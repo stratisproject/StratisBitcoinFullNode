@@ -14,7 +14,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
     public class SmartContractMempoolValidator : MempoolValidator
     {
         /// <summary>
-        /// Can be checked before loading coinview.
+        /// Can be checked instantly.
         /// </summary>
         private static readonly List<ISmartContractMempoolRule> preTxRules = new List<ISmartContractMempoolRule>
         {
@@ -24,7 +24,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         };
 
         /// <summary>
-        /// Rely on coinview to be loaded.
+        /// Rely on fee part of context to be loaded in parent class. See 'AcceptToMemoryPoolWorkerAsync'
         /// </summary>
         private static readonly List<ISmartContractMempoolRule> feeTxRules = new List<ISmartContractMempoolRule>
         {

@@ -350,23 +350,18 @@ namespace Stratis.Bitcoin.Features.Consensus
 
             using (await this.consensusLock.LockAsync(this.nodeLifetime.ApplicationStopping).ConfigureAwait(false))
             {
-                try
+
+                // Added by SC
+                blockValidationContext.RuleContext = new RuleContext(blockValidationContext, this.Validator.ConsensusParams, this.Tip);
+                blockValidationContext.RuleContext.Set = new UnspentOutputSet();
+                using (new StopwatchDisposable(o => this.Validator.PerformanceCounter.AddUTXOFetchingTime(o)))
                 {
-                    // Added by SC
-                    blockValidationContext.RuleContext = new RuleContext(blockValidationContext, this.Validator.ConsensusParams, this.Tip);
-                    blockValidationContext.RuleContext.Set = new UnspentOutputSet();
-                    using (new StopwatchDisposable(o => this.Validator.PerformanceCounter.AddUTXOFetchingTime(o)))
-                    {
-                        uint256[] ids = this.GetIdsToFetch(blockValidationContext.Block, true);
-                        FetchCoinsResponse coins = await this.UTXOSet.FetchCoinsAsync(ids).ConfigureAwait(false);
-                        blockValidationContext.RuleContext.Set.SetCoins(coins.UnspentOutputs);
-                    }
-                    await this.consensusRules.ExecuteAsync(blockValidationContext);
+                    uint256[] ids = this.GetIdsToFetch(blockValidationContext.Block, true);
+                    FetchCoinsResponse coins = await this.UTXOSet.FetchCoinsAsync(ids).ConfigureAwait(false);
+                    blockValidationContext.RuleContext.Set.SetCoins(coins.UnspentOutputs);
                 }
-                catch (Exception e)
-                {
-                    Console.WriteLine(e);
-                }
+                // End added by SC - really dislike this adding this ^ Should be in context always, at least for SC
+                await this.consensusRules.ExecuteAsync(blockValidationContext);
 
                 if (blockValidationContext.Error == null)
                 {

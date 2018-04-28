@@ -3,6 +3,9 @@ using Stratis.Bitcoin.Features.MemoryPool;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Consensus.Rules
 {
+    /// <summary>
+    /// Checks that transactsions sent to the mempool don't include the OP_SPEND opcode.
+    /// </summary>
     public class MempoolOpSpendRule : ISmartContractMempoolRule
     {
         public void CheckTransaction(MempoolValidationContext context)
