@@ -4,18 +4,17 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
-using NBitcoin.Protocol;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.P2P;
-using Stratis.Bitcoin.Tests.Common;
+using Stratis.Bitcoin.Tests.Common.Logging;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Utilities.Extensions;
 using Xunit;
 
 namespace Stratis.Bitcoin.Tests.P2P
 {
-    public sealed class PeerSelectorTests : TestBase
+    public sealed class PeerSelectorTests : LogsTestBase
     {
         private readonly ExtendedLoggerFactory extendedLoggerFactory;
 
@@ -738,7 +737,7 @@ namespace Stratis.Bitcoin.Tests.P2P
             var selfEndpointTracker = new SelfEndpointTracker();
             selfEndpointTracker.Add(selfIpEndPoint);
 
-            var peerSelector = new PeerSelector(new DateTimeProvider(), this.loggerFactory, peerAddresses, selfEndpointTracker);
+            var peerSelector = new PeerSelector(new DateTimeProvider(), this.LoggerFactory.Object, peerAddresses, selfEndpointTracker);
              
             IEnumerable<PeerAddress> peers = peerSelector.SelectPeersForDiscovery(2);
 

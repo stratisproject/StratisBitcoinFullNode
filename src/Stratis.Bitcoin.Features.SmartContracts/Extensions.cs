@@ -10,13 +10,14 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         /// Filters all transactions for those with smart contract exec opcodes
         /// A transaction should only have one smart contract exec output
         /// </summary>
-        /// <param name="transactions"></param>
-        /// <returns></returns>
         public static IEnumerable<Transaction> GetSmartContractExecTransactions(this IEnumerable<Transaction> transactions)
         {
             return transactions.Where(x=> x.IsSmartContractExecTransaction());
         }
 
+        /// <summary>
+        /// Filters all transactions for those with contract create opcodes. 
+        /// </summary>
         public static IEnumerable<Transaction> GetSmartContractCreateTransactions(this IEnumerable<Transaction> transactions)
         {
             return transactions.Where(x => x.IsSmartContractCreateTransaction());
@@ -29,7 +30,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
 
         public static bool IsSmartContractCreateTransaction(this Transaction tx)
         {
-            return tx.Outputs.Any(s => s.ScriptPubKey.ToOps().Any(op => op.Code == OpcodeType.OP_CREATECONTRACT));
+            return tx.Outputs.Any(x => x.ScriptPubKey.IsSmartContractCreate);
         }
 
         public static bool IsSmartContractSpendTransaction(this Transaction tx)

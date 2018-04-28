@@ -11,13 +11,14 @@ using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.P2P;
 using Stratis.Bitcoin.P2P.Peer;
+using Stratis.Bitcoin.Tests.Common.Logging;
 using Stratis.Bitcoin.Tests.Common;
 using Stratis.Bitcoin.Utilities;
 using Xunit;
 
 namespace Stratis.Bitcoin.Tests.P2P
 {
-    public sealed class PeerConnectorTests : TestBase
+    public sealed class PeerConnectorTests : LogsTestBase
     {
         private readonly IAsyncLoopFactory asyncLoopFactory;
         private readonly ExtendedLoggerFactory extendedLoggerFactory;
@@ -283,7 +284,7 @@ namespace Stratis.Bitcoin.Tests.P2P
         {
             var connectionManager = new ConnectionManager(
                 DateTimeProvider.Default,
-                this.loggerFactory,
+                this.LoggerFactory.Object,
                 this.network,
                 networkPeerFactory,
                 nodeSettings,

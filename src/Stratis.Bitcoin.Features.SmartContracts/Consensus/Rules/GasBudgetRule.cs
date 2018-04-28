@@ -13,7 +13,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Consensus.Rules
     /// Validates that the supplied transaction satoshis are greater than the gas budget satoshis in the contract invocation
     /// </summary>
     [ValidationRule(CanSkipValidation = false)]
-    public class GasBudgetRule : ConsensusRule, ISmartContractMempoolRule
+    public class GasBudgetRule : UtxoStoreConsensusRule, ISmartContractMempoolRule
     {
         public const ulong HardGasLimit = 5_000_000;
 
@@ -21,9 +21,14 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Consensus.Rules
         {
             Block block = context.BlockValidationContext.Block;
 
-            foreach(Transaction transaction in block.Transactions.Where(x=> !x.IsCoinBase && !x.IsCoinStake))
+            foreach (Transaction transaction in block.Transactions.Where(x => !x.IsCoinBase && !x.IsCoinStake))
             {
-                CheckTransaction(transaction, transaction.GetFee(context.Set));
+                if (!transaction.IsSmartContractExecTransaction())
+                    return Task.CompletedTask;
+
+                Money transactionFee = transaction.GetFee(context.Set);
+
+                CheckTransaction(transaction, transactionFee);
             }
 
             return Task.CompletedTask;

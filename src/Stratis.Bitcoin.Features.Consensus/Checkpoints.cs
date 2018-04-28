@@ -134,46 +134,54 @@ namespace Stratis.Bitcoin.Features.Consensus
         };
 
         /// <summary>Checkpoints for the specific instance of the class and its network.</summary>
-        private readonly Dictionary<int, CheckpointInfo> checkpoints;
+        private readonly Dictionary<int, CheckpointInfo> networkSpecificCheckpoints;
+
+        /// <summary>Consensus settings for the full node.</summary>
+        private ConsensusSettings ConsensusSettings { get; }
 
         /// <summary>
         /// Initializes a new instance of the object.
         /// </summary>
         public Checkpoints()
         {
-            this.checkpoints = new Dictionary<int, CheckpointInfo>();
+            this.networkSpecificCheckpoints = new Dictionary<int, CheckpointInfo>();
         }
 
         /// <summary>
         /// Initializes a new instance of the object.
         /// </summary>
         /// <param name="network">Specification of the network the node runs on - regtest/testnet/mainnet/stratis test/main.</param>
-        /// <param name="settings">Consensus settings for node - used to see if checkpoints have been disabled or not.</param>
-        public Checkpoints(Network network, ConsensusSettings settings)
+        /// <param name="consensusSettings">Consensus settings for node - used to see if checkpoints have been disabled or not.</param>
+        public Checkpoints(Network network, ConsensusSettings consensusSettings)
         {
             Guard.NotNull(network, nameof(network));
-            Guard.NotNull(settings, nameof(settings));
+            Guard.NotNull(consensusSettings, nameof(consensusSettings));
 
-            if (!settings.UseCheckpoints) this.checkpoints = new Dictionary<int, CheckpointInfo>();
-            else if (network.Equals(Network.Main)) this.checkpoints = bitcoinMainnetCheckpoints;
-            else if (network.Equals(Network.TestNet)) this.checkpoints = bitcoinTestnetCheckpoints;
-            else if (network.Equals(Network.RegTest)) this.checkpoints = new Dictionary<int, CheckpointInfo>();
-            else if (network.Equals(Network.StratisMain)) this.checkpoints = stratisMainnetCheckpoints;
-            else if (network.Equals(Network.StratisTest)) this.checkpoints = stratisTestnetCheckpoints;
-            else this.checkpoints = new Dictionary<int, CheckpointInfo>();
+            this.ConsensusSettings = consensusSettings;
+
+            this.networkSpecificCheckpoints = new Dictionary<int, CheckpointInfo>();
+
+            //if (network == Network.Main) this.networkSpecificCheckpoints = bitcoinMainnetCheckpoints;
+            //else if (network == Network.TestNet) this.networkSpecificCheckpoints = bitcoinTestnetCheckpoints;
+            //else if (network == Network.RegTest) this.networkSpecificCheckpoints = new Dictionary<int, CheckpointInfo>();
+            //else if (network == Network.StratisMain) this.networkSpecificCheckpoints = stratisMainnetCheckpoints;
+            //else if (network == Network.StratisTest) this.networkSpecificCheckpoints = stratisTestnetCheckpoints;
+            //else if (network == Network.SmartContractsTest) this.networkSpecificCheckpoints = new Dictionary<int, CheckpointInfo>();
+            //else this.networkSpecificCheckpoints = new Dictionary<int, CheckpointInfo>();
         }
 
         /// <inheritdoc />
         public int GetLastCheckpointHeight()
         {
-            return this.checkpoints.Count > 0 ? this.checkpoints.Keys.Last() : 0;
+            var checkpoints = this.GetCheckpoints();
+            return checkpoints.Count > 0 ? checkpoints.Keys.Last() : 0;
         }
 
         /// <inheritdoc />
         public bool CheckHardened(int height, uint256 hash)
         {
             CheckpointInfo checkpoint;
-            if (!this.checkpoints.TryGetValue(height, out checkpoint)) return true;
+            if (!this.GetCheckpoints().TryGetValue(height, out checkpoint)) return true;
 
             return checkpoint.Hash.Equals(hash);
         }
@@ -182,8 +190,16 @@ namespace Stratis.Bitcoin.Features.Consensus
         public CheckpointInfo GetCheckpoint(int height)
         {
             CheckpointInfo checkpoint;
-            this.checkpoints.TryGetValue(height, out checkpoint);
+            this.GetCheckpoints().TryGetValue(height, out checkpoint);
             return checkpoint;
+        }
+
+        private Dictionary<int, CheckpointInfo> GetCheckpoints()
+        {
+            if (this.ConsensusSettings == null || !this.ConsensusSettings.UseCheckpoints)
+                return new Dictionary<int, CheckpointInfo>();
+
+            return this.networkSpecificCheckpoints;
         }
     }
 }

@@ -44,6 +44,12 @@ namespace Stratis.Bitcoin.IntegrationTests.Builders
             return this;
         }
 
+        public NodeGroupBuilder CreateStratisPosApiNode(string nodeName)
+        {
+            this.nodes.Add(nodeName, this.nodeBuilder.CreateStratisPosApiNode());
+            return this;
+        }
+
         public NodeGroupBuilder NotInIBD()
         {
             this.nodes.Last().Value.NotInIBD();

@@ -188,7 +188,7 @@ namespace Stratis.SmartContracts.Core
                 this.Result = SmartContractExecutionResult.ContractDoesNotExist(this.carrier);
                 return;
             }
-          
+
             // Execute the call to the contract.
             this.Result = this.CreateContextAndExecute(this.carrier.ContractAddress, contractExecutionCode, this.carrier.MethodName);
 
