@@ -7,19 +7,27 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
     /// <summary>
     /// A rule that will verify the block time drift is according to the PoS consensus rules.
     /// </summary>
-    public class PosFutureDriftRule : PosConsensusRule
+    public class PosFutureDriftRule : StakeStoreConsensusRule
     {
+        /// <summary>New future drift in seconds after the hardfork.</summary>
+        private const int NewFutureDriftSeconds = 15;
+
+        /// <summary>Old future drift in seconds before the hardfork.</summary>
+        private const int OldFutureDriftSeconds = 128 * 60 * 60;
+
         /// <inheritdoc />
         /// <exception cref="ConsensusErrors.BlockTimestampTooFar">The block timestamp is too far into the future.</exception>
         public override Task RunAsync(RuleContext context)
         {
             Block block = context.BlockValidationContext.Block;
 
+            long adjustedTime = this.Parent.DateTimeProvider.GetAdjustedTimeAsUnixTimestamp();
+
             // Check timestamp.
-            if (block.Header.Time > this.FutureDrift(this.Parent.DateTimeProvider.GetAdjustedTimeAsUnixTimestamp()))
+            if (block.Header.Time > adjustedTime + this.GetFutureDrift(adjustedTime))
             {
                 // The block can be valid only after its time minus the future drift.
-                context.BlockValidationContext.RejectUntil = Utils.UnixTimeToDateTime(block.Header.Time - this.FutureDrift(0)).UtcDateTime;
+                context.BlockValidationContext.RejectUntil = Utils.UnixTimeToDateTime(block.Header.Time - this.GetFutureDrift(block.Header.Time)).UtcDateTime;
                 this.Logger.LogTrace("(-)[TIME_TOO_FAR]");
                 ConsensusErrors.BlockTimestampTooFar.Throw();
             }
@@ -28,17 +36,17 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         }
 
         /// <summary>
-        /// Applies future drift to provided timestamp.
+        /// Gets future drift for the provided timestamp.
         /// </summary>
         /// <remarks>
         /// Future drift is maximal allowed block's timestamp difference over adjusted time.
         /// If this difference is greater block won't be accepted.
         /// </remarks>
         /// <param name="time">UNIX timestamp.</param>
-        /// <returns>Timestamp with maximum future drift applied.</returns>
-        private long FutureDrift(long time)
+        /// <returns>Value of the future drift.</returns>
+        private long GetFutureDrift(long time)
         {
-            return this.IsDriftReduced(time) ? time + 15 : time + 128 * 60 * 60;
+            return this.IsDriftReduced(time) ? NewFutureDriftSeconds : OldFutureDriftSeconds;
         }
 
         /// <summary>

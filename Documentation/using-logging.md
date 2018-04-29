@@ -111,7 +111,7 @@ Here is the very basic `NLog.config` configuration file that you can start with:
 <?xml version="1.0" encoding="utf-8" ?>
 <nlog xmlns="http://www.nlog-project.org/schemas/NLog.xsd" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" autoReload="true">
   <targets>
-    <target xsi:type="File" name="debugFile" fileName="debug.txt" layout="[${longdate:universalTime=true} ${threadid}${mdlc:item=id}] ${level:uppercase=true}: ${callsite} ${message}" encoding="utf-8" /> 
+    <target xsi:type="File" name="debugAllFile" fileName="debug.txt" layout="[${longdate:universalTime=true} ${threadid}${mdlc:item=id}] ${level:uppercase=true}: ${callsite} ${message}" encoding="utf-8" /> 
     <target xsi:type="null" name="null" formatMessage="false" /> 
   </targets>
 

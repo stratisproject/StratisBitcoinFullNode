@@ -1,13 +1,12 @@
 ﻿using System.Collections.Generic;
-using Microsoft.Extensions.Logging;
 using NBitcoin;
-using Stratis.Bitcoin.Configuration;
-using Stratis.Bitcoin.Utilities;
+using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
+using Stratis.Bitcoin.Tests.Common;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.Consensus.Tests
 {
-    public class MerkeRootComputationTest
+    public class MerkleRootComputationTest
     {
         [Fact]
         public void MerkleRootComputationNotMutated()
@@ -42,7 +41,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
                 new uint256("ac2dcf5c46d9a801389b6c0630b435ce5c2fa850cfac5456f16937dd8ae697d3")
             };
             bool mutated;
-            var root = ComputeMerkleRoot(leaves, out mutated);
+            var root = this.ComputeMerkleRoot(leaves, out mutated);
 
             Assert.Equal("95aa5bba66381c3817df338895349acd3fc3e8ce226e04a5e2acbb53db18b9c0", root.ToString());
             Assert.True(mutated);
@@ -50,12 +49,11 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
 
         private uint256 ComputeMerkleRoot(List<uint256> leaves, out bool mutated)
         {
-            NodeSettings nodeSettings = NodeSettings.Default();
-            ConsensusSettings consensusSettings = new ConsensusSettings().Load(nodeSettings);
-            Network.Main.Consensus.Options = new PosConsensusOptions();
-            var consensusValidator = new PowConsensusValidator(Network.Main, new Checkpoints(Network.Main, consensusSettings), DateTimeProvider.Default, nodeSettings.LoggerFactory);
-
-            return consensusValidator.ComputeMerkleRoot(leaves, out mutated);
+            using (new StaticFlagIsolator(Network.Main))
+            {
+                Network.Main.Consensus.Options = new PosConsensusOptions();
+                return BlockMerkleRootRule.ComputeMerkleRoot(leaves, out mutated);
+            }
         }
     }
 }
