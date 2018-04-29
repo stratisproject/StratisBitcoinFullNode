@@ -314,7 +314,6 @@ namespace Stratis.Bitcoin.Features.Miner
         /// <param name="network">Specification of the network the node runs on - regtest/testnet/mainnet.</param>
         /// <param name="connectionManager">Provider of information about the node's connection to it's network peers.</param>
         /// <param name="dateTimeProvider">Provides date time functionality.</param>
-        /// <param name="blockAssemblerFactory">Provides an interface for creating block templates of different types.</param>
         /// <param name="initialBlockDownloadState">Provider of IBD state.</param>
         /// <param name="nodeLifetime">Global application life cycle control - triggers when application shuts down.</param>
         /// <param name="coinView">Consensus' view of UTXO set.</param>
@@ -515,7 +514,7 @@ namespace Stratis.Bitcoin.Features.Miner
                 {
                     UnspentOutputs set = coinset.UnspentOutputs.FirstOrDefault(f => f?.TransactionId == infoTransaction.Transaction.Id);
                     TxOut utxo = (set != null) && (infoTransaction.Transaction.Index < set.Outputs.Length) ? set.Outputs[infoTransaction.Transaction.Index] : null;
-                    uint256 hashBlock = set != null ? this.chain.GetBlock((int) set.Height)?.HashBlock : null;
+                    uint256 hashBlock = set != null ? this.chain.GetBlock((int)set.Height)?.HashBlock : null;
 
                     if ((utxo != null) && (utxo.Value > Money.Zero) && (hashBlock != null))
                     {

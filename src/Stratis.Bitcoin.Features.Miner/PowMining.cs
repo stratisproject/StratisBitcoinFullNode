@@ -28,12 +28,10 @@ namespace Stratis.Bitcoin.Features.Miner
 
     public class PowMining : IPowMining
     {
-        /// <summary>The async loop we need to wait upon before we can shut down this feature.</summary>
-        private IAsyncLoop asyncLoop;
-
         /// <summary>Factory for creating background async loop tasks.</summary>
         private readonly IAsyncLoopFactory asyncLoopFactory;
 
+        /// <summary>Thread safe chain of block headers from genesis.</summary>
         private readonly ConcurrentChain chain;
 
         /// <summary>Manager of the longest fully validated chain of blocks.</summary>
@@ -58,7 +56,7 @@ namespace Stratis.Bitcoin.Features.Miner
 
         private uint256 hashPrevBlock;
 
-        private const int innerLoopCount = 0x10000;
+        private const int InnerLoopCount = 0x10000;
 
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
@@ -71,6 +69,9 @@ namespace Stratis.Bitcoin.Features.Miner
 
         /// <summary>A lock for managing asynchronous access to memory pool.</summary>
         private readonly MempoolSchedulerLock mempoolLock;
+
+        /// <summary>The async loop we need to wait upon before we can shut down this feature.</summary>
+        private IAsyncLoop miningLoop;
 
         /// <summary>Specification of the network the node runs on - regtest/testnet/mainnet.</summary>
         private readonly Network network;
@@ -105,20 +106,20 @@ namespace Stratis.Bitcoin.Features.Miner
         ///<inheritdoc/>
         public IAsyncLoop Mine(Script reserveScript)
         {
-            if (this.asyncLoop != null)
-                return this.asyncLoop;
+            if (this.miningLoop != null)
+                return this.miningLoop;
 
-            this.asyncLoop = this.asyncLoopFactory.Run("PowMining.Mine", token =>
+            this.miningLoop = this.asyncLoopFactory.Run("PowMining.Mine", token =>
             {
                 this.GenerateBlocks(new ReserveScript { ReserveFullNodeScript = reserveScript }, int.MaxValue, int.MaxValue);
-                this.asyncLoop = null;
+                this.miningLoop = null;
                 return Task.CompletedTask;
             },
             this.nodeLifetime.ApplicationStopping,
             repeatEvery: TimeSpans.RunOnce,
             startAfter: TimeSpans.TenSeconds);
 
-            return this.asyncLoop;
+            return this.miningLoop;
         }
 
         ///<inheritdoc/>
@@ -158,7 +159,7 @@ namespace Stratis.Bitcoin.Features.Miner
                 nExtraNonce = this.IncrementExtraNonce(blockTemplate.Block, chainTip, nExtraNonce);
                 Block pblock = blockTemplate.Block;
 
-                while ((maxTries > 0) && (pblock.Header.Nonce < innerLoopCount) && !pblock.CheckProofOfWork(this.network.Consensus))
+                while ((maxTries > 0) && (pblock.Header.Nonce < InnerLoopCount) && !pblock.CheckProofOfWork(this.network.Consensus))
                 {
                     this.nodeLifetime.ApplicationStopping.ThrowIfCancellationRequested();
 
@@ -169,7 +170,7 @@ namespace Stratis.Bitcoin.Features.Miner
                 if (maxTries == 0)
                     break;
 
-                if (pblock.Header.Nonce == innerLoopCount)
+                if (pblock.Header.Nonce == InnerLoopCount)
                     continue;
 
                 var newChain = new ChainedBlock(pblock.Header, pblock.GetHash(), chainTip);
