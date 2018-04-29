@@ -50,9 +50,9 @@ namespace Stratis.Bitcoin.IntegrationTests
             MineCoinsToMaturity();
             ProofOfStakeNodeWithWallet();
             SyncWithProofWorkNode();
-            SendMillionCoinsFromPowWalletToPosWallet();
-            PowWalletBroadcastsTransactionToPosWallet();
-            PosNodeMinesToEnsureStaking();
+            SendOneMillionCoinsFromPowWalletToPosWallet();
+            PowWalletBroadcastsTransactionOfOneMillionCoinsAndPosWalletReceives();
+            PosNodeMinesTenBlocksMoreEnsuringTheyCanBeStaked();
             PosNodeStartsStaking();
             PosNodeWalletHasEarnedCoinsThroughStaking();
         }
@@ -116,7 +116,7 @@ namespace Stratis.Bitcoin.IntegrationTests
             this.nodeGroupBuilder.WithConnections().Connect(this.PowMiner, this.PosStaker);
         }
 
-        public void SendMillionCoinsFromPowWalletToPosWallet()
+        public void SendOneMillionCoinsFromPowWalletToPosWallet()
         {
             var context = SharedSteps.CreateTransactionBuildContext(
                 this.PowWallet,
@@ -151,7 +151,7 @@ namespace Stratis.Bitcoin.IntegrationTests
             this.nodes[this.PowMiner].FullNode.NodeService<WalletController>().SendTransaction(new SendTransactionRequest(transaction.ToHex()));
         }
 
-        public void PowWalletBroadcastsTransactionToPosWallet()
+        public void PowWalletBroadcastsTransactionOfOneMillionCoinsAndPosWalletReceives()
         {
             TestHelper.WaitLoop(() => this.nodes[this.PosStaker].CreateRPCClient().GetRawMempool().Length > 0);
             TestHelper.WaitLoop(() => this.nodes[this.PosStaker].FullNode.WalletManager().GetSpendableTransactionsInWallet(this.PosWallet).Any());
@@ -162,7 +162,7 @@ namespace Stratis.Bitcoin.IntegrationTests
             received.Sum(s => s.Transaction.Amount).Should().Be(Money.COIN * 1000000);
         }
 
-        public void PosNodeMinesToEnsureStaking()
+        public void PosNodeMinesTenBlocksMoreEnsuringTheyCanBeStaked()
         {
             this.nodes[this.PosStaker].GenerateStratisWithMiner(Convert.ToInt32(this.nodes[this.PosStaker].FullNode.Network.Consensus.Option<PosConsensusOptions>().CoinbaseMaturity));
         }

@@ -9,7 +9,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         {
             Given(two_nodes_which_includes_a_proof_of_stake_node_with_a_million_coins);
             When(a_wallet_sends_staked_coins_before_maturity);
-            Then(the_wallet_history_shows_the_transaction_as_sent);
+            Then(the_wallet_history_shows_the_transaction_as_sent_but_the_transaction_was_not_received);
         }
     }
 }

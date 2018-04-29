@@ -47,22 +47,22 @@ namespace Stratis.Bitcoin.IntegrationTests.Miners
 
         private void sends_a_million_coins_from_pow_wallet_to_pos_wallet()
         {
-            this.proofOfStakeSteps.SendMillionCoinsFromPowWalletToPosWallet();
+            this.proofOfStakeSteps.SendOneMillionCoinsFromPowWalletToPosWallet();
         }
 
         private void pow_wallet_broadcasts_tx_of_million_coins_and_pos_wallet_receives()
         {
-            this.proofOfStakeSteps.PowWalletBroadcastsTransactionToPosWallet();
+            this.proofOfStakeSteps.PowWalletBroadcastsTransactionOfOneMillionCoinsAndPosWalletReceives();
         }
 
         private void pos_node_mines_ten_blocks_more_ensuring_they_can_be_staked()
         {
-            this.proofOfStakeSteps.PosNodeMinesToEnsureStaking();
+            this.proofOfStakeSteps.PosNodeMinesTenBlocksMoreEnsuringTheyCanBeStaked();
         }
 
         private void pos_node_starts_staking()
         {
-            this.proofOfStakeSteps.PosNodeMinesToEnsureStaking();
+            this.proofOfStakeSteps.PosNodeStartsStaking();
         }
 
         private void pos_node_wallet_has_earned_coins_through_staking()

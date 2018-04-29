@@ -84,7 +84,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             this.SenderNode.FullNode.NodeService<WalletController>().SendTransaction(new SendTransactionRequest(walletTransactionModel.Hex));
         }
 
-        private void the_wallet_history_shows_the_transaction_as_sent()
+        private void the_wallet_history_shows_the_transaction_as_sent_but_the_transaction_was_not_received()
         {
             GetWalletHistory(this.SenderNode, this.proofOfStakeSteps.PosWallet)
                 .AccountsHistoryModel
@@ -102,7 +102,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             var walletHistory = node.FullNode.NodeService<WalletController>()
                 .GetHistory(new WalletHistoryRequest { WalletName = walletName }) as JsonResult;
 
-            return walletHistory.Value as WalletHistoryModel;
+            return walletHistory?.Value as WalletHistoryModel;
         }
 
         private string GetReceiverUnusedAddressFromWallet()
