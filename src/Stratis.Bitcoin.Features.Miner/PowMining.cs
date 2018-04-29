@@ -6,7 +6,6 @@ using NBitcoin;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.Interfaces;
 using Stratis.Bitcoin.Features.Miner.Interfaces;
-using Stratis.Bitcoin.Signals;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.Miner
@@ -83,22 +82,49 @@ namespace Stratis.Bitcoin.Features.Miner
         }
 
         ///<inheritdoc/>
-        public IAsyncLoop Mine(Script reserveScript)
+        public void Mine(Script reserveScript)
         {
             if (this.mining != null)
-                return this.mining; // already mining
+                return; // already mining
 
             this.mining = this.asyncLoopFactory.Run("PowMining.Mine", token =>
             {
-                this.GenerateBlocks(new ReserveScript { ReserveFullNodeScript = reserveScript }, int.MaxValue, int.MaxValue);
-                this.mining = null;
+                try
+                {
+                    this.GenerateBlocks(new ReserveScript { ReserveFullNodeScript = reserveScript }, int.MaxValue, int.MaxValue);
+                }
+                catch (OperationCanceledException)
+                {
+                    // Application stopping, nothing to do as the loop will be stopped.
+                }
+                catch (MinerException me)
+                {
+                    // Block not accepted by peers or invalid. Should not halt mining.
+                    this.logger.LogDebug("Miner exception occurred in miner loop: {0}", me.ToString());
+                }
+                catch (ConsensusErrorException cee)
+                {
+                    // Issues constructing block or verifying it. Should not halt mining.
+                    this.logger.LogDebug("Consensus error exception occurred in miner loop: {0}", cee.ToString());
+                }
+                catch
+                {
+                    this.logger.LogTrace("(-)[UNHANDLED_EXCEPTION]");
+                    throw;
+                }
+
                 return Task.CompletedTask;
             },
             this.nodeLifetime.ApplicationStopping,
-            repeatEvery: TimeSpans.RunOnce,
+            repeatEvery: TimeSpans.Second,
             startAfter: TimeSpans.TenSeconds);
+        }
 
-            return this.mining;
+        ///<inheritdoc/>
+        public void StopMining()
+        {
+            this.mining.Dispose();
+            this.mining = null;
         }
 
         ///<inheritdoc/>
