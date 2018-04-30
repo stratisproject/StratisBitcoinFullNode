@@ -64,9 +64,9 @@ namespace NBitcoin.Tests
 
         [Fact]
         public void SetTxFees_MinRelayTxFee_SetsTxFeesOnBuilder()
-        {            
+        {
             this.builder.SetTxFees(0, 0, 1231);
-            
+
             Assert.Equal(0, this.builder.MinTxFee);
             Assert.Equal(0, this.builder.FallbackFee);
             Assert.Equal(1231, this.builder.MinRelayTxFee);
@@ -202,9 +202,52 @@ namespace NBitcoin.Tests
         }
 
         [Fact]
+        public void BuildAndRegister_SetNoName_ThrowsInvalidOperationException()
+        {
+            this.builder.SetName(null);
+
+            Assert.Throws<InvalidOperationException>(() => this.builder.BuildAndRegister());
+        }
+
+        [Fact]
+        public void BuildAndRegister_RegisterTwice_ThrowsInvalidOperationException()
+        {
+            this.builder.SetName("MyDuplicateNetwork");
+            this.builder.SetGenesis(new Block(new BlockHeader() { Version = 10 }));
+            this.builder.SetConsensus(new Consensus() { CoinType = 15 });
+
+            this.builder.BuildAndRegister();
+
+            Assert.Throws<InvalidOperationException>(() => this.builder.BuildAndRegister());
+        }
+
+        [Fact]
+        public void BuildAndRegister_ConsensusNotProvided_ThrowsInvalidOperationException()
+        {
+            var genesis = new Block(new BlockHeader() { Version = 10 });
+
+            this.builder.SetName("ConsensusNotSetNetwork");
+            this.builder.SetGenesis(genesis);
+            this.builder.SetConsensus(null);
+
+            Assert.Throws<InvalidOperationException>(() => this.builder.BuildAndRegister());
+        }
+
+        [Fact]
+        public void BuildAndRegister_GenesisNotProvided_ThrowsInvalidOperationException()
+        {
+            var consensus = new Consensus() { CoinType = 15 };
+            this.builder.SetName("GenesisNotSetNetwork");
+            this.builder.SetGenesis(null);
+            this.builder.SetConsensus(consensus);
+
+            Assert.Throws<InvalidOperationException>(() => this.builder.BuildAndRegister());
+        }
+
+        [Fact]
         public void BuildAndRegister_SetName_SetsNetworkNameOnNetwork()
         {
-            this.builder.SetName("MyNetwork");
+            this.PrepareValidNetwork("MyNetwork");
 
             Network result = this.builder.BuildAndRegister();
 
@@ -214,7 +257,7 @@ namespace NBitcoin.Tests
         [Fact]
         public void BuildAndRegister_SetRootFolderName_SetsRootFolderNameOnNetwork()
         {
-            this.builder.SetName("RootFolderNetwork");
+            this.PrepareValidNetwork("RootFolderNetwork");
             this.builder.SetRootFolderName("MyRootFolder");
 
             Network result = this.builder.BuildAndRegister();
@@ -225,7 +268,7 @@ namespace NBitcoin.Tests
         [Fact]
         public void BuildAndRegister_SetDefaultConfigFilename_SetsDefaultConfigFilenameOnNetwork()
         {
-            this.builder.SetName("DefaultConfigFileNetwork");
+            this.PrepareValidNetwork("DefaultConfigFileNetwork");
             this.builder.SetDefaultConfigFilename("MyDefaultConfigFileName");
 
             Network result = this.builder.BuildAndRegister();
@@ -236,7 +279,7 @@ namespace NBitcoin.Tests
         [Fact]
         public void BuildAndRegister_SetTxFees_MinTxFee_SetsTxFeesOnNetwork()
         {
-            this.builder.SetName("MinTxFeeNetwork");
+            this.PrepareValidNetwork("MinTxFeeNetwork");
             this.builder.SetTxFees(1500, 0, 0);
 
             Network result = this.builder.BuildAndRegister();
@@ -249,7 +292,7 @@ namespace NBitcoin.Tests
         [Fact]
         public void BuildAndRegister_SetTxFees_FallbackFee_SetsTxFeesOnNetwork()
         {
-            this.builder.SetName("FallbackFeeNetwork");
+            this.PrepareValidNetwork("FallbackFeeNetwork");
             this.builder.SetTxFees(0, 2130, 0);
 
             Network result = this.builder.BuildAndRegister();
@@ -262,7 +305,7 @@ namespace NBitcoin.Tests
         [Fact]
         public void BuildAndRegister_SetTxFees_MinRelayTxFee_SetsTxFeesOnNetwork()
         {
-            this.builder.SetName("MinRelayTxFeeNetwork");
+            this.PrepareValidNetwork("MinRelayTxFeeNetwork");
             this.builder.SetTxFees(0, 0, 1231);
 
             Network result = this.builder.BuildAndRegister();
@@ -275,7 +318,7 @@ namespace NBitcoin.Tests
         [Fact]
         public void BuildAndRegister_SetMaxTimeOffsetSeconds_SetsMaxTimeOffsetSecondsOnNetwork()
         {
-            this.builder.SetName("MaxTimeOffsetSecondsNetwork");
+            this.PrepareValidNetwork("MaxTimeOffsetSecondsNetwork");
             this.builder.SetMaxTimeOffsetSeconds(918);
 
             Network result = this.builder.BuildAndRegister();
@@ -286,7 +329,7 @@ namespace NBitcoin.Tests
         [Fact]
         public void BuildAndRegister_SetSetMaxTipAge_SetsMaxTipAgeOnNetwork()
         {
-            this.builder.SetName("SetMaxTipAgeNetwork");
+            this.PrepareValidNetwork("SetMaxTipAgeNetwork");
             this.builder.SetMaxTipAge(712);
 
             Network result = this.builder.BuildAndRegister();
@@ -297,7 +340,7 @@ namespace NBitcoin.Tests
         [Fact]
         public void BuildAndRegister_AddAlias_RegistersNetworkWithAliasToNetworks()
         {
-            this.builder.SetName("AliasNetwork");
+            this.PrepareValidNetwork("AliasNetwork");
             this.builder.AddAlias("NetworkNameByAlias");
 
             Network result = this.builder.BuildAndRegister();
@@ -310,7 +353,7 @@ namespace NBitcoin.Tests
         [Fact]
         public void BuildAndRegister_SetRPCPort_SetsRPCPortOnNetwork()
         {
-            this.builder.SetName("SetRPCPortNetwork");
+            this.PrepareValidNetwork("SetRPCPortNetwork");
             this.builder.SetRPCPort(8339);
 
             Network result = this.builder.BuildAndRegister();
@@ -321,7 +364,7 @@ namespace NBitcoin.Tests
         [Fact]
         public void BuildAndRegister_SetPort_SetsPortOnNetwork()
         {
-            this.builder.SetName("SetPortNetwork");
+            this.PrepareValidNetwork("SetPortNetwork");
             this.builder.SetPort(14000);
 
             Network result = this.builder.BuildAndRegister();
@@ -332,7 +375,7 @@ namespace NBitcoin.Tests
         [Fact]
         public void BuildAndRegister_SetMagic_SetsMagicOnNetwork()
         {
-            this.builder.SetName("SetMagicNetwork");
+            this.PrepareValidNetwork("SetMagicNetwork");
             this.builder.SetMagic(1231241);
 
             Network result = this.builder.BuildAndRegister();
@@ -343,7 +386,7 @@ namespace NBitcoin.Tests
         [Fact]
         public void BuildAndRegister_AddDNSSeeds_SetsDNSSeedsOnNetwork()
         {
-            this.builder.SetName("SetDNSSeedsNetwork");
+            this.PrepareValidNetwork("SetDNSSeedsNetwork");
             this.builder.AddDNSSeeds(new DNSSeedData[] { new DNSSeedData("dnsNode1", "3.4.2.1") });
 
             Network result = this.builder.BuildAndRegister();
@@ -356,7 +399,7 @@ namespace NBitcoin.Tests
         [Fact]
         public void BuildAndRegister_AddSeeds_SetsSeedsOnNetwork()
         {
-            this.builder.SetName("SetSeedsNetwork");
+            this.PrepareValidNetwork("SetSeedsNetwork");
             this.builder.AddSeeds(new NetworkAddress[] { new NetworkAddress(IPAddress.Parse("::ffff:0:0"), 1234) });
 
             Network result = this.builder.BuildAndRegister();
@@ -385,7 +428,7 @@ namespace NBitcoin.Tests
         [Fact]
         public void BuildAndRegister_SetBase58Bytes_SetsBase58PrefixesOnNetwork()
         {
-            this.builder.SetName("SetBase58BytesNetwork");
+            this.PrepareValidNetwork("SetBase58BytesNetwork");
             this.builder.SetBase58Bytes(Base58Type.SCRIPT_ADDRESS, new byte[] { (196) });
 
             Network result = this.builder.BuildAndRegister();
@@ -396,7 +439,7 @@ namespace NBitcoin.Tests
         [Fact]
         public void BuildAndRegister_SetSetBech32_HumanReadable_SetsBech32EncodersOnNetwork()
         {
-            this.builder.SetName("SetBech34ReadableNetwork");
+            this.PrepareValidNetwork("SetBech34ReadableNetwork");
             this.builder.SetBech32(Bech32Type.WITNESS_PUBKEY_ADDRESS, "bc");
 
             Network result = this.builder.BuildAndRegister();
@@ -408,7 +451,7 @@ namespace NBitcoin.Tests
         public void BuildAndRegister_SetSetBech32_ExistingEncoder_SetsBech32EncodersOnNetwork()
         {
             Bech32Encoder encoder = Encoders.Bech32("bc");
-            this.builder.SetName("SetBech32EncoderNetwork");
+            this.PrepareValidNetwork("SetBech32EncoderNetwork");
             this.builder.SetBech32(Bech32Type.WITNESS_PUBKEY_ADDRESS, encoder);
 
             Network result = this.builder.BuildAndRegister();
@@ -423,7 +466,7 @@ namespace NBitcoin.Tests
             {
                 { 33333, new CheckpointInfo(new uint256("0x000000002dd5588a74784eaa7ab0507a18ad16a236e7b1ce69f00d7ddfb5d0a6")) },
             };
-            this.builder.SetName("SetCheckpointsNetwork");
+            this.PrepareValidNetwork("SetCheckpointsNetwork");
             this.builder.SetCheckpoints(checkpoints);
 
             Network result = this.builder.BuildAndRegister();
@@ -433,6 +476,13 @@ namespace NBitcoin.Tests
             Assert.Equal(33333, resultingCheckpoint.Key);
             Assert.Equal(new uint256("0x000000002dd5588a74784eaa7ab0507a18ad16a236e7b1ce69f00d7ddfb5d0a6"), resultingCheckpoint.Value.Hash);
             Assert.Null(resultingCheckpoint.Value.StakeModifierV2);
+        }
+
+        private void PrepareValidNetwork(string networkName)
+        {
+            this.builder.SetName(networkName);
+            this.builder.SetGenesis(new Block(new BlockHeader() { Version = 10 }));
+            this.builder.SetConsensus(new Consensus() { CoinType = 15 });
         }
     }
 }

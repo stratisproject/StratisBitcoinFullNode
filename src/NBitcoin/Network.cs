@@ -66,7 +66,7 @@ namespace NBitcoin
         WITNESS_PUBKEY_ADDRESS,
         WITNESS_SCRIPT_ADDRESS
     }
-    
+
     public enum BuriedDeployments : int
     {
         /// <summary>
@@ -83,7 +83,7 @@ namespace NBitcoin
         /// Strict DER signature
         /// </summary>
         BIP66
-    }    
+    }
 
     public class Consensus
     {
@@ -131,7 +131,7 @@ namespace NBitcoin
                 get { return this.parameters[(int) index]; }
                 set { this.parameters[(int) index] = value; }
             }
-        }       
+        }
 
         public Consensus()
         {
@@ -330,6 +330,12 @@ namespace NBitcoin
             if (GetNetwork(builder.Name) != null)
                 throw new InvalidOperationException("The network " + builder.Name + " is already registered.");
 
+            if (builder.Genesis == null)
+                throw new InvalidOperationException("A genesis block needs to be provided.");
+
+            if (builder.Consensus == null)
+                throw new InvalidOperationException("A consensus needs to be provided.");
+
             Network network = new Network();
             network.Name = builder.Name;
             network.RootFolderName = builder.RootFolderName;
@@ -339,8 +345,7 @@ namespace NBitcoin
             network.DefaultPort = builder.Port;
             network.RPCPort = builder.RPCPort;
             network.genesis = builder.Genesis;
-            if(network.consensus != null && network.genesis != null)
-                network.consensus.HashGenesisBlock = network.genesis.GetHash();
+            network.consensus.HashGenesisBlock = network.genesis.GetHash();
 
             foreach (DNSSeedData seed in builder.Seeds)
             {
