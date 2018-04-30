@@ -5,6 +5,7 @@ using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Builder.Feature;
+using Stratis.Bitcoin.Features.Api.Controllers;
 
 namespace Stratis.Bitcoin.Features.Api
 {
@@ -124,6 +125,7 @@ namespace Stratis.Bitcoin.Features.Api
                         services.AddSingleton(fullNodeBuilder);
                         services.AddSingleton(options);
                         services.AddSingleton<ApiSettings>(new ApiSettings(setup));
+                        services.AddSingleton<DashboardController>();
                     });
             });
 

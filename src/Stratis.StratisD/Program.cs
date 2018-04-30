@@ -12,6 +12,7 @@ using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.Miner;
 using Stratis.Bitcoin.Features.RPC;
+using Stratis.Bitcoin.Features.TestFeature;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Utilities;
 
@@ -39,6 +40,7 @@ namespace Stratis.StratisD
                     .UseBlockStore()
                     .UseMempool()
                     .UseWallet()
+                    .UseTestFeature()
                     .AddPowPosMining()
                     .UseApi()
                     .AddRPC()

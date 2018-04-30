@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\NBitcoin\NBitcoin.csproj" />
+    <ProjectReference Include="..\Stratis.Bitcoin\Stratis.Bitcoin.csproj" />
+</ItemGroup>
+  <ItemGroup>
+    <Folder Include="Controllers\" />
+    <Folder Include="dashboard_static_files\" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Remove="dashboard_static_files\*.*" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="dashboard_static_files\*.*" />
+  </ItemGroup>
+</Project>
