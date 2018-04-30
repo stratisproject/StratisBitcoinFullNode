@@ -104,7 +104,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             Transaction tx = new Transaction();
             tx.AddInput(new TxIn(new OutPoint(context.SrcTxs[0].GetHash(), 0), PayToPubkeyHashTemplate.Instance.GenerateScriptPubKey(minerSecret.PubKey)));
             tx.AddOutput(new TxOut(new Money(Money.CENT * 11), destSecret.PubKeyHash));
-            tx.Sign(minerSecret, false);
+            tx.Sign(Network.RegTest, minerSecret, false);
 
             MempoolValidationState state = new MempoolValidationState(false);
             bool isSuccess = await validator.AcceptToMemoryPool(state, tx);
@@ -133,7 +133,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             // Fund Alice, Bob, Satoshi
             // 50 Coins come from first tx on chain - send satoshi 1, bob 2, Alice 1.5 and change back to miner
             Coin coin = new Coin(context.SrcTxs[0].GetHash(), 0, context.SrcTxs[0].TotalOut, miner.ScriptPubKey);
-            TransactionBuilder txBuilder = new TransactionBuilder();
+            TransactionBuilder txBuilder = new TransactionBuilder(Network.RegTest);
             Transaction multiOutputTx = txBuilder
                 .AddCoins(new List<Coin> { coin })
                 .AddKeys(miner)
@@ -157,7 +157,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
                         .Select(o => new Coin(new OutPoint(multiOutputTx.GetHash(), multiOutputTx.Outputs.IndexOf(o)), o))
                         .ToArray();
 
-            txBuilder = new TransactionBuilder();
+            txBuilder = new TransactionBuilder(Network.RegTest);
             Transaction multiInputTx = txBuilder
                 .AddCoins(aliceCoins)
                 .AddKeys(alice)
@@ -203,7 +203,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             // Fund corp
             // 50 Coins come from first tx on chain - send corp 42 and change back to miner
             Coin coin = new Coin(context.SrcTxs[0].GetHash(), 0, context.SrcTxs[0].TotalOut, miner.ScriptPubKey);
-            TransactionBuilder txBuilder = new TransactionBuilder();
+            TransactionBuilder txBuilder = new TransactionBuilder(Network.RegTest);
             Transaction sendToMultiSigTx = txBuilder
                 .AddCoins(new List<Coin> { coin })
                 .AddKeys(miner)
@@ -222,7 +222,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
                         .ToArray();
 
             // Alice initiates the transaction
-            txBuilder = new TransactionBuilder();
+            txBuilder = new TransactionBuilder(Network.RegTest);
             Transaction multiSigTx = txBuilder
                     .AddCoins(corpCoins)
                     .AddKeys(alice)
@@ -233,7 +233,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             Assert.True(!txBuilder.Verify(multiSigTx)); //Well, only one signature on the two required...
 
             // Nico completes the transaction
-            txBuilder = new TransactionBuilder();
+            txBuilder = new TransactionBuilder(Network.RegTest);
             multiSigTx = txBuilder
                     .AddCoins(corpCoins)
                     .AddKeys(nico)
@@ -274,7 +274,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             // Fund corp
             // 50 Coins come from first tx on chain - send corp 42 and change back to miner
             Coin coin = new Coin(context.SrcTxs[0].GetHash(), 0, context.SrcTxs[0].TotalOut, miner.ScriptPubKey);
-            TransactionBuilder txBuilder = new TransactionBuilder();
+            TransactionBuilder txBuilder = new TransactionBuilder(Network.RegTest);
             Transaction fundP2shTx = txBuilder
                 .AddCoins(new List<Coin> { coin })
                 .AddKeys(miner)
@@ -289,10 +289,10 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             // AliceBobNico corp. send 20 to Satoshi
             Coin[] corpCoins = fundP2shTx.Outputs
                         .Where(o => o.ScriptPubKey == corpRedeemAddress.ScriptPubKey)
-                        .Select(o => new ScriptCoin(new OutPoint(fundP2shTx.GetHash(), fundP2shTx.Outputs.IndexOf(o)), o, corpMultiSig))
+                        .Select(o => ScriptCoin.Create(Network.RegTest, new OutPoint(fundP2shTx.GetHash(), fundP2shTx.Outputs.IndexOf(o)), o, corpMultiSig))
                         .ToArray();
 
-            txBuilder = new TransactionBuilder();
+            txBuilder = new TransactionBuilder(Network.RegTest);
             Transaction p2shSpendTx = txBuilder
                     .AddCoins(corpCoins)
                     .AddKeys(alice, bob)
@@ -323,7 +323,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             // Fund Bob
             // 50 Coins come from first tx on chain - send bob 42 and change back to miner
             Coin witnessCoin = new Coin(context.SrcTxs[0].GetHash(), 0, context.SrcTxs[0].TotalOut, miner.PubKey.WitHash.ScriptPubKey);
-            TransactionBuilder txBuilder = new TransactionBuilder();
+            TransactionBuilder txBuilder = new TransactionBuilder(Network.RegTest);
             Transaction p2wpkhTx = txBuilder
                 .AddCoins(witnessCoin)
                 .AddKeys(miner)
@@ -353,7 +353,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
 
             // Fund Bob
             // 50 Coins come from first tx on chain - send bob 42 and change back to miner
-            ScriptCoin witnessCoin = new ScriptCoin(context.SrcTxs[0].GetHash(), 0, context.SrcTxs[0].TotalOut, miner.PubKey.ScriptPubKey.WitHash.ScriptPubKey, miner.PubKey.ScriptPubKey).AssertCoherent(Network.RegTest);
+            ScriptCoin witnessCoin = ScriptCoin.Create(Network.RegTest, context.SrcTxs[0].GetHash(), 0, context.SrcTxs[0].TotalOut, miner.PubKey.ScriptPubKey.WitHash.ScriptPubKey, miner.PubKey.ScriptPubKey).AssertCoherent(Network.RegTest);
             TransactionBuilder txBuilder = new TransactionBuilder(Network.RegTest);
             Transaction p2wshTx = txBuilder
                 .AddCoins(witnessCoin)
@@ -384,8 +384,8 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
 
             // Fund Bob
             // 50 Coins come from first tx on chain - send bob 42 and change back to miner
-            ScriptCoin witnessCoin = new ScriptCoin(context.SrcTxs[0].GetHash(), 0, context.SrcTxs[0].TotalOut, miner.PubKey.ScriptPubKey.WitHash.ScriptPubKey.Hash.ScriptPubKey, miner.PubKey.ScriptPubKey);
-            TransactionBuilder txBuilder = new TransactionBuilder();
+            ScriptCoin witnessCoin =  ScriptCoin.Create(Network.RegTest, context.SrcTxs[0].GetHash(), 0, context.SrcTxs[0].TotalOut, miner.PubKey.ScriptPubKey.WitHash.ScriptPubKey.Hash.ScriptPubKey, miner.PubKey.ScriptPubKey);
+            TransactionBuilder txBuilder = new TransactionBuilder(Network.RegTest);
             Transaction p2shOverp2wpkh = txBuilder
                 .AddCoins(witnessCoin)
                 .AddKeys(miner)

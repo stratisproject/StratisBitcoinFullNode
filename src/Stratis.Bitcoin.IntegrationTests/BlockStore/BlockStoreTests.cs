@@ -23,7 +23,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
         {
             this.loggerFactory = new LoggerFactory();
             DBreezeSerializer serializer = new DBreezeSerializer();
-            serializer.Initialize();
+            serializer.Initialize(Network.Main);
         }
 
         private void BlockRepositoryBench()

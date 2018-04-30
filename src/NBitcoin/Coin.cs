@@ -600,6 +600,18 @@ namespace NBitcoin
             Redeem = redeem;
         }
 
+        internal ScriptCoin(IndexedTxOut txOut, Script redeem)
+            : base(txOut)
+        {
+            Redeem = redeem;
+        }
+
+        internal ScriptCoin(uint256 txHash, uint outputIndex, Money amount, Script scriptPubKey, Script redeem)
+            : base(txHash, outputIndex, amount, scriptPubKey)
+        {
+            Redeem = redeem;
+        }
+
         public static ScriptCoin Create(Network network, OutPoint fromOutpoint, TxOut fromTxOut, Script redeem)
         {
             return new ScriptCoin(fromOutpoint, fromTxOut, redeem).AssertCoherent(network);
@@ -618,6 +630,16 @@ namespace NBitcoin
         public static ScriptCoin Create(Network network, ICoin coin, Script redeem)
         {
             return new ScriptCoin(coin, redeem).AssertCoherent(network);
+        }
+
+        public static ScriptCoin Create(Network network, IndexedTxOut txOut, Script redeem)
+        {
+            return new ScriptCoin(txOut, redeem).AssertCoherent(network);
+        }
+
+        public static ScriptCoin Create(Network network, uint256 txHash, uint outputIndex, Money amount, Script scriptPubKey, Script redeem)
+        {
+            return new ScriptCoin(txHash, outputIndex, amount, scriptPubKey, redeem).AssertCoherent(network);
         }
 
         public bool IsP2SH

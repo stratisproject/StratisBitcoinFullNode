@@ -32,7 +32,7 @@ namespace Stratis.Bitcoin.Utilities
         {
             IBitcoinSerializable serializable = obj as IBitcoinSerializable;
             if (serializable != null)
-                return serializable.ToBytes(options: this.Network.NetworkOptions);
+                return serializable.ToBytes(consensusFactory: this.Network.Consensus.ConsensusFactory);
 
             uint256 u256 = obj as uint256;
             if (u256 != null)
@@ -92,21 +92,21 @@ namespace Stratis.Bitcoin.Utilities
             if (type == typeof(Coins))
             {
                 Coins coin = new Coins();
-                coin.ReadWrite(bytes, options: this.Network.NetworkOptions);
+                coin.ReadWrite(bytes, consensusFactory: this.Network.Consensus.ConsensusFactory);
                 return coin;
             }
 
             if (type == typeof(BlockHeader))
             {
-                BlockHeader header = new BlockHeader();
-                header.ReadWrite(bytes, options: this.Network.NetworkOptions);
+                BlockHeader header = this.Network.Consensus.ConsensusFactory.CreateBlockHeader();
+                header.ReadWrite(bytes, consensusFactory: this.Network.Consensus.ConsensusFactory);
                 return header;
             }
 
             if (type == typeof(RewindData))
             {
                 RewindData rewind = new RewindData();
-                rewind.ReadWrite(bytes, options: this.Network.NetworkOptions);
+                rewind.ReadWrite(bytes, consensusFactory: this.Network.Consensus.ConsensusFactory);
                 return rewind;
             }
 

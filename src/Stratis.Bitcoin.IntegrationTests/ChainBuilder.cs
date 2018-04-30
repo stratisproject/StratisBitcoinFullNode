@@ -36,7 +36,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 
         public Transaction Spend(ICoin[] coins, Money amount)
         {
-            TransactionBuilder builder = new TransactionBuilder();
+            TransactionBuilder builder = new TransactionBuilder(this.network);
             builder.AddCoins(coins);
             builder.AddKeys(this.MinerKey);
             builder.Send(this.MinerScriptPubKey, amount);

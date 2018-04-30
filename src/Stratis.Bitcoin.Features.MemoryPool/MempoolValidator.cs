@@ -149,6 +149,8 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         //  public long LastTime;
         //}
 
+        private Network network;
+
         /// <summary>
         /// Constructs a memory pool validator object.
         /// </summary>
@@ -178,6 +180,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             this.dateTimeProvider = dateTimeProvider;
             this.mempoolSettings = mempoolSettings;
             this.chain = chain;
+            this.network = chain.Network;
             this.coinView = coinView;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             // TODO: Implement later with CheckRateLimit()
@@ -539,7 +542,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         {
             // TODO: fix this to use dedicated mempool rules.
             new CheckPowTransactionRule { Logger = this.logger }.CheckTransaction(this.ConsensusOptions, context.Transaction);
-            if(this.chain.Network.NetworkOptions.IsProofOfStake)
+            if(this.chain.Network.Consensus.IsProofOfStake)
                 new CheckPosTransactionRule { Logger = this.logger }.CheckTransaction(context.Transaction);
 
             // Coinbase is only valid in a block, not as a loose transaction
@@ -619,7 +622,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             int dataOut = 0;
             foreach (TxOut txout in tx.Outputs)
             {
-                ScriptTemplate script = StandardScripts.GetTemplateFromScriptPubKey(txout.ScriptPubKey);
+                ScriptTemplate script = StandardScripts.GetTemplateFromScriptPubKey(this.network, txout.ScriptPubKey);
                 if (script == null) //!::IsStandard(txout.scriptPubKey, whichType, witnessEnabled))  https://github.com/bitcoin/bitcoin/blob/aa624b61c928295c27ffbb4d27be582f5aa31b56/src/policy/policy.cpp#L57-L80
                 {
                     context.State.Fail(MempoolErrors.Scriptpubkey).Throw();
@@ -1048,7 +1051,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                     TxOut txout = context.View.GetOutputFor(input);
 
                     TransactionChecker checker = new TransactionChecker(tx, iiIntput, txout.Value, txData);
-                    ScriptEvaluationContext ctx = new ScriptEvaluationContext();
+                    ScriptEvaluationContext ctx = new ScriptEvaluationContext(this.network);
                     ctx.ScriptVerify = scriptVerify;
                     if (ctx.VerifyScript(input.ScriptSig, txout.ScriptPubKey, checker))
                     {
@@ -1102,7 +1105,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             foreach (TxIn txin in tx.Inputs)
             {
                 TxOut prev = mapInputs.GetOutputFor(txin);
-                ScriptTemplate template = StandardScripts.GetTemplateFromScriptPubKey(prev.ScriptPubKey);
+                ScriptTemplate template = StandardScripts.GetTemplateFromScriptPubKey(this.network, prev.ScriptPubKey);
                 if (template == null)
                     return false;
 
@@ -1139,12 +1142,12 @@ namespace Stratis.Bitcoin.Features.MemoryPool
 
                 // Get the scriptPubKey corresponding to this input.
                 Script prevScript = prev.ScriptPubKey;
-                if (prevScript.IsPayToScriptHash)
+                if (prevScript.IsPayToScriptHash(this.network))
                 {
                     // If the scriptPubKey is P2SH, we try to extract the redeemScript casually by converting the scriptSig
                     // into a stack. We do not check IsPushOnly nor compare the hash as these will be done later anyway.
                     // If the check fails at this stage, we know that this txid must be a bad one.
-                    PayToScriptHashSigParameters sigParams = PayToScriptHashTemplate.Instance.ExtractScriptSigParameters(input.ScriptSig);
+                    PayToScriptHashSigParameters sigParams = PayToScriptHashTemplate.Instance.ExtractScriptSigParameters(this.network, input.ScriptSig);
                     if (sigParams == null || sigParams.RedeemScript == null)
                         return false;
 
@@ -1152,11 +1155,11 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                 }
 
                 // Non-witness program must not be associated with any witness.
-                if (!prevScript.IsWitness)
+                if (!prevScript.IsWitness(this.network))
                     return false;
 
                 // Check P2WSH standard limits.
-                WitProgramParameters wit = PayToWitTemplate.Instance.ExtractScriptPubKeyParameters2(prevScript);
+                WitProgramParameters wit = PayToWitTemplate.Instance.ExtractScriptPubKeyParameters2(this.chain.Network, prevScript);
                 if (wit == null)
                     return false;
 

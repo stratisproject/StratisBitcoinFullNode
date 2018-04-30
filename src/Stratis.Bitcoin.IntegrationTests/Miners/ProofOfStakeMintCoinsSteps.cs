@@ -115,12 +115,12 @@ namespace Stratis.Bitcoin.IntegrationTests.Miners
 
             var unspent = this.nodes[PowMiner].FullNode.WalletManager().GetSpendableTransactionsInWallet(PowWallet);
             var coins = new List<Coin>();
+            var network = this.nodes[PowMiner].FullNode.Network;
 
             var blockTimestamp = unspent.OrderBy(u => u.Transaction.CreationTime).Select(ts => ts.Transaction.CreationTime).First();
-            var transaction = new Transaction
-            {
-                Time = (uint)blockTimestamp.ToUnixTimeSeconds()
-            };
+
+            var transaction = network.Consensus.ConsensusFactory.CreateTransaction();
+            transaction.Time = (uint) blockTimestamp.ToUnixTimeSeconds();
 
             foreach (var item in unspent.OrderByDescending(a => a.Transaction.Amount))
             {
@@ -131,7 +131,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Miners
             var txIn = transaction.AddInput(new TxIn(coin.Outpoint, this.powSenderAddress.ScriptPubKey));
             transaction.AddOutput(new TxOut(new Money(9699999999995400), this.powSenderAddress.ScriptPubKey));
             transaction.AddOutput(new TxOut(new Money(100000000000000), this.posReceiverAddress.ScriptPubKey));
-            transaction.Sign(this.powSenderPrivateKey, new[] { coin });
+            transaction.Sign(network, this.powSenderPrivateKey, new[] { coin });
 
             this.nodes[PowMiner].FullNode.NodeService<WalletController>().SendTransaction(new SendTransactionRequest(transaction.ToHex()));
         }

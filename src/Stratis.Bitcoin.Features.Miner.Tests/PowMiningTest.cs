@@ -32,7 +32,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
             this.asyncLoopFactory = new Mock<IAsyncLoopFactory>();
 
             this.fixture = fixture;
-            this.network = Network.StratisTest;
+            this.network = Network.TestNet;
             this.chain = new ConcurrentChain(this.network);
 
             SetupNodeLifeTime();
@@ -109,10 +109,10 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
             FieldInfo hashPrevBlockFieldSelector = GetHashPrevBlockFieldSelector();
             hashPrevBlockFieldSelector.SetValue(this.powMining, new uint256(15));
 
-            var transaction = new Transaction();
+            var transaction = this.network.Consensus.ConsensusFactory.CreateTransaction();
             transaction.Inputs.Add(new TxIn());
 
-            var block = new Block();
+            var block = this.network.Consensus.ConsensusFactory.CreateBlock();
             block.Transactions.Add(transaction);
             block.Header.HashMerkleRoot = new uint256(0);
             block.Header.HashPrevBlock = new uint256(14);
@@ -133,10 +133,10 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
             FieldInfo hashPrevBlockFieldSelector = GetHashPrevBlockFieldSelector();
             hashPrevBlockFieldSelector.SetValue(this.powMining, new uint256(15));
 
-            var transaction = new Transaction();
+            var transaction = this.network.Consensus.ConsensusFactory.CreateTransaction();
             transaction.Inputs.Add(new TxIn());
 
-            var block = new Block();
+            var block = this.network.Consensus.ConsensusFactory.CreateBlock();
             block.Transactions.Add(transaction);
             block.Header.HashMerkleRoot = new uint256(0);
             block.Header.HashPrevBlock = new uint256(15);
@@ -447,8 +447,8 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
             var prevBlockHash = chain.Genesis.HashBlock;
             for (var i = 0; i < blockAmount; i++)
             {
-                var block = new Block();
-                block.AddTransaction(new Transaction());
+                var block = network.Consensus.ConsensusFactory.CreateBlock();
+                block.AddTransaction(network.Consensus.ConsensusFactory.CreateTransaction());
                 block.UpdateMerkleRoot();
                 block.Header.BlockTime = new DateTimeOffset(new DateTime(2017, 1, 1, 0, 0, 0, DateTimeKind.Utc).AddDays(i));
                 block.Header.HashPrevBlock = prevBlockHash;
@@ -503,7 +503,6 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
 
         private void ExecuteUsingNonProofOfStakeSettings(Action action)
         {
-            Assert.False(this.network.Consensus.IsProofOfStake);
             try
             {
                 action();
@@ -545,10 +544,10 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
         {
             uint nonce = 0;
 
-            var block = new Block();
+            var block = this.network.Consensus.ConsensusFactory.CreateBlock();
             block.Header.HashPrevBlock = prevBlock.HashBlock;
 
-            var transaction = new Transaction();
+            var transaction = this.network.Consensus.ConsensusFactory.CreateTransaction();
             transaction.AddInput(TxIn.CreateCoinbase(newHeight));
             transaction.AddOutput(new TxOut(new Money(1, MoneyUnit.BTC), ScriptPubKey));
             block.Transactions.Add(transaction);

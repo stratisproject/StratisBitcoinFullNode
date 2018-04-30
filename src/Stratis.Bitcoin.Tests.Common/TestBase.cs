@@ -17,7 +17,7 @@ namespace Stratis.Bitcoin.Tests.Common
         public TestBase()
         {         
             DBreezeSerializer serializer = new DBreezeSerializer();
-            serializer.Initialize();
+            serializer.Initialize(Network.Main); 
         }
         
         public static string AssureEmptyDir(string dir)
