@@ -28,7 +28,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.CoinViews
 
         private class TestCoinView : CoinView
         {
-            public TestCoinView() : base()
+            public TestCoinView()
             {
             }
 
