@@ -20,6 +20,13 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
     /// </summary>
     public class BlockStoreLoopStepBaseTest : LogsTestBase
     {
+        public BlockStoreLoopStepBaseTest()
+        {
+            // Ensure that these flags match the Network and NetworkOptions being used
+            Transaction.TimeStamp = false;
+            Block.BlockSignature = false;
+        }
+
         internal void AddBlockToPendingStorage(BlockStoreLoop blockStoreLoop, Block block)
         {
             var chainedBlock = blockStoreLoop.Chain.GetBlock(block.GetHash());
@@ -92,7 +99,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
         {
             this.connectionManager = new Mock<IConnectionManager>();
             this.connectionManager.Setup(c => c.ConnectedPeers).Returns(new NetworkPeerCollection());
-            this.connectionManager.Setup(c => c.NodeSettings).Returns(new NodeSettings(args:new string[] { $"-datadir={this.dataFolder.AddressManagerFilePath}" }));
+            this.connectionManager.Setup(c => c.NodeSettings).Returns(new NodeSettings(args:new string[] { $"-datadir={this.dataFolder.RootPath}" }));
             this.connectionManager.Setup(c => c.Parameters).Returns(new NetworkPeerConnectionParameters());
         }
 
@@ -110,7 +117,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
                     null,
                     chain,
                     this.chainState.Object,
-                    new StoreSettings(new NodeSettings(args:new string[] { $"-datadir={this.dataFolder.AddressManagerFilePath}" })),
+                    new StoreSettings(new NodeSettings(args:new string[] { $"-datadir={this.dataFolder.RootPath}" })),
                     this.nodeLifeTime.Object,
                     this.loggerFactory.Object,
                     this.initialBlockDownloadState,

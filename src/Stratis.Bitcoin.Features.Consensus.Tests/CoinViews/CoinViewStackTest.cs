@@ -112,7 +112,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.CoinViews
 
         private class NonBackedCoinView : CoinView
         {
-            public NonBackedCoinView() : base()
+            public NonBackedCoinView()
             {
             }
 
@@ -136,7 +136,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.CoinViews
         {
             private BackedCoinView2 inner;
 
-            public BackedCoinView1(BackedCoinView2 inner, int outputCount = 0) : base()
+            public BackedCoinView1(BackedCoinView2 inner, int outputCount = 0) 
             {
                 this.inner = inner;
                 this.OutputCount = outputCount;
@@ -165,7 +165,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.CoinViews
         {
             private NonBackedCoinView inner;
 
-            public BackedCoinView2(NonBackedCoinView inner, int outputCount = 0) : base()
+            public BackedCoinView2(NonBackedCoinView inner, int outputCount = 0) 
             {
                 this.inner = inner;
                 this.OutputCount = outputCount;

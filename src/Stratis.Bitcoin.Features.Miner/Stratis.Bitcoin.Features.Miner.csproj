@@ -23,6 +23,7 @@
     <EmbeddedResource Remove="Stratis.Bitcoin.Features.Miner\**" />
     <None Remove="Stratis.Bitcoin.Features.Miner\**" />
   </ItemGroup>
+
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.Mvc.Core" Version="2.0.0" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="2.0.0" />

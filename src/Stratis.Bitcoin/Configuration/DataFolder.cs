@@ -28,7 +28,13 @@ namespace Stratis.Bitcoin.Configuration
             this.WalletPath = Path.Combine(path);
             this.LogPath = Path.Combine(path, "Logs");
             this.DnsMasterFilePath = path;
+            this.RootPath = path;
         }
+
+        /// <summary>
+        /// The DataFolder's path.
+        /// </summary>
+        public string RootPath { get; }
 
         /// <summary>Address manager's database of peers.</summary>
         /// <seealso cref="Protocol.PeerAddressManager.SavePeers(string, string)"/>
