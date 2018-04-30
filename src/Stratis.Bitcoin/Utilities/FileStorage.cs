@@ -40,11 +40,14 @@ namespace Stratis.Bitcoin.Utilities
             Guard.NotNull(toSave, nameof(toSave));
 
             string filePath = Path.Combine(this.FolderPath, fileName);
+            string tempFilePath = $"{filePath}.temp";
+
+            File.WriteAllText(tempFilePath, JsonConvert.SerializeObject(toSave, Formatting.Indented));
 
             // If the file does not exist yet, create it.
             if (!File.Exists(filePath))
             {
-                File.WriteAllText(filePath, JsonConvert.SerializeObject(toSave, Formatting.Indented));
+                File.Move(tempFilePath, filePath);
 
                 if (saveBackupFile)
                 {
@@ -55,9 +58,7 @@ namespace Stratis.Bitcoin.Utilities
             }
 
             // Replace the file if it already exists. 
-            // This ensures the file does not get corrupted in the event of a crash.
-            string tempFilePath = $"{filePath}.temp";
-            File.WriteAllText(tempFilePath, JsonConvert.SerializeObject(toSave, Formatting.Indented));
+            // This ensures the file does not get corrupted in the event of a crash. 
             File.Replace(tempFilePath, filePath, saveBackupFile ? $"{filePath}.bak" : null);
         }
 
