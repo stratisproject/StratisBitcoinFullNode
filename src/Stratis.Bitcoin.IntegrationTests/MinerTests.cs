@@ -38,7 +38,7 @@ namespace Stratis.Bitcoin.IntegrationTests
             options.BlockMaxSize = testContext.network.Consensus.Option<PowConsensusOptions>().MaxBlockSerializedSize;
             options.BlockMinFeeRate = blockMinFeeRate;
 
-            return new PowBlockAssembler(testContext.consensus, testContext.network, testContext.mempoolLock, testContext.mempool, testContext.date, testContext.chain.Tip, new LoggerFactory(), options);
+            return new PowBlockAssembler(testContext.chain.Tip, testContext.consensus, testContext.date, new LoggerFactory(), testContext.mempool, testContext.mempoolLock, testContext.network, options);
         }
 
         public class Blockinfo
