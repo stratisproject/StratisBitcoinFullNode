@@ -33,6 +33,8 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <summary>A value indicating the peer ban time should be <see cref="ConnectionManagerSettings.BanTimeSeconds"/>.</summary>
         public const int BanDurationDefaultBan = 0;
 
+        public bool CanBanPeers => this.BanDurationSeconds != BanDurationNoBan;
+
         /// <summary>The chain of headers associated with the block.</summary>
         public ChainedBlock ChainedBlock { get; set; }
 
@@ -395,25 +397,20 @@ namespace Stratis.Bitcoin.Features.Consensus
                         return;
                     }
 
-                    if (blockValidationContext.Error == ConsensusErrors.BadTransactionDuplicate)
-                    {
-                        this.logger.LogTrace("(-)[BAD_TX_DUP]");
-                        if (blockValidationContext.Peer == null) return;
-                        int banDuration = blockValidationContext.BanDurationSeconds == BlockValidationContext.BanDurationDefaultBan 
-                            ? this.connectionManager.ConnectionSettings.BanTimeSeconds 
-                            : blockValidationContext.BanDurationSeconds;
-                        this.peerBanning.BanPeer(blockValidationContext.Peer, banDuration, $"Invalid block received: {blockValidationContext.Error.Message}");
-                        return;
-                    }
 
                     // Set the chain back to ConsensusLoop.Tip.
                     this.Chain.SetTip(this.Tip);
                     this.logger.LogTrace("Chain reverted back to block '{0}'.", this.Tip);
-
-                    if ((blockValidationContext.Peer != null) && (blockValidationContext.BanDurationSeconds != BlockValidationContext.BanDurationNoBan))
+    
+                    if (blockValidationContext.Peer != null && blockValidationContext.CanBanPeers)
                     {
                         int banDuration = blockValidationContext.BanDurationSeconds == BlockValidationContext.BanDurationDefaultBan ? this.connectionManager.ConnectionSettings.BanTimeSeconds : blockValidationContext.BanDurationSeconds;
                         this.peerBanning.BanPeer(blockValidationContext.Peer, banDuration, $"Invalid block received: {blockValidationContext.Error.Message}");
+                    }
+
+                    if (blockValidationContext.Error == ConsensusErrors.BadTransactionDuplicate)
+                    {
+                        return;
                     }
 
                     // Since ChainHeadersBehavior check PoW, MarkBlockInvalid can't be spammed.

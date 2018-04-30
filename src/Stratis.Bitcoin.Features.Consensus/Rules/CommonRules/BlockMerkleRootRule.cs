@@ -18,7 +18,13 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
     /// Check for merkle tree malleability (CVE-2012-2459): repeating sequences
     /// of transactions in a block without affecting the merkle root of a block,
     /// while still invalidating it.
-    /// </remarks>    
+    /// </remarks>
+    /// <remarks>
+    /// Validation cannot be skipped for this rule, someone might have been able to create a mutated
+    /// block (block with a duplicate transaction) with a valid hash, but we don't want to accept these 
+    /// kind of blocks.
+    /// </remarks>
+    [ValidationRule(CanSkipValidation = false)]
     public class BlockMerkleRootRule : ConsensusRule
     {
         /// <inheritdoc />
@@ -27,7 +33,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         public override Task RunAsync(RuleContext context)
         {
             if (!context.CheckMerkleRoot) return Task.CompletedTask;
-
+            
             var block = context.BlockValidationContext.Block;
 
             uint256 hashMerkleRoot2 = BlockMerkleRoot(block, out bool mutated);
@@ -98,8 +104,10 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
                 // For each of the lower bits in processedLeavesCount that are 0, do 1 step. Each
                 // corresponds to an subTreeHash value that existed before processing the
                 // current leaf, and each needs a hash to combine it.
+                // The following loop could also be read like this:
+                // for (level = 0; (processedLeavesCount % ((2^level) -1)) == 0; level++)
+                // but bitwise operations are faster    
                 for ( level = 0; (processedLeavesCount & (((uint)1) << level)) == 0; level++)
-                //for (level = 0; (processedLeavesCount % ((2^level) -1)) == 0; level++)
                 {
                     if (match)
                     {
@@ -134,8 +142,10 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
 
                 // As long as bit number level in processedLeavesCount is zero, skip it. It means there
                 // is nothing left at this level.
+                // the following while can also be read like this
+                // while ((processedLeavesCount % ((2^level) -1)) == 0)
+                // but bitwise operations are faster.
                 while ((processedLeavesCount & (((uint)1) << level)) == 0)
-                //while ((processedLeavesCount % ((2^level) -1)) == 0)
                     level++;
 
                 root = subTreeHashes[level];
