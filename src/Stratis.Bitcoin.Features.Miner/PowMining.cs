@@ -31,6 +31,9 @@ namespace Stratis.Bitcoin.Features.Miner
         /// <summary>Factory for creating background async loop tasks.</summary>
         private readonly IAsyncLoopFactory asyncLoopFactory;
 
+        /// <summary>Builder that creates a proof-of-work block template.</summary>
+        private readonly PowBlockAssembler blockBuilder;
+
         /// <summary>Thread safe chain of block headers from genesis.</summary>
         private readonly ConcurrentChain chain;
 
@@ -81,6 +84,7 @@ namespace Stratis.Bitcoin.Features.Miner
 
         public PowMining(
             IAsyncLoopFactory asyncLoopFactory,
+            PowBlockAssembler blockBuilder,
             IConsensusLoop consensusLoop,
             ConcurrentChain chain,
             IDateTimeProvider dateTimeProvider,
@@ -91,16 +95,16 @@ namespace Stratis.Bitcoin.Features.Miner
             ILoggerFactory loggerFactory)
         {
             this.asyncLoopFactory = asyncLoopFactory;
+            this.blockBuilder = blockBuilder;
             this.chain = chain;
             this.consensusLoop = consensusLoop;
             this.dateTimeProvider = dateTimeProvider;
             this.loggerFactory = loggerFactory;
+            this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.mempool = mempool;
             this.mempoolLock = mempoolLock;
             this.network = network;
             this.nodeLifetime = nodeLifetime;
-
-            this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
         }
 
         ///<inheritdoc/>
@@ -146,7 +150,7 @@ namespace Stratis.Bitcoin.Features.Miner
                     continue;
                 }
 
-                BlockTemplate blockTemplate = new PowBlockAssembler(chainTip, this.consensusLoop, this.dateTimeProvider, this.loggerFactory, this.mempool, this.mempoolLock, this.network).CreateNewBlock(reserveScript.ReserveFullNodeScript);
+                BlockTemplate blockTemplate = this.blockBuilder.Configure(this.consensusLoop).Build(chainTip, reserveScript.ReserveFullNodeScript);
 
                 if (this.network.NetworkOptions.IsProofOfStake)
                 {
@@ -157,28 +161,28 @@ namespace Stratis.Bitcoin.Features.Miner
                 }
 
                 nExtraNonce = this.IncrementExtraNonce(blockTemplate.Block, chainTip, nExtraNonce);
-                Block pblock = blockTemplate.Block;
+                Block block = blockTemplate.Block;
 
-                while ((maxTries > 0) && (pblock.Header.Nonce < InnerLoopCount) && !pblock.CheckProofOfWork(this.network.Consensus))
+                while ((maxTries > 0) && (block.Header.Nonce < InnerLoopCount) && !block.CheckProofOfWork(this.network.Consensus))
                 {
                     this.nodeLifetime.ApplicationStopping.ThrowIfCancellationRequested();
 
-                    ++pblock.Header.Nonce;
+                    ++block.Header.Nonce;
                     --maxTries;
                 }
 
                 if (maxTries == 0)
                     break;
 
-                if (pblock.Header.Nonce == InnerLoopCount)
+                if (block.Header.Nonce == InnerLoopCount)
                     continue;
 
-                var newChain = new ChainedBlock(pblock.Header, pblock.GetHash(), chainTip);
+                var newChain = new ChainedBlock(block.Header, block.GetHash(), chainTip);
 
                 if (newChain.ChainWork <= chainTip.ChainWork)
                     continue;
 
-                var blockValidationContext = new BlockValidationContext { Block = pblock };
+                var blockValidationContext = new BlockValidationContext { Block = block };
 
                 this.consensusLoop.AcceptBlockAsync(blockValidationContext).GetAwaiter().GetResult();
 
@@ -200,7 +204,7 @@ namespace Stratis.Bitcoin.Features.Miner
                 this.logger.LogInformation("Mined new {0} block: '{1}'.", BlockStake.IsProofOfStake(blockValidationContext.Block) ? "POS" : "POW", blockValidationContext.ChainedBlock);
 
                 nHeight++;
-                blocks.Add(pblock.GetHash());
+                blocks.Add(block.GetHash());
 
                 blockTemplate = null;
             }
