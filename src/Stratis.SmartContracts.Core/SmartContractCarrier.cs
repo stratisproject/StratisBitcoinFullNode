@@ -38,7 +38,13 @@ namespace Stratis.SmartContracts.Core
         /// <summary>The maximum cost (in satoshi) the contract can spend.</summary>
         public ulong GasCostBudget
         {
-            get { return this.GasPrice * this.GasLimit; }
+            get
+            {
+                checked
+                {
+                    return this.GasPrice * this.GasLimit;
+                }
+            }
         }
 
         /// <summary>The amount it costs per unit of gas to execute the contract.</summary>

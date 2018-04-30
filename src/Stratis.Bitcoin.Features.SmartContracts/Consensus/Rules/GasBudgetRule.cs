@@ -1,3 +1,4 @@
+using System;
 using System.Linq;
 using System.Threading.Tasks;
 using NBitcoin;
@@ -5,6 +6,7 @@ using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.Rules;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.SmartContracts.Core;
+using Stratis.SmartContracts.Core.Backend;
 using Block = NBitcoin.Block;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Consensus.Rules
@@ -50,18 +52,43 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Consensus.Rules
 
             var carrier = SmartContractCarrier.Deserialize(transaction, smartContractOutput);
 
+            if (carrier.GasLimit < GasPriceList.BaseCost)
+            {
+                // Supplied gas limit is too low.
+                this.ThrowGasLessThanBaseFee();
+            }
+
+
             if (carrier.GasLimit > HardGasLimit)
             {
                 // Supplied gas limit is too high - at a certain point we deem that a contract is taking up too much time. 
                 this.ThrowGasGreaterThanHardLimit();
             }
 
-
-            if (suppliedBudget < new Money(carrier.GasCostBudget))
+            try
             {
-                // Supplied satoshis are less than the budget we said we had for the contract execution
-                this.ThrowGasGreaterThanFee();
+                if (suppliedBudget < new Money(carrier.GasCostBudget))
+                {
+                    // Supplied satoshis are less than the budget we said we had for the contract execution
+                    this.ThrowGasGreaterThanFee();
+                }
             }
+            catch (OverflowException e)
+            {
+                this.ThrowGasOverflowException();
+            }
+        }
+
+        private void ThrowGasLessThanBaseFee()
+        {
+            // TODO make nicer
+            new ConsensusError("gas-limit-less-than-base-fee", "gas limit supplied is less than the base fee for contract execution").Throw();
+        }
+
+        private void ThrowGasOverflowException()
+        {
+            // TODO make nicer
+            new ConsensusError("gas-overflow", "gasLimit * gasPrice caused a ulong overflow").Throw();
         }
 
         private void ThrowGasGreaterThanHardLimit()

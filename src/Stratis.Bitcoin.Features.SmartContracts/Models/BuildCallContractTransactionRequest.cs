@@ -1,5 +1,7 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using Stratis.Bitcoin.Features.SmartContracts.Consensus.Rules;
 using Stratis.Bitcoin.Utilities.ValidationAttributes;
+using Stratis.SmartContracts.Core.Backend;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Models
 {
@@ -30,6 +32,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Models
         public string GasPrice { get; set; }
 
         [Required(ErrorMessage = "Gas limit is required.")]
+        [Range(GasPriceList.BaseCost, GasBudgetRule.HardGasLimit)]
         public string GasLimit { get; set; }
 
         public string Sender { get; set; }

@@ -9,7 +9,7 @@ namespace Stratis.SmartContracts.Core.Backend
     public static class GasPriceList
     {
         /// <summary>The base cost trying to execute a smart contract.</summary>
-        public static Gas BaseCost = (Gas)1000;
+        public const ulong BaseCost = 1000;
 
         /// <summary>The cost per gas unit if contract does not exist.</summary>
         private const ulong ContractDoesNotExistCost = 1000;
