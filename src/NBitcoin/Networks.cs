@@ -155,32 +155,24 @@ namespace NBitcoin
             network.MinTxFee = 1000;
             network.FallbackFee = 20000;
             network.MinRelayTxFee = 1000;
-            
-            // Partially obtained from https://github.com/bitcoin/bitcoin/blob/b1973d6181eacfaaf45effb67e0c449ea3a436b8/src/chainparams.cpp#L146
-            var checkpoints = new Dictionary<int, CheckpointInfo>
-            {
-                { 11111, new CheckpointInfo(new uint256("0x0000000069e244f73d78e8fd29ba2fd2ed618bd6fa2ee92559f542fdb26e7c1d")) },
-                { 33333, new CheckpointInfo(new uint256("0x000000002dd5588a74784eaa7ab0507a18ad16a236e7b1ce69f00d7ddfb5d0a6")) },
-                { 74000, new CheckpointInfo(new uint256("0x0000000000573993a3c9e41ce34471c079dcf5f52a0e824a81e7f953b8661a20")) },
-                { 105000, new CheckpointInfo(new uint256("0x00000000000291ce28027faea320c8d2b054b2e0fe44a773f3eefb151d6bdc97")) },
-                { 134444, new CheckpointInfo(new uint256("0x00000000000005b12ffd4cd315cd34ffd4a594f430ac814c91184a0d42d2b0fe")) },
-                { 168000, new CheckpointInfo(new uint256("0x000000000000099e61ea72015e79632f216fe6cb33d7899acb35b75c8303b763")) },
-                { 193000, new CheckpointInfo(new uint256("0x000000000000059f452a5f7340de6682a977387c17010ff6e6c3bd83ca8b1317")) },
-                { 210000, new CheckpointInfo(new uint256("0x000000000000048b95347e83192f69cf0366076336c639f9b7228e9ba171342e")) },
-                { 216116, new CheckpointInfo(new uint256("0x00000000000001b4f4b433e81ee46494af945cf96014816a4e2370f11b23df4e")) },
-                { 225430, new CheckpointInfo(new uint256("0x00000000000001c108384350f74090433e7fcf79a606b8e797f065b130575932")) },
-                { 250000, new CheckpointInfo(new uint256("0x000000000000003887df1f29024b06fc2200b55f8af8f35453d7be294df2d214")) },
-                { 279000, new CheckpointInfo(new uint256("0x0000000000000001ae8c72a0b0c301f67e3afca10e819efa9041e458e9bd7e40")) },
-                { 295000, new CheckpointInfo(new uint256("0x00000000000000004d9b4ef50f0f9d686fd69db2e03af35a100370c64632a983")) },
-                // Our own new checkpoints.
-                { 486000, new CheckpointInfo(new uint256("0x000000000000000000a2a8104d61651f76c666b70754d6e9346176385f7afa24")) },
-                { 491800, new CheckpointInfo(new uint256("0x000000000000000000d80de1f855902b50941bc3a3d0f71064d9613fd3943dc4")) },
-            };
 
-            foreach (var checkpoint in checkpoints)
-            {
-                network.checkpoints.Add(checkpoint.Key, checkpoint.Value);
-            }       
+            // Partially obtained from https://github.com/bitcoin/bitcoin/blob/b1973d6181eacfaaf45effb67e0c449ea3a436b8/src/chainparams.cpp#L146
+            network.checkpoints.Add(11111, new CheckpointInfo(new uint256("0x0000000069e244f73d78e8fd29ba2fd2ed618bd6fa2ee92559f542fdb26e7c1d")));
+            network.checkpoints.Add(33333, new CheckpointInfo(new uint256("0x000000002dd5588a74784eaa7ab0507a18ad16a236e7b1ce69f00d7ddfb5d0a6")));
+            network.checkpoints.Add(74000, new CheckpointInfo(new uint256("0x0000000000573993a3c9e41ce34471c079dcf5f52a0e824a81e7f953b8661a20")));
+            network.checkpoints.Add(105000, new CheckpointInfo(new uint256("0x00000000000291ce28027faea320c8d2b054b2e0fe44a773f3eefb151d6bdc97")));
+            network.checkpoints.Add(134444, new CheckpointInfo(new uint256("0x00000000000005b12ffd4cd315cd34ffd4a594f430ac814c91184a0d42d2b0fe")));
+            network.checkpoints.Add(168000, new CheckpointInfo(new uint256("0x000000000000099e61ea72015e79632f216fe6cb33d7899acb35b75c8303b763")));
+            network.checkpoints.Add(193000, new CheckpointInfo(new uint256("0x000000000000059f452a5f7340de6682a977387c17010ff6e6c3bd83ca8b1317")));
+            network.checkpoints.Add(210000, new CheckpointInfo(new uint256("0x000000000000048b95347e83192f69cf0366076336c639f9b7228e9ba171342e")));
+            network.checkpoints.Add(216116, new CheckpointInfo(new uint256("0x00000000000001b4f4b433e81ee46494af945cf96014816a4e2370f11b23df4e")));
+            network.checkpoints.Add(225430, new CheckpointInfo(new uint256("0x00000000000001c108384350f74090433e7fcf79a606b8e797f065b130575932")));
+            network.checkpoints.Add(250000, new CheckpointInfo(new uint256("0x000000000000003887df1f29024b06fc2200b55f8af8f35453d7be294df2d214")));
+            network.checkpoints.Add(279000, new CheckpointInfo(new uint256("0x0000000000000001ae8c72a0b0c301f67e3afca10e819efa9041e458e9bd7e40")));
+            network.checkpoints.Add(295000, new CheckpointInfo(new uint256("0x00000000000000004d9b4ef50f0f9d686fd69db2e03af35a100370c64632a983")));
+            // Our own new checkpoints.
+            network.checkpoints.Add(486000, new CheckpointInfo(new uint256("0x000000000000000000a2a8104d61651f76c666b70754d6e9346176385f7afa24")));
+            network.checkpoints.Add(491800, new CheckpointInfo(new uint256("0x000000000000000000d80de1f855902b50941bc3a3d0f71064d9613fd3943dc4")));
 
             NetworksContainer.TryAdd("mainnet", network);
             NetworksContainer.TryAdd(network.Name.ToLowerInvariant(), network);
@@ -259,19 +251,11 @@ namespace NBitcoin
             network.MinTxFee = 1000;
             network.FallbackFee = 20000;
             network.MinRelayTxFee = 1000;
-            
-            // Partially obtained from https://github.com/bitcoin/bitcoin/blob/b1973d6181eacfaaf45effb67e0c449ea3a436b8/src/chainparams.cpp#L246
-            var checkpoints = new Dictionary<int, CheckpointInfo>
-            {
-                { 546, new CheckpointInfo(new uint256("000000002a936ca763904c3c35fce2f3556c559c0214345d31b1bcebf76acb70")) },
-                // Our own new checkpoints.
-                { 1210000, new CheckpointInfo(new uint256("00000000461201277cf8c635fc10d042d6f0a7eaa57f6c9e8c099b9e0dbc46dc")) },
-            };
 
-            foreach (var checkpoint in checkpoints)
-            {
-                network.checkpoints.Add(checkpoint.Key, checkpoint.Value);
-            }
+            // Partially obtained from https://github.com/bitcoin/bitcoin/blob/b1973d6181eacfaaf45effb67e0c449ea3a436b8/src/chainparams.cpp#L246
+            network.checkpoints.Add(546, new CheckpointInfo(new uint256("000000002a936ca763904c3c35fce2f3556c559c0214345d31b1bcebf76acb70")));
+            // Our own new checkpoints.
+            network.checkpoints.Add(1210000, new CheckpointInfo(new uint256("00000000461201277cf8c635fc10d042d6f0a7eaa57f6c9e8c099b9e0dbc46dc")));
 
             NetworksContainer.TryAdd("test", network);
             NetworksContainer.TryAdd(network.Name.ToLowerInvariant(), network);
@@ -421,7 +405,7 @@ namespace NBitcoin
             Assert(consensus.HashGenesisBlock == uint256.Parse("0x0000066e91e46e5a264d42c89e1204963b2ee6be230b443e9159020539d972af"));
             Assert(genesis.Header.HashMerkleRoot == uint256.Parse("0x65a26bc20b0351aebf05829daefa8f7db2f800623439f3c114257c91447f1518"));
 
-            var builder = new NetworkBuilder()
+            NetworkBuilder builder = new NetworkBuilder()
                     .SetName("StratisMain")
                     .SetRootFolderName(StratisRootFolderName)
                     .SetDefaultConfigFilename(StratisDefaultConfigFilename)
@@ -484,7 +468,7 @@ namespace NBitcoin
             Block.BlockSignature = true;
             Transaction.TimeStamp = true;
 
-            var consensus = Network.StratisMain.Consensus.Clone();
+            Consensus consensus = Network.StratisMain.Consensus.Clone();
             consensus.PowLimit = new Target(uint256.Parse("0000ffff00000000000000000000000000000000000000000000000000000000"));
 
             // The message start string is designed to be unlikely to occur in normal data.
@@ -497,7 +481,7 @@ namespace NBitcoin
             messageStart[3] = 0x11;
             var magic = BitConverter.ToUInt32(messageStart, 0); //0x5223570; 
 
-            var genesis = Network.StratisMain.GetGenesis();
+            Block genesis = Network.StratisMain.GetGenesis();
             genesis.Header.Time = 1493909211;
             genesis.Header.Nonce = 2433759;
             genesis.Header.Bits = consensus.PowLimit;
@@ -517,7 +501,7 @@ namespace NBitcoin
                 { 163000, new CheckpointInfo(new uint256("0x4e44a9e0119a2e7cbf15e570a3c649a5605baa601d953a465b5ebd1c1982212a"), new uint256("0x0646fc7db8f3426eb209e1228c7d82724faa46a060f5bbbd546683ef30be245c")) },
             };
 
-            var builder = new NetworkBuilder()
+            NetworkBuilder builder = new NetworkBuilder()
                     .SetName("StratisTest")
                     .SetRootFolderName(StratisRootFolderName)
                     .SetDefaultConfigFilename(StratisDefaultConfigFilename)
@@ -567,7 +551,7 @@ namespace NBitcoin
             Block.BlockSignature = true;
             Transaction.TimeStamp = true;
 
-            var consensus = Network.StratisTest.Consensus.Clone();
+            Consensus consensus = Network.StratisTest.Consensus.Clone();
             consensus.PowLimit = new Target(uint256.Parse("7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"));
 
             consensus.PowAllowMinDifficultyBlocks = true;
@@ -580,7 +564,7 @@ namespace NBitcoin
             messageStart[3] = 0xef;
             var magic = BitConverter.ToUInt32(messageStart, 0);
 
-            var genesis = Network.StratisMain.GetGenesis();
+            Block genesis = Network.StratisMain.GetGenesis();
             genesis.Header.Time = 1494909211;
             genesis.Header.Nonce = 2433759;
             genesis.Header.Bits = consensus.PowLimit;
@@ -590,7 +574,7 @@ namespace NBitcoin
 
             consensus.DefaultAssumeValid = null; // turn off assumevalid for regtest.
 
-            var builder = new NetworkBuilder()
+            NetworkBuilder builder = new NetworkBuilder()
                 .SetName("StratisRegTest")
                 .SetRootFolderName(StratisRootFolderName)
                 .SetDefaultConfigFilename(StratisDefaultConfigFilename)
