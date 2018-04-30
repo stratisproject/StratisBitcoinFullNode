@@ -714,7 +714,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
             SmartContractCompilationResult compilationResult = SmartContractCompiler.CompileFile("SmartContracts/InterContract1.cs");
             Assert.True(compilationResult.Success);
             SmartContractCarrier contractTransaction = SmartContractCarrier.CreateContract(1, compilationResult.Compilation, gasPrice, gasLimit);
-            Transaction tx = this.AddTransactionToMempool(context, contractTransaction, preTx.GetHash(), 0, gasBudget);
+            Transaction tx = this.AddTransactionToMempool(context, contractTransaction, preTx.GetHash(), 0, gasBudget, false);
             BlockTemplate pblocktemplate = await this.BuildBlockAsync(context);
 
             // Check all went well. i.e. contract is deployed.
@@ -730,7 +730,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
             return await this.BuildBlockAsync(context);
         }
 
-        private Transaction AddTransactionToMempool(TestContext context, SmartContractCarrier smartContractCarrier, uint256 prevOutHash, ulong value, ulong gasBudget)
+        private Transaction AddTransactionToMempool(TestContext context, SmartContractCarrier smartContractCarrier, uint256 prevOutHash, ulong value, ulong gasBudget, bool spendsCoinbase = true)
         {
             var entryFee = gasBudget;
             TestMemPoolEntryHelper entry = new TestMemPoolEntryHelper();
@@ -740,7 +740,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
             tx.AddInput(txIn);
             tx.AddOutput(new TxOut(new Money(value), new Script(smartContractCarrier.Serialize())));
             tx.Sign(context.privateKey, false);
-            context.mempool.AddUnchecked(tx.GetHash(), entry.Fee(entryFee).Time(context.date.GetTime()).SpendsCoinbase(false).FromTx(tx));
+            context.mempool.AddUnchecked(tx.GetHash(), entry.Fee(entryFee).Time(context.date.GetTime()).SpendsCoinbase(spendsCoinbase).FromTx(tx));
             return tx;
         }
 

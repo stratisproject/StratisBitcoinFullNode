@@ -11,10 +11,13 @@ using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.SmartContracts
 {
+    /// <summary>
+    /// Provides the same functionality as the original mempool validator with some extra validation. 
+    /// </summary>
     public class SmartContractMempoolValidator : MempoolValidator
     {
         /// <summary>
-        /// Can be checked instantly.
+        /// These rules can be checked instantly. They don't rely on other parts of the context to be loaded.
         /// </summary>
         private static readonly List<ISmartContractMempoolRule> preTxRules = new List<ISmartContractMempoolRule>
         {
@@ -24,17 +27,19 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         };
 
         /// <summary>
-        /// Rely on fee part of context to be loaded in parent class. See 'AcceptToMemoryPoolWorkerAsync'
+        /// These rules rely on the fee part of the context to be loaded in parent class. See 'AcceptToMemoryPoolWorkerAsync'.
         /// </summary>
         private static readonly List<ISmartContractMempoolRule> feeTxRules = new List<ISmartContractMempoolRule>
         {
             new GasBudgetRule()
         };
 
-        public SmartContractMempoolValidator(ITxMempool memPool, MempoolSchedulerLock mempoolLock, IPowConsensusValidator consensusValidator, IDateTimeProvider dateTimeProvider, MempoolSettings mempoolSettings, ConcurrentChain chain, CoinView coinView, ILoggerFactory loggerFactory, NodeSettings nodeSettings) : base(memPool, mempoolLock, consensusValidator, dateTimeProvider, mempoolSettings, chain, coinView, loggerFactory, nodeSettings)
+        public SmartContractMempoolValidator(ITxMempool memPool, MempoolSchedulerLock mempoolLock, IPowConsensusValidator consensusValidator, IDateTimeProvider dateTimeProvider, MempoolSettings mempoolSettings, ConcurrentChain chain, CoinView coinView, ILoggerFactory loggerFactory, NodeSettings nodeSettings) 
+            : base(memPool, mempoolLock, consensusValidator, dateTimeProvider, mempoolSettings, chain, coinView, loggerFactory, nodeSettings)
         {
         }
 
+        /// <inheritdoc />
         protected override void PreMempoolChecks(MempoolValidationContext context)
         {
             base.PreMempoolChecks(context);
@@ -44,6 +49,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             }
         }
 
+        /// <inheritdoc />
         protected override void CheckFee(MempoolValidationContext context)
         {
             base.CheckFee(context);

@@ -23,16 +23,25 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             return transactions.Where(x => x.IsSmartContractCreateTransaction());
         }
 
+        /// <summary>
+        /// Whether the transaction has any outputs with ScriptPubKeys that are smart contract executions.
+        /// </summary>
         public static bool IsSmartContractExecTransaction(this Transaction tx)
         {
             return tx.Outputs.Any(s => s.ScriptPubKey.IsSmartContractExec);
         }
 
+        /// <summary>
+        /// Whether the transaction has any outputs with ScriptPubKeys that are smart contract creations.
+        /// </summary>
         public static bool IsSmartContractCreateTransaction(this Transaction tx)
         {
             return tx.Outputs.Any(x => x.ScriptPubKey.IsSmartContractCreate);
         }
 
+        /// <summary>
+        /// Whether the transaction has any inputs with ScriptSigs that are OP_SPENDS.
+        /// </summary>
         public static bool IsSmartContractSpendTransaction(this Transaction tx)
         {
             return tx.Inputs.Any(s => s.ScriptSig.IsSmartContractSpend);

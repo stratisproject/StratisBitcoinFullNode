@@ -91,28 +91,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                 this.AddContractToBlock(mempoolEntry, smartContractTxOut);
         }
 
-        //protected override void TestBlockValidity()
-        //{
-        //    this.logger.LogTrace("()");
-
-        //    var context = new RuleContext(new BlockValidationContext { Block = this.pblock }, this.network.Consensus, this.consensusLoop.Tip)
-        //    {
-        //        CheckPow = false,
-        //        CheckMerkleRoot = false
-        //    };
-
-        //    //context.Set = new UnspentOutputSet();
-
-        //    //uint256[] ids = this.consensusLoop.GetIdsToFetch(context.BlockValidationContext.Block, true); // true for BIP30. No idea actually.
-        //    //FetchCoinsResponse coins = this.coinView.FetchCoinsAsync(ids).Result; // RESULT SUCKS. Should we go full async?
-        //    //context.Set.SetCoins(coins.UnspentOutputs);
-
-        //    this.consensusLoop.ValidateBlock(context);
-
-        //    this.logger.LogTrace("(-)");
-        //}
-
-
         /// <summary>
         /// Execute the contract and add all relevant fees and refunds to the block.
         /// </summary>
