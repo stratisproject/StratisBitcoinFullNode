@@ -47,14 +47,14 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             this.nodeGroupBuilder?.Dispose();
         }
 
-        private void two_nodes_which_includes_a_proof_of_stake_node_with_a_million_coins()
+        private void two_nodes_which_includes_a_proof_of_stake_node_over_a_million_coins()
         {
             this.proofOfStakeSteps.GenerateCoins();
 
             this.proofOfStakeSteps.ProofOfStakeNodeWithCoins.FullNode.WalletManager()
                 .GetSpendableTransactionsInWallet(this.proofOfStakeSteps.PosWallet)
                 .Sum(utxo => utxo.Transaction.Amount)
-                .Should().Be(Money.Coins(OneMillion));
+                .Should().BeGreaterThan(Money.Coins(OneMillion));
         }
 
         private void a_wallet_sends_staked_coins_before_maturity()
@@ -71,7 +71,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             {
                 AccountName = this.proofOfStakeSteps.WalletAccount,
                 AllowUnconfirmed = true,
-                Amount = new Money((int)OneMillion).ToString(),
+                Amount = Money.Coins(OneMillion + 40).ToString(),
                 DestinationAddress = GetReceiverUnusedAddressFromWallet(), 
                 FeeType = FeeType.Medium.ToString("D"),
                 Password = this.proofOfStakeSteps.PosWalletPassword,
@@ -81,7 +81,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
 
             var walletTransactionModel = (transactionResult as JsonResult).Value as WalletBuildTransactionModel;
 
-            this.SenderNode.FullNode.NodeService<WalletController>().SendTransaction(new SendTransactionRequest(walletTransactionModel.Hex));
+            this.SenderNode.FullNode.NodeService<WalletController>().SendTransaction(new SendTransactionRequest(walletTransactionModel.Hex));          
         }
 
         private void the_wallet_history_shows_the_transaction_as_sent_but_the_transaction_was_not_received()
