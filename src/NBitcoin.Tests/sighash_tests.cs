@@ -79,7 +79,7 @@ namespace NBitcoin.Tests
                 var raw = ParseHex(raw_script);
                 scriptCode = new Script(raw);
 
-                var sh = Script.SignatureHash(scriptCode, tx, nIn, (SigHash)nHashType);
+                var sh = Script.SignatureHash(Network.Main, scriptCode, tx, nIn, (SigHash)nHashType);
                 Assert.True(sh.ToString() == sigHashHex, strTest);
             }
         }

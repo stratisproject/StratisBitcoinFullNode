@@ -353,8 +353,8 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
 
             // Fund Bob
             // 50 Coins come from first tx on chain - send bob 42 and change back to miner
-            ScriptCoin witnessCoin = new ScriptCoin(context.SrcTxs[0].GetHash(), 0, context.SrcTxs[0].TotalOut, miner.PubKey.ScriptPubKey.WitHash.ScriptPubKey, miner.PubKey.ScriptPubKey);
-            TransactionBuilder txBuilder = new TransactionBuilder();
+            ScriptCoin witnessCoin = new ScriptCoin(context.SrcTxs[0].GetHash(), 0, context.SrcTxs[0].TotalOut, miner.PubKey.ScriptPubKey.WitHash.ScriptPubKey, miner.PubKey.ScriptPubKey).AssertCoherent(Network.RegTest);
+            TransactionBuilder txBuilder = new TransactionBuilder(Network.RegTest);
             Transaction p2wshTx = txBuilder
                 .AddCoins(witnessCoin)
                 .AddKeys(miner)
