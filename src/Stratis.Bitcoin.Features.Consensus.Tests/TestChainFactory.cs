@@ -211,7 +211,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
             FeeRate blockMinFeeRate = new FeeRate(PowMining.DefaultBlockMinTxFee);
             options.BlockMinFeeRate = blockMinFeeRate;
 
-            return new PowBlockAssembler(consensus, network, mempoolLock, mempool, date, chain.Tip, loggerFactory, options);
+            return new PowBlockAssembler(chain.Tip, consensus, date, loggerFactory, mempool, mempoolLock, network, options);
         }
     }
 }
