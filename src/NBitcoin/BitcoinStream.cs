@@ -381,7 +381,7 @@ namespace NBitcoin
             }
         }
 
-        private ConsensusFactory consensusFactory; //= Network.Main.Consensus.ConsensusFactory;
+        private ConsensusFactory consensusFactory ;//= Network.Main.Consensus.ConsensusFactory;
 
         /// <summary>
         /// Set the format to use when serializing and deserializing consensus related types.

@@ -54,6 +54,8 @@ namespace NBitcoin
 
         public void Load(BitcoinStream stream)
         {
+            stream.ConsensusFactory = this.network.Consensus.ConsensusFactory;
+
             using (this.lockObject.LockWrite())
             {
                 try

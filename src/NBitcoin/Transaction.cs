@@ -1513,9 +1513,9 @@ namespace NBitcoin
         /// </summary>
         /// <param name="secrets">Secrets</param>
         /// <param name="coins">Coins to sign</param>
-        public void Sign(ISecret[] secrets, ICoin[] coins)
+        public void Sign(ISecret[] secrets, ICoin[] coins, ConsensusFactory consensusFactory = null)
         {
-            Sign(secrets.Select(s => s.PrivateKey).ToArray(), coins);
+            Sign(secrets.Select(s => s.PrivateKey).ToArray(), coins, consensusFactory);
         }
 
         /// <summary>
@@ -1523,9 +1523,9 @@ namespace NBitcoin
         /// </summary>
         /// <param name="keys">Private keys</param>
         /// <param name="coins">Coins to sign</param>
-        public void Sign(Key[] keys, ICoin[] coins)
+        public void Sign(Key[] keys, ICoin[] coins, ConsensusFactory consensusFactory)
         {
-            TransactionBuilder builder = new TransactionBuilder();
+            TransactionBuilder builder = new TransactionBuilder(consensusFactory ?? Network.Main.Consensus.ConsensusFactory);
             builder.AddKeys(keys);
             builder.AddCoins(coins);
             builder.SignTransactionInPlace(this);
@@ -1536,9 +1536,9 @@ namespace NBitcoin
         /// </summary>
         /// <param name="secret">Secret</param>
         /// <param name="coins">Coins to sign</param>
-        public void Sign(ISecret secret, ICoin[] coins)
+        public void Sign(ISecret secret, ICoin[] coins, ConsensusFactory consensusFactory = null)
         {
-            Sign(new[] { secret }, coins);
+            Sign(new[] { secret }, coins, consensusFactory);
         }
 
         /// <summary>
@@ -1546,9 +1546,9 @@ namespace NBitcoin
         /// </summary>
         /// <param name="secrets">Secrets</param>
         /// <param name="coins">Coins to sign</param>
-        public void Sign(ISecret[] secrets, ICoin coin)
+        public void Sign(ISecret[] secrets, ICoin coin, ConsensusFactory consensusFactory = null)
         {
-            Sign(secrets, new[] { coin });
+            Sign(secrets, new[] { coin }, consensusFactory);
         }
 
         /// <summary>
@@ -1556,9 +1556,9 @@ namespace NBitcoin
         /// </summary>
         /// <param name="secret">Secret</param>
         /// <param name="coin">Coins to sign</param>
-        public void Sign(ISecret secret, ICoin coin)
+        public void Sign(ISecret secret, ICoin coin, ConsensusFactory consensusFactory = null)
         {
-            Sign(new[] { secret }, new[] { coin });
+            Sign(new[] { secret }, new[] { coin }, consensusFactory);
         }
 
         /// <summary>
@@ -1566,9 +1566,9 @@ namespace NBitcoin
         /// </summary>
         /// <param name="key">Private key</param>
         /// <param name="coins">Coins to sign</param>
-        public void Sign(Key key, ICoin[] coins)
+        public void Sign(Key key, ICoin[] coins, ConsensusFactory consensusFactory = null)
         {
-            Sign(new[] { key }, coins);
+            Sign(new[] { key }, coins, consensusFactory);
         }
 
         /// <summary>
@@ -1576,9 +1576,9 @@ namespace NBitcoin
         /// </summary>
         /// <param name="key">Private key</param>
         /// <param name="coin">Coin to sign</param>
-        public void Sign(Key key, ICoin coin)
+        public void Sign(Key key, ICoin coin, ConsensusFactory consensusFactory = null)
         {
-            Sign(new[] { key }, new[] { coin });
+            Sign(new[] { key }, new[] { coin }, consensusFactory);
         }
 
         /// <summary>
@@ -1586,9 +1586,9 @@ namespace NBitcoin
         /// </summary>
         /// <param name="keys">Private keys</param>
         /// <param name="coin">Coin to sign</param>
-        public void Sign(Key[] keys, ICoin coin)
+        public void Sign(Key[] keys, ICoin coin, ConsensusFactory consensusFactory = null)
         {
-            Sign(keys, new[] { coin });
+            Sign(keys, new[] { coin }, consensusFactory);
         }
 
         /// <summary>
@@ -1598,9 +1598,9 @@ namespace NBitcoin
         /// </summary>
         /// <param name="secret"></param>
         [Obsolete("Use Sign(ISecret,ICoin[]) instead)")]
-        public void Sign(ISecret secret, bool assumeP2SH)
+        public void Sign(ISecret secret, bool assumeP2SH, ConsensusFactory consensusFactory = null)
         {
-            Sign(secret.PrivateKey, assumeP2SH);
+            Sign(secret.PrivateKey, assumeP2SH, consensusFactory);
         }
 
         /// <summary>
@@ -1610,7 +1610,7 @@ namespace NBitcoin
         /// </summary>
         /// <param name="secret"></param>
         [Obsolete("Use Sign(Key,ICoin[]) instead)")]
-        public void Sign(Key key, bool assumeP2SH)
+        public void Sign(Key key, bool assumeP2SH, ConsensusFactory consensusFactory = null)
         {
             List<Coin> coins = new List<Coin>();
             for(int i = 0; i < Inputs.Count; i++)
@@ -1645,7 +1645,7 @@ namespace NBitcoin
                 }
 
             }
-            Sign(key, coins.ToArray());
+            Sign(key, coins.ToArray(), consensusFactory);
         }
         /*
         public TxPayload CreatePayload()
