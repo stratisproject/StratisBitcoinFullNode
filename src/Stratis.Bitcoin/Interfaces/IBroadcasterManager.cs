@@ -13,6 +13,6 @@ namespace Stratis.Bitcoin.Interfaces
 
         TransactionBroadcastEntry GetTransaction(uint256 transactionHash);
 
-        void AddOrUpdate(Transaction transaction, State state);
+        void AddOrUpdate(Transaction transaction, State state, string ErrorMessage = "");
     }
 }

@@ -715,9 +715,15 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                     });
                 }
 
-                this.walletManager.ProcessTransaction(transaction, null, null, false);
-
                 this.broadcasterManager.BroadcastTransactionAsync(transaction).GetAwaiter().GetResult();
+
+                var transactionBroadCastEntry = this.walletManager.GetTransactionBroadcastEntry();
+
+                if (!string.IsNullOrEmpty(transactionBroadCastEntry?.ErroMessage))
+                {                    
+                    this.logger.LogError("Exception occurred: {0}", transactionBroadCastEntry.ErroMessage);
+                    return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, transactionBroadCastEntry.ErroMessage, "Transaction Exception");
+                }
 
                 return this.Json(model);
             }

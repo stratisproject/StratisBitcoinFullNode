@@ -73,6 +73,9 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <summary>The broadcast manager.</summary>
         private readonly IBroadcasterManager broadcasterManager;
 
+        /// <summary>The transaction broadcast entry.</summary>
+        private TransactionBroadcastEntry transactionBroadcastEntry;
+
         /// <summary>Provider of time functions.</summary>
         private readonly IDateTimeProvider dateTimeProvider;
 
@@ -138,7 +141,22 @@ namespace Stratis.Bitcoin.Features.Wallet
 
         private void BroadcasterManager_TransactionStateChanged(object sender, TransactionBroadcastEntry transactionEntry)
         {
-            this.ProcessTransaction(transactionEntry.Transaction, null, null, transactionEntry.State == State.Propagated);
+            this.logger.LogTrace("()");
+
+            this.transactionBroadcastEntry = null;
+
+            if (transactionEntry.State != State.CantBroadcast)
+            {
+                this.ProcessTransaction(transactionEntry.Transaction, null, null, transactionEntry.State == State.Propagated);
+            }
+            else
+            {
+                this.transactionBroadcastEntry = transactionEntry;
+                this.logger.LogTrace("Exception occurred: {0}", transactionEntry.ErroMessage);
+                this.logger.LogTrace("(-)[EXCEPTION]");
+            }
+
+            this.logger.LogTrace("(-)");
         }
 
         public void Start()
@@ -1338,6 +1356,12 @@ namespace Stratis.Bitcoin.Features.Wallet
         public DateTimeOffset GetOldestWalletCreationTime()
         {
             return this.Wallets.Min(w => w.CreationTime);
+        }
+
+        /// <inheritdoc />
+        public TransactionBroadcastEntry GetTransactionBroadcastEntry()
+        {
+            return this.transactionBroadcastEntry;
         }
 
         /// <inheritdoc />

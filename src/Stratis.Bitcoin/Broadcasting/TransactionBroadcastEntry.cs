@@ -9,10 +9,13 @@ namespace Stratis.Bitcoin.Broadcasting
 
         public State State { get; set; }
 
-        public TransactionBroadcastEntry(Transaction transaction, State state)
+        public string ErroMessage { get; set; }
+
+        public TransactionBroadcastEntry(Transaction transaction, State state, string errorMessage)
         {
             this.Transaction = transaction ?? throw new ArgumentNullException(nameof(transaction));
             this.State = state;
+            this.ErroMessage = errorMessage;
         }
     }
 }
