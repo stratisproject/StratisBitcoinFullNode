@@ -118,7 +118,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
                     currentLeaveHash = Hashes.Hash256(hash);
                 }
 
-                // Store the resulting hash at subTreeHashes  position level.
+                // Store the resulting hash at subTreeHashes position level.
                 subTreeHashes[level] = currentLeaveHash;
                 if (match)
                     matchLevel = level;

@@ -397,9 +397,12 @@ namespace Stratis.Bitcoin.Features.Consensus
 
                     if (blockValidationContext.Error == ConsensusErrors.BadTransactionDuplicate)
                     {
-                        int banDuration = blockValidationContext.BanDurationSeconds == BlockValidationContext.BanDurationDefaultBan ? this.connectionManager.ConnectionSettings.BanTimeSeconds : blockValidationContext.BanDurationSeconds;
-                        this.peerBanning.BanPeer(blockValidationContext.Peer, banDuration, $"Invalid block received: {blockValidationContext.Error.Message}");
                         this.logger.LogTrace("(-)[BAD_TX_DUP]");
+                        if (blockValidationContext.Peer == null) return;
+                        int banDuration = blockValidationContext.BanDurationSeconds == BlockValidationContext.BanDurationDefaultBan 
+                            ? this.connectionManager.ConnectionSettings.BanTimeSeconds 
+                            : blockValidationContext.BanDurationSeconds;
+                        this.peerBanning.BanPeer(blockValidationContext.Peer, banDuration, $"Invalid block received: {blockValidationContext.Error.Message}");
                         return;
                     }
 
