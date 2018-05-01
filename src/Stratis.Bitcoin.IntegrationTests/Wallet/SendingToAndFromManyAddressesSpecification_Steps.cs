@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
-using NBitcoin;
 using FluentAssertions;
+using NBitcoin;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Controllers;
@@ -37,7 +37,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         protected override void BeforeTest()
         {
             this.sharedSteps = new SharedSteps();
-            this.nodeGroupBuilder = new NodeGroupBuilder();
+            this.nodeGroupBuilder = new NodeGroupBuilder(this.CurrentTest.DisplayName);
         }
 
         protected override void AfterTest()
@@ -117,7 +117,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                         Amount = this.nodeTwoBalance - Money.COIN,
                         ScriptPubKey = sendToNodeOne.ScriptPubKey
                     }
-                }.ToList(), 
+                }.ToList(),
                 WalletPassword);
 
             var transaction = this.nodes[NodeTwo].FullNode.WalletTransactionHandler().BuildTransaction(this.transactionBuildContext);
