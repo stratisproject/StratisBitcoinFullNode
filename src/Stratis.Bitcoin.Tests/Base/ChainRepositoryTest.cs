@@ -10,6 +10,10 @@ namespace Stratis.Bitcoin.Tests.Base
 {
     public class ChainRepositoryTest : TestBase
     {
+        public ChainRepositoryTest() : base(Network.StratisRegTest)
+        {
+        }
+
         [Fact]
         public void SaveWritesChainToDisk()
         {
@@ -76,8 +80,8 @@ namespace Stratis.Bitcoin.Tests.Base
             var nonce = RandomUtils.GetUInt32();
             foreach (var chain in chains)
             {
-                var block = new Block();
-                block.AddTransaction(new Transaction());
+                var block = this.Network.Consensus.ConsensusFactory.CreateBlock();
+                block.AddTransaction(this.Network.Consensus.ConsensusFactory.CreateTransaction());
                 block.UpdateMerkleRoot();
                 block.Header.HashPrevBlock = previous == null ? chain.Tip.HashBlock : previous.HashBlock;
                 block.Header.Nonce = nonce;

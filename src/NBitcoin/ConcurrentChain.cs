@@ -102,6 +102,8 @@ namespace NBitcoin
 
         public void WriteTo(BitcoinStream stream)
         {
+            stream.ConsensusFactory = this.network.Consensus.ConsensusFactory;
+
             using (this.lockObject.LockRead())
             {
                 for (int i = 0; i < this.Tip.Height + 1; i++)

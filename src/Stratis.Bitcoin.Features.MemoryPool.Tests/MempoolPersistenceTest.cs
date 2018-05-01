@@ -46,8 +46,8 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             IEnumerable<MempoolPersistenceEntry> toSave = this.CreateTestEntries(numTx);
             IEnumerable<MempoolPersistenceEntry> loaded;
 
-            MemPoolSaveResult result = persistence.Save(toSave, fileName);
-            loaded = persistence.Load(fileName);
+            MemPoolSaveResult result = persistence.Save(settings.Network, toSave, fileName);
+            loaded = persistence.Load(settings.Network, fileName);
 
             Assert.True(File.Exists(Path.Combine(settings.DataDir, fileName)));
             Assert.True(result.Succeeded);
@@ -66,11 +66,11 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             IEnumerable<MempoolPersistenceEntry> loaded;
             string fullFilePath = Path.Combine(settings.DataDir, fileName);
 
-            MemPoolSaveResult result = persistence.Save(toSave, fileName);
+            MemPoolSaveResult result = persistence.Save(settings.Network, toSave, fileName);
             string fileData = File.ReadAllText(fullFilePath);
             string badFileData = new string(fileData.Take(fileData.Length / 2).ToArray());
             File.WriteAllText(fullFilePath, badFileData);
-            loaded = persistence.Load(fileName);
+            loaded = persistence.Load(settings.Network, fileName);
 
             Assert.True(File.Exists(fullFilePath));
             Assert.True(result.Succeeded);
@@ -85,7 +85,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             MempoolPersistence persistence = new MempoolPersistence(settings, new LoggerFactory());
             string fullFilePath = Path.Combine(settings.DataDir, fileName);
 
-            var loaded = persistence.Load(fileName);
+            var loaded = persistence.Load(settings.Network, fileName);
 
             Assert.False(File.Exists(fullFilePath));
             Assert.Null(loaded);
@@ -100,7 +100,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             IEnumerable<MempoolPersistenceEntry> toSave = this.CreateTestEntries(numTx);
             MempoolManager mempoolManager = CreateTestMempool(settings, out TxMempool unused);
 
-            MemPoolSaveResult result = (new MempoolPersistence(settings, new LoggerFactory())).Save(toSave, fileName);
+            MemPoolSaveResult result = (new MempoolPersistence(settings, new LoggerFactory())).Save(settings.Network, toSave, fileName);
             mempoolManager.LoadPoolAsync(fileName).GetAwaiter().GetResult();
             long actualSize = mempoolManager.MempoolSize().GetAwaiter().GetResult();
 
@@ -132,7 +132,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
                     FeeDelta = expectedTx1FeeDelta
                 },
             };
-            MemPoolSaveResult result = (new MempoolPersistence(settings, new LoggerFactory())).Save(toSave, fileName);
+            MemPoolSaveResult result = (new MempoolPersistence(settings, new LoggerFactory())).Save(settings.Network, toSave, fileName);
 
             long expectedSize = 2;
             await mempoolManager.LoadPoolAsync(fileName);
@@ -169,7 +169,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
                     FeeDelta = expectedTx1FeeDelta
                 },
             };
-            MemPoolSaveResult result = (new MempoolPersistence(settings, new LoggerFactory())).Save(toSave, fileName);
+            MemPoolSaveResult result = (new MempoolPersistence(settings, new LoggerFactory())).Save(settings.Network, toSave, fileName);
 
             long expectedSize = 1;
             await mempoolManager.LoadPoolAsync(fileName);
@@ -196,10 +196,11 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             long actualCount = -1;
             using (MemoryStream ms = new MemoryStream())
             {
-                persistence.DumpToStream(toSave, ms);
+                persistence.DumpToStream(settings.Network, toSave, ms);
                 actualStreamLength = ms.Length;
                 ms.Seek(0, SeekOrigin.Begin);
                 var bitcoinReader = new BitcoinStream(ms, false);
+                bitcoinReader.ConsensusFactory = settings.Network.Consensus.ConsensusFactory;
 
                 bitcoinReader.ReadWrite(ref actualVersion);
                 bitcoinReader.ReadWrite(ref actualCount);
@@ -275,7 +276,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             var consensusValidator = new PowConsensusValidator(Network.Main, new Checkpoints(Network.Main, consensusSettings), dateTimeProvider, loggerFactory);
             var mempoolValidator = new MempoolValidator(txMemPool, mempoolLock, consensusValidator, dateTimeProvider, mempoolSettings, chain, coins, loggerFactory, settings);
             var mempoolOrphans = new MempoolOrphans(mempoolLock, txMemPool, chain, new Signals.Signals(), mempoolValidator, consensusValidator, coins, dateTimeProvider, mempoolSettings, loggerFactory);
-            return new MempoolManager(mempoolLock, txMemPool, mempoolValidator, mempoolOrphans, dateTimeProvider, mempoolSettings, mempoolPersistence, coins, loggerFactory);
+            return new MempoolManager(mempoolLock, txMemPool, mempoolValidator, mempoolOrphans, dateTimeProvider, mempoolSettings, mempoolPersistence, coins, loggerFactory, settings.Network);
         }
     }
 }

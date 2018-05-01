@@ -22,10 +22,10 @@ namespace Stratis.Bitcoin.Tests.Utilities
         /// <summary>
         /// Initializes the DBreeze serializer.
         /// </summary>
-        public DBreezeTest()
+        public DBreezeTest() : base(Network.StratisRegTest)
         {
             this.dbreezeSerializer = new DBreezeSerializer();
-            this.dbreezeSerializer.Initialize(Network.StratisRegTest);
+            this.dbreezeSerializer.Initialize(this.Network);
         }
 
         [Fact]

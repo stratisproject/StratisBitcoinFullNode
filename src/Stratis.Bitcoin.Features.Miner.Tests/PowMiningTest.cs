@@ -32,7 +32,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
             this.asyncLoopFactory = new Mock<IAsyncLoopFactory>();
 
             this.fixture = fixture;
-            this.network = Network.TestNet;
+            this.network = fixture.network;
             this.chain = new ConcurrentChain(this.network);
 
             SetupNodeLifeTime();
@@ -278,8 +278,8 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
                     })
                     .Returns(Task.CompletedTask);
 
-                BlockTemplate blockTemplate = CreateBlockTemplate(this.fixture.block1);
-                blockTemplate.Block.Header.Nonce = 0;
+                BlockTemplate blockTemplate = this.CreateBlockTemplate(this.fixture.block1);
+                blockTemplate.Block.Header.Bits = 0;
                 this.blockAssembler.Setup(b => b.CreateNewBlock(It.Is<Script>(r => r == this.fixture.reserveScript.ReserveFullNodeScript), true))
                     .Returns(blockTemplate);
 
@@ -425,8 +425,8 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
                     })
                     .Returns(Task.CompletedTask);
 
-                BlockTemplate blockTemplate = CreateBlockTemplate(this.fixture.block1);
-                BlockTemplate blockTemplate2 = CreateBlockTemplate(this.fixture.block2);
+                BlockTemplate blockTemplate = this.CreateBlockTemplate(this.fixture.block1);
+                BlockTemplate blockTemplate2 = this.CreateBlockTemplate(this.fixture.block2);
 
                 this.blockAssembler.SetupSequence(b => b.CreateNewBlock(It.Is<Script>(r => r == this.fixture.reserveScript.ReserveFullNodeScript), true))
                     .Returns(blockTemplate)
@@ -495,9 +495,10 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
 
         private BlockTemplate CreateBlockTemplate(Block block)
         {
-            BlockTemplate blockTemplate = new BlockTemplate();
-            blockTemplate.Block = this.network.Consensus.ConsensusFactory.CreateBlock();
-            blockTemplate.Block.Transactions = block.Transactions;
+            BlockTemplate blockTemplate = new BlockTemplate() { Block = block};
+            //blockTemplate.Block = this.network.Consensus.ConsensusFactory.CreateBlock();
+            //blockTemplate.Block.Transactions = block.Transactions;
+            //blockTemplate.Block.Header.Bits = block.Header.Bits;
             return blockTemplate;
         }
 
@@ -518,7 +519,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
     /// </summary>
     public class PowMiningTestFixture
     {
-        private Network network;
+        public Network network;
         private ConcurrentChain chain;
         public Key key;
         public Block block1;
@@ -529,7 +530,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
 
         public PowMiningTestFixture()
         {
-            this.network = Network.StratisTest;
+            this.network = Network.RegTest;
             this.chain = new ConcurrentChain(this.network);
             this.key = new Key();
             this.reserveScript = new ReserveScript(this.key.ScriptPubKey);

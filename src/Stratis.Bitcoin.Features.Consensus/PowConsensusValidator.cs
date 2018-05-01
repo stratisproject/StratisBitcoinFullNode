@@ -409,6 +409,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         {
             var bms = new BitcoinStream(Stream.Null, true);
             bms.TransactionOptions = options;
+            bms.ConsensusFactory = this.network.Consensus.ConsensusFactory;
             data.ReadWrite(bms);
             return (int)bms.Counter.WrittenBytes;
         }

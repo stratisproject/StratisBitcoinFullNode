@@ -333,9 +333,10 @@ namespace NBitcoin
         /// <summary>
         /// Create a block with the specified option only. (useful for stripping data from a block).
         /// </summary>
+        /// <param name="consensusFactory">The network consensus factory.</param>
         /// <param name="options">Options to keep.</param>
         /// <returns>A new block with only the options wanted.</returns>
-        public Block WithOptions(NetworkOptions options)
+        public Block WithOptions(ConsensusFactory consensusFactory, NetworkOptions options)
         {
             if (this.Transactions.Count == 0)
                 return this;
@@ -346,18 +347,20 @@ namespace NBitcoin
             if ((options == NetworkOptions.None) && !this.Transactions[0].HasWitness)
                 return this;
 
-            var instance = new Block();
+            Block instance = consensusFactory.CreateBlock();
             var ms = new MemoryStream();
             var bms = new BitcoinStream(ms, true)
             {
-                TransactionOptions = options
+                TransactionOptions = options,
+                ConsensusFactory = consensusFactory
             };
 
             this.ReadWrite(bms);
             ms.Position = 0;
             bms = new BitcoinStream(ms, false)
             {
-                TransactionOptions = options
+                TransactionOptions = options,
+                ConsensusFactory = consensusFactory
             };
 
             instance.ReadWrite(bms);

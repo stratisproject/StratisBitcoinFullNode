@@ -13,6 +13,10 @@ namespace Stratis.Bitcoin.Api.Tests
     /// </summary>
     public class ApiSettingsTest : TestBase
     {
+        public ApiSettingsTest() : base(Network.Main)
+        {
+        }
+
         /// <summary>
         /// Tests that if no API settings are passed and we're on the bitcoin network, the defaults settings are used.
         /// </summary>

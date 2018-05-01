@@ -4,15 +4,18 @@ using System.IO;
 using System.Linq;
 using System.Net.Http;
 using Microsoft.Extensions.Logging;
+using Moq;
 using NBitcoin;
 using NBitcoin.BitcoinCore;
 using NBitcoin.Crypto;
 using NBitcoin.DataEncoders;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Base.Deployments;
+using Stratis.Bitcoin.BlockPulling;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
+using Stratis.Bitcoin.Features.Consensus.Rules;
 using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
 using Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers;
 using Stratis.Bitcoin.Utilities;
@@ -348,7 +351,11 @@ namespace Stratis.Bitcoin.IntegrationTests
             ConsensusSettings consensusSettings = new ConsensusSettings().Load(NodeSettings.Default());
             var validator = new PowConsensusValidator(Network.Main, new Checkpoints(Network.Main, consensusSettings), DateTimeProvider.Default, this.loggerFactory);
             new WitnessCommitmentsRule().RunAsync(context).GetAwaiter().GetResult();
-            new CheckPowTransactionRule().RunAsync(context);
+
+            CheckPowTransactionRule rule = new CheckPowTransactionRule();
+            var options = Network.Main.Consensus.Option<PowConsensusOptions>();
+            foreach (Transaction tx in block.Transactions)
+                rule.CheckTransaction(Network.Main, options, tx);
         }
     }
 }

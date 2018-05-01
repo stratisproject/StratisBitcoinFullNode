@@ -14,6 +14,10 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
     /// <remarks>TODO: Currently only stubs - need to complete</remarks>
     public class MempoolValidatorTest : TestBase
     {
+        public MempoolValidatorTest() : base(Network.RegTest)
+        {
+        }
+
         [Fact]
         public void CheckFinalTransaction_WithStandardLockTimeAndValidTxTime_ReturnsTrue()
         {

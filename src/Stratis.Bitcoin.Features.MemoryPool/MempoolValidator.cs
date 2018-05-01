@@ -541,7 +541,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         private void PreMempoolChecks(MempoolValidationContext context)
         {
             // TODO: fix this to use dedicated mempool rules.
-            new CheckPowTransactionRule { Logger = this.logger }.CheckTransaction(this.ConsensusOptions, context.Transaction);
+            new CheckPowTransactionRule { Logger = this.logger }.CheckTransaction(this.network, this.ConsensusOptions, context.Transaction);
             if(this.chain.Network.Consensus.IsProofOfStake)
                 new CheckPosTransactionRule { Logger = this.logger }.CheckTransaction(context.Transaction);
 
