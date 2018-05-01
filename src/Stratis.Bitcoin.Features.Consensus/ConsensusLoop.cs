@@ -407,14 +407,12 @@ namespace Stratis.Bitcoin.Features.Consensus
                         this.peerBanning.BanPeer(blockValidationContext.Peer, banDuration, $"Invalid block received: {blockValidationContext.Error.Message}");
                     }
 
-                    if (blockValidationContext.Error == ConsensusErrors.BadTransactionDuplicate)
+                    if (blockValidationContext.Error != ConsensusErrors.BadTransactionDuplicate)
                     {
-                        return;
-                    }
-
-                    // Since ChainHeadersBehavior check PoW, MarkBlockInvalid can't be spammed.
-                    this.logger.LogError("Marking block '{0}' as invalid{1}.", rejectedBlockHash, blockValidationContext.RejectUntil != null ? string.Format(" until {0:yyyy-MM-dd HH:mm:ss}", blockValidationContext.RejectUntil.Value) : "");
-                    this.chainState.MarkBlockInvalid(rejectedBlockHash, blockValidationContext.RejectUntil);
+                        // Since ChainHeadersBehavior check PoW, MarkBlockInvalid can't be spammed.
+                        this.logger.LogError("Marking block '{0}' as invalid{1}.", rejectedBlockHash, blockValidationContext.RejectUntil != null ? string.Format(" until {0:yyyy-MM-dd HH:mm:ss}", blockValidationContext.RejectUntil.Value) : "");
+                        this.chainState.MarkBlockInvalid(rejectedBlockHash, blockValidationContext.RejectUntil);
+                    } 
                 }
                 else
                 {

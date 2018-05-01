@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers;
 
 namespace Stratis.Bitcoin.IntegrationTests.Builders
@@ -10,9 +11,9 @@ namespace Stratis.Bitcoin.IntegrationTests.Builders
         private readonly NodeBuilder nodeBuilder;
         private readonly Dictionary<string, CoreNode> nodes;
 
-        public NodeGroupBuilder()
+        public NodeGroupBuilder([CallerMemberName] string dataFolderName = null)
         {
-            this.nodeBuilder = NodeBuilder.Create();
+            this.nodeBuilder = NodeBuilder.Create(dataFolderName);
             this.nodes = new Dictionary<string, CoreNode>();
         }
 
