@@ -39,6 +39,15 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
         }
 
         [Fact]
+        public void GasBudgetRule_GasBudgetMaxDoesntOverflow()
+        {
+            checked
+            {
+                ulong test = GasBudgetRule.GasPriceMaximum * GasBudgetRule.GasLimitMaximum;
+            }
+        }
+
+        [Fact]
         public async Task GasBudgetRule_SuccessAsync()
         {
             TestRulesContext testContext = TestRulesContextFactory.CreateAsync(Network.RegTest);

@@ -17,7 +17,13 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Consensus.Rules
     [ValidationRule(CanSkipValidation = false)]
     public class GasBudgetRule : UtxoStoreConsensusRule, ISmartContractMempoolRule
     {
-        public const ulong HardGasLimit = 5_000_000;
+        public const ulong GasLimitMaximum = 5_000_000;
+
+        public const ulong GasLimitMinimum = GasPriceList.BaseCost;
+
+        public const ulong GasPriceMinimum = 1;
+
+        public const ulong GasPriceMaximum = 10_000;
 
         public override Task RunAsync(RuleContext context)
         {
@@ -52,14 +58,26 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Consensus.Rules
 
             var carrier = SmartContractCarrier.Deserialize(transaction, smartContractOutput);
 
-            if (carrier.GasLimit < GasPriceList.BaseCost)
+            if (carrier.GasPrice < GasPriceMinimum)
+            {
+                // Supplied gas price is too low.
+                this.ThrowGasPriceLessThanMinimum();
+            }
+
+            if (carrier.GasPrice > GasPriceMaximum)
+            {
+                // Supplied gas price is too high.
+                this.ThrowGasPriceMoreThanMaximum();
+            }
+
+            if (carrier.GasLimit < GasLimitMinimum)
             {
                 // Supplied gas limit is too low.
                 this.ThrowGasLessThanBaseFee();
             }
 
 
-            if (carrier.GasLimit > HardGasLimit)
+            if (carrier.GasLimit > GasLimitMaximum)
             {
                 // Supplied gas limit is too high - at a certain point we deem that a contract is taking up too much time. 
                 this.ThrowGasGreaterThanHardLimit();
@@ -79,10 +97,22 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Consensus.Rules
             }
         }
 
+        private void ThrowGasPriceLessThanMinimum()
+        {
+            // TODO make nicer
+            new ConsensusError("gas-price-less-than-minimum", "gas price supplied is less than minimum allowed: " + GasPriceMinimum).Throw();
+        }
+
+        private void ThrowGasPriceMoreThanMaximum()
+        {
+            // TODO make nicer
+            new ConsensusError("gas-price-more-than-maximum", "gas price supplied is more than maximum allowed: " + GasPriceMaximum).Throw();
+        }
+
         private void ThrowGasLessThanBaseFee()
         {
             // TODO make nicer
-            new ConsensusError("gas-limit-less-than-base-fee", "gas limit supplied is less than the base fee for contract execution").Throw();
+            new ConsensusError("gas-limit-less-than-base-fee", "gas limit supplied is less than the base fee for contract execution: " + GasLimitMinimum).Throw();
         }
 
         private void ThrowGasOverflowException()
@@ -94,7 +124,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Consensus.Rules
         private void ThrowGasGreaterThanHardLimit()
         {
             // TODO make nicer
-            new ConsensusError("total-gas-value-greater-than-hard-limit", "total supplied gas value was greater than our hard limit of " + HardGasLimit).Throw();
+            new ConsensusError("total-gas-value-greater-than-hard-limit", "total supplied gas value was greater than our hard limit of " + GasLimitMaximum).Throw();
         }
 
         private void ThrowGasGreaterThanFee()
