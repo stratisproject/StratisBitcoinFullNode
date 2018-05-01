@@ -10,9 +10,9 @@ using Xunit;
 
 namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
 {
-    public class ConsensusRulesTest : ConsensusRuleUnitTestBase
+    public class ConsensusRulesTest : TestConsensusRulesUnitTestBase
     {
-        public ConsensusRulesTest() : base()
+        public ConsensusRulesTest()
         {
         }
 
@@ -300,7 +300,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
         {
             public bool RunCalled { get; private set; }
 
-            public ConsensusRuleWithValidationAttribute() : base()
+            public ConsensusRuleWithValidationAttribute()
             {
             }
 
@@ -317,7 +317,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
         {
             public bool RunCalled { get; private set; }
 
-            public ConsensusRuleWithSkipValidationAttribute() : base()
+            public ConsensusRuleWithSkipValidationAttribute()
             {
             }
 
@@ -334,7 +334,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
         {
             public bool RunCalled { get; private set; }
 
-            public ConsensusRuleWithoutNonValidationRuleAttribute() : base()
+            public ConsensusRuleWithoutNonValidationRuleAttribute()
             {
             }
 

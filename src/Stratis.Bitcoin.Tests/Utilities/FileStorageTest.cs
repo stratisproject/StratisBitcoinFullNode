@@ -227,6 +227,142 @@ namespace Stratis.Bitcoin.Tests.Utilities
             Assert.False(loadedObjects.Any());
         }
 
+        [Fact]
+        public void GivenSaveWithBackupIsCalled_WhenTheFileExistsandWasChanged_ThenABackupIsSaved()
+        {
+            // Arrange
+            TestObject testObject = new TestObject { Property1 = "prop1", Property2 = "prop2" };
+            string dir = this.GetFolderPathForTestExecution();
+            FileStorage<TestObject> fileStorage = new FileStorage<TestObject>(dir);
+            fileStorage.SaveToFile(testObject, "savedTestObject.json", true);
+            testObject.Property1 = testObject.Property1 + "-changed";
+            fileStorage.SaveToFile(testObject, "savedTestObject.json", true);
+
+            // Act
+            bool isFileExists = fileStorage.Exists("savedTestObject.json");
+            bool isBackupFileExists = fileStorage.Exists("savedTestObject.json.bak");
+            
+            // Assert
+            Assert.True(isFileExists);
+            Assert.True(isBackupFileExists);
+
+            TestObject loadedByFileName = fileStorage.LoadByFileName("savedTestObject.json");
+            TestObject loadedBackupByFileName = fileStorage.LoadByFileName("savedTestObject.json.bak");
+
+            Assert.Equal("prop1", loadedBackupByFileName.Property1);
+            Assert.Equal("prop2", loadedBackupByFileName.Property2);
+            Assert.Equal("prop1-changed", loadedByFileName.Property1);
+            Assert.Equal("prop2", loadedByFileName.Property2);
+        }
+
+        [Fact]
+        public void GivenSaveWithBackupIsCalled_WhenTheFileDidntExist_ThenTwoIdenticalFilesAreSaved()
+        {
+            // Arrange
+            TestObject testObject = new TestObject { Property1 = "prop1", Property2 = "prop2" };
+            string dir = this.GetFolderPathForTestExecution();
+            FileStorage<TestObject> fileStorage = new FileStorage<TestObject>(dir);
+            fileStorage.SaveToFile(testObject, "savedTestObject.json", true);
+            
+            // Act
+            bool isFileExists = fileStorage.Exists("savedTestObject.json");
+            bool isBackupFileExists = fileStorage.Exists("savedTestObject.json.bak");
+
+            // Assert
+            Assert.True(isFileExists);
+            Assert.True(isBackupFileExists);
+
+            TestObject loadedByFileName = fileStorage.LoadByFileName("savedTestObject.json");
+            TestObject loadedBackupByFileName = fileStorage.LoadByFileName("savedTestObject.json.bak");
+
+            Assert.Equal("prop1", loadedBackupByFileName.Property1);
+            Assert.Equal("prop2", loadedBackupByFileName.Property2);
+            Assert.Equal("prop1", loadedByFileName.Property1);
+            Assert.Equal("prop2", loadedByFileName.Property2);
+        }
+
+        [Fact]
+        public void GivenSaveFileWithNoBackupIsCalled_WhenTheFileExists_ThenNoBackupIsSaved()
+        {
+            // Arrange
+            TestObject testObject = new TestObject { Property1 = "prop1", Property2 = "prop2" };
+            string dir = this.GetFolderPathForTestExecution();
+            FileStorage<TestObject> fileStorage = new FileStorage<TestObject>(dir);
+            fileStorage.SaveToFile(testObject, "savedTestObject.json", false);
+            testObject.Property1 = testObject.Property1 + "-changed";
+            fileStorage.SaveToFile(testObject, "savedTestObject.json");
+
+            // Act
+            bool isFileExists = fileStorage.Exists("savedTestObject.json");
+            bool isBackupFileExists = fileStorage.Exists("savedTestObject.json.bak");
+
+            // Assert
+            Assert.True(isFileExists);
+            Assert.False(isBackupFileExists);
+            TestObject loadedByFileName = fileStorage.LoadByFileName("savedTestObject.json");
+            Assert.Equal("prop1-changed", loadedByFileName.Property1);
+            Assert.Equal("prop2", loadedByFileName.Property2);
+        }
+
+        [Fact]
+        public void GivenSaveFileWithNoBackupIsCalled_WhenTheFileDidntExist_ThenNoBackupIsSaved()
+        {
+            // Arrange
+            TestObject testObject = new TestObject { Property1 = "prop1", Property2 = "prop2" };
+            string dir = this.GetFolderPathForTestExecution();
+            FileStorage<TestObject> fileStorage = new FileStorage<TestObject>(dir);
+            fileStorage.SaveToFile(testObject, "savedTestObject.json", false);
+
+            // Act
+            bool isFileExists = fileStorage.Exists("savedTestObject.json");
+            bool isBackupFileExists = fileStorage.Exists("savedTestObject.json.bak");
+
+            // Assert
+            Assert.True(isFileExists);
+            Assert.False(isBackupFileExists);
+        }
+
+        [Fact]
+        public void GivenSaveFileIsCalled_WhenTheFileDidntExist_ThenNoBackupIsSaved()
+        {
+            // Arrange
+            TestObject testObject = new TestObject { Property1 = "prop1", Property2 = "prop2" };
+            string dir = this.GetFolderPathForTestExecution();
+            FileStorage<TestObject> fileStorage = new FileStorage<TestObject>(dir);
+            fileStorage.SaveToFile(testObject, "savedTestObject.json");
+
+            // Act
+            bool isFileExists = fileStorage.Exists("savedTestObject.json");
+            bool isBackupFileExists = fileStorage.Exists("savedTestObject.json.bak");
+
+            // Assert
+            Assert.True(isFileExists);
+            Assert.False(isBackupFileExists);
+        }
+
+        [Fact]
+        public void GivenSaveFileIsCalled_WhenTheFileExists_ThenNoBackupIsSaved()
+        {
+            // Arrange
+            TestObject testObject = new TestObject { Property1 = "prop1", Property2 = "prop2" };
+            string dir = this.GetFolderPathForTestExecution();
+            FileStorage<TestObject> fileStorage = new FileStorage<TestObject>(dir);
+            fileStorage.SaveToFile(testObject, "savedTestObject.json");
+            testObject.Property1 = testObject.Property1 + "-changed";
+            fileStorage.SaveToFile(testObject, "savedTestObject.json");
+
+            // Act
+            bool isFileExists = fileStorage.Exists("savedTestObject.json");
+            bool isBackupFileExists = fileStorage.Exists("savedTestObject.json.bak");
+
+            // Assert
+            Assert.True(isFileExists);
+            Assert.False(isBackupFileExists);
+            TestObject loadedByFileName = fileStorage.LoadByFileName("savedTestObject.json");
+            Assert.Equal("prop1-changed", loadedByFileName.Property1);
+            Assert.Equal("prop2", loadedByFileName.Property2);
+        }
+
         public void Dispose()
         {
             DirectoryInfo directoryInfo = new DirectoryInfo(TestFolder);

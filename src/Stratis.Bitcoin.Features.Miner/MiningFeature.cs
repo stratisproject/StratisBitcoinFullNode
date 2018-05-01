@@ -13,7 +13,6 @@ using Stratis.Bitcoin.Features.Miner.Controllers;
 using Stratis.Bitcoin.Features.Miner.Interfaces;
 using Stratis.Bitcoin.Features.RPC;
 using Stratis.Bitcoin.Features.Wallet;
-using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.Miner
 {
@@ -39,9 +38,6 @@ namespace Stratis.Bitcoin.Features.Miner
 
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
-
-        /// <summary>POW mining loop.</summary>
-        private IAsyncLoop powLoop;
 
         /// <summary>State of time synchronization feature that stores collected data samples.</summary>
         private readonly ITimeSyncBehaviorState timeSyncBehaviorState;
@@ -131,6 +127,15 @@ namespace Stratis.Bitcoin.Features.Miner
             this.logger.LogInformation("Staking stopped.");
         }
 
+        /// <summary>
+        /// Stop a Proof of Work miner.
+        /// </summary>
+        public void StopMining()
+        {
+            this.powMining?.StopMining();
+            this.logger.LogInformation("Mining stopped.");
+        }
+
         /// <inheritdoc />
         public override void Initialize()
         {
@@ -144,7 +149,7 @@ namespace Stratis.Bitcoin.Features.Miner
                 {
                     this.logger.LogInformation("Mining enabled.");
 
-                    this.powLoop = this.powMining.Mine(BitcoinAddress.Create(mineToAddress, this.network).ScriptPubKey);
+                    this.powMining.Mine(BitcoinAddress.Create(mineToAddress, this.network).ScriptPubKey);
                 }
             }
 
@@ -157,7 +162,7 @@ namespace Stratis.Bitcoin.Features.Miner
         /// <inheritdoc />
         public override void Dispose()
         {
-            this.powLoop?.Dispose();
+            this.StopMining();
             this.StopStaking();
         }
 
