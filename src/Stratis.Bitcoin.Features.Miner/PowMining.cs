@@ -156,7 +156,7 @@ namespace Stratis.Bitcoin.Features.Miner
         {
             this.miningCancellationTokenSource.Cancel();
             this.miningLoop?.Dispose();
-
+            this.miningLoop = null;
             this.miningCancellationTokenSource.Dispose();
             this.miningCancellationTokenSource = null;
         }
