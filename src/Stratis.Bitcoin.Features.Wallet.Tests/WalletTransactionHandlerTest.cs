@@ -207,7 +207,6 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             // we should not be able to build the transaction
             context.OverrideFeeRate = new FeeRate(networkMinRelayTxFee - 1);
 
-            // Have to do this because the context does not set the builder until after BuildTransaction is called
             new Action(() => walletTransactionHandler.BuildTransaction(context))
                 .Should().Throw<WalletException>()
                 .And.Message.Should().Contain("is too low. The policy minimum is");
