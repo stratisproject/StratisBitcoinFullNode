@@ -132,18 +132,18 @@ namespace Stratis.Bitcoin.Features.Miner
 
         private static long medianTimePast;
 
-        protected IConsensusLoop consensusLoop;
+        protected readonly IConsensusLoop consensusLoop;
 
-        protected MempoolSchedulerLock mempoolLock;
+        protected readonly MempoolSchedulerLock mempoolLock;
 
-        protected ITxMempool mempool;
+        protected readonly ITxMempool mempool;
 
-        protected IDateTimeProvider dateTimeProvider;
+        protected readonly IDateTimeProvider dateTimeProvider;
 
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
 
-        protected AssemblerOptions options;
+        protected readonly AssemblerOptions options;
 
         // The constructed block template.
         protected BlockTemplate blockTemplate;
