@@ -45,7 +45,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Miners
         protected override void BeforeTest()
         {
             this.sharedSteps = new SharedSteps();
-            this.nodeGroupBuilder = new NodeGroupBuilder();
+            this.nodeGroupBuilder = new NodeGroupBuilder(this.CurrentTest.DisplayName);
 
             Transaction.TimeStamp = true;
             Block.BlockSignature = true;
