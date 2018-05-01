@@ -18,11 +18,10 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
     /// Check for merkle tree malleability (CVE-2012-2459): repeating sequences
     /// of transactions in a block without affecting the merkle root of a block,
     /// while still invalidating it.
-    /// </remarks>
-    /// <remarks>
     /// Validation cannot be skipped for this rule, someone might have been able to create a mutated
     /// block (block with a duplicate transaction) with a valid hash, but we don't want to accept these 
     /// kind of blocks.
+    /// https://bitcointalk.org/index.php?topic=102395.0
     /// </remarks>
     [ValidationRule(CanSkipValidation = false)]
     public class BlockMerkleRootRule : ConsensusRule

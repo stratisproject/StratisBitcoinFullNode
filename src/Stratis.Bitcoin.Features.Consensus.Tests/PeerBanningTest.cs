@@ -15,7 +15,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
 {
     public class PeerBanningTest : TestBase
     {
-        private static readonly Script scriptPubKey;
+        private static readonly Script minerScriptPubKey;
 
         public PeerBanningTest()
         {
@@ -25,7 +25,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
 
         static PeerBanningTest()
         {
-            scriptPubKey = new Key().ScriptPubKey;
+            minerScriptPubKey = new Key().ScriptPubKey;
         }
 
         private async Task<(TestChainContext context, IPEndPoint peerEndPoint)> InitialiseContextAndPeerEndpoint()
@@ -195,7 +195,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
 
         private static async Task<Block> Mine2BlocksAndCreateABlockWithBadPrevHash(TestChainContext context)
         {
-            var blocks = await TestChainFactory.MineBlocksAsync(context, 2, scriptPubKey);
+            var blocks = await TestChainFactory.MineBlocksAsync(context, 2, minerScriptPubKey);
             
             var block = blocks.First();
             block.Header.HashPrevBlock = context.Chain.Tip.HashBlock;
@@ -204,7 +204,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
 
         private static async Task<Block> MineAMutatedBlock(TestChainContext context)
         {
-            var blocks = await TestChainFactory.MineBlocksAsync(context, 1, scriptPubKey, 
+            var blocks = await TestChainFactory.MineBlocksAsync(context, 1, minerScriptPubKey, 
                 mutateLastBlock: true);
             var block = blocks.Last();
             

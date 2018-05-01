@@ -1,6 +1,5 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
@@ -138,7 +137,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
         {
             BlockTemplate newBlock = CreateBlockTemplate(testChainContext, scriptPubKey, mempoolLock, mempool);
 
-            if(getMutatedBlock) newBlock.Block.Transactions.Add(newBlock.Block.Transactions[0]);
+            if(getMutatedBlock) BuildMutatedBlock(newBlock);
+            
             newBlock.Block.UpdateMerkleRoot();
 
             TryFindNonceForProofOfWork(testChainContext, newBlock);
@@ -146,6 +146,28 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
             else CheckBlockIsMutated(newBlock);
 
             return newBlock;
+        }
+
+        private static void BuildMutatedBlock(BlockTemplate newBlock)
+        {
+            var coinbaseTransaction = newBlock.Block.Transactions[0];
+            var outTransaction = CreateNonCoinbaseTransaction(coinbaseTransaction);
+            newBlock.Block.Transactions.Add(outTransaction);
+            var duplicateTransaction = CreateNonCoinbaseTransaction(coinbaseTransaction);
+            newBlock.Block.Transactions.Add(duplicateTransaction);
+            newBlock.Block.Transactions.Add(duplicateTransaction);
+        }
+
+        private static Transaction CreateNonCoinbaseTransaction(Transaction inputTransaction)
+        {
+            var transaction = new Transaction();
+            var outPoint = new OutPoint(inputTransaction, 0);
+            transaction.Inputs.Add(new TxIn(outPoint));
+            var outValue = Money.Satoshis(inputTransaction.TotalOut.Satoshi / 4);
+            var outScript = (new Key()).ScriptPubKey;
+            outValue.Should().NotBe(Money.Zero, "just to have an actual out");
+            transaction.Outputs.Add(new TxOut(outValue, outScript));
+            return transaction;
         }
 
         private static BlockTemplate CreateBlockTemplate(TestChainContext testChainContext, Script scriptPubKey,
