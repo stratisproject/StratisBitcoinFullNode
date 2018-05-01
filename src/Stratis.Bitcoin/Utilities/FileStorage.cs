@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Newtonsoft.Json;
@@ -40,7 +41,7 @@ namespace Stratis.Bitcoin.Utilities
             Guard.NotNull(toSave, nameof(toSave));
 
             string filePath = Path.Combine(this.FolderPath, fileName);
-            string tempFilePath = $"{filePath}.temp";
+            string tempFilePath = $"{filePath}.{DateTime.UtcNow.Ticks}.temp";
 
             File.WriteAllText(tempFilePath, JsonConvert.SerializeObject(toSave, Formatting.Indented));
 
