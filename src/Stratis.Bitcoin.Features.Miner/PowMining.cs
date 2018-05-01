@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
@@ -79,6 +80,11 @@ namespace Stratis.Bitcoin.Features.Miner
         /// <summary>Global application life cycle control - triggers when application shuts down.</summary>
         private readonly INodeLifetime nodeLifetime;
 
+        /// <summary>
+        /// A cancellation token source that can cancel the mining processes and is linked to the <see cref="INodeLifetime.ApplicationStopping"/>.
+        /// </summary>
+        private CancellationTokenSource miningCancellationTokenSource;
+
         public PowMining(
             IAsyncLoopFactory asyncLoopFactory,
             IConsensusLoop consensusLoop,
@@ -100,26 +106,59 @@ namespace Stratis.Bitcoin.Features.Miner
             this.network = network;
             this.nodeLifetime = nodeLifetime;
 
+            this.miningCancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(new[] { this.nodeLifetime.ApplicationStopping });
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
         }
 
         ///<inheritdoc/>
-        public IAsyncLoop Mine(Script reserveScript)
+        public void Mine(Script reserveScript)
         {
             if (this.miningLoop != null)
-                return this.miningLoop;
+                return;
+
+            this.miningCancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(new[] { this.nodeLifetime.ApplicationStopping });
 
             this.miningLoop = this.asyncLoopFactory.Run("PowMining.Mine", token =>
             {
-                this.GenerateBlocks(new ReserveScript { ReserveFullNodeScript = reserveScript }, int.MaxValue, int.MaxValue);
-                this.miningLoop = null;
+                try
+                {
+                    this.GenerateBlocks(new ReserveScript { ReserveFullNodeScript = reserveScript }, int.MaxValue, int.MaxValue);
+                }
+                catch (OperationCanceledException)
+                {
+                    // Application stopping, nothing to do as the loop will be stopped.
+                }
+                catch (MinerException me)
+                {
+                    // Block not accepted by peers or invalid. Should not halt mining.
+                    this.logger.LogDebug("Miner exception occurred in miner loop: {0}", me.ToString());
+                }
+                catch (ConsensusErrorException cee)
+                {
+                    // Issues constructing block or verifying it. Should not halt mining.
+                    this.logger.LogDebug("Consensus error exception occurred in miner loop: {0}", cee.ToString());
+                }
+                catch
+                {
+                    this.logger.LogTrace("(-)[UNHANDLED_EXCEPTION]");
+                    throw;
+                }
+
                 return Task.CompletedTask;
             },
-            this.nodeLifetime.ApplicationStopping,
-            repeatEvery: TimeSpans.RunOnce,
+            this.miningCancellationTokenSource.Token,
+            repeatEvery: TimeSpans.Second,
             startAfter: TimeSpans.TenSeconds);
+        }
 
-            return this.miningLoop;
+        ///<inheritdoc/>
+        public void StopMining()
+        {
+            this.miningCancellationTokenSource.Cancel();
+            this.miningLoop.Dispose();
+            this.miningLoop = null;
+            this.miningCancellationTokenSource.Dispose();
+            this.miningCancellationTokenSource = null;
         }
 
         ///<inheritdoc/>
@@ -137,7 +176,7 @@ namespace Stratis.Bitcoin.Features.Miner
 
             while (nHeight < nHeightEnd)
             {
-                this.nodeLifetime.ApplicationStopping.ThrowIfCancellationRequested();
+                this.miningCancellationTokenSource.Token.ThrowIfCancellationRequested();
 
                 ChainedBlock chainTip = this.consensusLoop.Tip;
                 if (this.chain.Tip != chainTip)
@@ -161,7 +200,7 @@ namespace Stratis.Bitcoin.Features.Miner
 
                 while ((maxTries > 0) && (pblock.Header.Nonce < InnerLoopCount) && !pblock.CheckProofOfWork(this.network.Consensus))
                 {
-                    this.nodeLifetime.ApplicationStopping.ThrowIfCancellationRequested();
+                    this.miningCancellationTokenSource.Token.ThrowIfCancellationRequested();
 
                     ++pblock.Header.Nonce;
                     --maxTries;
