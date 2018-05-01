@@ -52,9 +52,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 
             this.WaitForNodeToSync(node);
 
-            var rewardCoinCount = blockCount * Money.COIN * 50;
-
-            balanceIncrease.Should().Be(rewardCoinCount + expectedFees);
+            balanceIncrease.Should().Be(node.GetProofOfWorkRewardForMinedBlocks(blockCount) + expectedFees);
         }
 
         public void MinePremineBlocks(CoreNode node, string walletName, string walletAccount, string walletPassword)
