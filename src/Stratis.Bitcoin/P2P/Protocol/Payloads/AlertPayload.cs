@@ -106,7 +106,10 @@ namespace Stratis.Bitcoin.P2P.Protocol.Payloads
             stream.ReadWrite(ref this.payload);
             if (!stream.Serializing)
             {
-                var payloadStream = new BitcoinStream(this.payload.GetString());
+                var payloadStream = new BitcoinStream(this.payload.GetString())
+                {
+                    ConsensusFactory = stream.ConsensusFactory
+                };
                 payloadStream.CopyParameters(stream);
 
                 this.ReadWritePayloadFields(payloadStream);
@@ -136,6 +139,7 @@ namespace Stratis.Bitcoin.P2P.Protocol.Payloads
         {
             MemoryStream ms = new MemoryStream();
             var seria = new BitcoinStream(ms, true);
+            seria.ConsensusFactory = stream.ConsensusFactory;
             seria.CopyParameters(stream);
             this.ReadWritePayloadFields(seria);
             this.payload = new VarString(ms.ToArray());

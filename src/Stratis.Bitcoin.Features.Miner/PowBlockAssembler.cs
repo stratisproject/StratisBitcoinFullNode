@@ -224,7 +224,7 @@ namespace Stratis.Bitcoin.Features.Miner
             this.fees = 0;
 
             this.ChainTip = chainTip;
-            this.pblocktemplate = new BlockTemplate { Block = new Block(), VTxFees = new List<Money>() };
+            this.pblocktemplate = new BlockTemplate { Block = this.network.Consensus.ConsensusFactory.CreateBlock(), VTxFees = new List<Money>() };
         }
 
         private int ComputeBlockVersion(ChainedBlock prevChainedBlock, NBitcoin.Consensus consensus)
@@ -321,7 +321,7 @@ namespace Stratis.Bitcoin.Features.Miner
             // Create coinbase transaction.
             // Set the coin base with zero money.
             // Once we have the fee we can update the amount.
-            this.coinbase = new Transaction();
+            this.coinbase = this.network.Consensus.ConsensusFactory.CreateTransaction();
             this.coinbase.Time = (uint)this.dateTimeProvider.GetAdjustedTimeAsUnixTimestamp();
             this.coinbase.AddInput(TxIn.CreateCoinbase(this.ChainTip.Height + 1));
             this.coinbase.AddOutput(new TxOut(Money.Zero, this.scriptPubKeyIn));
