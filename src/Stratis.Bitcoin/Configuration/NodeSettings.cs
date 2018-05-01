@@ -44,6 +44,8 @@ namespace Stratis.Bitcoin.Configuration
         /// <param name="innerNetwork">Specification of the network the node runs on - regtest/testnet/mainnet.</param>
         /// <param name="protocolVersion">Supported protocol version for which to create the configuration.</param>
         /// <param name="agent">The nodes user agent that will be shared with peers.</param>
+        /// <param name="args">The command-line arguments.</param>
+        /// <param name="loadConfiguration">Determines whether to load the configuration file.</param>
         public NodeSettings(Network innerNetwork = null, ProtocolVersion protocolVersion = SupportedProtocolVersion, 
             string agent = "StratisBitcoin", string[] args = null, bool loadConfiguration = true)
         {
@@ -197,6 +199,7 @@ namespace Stratis.Bitcoin.Configuration
         /// <summary>
         /// Loads the configuration file.
         /// </summary>
+        /// <param name="features">The features to include in the configuration file if a default file has to be created.</param>
         /// <returns>Initialized node configuration.</returns>
         /// <exception cref="ConfigurationException">Thrown in case of any problems with the configuration file or command line arguments.</exception>
         public NodeSettings LoadConfiguration(List<IFeatureRegistration> features = null)
@@ -214,11 +217,13 @@ namespace Stratis.Bitcoin.Configuration
                 this.ConfigurationFile = this.CreateDefaultConfigurationFile(features);
             }
 
+            // Add the file configuration to the command-line configuration.
             var fileConfig = new TextFileConfiguration(File.ReadAllText(this.ConfigurationFile));
             var config = new TextFileConfiguration(args);
             this.ConfigReader = config;
             fileConfig.MergeInto(config);
 
+            // TODO: Does this code belong here?
             if (!Directory.Exists(this.DataFolder.CoinViewPath))
                 Directory.CreateDirectory(this.DataFolder.CoinViewPath);
 
@@ -303,6 +308,7 @@ namespace Stratis.Bitcoin.Configuration
         /// <summary>
         /// Creates a default configuration file if no configuration file is found.
         /// </summary>
+        /// <param name="features">The features to include in the configuration file if a default file has to be created.</param>
         /// <returns>Path to the configuration file.</returns>
         private string CreateDefaultConfigurationFile(List<IFeatureRegistration> features = null)
         {
