@@ -23,4 +23,3 @@ namespace Stratis.Bitcoin.IntegrationTests.Transactions
         }
     }
 }
-

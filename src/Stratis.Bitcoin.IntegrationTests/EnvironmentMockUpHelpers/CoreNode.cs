@@ -37,10 +37,11 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
         private Money fee = Money.Coins(0.0001m);
         private object lockObject = new object();
 
-        public string Folder { get; }
+        /// <summary>The data folder for the node.</summary>
+        public readonly string DataFolder;
 
-        /// <summary>Location of the data directory for the node.</summary>
-        public string DataFolder { get; }
+        /// <summary>The root folder the node.</summary>
+        public readonly string Folder;
 
         public IPEndPoint Endpoint { get { return new IPEndPoint(IPAddress.Parse("127.0.0.1"), this.ports[0]); } }
 
@@ -53,12 +54,11 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
             this.runner = runner;
             this.Folder = folder;
             this.State = CoreNodeState.Stopped;
-            if (cleanfolders)
-                this.CleanFolder();
 
-            Directory.CreateDirectory(folder);
             this.DataFolder = Path.Combine(folder, "data");
-            Directory.CreateDirectory(this.DataFolder);
+
+            NodeBuilder.CreateTestDataFolder(this.DataFolder);
+
             var pass = Encoders.Hex.EncodeData(RandomUtils.GetBytes(20));
             this.creds = new NetworkCredential(pass, pass);
             this.Config = Path.Combine(this.DataFolder, configfile);
@@ -81,20 +81,17 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
             }
         }
 
-        private void CleanFolder()
-        {
-            NodeBuilder.CleanupTestFolder(this.Folder);
-        }
-
         public void Sync(CoreNode node, bool keepConnection = false)
         {
             var rpc = this.CreateRPCClient();
             var rpc1 = node.CreateRPCClient();
             rpc.AddNode(node.Endpoint, true);
+
             while (rpc.GetBestBlockHash() != rpc1.GetBestBlockHash())
             {
                 Thread.Sleep(200);
             }
+
             if (!keepConnection)
                 rpc.RemoveNode(node.Endpoint);
         }
@@ -109,11 +106,6 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
         public void NotInIBD()
         {
             (this.FullNode.NodeService<IInitialBlockDownloadState>() as InitialBlockDownloadStateMock).SetIsInitialBlockDownload(false, DateTime.UtcNow.AddMinutes(5));
-        }
-
-        public void Start()
-        {
-            this.StartAsync().Wait();
         }
 
         public RPCClient CreateRPCClient()
@@ -131,9 +123,10 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
             return this.networkPeerFactory.CreateConnectedNetworkPeerAsync("127.0.0.1:" + this.ports[0].ToString()).GetAwaiter().GetResult();
         }
 
-        public async Task StartAsync()
+        public void Start()
         {
-            NodeConfigParameters config = new NodeConfigParameters();
+            var config = new NodeConfigParameters();
+
             config.Add("regtest", "1");
             config.Add("rest", "1");
             config.Add("server", "1");
@@ -146,25 +139,51 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
             config.Add("keypool", "10");
             config.Add("agentprefix", "node" + this.ports[0].ToString());
             config.Import(this.ConfigParameters);
+
             File.WriteAllText(this.Config, config.ToString());
-            lock (this.lockObject)
-            {
-                this.runner.Start(this.DataFolder);
-                this.State = CoreNodeState.Starting;
-            }
+
+            this.runner.Start(this.DataFolder);
+
+            this.State = CoreNodeState.Starting;
+
+            if (this.runner is BitcoinCoreRunner)
+                StartBitcoinCoreRunner();
+            else
+                StartStratisRunner();
+
+            this.State = CoreNodeState.Running;
+        }
+
+        private void StartBitcoinCoreRunner()
+        {
             while (true)
             {
                 try
                 {
-                    await this.CreateRPCClient().GetBlockHashAsync(0);
+                    CreateRPCClient().GetBlockHashAsync(0).GetAwaiter().GetResult();
                     this.State = CoreNodeState.Running;
                     break;
                 }
-                catch
+                catch { }
+
+                Task.Delay(200);
+            }
+        }
+
+        private void StartStratisRunner()
+        {
+            while (true)
+            {
+                if (this.runner.FullNode == null)
                 {
+                    Thread.Sleep(100);
+                    continue;
                 }
-                if (this.runner.IsDisposed)
+
+                if (this.runner.FullNode.State == FullNodeState.Started)
                     break;
+                else
+                    Thread.Sleep(100);
             }
         }
 
@@ -259,7 +278,6 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
                 return after - before;
             }
         }
-
 
         public void SelectMempoolTransactions()
         {
@@ -590,6 +608,7 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
                 await peer.SendMessageAsync(new InvPayload(block));
                 await peer.SendMessageAsync(new BlockPayload(block));
             }
+
             await this.PingPongAsync(peer);
         }
 

@@ -10,9 +10,9 @@ namespace Stratis.Bitcoin.IntegrationTests.Builders
         private readonly NodeBuilder nodeBuilder;
         private readonly Dictionary<string, CoreNode> nodes;
 
-        public NodeGroupBuilder()
+        public NodeGroupBuilder(string testFolderPath)
         {
-            this.nodeBuilder = NodeBuilder.Create();
+            this.nodeBuilder = NodeBuilder.Create(testFolder: testFolderPath);
             this.nodes = new Dictionary<string, CoreNode>();
         }
 
