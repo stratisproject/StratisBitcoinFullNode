@@ -21,7 +21,7 @@ namespace Stratis.Bitcoin.Features.Consensus
 
         public bool HaveInputs(Transaction tx)
         {
-            return tx.Inputs.All(txin => this.GetOutputFor(txin) != null);
+            return tx.Inputs.All(t => this.GetOutputFor(t) != null);
         }
 
         public UnspentOutputs AccessCoins(uint256 uint256)
