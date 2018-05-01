@@ -433,6 +433,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
         private PosMinting InitializePosMinting()
         {
             var posBlockBuilder = new Mock<PosBlockAssembler>(
+                this.consensusLoop.Object,
                 this.dateTimeProvider.Object,
                 this.LoggerFactory.Object,
                 this.txMempool.Object,

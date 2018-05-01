@@ -20,6 +20,7 @@ namespace Stratis.Bitcoin.Features.Miner
         private readonly IStakeValidator stakeValidator;
 
         public PosBlockAssembler(
+            IConsensusLoop consensusLoop,
             IDateTimeProvider dateTimeProvider,
             ILoggerFactory loggerFactory,
             ITxMempool mempool,
@@ -27,7 +28,7 @@ namespace Stratis.Bitcoin.Features.Miner
             Network network,
             IStakeChain stakeChain,
             IStakeValidator stakeValidator)
-            : base(dateTimeProvider, loggerFactory, mempool, mempoolLock, network, new AssemblerOptions() { IsProofOfStake = true })
+            : base(consensusLoop, dateTimeProvider, loggerFactory, mempool, mempoolLock, network, new AssemblerOptions() { IsProofOfStake = true })
         {
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.stakeChain = stakeChain;
@@ -48,13 +49,6 @@ namespace Stratis.Bitcoin.Features.Miner
 
             this.logger.LogTrace("(-)");
             return this.blockTemplate;
-        }
-
-        public override BlockAssembler Configure(IConsensusLoop consensusLoop)
-        {
-            base.Configure(consensusLoop);
-
-            return this;
         }
 
         protected override void UpdateHeaders()

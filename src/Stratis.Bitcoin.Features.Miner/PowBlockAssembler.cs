@@ -185,6 +185,7 @@ namespace Stratis.Bitcoin.Features.Miner
         protected Script minerAddress;
 
         public PowBlockAssembler(
+            IConsensusLoop consensusLoop,
             IDateTimeProvider dateTimeProvider,
             ILoggerFactory loggerFactory,
             ITxMempool mempool,
@@ -192,6 +193,7 @@ namespace Stratis.Bitcoin.Features.Miner
             Network network,
             AssemblerOptions options = null)
         {
+            this.consensusLoop = consensusLoop;
             this.dateTimeProvider = dateTimeProvider;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.mempool = mempool;
@@ -212,10 +214,7 @@ namespace Stratis.Bitcoin.Features.Miner
 
             this.options = options;
 
-            this.blockTemplate = new BlockTemplate { Block = new Block(), VTxFees = new List<Money>() };
-            this.blockSigOpsCost = 0;
-            this.fees = 0;
-            this.inBlock = new TxMempool.SetEntries();
+            this.Configure();
         }
 
         private int ComputeBlockVersion(ChainedBlock prevChainedBlock, NBitcoin.Consensus consensus)
@@ -239,6 +238,8 @@ namespace Stratis.Bitcoin.Features.Miner
         public override BlockTemplate Build(ChainedBlock chainTip, Script minerAddress)
         {
             this.logger.LogTrace("({0}:{1},{2}.{3}:{4})", nameof(chainTip), chainTip.Height, nameof(minerAddress), nameof(minerAddress.Length), minerAddress.Length);
+
+            this.Configure();
 
             this.ChainTip = chainTip;
 
@@ -300,25 +301,16 @@ namespace Stratis.Bitcoin.Features.Miner
             return this.blockTemplate;
         }
 
-        public virtual BlockAssembler Configure(IConsensusLoop consensusLoop)
+        public void Configure()
         {
-            this.consensusLoop = consensusLoop;
-
-            this.inBlock.Clear();
-
-            // Reserve space for coinbase tx.
             this.blockSize = 1000;
+            this.blockTemplate = new BlockTemplate { Block = new Block(), VTxFees = new List<Money>() };
+            this.blockTx = 0;
             this.blockWeight = 4000;
             this.blockSigOpsCost = 400;
-            this.includeWitness = false;
-
-            // These counters do not include coinbase tx.
-            this.blockTx = 0;
             this.fees = 0;
-
-            this.blockTemplate = new BlockTemplate { Block = new Block(), VTxFees = new List<Money>() };
-
-            return this;
+            this.inBlock = new TxMempool.SetEntries();
+            this.includeWitness = false;
         }
 
         /// <summary>

@@ -540,7 +540,7 @@ namespace Stratis.Bitcoin.Features.Miner
                 this.logger.LogTrace("Wallet contains {0} coins.", new Money(totalBalance));
 
                 if (blockTemplate == null)
-                    blockTemplate = this.blockBuilder.Configure(this.consensusLoop).Build(chainTip, new Script());
+                    blockTemplate = this.blockBuilder.Build(chainTip, new Script());
 
                 Block block = blockTemplate.Block;
 

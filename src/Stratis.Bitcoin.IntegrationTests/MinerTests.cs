@@ -39,7 +39,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 BlockMinFeeRate = blockMinFeeRate
             };
 
-            return new PowBlockAssembler(testContext.DateTimeProvider, new LoggerFactory(), testContext.mempool, testContext.mempoolLock, testContext.network, options);
+            return new PowBlockAssembler(testContext.consensus, testContext.DateTimeProvider, new LoggerFactory(), testContext.mempool, testContext.mempoolLock, testContext.network, options);
         }
 
         public class Blockinfo
@@ -173,7 +173,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 this.mempoolLock = new MempoolSchedulerLock();
 
                 // Simple block creation, nothing special yet:
-                this.newBlock = AssemblerForTest(this).Configure(this.consensus).Build(this.chain.Tip, this.scriptPubKey);
+                this.newBlock = AssemblerForTest(this).Build(this.chain.Tip, this.scriptPubKey);
                 this.chain.SetTip(this.newBlock.Block.Header);
                 await this.consensus.ValidateAndExecuteBlockAsync(new RuleContext(new BlockValidationContext { Block = this.newBlock.Block }, this.network.Consensus, this.consensus.Tip) { CheckPow = false, CheckMerkleRoot = false });
 
@@ -210,7 +210,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 }
 
                 // Just to make sure we can still make simple blocks
-                this.newBlock = AssemblerForTest(this).Configure(this.consensus).Build(this.chain.Tip, this.scriptPubKey);
+                this.newBlock = AssemblerForTest(this).Build(this.chain.Tip, this.scriptPubKey);
                 Assert.NotNull(this.newBlock);
             }
 
@@ -257,7 +257,7 @@ namespace Stratis.Bitcoin.IntegrationTests
             uint256 hashHighFeeTx = tx.GetHash();
             context.mempool.AddUnchecked(hashHighFeeTx, entry.Fee(50000).Time(context.DateTimeProvider.GetTime()).SpendsCoinbase(false).FromTx(tx));
 
-            var pblocktemplate = AssemblerForTest(context).Configure(context.consensus).Build(context.chain.Tip, context.scriptPubKey);
+            var pblocktemplate = AssemblerForTest(context).Build(context.chain.Tip, context.scriptPubKey);
             Assert.True(pblocktemplate.Block.Transactions[1].GetHash() == hashParentTx);
             Assert.True(pblocktemplate.Block.Transactions[2].GetHash() == hashHighFeeTx);
             Assert.True(pblocktemplate.Block.Transactions[3].GetHash() == hashMediumFeeTx);
@@ -279,7 +279,7 @@ namespace Stratis.Bitcoin.IntegrationTests
             tx.Outputs[0].Value = 5000000000L - 1000 - 50000 - feeToUse;
             uint256 hashLowFeeTx = tx.GetHash();
             context.mempool.AddUnchecked(hashLowFeeTx, entry.Fee(feeToUse).FromTx(tx));
-            pblocktemplate = AssemblerForTest(context).Configure(context.consensus).Build(context.chain.Tip, context.scriptPubKey);
+            pblocktemplate = AssemblerForTest(context).Build(context.chain.Tip, context.scriptPubKey);
             // Verify that the free tx and the low fee tx didn't get selected
             for (var i = 0; i < pblocktemplate.Block.Transactions.Count; ++i)
             {
@@ -295,7 +295,7 @@ namespace Stratis.Bitcoin.IntegrationTests
             tx.Outputs[0].Value -= 2; // Now we should be just over the min relay fee
             hashLowFeeTx = tx.GetHash();
             context.mempool.AddUnchecked(hashLowFeeTx, entry.Fee(feeToUse + 2).FromTx(tx));
-            pblocktemplate = AssemblerForTest(context).Configure(context.consensus).Build(context.chain.Tip, context.scriptPubKey);
+            pblocktemplate = AssemblerForTest(context).Build(context.chain.Tip, context.scriptPubKey);
             Assert.True(pblocktemplate.Block.Transactions[4].GetHash() == hashFreeTx);
             Assert.True(pblocktemplate.Block.Transactions[5].GetHash() == hashLowFeeTx);
 
@@ -318,7 +318,7 @@ namespace Stratis.Bitcoin.IntegrationTests
             tx.Outputs[0].Value = 5000000000L - 100000000 - feeToUse;
             uint256 hashLowFeeTx2 = tx.GetHash();
             context.mempool.AddUnchecked(hashLowFeeTx2, entry.Fee(feeToUse).SpendsCoinbase(false).FromTx(tx));
-            pblocktemplate = AssemblerForTest(context).Configure(context.consensus).Build(context.chain.Tip, context.scriptPubKey);
+            pblocktemplate = AssemblerForTest(context).Build(context.chain.Tip, context.scriptPubKey);
 
             // Verify that this tx isn't selected.
             for (var i = 0; i < pblocktemplate.Block.Transactions.Count; ++i)
@@ -333,7 +333,7 @@ namespace Stratis.Bitcoin.IntegrationTests
             tx.Inputs[0].PrevOut.N = 1;
             tx.Outputs[0].Value = 100000000 - 10000; // 10k satoshi fee
             context.mempool.AddUnchecked(tx.GetHash(), entry.Fee(10000).FromTx(tx));
-            pblocktemplate = AssemblerForTest(context).Configure(context.consensus).Build(context.chain.Tip, context.scriptPubKey);
+            pblocktemplate = AssemblerForTest(context).Build(context.chain.Tip, context.scriptPubKey);
             Assert.True(pblocktemplate.Block.Transactions[8].GetHash() == hashLowFeeTx2);
         }
 
@@ -358,7 +358,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 tx = tx.Clone();
                 tx.Inputs[0].PrevOut.Hash = context.hash;
             }
-            var error = Assert.Throws<ConsensusErrorException>(() => AssemblerForTest(context).Configure(context.consensus).Build(context.chain.Tip, context.scriptPubKey));
+            var error = Assert.Throws<ConsensusErrorException>(() => AssemblerForTest(context).Build(context.chain.Tip, context.scriptPubKey));
             Assert.True(error.ConsensusError == ConsensusErrors.BadBlockSigOps);
             context.mempool.Clear();
 
@@ -374,7 +374,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 tx = tx.Clone();
                 tx.Inputs[0].PrevOut.Hash = context.hash;
             }
-            var pblocktemplate = AssemblerForTest(context).Configure(context.consensus).Build(context.chain.Tip, context.scriptPubKey);
+            var pblocktemplate = AssemblerForTest(context).Build(context.chain.Tip, context.scriptPubKey);
             Assert.NotNull(pblocktemplate);
             context.mempool.Clear();
         }
@@ -409,7 +409,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 tx = tx.Clone();
                 tx.Inputs[0].PrevOut.Hash = context.hash;
             }
-            var pblocktemplate = AssemblerForTest(context).Configure(context.consensus).Build(context.chain.Tip, context.scriptPubKey);
+            var pblocktemplate = AssemblerForTest(context).Build(context.chain.Tip, context.scriptPubKey);
             Assert.NotNull(pblocktemplate);
             context.mempool.Clear();
         }
@@ -439,7 +439,7 @@ namespace Stratis.Bitcoin.IntegrationTests
             tx.Outputs[0].Value = tx.Outputs[0].Value + context.BLOCKSUBSIDY - context.HIGHERFEE; //First txn output + fresh coinbase - new txn fee
             context.hash = tx.GetHash();
             context.mempool.AddUnchecked(context.hash, context.entry.Fee(context.HIGHERFEE).Time(context.DateTimeProvider.GetTime()).SpendsCoinbase(true).FromTx(tx));
-            var pblocktemplate = AssemblerForTest(context).Configure(context.consensus).Build(context.chain.Tip, context.scriptPubKey);
+            var pblocktemplate = AssemblerForTest(context).Build(context.chain.Tip, context.scriptPubKey);
             Assert.NotNull(pblocktemplate);
             context.mempool.Clear();
         }
@@ -460,7 +460,7 @@ namespace Stratis.Bitcoin.IntegrationTests
             context.hash = tx.GetHash();
             // give it a fee so it'll get mined
             context.mempool.AddUnchecked(context.hash, context.entry.Fee(context.LOWFEE).Time(context.DateTimeProvider.GetTime()).SpendsCoinbase(false).FromTx(tx));
-            var error = Assert.Throws<ConsensusErrorException>(() => AssemblerForTest(context).Configure(context.consensus).Build(context.chain.Tip, context.scriptPubKey));
+            var error = Assert.Throws<ConsensusErrorException>(() => AssemblerForTest(context).Build(context.chain.Tip, context.scriptPubKey));
             Assert.True(error.ConsensusError == ConsensusErrors.BadMultipleCoinbase);
             context.mempool.Clear();
         }

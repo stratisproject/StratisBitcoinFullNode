@@ -150,7 +150,7 @@ namespace Stratis.Bitcoin.Features.Miner
                     continue;
                 }
 
-                BlockTemplate blockTemplate = this.blockBuilder.Configure(this.consensusLoop).Build(chainTip, reserveScript.ReserveFullNodeScript);
+                BlockTemplate blockTemplate = this.blockBuilder.Build(chainTip, reserveScript.ReserveFullNodeScript);
 
                 if (this.network.NetworkOptions.IsProofOfStake)
                 {
