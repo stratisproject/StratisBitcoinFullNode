@@ -37,20 +37,20 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <summary>
         /// Adds transaction's outputs to unspent coins list and removes transaction's inputs from it.
         /// </summary>
-        /// <param name="transcation">Transaction which inputs and outputs are used for updating unspent coins list.</param>
+        /// <param name="transaction">Transaction which inputs and outputs are used for updating unspent coins list.</param>
         /// <param name="height">Height of a block that contains target transaction.</param>
-        public void Update(Transaction transcation, int height)
+        public void Update(Transaction transaction, int height)
         {
-            if (!transcation.IsCoinBase)
+            if (!transaction.IsCoinBase)
             {
-                foreach (var input in transcation.Inputs)
+                foreach (var input in transaction.Inputs)
                 {
                     var c = this.AccessCoins(input.PrevOut.Hash);
                     c.Spend(input.PrevOut.N);
                 }
             }
 
-            this.unspents.AddOrReplace(transcation.GetHash(), new UnspentOutputs((uint)height, transcation));
+            this.unspents.AddOrReplace(transaction.GetHash(), new UnspentOutputs((uint)height, transaction));
         }
 
         public void SetCoins(UnspentOutputs[] coins)

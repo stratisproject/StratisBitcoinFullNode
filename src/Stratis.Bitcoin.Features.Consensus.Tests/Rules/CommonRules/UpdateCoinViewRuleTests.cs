@@ -4,6 +4,7 @@ using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
 using NBitcoin;
+using Stratis.Bitcoin.Base.Deployments;
 using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
 using Stratis.Bitcoin.Utilities;
 using Xunit;
@@ -12,39 +13,94 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
 {
     public class UpdateCoinViewRuleTests
     {
-        private readonly RuleContext ruleContext;
-        private readonly List<Transaction> transactions;
+        private List<Transaction> transactions;
+        private RuleContext ruleContext;
         private Exception caughtExecption;
+        private Transaction transactionWithCoinbase;
+        private UnspentOutputSet coinView;
+        private Transaction transactionWithCoinbaseFromPreviousBlock;
 
-        public UpdateCoinViewRuleTests()
+        [Fact]
+        public void RunAsync_TransactionThatIsNotCoinBaseButStillHasUnspentOutputsWithoutInput_ThrowsBadTransactionMissingInput()
+        {
+            this.GivenACoinbaseTransactionFromAPreviousBlock();
+            this.GivenACoinbaseTransaction();
+            this.AndARuleContext();
+            this.AndSomeUnspentOutputs();
+            this.AndATransactionWithNoUnspentOutputsAsInput();
+            this.WhenExecutingTheRule();
+            this.ThenExceptionThrownIs(ConsensusErrors.BadTransactionMissingInput);
+        }
+          
+        [Fact]
+        public void RunAsync_AttemptingABlockHeightLowerThanBIP86Allows_ThrowsBadTransactionNonFinal()
+        {
+            this.GivenACoinbaseTransactionFromAPreviousBlock();
+            this.GivenACoinbaseTransaction();
+            this.AndARuleContext();
+            this.AndSomeUnspentOutputs();
+            this.AndATransactionBlockHeightLowerThanBip68Allows();
+            this.WhenExecutingTheRule();
+            this.ThenExceptionThrownIs(ConsensusErrors.BadTransactionNonFinal);
+        }
+
+        private void AndSomeUnspentOutputs()
+        {
+            this.coinView = new UnspentOutputSet();
+            this.coinView.SetCoins(new UnspentOutputs[0]);
+            this.ruleContext.Set = this.coinView;
+            this.coinView.Update(this.transactionWithCoinbaseFromPreviousBlock, 0);
+        }
+
+        private void AndARuleContext()
         {
             this.ruleContext = new RuleContext { };
             this.ruleContext.BlockValidationContext = new BlockValidationContext();
-            this.ruleContext.Set = new UnspentOutputSet();
-            this.ruleContext.Set.SetCoins(new UnspentOutputs[0]);
+            this.coinView = new UnspentOutputSet();
+            this.ruleContext.Set = this.coinView;
+
             this.transactions = new List<Transaction>();
             this.ruleContext.BlockValidationContext.Block = new Block()
             {
                 Transactions = this.transactions
             };
+            this.ruleContext.BlockValidationContext.ChainedBlock = new ChainedBlock(new BlockHeader(), new uint256("bcd7d5de8d3bcc7b15e7c8e5fe77c0227cdfa6c682ca13dcf4910616f10fdd06"), 0);
+            this.ruleContext.Flags = new DeploymentFlags();
+
+            this.transactions.Add(this.transactionWithCoinbase);
         }
 
-        [Fact]
-        public void RunAsync_TransactionThatIsNotCoinBaseButStillHasUnspentOutputsWithoutInput_ThrowsBadTransactionMissingInput()
+        private void AndATransactionBlockHeightLowerThanBip68Allows()
         {
-            this.GivenACoinbaseTransaction();
-            this.AndATransactionWithNoUnspentOutputsAsInput();
-            this.WhenExecutingTheRule();
-            this.ThenBadTransactionMissingInputIsThrown();
+            var transaction = new Transaction
+            {
+                Inputs = { new TxIn()
+                {
+                    PrevOut = new OutPoint(this.transactionWithCoinbase, 0),
+                    Sequence = Sequence.SEQUENCE_LOCKTIME_MASK 
+                } },
+                Outputs = { new TxOut()},
+                Version = 2, // So that sequence locks considered (BIP68)
+            };
+
+            this.ruleContext.Flags = new DeploymentFlags() { LockTimeFlags = Transaction.LockTimeFlags.VerifySequence };
+            this.transactions.Add(transaction);
         }
 
         private void GivenACoinbaseTransaction()
         {
-            var transactionWithCoinbase = new Transaction();
+            this.transactionWithCoinbase = new Transaction();
             var txIn = new TxIn { PrevOut = new OutPoint() };
-            transactionWithCoinbase.AddInput(txIn);
-            transactionWithCoinbase.AddOutput(new TxOut());
-            this.transactions.Add(transactionWithCoinbase);
+            this.transactionWithCoinbase.AddInput(txIn);
+            this.transactionWithCoinbase.AddOutput(new TxOut());
+        }
+
+        private void GivenACoinbaseTransactionFromAPreviousBlock()
+        {
+            this.transactionWithCoinbaseFromPreviousBlock = new Transaction();
+            var txIn = new TxIn { PrevOut = new OutPoint() };
+            this.transactionWithCoinbaseFromPreviousBlock.AddInput(txIn);
+            this.transactionWithCoinbaseFromPreviousBlock.AddOutput(new TxOut());
         }
 
         private void AndATransactionWithNoUnspentOutputsAsInput()
@@ -65,11 +121,12 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             }
         }
 
-        private void ThenBadTransactionMissingInputIsThrown()
+        private void ThenExceptionThrownIs(ConsensusError consensusErrorType)
         {
+            this.caughtExecption.Should().NotBeNull();
             this.caughtExecption.Should().BeOfType<ConsensusErrorException>();
-            var consensusErrorException = (ConsensusErrorException)this.caughtExecption;
-            consensusErrorException.ConsensusError.Should().Be(ConsensusErrors.BadTransactionMissingInput);
+            var consensusErrorException = (ConsensusErrorException) this.caughtExecption;
+            consensusErrorException.ConsensusError.Should().Be(consensusErrorType);
         }
     }
 }
