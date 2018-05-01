@@ -37,10 +37,10 @@ namespace Stratis.Bitcoin.IntegrationTests
 
         public readonly string WalletAccount = "account 0";
 
-        public ProofOfStakeSteps() 
+        public ProofOfStakeSteps(string displayName) 
         {
             this.sharedSteps = new SharedSteps();
-            this.nodeGroupBuilder = new NodeGroupBuilder();
+            this.nodeGroupBuilder = new NodeGroupBuilder(displayName);
         }
 
         public void GenerateCoins()

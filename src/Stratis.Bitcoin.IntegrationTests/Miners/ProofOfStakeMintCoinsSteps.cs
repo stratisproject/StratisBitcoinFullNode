@@ -13,7 +13,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Miners
         public ProofOfStakeMintCoinsSpecification(ITestOutputHelper outputHelper)
             : base(outputHelper)
         {
-            this.proofOfStakeSteps = new ProofOfStakeSteps();
+            this.proofOfStakeSteps = new ProofOfStakeSteps(this.CurrentTest.DisplayName);
         }
 
         protected override void BeforeTest() { }

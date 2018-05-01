@@ -39,8 +39,8 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         protected override void BeforeTest()
         {
             this.sharedSteps = new SharedSteps();
-            this.proofOfStakeSteps = new ProofOfStakeSteps();
-            this.nodeGroupBuilder = new NodeGroupBuilder();
+            this.proofOfStakeSteps = new ProofOfStakeSteps(this.CurrentTest.DisplayName);
+            this.nodeGroupBuilder = new NodeGroupBuilder(this.CurrentTest.DisplayName);
         }
 
         protected override void AfterTest()
