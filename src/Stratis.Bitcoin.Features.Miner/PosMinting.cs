@@ -210,9 +210,6 @@ namespace Stratis.Bitcoin.Features.Miner
         /// <summary>Provides date time functionality.</summary>
         private readonly IDateTimeProvider dateTimeProvider;
 
-        /// <summary>Provides an interface for creating block templates of different types.</summary>
-        private readonly IAssemblerFactory blockAssemblerFactory;
-
         /// <summary>Global application life cycle control - triggers when application shuts down.</summary>
         private readonly INodeLifetime nodeLifetime;
 
@@ -317,7 +314,6 @@ namespace Stratis.Bitcoin.Features.Miner
         /// <param name="network">Specification of the network the node runs on - regtest/testnet/mainnet.</param>
         /// <param name="connectionManager">Provider of information about the node's connection to it's network peers.</param>
         /// <param name="dateTimeProvider">Provides date time functionality.</param>
-        /// <param name="blockAssemblerFactory">Provides an interface for creating block templates of different types.</param>
         /// <param name="initialBlockDownloadState">Provider of IBD state.</param>
         /// <param name="nodeLifetime">Global application life cycle control - triggers when application shuts down.</param>
         /// <param name="coinView">Consensus' view of UTXO set.</param>
@@ -335,7 +331,6 @@ namespace Stratis.Bitcoin.Features.Miner
             Network network,
             IConnectionManager connectionManager,
             IDateTimeProvider dateTimeProvider,
-            IAssemblerFactory blockAssemblerFactory,
             IInitialBlockDownloadState initialBlockDownloadState,
             INodeLifetime nodeLifetime,
             CoinView coinView,
@@ -353,7 +348,6 @@ namespace Stratis.Bitcoin.Features.Miner
             this.network = network;
             this.connection = connectionManager;
             this.dateTimeProvider = dateTimeProvider;
-            this.blockAssemblerFactory = blockAssemblerFactory;
             this.initialBlockDownloadState = initialBlockDownloadState;
             this.nodeLifetime = nodeLifetime;
             this.coinView = coinView;
@@ -395,7 +389,7 @@ namespace Stratis.Bitcoin.Features.Miner
             this.stakingLoop = this.asyncLoopFactory.Run("PosMining.Stake", async token =>
             {
                 this.logger.LogTrace("()");
-                
+
                 try
                 {
                     await this.GenerateBlocksAsync(walletSecret).ConfigureAwait(false);
@@ -476,7 +470,7 @@ namespace Stratis.Bitcoin.Features.Miner
                 }
 
                 // Prevent mining if not fully synced.
-                if (this.initialBlockDownloadState.IsInitialBlockDownload() || 
+                if (this.initialBlockDownloadState.IsInitialBlockDownload() ||
                     this.consensusLoop.Tip != this.chain.Tip)
                 {
                     this.logger.LogTrace("Waiting for synchronization before mining can be started...");
@@ -520,12 +514,11 @@ namespace Stratis.Bitcoin.Features.Miner
                 {
                     UnspentOutputs set = coinset.UnspentOutputs.FirstOrDefault(f => f?.TransactionId == infoTransaction.Transaction.Id);
                     TxOut utxo = (set != null) && (infoTransaction.Transaction.Index < set.Outputs.Length) ? set.Outputs[infoTransaction.Transaction.Index] : null;
-                    uint256 hashBlock = set != null ? this.chain.GetBlock((int) set.Height)?.HashBlock : null;
+                    uint256 hashBlock = set != null ? this.chain.GetBlock((int)set.Height)?.HashBlock : null;
 
                     if ((utxo != null) && (utxo.Value > Money.Zero) && (hashBlock != null))
                     {
                         var utxoStakeDescription = new UtxoStakeDescription();
-
                         utxoStakeDescription.TxOut = utxo;
                         utxoStakeDescription.OutPoint = new OutPoint(set.TransactionId, infoTransaction.Transaction.Index);
                         utxoStakeDescription.Address = infoTransaction.Address;
@@ -534,6 +527,7 @@ namespace Stratis.Bitcoin.Features.Miner
                         utxoStakeDescription.Secret = walletSecret; // Temporary.
                         utxoStakeDescriptions.Add(utxoStakeDescription);
                         totalBalance += utxo.Value;
+
                         this.logger.LogTrace("UTXO '{0}' with value {1} might be available for staking.", utxoStakeDescription.OutPoint, utxo.Value);
                     }
                 }
@@ -541,7 +535,16 @@ namespace Stratis.Bitcoin.Features.Miner
                 this.logger.LogTrace("Wallet contains {0} coins.", new Money(totalBalance));
 
                 if (blockTemplate == null)
-                    blockTemplate = this.blockAssemblerFactory.Create(chainTip, new AssemblerOptions() { IsProofOfStake = true }).CreateNewBlock(new Script());
+                    blockTemplate = new PosBlockAssembler(
+                        this.consensusLoop,
+                        this.network,
+                        this.mempoolLock,
+                        this.mempool,
+                        this.dateTimeProvider,
+                        this.stakeChain,
+                        this.stakeValidator, chainTip,
+                        this.loggerFactory,
+                        new AssemblerOptions() { IsProofOfStake = true }).CreateNewBlock(new Script());
 
                 Block block = blockTemplate.Block;
 
