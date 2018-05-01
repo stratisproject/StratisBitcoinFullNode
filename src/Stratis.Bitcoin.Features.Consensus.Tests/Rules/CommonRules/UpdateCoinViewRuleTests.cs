@@ -21,7 +21,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         private Transaction transactionWithCoinbaseFromPreviousBlock;
 
         [Fact]
-        public void RunAsync_TransactionThatIsNotCoinBaseButStillHasUnspentOutputsWithoutInput_ThrowsBadTransactionMissingInput()
+        public void RunAsync_ValidatingATransactionThatIsNotCoinBaseButStillHasUnspentOutputsWithoutInput_ThrowsBadTransactionMissingInput()
         {
             this.GivenACoinbaseTransactionFromAPreviousBlock();
             this.GivenACoinbaseTransaction();
@@ -33,7 +33,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         }
           
         [Fact]
-        public void RunAsync_AttemptingABlockHeightLowerThanBIP86Allows_ThrowsBadTransactionNonFinal()
+        public void RunAsync_ValidatingABlockHeightLowerThanBIP86Allows_ThrowsBadTransactionNonFinal()
         {
             this.GivenACoinbaseTransactionFromAPreviousBlock();
             this.GivenACoinbaseTransaction();
@@ -42,6 +42,12 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             this.AndATransactionBlockHeightLowerThanBip68Allows();
             this.WhenExecutingTheRule();
             this.ThenExceptionThrownIs(ConsensusErrors.BadTransactionNonFinal);
+        }
+
+        //[Fact]
+        public void RunAsync_AttemptingABlockEarlierThanBIP86Allows_ThrowsBadTransactionNonFinal()
+        {
+            //TODO before PR complete - Similar test to the block height but considering the time not the height.
         }
 
         private void AndSomeUnspentOutputs()
