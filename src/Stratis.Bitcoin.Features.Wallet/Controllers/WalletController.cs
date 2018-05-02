@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
+using Stratis.Bitcoin.Broadcasting;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Features.Wallet.Helpers;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
@@ -715,9 +716,15 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                     });
                 }
 
-                this.walletManager.ProcessTransaction(transaction, null, null, false);
-
                 this.broadcasterManager.BroadcastTransactionAsync(transaction).GetAwaiter().GetResult();
+
+                TransactionBroadcastEntry transactionBroadCastEntry = this.broadcasterManager.GetTransaction(transaction.GetHash());
+
+                if (!string.IsNullOrEmpty(transactionBroadCastEntry?.ErrorMessage))
+                {                    
+                    this.logger.LogError("Exception occurred: {0}", transactionBroadCastEntry.ErrorMessage);
+                    return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, transactionBroadCastEntry.ErrorMessage, "Transaction Exception");
+                }
 
                 return this.Json(model);
             }

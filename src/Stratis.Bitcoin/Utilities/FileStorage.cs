@@ -41,14 +41,16 @@ namespace Stratis.Bitcoin.Utilities
             Guard.NotNull(toSave, nameof(toSave));
 
             string filePath = Path.Combine(this.FolderPath, fileName);
-            string tempFilePath = $"{filePath}.{DateTime.UtcNow.Ticks}.temp";
+            long uniqueId = DateTime.UtcNow.Ticks;
+            string newFilePath = $"{filePath}.{uniqueId}.new";
+            string tempFilePath = $"{filePath}.{uniqueId}.temp";
 
-            File.WriteAllText(tempFilePath, JsonConvert.SerializeObject(toSave, Formatting.Indented));
+            File.WriteAllText(newFilePath, JsonConvert.SerializeObject(toSave, Formatting.Indented));
 
             // If the file does not exist yet, create it.
             if (!File.Exists(filePath))
             {
-                File.Move(tempFilePath, filePath);
+                File.Move(newFilePath, filePath);
 
                 if (saveBackupFile)
                 {
@@ -58,9 +60,24 @@ namespace Stratis.Bitcoin.Utilities
                 return;
             }
 
-            // Replace the file if it already exists. 
-            // This ensures the file does not get corrupted in the event of a crash. 
-            File.Replace(tempFilePath, filePath, saveBackupFile ? $"{filePath}.bak" : null);
+            if (saveBackupFile)
+            {
+                File.Copy(filePath, $"{filePath}.bak", true);
+            }
+
+            // Delete the file and rename the temp file to that of the target file.
+            File.Move(filePath, tempFilePath);
+            File.Move(newFilePath, filePath);
+
+            try
+            {
+                File.Delete(tempFilePath);
+            }
+            catch (IOException)
+            {
+                // Marking the file for deletion in the future.
+                File.Move(tempFilePath, $"{ filePath}.{ uniqueId}.del");
+            }
         }
 
         /// <summary>
