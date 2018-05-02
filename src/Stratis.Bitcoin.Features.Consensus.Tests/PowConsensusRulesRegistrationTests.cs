@@ -1,11 +1,8 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using FluentAssertions;
-using Moq;
-using NBitcoin;
 using Stratis.Bitcoin.Features.Consensus.Rules;
 using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
-using Stratis.Bitcoin.Utilities;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.Consensus.Tests
@@ -16,7 +13,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
 
         public PowConsensusRulesRegistrationTests()
         {
-            this.rules = new FullNodeBuilderConsensusExtension.PowConsensusRulesRegistration(Network.RegTest, new Mock<IDateTimeProvider>().Object).GetRules();
+            this.rules = new FullNodeBuilderConsensusExtension.PowConsensusRulesRegistration().GetRules();
         }
 
         [Fact]

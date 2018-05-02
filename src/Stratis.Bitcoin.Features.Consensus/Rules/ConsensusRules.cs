@@ -27,7 +27,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules
         public Network Network { get; }
 
         /// <summary>A provider of date and time.</summary>
-        public IDateTimeProvider DateTimeProvider { get; }
+        public virtual IDateTimeProvider DateTimeProvider { get; }
 
         /// <summary>A chain of the longest block headers all the way to genesis.</summary>
         public ConcurrentChain Chain { get; }

@@ -16,7 +16,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
 
         public PosConsensusRulesRegistrationTests()
         {
-            this.rules = new FullNodeBuilderConsensusExtension.PosConsensusRulesRegistration(Network.RegTest, new Mock<IDateTimeProvider>().Object).GetRules();
+            this.rules = new FullNodeBuilderConsensusExtension.PosConsensusRulesRegistration().GetRules();
         }
 
         [Fact]

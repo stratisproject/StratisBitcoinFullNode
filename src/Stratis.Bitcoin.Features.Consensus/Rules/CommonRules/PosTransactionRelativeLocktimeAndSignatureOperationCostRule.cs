@@ -16,14 +16,11 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
     public class PosTransactionRelativeLocktimeAndSignatureOperationCostRule : ConsensusRule
     {
         /// <summary>Consensus options.</summary>
-        public PosConsensusOptions ConsensusOptions { get; }
+        private PosConsensusOptions consensusOptions;
 
-        public ConsensusPerformanceCounter PerformanceCounter { get; set; }
-
-        public PosTransactionRelativeLocktimeAndSignatureOperationCostRule(Network network, IDateTimeProvider dateTimeProvider)
+        public override void Initialize()
         {
-            this.PerformanceCounter = new ConsensusPerformanceCounter(dateTimeProvider);
-            this.ConsensusOptions = network.Consensus.Option<PosConsensusOptions>();
+            this.consensusOptions = this.Parent.Network.Consensus.Option<PosConsensusOptions>();
         }
 
         public override Task RunAsync(RuleContext context)
@@ -33,7 +30,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
             DeploymentFlags flags = context.Flags;
             UnspentOutputSet view = context.Set;
 
-            this.PerformanceCounter.AddProcessedBlocks(1);
+            this.Parent.PerformanceCounter.AddProcessedBlocks(1);
 
             long sigOpsCost = 0;
 
@@ -42,7 +39,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
             context.CheckInputs = new List<Task<bool>>();
             for (int txIndex = 0; txIndex < block.Transactions.Count; txIndex++)
             {
-                this.PerformanceCounter.AddProcessedTransactions(1);
+                this.Parent.PerformanceCounter.AddProcessedTransactions(1);
                 Transaction tx = block.Transactions[txIndex];
                 if (!context.SkipValidation)
                 {
@@ -77,7 +74,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
                     // * p2sh (when P2SH enabled in flags and excludes coinbase),
                     // * witness (when witness enabled in flags and excludes coinbase).
                     sigOpsCost += this.GetTransactionSignatureOperationCost(tx, view, flags);
-                    if (sigOpsCost > this.ConsensusOptions.MaxBlockSigopsCost)
+                    if (sigOpsCost > this.consensusOptions.MaxBlockSigopsCost)
                         ConsensusErrors.BadBlockSigOps.Throw();
 
                     if (!tx.IsCoinBase)//TODO before PR - create POS rule && (!context.IsPoS || (context.IsPoS && !tx.IsCoinStake)))
@@ -87,7 +84,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
                         var txData = new PrecomputedTransactionData(tx);
                         for (int inputIndex = 0; inputIndex < tx.Inputs.Count; inputIndex++)
                         {
-                            this.PerformanceCounter.AddProcessedInputs(1);
+                            this.Parent.PerformanceCounter.AddProcessedInputs(1);
                             TxIn input = tx.Inputs[inputIndex];
                             int inputIndexCopy = inputIndex;
                             TxOut txout = view.GetOutputFor(input);
@@ -173,9 +170,9 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
             // If prev is coinbase, check that it's matured
             if (coins.IsCoinbase)
             {
-                if ((spendHeight - coins.Height) < this.ConsensusOptions.CoinbaseMaturity)
+                if ((spendHeight - coins.Height) < this.consensusOptions.CoinbaseMaturity)
                 {
-                    this.Logger.LogTrace("Coinbase transaction height {0} spent at height {1}, but maturity is set to {2}.", coins.Height, spendHeight, this.ConsensusOptions.CoinbaseMaturity);
+                    this.Logger.LogTrace("Coinbase transaction height {0} spent at height {1}, but maturity is set to {2}.", coins.Height, spendHeight, this.consensusOptions.CoinbaseMaturity);
                     this.Logger.LogTrace("(-)[COINBASE_PREMATURE_SPENDING]");
                     ConsensusErrors.BadTransactionPrematureCoinbaseSpending.Throw();
                 }
@@ -235,13 +232,13 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         }
 
         /// <summary>
-        /// Checks if value is in range from 0 to <see cref="ConsensusOptions.MaxMoney"/>.
+        /// Checks if value is in range from 0 to <see cref="consensusOptions.MaxMoney"/>.
         /// </summary>
         /// <param name="value">The value to be checked.</param>
         /// <returns><c>true</c> if the value is in range. Otherwise <c>false</c>.</returns>
         private bool MoneyRange(long value)
         {
-            return ((value >= 0) && (value <= this.ConsensusOptions.MaxMoney));
+            return ((value >= 0) && (value <= this.consensusOptions.MaxMoney));
         }
 
         /// <summary>
@@ -286,14 +283,14 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         /// <inheritdoc />
         public long GetTransactionSignatureOperationCost(Transaction transaction, UnspentOutputSet inputs, DeploymentFlags flags)
         {
-            long signatureOperationCost = this.GetLegacySignatureOperationsCount(transaction) * this.ConsensusOptions.WitnessScaleFactor;
+            long signatureOperationCost = this.GetLegacySignatureOperationsCount(transaction) * this.consensusOptions.WitnessScaleFactor;
 
             if (transaction.IsCoinBase)
                 return signatureOperationCost;
 
             if (flags.ScriptFlags.HasFlag(ScriptVerify.P2SH))
             {
-                signatureOperationCost += this.GetP2SHSignatureOperationsCount(transaction, inputs) * this.ConsensusOptions.WitnessScaleFactor;
+                signatureOperationCost += this.GetP2SHSignatureOperationsCount(transaction, inputs) * this.consensusOptions.WitnessScaleFactor;
             }
 
             for (int i = 0; i < transaction.Inputs.Count; i++)

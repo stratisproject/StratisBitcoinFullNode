@@ -16,14 +16,11 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
     public class PowTransactionRelativeLocktimeAndSignatureOperationCostRule : ConsensusRule 
     {
         /// <summary>Consensus options.</summary>
-        public PowConsensusOptions ConsensusOptions { get; }
+        public PowConsensusOptions ConsensusOptions { get; private set; }
 
-        public ConsensusPerformanceCounter PerformanceCounter { get; set; }
-
-        public PowTransactionRelativeLocktimeAndSignatureOperationCostRule(Network network, IDateTimeProvider dateTimeProvider)
+        public override void Initialize()
         {
-            this.PerformanceCounter = new ConsensusPerformanceCounter(dateTimeProvider);
-            this.ConsensusOptions = network.Consensus.Option<PowConsensusOptions>();
+            this.ConsensusOptions = this.Parent.Network.Consensus.Option<PowConsensusOptions>();
         }
 
         public override Task RunAsync(RuleContext context)
@@ -33,7 +30,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
             DeploymentFlags flags = context.Flags;
             UnspentOutputSet view = context.Set;
 
-            this.PerformanceCounter.AddProcessedBlocks(1);
+            this.Parent.PerformanceCounter.AddProcessedBlocks(1);
 
             long sigOpsCost = 0;
 
@@ -42,7 +39,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
             context.CheckInputs = new List<Task<bool>>();
             for (int txIndex = 0; txIndex < block.Transactions.Count; txIndex++)
             {
-                this.PerformanceCounter.AddProcessedTransactions(1);
+                this.Parent.PerformanceCounter.AddProcessedTransactions(1);
                 Transaction tx = block.Transactions[txIndex];
                 if (!context.SkipValidation)
                 {
@@ -87,7 +84,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
                         var txData = new PrecomputedTransactionData(tx);
                         for (int inputIndex = 0; inputIndex < tx.Inputs.Count; inputIndex++)
                         {
-                            this.PerformanceCounter.AddProcessedInputs(1);
+                            this.Parent.PerformanceCounter.AddProcessedInputs(1);
                             TxIn input = tx.Inputs[inputIndex];
                             int inputIndexCopy = inputIndex;
                             TxOut txout = view.GetOutputFor(input);

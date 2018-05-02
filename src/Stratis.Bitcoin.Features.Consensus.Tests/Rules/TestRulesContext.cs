@@ -121,7 +121,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
 
             NodeDeployments deployments = new NodeDeployments(testRulesContext.Network, testRulesContext.Chain);
             testRulesContext.Consensus = new PowConsensusRules(testRulesContext.Network, testRulesContext.LoggerFactory, testRulesContext.DateTimeProvider, testRulesContext.Chain, deployments, consensusSettings, testRulesContext.Checkpoints, new InMemoryCoinView(new uint256()), new Mock<ILookaheadBlockPuller>().Object)
-                .Register(new FullNodeBuilderConsensusExtension.PowConsensusRulesRegistration(testRulesContext.Network, testRulesContext.DateTimeProvider));
+                .Register(new FullNodeBuilderConsensusExtension.PowConsensusRulesRegistration());
 
             return testRulesContext;
         }
