@@ -291,7 +291,8 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
 
         internal static void CreateTestFolder(string folderName)
         {
-            while (true)
+            var deleteAttempts = 0;
+            while (deleteAttempts < 50)
             {
                 if (Directory.Exists(folderName))
                 {
@@ -302,12 +303,16 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
                     }
                     catch
                     {
+                        deleteAttempts++;
                         Thread.Sleep(200);
                     }
                 }
                 else
                     break;
             }
+
+            if (deleteAttempts >= 50)
+                throw new Exception(string.Format("The test folder: {0} could not be created.", folderName));
 
             Directory.CreateDirectory(folderName);
         }
