@@ -21,7 +21,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
     /// Validation cannot be skipped for this rule, someone might have been able to create a mutated
     /// block (block with a duplicate transaction) with a valid hash, but we don't want to accept these 
     /// kind of blocks.
-    /// https://bitcointalk.org/index.php?topic=102395.0
+    /// <seealso cref="https://bitcointalk.org/index.php?topic=102395.0"/>
     /// </remarks>
     [ValidationRule(CanSkipValidation = false)]
     public class BlockMerkleRootRule : ConsensusRule
@@ -103,9 +103,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
                 // For each of the lower bits in processedLeavesCount that are 0, do 1 step. Each
                 // corresponds to an subTreeHash value that existed before processing the
                 // current leaf, and each needs a hash to combine it.
-                // The following loop could also be read like this:
-                // for (level = 0; (processedLeavesCount % ((2^level) -1)) == 0; level++)
-                // but bitwise operations are faster    
                 for ( level = 0; (processedLeavesCount & (((uint)1) << level)) == 0; level++)
                 {
                     if (match)
@@ -141,9 +138,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
 
                 // As long as bit number level in processedLeavesCount is zero, skip it. It means there
                 // is nothing left at this level.
-                // the following while can also be read like this
-                // while ((processedLeavesCount % ((2^level) -1)) == 0)
-                // but bitwise operations are faster.
                 while ((processedLeavesCount & (((uint)1) << level)) == 0)
                     level++;
 
