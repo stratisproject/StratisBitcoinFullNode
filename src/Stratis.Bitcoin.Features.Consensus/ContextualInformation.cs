@@ -76,6 +76,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <summary>The current tip of the chain that has been validated.</summary>
         public ChainedBlock ConsensusTip { get; set; }
 
+        //TODO before PR merge: not sure if this belongs on the context here or the rule Parent.
         public TaskScheduler TaskScheduler { get; } = TaskScheduler.Default;
 
         public bool IsPoS
