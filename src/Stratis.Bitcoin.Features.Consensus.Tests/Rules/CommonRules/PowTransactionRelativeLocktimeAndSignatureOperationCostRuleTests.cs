@@ -26,7 +26,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
 
         [Fact]
         public void RunAsync_ValidatingATransactionThatIsNotCoinBaseButStillHasUnspentOutputsWithoutInput_ThrowsBadTransactionMissingInput()
-        { 
+        {
             this.GivenACoinbaseTransactionFromAPreviousBlock();
             //this.GivenACoinbaseTransaction();
             this.AndARuleContext();
