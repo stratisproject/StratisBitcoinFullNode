@@ -12,7 +12,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Broadcasting
 
         public string ErrorMessage { get; set; }
 
-        public TransactionBroadcastEntry(Transaction transaction, State state, string errorMessage)
+        public TransactionBroadcastEntry(NBitcoin.Transaction transaction, State state, string errorMessage)
         {
             this.Transaction = transaction ?? throw new ArgumentNullException(nameof(transaction));
             this.State = state;
