@@ -51,7 +51,18 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 BlockMinFeeRate = blockMinFeeRate
             };
 
-            return new SmartContractBlockAssembler(testContext.consensus, testContext.network, testContext.mempoolLock, testContext.mempool, testContext.date, testContext.chain.Tip, new LoggerFactory(), testContext.stateRoot, testContext.executorFactory, testContext.cachedCoinView, options);
+            return new SmartContractBlockAssembler(
+                testContext.chain.Tip,
+                testContext.consensus,
+                testContext.date,
+                new LoggerFactory(),
+                testContext.mempool,
+                testContext.mempoolLock,
+                testContext.network,
+                testContext.stateRoot,
+                testContext.executorFactory,
+                testContext.cachedCoinView,
+                options);
         }
 
         public class Blockinfo

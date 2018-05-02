@@ -11,6 +11,7 @@ using Stratis.Bitcoin.Features.Consensus.Interfaces;
 using Stratis.Bitcoin.Features.Consensus.Rules;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.Miner;
+using Stratis.Bitcoin.Features.Miner.Interfaces;
 using Stratis.Bitcoin.Features.SmartContracts.Controllers;
 using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.ContractValidation;
@@ -64,7 +65,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                         services.AddSingleton<IKeyEncodingStrategy, BasicKeyEncodingStrategy>();
 
                         services.AddSingleton<IPowConsensusValidator, SmartContractConsensusValidator>();
-                        services.AddSingleton<IAssemblerFactory, SmartContractAssemblerFactory>();
+                        services.AddSingleton<IPowMining, SmartContractPowMining>();
                         services.AddSingleton<IMempoolValidator, SmartContractMempoolValidator>();
 
                         services.AddSingleton<SmartContractsController>();

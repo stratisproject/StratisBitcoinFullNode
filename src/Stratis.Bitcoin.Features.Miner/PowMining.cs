@@ -30,16 +30,16 @@ namespace Stratis.Bitcoin.Features.Miner
     public class PowMining : IPowMining
     {
         /// <summary>Factory for creating background async loop tasks.</summary>
-        private readonly IAsyncLoopFactory asyncLoopFactory;
+        protected readonly IAsyncLoopFactory asyncLoopFactory;
 
         /// <summary>Thread safe chain of block headers from genesis.</summary>
-        private readonly ConcurrentChain chain;
+        protected readonly ConcurrentChain chain;
 
         /// <summary>Manager of the longest fully validated chain of blocks.</summary>
-        private readonly IConsensusLoop consensusLoop;
+        protected readonly IConsensusLoop consensusLoop;
 
         /// <summary>Provider of time functions.</summary>
-        private readonly IDateTimeProvider dateTimeProvider;
+        protected readonly IDateTimeProvider dateTimeProvider;
 
         /// <summary>Default for "-blockmintxfee", which sets the minimum feerate for a transaction in blocks created by mining code.</summary>
         public const int DefaultBlockMinTxFee = 1000;
@@ -63,19 +63,19 @@ namespace Stratis.Bitcoin.Features.Miner
         private readonly ILogger logger;
 
         /// <summary>Factory for creating loggers.</summary>
-        private readonly ILoggerFactory loggerFactory;
+        protected readonly ILoggerFactory loggerFactory;
 
         /// <summary>Transaction memory pool for managing transactions in the memory pool.</summary>
-        private readonly ITxMempool mempool;
+        protected readonly ITxMempool mempool;
 
         /// <summary>A lock for managing asynchronous access to memory pool.</summary>
-        private readonly MempoolSchedulerLock mempoolLock;
+        protected readonly MempoolSchedulerLock mempoolLock;
 
         /// <summary>The async loop we need to wait upon before we can shut down this feature.</summary>
         private IAsyncLoop miningLoop;
 
         /// <summary>Specification of the network the node runs on - regtest/testnet/mainnet.</summary>
-        private readonly Network network;
+        protected readonly Network network;
 
         /// <summary>Global application life cycle control - triggers when application shuts down.</summary>
         private readonly INodeLifetime nodeLifetime;
@@ -185,7 +185,7 @@ namespace Stratis.Bitcoin.Features.Miner
                     continue;
                 }
 
-                BlockTemplate blockTemplate = new PowBlockAssembler(chainTip, this.consensusLoop, this.dateTimeProvider, this.loggerFactory, this.mempool, this.mempoolLock, this.network).CreateNewBlock(reserveScript.ReserveFullNodeScript);
+                BlockTemplate blockTemplate = GetBlockTemplate(chainTip, reserveScript);
 
                 if (this.network.NetworkOptions.IsProofOfStake)
                 {
@@ -266,6 +266,13 @@ namespace Stratis.Bitcoin.Features.Miner
             pblock.UpdateMerkleRoot();
 
             return nExtraNonce;
+        }
+
+        protected virtual BlockTemplate GetBlockTemplate(ChainedBlock chainTip, ReserveScript reserveScript)
+        {
+            var asm = new PowBlockAssembler(chainTip, this.consensusLoop, this.dateTimeProvider, this.loggerFactory, this.mempool, this.mempoolLock, this.network);
+                
+            return asm.CreateNewBlock(reserveScript.ReserveFullNodeScript);
         }
     }
 }

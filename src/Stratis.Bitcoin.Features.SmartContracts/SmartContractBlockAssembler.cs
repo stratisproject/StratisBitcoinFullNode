@@ -30,13 +30,13 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         private readonly ILogger<SmartContractBlockAssembler> logger;
 
         public SmartContractBlockAssembler(
-            IConsensusLoop consensusLoop,
-            Network network,
-            MempoolSchedulerLock mempoolLock,
-            ITxMempool mempool,
-            IDateTimeProvider dateTimeProvider,
             ChainedBlock chainTip,
+            IConsensusLoop consensusLoop,
+            IDateTimeProvider dateTimeProvider,
             ILoggerFactory loggerFactory,
+            ITxMempool mempool,
+            MempoolSchedulerLock mempoolLock,
+            Network network,
             ContractStateRepositoryRoot stateRoot,
             SmartContractExecutorFactory executorFactory,
             CoinView coinView,
