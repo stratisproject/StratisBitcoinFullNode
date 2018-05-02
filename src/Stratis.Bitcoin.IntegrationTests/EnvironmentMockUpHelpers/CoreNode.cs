@@ -48,17 +48,13 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
 
         public NodeConfigParameters ConfigParameters { get; } = new NodeConfigParameters();
 
-        public CoreNode(string folder, INodeRunner runner, NodeBuilder builder, Network network, bool cleanfolders = true, string configfile = "bitcoin.conf")
+        public CoreNode(string folder, INodeRunner runner, NodeBuilder builder, Network network, string configfile = "bitcoin.conf")
         {
             this.runner = runner;
             this.Folder = folder;
-            this.State = CoreNodeState.Stopped;
-            if (cleanfolders)
-                this.CleanFolder();
-
-            Directory.CreateDirectory(folder);
             this.DataFolder = Path.Combine(folder, "data");
-            Directory.CreateDirectory(this.DataFolder);
+
+            this.State = CoreNodeState.Stopped;
             var pass = Encoders.Hex.EncodeData(RandomUtils.GetBytes(20));
             this.creds = new NetworkCredential(pass, pass);
             this.Config = Path.Combine(this.DataFolder, configfile);
@@ -79,11 +75,6 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
             {
                 return this.runner.FullNode;
             }
-        }
-
-        private void CleanFolder()
-        {
-            NodeBuilder.CleanupTestFolder(this.Folder);
         }
 
         public void Sync(CoreNode node, bool keepConnection = false)
@@ -133,7 +124,9 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
 
         public async Task StartAsync()
         {
-            NodeConfigParameters config = new NodeConfigParameters();
+            NodeBuilder.CreateDataFolder(this.DataFolder);
+
+            var config = new NodeConfigParameters();
             config.Add("regtest", "1");
             config.Add("rest", "1");
             config.Add("server", "1");
