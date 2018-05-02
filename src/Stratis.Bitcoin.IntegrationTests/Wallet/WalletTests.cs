@@ -310,7 +310,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
 
                 // create a reorg by mining on two different chains
                 // ================================================
-                // advance both chains, one chin is longer
+                // advance both chains, one chain is longer
                 stratisSender.GenerateStratisWithMiner(2);
                 stratisReorg.GenerateStratisWithMiner(10);
                 TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(stratisSender));

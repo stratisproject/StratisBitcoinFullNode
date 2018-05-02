@@ -147,14 +147,4 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             consensusErrorException.ConsensusError.Should().Be(consensusErrorType);
         }
     }
-
-    public class Person
-    {
-        public Person(string surname)
-        {
-            this.LastName = surname;
-        }
-
-        public string LastName { get; set; }
-    }
 }
