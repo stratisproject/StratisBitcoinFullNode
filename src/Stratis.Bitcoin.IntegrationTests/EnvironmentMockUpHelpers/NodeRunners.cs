@@ -47,7 +47,7 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
         }
     }
 
-    public abstract class StratisRunner : INodeRunner
+    public abstract class NodeRunner : INodeRunner
     {
         public Action<IFullNodeBuilder> Callback { get; set; }
         public bool IsDisposed => this.FullNode.State == FullNodeState.Disposed;
@@ -61,7 +61,7 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
         public abstract void Start(string dataDir);
     }
 
-    public sealed class StratisBitcoinPosRunner : StratisRunner
+    public sealed class StratisBitcoinPosRunner : NodeRunner
     {
         public StratisBitcoinPosRunner(Action<IFullNodeBuilder> callback = null)
         {
@@ -131,7 +131,7 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
         }
     }
 
-    public sealed class StratisPosApiRunner : StratisRunner
+    public sealed class StratisPosApiRunner : NodeRunner
     {
         public StratisPosApiRunner(Action<IFullNodeBuilder> callback = null)
         {
@@ -176,7 +176,7 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
         }
     }
 
-    public sealed class StratisBitcoinPowRunner : StratisRunner
+    public sealed class StratisBitcoinPowRunner : NodeRunner
     {
         public StratisBitcoinPowRunner(Action<IFullNodeBuilder> callback = null) : base()
         {
@@ -221,7 +221,7 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
         }
     }
 
-    public sealed class StratisProofOfWorkMiningNode : StratisRunner
+    public sealed class StratisProofOfWorkMiningNode : NodeRunner
     {
         public StratisProofOfWorkMiningNode(Action<IFullNodeBuilder> callback = null)
             : base()
