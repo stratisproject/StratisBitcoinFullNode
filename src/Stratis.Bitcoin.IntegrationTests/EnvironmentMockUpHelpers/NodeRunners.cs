@@ -47,46 +47,45 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
         }
     }
 
-    public class StratisBitcoinPosRunner : INodeRunner
+    public abstract class NodeRunner : INodeRunner
     {
-        private Action<IFullNodeBuilder> callback;
+        public Action<IFullNodeBuilder> Callback { get; set; }
+        public bool IsDisposed => this.FullNode.State == FullNodeState.Disposed;
         public FullNode FullNode { get; set; }
-
-        public StratisBitcoinPosRunner(Action<IFullNodeBuilder> callback = null)
-        {
-            this.callback = callback;
-        }
-
-        public bool IsDisposed
-        {
-            get { return this.FullNode.State == FullNodeState.Disposed; }
-        }
 
         public void Kill()
         {
             this.FullNode?.Dispose();
         }
 
-        public void Start(string dataDir)
+        public abstract void Start(string dataDir);
+    }
+
+    public sealed class StratisBitcoinPosRunner : NodeRunner
+    {
+        public StratisBitcoinPosRunner(Action<IFullNodeBuilder> callback = null)
+        {
+            this.Callback = callback;
+        }
+
+        public override void Start(string dataDir)
         {
             NodeSettings nodeSettings = new NodeSettings(Network.StratisRegTest, ProtocolVersion.ALT_PROTOCOL_VERSION, args: new string[] { "-conf=stratis.conf", "-datadir=" + dataDir }, loadConfiguration: false);
 
-            var node = BuildFullNode(nodeSettings, this.callback);
+            var node = BuildFullNode(nodeSettings);
 
             this.FullNode = node;
             this.FullNode.Start();
         }
 
-        public FullNode BuildFullNode(NodeSettings args, Action<IFullNodeBuilder> callback = null)
+        public FullNode BuildFullNode(NodeSettings args)
         {
             FullNode node;
 
-            if (callback != null)
+            if (this.Callback != null)
             {
                 var builder = new FullNodeBuilder().UseNodeSettings(args);
-
-                callback(builder);
-
+                this.Callback(builder);
                 node = (FullNode)builder.Build();
             }
             else
@@ -132,44 +131,31 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
         }
     }
 
-    public class StratisPosApiRunner : INodeRunner
+    public sealed class StratisPosApiRunner : NodeRunner
     {
-        private Action<IFullNodeBuilder> callback;
-        public FullNode FullNode { get; set; }
-
         public StratisPosApiRunner(Action<IFullNodeBuilder> callback = null)
         {
-            this.callback = callback;
+            this.Callback = callback;
         }
 
-        public bool IsDisposed
-        {
-            get { return this.FullNode.State == FullNodeState.Disposed; }
-        }
-
-        public void Kill()
-        {
-            this.FullNode?.Dispose();
-        }
-
-        public void Start(string dataDir)
+        public override void Start(string dataDir)
         {
             NodeSettings nodeSettings = new NodeSettings(Network.StratisRegTest, ProtocolVersion.ALT_PROTOCOL_VERSION, args: new string[] { "-conf=stratis.conf", "-datadir=" + dataDir }, loadConfiguration: false);
 
-            var node = BuildFullNode(nodeSettings, this.callback);
+            var node = BuildFullNode(nodeSettings);
 
             this.FullNode = node;
             this.FullNode.Start();
         }
 
-        public FullNode BuildFullNode(NodeSettings args, Action<IFullNodeBuilder> callback = null)
+        public FullNode BuildFullNode(NodeSettings args)
         {
             FullNode node;
 
-            if (callback != null)
+            if (this.Callback != null)
             {
                 var builder = new FullNodeBuilder().UseNodeSettings(args);
-                callback(builder);
+                this.Callback(builder);
                 node = (FullNode)builder.Build();
             }
             else
@@ -190,44 +176,31 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
         }
     }
 
-    public sealed class StratisBitcoinPowRunner : INodeRunner
+    public sealed class StratisBitcoinPowRunner : NodeRunner
     {
-        private Action<IFullNodeBuilder> callback;
-        public FullNode FullNode { get; set; }
-
         public StratisBitcoinPowRunner(Action<IFullNodeBuilder> callback = null) : base()
         {
-            this.callback = callback;
+            this.Callback = callback;
         }
 
-        public bool IsDisposed
-        {
-            get { return this.FullNode.State == FullNodeState.Disposed; }
-        }
-
-        public void Kill()
-        {
-            this.FullNode?.Dispose();
-        }
-
-        public void Start(string dataDir)
+        public override void Start(string dataDir)
         {
             NodeSettings nodeSettings = new NodeSettings(args: new string[] { "-conf=bitcoin.conf", "-datadir=" + dataDir }, loadConfiguration: false);
 
-            var node = BuildFullNode(nodeSettings, this.callback);
+            var node = BuildFullNode(nodeSettings);
 
             this.FullNode = node;
             this.FullNode.Start();
         }
 
-        public FullNode BuildFullNode(NodeSettings args, Action<IFullNodeBuilder> callback = null)
+        public FullNode BuildFullNode(NodeSettings args)
         {
             FullNode node;
 
-            if (callback != null)
+            if (this.Callback != null)
             {
                 var builder = new FullNodeBuilder().UseNodeSettings(args);
-                callback(builder);
+                this.Callback(builder);
                 node = (FullNode)builder.Build();
             }
             else
@@ -248,44 +221,32 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
         }
     }
 
-    public sealed class StratisProofOfWorkMiningNode : INodeRunner
+    public sealed class StratisProofOfWorkMiningNode : NodeRunner
     {
-        private Action<IFullNodeBuilder> callback;
-        public FullNode FullNode { get; set; }
-
-        public StratisProofOfWorkMiningNode(Action<IFullNodeBuilder> callback = null) : base()
+        public StratisProofOfWorkMiningNode(Action<IFullNodeBuilder> callback = null)
+            : base()
         {
-            this.callback = callback;
+            this.Callback = callback;
         }
 
-        public bool IsDisposed
-        {
-            get { return this.FullNode.State == FullNodeState.Disposed; }
-        }
-
-        public void Kill()
-        {
-            this.FullNode?.Dispose();
-        }
-
-        public void Start(string dataDir)
+        public override void Start(string dataDir)
         {
             NodeSettings nodeSettings = new NodeSettings(Network.StratisRegTest, ProtocolVersion.ALT_PROTOCOL_VERSION, args: new string[] { "-conf=stratis.conf", "-datadir=" + dataDir }, loadConfiguration: false);
 
-            var node = BuildFullNode(nodeSettings, this.callback);
+            var node = BuildFullNode(nodeSettings);
 
             this.FullNode = node;
             this.FullNode.Start();
         }
 
-        public FullNode BuildFullNode(NodeSettings args, Action<IFullNodeBuilder> callback = null)
+        public FullNode BuildFullNode(NodeSettings args)
         {
             FullNode node;
 
-            if (callback != null)
+            if (this.Callback != null)
             {
                 var builder = new FullNodeBuilder().UseNodeSettings(args);
-                callback(builder);
+                this.Callback(builder);
                 node = (FullNode)builder.Build();
             }
             else
