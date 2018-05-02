@@ -44,9 +44,9 @@ namespace Stratis.Bitcoin.Features.Miner
 
         public Money TotalFee;
 
-        public BlockTemplate()
+        public BlockTemplate(Network network)
         {
-            this.Block = new Block();
+            this.Block = network.Consensus.ConsensusFactory.CreateBlock();
             this.VTxFees = new List<Money>();
             this.TxSigOpsCost = new List<long>();
         }
@@ -221,7 +221,7 @@ namespace Stratis.Bitcoin.Features.Miner
             this.fees = 0;
 
             this.ChainTip = chainTip;
-            this.pblocktemplate = new BlockTemplate { Block = this.network.Consensus.ConsensusFactory.CreateBlock(), VTxFees = new List<Money>() };
+            this.pblocktemplate = new BlockTemplate(this.network) { Block = this.network.Consensus.ConsensusFactory.CreateBlock(), VTxFees = new List<Money>() };
         }
 
         private int ComputeBlockVersion(ChainedBlock prevChainedBlock, NBitcoin.Consensus consensus)

@@ -481,7 +481,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
 
         private BlockTemplate CreateBlockTemplate(Block block)
         {
-            BlockTemplate blockTemplate = new BlockTemplate() { Block = block };
+            BlockTemplate blockTemplate = new BlockTemplate(this.network) { Block = block };
             return blockTemplate;
         }
 

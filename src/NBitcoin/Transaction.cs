@@ -1876,11 +1876,10 @@ namespace NBitcoin
         /// Create a transaction with the specified option only. (useful for stripping data from a transaction)
         /// </summary>
         /// <param name="options">Options to keep</param>
+        /// <param name="consensusFactory">The network consensus factory.</param>
         /// <returns>A new transaction with only the options wanted</returns>
-        public Transaction WithOptions(NetworkOptions options, ConsensusFactory consensusFactory = null)
+        public Transaction WithOptions(NetworkOptions options, ConsensusFactory consensusFactory)
         {
-            consensusFactory = consensusFactory ?? Network.Main.Consensus.ConsensusFactory;
-
             if(options == NetworkOptions.Witness && HasWitness)
                 return this;
             if(options == NetworkOptions.None && !HasWitness)

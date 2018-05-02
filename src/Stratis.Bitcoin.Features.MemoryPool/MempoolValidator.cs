@@ -284,6 +284,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// The LockPoints should not be considered valid if CheckSequenceLocks returns false.
         /// See consensus/consensus.h for flag definitions.
         /// </summary>
+        /// <param name="network">The blockchain network.</param>
         /// <param name="tip">Tip of the blockchain.</param>
         /// <param name="context">Validation context for the memory pool.</param>
         /// <param name="flags">Transaction lock time flags.</param>
@@ -291,10 +292,10 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <param name="useExistingLockPoints">Whether to use the existing lock points during evaluation.</param>
         /// <returns>Whether sequence lock validated.</returns>
         /// <seealso cref="SequenceLock.Evaluate(ChainedBlock)"/>
-        public static bool CheckSequenceLocks(ChainedBlock tip, MempoolValidationContext context, Transaction.LockTimeFlags flags, LockPoints lp = null,
-            bool useExistingLockPoints = false)
+        public static bool CheckSequenceLocks(Network network, ChainedBlock tip, MempoolValidationContext context, Transaction.LockTimeFlags flags, LockPoints lp = null, bool useExistingLockPoints = false)
         {
-            var dummyBlock = new Block { Header = { HashPrevBlock = tip.HashBlock } };
+            var dummyBlock = network.Consensus.ConsensusFactory.CreateBlock();
+            dummyBlock.Header.HashPrevBlock = tip.HashBlock;
             ChainedBlock index = new ChainedBlock(dummyBlock.Header, dummyBlock.GetHash(), tip);
 
             // CheckSequenceLocks() uses chainActive.Height()+1 to evaluate
@@ -733,7 +734,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             // be mined yet.
             // Must keep pool.cs for this unless we change CheckSequenceLocks to take a
             // CoinsViewCache instead of create its own
-            if (!CheckSequenceLocks(this.chain.Tip, context, PowConsensusValidator.StandardLocktimeVerifyFlags, context.LockPoints))
+            if (!CheckSequenceLocks(this.network, this.chain.Tip, context, PowConsensusValidator.StandardLocktimeVerifyFlags, context.LockPoints))
                 context.State.Fail(MempoolErrors.NonBIP68Final).Throw();
 
             // Check for non-standard pay-to-script-hash in inputs
