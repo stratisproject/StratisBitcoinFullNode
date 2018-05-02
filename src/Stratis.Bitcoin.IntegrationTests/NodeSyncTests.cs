@@ -136,7 +136,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         }
 
         [Fact]
-        public void Given__NodesAreSynced__When__ABigReorgHappens__Then__TheReorgIsIgnored()
+        public void Given_NodesAreSynced_When_ABigReorgHappens_Then_TheReorgIsIgnored()
         {
             // Temporary fix so the Network static initialize will not break.
             var m = Network.Main;
@@ -338,7 +338,7 @@ namespace Stratis.Bitcoin.IntegrationTests
             Assert.NotEqual(miner.FullNode.Chain.Tip.HashBlock, networkNode1.FullNode.Chain.Tip.HashBlock);
             Assert.Equal(connector.FullNode.Chain.Tip.HashBlock, networkNode1.FullNode.Chain.Tip.HashBlock);
             Assert.Equal(miner.FullNode.Chain.Tip.Height, networkHeight);
-            Assert.Equal(connector.FullNode.Chain.Tip.Height, networkHeight+1);
+            Assert.Equal(connector.FullNode.Chain.Tip.Height, networkHeight + 1);
 
             // Miner mines the block.
             miner.GenerateStratis(1);
