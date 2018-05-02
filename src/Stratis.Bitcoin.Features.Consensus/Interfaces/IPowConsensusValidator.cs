@@ -49,14 +49,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Interfaces
         void CheckInputs(Transaction transaction, UnspentOutputSet inputs, int spendHeight);
 
         /// <summary>
-        /// Computes merkle root.
-        /// </summary>
-        /// <remarks>This implements a constant-space merkle root/path calculator, limited to 2^32 leaves.</remarks>
-        /// <param name="leaves">Merkle tree leaves.</param>
-        /// <param name="mutated"><c>true</c> if at least one leaf of the merkle tree has the same hash as any subtree. Otherwise: <c>false</c>.</param>
-        uint256 ComputeMerkleRoot(List<uint256> leaves, out bool mutated);
-
-        /// <summary>
         /// Validates the UTXO set is correctly spent.
         /// </summary>
         /// <param name="context">Context that contains variety of information regarding blocks validation and execution.</param>

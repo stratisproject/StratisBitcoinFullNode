@@ -4,6 +4,8 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Base.Deployments;
+using Stratis.Bitcoin.BlockPulling;
+using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.Consensus.Interfaces;
 using Stratis.Bitcoin.Utilities;
 
@@ -42,6 +44,19 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules
         /// <summary>Provider of block header hash checkpoints.</summary>
         public ICheckpoints Checkpoints { get; }
 
+        /// <summary>Keeps track of how much time different actions took to execute and how many times they were executed.</summary>
+        public ConsensusPerformanceCounter PerformanceCounter { get; }
+
+        /// <summary>
+        /// Grouping of rules that are marked with a <see cref="ValidationRuleAttribute"/> or no attribute.
+        /// </summary>
+        private readonly List<ConsensusRuleDescriptor> validationRules;
+
+        /// <summary>
+        /// Grouping of rules that are marked with a <see cref="ExecutionRuleAttribute"/>.
+        /// </summary>
+        private readonly List<ConsensusRuleDescriptor> executionRules;
+
         /// <summary>
         /// Initializes an instance of the object.
         /// </summary>
@@ -64,7 +79,11 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules
             this.Checkpoints = checkpoints;
             this.ConsensusParams = this.Network.Consensus;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
+            this.PerformanceCounter = new ConsensusPerformanceCounter(this.DateTimeProvider);
+
             this.consensusRules = new Dictionary<string, ConsensusRuleDescriptor>();
+            this.validationRules = new List<ConsensusRuleDescriptor>();
+            this.executionRules = new List<ConsensusRuleDescriptor>();
         }
         
         /// <inheritdoc />
@@ -84,6 +103,9 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules
                 this.consensusRules.Add(consensusRule.GetType().FullName, new ConsensusRuleDescriptor(consensusRule));
             }
 
+            this.validationRules.AddRange(this.consensusRules.Values.Where(w => w.RuleAttributes.OfType<ValidationRuleAttribute>().Any() || w.RuleAttributes.Count == 0));
+            this.executionRules.AddRange(this.consensusRules.Values.Where(w => w.RuleAttributes.OfType<ExecutionRuleAttribute>().Any()));
+
             return this;
         }
 
@@ -97,29 +119,15 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules
             // extend or replace the default current error handling code.
         }
 
-        /// <inheritdoc />
-        public async Task ExecuteAsync(BlockValidationContext blockValidationContext)
+        /// <inheritdoc/>
+        public async Task AcceptBlockAsync(BlockValidationContext blockValidationContext)
         {
             Guard.NotNull(blockValidationContext, nameof(blockValidationContext));
             Guard.NotNull(blockValidationContext.RuleContext, nameof(blockValidationContext.RuleContext));
 
             try
             {
-                var context = blockValidationContext.RuleContext;
-
-                foreach (var consensusRule in this.consensusRules)
-                {
-                    var rule = consensusRule.Value;
-
-                    if (context.SkipValidation && rule.CanSkipValidation)
-                    {
-                        this.logger.LogTrace("Rule {0} skipped for block at height {1}.", nameof(rule), blockValidationContext.ChainedBlock.Height);
-                    }
-                    else
-                    {
-                        await rule.Rule.RunAsync(context).ConfigureAwait(false);
-                    }
-                }
+                await this.ValidateAndExecuteAsync(blockValidationContext.RuleContext);
             }
             catch (ConsensusErrorException ex)
             {
@@ -133,41 +141,68 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules
         }
 
         /// <inheritdoc />
+        public async Task ValidateAndExecuteAsync(RuleContext ruleContext)
+        {
+            await this.ValidateAsync(ruleContext);
+
+            using (new StopwatchDisposable(o => this.PerformanceCounter.AddBlockProcessingTime(o)))
+            {
+                foreach (ConsensusRuleDescriptor ruleDescriptor in this.executionRules)
+                {
+                    await ruleDescriptor.Rule.RunAsync(ruleContext).ConfigureAwait(false);
+                }
+            }
+        }
+
+        /// <inheritdoc />
         public async Task ValidateAsync(RuleContext ruleContext)
         {
-            foreach (var consensusRule in this.consensusRules)
+            using (new StopwatchDisposable(o => this.PerformanceCounter.AddBlockProcessingTime(o)))
             {
-                var rule = consensusRule.Value;
-
-                if (rule.Attributes.Count == 0 || rule.Attributes.OfType<ValidationRuleAttribute>().Any())
+                foreach (ConsensusRuleDescriptor ruleDescriptor in this.validationRules)
                 {
-                    await rule.Rule.RunAsync(ruleContext).ConfigureAwait(false);
+                    if (ruleContext.SkipValidation && ruleDescriptor.CanSkipValidation)
+                    {
+                        this.logger.LogTrace("Rule {0} skipped for block at height {1}.", nameof(ruleDescriptor), ruleContext.BestBlock?.Height);
+                    }
+                    else
+                    {
+                        await ruleDescriptor.Rule.RunAsync(ruleContext).ConfigureAwait(false);
+                    }
                 }
             }
         }
     }
 
     /// <summary>
-    /// Consensus rules that represent a Proof-Of-Work blockchain.
+    /// Extension of consensus rules that provide access to a store based on UTXO (Unspent transaction outputs).
     /// </summary>
     public class PowConsensusRules : ConsensusRules
     {
+        /// <summary>The consensus db, containing all unspent UTXO in the chain.</summary>
+        public CoinView UtxoSet { get; }
+
+        /// <summary>A puller that can pull blocks from peers on demand.</summary>
+        public ILookaheadBlockPuller Puller { get; }
+
         /// <summary>
         /// Initializes an instance of the object.
         /// </summary>
-        public PowConsensusRules(Network network, ILoggerFactory loggerFactory, IDateTimeProvider dateTimeProvider, ConcurrentChain chain, NodeDeployments nodeDeployments, ConsensusSettings consensusSettings, ICheckpoints checkpoints)
+        public PowConsensusRules(Network network, ILoggerFactory loggerFactory, IDateTimeProvider dateTimeProvider, ConcurrentChain chain, NodeDeployments nodeDeployments, ConsensusSettings consensusSettings, ICheckpoints checkpoints, CoinView utxoSet, ILookaheadBlockPuller puller)
             : base(network, loggerFactory, dateTimeProvider, chain, nodeDeployments, consensusSettings, checkpoints)
         {
+            this.UtxoSet = utxoSet;
+            this.Puller = puller;
         }
     }
 
     /// <summary>
-    /// Consensus rules that represent a Proof-Of-Stake blockchain.
+    /// Extension of consensus rules that provide access to a PoS store.
     /// </summary>
     /// <remarks>
     /// A Proof-Of-Stake blockchain as implemented in this code base represents a hybrid POS/POW consensus model.
     /// </remarks>
-    public class PosConsensusRules : ConsensusRules
+    public class PosConsensusRules : PowConsensusRules
     {
         /// <summary>Database of stake related data for the current blockchain.</summary>
         public IStakeChain StakeChain { get; }
@@ -178,8 +213,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules
         /// <summary>
         /// Initializes an instance of the object.
         /// </summary>
-        public PosConsensusRules(Network network, ILoggerFactory loggerFactory, IDateTimeProvider dateTimeProvider, ConcurrentChain chain, NodeDeployments nodeDeployments, ConsensusSettings consensusSettings, ICheckpoints checkpoints, IStakeChain stakeChain, IStakeValidator stakeValidator) 
-            : base(network, loggerFactory, dateTimeProvider, chain, nodeDeployments, consensusSettings, checkpoints)
+        public PosConsensusRules(Network network, ILoggerFactory loggerFactory, IDateTimeProvider dateTimeProvider, ConcurrentChain chain, NodeDeployments nodeDeployments, ConsensusSettings consensusSettings, ICheckpoints checkpoints, CoinView utxoSet, ILookaheadBlockPuller puller, IStakeChain stakeChain, IStakeValidator stakeValidator) 
+            : base(network, loggerFactory, dateTimeProvider, chain, nodeDeployments, consensusSettings, checkpoints, utxoSet, puller)
         {
             this.StakeChain = stakeChain;
             this.StakeValidator = stakeValidator;

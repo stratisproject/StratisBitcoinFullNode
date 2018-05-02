@@ -32,8 +32,6 @@ namespace Stratis.Bitcoin.Features.Miner
         public bool IsProofOfStake = false;
     }
 
-;
-
     public class BlockTemplate
     {
         public Block Block;
@@ -180,13 +178,13 @@ namespace Stratis.Bitcoin.Features.Miner
         protected Script scriptPubKeyIn;
 
         public PowBlockAssembler(
-            IConsensusLoop consensusLoop,
-            Network network,
-            MempoolSchedulerLock mempoolLock,
-            ITxMempool mempool,
-            IDateTimeProvider dateTimeProvider,
             ChainedBlock chainTip,
+            IConsensusLoop consensusLoop,
+            IDateTimeProvider dateTimeProvider,
             ILoggerFactory loggerFactory,
+            ITxMempool mempool,
+            MempoolSchedulerLock mempoolLock,
+            Network network,
             AssemblerOptions options = null)
         {
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
@@ -321,6 +319,7 @@ namespace Stratis.Bitcoin.Features.Miner
             // Set the coin base with zero money.
             // Once we have the fee we can update the amount.
             this.coinbase = new Transaction();
+            this.coinbase.Time = (uint)this.dateTimeProvider.GetAdjustedTimeAsUnixTimestamp();
             this.coinbase.AddInput(TxIn.CreateCoinbase(this.ChainTip.Height + 1));
             this.coinbase.AddOutput(new TxOut(Money.Zero, this.scriptPubKeyIn));
             this.pblock.AddTransaction(this.coinbase);

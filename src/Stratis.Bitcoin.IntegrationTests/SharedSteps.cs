@@ -1,6 +1,8 @@
-﻿using System.Linq;
+﻿using System.Collections.Generic;
+using System.Linq;
 using FluentAssertions;
 using NBitcoin;
+using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers;
 
@@ -8,10 +10,15 @@ namespace Stratis.Bitcoin.IntegrationTests
 {
     public class SharedSteps
     {
-        public static TransactionBuildContext CreateTransactionBuildContext(string sendingWalletName, string sendingAccountName, string sendingPassword, Script destinationScript, Money amount, FeeType feeType, int minConfirmations)
+        public static TransactionBuildContext CreateTransactionBuildContext(
+            string sendingWalletName,
+            string sendingAccountName,
+            string sendingPassword,
+            ICollection<Recipient> recipients,
+            FeeType feeType,
+            int minConfirmations)
         {
-            return new TransactionBuildContext(new WalletAccountReference(sendingWalletName, sendingAccountName),
-                new[] { new Recipient { Amount = amount, ScriptPubKey = destinationScript } }.ToList(), sendingPassword)
+            return new TransactionBuildContext(new WalletAccountReference(sendingWalletName, sendingAccountName), recipients.ToList(), sendingPassword)
             {
                 MinConfirmations = minConfirmations,
                 FeeType = feeType
@@ -20,7 +27,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 
         public void MineBlocks(int blockCount, CoreNode node, string accountName, string toWalletName, string withPassword, long expectedFees = 0)
         {
-            this.WaitForBlockStoreToSync(node);
+            this.WaitForNodeToSync(node);
 
             var address = node.FullNode.WalletManager().GetUnusedAddress(new WalletAccountReference(toWalletName, accountName));
 
@@ -43,25 +50,36 @@ namespace Stratis.Bitcoin.IntegrationTests
 
             var balanceIncrease = balanceAfterMining - balanceBeforeMining;
 
-            this.WaitForBlockStoreToSync(node);
+            this.WaitForNodeToSync(node);
 
-            var rewardCoinCount = blockCount * Money.COIN * 50;
-            
-            balanceIncrease.Should().Be(rewardCoinCount + expectedFees);
+            balanceIncrease.Should().Be(node.GetProofOfWorkRewardForMinedBlocks(blockCount) + expectedFees);
         }
 
-        public void WaitForBlockStoreToSync(params CoreNode[] nodes)
+        public void MinePremineBlocks(CoreNode node, string walletName, string walletAccount, string walletPassword)
         {
-            if (nodes.Length == 1)
-            {
-                TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(nodes[0]));
-                return;
-            }
+            this.WaitForNodeToSync(node);
 
-            for (int i = 1; i < nodes.Length; i++)
-            {
-                TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(nodes[i-1], nodes[i]));
-            }
+            var unusedAddress = node.FullNode.WalletManager().GetUnusedAddress(new WalletAccountReference(walletName, walletAccount));
+            var wallet = node.FullNode.WalletManager().GetWalletByName(walletName);
+            var extendedPrivateKey = wallet.GetExtendedPrivateKeyForAddress(walletPassword, unusedAddress).PrivateKey;
+
+            node.SetDummyMinerSecret(new BitcoinSecret(extendedPrivateKey, node.FullNode.Network));
+            node.GenerateStratisWithMiner(2);
+
+            this.WaitForNodeToSync(node);
+
+            var spendable = node.FullNode.WalletManager().GetSpendableTransactionsInWallet(walletName);
+            var amountShouldBe = node.FullNode.Network.Consensus.Option<PosConsensusOptions>().PremineReward + node.FullNode.Network.Consensus.Option<PosConsensusOptions>().ProofOfWorkReward;
+            spendable.Sum(s => s.Transaction.Amount).Should().Be(amountShouldBe);
+        }
+
+        public void WaitForNodeToSync(params CoreNode[] nodes)
+        {
+            nodes.ToList().ForEach(n =>
+                TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(n)));
+
+            nodes.Skip(1).ToList().ForEach(
+                n => TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(nodes.First(), n)));
         }
     }
 }
