@@ -274,12 +274,6 @@ namespace Stratis.Bitcoin.Features.Wallet.Interfaces
         DateTimeOffset GetOldestWalletCreationTime();
 
         /// <summary>
-        /// Get the latest transaction that was broadcast.
-        /// </summary>
-        /// <returns><see cref="TransactionBroadcastEntry"/></returns>
-        TransactionBroadcastEntry GetTransactionBroadcastEntry();
-
-        /// <summary>
         /// Removes the specified transactions from the wallet and persist it.
         /// </summary>
         /// <param name="walletName">The name of the wallet to remove transactions from.</param>

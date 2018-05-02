@@ -1359,12 +1359,6 @@ namespace Stratis.Bitcoin.Features.Wallet
         }
 
         /// <inheritdoc />
-        public TransactionBroadcastEntry GetTransactionBroadcastEntry()
-        {
-            return this.transactionBroadcastEntry;
-        }
-
-        /// <inheritdoc />
         public HashSet<(uint256, DateTimeOffset)> RemoveTransactionsByIds(string walletName, IEnumerable<uint256> transactionsIds)
         {
             Guard.NotNull(transactionsIds, nameof(transactionsIds));
