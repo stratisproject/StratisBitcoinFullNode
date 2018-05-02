@@ -48,17 +48,13 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
 
         public NodeConfigParameters ConfigParameters { get; } = new NodeConfigParameters();
 
-        public CoreNode(string folder, INodeRunner runner, NodeBuilder builder, Network network, bool cleanfolders = true, string configfile = "bitcoin.conf")
+        public CoreNode(string folder, INodeRunner runner, NodeBuilder builder, Network network, string configfile = "bitcoin.conf")
         {
             this.runner = runner;
             this.Folder = folder;
-            this.State = CoreNodeState.Stopped;
-            if (cleanfolders)
-                this.CleanFolder();
-
-            Directory.CreateDirectory(folder);
             this.DataFolder = Path.Combine(folder, "data");
-            Directory.CreateDirectory(this.DataFolder);
+
+            this.State = CoreNodeState.Stopped;
             var pass = Encoders.Hex.EncodeData(RandomUtils.GetBytes(20));
             this.creds = new NetworkCredential(pass, pass);
             this.Config = Path.Combine(this.DataFolder, configfile);
@@ -79,11 +75,6 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
             {
                 return this.runner.FullNode;
             }
-        }
-
-        private void CleanFolder()
-        {
-            NodeBuilder.CleanupTestFolder(this.Folder);
         }
 
         public void Sync(CoreNode node, bool keepConnection = false)
@@ -111,11 +102,6 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
             (this.FullNode.NodeService<IInitialBlockDownloadState>() as InitialBlockDownloadStateMock).SetIsInitialBlockDownload(false, DateTime.UtcNow.AddMinutes(5));
         }
 
-        public void Start()
-        {
-            this.StartAsync().Wait();
-        }
-
         public RPCClient CreateRPCClient()
         {
             return new RPCClient(this.creds, new Uri("http://127.0.0.1:" + this.ports[1].ToString() + "/"), Network.RegTest);
@@ -131,9 +117,11 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
             return this.networkPeerFactory.CreateConnectedNetworkPeerAsync("127.0.0.1:" + this.ports[0].ToString()).GetAwaiter().GetResult();
         }
 
-        public async Task StartAsync()
+        public void Start()
         {
-            NodeConfigParameters config = new NodeConfigParameters();
+            NodeBuilder.CreateDataFolder(this.DataFolder);
+
+            var config = new NodeConfigParameters();
             config.Add("regtest", "1");
             config.Add("rest", "1");
             config.Add("server", "1");
@@ -147,24 +135,51 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
             config.Add("agentprefix", "node" + this.ports[0].ToString());
             config.Import(this.ConfigParameters);
             File.WriteAllText(this.Config, config.ToString());
+
             lock (this.lockObject)
             {
                 this.runner.Start(this.DataFolder);
                 this.State = CoreNodeState.Starting;
             }
+
+            if (this.runner is BitcoinCoreRunner)
+                StartBitcoinCoreRunner();
+            else
+                StartStratisRunner();
+
+            this.State = CoreNodeState.Running;
+        }
+
+        private void StartBitcoinCoreRunner()
+        {
             while (true)
             {
                 try
                 {
-                    await this.CreateRPCClient().GetBlockHashAsync(0);
+                    CreateRPCClient().GetBlockHashAsync(0).GetAwaiter().GetResult();
                     this.State = CoreNodeState.Running;
                     break;
                 }
-                catch
+                catch { }
+
+                Task.Delay(200);
+            }
+        }
+
+        private void StartStratisRunner()
+        {
+            while (true)
+            {
+                if (this.runner.FullNode == null)
                 {
+                    Thread.Sleep(100);
+                    continue;
                 }
-                if (this.runner.IsDisposed)
+
+                if (this.runner.FullNode.State == FullNodeState.Started)
                     break;
+                else
+                    Thread.Sleep(200);
             }
         }
 
