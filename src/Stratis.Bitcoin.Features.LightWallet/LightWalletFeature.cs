@@ -12,6 +12,7 @@ using Stratis.Bitcoin.Builder.Feature;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Connection;
+using Stratis.Bitcoin.Features.LightWallet.Broadcasting;
 using Stratis.Bitcoin.Features.Notifications;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Broadcasting;
