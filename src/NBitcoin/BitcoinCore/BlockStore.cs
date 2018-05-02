@@ -63,6 +63,7 @@ namespace NBitcoin.BitcoinCore
             }
         }
 
+        // TODO Method not in Use
         public ConcurrentChain GetStratisChain()
         {
             var chain = new ConcurrentChain(this.Network);
@@ -70,15 +71,16 @@ namespace NBitcoin.BitcoinCore
             return chain;
         }
 
+        // TODO Method not in Use
         public void SynchronizeStratisChain(ChainBase chain)
         {
             var blocks = new Dictionary<uint256, Block>();
-            var chainedBlocks = new Dictionary<uint256, ChainedBlock>();
+            var chainedHeaders = new Dictionary<uint256, ChainedHeader>();
             var inChain = new HashSet<uint256>();
 
             inChain.Add(chain.GetBlock(0).HashBlock);
 
-            chainedBlocks.Add(chain.GetBlock(0).HashBlock, chain.GetBlock(0));
+            chainedHeaders.Add(chain.GetBlock(0).HashBlock, chain.GetBlock(0));
 
             foreach (Block block in this.Enumerate(false).Select(b => b.Item))
             {
@@ -90,7 +92,7 @@ namespace NBitcoin.BitcoinCore
             while (blocks.Any())
             {
                 // to optimize keep a track of the last block
-                ChainedBlock last = chain.GetBlock(0);
+                ChainedHeader last = chain.GetBlock(0);
 
                 foreach (KeyValuePair<uint256, Block> block in blocks)
                 {
@@ -98,20 +100,20 @@ namespace NBitcoin.BitcoinCore
                     {
                         toRemove.Add(block.Key);
 
-                        ChainedBlock chainedBlock;
+                        ChainedHeader chainedBlock;
                         if (last.HashBlock == block.Value.Header.HashPrevBlock)
                         {
                             chainedBlock = last;
                         }
                         else
                         {
-                            if (!chainedBlocks.TryGetValue(block.Value.Header.HashPrevBlock, out chainedBlock))
+                            if (!chainedHeaders.TryGetValue(block.Value.Header.HashPrevBlock, out chainedBlock))
                                 break;
                         }
 
-                        var chainedHeader = new ChainedBlock(block.Value.Header, block.Value.GetHash(this.Network.NetworkOptions), chainedBlock);
+                        var chainedHeader = new ChainedHeader(block.Value.Header, block.Value.GetHash(this.Network.NetworkOptions), chainedBlock);
                         chain.SetTip(chainedHeader);
-                        chainedBlocks.TryAdd(chainedHeader.HashBlock, chainedHeader);
+                        chainedHeaders.TryAdd(chainedHeader.HashBlock, chainedHeader);
                         inChain.Add(block.Key);
                         last = chainedHeader;
                     }

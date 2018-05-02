@@ -180,7 +180,7 @@ namespace NBitcoin
         /// <param name="now">The expected date.</param>
         /// <param name="consensus">Consensus.</param>
         /// <param name="prev">Previous block.</param>
-        public void UpdateTime(DateTimeOffset now, Consensus consensus, ChainedBlock prev)
+        public void UpdateTime(DateTimeOffset now, Consensus consensus, ChainedHeader prev)
         {
             DateTimeOffset nOldTime = this.BlockTime;
             DateTimeOffset mtp = prev.GetMedianTimePast() + TimeSpan.FromSeconds(1);
@@ -200,19 +200,19 @@ namespace NBitcoin
         /// <param name="now">The expected date.</param>
         /// <param name="network">Network.</param>
         /// <param name="prev">Previous block.</param>
-        public void UpdateTime(DateTimeOffset now, Network network, ChainedBlock prev)
+        public void UpdateTime(DateTimeOffset now, Network network, ChainedHeader prev)
         {
             this.UpdateTime(now, network.Consensus, prev);
         }
 
-        public Target GetWorkRequired(Network network, ChainedBlock prev)
+        public Target GetWorkRequired(Network network, ChainedHeader prev)
         {
             return this.GetWorkRequired(network.Consensus, prev);
         }
 
-        public Target GetWorkRequired(Consensus consensus, ChainedBlock prev)
+        public Target GetWorkRequired(Consensus consensus, ChainedHeader prev)
         {
-            return new ChainedBlock(this, this.GetHash(consensus.NetworkOptions), prev).GetWorkRequired(consensus);
+            return new ChainedHeader(this, this.GetHash(consensus.NetworkOptions), prev).GetWorkRequired(consensus);
         }
     }
 
