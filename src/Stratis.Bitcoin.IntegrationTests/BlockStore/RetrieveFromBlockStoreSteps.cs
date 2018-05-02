@@ -48,7 +48,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
 
         protected override void BeforeTest()
         {
-            this.builder = NodeBuilder.Create();
+            this.builder = NodeBuilder.Create(caller: this.CurrentTest.DisplayName);
         }
 
         protected override void AfterTest()

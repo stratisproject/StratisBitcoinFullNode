@@ -8,14 +8,14 @@ using Microsoft.VisualStudio.TestPlatform.CommunicationUtilities;
 using NBitcoin;
 using Stratis.Bitcoin.Features.Api;
 using Stratis.Bitcoin.Features.Miner;
-using Stratis.Bitcoin.IntegrationTests.TestFramework;
-using Xunit.Abstractions;
 using Stratis.Bitcoin.Features.Miner.Interfaces;
 using Stratis.Bitcoin.Features.Miner.Models;
 using Stratis.Bitcoin.Features.RPC.Models;
 using Stratis.Bitcoin.Features.Wallet.Models;
 using Stratis.Bitcoin.IntegrationTests.Builders;
 using Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers;
+using Stratis.Bitcoin.IntegrationTests.TestFramework;
+using Xunit.Abstractions;
 
 namespace Stratis.Bitcoin.IntegrationTests.API
 {
@@ -40,7 +40,7 @@ namespace Stratis.Bitcoin.IntegrationTests.API
         protected override void BeforeTest()
         {
             this.httpClient = new HttpClient();
-            this.nodeGroupBuilder = new NodeGroupBuilder();
+            this.nodeGroupBuilder = new NodeGroupBuilder(this.CurrentTest.DisplayName);
         }
 
         protected override void AfterTest()
