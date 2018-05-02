@@ -1,15 +1,17 @@
 ﻿using System;
+using Stratis.SmartContracts.Core.Exceptions;
 
 namespace Stratis.SmartContracts.Standards
 {
+    /// <summary>
+    /// TODO: investigare improvements for Assert checks
+    /// </summary>
     public class StandardToken : SmartContract, IStandardToken
     {
         private readonly ISmartContractMapping<ulong> balances;
         private readonly ISmartContractMapping<ISmartContractMapping<ulong>> allowed;
 
-        public StandardToken(
-            ulong totalSupply,
-            ISmartContractState smartContractState) : base(smartContractState)
+        public StandardToken(ISmartContractState smartContractState, ulong totalSupply) : base(smartContractState)
         {
             if (totalSupply == 0)
                 throw new ArgumentException("Token supply must be greater than 0", nameof(totalSupply));
@@ -31,51 +33,51 @@ namespace Stratis.SmartContracts.Standards
             private set => this.PersistentState.SetObject(nameof(this.Owner), value);
         }
 
-        public Result<ulong> GetBalance(Address address)
+        public ulong GetBalance(Address address)
         {
-            Guard.AgainstInvalidAddress(address, paramName: nameof(address));
-            
-            return Result.Ok(this.balances[address.Value]);
+            this.Assert(string.IsNullOrWhiteSpace(address.Value));
+
+            return this.balances[address.Value];
         }
 
-        public Result Transfer(Address to, ulong amountToTransfer)
+        public bool Transfer(Address to, ulong amountToTransfer)
         {
             return this.TransferFrom(this.Message.ContractAddress, to, amountToTransfer);
         }
 
-        public Result TransferFrom(Address from, Address to, ulong amountToTransfer)
+        public bool TransferFrom(Address from, Address to, ulong amountToTransfer)
         {
-            Guard.AgainstInvalidAddress(from, paramName: nameof(from));
-            Guard.AgainstInvalidAddress(to, paramName: nameof(to));
+            this.Assert(string.IsNullOrWhiteSpace(from.Value));
+            this.Assert(string.IsNullOrWhiteSpace(to.Value));
 
             checked
             {   
                 if (this.balances[from.Value] < amountToTransfer)
                 {
-                    return Result.Fail($"Insufficient funds in {from} to transfer {amountToTransfer}");
+                    throw new StandardTokenValidationException($"Insufficient funds in {from} to transfer {amountToTransfer}");
                 }
 
                 this.balances[from.Value] -= amountToTransfer;
                 this.balances[to.Value] += amountToTransfer;
 
-                return Result.Ok();
+                return true;
             }
         }
 
-        public Result<ulong> GetAllowance(Address owner, Address spender)
+        public ulong GetAllowance(Address owner, Address spender)
         {
-            Guard.AgainstInvalidAddress(owner, paramName: nameof(owner));
-            Guard.AgainstInvalidAddress(spender, paramName: nameof(spender));
+            this.Assert(string.IsNullOrWhiteSpace(owner.Value));
+            this.Assert(string.IsNullOrWhiteSpace(spender.Value));
 
-            return Result.Ok(this.allowed[owner.Value][spender.Value]);
+            return this.allowed[owner.Value][spender.Value];
         }
 
-        public Result Approve(Address sender, ulong amountToApprove)
+        public bool Approve(Address sender, ulong amountToApprove)
         {
             Guard.AgainstInvalidAddress(sender, paramName: nameof(sender));
 
             this.allowed[this.Owner.Value][sender.Value] = amountToApprove;
-            return Result.Ok();
+            return true;
         }
     }
 }

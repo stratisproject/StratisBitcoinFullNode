@@ -14,8 +14,8 @@
         /// Gets the balance of the specified address.
         /// </summary>
         /// <param name="address">The address to check balance for.</param>
-        /// <returns>Result containing balance for the given address</returns>
-        Result<ulong> GetBalance(Address address);
+        /// <returns>Balance for the given address</returns>
+        ulong GetBalance(Address address);
 
         /// <summary>
         /// Transfers tokens from current address to specified address.
@@ -23,7 +23,7 @@
         /// <param name="to">Address you want to send tokens to.</param>
         /// <param name="amountToTransfer">Address to transfer tokens to.</param>
         /// <returns>Result of the transfer operation</returns>
-        Result Transfer(Address to, ulong amountToTransfer);
+        bool Transfer(Address to, ulong amountToTransfer);
 
         /// <summary>
         /// Transfers tokens from one address to another.
@@ -32,7 +32,7 @@
         /// <param name="to">Address to transfer tokens to.</param>
         /// <param name="amountToTransfer">Amount of tokens to transfer.</param>
         /// <returns>Result of the transfer operation</returns>
-        Result TransferFrom(Address from, Address to, ulong amountToTransfer);
+        bool TransferFrom(Address from, Address to, ulong amountToTransfer);
 
         /// <summary>
         /// Gets the amount of tokens that an owner allowed to a spender.
@@ -40,7 +40,7 @@
         /// <param name="owner">The address of the token owner.</param>
         /// <param name="spender">The spender address.</param>
         /// <returns>Number of allowed tokens</returns>
-        Result<ulong> GetAllowance(Address owner, Address spender);
+        ulong GetAllowance(Address owner, Address spender);
 
         /// <summary>
         /// Approves the specified sender for a specified amount of tokens.
@@ -48,6 +48,6 @@
         /// <param name="spender">The sender.</param>
         /// <param name="amountToApprove">The amount of allowed tokens.</param>
         /// <returns>Result of the operation</returns>
-        Result Approve(Address spender, ulong amountToApprove); 
+        bool Approve(Address spender, ulong amountToApprove); 
     }
 }
