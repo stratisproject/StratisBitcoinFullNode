@@ -93,6 +93,16 @@ namespace Stratis.Bitcoin.Features.Wallet
             WalletSettings.PrintHelp(network);
         }
 
+        /// <summary>
+        /// Get the default configuration.
+        /// </summary>
+        /// <param name="builder">The string builder to add the settings to.</param>
+        /// <param name="network">The network to base the defaults off.</param>
+        public static void BuildDefaultConfigurationFile(StringBuilder builder, Network network)
+        {
+            WalletSettings.BuildDefaultConfigurationFile(builder, network);
+        }
+
         /// <inheritdoc />
         public void AddNodeStats(StringBuilder benchLogs)
         {
