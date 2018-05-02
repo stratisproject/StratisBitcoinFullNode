@@ -35,11 +35,11 @@ namespace Stratis.Bitcoin.Features.Miner
             this.stakeValidator = stakeValidator;
         }
 
-        public override BlockTemplate Build(ChainedBlock chainTip, Script minerAddress)
+        public override BlockTemplate Build(ChainedBlock chainTip, Script scriptPubKey)
         {
-            this.logger.LogTrace("({0}:{1},{2}.{3}:{4})", nameof(chainTip), chainTip.Height, nameof(minerAddress), nameof(minerAddress.Length), minerAddress.Length);
+            this.logger.LogTrace("({0}:'{1}',{2}.{3}:{4})", nameof(chainTip), chainTip, nameof(scriptPubKey), nameof(scriptPubKey.Length), scriptPubKey.Length);
 
-            base.Build(chainTip, minerAddress);
+            base.Build(chainTip, scriptPubKey);
 
             this.coinbase.Outputs[0].ScriptPubKey = new Script();
             this.coinbase.Outputs[0].Value = Money.Zero;

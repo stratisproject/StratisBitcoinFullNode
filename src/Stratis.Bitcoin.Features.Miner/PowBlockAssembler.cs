@@ -18,9 +18,9 @@ namespace Stratis.Bitcoin.Features.Miner
         /// Constructs a block template which will be passed to consensus. 
         /// </summary>
         /// <param name="chainTip">Tip of the chain that this instance will work with without touching any shared chain resources.</param>
-        /// <param name="minerAddress">The miner's address.</param>
+        /// <param name="scriptPubKey">Script that explains what conditions must be met to claim ownership of a coin.</param>
         /// <returns>The contructed <see cref="BlockTemplate"/>.</returns>
-        public abstract BlockTemplate Build(ChainedBlock chainTip, Script minerAddress);
+        public abstract BlockTemplate Build(ChainedBlock chainTip, Script scriptPubKey);
 
         /// <summary>
         /// Tip of the chain that this instance will work with without touching any shared chain resources.
@@ -182,7 +182,7 @@ namespace Stratis.Bitcoin.Features.Miner
 
         protected Network network;
 
-        protected Script minerAddress;
+        protected Script scriptPubKey;
 
         public PowBlockAssembler(
             IConsensusLoop consensusLoop,
@@ -235,16 +235,16 @@ namespace Stratis.Bitcoin.Features.Miner
         }
 
         /// <inheritdoc/>
-        public override BlockTemplate Build(ChainedBlock chainTip, Script minerAddress)
+        public override BlockTemplate Build(ChainedBlock chainTip, Script scriptPubKey)
         {
-            this.logger.LogTrace("({0}:{1},{2}.{3}:{4})", nameof(chainTip), chainTip.Height, nameof(minerAddress), nameof(minerAddress.Length), minerAddress.Length);
+            this.logger.LogTrace("({0}:'{1}',{2}.{3}:{4})", nameof(chainTip), chainTip, nameof(scriptPubKey), nameof(scriptPubKey.Length), scriptPubKey.Length);
 
             this.Configure();
 
             this.ChainTip = chainTip;
 
             this.block = this.blockTemplate.Block;
-            this.minerAddress = minerAddress;
+            this.scriptPubKey = scriptPubKey;
 
             this.CreateCoinbase();
             this.ComputeBlockVersion();
@@ -336,7 +336,7 @@ namespace Stratis.Bitcoin.Features.Miner
             this.coinbase = new Transaction();
             this.coinbase.Time = (uint)this.dateTimeProvider.GetAdjustedTimeAsUnixTimestamp();
             this.coinbase.AddInput(TxIn.CreateCoinbase(this.ChainTip.Height + 1));
-            this.coinbase.AddOutput(new TxOut(Money.Zero, this.minerAddress));
+            this.coinbase.AddOutput(new TxOut(Money.Zero, this.scriptPubKey));
 
             this.block.AddTransaction(this.coinbase);
             this.blockTemplate.VTxFees.Add(-1); // Updated at end.

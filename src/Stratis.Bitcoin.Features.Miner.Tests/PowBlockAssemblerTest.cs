@@ -500,7 +500,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
 
             public BlockTemplate CreateCoinBase(ChainedBlock chainTip, Script scriptPubKeyIn)
             {
-                base.minerAddress = scriptPubKeyIn;
+                base.scriptPubKey = scriptPubKeyIn;
                 base.ChainTip = chainTip;
 
                 base.CreateCoinbase();
