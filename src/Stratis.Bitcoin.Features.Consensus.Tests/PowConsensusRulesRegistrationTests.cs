@@ -1,10 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using FluentAssertions;
+using Moq;
+using NBitcoin;
 using Stratis.Bitcoin.Features.Consensus.Rules;
 using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
+using Stratis.Bitcoin.Utilities;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.Consensus.Tests
@@ -15,7 +16,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
 
         public PowConsensusRulesRegistrationTests()
         {
-            this.rules = new FullNodeBuilderConsensusExtension.PowConsensusRulesRegistration().GetRules();
+            this.rules = new FullNodeBuilderConsensusExtension.PowConsensusRulesRegistration(Network.RegTest, new Mock<IDateTimeProvider>().Object).GetRules();
         }
 
         [Fact]
@@ -36,8 +37,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
             this.rules.ElementAt(12).Should().BeOfType<CheckSigOpsRule>();
             this.rules.ElementAt(13).Should().BeOfType<LoadCoinviewRule>();
             this.rules.ElementAt(14).Should().BeOfType<TransactionDuplicationActivationRule>();
-            //TODO for PR
-            //this.rules.ElementAt(15).Should().BeOfType<UpdateCoinViewRule>();
+            this.rules.ElementAt(15).Should().BeOfType<TransactionRelativeLocktimeAndSignatureOperationCostRule>();
         }
     }
 }

@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 using NBitcoin;
 using Stratis.Bitcoin.Base.Deployments;
 using Stratis.Bitcoin.Utilities;
@@ -59,15 +61,22 @@ namespace Stratis.Bitcoin.Features.Consensus
 
         public UnspentOutputSet Set { get; set; }
 
+        public Money Fees { get; set; }
+
+        public List<Task<bool>> CheckInputs { get; set; }
+
         public bool CheckMerkleRoot { get; set; }
 
         public bool CheckPow { get; set; }
+
 
         /// <summary>Whether to skip block validation for this block due to either a checkpoint or assumevalid hash set.</summary>
         public bool SkipValidation { get; set; }
 
         /// <summary>The current tip of the chain that has been validated.</summary>
         public ChainedBlock ConsensusTip { get; set; }
+
+        public TaskScheduler TaskScheduler { get; } = TaskScheduler.Default;
 
         public bool IsPoS
         {

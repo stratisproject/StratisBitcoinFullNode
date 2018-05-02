@@ -163,7 +163,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                 cache.FlushAsync().GetAwaiter().GetResult();
                 cache.Dispose();
             }
-           
+
             this.dBreezeCoinView.Dispose();
         }
     }
@@ -201,7 +201,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                     services.AddSingleton<ConsensusStats>();
                     services.AddSingleton<ConsensusSettings>();
                     services.AddSingleton<IConsensusRules, PowConsensusRules>();
-                    services.AddSingleton<IRuleRegistration, PowConsensusRulesRegistration>();
+                    services.AddSingleton<IRuleRegistration>(new PowConsensusRulesRegistration(fullNodeBuilder.Network, new DateTimeProvider()));
                 });
             });
 
@@ -251,6 +251,15 @@ namespace Stratis.Bitcoin.Features.Consensus
 
         public class PowConsensusRulesRegistration : IRuleRegistration
         {
+            private readonly Network network;
+            private readonly IDateTimeProvider dateTimeProvider;
+
+            public PowConsensusRulesRegistration(Network network, IDateTimeProvider dateTimeProvider)
+            {
+                this.network = network;
+                this.dateTimeProvider = dateTimeProvider;
+            }
+
             public IEnumerable<ConsensusRule> GetRules()
             {
                 return new List<ConsensusRule>
@@ -280,8 +289,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                     // rules that require the store to be loaded (coinview)
                     new LoadCoinviewRule(),
                     new TransactionDuplicationActivationRule(), // implements BIP30
-                    //TODO for PR
-                    //new UpdateCoinViewRule()
+                    new TransactionRelativeLocktimeAndSignatureOperationCostRule(this.network, this.dateTimeProvider) // implements BIP68
                 };
             }
         }

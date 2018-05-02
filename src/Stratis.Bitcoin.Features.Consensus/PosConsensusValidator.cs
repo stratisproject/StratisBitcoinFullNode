@@ -127,20 +127,21 @@ namespace Stratis.Bitcoin.Features.Consensus
             this.logger.LogTrace("(-)");
         }
 
-        /// <inheritdoc />
-        protected override void UpdateCoinView(RuleContext context, Transaction transaction)
-        {
-            this.logger.LogTrace("()");
+        //TODO before PR merge - move this logic somewhere ?
+        ///// <inheritdoc />
+        //protected override void UpdateCoinView(RuleContext context, Transaction transaction)
+        //{
+        //    this.logger.LogTrace("()");
 
-            UnspentOutputSet view = context.Set;
+        //    UnspentOutputSet view = context.Set;
 
-            if (transaction.IsCoinStake)
-                context.Stake.TotalCoinStakeValueIn = view.GetValueIn(transaction);
+        //    if (transaction.IsCoinStake)
+        //        context.Stake.TotalCoinStakeValueIn = view.GetValueIn(transaction);
 
-            base.UpdateCoinView(context, transaction);
+        //    base.UpdateCoinView(context, transaction);
 
-            this.logger.LogTrace("(-)");
-        }
+        //    this.logger.LogTrace("(-)");
+        //}
 
         /// <inheritdoc />
         protected override void CheckMaturity(UnspentOutputs coins, int spendHeight)

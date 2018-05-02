@@ -119,7 +119,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         {
             try
             {
-                var rule = new UpdateCoinViewRule { Logger = new Mock<ILogger>().Object };
+                var rule = new TransactionRelativeLocktimeAndSignatureOperationCostRule(Network.RegTest, new Mock<IDateTimeProvider>().Object) { Logger = new Mock<ILogger>().Object };
                 rule.RunAsync(this.ruleContext).GetAwaiter().GetResult();
             }
             catch (Exception e)
