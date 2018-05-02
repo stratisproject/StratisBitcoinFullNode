@@ -137,7 +137,19 @@ namespace Stratis.Bitcoin.Features.Wallet
 
         private void BroadcasterManager_TransactionStateChanged(object sender, TransactionBroadcastEntry transactionEntry)
         {
-            this.ProcessTransaction(transactionEntry.Transaction, null, null, transactionEntry.State == State.Propagated);
+            this.logger.LogTrace("()");
+
+            if (string.IsNullOrEmpty(transactionEntry.ErrorMessage))
+            {
+                this.ProcessTransaction(transactionEntry.Transaction, null, null, transactionEntry.State == State.Propagated);
+            }
+            else
+            {
+                this.logger.LogTrace("Exception occurred: {0}", transactionEntry.ErrorMessage);
+                this.logger.LogTrace("(-)[EXCEPTION]");
+            }
+
+            this.logger.LogTrace("(-)");
         }
 
         public void Start()
