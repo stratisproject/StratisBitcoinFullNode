@@ -102,11 +102,6 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
             (this.FullNode.NodeService<IInitialBlockDownloadState>() as InitialBlockDownloadStateMock).SetIsInitialBlockDownload(false, DateTime.UtcNow.AddMinutes(5));
         }
 
-        public void Start()
-        {
-            this.StartAsync().Wait();
-        }
-
         public RPCClient CreateRPCClient()
         {
             return new RPCClient(this.creds, new Uri("http://127.0.0.1:" + this.ports[1].ToString() + "/"), Network.RegTest);
@@ -122,7 +117,7 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
             return this.networkPeerFactory.CreateConnectedNetworkPeerAsync("127.0.0.1:" + this.ports[0].ToString()).GetAwaiter().GetResult();
         }
 
-        public async Task StartAsync()
+        public void Start()
         {
             NodeBuilder.CreateDataFolder(this.DataFolder);
 
@@ -140,24 +135,51 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
             config.Add("agentprefix", "node" + this.ports[0].ToString());
             config.Import(this.ConfigParameters);
             File.WriteAllText(this.Config, config.ToString());
+
             lock (this.lockObject)
             {
                 this.runner.Start(this.DataFolder);
                 this.State = CoreNodeState.Starting;
             }
+
+            if (this.runner is BitcoinCoreRunner)
+                StartBitcoinCoreRunner();
+            else
+                StartStratisRunner();
+
+            this.State = CoreNodeState.Running;
+        }
+
+        private void StartBitcoinCoreRunner()
+        {
             while (true)
             {
                 try
                 {
-                    await this.CreateRPCClient().GetBlockHashAsync(0);
+                    CreateRPCClient().GetBlockHashAsync(0).GetAwaiter().GetResult();
                     this.State = CoreNodeState.Running;
                     break;
                 }
-                catch
+                catch { }
+
+                Task.Delay(200);
+            }
+        }
+
+        private void StartStratisRunner()
+        {
+            while (true)
+            {
+                if (this.runner.FullNode == null)
                 {
+                    Thread.Sleep(100);
+                    continue;
                 }
-                if (this.runner.IsDisposed)
+
+                if (this.runner.FullNode.State == FullNodeState.Started)
                     break;
+                else
+                    Thread.Sleep(200);
             }
         }
 

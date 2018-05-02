@@ -9,7 +9,6 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
 using NBitcoin;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Features.BlockStore;
@@ -251,7 +250,10 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
 
         public void StartAll()
         {
-            Task.WaitAll(this.Nodes.Where(n => n.State == CoreNodeState.Stopped).Select(n => n.StartAsync()).ToArray());
+            foreach (var node in this.Nodes.Where(n => n.State == CoreNodeState.Stopped))
+            {
+                node.Start();
+            }
         }
 
         public void Dispose()
