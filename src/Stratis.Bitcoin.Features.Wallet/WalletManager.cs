@@ -145,14 +145,14 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             this.transactionBroadcastEntry = null;
 
-            if (string.IsNullOrEmpty(transactionEntry.ErroMessage))
+            if (string.IsNullOrEmpty(transactionEntry.ErrorMessage))
             {
                 this.ProcessTransaction(transactionEntry.Transaction, null, null, transactionEntry.State == State.Propagated);
             }
             else
             {
                 this.transactionBroadcastEntry = transactionEntry;
-                this.logger.LogTrace("Exception occurred: {0}", transactionEntry.ErroMessage);
+                this.logger.LogTrace("Exception occurred: {0}", transactionEntry.ErrorMessage);
                 this.logger.LogTrace("(-)[EXCEPTION]");
             }
 

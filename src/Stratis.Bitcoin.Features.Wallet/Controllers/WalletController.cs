@@ -719,10 +719,10 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
 
                 var transactionBroadCastEntry = this.walletManager.GetTransactionBroadcastEntry();
 
-                if (!string.IsNullOrEmpty(transactionBroadCastEntry?.ErroMessage))
+                if (!string.IsNullOrEmpty(transactionBroadCastEntry?.ErrorMessage))
                 {                    
-                    this.logger.LogError("Exception occurred: {0}", transactionBroadCastEntry.ErroMessage);
-                    return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, transactionBroadCastEntry.ErroMessage, "Transaction Exception");
+                    this.logger.LogError("Exception occurred: {0}", transactionBroadCastEntry.ErrorMessage);
+                    return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, transactionBroadCastEntry.ErrorMessage, "Transaction Exception");
                 }
 
                 return this.Json(model);
