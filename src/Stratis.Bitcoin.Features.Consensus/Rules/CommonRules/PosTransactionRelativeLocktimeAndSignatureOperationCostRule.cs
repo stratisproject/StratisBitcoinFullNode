@@ -13,17 +13,17 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
     /// Then updates the coinview with each transaction
     /// </summary>
     [ExecutionRule]
-    public class TransactionRelativeLocktimeAndSignatureOperationCostRule : ConsensusRule 
+    public class PosTransactionRelativeLocktimeAndSignatureOperationCostRule : ConsensusRule
     {
         /// <summary>Consensus options.</summary>
-        public PowConsensusOptions ConsensusOptions { get; }
+        public PosConsensusOptions ConsensusOptions { get; }
 
         public ConsensusPerformanceCounter PerformanceCounter { get; set; }
 
-        public TransactionRelativeLocktimeAndSignatureOperationCostRule(Network network, IDateTimeProvider dateTimeProvider)
+        public PosTransactionRelativeLocktimeAndSignatureOperationCostRule(Network network, IDateTimeProvider dateTimeProvider)
         {
             this.PerformanceCounter = new ConsensusPerformanceCounter(dateTimeProvider);
-            this.ConsensusOptions = network.Consensus.Option<PowConsensusOptions>();
+            this.ConsensusOptions = network.Consensus.Option<PosConsensusOptions>();
         }
 
         public override Task RunAsync(RuleContext context)
@@ -46,7 +46,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
                 Transaction tx = block.Transactions[txIndex];
                 if (!context.SkipValidation)
                 {
-                    if (!tx.IsCoinBase && (!context.IsPoS || (context.IsPoS && !tx.IsCoinStake)))
+                    if (!tx.IsCoinBase)//TODO before PR - create POS rule && (!context.IsPoS || (context.IsPoS && !tx.IsCoinStake)))
                     {
                         int[] prevheights;
 
@@ -80,9 +80,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
                     if (sigOpsCost > this.ConsensusOptions.MaxBlockSigopsCost)
                         ConsensusErrors.BadBlockSigOps.Throw();
 
-                    // TODO: Remove when agree that the below commented out is correct to removed - it is exactly the same condition that this code is already in.
-                    //if (!tx.IsCoinBase && (!context.IsPoS || (context.IsPoS && !tx.IsCoinStake)))
-                    //{ 
+                    if (!tx.IsCoinBase)//TODO before PR - create POS rule && (!context.IsPoS || (context.IsPoS && !tx.IsCoinStake)))
+                    {
                         this.CheckInputs(tx, view, index2.Height);
                         fees += view.GetValueIn(tx) - tx.TotalOut;
                         var txData = new PrecomputedTransactionData(tx);
@@ -102,7 +101,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
                             checkInput.Start(context.TaskScheduler);
                             context.CheckInputs.Add(checkInput);
                         }
-                    //}
+                    }
                 }
 
                 context.Fees = fees;

@@ -11,7 +11,7 @@ using Xunit;
 
 namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
 {
-    public class UpdateCoinViewRuleTests
+    public class PowTransactionRelativeLocktimeAndSignatureOperationCostRuleTests
     {
         private const int HeightOfBlockchain = 1;
         private List<Transaction> transactions;
@@ -25,7 +25,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         public void RunAsync_ValidatingATransactionThatIsNotCoinBaseButStillHasUnspentOutputsWithoutInput_ThrowsBadTransactionMissingInput()
         {
             this.GivenACoinbaseTransactionFromAPreviousBlock();
-            this.GivenACoinbaseTransaction();
+            //this.GivenACoinbaseTransaction();
             this.AndARuleContext();
             this.AndSomeUnspentOutputs();
             this.AndATransactionWithNoUnspentOutputsAsInput();
@@ -37,7 +37,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         public void RunAsync_ValidatingABlockHeightLowerThanBIP86Allows_ThrowsBadTransactionNonFinal()
         {
             this.GivenACoinbaseTransactionFromAPreviousBlock();
-            this.GivenACoinbaseTransaction();
+            //this.GivenACoinbaseTransaction();
             this.AndARuleContext();
             this.AndSomeUnspentOutputs();
             this.AndATransactionBlockHeightLowerThanBip68Allows();
@@ -74,7 +74,9 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             this.ruleContext.BlockValidationContext.ChainedBlock = new ChainedBlock(new BlockHeader(), new uint256("bcd7d5de8d3bcc7b15e7c8e5fe77c0227cdfa6c682ca13dcf4910616f10fdd06"), HeightOfBlockchain);
             this.ruleContext.Flags = new DeploymentFlags();
 
-            this.transactions.Add(this.transactionWithCoinbase);
+            //TODO: COINBASE TRANSACTION REMOVED FROM TEST AT THE MOMENT - SO CANT BE ADDED HERE UNLESS NOT NULL
+            if (this.transactionWithCoinbase != null)
+                this.transactions.Add(this.transactionWithCoinbase);
         }
 
         private void AndATransactionBlockHeightLowerThanBip68Allows()
@@ -83,7 +85,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             {
                 Inputs = { new TxIn()
                 {
-                    PrevOut = new OutPoint(this.transactionWithCoinbase, 0),
+                    PrevOut = new OutPoint(this.transactionWithCoinbaseFromPreviousBlock, 0),
                     Sequence = HeightOfBlockchain + 1, //this sequence being higher triggers the ThrowsBadTransactionNonFinal
                 } },
                 Outputs = { new TxOut()},
@@ -119,7 +121,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         {
             try
             {
-                var rule = new TransactionRelativeLocktimeAndSignatureOperationCostRule(Network.RegTest, new Mock<IDateTimeProvider>().Object) { Logger = new Mock<ILogger>().Object };
+                var rule = new PowTransactionRelativeLocktimeAndSignatureOperationCostRule(Network.RegTest, new Mock<IDateTimeProvider>().Object) { Logger = new Mock<ILogger>().Object };
                 rule.RunAsync(this.ruleContext).GetAwaiter().GetResult();
             }
             catch (Exception e)

@@ -289,13 +289,22 @@ namespace Stratis.Bitcoin.Features.Consensus
                     // rules that require the store to be loaded (coinview)
                     new LoadCoinviewRule(),
                     new TransactionDuplicationActivationRule(), // implements BIP30
-                    new TransactionRelativeLocktimeAndSignatureOperationCostRule(this.network, this.dateTimeProvider) // implements BIP68
+                    new PowTransactionRelativeLocktimeAndSignatureOperationCostRule(this.network, this.dateTimeProvider) // implements BIP68
                 };
             }
         }
 
         public class PosConsensusRulesRegistration : IRuleRegistration
         {
+            private Network network;
+            private IDateTimeProvider dateTimeProvider;
+
+            public PosConsensusRulesRegistration(Network network, IDateTimeProvider dateTimeProvider)
+            {
+                this.network = network;
+                this.dateTimeProvider = dateTimeProvider;
+            }
+
             public IEnumerable<ConsensusRule> GetRules()
             {
                 return new List<ConsensusRule>
@@ -331,7 +340,8 @@ namespace Stratis.Bitcoin.Features.Consensus
 
                     // rules that require the store to be loaded (coinview)
                     new LoadCoinviewRule(),
-                    new TransactionDuplicationActivationRule() // implements BIP30
+                    new TransactionDuplicationActivationRule(), // implements BIP30
+                    new PosTransactionRelativeLocktimeAndSignatureOperationCostRule(this.network, this.dateTimeProvider) // implements BIP68
                 };
             }
         }
