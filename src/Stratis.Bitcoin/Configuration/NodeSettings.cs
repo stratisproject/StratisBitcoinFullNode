@@ -327,8 +327,11 @@ namespace Stratis.Bitcoin.Configuration
                     foreach (var featureRegistration in features)
                     {
                         MethodInfo getDefaultConfiguration = featureRegistration.FeatureType.GetMethod("BuildDefaultConfigurationFile", BindingFlags.Public | BindingFlags.Static);
-
-                        getDefaultConfiguration?.Invoke(null, new object[] { builder, this.Network });
+                        if (getDefaultConfiguration != null)
+                        {
+                            getDefaultConfiguration.Invoke(null, new object[] { builder, this.Network });
+                            builder.AppendLine();
+                        }
                     }
                 }
 
@@ -418,6 +421,40 @@ namespace Stratis.Bitcoin.Configuration
             builder.AppendLine($"-bantime=<number>         Number of seconds to keep misbehaving peers from reconnecting (Default 24-hour ban).");
 
             defaults.Logger.LogInformation(builder.ToString());
+        }
+        
+        /// <summary>
+        /// Get the default configuration.
+        /// </summary>
+        /// <param name="builder">The string builder to add the settings to.</param>
+        /// <param name="network">The network to base the defaults off.</param>
+        public static void BuildDefaultConfigurationFile(StringBuilder builder, Network network)
+        {
+            var defaults = Default();
+
+            builder.AppendLine("####Node Settings####");
+            builder.AppendLine($"#Accept non-standard transactions. Default {(defaults.RequireStandard?1:0)}.");
+            builder.AppendLine($"#acceptnonstdtxn={(defaults.RequireStandard?1:0)}");
+            builder.AppendLine($"#Max tip age. Default {network.MaxTipAge}.");
+            builder.AppendLine($"#maxtipage={network.MaxTipAge}");
+            builder.AppendLine($"#Specified node to connect to. Can be specified multiple times.");
+            builder.AppendLine($"#connect=<ip:port>");
+            builder.AppendLine($"#Add a node to connect to and attempt to keep the connection open. Can be specified multiple times.");
+            builder.AppendLine($"#addnode=<ip:port>");
+            builder.AppendLine($"#Bind to given address and whitelist peers connecting to it. Use [host]:port notation for IPv6. Can be specified multiple times.");
+            builder.AppendLine($"#whitebind=<ip:port>");
+            builder.AppendLine($"#Specify your own public address.");
+            builder.AppendLine($"#externalip=<ip>");
+            builder.AppendLine($"#Sync with peers. Default 1.");
+            builder.AppendLine($"#synctime=1");
+            builder.AppendLine($"#Minimum fee rate. Defaults to {network.MinTxFee}.");
+            builder.AppendLine($"#mintxfee={network.MinTxFee}");
+            builder.AppendLine($"#Fallback fee rate. Defaults to {network.FallbackFee}.");
+            builder.AppendLine($"#fallbackfee={network.FallbackFee}");
+            builder.AppendLine($"#Minimum relay fee rate. Defaults to {network.MinRelayTxFee}.");
+            builder.AppendLine($"#minrelaytxfee={network.MinRelayTxFee}");
+            builder.AppendLine($"#Number of seconds to keep misbehaving peers from reconnecting (Default 24-hour ban).");
+            builder.AppendLine($"#bantime=<number>");
         }
     }
 }
