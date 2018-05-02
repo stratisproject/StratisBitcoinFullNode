@@ -73,9 +73,6 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <summary>The broadcast manager.</summary>
         private readonly IBroadcasterManager broadcasterManager;
 
-        /// <summary>The transaction broadcast entry.</summary>
-        private TransactionBroadcastEntry transactionBroadcastEntry;
-
         /// <summary>Provider of time functions.</summary>
         private readonly IDateTimeProvider dateTimeProvider;
 
@@ -102,7 +99,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             IAsyncLoopFactory asyncLoopFactory,
             INodeLifetime nodeLifetime,
             IDateTimeProvider dateTimeProvider,
-            IBroadcasterManager broadcasterManager = null) // no need to know about transactions the node broadcasted
+            IBroadcasterManager broadcasterManager = null) // no need to know about transactions the node broadcast
         {
             Guard.NotNull(loggerFactory, nameof(loggerFactory));
             Guard.NotNull(network, nameof(network));
@@ -143,15 +140,12 @@ namespace Stratis.Bitcoin.Features.Wallet
         {
             this.logger.LogTrace("()");
 
-            this.transactionBroadcastEntry = null;
-
             if (string.IsNullOrEmpty(transactionEntry.ErrorMessage))
             {
                 this.ProcessTransaction(transactionEntry.Transaction, null, null, transactionEntry.State == State.Propagated);
             }
             else
             {
-                this.transactionBroadcastEntry = transactionEntry;
                 this.logger.LogTrace("Exception occurred: {0}", transactionEntry.ErrorMessage);
                 this.logger.LogTrace("(-)[EXCEPTION]");
             }
