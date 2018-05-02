@@ -44,7 +44,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
                 Transaction tx = block.Transactions[txIndex];
                 if (!context.SkipValidation)
                 {
-                    if (!tx.IsCoinBase && !tx.IsCoinStake)
+                    if (!tx.IsCoinBase && !tx.IsCoinStake) //TODO: is just !IsCoinStake sufficient here?
                     {
                         //TODO before PR - this logic can be pulled out in the Pow Base and just called here
                         int[] prevheights;
