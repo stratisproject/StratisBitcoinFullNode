@@ -1,6 +1,5 @@
 ﻿using System.Collections.Generic;
 using NBitcoin;
-using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.Miner.Interfaces
 {
@@ -29,6 +28,11 @@ namespace Stratis.Bitcoin.Features.Miner.Interfaces
         /// </summary>
         /// <param name="reserveScript">The reserve script to use in the mining loop.</param>
         /// <returns>The running async loop.</returns>
-        IAsyncLoop Mine(Script reserveScript);
+        void Mine(Script reserveScript);
+
+        /// <summary>
+        /// Stops the async mining loop.
+        /// </summary>
+        void StopMining();
     }
 }
