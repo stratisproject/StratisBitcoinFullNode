@@ -601,7 +601,7 @@ namespace NBitcoin
         {
             get
             {
-                var op = ToOps().FirstOrDefault();
+                Op op = ToOps().FirstOrDefault();
                 if (op == null)
                     return false;
 

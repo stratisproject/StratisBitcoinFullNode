@@ -9,7 +9,7 @@ using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
 {
-    [ExecutionRule]
+    // [ExecutionRule] - For smart contracts, we need to do validation on the fee for particular transactions. See GasBudgetRule. As such, we need this rule to be available in both cases : Validation and Execution. 
     public class LoadCoinviewRule : UtxoStoreConsensusRule
     {
         /// <inheritdoc />

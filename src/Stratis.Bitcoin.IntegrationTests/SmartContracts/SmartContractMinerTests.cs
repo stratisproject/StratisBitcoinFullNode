@@ -115,7 +115,6 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
             public List<Blockinfo> blockinfo;
             public Network network;
             public Script scriptPubKey;
-            public uint160 coinbaseAddress;
             public BlockTemplate newBlock;
             public Transaction tx, tx2;
             public Script script;
@@ -156,8 +155,6 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 this.network = Network.SmartContractsRegTest;
                 this.privateKey = new Key();
                 this.scriptPubKey = PayToPubkeyHashTemplate.Instance.GenerateScriptPubKey(this.privateKey.PubKey);
-
-                this.coinbaseAddress = new uint160(this.privateKey.PubKey.Hash.ToBytes(), false);
                 this.newBlock = new BlockTemplate();
 
                 this.entry = new TestMemPoolEntryHelper();
@@ -690,6 +687,42 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
             Assert.Equal(1000, pblocktemplate.Block.Transactions[2].Outputs[0].Value); // Only txOut should be to contract
         }
 
+        /// <summary>
+        /// Can execute a smart contract transaction referencing a P2PKH that's in the same block, above it.
+        /// </summary>
+        /// <returns></returns>
+        [Fact]
+        public async Task SmartContract_ReferencingInputInSameBlock()
+        {
+            TestContext context = new TestContext();
+            await context.InitializeAsync();
+
+            // Create the transaction to be used as the input and add to mempool
+            TestMemPoolEntryHelper entry = new TestMemPoolEntryHelper();
+            Transaction preTx = new Transaction();
+            var txIn = new TxIn(new OutPoint(context.txFirst[0].GetHash(), 0));
+            txIn.ScriptSig = context.privateKey.ScriptPubKey;
+            preTx.AddInput(txIn);
+            preTx.AddOutput(new TxOut(new Money(49, MoneyUnit.BTC), PayToPubkeyHashTemplate.Instance.GenerateScriptPubKey(context.privateKey.PubKey)));
+            preTx.Sign(context.privateKey, false);
+            context.mempool.AddUnchecked(preTx.GetHash(), entry.Fee(30000).Time(context.date.GetTime()).SpendsCoinbase(true).FromTx(preTx));
+
+            // Add the smart contract transaction to the mempool and mine as normal.
+            ulong gasPrice = 1;
+            Gas gasLimit = (Gas)1000000;
+            var gasBudget = gasPrice * gasLimit;
+            SmartContractCompilationResult compilationResult = SmartContractCompiler.CompileFile("SmartContracts/InterContract1.cs");
+            Assert.True(compilationResult.Success);
+            SmartContractCarrier contractTransaction = SmartContractCarrier.CreateContract(1, compilationResult.Compilation, gasPrice, gasLimit);
+            Transaction tx = this.AddTransactionToMempool(context, contractTransaction, preTx.GetHash(), 0, gasBudget, false);
+            BlockTemplate pblocktemplate = await this.BuildBlockAsync(context);
+
+            // Check all went well. i.e. contract is deployed.
+            uint160 newContractAddress = SmartContractCarrier.Deserialize(tx, tx.Outputs[0]).GetNewContractAddress();
+            string newContractAddressString = newContractAddress.ToString();
+            Assert.NotNull(context.stateRoot.GetCode(newContractAddress));
+        }
+
 
         private async Task<BlockTemplate> AddTransactionToMemPoolAndBuildBlockAsync(TestContext context, SmartContractCarrier smartContractCarrier, uint256 prevOutHash, ulong value, ulong gasBudget)
         {
@@ -697,7 +730,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
             return await this.BuildBlockAsync(context);
         }
 
-        private Transaction AddTransactionToMempool(TestContext context, SmartContractCarrier smartContractCarrier, uint256 prevOutHash, ulong value, ulong gasBudget)
+        private Transaction AddTransactionToMempool(TestContext context, SmartContractCarrier smartContractCarrier, uint256 prevOutHash, ulong value, ulong gasBudget, bool spendsCoinbase = true)
         {
             var entryFee = gasBudget;
             TestMemPoolEntryHelper entry = new TestMemPoolEntryHelper();
@@ -707,7 +740,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
             tx.AddInput(txIn);
             tx.AddOutput(new TxOut(new Money(value), new Script(smartContractCarrier.Serialize())));
             tx.Sign(context.privateKey, false);
-            context.mempool.AddUnchecked(tx.GetHash(), entry.Fee(entryFee).Time(context.date.GetTime()).SpendsCoinbase(true).FromTx(tx));
+            context.mempool.AddUnchecked(tx.GetHash(), entry.Fee(entryFee).Time(context.date.GetTime()).SpendsCoinbase(spendsCoinbase).FromTx(tx));
             return tx;
         }
 

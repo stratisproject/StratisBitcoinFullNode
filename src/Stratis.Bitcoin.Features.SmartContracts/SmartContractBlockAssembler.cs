@@ -27,6 +27,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         private uint160 coinbaseAddress;
         private readonly CoinView coinView;
 
+        private readonly ILogger<SmartContractBlockAssembler> logger;
+
         public SmartContractBlockAssembler(
             IConsensusLoop consensusLoop,
             Network network,
@@ -44,6 +46,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             this.coinView = coinView;
             this.stateRoot = stateRoot;
             this.executorFactory = executorFactory;
+            this.logger = loggerFactory.CreateLogger<SmartContractBlockAssembler>();
         }
 
         public override BlockTemplate CreateNewBlock(Script scriptPubKeyIn, bool mineWitnessTx = true)
@@ -87,7 +90,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             else
                 this.AddContractToBlock(mempoolEntry, smartContractTxOut);
         }
-
 
         /// <summary>
         /// Execute the contract and add all relevant fees and refunds to the block.

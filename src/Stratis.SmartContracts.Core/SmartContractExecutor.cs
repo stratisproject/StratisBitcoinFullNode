@@ -81,7 +81,7 @@ namespace Stratis.SmartContracts.Core
         /// </summary>
         private void PreExecute()
         {
-            this.gasMeter.Spend(GasPriceList.BaseCost);
+            this.gasMeter.Spend((Gas)GasPriceList.BaseCost);
         }
 
         public abstract void OnExecute();

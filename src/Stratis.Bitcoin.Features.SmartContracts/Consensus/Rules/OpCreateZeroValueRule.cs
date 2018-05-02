@@ -1,9 +1,9 @@
-﻿using System.Collections.Generic;
-using System.Linq;
+﻿using System.Linq;
 using System.Threading.Tasks;
 using NBitcoin;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.Rules;
+using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.SmartContracts.Core;
 using Block = NBitcoin.Block;
 
@@ -13,36 +13,40 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Consensus.Rules
     /// Validates that no satoshis were supplied in the smart contract create transaction
     /// </summary>
     [ValidationRule(CanSkipValidation = false)]
-    public class OpCreateZeroValueRule : ConsensusRule
+    public class OpCreateZeroValueRule : ConsensusRule, ISmartContractMempoolRule
     {
         public override Task RunAsync(RuleContext context)
         {
             Block block = context.BlockValidationContext.Block;
 
-            IEnumerable<Transaction> smartContractTransactions =
-                block.Transactions.GetSmartContractCreateTransactions().ToList();
-
-            if (!smartContractTransactions.Any())
+            foreach(Transaction transaction in block.Transactions)
             {
-                // No smart contract transactions, nothing to validate
-                return Task.CompletedTask;
-            }
-
-            foreach (Transaction transaction in smartContractTransactions)
-            {
-                // This should never be null as every tx in smartContractTransactions contains a SmartContractOutput
-                // So throw if null, because we really didn't expect that
-                TxOut smartContractOutput = transaction.Outputs.First(txOut => txOut.ScriptPubKey.IsSmartContractExec);
-
-                var carrier = SmartContractCarrier.Deserialize(transaction, smartContractOutput);
-
-                if (carrier.TxOutValue != 0)
-                {
-                    this.Throw();
-                }
+                CheckTransaction(transaction);
             }
 
             return Task.CompletedTask;
+        }
+
+        public void CheckTransaction(MempoolValidationContext context)
+        {
+            CheckTransaction(context.Transaction);
+        }
+
+        private void CheckTransaction(Transaction transaction)
+        {
+            if (!transaction.IsSmartContractCreateTransaction())
+                return;
+
+            // This should never be null as every tx in smartContractTransactions contains a SmartContractOutput
+            // So throw if null, because we really didn't expect that
+            TxOut smartContractOutput = transaction.Outputs.First(txOut => txOut.ScriptPubKey.IsSmartContractExec);
+
+            var carrier = SmartContractCarrier.Deserialize(transaction, smartContractOutput);
+
+            if (carrier.TxOutValue != 0)
+            {
+                this.Throw();
+            }
         }
 
         private void Throw()
