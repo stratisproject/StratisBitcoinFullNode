@@ -1,59 +1,44 @@
-﻿using System.Linq;
-using Microsoft.Extensions.DependencyInjection;
-using Stratis.Bitcoin.Builder;
-using Stratis.Bitcoin.Builder.Feature;
+﻿using System.Collections.Generic;
+using System.Linq;
+using NBitcoin;
+using Stratis.Bitcoin.Features.Consensus;
+using Stratis.Bitcoin.Features.Consensus.Interfaces;
+using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers;
-using Stratis.Bitcoin.Interfaces;
-using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.IntegrationTests
 {
-    public static class FullNodeTestBuilderExtension
+    public static class CoreNodeExtensions
     {
-        /// <summary>
-        /// Substitute the <see cref="IDateTimeProvider"/> for a given feature.
-        /// </summary>
-        /// <typeparam name="T">The feature to substitute the provider for.</typeparam>
-        public static IFullNodeBuilder SubstituteDateTimeProviderFor<T>(this IFullNodeBuilder fullNodeBuilder, IDateTimeProvider provider)
+        public static Money GetProofOfWorkRewardForMinedBlocks(this CoreNode node, int numberOfBlocks)
         {
-            fullNodeBuilder.ConfigureFeature(features =>
-            {
-                var feature = features.FeatureRegistrations.FirstOrDefault(f => f.FeatureType == typeof(T));
-                if (feature != null)
-                {
-                    feature.FeatureServices(services =>
-                    {
-                        ServiceDescriptor service = services.FirstOrDefault(s => s.ServiceType == typeof(IDateTimeProvider));
-                        if (service != null)
-                            services.Remove(service); services.AddSingleton(provider);
-                    });
-                }
-            });
+            var powValidator = node.FullNode.NodeService<IPowConsensusValidator>();
+            var halvingInterval = powValidator.ConsensusParams.SubsidyHalvingInterval;
+            var startBlock = node.FullNode.Chain.Height - numberOfBlocks + 1;
 
-            return fullNodeBuilder;
+            return Enumerable.Range(startBlock, numberOfBlocks)
+                .Partition(halvingInterval)
+                .Sum(p => powValidator.GetProofOfWorkReward(p.First()) * p.Count());
         }
 
-        public static IFullNodeBuilder MockIBD(this IFullNodeBuilder fullNodeBuilder)
+        public static Money WalletBalance(this CoreNode node, string walletName)
         {
-            fullNodeBuilder.ConfigureFeature(features =>
-            {
-                foreach (IFeatureRegistration feature in features.FeatureRegistrations)
-                {
-                    feature.FeatureServices(services =>
-                    {
-                        // Get default IBD implementation and replace it with the mock.
-                        ServiceDescriptor ibdService = services.FirstOrDefault(x => x.ServiceType == typeof(IInitialBlockDownloadState));
+            return node.FullNode.WalletManager().GetSpendableTransactionsInWallet(walletName).Sum(s => s.Transaction.Amount);
+        }
 
-                        if (ibdService != null)
-                        {
-                            services.Remove(ibdService);
-                            services.AddSingleton<IInitialBlockDownloadState, InitialBlockDownloadStateMock>();
-                        }
-                    });
-                }
-            });
+        public static int? WalletHeight(this CoreNode node, string walletName)
+        {
+            return node.FullNode.WalletManager().GetSpendableTransactionsInWallet(walletName).First().Transaction.BlockHeight;
+        }
 
-            return fullNodeBuilder;
+        public static int WalletSpendableTransactionCount(this CoreNode node, string walletName)
+        {
+            return node.FullNode.WalletManager().GetSpendableTransactionsInWallet(walletName).Count();
+        }
+
+        public static Money GetFee(this CoreNode node, TransactionBuildContext transactionBuildContext)
+        {
+            return node.FullNode.WalletTransactionHandler().EstimateFee(transactionBuildContext);
         }
     }
 }

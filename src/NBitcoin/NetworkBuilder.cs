@@ -17,7 +17,7 @@ namespace NBitcoin
         internal int Port;
         internal uint Magic;
         internal Consensus Consensus;
-        internal List<DNSSeedData> Seeds ;
+        internal List<DNSSeedData> Seeds;
         internal List<NetworkAddress> FixedSeeds;
         internal Block Genesis;
         internal long MinTxFee;
@@ -25,6 +25,7 @@ namespace NBitcoin
         internal int MaxTipAge;
         internal long FallbackFee;
         internal long MinRelayTxFee;
+        internal Dictionary<int, CheckpointInfo> Checkpoints;
 
         public NetworkBuilder()
         {
@@ -33,6 +34,7 @@ namespace NBitcoin
             this.Aliases = new List<string>();
             this.Seeds = new List<DNSSeedData>();
             this.FixedSeeds = new List<NetworkAddress>();
+            this.Checkpoints = new Dictionary<int, CheckpointInfo>();
         }
 
         public NetworkBuilder SetName(string name)
@@ -95,7 +97,7 @@ namespace NBitcoin
 
         public void CopyFrom(Network network)
         {
-            if(network == null)
+            if (network == null)
                 throw new ArgumentNullException("network");
 
             this.Base58Prefixes.Clear();
@@ -108,6 +110,7 @@ namespace NBitcoin
                 this.SetBech32((Bech32Type)i, network.bech32Encoders[i]);
 
             this.SetConsensus(network.Consensus)
+                .SetCheckpoints(network.Checkpoints)
                 .SetGenesis(network.GetGenesis())
                 .SetMagic(this.Magic)
                 .SetPort(network.DefaultPort)
@@ -121,7 +124,7 @@ namespace NBitcoin
         {
             this.Aliases.Add(alias);
             return this;
-        }        
+        }
 
         public NetworkBuilder SetRPCPort(int port)
         {
@@ -151,18 +154,18 @@ namespace NBitcoin
             this.FixedSeeds.AddRange(seeds);
             return this;
         }
-        
+
         public NetworkBuilder SetConsensus(Consensus consensus)
         {
             this.Consensus = consensus?.Clone();
             return this;
         }
-        
+
         public NetworkBuilder SetGenesis(Block genesis)
         {
             this.Genesis = genesis;
             return this;
-        }        
+        }
 
         public NetworkBuilder SetBase58Bytes(Base58Type type, byte[] bytes)
         {
@@ -178,6 +181,15 @@ namespace NBitcoin
         public NetworkBuilder SetBech32(Bech32Type type, Bech32Encoder encoder)
         {
             this.Bech32Prefixes.AddOrReplace(type, encoder);
+            return this;
+        }
+
+        public NetworkBuilder SetCheckpoints(Dictionary<int, CheckpointInfo> checkpoints)
+        {
+            if (checkpoints == null)
+                throw new ArgumentNullException("checkpoints");
+
+            this.Checkpoints = checkpoints;
             return this;
         }
 

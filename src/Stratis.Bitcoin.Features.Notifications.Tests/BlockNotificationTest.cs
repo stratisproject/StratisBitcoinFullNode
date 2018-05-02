@@ -71,7 +71,7 @@ namespace Stratis.Bitcoin.Features.Notifications.Tests
             var dataFolder = CreateDataFolder(this);
             var connectionManager = new Mock<IConnectionManager>();
             connectionManager.Setup(c => c.ConnectedPeers).Returns(new NetworkPeerCollection());
-            connectionManager.Setup(c => c.NodeSettings).Returns(new NodeSettings(args:new string[] { $"-datadir={dataFolder.WalletPath}" }));
+            connectionManager.Setup(c => c.NodeSettings).Returns(new NodeSettings(args:new string[] { $"-datadir={dataFolder.RootPath}" }));
             connectionManager.Setup(c => c.Parameters).Returns(new NetworkPeerConnectionParameters());
 
             var lookAheadBlockPuller = new LookaheadBlockPuller(chain, connectionManager.Object, new Mock<ILoggerFactory>().Object);

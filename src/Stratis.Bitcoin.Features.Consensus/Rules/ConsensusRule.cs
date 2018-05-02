@@ -44,12 +44,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules
     public class ConsensusRuleDescriptor
     {
         /// <summary>
-        /// A special validation attribute that will be used by the engine to determine if validation
-        /// whether this rules is a validation rule.
-        /// </summary>
-        private readonly ValidationRuleAttribute validationRuleAttribute;
-
-        /// <summary>
         /// Initializes an instance of the object.
         /// </summary>
         public ConsensusRuleDescriptor(ConsensusRule rule)
@@ -57,11 +51,11 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules
             Guard.NotNull(rule, nameof(rule));
 
             this.Rule = rule;
-            this.Attributes = Attribute.GetCustomAttributes(rule.GetType()).OfType<RuleAttribute>().ToList();
+            this.RuleAttributes = Attribute.GetCustomAttributes(rule.GetType()).OfType<RuleAttribute>().ToList();
 
-            this.validationRuleAttribute = this.Attributes.OfType<ValidationRuleAttribute>().FirstOrDefault();
+            var validationRuleAttribute = this.RuleAttributes.OfType<ValidationRuleAttribute>().FirstOrDefault();
 
-            this.CanSkipValidation = this.validationRuleAttribute?.CanSkipValidation ?? !this.Attributes.Any();
+            this.CanSkipValidation = validationRuleAttribute?.CanSkipValidation ?? !this.RuleAttributes.Any();
         }
 
         /// <summary>Rules that are strictly validation can be skipped unless the <see cref="ValidationRuleAttribute.CanSkipValidation"/> is <c>false</c>.</summary>
@@ -71,7 +65,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules
         public ConsensusRule Rule { get; }
 
         /// <summary>The collection of <see cref="RuleAttribute"/> that are attached to this rule.</summary>
-        public List<RuleAttribute> Attributes { get; }
+        public List<RuleAttribute> RuleAttributes { get; }
     }
 
     /// <summary>
