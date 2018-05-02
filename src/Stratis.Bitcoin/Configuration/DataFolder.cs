@@ -29,7 +29,13 @@ namespace Stratis.Bitcoin.Configuration
             this.LogPath = Path.Combine(path, "Logs");
             this.DnsMasterFilePath = path;
             this.SmartContractStatePath = Path.Combine(path, "contracts");
+            this.RootPath = path;
         }
+
+        /// <summary>
+        /// The DataFolder's path.
+        /// </summary>
+        public string RootPath { get; }
 
         /// <summary>Address manager's database of peers.</summary>
         /// <seealso cref="Protocol.PeerAddressManager.SavePeers(string, string)"/>

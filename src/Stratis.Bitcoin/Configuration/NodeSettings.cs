@@ -117,9 +117,8 @@ namespace Stratis.Bitcoin.Configuration
             {
                 // Create the data directories if they don't exist.
                 string directoryPath = Path.Combine(this.DataDir, this.Network.RootFolderName, this.Network.Name);
-                Directory.CreateDirectory(directoryPath);
-                this.DataDir = directoryPath;
-                this.Logger.LogDebug("Data directory initialized with path {0}.", directoryPath);
+                this.DataDir = Directory.CreateDirectory(directoryPath).FullName;
+                this.Logger.LogDebug("Data directory initialized with path {0}.", this.DataDir);
             }
 
             this.DataFolder = new DataFolder(this.DataDir);

@@ -109,14 +109,12 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
 
         private int last;
         private string root;
-        private List<IDisposable> disposables;
 
         public NodeBuilder(string root, string bitcoindPath)
         {
             this.last = 0;
             this.Nodes = new List<CoreNode>();
             this.ConfigParameters = new NodeConfigParameters();
-            this.disposables = new List<IDisposable>();
 
             this.root = root;
             this.BitcoinD = bitcoindPath;
@@ -134,6 +132,8 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
 
         public static NodeBuilder Create([CallerMemberName] string caller = null, string version = "0.13.1")
         {
+            KillAnyBitcoinInstances();
+
             Directory.CreateDirectory("TestData");
             var path = EnsureDownloaded(version);
             caller = Path.Combine("TestData", caller);
@@ -290,24 +290,25 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
         {
             foreach (var node in this.Nodes)
                 node.Kill();
-            foreach (var disposable in this.disposables)
-                disposable.Dispose();
 
-            for (int retry = 0; retry < 2; retry++)
-            {
-                foreach (var bitcoind in Process.GetProcessesByName("bitcoind"))
-                {
-                    if (bitcoind.MainModule.FileName.Contains("Stratis.Bitcoin.IntegrationTests"))
-                        bitcoind.Kill();
-                }
-
-                Thread.Sleep(1000);
-            }
+            KillAnyBitcoinInstances();
         }
 
-        internal void AddDisposable(IDisposable group)
+        internal static void KillAnyBitcoinInstances()
         {
-            this.disposables.Add(group);
+            while (true)
+            {
+                var bitcoinDProcesses = Process.GetProcessesByName("bitcoind");
+                var applicableBitcoinDProcesses = bitcoinDProcesses.Where(b => b.MainModule.FileName.Contains("Stratis.Bitcoin.IntegrationTests"));
+                if (!applicableBitcoinDProcesses.Any())
+                    break;
+
+                foreach (var process in applicableBitcoinDProcesses)
+                {
+                    process.Kill();
+                    Thread.Sleep(1000);
+                }
+            }
         }
     }
 }

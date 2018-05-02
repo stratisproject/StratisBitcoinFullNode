@@ -41,7 +41,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             SmartContractExecutorFactory executorFactory,
             CoinView coinView,
             AssemblerOptions options = null)
-            : base(consensusLoop, network, mempoolLock, mempool, dateTimeProvider, chainTip, loggerFactory, options)
+            : base(chainTip, consensusLoop, dateTimeProvider, loggerFactory, mempool, mempoolLock, network, options)
         {
             this.coinView = coinView;
             this.stateRoot = stateRoot;

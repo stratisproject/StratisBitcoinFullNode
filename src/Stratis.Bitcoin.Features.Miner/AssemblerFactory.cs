@@ -66,7 +66,7 @@ namespace Stratis.Bitcoin.Features.Miner
 
         public BlockAssembler Create(ChainedBlock chainTip, AssemblerOptions options = null)
         {
-            return new PowBlockAssembler(this.consensusLoop, this.network, this.mempoolLock, this.mempool, this.dateTimeProvider, chainTip, this.loggerFactory, options);
+            return new PowBlockAssembler(chainTip, this.consensusLoop, this.dateTimeProvider, this.loggerFactory, this.mempool, this.mempoolLock, this.network, options);
         }
     }
 

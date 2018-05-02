@@ -30,7 +30,7 @@ namespace Stratis.Bitcoin.Features.Miner
             ChainedBlock chainTip,
             ILoggerFactory loggerFactory,
             AssemblerOptions options = null)
-            : base(consensusLoop, network, mempoolLock, mempool, dateTimeProvider, chainTip, loggerFactory, options)
+            : base(chainTip, consensusLoop, dateTimeProvider, loggerFactory, mempool, mempoolLock, network, options)
         {
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.stakeChain = stakeChain;

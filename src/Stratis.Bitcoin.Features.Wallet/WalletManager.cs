@@ -1217,8 +1217,8 @@ namespace Stratis.Bitcoin.Features.Wallet
             };
 
             // Create a folder if none exists and persist the file.
-            this.fileStorage.SaveToFile(walletFile, $"{name}.{WalletFileExtension}");
-
+            this.SaveWallet(walletFile);
+            
             this.logger.LogTrace("(-)");
             return walletFile;
         }
