@@ -9,7 +9,6 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
 using NBitcoin;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Features.BlockStore;
@@ -118,16 +117,6 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
 
             this.root = root;
             this.BitcoinD = bitcoindPath;
-        }
-
-        /// <summary>
-        /// Deletes test folders. Stops "bitcoind" if required.
-        /// </summary>
-        /// <param name="folder">The folder to remove.</param>
-        public static void CleanupTestFolder(string folder)
-        {
-            if (Directory.Exists(folder))
-                Directory.Delete(folder, true);
         }
 
         public static NodeBuilder Create([CallerMemberName] string caller = null, string version = "0.13.1")
@@ -254,7 +243,7 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
 
         public CoreNode CloneStratisNode(CoreNode cloneNode)
         {
-            var node = new CoreNode(cloneNode.Folder, new StratisBitcoinPowRunner(), this, Network.RegTest, false);
+            var node = new CoreNode(cloneNode.Folder, new StratisBitcoinPowRunner(), this, Network.RegTest);
             this.Nodes.Add(node);
             this.Nodes.Remove(cloneNode);
             return node;
@@ -269,7 +258,10 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
 
         public void StartAll()
         {
-            Task.WaitAll(this.Nodes.Where(n => n.State == CoreNodeState.Stopped).Select(n => n.StartAsync()).ToArray());
+            foreach (var node in this.Nodes.Where(n => n.State == CoreNodeState.Stopped))
+            {
+                node.Start();
+            }
         }
 
         public void Dispose()
@@ -323,6 +315,12 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
                 throw new Exception(string.Format("The test folder: {0} could not be created.", folderName));
 
             Directory.CreateDirectory(folderName);
+        }
+
+        internal static void CreateDataFolder(string dataFolder)
+        {
+            if (!Directory.Exists(dataFolder))
+                Directory.CreateDirectory(dataFolder);
         }
     }
 }
