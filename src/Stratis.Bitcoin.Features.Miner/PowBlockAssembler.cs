@@ -14,6 +14,11 @@ namespace Stratis.Bitcoin.Features.Miner
 {
     public abstract class BlockAssembler
     {
+        /// <summary>
+        /// Tip of the chain that this instance will work with without touching any shared chain resources.
+        /// </summary>
+        protected ChainedBlock ChainTip;
+
         /// <summary>Manager of the longest fully validated chain of blocks.</summary>
         protected readonly IConsensusLoop ConsensusLoop;
 
@@ -34,6 +39,62 @@ namespace Stratis.Bitcoin.Features.Miner
 
         /// <summary>Assembler options specific to the assembler e.g. <see cref="AssemblerOptions.BlockMaxSize"/>.</summary>
         protected AssemblerOptions Options;
+
+        private const long TicksPerMicrosecond = 10;
+
+        // Limit the number of attempts to add transactions to the block when it is
+        // close to full; this is just a simple heuristic to finish quickly if the
+        // mempool has a lot of entries.
+        protected const int MaxConsecutiveAddTransactionFailures = 1000;
+
+        // Unconfirmed transactions in the memory pool often depend on other
+        // transactions in the memory pool. When we select transactions from the
+        // pool, we select by highest fee rate of a transaction combined with all
+        // its ancestors.
+        protected long LastBlockTx = 0;
+
+        protected long LastBlockSize = 0;
+
+        protected long LastBlockWeight = 0;
+
+        protected long MedianTimePast;
+
+        // The constructed block template.
+        protected BlockTemplate blockTemplate;
+
+        // A convenience pointer that always refers to the CBlock in pblocktemplate.
+        protected Block block;
+
+        // Configuration parameters for the block size.
+        protected bool IncludeWitness;
+
+        protected uint BlockMaxWeight, BlockMaxSize;
+
+        protected bool NeedSizeAccounting;
+
+        protected FeeRate BlockMinFeeRate;
+
+        // Information on the current status of the block.
+        protected long BlockWeight;
+
+        protected long BlockSize;
+
+        protected long BlockTx;
+
+        protected long BlockSigOpsCost;
+
+        public Money fees;
+
+        protected TxMempool.SetEntries inBlock;
+
+        protected Transaction coinbase;
+
+        // Chain context for the block.
+        protected int height;
+
+        protected long LockTimeCutoff;
+
+        protected Script scriptPubKey;
 
         protected BlockAssembler(
             IConsensusLoop consensusLoop,
@@ -58,11 +119,6 @@ namespace Stratis.Bitcoin.Features.Miner
         /// <param name="scriptPubKey">Script that explains what conditions must be met to claim ownership of a coin.</param>
         /// <returns>The contructed <see cref="BlockTemplate"/>.</returns>
         public abstract BlockTemplate Build(ChainedBlock chainTip, Script scriptPubKey);
-
-        /// <summary>
-        /// Tip of the chain that this instance will work with without touching any shared chain resources.
-        /// </summary>
-        protected ChainedBlock ChainTip { get; set; }
     }
 
     public class AssemblerOptions
@@ -150,62 +206,6 @@ namespace Stratis.Bitcoin.Features.Miner
             }
         }
 
-        private const long TicksPerMicrosecond = 10;
-
-        // Limit the number of attempts to add transactions to the block when it is
-        // close to full; this is just a simple heuristic to finish quickly if the
-        // mempool has a lot of entries.
-        private int MaxConsecutiveAddTransactionFailures = 1000;
-
-        // Unconfirmed transactions in the memory pool often depend on other
-        // transactions in the memory pool. When we select transactions from the
-        // pool, we select by highest fee rate of a transaction combined with all
-        // its ancestors.
-        private static long lastBlockTx = 0;
-
-        private static long lastBlockSize = 0;
-
-        private static long lastBlockWeight = 0;
-
-        private static long medianTimePast;
-
-        // The constructed block template.
-        protected BlockTemplate blockTemplate;
-
-        // A convenience pointer that always refers to the CBlock in pblocktemplate.
-        protected Block block;
-
-        // Configuration parameters for the block size.
-        private bool includeWitness;
-
-        private uint blockMaxWeight, blockMaxSize;
-
-        private bool needSizeAccounting;
-
-        private FeeRate blockMinFeeRate;
-
-        // Information on the current status of the block.
-        private long blockWeight;
-
-        private long blockSize;
-
-        private long blockTx;
-
-        private long blockSigOpsCost;
-
-        public Money fees;
-
-        protected TxMempool.SetEntries inBlock;
-
-        protected Transaction coinbase;
-
-        // Chain context for the block.
-        protected int height;
-
-        private long lockTimeCutoff;
-
-        protected Script scriptPubKey;
-
         public PowBlockAssembler(
             IConsensusLoop consensusLoop,
             IDateTimeProvider dateTimeProvider,
@@ -217,16 +217,16 @@ namespace Stratis.Bitcoin.Features.Miner
             : base(consensusLoop, dateTimeProvider, loggerFactory, mempool, mempoolLock, network)
         {
             options = options ?? new AssemblerOptions();
-            this.blockMinFeeRate = options.BlockMinFeeRate;
+            this.BlockMinFeeRate = options.BlockMinFeeRate;
 
             // Limit weight to between 4K and MAX_BLOCK_WEIGHT-4K for sanity.
-            this.blockMaxWeight = (uint)Math.Max(4000, Math.Min(PowMining.DefaultBlockMaxWeight - 4000, options.BlockMaxWeight));
+            this.BlockMaxWeight = (uint)Math.Max(4000, Math.Min(PowMining.DefaultBlockMaxWeight - 4000, options.BlockMaxWeight));
 
             // Limit size to between 1K and MAX_BLOCK_SERIALIZED_SIZE-1K for sanity.
-            this.blockMaxSize = (uint)Math.Max(1000, Math.Min(network.Consensus.Option<PowConsensusOptions>().MaxBlockSerializedSize - 1000, options.BlockMaxSize));
+            this.BlockMaxSize = (uint)Math.Max(1000, Math.Min(network.Consensus.Option<PowConsensusOptions>().MaxBlockSerializedSize - 1000, options.BlockMaxSize));
 
             // Whether we need to account for byte usage (in addition to weight usage).
-            this.needSizeAccounting = (this.blockMaxSize < network.Consensus.Option<PowConsensusOptions>().MaxBlockSerializedSize - 1000);
+            this.NeedSizeAccounting = (this.BlockMaxSize < network.Consensus.Option<PowConsensusOptions>().MaxBlockSerializedSize - 1000);
 
             this.Options = options;
 
@@ -271,9 +271,9 @@ namespace Stratis.Bitcoin.Features.Miner
             //if (this.network. chainparams.MineBlocksOnDemand())
             //    pblock->nVersion = GetArg("-blockversion", pblock->nVersion);
 
-            medianTimePast = Utils.DateTimeToUnixTime(this.ChainTip.GetMedianTimePast());
-            this.lockTimeCutoff = PowConsensusValidator.StandardLocktimeVerifyFlags.HasFlag(Transaction.LockTimeFlags.MedianTimePast)
-                ? medianTimePast
+            this.MedianTimePast = Utils.DateTimeToUnixTime(this.ChainTip.GetMedianTimePast());
+            this.LockTimeCutoff = PowConsensusValidator.StandardLocktimeVerifyFlags.HasFlag(Transaction.LockTimeFlags.MedianTimePast)
+                ? this.MedianTimePast
                 : this.block.Header.Time;
 
             // TODO: Implement Witness Code
@@ -283,16 +283,16 @@ namespace Stratis.Bitcoin.Features.Miner
             // -promiscuousmempoolflags is used.
             // TODO: replace this with a call to main to assess validity of a mempool
             // transaction (which in most cases can be a no-op).
-            this.includeWitness = false; //IsWitnessEnabled(pindexPrev, chainparams.GetConsensus()) && fMineWitnessTx;
+            this.IncludeWitness = false; //IsWitnessEnabled(pindexPrev, chainparams.GetConsensus()) && fMineWitnessTx;
 
             // add transactions from the mempool
             int nPackagesSelected;
             int nDescendantsUpdated;
             this.AddTransactions(out nPackagesSelected, out nDescendantsUpdated);
 
-            lastBlockTx = this.blockTx;
-            lastBlockSize = this.blockSize;
-            lastBlockWeight = this.blockWeight;
+            this.LastBlockTx = this.BlockTx;
+            this.LastBlockSize = this.BlockSize;
+            this.LastBlockWeight = this.BlockWeight;
 
             // TODO: Implement Witness Code
             // pblocktemplate->CoinbaseCommitment = GenerateCoinbaseCommitment(*pblock, pindexPrev, chainparams.GetConsensus());
@@ -301,7 +301,7 @@ namespace Stratis.Bitcoin.Features.Miner
             this.blockTemplate.TotalFee = this.fees;
 
             int nSerializeSize = this.block.GetSerializedSize();
-            this.Logger.LogDebug("Serialized size is {0} bytes, block weight is {1}, number of txs is {2}, tx fees are {3}, number of sigops is {4}.", nSerializeSize, this.ConsensusLoop.Validator.GetBlockWeight(this.block), this.blockTx, this.fees, this.blockSigOpsCost);
+            this.Logger.LogDebug("Serialized size is {0} bytes, block weight is {1}, number of txs is {2}, tx fees are {3}, number of sigops is {4}.", nSerializeSize, this.ConsensusLoop.Validator.GetBlockWeight(this.block), this.BlockTx, this.fees, this.BlockSigOpsCost);
 
             this.UpdateHeaders();
 
@@ -323,14 +323,14 @@ namespace Stratis.Bitcoin.Features.Miner
         /// </summary>
         public void Configure()
         {
-            this.blockSize = 1000;
+            this.BlockSize = 1000;
             this.blockTemplate = new BlockTemplate { Block = new Block(), VTxFees = new List<Money>() };
-            this.blockTx = 0;
-            this.blockWeight = 4000;
-            this.blockSigOpsCost = 400;
+            this.BlockTx = 0;
+            this.BlockWeight = 4000;
+            this.BlockSigOpsCost = 400;
             this.fees = 0;
             this.inBlock = new TxMempool.SetEntries();
-            this.includeWitness = false;
+            this.IncludeWitness = false;
         }
 
         /// <summary>
@@ -396,12 +396,12 @@ namespace Stratis.Bitcoin.Features.Miner
             this.blockTemplate.VTxFees.Add(iter.Fee);
             this.blockTemplate.TxSigOpsCost.Add(iter.SigOpCost);
 
-            if (this.needSizeAccounting)
-                this.blockSize += iter.Transaction.GetSerializedSize();
+            if (this.NeedSizeAccounting)
+                this.BlockSize += iter.Transaction.GetSerializedSize();
 
-            this.blockWeight += iter.TxWeight;
-            this.blockTx++;
-            this.blockSigOpsCost += iter.SigOpCost;
+            this.BlockWeight += iter.TxWeight;
+            this.BlockTx++;
+            this.BlockSigOpsCost += iter.SigOpCost;
             this.fees += iter.Fee;
             this.inBlock.Add(iter);
 
@@ -526,7 +526,7 @@ namespace Stratis.Bitcoin.Features.Miner
                     packageSigOpsCost = modit.SigOpCostWithAncestors;
                 }
 
-                if (packageFees < this.blockMinFeeRate.GetFee((int)packageSize))
+                if (packageFees < this.BlockMinFeeRate.GetFee((int)packageSize))
                 {
                     // Everything else we might consider has a lower fee rate
                     return;
@@ -545,7 +545,7 @@ namespace Stratis.Bitcoin.Features.Miner
 
                     nConsecutiveFailed++;
 
-                    if ((nConsecutiveFailed > this.MaxConsecutiveAddTransactionFailures) && (this.blockWeight > this.blockMaxWeight - 4000))
+                    if ((nConsecutiveFailed > MaxConsecutiveAddTransactionFailures) && (this.BlockWeight > this.BlockMaxWeight - 4000))
                     {
                         // Give up if we're close to full and haven't succeeded in a while
                         break;
@@ -614,10 +614,10 @@ namespace Stratis.Bitcoin.Features.Miner
         private bool TestPackage(long packageSize, long packageSigOpsCost)
         {
             // TODO: Switch to weight-based accounting for packages instead of vsize-based accounting.
-            if (this.blockWeight + this.Network.Consensus.Option<PowConsensusOptions>().WitnessScaleFactor * packageSize >= this.blockMaxWeight)
+            if (this.BlockWeight + this.Network.Consensus.Option<PowConsensusOptions>().WitnessScaleFactor * packageSize >= this.BlockMaxWeight)
                 return false;
 
-            if (this.blockSigOpsCost + packageSigOpsCost >= this.Network.Consensus.Option<PowConsensusOptions>().MaxBlockSigopsCost)
+            if (this.BlockSigOpsCost + packageSigOpsCost >= this.Network.Consensus.Option<PowConsensusOptions>().MaxBlockSigopsCost)
                 return false;
 
             return true;
@@ -630,19 +630,19 @@ namespace Stratis.Bitcoin.Features.Miner
         // - serialized size (in case -blockmaxsize is in use)
         private bool TestPackageTransactions(TxMempool.SetEntries package)
         {
-            long nPotentialBlockSize = this.blockSize; // only used with needSizeAccounting
+            long nPotentialBlockSize = this.BlockSize; // only used with needSizeAccounting
             foreach (TxMempoolEntry it in package)
             {
-                if (!it.Transaction.IsFinal(Utils.UnixTimeToDateTime(this.lockTimeCutoff), this.height))
+                if (!it.Transaction.IsFinal(Utils.UnixTimeToDateTime(this.LockTimeCutoff), this.height))
                     return false;
 
-                if (!this.includeWitness && it.Transaction.HasWitness)
+                if (!this.IncludeWitness && it.Transaction.HasWitness)
                     return false;
 
-                if (this.needSizeAccounting)
+                if (this.NeedSizeAccounting)
                 {
                     int nTxSize = it.Transaction.GetSerializedSize();
-                    if (nPotentialBlockSize + nTxSize >= this.blockMaxSize)
+                    if (nPotentialBlockSize + nTxSize >= this.BlockMaxSize)
                         return false;
 
                     nPotentialBlockSize += nTxSize;
