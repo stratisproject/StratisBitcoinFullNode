@@ -4,27 +4,66 @@ using System.Reflection;
 
 namespace NBitcoin
 {
+    /// <summary>
+    /// A factory to create protocol types.
+    /// </summary>
     public class ConsensusFactory
     {
+        /// <summary>
+        /// A dictionary for types assignable from <see cref="BlockHeader"/>
+        /// </summary>
         private readonly ConcurrentDictionary<Type, bool> isAssignableFromBlockHeader = new ConcurrentDictionary<Type, bool>();
+
+        /// <summary>
+        /// The <see cref="BlockHeader"/> type.
+        /// </summary>
         private readonly TypeInfo blockHeaderType = typeof(BlockHeader).GetTypeInfo();
 
+        /// <summary>
+        /// A dictionary for types assignable from <see cref="Block"/>
+        /// </summary>
         private readonly ConcurrentDictionary<Type, bool> isAssignableFromBlock = new ConcurrentDictionary<Type, bool>();
+
+        /// <summary>
+        /// The <see cref="Block"/> type.
+        /// </summary>
         private readonly TypeInfo blockType = typeof(Block).GetTypeInfo();
 
+        /// <summary>
+        /// A dictionary for types assignable from <see cref="Transaction"/>
+        /// </summary>
         private readonly ConcurrentDictionary<Type, bool> isAssignableFromTransaction = new ConcurrentDictionary<Type, bool>();
+
+        /// <summary>
+        /// The <see cref="Transaction"/> type.
+        /// </summary>
         private readonly TypeInfo transactionType = typeof(Transaction).GetTypeInfo();
 
+        /// <summary>
+        /// Check if the generic type is assignable from <see cref="BlockHeader"/>
+        /// </summary>
+        /// <typeparam name="T">The <see cref="BlockHeader"/> type.</typeparam>
+        /// <returns><c>true</c> if its assignable.</returns>
         protected bool IsBlockHeader<T>()
         {
             return this.IsAssignable<T>(this.blockHeaderType, this.isAssignableFromBlockHeader);
         }
 
+        /// <summary>
+        /// Check if the generic type is assignable from <see cref="Block"/>
+        /// </summary>
+        /// <typeparam name="T">The <see cref="Block"/> type.</typeparam>
+        /// <returns><c>true</c> if its assignable.</returns>
         protected bool IsBlock<T>()
         {
             return this.IsAssignable<T>(this.blockType, this.isAssignableFromBlock);
         }
 
+        /// <summary>
+        /// Check if the generic type is assignable from <see cref="Transaction"/>
+        /// </summary>
+        /// <typeparam name="T">The <see cref="Transaction"/> type.</typeparam>
+        /// <returns><c>true</c> if its assignable.</returns>
         protected bool IsTransaction<T>()
         {
             return this.IsAssignable<T>(this.transactionType, this.isAssignableFromTransaction);
@@ -36,38 +75,56 @@ namespace NBitcoin
         /// </summary>
         public Consensus Consensus { get; set; }
 
+        /// <summary>
+        /// Check weather a type is assignable within the collection of types in the give dictionary.
+        /// </summary>
+        /// <typeparam name="T">The generic type to check.</typeparam>
+        /// <param name="type">The type to compare against.</param>
+        /// <param name="cache">A collection of already checked types.</param>
+        /// <returns><c>true</c> if its assignable.</returns>
         private bool IsAssignable<T>(TypeInfo type, ConcurrentDictionary<Type, bool> cache)
         {
-            bool isAssignable = false;
-            if (!cache.TryGetValue(typeof(T), out isAssignable))
+            if (!cache.TryGetValue(typeof(T), out bool isAssignable))
             {
                 isAssignable = type.IsAssignableFrom(typeof(T).GetTypeInfo());
                 cache.TryAdd(typeof(T), isAssignable);
             }
+
             return isAssignable;
         }
 
+        /// <summary>
+        /// A method that will try to resolve a type and determine weather its part of the factory types.
+        /// </summary>
+        /// <typeparam name="T">The generic type to resolve.</typeparam>
+        /// <param name="result">If the type is known it will be initialized.</param>
+        /// <returns><c>true</c> if its known.</returns>
         public virtual bool TryCreateNew<T>(out T result) where T : IBitcoinSerializable
         {
             result = default(T);
-            if (IsBlock<T>())
+            if (this.IsBlock<T>())
             {
-                result = (T)(object)CreateBlock();
+                result = (T)(object)this.CreateBlock();
                 return true;
             }
-            if (IsBlockHeader<T>())
+            if (this.IsBlockHeader<T>())
             {
-                result = (T)(object)CreateBlockHeader();
+                result = (T)(object)this.CreateBlockHeader();
                 return true;
             }
-            if (IsTransaction<T>())
+            if (this.IsTransaction<T>())
             {
-                result = (T)(object)CreateTransaction();
+                result = (T)(object)this.CreateTransaction();
                 return true;
             }
             return false;
         }
 
+        /// <summary>
+        /// A set of flags representing the capabilities of the protocol.
+        /// </summary>
+        /// <param name="protocolVersion">The version to build the flags from.</param>
+        /// <returns>The <see cref="ProtocolCapabilities"/></returns>
         public virtual ProtocolCapabilities GetProtocolCapabilities(uint protocolVersion)
         {
             return new ProtocolCapabilities()
@@ -87,6 +144,9 @@ namespace NBitcoin
             };
         }
 
+        /// <summary>
+        /// Create a <see cref="Block"/> instance.
+        /// </summary>
         public virtual Block CreateBlock()
         {
 #pragma warning disable CS0618 // Type or member is obsolete
@@ -94,6 +154,9 @@ namespace NBitcoin
 #pragma warning restore CS0618 // Type or member is obsolete
         }
 
+        /// <summary>
+        /// Create a <see cref="BlockHeader"/> instance.
+        /// </summary>
         public virtual BlockHeader CreateBlockHeader()
         {
 #pragma warning disable CS0618 // Type or member is obsolete
@@ -101,16 +164,22 @@ namespace NBitcoin
 #pragma warning restore CS0618 // Type or member is obsolete
         }
 
+        /// <summary>
+        /// Create a <see cref="Transaction"/> instance.
+        /// </summary>
         public virtual Transaction CreateTransaction()
         {
             return new Transaction();
         }
     }
 
+    /// <summary>
+    /// A class with a set of flags representing the capabilities of the protocol.
+    /// </summary>
     public class ProtocolCapabilities
     {
         /// <summary>
-        /// Disconnect from peers older than this protocol version
+        /// Disconnect from peers older than this protocol version.
         /// </summary>
         public bool PeerTooOld
         {
@@ -119,19 +188,23 @@ namespace NBitcoin
 
         /// <summary>
         /// nTime field added to CAddress, starting with this version;
-        /// if possible, avoid requesting addresses nodes older than this
+        /// if possible, avoid requesting addresses nodes older than this.
         /// </summary>
         public bool SupportTimeAddress
         {
             get; set;
         }
 
+        /// <summary>
+        /// Support Get Block.
+        /// </summary>
         public bool SupportGetBlock
         {
             get; set;
         }
+
         /// <summary>
-        /// BIP 0031, pong message, is enabled for all versions AFTER this one
+        /// BIP 0031, pong message, is enabled for all versions AFTER this one.
         /// </summary>
         public bool SupportPingPong
         {
@@ -139,7 +212,7 @@ namespace NBitcoin
         }
 
         /// <summary>
-        /// "mempool" command, enhanced "getdata" behavior starts with this version
+        /// "mempool" command, enhanced "getdata" behavior starts with this version.
         /// </summary>
         public bool SupportMempoolQuery
         {
@@ -147,7 +220,7 @@ namespace NBitcoin
         }
 
         /// <summary>
-        /// "reject" command
+        /// "reject" command.
         /// </summary>
         public bool SupportReject
         {
@@ -155,7 +228,7 @@ namespace NBitcoin
         }
 
         /// <summary>
-        /// ! "filter*" commands are disabled without NODE_BLOOM after and including this version
+        /// "filter*" commands are disabled without NODE_BLOOM after and including this version.
         /// </summary>
         public bool SupportNodeBloom
         {
@@ -163,7 +236,7 @@ namespace NBitcoin
         }
 
         /// <summary>
-        /// ! "sendheaders" command and announcing blocks with headers starts with this version
+        /// "sendheaders" command and announcing blocks with headers starts with this version.
         /// </summary>
         public bool SupportSendHeaders
         {
@@ -171,7 +244,7 @@ namespace NBitcoin
         }
 
         /// <summary>
-        /// ! Version after which witness support potentially exists
+        /// Version after which witness support potentially exists.
         /// </summary>
         public bool SupportWitness
         {
@@ -179,7 +252,7 @@ namespace NBitcoin
         }
 
         /// <summary>
-        /// short-id-based block download starts with this version
+        /// short-id-based block download starts with this version.
         /// </summary>
         public bool SupportCompactBlocks
         {
@@ -187,19 +260,26 @@ namespace NBitcoin
         }
 
         /// <summary>
-        /// Support checksum at p2p message level
+        /// Support checksum at p2p message level.
         /// </summary>
         public bool SupportCheckSum
         {
             get;
             set;
         }
+
+        /// <summary>
+        /// Support a user agent.
+        /// </summary>
         public bool SupportUserAgent
         {
             get;
             set;
         }
 
+        /// <summary>
+        /// Support all flags.
+        /// </summary>
         public static ProtocolCapabilities CreateSupportAll()
         {
             return new ProtocolCapabilities()
@@ -219,6 +299,9 @@ namespace NBitcoin
             };
         }
 
+        /// <summary>
+        /// Is the set of flags a sub set of a given protocol flags.
+        /// </summary>
         public bool IsSupersetOf(ProtocolCapabilities capabilities)
         {
             return (!capabilities.SupportCheckSum || this.SupportCheckSum) &&
@@ -235,5 +318,4 @@ namespace NBitcoin
                 (!capabilities.SupportCheckSum || this.SupportCheckSum);
         }
     }
-
 }

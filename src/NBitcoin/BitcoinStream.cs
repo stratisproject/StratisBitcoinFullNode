@@ -381,25 +381,10 @@ namespace NBitcoin
             }
         }
 
-        private ConsensusFactory consensusFactory ;//= Network.Main.Consensus.ConsensusFactory;
-
         /// <summary>
         /// Set the format to use when serializing and deserializing consensus related types.
         /// </summary>
-        public ConsensusFactory ConsensusFactory
-        {
-            get
-            {
-                return this.consensusFactory;
-            }
-            set
-            {
-                if (value == null)
-                    throw new ArgumentNullException(nameof(value));
-
-                this.consensusFactory = value;
-            }
-        }
+        public ConsensusFactory ConsensusFactory { get; set; }
 
         public IDisposable ProtocolVersionScope(ProtocolVersion version)
         {
