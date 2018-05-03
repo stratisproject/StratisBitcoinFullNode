@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using NBitcoin;
+using Stratis.Bitcoin.Broadcasting;
 
 namespace Stratis.Bitcoin.Features.Wallet.Interfaces
 {
@@ -257,7 +258,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Interfaces
         /// Gets the extended public key of an account.
         /// </summary>
         /// <param name="accountReference">The account.</param>
-        /// <returns>The extended plublic key.</returns>
+        /// <returns>The extended public key.</returns>
         string GetExtPubKey(WalletAccountReference accountReference);
 
         /// <summary>
@@ -276,7 +277,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Interfaces
         /// Removes the specified transactions from the wallet and persist it.
         /// </summary>
         /// <param name="walletName">The name of the wallet to remove transactions from.</param>
-        /// <param name="transactionsIds">The IDs of trandactions to remove.</param>
+        /// <param name="transactionsIds">The IDs of transactions to remove.</param>
         /// <returns>A list of objects made up of a transactions ID along with the time at which they were created.</returns>
         HashSet<(uint256, DateTimeOffset)> RemoveTransactionsByIds(string walletName, IEnumerable<uint256> transactionsIds);
 

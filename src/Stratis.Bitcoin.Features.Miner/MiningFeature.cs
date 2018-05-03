@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Text;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
@@ -83,6 +84,16 @@ namespace Stratis.Bitcoin.Features.Miner
         public static void PrintHelp(Network network)
         {
             MinerSettings.PrintHelp(network);
+        }
+        
+        /// <summary>
+        /// Get the default configuration.
+        /// </summary>
+        /// <param name="builder">The string builder to add the settings to.</param>
+        /// <param name="network">The network to base the defaults off.</param>
+        public static void BuildDefaultConfigurationFile(StringBuilder builder, Network network)
+        {
+            MinerSettings.BuildDefaultConfigurationFile(builder, network);
         }
 
         /// <summary>
@@ -210,6 +221,7 @@ namespace Stratis.Bitcoin.Features.Miner
                     .FeatureServices(services =>
                     {
                         services.AddSingleton<IPowMining, PowMining>();
+                        services.AddSingleton<PowBlockAssembler>();
                         services.AddSingleton<MinerController>();
                         services.AddSingleton<MiningRPCController>();
                         services.AddSingleton<MinerSettings>(new MinerSettings(setup));
@@ -239,7 +251,9 @@ namespace Stratis.Bitcoin.Features.Miner
                     .FeatureServices(services =>
                     {
                         services.AddSingleton<IPowMining, PowMining>();
+                        services.AddSingleton<PowBlockAssembler>();
                         services.AddSingleton<IPosMinting, PosMinting>();
+                        services.AddSingleton<PosBlockAssembler>();
                         services.AddSingleton<MinerController>();
                         services.AddSingleton<MiningRPCController>();
                         services.AddSingleton<MinerSettings>(new MinerSettings(setup));
