@@ -63,7 +63,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             GetWalletHistory(this.proofOfStakeSteps.ProofOfStakeNodeWithCoins, this.proofOfStakeSteps.PosWallet)
                 .AccountsHistoryModel
                 .FirstOrDefault()
-                .TransactionsHistory
+                ?.TransactionsHistory
                 .Where(txn => txn.Type == TransactionItemType.Send).Count().Should().Be(0);
 
             var transactionResult = this.proofOfStakeSteps.ProofOfStakeNodeWithCoins.FullNode.NodeService<WalletController>()
@@ -104,7 +104,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                 .Where(txn => txn.Type == TransactionItemType.Send).Count().Should().Be(0);
         }
 
-        private void the_transaction_was_not_recieved()
+        private void the_transaction_was_not_received()
         {
             this.ReceiverNode.FullNode.WalletManager().GetSpendableTransactionsInWallet(WalletName)
                 .Sum(utxo => utxo.Transaction.Amount)
