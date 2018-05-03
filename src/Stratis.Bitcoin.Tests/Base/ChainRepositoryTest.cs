@@ -24,12 +24,12 @@ namespace Stratis.Bitcoin.Tests.Base
 
             using (var engine = new DBreezeEngine(dir))
             {
-                ChainedBlock tip = null;
+                ChainedHeader tip = null;
                 foreach (var row in engine.GetTransaction().SelectForward<int, BlockHeader>("Chain"))
                 {
                     if (tip != null && row.Value.HashPrevBlock != tip.HashBlock)
                         break;
-                    tip = new ChainedBlock(row.Value, row.Value.GetHash(Network.StratisRegTest.NetworkOptions), tip);
+                    tip = new ChainedHeader(row.Value, row.Value.GetHash(Network.StratisRegTest.NetworkOptions), tip);
                 }
                 Assert.Equal(tip, chain.Tip);
             }
@@ -46,15 +46,15 @@ namespace Stratis.Bitcoin.Tests.Base
             {
                 using (DBreeze.Transactions.Transaction transaction = engine.GetTransaction())
                 {
-                    ChainedBlock toSave = tip;
-                    List<ChainedBlock> blocks = new List<ChainedBlock>();
+                    ChainedHeader toSave = tip;
+                    var blocks = new List<ChainedHeader>();
                     while (toSave != null)
                     {
                         blocks.Insert(0, toSave);
                         toSave = toSave.Previous;
                     }
 
-                    foreach (var block in blocks)
+                    foreach (ChainedHeader block in blocks)
                     {
                         transaction.Insert<int, BlockHeader>("Chain", block.Height, block.Header);
                     }
@@ -70,11 +70,11 @@ namespace Stratis.Bitcoin.Tests.Base
             }
         }
 
-        public ChainedBlock AppendBlock(ChainedBlock previous, params ConcurrentChain[] chains)
+        public ChainedHeader AppendBlock(ChainedHeader previous, params ConcurrentChain[] chains)
         {
-            ChainedBlock last = null;
+            ChainedHeader last = null;
             var nonce = RandomUtils.GetUInt32();
-            foreach (var chain in chains)
+            foreach (ConcurrentChain chain in chains)
             {
                 var block = new Block();
                 block.AddTransaction(new Transaction());
@@ -87,9 +87,9 @@ namespace Stratis.Bitcoin.Tests.Base
             return last;
         }
 
-        private ChainedBlock AppendBlock(params ConcurrentChain[] chains)
+        private ChainedHeader AppendBlock(params ConcurrentChain[] chains)
         {
-            ChainedBlock index = null;
+            ChainedHeader index = null;
             return this.AppendBlock(index, chains);
         }
     }

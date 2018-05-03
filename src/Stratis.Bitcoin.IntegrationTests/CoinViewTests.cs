@@ -45,7 +45,7 @@ namespace Stratis.Bitcoin.IntegrationTests
             using (NodeContext ctx = NodeContext.Create())
             {
                 var genesis = ctx.Network.GetGenesis();
-                var genesisChainedBlock = new ChainedBlock(genesis.Header, ctx.Network.GenesisHash ,0);
+                var genesisChainedBlock = new ChainedHeader(genesis.Header, ctx.Network.GenesisHash ,0);
                 var chained = this.MakeNext(genesisChainedBlock, ctx.Network);
                 ctx.PersistentCoinView.SaveChangesAsync(new UnspentOutputs[] { new UnspentOutputs(genesis.Transactions[0].GetHash(), new Coins(genesis.Transactions[0], 0)) }, null, genesisChainedBlock.HashBlock, chained.HashBlock).Wait();
                 Assert.NotNull(ctx.PersistentCoinView.FetchCoinsAsync(new[] { genesis.Transactions[0].GetHash() }).Result.UnspentOutputs[0]);
@@ -69,7 +69,7 @@ namespace Stratis.Bitcoin.IntegrationTests
             using (NodeContext ctx = NodeContext.Create())
             {
                 var genesis = ctx.Network.GetGenesis();
-                var genesisChainedBlock = new ChainedBlock(genesis.Header, ctx.Network.GenesisHash, 0);
+                var genesisChainedBlock = new ChainedHeader(genesis.Header, ctx.Network.GenesisHash, 0);
                 var chained = this.MakeNext(genesisChainedBlock, ctx.Network);
                 var cacheCoinView = new CachedCoinView(ctx.PersistentCoinView, DateTimeProvider.Default, this.loggerFactory);
 
@@ -250,11 +250,11 @@ namespace Stratis.Bitcoin.IntegrationTests
             }
         }
 
-        private ChainedBlock MakeNext(ChainedBlock previous, Network network)
+        private ChainedHeader MakeNext(ChainedHeader previous, Network network)
         {
             var header = previous.Header.Clone();
             header.HashPrevBlock = previous.HashBlock;
-            return new ChainedBlock(header, header.GetHash(network.NetworkOptions), previous);
+            return new ChainedHeader(header, header.GetHash(network.NetworkOptions), previous);
         }
 
         [Fact]
@@ -282,9 +282,9 @@ namespace Stratis.Bitcoin.IntegrationTests
             }
         }
 
-        public ChainedBlock AppendBlock(ChainedBlock previous, params ConcurrentChain[] chains)
+        public ChainedHeader AppendBlock(ChainedHeader previous, params ConcurrentChain[] chains)
         {
-            ChainedBlock last = null;
+            ChainedHeader last = null;
             var nonce = RandomUtils.GetUInt32();
             foreach (var chain in chains)
             {
@@ -299,9 +299,9 @@ namespace Stratis.Bitcoin.IntegrationTests
             return last;
         }
 
-        private ChainedBlock AppendBlock(params ConcurrentChain[] chains)
+        private ChainedHeader AppendBlock(params ConcurrentChain[] chains)
         {
-            ChainedBlock index = null;
+            ChainedHeader index = null;
             return this.AppendBlock(index, chains);
         }
 
