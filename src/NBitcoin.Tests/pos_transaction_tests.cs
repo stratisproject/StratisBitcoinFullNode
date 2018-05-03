@@ -1394,8 +1394,8 @@ namespace NBitcoin.Tests
                         redeem
                     })
                 .Select((_, i) =>
-                new ScriptCoin
-                    (
+                ScriptCoin.Create
+                    (Network.StratisMain,
                     new OutPoint(Rand(), i),
                     new TxOut(new Money((i + 1) * Money.COIN), _.script), _.redeem
                     )).ToList();
@@ -1409,8 +1409,8 @@ namespace NBitcoin.Tests
                     redeem
                 })
             .Select((_, i) =>
-            new ScriptCoin
-                (
+            ScriptCoin.Create
+                (Network.StratisMain,
                 new OutPoint(Rand(), i),
                 new TxOut(new Money((i + 1) * Money.COIN), _.redeem.WitHash.ScriptPubKey.Hash),
                 _.redeem
