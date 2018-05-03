@@ -103,7 +103,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
                 // For each of the lower bits in processedLeavesCount that are 0, do 1 step. Each
                 // corresponds to an subTreeHash value that existed before processing the
                 // current leaf, and each needs a hash to combine it.
-                for ( level = 0; (processedLeavesCount & (((uint)1) << level)) == 0; level++)
+                for (level = 0; (processedLeavesCount & (((uint)1) << level)) == 0; level++)
                 {
                     if (match)
                     {
