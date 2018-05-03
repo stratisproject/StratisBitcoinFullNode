@@ -173,14 +173,14 @@ namespace Stratis.Bitcoin.Features.Wallet.Interfaces
         /// <summary>
         /// Remove all the transactions in the wallet that are above this block height
         /// </summary>
-        void RemoveBlocks(ChainedBlock fork);
+        void RemoveBlocks(ChainedHeader fork);
 
         /// <summary>
         /// Processes a block received from the network.
         /// </summary>
         /// <param name="block">The block.</param>
-        /// <param name="chainedBlock">The blocks chain of headers.</param>
-        void ProcessBlock(Block block, ChainedBlock chainedBlock);
+        /// <param name="chainedHeader">The blocks chain of headers.</param>
+        void ProcessBlock(Block block, ChainedHeader chainedHeader);
 
         /// <summary>
         /// Processes a transaction received from the network.
@@ -219,14 +219,14 @@ namespace Stratis.Bitcoin.Features.Wallet.Interfaces
         /// Updates the wallet with the height of the last block synced.
         /// </summary>
         /// <param name="wallet">The wallet to update.</param>
-        /// <param name="chainedBlock">The height of the last block synced.</param>
-        void UpdateLastBlockSyncedHeight(Wallet wallet, ChainedBlock chainedBlock);
+        /// <param name="chainedHeader">The height of the last block synced.</param>
+        void UpdateLastBlockSyncedHeight(Wallet wallet, ChainedHeader chainedHeader);
 
         /// <summary>
         /// Updates all the loaded wallets with the height of the last block synced.
         /// </summary>
-        /// <param name="chainedBlock">The height of the last block synced.</param>
-        void UpdateLastBlockSyncedHeight(ChainedBlock chainedBlock);
+        /// <param name="chainedHeader">The height of the last block synced.</param>
+        void UpdateLastBlockSyncedHeight(ChainedHeader chainedHeader);
 
         /// <summary>
         /// Gets a wallet given its name.

@@ -45,7 +45,7 @@ namespace Stratis.Bitcoin.Features.RPC.Models
         {
         }
 
-        public TransactionVerboseModel(Transaction trx, Network network, ChainedBlock block = null, ChainedBlock tip = null) : base(trx)
+        public TransactionVerboseModel(Transaction trx, Network network, ChainedHeader block = null, ChainedHeader tip = null) : base(trx)
         {
             if (trx != null)
             {

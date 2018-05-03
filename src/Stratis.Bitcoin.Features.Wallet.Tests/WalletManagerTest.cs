@@ -321,7 +321,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                                                   dataFolder, new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime(), DateTimeProvider.Default);
 
             var concurrentChain = new ConcurrentChain(Network.Main);
-            ChainedBlock tip = WalletTestsHelpers.AppendBlock(null, concurrentChain).ChainedBlock;
+            ChainedHeader tip = WalletTestsHelpers.AppendBlock(null, concurrentChain).ChainedBlock;
 
             walletManager.Wallets.Add(WalletTestsHelpers.CreateWallet("wallet1"));
             walletManager.Wallets.Add(WalletTestsHelpers.CreateWallet("wallet2"));
