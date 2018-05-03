@@ -44,13 +44,13 @@ namespace Stratis.Bitcoin.Features.Wallet.Broadcasting
             return txEntry;
         }
 
-        public void AddOrUpdate(Transaction transaction, State state)
+        public void AddOrUpdate(Transaction transaction, State state, string errorMessage = "")
         {
             TransactionBroadcastEntry broadcastEntry = this.Broadcasts.FirstOrDefault(x => x.Transaction.GetHash() == transaction.GetHash());
 
             if (broadcastEntry == null)
             {
-                broadcastEntry = new TransactionBroadcastEntry(transaction, state);
+                broadcastEntry = new TransactionBroadcastEntry(transaction, state, errorMessage);
                 this.Broadcasts.Add(broadcastEntry);
                 this.OnTransactionStateChanged(broadcastEntry);
             }
