@@ -37,10 +37,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Broadcasting
         public TransactionBroadcastEntry GetTransaction(uint256 transactionHash)
         {
             TransactionBroadcastEntry txEntry = this.Broadcasts.FirstOrDefault(x => x.Transaction.GetHash() == transactionHash);
-            if (txEntry == default(TransactionBroadcastEntry))
-                return null;
-
-            return txEntry;
+            return txEntry ?? null;
         }
 
         public void AddOrUpdate(Transaction transaction, State state, string errorMessage = "")

@@ -31,7 +31,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Broadcasting
 
             if (!await this.mempoolValidator.AcceptToMemoryPool(state, transaction).ConfigureAwait(false))
             {
-                var errorMessage = string.Empty;
+                string errorMessage = string.Empty;
 
                 if (state.Error?.ConsensusError != null)
                 {
@@ -39,7 +39,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Broadcasting
                 }
                 else if (!string.IsNullOrEmpty(state.Error?.Code))
                 {
-                    errorMessage = state.Error.Code;
+                    if (state.Error != null) errorMessage = state.Error.Code;
                 }
 
                 this.AddOrUpdate(transaction, State.CantBroadcast, errorMessage);
