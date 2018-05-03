@@ -791,7 +791,7 @@ namespace NBitcoin
             if(Redeem == null)
                 return base.GetScriptCode(network);
             else
-                return new ScriptCoin(this, Redeem).AssertCoherent(network).GetScriptCode(network);
+                return ScriptCoin.Create(network, this, Redeem).GetScriptCode(network);
         }
 
         public override HashVersion GetHashVersion(Network network)
@@ -799,7 +799,7 @@ namespace NBitcoin
             if(Redeem == null)
                 return base.GetHashVersion(network);
             else
-                return new ScriptCoin(this, Redeem).AssertCoherent(network).GetHashVersion(network);
+                return ScriptCoin.Create(network, this, Redeem).GetHashVersion(network);
         }
 
         /// <summary>
