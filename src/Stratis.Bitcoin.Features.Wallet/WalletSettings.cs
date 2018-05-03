@@ -39,7 +39,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// </summary>
         /// <param name="callback">Callback routine to be called once the wallet settings are loaded.</param>
         public WalletSettings(Action<WalletSettings> callback = null)
-        {        
+        {
             this.callback = callback;
         }
 
@@ -67,6 +67,18 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             builder.AppendLine("-savetrxhex=<0 or 1>            Save the hex of transactions in the wallet file. Default: false.");
             defaults.Logger.LogInformation(builder.ToString());
+        }
+
+        /// <summary>
+        /// Get the default configuration.
+        /// </summary>
+        /// <param name="builder">The string builder to add the settings to.</param>
+        /// <param name="network">The network to base the defaults off.</param>
+        public static void BuildDefaultConfigurationFile(StringBuilder builder, Network network)
+        {
+            builder.AppendLine("####Wallet Settings####");
+            builder.AppendLine("#Save the hex of transactions in the wallet file. Default: 0.");
+            builder.AppendLine("#savetrxhex=0");
         }
     }
 }
