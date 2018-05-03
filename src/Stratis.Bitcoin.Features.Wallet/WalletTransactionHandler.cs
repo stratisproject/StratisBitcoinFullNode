@@ -36,6 +36,9 @@ namespace Stratis.Bitcoin.Features.Wallet
 
         private readonly ILogger logger;
 
+
+        private readonly Network network;
+
         public WalletTransactionHandler(
             ILoggerFactory loggerFactory,
             IWalletManager walletManager,
@@ -46,6 +49,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             this.walletFeePolicy = walletFeePolicy;
             this.coinType = (CoinType)network.Consensus.CoinType;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
+            this.network = network;
         }
 
         /// <inheritdoc />
@@ -185,7 +189,13 @@ namespace Stratis.Bitcoin.Features.Wallet
             Guard.NotNull(context.Recipients, nameof(context.Recipients));
             Guard.NotNull(context.AccountReference, nameof(context.AccountReference));
 
-            context.TransactionBuilder = new TransactionBuilder();
+            context.TransactionBuilder = new TransactionBuilder
+            {
+                StandardTransactionPolicy = new StandardTransactionPolicy
+                {
+                    MinRelayTxFee = new FeeRate(this.network.MinRelayTxFee)
+                }
+            };
 
             this.AddRecipients(context);
             this.AddOpReturnOutput(context);

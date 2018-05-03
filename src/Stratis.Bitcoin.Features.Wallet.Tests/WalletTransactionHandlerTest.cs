@@ -172,6 +172,47 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         }
 
         [Fact]
+        public void Transaction_With_GreaterThan_NetworkMixRelayTxFee_Should_Build_Correctly()
+        {
+            var (wallet, accountKeys, destinationKeys, addressTransaction, walletTransactionHandler, walletReference) = this.SetupWallet();
+
+            // Despite its name, MinRelayTxFee appears to be a FeeRate and not a Fee
+            var networkMinRelayTxFee = wallet.Network.MinRelayTxFee;
+
+            var context = CreateContext(walletReference, "password", destinationKeys.PubKey.ScriptPubKey, new Money(7500), FeeType.Low, 0);
+
+            // We expect that if we set the fee to the networkMinRelayTxFee + 1,
+            // we should have no problem building the transaction
+            context.OverrideFeeRate = new FeeRate(networkMinRelayTxFee + 1);
+
+            // Have to do this because the context does not set the builder until after BuildTransaction is called
+            var transactionResult = walletTransactionHandler.BuildTransaction(context);
+
+            var verificationResult = context.TransactionBuilder.Verify(transactionResult);
+
+            Assert.True(verificationResult);
+        }
+
+        [Fact]
+        public void Transaction_With_LessThan_NetworkMixRelayTxFee_Should_Not_Build_Correctly()
+        {
+            var (wallet, accountKeys, destinationKeys, addressTransaction, walletTransactionHandler, walletReference) = this.SetupWallet();
+
+            // Despite its name, MinRelayTxFee appears to be a FeeRate and not a Fee
+            var networkMinRelayTxFee = wallet.Network.MinRelayTxFee;
+
+            var context = CreateContext(walletReference, "password", destinationKeys.PubKey.ScriptPubKey, new Money(7500), FeeType.Low, 0);
+
+            // We expect that if we set the fee to the networkMinRelayTxFee - 1,
+            // we should not be able to build the transaction
+            context.OverrideFeeRate = new FeeRate(networkMinRelayTxFee - 1);
+
+            new Action(() => walletTransactionHandler.BuildTransaction(context))
+                .Should().Throw<WalletException>()
+                .And.Message.Should().Contain("is too low. The policy minimum is");
+        }
+
+        [Fact]
         public void BuildTransaction_When_OpReturnData_Is_Empty_Should_Not_Add_Extra_Output()
         {
             var (wallet, accountKeys, destinationKeys, addressTransaction, walletTransactionHandler, walletReference) = this.SetupWallet();
@@ -184,7 +225,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             transactionResult.Outputs.Where(o => o.ScriptPubKey.IsUnspendable).Should()
                 .BeEmpty("because opReturnData is empty");
         }
-        
+
         [Fact]
         public void BuildTransaction_When_OpReturnData_Is_Null_Should_Not_Add_Extra_Output()
         {
