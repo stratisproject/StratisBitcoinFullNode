@@ -68,5 +68,21 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
             NodeSettings.Default().Logger.LogInformation(builder.ToString());
         }
+
+        /// <summary>
+        /// Get the default configuration.
+        /// </summary>
+        /// <param name="builder">The string builder to add the settings to.</param>
+        /// <param name="network">The network to base the defaults off.</param>
+        public static void BuildDefaultConfigurationFile(StringBuilder builder, Network network)
+        {
+            builder.AppendLine("####BlockStore Settings####");
+            builder.AppendLine($"#Enable to maintain a full transaction index.");
+            builder.AppendLine($"#txindex=0");
+            builder.AppendLine($"#Rebuild chain state and block index from block data files on disk.");
+            builder.AppendLine($"#reindex=0");
+            builder.AppendLine($"#Enable pruning to reduce storage requirements by enabling deleting of old blocks.");
+            builder.AppendLine($"#prune=0");
+        }
     }
 }

@@ -14,11 +14,18 @@ namespace Stratis.Bitcoin.Features.Miner
 {
     public abstract class BlockAssembler
     {
-        /// <summary>Tip of the chain that this instance will work with without touching any shared chain resources.</summary>
-        /// <remarks>Using a fixed value prevents race conditions in the methods of derived classes.</remarks>
-        protected ChainedBlock ChainTip { get; set; }
+        /// <summary>
+        /// Constructs a block template which will be passed to consensus. 
+        /// </summary>
+        /// <param name="chainTip">Tip of the chain that this instance will work with without touching any shared chain resources.</param>
+        /// <param name="scriptPubKey">Script that explains what conditions must be met to claim ownership of a coin.</param>
+        /// <returns>The contructed <see cref="BlockTemplate"/>.</returns>
+        public abstract BlockTemplate Build(ChainedBlock chainTip, Script scriptPubKey);
 
-        public abstract BlockTemplate CreateNewBlock(Script scriptPubKeyIn, bool fMineWitnessTx = true);
+        /// <summary>
+        /// Tip of the chain that this instance will work with without touching any shared chain resources.
+        /// </summary>
+        protected ChainedBlock ChainTip { get; set; }
     }
 
     public class AssemblerOptions
@@ -139,13 +146,13 @@ namespace Stratis.Bitcoin.Features.Miner
         protected readonly AssemblerOptions options;
 
         // The constructed block template.
-        protected readonly BlockTemplate pblocktemplate;
+        protected BlockTemplate blockTemplate;
 
         // A convenience pointer that always refers to the CBlock in pblocktemplate.
-        protected Block pblock;
+        protected Block block;
 
         // Configuration parameters for the block size.
-        private bool fIncludeWitness;
+        private bool includeWitness;
 
         private uint blockMaxWeight, blockMaxSize;
 
@@ -164,7 +171,7 @@ namespace Stratis.Bitcoin.Features.Miner
 
         public Money fees;
 
-        protected TxMempool.SetEntries inBlock { get; }
+        protected TxMempool.SetEntries inBlock;
 
         protected Transaction coinbase;
 
@@ -175,10 +182,9 @@ namespace Stratis.Bitcoin.Features.Miner
 
         protected Network network;
 
-        protected Script scriptPubKeyIn;
+        protected Script scriptPubKey;
 
         public PowBlockAssembler(
-            ChainedBlock chainTip,
             IConsensusLoop consensusLoop,
             IDateTimeProvider dateTimeProvider,
             ILoggerFactory loggerFactory,
@@ -187,7 +193,12 @@ namespace Stratis.Bitcoin.Features.Miner
             Network network,
             AssemblerOptions options = null)
         {
+            this.consensusLoop = consensusLoop;
+            this.dateTimeProvider = dateTimeProvider;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
+            this.mempool = mempool;
+            this.mempoolLock = mempoolLock;
+            this.network = network;
 
             options = options ?? new AssemblerOptions();
             this.blockMinFeeRate = options.BlockMinFeeRate;
@@ -201,55 +212,39 @@ namespace Stratis.Bitcoin.Features.Miner
             // Whether we need to account for byte usage (in addition to weight usage).
             this.needSizeAccounting = (this.blockMaxSize < network.Consensus.Option<PowConsensusOptions>().MaxBlockSerializedSize - 1000);
 
-            this.consensusLoop = consensusLoop;
-            this.mempoolLock = mempoolLock;
-            this.mempool = mempool;
-            this.dateTimeProvider = dateTimeProvider;
             this.options = options;
-            this.network = network;
 
-            this.inBlock = new TxMempool.SetEntries();
-
-            // Reserve space for coinbase tx.
-            this.blockSize = 1000;
-            this.blockWeight = 4000;
-            this.blockSigOpsCost = 400;
-            this.fIncludeWitness = false;
-
-            // These counters do not include coinbase tx.
-            this.blockTx = 0;
-            this.fees = 0;
-
-            this.ChainTip = chainTip;
-            this.pblocktemplate = new BlockTemplate { Block = new Block(), VTxFees = new List<Money>() };
+            this.Configure();
         }
 
         private int ComputeBlockVersion(ChainedBlock prevChainedBlock, NBitcoin.Consensus consensus)
         {
-            uint nVersion = ThresholdConditionCache.VersionbitsTopBits;
+            uint version = ThresholdConditionCache.VersionbitsTopBits;
             var thresholdConditionCache = new ThresholdConditionCache(consensus);
 
-            IEnumerable<BIP9Deployments> deployments = Enum.GetValues(typeof(BIP9Deployments))
-                .OfType<BIP9Deployments>();
+            IEnumerable<BIP9Deployments> deployments = Enum.GetValues(typeof(BIP9Deployments)).OfType<BIP9Deployments>();
 
             foreach (BIP9Deployments deployment in deployments)
             {
                 ThresholdState state = thresholdConditionCache.GetState(prevChainedBlock, deployment);
                 if ((state == ThresholdState.LockedIn) || (state == ThresholdState.Started))
-                    nVersion |= thresholdConditionCache.Mask(deployment);
+                    version |= thresholdConditionCache.Mask(deployment);
             }
 
-            return (int)nVersion;
+            return (int)version;
         }
 
-        /** Construct a new block template with coinbase to scriptPubKeyIn */
-
-        public override BlockTemplate CreateNewBlock(Script scriptPubKeyIn, bool fMineWitnessTx = true)
+        /// <inheritdoc/>
+        public override BlockTemplate Build(ChainedBlock chainTip, Script scriptPubKey)
         {
-            this.logger.LogTrace("({0}.{1}:{2},{3}:{4})", nameof(scriptPubKeyIn), nameof(scriptPubKeyIn.Length), scriptPubKeyIn.Length, nameof(fMineWitnessTx), fMineWitnessTx);
+            this.logger.LogTrace("({0}:'{1}',{2}.{3}:{4})", nameof(chainTip), chainTip, nameof(scriptPubKey), nameof(scriptPubKey.Length), scriptPubKey.Length);
 
-            this.pblock = this.pblocktemplate.Block; // Pointer for convenience.
-            this.scriptPubKeyIn = scriptPubKeyIn;
+            this.Configure();
+
+            this.ChainTip = chainTip;
+
+            this.block = this.blockTemplate.Block;
+            this.scriptPubKey = scriptPubKey;
 
             this.CreateCoinbase();
             this.ComputeBlockVersion();
@@ -263,7 +258,7 @@ namespace Stratis.Bitcoin.Features.Miner
             medianTimePast = Utils.DateTimeToUnixTime(this.ChainTip.GetMedianTimePast());
             this.lockTimeCutoff = PowConsensusValidator.StandardLocktimeVerifyFlags.HasFlag(Transaction.LockTimeFlags.MedianTimePast)
                 ? medianTimePast
-                : this.pblock.Header.Time;
+                : this.block.Header.Time;
 
             // TODO: Implement Witness Code
             // Decide whether to include witness transactions
@@ -272,7 +267,7 @@ namespace Stratis.Bitcoin.Features.Miner
             // -promiscuousmempoolflags is used.
             // TODO: replace this with a call to main to assess validity of a mempool
             // transaction (which in most cases can be a no-op).
-            this.fIncludeWitness = false; //IsWitnessEnabled(pindexPrev, chainparams.GetConsensus()) && fMineWitnessTx;
+            this.includeWitness = false; //IsWitnessEnabled(pindexPrev, chainparams.GetConsensus()) && fMineWitnessTx;
 
             // add transactions from the mempool
             int nPackagesSelected;
@@ -285,12 +280,12 @@ namespace Stratis.Bitcoin.Features.Miner
 
             // TODO: Implement Witness Code
             // pblocktemplate->CoinbaseCommitment = GenerateCoinbaseCommitment(*pblock, pindexPrev, chainparams.GetConsensus());
-            this.pblocktemplate.VTxFees[0] = -this.fees;
+            this.blockTemplate.VTxFees[0] = -this.fees;
             this.coinbase.Outputs[0].Value = this.fees + this.consensusLoop.Validator.GetProofOfWorkReward(this.height);
-            this.pblocktemplate.TotalFee = this.fees;
+            this.blockTemplate.TotalFee = this.fees;
 
-            int nSerializeSize = this.pblock.GetSerializedSize();
-            this.logger.LogDebug("Serialized size is {0} bytes, block weight is {1}, number of txs is {2}, tx fees are {3}, number of sigops is {4}.", nSerializeSize, this.consensusLoop.Validator.GetBlockWeight(this.pblock), this.blockTx, this.fees, this.blockSigOpsCost);
+            int nSerializeSize = this.block.GetSerializedSize();
+            this.logger.LogDebug("Serialized size is {0} bytes, block weight is {1}, number of txs is {2}, tx fees are {3}, number of sigops is {4}.", nSerializeSize, this.consensusLoop.Validator.GetBlockWeight(this.block), this.blockTx, this.fees, this.blockSigOpsCost);
 
             this.UpdateHeaders();
 
@@ -303,39 +298,59 @@ namespace Stratis.Bitcoin.Features.Miner
             //LogPrint(BCLog::BENCH, "CreateNewBlock() packages: %.2fms (%d packages, %d updated descendants), validity: %.2fms (total %.2fms)\n", 0.001 * (nTime1 - nTimeStart), nPackagesSelected, nDescendantsUpdated, 0.001 * (nTime2 - nTime1), 0.001 * (nTime2 - nTimeStart));
 
             this.logger.LogTrace("(-)");
-            return this.pblocktemplate;
+            return this.blockTemplate;
         }
 
+        /// <summary>
+        /// Configures (resets) the builder to its default state 
+        /// before constructing a new block.
+        /// </summary>
+        public void Configure()
+        {
+            this.blockSize = 1000;
+            this.blockTemplate = new BlockTemplate { Block = new Block(), VTxFees = new List<Money>() };
+            this.blockTx = 0;
+            this.blockWeight = 4000;
+            this.blockSigOpsCost = 400;
+            this.fees = 0;
+            this.inBlock = new TxMempool.SetEntries();
+            this.includeWitness = false;
+        }
+
+        /// <summary>
+        //// Compute the block version.
+        /// </summary>
         protected virtual void ComputeBlockVersion()
         {
-            // Compute the block version.
             this.height = this.ChainTip.Height + 1;
-            this.pblock.Header.Version = this.ComputeBlockVersion(this.ChainTip, this.network.Consensus);
+            this.block.Header.Version = this.ComputeBlockVersion(this.ChainTip, this.network.Consensus);
         }
 
+        /// <summary>
+        /// Create coinbase transaction.
+        /// Set the coin base with zero money.
+        /// Once we have the fee we can update the amount.
+        /// </summary>
         protected virtual void CreateCoinbase()
         {
-            // Create coinbase transaction.
-            // Set the coin base with zero money.
-            // Once we have the fee we can update the amount.
             this.coinbase = new Transaction();
             this.coinbase.Time = (uint)this.dateTimeProvider.GetAdjustedTimeAsUnixTimestamp();
             this.coinbase.AddInput(TxIn.CreateCoinbase(this.ChainTip.Height + 1));
-            this.coinbase.AddOutput(new TxOut(Money.Zero, this.scriptPubKeyIn));
-            this.pblock.AddTransaction(this.coinbase);
-            this.pblocktemplate.VTxFees.Add(-1); // Updated at end.
-            this.pblocktemplate.TxSigOpsCost.Add(-1); // Updated at end.
+            this.coinbase.AddOutput(new TxOut(Money.Zero, this.scriptPubKey));
+
+            this.block.AddTransaction(this.coinbase);
+            this.blockTemplate.VTxFees.Add(-1); // Updated at end.
+            this.blockTemplate.TxSigOpsCost.Add(-1); // Updated at end.
         }
 
         protected virtual void UpdateHeaders()
         {
             this.logger.LogTrace("()");
 
-            // Fill in header.
-            this.pblock.Header.HashPrevBlock = this.ChainTip.HashBlock;
-            this.pblock.Header.UpdateTime(this.dateTimeProvider.GetTimeOffset(), this.network, this.ChainTip);
-            this.pblock.Header.Bits = this.pblock.Header.GetWorkRequired(this.network, this.ChainTip);
-            this.pblock.Header.Nonce = 0;
+            this.block.Header.HashPrevBlock = this.ChainTip.HashBlock;
+            this.block.Header.UpdateTime(this.dateTimeProvider.GetTimeOffset(), this.network, this.ChainTip);
+            this.block.Header.Bits = this.block.Header.GetWorkRequired(this.network, this.ChainTip);
+            this.block.Header.Nonce = 0;
 
             this.logger.LogTrace("(-)");
         }
@@ -344,7 +359,7 @@ namespace Stratis.Bitcoin.Features.Miner
         {
             this.logger.LogTrace("()");
 
-            var context = new RuleContext(new BlockValidationContext { Block = this.pblock }, this.network.Consensus, this.consensusLoop.Tip)
+            var context = new RuleContext(new BlockValidationContext { Block = this.block }, this.network.Consensus, this.consensusLoop.Tip)
             {
                 CheckPow = false,
                 CheckMerkleRoot = false,
@@ -360,10 +375,10 @@ namespace Stratis.Bitcoin.Features.Miner
         {
             this.logger.LogTrace("({0}.{1}:'{2}')", nameof(iter), nameof(iter.TransactionHash), iter.TransactionHash);
 
-            this.pblock.AddTransaction(iter.Transaction);
+            this.block.AddTransaction(iter.Transaction);
 
-            this.pblocktemplate.VTxFees.Add(iter.Fee);
-            this.pblocktemplate.TxSigOpsCost.Add(iter.SigOpCost);
+            this.blockTemplate.VTxFees.Add(iter.Fee);
+            this.blockTemplate.TxSigOpsCost.Add(iter.SigOpCost);
 
             if (this.needSizeAccounting)
                 this.blockSize += iter.Transaction.GetSerializedSize();
@@ -605,7 +620,7 @@ namespace Stratis.Bitcoin.Features.Miner
                 if (!it.Transaction.IsFinal(Utils.UnixTimeToDateTime(this.lockTimeCutoff), this.height))
                     return false;
 
-                if (!this.fIncludeWitness && it.Transaction.HasWitness)
+                if (!this.includeWitness && it.Transaction.HasWitness)
                     return false;
 
                 if (this.needSizeAccounting)
