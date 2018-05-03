@@ -27,7 +27,7 @@ namespace Stratis.Bitcoin.Features.Miner
             IDateTimeProvider dateTimeProvider,
             IStakeChain stakeChain,
             IStakeValidator stakeValidator,
-            ChainedBlock chainTip,
+            ChainedHeader chainTip,
             ILoggerFactory loggerFactory,
             AssemblerOptions options = null)
             : base(chainTip, consensusLoop, dateTimeProvider, loggerFactory, mempool, mempoolLock, network, options)

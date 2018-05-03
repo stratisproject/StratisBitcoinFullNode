@@ -482,7 +482,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
               MempoolSchedulerLock mempoolLock,
               ITxMempool mempool,
               IDateTimeProvider dateTimeProvider,
-              ChainedBlock chainTip,
+              ChainedHeader chainTip,
               ILoggerFactory loggerFactory,
               AssemblerOptions options = null) :
                 base(chainTip, consensusLoop, dateTimeProvider, loggerFactory, mempool, mempoolLock, network, options)
@@ -498,7 +498,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
                 }
             }
 
-            public (int Height, int Version) ComputeBlockVersion(ChainedBlock chainTip)
+            public (int Height, int Version) ComputeBlockVersion(ChainedHeader chainTip)
             {
                 base.ChainTip = chainTip;
 
@@ -507,7 +507,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
                 return (base.height, base.pblock.Header.Version);
             }
 
-            public BlockTemplate CreateCoinBase(ChainedBlock chainTip, Script scriptPubKeyIn)
+            public BlockTemplate CreateCoinBase(ChainedHeader chainTip, Script scriptPubKeyIn)
             {
                 base.scriptPubKeyIn = scriptPubKeyIn;
                 base.ChainTip = chainTip;
@@ -519,7 +519,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
                 return base.pblocktemplate;
             }
 
-            public Block UpdateHeaders(ChainedBlock chainTip)
+            public Block UpdateHeaders(ChainedHeader chainTip)
             {
                 base.ChainTip = chainTip;
 

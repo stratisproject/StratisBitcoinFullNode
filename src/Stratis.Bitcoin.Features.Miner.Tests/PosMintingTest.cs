@@ -218,9 +218,9 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
         [Fact]
         public void GetDifficulty_VeryLowTarget_ReturnsDifficulty()
         {
-            ChainedBlock chainedBlock = CreateChainedBlockWithNBits(0x1f111111);
+            ChainedHeader chainedHeader = CreateChainedBlockWithNBits(0x1f111111);
 
-            var result = this.posMinting.GetDifficulty(chainedBlock);
+            var result = this.posMinting.GetDifficulty(chainedHeader);
 
             Assert.Equal(0.000001, Math.Round(result, 6));
         }
@@ -228,9 +228,9 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
         [Fact]
         public void GetDifficulty_LowTarget_ReturnsDifficulty()
         {
-            ChainedBlock chainedBlock = CreateChainedBlockWithNBits(0x1ef88f6f);
+            ChainedHeader chainedHeader = CreateChainedBlockWithNBits(0x1ef88f6f);
 
-            var result = this.posMinting.GetDifficulty(chainedBlock);
+            var result = this.posMinting.GetDifficulty(chainedHeader);
 
             Assert.Equal(0.000016, Math.Round(result, 6));
         }
@@ -238,9 +238,9 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
         [Fact]
         public void GetDifficulty_MidTarget_ReturnsDifficulty()
         {
-            ChainedBlock chainedBlock = CreateChainedBlockWithNBits(0x1df88f6f);
+            ChainedHeader chainedHeader = CreateChainedBlockWithNBits(0x1df88f6f);
 
-            var result = this.posMinting.GetDifficulty(chainedBlock);
+            var result = this.posMinting.GetDifficulty(chainedHeader);
 
             Assert.Equal(0.004023, Math.Round(result, 6));
         }
@@ -248,9 +248,9 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
         [Fact]
         public void GetDifficulty_HighTarget_ReturnsDifficulty()
         {
-            ChainedBlock chainedBlock = CreateChainedBlockWithNBits(0x1cf88f6f);
+            ChainedHeader chainedHeader = CreateChainedBlockWithNBits(0x1cf88f6f);
 
-            var result = this.posMinting.GetDifficulty(chainedBlock);
+            var result = this.posMinting.GetDifficulty(chainedHeader);
 
             Assert.Equal(1.029916, Math.Round(result, 6));
         }
@@ -258,9 +258,9 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
         [Fact]
         public void GetDifficulty_VeryHighTarget_ReturnsDifficulty()
         {
-            ChainedBlock chainedBlock = CreateChainedBlockWithNBits(0x12345678);
+            ChainedHeader chainedHeader = CreateChainedBlockWithNBits(0x12345678);
 
-            var result = this.posMinting.GetDifficulty(chainedBlock);
+            var result = this.posMinting.GetDifficulty(chainedHeader);
 
             Assert.Equal(5913134931067755359633408.0, Math.Round(result, 6));
         }
@@ -272,9 +272,9 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
             this.consensusLoop.Setup(c => c.Tip)
                 .Returns(this.chain.Tip);
 
-            ChainedBlock chainedBlock = CreateChainedBlockWithNBits(0x12345678);
-            this.stakeValidator.Setup(s => s.GetLastPowPosChainedBlock(this.stakeChain.Object, It.Is<ChainedBlock>(c => c.HashBlock == this.chain.Tip.HashBlock), false))
-                .Returns(chainedBlock);
+            ChainedHeader chainedHeader = CreateChainedBlockWithNBits(0x12345678);
+            this.stakeValidator.Setup(s => s.GetLastPowPosChainedBlock(this.stakeChain.Object, It.Is<ChainedHeader>(c => c.HashBlock == this.chain.Tip.HashBlock), false))
+                .Returns(chainedHeader);
 
             this.posMinting = this.InitializePosMinting();
             var result = this.posMinting.GetDifficulty(null);
@@ -286,7 +286,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
         public void GetDifficulty_BlockNull_NoConsensusTip_ReturnsDefaultDifficulty()
         {
             this.consensusLoop.Setup(c => c.Tip)
-                .Returns((ChainedBlock)null);
+                .Returns((ChainedHeader)null);
 
             var result = this.posMinting.GetDifficulty(null);
 
@@ -297,7 +297,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
         public void GetNetworkWeight_NoConsensusLoopTip_ReturnsZero()
         {
             this.consensusLoop.Setup(c => c.Tip)
-                .Returns((ChainedBlock)null);
+                .Returns((ChainedHeader)null);
 
             var result = this.posMinting.GetNetworkWeight();
 
@@ -438,12 +438,12 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
                 this.walletManager.Object, this.asyncLoopFactory.Object, this.timeSyncBehaviorState.Object, this.LoggerFactory.Object);
         }
 
-        private static ChainedBlock CreateChainedBlockWithNBits(uint bits)
+        private static ChainedHeader CreateChainedBlockWithNBits(uint bits)
         {
             var blockHeader = new BlockHeader();
             blockHeader.Time = 1269211443;
             blockHeader.Bits = new Target(bits);
-            var chainedBlock = new ChainedBlock(blockHeader, blockHeader.GetHash(), 46367);
+            var chainedBlock = new ChainedHeader(blockHeader, blockHeader.GetHash(), 46367);
             return chainedBlock;
         }
     }

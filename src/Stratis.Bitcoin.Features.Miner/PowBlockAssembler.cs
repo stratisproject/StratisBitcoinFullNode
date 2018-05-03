@@ -16,7 +16,7 @@ namespace Stratis.Bitcoin.Features.Miner
     {
         /// <summary>Tip of the chain that this instance will work with without touching any shared chain resources.</summary>
         /// <remarks>Using a fixed value prevents race conditions in the methods of derived classes.</remarks>
-        protected ChainedBlock ChainTip { get; set; }
+        protected ChainedHeader ChainTip { get; set; }
 
         public abstract BlockTemplate CreateNewBlock(Script scriptPubKeyIn, bool fMineWitnessTx = true);
     }
@@ -178,7 +178,7 @@ namespace Stratis.Bitcoin.Features.Miner
         protected Script scriptPubKeyIn;
 
         public PowBlockAssembler(
-            ChainedBlock chainTip,
+            ChainedHeader chainTip,
             IConsensusLoop consensusLoop,
             IDateTimeProvider dateTimeProvider,
             ILoggerFactory loggerFactory,
@@ -224,7 +224,7 @@ namespace Stratis.Bitcoin.Features.Miner
             this.pblocktemplate = new BlockTemplate { Block = new Block(), VTxFees = new List<Money>() };
         }
 
-        private int ComputeBlockVersion(ChainedBlock prevChainedBlock, NBitcoin.Consensus consensus)
+        private int ComputeBlockVersion(ChainedHeader prevChainedHeader, NBitcoin.Consensus consensus)
         {
             uint nVersion = ThresholdConditionCache.VersionbitsTopBits;
             var thresholdConditionCache = new ThresholdConditionCache(consensus);
@@ -234,7 +234,7 @@ namespace Stratis.Bitcoin.Features.Miner
 
             foreach (BIP9Deployments deployment in deployments)
             {
-                ThresholdState state = thresholdConditionCache.GetState(prevChainedBlock, deployment);
+                ThresholdState state = thresholdConditionCache.GetState(prevChainedHeader, deployment);
                 if ((state == ThresholdState.LockedIn) || (state == ThresholdState.Started))
                     nVersion |= thresholdConditionCache.Mask(deployment);
             }

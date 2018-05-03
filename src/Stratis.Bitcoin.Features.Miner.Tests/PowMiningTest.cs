@@ -186,8 +186,8 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
                 this.consensusLoop.Setup(c => c.AcceptBlockAsync(It.IsAny<BlockValidationContext>()))
                     .Callback<BlockValidationContext>((context) =>
                     {
-                        context.ChainedBlock = new ChainedBlock(context.Block.Header, context.Block.GetHash(), this.chain.Tip);
-                        this.chain.SetTip(context.ChainedBlock);
+                        context.ChainedHeader = new ChainedHeader(context.Block.Header, context.Block.GetHash(), this.chain.Tip);
+                        this.chain.SetTip(context.ChainedHeader);
                         callbackBlockValidationContext = context;
                     })
                     .Returns(Task.CompletedTask);
@@ -212,7 +212,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
                 this.consensusLoop.Setup(c => c.AcceptBlockAsync(It.IsAny<BlockValidationContext>()))
                     .Callback<BlockValidationContext>((context) =>
                     {
-                        context.ChainedBlock = null;
+                        context.ChainedHeader = null;
                         callbackBlockValidationContext = context;
                     })
                     .Returns(Task.CompletedTask);
@@ -236,8 +236,8 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
                 this.consensusLoop.Setup(c => c.AcceptBlockAsync(It.IsAny<BlockValidationContext>()))
                     .Callback<BlockValidationContext>((context) =>
                     {
-                        context.ChainedBlock = new ChainedBlock(context.Block.Header, context.Block.GetHash(), this.chain.Tip);
-                        this.chain.SetTip(context.ChainedBlock);
+                        context.ChainedHeader = new ChainedHeader(context.Block.Header, context.Block.GetHash(), this.chain.Tip);
+                        this.chain.SetTip(context.ChainedHeader);
                         context.Error = ConsensusErrors.BadMerkleRoot;
                         callbackBlockValidationContext = context;
                     })
@@ -263,7 +263,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
                 this.consensusLoop.Setup(c => c.AcceptBlockAsync(It.IsAny<BlockValidationContext>()))
                     .Callback<BlockValidationContext>((context) =>
                     {
-                        context.ChainedBlock = new ChainedBlock(context.Block.Header, context.Block.GetHash(), this.chain.Tip);
+                        context.ChainedHeader = new ChainedHeader(context.Block.Header, context.Block.GetHash(), this.chain.Tip);
                         if (lastError == null)
                         {
                             context.Error = ConsensusErrors.InvalidPrevTip;
@@ -271,7 +271,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
                         }
                         else if (lastError != null)
                         {
-                            this.chain.SetTip(context.ChainedBlock);
+                            this.chain.SetTip(context.ChainedHeader);
                         }
                         callbackBlockValidationContext = context;
                     })
@@ -298,8 +298,8 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
                 this.consensusLoop.Setup(c => c.AcceptBlockAsync(It.IsAny<BlockValidationContext>()))
                     .Callback<BlockValidationContext>((context) =>
                     {
-                        context.ChainedBlock = new ChainedBlock(context.Block.Header, context.Block.GetHash(), this.chain.Tip);
-                        this.chain.SetTip(context.ChainedBlock);
+                        context.ChainedHeader = new ChainedHeader(context.Block.Header, context.Block.GetHash(), this.chain.Tip);
+                        this.chain.SetTip(context.ChainedHeader);
                         callbackBlockValidationContext = context;
                     })
                     .Returns(Task.CompletedTask);
@@ -329,21 +329,21 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
             this.ExecuteUsingNonProofOfStakeSettings(() =>
             {
                 List<BlockValidationContext> callbackBlockValidationContexts = new List<BlockValidationContext>();
-                ChainedBlock lastChainedBlock = null;
+                ChainedHeader lastChainedHeader = null;
                 this.consensusLoop.Setup(c => c.AcceptBlockAsync(It.IsAny<BlockValidationContext>()))
                     .Callback<BlockValidationContext>((context) =>
                     {
-                        if (lastChainedBlock == null)
+                        if (lastChainedHeader == null)
                         {
-                            context.ChainedBlock = this.fixture.ChainedBlock1;
-                            lastChainedBlock = context.ChainedBlock;
+                            context.ChainedHeader = this.fixture.ChainedBlock1;
+                            lastChainedHeader = context.ChainedHeader;
                         }
                         else
                         {
-                            context.ChainedBlock = this.fixture.ChainedBlock2;
+                            context.ChainedHeader = this.fixture.ChainedBlock2;
                         }
 
-                        this.chain.SetTip(context.ChainedBlock);
+                        this.chain.SetTip(context.ChainedHeader);
                         callbackBlockValidationContexts.Add(context);
                     })
                     .Returns(Task.CompletedTask);
@@ -355,15 +355,15 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
                 this.blockAssembler.Setup(b => b.CreateNewBlock(It.Is<Script>(r => r == this.fixture.ReserveScript.ReserveFullNodeScript), true))
                     .Returns(() =>
                     {
-                        if (lastChainedBlock == null)
+                        if (lastChainedHeader == null)
                         {
                             if (attempts == 10)
                             {
                                 // sometimes the PoW nonce we generate in the fixture is not accepted resulting in an infinite loop. Retry.
                                 this.fixture.Block1 = this.fixture.PrepareValidBlock(this.chain.Tip, 1, this.fixture.Key.ScriptPubKey);
-                                this.fixture.ChainedBlock1 = new ChainedBlock(this.fixture.Block1.Header, this.fixture.Block1.GetHash(), this.chain.Tip);
+                                this.fixture.ChainedBlock1 = new ChainedHeader(this.fixture.Block1.Header, this.fixture.Block1.GetHash(), this.chain.Tip);
                                 this.fixture.Block2 = this.fixture.PrepareValidBlock(this.fixture.ChainedBlock1, 2, this.fixture.Key.ScriptPubKey);
-                                this.fixture.ChainedBlock2 = new ChainedBlock(this.fixture.Block2.Header, this.fixture.Block2.GetHash(), this.fixture.ChainedBlock1);
+                                this.fixture.ChainedBlock2 = new ChainedHeader(this.fixture.Block2.Header, this.fixture.Block2.GetHash(), this.fixture.ChainedBlock1);
 
                                 blockTemplate = CreateBlockTemplate(this.fixture.Block1);
                                 blockTemplate2 = CreateBlockTemplate(this.fixture.Block2);
@@ -392,19 +392,19 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
             this.ExecuteUsingNonProofOfStakeSettings(() =>
             {
                 List<BlockValidationContext> callbackBlockValidationContexts = new List<BlockValidationContext>();
-                ChainedBlock lastChainedBlock = null;
+                ChainedHeader lastChainedHeader = null;
                 this.consensusLoop.Setup(c => c.AcceptBlockAsync(It.IsAny<BlockValidationContext>()))
                     .Callback<BlockValidationContext>((context) =>
                     {
-                        if (lastChainedBlock == null)
+                        if (lastChainedHeader == null)
                         {
-                            context.ChainedBlock = this.fixture.ChainedBlock1;
-                            lastChainedBlock = context.ChainedBlock;
-                            this.chain.SetTip(context.ChainedBlock);
+                            context.ChainedHeader = this.fixture.ChainedBlock1;
+                            lastChainedHeader = context.ChainedHeader;
+                            this.chain.SetTip(context.ChainedHeader);
                         }
                         else
                         {
-                            context.ChainedBlock = null;
+                            context.ChainedHeader = null;
                         }
 
                         callbackBlockValidationContexts.Add(context);
@@ -432,15 +432,15 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
             this.ExecuteUsingNonProofOfStakeSettings(() =>
             {
                 List<BlockValidationContext> callbackBlockValidationContexts = new List<BlockValidationContext>();
-                ChainedBlock lastChainedBlock = null;
+                ChainedHeader lastChainedHeader = null;
                 this.consensusLoop.Setup(c => c.AcceptBlockAsync(It.IsAny<BlockValidationContext>()))
                     .Callback<BlockValidationContext>((context) =>
                     {
-                        if (lastChainedBlock == null)
+                        if (lastChainedHeader == null)
                         {
-                            context.ChainedBlock = this.fixture.ChainedBlock1;
-                            this.chain.SetTip(context.ChainedBlock);
-                            lastChainedBlock = context.ChainedBlock;
+                            context.ChainedHeader = this.fixture.ChainedBlock1;
+                            this.chain.SetTip(context.ChainedHeader);
+                            lastChainedHeader = context.ChainedHeader;
                         }
                         else
                         {
@@ -534,10 +534,10 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
         public readonly Network Network;
 
         public Block Block1 { get; set; }
-        public ChainedBlock ChainedBlock1 { get; set; }
+        public ChainedHeader ChainedBlock1 { get; set; }
 
         public Block Block2 { get; set; }
-        public ChainedBlock ChainedBlock2 { get; set; }
+        public ChainedHeader ChainedBlock2 { get; set; }
 
         public readonly ReserveScript ReserveScript;
 
@@ -560,9 +560,9 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
                 Transaction.TimeStamp = false;
 
                 this.Block1 = PrepareValidBlock(this.Chain.Tip, 1, this.Key.ScriptPubKey);
-                this.ChainedBlock1 = new ChainedBlock(this.Block1.Header, this.Block1.GetHash(), this.Chain.Tip);
+                this.ChainedBlock1 = new ChainedHeader(this.Block1.Header, this.Block1.GetHash(), this.Chain.Tip);
                 this.Block2 = PrepareValidBlock(this.ChainedBlock1, 2, this.Key.ScriptPubKey);
-                this.ChainedBlock2 = new ChainedBlock(this.Block2.Header, this.Block2.GetHash(), this.ChainedBlock1);
+                this.ChainedBlock2 = new ChainedHeader(this.Block2.Header, this.Block2.GetHash(), this.ChainedBlock1);
             }
             finally
             {
@@ -573,7 +573,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
             }
         }
 
-        public Block PrepareValidBlock(ChainedBlock prevBlock, int newHeight, Script ScriptPubKey)
+        public Block PrepareValidBlock(ChainedHeader prevBlock, int newHeight, Script ScriptPubKey)
         {
             uint nonce = 0;
 

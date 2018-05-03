@@ -20,7 +20,7 @@ namespace Stratis.Bitcoin.Features.Miner.Interfaces
         /// <param name="fees">Transaction fees from the transactions included in the block if we mine it.</param>
         /// <param name="coinstakeContext">Information about coinstake transaction and its private key that is to be filled when the kernel is found.</param>
         /// <returns><c>true</c> if the function succeeds, <c>false</c> otherwise.</returns>
-        Task<bool> CreateCoinstakeAsync(List<PosMinting.UtxoStakeDescription> utxoStakeDescriptions, Block block, ChainedBlock chainTip, long searchInterval, long fees, PosMinting.CoinstakeContext coinstakeContext);
+        Task<bool> CreateCoinstakeAsync(List<PosMinting.UtxoStakeDescription> utxoStakeDescriptions, Block block, ChainedHeader chainTip, long searchInterval, long fees, PosMinting.CoinstakeContext coinstakeContext);
 
         /// <summary>
         /// Attempts to stake new blocks in a loop.
@@ -40,7 +40,7 @@ namespace Stratis.Bitcoin.Features.Miner.Interfaces
         /// The actual idea behind the calculation is a mystery. It was simply ported from
         /// <see cref="https://github.com/stratisproject/stratisX/blob/47851b7337f528f52ec20e86dca7dcead8191cf5/src/rpcblockchain.cpp#L16"/>.
         /// </remarks>
-        double GetDifficulty(ChainedBlock block);
+        double GetDifficulty(ChainedHeader block);
 
         /// <summary>
         /// Constructs model for RPC "getstakinginfo" call.
