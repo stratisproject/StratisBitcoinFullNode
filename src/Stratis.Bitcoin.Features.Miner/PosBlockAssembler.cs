@@ -21,27 +21,25 @@ namespace Stratis.Bitcoin.Features.Miner
 
         public PosBlockAssembler(
             IConsensusLoop consensusLoop,
-            Network network,
-            MempoolSchedulerLock mempoolLock,
-            ITxMempool mempool,
             IDateTimeProvider dateTimeProvider,
-            IStakeChain stakeChain,
-            IStakeValidator stakeValidator,
-            ChainedBlock chainTip,
             ILoggerFactory loggerFactory,
-            AssemblerOptions options = null)
-            : base(chainTip, consensusLoop, dateTimeProvider, loggerFactory, mempool, mempoolLock, network, options)
+            ITxMempool mempool,
+            MempoolSchedulerLock mempoolLock,
+            Network network,
+            IStakeChain stakeChain,
+            IStakeValidator stakeValidator)
+            : base(consensusLoop, dateTimeProvider, loggerFactory, mempool, mempoolLock, network, new AssemblerOptions() { IsProofOfStake = true })
         {
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.stakeChain = stakeChain;
             this.stakeValidator = stakeValidator;
         }
 
-        public override BlockTemplate CreateNewBlock(Script scriptPubKeyIn, bool fMineWitnessTx = true)
+        public override BlockTemplate Build(ChainedBlock chainTip, Script scriptPubKey)
         {
-            this.logger.LogTrace("({0}.{1}:{2},{3}:{4})", nameof(scriptPubKeyIn), nameof(scriptPubKeyIn.Length), scriptPubKeyIn.Length, nameof(fMineWitnessTx), fMineWitnessTx);
+            this.logger.LogTrace("({0}:'{1}',{2}.{3}:{4})", nameof(chainTip), chainTip, nameof(scriptPubKey), nameof(scriptPubKey.Length), scriptPubKey.Length);
 
-            base.CreateNewBlock(scriptPubKeyIn, fMineWitnessTx);
+            base.Build(chainTip, scriptPubKey);
 
             this.coinbase.Outputs[0].ScriptPubKey = new Script();
             this.coinbase.Outputs[0].Value = Money.Zero;
@@ -50,7 +48,7 @@ namespace Stratis.Bitcoin.Features.Miner
             Guard.NotNull(posValidator, nameof(posValidator));
 
             this.logger.LogTrace("(-)");
-            return this.pblocktemplate;
+            return this.blockTemplate;
         }
 
         protected override void UpdateHeaders()
@@ -59,8 +57,8 @@ namespace Stratis.Bitcoin.Features.Miner
 
             base.UpdateHeaders();
 
-            var stake = new BlockStake(this.pblock);
-            this.pblock.Header.Bits = this.stakeValidator.GetNextTargetRequired(this.stakeChain, this.ChainTip, this.network.Consensus, this.options.IsProofOfStake);
+            var stake = new BlockStake(this.block);
+            this.block.Header.Bits = this.stakeValidator.GetNextTargetRequired(this.stakeChain, this.ChainTip, this.network.Consensus, this.options.IsProofOfStake);
 
             this.logger.LogTrace("(-)");
         }
