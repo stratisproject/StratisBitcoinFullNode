@@ -31,7 +31,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
 
         public PowMiningTest(PowMiningTestFixture fixture)
         {
-            // Ensure that these flags match the values derived from the Network and NetworkOptions.
+            // Static flags should match the values derived from the Network and NetworkOptions.
             Transaction.TimeStamp = true;
             Block.BlockSignature = true;
 
