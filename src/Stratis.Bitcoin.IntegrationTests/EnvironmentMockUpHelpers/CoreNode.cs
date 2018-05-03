@@ -30,17 +30,18 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
         private readonly INetworkPeerFactory networkPeerFactory;
 
         private int[] ports;
-        private INodeRunner runner;
+        private NodeRunner runner;
         private readonly NetworkCredential creds;
         private List<Transaction> transactions = new List<Transaction>();
         private HashSet<OutPoint> locked = new HashSet<OutPoint>();
         private Money fee = Money.Coins(0.0001m);
         private object lockObject = new object();
 
-        public string Folder { get; }
-
         /// <summary>Location of the data directory for the node.</summary>
-        public string DataFolder { get; }
+        public string DataFolder
+        {
+            get { return this.runner.DataFolder; }
+        }
 
         public IPEndPoint Endpoint { get { return new IPEndPoint(IPAddress.Parse("127.0.0.1"), this.ports[0]); } }
 
@@ -48,16 +49,14 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
 
         public NodeConfigParameters ConfigParameters { get; } = new NodeConfigParameters();
 
-        public CoreNode(string folder, INodeRunner runner, NodeBuilder builder, Network network, string configfile = "bitcoin.conf")
+        public CoreNode(NodeRunner runner, NodeBuilder builder, Network network, string configfile = "bitcoin.conf")
         {
             this.runner = runner;
-            this.Folder = folder;
-            this.DataFolder = Path.Combine(folder, "data");
 
             this.State = CoreNodeState.Stopped;
             var pass = Encoders.Hex.EncodeData(RandomUtils.GetBytes(20));
             this.creds = new NetworkCredential(pass, pass);
-            this.Config = Path.Combine(this.DataFolder, configfile);
+            this.Config = Path.Combine(this.runner.DataFolder, configfile);
             this.ConfigParameters.Import(builder.ConfigParameters);
             this.ports = new int[2];
             this.FindPorts(this.ports);
@@ -119,7 +118,7 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
 
         public void Start()
         {
-            NodeBuilder.CreateDataFolder(this.DataFolder);
+            NodeBuilder.CreateDataFolder(this.runner.DataFolder);
 
             var config = new NodeConfigParameters();
             config.Add("regtest", "1");
@@ -138,7 +137,7 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
 
             lock (this.lockObject)
             {
-                this.runner.Start(this.DataFolder);
+                this.runner.Start();
                 this.State = CoreNodeState.Starting;
             }
 
