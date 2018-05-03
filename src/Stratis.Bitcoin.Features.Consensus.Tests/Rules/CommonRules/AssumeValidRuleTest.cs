@@ -69,7 +69,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         {            
             this.consensusSettings.BlockAssumedValid = this.concurrentChain.GetBlock(4).HashBlock;
             this.ruleContext.SkipValidation = false;
-            this.ruleContext.BlockValidationContext.ChainedBlock = this.concurrentChain.GetBlock(3);
+            this.ruleContext.BlockValidationContext.ChainedHeader = this.concurrentChain.GetBlock(3);
 
             var awaiter = this.rule.RunAsync(this.ruleContext).GetAwaiter();
 
@@ -82,7 +82,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         {            
             this.consensusSettings.BlockAssumedValid = this.concurrentChain.GetBlock(4).HashBlock;
             this.ruleContext.SkipValidation = false;
-            this.ruleContext.BlockValidationContext.ChainedBlock = this.concurrentChain.GetBlock(4);
+            this.ruleContext.BlockValidationContext.ChainedHeader = this.concurrentChain.GetBlock(4);
 
             var awaiter = this.rule.RunAsync(this.ruleContext).GetAwaiter();
 
@@ -95,7 +95,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         {            
             this.consensusSettings.BlockAssumedValid = this.concurrentChain.GetBlock(3).HashBlock;
             this.ruleContext.SkipValidation = false;
-            this.ruleContext.BlockValidationContext.ChainedBlock = this.concurrentChain.GetBlock(4);
+            this.ruleContext.BlockValidationContext.ChainedHeader = this.concurrentChain.GetBlock(4);
 
             var awaiter = this.rule.RunAsync(this.ruleContext).GetAwaiter();
 

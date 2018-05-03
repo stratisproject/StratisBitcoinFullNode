@@ -22,8 +22,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         public async Task RunAsync_HeaderVersionBelowMinimalHeaderVersion_ThrowsBadVersionConsensusErrorAsync()
         {
             int MinimalHeaderVersion = 7;
-            this.ruleContext.BlockValidationContext.ChainedBlock = this.concurrentChain.GetBlock(1);
-            this.ruleContext.BlockValidationContext.ChainedBlock.Header.Version = MinimalHeaderVersion - 1;
+            this.ruleContext.BlockValidationContext.ChainedHeader = this.concurrentChain.GetBlock(1);
+            this.ruleContext.BlockValidationContext.ChainedHeader.Header.Version = MinimalHeaderVersion - 1;
 
             var exception = await Assert.ThrowsAsync<ConsensusErrorException>(() => this.rule.RunAsync(this.ruleContext));
 
@@ -33,7 +33,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         [Fact]
         public async Task RunAsync_ProofOfWorkTooHigh_ThrowsProofOfWorkTooHighConsensusErrorAsync()
         {
-            this.ruleContext.BlockValidationContext.ChainedBlock = this.concurrentChain.GetBlock(3);
+            this.ruleContext.BlockValidationContext.ChainedHeader = this.concurrentChain.GetBlock(3);
             this.ruleContext.Stake = new ContextStakeInformation()
             {
                 BlockStake = new BlockStake()
@@ -64,10 +64,10 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
                         }
                     }
                 },
-                ChainedBlock = this.concurrentChain.GetBlock(3)
+                ChainedHeader = this.concurrentChain.GetBlock(3)
             };
             this.network.Consensus.LastPOWBlock = 12500;
-            this.ruleContext.BlockValidationContext.ChainedBlock.Header.Time = this.ruleContext.BlockValidationContext.Block.Transactions[0].Time + MaxFutureDriftBeforeHardFork + 1;
+            this.ruleContext.BlockValidationContext.ChainedHeader.Header.Time = this.ruleContext.BlockValidationContext.Block.Transactions[0].Time + MaxFutureDriftBeforeHardFork + 1;
 
             var exception = await Assert.ThrowsAsync<ConsensusErrorException>(() => this.rule.RunAsync(this.ruleContext));
 
@@ -93,11 +93,11 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
                         }
                     }
                 },
-                ChainedBlock = this.concurrentChain.GetBlock(3)
+                ChainedHeader = this.concurrentChain.GetBlock(3)
             };
 
             this.network.Consensus.LastPOWBlock = 12500;
-            this.ruleContext.BlockValidationContext.ChainedBlock.Header.Time = this.ruleContext.BlockValidationContext.Block.Transactions[0].Time + MaxFutureDriftAfterHardFork + 1;
+            this.ruleContext.BlockValidationContext.ChainedHeader.Header.Time = this.ruleContext.BlockValidationContext.Block.Transactions[0].Time + MaxFutureDriftAfterHardFork + 1;
 
             var exception = await Assert.ThrowsAsync<ConsensusErrorException>(() => this.rule.RunAsync(this.ruleContext));
 
@@ -116,7 +116,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             };
             this.ruleContext.BlockValidationContext = new BlockValidationContext()
             {
-                ChainedBlock = this.concurrentChain.GetBlock(3),
+                ChainedHeader = this.concurrentChain.GetBlock(3),
                 Block = new Block()
                 {
                     Transactions = new List<Transaction>()
@@ -128,7 +128,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             };
             this.network.Consensus.LastPOWBlock = 12500;
             this.ruleContext.BlockValidationContext.Block.Transactions[1].Time = this.ruleContext.BlockValidationContext.Block.Transactions[0].Time + MaxFutureDriftAfterHardFork + 1;
-            this.ruleContext.BlockValidationContext.ChainedBlock.Header.Time = this.ruleContext.BlockValidationContext.Block.Transactions[0].Time + MaxFutureDriftAfterHardFork;
+            this.ruleContext.BlockValidationContext.ChainedHeader.Header.Time = this.ruleContext.BlockValidationContext.Block.Transactions[0].Time + MaxFutureDriftAfterHardFork;
 
             var exception = await Assert.ThrowsAsync<ConsensusErrorException>(() => this.rule.RunAsync(this.ruleContext));
 
@@ -147,7 +147,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             };
             this.ruleContext.BlockValidationContext = new BlockValidationContext()
             {
-                ChainedBlock = this.concurrentChain.GetBlock(3),
+                ChainedHeader = this.concurrentChain.GetBlock(3),
                 Block = new Block()
                 {
                     Transactions = new List<Transaction>()
@@ -159,7 +159,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             };
             this.network.Consensus.LastPOWBlock = 12500;
             this.ruleContext.BlockValidationContext.Block.Transactions[1].Time = this.ruleContext.BlockValidationContext.Block.Transactions[0].Time + MaxFutureDriftAfterHardFork;
-            this.ruleContext.BlockValidationContext.ChainedBlock.Header.Time = this.ruleContext.BlockValidationContext.Block.Transactions[0].Time + MaxFutureDriftAfterHardFork;
+            this.ruleContext.BlockValidationContext.ChainedHeader.Header.Time = this.ruleContext.BlockValidationContext.Block.Transactions[0].Time + MaxFutureDriftAfterHardFork;
 
             var exception = await Assert.ThrowsAsync<ConsensusErrorException>(() => this.rule.RunAsync(this.ruleContext));
 
@@ -178,7 +178,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             };
             this.ruleContext.BlockValidationContext = new BlockValidationContext()
             {
-                ChainedBlock = this.concurrentChain.GetBlock(3),
+                ChainedHeader = this.concurrentChain.GetBlock(3),
                 Block = new Block()
                 {
                     Transactions = new List<Transaction>()
@@ -191,10 +191,10 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             this.network.Consensus.LastPOWBlock = 12500;
 
             // time before previous block.
-            var previousBlockHeaderTime = this.ruleContext.BlockValidationContext.ChainedBlock.Previous.Header.Time;
+            var previousBlockHeaderTime = this.ruleContext.BlockValidationContext.ChainedHeader.Previous.Header.Time;
             this.ruleContext.BlockValidationContext.Block.Transactions[0].Time = previousBlockHeaderTime;
             this.ruleContext.BlockValidationContext.Block.Transactions[1].Time = previousBlockHeaderTime - 32;
-            this.ruleContext.BlockValidationContext.ChainedBlock.Header.Time = previousBlockHeaderTime - 32;
+            this.ruleContext.BlockValidationContext.ChainedHeader.Header.Time = previousBlockHeaderTime - 32;
 
             var exception = await Assert.ThrowsAsync<ConsensusErrorException>(() => this.rule.RunAsync(this.ruleContext));
 
@@ -213,7 +213,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             };
             this.ruleContext.BlockValidationContext = new BlockValidationContext()
             {
-                ChainedBlock = this.concurrentChain.GetBlock(3),
+                ChainedHeader = this.concurrentChain.GetBlock(3),
                 Block = new Block()
                 {
                     Transactions = new List<Transaction>()
@@ -226,10 +226,10 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             this.network.Consensus.LastPOWBlock = 12500;
 
             // time same as previous block.
-            var previousBlockHeaderTime = this.ruleContext.BlockValidationContext.ChainedBlock.Previous.Header.Time;
+            var previousBlockHeaderTime = this.ruleContext.BlockValidationContext.ChainedHeader.Previous.Header.Time;
             this.ruleContext.BlockValidationContext.Block.Transactions[0].Time = previousBlockHeaderTime;
             this.ruleContext.BlockValidationContext.Block.Transactions[1].Time = previousBlockHeaderTime;
-            this.ruleContext.BlockValidationContext.ChainedBlock.Header.Time = previousBlockHeaderTime;
+            this.ruleContext.BlockValidationContext.ChainedHeader.Header.Time = previousBlockHeaderTime;
 
             var exception = await Assert.ThrowsAsync<ConsensusErrorException>(() => this.rule.RunAsync(this.ruleContext));
 
@@ -248,7 +248,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             };
             this.ruleContext.BlockValidationContext = new BlockValidationContext()
             {
-                ChainedBlock = this.concurrentChain.GetBlock(3),
+                ChainedHeader = this.concurrentChain.GetBlock(3),
                 Block = new Block()
                 {
                     Transactions = new List<Transaction>()
@@ -261,10 +261,10 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             this.network.Consensus.LastPOWBlock = 12500;
 
             // time after previous block.
-            var previousBlockHeaderTime = this.ruleContext.BlockValidationContext.ChainedBlock.Previous.Header.Time;
+            var previousBlockHeaderTime = this.ruleContext.BlockValidationContext.ChainedHeader.Previous.Header.Time;
             this.ruleContext.BlockValidationContext.Block.Transactions[0].Time = previousBlockHeaderTime + 62;
             this.ruleContext.BlockValidationContext.Block.Transactions[1].Time = previousBlockHeaderTime + 64;
-            this.ruleContext.BlockValidationContext.ChainedBlock.Header.Time = previousBlockHeaderTime + 64;
+            this.ruleContext.BlockValidationContext.ChainedHeader.Header.Time = previousBlockHeaderTime + 64;
 
             await this.rule.RunAsync(this.ruleContext);
         }

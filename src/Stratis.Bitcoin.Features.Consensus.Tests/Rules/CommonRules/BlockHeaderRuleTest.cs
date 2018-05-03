@@ -23,7 +23,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             context.BlockValidationContext.Block = new Block(new BlockHeader { HashPrevBlock = testContext.Chain.Tip.HashBlock });
             await blockHeaderRule.RunAsync(context);
 
-            Assert.NotNull(context.BlockValidationContext.ChainedBlock);
+            Assert.NotNull(context.BlockValidationContext.ChainedHeader);
             Assert.NotNull(context.BestBlock);
             Assert.NotNull(context.Flags);
         }

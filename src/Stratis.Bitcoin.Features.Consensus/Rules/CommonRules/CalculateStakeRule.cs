@@ -25,7 +25,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
                 }
             }
 
-            context.NextWorkRequired = this.PosParent.StakeValidator.GetNextTargetRequired(this.PosParent.StakeChain, context.BlockValidationContext.ChainedBlock.Previous, context.Consensus, 
+            context.NextWorkRequired = this.PosParent.StakeValidator.GetNextTargetRequired(this.PosParent.StakeChain, context.BlockValidationContext.ChainedHeader.Previous, context.Consensus, 
                 context.Stake.BlockStake.IsProofOfStake());
 
             return Task.CompletedTask;

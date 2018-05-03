@@ -66,7 +66,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             this.logger.LogTrace("()");
 
             Block block = context.BlockValidationContext.Block;
-            ChainedBlock index = context.BlockValidationContext.ChainedBlock;
+            ChainedHeader index = context.BlockValidationContext.ChainedHeader;
             DeploymentFlags flags = context.Flags;
             UnspentOutputSet view = context.Set;
 
@@ -170,7 +170,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         {
             this.logger.LogTrace("()");
 
-            ChainedBlock index = context.BlockValidationContext.ChainedBlock;
+            ChainedHeader index = context.BlockValidationContext.ChainedHeader;
             UnspentOutputSet view = context.Set;
 
             view.Update(transaction, index.Height);

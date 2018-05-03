@@ -23,10 +23,10 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
             // Check whether to use assumevalid switch to skip validation.
             if (!context.SkipValidation && (this.Parent.ConsensusSettings.BlockAssumedValid != null))
             {
-                ChainedBlock assumeValidBlock = this.Parent.Chain.GetBlock(this.Parent.ConsensusSettings.BlockAssumedValid);
-                context.SkipValidation = (assumeValidBlock != null) && (context.BlockValidationContext.ChainedBlock.Height <= assumeValidBlock.Height);
+                ChainedHeader assumeValidBlock = this.Parent.Chain.GetBlock(this.Parent.ConsensusSettings.BlockAssumedValid);
+                context.SkipValidation = (assumeValidBlock != null) && (context.BlockValidationContext.ChainedHeader.Height <= assumeValidBlock.Height);
                 if (context.SkipValidation)
-                    this.Logger.LogTrace("Block validation will be partially skipped due to block height {0} is not greater than assumed valid block height {1}.", context.BlockValidationContext.ChainedBlock.Height, assumeValidBlock.Height);
+                    this.Logger.LogTrace("Block validation will be partially skipped due to block height {0} is not greater than assumed valid block height {1}.", context.BlockValidationContext.ChainedHeader.Height, assumeValidBlock.Height);
             }
 
             return Task.CompletedTask;
