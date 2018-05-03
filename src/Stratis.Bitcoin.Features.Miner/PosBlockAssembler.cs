@@ -44,7 +44,7 @@ namespace Stratis.Bitcoin.Features.Miner
             this.coinbase.Outputs[0].ScriptPubKey = new Script();
             this.coinbase.Outputs[0].Value = Money.Zero;
 
-            IPosConsensusValidator posValidator = this.consensusLoop.Validator as IPosConsensusValidator;
+            IPosConsensusValidator posValidator = this.ConsensusLoop.Validator as IPosConsensusValidator;
             Guard.NotNull(posValidator, nameof(posValidator));
 
             this.logger.LogTrace("(-)");
@@ -58,7 +58,7 @@ namespace Stratis.Bitcoin.Features.Miner
             base.UpdateHeaders();
 
             var stake = new BlockStake(this.block);
-            this.block.Header.Bits = this.stakeValidator.GetNextTargetRequired(this.stakeChain, this.ChainTip, this.network.Consensus, this.options.IsProofOfStake);
+            this.block.Header.Bits = this.stakeValidator.GetNextTargetRequired(this.stakeChain, this.ChainTip, this.Network.Consensus, this.Options.IsProofOfStake);
 
             this.logger.LogTrace("(-)");
         }
