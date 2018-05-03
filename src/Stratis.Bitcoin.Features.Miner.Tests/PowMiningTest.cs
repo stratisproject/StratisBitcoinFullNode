@@ -28,14 +28,9 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
         private Network network;
         private Mock<INodeLifetime> nodeLifetime;
         private PowMining powMining;
-        private readonly bool initialBlockSignature;
-        private readonly bool initialTimestamp;
 
         public PowMiningTest(PowMiningTestFixture fixture)
         {
-            this.initialBlockSignature = Block.BlockSignature;
-            this.initialTimestamp = Transaction.TimeStamp;
-
             Transaction.TimeStamp = true;
             Block.BlockSignature = true;
 
@@ -67,9 +62,6 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
 
         public void Dispose()
         {
-            Block.BlockSignature = this.initialBlockSignature;
-            Transaction.TimeStamp = this.initialTimestamp;
-
             this.network.Consensus.Options = this.initialNetworkOptions;
         }
 
