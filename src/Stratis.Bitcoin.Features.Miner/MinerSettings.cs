@@ -92,5 +92,25 @@ namespace Stratis.Bitcoin.Features.Miner
 
             defaults.Logger.LogInformation(builder.ToString());
         }
+
+        /// <summary>
+        /// Get the default configuration.
+        /// </summary>
+        /// <param name="builder">The string builder to add the settings to.</param>
+        /// <param name="network">The network to base the defaults off.</param>
+        public static void BuildDefaultConfigurationFile(StringBuilder builder, Network network)
+        {
+            builder.AppendLine("####Miner Settings####");
+            builder.AppendLine("#Enable POW mining.");
+            builder.AppendLine("#mine=0");
+            builder.AppendLine("#Enable POS.");
+            builder.AppendLine("#stake=0");
+            builder.AppendLine("#The address to use for mining (empty string to select an address from the wallet).");
+            builder.AppendLine("#mineaddress=<string>");
+            builder.AppendLine("#The wallet name to use when staking.");
+            builder.AppendLine("#walletname=<string>");
+            builder.AppendLine("#Password to unlock the wallet.");
+            builder.AppendLine("#walletpassword=<string>");
+        }
     }
 }

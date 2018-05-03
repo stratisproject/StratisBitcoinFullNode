@@ -69,5 +69,19 @@ namespace Stratis.Bitcoin.Features.Consensus
 
             NodeSettings.Default().Logger.LogInformation(builder.ToString());
         }
+
+        /// <summary>
+        /// Get the default configuration.
+        /// </summary>
+        /// <param name="builder">The string builder to add the settings to.</param>
+        /// <param name="network">The network to base the defaults off.</param>
+        public static void BuildDefaultConfigurationFile(StringBuilder builder, Network network)
+        {
+            builder.AppendLine("####Consensus Settings####");
+            builder.AppendLine($"#Use checkpoints. Default 1.");
+            builder.AppendLine($"#checkpoints=1");
+            builder.AppendLine($"#If this block is in the chain assume that it and its ancestors are valid and potentially skip their script verification (0 to verify all). Defaults to { network.Consensus.DefaultAssumeValid }.");
+            builder.AppendLine($"#assumevalid={network.Consensus.DefaultAssumeValid}");
+        }
     }
 }
