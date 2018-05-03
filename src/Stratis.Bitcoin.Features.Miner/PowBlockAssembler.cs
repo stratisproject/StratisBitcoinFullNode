@@ -102,7 +102,8 @@ namespace Stratis.Bitcoin.Features.Miner
             ILoggerFactory loggerFactory,
             ITxMempool mempool,
             MempoolSchedulerLock mempoolLock,
-            Network network)
+            Network network,
+            AssemblerOptions options = null)
         {
             this.ConsensusLoop = consensusLoop;
             this.DateTimeProvider = dateTimeProvider;
@@ -110,6 +111,34 @@ namespace Stratis.Bitcoin.Features.Miner
             this.Mempool = mempool;
             this.MempoolLock = mempoolLock;
             this.Network = network;
+
+            this.Options = options ?? new AssemblerOptions();
+            this.BlockMinFeeRate = this.Options.BlockMinFeeRate;
+
+            // Limit weight to between 4K and MAX_BLOCK_WEIGHT-4K for sanity.
+            this.BlockMaxWeight = (uint)Math.Max(4000, Math.Min(PowMining.DefaultBlockMaxWeight - 4000, this.Options.BlockMaxWeight));
+
+            // Limit size to between 1K and MAX_BLOCK_SERIALIZED_SIZE-1K for sanity.
+            this.BlockMaxSize = (uint)Math.Max(1000, Math.Min(network.Consensus.Option<PowConsensusOptions>().MaxBlockSerializedSize - 1000, this.Options.BlockMaxSize));
+
+            // Whether we need to account for byte usage (in addition to weight usage).
+            this.NeedSizeAccounting = (this.BlockMaxSize < network.Consensus.Option<PowConsensusOptions>().MaxBlockSerializedSize - 1000);
+        }
+
+        /// <summary>
+        /// Configures (resets) the builder to its default state 
+        /// before constructing a new block.
+        /// </summary>
+        protected void Configure()
+        {
+            this.BlockSize = 1000;
+            this.blockTemplate = new BlockTemplate { Block = new Block(), VTxFees = new List<Money>() };
+            this.BlockTx = 0;
+            this.BlockWeight = 4000;
+            this.BlockSigOpsCost = 400;
+            this.fees = 0;
+            this.inBlock = new TxMempool.SetEntries();
+            this.IncludeWitness = false;
         }
 
         /// <summary>
@@ -216,21 +245,6 @@ namespace Stratis.Bitcoin.Features.Miner
             AssemblerOptions options = null)
             : base(consensusLoop, dateTimeProvider, loggerFactory, mempool, mempoolLock, network)
         {
-            options = options ?? new AssemblerOptions();
-            this.BlockMinFeeRate = options.BlockMinFeeRate;
-
-            // Limit weight to between 4K and MAX_BLOCK_WEIGHT-4K for sanity.
-            this.BlockMaxWeight = (uint)Math.Max(4000, Math.Min(PowMining.DefaultBlockMaxWeight - 4000, options.BlockMaxWeight));
-
-            // Limit size to between 1K and MAX_BLOCK_SERIALIZED_SIZE-1K for sanity.
-            this.BlockMaxSize = (uint)Math.Max(1000, Math.Min(network.Consensus.Option<PowConsensusOptions>().MaxBlockSerializedSize - 1000, options.BlockMaxSize));
-
-            // Whether we need to account for byte usage (in addition to weight usage).
-            this.NeedSizeAccounting = (this.BlockMaxSize < network.Consensus.Option<PowConsensusOptions>().MaxBlockSerializedSize - 1000);
-
-            this.Options = options;
-
-            this.Configure();
         }
 
         private int ComputeBlockVersion(ChainedBlock prevChainedBlock, NBitcoin.Consensus consensus)
@@ -315,22 +329,6 @@ namespace Stratis.Bitcoin.Features.Miner
 
             this.Logger.LogTrace("(-)");
             return this.blockTemplate;
-        }
-
-        /// <summary>
-        /// Configures (resets) the builder to its default state 
-        /// before constructing a new block.
-        /// </summary>
-        public void Configure()
-        {
-            this.BlockSize = 1000;
-            this.blockTemplate = new BlockTemplate { Block = new Block(), VTxFees = new List<Money>() };
-            this.BlockTx = 0;
-            this.BlockWeight = 4000;
-            this.BlockSigOpsCost = 400;
-            this.fees = 0;
-            this.inBlock = new TxMempool.SetEntries();
-            this.IncludeWitness = false;
         }
 
         /// <summary>
