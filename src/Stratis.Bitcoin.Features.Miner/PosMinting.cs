@@ -179,6 +179,9 @@ namespace Stratis.Bitcoin.Features.Miner
         ///<summary>The maximum size for mined blocks.</summary>
         public const int MaxBlockSizeGen = MaxBlockSize / 2;
 
+        /// <summary>Builder that creates a proof-of-stake block template.</summary>
+        private readonly PosBlockAssembler blockBuilder;
+
         /// <summary><c>true</c> if coinstake transaction splits the coin and generates extra UTXO
         /// to prevent halting chain; <c>false</c> to disable coinstake splitting.</summary>
         /// <remarks>TODO: It should be configurable option, not constant. <see cref="https://github.com/stratisproject/StratisBitcoinFullNode/issues/550"/></remarks>
@@ -326,6 +329,7 @@ namespace Stratis.Bitcoin.Features.Miner
         /// <param name="timeSyncBehaviorState">State of time synchronization feature that stores collected data samples.</param>
         /// <param name="loggerFactory">Factory for creating loggers.</param>
         public PosMinting(
+            PosBlockAssembler blockBuilder,
             IConsensusLoop consensusLoop,
             ConcurrentChain chain,
             Network network,
@@ -343,6 +347,7 @@ namespace Stratis.Bitcoin.Features.Miner
             ITimeSyncBehaviorState timeSyncBehaviorState,
             ILoggerFactory loggerFactory)
         {
+            this.blockBuilder = blockBuilder;
             this.consensusLoop = consensusLoop;
             this.chain = chain;
             this.network = network;
@@ -535,16 +540,7 @@ namespace Stratis.Bitcoin.Features.Miner
                 this.logger.LogTrace("Wallet contains {0} coins.", new Money(totalBalance));
 
                 if (blockTemplate == null)
-                    blockTemplate = new PosBlockAssembler(
-                        this.consensusLoop,
-                        this.network,
-                        this.mempoolLock,
-                        this.mempool,
-                        this.dateTimeProvider,
-                        this.stakeChain,
-                        this.stakeValidator, chainTip,
-                        this.loggerFactory,
-                        new AssemblerOptions() { IsProofOfStake = true }).CreateNewBlock(new Script());
+                    blockTemplate = this.blockBuilder.Build(chainTip, new Script());
 
                 Block block = blockTemplate.Block;
 
