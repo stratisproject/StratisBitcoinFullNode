@@ -223,10 +223,6 @@ namespace Stratis.Bitcoin.Configuration
             this.ConfigReader = config;
             fileConfig.MergeInto(config);
 
-            // TODO: Does this code belong here?
-            if (!Directory.Exists(this.DataFolder.CoinViewPath))
-                Directory.CreateDirectory(this.DataFolder.CoinViewPath);
-
             // Set the configuration filter and file path.
             this.Log.Load(config);
             this.LoggerFactory.AddFilters(this.Log, this.DataFolder);
