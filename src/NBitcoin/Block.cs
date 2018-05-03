@@ -113,7 +113,7 @@ namespace NBitcoin
 
         public BlockHeader(string hex, ConsensusFactory consensusFactory)
         {
-            if (hex == null)
+            if (string.IsNullOrEmpty(hex))
                 throw new ArgumentNullException(nameof(hex));
 
             if (consensusFactory == null)
@@ -183,10 +183,10 @@ namespace NBitcoin
         }
 
         /// <summary>
-        /// Precompute the block header hash so that later calls to GetHash() will returns the precomputed hash
+        /// Precompute the block header hash so that later calls to <see cref="GetHash()"/> will returns the precomputed hash.
         /// </summary>
-        /// <param name="invalidateExisting">If true, the previous precomputed hash is thrown away, else it is reused</param>
-        /// <param name="lazily">If true, the hash will be calculated and cached at the first call to GetHash(), else it will be immediately</param>
+        /// <param name="invalidateExisting">If true, the previous precomputed hash is thrown away, else it is reused.</param>
+        /// <param name="lazily">If <c>true</c>, the hash will be calculated and cached at the first call to GetHash(), else it will be immediately.</param>
         public void PrecomputeHash(bool invalidateExisting = false, bool lazily = false)
         {
             this.hashes = invalidateExisting ? new uint256[1] : this.hashes ?? new uint256[1];
@@ -381,69 +381,13 @@ namespace NBitcoin
         {
             return this.Header.HashMerkleRoot == GetMerkleRoot().Hash;
         }
-
-        public Block CreateNextBlockWithCoinbase(BitcoinAddress address, int height)
-        {
-            return this.CreateNextBlockWithCoinbase(address, height, DateTimeOffset.UtcNow);
-        }
-
-        public Block CreateNextBlockWithCoinbase(BitcoinAddress address, int height, DateTimeOffset now)
-        {
-            if (address == null)
-                throw new ArgumentNullException("address");
-
-            Block block = new Block();
-            block.Header.Nonce = RandomUtils.GetUInt32();
-            block.Header.HashPrevBlock = this.GetHash();
-            block.Header.BlockTime = now;
-
-            Transaction tx = block.AddTransaction(new Transaction());
-            tx.AddInput(new TxIn()
-            {
-                ScriptSig = new Script(Op.GetPushOp(RandomUtils.GetBytes(30)))
-            });
-
-            tx.Outputs.Add(new TxOut(address.Network.GetReward(height), address)
-            {
-                Value = address.Network.GetReward(height)
-            });
-
-            return block;
-        }
-
-        public Block CreateNextBlockWithCoinbase(PubKey pubkey, Money value)
-        {
-            return this.CreateNextBlockWithCoinbase(pubkey, value, DateTimeOffset.UtcNow);
-        }
-
-        public Block CreateNextBlockWithCoinbase(PubKey pubkey, Money value, DateTimeOffset now)
-        {
-            Block block = new Block();
-            block.Header.Nonce = RandomUtils.GetUInt32();
-            block.Header.HashPrevBlock = this.GetHash();
-            block.Header.BlockTime = now;
-            Transaction tx = block.AddTransaction(new Transaction());
-
-            tx.AddInput(new TxIn()
-            {
-                ScriptSig = new Script(Op.GetPushOp(RandomUtils.GetBytes(30)))
-            });
-
-            tx.Outputs.Add(new TxOut()
-            {
-                Value = value,
-                ScriptPubKey = PayToPubkeyHashTemplate.Instance.GenerateScriptPubKey(pubkey)
-            });
-
-            return block;
-        }
-
-        public static Block ParseJson(string json)
+        
+        public static Block ParseJson(Network network, string json)
         {
             var formatter = new BlockExplorerFormatter();
             JObject block = JObject.Parse(json);
             JArray txs = (JArray)block["tx"];
-            Block blk = new Block();
+            Block blk = network.Consensus.ConsensusFactory.CreateBlock();
             blk.Header.Bits = new Target((uint)block["bits"]);
             blk.Header.BlockTime = Utils.UnixTimeToDateTime((uint)block["time"]);
             blk.Header.Nonce = (uint)block["nonce"];
@@ -463,6 +407,7 @@ namespace NBitcoin
         {
             if (network == null)
                 throw new ArgumentNullException(nameof(network));
+
             return Parse(hex, network.Consensus.ConsensusFactory);
         }
 
@@ -470,17 +415,21 @@ namespace NBitcoin
         {
             if (consensus == null)
                 throw new ArgumentNullException(nameof(consensus));
+
             return Parse(hex, consensus.ConsensusFactory);
         }
 
         public static Block Parse(string hex, ConsensusFactory consensusFactory)
         {
-            if (hex == null)
+            if (string.IsNullOrEmpty(hex))
                 throw new ArgumentNullException(nameof(hex));
+
             if (consensusFactory == null)
                 throw new ArgumentNullException(nameof(consensusFactory));
-            var block = consensusFactory.CreateBlock();
+
+            Block block = consensusFactory.CreateBlock();
             block.ReadWrite(Encoders.Hex.DecodeData(hex), consensusFactory: consensusFactory);
+
             return block;
         }
 
@@ -488,26 +437,36 @@ namespace NBitcoin
         {
             if (hex == null)
                 throw new ArgumentNullException(nameof(hex));
+
             if (network == null)
                 throw new ArgumentNullException(nameof(network));
+
             return Load(hex, network.Consensus.ConsensusFactory);
         }
+
         public static Block Load(byte[] hex, Consensus consensus)
         {
+
             if (hex == null)
                 throw new ArgumentNullException(nameof(hex));
+
             if (consensus == null)
                 throw new ArgumentNullException(nameof(consensus));
+
             return Load(hex, consensus.ConsensusFactory);
         }
+
         public static Block Load(byte[] hex, ConsensusFactory consensusFactory)
         {
             if (hex == null)
                 throw new ArgumentNullException(nameof(hex));
+
             if (consensusFactory == null)
                 throw new ArgumentNullException(nameof(consensusFactory));
-            var block = consensusFactory.CreateBlock();
+
+            Block block = consensusFactory.CreateBlock();
             block.ReadWrite(hex, consensusFactory: consensusFactory);
+
             return block;
         }
 

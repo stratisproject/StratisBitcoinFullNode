@@ -137,6 +137,13 @@ namespace NBitcoin
         }
     }
 
+    /// <summary>
+    /// A Proof Of Stake transaction.
+    /// </summary>
+    /// <remarks>
+    /// TODO: later we can move the POS timestamp field in this class.
+    /// serialization can be refactored to have a common array that will be serialized and each inheritance can add to the array)
+    /// </remarks>
     public class PosTransaction : Transaction
     {
         public PosTransaction() : base()
@@ -154,29 +161,39 @@ namespace NBitcoin
         }
     }
 
+    /// <summary>
+    /// The consensus factory for creating POS protocol types.
+    /// </summary>
     public class PosConsensusFactory : ConsensusFactory
     {
+        /// <inheritdoc />
         public override Block CreateBlock()
         {
             return new PosBlock(this.CreateBlockHeader());
         }
 
+        /// <inheritdoc />
         public override BlockHeader CreateBlockHeader()
         {
             return new PosBlockHeader();
         }
 
+        /// <inheritdoc />
         public override Transaction CreateTransaction()
         {
             return new PosTransaction();
         }
     }
 
+    /// <summary>
+    /// A POS block header, this will create a work hash based on the X13 hash algos.
+    /// </summary>
     public class PosBlockHeader : BlockHeader
     {
         /// <summary>Current header version.</summary>
         public override int CurrentVersion => 7;
 
+        /// <inheritdoc />
         public override uint256 GetHash()
         {
             uint256 hash = null;
@@ -202,27 +219,42 @@ namespace NBitcoin
             return hash;
         }
 
+        /// <summary>
+        /// Generate a has based on the X13 algorithms.
+        /// </summary>
+        /// <returns></returns>
         public override uint256 GetPoWHash()
         {
             return HashX13.Instance.Hash(this.ToBytes());
         }
     }
 
+    /// <summary>
+    /// A POS block that contains the additional block signature serialization.
+    /// </summary>
     public class PosBlock : Block
     {
-        // block signature - signed by one of the coin base txout[N]'s owner
+        /// <summary>
+        /// A block signature - signed by one of the coin base txout[N]'s owner.
+        /// </summary>
         private BlockSignature blockSignature = new BlockSignature();
 
         internal PosBlock(BlockHeader blockHeader) : base(blockHeader)
         {
         }
 
+        /// <summary>
+        /// The block signature type.
+        /// </summary>
         public BlockSignature BlockSignatur
         {
             get { return this.blockSignature; }
             set { this.blockSignature = value; }
         }
 
+        /// <summary>
+        /// The additional serialization of the block POS block.
+        /// </summary>
         public override void ReadWrite(BitcoinStream stream)
         {
             base.ReadWrite(stream);
