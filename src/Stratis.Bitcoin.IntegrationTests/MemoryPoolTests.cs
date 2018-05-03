@@ -56,7 +56,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 tx.AddInput(new TxIn(new OutPoint(prevTrx.GetHash(), 0), PayToPubkeyHashTemplate.Instance.GenerateScriptPubKey(stratisNodeSync.MinerSecret.PubKey)));
                 tx.AddOutput(new TxOut("25", dest.PubKey.Hash));
                 tx.AddOutput(new TxOut("24", new Key().PubKey.Hash)); // 1 btc fee
-                tx.Sign(stratisNodeSync.MinerSecret, false);
+                tx.Sign(stratisNodeSync.FullNode.Network, stratisNodeSync.MinerSecret, false);
 
                 stratisNodeSync.Broadcast(tx);
 
@@ -87,7 +87,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 parentTx.AddInput(new TxIn(new OutPoint(prevTrx.GetHash(), 0), PayToPubkeyHashTemplate.Instance.GenerateScriptPubKey(stratisNodeSync.MinerSecret.PubKey)));
                 parentTx.AddOutput(new TxOut("25", dest1.PubKey.Hash));
                 parentTx.AddOutput(new TxOut("24", dest2.PubKey.Hash)); // 1 btc fee
-                parentTx.Sign(stratisNodeSync.MinerSecret, false);
+                parentTx.Sign(stratisNodeSync.FullNode.Network, stratisNodeSync.MinerSecret, false);
                 stratisNodeSync.Broadcast(parentTx);
                 // wiat for the trx to enter the pool
                 TestHelper.WaitLoop(() => stratisNodeSync.CreateRPCClient().GetRawMempool().Length == 1);
@@ -132,7 +132,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                     tx.AddInput(new TxIn(new OutPoint(prevTrx.GetHash(), 0), PayToPubkeyHashTemplate.Instance.GenerateScriptPubKey(stratisNodeSync.MinerSecret.PubKey)));
                     tx.AddOutput(new TxOut("25", dest.PubKey.Hash));
                     tx.AddOutput(new TxOut("24", new Key().PubKey.Hash)); // 1 btc fee
-                    tx.Sign(stratisNodeSync.MinerSecret, false);
+                    tx.Sign(stratisNodeSync.FullNode.Network, stratisNodeSync.MinerSecret, false);
                     trxs.Add(tx);
                 }
                 var options = new ParallelOptions { MaxDegreeOfParallelism = 10 };
@@ -175,7 +175,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                     trx.AddInput(new TxIn(new OutPoint(genBlock.Transactions[0].GetHash(), 0), scriptPubKey));
                     trx.AddOutput(Money.Cents(11), new Key().PubKey.Hash);
                     // Sign:
-                    trx.Sign(stratisNodeSync.MinerSecret, false);
+                    trx.Sign(stratisNodeSync.FullNode.Network, stratisNodeSync.MinerSecret, false);
                     spends.Add(trx);
                 }
 
@@ -311,12 +311,12 @@ namespace Stratis.Bitcoin.IntegrationTests
                 tx.AddInput(new TxIn(new OutPoint(prevTrx.GetHash(), 0), PayToPubkeyHashTemplate.Instance.GenerateScriptPubKey(stratisNodeSync.MinerSecret.PubKey)));
                 tx.AddOutput(new TxOut("25", dest.PubKey.Hash));
                 tx.AddOutput(new TxOut("24", key.PubKey.Hash)); // 1 btc fee
-                tx.Sign(stratisNodeSync.MinerSecret, false);
+                tx.Sign(stratisNodeSync.FullNode.Network, stratisNodeSync.MinerSecret, false);
 
                 Transaction txOrphan = new Transaction();
                 txOrphan.AddInput(new TxIn(new OutPoint(tx.GetHash(), 1), PayToPubkeyHashTemplate.Instance.GenerateScriptPubKey(key.PubKey)));
                 txOrphan.AddOutput(new TxOut("10", new Key().PubKey.Hash));
-                txOrphan.Sign(key.GetBitcoinSecret(stratisNodeSync.FullNode.Network), false);
+                txOrphan.Sign(stratisNodeSync.FullNode.Network, key.GetBitcoinSecret(stratisNodeSync.FullNode.Network), false);
 
                 // broadcast the orphan
                 stratisNodeSync.Broadcast(txOrphan);
@@ -367,7 +367,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                     tx.AddInput(new TxIn(new OutPoint(prevTrx.GetHash(), 0), PayToPubkeyHashTemplate.Instance.GenerateScriptPubKey(stratisNodeSync.MinerSecret.PubKey)));
                     tx.AddOutput(new TxOut("25", dest.PubKey.Hash));
                     tx.AddOutput(new TxOut("24", new Key().PubKey.Hash)); // 1 btc fee
-                    tx.Sign(stratisNodeSync.MinerSecret, false);
+                    tx.Sign(stratisNodeSync.FullNode.Network, stratisNodeSync.MinerSecret, false);
                     trxs.Add(tx);
                 }
                 var options = new ParallelOptions { MaxDegreeOfParallelism = 5 };

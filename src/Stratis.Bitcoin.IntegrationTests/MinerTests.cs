@@ -90,7 +90,7 @@ namespace Stratis.Bitcoin.IntegrationTests
             var context = new MempoolValidationContext(tx, new MempoolValidationState(false));
             context.View = new MempoolCoinView(testContext.cachedCoinView, testContext.mempool, testContext.mempoolLock, null);
             context.View.LoadViewAsync(tx).GetAwaiter().GetResult();
-            return MempoolValidator.CheckSequenceLocks(chainedBlock, context, flags, uselock, false);
+            return MempoolValidator.CheckSequenceLocks(testContext.network, chainedBlock, context, flags, uselock, false);
         }
 
         // TODO: There may be an opportunity to share the logic for populating the chain (TestContext) using TestChainFactory in the mempool unit tests.

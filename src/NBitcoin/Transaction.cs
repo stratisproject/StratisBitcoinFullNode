@@ -230,9 +230,9 @@ namespace NBitcoin
         /// Try to get the expected scriptPubKey of this TxIn based on its scriptSig and witScript.
         /// </summary>
         /// <returns>Null if could not infer the scriptPubKey, else, the expected scriptPubKey</returns>
-        public IDestination GetSigner()
+        public IDestination GetSigner(Network network)
         {
-            return scriptSig.GetSigner() ?? witScript.GetSigner();
+            return scriptSig.GetSigner(network) ?? witScript.GetSigner(network);
         }
 
         WitScript witScript = WitScript.Empty;
@@ -263,9 +263,9 @@ namespace NBitcoin
 
         #endregion
 
-        public bool IsFrom(PubKey pubKey)
+        public bool IsFrom(Network network, PubKey pubKey)
         {
-            var result = PayToPubkeyHashTemplate.Instance.ExtractScriptSigParameters(ScriptSig);
+            var result = PayToPubkeyHashTemplate.Instance.ExtractScriptSigParameters(network, ScriptSig);
             return result != null && result.PublicKey == pubKey;
         }
 
@@ -694,49 +694,49 @@ namespace NBitcoin
             set;
         }
 
-        public bool VerifyScript(Script scriptPubKey, ScriptVerify scriptVerify = ScriptVerify.Standard)
+        public bool VerifyScript(Network network, Script scriptPubKey, ScriptVerify scriptVerify = ScriptVerify.Standard)
         {
-            return VerifyScript(scriptPubKey, scriptVerify, out ScriptError unused);
+            return VerifyScript(network, scriptPubKey, scriptVerify, out ScriptError unused);
         }
-        public bool VerifyScript(Script scriptPubKey, out ScriptError error)
+        public bool VerifyScript(Network network, Script scriptPubKey, out ScriptError error)
         {
-            return Script.VerifyScript(scriptPubKey, Transaction, (int)Index, null, out error);
+            return Script.VerifyScript(network, scriptPubKey, Transaction, (int)Index, null, out error);
         }
-        public bool VerifyScript(Script scriptPubKey, ScriptVerify scriptVerify, out ScriptError error)
+        public bool VerifyScript(Network network, Script scriptPubKey, ScriptVerify scriptVerify, out ScriptError error)
         {
-            return Script.VerifyScript(scriptPubKey, Transaction, (int)Index, null, scriptVerify, SigHash.Undefined, out error);
+            return Script.VerifyScript(network, scriptPubKey, Transaction, (int)Index, null, scriptVerify, SigHash.Undefined, out error);
         }
-        public bool VerifyScript(Script scriptPubKey, Money value, ScriptVerify scriptVerify, out ScriptError error)
+        public bool VerifyScript(Network network, Script scriptPubKey, Money value, ScriptVerify scriptVerify, out ScriptError error)
         {
-            return Script.VerifyScript(scriptPubKey, Transaction, (int)Index, value, scriptVerify, SigHash.Undefined, out error);
-        }
-
-        public bool VerifyScript(ICoin coin, ScriptVerify scriptVerify = ScriptVerify.Standard)
-        {
-            return VerifyScript(coin, scriptVerify, out ScriptError unused);
+            return Script.VerifyScript(network, scriptPubKey, Transaction, (int)Index, value, scriptVerify, SigHash.Undefined, out error);
         }
 
-        public bool VerifyScript(ICoin coin, ScriptVerify scriptVerify, out ScriptError error)
+        public bool VerifyScript(Network network, ICoin coin, ScriptVerify scriptVerify = ScriptVerify.Standard)
         {
-            return Script.VerifyScript(coin.TxOut.ScriptPubKey, Transaction, (int)Index, coin.TxOut.Value, scriptVerify, SigHash.Undefined, out error);
-        }
-        public bool VerifyScript(ICoin coin, out ScriptError error)
-        {
-            return VerifyScript(coin, ScriptVerify.Standard, out error);
+            return VerifyScript(network, coin, scriptVerify, out ScriptError unused);
         }
 
-        public TransactionSignature Sign(Key key, ICoin coin, SigHash sigHash)
+        public bool VerifyScript(Network network, ICoin coin, ScriptVerify scriptVerify, out ScriptError error)
         {
-            var hash = GetSignatureHash(coin, sigHash);
+            return Script.VerifyScript(network, coin.TxOut.ScriptPubKey, Transaction, (int)Index, coin.TxOut.Value, scriptVerify, SigHash.Undefined, out error);
+        }
+        public bool VerifyScript(Network network, ICoin coin, out ScriptError error)
+        {
+            return VerifyScript(network, coin, ScriptVerify.Standard, out error);
+        }
+
+        public TransactionSignature Sign(Network network, Key key, ICoin coin, SigHash sigHash)
+        {
+            var hash = GetSignatureHash(network, coin, sigHash);
             return key.Sign(hash, sigHash);
         }
 
-        public uint256 GetSignatureHash(ICoin coin, SigHash sigHash = SigHash.All)
+        public uint256 GetSignatureHash(Network network, ICoin coin, SigHash sigHash = SigHash.All)
         {
-            return Script.SignatureHash(coin.GetScriptCode(), Transaction, (int)Index, sigHash, coin.TxOut.Value, coin.GetHashVersion());
+            return Script.SignatureHash(network, coin.GetScriptCode(network), Transaction, (int)Index, sigHash, coin.TxOut.Value, coin.GetHashVersion(network));
         }
-
     }
+
     public class TxInList : UnsignedList<TxIn>
     {
         public TxInList()
@@ -1064,9 +1064,9 @@ namespace NBitcoin
             return new WitScript(ToBytes());
         }
 
-        public TxDestination GetSigner()
+        public TxDestination GetSigner(Network network)
         {
-            var pubKey = PayToWitPubKeyHashTemplate.Instance.ExtractWitScriptParameters(this);
+            var pubKey = PayToWitPubKeyHashTemplate.Instance.ExtractWitScriptParameters(network, this);
             if(pubKey != null)
             {
                 return pubKey.PublicKey.WitHash;
@@ -1167,7 +1167,7 @@ namespace NBitcoin
             this.FromBytes(Encoders.Hex.DecodeData(hex), version);
         }
 
-        public Transaction(byte[] bytes)
+        internal Transaction(byte[] bytes)
             : this()
         {
             this.FromBytes(bytes);
@@ -1388,17 +1388,17 @@ namespace NBitcoin
             }
             return h;
         }
-        public uint256 GetSignatureHash(ICoin coin, SigHash sigHash = SigHash.All)
+        public uint256 GetSignatureHash(Network network, ICoin coin, SigHash sigHash = SigHash.All)
         {
-            return Inputs.AsIndexedInputs().ToArray()[GetIndex(coin)].GetSignatureHash(coin, sigHash);
+            return Inputs.AsIndexedInputs().ToArray()[GetIndex(coin)].GetSignatureHash(network, coin, sigHash);
         }
-        public TransactionSignature SignInput(ISecret secret, ICoin coin, SigHash sigHash = SigHash.All)
+        public TransactionSignature SignInput(Network network, ISecret secret, ICoin coin, SigHash sigHash = SigHash.All)
         {
-            return SignInput(secret.PrivateKey, coin, sigHash);
+            return SignInput(network, secret.PrivateKey, coin, sigHash);
         }
-        public TransactionSignature SignInput(Key key, ICoin coin, SigHash sigHash = SigHash.All)
+        public TransactionSignature SignInput(Network network, Key key, ICoin coin, SigHash sigHash = SigHash.All)
         {
-            return Inputs.AsIndexedInputs().ToArray()[GetIndex(coin)].Sign(key, coin, sigHash);
+            return Inputs.AsIndexedInputs().ToArray()[GetIndex(coin)].Sign(network, key, coin, sigHash);
         }
 
         private int GetIndex(ICoin coin)
@@ -1489,9 +1489,9 @@ namespace NBitcoin
         /// </summary>
         /// <param name="secrets">Secrets</param>
         /// <param name="coins">Coins to sign</param>
-        public void Sign(ISecret[] secrets, ICoin[] coins)
+        public void Sign(Network network, ISecret[] secrets, ICoin[] coins)
         {
-            Sign(secrets.Select(s => s.PrivateKey).ToArray(), coins);
+            Sign(network, secrets.Select(s => s.PrivateKey).ToArray(), coins);
         }
 
         /// <summary>
@@ -1499,7 +1499,7 @@ namespace NBitcoin
         /// </summary>
         /// <param name="keys">Private keys</param>
         /// <param name="coins">Coins to sign</param>
-        public void Sign(Key[] keys, ICoin[] coins)
+        public void Sign(Network network, Key[] keys, ICoin[] coins)
         {
             TransactionBuilder builder = new TransactionBuilder();
             builder.AddKeys(keys);
@@ -1512,9 +1512,9 @@ namespace NBitcoin
         /// </summary>
         /// <param name="secret">Secret</param>
         /// <param name="coins">Coins to sign</param>
-        public void Sign(ISecret secret, ICoin[] coins)
+        public void Sign(Network network, ISecret secret, ICoin[] coins)
         {
-            Sign(new[] { secret }, coins);
+            Sign(network, new[] { secret }, coins);
         }
 
         /// <summary>
@@ -1522,9 +1522,9 @@ namespace NBitcoin
         /// </summary>
         /// <param name="secrets">Secrets</param>
         /// <param name="coins">Coins to sign</param>
-        public void Sign(ISecret[] secrets, ICoin coin)
+        public void Sign(Network network, ISecret[] secrets, ICoin coin)
         {
-            Sign(secrets, new[] { coin });
+            Sign(network, secrets, new[] { coin });
         }
 
         /// <summary>
@@ -1532,9 +1532,9 @@ namespace NBitcoin
         /// </summary>
         /// <param name="secret">Secret</param>
         /// <param name="coin">Coins to sign</param>
-        public void Sign(ISecret secret, ICoin coin)
+        public void Sign(Network network, ISecret secret, ICoin coin)
         {
-            Sign(new[] { secret }, new[] { coin });
+            Sign(network, new[] { secret }, new[] { coin });
         }
 
         /// <summary>
@@ -1542,9 +1542,9 @@ namespace NBitcoin
         /// </summary>
         /// <param name="key">Private key</param>
         /// <param name="coins">Coins to sign</param>
-        public void Sign(Key key, ICoin[] coins)
+        public void Sign(Network network, Key key, ICoin[] coins)
         {
-            Sign(new[] { key }, coins);
+            Sign(network, new[] { key }, coins);
         }
 
         /// <summary>
@@ -1552,9 +1552,9 @@ namespace NBitcoin
         /// </summary>
         /// <param name="key">Private key</param>
         /// <param name="coin">Coin to sign</param>
-        public void Sign(Key key, ICoin coin)
+        public void Sign(Network network, Key key, ICoin coin)
         {
-            Sign(new[] { key }, new[] { coin });
+            Sign(network, new[] { key }, new[] { coin });
         }
 
         /// <summary>
@@ -1562,9 +1562,9 @@ namespace NBitcoin
         /// </summary>
         /// <param name="keys">Private keys</param>
         /// <param name="coin">Coin to sign</param>
-        public void Sign(Key[] keys, ICoin coin)
+        public void Sign(Network network, Key[] keys, ICoin coin)
         {
-            Sign(keys, new[] { coin });
+            Sign(network, keys, new[] { coin });
         }
 
         /// <summary>
@@ -1574,9 +1574,9 @@ namespace NBitcoin
         /// </summary>
         /// <param name="secret"></param>
         [Obsolete("Use Sign(ISecret,ICoin[]) instead)")]
-        public void Sign(ISecret secret, bool assumeP2SH)
+        public void Sign(Network network, ISecret secret, bool assumeP2SH)
         {
-            Sign(secret.PrivateKey, assumeP2SH);
+            Sign(network, secret.PrivateKey, assumeP2SH);
         }
 
         /// <summary>
@@ -1586,7 +1586,7 @@ namespace NBitcoin
         /// </summary>
         /// <param name="secret"></param>
         [Obsolete("Use Sign(Key,ICoin[]) instead)")]
-        public void Sign(Key key, bool assumeP2SH)
+        public void Sign(Network network, Key key, bool assumeP2SH)
         {
             List<Coin> coins = new List<Coin>();
             for(int i = 0; i < Inputs.Count; i++)
@@ -1596,7 +1596,7 @@ namespace NBitcoin
                     throw new InvalidOperationException("ScriptSigs should be filled with either previous scriptPubKeys or redeem script (for P2SH)");
                 if(assumeP2SH)
                 {
-                    var p2shSig = PayToScriptHashTemplate.Instance.ExtractScriptSigParameters(txin.ScriptSig);
+                    var p2shSig = PayToScriptHashTemplate.Instance.ExtractScriptSigParameters(network, txin.ScriptSig);
                     if(p2shSig == null)
                     {
                         coins.Add(new ScriptCoin(txin.PrevOut, new TxOut()
@@ -1621,7 +1621,7 @@ namespace NBitcoin
                 }
 
             }
-            Sign(key, coins.ToArray());
+            Sign(network, key, coins.ToArray());
         }
         /*
         public TxPayload CreatePayload()
@@ -1663,7 +1663,7 @@ namespace NBitcoin
             switch(rawFormat)
             {
                 case RawFormat.Satoshi:
-                    formatter = new SatoshiFormatter();
+                    formatter = new SatoshiFormatter(network);
                     break;
                 case RawFormat.BlockExplorer:
                     formatter = new BlockExplorerFormatter();
