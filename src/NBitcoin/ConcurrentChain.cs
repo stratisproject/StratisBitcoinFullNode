@@ -28,7 +28,7 @@ namespace NBitcoin
         public ConcurrentChain(BlockHeader genesisHeader, Network network = null) // TODO: Remove the null default
         {
             this.network = network ?? Network.Main;
-            this.SetTip(new ChainedBlock(genesisHeader, genesisHeader.GetHash(this.network.NetworkOptions), 0));
+            this.SetTip(new ChainedBlock(genesisHeader, genesisHeader.GetHash(), 0));
         }
 
         public ConcurrentChain(Network network)
@@ -54,6 +54,8 @@ namespace NBitcoin
 
         public void Load(BitcoinStream stream)
         {
+            stream.ConsensusFactory = this.network.Consensus.ConsensusFactory;
+
             using (this.lockObject.LockWrite())
             {
                 try
@@ -100,6 +102,8 @@ namespace NBitcoin
 
         public void WriteTo(BitcoinStream stream)
         {
+            stream.ConsensusFactory = this.network.Consensus.ConsensusFactory;
+
             using (this.lockObject.LockRead())
             {
                 for (int i = 0; i < this.Tip.Height + 1; i++)

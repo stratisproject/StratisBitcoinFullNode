@@ -7,12 +7,12 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Base.Deployments;
-using Stratis.Bitcoin.Broadcasting;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Builder.Feature;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Connection;
+using Stratis.Bitcoin.Features.LightWallet.Broadcasting;
 using Stratis.Bitcoin.Features.Notifications;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Broadcasting;
@@ -74,7 +74,7 @@ namespace Stratis.Bitcoin.Features.LightWallet
         /// <param name="asyncLoopFactory">The asynchronous loop factory.</param>
         /// <param name="nodeLifetime">The node lifetime.</param>
         /// <param name="walletFeePolicy">The wallet fee policy.</param>
-        /// <param name="broadcasterBehavior">The broadcaster behavior.</param>
+        /// <param name="broadcasterBehavior">The broadcaster behaviour.</param>
         /// <param name="loggerFactory">Factory to be used to create logger for the puller.</param>
         /// <param name="nodeSettings">The settings for the node.</param>
         /// <param name="walletSettings">The settings for the wallet.</param>

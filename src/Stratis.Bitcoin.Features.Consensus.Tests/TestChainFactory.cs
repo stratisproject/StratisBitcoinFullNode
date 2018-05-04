@@ -1,5 +1,7 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
+using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
 using NBitcoin;
@@ -12,6 +14,7 @@ using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.Consensus.Interfaces;
 using Stratis.Bitcoin.Features.Consensus.Rules;
+using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.MemoryPool.Fee;
 using Stratis.Bitcoin.Features.Miner;
@@ -107,10 +110,22 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
             return testChainContext;
         }
 
+        public static async Task<List<Block>> MineBlocksWithLastBlockMutatedAsync(TestChainContext testChainContext, 
+            int count, Script receiver)
+        {
+            return await MineBlocksAsync(testChainContext, count, receiver, true);
+        }
+
+        public static async Task<List<Block>> MineBlocksAsync(TestChainContext testChainContext,
+            int count, Script receiver)
+        {
+            return await MineBlocksAsync(testChainContext, count, receiver, false);
+        }
+
         /// <summary>
         /// Mine new blocks in to the consensus database and the chain.
         /// </summary>
-        public static async Task<List<Block>> MineBlocksAsync(TestChainContext testChainContext, int count, Script receiver)
+        private static async Task<List<Block>> MineBlocksAsync(TestChainContext testChainContext, int count, Script receiver, bool mutateLastBlock)
         {
             var blockPolicyEstimator = new BlockPolicyEstimator(new MempoolSettings(testChainContext.NodeSettings), testChainContext.LoggerFactory, testChainContext.NodeSettings);
             var mempool = new TxMempool(testChainContext.DateTimeProvider, blockPolicyEstimator, testChainContext.LoggerFactory, testChainContext.NodeSettings);
@@ -120,34 +135,81 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
             List<Block> blocks = new List<Block>();
             for (int i = 0; i < count; ++i)
             {
-                PowBlockAssembler blockAssembler = CreatePowBlockAssembler(testChainContext.Consensus, testChainContext.DateTimeProvider, testChainContext.LoggerFactory as LoggerFactory, mempool, mempoolLock, testChainContext.Network);
-
-                BlockTemplate newBlock = blockAssembler.Build(testChainContext.Chain.Tip, receiver);
-
-                int nHeight = testChainContext.Chain.Tip.Height + 1; // Height first in coinbase required for block.version=2
-                Transaction txCoinbase = newBlock.Block.Transactions[0];
-                txCoinbase.Inputs[0] = TxIn.CreateCoinbase(nHeight);
-                newBlock.Block.UpdateMerkleRoot();
-
-                var maxTries = int.MaxValue;
-
-                while (maxTries > 0 && !newBlock.Block.CheckProofOfWork(testChainContext.Network.Consensus))
-                {
-                    ++newBlock.Block.Header.Nonce;
-                    --maxTries;
-                }
-
-                if (maxTries == 0)
-                    throw new XunitException("Test failed no blocks found");
-
-                var context = new BlockValidationContext { Block = newBlock.Block };
-                await testChainContext.Consensus.AcceptBlockAsync(context);
-                Assert.Null(context.Error);
+                BlockTemplate newBlock = await MineBlockAsync(testChainContext, receiver, mempool, mempoolLock, mutateLastBlock && i == count-1);
 
                 blocks.Add(newBlock.Block);
             }
 
             return blocks;
+        }
+
+        private static async Task<BlockTemplate> MineBlockAsync(TestChainContext testChainContext, Script scriptPubKey, TxMempool mempool,
+            MempoolSchedulerLock mempoolLock, bool getMutatedBlock = false)
+        {
+            BlockTemplate newBlock = CreateBlockTemplate(testChainContext, scriptPubKey, mempool, mempoolLock);
+
+            if (getMutatedBlock) BuildMutatedBlock(newBlock);
+
+            newBlock.Block.UpdateMerkleRoot();
+
+            TryFindNonceForProofOfWork(testChainContext, newBlock);
+
+            if (!getMutatedBlock) await ValidateBlock(testChainContext, newBlock);
+            else CheckBlockIsMutated(newBlock);
+
+            return newBlock;
+        }
+
+        private static BlockTemplate CreateBlockTemplate(TestChainContext testChainContext, Script scriptPubKey,
+            TxMempool mempool, MempoolSchedulerLock mempoolLock)
+        {
+            PowBlockAssembler blockAssembler = CreatePowBlockAssembler(testChainContext.Consensus,
+                testChainContext.DateTimeProvider, testChainContext.LoggerFactory as LoggerFactory, mempool, mempoolLock,
+                testChainContext.Network);
+
+            BlockTemplate newBlock = blockAssembler.Build(testChainContext.Chain.Tip, scriptPubKey);
+
+            int nHeight = testChainContext.Chain.Tip.Height + 1; // Height first in coinbase required for block.version=2
+            Transaction txCoinbase = newBlock.Block.Transactions[0];
+            txCoinbase.Inputs[0] = TxIn.CreateCoinbase(nHeight);
+            return newBlock;
+        }
+
+        private static void BuildMutatedBlock(BlockTemplate newBlock)
+        {
+            var coinbaseTransaction = newBlock.Block.Transactions[0];
+            var outTransaction = Transactions.BuildNewTransactionFromExistingTransaction(coinbaseTransaction, 0);
+            newBlock.Block.Transactions.Add(outTransaction);
+            var duplicateTransaction = Transactions.BuildNewTransactionFromExistingTransaction(coinbaseTransaction, 1);
+            newBlock.Block.Transactions.Add(duplicateTransaction);
+            newBlock.Block.Transactions.Add(duplicateTransaction);
+        }
+
+        private static void TryFindNonceForProofOfWork(TestChainContext testChainContext, BlockTemplate newBlock)
+        {
+            var maxTries = int.MaxValue;
+            while (maxTries > 0 && !newBlock.Block.CheckProofOfWork(testChainContext.Network.Consensus))
+            {
+                ++newBlock.Block.Header.Nonce;
+                --maxTries;
+            }
+
+            if (maxTries == 0)
+                throw new XunitException("Test failed no blocks found");
+        }
+
+        private static void CheckBlockIsMutated(BlockTemplate newBlock)
+        {
+            var transactionHashes = newBlock.Block.Transactions.Select(t => t.GetHash()).ToList();
+            BlockMerkleRootRule.ComputeMerkleRoot(transactionHashes, out bool isMutated);
+            isMutated.Should().Be(true);
+        }
+
+        private static async Task ValidateBlock(TestChainContext testChainContext, BlockTemplate newBlock)
+        {
+            var context = new BlockValidationContext {Block = newBlock.Block};
+            await testChainContext.Consensus.AcceptBlockAsync(context);
+            Assert.Null(context.Error);
         }
 
         /// <summary>

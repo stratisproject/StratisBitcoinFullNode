@@ -21,14 +21,14 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <param name="memPool">The transaction memory pool.</param>
         /// <param name="fileName">The filename to persist to. Default filename is used if null.</param>
         /// <returns>Result of saving the memory pool.</returns>
-        MemPoolSaveResult Save(ITxMempool memPool, string fileName = null);
+        MemPoolSaveResult Save(Network network, ITxMempool memPool, string fileName = null);
 
         /// <summary>
         /// Loads the memory pool from a persisted file.
         /// </summary>
         /// <param name="fileName">Filename to load from. Default filename is used if null.</param>
         /// <returns>List of persistence entries.</returns>
-        IEnumerable<MempoolPersistenceEntry> Load(string fileName = null);
+        IEnumerable<MempoolPersistenceEntry> Load(Network network, string fileName = null);
     }
 
     /// <summary>
@@ -73,7 +73,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <summary>The transaction fee difference.</summary>
         private uint feeDelta;
 
-        /// <summary>Gets or set the transation for persistence.</summary>
+        /// <summary>Gets or set the transaction for persistence.</summary>
         public Transaction Tx
         {
             get { return this.tx; }
@@ -178,20 +178,21 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         }
 
         /// <inheritdoc />
-        public MemPoolSaveResult Save(ITxMempool memPool, string fileName = null)
+        public MemPoolSaveResult Save(Network network, ITxMempool memPool, string fileName = null)
         {
             fileName = fileName ?? DefaultFilename;
             IEnumerable<MempoolPersistenceEntry> toSave = memPool.MapTx.Values.ToArray().Select(tx => MempoolPersistenceEntry.FromTxMempoolEntry(tx));
-            return this.Save(toSave, fileName);
+            return this.Save(network, toSave, fileName);
         }
 
         /// <summary>
         /// Saves a list of memory pool transaction entries to a persistence file.
         /// </summary>
+        /// <param name="network">The blockchain network.</param>
         /// <param name="toSave">List of persistence transactions to save.</param>
         /// <param name="fileName">The filename to persist transactions to.</param>
         /// <returns>The save result.</returns>
-        internal MemPoolSaveResult Save(IEnumerable<MempoolPersistenceEntry> toSave, string fileName)
+        internal MemPoolSaveResult Save(Network network, IEnumerable<MempoolPersistenceEntry> toSave, string fileName)
         {
             Guard.NotEmpty(this.dataDir, nameof(this.dataDir));
             Guard.NotEmpty(fileName, nameof(fileName));
@@ -211,7 +212,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                     {
                         using (FileStream fs = new FileStream(tempFilePath, FileMode.Create))
                         {
-                            this.DumpToStream(toSave, fs);
+                            this.DumpToStream(network, toSave, fs);
                         }
                         File.Delete(filePath);
                         File.Move(tempFilePath, filePath);
@@ -231,11 +232,13 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <summary>
         /// Writes a collection of memory pool transactions to a stream.
         /// </summary>
-        /// <param name="toSave">Collection of memory pool transations to save.</param>
+        /// <param name="network">The blockchain network.</param>
+        /// <param name="toSave">Collection of memory pool transactions to save.</param>
         /// <param name="stream">Stream to write transactions to.</param>
-        internal void DumpToStream(IEnumerable<MempoolPersistenceEntry> toSave, Stream stream)
+        internal void DumpToStream(Network network, IEnumerable<MempoolPersistenceEntry> toSave, Stream stream)
         {
             var bitcoinWriter = new BitcoinStream(stream, true);
+            bitcoinWriter.ConsensusFactory = network.Consensus.ConsensusFactory;
 
             bitcoinWriter.ReadWrite(MempoolDumpVersion);
             bitcoinWriter.ReadWrite(toSave.LongCount());
@@ -247,7 +250,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         }
 
         /// <inheritdoc />
-        public IEnumerable<MempoolPersistenceEntry> Load(string fileName = null)
+        public IEnumerable<MempoolPersistenceEntry> Load(Network network, string fileName = null)
         {
             fileName = fileName ?? DefaultFilename;
             Guard.NotEmpty(this.dataDir, nameof(this.dataDir));
@@ -259,7 +262,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             try
             {
                 using (FileStream fs = new FileStream(filePath, FileMode.Open))
-                    return this.LoadFromStream(fs);
+                    return this.LoadFromStream(network, fs);
             }
             catch (Exception ex)
             {
@@ -273,14 +276,14 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// </summary>
         /// <param name="stream">Stream to load transactions from.</param>
         /// <returns>Collection of memory pool transactions.</returns>
-        internal IEnumerable<MempoolPersistenceEntry> LoadFromStream(Stream stream)
+        internal IEnumerable<MempoolPersistenceEntry> LoadFromStream(Network network, Stream stream)
         {
             var toReturn = new List<MempoolPersistenceEntry>();
 
             ulong version = 0;
             long numEntries = -1;
             var bitcoinReader = new BitcoinStream(stream, false);
-
+            bitcoinReader.ConsensusFactory = network.Consensus.ConsensusFactory;
             bool exitWithError = false;
             try
             {

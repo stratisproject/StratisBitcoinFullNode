@@ -6,8 +6,11 @@ namespace NBitcoin.RPC
 {
     public class UnspentCoin
     {
+        public Network Network { get; }
+
         internal UnspentCoin(JObject unspent, Network network)
         {
+            this.Network = network;
             OutPoint = new OutPoint(uint256.Parse((string)unspent["txid"]), (uint)unspent["vout"]);
             var address = (string)unspent["address"];
             if(address != null)
@@ -79,7 +82,7 @@ namespace NBitcoin.RPC
         {
             var coin = new Coin(OutPoint, new TxOut(Amount, ScriptPubKey));
             if(RedeemScript != null)
-                coin = coin.ToScriptCoin(RedeemScript);
+                coin = coin.ToScriptCoin(RedeemScript).AssertCoherent(this.Network);
             return coin;
         }
 

@@ -520,7 +520,10 @@ namespace Stratis.Bitcoin.Features.Miner
                 if (blockTemplate == null)
                     blockTemplate = this.blockBuilder.Build(chainTip, new Script());
 
-                Block block = blockTemplate.Block;
+                if (!(blockTemplate.Block is PosBlock block))
+                {
+                    throw new InvalidCastException();
+                }
 
                 this.networkWeight = (long)this.GetNetworkWeight();
                 this.rpcGetStakingInfoModel.CurrentBlockSize = block.GetSerializedSize();
@@ -600,7 +603,7 @@ namespace Stratis.Bitcoin.Features.Miner
         /// <param name="fees">Transaction fees from the transactions included in the block if we mine it.</param>
         /// <param name="coinstakeTimestamp">Maximal timestamp of the coinstake transaction. The actual timestamp can be lower, but not higher.</param>
         /// <returns><c>true</c> if the function succeeds, <c>false</c> otherwise.</returns>
-        private async Task<bool> StakeAndSignBlockAsync(List<UtxoStakeDescription> utxoStakeDescriptions, Block block, ChainedBlock chainTip, long fees, uint coinstakeTimestamp)
+        private async Task<bool> StakeAndSignBlockAsync(List<UtxoStakeDescription> utxoStakeDescriptions, PosBlock block, ChainedBlock chainTip, long fees, uint coinstakeTimestamp)
         {
             this.logger.LogTrace("({0}.{1}:{2},{3}:'{4}',{5}:{6},{7}:{8})", nameof(utxoStakeDescriptions), nameof(utxoStakeDescriptions.Count), utxoStakeDescriptions.Count, nameof(chainTip), chainTip, nameof(fees), fees, nameof(coinstakeTimestamp), coinstakeTimestamp);
 
@@ -619,7 +622,7 @@ namespace Stratis.Bitcoin.Features.Miner
             }
 
             var coinstakeContext = new CoinstakeContext();
-            coinstakeContext.CoinstakeTx = new Transaction();
+            coinstakeContext.CoinstakeTx = this.network.Consensus.ConsensusFactory.CreateTransaction();
             coinstakeContext.CoinstakeTx.Time = coinstakeTimestamp;
 
             // Search to current coinstake time.
@@ -657,7 +660,7 @@ namespace Stratis.Bitcoin.Features.Miner
                     // Append a signature to our block.
                     ECDSASignature signature = coinstakeContext.Key.Sign(block.GetHash());
 
-                    block.BlockSignatur = new BlockSignature { Signature = signature.ToDER() };
+                    block.BlockSignature = new BlockSignature { Signature = signature.ToDER() };
                     this.logger.LogTrace("(-):true");
                     return true;
                 }
@@ -846,8 +849,8 @@ namespace Stratis.Bitcoin.Features.Miner
 
                 // Script of the first coinstake input.
                 Script scriptPubKeyKernel = utxoStakeInfo.TxOut.ScriptPubKey;
-                if (!PayToPubkeyTemplate.Instance.CheckScriptPubKey(scriptPubKeyKernel)
-                    && !PayToPubkeyHashTemplate.Instance.CheckScriptPubKey(scriptPubKeyKernel))
+                if (!PayToPubkeyTemplate.Instance.CheckScriptPubKey(this.network, scriptPubKeyKernel)
+                    && !PayToPubkeyHashTemplate.Instance.CheckScriptPubKey(this.network, scriptPubKeyKernel))
                 {
                     context.Logger.LogTrace("Kernel type must be P2PK or P2PKH, kernel rejected.");
                     continue;
@@ -953,7 +956,7 @@ namespace Stratis.Bitcoin.Features.Miner
             bool res = false;
             try
             {
-                new TransactionBuilder()
+                new TransactionBuilder(this.network)
                     .AddKeys(input.Key)
                     .AddCoins(new Coin(input.OutPoint, input.TxOut))
                     .SignTransactionInPlace(transaction);

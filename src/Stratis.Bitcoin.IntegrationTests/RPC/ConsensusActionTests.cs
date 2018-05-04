@@ -15,69 +15,39 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
         [Fact]
         public void CanCall_GetBestBlockHash()
         {
-            var initialBlockSignature = Block.BlockSignature;
+            string dir = CreateTestDir(this);
 
-            try
-            {
-                Block.BlockSignature = false;
-                string dir = CreateTestDir(this);
+            var fullNode = this.BuildServicedNode(dir);
+            var controller = fullNode.Services.ServiceProvider.GetService<ConsensusController>();
 
-                var fullNode = this.BuildServicedNode(dir);
-                var controller = fullNode.Services.ServiceProvider.GetService<ConsensusController>();
+            uint256 result = controller.GetBestBlockHash();
 
-                uint256 result = controller.GetBestBlockHash();
-
-                Assert.Null(result);
-            }
-            finally
-            {
-                Block.BlockSignature = initialBlockSignature;
-            }
+            Assert.Null(result);
         }
 
         [Fact]
         public void CanCall_GetBlockHash()
         {
-            var initialBlockSignature = Block.BlockSignature;
+            string dir = CreateTestDir(this);
 
-            try
-            {
-                Block.BlockSignature = false;
-                string dir = CreateTestDir(this);
+            var fullNode = this.BuildServicedNode(dir);
+            var controller = fullNode.Services.ServiceProvider.GetService<ConsensusController>();
 
-                var fullNode = this.BuildServicedNode(dir);
-                var controller = fullNode.Services.ServiceProvider.GetService<ConsensusController>();
+            uint256 result = controller.GetBlockHash(0);
 
-                uint256 result = controller.GetBlockHash(0);
-
-                Assert.Null(result);
-            }
-            finally
-            {
-                Block.BlockSignature = initialBlockSignature;
-            }
+            Assert.Null(result);
         }
 
         [Fact]
         public void CanCall_IsInitialBlockDownload()
         {
-            var initialBlockSignature = Block.BlockSignature;
+            string dir = CreateTestDir(this);
 
-            try
-            {
-                Block.BlockSignature = false;
-                string dir = CreateTestDir(this);
+            var fullNode = this.BuildServicedNode(dir);
+            var isIBDProvider = fullNode.NodeService<IInitialBlockDownloadState>(true);
 
-                var fullNode = this.BuildServicedNode(dir);
-                var isIBDProvider = fullNode.NodeService<IInitialBlockDownloadState>(true);
-
-                Assert.NotNull(isIBDProvider);
-                Assert.True(isIBDProvider.IsInitialBlockDownload());
-            }
-            finally
-            {
-                Block.BlockSignature = initialBlockSignature;
-            }
+            Assert.NotNull(isIBDProvider);
+            Assert.True(isIBDProvider.IsInitialBlockDownload());
         }
     }
 }

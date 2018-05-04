@@ -4,15 +4,18 @@ using System.IO;
 using System.Linq;
 using System.Net.Http;
 using Microsoft.Extensions.Logging;
+using Moq;
 using NBitcoin;
 using NBitcoin.BitcoinCore;
 using NBitcoin.Crypto;
 using NBitcoin.DataEncoders;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Base.Deployments;
+using Stratis.Bitcoin.BlockPulling;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
+using Stratis.Bitcoin.Features.Consensus.Rules;
 using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
 using Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers;
 using Stratis.Bitcoin.Utilities;
@@ -36,7 +39,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             this.loggerFactory = new LoggerFactory();
             this.dbreezeSerializer = new DBreezeSerializer();
-            this.dbreezeSerializer.Initialize();
+            this.dbreezeSerializer.Initialize(Network.Main);
         }
 
         [Fact]
@@ -254,7 +257,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             var header = previous.Header.Clone();
             header.HashPrevBlock = previous.HashBlock;
-            return new ChainedBlock(header, header.GetHash(network.NetworkOptions), previous);
+            return new ChainedBlock(header, header.GetHash(), previous);
         }
 
         [Fact]
@@ -321,7 +324,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         [Fact]
         public void CanCheckBlockWithWitness()
         {
-            var block = new Block(Encoders.Hex.DecodeData("000000202f6f6a130549473222411b5c6f54150d63b32aadf10e57f7d563cfc7010000001e28204471ef9ef11acd73543894a96a3044932b85e99889e731322a8ec28a9f9ae9fc56ffff011d0011b40202010000000001010000000000000000000000000000000000000000000000000000000000000000ffffffff2c028027266a24aa21a9ed09154465f26a2a4144739eba3e83b3e9ae6a1f69566eae7dc3747d48f1183779010effffffff0250b5062a0100000023210263ed47e995cbbf1bc560101e3b76c6bdb1b094a185450cea533781ce598ff2b6ac0000000000000000266a24aa21a9ed09154465f26a2a4144739eba3e83b3e9ae6a1f69566eae7dc3747d48f1183779012000000000000000000000000000000000000000000000000000000000000000000000000001000000000101cecd90cd38ac6858c47f2fe9f28145d6e18f9c5abc7ef1a41e2f19e6fe0362580100000000ffffffff0130b48d06000000001976a91405481b7f1d90c5a167a15b00e8af76eb6984ea5988ac0247304402206104c335e4adbb920184957f9f710b09de17d015329fde6807b9d321fd2142db02200b24ad996b4aa4ff103000348b5ad690abfd9fddae546af9e568394ed4a83113012103a65786c1a48d4167aca08cf6eb8eed081e13f45c02dc6000fd8f3bb16242579a00000000"));
+            var block = Block.Load(Encoders.Hex.DecodeData("000000202f6f6a130549473222411b5c6f54150d63b32aadf10e57f7d563cfc7010000001e28204471ef9ef11acd73543894a96a3044932b85e99889e731322a8ec28a9f9ae9fc56ffff011d0011b40202010000000001010000000000000000000000000000000000000000000000000000000000000000ffffffff2c028027266a24aa21a9ed09154465f26a2a4144739eba3e83b3e9ae6a1f69566eae7dc3747d48f1183779010effffffff0250b5062a0100000023210263ed47e995cbbf1bc560101e3b76c6bdb1b094a185450cea533781ce598ff2b6ac0000000000000000266a24aa21a9ed09154465f26a2a4144739eba3e83b3e9ae6a1f69566eae7dc3747d48f1183779012000000000000000000000000000000000000000000000000000000000000000000000000001000000000101cecd90cd38ac6858c47f2fe9f28145d6e18f9c5abc7ef1a41e2f19e6fe0362580100000000ffffffff0130b48d06000000001976a91405481b7f1d90c5a167a15b00e8af76eb6984ea5988ac0247304402206104c335e4adbb920184957f9f710b09de17d015329fde6807b9d321fd2142db02200b24ad996b4aa4ff103000348b5ad690abfd9fddae546af9e568394ed4a83113012103a65786c1a48d4167aca08cf6eb8eed081e13f45c02dc6000fd8f3bb16242579a00000000"), Network.Main);
 
             var consensusFlags = new DeploymentFlags
             {
@@ -348,7 +351,11 @@ namespace Stratis.Bitcoin.IntegrationTests
             ConsensusSettings consensusSettings = new ConsensusSettings().Load(NodeSettings.Default());
             var validator = new PowConsensusValidator(Network.Main, new Checkpoints(Network.Main, consensusSettings), DateTimeProvider.Default, this.loggerFactory);
             new WitnessCommitmentsRule().RunAsync(context).GetAwaiter().GetResult();
-            new CheckPowTransactionRule().RunAsync(context);
+
+            CheckPowTransactionRule rule = new CheckPowTransactionRule();
+            var options = Network.Main.Consensus.Option<PowConsensusOptions>();
+            foreach (Transaction tx in block.Transactions)
+                rule.CheckTransaction(Network.Main, options, tx);
         }
     }
 }

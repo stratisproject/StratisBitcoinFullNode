@@ -8,14 +8,6 @@ namespace NBitcoin.Tests
 {
     public class NetworkTests
     {
-        public NetworkTests()
-        {
-            // These flags may get set due to static network initializers
-            // which include the initializers for Stratis.
-            Transaction.TimeStamp = false;
-            Block.BlockSignature = false;
-        }
-
         [Fact]
         [Trait("UnitTest", "UnitTest")]
         public void CanGetNetworkFromName()

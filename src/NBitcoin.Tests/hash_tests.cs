@@ -7,14 +7,6 @@ namespace NBitcoin.Tests
 {
     public class hash_tests
     {
-        public hash_tests()
-        {
-            // These tests should be using the Bitcoin network.
-            // Set these expected values accordingly.
-            Transaction.TimeStamp = false;
-            Block.BlockSignature = false;
-        }
-
         [Fact]
         [Trait("Core", "Core")]
         public void murmurhash3()

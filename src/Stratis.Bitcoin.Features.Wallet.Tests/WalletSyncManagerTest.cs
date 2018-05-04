@@ -23,11 +23,6 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
         public WalletSyncManagerTest()
         {
-            // These tests use Network.StratisMain.
-            // Ensure that these static flags have the expected values.
-            Transaction.TimeStamp = true;
-            Block.BlockSignature = true;
-
             this.storeSettings = new StoreSettings
             {
                 Prune = false

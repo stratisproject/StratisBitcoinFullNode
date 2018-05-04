@@ -101,7 +101,10 @@ namespace Stratis.Bitcoin.Configuration
                 if (testNet && regTest)
                     throw new ConfigurationException("Invalid combination of -regtest and -testnet.");
 
-                this.Network = testNet ? Network.TestNet : regTest ? Network.RegTest : Network.Main;
+                if (protocolVersion == ProtocolVersion.ALT_PROTOCOL_VERSION)
+                    this.Network = testNet ? Network.StratisTest : regTest ? Network.StratisRegTest : Network.StratisMain;
+                else
+                    this.Network = testNet ? Network.TestNet : regTest ? Network.RegTest : Network.Main;
             }
 
             // Setting the data directory.

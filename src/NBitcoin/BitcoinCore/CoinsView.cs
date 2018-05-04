@@ -106,7 +106,7 @@ namespace NBitcoin.BitcoinCore
             return new CoinsView(new CachedNoSqlRepository(this.Index));
         }
 
-        public void AddTransaction(Transaction tx, int height)
+        public void AddTransaction(Consensus consensus, Transaction tx, int height)
         {
             SetCoins(tx.GetHash(), new Coins(tx, height));
         }

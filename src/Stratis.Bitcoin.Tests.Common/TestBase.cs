@@ -11,13 +11,16 @@ namespace Stratis.Bitcoin.Tests.Common
 {
     public class TestBase
     {
+        public Network Network { get; }
+
         /// <summary>
         /// Initializes logger factory for inherited tests.
         /// </summary>
-        public TestBase()
-        {         
+        public TestBase(Network network)
+        {
+            this.Network = network;
             DBreezeSerializer serializer = new DBreezeSerializer();
-            serializer.Initialize();
+            serializer.Initialize(this.Network); 
         }
         
         public static string AssureEmptyDir(string dir)
@@ -83,7 +86,7 @@ namespace Stratis.Bitcoin.Tests.Common
             for (int i = 0; i < amount; i++)
             {
                 Block block = this.CreateBlock(i);
-                block.Header.HashPrevBlock = blocks.LastOrDefault()?.GetHash() ?? Network.Main.GenesisHash;
+                block.Header.HashPrevBlock = blocks.LastOrDefault()?.GetHash() ?? this.Network.GenesisHash;
                 blocks.Add(block);
             }
 
