@@ -21,6 +21,7 @@ namespace Stratis.Bitcoin.Features.Miner
         /// <param name="chainTip">Tip of the chain that this instance will work with without touching any shared chain resources.</param>
         /// <returns>The contructed <see cref="BlockTemplate"/>.</returns>
         public abstract BlockTemplate Build(ChainedHeader chainTip, Script scriptPubKey);
+
         /// <summary>Tip of the chain that this instance will work with without touching any shared chain resources.</summary>
         /// <remarks>Using a fixed value prevents race conditions in the methods of derived classes.</remarks>
         protected ChainedHeader ChainTip { get; set; }
