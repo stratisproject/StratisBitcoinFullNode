@@ -16,10 +16,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
 {
     public class PeerBanningTest : TestBase
     {
-        public PeerBanningTest()
+        public PeerBanningTest() : base(Network.RegTest)
         {
-            Block.BlockSignature = false;
-            Transaction.TimeStamp = false;
         }
 
         [Fact]

@@ -31,11 +31,9 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
         protected Mock<IRuleRegistration> ruleRegistration;
         protected RuleContext ruleContext;
 
-        protected ConsensusRuleUnitTestBase()
+        protected ConsensusRuleUnitTestBase(Network network)
         {
-            Block.BlockSignature = false;
-            Transaction.TimeStamp = false;
-            this.network = Network.TestNet;
+            this.network = network;
             this.logger = new Mock<ILogger>();
             this.loggerFactory = new Mock<ILoggerFactory>();
             this.loggerFactory.Setup(l => l.CreateLogger(It.IsAny<string>()))
@@ -64,8 +62,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
             var prevBlockHash = chain.Tip.HashBlock;
             for (var i = 0; i < blockAmount; i++)
             {
-                var block = new Block();
-                block.AddTransaction(new Transaction());
+                var block = chain.Network.Consensus.ConsensusFactory.CreateBlock();
+                block.AddTransaction(chain.Network.Consensus.ConsensusFactory.CreateTransaction());
                 block.UpdateMerkleRoot();
                 block.Header.BlockTime = new DateTimeOffset(new DateTime(2017, 1, 1, 0, 0, 0, DateTimeKind.Utc).AddDays(i));
                 block.Header.HashPrevBlock = prevBlockHash;
@@ -83,7 +81,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
         protected Mock<ILookaheadBlockPuller> lookaheadBlockPuller;
         protected Mock<CoinView> coinView;
 
-        public PosConsensusRuleUnitTestBase()
+        public PosConsensusRuleUnitTestBase() : base(Network.StratisTest)
         {
             this.stakeChain = new Mock<IStakeChain>();
             this.stakeValidator = new Mock<IStakeValidator>();
@@ -106,11 +104,9 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
         protected T consensusRules;
         protected RuleContext ruleContext;
 
-        protected ConsensusRuleUnitTestBase()
+        protected ConsensusRuleUnitTestBase(Network network)
         {
-            Block.BlockSignature = false;
-            Transaction.TimeStamp = false;
-            this.network = Network.TestNet;
+            this.network = network;
             this.loggerFactory = new Mock<ILoggerFactory>();
             this.loggerFactory.Setup(l => l.CreateLogger(It.IsAny<string>()))
                 .Returns(new Mock<ILogger>().Object);
@@ -144,8 +140,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
             var prevBlockHash = chain.Genesis.HashBlock;
             for (var i = 0; i < blockAmount; i++)
             {
-                var block = new Block();
-                block.AddTransaction(new Transaction());
+                var block = network.Consensus.ConsensusFactory.CreateBlock();
+                block.AddTransaction(network.Consensus.ConsensusFactory.CreateTransaction());
                 block.UpdateMerkleRoot();
                 block.Header.BlockTime = new DateTimeOffset(new DateTime(2017, 1, 1, 0, 0, 0, DateTimeKind.Utc).AddDays(i));
                 block.Header.HashPrevBlock = prevBlockHash;
@@ -175,7 +171,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
 
     public class TestConsensusRulesUnitTestBase : ConsensusRuleUnitTestBase<TestConsensusRules>
     {
-        public TestConsensusRulesUnitTestBase()
+        public TestConsensusRulesUnitTestBase() : base( Network.TestNet)
         {
             this.network.Consensus.Options = new PowConsensusOptions();
             this.consensusRules = InitializeConsensusRules();
@@ -194,7 +190,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
         protected Mock<ILookaheadBlockPuller> lookaheadBlockPuller;
         protected Mock<CoinView> coinView;
 
-        public TestPosConsensusRulesUnitTestBase()
+        public TestPosConsensusRulesUnitTestBase() : base(Network.StratisTest)
         {
             this.stakeChain = new Mock<IStakeChain>();
             this.stakeValidator = new Mock<IStakeValidator>();

@@ -51,9 +51,9 @@ namespace Stratis.Bitcoin.Features.Miner
 
         public Money TotalFee;
 
-        public BlockTemplate()
+        public BlockTemplate(Network network)
         {
-            this.Block = new Block();
+            this.Block = network.Consensus.ConsensusFactory.CreateBlock();
             this.VTxFees = new List<Money>();
             this.TxSigOpsCost = new List<long>();
         }
@@ -308,7 +308,7 @@ namespace Stratis.Bitcoin.Features.Miner
         public void Configure()
         {
             this.blockSize = 1000;
-            this.blockTemplate = new BlockTemplate { Block = new Block(), VTxFees = new List<Money>() };
+            this.blockTemplate = new BlockTemplate(this.network) { Block = this.network.Consensus.ConsensusFactory.CreateBlock(), VTxFees = new List<Money>() };
             this.blockTx = 0;
             this.blockWeight = 4000;
             this.blockSigOpsCost = 400;
@@ -333,7 +333,7 @@ namespace Stratis.Bitcoin.Features.Miner
         /// </summary>
         protected virtual void CreateCoinbase()
         {
-            this.coinbase = new Transaction();
+            this.coinbase = this.network.Consensus.ConsensusFactory.CreateTransaction();
             this.coinbase.Time = (uint)this.dateTimeProvider.GetAdjustedTimeAsUnixTimestamp();
             this.coinbase.AddInput(TxIn.CreateCoinbase(this.ChainTip.Height + 1));
             this.coinbase.AddOutput(new TxOut(Money.Zero, this.scriptPubKey));

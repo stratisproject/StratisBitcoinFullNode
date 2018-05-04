@@ -191,7 +191,7 @@ namespace Stratis.Bitcoin.Features.Miner
 
                 BlockTemplate blockTemplate = this.blockBuilder.Build(chainTip, reserveScript.ReserveFullNodeScript);
 
-                if (this.network.NetworkOptions.IsProofOfStake)
+                if (this.network.Consensus.IsProofOfStake)
                 {
                     // Make sure the POS consensus rules are valid. This is required for generation of blocks inside tests,
                     // where it is possible to generate multiple blocks within one second.

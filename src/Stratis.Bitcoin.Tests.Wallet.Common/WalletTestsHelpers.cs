@@ -161,7 +161,7 @@ namespace Stratis.Bitcoin.Tests.Wallet.Common
         {
             ChainedBlock last = null;
             var nonce = RandomUtils.GetUInt32();
-            var block = new Block();
+            var block = chain.Network.Consensus.ConsensusFactory.CreateBlock();
             block.AddTransaction(transaction);
             block.UpdateMerkleRoot();
             block.Header.HashPrevBlock = chain.Tip.HashBlock;
@@ -179,7 +179,7 @@ namespace Stratis.Bitcoin.Tests.Wallet.Common
 
             var privateKey = Key.Parse(wallet.EncryptedSeed, password, wallet.Network);
 
-            var builder = new TransactionBuilder();
+            var builder = new TransactionBuilder(wallet.Network);
             Transaction tx = builder
                 .AddCoins(new List<Coin> { coin })
                 .AddKeys(new ExtKey(privateKey, wallet.ChainCode).Derive(new KeyPath(spendingAddress.HdPath)).GetWif(wallet.Network))
@@ -475,7 +475,7 @@ namespace Stratis.Bitcoin.Tests.Wallet.Common
             block.AddTransaction(coinbase);
             block.Header.Nonce = 0;
             block.UpdateMerkleRoot();
-            block.Header.CacheHashes();
+            block.Header.PrecomputeHash();
 
             chain.SetTip(block.Header);
 
@@ -502,7 +502,7 @@ namespace Stratis.Bitcoin.Tests.Wallet.Common
                 block.AddTransaction(coinbase);
                 block.Header.Nonce = 0;
                 block.UpdateMerkleRoot();
-                block.Header.CacheHashes();
+                block.Header.PrecomputeHash();
 
                 chain.SetTip(block.Header);
 

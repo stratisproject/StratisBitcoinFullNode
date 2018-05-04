@@ -24,10 +24,10 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
             long adjustedTime = this.Parent.DateTimeProvider.GetAdjustedTimeAsUnixTimestamp();
 
             // Check timestamp.
-            if (block.Header.Time > adjustedTime + this.GetFutureDrift(adjustedTime))
+            if (block.Header.Time > adjustedTime + GetFutureDrift(adjustedTime))
             {
                 // The block can be valid only after its time minus the future drift.
-                context.BlockValidationContext.RejectUntil = Utils.UnixTimeToDateTime(block.Header.Time - this.GetFutureDrift(block.Header.Time)).UtcDateTime;
+                context.BlockValidationContext.RejectUntil = Utils.UnixTimeToDateTime(block.Header.Time - GetFutureDrift(block.Header.Time)).UtcDateTime;
                 this.Logger.LogTrace("(-)[TIME_TOO_FAR]");
                 ConsensusErrors.BlockTimestampTooFar.Throw();
             }
@@ -44,9 +44,9 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         /// </remarks>
         /// <param name="time">UNIX timestamp.</param>
         /// <returns>Value of the future drift.</returns>
-        private long GetFutureDrift(long time)
+        public static long GetFutureDrift(long time)
         {
-            return this.IsDriftReduced(time) ? NewFutureDriftSeconds : OldFutureDriftSeconds;
+            return IsDriftReduced(time) ? NewFutureDriftSeconds : OldFutureDriftSeconds;
         }
 
         /// <summary>
@@ -54,7 +54,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         /// </summary>
         /// <param name="time">UNIX timestamp.</param>
         /// <returns><c>true</c> if for this timestamp future drift should be reduced, <c>false</c> otherwise.</returns>
-        private bool IsDriftReduced(long time)
+        public static bool IsDriftReduced(long time)
         {
             // TODO: Break this rule to only be used by the statis chain 
             // this is a specific Stratis bug fix where the blockchain drifted 24 hour ahead as the protocol allowed that.

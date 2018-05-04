@@ -53,6 +53,8 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <summary>Instance logger for the memory pool component.</summary>
         private readonly ILogger logger;
 
+        private readonly Network network;
+
         /// <summary>
         /// Inventory transaction to send.
         /// State that is local to the behavior.
@@ -75,6 +77,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <param name="initialBlockDownloadState">Provider of IBD state.</param>
         /// <param name="signals">Peer notifications available to subscribe to.</param>
         /// <param name="logger">Instance logger for memory pool behavior.</param>
+        /// <param name="network">The blockchain network.</param>
         public MempoolBehavior(
             IMempoolValidator validator,
             MempoolManager manager,
@@ -82,7 +85,8 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             IConnectionManager connectionManager,
             IInitialBlockDownloadState initialBlockDownloadState,
             Signals.Signals signals,
-            ILogger logger)
+            ILogger logger,
+            Network network)
         {
             this.validator = validator;
             this.manager = manager;
@@ -91,6 +95,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             this.initialBlockDownloadState = initialBlockDownloadState;
             this.signals = signals;
             this.logger = logger;
+            this.network = network;
 
             this.inventoryTxToSend = new Dictionary<uint256, uint256>();
             this.filterInventoryKnown = new Dictionary<uint256, uint256>();
@@ -107,6 +112,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <param name="initialBlockDownloadState">Provider of IBD state.</param>
         /// <param name="signals">Peer notifications available to subscribe to.</param>
         /// <param name="loggerFactory">Logger factory for creating logger.</param>
+        /// <param name="network">The blockchain network.</param>
         public MempoolBehavior(
             IMempoolValidator validator,
             MempoolManager manager,
@@ -114,8 +120,9 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             IConnectionManager connectionManager,
             IInitialBlockDownloadState initialBlockDownloadState,
             Signals.Signals signals,
-            ILoggerFactory loggerFactory)
-            : this(validator, manager, orphans, connectionManager, initialBlockDownloadState, signals, loggerFactory.CreateLogger(typeof(MempoolBehavior).FullName))
+            ILoggerFactory loggerFactory,
+            Network network)
+            : this(validator, manager, orphans, connectionManager, initialBlockDownloadState, signals, loggerFactory.CreateLogger(typeof(MempoolBehavior).FullName), network)
         {
         }
 
@@ -171,7 +178,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <inheritdoc />
         public override object Clone()
         {
-            return new MempoolBehavior(this.validator, this.manager, this.orphans, this.connectionManager, this.initialBlockDownloadState, this.signals, this.logger);
+            return new MempoolBehavior(this.validator, this.manager, this.orphans, this.connectionManager, this.initialBlockDownloadState, this.signals, this.logger, this.network);
         }
 
         /// <summary>
@@ -411,7 +418,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                     if (peer.IsConnected)
                     {
                         this.logger.LogTrace("Sending transaction '{0}' to peer '{1}'.", item.Hash, peer.RemoteSocketEndpoint);
-                        await peer.SendMessageAsync(new TxPayload(trxInfo.Trx.WithOptions(peer.SupportedTransactionOptions))).ConfigureAwait(false);
+                        await peer.SendMessageAsync(new TxPayload(trxInfo.Trx.WithOptions(peer.SupportedTransactionOptions, this.network.Consensus.ConsensusFactory))).ConfigureAwait(false);
                     }
             }
 

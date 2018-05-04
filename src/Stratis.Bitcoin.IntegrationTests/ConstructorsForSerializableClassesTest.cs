@@ -19,6 +19,9 @@ namespace Stratis.Bitcoin.IntegrationTests
                 typeof(NBitcoin.ExtKey),
                 typeof(NBitcoin.ExtPubKey),
                 typeof(NBitcoin.PubKey),
+                typeof(NBitcoin.PosBlock),
+                typeof(NBitcoin.PosBlockHeader),
+                typeof(NBitcoin.PosTransaction),
                 typeof(NBitcoin.Protocol.CompactVarInt),
             };
 

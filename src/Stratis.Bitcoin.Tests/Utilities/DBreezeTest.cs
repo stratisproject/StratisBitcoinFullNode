@@ -22,15 +22,16 @@ namespace Stratis.Bitcoin.Tests.Utilities
         /// <summary>
         /// Initializes the DBreeze serializer.
         /// </summary>
-        public DBreezeTest()
+        public DBreezeTest() : base(Network.StratisRegTest)
         {
             this.dbreezeSerializer = new DBreezeSerializer();
+            this.dbreezeSerializer.Initialize(this.Network);
         }
 
         [Fact]
         public void SerializerWithBitcoinSerializableReturnsAsBytes()
         {
-            Block block = new Block();
+            Block block = Network.StratisRegTest.Consensus.ConsensusFactory.CreateBlock();
 
             byte[] result = this.dbreezeSerializer.Serializer(block);
 
@@ -65,7 +66,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
             var genesis = network.GetGenesis();
             var coins = new Coins(genesis.Transactions[0], 0);
 
-            var result = (Coins)this.dbreezeSerializer.Deserializer(coins.ToBytes(), typeof(Coins));
+            var result = (Coins)this.dbreezeSerializer.Deserializer(coins.ToBytes(consensusFactory:Network.StratisRegTest.Consensus.ConsensusFactory), typeof(Coins));
 
             Assert.Equal(coins.CoinBase, result.CoinBase);
             Assert.Equal(coins.Height, result.Height);
@@ -86,7 +87,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
             var genesis = network.GetGenesis();
             var blockHeader = genesis.Header;
 
-            var result = (BlockHeader)this.dbreezeSerializer.Deserializer(blockHeader.ToBytes(), typeof(BlockHeader));
+            var result = (BlockHeader)this.dbreezeSerializer.Deserializer(blockHeader.ToBytes(consensusFactory: Network.StratisRegTest.Consensus.ConsensusFactory), typeof(BlockHeader));
 
             Assert.Equal(blockHeader.GetHash(), result.GetHash());
         }
@@ -119,7 +120,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
             Network network = Network.StratisRegTest;
             Block block = network.GetGenesis();
 
-            var result = (Block)this.dbreezeSerializer.Deserializer(block.ToBytes(), typeof(Block));
+            var result = (Block)this.dbreezeSerializer.Deserializer(block.ToBytes(consensusFactory:Network.StratisRegTest.Consensus.ConsensusFactory), typeof(Block));
 
             Assert.Equal(block.GetHash(), result.GetHash());
         }

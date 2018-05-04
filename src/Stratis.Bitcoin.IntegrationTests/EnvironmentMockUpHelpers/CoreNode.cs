@@ -206,36 +206,6 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
             }
         }
 
-        public Transaction GiveMoney(Script destination, Money amount, bool broadcast = true)
-        {
-            var rpc = this.CreateRPCClient();
-            TransactionBuilder builder = new TransactionBuilder();
-            builder.AddKeys(rpc.ListSecrets().OfType<ISecret>().ToArray());
-            builder.AddCoins(rpc.ListUnspent().Where(c => !this.locked.Contains(c.OutPoint)).Select(c => c.AsCoin()));
-            builder.Send(destination, amount);
-            builder.SendFees(this.fee);
-            builder.SetChange(this.GetFirstSecret(rpc));
-            var tx = builder.BuildTransaction(true);
-            foreach (var outpoint in tx.Inputs.Select(i => i.PrevOut))
-            {
-                this.locked.Add(outpoint);
-            }
-            if (broadcast)
-                this.Broadcast(tx);
-            else
-                this.transactions.Add(tx);
-            return tx;
-        }
-
-        public void Rollback(Transaction tx)
-        {
-            this.transactions.Remove(tx);
-            foreach (var outpoint in tx.Inputs.Select(i => i.PrevOut))
-            {
-                this.locked.Remove(outpoint);
-            }
-        }
-
         public void Broadcast(Transaction transaction)
         {
             using (INetworkPeer peer = this.CreateNetworkPeerClient())
@@ -288,7 +258,7 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
         public void Split(Money amount, int parts)
         {
             var rpc = this.CreateRPCClient();
-            TransactionBuilder builder = new TransactionBuilder();
+            TransactionBuilder builder = new TransactionBuilder(this.FullNode.Network);
             builder.AddKeys(rpc.ListSecrets().OfType<ISecret>().ToArray());
             builder.AddCoins(rpc.ListUnspent().Select(c => c.AsCoin()));
             var secret = this.GetFirstSecret(rpc);

@@ -33,7 +33,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
             }
 
             // Check coinbase timestamp.
-            if (chainedBlock.Header.Time > this.FutureDrift(context.BlockValidationContext.Block.Transactions[0].Time))
+            uint coinbaseTime = context.BlockValidationContext.Block.Transactions[0].Time;
+            if (chainedBlock.Header.Time > coinbaseTime + PosFutureDriftRule.GetFutureDrift(coinbaseTime))
             {
                 this.Logger.LogTrace("(-)[TIME_TOO_NEW]");
                 ConsensusErrors.TimeTooNew.Throw();
@@ -66,30 +67,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         private bool CheckCoinStakeTimestamp(long blockTime, long transactionTime)
         {
             return (blockTime == transactionTime) && ((transactionTime & PosConsensusValidator.StakeTimestampMask) == 0);
-        }
-
-        /// <summary>
-        /// Applies future drift to provided timestamp.
-        /// </summary>
-        /// <remarks>
-        /// Future drift is maximal allowed block's timestamp difference over adjusted time.
-        /// If this difference is greater block won't be accepted.
-        /// </remarks>
-        /// <param name="time">UNIX timestamp.</param>
-        /// <returns>Timestamp with maximum future drift applied.</returns>
-        private long FutureDrift(long time)
-        {
-            return this.IsDriftReduced(time) ? time + 15 : time + 128 * 60 * 60;
-        }
-
-        /// <summary>
-        /// Checks whether the future drift should be reduced after provided timestamp.
-        /// </summary>
-        /// <param name="time">UNIX timestamp.</param>
-        /// <returns><c>true</c> if for this timestamp future drift should be reduced, <c>false</c> otherwise.</returns>
-        private bool IsDriftReduced(long time)
-        {
-            return time > PosConsensusValidator.DriftingBugFixTimestamp;
         }
     }
 }

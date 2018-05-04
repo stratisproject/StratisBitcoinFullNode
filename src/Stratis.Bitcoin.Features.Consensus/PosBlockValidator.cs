@@ -5,14 +5,14 @@ namespace Stratis.Bitcoin.Features.Consensus
 {
     public class PosBlockValidator
     {
-        public static bool IsCanonicalBlockSignature(Block block, bool checkLowS)
+        public static bool IsCanonicalBlockSignature(PosBlock block, bool checkLowS)
         {
             if (BlockStake.IsProofOfWork(block))
-                return block.BlockSignatur.IsEmpty();
+                return block.BlockSignature.IsEmpty();
 
             return checkLowS ?
-                ScriptEvaluationContext.IsLowDerSignature(block.BlockSignatur.Signature) :
-                ScriptEvaluationContext.IsValidSignatureEncoding(block.BlockSignatur.Signature);
+                ScriptEvaluationContext.IsLowDerSignature(block.BlockSignature.Signature) :
+                ScriptEvaluationContext.IsValidSignatureEncoding(block.BlockSignature.Signature);
         }
 
         public static bool EnsureLowS(BlockSignature blockSignature)

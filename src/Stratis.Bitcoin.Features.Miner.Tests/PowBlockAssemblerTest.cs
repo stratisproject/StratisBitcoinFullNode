@@ -38,9 +38,6 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
 
             SetupValidator();
             SetupConsensusLoop();
-
-            Transaction.TimeStamp = true;
-            Block.BlockSignature = true;
         }
 
         [Fact]

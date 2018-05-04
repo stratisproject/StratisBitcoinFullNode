@@ -14,14 +14,6 @@ namespace NBitcoin.Tests
 {
     public class util_tests
     {
-        public util_tests()
-        {
-            // These flags may get set due to static network initializers
-            // which include the initializers for Stratis.
-            Transaction.TimeStamp = false;
-            Block.BlockSignature = false;
-        }
-
         static byte[] ParseHex_expected = new byte[]{
     0x04, 0x67, 0x8a, 0xfd, 0xb0, 0xfe, 0x55, 0x48, 0x27, 0x19, 0x67, 0xf1, 0xa6, 0x71, 0x30, 0xb7,
     0x10, 0x5c, 0xd6, 0xa8, 0x28, 0xe0, 0x39, 0x09, 0xa6, 0x79, 0x62, 0xe0, 0xea, 0x1f, 0x61, 0xde,
@@ -829,7 +821,7 @@ namespace NBitcoin.Tests
             var jobj = JObject.Parse(File.ReadAllText("Data/blocks/Block1.json"));
             var array = (JArray)jobj["mrkl_tree"];
             var expected = array.OfType<JValue>().Select(v => uint256.Parse(v.ToString())).ToList();
-            var block = Block.ParseJson(File.ReadAllText("Data/blocks/Block1.json"));
+            var block = Block.ParseJson(Network.Main, File.ReadAllText("Data/blocks/Block1.json"));
             Assert.Equal("000000000000000040cd080615718eb68f00a0138706e7afd4068f3e08d4ca20", block.GetHash().ToString());
             Assert.True(block.CheckMerkleRoot());
         }

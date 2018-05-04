@@ -27,12 +27,12 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
 
             // Check transactions
             foreach (Transaction tx in block.Transactions)
-                this.CheckTransaction(options, tx);
+                this.CheckTransaction(this.Parent.Network, options, tx);
 
             return Task.CompletedTask;
         }
 
-        public virtual void CheckTransaction(PowConsensusOptions options, Transaction tx)
+        public virtual void CheckTransaction(Network network, PowConsensusOptions options, Transaction tx)
         {
             // Basic checks that don't depend on any context.
             if (tx.Inputs.Count == 0)
@@ -48,7 +48,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
             }
 
             // Size limits (this doesn't take the witness into account, as that hasn't been checked for malleability).
-            if (BlockSizeRule.GetSize(tx, NetworkOptions.TemporaryOptions & ~NetworkOptions.Witness) > options.MaxBlockBaseSize)
+            if (BlockSizeRule.GetSize(network, tx, NetworkOptions.TemporaryOptions & ~NetworkOptions.Witness) > options.MaxBlockBaseSize)
             {
                 this.Logger.LogTrace("(-)[TX_OVERSIZE]");
                 ConsensusErrors.BadTransactionOversize.Throw();
