@@ -700,7 +700,7 @@ namespace NBitcoin
 
         public Block GetGenesis()
         {
-            return this.genesis.Clone(consensusFactory:this.consensus.ConsensusFactory);
+            return this.genesis.Clone(network: this);
         }
 
         public uint256 GenesisHash => this.consensus.HashGenesisBlock;

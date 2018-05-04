@@ -171,7 +171,7 @@ namespace NBitcoin.Tests
                 ScriptSig = scriptPubKey
             });
             tx.AddOutput(new TxOut("21", key.PubKey.Hash));
-            var clone = tx.Clone(consensusFactory: Network.StratisMain.Consensus.ConsensusFactory);
+            var clone = tx.Clone(network: Network.StratisMain);
             tx.Sign(Network.StratisMain, key, false);
             AssertCorrectlySigned(tx, scriptPubKey);
             clone.Sign(Network.StratisMain, key, true);
@@ -397,7 +397,7 @@ namespace NBitcoin.Tests
             var satoshi = new Key();
             var bob = new Key();
 
-            var repo = new NoSqlColoredTransactionRepository(new NoSqlTransactionRepository(Network.StratisMain.Consensus.ConsensusFactory), new InMemoryNoSqlRepository(Network.StratisMain.Consensus.ConsensusFactory));
+            var repo = new NoSqlColoredTransactionRepository(new NoSqlTransactionRepository(Network.StratisMain), new InMemoryNoSqlRepository(Network.StratisMain));
 
             var init = Network.StratisMain.Consensus.ConsensusFactory.CreateTransaction();
             
@@ -1196,7 +1196,7 @@ namespace NBitcoin.Tests
 
         private Transaction AssertClone(Transaction before)
         {
-            Transaction after = before.Clone(consensusFactory: Network.StratisMain.Consensus.ConsensusFactory);
+            Transaction after = before.Clone(network: Network.StratisMain);
             Transaction after2 = null;
 
             MemoryStream ms = new MemoryStream();
@@ -1630,7 +1630,7 @@ namespace NBitcoin.Tests
             // Next, create a transaction to send funds into that multisig. Transaction d6f72... is
             // an unspent transaction in my wallet (which I got from the 'listunspent' RPC call):
             // Taken from example
-            var fundingTransaction = Transaction.Load("01000000ec7b1a580189632848f99722915727c5c75da8db2dbf194342a0429828f66ff88fab2af7d6000000008b483045022100abbc8a73fe2054480bda3f3281da2d0c51e2841391abd4c09f4f908a2034c18d02205bc9e4d68eafb918f3e9662338647a4419c0de1a650ab8983f1d216e2a31d8e30141046f55d7adeff6011c7eac294fe540c57830be80e9355c83869c9260a4b8bf4767a66bacbd70b804dc63d5beeb14180292ad7f3b083372b1d02d7a37dd97ff5c9effffffff0140420f000000000017a914f815b036d9bbbce5e9f2a00abd1bf3dc91e955108700000000", Network.StratisMain.Consensus.ConsensusFactory);
+            var fundingTransaction = Transaction.Load("01000000ec7b1a580189632848f99722915727c5c75da8db2dbf194342a0429828f66ff88fab2af7d6000000008b483045022100abbc8a73fe2054480bda3f3281da2d0c51e2841391abd4c09f4f908a2034c18d02205bc9e4d68eafb918f3e9662338647a4419c0de1a650ab8983f1d216e2a31d8e30141046f55d7adeff6011c7eac294fe540c57830be80e9355c83869c9260a4b8bf4767a66bacbd70b804dc63d5beeb14180292ad7f3b083372b1d02d7a37dd97ff5c9effffffff0140420f000000000017a914f815b036d9bbbce5e9f2a00abd1bf3dc91e955108700000000", Network.StratisMain);
 
             // Create the spend-from-multisig transaction. Since the fund-the-multisig transaction
             // hasn't been sent yet, I need to give txid, scriptPubKey and redeemScript:
@@ -1647,7 +1647,7 @@ namespace NBitcoin.Tests
 
             spendTransaction.Inputs[0].ScriptSig = redeem; //The redeem should be in the scriptSig before signing
 
-            var partiallySigned = spendTransaction.Clone(consensusFactory:Network.StratisMain.Consensus.ConsensusFactory);
+            var partiallySigned = spendTransaction.Clone(network: Network.StratisMain);
             //... Now I can partially sign it using one private key:
 
             partiallySigned.Sign(Network.StratisMain, privKeys[0], true);
@@ -1658,18 +1658,18 @@ namespace NBitcoin.Tests
             AssertCorrectlySigned(partiallySigned, fundingTransaction.Outputs[0].ScriptPubKey, allowHighS);
 
             //Verify the transaction from the gist is also correctly signed
-            var gistTransaction = Transaction.Load("010000009d4f1b5801e1f87273f4e266d0f2d08a4a08807dc2c2e8f6e47bcc488201652a03778de19600000000fd5e0100483045022100d62e6327a72ca014778d87ba225ef8fc08610e2345fe1c543bb429777f82052a02207832b67b2f03bd8bfdfd79597a51a269c3f569fcd89a347db370a07146292c7501483045022100eff296780357c91f1b1334011e11150dac30de70be3d428e4799fd66456055ee02205313912c3c17e59533e1aa86c7526a365faef59c2dd55dd3bb5292cbada52eb9014cc952410491bba2510912a5bd37da1fb5b1673010e43d2c6d812c514e91bfa9f2eb129e1c183329db55bd868e209aac2fbc02cb33d98fe74bf23f0c235d6126b1d8334f864104865c40293a680cb9c020e7b1e106d8c1916d3cef99aa431a56d253e69256dac09ef122b1a986818a7cb624532f062c1d1f8722084861c5c3291ccffef4ec687441048d2455d2403e08708fc1f556002f1b6cd83f992d085097f9974ab08a28838f07896fbab08f39495e15fa6fad6edbfb1e754e35fa1c7844c41f322a1863d4621353aeffffffff0140420f00000000001976a914ae56b4db13554d321c402db3961187aed1bbed5b88ac00000000", Network.StratisMain.Consensus.ConsensusFactory);
+            var gistTransaction = Transaction.Load("010000009d4f1b5801e1f87273f4e266d0f2d08a4a08807dc2c2e8f6e47bcc488201652a03778de19600000000fd5e0100483045022100d62e6327a72ca014778d87ba225ef8fc08610e2345fe1c543bb429777f82052a02207832b67b2f03bd8bfdfd79597a51a269c3f569fcd89a347db370a07146292c7501483045022100eff296780357c91f1b1334011e11150dac30de70be3d428e4799fd66456055ee02205313912c3c17e59533e1aa86c7526a365faef59c2dd55dd3bb5292cbada52eb9014cc952410491bba2510912a5bd37da1fb5b1673010e43d2c6d812c514e91bfa9f2eb129e1c183329db55bd868e209aac2fbc02cb33d98fe74bf23f0c235d6126b1d8334f864104865c40293a680cb9c020e7b1e106d8c1916d3cef99aa431a56d253e69256dac09ef122b1a986818a7cb624532f062c1d1f8722084861c5c3291ccffef4ec687441048d2455d2403e08708fc1f556002f1b6cd83f992d085097f9974ab08a28838f07896fbab08f39495e15fa6fad6edbfb1e754e35fa1c7844c41f322a1863d4621353aeffffffff0140420f00000000001976a914ae56b4db13554d321c402db3961187aed1bbed5b88ac00000000", Network.StratisMain);
 
             AssertCorrectlySigned(gistTransaction, fundingTransaction.Outputs[0].ScriptPubKey, allowHighS); //One sig in the hard code tx is high
 
             //Can sign out of order
-            partiallySigned = spendTransaction.Clone(consensusFactory: Network.StratisMain.Consensus.ConsensusFactory);
+            partiallySigned = spendTransaction.Clone(network: Network.StratisMain);
             partiallySigned.Sign(Network.StratisMain, privKeys[2], true);
             partiallySigned.Sign(Network.StratisMain, privKeys[0], true);
             AssertCorrectlySigned(partiallySigned, fundingTransaction.Outputs[0].ScriptPubKey);
 
             //Can sign multiple inputs
-            partiallySigned = spendTransaction.Clone(consensusFactory: Network.StratisMain.Consensus.ConsensusFactory);
+            partiallySigned = spendTransaction.Clone(network: Network.StratisMain);
             partiallySigned.Inputs.Add(new TxIn()
             {
                 PrevOut = new OutPoint(fundingTransaction.GetHash(), 1),
@@ -1709,9 +1709,9 @@ namespace NBitcoin.Tests
         {
             // test is disabled for now
 
-            Transaction funding = Transaction.Load("0100000070b2b357014473839a1b714fc2a4d40a0f7591ae34027f776b0fc4441dcc0d48248411bc5c020000004847304402201cca79f56f1ecae454ebf56702d5c518674fe76f8830efccb56158c3af23946e0220128daad11ed40f25f36b752f5a98c3027312e2f8fe7371fe352db9ceb98f4b5901ffffffff03000000000000000000400788a12000000023210379a3e0dba7f8739ce5730a0afd22110d56a24a86114697b4b802c48a937106e0ac400788a12000000023210379a3e0dba7f8739ce5730a0afd22110d56a24a86114697b4b802c48a937106e0ac00000000", Network.StratisMain.Consensus.ConsensusFactory);
+            Transaction funding = Transaction.Load("0100000070b2b357014473839a1b714fc2a4d40a0f7591ae34027f776b0fc4441dcc0d48248411bc5c020000004847304402201cca79f56f1ecae454ebf56702d5c518674fe76f8830efccb56158c3af23946e0220128daad11ed40f25f36b752f5a98c3027312e2f8fe7371fe352db9ceb98f4b5901ffffffff03000000000000000000400788a12000000023210379a3e0dba7f8739ce5730a0afd22110d56a24a86114697b4b802c48a937106e0ac400788a12000000023210379a3e0dba7f8739ce5730a0afd22110d56a24a86114697b4b802c48a937106e0ac00000000", Network.StratisMain);
 
-            Transaction spending = Transaction.Load("0100000080c3af5701b3436109108f717be2eeaac32482cad8d60944826fe09f97069abafdc4bebaf602000000484730440220284494bd9bbd60857f0936e2fa9673a9c15b5079bb192c88747c874a000f379f02204c6caa1ec9ef4153f670e0959f727001f8576ca4b6c59bca47d079153c7e937001ffffffff03000000000000000000802d1a3d4100000023210379a3e0dba7f8739ce5730a0afd22110d56a24a86114697b4b802c48a937106e0ac802d1a3d4100000023210379a3e0dba7f8739ce5730a0afd22110d56a24a86114697b4b802c48a937106e0ac00000000", Network.StratisMain.Consensus.ConsensusFactory);
+            Transaction spending = Transaction.Load("0100000080c3af5701b3436109108f717be2eeaac32482cad8d60944826fe09f97069abafdc4bebaf602000000484730440220284494bd9bbd60857f0936e2fa9673a9c15b5079bb192c88747c874a000f379f02204c6caa1ec9ef4153f670e0959f727001f8576ca4b6c59bca47d079153c7e937001ffffffff03000000000000000000802d1a3d4100000023210379a3e0dba7f8739ce5730a0afd22110d56a24a86114697b4b802c48a937106e0ac802d1a3d4100000023210379a3e0dba7f8739ce5730a0afd22110d56a24a86114697b4b802c48a937106e0ac00000000", Network.StratisMain);
 
 
             TransactionBuilder builder = new TransactionBuilder(Network.StratisMain);
@@ -1753,7 +1753,7 @@ namespace NBitcoin.Tests
         {
             var tx = Network.StratisMain.Consensus.ConsensusFactory.CreateTransaction();
             tx.LockTime = new LockTime(4);
-            var clone = tx.Clone(consensusFactory:Network.StratisMain.Consensus.ConsensusFactory);
+            var clone = tx.Clone(network: Network.StratisMain);
             Assert.Equal(tx.LockTime, clone.LockTime);
 
             Assert.Equal("Height : 0", new LockTime().ToString());
@@ -1822,10 +1822,10 @@ namespace NBitcoin.Tests
         {
             // SegWit test disabled for now
 
-            Transaction tx = Transaction.Load("010000000001015d896079097272b13ed9cb22acfabeca9ce83f586d98cc15a08ea2f9c558013b0300000000ffffffff01605af40500000000160014a8cbb5eca9af499cecaa08457690ab367f23d95b0247304402200b6baba4287f3321ae4ec6ba66420d9a48c3f3bc331603e7dca6b12ca75cce6102207fa582041b025605c0474b99a2d3ab5080d6ea14ae3a50b7de92596abf40fb4b012102cdfc0f4701e0c8db3a0913de5f635d0ea76663a8f80925567358d558603fae3500000000", Network.StratisMain.Consensus.ConsensusFactory);
+            Transaction tx = Transaction.Load("010000000001015d896079097272b13ed9cb22acfabeca9ce83f586d98cc15a08ea2f9c558013b0300000000ffffffff01605af40500000000160014a8cbb5eca9af499cecaa08457690ab367f23d95b0247304402200b6baba4287f3321ae4ec6ba66420d9a48c3f3bc331603e7dca6b12ca75cce6102207fa582041b025605c0474b99a2d3ab5080d6ea14ae3a50b7de92596abf40fb4b012102cdfc0f4701e0c8db3a0913de5f635d0ea76663a8f80925567358d558603fae3500000000", Network.StratisMain);
             CanCheckSegwitSigCore(tx, 0, Money.Coins(1.0m));
 
-            Transaction toCheck = Transaction.Load("01000000000103b019e2344634c5b34aeb867f2cd8b09dbbd95b5bf8c5d56d58be1dd9077f9d3a00000000da0047304402201b2be1016abd4df4ca699e0430b97bc8dcd4c1c90b6a6ee382be75f42956566402205ab38fddace15ba4b2c4dbacc6793bb1f35a371aa8386f1348bd65dfeda9657201483045022100db1dbea1a5d05ff7daf6d106931ab701a29d2dddd8cd7781e9eb7fefd31139790220319eb8a238e6c635ebe2960f5960eeb96371f5a38503cf41aa89a33807c8b6a50147522102a96e9843b846b8cc3277ea54638f1454378219854ef89c81a8a4e9217f1f3ca02103d5feb2e2f2fa1403ede18aaac7631dd2c9a893953a9ab338e7d9fa749d91f03b52aeffffffffb019e2344634c5b34aeb867f2cd8b09dbbd95b5bf8c5d56d58be1dd9077f9d3a01000000db00483045022100aec68f5760337efdf425007387f094df284a576e824492597b0d046e038034100220434cb22f056e97cd823a13751c482a9f2d3fb956abcfa69db4dcd2679379070101483045022100c7ce0a9617cbcaa9308758092d336b228f67d358ad25a786711a87a29e2f72d102203d608bf6a4416e9493a5d89552633da300e9a237811e9affea3cda3320a3257c0147522102c4bd91a554815c73814848b311051c43ad6a75810269e1ff0eb9c13d828fc6fb21031035e69a48e04bc4d6315590620f784ab79d8369d122bd45ad7e77c81ac1cb1c52aeffffffffbcf750fad5ddd1909d8b3e2edda94f7ae3c866952932823763291b9467e3b9580000000023220020e0be53749d09a8e2d3843633cf11133e51e73944334d11a147f1ae53f1c3dfe5ffffffff019cbaf0080000000017a9148d52e4999751ec43c07eb371119f8c45047d26dc870000040047304402205bdc03fac6c3be92309e4fdd1572147ca56210dbb4413539874a4e3b0670ac0b02206422cd069e6078bcdc8f698ff77aed65566b6fa1ff028cc322d14d036d2c192401473044022022fa0bda2e8e21716b9d74499665e4f31cbcf2bf49d0b535188e7e196e8e90d8022076ad55655fbd54637c0cf5bbd7f07905446e23a621f82a940cb07677dab2f8fe0147522102d01cf4abc1b6c22cc0e0e43e5277f1a7fb544eca52244cd4cb88bef5943c5563210284a2ffb3e6b6ac0ac9444b0ecd9856f79b53bbd3100894ec6dc80e6e956edbeb52ae00000000", Network.StratisMain.Consensus.ConsensusFactory);
+            Transaction toCheck = Transaction.Load("01000000000103b019e2344634c5b34aeb867f2cd8b09dbbd95b5bf8c5d56d58be1dd9077f9d3a00000000da0047304402201b2be1016abd4df4ca699e0430b97bc8dcd4c1c90b6a6ee382be75f42956566402205ab38fddace15ba4b2c4dbacc6793bb1f35a371aa8386f1348bd65dfeda9657201483045022100db1dbea1a5d05ff7daf6d106931ab701a29d2dddd8cd7781e9eb7fefd31139790220319eb8a238e6c635ebe2960f5960eeb96371f5a38503cf41aa89a33807c8b6a50147522102a96e9843b846b8cc3277ea54638f1454378219854ef89c81a8a4e9217f1f3ca02103d5feb2e2f2fa1403ede18aaac7631dd2c9a893953a9ab338e7d9fa749d91f03b52aeffffffffb019e2344634c5b34aeb867f2cd8b09dbbd95b5bf8c5d56d58be1dd9077f9d3a01000000db00483045022100aec68f5760337efdf425007387f094df284a576e824492597b0d046e038034100220434cb22f056e97cd823a13751c482a9f2d3fb956abcfa69db4dcd2679379070101483045022100c7ce0a9617cbcaa9308758092d336b228f67d358ad25a786711a87a29e2f72d102203d608bf6a4416e9493a5d89552633da300e9a237811e9affea3cda3320a3257c0147522102c4bd91a554815c73814848b311051c43ad6a75810269e1ff0eb9c13d828fc6fb21031035e69a48e04bc4d6315590620f784ab79d8369d122bd45ad7e77c81ac1cb1c52aeffffffffbcf750fad5ddd1909d8b3e2edda94f7ae3c866952932823763291b9467e3b9580000000023220020e0be53749d09a8e2d3843633cf11133e51e73944334d11a147f1ae53f1c3dfe5ffffffff019cbaf0080000000017a9148d52e4999751ec43c07eb371119f8c45047d26dc870000040047304402205bdc03fac6c3be92309e4fdd1572147ca56210dbb4413539874a4e3b0670ac0b02206422cd069e6078bcdc8f698ff77aed65566b6fa1ff028cc322d14d036d2c192401473044022022fa0bda2e8e21716b9d74499665e4f31cbcf2bf49d0b535188e7e196e8e90d8022076ad55655fbd54637c0cf5bbd7f07905446e23a621f82a940cb07677dab2f8fe0147522102d01cf4abc1b6c22cc0e0e43e5277f1a7fb544eca52244cd4cb88bef5943c5563210284a2ffb3e6b6ac0ac9444b0ecd9856f79b53bbd3100894ec6dc80e6e956edbeb52ae00000000", Network.StratisMain);
 
             ScriptError error;
             Assert.True(toCheck.Inputs.AsIndexedInputs().Skip(0).First().VerifyScript(Network.StratisMain, new Script("OP_HASH160 442afa4f034468652c571202da0bf277cb729def OP_EQUAL"), Money.Satoshis(100000), ScriptVerify.Mandatory, out error));
@@ -1857,7 +1857,7 @@ namespace NBitcoin.Tests
         public void CanParseWitTransaction()
         {
             var hex = "01000000ec7b1a580001015d896079097272b13ed9cb22acfabeca9ce83f586d98cc15a08ea2f9c558013b0300000000ffffffff01605af40500000000160014a8cbb5eca9af499cecaa08457690ab367f23d95b0247304402200b6baba4287f3321ae4ec6ba66420d9a48c3f3bc331603e7dca6b12ca75cce6102207fa582041b025605c0474b99a2d3ab5080d6ea14ae3a50b7de92596abf40fb4b012102cdfc0f4701e0c8db3a0913de5f635d0ea76663a8f80925567358d558603fae3500000000";
-            Transaction tx = Transaction.Load(hex, Network.StratisMain.Consensus.ConsensusFactory);
+            Transaction tx = Transaction.Load(hex, Network.StratisMain);
             var bytes = tx.ToBytes();
             Assert.Equal(Encoders.Hex.EncodeData(bytes), hex);
 
@@ -1867,7 +1867,7 @@ namespace NBitcoin.Tests
             var noWit = tx.WithOptions(NetworkOptions.None, Network.StratisMain.Consensus.ConsensusFactory);
             Assert.True(noWit.GetSerializedSize() < tx.GetSerializedSize());
 
-            tx = Transaction.Load("01000000ec7b1a580001015d896079097272b13ed9cb22acfabeca9ce83f586d98cc15a08ea2f9c558013b0200000000ffffffff01605af40500000000160014a8cbb5eca9af499cecaa08457690ab367f23d95b02483045022100d3edd272c4ff247c36a1af34a2394859ece319f61ee85f759b94ec0ecd61912402206dbdc7c6ca8f7279405464d2d935b5e171dfd76656872f76399dbf333c0ac3a001fd08020000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000100000000", Network.StratisMain.Consensus.ConsensusFactory);
+            tx = Transaction.Load("01000000ec7b1a580001015d896079097272b13ed9cb22acfabeca9ce83f586d98cc15a08ea2f9c558013b0200000000ffffffff01605af40500000000160014a8cbb5eca9af499cecaa08457690ab367f23d95b02483045022100d3edd272c4ff247c36a1af34a2394859ece319f61ee85f759b94ec0ecd61912402206dbdc7c6ca8f7279405464d2d935b5e171dfd76656872f76399dbf333c0ac3a001fd08020000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000100000000", Network.StratisMain);
 
             ScriptError error;
             Assert.False(tx.Inputs.AsIndexedInputs().First().VerifyScript(Network.StratisMain, new Script("0 b7854eb547106248b136ca2bf48d8df2f1167588"), out error));
@@ -1879,7 +1879,7 @@ namespace NBitcoin.Tests
         private void bip143Test()
         {
             // this test is disable dor now as it is part of SegWit
-            Transaction tx = Transaction.Load("0100000002fff7f7881a8099afa6940d42d1e7f6362bec38171ea3edf433541db4e4ad969f0000000000eeffffffef51e1b804cc89d182d279655c3aa89e815b1b309fe287d9b2b55d57b90ec68a0100000000ffffffff02202cb206000000001976a9148280b37df378db99f66f85c95a783a76ac7a6d5988ac9093510d000000001976a9143bde42dbee7e4dbe6a21b2d50ce2f0167faa815988ac11000000", Network.StratisMain.Consensus.ConsensusFactory);
+            Transaction tx = Transaction.Load("0100000002fff7f7881a8099afa6940d42d1e7f6362bec38171ea3edf433541db4e4ad969f0000000000eeffffffef51e1b804cc89d182d279655c3aa89e815b1b309fe287d9b2b55d57b90ec68a0100000000ffffffff02202cb206000000001976a9148280b37df378db99f66f85c95a783a76ac7a6d5988ac9093510d000000001976a9143bde42dbee7e4dbe6a21b2d50ce2f0167faa815988ac11000000", Network.StratisMain);
             var h = Script.SignatureHash(Network.StratisMain, new Script(Encoders.Hex.DecodeData("76a9141d0f172a0ecb48aee1be1f2687d2963ae33f71a188ac")), tx, 1, SigHash.All, Money.Satoshis(0x23c34600L), HashVersion.Witness);
             Assert.Equal(new uint256(Encoders.Hex.DecodeData("c37af31116d1b27caf68aae9e3ac82f1477929014d5b917657d0eb49478cb670"), true), h);
         }
@@ -1912,7 +1912,7 @@ namespace NBitcoin.Tests
             foreach (var test in tests.Select(t => t.GetDynamic(0)))
             {
                 string raw = test.Raw;
-                Transaction tx = Transaction.Load(raw, Network.StratisMain.Consensus.ConsensusFactory);
+                Transaction tx = Transaction.Load(raw, Network.StratisMain);
                 Assert.Equal((int)test.JSON.vin_sz, tx.Inputs.Count);
                 Assert.Equal((int)test.JSON.vout_sz, tx.Outputs.Count);
                 Assert.Equal((uint)test.JSON.lock_time, (uint)tx.LockTime);
@@ -2281,7 +2281,7 @@ namespace NBitcoin.Tests
 
                             if (flag == SigHash.None)
                             {
-                                var clone = result.Clone(consensusFactory: Network.StratisMain.Consensus.ConsensusFactory);
+                                var clone = result.Clone(network: Network.StratisMain);
                                 foreach (var input in clone.Inputs)
                                 {
                                     if (input.PrevOut != signedCoin.Outpoint)
@@ -2441,7 +2441,7 @@ namespace NBitcoin.Tests
                         mapprevOutScriptPubKeysAmount[outpoint] = Money.Satoshis(vinput[3].Value<long>());
                 }
 
-                Transaction tx = Transaction.Load((string)test[1], Network.StratisMain.Consensus.ConsensusFactory);
+                Transaction tx = Transaction.Load((string)test[1], Network.StratisMain);
 
 
                 for (int i = 0; i < tx.Inputs.Count; i++)
@@ -2565,7 +2565,7 @@ namespace NBitcoin.Tests
                         mapprevOutScriptPubKeysAmount[outpoint] = Money.Satoshis(vinput[3].Value<int>());
                 }
 
-                Transaction tx = Transaction.Load((string)test[1], Network.StratisMain.Consensus.ConsensusFactory);
+                Transaction tx = Transaction.Load((string)test[1], Network.StratisMain);
 
                 var fValid = true;
                 fValid = tx.Check() == TransactionCheckResult.Success;
@@ -2697,7 +2697,7 @@ namespace NBitcoin.Tests
             outputm.Outputs[0].Value = Money.Satoshis(1);
             outputm.Outputs[0].ScriptPubKey = outscript;
 
-            output = outputm.Clone(consensusFactory: Network.StratisMain.Consensus.ConsensusFactory);
+            output = outputm.Clone(network: Network.StratisMain);
 
             Assert.True(output.Inputs.Count == 1);
             Assert.True(output.Inputs[0].ToBytes().SequenceEqual(outputm.Inputs[0].ToBytes()));
@@ -2717,7 +2717,7 @@ namespace NBitcoin.Tests
             inputm.Outputs[0].ScriptPubKey = Script.Empty;
             bool ret = SignSignature(keystore, output, inputm, 0);
             Assert.True(ret == success);
-            input = inputm.Clone(consensusFactory: Network.StratisMain.Consensus.ConsensusFactory);
+            input = inputm.Clone(network: Network.StratisMain);
             Assert.True(input.Inputs.Count == 1);
             Assert.True(input.Inputs[0].ToBytes().SequenceEqual(inputm.Inputs[0].ToBytes()));
             Assert.True(input.Outputs.Count == 1);
@@ -2769,7 +2769,7 @@ namespace NBitcoin.Tests
 
         void CheckWithFlag(Transaction output, Transaction input, ScriptVerify flags, bool success)
         {
-            Transaction inputi = input.Clone(consensusFactory: Network.StratisMain.Consensus.ConsensusFactory);
+            Transaction inputi = input.Clone(network: Network.StratisMain);
             ScriptEvaluationContext ctx = new ScriptEvaluationContext(Network.StratisMain);
             ctx.ScriptVerify = flags;
             bool ret = ctx.VerifyScript(inputi.Inputs[0].ScriptSig, output.Outputs[0].ScriptPubKey, new TransactionChecker(inputi, 0, output.Outputs[0].Value));
