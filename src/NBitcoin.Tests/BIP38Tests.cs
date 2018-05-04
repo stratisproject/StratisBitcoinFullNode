@@ -8,14 +8,6 @@ namespace NBitcoin.Tests
     //https://github.com/bitcoin/bips/blob/master/bip-0038.mediawiki
     public class BIP38Tests
     {
-        public BIP38Tests()
-        {
-            // These flags may get set due to static network initializers
-            // which include the initializers for Stratis.
-            Transaction.TimeStamp = false;
-            Block.BlockSignature = false;
-        }
-
         [Fact]
         [Trait("UnitTest", "UnitTest")]
         public void EncryptedSecretNoECmultiply()

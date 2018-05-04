@@ -1013,7 +1013,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                 {
                     // Figure out how to retrieve the destination address.
                     string destinationAddress = string.Empty;
-                    ScriptTemplate scriptTemplate = paidToOutput.ScriptPubKey.FindTemplate();
+                    ScriptTemplate scriptTemplate = paidToOutput.ScriptPubKey.FindTemplate(this.network);
                     switch (scriptTemplate.Type)
                     {
                         // Pay to PubKey can be found in outputs of staking transactions.

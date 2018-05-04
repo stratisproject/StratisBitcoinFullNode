@@ -7,12 +7,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
 {
     public class BlockHeaderRuleTest
     {
-        public BlockHeaderRuleTest()
-        {
-            Block.BlockSignature = false;
-            Transaction.TimeStamp = false;
-        }
-
         [Fact]
         public async Task BlockReceived_IsNextBlock_ValidationSucessAsync()
         {
@@ -20,7 +14,9 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             BlockHeaderRule blockHeaderRule = testContext.CreateRule<BlockHeaderRule>();
 
             var context = new RuleContext(new BlockValidationContext(), Network.RegTest.Consensus, testContext.Chain.Tip);
-            context.BlockValidationContext.Block = new Block(new BlockHeader { HashPrevBlock = testContext.Chain.Tip.HashBlock });
+            context.BlockValidationContext.Block = Network.RegTest.Consensus.ConsensusFactory.CreateBlock();
+            context.BlockValidationContext.Block.Header.HashPrevBlock = testContext.Chain.Tip.HashBlock;
+
             await blockHeaderRule.RunAsync(context);
 
             Assert.NotNull(context.BlockValidationContext.ChainedBlock);
@@ -35,7 +31,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             BlockHeaderRule blockHeaderRule = testContext.CreateRule<BlockHeaderRule>();
 
             var context = new RuleContext(new BlockValidationContext(), Network.RegTest.Consensus, testContext.Chain.Tip);
-            context.BlockValidationContext.Block = new Block(new BlockHeader { HashPrevBlock = uint256.Zero });
+            context.BlockValidationContext.Block = Network.RegTest.Consensus.ConsensusFactory.CreateBlock();
+            context.BlockValidationContext.Block.Header.HashPrevBlock = uint256.Zero;
             var error = await Assert.ThrowsAsync<ConsensusErrorException>(async () => await blockHeaderRule.RunAsync(context));
 
             Assert.Equal(ConsensusErrors.InvalidPrevTip, error.ConsensusError);

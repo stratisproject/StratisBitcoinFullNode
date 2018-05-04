@@ -4,7 +4,7 @@ namespace Stratis.Bitcoin.P2P.Protocol.Payloads
 {
     public class BitcoinSerializablePayload<T> : Payload where T : IBitcoinSerializable, new()
     {
-        private T obj = new T();
+        private T obj;
         public T Obj { get { return this.obj; } set { this.obj = value; } }
 
         public BitcoinSerializablePayload()

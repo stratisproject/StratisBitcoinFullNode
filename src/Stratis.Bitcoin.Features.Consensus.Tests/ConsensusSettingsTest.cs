@@ -39,29 +39,21 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
         [Fact]
         public void LoadConfigWithDefaultsSetsToNetworkDefault()
         {
-            try
-            {
-                Network network = Network.StratisMain;
-                ConsensusSettings settings = new ConsensusSettings().Load(NodeSettings.Default(network));
-                Assert.Equal(network.Consensus.DefaultAssumeValid, settings.BlockAssumedValid);
+            Network network = Network.StratisMain;
+            ConsensusSettings settings = new ConsensusSettings().Load(NodeSettings.Default(network));
+            Assert.Equal(network.Consensus.DefaultAssumeValid, settings.BlockAssumedValid);
 
-                network = Network.StratisTest;
-                settings = new ConsensusSettings().Load(NodeSettings.Default(network));
-                Assert.Equal(network.Consensus.DefaultAssumeValid, settings.BlockAssumedValid);
+            network = Network.StratisTest;
+            settings = new ConsensusSettings().Load(NodeSettings.Default(network));
+            Assert.Equal(network.Consensus.DefaultAssumeValid, settings.BlockAssumedValid);
 
-                network = Network.Main;
-                settings = new ConsensusSettings().Load(NodeSettings.Default(network));
-                Assert.Equal(network.Consensus.DefaultAssumeValid, settings.BlockAssumedValid);
+            network = Network.Main;
+            settings = new ConsensusSettings().Load(NodeSettings.Default(network));
+            Assert.Equal(network.Consensus.DefaultAssumeValid, settings.BlockAssumedValid);
 
-                network = Network.TestNet;
-                settings = new ConsensusSettings().Load(NodeSettings.Default(network));
-                Assert.Equal(network.Consensus.DefaultAssumeValid, settings.BlockAssumedValid);
-            }
-            finally
-            {
-                Block.BlockSignature = false;
-                Transaction.TimeStamp = false;
-            }
+            network = Network.TestNet;
+            settings = new ConsensusSettings().Load(NodeSettings.Default(network));
+            Assert.Equal(network.Consensus.DefaultAssumeValid, settings.BlockAssumedValid);
         }
     }
 }
