@@ -146,7 +146,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             var context = CreateContext(walletReference, "password", destinationKeys.PubKey.ScriptPubKey, new Money(7500), FeeType.Low, 0);
             var transactionResult = walletTransactionHandler.BuildTransaction(context);
 
-            var result = Transaction.Load(transactionResult.ToHex(), Network.Main.Consensus.ConsensusFactory);
+            var result = Transaction.Load(transactionResult.ToHex(), Network.Main);
             var expectedChangeAddressKeys = WalletTestsHelpers.GenerateAddressKeys(wallet, accountKeys.ExtPubKey, "1/0");
 
             Assert.Single(result.Inputs);

@@ -256,7 +256,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
                 foreach (var item in blockDict)
                 {
                     var bl = blocks.Single(b => b.GetHash() == new uint256(item.Key));
-                    Assert.Equal(bl.Header.GetHash(), Block.Load(item.Value, Network.Main.Consensus.ConsensusFactory).Header.GetHash());
+                    Assert.Equal(bl.Header.GetHash(), Block.Load(item.Value, Network.Main).Header.GetHash());
                 }
 
                 foreach (var item in transDict)
