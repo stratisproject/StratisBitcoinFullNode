@@ -8,7 +8,7 @@ using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.Miner
 {
-    public class PosBlockAssembler : PowBlockAssembler
+    public class PosBlockAssembler : BlockAssembler
     {
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
@@ -39,35 +39,34 @@ namespace Stratis.Bitcoin.Features.Miner
         {
             this.logger.LogTrace("({0}:'{1}',{2}.{3}:{4})", nameof(chainTip), chainTip, nameof(scriptPubKey), nameof(scriptPubKey.Length), scriptPubKey.Length);
 
-            base.Build(chainTip, scriptPubKey);
+            this.OnBuild(chainTip, scriptPubKey);
 
             this.coinbase.Outputs[0].ScriptPubKey = new Script();
             this.coinbase.Outputs[0].Value = Money.Zero;
 
-            IPosConsensusValidator posValidator = this.consensusLoop.Validator as IPosConsensusValidator;
+            IPosConsensusValidator posValidator = this.ConsensusLoop.Validator as IPosConsensusValidator;
             Guard.NotNull(posValidator, nameof(posValidator));
 
             this.logger.LogTrace("(-)");
-            return this.blockTemplate;
+
+            return this.BlockTemplate;
         }
 
-        protected override void UpdateHeaders()
+        public override void OnUpdateHeaders()
         {
             this.logger.LogTrace("()");
 
-            base.UpdateHeaders();
-
-            var stake = new BlockStake(this.block);
-            this.block.Header.Bits = this.stakeValidator.GetNextTargetRequired(this.stakeChain, this.ChainTip, this.network.Consensus, this.options.IsProofOfStake);
+            this.block.Header.HashPrevBlock = this.ChainTip.HashBlock;
+            this.block.Header.UpdateTime(this.DateTimeProvider.GetTimeOffset(), this.Network, this.ChainTip);
+            this.block.Header.Nonce = 0;
+            this.block.Header.Bits = this.stakeValidator.GetNextTargetRequired(this.stakeChain, this.ChainTip, this.Network.Consensus, this.Options.IsProofOfStake);
 
             this.logger.LogTrace("(-)");
         }
 
-        protected override void TestBlockValidity()
+        public override void OnTestBlockValidity()
         {
             this.logger.LogTrace("()");
-
-            //base.TestBlockValidity();
 
             this.logger.LogTrace("(-)");
         }
