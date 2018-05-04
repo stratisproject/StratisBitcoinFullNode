@@ -46,12 +46,12 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
 
             if (BlockStake.IsProofOfWork(block))
             {
-                bool res = block.BlockSignatur.IsEmpty();
+                bool res = block.BlockSignature.IsEmpty();
                 this.Logger.LogTrace("(-)[POW]:{0}", res);
                 return res;
             }
 
-            if (block.BlockSignatur.IsEmpty())
+            if (block.BlockSignature.IsEmpty())
             {
                 this.Logger.LogTrace("(-)[EMPTY]:false");
                 return false;
@@ -62,7 +62,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
             if (PayToPubkeyTemplate.Instance.CheckScriptPubKey(this.Parent.Network, txout.ScriptPubKey))
             {
                 PubKey pubKey = PayToPubkeyTemplate.Instance.ExtractScriptPubKeyParameters(txout.ScriptPubKey);
-                bool res = pubKey.Verify(block.GetHash(), new ECDSASignature(block.BlockSignatur.Signature));
+                bool res = pubKey.Verify(block.GetHash(), new ECDSASignature(block.BlockSignature.Signature));
                 this.Logger.LogTrace("(-)[P2PK]:{0}", res);
                 return res;
             }
@@ -96,7 +96,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
                 return false;
             }
 
-            bool verifyRes = new PubKey(data).Verify(block.GetHash(), new ECDSASignature(block.BlockSignatur.Signature));
+            bool verifyRes = new PubKey(data).Verify(block.GetHash(), new ECDSASignature(block.BlockSignature.Signature));
             this.Logger.LogTrace("(-):{0}", verifyRes);
             return verifyRes;
         }

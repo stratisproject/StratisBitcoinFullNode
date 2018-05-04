@@ -87,7 +87,7 @@ namespace NBitcoin
                 {
                     ProtocolVersion = version,
                     ConsensusFactory = consensusFactory ?? Network.Main.Consensus.ConsensusFactory
-				};
+                };
                 serializable.ReadWrite(bms);
                 return ToArrayEfficient(ms);
             }

@@ -20,7 +20,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         {
             this.ruleContext.BlockValidationContext.Block = Network.StratisMain.Consensus.ConsensusFactory.CreateBlock();
 
-            (this.ruleContext.BlockValidationContext.Block as PosBlock).BlockSignatur = new BlockSignature() {Signature = new byte[] {0x2, 0x3}};
+            (this.ruleContext.BlockValidationContext.Block as PosBlock).BlockSignature = new BlockSignature() {Signature = new byte[] {0x2, 0x3}};
               
             Assert.True(BlockStake.IsProofOfWork(this.ruleContext.BlockValidationContext.Block));
 
@@ -72,7 +72,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             block.Transactions.Add(transaction);
 
             ECDSASignature signature = this.key.Sign(block.GetHash());
-            (block as PosBlock).BlockSignatur = new BlockSignature { Signature = signature.ToDER() };
+            (block as PosBlock).BlockSignature = new BlockSignature { Signature = signature.ToDER() };
 
             this.ruleContext.BlockValidationContext.Block = block;
             Assert.True(BlockStake.IsProofOfStake(this.ruleContext.BlockValidationContext.Block));
@@ -100,7 +100,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             block.Transactions.Add(transaction);
 
             ECDSASignature signature = this.key.Sign(block.GetHash());
-            (block as PosBlock).BlockSignatur = new BlockSignature { Signature = signature.ToDER() };
+            (block as PosBlock).BlockSignature = new BlockSignature { Signature = signature.ToDER() };
 
             this.ruleContext.BlockValidationContext.Block = block;
             Assert.True(BlockStake.IsProofOfStake(this.ruleContext.BlockValidationContext.Block));
@@ -128,7 +128,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             block.Transactions.Add(transaction);
 
             ECDSASignature signature = this.key.Sign(block.GetHash());
-            (block as PosBlock).BlockSignatur = new BlockSignature { Signature = signature.ToDER() };
+            (block as PosBlock).BlockSignature = new BlockSignature { Signature = signature.ToDER() };
 
             this.ruleContext.BlockValidationContext.Block = block;
             Assert.True(BlockStake.IsProofOfStake(this.ruleContext.BlockValidationContext.Block));
@@ -156,7 +156,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             block.Transactions.Add(transaction);
 
             ECDSASignature signature = this.key.Sign(block.GetHash());
-            (block as PosBlock).BlockSignatur = new BlockSignature { Signature = signature.ToDER() };
+            (block as PosBlock).BlockSignature = new BlockSignature { Signature = signature.ToDER() };
 
             this.ruleContext.BlockValidationContext.Block = block;
             Assert.True(BlockStake.IsProofOfStake(this.ruleContext.BlockValidationContext.Block));
@@ -184,7 +184,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             block.Transactions.Add(transaction);
 
             ECDSASignature signature = this.key.Sign(block.GetHash());
-            (block as PosBlock).BlockSignatur = new BlockSignature { Signature = signature.ToDER() };
+            (block as PosBlock).BlockSignature = new BlockSignature { Signature = signature.ToDER() };
 
             this.ruleContext.BlockValidationContext.Block = block;
             Assert.True(BlockStake.IsProofOfStake(this.ruleContext.BlockValidationContext.Block));
@@ -216,7 +216,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             block.Transactions.Add(transaction);
 
             ECDSASignature signature = this.key.Sign(block.GetHash());
-            (block as PosBlock).BlockSignatur = new BlockSignature { Signature = signature.ToDER() };
+            (block as PosBlock).BlockSignature = new BlockSignature { Signature = signature.ToDER() };
 
             this.ruleContext.BlockValidationContext.Block = block;
             Assert.True(BlockStake.IsProofOfStake(this.ruleContext.BlockValidationContext.Block));
@@ -246,7 +246,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             block.Transactions.Add(transaction);
 
             ECDSASignature signature = this.key.Sign(block.GetHash());
-            (block as PosBlock).BlockSignatur = new BlockSignature { Signature = signature.ToDER() };
+            (block as PosBlock).BlockSignature = new BlockSignature { Signature = signature.ToDER() };
 
             this.ruleContext.BlockValidationContext.Block = block;
             Assert.True(BlockStake.IsProofOfStake(this.ruleContext.BlockValidationContext.Block));
@@ -273,7 +273,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             block.Transactions.Add(transaction);
 
             ECDSASignature signature = this.key.Sign(block.GetHash());
-            (block as PosBlock).BlockSignatur = new BlockSignature { Signature = signature.ToDER() };
+            (block as PosBlock).BlockSignature = new BlockSignature { Signature = signature.ToDER() };
 
             this.ruleContext.BlockValidationContext.Block = block;
             Assert.True(BlockStake.IsProofOfStake(this.ruleContext.BlockValidationContext.Block));
@@ -297,7 +297,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             transaction.Outputs.Add(new TxOut(Money.Zero, (IDestination)null));
             transaction.Outputs.Add(new TxOut(Money.Zero, (IDestination)null));
             block.Transactions.Add(transaction);
-            (block as PosBlock).BlockSignatur = new BlockSignature();
+            (block as PosBlock).BlockSignature = new BlockSignature();
 
             this.ruleContext.BlockValidationContext.Block = block;
             Assert.True(BlockStake.IsProofOfWork(this.ruleContext.BlockValidationContext.Block));

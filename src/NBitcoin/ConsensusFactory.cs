@@ -10,7 +10,7 @@ namespace NBitcoin
     public class ConsensusFactory
     {
         /// <summary>
-        /// A dictionary for types assignable from <see cref="BlockHeader"/>
+        /// A dictionary for types assignable from <see cref="BlockHeader"/>.
         /// </summary>
         private readonly ConcurrentDictionary<Type, bool> isAssignableFromBlockHeader = new ConcurrentDictionary<Type, bool>();
 
@@ -20,7 +20,7 @@ namespace NBitcoin
         private readonly TypeInfo blockHeaderType = typeof(BlockHeader).GetTypeInfo();
 
         /// <summary>
-        /// A dictionary for types assignable from <see cref="Block"/>
+        /// A dictionary for types assignable from <see cref="Block"/>.
         /// </summary>
         private readonly ConcurrentDictionary<Type, bool> isAssignableFromBlock = new ConcurrentDictionary<Type, bool>();
 
@@ -30,7 +30,7 @@ namespace NBitcoin
         private readonly TypeInfo blockType = typeof(Block).GetTypeInfo();
 
         /// <summary>
-        /// A dictionary for types assignable from <see cref="Transaction"/>
+        /// A dictionary for types assignable from <see cref="Transaction"/>.
         /// </summary>
         private readonly ConcurrentDictionary<Type, bool> isAssignableFromTransaction = new ConcurrentDictionary<Type, bool>();
 
@@ -40,30 +40,30 @@ namespace NBitcoin
         private readonly TypeInfo transactionType = typeof(Transaction).GetTypeInfo();
 
         /// <summary>
-        /// Check if the generic type is assignable from <see cref="BlockHeader"/>
+        /// Check if the generic type is assignable from <see cref="BlockHeader"/>.
         /// </summary>
-        /// <typeparam name="T">The <see cref="BlockHeader"/> type.</typeparam>
-        /// <returns><c>true</c> if its assignable.</returns>
+        /// <typeparam name="T">The type to check if it is IsAssignable from <see cref="BlockHeader"/>.</typeparam>
+        /// <returns><c>true</c> if it is assignable.</returns>
         protected bool IsBlockHeader<T>()
         {
             return this.IsAssignable<T>(this.blockHeaderType, this.isAssignableFromBlockHeader);
         }
 
         /// <summary>
-        /// Check if the generic type is assignable from <see cref="Block"/>
+        /// Check if the generic type is assignable from <see cref="Block"/>.
         /// </summary>
-        /// <typeparam name="T">The <see cref="Block"/> type.</typeparam>
-        /// <returns><c>true</c> if its assignable.</returns>
+        /// <typeparam name="T">The type to check if it is IsAssignable from <see cref="Block"/>.</typeparam>
+        /// <returns><c>true</c> if it is assignable.</returns>
         protected bool IsBlock<T>()
         {
             return this.IsAssignable<T>(this.blockType, this.isAssignableFromBlock);
         }
 
         /// <summary>
-        /// Check if the generic type is assignable from <see cref="Transaction"/>
+        /// Check if the generic type is assignable from <see cref="Transaction"/>.
         /// </summary>
-        /// <typeparam name="T">The <see cref="Transaction"/> type.</typeparam>
-        /// <returns><c>true</c> if its assignable.</returns>
+        /// <typeparam name="T">The type to check if it is IsAssignable from <see cref="Transaction"/>.</typeparam>
+        /// <returns><c>true</c> if it is assignable.</returns>
         protected bool IsTransaction<T>()
         {
             return this.IsAssignable<T>(this.transactionType, this.isAssignableFromTransaction);
@@ -81,7 +81,7 @@ namespace NBitcoin
         /// <typeparam name="T">The generic type to check.</typeparam>
         /// <param name="type">The type to compare against.</param>
         /// <param name="cache">A collection of already checked types.</param>
-        /// <returns><c>true</c> if its assignable.</returns>
+        /// <returns><c>true</c> if it is assignable.</returns>
         private bool IsAssignable<T>(TypeInfo type, ConcurrentDictionary<Type, bool> cache)
         {
             if (!cache.TryGetValue(typeof(T), out bool isAssignable))
@@ -98,7 +98,7 @@ namespace NBitcoin
         /// </summary>
         /// <typeparam name="T">The generic type to resolve.</typeparam>
         /// <param name="result">If the type is known it will be initialized.</param>
-        /// <returns><c>true</c> if its known.</returns>
+        /// <returns><c>true</c> if it is known.</returns>
         public virtual bool TryCreateNew<T>(out T result) where T : IBitcoinSerializable
         {
             result = default(T);
@@ -124,7 +124,7 @@ namespace NBitcoin
         /// A set of flags representing the capabilities of the protocol.
         /// </summary>
         /// <param name="protocolVersion">The version to build the flags from.</param>
-        /// <returns>The <see cref="ProtocolCapabilities"/></returns>
+        /// <returns>The <see cref="ProtocolCapabilities"/>.</returns>
         public virtual ProtocolCapabilities GetProtocolCapabilities(uint protocolVersion)
         {
             return new ProtocolCapabilities()
@@ -187,7 +187,7 @@ namespace NBitcoin
         }
 
         /// <summary>
-        /// nTime field added to CAddress, starting with this version;
+        /// nTime field added to CAddress, starting with this version.
         /// if possible, avoid requesting addresses nodes older than this.
         /// </summary>
         public bool SupportTimeAddress

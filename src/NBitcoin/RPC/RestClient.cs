@@ -141,7 +141,7 @@ namespace NBitcoin.RPC
 
             return Enumerable
                 .Range(0, result.Length / hexSize)
-                .Select(i => new BlockHeader(result.SafeSubarray(i * hexSize, hexSize), this.network));
+                .Select(i => BlockHeader.Load(result.SafeSubarray(i * hexSize, hexSize), this.network));
         }
 
         /// <summary>

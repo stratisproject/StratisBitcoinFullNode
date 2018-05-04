@@ -9,7 +9,6 @@ namespace Stratis.Bitcoin.P2P.Protocol.Payloads
 
         public BitcoinSerializablePayload()
         {
-            //obj = new T();
         }
 
         public BitcoinSerializablePayload(T obj)

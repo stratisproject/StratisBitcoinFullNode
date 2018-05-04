@@ -103,7 +103,7 @@ namespace NBitcoin.RPC
                 if (posBlock == null)
                     throw new Exception();
 
-                posBlock.BlockSignatur.Signature = Encoders.Hex.DecodeData(rpcBlock.signature);
+                posBlock.BlockSignature.Signature = Encoders.Hex.DecodeData(rpcBlock.signature);
             }
 
             // todo: parse transactions

@@ -682,7 +682,7 @@ namespace Stratis.Bitcoin.Features.Miner
                     // Append a signature to our block.
                     ECDSASignature signature = coinstakeContext.Key.Sign(block.GetHash());
 
-                    block.BlockSignatur = new BlockSignature { Signature = signature.ToDER() };
+                    block.BlockSignature = new BlockSignature { Signature = signature.ToDER() };
                     this.logger.LogTrace("(-):true");
                     return true;
                 }

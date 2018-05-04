@@ -66,65 +66,19 @@ namespace NBitcoin
         {
             this.SetNull();
         }
-
-        public BlockHeader(byte[] bytes)
+        
+        public static BlockHeader Load(byte[] hex, Network network)
         {
-            this.ReadWrite(bytes);
-        }
-
-        public BlockHeader(string hex, Network network)
-            : this(hex, network?.Consensus?.ConsensusFactory ?? throw new ArgumentNullException(nameof(network)))
-        {
-
-        }
-
-        public BlockHeader(string hex, Consensus consensus)
-            : this(hex, consensus?.ConsensusFactory ?? throw new ArgumentNullException(nameof(consensus)))
-        {
-
-        }
-        public BlockHeader(byte[] data, Network network)
-            : this(data, network?.Consensus?.ConsensusFactory ?? throw new ArgumentNullException(nameof(network)))
-        {
-
-        }
-
-        public BlockHeader(byte[] data, Consensus consensus)
-            : this(data, consensus?.ConsensusFactory ?? throw new ArgumentNullException(nameof(consensus)))
-        {
-        }
-
-        public BlockHeader(byte[] data, ConsensusFactory consensusFactory)
-        {
-            if (data == null)
-                throw new ArgumentNullException(nameof(data));
-
-            if (consensusFactory == null)
-                throw new ArgumentNullException(nameof(consensusFactory));
-
-
-            BitcoinStream bs = new BitcoinStream(data)
-            {
-                ConsensusFactory = consensusFactory
-            };
-
-            this.ReadWrite(bs);
-        }
-
-        public BlockHeader(string hex, ConsensusFactory consensusFactory)
-        {
-            if (string.IsNullOrEmpty(hex))
+            if (hex == null)
                 throw new ArgumentNullException(nameof(hex));
 
-            if (consensusFactory == null)
-                throw new ArgumentNullException(nameof(consensusFactory));
+            if (network == null)
+                throw new ArgumentNullException(nameof(network));
 
-            BitcoinStream bs = new BitcoinStream(Encoders.Hex.DecodeData(hex))
-            {
-                ConsensusFactory = consensusFactory
-            };
+            BlockHeader blockHeader = network.Consensus.ConsensusFactory.CreateBlockHeader();
+            blockHeader.ReadWrite(hex, consensusFactory: network.Consensus.ConsensusFactory);
 
-            this.ReadWrite(bs);
+            return blockHeader;
         }
 
         internal void SetNull()
@@ -189,7 +143,9 @@ namespace NBitcoin
         /// <param name="lazily">If <c>true</c>, the hash will be calculated and cached at the first call to GetHash(), else it will be immediately.</param>
         public void PrecomputeHash(bool invalidateExisting = false, bool lazily = false)
         {
-            this.hashes = invalidateExisting ? new uint256[1] : this.hashes ?? new uint256[1];
+            if (this.hashes == null || invalidateExisting)
+                this.hashes = new uint256[1];
+
             if (!lazily && this.hashes[0] == null)
                 this.hashes[0] = this.GetHash();
         }

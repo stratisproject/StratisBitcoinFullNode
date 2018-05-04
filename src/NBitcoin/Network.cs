@@ -240,8 +240,8 @@ namespace NBitcoin
         private uint magic;
         private byte[] alertPubKeyArray;
         private PubKey alertPubKey;
-        private readonly List<DNSSeedData> seeds = new List<DNSSeedData>();
-        private readonly List<NetworkAddress> fixedSeeds = new List<NetworkAddress>();
+        private readonly List<DNSSeedData> seeds;
+        private readonly List<NetworkAddress> fixedSeeds;
         private readonly Dictionary<int, CheckpointInfo> checkpoints = new Dictionary<int, CheckpointInfo>();
         private Block genesis;
         private Consensus consensus = new Consensus();
@@ -328,7 +328,7 @@ namespace NBitcoin
 
         public uint Magic => this.magic;
 
-        static readonly ConcurrentDictionary<string, Network> NetworksContainer = new ConcurrentDictionary<string, Network>();
+        private static readonly ConcurrentDictionary<string, Network> NetworksContainer = new ConcurrentDictionary<string, Network>();
 
         internal static Network Register(NetworkBuilder builder)
         {

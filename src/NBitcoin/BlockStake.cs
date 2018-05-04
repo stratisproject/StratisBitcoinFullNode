@@ -246,7 +246,7 @@ namespace NBitcoin
         /// <summary>
         /// The block signature type.
         /// </summary>
-        public BlockSignature BlockSignatur
+        public BlockSignature BlockSignature
         {
             get { return this.blockSignature; }
             set { this.blockSignature = value; }
