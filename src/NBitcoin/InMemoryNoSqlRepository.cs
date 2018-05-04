@@ -8,8 +8,8 @@ namespace NBitcoin
     {
         Dictionary<string, byte[]> table = new Dictionary<string, byte[]>();
 
-        public InMemoryNoSqlRepository(ConsensusFactory consensusFactory = null)
-            :base(consensusFactory ?? Network.Main.Consensus.ConsensusFactory)
+        public InMemoryNoSqlRepository(Network network = null)
+            :base(network ?? Network.Main)
         {
         }
 

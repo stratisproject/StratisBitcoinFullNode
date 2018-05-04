@@ -14,8 +14,8 @@ namespace NBitcoin
             }
         }
 
-        public NoSqlTransactionRepository(ConsensusFactory consensusFactory = null)
-            :this(new InMemoryNoSqlRepository(consensusFactory))
+        public NoSqlTransactionRepository(Network network = null)
+            :this(new InMemoryNoSqlRepository(network))
         {
 
         }

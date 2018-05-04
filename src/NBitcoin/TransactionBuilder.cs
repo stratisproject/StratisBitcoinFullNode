@@ -411,7 +411,7 @@ namespace NBitcoin
             public void RestoreMemento(TransactionBuildingContext memento)
             {
                 _Marker = memento._Marker == null ? null : new ColorMarker(memento._Marker.GetScript());
-                Transaction = memento.Transaction.Clone(consensusFactory:memento.Builder.Network.Consensus.ConsensusFactory);
+                Transaction = memento.Transaction.Clone(network: memento.Builder.Network);
                 AdditionalFees = memento.AdditionalFees;
             }
 
@@ -1072,7 +1072,7 @@ namespace NBitcoin
         {
             TransactionBuildingContext ctx = new TransactionBuildingContext(this);
             if(_CompletedTransaction != null)
-                ctx.Transaction = _CompletedTransaction.Clone(consensusFactory: this.Network.Consensus.ConsensusFactory);
+                ctx.Transaction = _CompletedTransaction.Clone(network: this.Network);
             if(_LockTime != null)
                 ctx.Transaction.LockTime = _LockTime.Value;
             foreach(var group in _BuilderGroups)
@@ -1131,7 +1131,7 @@ namespace NBitcoin
                 if(builderList[i].Target == _SubstractFeeBuilder)
                 {
                     builderList.Remove(builderList[i]);
-                    var newTxOut = _SubstractFeeBuilder._TxOut.Clone(consensusFactory: this.Network.Consensus.ConsensusFactory);
+                    var newTxOut = _SubstractFeeBuilder._TxOut.Clone(network: this.Network);
                     newTxOut.Value -= fees;
                     builderList.Insert(i, new SendBuilder(newTxOut).Build);
                 }
@@ -1194,7 +1194,7 @@ namespace NBitcoin
 
         public Transaction SignTransaction(Transaction transaction, SigHash sigHash)
         {
-            var tx = transaction.Clone(consensusFactory: this.Network.Consensus.ConsensusFactory);
+            var tx = transaction.Clone(network: this.Network);
             SignTransactionInPlace(tx, sigHash);
             return tx;
         }
@@ -1422,7 +1422,7 @@ namespace NBitcoin
         {
             if(tx == null)
                 throw new ArgumentNullException("tx");
-            var clone = tx.Clone(consensusFactory:this.Network.Consensus.ConsensusFactory);
+            var clone = tx.Clone(network:this.Network);
             clone.Inputs.Clear();
             var baseSize = clone.GetSerializedSize();
 
@@ -1732,7 +1732,7 @@ namespace NBitcoin
         {
             if(_CompletedTransaction != null)
                 throw new InvalidOperationException("Transaction to complete already set");
-            _CompletedTransaction = transaction.Clone(consensusFactory:this.Network.Consensus.ConsensusFactory);
+            _CompletedTransaction = transaction.Clone(network:this.Network);
             return this;
         }
 
@@ -1794,7 +1794,7 @@ namespace NBitcoin
             if(transactions.Length == 0)
                 return null;
 
-            Transaction tx = transactions[0].Clone(consensusFactory: this.Network.Consensus.ConsensusFactory);
+            Transaction tx = transactions[0].Clone(network: this.Network);
             for(int i = 1; i < transactions.Length; i++)
             {
                 var signed = transactions[i];
@@ -1819,7 +1819,7 @@ namespace NBitcoin
                 return signed2;
             if(signed2 == null)
                 return signed1;
-            var tx = signed1.Clone(consensusFactory: this.Network.Consensus.ConsensusFactory);
+            var tx = signed1.Clone(network: this.Network);
             for(int i = 0; i < tx.Inputs.Count; i++)
             {
                 if(i >= signed2.Inputs.Count)

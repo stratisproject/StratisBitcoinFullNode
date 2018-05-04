@@ -1171,29 +1171,29 @@ namespace NBitcoin
             this.FromBytes(bytes);
         }
 
-        public static Transaction Load(string hex, ConsensusFactory consensusFactory, ProtocolVersion version = ProtocolVersion.PROTOCOL_VERSION)
+        public static Transaction Load(string hex, Network network, ProtocolVersion version = ProtocolVersion.PROTOCOL_VERSION)
         {
             if (hex == null)
                 throw new ArgumentNullException(nameof(hex));
 
-            if (consensusFactory == null)
-                throw new ArgumentNullException(nameof(consensusFactory));
+            if (network == null)
+                throw new ArgumentNullException(nameof(network));
 
-            var transaction = consensusFactory.CreateTransaction();
-            transaction.FromBytes(Encoders.Hex.DecodeData(hex), version, consensusFactory);
+            var transaction = network.Consensus.ConsensusFactory.CreateTransaction();
+            transaction.FromBytes(Encoders.Hex.DecodeData(hex), version, network);
             return transaction;
         }
 
-        public static Transaction Load(byte[] bytes, ConsensusFactory consensusFactory)
+        public static Transaction Load(byte[] bytes, Network network)
         {
             if (bytes == null)
                 throw new ArgumentNullException(nameof(bytes));
 
-            if (consensusFactory == null)
-                throw new ArgumentNullException(nameof(consensusFactory));
+            if (network == null)
+                throw new ArgumentNullException(nameof(network));
 
-            var transaction = consensusFactory.CreateTransaction();
-            transaction.FromBytes(bytes, consensusFactory: consensusFactory);
+            var transaction = network.Consensus.ConsensusFactory.CreateTransaction();
+            transaction.FromBytes(bytes, network: network);
             return transaction;
         }
 
@@ -1372,9 +1372,9 @@ namespace NBitcoin
             _Hashes = new uint256[2];
         }
 
-        public Transaction Clone(bool cloneCache, ConsensusFactory consensusFactory = null)
+        public Transaction Clone(bool cloneCache, Network network = null)
         {
-            var clone = BitcoinSerializableExtensions.Clone(this, consensusFactory:consensusFactory);
+            var clone = BitcoinSerializableExtensions.Clone(this, network: network);
             if(cloneCache)
                 clone._Hashes = _Hashes.ToArray();
             return clone;
