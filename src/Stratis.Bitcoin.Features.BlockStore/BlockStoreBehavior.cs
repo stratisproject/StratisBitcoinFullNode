@@ -314,7 +314,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
                     this.logger.LogTrace("Sending block '{0}' to peer '{1}'.", item.Hash, peer.RemoteSocketEndpoint);
 
                     //TODO strip block of witness if node does not support
-                    await peer.SendMessageAsync(new BlockPayload(block.WithOptions(peer.SupportedTransactionOptions))).ConfigureAwait(false);
+                    await peer.SendMessageAsync(new BlockPayload(block.WithOptions(this.chain.Network.Consensus.ConsensusFactory, peer.SupportedTransactionOptions))).ConfigureAwait(false);
                 }
 
                 // If the peer is syncing using "getblocks" message we are supposed to send 

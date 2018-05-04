@@ -8,24 +8,14 @@ namespace NBitcoin
         void ReadWrite(BitcoinStream stream);
     }
 
-    public interface IHaveNetworkOptions
-    {
-        NetworkOptions GetNetworkOptions();
-    }
-
     public static class BitcoinSerializableExtensions
     {
-        public static void ReadWrite(this IBitcoinSerializable serializable, Stream stream, bool serializing, ProtocolVersion version = ProtocolVersion.PROTOCOL_VERSION, 
-            NetworkOptions options = null)
+        public static void ReadWrite(this IBitcoinSerializable serializable, Stream stream, bool serializing, ProtocolVersion version = ProtocolVersion.PROTOCOL_VERSION, ConsensusFactory consensusFactory = null)
         {
-            // If no options have been provided then take the options from the serializable
-            if (options == null && serializing && serializable is IHaveNetworkOptions)
-                options = (serializable as IHaveNetworkOptions).GetNetworkOptions();
-
             serializable.ReadWrite(new BitcoinStream(stream, serializing)
             {
                 ProtocolVersion = version,
-                TransactionOptions = options ?? NetworkOptions.TemporaryOptions
+                ConsensusFactory = consensusFactory ?? Network.Main.Consensus.ConsensusFactory,
             });
         }
         public static int GetSerializedSize(this IBitcoinSerializable serializable, ProtocolVersion version, SerializationType serializationType)
@@ -42,16 +32,14 @@ namespace NBitcoin
             serializable.ReadWrite(bms);
             return (int)bms.Counter.WrittenBytes;
         }
-        public static int GetSerializedSize(this IBitcoinSerializable serializable, ProtocolVersion version = ProtocolVersion.PROTOCOL_VERSION)
-        {
-            return GetSerializedSize(serializable, version, SerializationType.Disk);
-        }
 
-        public static string ToHex(this IBitcoinSerializable serializable, SerializationType serializationType = SerializationType.Disk)
+        public static string ToHex(this IBitcoinSerializable serializable, Network network, SerializationType serializationType = SerializationType.Disk)
         {
             using (var memoryStream = new MemoryStream())
             {
                 BitcoinStream bitcoinStream = new BitcoinStream(memoryStream, true);
+                bitcoinStream.ConsensusFactory = network.Consensus.ConsensusFactory;
+
                 bitcoinStream.Type = serializationType;
                 bitcoinStream.ReadWrite(serializable);
                 memoryStream.Seek(0, SeekOrigin.Begin);
@@ -60,43 +48,45 @@ namespace NBitcoin
             }
         }
 
-        public static void ReadWrite(this IBitcoinSerializable serializable, byte[] bytes, ProtocolVersion version = ProtocolVersion.PROTOCOL_VERSION, 
-            NetworkOptions options = null)
+        public static int GetSerializedSize(this IBitcoinSerializable serializable, ProtocolVersion version = ProtocolVersion.PROTOCOL_VERSION)
         {
-            ReadWrite(serializable, new MemoryStream(bytes), false, version, options);
+            return GetSerializedSize(serializable, version, SerializationType.Disk);
+        }
+        
+        public static void ReadWrite(this IBitcoinSerializable serializable, byte[] bytes, ProtocolVersion version = ProtocolVersion.PROTOCOL_VERSION, ConsensusFactory consensusFactory = null)
+        {
+            ReadWrite(serializable, new MemoryStream(bytes), false, version, consensusFactory);
         }
 
-        public static void FromBytes(this IBitcoinSerializable serializable, byte[] bytes, ProtocolVersion version = ProtocolVersion.PROTOCOL_VERSION, 
-            NetworkOptions options = null)
+        public static void FromBytes(this IBitcoinSerializable serializable, byte[] bytes, ProtocolVersion version = ProtocolVersion.PROTOCOL_VERSION, ConsensusFactory consensusFactory = null)
         {
             var bms = new BitcoinStream(bytes)
             {
                 ProtocolVersion = version,
-                TransactionOptions = options
+                ConsensusFactory = consensusFactory ?? Network.Main.Consensus.ConsensusFactory
             };
             serializable.ReadWrite(bms);
         }
 
-        public static T Clone<T>(this T serializable, ProtocolVersion version = ProtocolVersion.PROTOCOL_VERSION, NetworkOptions options = null) where T : IBitcoinSerializable, new()
+        public static T Clone<T>(this T serializable, ProtocolVersion version = ProtocolVersion.PROTOCOL_VERSION, ConsensusFactory consensusFactory = null) where T : IBitcoinSerializable, new()
         {
-            options = options ?? NetworkOptions.TemporaryOptions;
-            var instance = new T();
-            if (serializable is IHaveNetworkOptions haveNetworkOptions)
-                options = haveNetworkOptions.GetNetworkOptions();
-            instance.FromBytes(serializable.ToBytes(version, options), version, options);
+	        consensusFactory = consensusFactory ?? Network.Main.Consensus.ConsensusFactory;
+
+            if (!consensusFactory.TryCreateNew<T>(out T instance))
+                instance = new T();
+
+            instance.FromBytes(serializable.ToBytes(version, consensusFactory), version, consensusFactory);
             return instance;
         }
         
-        public static byte[] ToBytes(this IBitcoinSerializable serializable, ProtocolVersion version = ProtocolVersion.PROTOCOL_VERSION,
-            NetworkOptions options = null)
+        public static byte[] ToBytes(this IBitcoinSerializable serializable, ProtocolVersion version = ProtocolVersion.PROTOCOL_VERSION, ConsensusFactory consensusFactory = null)
         {
             using (MemoryStream ms = new MemoryStream())
             {
                 var bms = new BitcoinStream(ms, true)
                 {
                     ProtocolVersion = version,
-                    // If no options have been provided then take the options from the serializable (or default)
-                    TransactionOptions = options ?? ((serializable as IHaveNetworkOptions)?.GetNetworkOptions() ?? NetworkOptions.TemporaryOptions)
+                    ConsensusFactory = consensusFactory ?? Network.Main.Consensus.ConsensusFactory
                 };
                 serializable.ReadWrite(bms);
                 return ToArrayEfficient(ms);

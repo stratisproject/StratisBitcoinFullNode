@@ -157,6 +157,7 @@ namespace NBitcoin
     }
     public class ScriptEvaluationContext
     {
+        public Network Network { get; }
 
         class CScriptNum
         {
@@ -407,22 +408,26 @@ namespace NBitcoin
             }
         }
 
-        public ScriptEvaluationContext()
+        public ScriptEvaluationContext(Network network)
         {
-            ScriptVerify = NBitcoin.ScriptVerify.Standard;
-            SigHash = NBitcoin.SigHash.Undefined;
-            Error = ScriptError.UnknownError;
+            this.Network = network;
+            this.ScriptVerify = NBitcoin.ScriptVerify.Standard;
+            this.SigHash = NBitcoin.SigHash.Undefined;
+            this.Error = ScriptError.UnknownError;
         }
+
         public ScriptVerify ScriptVerify
         {
             get;
             set;
         }
+
         public SigHash SigHash
         {
             get;
             set;
         }
+
         public bool VerifyScript(Script scriptSig, Script scriptPubKey, Transaction txTo, int nIn, Money value)
         {
             return VerifyScript(scriptSig, scriptPubKey, new TransactionChecker(txTo, nIn, value));
@@ -454,7 +459,7 @@ namespace NBitcoin
 
             if((ScriptVerify & ScriptVerify.Witness) != 0)
             {
-                var wit = PayToWitTemplate.Instance.ExtractScriptPubKeyParameters2(scriptPubKey);
+                var wit = PayToWitTemplate.Instance.ExtractScriptPubKeyParameters2(this.Network, scriptPubKey);
                 if(wit != null)
                 {
                     hadWitness = true;
@@ -475,7 +480,7 @@ namespace NBitcoin
             }
 
             // Additional validation for spend-to-script-hash transactions:
-            if(((ScriptVerify & ScriptVerify.P2SH) != 0) && scriptPubKey.IsPayToScriptHash)
+            if(((ScriptVerify & ScriptVerify.P2SH) != 0) && scriptPubKey.IsPayToScriptHash(this.Network))
             {
                 Load(evaluationCopy);
                 evaluationCopy = this;
@@ -499,7 +504,7 @@ namespace NBitcoin
                 // P2SH witness program
                 if((ScriptVerify & ScriptVerify.Witness) != 0)
                 {
-                    var wit = PayToWitTemplate.Instance.ExtractScriptPubKeyParameters2(redeem);
+                    var wit = PayToWitTemplate.Instance.ExtractScriptPubKeyParameters2(this.Network, redeem);
                     if(wit != null)
                     {
                         hadWitness = true;
@@ -1735,19 +1740,21 @@ namespace NBitcoin
             set;
         }
 
-        static byte[] vchMaxModOrder = new byte[]{
-0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,
- 0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFE,
- 0xBA,0xAE,0xDC,0xE6,0xAF,0x48,0xA0,0x3B,
-0xBF,0xD2,0x5E,0x8C,0xD0,0x36,0x41,0x40
-};
+        static byte[] vchMaxModOrder = new byte[]
+        {
+            0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,
+            0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFE,
+            0xBA,0xAE,0xDC,0xE6,0xAF,0x48,0xA0,0x3B,
+            0xBF,0xD2,0x5E,0x8C,0xD0,0x36,0x41,0x40
+        };
 
-        static byte[] vchMaxModHalfOrder = new byte[]{
- 0x7F,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,
- 0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,
- 0x5D,0x57,0x6E,0x73,0x57,0xA4,0x50,0x1D,
-0xDF,0xE9,0x2F,0x46,0x68,0x1B,0x20,0xA0
-};
+        static byte[] vchMaxModHalfOrder = new byte[]
+        {
+             0x7F,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,
+             0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,
+             0x5D,0x57,0x6E,0x73,0x57,0xA4,0x50,0x1D,
+             0xDF,0xE9,0x2F,0x46,0x68,0x1B,0x20,0xA0
+        };
 
         private static bool CheckSignatureElement(byte[] vchSig, int i, int len, bool half)
         {
@@ -1979,7 +1986,7 @@ namespace NBitcoin
             if(!IsAllowedSignature(scriptSig.SigHash))
                 return false;
 
-            uint256 sighash = Script.SignatureHash(scriptCode, checker.Transaction, checker.Index, scriptSig.SigHash, checker.Amount, (HashVersion)sigversion, checker.PrecomputedTransactionData);
+            uint256 sighash = Script.SignatureHash(this.Network, scriptCode, checker.Transaction, checker.Index, scriptSig.SigHash, checker.Amount, (HashVersion)sigversion, checker.PrecomputedTransactionData);
             _SignedHashes.Add(new SignedHash()
             {
                 ScriptCode = scriptCode,
@@ -2028,7 +2035,7 @@ namespace NBitcoin
 
         public ScriptEvaluationContext Clone()
         {
-            return new ScriptEvaluationContext()
+            return new ScriptEvaluationContext(this.Network)
             {
                 _stack = new ContextStack<byte[]>(_stack),
                 ScriptVerify = ScriptVerify,

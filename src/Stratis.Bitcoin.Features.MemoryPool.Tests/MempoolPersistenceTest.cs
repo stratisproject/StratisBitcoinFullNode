@@ -21,9 +21,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
 
         public MempoolPersistenceTest()
         {
-            Block.BlockSignature = false;
-            Transaction.TimeStamp = false;
-
             this.dir = "TestData/MempoolPersistenceTest/";
 
             if (!Directory.Exists(this.dir))
@@ -49,8 +46,8 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             IEnumerable<MempoolPersistenceEntry> toSave = this.CreateTestEntries(numTx);
             IEnumerable<MempoolPersistenceEntry> loaded;
 
-            MemPoolSaveResult result = persistence.Save(toSave, fileName);
-            loaded = persistence.Load(fileName);
+            MemPoolSaveResult result = persistence.Save(settings.Network, toSave, fileName);
+            loaded = persistence.Load(settings.Network, fileName);
 
             Assert.True(File.Exists(Path.Combine(settings.DataDir, fileName)));
             Assert.True(result.Succeeded);
@@ -69,11 +66,11 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             IEnumerable<MempoolPersistenceEntry> loaded;
             string fullFilePath = Path.Combine(settings.DataDir, fileName);
 
-            MemPoolSaveResult result = persistence.Save(toSave, fileName);
+            MemPoolSaveResult result = persistence.Save(settings.Network, toSave, fileName);
             string fileData = File.ReadAllText(fullFilePath);
             string badFileData = new string(fileData.Take(fileData.Length / 2).ToArray());
             File.WriteAllText(fullFilePath, badFileData);
-            loaded = persistence.Load(fileName);
+            loaded = persistence.Load(settings.Network, fileName);
 
             Assert.True(File.Exists(fullFilePath));
             Assert.True(result.Succeeded);
@@ -88,7 +85,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             MempoolPersistence persistence = new MempoolPersistence(settings, new LoggerFactory());
             string fullFilePath = Path.Combine(settings.DataDir, fileName);
 
-            var loaded = persistence.Load(fileName);
+            var loaded = persistence.Load(settings.Network, fileName);
 
             Assert.False(File.Exists(fullFilePath));
             Assert.Null(loaded);
@@ -103,7 +100,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             IEnumerable<MempoolPersistenceEntry> toSave = this.CreateTestEntries(numTx);
             MempoolManager mempoolManager = CreateTestMempool(settings, out TxMempool unused);
 
-            MemPoolSaveResult result = (new MempoolPersistence(settings, new LoggerFactory())).Save(toSave, fileName);
+            MemPoolSaveResult result = (new MempoolPersistence(settings, new LoggerFactory())).Save(settings.Network, toSave, fileName);
             mempoolManager.LoadPoolAsync(fileName).GetAwaiter().GetResult();
             long actualSize = mempoolManager.MempoolSize().GetAwaiter().GetResult();
 
@@ -114,8 +111,8 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
         public async Task LoadPoolTest_WithGoodTransactionsAsync()
         {
             string fileName = "mempool.dat";
-            var tx1_parent = new Transaction("0100000001c4fadb806f9679c27c30c11b694523f6ac9614f7a69076b8940082ce636040fb000000006b4830450221009ad4b969a40b95017d133b13f7d465031829731f3b0ae4bcdcb5e393f5e919f902207f33aad2c3af48d6d65aaf5dd15a85a1f588ee3d6f477b2236cda1d81d88c43b012102eb184a906e082db44a95347de64110952b5821c42068a2054947aec4bc60db2fffffffff02685e3e00000000001976a9149ed35c9c42543ec67f9e6d1033e2ac1ac76f86ba88acd33e4500000000001976a9143c88fada9101f660d77feec1dd8db4ee9ea01d6788ac00000000");
-            var tx1 = new Transaction("0100000001055c4c42511f9d05f2fa817c7f023df567f3d501bebec14ddce7c05a9d5fda52000000006b483045022100de552f011768887141b9a767ae184f61aa3743a32aad394ac1e1ec35345415420220070b3d0afd28414f188c966e334e9f7b65e7440538d93bc1d61f82067fcfd3fa012103b47b6ffce08f54be286620a29f45407fedb7b33acfec938551938ec96a1e1b0bffffffff019f053e000000000017a91493e31884769545a237f164aa07b3caef6b62f6b68700000000");
+            var tx1_parent = Transaction.Load("0100000001c4fadb806f9679c27c30c11b694523f6ac9614f7a69076b8940082ce636040fb000000006b4830450221009ad4b969a40b95017d133b13f7d465031829731f3b0ae4bcdcb5e393f5e919f902207f33aad2c3af48d6d65aaf5dd15a85a1f588ee3d6f477b2236cda1d81d88c43b012102eb184a906e082db44a95347de64110952b5821c42068a2054947aec4bc60db2fffffffff02685e3e00000000001976a9149ed35c9c42543ec67f9e6d1033e2ac1ac76f86ba88acd33e4500000000001976a9143c88fada9101f660d77feec1dd8db4ee9ea01d6788ac00000000", Network.Main.Consensus.ConsensusFactory);
+            var tx1 = Transaction.Load("0100000001055c4c42511f9d05f2fa817c7f023df567f3d501bebec14ddce7c05a9d5fda52000000006b483045022100de552f011768887141b9a767ae184f61aa3743a32aad394ac1e1ec35345415420220070b3d0afd28414f188c966e334e9f7b65e7440538d93bc1d61f82067fcfd3fa012103b47b6ffce08f54be286620a29f45407fedb7b33acfec938551938ec96a1e1b0bffffffff019f053e000000000017a91493e31884769545a237f164aa07b3caef6b62f6b68700000000", Network.Main.Consensus.ConsensusFactory);
             NodeSettings settings = this.CreateSettings("LoadPoolTest_WithGoodTransactions");
             TxMempool txMemPool;
             MempoolManager mempoolManager = CreateTestMempool(settings, out txMemPool);
@@ -135,7 +132,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
                     FeeDelta = expectedTx1FeeDelta
                 },
             };
-            MemPoolSaveResult result = (new MempoolPersistence(settings, new LoggerFactory())).Save(toSave, fileName);
+            MemPoolSaveResult result = (new MempoolPersistence(settings, new LoggerFactory())).Save(settings.Network, toSave, fileName);
 
             long expectedSize = 2;
             await mempoolManager.LoadPoolAsync(fileName);
@@ -151,8 +148,8 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
         public async Task LoadPoolTest_WithExpiredTransaction_PurgesTxAsync()
         {
             string fileName = "mempool.dat";
-            var tx1_parent = new Transaction("0100000001c4fadb806f9679c27c30c11b694523f6ac9614f7a69076b8940082ce636040fb000000006b4830450221009ad4b969a40b95017d133b13f7d465031829731f3b0ae4bcdcb5e393f5e919f902207f33aad2c3af48d6d65aaf5dd15a85a1f588ee3d6f477b2236cda1d81d88c43b012102eb184a906e082db44a95347de64110952b5821c42068a2054947aec4bc60db2fffffffff02685e3e00000000001976a9149ed35c9c42543ec67f9e6d1033e2ac1ac76f86ba88acd33e4500000000001976a9143c88fada9101f660d77feec1dd8db4ee9ea01d6788ac00000000");
-            var tx1 = new Transaction("0100000001055c4c42511f9d05f2fa817c7f023df567f3d501bebec14ddce7c05a9d5fda52000000006b483045022100de552f011768887141b9a767ae184f61aa3743a32aad394ac1e1ec35345415420220070b3d0afd28414f188c966e334e9f7b65e7440538d93bc1d61f82067fcfd3fa012103b47b6ffce08f54be286620a29f45407fedb7b33acfec938551938ec96a1e1b0bffffffff019f053e000000000017a91493e31884769545a237f164aa07b3caef6b62f6b68700000000");
+            var tx1_parent = Transaction.Load("0100000001c4fadb806f9679c27c30c11b694523f6ac9614f7a69076b8940082ce636040fb000000006b4830450221009ad4b969a40b95017d133b13f7d465031829731f3b0ae4bcdcb5e393f5e919f902207f33aad2c3af48d6d65aaf5dd15a85a1f588ee3d6f477b2236cda1d81d88c43b012102eb184a906e082db44a95347de64110952b5821c42068a2054947aec4bc60db2fffffffff02685e3e00000000001976a9149ed35c9c42543ec67f9e6d1033e2ac1ac76f86ba88acd33e4500000000001976a9143c88fada9101f660d77feec1dd8db4ee9ea01d6788ac00000000", Network.Main.Consensus.ConsensusFactory);
+            var tx1 = Transaction.Load("0100000001055c4c42511f9d05f2fa817c7f023df567f3d501bebec14ddce7c05a9d5fda52000000006b483045022100de552f011768887141b9a767ae184f61aa3743a32aad394ac1e1ec35345415420220070b3d0afd28414f188c966e334e9f7b65e7440538d93bc1d61f82067fcfd3fa012103b47b6ffce08f54be286620a29f45407fedb7b33acfec938551938ec96a1e1b0bffffffff019f053e000000000017a91493e31884769545a237f164aa07b3caef6b62f6b68700000000", Network.Main.Consensus.ConsensusFactory);
             NodeSettings settings = this.CreateSettings("LoadPoolTest_WithExpiredTxs");
             TxMempool txMemPool;
             MempoolManager mempoolManager = CreateTestMempool(settings, out txMemPool);
@@ -172,7 +169,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
                     FeeDelta = expectedTx1FeeDelta
                 },
             };
-            MemPoolSaveResult result = (new MempoolPersistence(settings, new LoggerFactory())).Save(toSave, fileName);
+            MemPoolSaveResult result = (new MempoolPersistence(settings, new LoggerFactory())).Save(settings.Network, toSave, fileName);
 
             long expectedSize = 1;
             await mempoolManager.LoadPoolAsync(fileName);
@@ -199,10 +196,11 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             long actualCount = -1;
             using (MemoryStream ms = new MemoryStream())
             {
-                persistence.DumpToStream(toSave, ms);
+                persistence.DumpToStream(settings.Network, toSave, ms);
                 actualStreamLength = ms.Length;
                 ms.Seek(0, SeekOrigin.Begin);
                 var bitcoinReader = new BitcoinStream(ms, false);
+                bitcoinReader.ConsensusFactory = settings.Network.Consensus.ConsensusFactory;
 
                 bitcoinReader.ReadWrite(ref actualVersion);
                 bitcoinReader.ReadWrite(ref actualCount);
@@ -278,7 +276,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             var consensusValidator = new PowConsensusValidator(Network.Main, new Checkpoints(Network.Main, consensusSettings), dateTimeProvider, loggerFactory);
             var mempoolValidator = new MempoolValidator(txMemPool, mempoolLock, consensusValidator, dateTimeProvider, mempoolSettings, chain, coins, loggerFactory, settings);
             var mempoolOrphans = new MempoolOrphans(mempoolLock, txMemPool, chain, new Signals.Signals(), mempoolValidator, consensusValidator, coins, dateTimeProvider, mempoolSettings, loggerFactory);
-            return new MempoolManager(mempoolLock, txMemPool, mempoolValidator, mempoolOrphans, dateTimeProvider, mempoolSettings, mempoolPersistence, coins, loggerFactory);
+            return new MempoolManager(mempoolLock, txMemPool, mempoolValidator, mempoolOrphans, dateTimeProvider, mempoolSettings, mempoolPersistence, coins, loggerFactory, settings.Network);
         }
     }
 }

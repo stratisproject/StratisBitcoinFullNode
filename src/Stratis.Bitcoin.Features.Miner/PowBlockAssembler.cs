@@ -161,7 +161,7 @@ namespace Stratis.Bitcoin.Features.Miner
         /// </summary>
         protected virtual void CreateCoinbase()
         {
-            this.coinbase = new Transaction();
+            this.coinbase = this.Network.Consensus.ConsensusFactory.CreateTransaction();
             this.coinbase.Time = (uint)this.DateTimeProvider.GetAdjustedTimeAsUnixTimestamp();
             this.coinbase.AddInput(TxIn.CreateCoinbase(this.ChainTip.Height + 1));
             this.coinbase.AddOutput(new TxOut(Money.Zero, this.scriptPubKey));
@@ -178,7 +178,7 @@ namespace Stratis.Bitcoin.Features.Miner
         protected void Configure()
         {
             this.BlockSize = 1000;
-            this.BlockTemplate = new BlockTemplate { Block = new Block(), VTxFees = new List<Money>() };
+            this.BlockTemplate = new BlockTemplate(this.Network);
             this.BlockTx = 0;
             this.BlockWeight = 4000;
             this.BlockSigOpsCost = 400;
@@ -627,7 +627,7 @@ namespace Stratis.Bitcoin.Features.Miner
         {
             this.Logger.LogTrace("({0}:'{1}',{2}.{3}:{4})", nameof(chainTip), chainTip, nameof(scriptPubKey), nameof(scriptPubKey.Length), scriptPubKey.Length);
 
-            base.OnBuild(chainTip, scriptPubKey);
+            this.OnBuild(chainTip, scriptPubKey);
 
             this.Logger.LogTrace("(-)");
 

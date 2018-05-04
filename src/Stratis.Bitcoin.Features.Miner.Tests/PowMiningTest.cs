@@ -12,16 +12,15 @@ using Stratis.Bitcoin.Features.MemoryPool.Interfaces;
 using Stratis.Bitcoin.Tests.Common.Logging;
 using Stratis.Bitcoin.Utilities;
 using Xunit;
-using static NBitcoin.Consensus;
 
 namespace Stratis.Bitcoin.Features.Miner.Tests
 {
-    public class PowMiningTest : LogsTestBase, IClassFixture<PowMiningTestFixture>, IDisposable
+    public class PowMiningTest : LogsTestBase, IClassFixture<PowMiningTestFixture>
     {
         private Mock<IAsyncLoopFactory> asyncLoopFactory;
         private ConcurrentChain chain;
         private Mock<IConsensusLoop> consensusLoop;
-        private ConsensusOptions initialNetworkOptions;
+        private NBitcoin.Consensus.ConsensusOptions initialNetworkOptions;
         private PowMiningTestFixture fixture;
         private Mock<ITxMempool> mempool;
         private MempoolSchedulerLock mempoolLock;
@@ -33,12 +32,6 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
 
         public PowMiningTest(PowMiningTestFixture fixture)
         {
-            this.initialBlockSignature = Block.BlockSignature;
-            this.initialTimestamp = Transaction.TimeStamp;
-
-            Transaction.TimeStamp = true;
-            Block.BlockSignature = true;
-
             this.fixture = fixture;
             this.network = fixture.Network;
 
@@ -61,14 +54,6 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
             this.nodeLifetime.Setup(n => n.ApplicationStopping).Returns(new CancellationToken()).Verifiable();
 
             this.mempoolLock = new MempoolSchedulerLock();
-        }
-
-        public void Dispose()
-        {
-            Block.BlockSignature = this.initialBlockSignature;
-            Transaction.TimeStamp = this.initialTimestamp;
-
-            this.network.Consensus.Options = this.initialNetworkOptions;
         }
 
         [Fact]
@@ -336,6 +321,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
 
                 BlockTemplate blockTemplate = CreateBlockTemplate(this.fixture.Block1);
                 blockTemplate.Block.Header.Nonce = 0;
+                blockTemplate.Block.Header.Bits = Network.TestNet.GetGenesis().Header.Bits; // make the difficulty harder.
 
                 this.chain.SetTip(this.chain.GetBlock(0));
 
@@ -565,35 +551,16 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
 
         private BlockTemplate CreateBlockTemplate(Block block)
         {
-            BlockTemplate blockTemplate = new BlockTemplate
+            BlockTemplate blockTemplate = new BlockTemplate(this.network)
             {
-                Block = new Block(block.Header)
+                Block = block,
             };
-
-            blockTemplate.Block.Transactions = block.Transactions;
             return blockTemplate;
         }
 
         private void ExecuteUsingNonProofOfStakeSettings(Action action)
         {
-            var isProofOfStake = this.network.NetworkOptions.IsProofOfStake;
-            var blockSignature = Block.BlockSignature;
-            var timestamp = Transaction.TimeStamp;
-
-            try
-            {
-                this.network.NetworkOptions.IsProofOfStake = false;
-                Block.BlockSignature = false;
-                Transaction.TimeStamp = false;
-
-                action();
-            }
-            finally
-            {
-                this.network.NetworkOptions.IsProofOfStake = isProofOfStake;
-                Block.BlockSignature = blockSignature;
-                Transaction.TimeStamp = timestamp;
-            }
+            action();
         }
     }
 
@@ -616,45 +583,26 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
 
         public PowMiningTestFixture()
         {
-            this.Network = Network.StratisTest;
+            this.Network = Network.RegTest; // fast mining so use regtest
             this.Chain = new ConcurrentChain(this.Network);
             this.Key = new Key();
             this.ReserveScript = new ReserveScript(this.Key.ScriptPubKey);
 
-            var isProofOfStake = this.Network.NetworkOptions.IsProofOfStake;
-            var blockSignature = Block.BlockSignature;
-            var timestamp = Transaction.TimeStamp;
+            this.Block1 = this.PrepareValidBlock(this.Chain.Tip, 1, this.Key.ScriptPubKey);
+            this.ChainedBlock1 = new ChainedBlock(this.Block1.Header, this.Block1.GetHash(), this.Chain.Tip);
 
-            try
-            {
-                this.Network.NetworkOptions.IsProofOfStake = false;
-
-                Block.BlockSignature = false;
-                Transaction.TimeStamp = false;
-
-                this.Block1 = PrepareValidBlock(this.Chain.Tip, 1, this.Key.ScriptPubKey);
-                this.ChainedBlock1 = new ChainedBlock(this.Block1.Header, this.Block1.GetHash(), this.Chain.Tip);
-
-                this.Block2 = PrepareValidBlock(this.ChainedBlock1, 2, this.Key.ScriptPubKey);
-                this.ChainedBlock2 = new ChainedBlock(this.Block2.Header, this.Block2.GetHash(), this.ChainedBlock1);
-            }
-            finally
-            {
-                this.Network.NetworkOptions.IsProofOfStake = isProofOfStake;
-
-                Block.BlockSignature = blockSignature;
-                Transaction.TimeStamp = timestamp;
-            }
+            this.Block2 = this.PrepareValidBlock(this.ChainedBlock1, 2, this.Key.ScriptPubKey);
+            this.ChainedBlock2 = new ChainedBlock(this.Block2.Header, this.Block2.GetHash(), this.ChainedBlock1);
         }
 
         public Block PrepareValidBlock(ChainedBlock prevBlock, int newHeight, Script ScriptPubKey)
         {
             uint nonce = 0;
 
-            var block = new Block();
+            var block = this.Network.Consensus.ConsensusFactory.CreateBlock();
             block.Header.HashPrevBlock = prevBlock.HashBlock;
 
-            var transaction = new Transaction();
+            var transaction = this.Network.Consensus.ConsensusFactory.CreateTransaction();
             transaction.AddInput(TxIn.CreateCoinbase(newHeight));
             transaction.AddOutput(new TxOut(new Money(1, MoneyUnit.BTC), ScriptPubKey));
             block.Transactions.Add(transaction);

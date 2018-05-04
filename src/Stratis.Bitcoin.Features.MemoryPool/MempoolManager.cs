@@ -37,6 +37,8 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <summary>Coin view of the memory pool.</summary>
         private readonly CoinView coinView;
 
+        private readonly Network network;
+
         /// <summary>
         /// Constructs an instance of a memory pool manager object.
         /// </summary>
@@ -49,6 +51,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <param name="mempoolPersistence">Memory pool persistence methods for loading and saving from storage.</param>
         /// <param name="coinView">Coin view of the memory pool.</param>
         /// <param name="loggerFactory">Logger factory for creating instance logger.</param>
+        /// <param name="network">The blockchain network.</param>
         public MempoolManager(
             MempoolSchedulerLock mempoolLock,
             ITxMempool memPool,
@@ -58,7 +61,8 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             MempoolSettings mempoolSettings,
             IMempoolPersistence mempoolPersistence,
             CoinView coinView,
-            ILoggerFactory loggerFactory)
+            ILoggerFactory loggerFactory,
+            Network network)
         {
             this.MempoolLock = mempoolLock;
             this.memPool = memPool;
@@ -68,6 +72,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             this.Validator = validator;
             this.mempoolPersistence = mempoolPersistence;
             this.coinView = coinView;
+            this.network = network;
             this.mempoolLogger = loggerFactory.CreateLogger(this.GetType().FullName);
         }
 
@@ -130,7 +135,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             if (this.mempoolPersistence != null && this.memPool?.MapTx != null && this.Validator != null)
             {
                 this.mempoolLogger.LogInformation("Loading Memory Pool...");
-                IEnumerable<MempoolPersistenceEntry> entries = this.mempoolPersistence.Load(fileName);
+                IEnumerable<MempoolPersistenceEntry> entries = this.mempoolPersistence.Load(this.network, fileName);
                 await this.AddMempoolEntriesToMempoolAsync(entries);
             }
             else
@@ -147,7 +152,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         {
             if (this.mempoolPersistence == null)
                 return MemPoolSaveResult.NonSuccess;
-            return this.mempoolPersistence.Save(this.memPool);
+            return this.mempoolPersistence.Save(this.network, this.memPool);
         }
 
         /// <summary>

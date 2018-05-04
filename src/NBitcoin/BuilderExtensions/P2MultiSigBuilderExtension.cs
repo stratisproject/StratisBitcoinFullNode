@@ -6,34 +6,34 @@ namespace NBitcoin.BuilderExtensions
 {
     public class P2MultiSigBuilderExtension : BuilderExtension
     {
-        public override bool CanCombineScriptSig(Script scriptPubKey, Script a, Script b)
+        public override bool CanCombineScriptSig(Network network, Script scriptPubKey, Script a, Script b)
         {
-            return PayToMultiSigTemplate.Instance.ExtractScriptPubKeyParameters(scriptPubKey) != null;
+            return PayToMultiSigTemplate.Instance.ExtractScriptPubKeyParameters(network, scriptPubKey) != null;
         }
 
-        public override bool CanDeduceScriptPubKey(Script scriptSig)
+        public override bool CanDeduceScriptPubKey(Network network, Script scriptSig)
         {
             return false;
         }
 
-        public override bool CanEstimateScriptSigSize(Script scriptPubKey)
+        public override bool CanEstimateScriptSigSize(Network network, Script scriptPubKey)
         {
-            return PayToMultiSigTemplate.Instance.ExtractScriptPubKeyParameters(scriptPubKey) != null;
+            return PayToMultiSigTemplate.Instance.ExtractScriptPubKeyParameters(network, scriptPubKey) != null;
         }
 
-        public override bool CanGenerateScriptSig(Script scriptPubKey)
+        public override bool CanGenerateScriptSig(Network network, Script scriptPubKey)
         {
-            return PayToMultiSigTemplate.Instance.ExtractScriptPubKeyParameters(scriptPubKey) != null;
+            return PayToMultiSigTemplate.Instance.ExtractScriptPubKeyParameters(network, scriptPubKey) != null;
         }
 
-        public override Script CombineScriptSig(Script scriptPubKey, Script a, Script b)
+        public override Script CombineScriptSig(Network network, Script scriptPubKey, Script a, Script b)
         {
-            var para = PayToMultiSigTemplate.Instance.ExtractScriptPubKeyParameters(scriptPubKey);
+            var para = PayToMultiSigTemplate.Instance.ExtractScriptPubKeyParameters(network, scriptPubKey);
             // Combine all the signatures we've got:
-            var aSigs = PayToMultiSigTemplate.Instance.ExtractScriptSigParameters(a);
+            var aSigs = PayToMultiSigTemplate.Instance.ExtractScriptSigParameters(network, a);
             if(aSigs == null)
                 return b;
-            var bSigs = PayToMultiSigTemplate.Instance.ExtractScriptSigParameters(b);
+            var bSigs = PayToMultiSigTemplate.Instance.ExtractScriptSigParameters(network, b);
             if(bSigs == null)
                 return a;
             int sigCount = 0;
@@ -56,20 +56,20 @@ namespace NBitcoin.BuilderExtensions
             return PayToMultiSigTemplate.Instance.GenerateScriptSig(sigs);
         }
 
-        public override Script DeduceScriptPubKey(Script scriptSig)
+        public override Script DeduceScriptPubKey(Network network, Script scriptSig)
         {
             throw new NotImplementedException();
         }
 
-        public override int EstimateScriptSigSize(Script scriptPubKey)
+        public override int EstimateScriptSigSize(Network network, Script scriptPubKey)
         {
-            var p2mk = PayToMultiSigTemplate.Instance.ExtractScriptPubKeyParameters(scriptPubKey);
+            var p2mk = PayToMultiSigTemplate.Instance.ExtractScriptPubKeyParameters(network, scriptPubKey);
             return PayToMultiSigTemplate.Instance.GenerateScriptSig(Enumerable.Range(0, p2mk.SignatureCount).Select(o => DummySignature).ToArray()).Length;
         }
 
-        public override Script GenerateScriptSig(Script scriptPubKey, IKeyRepository keyRepo, ISigner signer)
+        public override Script GenerateScriptSig(Network network, Script scriptPubKey, IKeyRepository keyRepo, ISigner signer)
         {
-            var multiSigParams = PayToMultiSigTemplate.Instance.ExtractScriptPubKeyParameters(scriptPubKey);
+            var multiSigParams = PayToMultiSigTemplate.Instance.ExtractScriptPubKeyParameters(network, scriptPubKey);
             TransactionSignature[] signatures = new TransactionSignature[multiSigParams.PubKeys.Length];
             var keys =
                 multiSigParams

@@ -15,9 +15,9 @@ namespace Stratis.Bitcoin.Features.Miner
 
         public Money TotalFee;
 
-        public BlockTemplate()
+        public BlockTemplate(Network network)
         {
-            this.Block = new Block();
+            this.Block = network.Consensus.ConsensusFactory.CreateBlock();
             this.VTxFees = new List<Money>();
             this.TxSigOpsCost = new List<long>();
         }

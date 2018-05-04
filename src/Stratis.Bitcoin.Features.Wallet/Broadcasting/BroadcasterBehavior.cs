@@ -3,13 +3,13 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using Stratis.Bitcoin.Interfaces;
+using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.P2P.Protocol;
 using Stratis.Bitcoin.P2P.Protocol.Behaviors;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
 
-namespace Stratis.Bitcoin.Broadcasting
+namespace Stratis.Bitcoin.Features.Wallet.Broadcasting
 {
     public class BroadcasterBehavior : NetworkPeerBehavior
     {
@@ -88,7 +88,7 @@ namespace Stratis.Bitcoin.Broadcasting
 
         private void ProcessInvPayload(InvPayload invPayload)
         {
-            // if node has tx we broadcasted
+            // if node has transaction we broadcast
             foreach (var inv in invPayload.Inventory.Where(x => x.Type == InventoryType.MSG_TX))
             {
                 var txEntry = this.broadcasterManager.GetTransaction(inv.Hash);
@@ -101,7 +101,7 @@ namespace Stratis.Bitcoin.Broadcasting
 
         protected async Task ProcessGetDataPayloadAsync(INetworkPeer peer, GetDataPayload getDataPayload)
         {
-            // If node asks for tx we want to broadcast.
+            // If node asks for transaction we want to broadcast.
             foreach (InventoryVector inv in getDataPayload.Inventory.Where(x => x.Type == InventoryType.MSG_TX))
             {
                 TransactionBroadcastEntry txEntry = this.broadcasterManager.GetTransaction(inv.Hash);

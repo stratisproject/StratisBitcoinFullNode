@@ -4,10 +4,11 @@ using System.Linq;
 using System.Threading.Tasks;
 using NBitcoin;
 using Stratis.Bitcoin.Connection;
+using Stratis.Bitcoin.Features.Wallet.Broadcasting;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.Utilities;
 
-namespace Stratis.Bitcoin.Features.Wallet.Broadcasting
+namespace Stratis.Bitcoin.Features.LightWallet.Broadcasting
 {
     public class LightWalletBroadcasterManager : BroadcasterManagerBase
     {

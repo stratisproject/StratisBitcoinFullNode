@@ -39,7 +39,7 @@ namespace Stratis.Bitcoin.Features.Miner
         {
             this.logger.LogTrace("({0}:'{1}',{2}.{3}:{4})", nameof(chainTip), chainTip, nameof(scriptPubKey), nameof(scriptPubKey.Length), scriptPubKey.Length);
 
-            base.OnBuild(chainTip, scriptPubKey);
+            this.OnBuild(chainTip, scriptPubKey);
 
             this.coinbase.Outputs[0].ScriptPubKey = new Script();
             this.coinbase.Outputs[0].Value = Money.Zero;

@@ -37,13 +37,10 @@ namespace NBitcoin
         /// </summary>
         /// <exception cref="System.InvalidOperationException">Additional information needed to get the ScriptCode</exception>
         /// <returns>The executed script</returns>
-        Script GetScriptCode();
+        Script GetScriptCode(Network network);
         void OverrideScriptCode(Script scriptCode);
-        bool CanGetScriptCode
-        {
-            get;
-        }
-        HashVersion GetHashVersion();
+        bool CanGetScriptCode(Network network);
+        HashVersion GetHashVersion(Network network);
     }
 
     public class IssuanceCoin : IColoredCoin
@@ -181,22 +178,19 @@ namespace NBitcoin
         #region ICoin Members
 
 
-        public Script GetScriptCode()
+        public Script GetScriptCode(Network network)
         {
-            return this.Bearer.GetScriptCode();
+            return this.Bearer.GetScriptCode(network);
         }
 
-        public bool CanGetScriptCode
+        public bool CanGetScriptCode(Network network)
         {
-            get
-            {
-                return this.Bearer.CanGetScriptCode;
-            }
+            return this.Bearer.CanGetScriptCode(network);
         }
 
-        public HashVersion GetHashVersion()
+        public HashVersion GetHashVersion(Network network)
         {
-            return this.Bearer.GetHashVersion();
+            return this.Bearer.GetHashVersion(network);
         }
 
         public void OverrideScriptCode(Script scriptCode)
@@ -366,22 +360,19 @@ namespace NBitcoin
             }
         }
 
-        public Script GetScriptCode()
+        public Script GetScriptCode(Network network)
         {
-            return this.Bearer.GetScriptCode();
+            return this.Bearer.GetScriptCode(network);
         }
 
-        public bool CanGetScriptCode
+        public bool CanGetScriptCode(Network network)
         {
-            get
-            {
-                return this.Bearer.CanGetScriptCode;
-            }
+            return this.Bearer.CanGetScriptCode(network);
         }
 
-        public HashVersion GetHashVersion()
+        public HashVersion GetHashVersion(Network network)
         {
-            return this.Bearer.GetHashVersion();
+            return this.Bearer.GetHashVersion(network);
         }
 
         public void OverrideScriptCode(Script scriptCode)
@@ -433,29 +424,26 @@ namespace NBitcoin
             TxOut = new TxOut(amount, scriptPubKey);
         }
 
-        public virtual Script GetScriptCode()
+        public virtual Script GetScriptCode(Network network)
         {
-            if(!CanGetScriptCode)
+            if(!CanGetScriptCode(network))
                 throw new InvalidOperationException("You need to provide P2WSH or P2SH redeem script with Coin.ToScriptCoin()");
             if(_OverrideScriptCode != null)
                 return _OverrideScriptCode;
-            var key = PayToWitPubKeyHashTemplate.Instance.ExtractScriptPubKeyParameters(ScriptPubKey);
+            var key = PayToWitPubKeyHashTemplate.Instance.ExtractScriptPubKeyParameters(network, ScriptPubKey);
             if(key != null)
                 return key.AsKeyId().ScriptPubKey;
             return ScriptPubKey;
         }
 
-        public virtual bool CanGetScriptCode
+        public virtual bool CanGetScriptCode(Network network)
         {
-            get
-            {
-                return _OverrideScriptCode != null || !ScriptPubKey.IsPayToScriptHash && !PayToWitScriptHashTemplate.Instance.CheckScriptPubKey(ScriptPubKey);
-            }
+                return _OverrideScriptCode != null || !ScriptPubKey.IsPayToScriptHash(network) && !PayToWitScriptHashTemplate.Instance.CheckScriptPubKey(network, ScriptPubKey);
         }
 
-        public virtual HashVersion GetHashVersion()
+        public virtual HashVersion GetHashVersion(Network network)
         {
-            if(PayToWitTemplate.Instance.CheckScriptPubKey(ScriptPubKey))
+            if(PayToWitTemplate.Instance.CheckScriptPubKey(network, ScriptPubKey))
                 return HashVersion.Witness;
             return HashVersion.Original;
         }
@@ -588,31 +576,70 @@ namespace NBitcoin
 
         }
 
-        public ScriptCoin(OutPoint fromOutpoint, TxOut fromTxOut, Script redeem)
+        internal ScriptCoin(OutPoint fromOutpoint, TxOut fromTxOut, Script redeem)
             : base(fromOutpoint, fromTxOut)
         {
             Redeem = redeem;
-            AssertCoherent();
         }
 
-        public ScriptCoin(Transaction fromTx, uint fromOutputIndex, Script redeem)
+        internal ScriptCoin(Transaction fromTx, uint fromOutputIndex, Script redeem)
             : base(fromTx, fromOutputIndex)
         {
             Redeem = redeem;
-            AssertCoherent();
         }
 
-        public ScriptCoin(Transaction fromTx, TxOut fromOutput, Script redeem)
+        internal ScriptCoin(Transaction fromTx, TxOut fromOutput, Script redeem)
             : base(fromTx, fromOutput)
         {
             Redeem = redeem;
-            AssertCoherent();
         }
-        public ScriptCoin(ICoin coin, Script redeem)
+
+        internal ScriptCoin(ICoin coin, Script redeem)
             : base(coin.Outpoint, coin.TxOut)
         {
             Redeem = redeem;
-            AssertCoherent();
+        }
+
+        internal ScriptCoin(IndexedTxOut txOut, Script redeem)
+            : base(txOut)
+        {
+            Redeem = redeem;
+        }
+
+        internal ScriptCoin(uint256 txHash, uint outputIndex, Money amount, Script scriptPubKey, Script redeem)
+            : base(txHash, outputIndex, amount, scriptPubKey)
+        {
+            Redeem = redeem;
+        }
+
+        public static ScriptCoin Create(Network network, OutPoint fromOutpoint, TxOut fromTxOut, Script redeem)
+        {
+            return new ScriptCoin(fromOutpoint, fromTxOut, redeem).AssertCoherent(network);
+        }
+
+        public static ScriptCoin Create(Network network, Transaction fromTx, uint fromOutputIndex, Script redeem)
+        {
+            return new ScriptCoin(fromTx, fromOutputIndex, redeem).AssertCoherent(network);
+        }
+
+        public static ScriptCoin Create(Network network, Transaction fromTx, TxOut fromOutput, Script redeem)
+        {
+            return new ScriptCoin(fromTx, fromOutput, redeem).AssertCoherent(network);
+        }
+
+        public static ScriptCoin Create(Network network, ICoin coin, Script redeem)
+        {
+            return new ScriptCoin(coin, redeem).AssertCoherent(network);
+        }
+
+        public static ScriptCoin Create(Network network, IndexedTxOut txOut, Script redeem)
+        {
+            return new ScriptCoin(txOut, redeem).AssertCoherent(network);
+        }
+
+        public static ScriptCoin Create(Network network, uint256 txHash, uint outputIndex, Money amount, Script scriptPubKey, Script redeem)
+        {
+            return new ScriptCoin(txHash, outputIndex, amount, scriptPubKey, redeem).AssertCoherent(network);
         }
 
         public bool IsP2SH
@@ -622,7 +649,6 @@ namespace NBitcoin
                 return ScriptPubKey.ToBytes(true)[0] == (byte)OpcodeType.OP_HASH160;
             }
         }
-
 
         public Script GetP2SHRedeem()
         {
@@ -647,19 +673,19 @@ namespace NBitcoin
             }
         }
 
-        private void AssertCoherent()
+        public ScriptCoin AssertCoherent(Network network)
         {
             if(Redeem == null)
                 throw new ArgumentException("redeem cannot be null", "redeem");
 
-            var expectedDestination = GetRedeemHash(TxOut.ScriptPubKey);
+            var expectedDestination = GetRedeemHash(network, TxOut.ScriptPubKey);
             if(expectedDestination == null)
             {
                 throw new ArgumentException("the provided scriptPubKey is not P2SH or P2WSH");
             }
             if(expectedDestination is ScriptId)
             {
-                if(PayToWitScriptHashTemplate.Instance.CheckScriptPubKey(Redeem))
+                if(PayToWitScriptHashTemplate.Instance.CheckScriptPubKey(network, Redeem))
                 {
                     throw new ArgumentException("The redeem script provided must be the witness one, not the P2SH one");
                 }
@@ -677,52 +703,38 @@ namespace NBitcoin
             }
             else
                 throw new NotSupportedException("Not supported redeemed scriptPubkey");
+
+            return this;
         }
 
-        public ScriptCoin(IndexedTxOut txOut, Script redeem)
-            : base(txOut)
-        {
-            Redeem = redeem;
-            AssertCoherent();
-        }
-
-        public ScriptCoin(uint256 txHash, uint outputIndex, Money amount, Script scriptPubKey, Script redeem)
-            : base(txHash, outputIndex, amount, scriptPubKey)
-        {
-            Redeem = redeem;
-            AssertCoherent();
-        }
-
+       
         public Script Redeem
         {
             get;
             set;
         }
 
-        public override Script GetScriptCode()
+        public override Script GetScriptCode(Network network)
         {
-            if(!CanGetScriptCode)
+            if(!CanGetScriptCode(network))
                 throw new InvalidOperationException("You need to provide the P2WSH redeem script with ScriptCoin.ToScriptCoin()");
             if(_OverrideScriptCode != null)
                 return _OverrideScriptCode;
-            var key = PayToWitPubKeyHashTemplate.Instance.ExtractScriptPubKeyParameters(Redeem);
+            var key = PayToWitPubKeyHashTemplate.Instance.ExtractScriptPubKeyParameters(network, Redeem);
             if(key != null)
                 return key.AsKeyId().ScriptPubKey;
             return Redeem;
         }
 
-        public override bool CanGetScriptCode
+        public override bool CanGetScriptCode(Network network)
         {
-            get
-            {
-                return _OverrideScriptCode != null || !IsP2SH || !PayToWitScriptHashTemplate.Instance.CheckScriptPubKey(Redeem);
-            }
+                return _OverrideScriptCode != null || !IsP2SH || !PayToWitScriptHashTemplate.Instance.CheckScriptPubKey(network, Redeem);
         }
 
-        public override HashVersion GetHashVersion()
+        public override HashVersion GetHashVersion(Network network)
         {
-            var isWitness = PayToWitTemplate.Instance.CheckScriptPubKey(ScriptPubKey) ||
-                            PayToWitTemplate.Instance.CheckScriptPubKey(Redeem) ||
+            var isWitness = PayToWitTemplate.Instance.CheckScriptPubKey(network, ScriptPubKey) ||
+                            PayToWitTemplate.Instance.CheckScriptPubKey(network, Redeem) ||
                             RedeemType == NBitcoin.RedeemType.WitnessV0;
             return isWitness ? HashVersion.Witness : HashVersion.Original;
         }
@@ -732,13 +744,13 @@ namespace NBitcoin
         /// </summary>
         /// <param name="scriptPubKey">The scriptPubKey</param>
         /// <returns>The hash of the scriptPubkey</returns>
-        public static TxDestination GetRedeemHash(Script scriptPubKey)
+        public static TxDestination GetRedeemHash(Network network, Script scriptPubKey)
         {
             if(scriptPubKey == null)
                 throw new ArgumentNullException("scriptPubKey");
             return PayToScriptHashTemplate.Instance.ExtractScriptPubKeyParameters(scriptPubKey) as TxDestination
                     ??
-                    PayToWitScriptHashTemplate.Instance.ExtractScriptPubKeyParameters(scriptPubKey);
+                    PayToWitScriptHashTemplate.Instance.ExtractScriptPubKeyParameters(network, scriptPubKey);
         }
     }
 
@@ -772,22 +784,22 @@ namespace NBitcoin
             set;
         }
 
-        public override Script GetScriptCode()
+        public override Script GetScriptCode(Network network)
         {
             if(_OverrideScriptCode != null)
                 return _OverrideScriptCode;
             if(Redeem == null)
-                return base.GetScriptCode();
+                return base.GetScriptCode(network);
             else
-                return new ScriptCoin(this, Redeem).GetScriptCode();
+                return ScriptCoin.Create(network, this, Redeem).GetScriptCode(network);
         }
 
-        public override HashVersion GetHashVersion()
+        public override HashVersion GetHashVersion(Network network)
         {
             if(Redeem == null)
-                return base.GetHashVersion();
+                return base.GetHashVersion(network);
             else
-                return new ScriptCoin(this, Redeem).GetHashVersion();
+                return ScriptCoin.Create(network, this, Redeem).GetHashVersion(network);
         }
 
         /// <summary>
