@@ -39,7 +39,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Broadcasting
                 }
                 else if (!string.IsNullOrEmpty(state.Error?.Code))
                 {
-                    if (state.Error != null) errorMessage = state.Error.Code;
+                    errorMessage = state.Error.Code;
                 }
 
                 this.AddOrUpdate(transaction, State.CantBroadcast, errorMessage);
