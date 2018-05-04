@@ -4,42 +4,42 @@ namespace NBitcoin.BuilderExtensions
 {
     public class P2PKBuilderExtension : BuilderExtension
     {
-        public override bool CanCombineScriptSig(Script scriptPubKey, Script a, Script b)
+        public override bool CanCombineScriptSig(Network network, Script scriptPubKey, Script a, Script b)
         {
             return false;
         }
 
-        public override bool CanDeduceScriptPubKey(Script scriptSig)
+        public override bool CanDeduceScriptPubKey(Network network, Script scriptSig)
         {
             return false;
         }
 
-        public override bool CanEstimateScriptSigSize(Script scriptPubKey)
+        public override bool CanEstimateScriptSigSize(Network network, Script scriptPubKey)
         {
             return PayToPubkeyTemplate.Instance.ExtractScriptPubKeyParameters(scriptPubKey) != null;
         }
 
-        public override bool CanGenerateScriptSig(Script scriptPubKey)
+        public override bool CanGenerateScriptSig(Network network, Script scriptPubKey)
         {
             return PayToPubkeyTemplate.Instance.ExtractScriptPubKeyParameters(scriptPubKey) != null;
         }
 
-        public override Script CombineScriptSig(Script scriptPubKey, Script a, Script b)
+        public override Script CombineScriptSig(Network network, Script scriptPubKey, Script a, Script b)
         {
             throw new NotImplementedException();
         }
 
-        public override Script DeduceScriptPubKey(Script scriptSig)
+        public override Script DeduceScriptPubKey(Network network, Script scriptSig)
         {
             throw new NotImplementedException();
         }
 
-        public override int EstimateScriptSigSize(Script scriptPubKey)
+        public override int EstimateScriptSigSize(Network network, Script scriptPubKey)
         {
             return PayToPubkeyTemplate.Instance.GenerateScriptSig(DummySignature).Length;
         }
 
-        public override Script GenerateScriptSig(Script scriptPubKey, IKeyRepository keyRepo, ISigner signer)
+        public override Script GenerateScriptSig(Network network, Script scriptPubKey, IKeyRepository keyRepo, ISigner signer)
         {
             var key = keyRepo.FindKey(scriptPubKey);
             if(key == null)

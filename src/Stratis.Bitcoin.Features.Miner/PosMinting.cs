@@ -868,8 +868,8 @@ namespace Stratis.Bitcoin.Features.Miner
 
                 // Script of the first coinstake input.
                 Script scriptPubKeyKernel = utxoStakeInfo.TxOut.ScriptPubKey;
-                if (!PayToPubkeyTemplate.Instance.CheckScriptPubKey(scriptPubKeyKernel)
-                    && !PayToPubkeyHashTemplate.Instance.CheckScriptPubKey(scriptPubKeyKernel))
+                if (!PayToPubkeyTemplate.Instance.CheckScriptPubKey(this.network, scriptPubKeyKernel)
+                    && !PayToPubkeyHashTemplate.Instance.CheckScriptPubKey(this.network, scriptPubKeyKernel))
                 {
                     context.Logger.LogTrace("Kernel type must be P2PK or P2PKH, kernel rejected.");
                     continue;

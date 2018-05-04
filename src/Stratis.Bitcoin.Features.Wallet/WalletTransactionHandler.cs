@@ -21,6 +21,8 @@ namespace Stratis.Bitcoin.Features.Wallet
     /// </remarks>
     public class WalletTransactionHandler : IWalletTransactionHandler
     {
+        public Network Network { get; }
+
         /// <summary>A threshold that if possible will limit the amount of UTXO sent to the <see cref="ICoinSelector"/>.</summary>
         /// <remarks>
         /// 500 is a safe number that if reached ensures the coin selector will not take too long to complete,
@@ -42,6 +44,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             IWalletFeePolicy walletFeePolicy,
             Network network)
         {
+            this.Network = network;
             this.walletManager = walletManager;
             this.walletFeePolicy = walletFeePolicy;
             this.coinType = (CoinType)network.Consensus.CoinType;
@@ -149,7 +152,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                 {
                     FeeType = feeType,
                     MinConfirmations = allowUnconfirmed ? 0 : 1,
-                    TransactionBuilder = new TransactionBuilder()
+                    TransactionBuilder = new TransactionBuilder(this.Network)
                 };
 
                 this.AddRecipients(context);
@@ -185,7 +188,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             Guard.NotNull(context.Recipients, nameof(context.Recipients));
             Guard.NotNull(context.AccountReference, nameof(context.AccountReference));
 
-            context.TransactionBuilder = new TransactionBuilder();
+            context.TransactionBuilder = new TransactionBuilder(this.Network);
 
             this.AddRecipients(context);
             this.AddOpReturnOutput(context);
@@ -474,7 +477,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// Shuffles transaction inputs and outputs for increased privacy.
         /// </summary>
         public bool Shuffle { get; set; }
-        
+
         /// <summary>
         /// Optional data to be added as an extra OP_RETURN transaction output with Money.Zero value.
         /// </summary>
@@ -502,4 +505,3 @@ namespace Stratis.Bitcoin.Features.Wallet
         public bool SubtractFeeFromAmount { get; set; }
     }
 }
- 

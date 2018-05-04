@@ -18,24 +18,26 @@ namespace NBitcoin
         /// <summary>
         /// Check if valid transaction signature
         /// </summary>
+        /// <param name="network">The blockchain network class.</param>
         /// <param name="sig">Signature in bytes</param>
         /// <param name="scriptVerify">Verification rules</param>
         /// <returns>True if valid</returns>
-        public static bool IsValid(byte[] sig, ScriptVerify scriptVerify = ScriptVerify.DerSig | ScriptVerify.StrictEnc)
+        public static bool IsValid(Network network, byte[] sig, ScriptVerify scriptVerify = ScriptVerify.DerSig | ScriptVerify.StrictEnc)
         {
             ScriptError error;
-            return IsValid(sig, scriptVerify, out error);
+            return IsValid(network, sig, scriptVerify, out error);
         }
 
 
         /// <summary>
         /// Check if valid transaction signature
         /// </summary>
+        /// <param name="network">The blockchain network class.</param>
         /// <param name="sig">The signature</param>
         /// <param name="scriptVerify">Verification rules</param>
         /// <param name="error">Error</param>
         /// <returns>True if valid</returns>
-        public static bool IsValid(byte[] sig, ScriptVerify scriptVerify, out ScriptError error)
+        public static bool IsValid(Network network, byte[] sig, ScriptVerify scriptVerify, out ScriptError error)
         {
             if(sig == null)
                 throw new ArgumentNullException("sig");
@@ -45,7 +47,7 @@ namespace NBitcoin
                 return false;
             }
             error = ScriptError.OK;
-            var ctx = new ScriptEvaluationContext()
+            var ctx = new ScriptEvaluationContext(network)
             {
                 ScriptVerify = scriptVerify
             };
@@ -110,14 +112,14 @@ namespace NBitcoin
             return (67 <= length && length <= 80) || length == 9; //9 = Empty signature
         }
 
-        public bool Check(PubKey pubKey, Script scriptPubKey, IndexedTxIn txIn, ScriptVerify verify = ScriptVerify.Standard)
+        public bool Check(Network network, PubKey pubKey, Script scriptPubKey, IndexedTxIn txIn, ScriptVerify verify = ScriptVerify.Standard)
         {
-            return Check(pubKey, scriptPubKey, txIn.Transaction, txIn.Index, verify);
+            return this.Check(network, pubKey, scriptPubKey, txIn.Transaction, txIn.Index, verify);
         }
 
-        public bool Check(PubKey pubKey, Script scriptPubKey, Transaction tx, uint nIndex, ScriptVerify verify = ScriptVerify.Standard)
+        public bool Check(Network network, PubKey pubKey, Script scriptPubKey, Transaction tx, uint nIndex, ScriptVerify verify = ScriptVerify.Standard)
         {
-            return new ScriptEvaluationContext()
+            return new ScriptEvaluationContext(network)
             {
                 ScriptVerify = verify,
                 SigHash = SigHash

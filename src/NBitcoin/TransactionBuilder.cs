@@ -173,8 +173,10 @@ namespace NBitcoin
             ICoin coin;
             SigHash sigHash;
             IndexedTxIn txIn;
-            public TransactionBuilderSigner(ICoin coin, SigHash sigHash, IndexedTxIn txIn)
+            TransactionBuilder builder;
+            public TransactionBuilderSigner(TransactionBuilder builder, ICoin coin, SigHash sigHash, IndexedTxIn txIn)
             {
+                this.builder = builder;
                 this.coin = coin;
                 this.sigHash = sigHash;
                 this.txIn = txIn;
@@ -183,7 +185,7 @@ namespace NBitcoin
 
             public TransactionSignature Sign(Key key)
             {
-                return txIn.Sign(key, coin, sigHash);
+                return txIn.Sign(this.builder.Network, key, coin, sigHash);
             }
 
             #endregion
@@ -215,9 +217,11 @@ namespace NBitcoin
             private List<Tuple<PubKey, ECDSASignature>> _KnownSignatures;
             private Dictionary<KeyId, ECDSASignature> _VerifiedSignatures = new Dictionary<KeyId, ECDSASignature>();
             private Dictionary<uint256, PubKey> _DummyToRealKey = new Dictionary<uint256, PubKey>();
+            TransactionBuilder builder;
 
-            public KnownSignatureSigner(List<Tuple<PubKey, ECDSASignature>> _KnownSignatures, ICoin coin, SigHash sigHash, IndexedTxIn txIn)
+            public KnownSignatureSigner(TransactionBuilder builder, List<Tuple<PubKey, ECDSASignature>> _KnownSignatures, ICoin coin, SigHash sigHash, IndexedTxIn txIn)
             {
+                this.builder = builder;
                 this._KnownSignatures = _KnownSignatures;
                 this.coin = coin;
                 this.sigHash = sigHash;
@@ -228,7 +232,7 @@ namespace NBitcoin
             {
                 foreach(var tv in _KnownSignatures.Where(tv => IsCompatibleKey(tv.Item1, scriptPubKey)))
                 {
-                    var hash = txIn.GetSignatureHash(coin, sigHash);
+                    var hash = txIn.GetSignatureHash(this.builder.Network, coin, sigHash);
                     if(tv.Item1.Verify(hash, tv.Item2))
                     {
                         var key = new Key();
@@ -506,9 +510,22 @@ namespace NBitcoin
         }
         public TransactionBuilder()
         {
+            this.Network = Network.Main;
+
             _Rand = new Random();
             CoinSelector = new DefaultCoinSelector();
-            StandardTransactionPolicy = new StandardTransactionPolicy();
+            StandardTransactionPolicy = new StandardTransactionPolicy(this.Network);
+            DustPrevention = true;
+            InitExtensions();
+        }
+
+        public TransactionBuilder(Network network)
+        {
+            this.Network = network;
+
+            _Rand = new Random();
+            CoinSelector = new DefaultCoinSelector();
+            StandardTransactionPolicy = new StandardTransactionPolicy(this.Network);
             DustPrevention = true;
             InitExtensions();
         }
@@ -522,11 +539,24 @@ namespace NBitcoin
         }
 
         internal Random _Rand;
-        public TransactionBuilder(int seed)
+        internal TransactionBuilder(int seed)
         {
+            this.Network = Network.Main;
+
             _Rand = new Random(seed);
             CoinSelector = new DefaultCoinSelector(seed);
-            StandardTransactionPolicy = new StandardTransactionPolicy();
+            StandardTransactionPolicy = new StandardTransactionPolicy(this.Network);
+            DustPrevention = true;
+            InitExtensions();
+        }
+
+        public TransactionBuilder(int seed, Network network)
+        {
+            this.Network = network;
+
+            _Rand = new Random(seed);
+            CoinSelector = new DefaultCoinSelector(seed);
+            StandardTransactionPolicy = new StandardTransactionPolicy(this.Network);
             DustPrevention = true;
             InitExtensions();
         }
@@ -535,6 +565,15 @@ namespace NBitcoin
         {
             get;
             set;
+        }
+
+        /// <summary>
+        /// This field should be mandatory in the constructor.
+        /// </summary>
+        public Network Network
+        {
+            get;
+            private set;
         }
 
         /// <summary>
@@ -660,7 +699,7 @@ namespace NBitcoin
             if(amount < Money.Zero)
                 throw new ArgumentOutOfRangeException("amount", "amount can't be negative");
             _LastSendBuilder = null; //If the amount is dust, we don't want the fee to be paid by the previous Send
-            if(DustPrevention && amount < GetDust(scriptPubKey) && !_OpReturnTemplate.CheckScriptPubKey(scriptPubKey))
+            if(DustPrevention && amount < GetDust(scriptPubKey) && !_OpReturnTemplate.CheckScriptPubKey(this.Network, scriptPubKey))
             {
                 SendFees(amount);
                 return this;
@@ -1191,11 +1230,11 @@ namespace NBitcoin
             if(coin == null || coin is ScriptCoin || coin is StealthCoin)
                 return coin;
 
-            var hash = ScriptCoin.GetRedeemHash(coin.TxOut.ScriptPubKey);
+            var hash = ScriptCoin.GetRedeemHash(this.Network, coin.TxOut.ScriptPubKey);
             if(hash != null)
             {
                 var redeem = _ScriptPubKeyToRedeem.TryGet(coin.TxOut.ScriptPubKey);
-                if(redeem != null && PayToWitScriptHashTemplate.Instance.CheckScriptPubKey(redeem))
+                if(redeem != null && PayToWitScriptHashTemplate.Instance.CheckScriptPubKey(this.Network, redeem))
                     redeem = _ScriptPubKeyToRedeem.TryGet(redeem);
                 if(redeem == null)
                 {
@@ -1203,7 +1242,7 @@ namespace NBitcoin
                         redeem = PayToWitScriptHashTemplate.Instance.ExtractWitScriptParameters(txIn.WitScript, (WitScriptId)hash);
                     if(hash is ScriptId)
                     {
-                        var parameters = PayToScriptHashTemplate.Instance.ExtractScriptSigParameters(txIn.ScriptSig, (ScriptId)hash);
+                        var parameters = PayToScriptHashTemplate.Instance.ExtractScriptSigParameters(this.Network, txIn.ScriptSig, (ScriptId)hash);
                         if(parameters != null)
                             redeem = parameters.RedeemScript;
                     }
@@ -1428,22 +1467,22 @@ namespace NBitcoin
                 }
             }
 
-            var scriptPubkey = coin.GetScriptCode();
+            var scriptPubkey = coin.GetScriptCode(this.Network);
             var scriptSigSize = -1;
             foreach(var extension in Extensions)
             {
-                if(extension.CanEstimateScriptSigSize(scriptPubkey))
+                if(extension.CanEstimateScriptSigSize(this.Network, scriptPubkey))
                 {
-                    scriptSigSize = extension.EstimateScriptSigSize(scriptPubkey);
+                    scriptSigSize = extension.EstimateScriptSigSize(this.Network, scriptPubkey);
                     break;
                 }
             }
 
             if(scriptSigSize == -1)
                 scriptSigSize += coin.TxOut.ScriptPubKey.Length; //Using heurestic to approximate size of unknown scriptPubKey
-            if(coin.GetHashVersion() == HashVersion.Witness)
+            if(coin.GetHashVersion(this.Network) == HashVersion.Witness)
                 vSize += scriptSigSize + 1; //Account for the push
-            if(coin.GetHashVersion() == HashVersion.Original)
+            if(coin.GetHashVersion(this.Network) == HashVersion.Original)
                 size += scriptSigSize;
         }
 
@@ -1522,7 +1561,7 @@ namespace NBitcoin
             ScriptCoin scriptCoin = coin as ScriptCoin;
 
             Script signatures = null;
-            if(coin.GetHashVersion() == HashVersion.Witness)
+            if(coin.GetHashVersion(this.Network) == HashVersion.Witness)
             {
                 signatures = txIn.WitScript;
                 if(scriptCoin != null)
@@ -1543,7 +1582,7 @@ namespace NBitcoin
 
             signatures = CombineScriptSigs(coin, scriptSig, signatures);
 
-            if(coin.GetHashVersion() == HashVersion.Witness)
+            if(coin.GetHashVersion(this.Network) == HashVersion.Witness)
             {
                 txIn.WitScript = signatures;
                 if(scriptCoin != null)
@@ -1575,7 +1614,7 @@ namespace NBitcoin
 
         private Script CombineScriptSigs(ICoin coin, Script a, Script b)
         {
-            var scriptPubkey = coin.GetScriptCode();
+            var scriptPubkey = coin.GetScriptCode(this.Network);
             if(Script.IsNullOrEmpty(a))
                 return b ?? Script.Empty;
             if(Script.IsNullOrEmpty(b))
@@ -1583,9 +1622,9 @@ namespace NBitcoin
 
             foreach(var extension in Extensions)
             {
-                if(extension.CanCombineScriptSig(scriptPubkey, a, b))
+                if(extension.CanCombineScriptSig(this.Network, scriptPubkey, a, b))
                 {
-                    return extension.CombineScriptSig(scriptPubkey, a, b);
+                    return extension.CombineScriptSig(this.Network, scriptPubkey, a, b);
                 }
             }
             return a.Length > b.Length ? a : b; //Heurestic
@@ -1593,25 +1632,25 @@ namespace NBitcoin
 
         private Script CreateScriptSig(TransactionSigningContext ctx, ICoin coin, IndexedTxIn txIn)
         {
-            var scriptPubKey = coin.GetScriptCode();
+            var scriptPubKey = coin.GetScriptCode(this.Network);
             var keyRepo = new TransactionBuilderKeyRepository(this, ctx);
-            var signer = new TransactionBuilderSigner(coin, ctx.SigHash, txIn);
+            var signer = new TransactionBuilderSigner(this, coin, ctx.SigHash, txIn);
 
-            var signer2 = new KnownSignatureSigner(_KnownSignatures, coin, ctx.SigHash, txIn);
+            var signer2 = new KnownSignatureSigner(this, _KnownSignatures, coin, ctx.SigHash, txIn);
 
             foreach(var extension in Extensions)
             {
-                if(extension.CanGenerateScriptSig(scriptPubKey))
+                if(extension.CanGenerateScriptSig(this.Network, scriptPubKey))
                 {
-                    var scriptSig1 = extension.GenerateScriptSig(scriptPubKey, keyRepo, signer);
-                    var scriptSig2 = extension.GenerateScriptSig(scriptPubKey, signer2, signer2);
+                    var scriptSig1 = extension.GenerateScriptSig(this.Network, scriptPubKey, keyRepo, signer);
+                    var scriptSig2 = extension.GenerateScriptSig(this.Network, scriptPubKey, signer2, signer2);
                     if (scriptSig2 != null)
                     {
                         scriptSig2 = signer2.ReplaceDummyKeys(scriptSig2);
                     }
-                    if (scriptSig1 != null && scriptSig2 != null && extension.CanCombineScriptSig(scriptPubKey, scriptSig1, scriptSig2))
+                    if (scriptSig1 != null && scriptSig2 != null && extension.CanCombineScriptSig(this.Network, scriptPubKey, scriptSig1, scriptSig2))
                     {
-                        var combined = extension.CombineScriptSig(scriptPubKey, scriptSig1, scriptSig2);
+                        var combined = extension.CombineScriptSig(this.Network, scriptPubKey, scriptSig1, scriptSig2);
                         return combined;
                     }
                     return scriptSig1 ?? scriptSig2;
@@ -1797,6 +1836,7 @@ namespace NBitcoin
                 if(coin != null)
                     amount = coin is IColoredCoin ? ((IColoredCoin)coin).Bearer.Amount : ((Coin)coin).Amount;
                 var result = Script.CombineSignatures(
+                                    this.Network,
                                     scriptPubKey,
                                     new TransactionChecker(tx, i, amount),
                                      GetScriptSigs(signed1.Inputs.AsIndexedInputs().Skip(i).First()),
@@ -1819,16 +1859,16 @@ namespace NBitcoin
 
         private Script DeduceScriptPubKey(Script scriptSig)
         {
-            var p2sh = PayToScriptHashTemplate.Instance.ExtractScriptSigParameters(scriptSig);
+            var p2sh = PayToScriptHashTemplate.Instance.ExtractScriptSigParameters(this.Network, scriptSig);
             if(p2sh != null && p2sh.RedeemScript != null)
             {
                 return p2sh.RedeemScript.Hash.ScriptPubKey;
             }
             foreach(var extension in Extensions)
             {
-                if(extension.CanDeduceScriptPubKey(scriptSig))
+                if(extension.CanDeduceScriptPubKey(this.Network, scriptSig))
                 {
-                    return extension.DeduceScriptPubKey(scriptSig);
+                    return extension.DeduceScriptPubKey(this.Network, scriptSig);
                 }
             }
             return null;
