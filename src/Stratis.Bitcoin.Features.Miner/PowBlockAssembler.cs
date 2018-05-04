@@ -554,37 +554,6 @@ namespace Stratis.Bitcoin.Features.Miner
         public abstract void OnTestBlockValidity();
     }
 
-    public class AssemblerOptions
-    {
-        public long BlockMaxWeight = PowMining.DefaultBlockMaxWeight;
-
-        public long BlockMaxSize = PowMining.DefaultBlockMaxSize;
-
-        public FeeRate BlockMinFeeRate = new FeeRate(PowMining.DefaultBlockMinTxFee);
-
-        public bool IsProofOfStake = false;
-    }
-
-    public class BlockTemplate
-    {
-        public Block Block;
-
-        public List<Money> VTxFees;
-
-        public List<long> TxSigOpsCost;
-
-        public string CoinbaseCommitment;
-
-        public Money TotalFee;
-
-        public BlockTemplate()
-        {
-            this.Block = new Block();
-            this.VTxFees = new List<Money>();
-            this.TxSigOpsCost = new List<long>();
-        }
-    }
-
     public class PowBlockAssembler : BlockAssembler
     {
         // Container for tracking updates to ancestor feerate as we include (parent)
