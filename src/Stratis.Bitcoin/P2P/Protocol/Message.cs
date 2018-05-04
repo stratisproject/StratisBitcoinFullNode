@@ -90,7 +90,7 @@ namespace Stratis.Bitcoin.P2P.Protocol
             int length = 0;
             uint checksum = 0;
             bool hasChecksum = false;
-            byte[] payloadBytes = stream.Serializing ? this.GetPayloadBytes(out length) : null;
+            byte[] payloadBytes = stream.Serializing ? this.GetPayloadBytes(stream.ConsensusFactory, out length) : null;
             length = payloadBytes == null ? 0 : length;
             stream.ReadWrite(ref length);
 
@@ -127,6 +127,7 @@ namespace Stratis.Bitcoin.P2P.Protocol
                 }
 
                 BitcoinStream payloadStream = new BitcoinStream(payloadBytes);
+                payloadStream.ConsensusFactory = stream.ConsensusFactory;
                 payloadStream.CopyParameters(stream);
 
                 Type payloadType = this.payloadProvider.GetCommandType(this.Command);
@@ -146,13 +147,16 @@ namespace Stratis.Bitcoin.P2P.Protocol
         /// <summary>
         /// Read the payload in to byte array.
         /// </summary>
+        /// <param name="consensusFactory">The network consensus factory.</param>
         /// <param name="length">The length of the payload.</param>
         /// <returns>The payload in bytes.</returns>
-        private byte[] GetPayloadBytes(out int length)
+        private byte[] GetPayloadBytes(ConsensusFactory consensusFactory, out int length)
         {
             using (MemoryStream ms = new MemoryStream())
             {
-                this.Payload.ReadWrite(new BitcoinStream(ms, true));
+                BitcoinStream stream = new BitcoinStream(ms, true);
+                stream.ConsensusFactory = consensusFactory;
+                this.Payload.ReadWrite(stream);
                 length = (int) ms.Position;
                 return ms.ToArray();
             }
@@ -173,7 +177,8 @@ namespace Stratis.Bitcoin.P2P.Protocol
             BitcoinStream bitStream = new BitcoinStream(stream, false)
             {
                 ProtocolVersion = version,
-                ReadCancellationToken = cancellationToken
+                ReadCancellationToken = cancellationToken,
+                ConsensusFactory = network.Consensus.ConsensusFactory,
             };
 
             if (!network.ReadMagic(stream, cancellationToken, true))

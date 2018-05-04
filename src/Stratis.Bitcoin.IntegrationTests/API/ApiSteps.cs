@@ -56,9 +56,6 @@ namespace Stratis.Bitcoin.IntegrationTests.API
 
         private void a_proof_of_stake_node_with_api_enabled()
         {
-            Transaction.TimeStamp = true;
-            Block.BlockSignature = true;
-
             this.nodes = this.nodeGroupBuilder.CreateStratisPosApiNode(PosNode)
                 .Start()
                 .WithWallet(WalletName, WalletPassword)

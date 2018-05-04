@@ -37,6 +37,8 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <summary>Keeps track of how much time different actions took to execute and how many times they were executed.</summary>
         public ConsensusPerformanceCounter PerformanceCounter { get; }
 
+        private readonly Network network;
+
         /// <summary>Provider of time functions.</summary>
         protected readonly IDateTimeProvider dateTimeProvider;
 
@@ -55,6 +57,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.ConsensusParams = network.Consensus;
             this.ConsensusOptions = network.Consensus.Option<PowConsensusOptions>();
+            this.network = network;
             this.dateTimeProvider = dateTimeProvider;
             this.PerformanceCounter = new ConsensusPerformanceCounter(this.dateTimeProvider);
             this.Checkpoints = checkpoints;
@@ -132,7 +135,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                             var checkInput = new Task<bool>(() =>
                             {
                                 var checker = new TransactionChecker(tx, inputIndexCopy, txout.Value, txData);
-                                var ctx = new ScriptEvaluationContext();
+                                var ctx = new ScriptEvaluationContext(this.network);
                                 ctx.ScriptVerify = flags.ScriptFlags;
                                 return ctx.VerifyScript(input.ScriptSig, txout.ScriptPubKey, checker);
                             });
@@ -324,7 +327,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             if (!flags.ScriptFlags.HasFlag(ScriptVerify.Witness))
                 return 0;
 
-            WitProgramParameters witParams = PayToWitTemplate.Instance.ExtractScriptPubKeyParameters2(scriptPubKey);
+            WitProgramParameters witParams = PayToWitTemplate.Instance.ExtractScriptPubKeyParameters2(this.network, scriptPubKey);
 
             if (witParams?.Version == 0)
             {
@@ -356,8 +359,8 @@ namespace Stratis.Bitcoin.Features.Consensus
             for (int i = 0; i < transaction.Inputs.Count; i++)
             {
                 TxOut prevout = inputs.GetOutputFor(transaction.Inputs[i]);
-                if (prevout.ScriptPubKey.IsPayToScriptHash)
-                    sigOps += prevout.ScriptPubKey.GetSigOpCount(transaction.Inputs[i].ScriptSig);
+                if (prevout.ScriptPubKey.IsPayToScriptHash(this.network))
+                    sigOps += prevout.ScriptPubKey.GetSigOpCount(this.network, transaction.Inputs[i].ScriptSig);
             }
 
             return sigOps;
@@ -408,6 +411,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         {
             var bms = new BitcoinStream(Stream.Null, true);
             bms.TransactionOptions = options;
+            bms.ConsensusFactory = this.network.Consensus.ConsensusFactory;
             data.ReadWrite(bms);
             return (int)bms.Counter.WrittenBytes;
         }

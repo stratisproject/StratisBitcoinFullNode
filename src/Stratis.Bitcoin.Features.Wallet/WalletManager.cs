@@ -7,10 +7,9 @@ using System.Security;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
-using Stratis.Bitcoin.Broadcasting;
 using Stratis.Bitcoin.Configuration;
+using Stratis.Bitcoin.Features.Wallet.Broadcasting;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
-using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Utilities;
 
 [assembly: InternalsVisibleTo("Stratis.Bitcoin.Features.Wallet.Tests")]
@@ -99,7 +98,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             IAsyncLoopFactory asyncLoopFactory,
             INodeLifetime nodeLifetime,
             IDateTimeProvider dateTimeProvider,
-            IBroadcasterManager broadcasterManager = null) // no need to know about transactions the node broadcast
+            IBroadcasterManager broadcasterManager = null) // no need to know about transactions the node will broadcast to.
         {
             Guard.NotNull(loggerFactory, nameof(loggerFactory));
             Guard.NotNull(network, nameof(network));
@@ -894,7 +893,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// This method is can be called many times for the same transaction (idempotent).
         /// </summary>
         /// <param name="transaction">The transaction from which details are added.</param>
-        /// <param name="utxo">The unspend output to add to the wallet.</param>
+        /// <param name="utxo">The unspent output to add to the wallet.</param>
         /// <param name="blockHeight">Height of the block.</param>
         /// <param name="block">The block containing the transaction to add.</param>
         /// <param name="isPropagated">Propagation state of the transaction.</param>
@@ -1013,7 +1012,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                 {
                     // Figure out how to retrieve the destination address.
                     string destinationAddress = string.Empty;
-                    ScriptTemplate scriptTemplate = paidToOutput.ScriptPubKey.FindTemplate();
+                    ScriptTemplate scriptTemplate = paidToOutput.ScriptPubKey.FindTemplate(this.network);
                     switch (scriptTemplate.Type)
                     {
                         // Pay to PubKey can be found in outputs of staking transactions.

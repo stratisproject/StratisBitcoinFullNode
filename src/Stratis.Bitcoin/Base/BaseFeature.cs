@@ -175,7 +175,7 @@ namespace Stratis.Bitcoin.Base
         {
             this.logger.LogTrace("()");
 
-            this.dbreezeSerializer.Initialize();
+            this.dbreezeSerializer.Initialize(this.chain.Network);
 
             this.StartChainAsync().GetAwaiter().GetResult();
 

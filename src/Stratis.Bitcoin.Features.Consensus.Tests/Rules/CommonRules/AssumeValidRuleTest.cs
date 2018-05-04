@@ -9,7 +9,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
     {
         private AssumeValidRule rule;
 
-        public AssumeValidRuleTest()
+        public AssumeValidRuleTest() : base(Network.TestNet)
         {
             this.network.Consensus.Options = new PowConsensusOptions();
             AddBlocksToChain(this.concurrentChain, 5);

@@ -23,7 +23,7 @@ using Xunit;
 
 namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
 {
-    public class FullNodeControllerTest : LogsTestBase, IDisposable
+    public class FullNodeControllerTest : LogsTestBase
     {
         private ConcurrentChain chain;
         private readonly Mock<IFullNode> fullNode;
@@ -41,10 +41,6 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
 
         public FullNodeControllerTest()
         {
-            this.initialBlockSignature = Block.BlockSignature;
-
-            Block.BlockSignature = false;
-
             this.fullNode = new Mock<IFullNode>();
             this.chainState = new Mock<IChainState>();
             this.connectionManager = new Mock<IConnectionManager>();
@@ -58,11 +54,6 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
             this.networkDifficulty = new Mock<INetworkDifficulty>();
             this.controller = new FullNodeController(this.LoggerFactory.Object, this.pooledTransaction.Object, this.pooledGetUnspentTransaction.Object, this.getUnspentTransaction.Object, this.networkDifficulty.Object,
                 this.consensusLoop.Object, this.fullNode.Object, this.nodeSettings, this.network, this.chain, this.chainState.Object, this.connectionManager.Object);
-        }
-
-        public void Dispose()
-        {
-            Block.BlockSignature = this.initialBlockSignature;
         }
 
         [Fact]

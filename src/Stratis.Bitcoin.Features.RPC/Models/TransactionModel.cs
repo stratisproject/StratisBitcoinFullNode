@@ -188,11 +188,11 @@ namespace Stratis.Bitcoin.Features.RPC.Models
 
         public ScriptPubKey(NBitcoin.Script script, Network network) : base(script)
         {
-            var destinations = new List<TxDestination> { script.GetDestination() };
-            this.Type = this.GetScriptType(script.FindTemplate());
+            var destinations = new List<TxDestination> { script.GetDestination(network) };
+            this.Type = this.GetScriptType(script.FindTemplate(network));
             if (destinations[0] == null)
             {
-                destinations = script.GetDestinationPublicKeys()
+                destinations = script.GetDestinationPublicKeys(network)
                                     .Select(p => p.Hash)
                                     .ToList<TxDestination>();
             }
@@ -205,7 +205,7 @@ namespace Stratis.Bitcoin.Features.RPC.Models
                 }
                 else
                 {
-                    PayToMultiSigTemplateParameters multi = PayToMultiSigTemplate.Instance.ExtractScriptPubKeyParameters(script);
+                    PayToMultiSigTemplateParameters multi = PayToMultiSigTemplate.Instance.ExtractScriptPubKeyParameters(network, script);
                     this.ReqSigs = multi.SignatureCount;
                     this.Addresses = multi.PubKeys.Select(m => m.GetAddress(network).ToString()).ToList();
                 }

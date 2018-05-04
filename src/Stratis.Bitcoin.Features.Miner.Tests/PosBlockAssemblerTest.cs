@@ -42,9 +42,6 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
 
             SetupValidator();
             SetupConsensusLoop();
-
-            Transaction.TimeStamp = true;
-            Block.BlockSignature = true;
         }
 
         [Fact]
@@ -55,12 +52,10 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
             this.ExecuteWithConsensusOptions(newOptions, () =>
             {
                 var chain = GenerateChainWithHeight(5, this.network, new Key());
-                this.consensusLoop.Setup(c => c.Tip)
-               .Returns(chain.GetBlock(5));
+                this.consensusLoop.Setup(c => c.Tip).Returns(chain.GetBlock(5));
 
                 var posBlockAssembler = new PosTestBlockAssembler(this.consensusLoop.Object, this.network, new MempoolSchedulerLock(), this.mempool.Object, this.dateTimeProvider.Object, this.stakeChain.Object, this.stakeValidator.Object, this.LoggerFactory.Object);
-
-                posBlockAssembler.TestBlockValidity();
+                posBlockAssembler.OnTestBlockValidity();
 
                 this.consensusLoop.Verify(c => c.ValidateBlock(It.IsAny<RuleContext>()), Times.Exactly(0));
             });
@@ -71,14 +66,9 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
         {
             this.ExecuteWithConsensusOptions(new PosConsensusOptions(), () =>
             {
-                this.dateTimeProvider.Setup(d => d.GetTimeOffset())
-                    .Returns(new DateTimeOffset(new DateTime(2017, 1, 7, 0, 0, 0, DateTimeKind.Utc)));
+                this.dateTimeProvider.Setup(d => d.GetTimeOffset()).Returns(new DateTimeOffset(new DateTime(2017, 1, 7, 0, 0, 0, DateTimeKind.Utc)));
 
                 var chain = GenerateChainWithHeight(5, this.network, new Key());
-                var assemblerOptions = new AssemblerOptions()
-                {
-                    IsProofOfStake = true
-                };
 
                 this.stakeValidator.Setup(s => s.GetNextTargetRequired(this.stakeChain.Object, chain.Tip, this.network.Consensus, true))
                     .Returns(new Target(new uint256(1123123123)))
@@ -86,12 +76,12 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
 
                 var posBlockAssembler = new PosTestBlockAssembler(this.consensusLoop.Object, this.network, new MempoolSchedulerLock(), this.mempool.Object, this.dateTimeProvider.Object, this.stakeChain.Object, this.stakeValidator.Object, this.LoggerFactory.Object);
 
-                var result = posBlockAssembler.UpdateHeaders(chain.Tip);
+                var block = posBlockAssembler.OnUpdateHeaders(chain.Tip);
 
-                Assert.Equal(chain.Tip.HashBlock, result.Header.HashPrevBlock);
-                Assert.Equal((uint)1483747200, result.Header.Time);
-                Assert.Equal(2.400408204198463E+58, result.Header.Bits.Difficulty);
-                Assert.Equal((uint)0, result.Header.Nonce);
+                Assert.Equal(chain.Tip.HashBlock, block.Header.HashPrevBlock);
+                Assert.Equal((uint)1483747200, block.Header.Time);
+                Assert.Equal(2.400408204198463E+58, block.Header.Bits.Difficulty);
+                Assert.Equal((uint)0, block.Header.Nonce);
                 this.stakeValidator.Verify();
             });
         }
@@ -505,20 +495,18 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
                 ILoggerFactory loggerFactory)
                 : base(consensusLoop, dateTimeProvider, loggerFactory, mempool, mempoolLock, network, stakeChain, stakeValidator)
             {
-                base.block = this.blockTemplate.Block;
+                base.block = this.BlockTemplate.Block;
             }
 
-            public new void TestBlockValidity()
+            public new void OnTestBlockValidity()
             {
-                base.TestBlockValidity();
+                base.OnTestBlockValidity();
             }
 
-            public Block UpdateHeaders(ChainedHeader chainTip)
+            public Block OnUpdateHeaders(ChainedBlock chainTip)
             {
-                base.ChainTip = chainTip;
-
-                base.UpdateHeaders();
-
+                this.ChainTip = chainTip;
+                base.OnUpdateHeaders();
                 return this.block;
             }
 
@@ -538,9 +526,9 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
 
                 base.CreateCoinbase();
 
-                base.blockTemplate.Block = base.block;
+                base.BlockTemplate.Block = base.block;
 
-                return base.blockTemplate;
+                return base.BlockTemplate;
             }
 
             public (Block Block, int Selected, int Updated) AddTransactions()

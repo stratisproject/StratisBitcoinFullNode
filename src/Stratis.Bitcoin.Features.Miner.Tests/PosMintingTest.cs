@@ -20,7 +20,7 @@ using Xunit;
 
 namespace Stratis.Bitcoin.Features.Miner.Tests
 {
-    public class PosMintingTest : LogsTestBase, IDisposable
+    public class PosMintingTest : LogsTestBase
     {
         private PosMinting posMinting;
         private readonly bool initialBlockSignature;
@@ -46,12 +46,6 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
 
         public PosMintingTest()
         {
-            this.initialBlockSignature = Block.BlockSignature;
-            this.initialTimestamp = Transaction.TimeStamp;
-
-            Transaction.TimeStamp = true;
-            Block.BlockSignature = true;
-
             this.consensusValidator = new Mock<IPosConsensusValidator>();
             this.consensusLoop = new Mock<IConsensusLoop>();
             this.network = Network.StratisTest;
@@ -78,12 +72,6 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
             this.nodeLifetime.Setup(n => n.ApplicationStopping).Returns(this.cancellationTokenSource.Token);
 
             this.posMinting = this.InitializePosMinting();
-        }
-
-        public void Dispose()
-        {
-            Block.BlockSignature = this.initialBlockSignature;
-            Transaction.TimeStamp = this.initialTimestamp;
         }
 
         [Fact]

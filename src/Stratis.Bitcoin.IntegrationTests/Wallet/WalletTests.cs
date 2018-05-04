@@ -14,20 +14,8 @@ using Xunit;
 
 namespace Stratis.Bitcoin.IntegrationTests.Wallet
 {
-    public class WalletTests : IDisposable
+    public class WalletTests
     {
-        private bool initialBlockSignature;
-        public WalletTests()
-        {
-            this.initialBlockSignature = Block.BlockSignature;
-            Block.BlockSignature = false;
-        }
-
-        public void Dispose()
-        {
-            Block.BlockSignature = this.initialBlockSignature;
-        }
-
         [Fact]
         public void WalletCanReceiveAndSendCorrectly()
         {

@@ -16,11 +16,10 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
 {
     public partial class SendingStakedCoinsBeforeMaturity : BddSpecification
     {
-        private SharedSteps sharedSteps;
         private ProofOfStakeSteps proofOfStakeSteps;
         private NodeGroupBuilder nodeGroupBuilder;
 
-        private CoreNode ReceiverNode;
+        private CoreNode receiverNode;
 
         private const string WalletName = "mywallet";
         private const string WalletPassword = "123456";
@@ -29,16 +28,10 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
 
         private const decimal OneMillion = 1_000_000;
 
-        ITestOutputHelper outputHelper;
-
-        public SendingStakedCoinsBeforeMaturity(ITestOutputHelper outputHelper) : base(outputHelper)
-        {
-            this.outputHelper = outputHelper;
-        }
+        public SendingStakedCoinsBeforeMaturity(ITestOutputHelper outputHelper) : base(outputHelper) { }
 
         protected override void BeforeTest()
         {
-            this.sharedSteps = new SharedSteps();
             this.proofOfStakeSteps = new ProofOfStakeSteps(this.CurrentTest.DisplayName);
             this.nodeGroupBuilder = new NodeGroupBuilder(this.CurrentTest.DisplayName);
         }
@@ -60,53 +53,62 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
 
         private void a_wallet_sends_coins_before_maturity()
         {
-            GetWalletHistory(this.proofOfStakeSteps.ProofOfStakeNodeWithCoins, this.proofOfStakeSteps.PosWallet)
-                .AccountsHistoryModel
-                .FirstOrDefault()
-                .TransactionsHistory
-                .Where(txn => txn.Type == TransactionItemType.Send).Count().Should().Be(0);
+            this.the_wallet_history_does_not_include_the_transaction();
 
+            IActionResult sendTransactionResult = this.SendTransaction(this.BuildTransaction());
+
+            sendTransactionResult.Should().BeOfType<ErrorResult>();
+
+            if (!(sendTransactionResult is ErrorResult)) return;
+
+            var error = sendTransactionResult as ErrorResult;
+            error.StatusCode.Should().Be(400);
+
+            var errorResponse = error.Value as ErrorResponse;
+            errorResponse?.Errors.Count.Should().Be(1);
+            errorResponse?.Errors[0].Message.Should().Be(ConsensusErrors.BadTransactionPrematureCoinbaseSpending.Message);
+        }
+
+        private IActionResult SendTransaction(IActionResult transactionResult)
+        {
+            var walletTransactionModel = (WalletBuildTransactionModel) (transactionResult as JsonResult)?.Value;
+
+            if (walletTransactionModel == null) return null;
+
+            return this.proofOfStakeSteps.ProofOfStakeNodeWithCoins.FullNode.NodeService<WalletController>()
+                    .SendTransaction(new SendTransactionRequest(walletTransactionModel.Hex));
+        }
+
+        private IActionResult BuildTransaction()
+        {
             var transactionResult = this.proofOfStakeSteps.ProofOfStakeNodeWithCoins.FullNode.NodeService<WalletController>()
                 .BuildTransaction(new BuildTransactionRequest
-            {
-                AccountName = this.proofOfStakeSteps.WalletAccount,
-                AllowUnconfirmed = true,
-                Amount = Money.Coins(OneMillion + 40).ToString(),
-                DestinationAddress = GetReceiverUnusedAddressFromWallet(), 
-                FeeType = FeeType.Medium.ToString("D"),
-                Password = this.proofOfStakeSteps.PosWalletPassword,
-                WalletName = this.proofOfStakeSteps.PosWallet,
-                FeeAmount = Money.Satoshis(20000).ToString()
-            });
+                {
+                    AccountName = this.proofOfStakeSteps.WalletAccount,
+                    AllowUnconfirmed = true,
+                    Amount = Money.Coins(OneMillion + 40).ToString(),
+                    DestinationAddress = this.GetReceiverUnusedAddressFromWallet(),
+                    FeeType = FeeType.Medium.ToString("D"),
+                    Password = this.proofOfStakeSteps.PosWalletPassword,
+                    WalletName = this.proofOfStakeSteps.PosWallet,
+                    FeeAmount = Money.Satoshis(20000).ToString()
+                });
 
-            var walletTransactionModel = (transactionResult as JsonResult).Value as WalletBuildTransactionModel;
-
-            var result = this.proofOfStakeSteps.ProofOfStakeNodeWithCoins.FullNode.NodeService<WalletController>()
-                .SendTransaction(new SendTransactionRequest(walletTransactionModel.Hex));
-
-            if (result is ErrorResult)
-            {
-                var error = result as ErrorResult;
-                error.StatusCode.Should().Be(400);
-
-                var errorResponse = error.Value as ErrorResponse;
-                errorResponse?.Errors.Count.Should().Be(1);
-                errorResponse?.Errors[0].Message.Should().Be(ConsensusErrors.BadTransactionPrematureCoinbaseSpending.Message);
-            }
+            return transactionResult;
         }
 
         private void the_wallet_history_does_not_include_the_transaction()
         {
-            GetWalletHistory(this.proofOfStakeSteps.ProofOfStakeNodeWithCoins, this.proofOfStakeSteps.PosWallet)
-                .AccountsHistoryModel
-                .FirstOrDefault()
-                .TransactionsHistory
-                .Where(txn => txn.Type == TransactionItemType.Send).Count().Should().Be(0);
+            var walletHistory = this.GetWalletHistory(this.proofOfStakeSteps.ProofOfStakeNodeWithCoins,this.proofOfStakeSteps.PosWallet);
+
+            var accountHistory = walletHistory.AccountsHistoryModel.FirstOrDefault();
+
+            accountHistory?.TransactionsHistory?.Where(txn => txn.Type == TransactionItemType.Send).Count().Should().Be(0);
         }
 
-        private void the_transaction_was_not_recieved()
+        private void the_transaction_was_not_received()
         {
-            this.ReceiverNode.FullNode.WalletManager().GetSpendableTransactionsInWallet(WalletName)
+            this.receiverNode.FullNode.WalletManager().GetSpendableTransactionsInWallet(WalletName)
                 .Sum(utxo => utxo.Transaction.Amount)
                 .Should().Be(0);
         }
@@ -121,11 +123,11 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
 
         private string GetReceiverUnusedAddressFromWallet()
         {
-            this.ReceiverNode = CreateRecevierNode();
+            this.receiverNode = this.CreateRecevierNode();
 
-            this.ReceiverNode.FullNode.WalletManager().CreateWallet(WalletPassword, WalletName);
+            this.receiverNode.FullNode.WalletManager().CreateWallet(WalletPassword, WalletName);
 
-            return this.ReceiverNode.FullNode.WalletManager().GetUnusedAddress(
+            return this.receiverNode.FullNode.WalletManager().GetUnusedAddress(
                 new WalletAccountReference(WalletName, WalletAccountName)).Address;
         }
 
