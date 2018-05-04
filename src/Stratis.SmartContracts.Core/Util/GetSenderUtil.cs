@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using NBitcoin;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
+using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.SmartContracts.Core.Util
 {
@@ -21,31 +22,37 @@ namespace Stratis.SmartContracts.Core.Util
         /// <returns></returns>
         public static uint160 GetSender(Transaction tx, CoinView coinView, IList<Transaction> blockTxs)
         {
-            Script script = null;
-            bool scriptFilled = false;
-
-                if (blockTxs != null && blockTxs.Count > 0)
+            // Check the txes in this block first
+            if (blockTxs != null && blockTxs.Count > 0)
             {
                 foreach (Transaction btx in blockTxs)
                 {
                     if (btx.GetHash() == tx.Inputs[0].PrevOut.Hash)
                     {
-                        script = btx.Outputs[tx.Inputs[0].PrevOut.N].ScriptPubKey;
-                        scriptFilled = true;
-                        break;
+                        Script script = btx.Outputs[tx.Inputs[0].PrevOut.N].ScriptPubKey;
+
+                        return GetAddressFromScript(script);
                     }
                 }
             }
 
-            if (!scriptFilled && coinView != null)
+            // Check the utxoset for the p2pk of the unspent output for this transaction
+            if (coinView != null)
             {
                 FetchCoinsResponse fetchCoinResult = coinView.FetchCoinsAsync(new uint256[] { tx.Inputs[0].PrevOut.Hash }).Result;
-                script = fetchCoinResult.UnspentOutputs.FirstOrDefault().Outputs[0].ScriptPubKey;
-                scriptFilled = true;
+                UnspentOutputs unspentOutputs = fetchCoinResult.UnspentOutputs.FirstOrDefault();
+
+                if (unspentOutputs == null)
+                {
+                    throw new Exception("Unspent outputs to smart contract transaction are not present in coinview");
+                }
+
+                Script script = unspentOutputs.Outputs[0].ScriptPubKey;
+
+                return GetAddressFromScript(script);
             }
 
-            return GetAddressFromScript(script);
-
+            throw new Exception("Unable to get the sender of the transaction");
         }
 
         /// <summary>
