@@ -53,15 +53,12 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
 
     public abstract class NodeRunner
     {
-        internal readonly Action<IFullNodeBuilder> Callback;
         public readonly string DataFolder;
         public bool IsDisposed => this.FullNode.State == FullNodeState.Disposed;
         public FullNode FullNode { get; set; }
-        protected NodeSettings NodeSettings { get; set; }
 
-        protected NodeRunner(string dataDir, Action<IFullNodeBuilder> callback = null)
+        protected NodeRunner(string dataDir)
         {
-            this.Callback = callback;
             this.DataFolder = dataDir;
         }
 
@@ -75,26 +72,15 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
 
         public void Start()
         {
-            if (this.Callback != null)
-                StartWithCallBack();
-            else
-                BuildNode();
-
+            BuildNode();
             OnStart();
-        }
-
-        protected void StartWithCallBack()
-        {
-            var builder = new FullNodeBuilder().UseNodeSettings(this.NodeSettings);
-            this.Callback(builder);
-            this.FullNode = (FullNode)builder.Build();
         }
     }
 
     public sealed class StratisBitcoinPosRunner : NodeRunner
     {
-        public StratisBitcoinPosRunner(string dataDir, Action<IFullNodeBuilder> callback = null)
-            : base(dataDir, callback)
+        public StratisBitcoinPosRunner(string dataDir)
+            : base(dataDir)
         {
         }
 
@@ -147,8 +133,8 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
 
     public sealed class StratisPosApiRunner : NodeRunner
     {
-        public StratisPosApiRunner(string dataDir, Action<IFullNodeBuilder> callback = null)
-            : base(dataDir, callback)
+        public StratisPosApiRunner(string dataDir)
+            : base(dataDir)
         {
         }
 
@@ -176,8 +162,8 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
 
     public sealed class StratisBitcoinPowRunner : NodeRunner
     {
-        public StratisBitcoinPowRunner(string dataDir, Action<IFullNodeBuilder> callback = null)
-            : base(dataDir, callback)
+        public StratisBitcoinPowRunner(string dataDir)
+            : base(dataDir)
         {
         }
 
@@ -205,8 +191,8 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
 
     public sealed class StratisProofOfWorkMiningNode : NodeRunner
     {
-        public StratisProofOfWorkMiningNode(string dataDir, Action<IFullNodeBuilder> callback = null)
-            : base(dataDir, callback)
+        public StratisProofOfWorkMiningNode(string dataDir)
+            : base(dataDir)
         {
         }
 

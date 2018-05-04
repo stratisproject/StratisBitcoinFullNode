@@ -186,36 +186,36 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
             return node;
         }
 
-        public CoreNode CreateStratisPowNode(bool start = false, Action<IFullNodeBuilder> callback = null)
+        public CoreNode CreateStratisPowNode(bool start = false)
         {
-            var node = new CoreNode(new StratisBitcoinPowRunner(this.GetNextDataFolderName(), callback), this, Network.RegTest);
+            var node = new CoreNode(new StratisBitcoinPowRunner(this.GetNextDataFolderName()), this, Network.RegTest);
             this.Nodes.Add(node);
             if (start)
                 node.Start();
             return node;
         }
 
-        public CoreNode CreateStratisPowMiningNode(bool start = false, Action<IFullNodeBuilder> callback = null)
+        public CoreNode CreateStratisPowMiningNode(bool start = false)
         {
-            var node = new CoreNode(new StratisProofOfWorkMiningNode(this.GetNextDataFolderName(), callback), this, Network.RegTest, configfile: "stratis.conf");
+            var node = new CoreNode(new StratisProofOfWorkMiningNode(this.GetNextDataFolderName()), this, Network.RegTest, configfile: "stratis.conf");
             this.Nodes.Add(node);
             if (start)
                 node.Start();
             return node;
         }
 
-        public CoreNode CreateStratisPosNode(bool start = false, Action<IFullNodeBuilder> callback = null)
+        public CoreNode CreateStratisPosNode(bool start = false)
         {
-            var node = new CoreNode(new StratisBitcoinPosRunner(this.GetNextDataFolderName(), callback), this, Network.RegTest, configfile: "stratis.conf");
+            var node = new CoreNode(new StratisBitcoinPosRunner(this.GetNextDataFolderName()), this, Network.RegTest, configfile: "stratis.conf");
             this.Nodes.Add(node);
             if (start)
                 node.Start();
             return node;
         }
 
-        public CoreNode CreateStratisPosApiNode(bool start = false, Action<IFullNodeBuilder> callback = null)
+        public CoreNode CreateStratisPosApiNode(bool start = false)
         {
-            var node = new CoreNode(new StratisPosApiRunner(this.GetNextDataFolderName(), callback), this, Network.RegTest, configfile: "stratis.conf");
+            var node = new CoreNode(new StratisPosApiRunner(this.GetNextDataFolderName()), this, Network.RegTest, configfile: "stratis.conf");
             this.Nodes.Add(node);
             if (start)
                 node.Start();
