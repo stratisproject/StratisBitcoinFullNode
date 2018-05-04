@@ -16,7 +16,7 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
 
         public NetworkSimulator([CallerMemberName] string caller = null)
         {
-            this.nodeBuilder = NodeBuilder.Create(caller: caller);
+            this.nodeBuilder = NodeBuilder.Create(testFolder: caller);
         }
 
         public void Initialize(int nodesCount)

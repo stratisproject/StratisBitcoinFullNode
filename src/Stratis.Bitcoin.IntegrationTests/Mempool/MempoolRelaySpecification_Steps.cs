@@ -25,7 +25,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Mempool
 
         protected override void BeforeTest()
         {
-            this.nodeBuilder = NodeBuilder.Create(caller: this.CurrentTest.DisplayName);
+            this.nodeBuilder = NodeBuilder.Create(testFolder: this.CurrentTest.DisplayName);
         }
 
         protected override void AfterTest()
