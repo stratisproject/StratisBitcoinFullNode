@@ -113,13 +113,13 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
         public static async Task<List<Block>> MineBlocksWithLastBlockMutatedAsync(TestChainContext testChainContext, 
             int count, Script receiver)
         {
-            return await MineBlocksAsync(testChainContext, count, receiver, false);
+            return await MineBlocksAsync(testChainContext, count, receiver, true);
         }
 
         public static async Task<List<Block>> MineBlocksAsync(TestChainContext testChainContext,
             int count, Script receiver)
         {
-            return await MineBlocksAsync(testChainContext, count, receiver, true);
+            return await MineBlocksAsync(testChainContext, count, receiver, false);
         }
 
         /// <summary>

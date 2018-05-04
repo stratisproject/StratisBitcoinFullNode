@@ -204,7 +204,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
 
         private static async Task<Block> MineAMutatedBlock(TestChainContext context)
         {
-            var blocks = await TestChainFactory.MineBlocksWithLastBlockMutatedAsync(context, 2, minerScriptPubKey);
+            var blocks = await TestChainFactory.MineBlocksWithLastBlockMutatedAsync(context, 1, minerScriptPubKey);
             var block = blocks.Last();
             return block;
         }
