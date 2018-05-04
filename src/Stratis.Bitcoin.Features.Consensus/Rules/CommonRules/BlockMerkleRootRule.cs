@@ -42,10 +42,11 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
                 ConsensusErrors.BadMerkleRoot.Throw();
             }
 
-            if (!mutated) return Task.CompletedTask;
-
-            this.Logger.LogTrace("(-)[BAD_TX_DUP]");
-            ConsensusErrors.BadTransactionDuplicate.Throw();
+            if (mutated)
+            {
+                this.Logger.LogTrace("(-)[BAD_TX_DUP]");
+                ConsensusErrors.BadTransactionDuplicate.Throw();
+            }
 
             return Task.CompletedTask;
         }
