@@ -61,7 +61,7 @@ namespace Stratis.Bitcoin.Features.Miner
         protected long MedianTimePast;
 
         // The constructed block template.
-        protected BlockTemplate blockTemplate;
+        protected BlockTemplate BlockTemplate;
 
         // A convenience pointer that always refers to the CBlock in pblocktemplate.
         protected Block block;
@@ -124,6 +124,8 @@ namespace Stratis.Bitcoin.Features.Miner
 
             // Whether we need to account for byte usage (in addition to weight usage).
             this.NeedSizeAccounting = (this.BlockMaxSize < network.Consensus.Option<PowConsensusOptions>().MaxBlockSerializedSize - 1000);
+
+            this.Configure();
         }
 
         private int ComputeBlockVersion(ChainedBlock prevChainedBlock, NBitcoin.Consensus consensus)
@@ -165,8 +167,8 @@ namespace Stratis.Bitcoin.Features.Miner
             this.coinbase.AddOutput(new TxOut(Money.Zero, this.scriptPubKey));
 
             this.block.AddTransaction(this.coinbase);
-            this.blockTemplate.VTxFees.Add(-1); // Updated at end.
-            this.blockTemplate.TxSigOpsCost.Add(-1); // Updated at end.
+            this.BlockTemplate.VTxFees.Add(-1); // Updated at end.
+            this.BlockTemplate.TxSigOpsCost.Add(-1); // Updated at end.
         }
 
         /// <summary>
@@ -176,7 +178,7 @@ namespace Stratis.Bitcoin.Features.Miner
         protected void Configure()
         {
             this.BlockSize = 1000;
-            this.blockTemplate = new BlockTemplate { Block = new Block(), VTxFees = new List<Money>() };
+            this.BlockTemplate = new BlockTemplate { Block = new Block(), VTxFees = new List<Money>() };
             this.BlockTx = 0;
             this.BlockWeight = 4000;
             this.BlockSigOpsCost = 400;
@@ -190,14 +192,14 @@ namespace Stratis.Bitcoin.Features.Miner
         /// </summary>
         /// <param name="chainTip">Tip of the chain that this instance will work with without touching any shared chain resources.</param>
         /// <param name="scriptPubKey">Script that explains what conditions must be met to claim ownership of a coin.</param>
-        /// <returns>The contructed <see cref="BlockTemplate"/>.</returns>
+        /// <returns>The contructed <see cref="Miner.BlockTemplate"/>.</returns>
         protected void OnBuild(ChainedBlock chainTip, Script scriptPubKey)
         {
             this.Configure();
 
             this.ChainTip = chainTip;
 
-            this.block = this.blockTemplate.Block;
+            this.block = this.BlockTemplate.Block;
             this.scriptPubKey = scriptPubKey;
 
             this.CreateCoinbase();
@@ -234,9 +236,9 @@ namespace Stratis.Bitcoin.Features.Miner
 
             // TODO: Implement Witness Code
             // pblocktemplate->CoinbaseCommitment = GenerateCoinbaseCommitment(*pblock, pindexPrev, chainparams.GetConsensus());
-            this.blockTemplate.VTxFees[0] = -this.fees;
+            this.BlockTemplate.VTxFees[0] = -this.fees;
             this.coinbase.Outputs[0].Value = this.fees + this.ConsensusLoop.Validator.GetProofOfWorkReward(this.height);
-            this.blockTemplate.TotalFee = this.fees;
+            this.BlockTemplate.TotalFee = this.fees;
 
             int nSerializeSize = this.block.GetSerializedSize();
             this.Logger.LogDebug("Serialized size is {0} bytes, block weight is {1}, number of txs is {2}, tx fees are {3}, number of sigops is {4}.", nSerializeSize, this.ConsensusLoop.Validator.GetBlockWeight(this.block), this.BlockTx, this.fees, this.BlockSigOpsCost);
@@ -259,8 +261,8 @@ namespace Stratis.Bitcoin.Features.Miner
 
             this.block.AddTransaction(iter.Transaction);
 
-            this.blockTemplate.VTxFees.Add(iter.Fee);
-            this.blockTemplate.TxSigOpsCost.Add(iter.SigOpCost);
+            this.BlockTemplate.VTxFees.Add(iter.Fee);
+            this.BlockTemplate.TxSigOpsCost.Add(iter.SigOpCost);
 
             if (this.NeedSizeAccounting)
                 this.BlockSize += iter.Transaction.GetSerializedSize();
@@ -629,7 +631,7 @@ namespace Stratis.Bitcoin.Features.Miner
 
             this.Logger.LogTrace("(-)");
 
-            return this.blockTemplate;
+            return this.BlockTemplate;
         }
 
         public override void OnUpdateHeaders()

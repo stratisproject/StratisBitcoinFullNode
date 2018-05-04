@@ -49,7 +49,7 @@ namespace Stratis.Bitcoin.Features.Miner
 
             this.logger.LogTrace("(-)");
 
-            return this.blockTemplate;
+            return this.BlockTemplate;
         }
 
         public override void OnUpdateHeaders()
