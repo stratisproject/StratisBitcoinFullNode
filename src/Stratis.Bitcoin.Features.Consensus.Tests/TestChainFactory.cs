@@ -10,6 +10,7 @@ using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
+using Stratis.Bitcoin.Features.Consensus.Interfaces;
 using Stratis.Bitcoin.Features.Consensus.Rules;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.MemoryPool.Fee;
@@ -70,7 +71,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
         {
             var testChainContext = new TestChainContext() { Network = network };
 
-            testChainContext.NodeSettings = new NodeSettings(network, args:new string[] { $"-datadir={dataDir}" });
+            testChainContext.NodeSettings = new NodeSettings(network, args: new string[] { $"-datadir={dataDir}" });
             testChainContext.ConnectionSettings = new ConnectionManagerSettings();
             testChainContext.ConnectionSettings.Load(testChainContext.NodeSettings);
             testChainContext.LoggerFactory = testChainContext.NodeSettings.LoggerFactory;
@@ -109,20 +110,19 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
         /// <summary>
         /// Mine new blocks in to the consensus database and the chain.
         /// </summary>
-        public static async Task<List<Block>> MineBlocksAsync(TestChainContext testChainContext, int count, Script scriptPubKey)
+        public static async Task<List<Block>> MineBlocksAsync(TestChainContext testChainContext, int count, Script receiver)
         {
-            BlockPolicyEstimator blockPolicyEstimator = new BlockPolicyEstimator(new MempoolSettings(testChainContext.NodeSettings), testChainContext.LoggerFactory, testChainContext.NodeSettings);
-            TxMempool mempool = new TxMempool(testChainContext.DateTimeProvider, blockPolicyEstimator, testChainContext.LoggerFactory, testChainContext.NodeSettings);
-            MempoolSchedulerLock mempoolLock = new MempoolSchedulerLock();
+            var blockPolicyEstimator = new BlockPolicyEstimator(new MempoolSettings(testChainContext.NodeSettings), testChainContext.LoggerFactory, testChainContext.NodeSettings);
+            var mempool = new TxMempool(testChainContext.DateTimeProvider, blockPolicyEstimator, testChainContext.LoggerFactory, testChainContext.NodeSettings);
+            var mempoolLock = new MempoolSchedulerLock();
 
             // Simple block creation, nothing special yet:
-
             List<Block> blocks = new List<Block>();
             for (int i = 0; i < count; ++i)
             {
-                PowBlockAssembler blockAssembler = CreatePowBlockAssembler(testChainContext.Network, testChainContext.Consensus, testChainContext.Chain, mempoolLock, mempool, testChainContext.DateTimeProvider, testChainContext.LoggerFactory as LoggerFactory);
+                PowBlockAssembler blockAssembler = CreatePowBlockAssembler(testChainContext.Consensus, testChainContext.DateTimeProvider, testChainContext.LoggerFactory as LoggerFactory, mempool, mempoolLock, testChainContext.Network);
 
-                BlockTemplate newBlock = blockAssembler.CreateNewBlock(scriptPubKey);
+                BlockTemplate newBlock = blockAssembler.Build(testChainContext.Chain.Tip, receiver);
 
                 int nHeight = testChainContext.Chain.Tip.Height + 1; // Height first in coinbase required for block.version=2
                 Transaction txCoinbase = newBlock.Block.Transactions[0];
@@ -154,23 +154,24 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
         /// Creates a proof of work block assembler.
         /// </summary>
         /// <param name="network">Network running on.</param>
-        /// <param name="consensus">Consensus loop.</param>
+        /// <param name="consensusLoop">Consensus loop.</param>
         /// <param name="chain">Block chain.</param>
         /// <param name="mempoolLock">Async lock for memory pool.</param>
         /// <param name="mempool">Memory pool for transactions.</param>
-        /// <param name="date">Date and time provider.</param>
+        /// <param name="dateTimeProvider">Date and time provider.</param>
         /// <returns>Proof of work block assembler.</returns>
-        private static PowBlockAssembler CreatePowBlockAssembler(Network network, ConsensusLoop consensus, ConcurrentChain chain, MempoolSchedulerLock mempoolLock, TxMempool mempool, IDateTimeProvider date, LoggerFactory loggerFactory)
+        private static PowBlockAssembler CreatePowBlockAssembler(IConsensusLoop consensusLoop, IDateTimeProvider dateTimeProvider, LoggerFactory loggerFactory, TxMempool mempool, MempoolSchedulerLock mempoolLock, Network network)
         {
-            AssemblerOptions options = new AssemblerOptions();
+            var options = new AssemblerOptions
+            {
+                BlockMaxWeight = network.Consensus.Option<PowConsensusOptions>().MaxBlockWeight,
+                BlockMaxSize = network.Consensus.Option<PowConsensusOptions>().MaxBlockSerializedSize
+            };
 
-            options.BlockMaxWeight = network.Consensus.Option<PowConsensusOptions>().MaxBlockWeight;
-            options.BlockMaxSize = network.Consensus.Option<PowConsensusOptions>().MaxBlockSerializedSize;
-
-            FeeRate blockMinFeeRate = new FeeRate(PowMining.DefaultBlockMinTxFee);
+            var blockMinFeeRate = new FeeRate(PowMining.DefaultBlockMinTxFee);
             options.BlockMinFeeRate = blockMinFeeRate;
 
-            return new PowBlockAssembler(chain.Tip, consensus, date, loggerFactory, mempool, mempoolLock, network, options);
+            return new PowBlockAssembler(consensusLoop, dateTimeProvider, loggerFactory, mempool, mempoolLock, network, options);
         }
     }
 }

@@ -117,36 +117,6 @@ namespace NBitcoin.BitcoinCore
 
         public int UnspentCount => this.Outputs.Count(c => !IsNull(c));
 
-        public bool Spend(int position, out TxInUndo undo)
-        {
-            undo = null;
-
-            if (position >= this.Outputs.Count)
-                return false;
-
-            if (IsNull(this.Outputs[position]))
-                return false;
-
-            undo = new TxInUndo(this.Outputs[position].Clone());
-            this.Outputs[position] = NullTxOut;
-            Cleanup();
-
-            if (this.IsEmpty)
-            {
-                undo.Height = this.nHeight;
-                undo.CoinBase = this.CoinBase;
-                undo.Version = this.nVersion;
-            }
-
-            return true;
-        }
-
-        public bool Spend(int position)
-        {
-            TxInUndo undo;
-            return Spend(position, out undo);
-        }
-
         #region IBitcoinSerializable Members
 
         public void ReadWrite(BitcoinStream stream)

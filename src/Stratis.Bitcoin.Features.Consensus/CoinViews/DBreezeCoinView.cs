@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using DBreeze;
@@ -67,6 +68,9 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         {
             Guard.NotNull(network, nameof(network));
             Guard.NotEmpty(folder, nameof(folder));
+
+            // Create the coinview folder if it does not exist.
+            Directory.CreateDirectory(folder);
 
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.dbreeze = new DBreezeEngine(folder);
