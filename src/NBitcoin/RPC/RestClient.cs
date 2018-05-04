@@ -25,6 +25,19 @@ namespace NBitcoin.RPC
     public class RestClient : INBitcoinBlockRepository
     {
         private readonly Uri address;
+        private readonly Network network;
+
+
+        /// <summary>
+        /// Gets the <see cref="Network"/> instance for the client.
+        /// </summary>
+        public Network Network
+        {
+            get
+            {
+                return network;
+            }
+        }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="RestClient"/> class.
@@ -33,8 +46,25 @@ namespace NBitcoin.RPC
         /// <exception cref="System.ArgumentNullException">Null rest API endpoint</exception>
         /// <exception cref="System.ArgumentException">Invalid value for RestResponseFormat</exception>
         public RestClient(Uri address)
+            : this(address, Network.Main)
         {
-            this.address = address ?? throw new ArgumentNullException("address");
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="RestClient"/> class.
+        /// </summary>
+        /// <param name="address">The rest API endpoint</param>
+        /// <param name="network">The network to operate with</param>
+        /// <exception cref="System.ArgumentNullException">Null rest API endpoint</exception>
+        /// <exception cref="System.ArgumentException">Invalid value for RestResponseFormat</exception>
+        public RestClient(Uri address, Network network)
+        {
+            if (address == null)
+                throw new ArgumentNullException("address");
+            if (network == null)
+                throw new ArgumentNullException("network");
+            this.address = address;
+            this.network = network;
         }
 
         /// <summary>
@@ -111,7 +141,7 @@ namespace NBitcoin.RPC
 
             return Enumerable
                 .Range(0, result.Length / hexSize)
-                .Select(i => new BlockHeader(result.SafeSubarray(i * hexSize, hexSize)));
+                .Select(i => BlockHeader.Load(result.SafeSubarray(i * hexSize, hexSize), this.network));
         }
 
         /// <summary>

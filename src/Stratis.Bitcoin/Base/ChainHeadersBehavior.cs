@@ -352,7 +352,7 @@ namespace Stratis.Bitcoin.Base
                     // Now we know the previous block header and thus we can connect the new header.
                 }
 
-                tip = new ChainedBlock(header, header.GetHash(peer.Network.NetworkOptions), prev);
+                tip = new ChainedBlock(header, header.GetHash(), prev);
                 bool validated = this.Chain.GetBlock(tip.HashBlock) != null || tip.Validate(peer.Network);
                 validated &= !this.chainState.IsMarkedInvalid(tip.HashBlock);
                 if (!validated)

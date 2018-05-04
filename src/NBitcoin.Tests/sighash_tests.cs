@@ -8,14 +8,6 @@ namespace NBitcoin.Tests
     {
         static Random rand = new Random();
 
-        public sighash_tests()
-        {
-            // These flags may get set due to static network initializers
-            // which include the initializers for Stratis.
-            Transaction.TimeStamp = false;
-            Block.BlockSignature = false;
-        }
-
         static Script RandomScript()
         {
             OpcodeType[] oplist = { OpcodeType.OP_FALSE, OpcodeType.OP_1, OpcodeType.OP_2, OpcodeType.OP_3, OpcodeType.OP_CHECKSIG, OpcodeType.OP_IF, OpcodeType.OP_VERIF, OpcodeType.OP_RETURN, OpcodeType.OP_CODESEPARATOR };
@@ -87,7 +79,7 @@ namespace NBitcoin.Tests
                 var raw = ParseHex(raw_script);
                 scriptCode = new Script(raw);
 
-                var sh = Script.SignatureHash(scriptCode, tx, nIn, (SigHash)nHashType);
+                var sh = Script.SignatureHash(Network.Main, scriptCode, tx, nIn, (SigHash)nHashType);
                 Assert.True(sh.ToString() == sigHashHex, strTest);
             }
         }

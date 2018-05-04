@@ -35,7 +35,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
 
             // Size limits.
             if ((block.Transactions.Count == 0) || (block.Transactions.Count > options.MaxBlockBaseSize) || 
-                (GetSize(block, context.Consensus.NetworkOptions & ~NetworkOptions.All) > options.MaxBlockBaseSize))
+                (GetSize(this.Parent.Network, block, context.Consensus.NetworkOptions & ~NetworkOptions.All) > options.MaxBlockBaseSize))
             {
                 this.Logger.LogTrace("(-)[BAD_BLOCK_LEN]");
                 ConsensusErrors.BadBlockLength.Throw();
@@ -56,19 +56,21 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         /// <returns>Block weight.</returns>
         public long GetBlockWeight(Block block, PowConsensusOptions powOptions, NetworkOptions options)
         {
-            return GetSize(block, options & ~NetworkOptions.Witness) * (powOptions.WitnessScaleFactor - 1) + GetSize(block, options);
+            return GetSize(this.Parent.Network, block, options & ~NetworkOptions.Witness) * (powOptions.WitnessScaleFactor - 1) + GetSize(this.Parent.Network, block, options);
         }
 
         /// <summary>
         /// Gets serialized size of <paramref name="data"/> in bytes.
         /// </summary>
+        /// <param name="network">The blockchain network.</param>
         /// <param name="data">Data that we calculate serialized size of.</param>
         /// <param name="options">Serialization options.</param>
         /// <returns>Serialized size of <paramref name="data"/> in bytes.</returns>
-        public static int GetSize(IBitcoinSerializable data, NetworkOptions options)
+        public static int GetSize(Network network, IBitcoinSerializable data, NetworkOptions options)
         {
             var bms = new BitcoinStream(Stream.Null, true);
             bms.TransactionOptions = options;
+            bms.ConsensusFactory = network.Consensus.ConsensusFactory;
             data.ReadWrite(bms);
             return (int)bms.Counter.WrittenBytes;
         }

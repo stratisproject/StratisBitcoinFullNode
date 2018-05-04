@@ -121,12 +121,12 @@ namespace Stratis.Bitcoin.BlockPulling
                 // even if the origin of the message was from the other puller behavior.
                 // Therefore we first make a quick check whether this puller behavior was the one
                 // who should deal with this block.
-                uint256 blockHash = block.Obj.Header.GetHash(peer.Network.NetworkOptions);
+                uint256 blockHash = block.Obj.Header.GetHash();
                 if (this.puller.CheckBlockTaskAssignment(this, blockHash))
                 {
                     this.logger.LogTrace("Received block '{0}', length {1} bytes.", blockHash, message.Length);
 
-                    block.Obj.Header.CacheHashes();
+                    block.Obj.Header.PrecomputeHash();
                     foreach (Transaction tx in block.Obj.Transactions)
                         tx.CacheHashes();
 

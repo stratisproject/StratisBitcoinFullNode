@@ -137,6 +137,11 @@ namespace NBitcoin
         {
             this.BuriedDeployments = new BuriedDeploymentsArray(this);
             this.BIP9Deployments = new BIP9DeploymentsArray(this);
+
+            this.ConsensusFactory = new ConsensusFactory()
+            {
+                Consensus = this
+            };
         }
 
         public BuriedDeploymentsArray BuriedDeployments { get; }
@@ -144,8 +149,6 @@ namespace NBitcoin
         public BIP9DeploymentsArray BIP9Deployments { get; }
 
         public int SubsidyHalvingInterval { get; set; }
-
-        public Func<NetworkOptions, BlockHeader, uint256> GetPoWHash { get; set; } = (n,h) => h.GetHash(n);
 
         public int MajorityEnforceBlockUpgrade { get; set; }
 
@@ -183,19 +186,24 @@ namespace NBitcoin
         /// </summary>
         public int CoinType { get; set; }
 
-        /// <summary>
-        /// Specify using litecoin calculation for difficulty
-        /// </summary>
-        public bool LitecoinWorkCalculation { get; set; }
-
         public BigInteger ProofOfStakeLimit { get; set; }
 
         public BigInteger ProofOfStakeLimitV2 { get; set; }
 
         public int LastPOWBlock { get; set; }
 
+        /// <summary>
+        /// An indicator whether this is a Proof Of Stake network.
+        /// </summary>
+        public bool IsProofOfStake { get; set; }
+
         /// <summary>The default hash to use for assuming valid blocks.</summary>
         public uint256 DefaultAssumeValid { get; set; }
+
+        /// <summary>
+        /// A factory that enables overloading base types.
+        /// </summary>
+        public ConsensusFactory ConsensusFactory { get; set; }
 
         public virtual Consensus Clone()
         {
@@ -215,13 +223,13 @@ namespace NBitcoin
                 RuleChangeActivationThreshold = this.RuleChangeActivationThreshold,
                 SubsidyHalvingInterval = this.SubsidyHalvingInterval,
                 MinimumChainWork = this.MinimumChainWork,
-                GetPoWHash = this.GetPoWHash,
                 CoinType = this.CoinType,
-                LitecoinWorkCalculation = this.LitecoinWorkCalculation,
+                IsProofOfStake = this.IsProofOfStake,
                 LastPOWBlock = this.LastPOWBlock,
                 ProofOfStakeLimit = this.ProofOfStakeLimit,
                 ProofOfStakeLimitV2 = this.ProofOfStakeLimitV2,
                 DefaultAssumeValid = this.DefaultAssumeValid,
+                ConsensusFactory = this.ConsensusFactory,
                 NetworkOptions = this.NetworkOptions.Clone()
             };
         }
@@ -232,8 +240,8 @@ namespace NBitcoin
         private uint magic;
         private byte[] alertPubKeyArray;
         private PubKey alertPubKey;
-        private readonly List<DNSSeedData> seeds = new List<DNSSeedData>();
-        private readonly List<NetworkAddress> fixedSeeds = new List<NetworkAddress>();
+        private readonly List<DNSSeedData> seeds;
+        private readonly List<NetworkAddress> fixedSeeds;
         private readonly Dictionary<int, CheckpointInfo> checkpoints = new Dictionary<int, CheckpointInfo>();
         private Block genesis;
         private Consensus consensus = new Consensus();
@@ -248,7 +256,8 @@ namespace NBitcoin
 
         private Network()
         {
-            this.genesis = new Block();
+            this.seeds = new List<DNSSeedData>();
+            this.fixedSeeds = new List<NetworkAddress>();
         }
 
         public PubKey AlertPubKey
@@ -319,8 +328,7 @@ namespace NBitcoin
 
         public uint Magic => this.magic;
 
-        static readonly ConcurrentDictionary<string, Network> NetworksContainer =
-            new ConcurrentDictionary<string, Network>();
+        private static readonly ConcurrentDictionary<string, Network> NetworksContainer = new ConcurrentDictionary<string, Network>();
 
         internal static Network Register(NetworkBuilder builder)
         {
@@ -692,7 +700,7 @@ namespace NBitcoin
 
         public Block GetGenesis()
         {
-            return this.genesis.Clone(options:this.NetworkOptions);
+            return this.genesis.Clone(consensusFactory:this.consensus.ConsensusFactory);
         }
 
         public uint256 GenesisHash => this.consensus.HashGenesisBlock;

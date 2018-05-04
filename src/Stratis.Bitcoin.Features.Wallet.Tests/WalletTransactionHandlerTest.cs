@@ -21,11 +21,6 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
         public WalletTransactionHandlerTest()
         {
-            // These tests use Network.Main.
-            // Ensure that these static flags have the expected values.
-            Transaction.TimeStamp = false;
-            Block.BlockSignature = false;
-
             // adding this data to the transaction output should increase the fee
             // 83 is the max size for the OP_RETURN script => 80 is the max for the content of the script
             byte[] maxQuantityOfBytes = Enumerable.Range(0, 80).Select(Convert.ToByte).ToArray();
@@ -151,7 +146,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             var context = CreateContext(walletReference, "password", destinationKeys.PubKey.ScriptPubKey, new Money(7500), FeeType.Low, 0);
             var transactionResult = walletTransactionHandler.BuildTransaction(context);
 
-            var result = new Transaction(transactionResult.ToHex());
+            var result = Transaction.Load(transactionResult.ToHex(), Network.Main.Consensus.ConsensusFactory);
             var expectedChangeAddressKeys = WalletTestsHelpers.GenerateAddressKeys(wallet, accountKeys.ExtPubKey, "1/0");
 
             Assert.Single(result.Inputs);
