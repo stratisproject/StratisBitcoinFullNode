@@ -110,10 +110,22 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
             return testChainContext;
         }
 
+        public static async Task<List<Block>> MineBlocksWithLastBlockMutatedAsync(TestChainContext testChainContext, 
+            int count, Script receiver)
+        {
+            return await MineBlocksAsync(testChainContext, count, receiver, false);
+        }
+
+        public static async Task<List<Block>> MineBlocksAsync(TestChainContext testChainContext,
+            int count, Script receiver)
+        {
+            return await MineBlocksAsync(testChainContext, count, receiver, true);
+        }
+
         /// <summary>
         /// Mine new blocks in to the consensus database and the chain.
         /// </summary>
-        public static async Task<List<Block>> MineBlocksAsync(TestChainContext testChainContext, int count, Script receiver, bool mutateLastBlock = false)
+        private static async Task<List<Block>> MineBlocksAsync(TestChainContext testChainContext, int count, Script receiver, bool mutateLastBlock)
         {
             var blockPolicyEstimator = new BlockPolicyEstimator(new MempoolSettings(testChainContext.NodeSettings), testChainContext.LoggerFactory, testChainContext.NodeSettings);
             var mempool = new TxMempool(testChainContext.DateTimeProvider, blockPolicyEstimator, testChainContext.LoggerFactory, testChainContext.NodeSettings);
@@ -123,7 +135,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
             List<Block> blocks = new List<Block>();
             for (int i = 0; i < count; ++i)
             {
-                BlockTemplate newBlock = await MineBlockAsync(testChainContext, receiver, mempool, mempoolLock);
+                BlockTemplate newBlock = await MineBlockAsync(testChainContext, receiver, mempool, mempoolLock, mutateLastBlock && i == count-1);
 
                 blocks.Add(newBlock.Block);
             }
