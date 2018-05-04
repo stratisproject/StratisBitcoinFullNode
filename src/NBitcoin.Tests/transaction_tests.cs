@@ -105,7 +105,7 @@ namespace NBitcoin.Tests
             tx.Inputs[0].Sequence = 1;
             //////////
 
-            //Test on heigh, normal case
+            //Test on height, normal case
             tx.LockTime = new LockTime(400);
             DateTimeOffset zero = Utils.UnixTimeToDateTime(0);
             Assert.False(tx.IsFinal(zero, 0));

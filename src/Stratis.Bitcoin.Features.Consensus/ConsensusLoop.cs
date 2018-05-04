@@ -9,6 +9,7 @@ using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Base.Deployments;
 using Stratis.Bitcoin.BlockPulling;
 using Stratis.Bitcoin.Configuration;
+using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.Consensus.Interfaces;
@@ -464,7 +465,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             }
 
             // Persist the changes to the coinview. This will likely only be stored in memory,
-            // unless the coinview treashold is reached.
+            // unless the coinview threshold is reached.
             this.logger.LogTrace("Saving coinview changes.");
             await this.UTXOSet.SaveChangesAsync(context.Set.GetCoins(this.UTXOSet), null, this.Tip.HashBlock, context.BlockValidationContext.ChainedBlock.HashBlock).ConfigureAwait(false);
 
