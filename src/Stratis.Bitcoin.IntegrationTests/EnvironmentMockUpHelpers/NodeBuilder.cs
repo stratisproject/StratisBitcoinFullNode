@@ -108,12 +108,12 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
             this.BitcoinD = bitcoindPath;
         }
 
-        public static NodeBuilder Create([CallerMemberName] string testFolder = null, string version = "0.13.1")
+        public static NodeBuilder Create([CallerMemberName] string caller = null, string version = "0.13.1")
         {
             KillAnyBitcoinInstances();
-            testFolder = Path.Combine("TestData", testFolder);
-            CreateTestFolder(testFolder);
-            return new NodeBuilder(testFolder, DownloadBitcoinCore(version));
+            caller = Path.Combine("TestData", caller);
+            CreateTestFolder(caller);
+            return new NodeBuilder(caller, DownloadBitcoinCore(version));
         }
 
         private static string DownloadBitcoinCore(string version)
