@@ -202,7 +202,7 @@ namespace NBitcoin
 
         public Target GetWorkRequired(Consensus consensus, ChainedHeader prev)
         {
-            return new ChainedBlock(this, this.GetHash(), prev).GetWorkRequired(consensus);
+            return new ChainedHeader(this, this.GetHash(), prev).GetWorkRequired(consensus);
         }
     }
 

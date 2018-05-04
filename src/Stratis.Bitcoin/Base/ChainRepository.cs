@@ -64,7 +64,7 @@ namespace Stratis.Bitcoin.Base
                     }
 
                     if (previousHeader != null)
-                        tip = new ChainedBlock(previousHeader, previousHeader.GetHash(), tip);
+                        tip = new ChainedHeader(previousHeader, previousHeader.GetHash(), tip);
 
                     if (tip == null)
                         return;

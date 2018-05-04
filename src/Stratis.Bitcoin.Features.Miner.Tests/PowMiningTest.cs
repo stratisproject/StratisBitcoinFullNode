@@ -357,12 +357,12 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
                     {
                         if (lastChainedHeader == null)
                         {
-                            context.ChainedHeader = this.fixture.ChainedBlock1;
+                            context.ChainedHeader = this.fixture.ChainedHeader1;
                             lastChainedHeader = context.ChainedHeader;
                         }
                         else
                         {
-                            context.ChainedHeader = this.fixture.ChainedBlock2;
+                            context.ChainedHeader = this.fixture.ChainedHeader2;
                         }
 
                         this.chain.SetTip(context.ChainedHeader);
@@ -387,9 +387,9 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
                             {
                                 // sometimes the PoW nonce we generate in the fixture is not accepted resulting in an infinite loop. Retry.
                                 this.fixture.Block1 = this.fixture.PrepareValidBlock(this.chain.Tip, 1, this.fixture.Key.ScriptPubKey);
-                                this.fixture.ChainedBlock1 = new ChainedHeader(this.fixture.Block1.Header, this.fixture.Block1.GetHash(), this.chain.Tip);
-                                this.fixture.Block2 = this.fixture.PrepareValidBlock(this.fixture.ChainedBlock1, 2, this.fixture.Key.ScriptPubKey);
-                                this.fixture.ChainedBlock2 = new ChainedHeader(this.fixture.Block2.Header, this.fixture.Block2.GetHash(), this.fixture.ChainedBlock1);
+                                this.fixture.ChainedHeader1 = new ChainedHeader(this.fixture.Block1.Header, this.fixture.Block1.GetHash(), this.chain.Tip);
+                                this.fixture.Block2 = this.fixture.PrepareValidBlock(this.fixture.ChainedHeader1, 2, this.fixture.Key.ScriptPubKey);
+                                this.fixture.ChainedHeader2 = new ChainedHeader(this.fixture.Block2.Header, this.fixture.Block2.GetHash(), this.fixture.ChainedHeader1);
 
                                 blockTemplate = CreateBlockTemplate(this.fixture.Block1);
                                 blockTemplate2 = CreateBlockTemplate(this.fixture.Block2);
@@ -425,7 +425,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
                     {
                         if (lastChainedHeader == null)
                         {
-                            context.ChainedHeader = this.fixture.ChainedBlock1;
+                            context.ChainedHeader = this.fixture.ChainedHeader1;
                             lastChainedHeader = context.ChainedHeader;
                             this.chain.SetTip(context.ChainedHeader);
                         }
@@ -470,7 +470,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
                 {
                     if (lastChainedBlock == null)
                     {
-                        context.ChainedHeader = this.fixture.ChainedBlock1;
+                        context.ChainedHeader = this.fixture.ChainedHeader1;
                         this.chain.SetTip(context.ChainedHeader);
                         lastChainedBlock = context.ChainedHeader;
                     }
@@ -572,10 +572,10 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
         public readonly Network Network;
 
         public Block Block1 { get; set; }
-        public ChainedHeader ChainedBlock1 { get; set; }
+        public ChainedHeader ChainedHeader1 { get; set; }
 
         public Block Block2 { get; set; }
-        public ChainedHeader ChainedBlock2 { get; set; }
+        public ChainedHeader ChainedHeader2 { get; set; }
 
         public readonly ReserveScript ReserveScript;
 
@@ -587,10 +587,10 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
             this.ReserveScript = new ReserveScript(this.Key.ScriptPubKey);
 
             this.Block1 = this.PrepareValidBlock(this.Chain.Tip, 1, this.Key.ScriptPubKey);
-            this.ChainedBlock1 = new ChainedBlock(this.Block1.Header, this.Block1.GetHash(), this.Chain.Tip);
+            this.ChainedHeader1 = new ChainedHeader(this.Block1.Header, this.Block1.GetHash(), this.Chain.Tip);
 
-            this.Block2 = this.PrepareValidBlock(this.ChainedBlock1, 2, this.Key.ScriptPubKey);
-            this.ChainedBlock2 = new ChainedBlock(this.Block2.Header, this.Block2.GetHash(), this.ChainedBlock1);
+            this.Block2 = this.PrepareValidBlock(this.ChainedHeader1, 2, this.Key.ScriptPubKey);
+            this.ChainedHeader2 = new ChainedHeader(this.Block2.Header, this.Block2.GetHash(), this.ChainedHeader1);
         }
 
         public Block PrepareValidBlock(ChainedHeader prevBlock, int newHeight, Script ScriptPubKey)

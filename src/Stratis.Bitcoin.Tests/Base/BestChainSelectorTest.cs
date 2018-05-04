@@ -31,7 +31,7 @@ namespace Stratis.Bitcoin.Tests.Base
                     Bits = Target.Difficulty1
                 };
 
-                var chainedBlock = new ChainedBlock(header, header.GetHash(), chain.Tip);
+                var chainedHeader = new ChainedHeader(header, header.GetHash(), chain.Tip);
 
                 chain.SetTip(chainedHeader);
                 

@@ -16,7 +16,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
 
             RuleContext context = new RuleContext(new BlockValidationContext (), Network.RegTest.Consensus, testContext.Chain.Tip);
             context.BlockValidationContext.Block = TestRulesContextFactory.MineBlock(Network.RegTest, testContext.Chain);
-            context.BlockValidationContext.ChainedBlock = new ChainedBlock(context.BlockValidationContext.Block.Header, context.BlockValidationContext.Block.Header.GetHash(), context.ConsensusTip);
+            context.BlockValidationContext.ChainedHeader = new ChainedHeader(context.BlockValidationContext.Block.Header, context.BlockValidationContext.Block.Header.GetHash(), context.ConsensusTip);
             context.SetBestBlock(DateTimeProvider.Default.GetTimeOffset());
 
             // increment the bits.
@@ -35,7 +35,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
 
             RuleContext context = new RuleContext(new BlockValidationContext(), Network.RegTest.Consensus, testContext.Chain.Tip);
             context.BlockValidationContext.Block = TestRulesContextFactory.MineBlock(Network.RegTest, testContext.Chain);
-            context.BlockValidationContext.ChainedBlock = new ChainedBlock(context.BlockValidationContext.Block.Header, context.BlockValidationContext.Block.Header.GetHash(), context.ConsensusTip);
+            context.BlockValidationContext.ChainedHeader = new ChainedHeader(context.BlockValidationContext.Block.Header, context.BlockValidationContext.Block.Header.GetHash(), context.ConsensusTip);
             context.SetBestBlock(DateTimeProvider.Default.GetTimeOffset());
 
             // increment the bits.
@@ -54,7 +54,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
 
             RuleContext context = new RuleContext(new BlockValidationContext(), Network.RegTest.Consensus, testContext.Chain.Tip);
             context.BlockValidationContext.Block = TestRulesContextFactory.MineBlock(Network.RegTest, testContext.Chain);
-            context.BlockValidationContext.ChainedBlock = new ChainedBlock(context.BlockValidationContext.Block.Header, context.BlockValidationContext.Block.Header.GetHash(), context.ConsensusTip);
+            context.BlockValidationContext.ChainedHeader = new ChainedHeader(context.BlockValidationContext.Block.Header, context.BlockValidationContext.Block.Header.GetHash(), context.ConsensusTip);
             context.SetBestBlock(DateTimeProvider.Default.GetTimeOffset());
 
             // increment the bits.

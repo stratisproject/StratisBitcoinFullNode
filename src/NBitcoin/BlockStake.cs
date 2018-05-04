@@ -128,10 +128,10 @@ namespace NBitcoin
                 throw new ArgumentNullException("network");
             if (chainedHeader.Height != 0 && chainedHeader.Previous == null)
                 return false;
-            var heightCorrect = chainedBlock.Height == 0 || chainedBlock.Height == chainedBlock.Previous.Height + 1;
-            var genesisCorrect = chainedBlock.Height != 0 || chainedBlock.HashBlock == network.GetGenesis().GetHash();
-            var hashPrevCorrect = chainedBlock.Height == 0 || chainedBlock.Header.HashPrevBlock == chainedBlock.Previous.HashBlock;
-            var hashCorrect = chainedBlock.HashBlock == chainedBlock.Header.GetHash();
+            var heightCorrect = chainedHeader.Height == 0 || chainedHeader.Height == chainedHeader.Previous.Height + 1;
+            var genesisCorrect = chainedHeader.Height != 0 || chainedHeader.HashBlock == network.GetGenesis().GetHash();
+            var hashPrevCorrect = chainedHeader.Height == 0 || chainedHeader.Header.HashPrevBlock == chainedHeader.Previous.HashBlock;
+            var hashCorrect = chainedHeader.HashBlock == chainedHeader.Header.GetHash();
 
             return heightCorrect && genesisCorrect && hashPrevCorrect && hashCorrect;
         }

@@ -34,7 +34,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
 
             // Check coinbase timestamp.
             uint coinbaseTime = context.BlockValidationContext.Block.Transactions[0].Time;
-            if (chainedBlock.Header.Time > coinbaseTime + PosFutureDriftRule.GetFutureDrift(coinbaseTime))
+            if (chainedHeader.Header.Time > coinbaseTime + PosFutureDriftRule.GetFutureDrift(coinbaseTime))
             {
                 this.Logger.LogTrace("(-)[TIME_TOO_NEW]");
                 ConsensusErrors.TimeTooNew.Throw();

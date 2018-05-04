@@ -258,7 +258,7 @@ namespace NBitcoin
         /// <returns>The target proof of work.</returns>
         public Target GetNextWorkRequired(BlockHeader block, Consensus consensus)
         {
-            return new ChainedBlock(block, block.GetHash(), this).GetWorkRequired(consensus);
+            return new ChainedHeader(block, block.GetHash(), this).GetWorkRequired(consensus);
         }
 
         /// <summary>
@@ -314,8 +314,8 @@ namespace NBitcoin
             // Go back by what we want to be 14 days worth of blocks.
             long pastHeight = lastBlock.Height - (consensus.DifficultyAdjustmentInterval - 1);
 
-            ChainedBlock firstChainedBlock = this.GetAncestor((int)pastHeight);
-            if (firstChainedBlock == null)
+            ChainedHeader firstChainedHeader = this.GetAncestor((int)pastHeight);
+            if (firstChainedHeader == null)
                 throw new NotSupportedException("Can only calculate work of a full chain");
 
             if (consensus.PowNoRetargeting)

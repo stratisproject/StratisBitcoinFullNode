@@ -503,7 +503,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
                 base.OnTestBlockValidity();
             }
 
-            public Block OnUpdateHeaders(ChainedBlock chainTip)
+            public Block OnUpdateHeaders(ChainedHeader chainTip)
             {
                 this.ChainTip = chainTip;
                 base.OnUpdateHeaders();

@@ -470,7 +470,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
                 this.block = this.BlockTemplate.Block;
             }
 
-            public override BlockTemplate Build(ChainedBlock chainTip, Script scriptPubKey)
+            public override BlockTemplate Build(ChainedHeader chainTip, Script scriptPubKey)
             {
                 base.OnBuild(chainTip, scriptPubKey);
 
@@ -506,7 +506,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
                 return base.BlockTemplate;
             }
 
-            public Block OnUpdateHeaders(ChainedBlock chainTip)
+            public Block OnUpdateHeaders(ChainedHeader chainTip)
             {
                 base.ChainTip = chainTip;
                 base.OnUpdateHeaders();

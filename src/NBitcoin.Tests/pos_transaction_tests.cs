@@ -69,10 +69,10 @@ namespace NBitcoin.Tests
             if (chain != null)
             {
                 b.Header.HashPrevBlock = chain.Tip.HashBlock;
-                return new ChainedBlock(b.Header, b.Header.GetHash(), chain.Tip);
+                return new ChainedHeader(b.Header, b.Header.GetHash(), chain.Tip);
             }
             else
-                return new ChainedBlock(b.Header, b.Header.GetHash(), 0);
+                return new ChainedHeader(b.Header, b.Header.GetHash(), 0);
         }
 
         [Fact]
