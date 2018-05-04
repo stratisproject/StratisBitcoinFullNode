@@ -1,25 +1,27 @@
 ﻿using System;
-using Stratis.SmartContracts.Core.Exceptions;
+using Stratis.SmartContracts;
+using Stratis.SmartContracts.Standards;
 
-namespace Stratis.SmartContracts.Standards
+namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
 {
     /// <summary>
     /// TODO: investigare improvements for Assert checks
+    /// TODO: investigate implementation of 2D mapping arrays
     /// </summary>
     public class StandardToken : SmartContract, IStandardToken
     {
-        private readonly ISmartContractMapping<ulong> balances;
-        private readonly ISmartContractMapping<ISmartContractMapping<ulong>> allowed;
-
         public StandardToken(ISmartContractState smartContractState, ulong totalSupply) : base(smartContractState)
         {
             if (totalSupply == 0)
                 throw new ArgumentException("Token supply must be greater than 0", nameof(totalSupply));
-            this.balances = this.PersistentState.GetMapping<ulong>("Balances");
-            this.allowed = this.PersistentState.GetMapping<ISmartContractMapping<ulong>>("Allowed");
+            this.Balances = this.PersistentState.GetMapping<ulong>(nameof(this.Balances));
+            this.Allowed = this.PersistentState.GetMapping<ISmartContractMapping<ulong>>(nameof(this.Allowed));
             this.Owner = this.Message.Sender;
             this.TotalSupply = totalSupply;
         }
+
+        public readonly ISmartContractMapping<ulong> Balances;
+        public readonly ISmartContractMapping<ISmartContractMapping<ulong>> Allowed;
 
         public ulong TotalSupply
         {
@@ -35,9 +37,9 @@ namespace Stratis.SmartContracts.Standards
 
         public ulong GetBalance(Address address)
         {
-            this.Assert(string.IsNullOrWhiteSpace(address.Value));
+            this.Assert(!string.IsNullOrWhiteSpace(address.Value));
 
-            return this.balances[address.Value];
+            return this.Balances[address.Value];
         }
 
         public bool Transfer(Address to, ulong amountToTransfer)
@@ -47,18 +49,23 @@ namespace Stratis.SmartContracts.Standards
 
         public bool TransferFrom(Address from, Address to, ulong amountToTransfer)
         {
-            this.Assert(string.IsNullOrWhiteSpace(from.Value));
-            this.Assert(string.IsNullOrWhiteSpace(to.Value));
+            this.Assert(!string.IsNullOrWhiteSpace(from.Value));
+            this.Assert(!string.IsNullOrWhiteSpace(to.Value));
 
             checked
             {   
-                if (this.balances[from.Value] < amountToTransfer)
+                if (this.Balances[from.Value] < amountToTransfer)
                 {
-                    throw new StandardTokenValidationException($"Insufficient funds in {from} to transfer {amountToTransfer}");
+                    throw new ApplicationException($"Insufficient funds in {from} to transfer {amountToTransfer}");
                 }
 
-                this.balances[from.Value] -= amountToTransfer;
-                this.balances[to.Value] += amountToTransfer;
+                if (amountToTransfer > this.TotalSupply)
+                {
+                    throw new ApplicationException($"Amount to transfer exceeds total supply of {this.TotalSupply}");
+                }
+
+                this.Balances[from.Value] -= amountToTransfer;
+                this.Balances[to.Value] += amountToTransfer;
 
                 return true;
             }
@@ -66,17 +73,17 @@ namespace Stratis.SmartContracts.Standards
 
         public ulong GetAllowance(Address owner, Address spender)
         {
-            this.Assert(string.IsNullOrWhiteSpace(owner.Value));
-            this.Assert(string.IsNullOrWhiteSpace(spender.Value));
+            this.Assert(!string.IsNullOrWhiteSpace(owner.Value));
+            this.Assert(!string.IsNullOrWhiteSpace(spender.Value));
 
-            return this.allowed[owner.Value][spender.Value];
+            return this.Allowed[owner.Value][spender.Value];
         }
 
         public bool Approve(Address sender, ulong amountToApprove)
         {
-            Guard.AgainstInvalidAddress(sender, paramName: nameof(sender));
+            this.Assert(!string.IsNullOrWhiteSpace(sender.Value));
 
-            this.allowed[this.Owner.Value][sender.Value] = amountToApprove;
+            this.Allowed[this.Owner.Value][sender.Value] = amountToApprove;
             return true;
         }
     }
