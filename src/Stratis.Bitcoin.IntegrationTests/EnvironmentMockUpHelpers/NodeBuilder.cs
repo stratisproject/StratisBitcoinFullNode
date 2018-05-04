@@ -165,7 +165,7 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
             }
         }
 
-        private CoreNode CreateNode(NodeRunner runner, Network network, bool start, string configFile = null)
+        private CoreNode CreateNode(NodeRunner runner, Network network, bool start, string configFile = "bitcoin.conf")
         {
             var node = new CoreNode(runner, this, network, configFile);
             this.Nodes.Add(node);
