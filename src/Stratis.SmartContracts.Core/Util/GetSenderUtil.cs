@@ -24,7 +24,7 @@ namespace Stratis.SmartContracts.Core.Util
             Script script = null;
             bool scriptFilled = false;
 
-                if (blockTxs != null & blockTxs.Count > 0)
+                if (blockTxs != null && blockTxs.Count > 0)
             {
                 foreach (Transaction btx in blockTxs)
                 {
