@@ -61,9 +61,9 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
         /// Creates the test chain with some default blocks and txs.
         /// </summary>
         /// <param name="network">Network to create the chain on.</param>
-        /// <param name="receiver">Public key to create blocks/txs with.</param>
+        /// <param name="scriptPubKey">Public key to create blocks/txs with.</param>
         /// <returns>Context object representing the test chain.</returns>
-        public static async Task<ITestChainContext> CreateAsync(Network network, Script receiver, string dataDir)
+        public static async Task<ITestChainContext> CreateAsync(Network network, Script scriptPubKey, string dataDir)
         {
             NodeSettings nodeSettings = new NodeSettings(network, args: new string[] { $"-datadir={dataDir}" });
 
@@ -96,7 +96,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
 
             // Simple block creation, nothing special yet:
             PowBlockAssembler blockAssembler = CreatePowBlockAssembler(consensus, dateTimeProvider, loggerFactory as LoggerFactory, mempool, mempoolLock, network);
-            BlockTemplate newBlock = blockAssembler.Build(chain.Tip, receiver);
+            BlockTemplate newBlock = blockAssembler.Build(chain.Tip, scriptPubKey);
             chain.SetTip(newBlock.Block.Header);
             await consensus.ValidateAndExecuteBlockAsync(new RuleContext(new BlockValidationContext { Block = newBlock.Block }, network.Consensus, consensus.Tip) { CheckPow = false, CheckMerkleRoot = false });
 
@@ -136,7 +136,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
 
             // Just to make sure we can still make simple blocks
             blockAssembler = CreatePowBlockAssembler(consensus, dateTimeProvider, loggerFactory as LoggerFactory, mempool, mempoolLock, network);
-            newBlock = blockAssembler.Build(chain.Tip, receiver);
+            newBlock = blockAssembler.Build(chain.Tip, scriptPubKey);
 
             MempoolValidator mempoolValidator = new MempoolValidator(mempool, mempoolLock, consensusValidator, dateTimeProvider, new MempoolSettings(nodeSettings), chain, cachedCoinView, loggerFactory, nodeSettings);
 
