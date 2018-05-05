@@ -97,7 +97,7 @@ namespace Stratis.Bitcoin.Tests.Wallet.Common
             return last;
         }
 
-        public static (ChainedHeader ChainedBlock, Block Block) AppendBlock(ChainedHeader previous, ConcurrentChain chain)
+        public static (ChainedHeader ChainedHeader, Block Block) AppendBlock(ChainedHeader previous, ConcurrentChain chain)
         {
             ChainedHeader last = null;
             var nonce = RandomUtils.GetUInt32();

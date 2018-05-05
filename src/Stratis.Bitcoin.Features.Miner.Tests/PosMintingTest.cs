@@ -455,8 +455,8 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
             var blockHeader = new BlockHeader();
             blockHeader.Time = 1269211443;
             blockHeader.Bits = new Target(bits);
-            var chainedBlock = new ChainedHeader(blockHeader, blockHeader.GetHash(), 46367);
-            return chainedBlock;
+            var chainedHeader = new ChainedHeader(blockHeader, blockHeader.GetHash(), 46367);
+            return chainedHeader;
         }
     }
 }
