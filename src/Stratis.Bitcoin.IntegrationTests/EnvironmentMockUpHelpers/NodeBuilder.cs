@@ -185,7 +185,7 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
 
         public CoreNode CreateStratisPowMiningNode(bool start = false)
         {
-            return CreateNode(new StratisProofOfWorkMiningNode(this.GetNextDataFolderName()), Network.RegTest, start);
+            return CreateNode(new StratisProofOfWorkMiningNode(this.GetNextDataFolderName()), Network.RegTest, start, "stratis.conf");
         }
 
         public CoreNode CreateStratisPosNode(bool start = false)
@@ -200,7 +200,7 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
 
         public CoreNode CloneStratisNode(CoreNode cloneNode)
         {
-            var node = new CoreNode(new StratisBitcoinPowRunner(cloneNode.FullNode.Settings.DataFolder.RootPath), this, Network.RegTest);
+            var node = new CoreNode(new StratisBitcoinPowRunner(cloneNode.FullNode.Settings.DataFolder.RootPath), this, Network.RegTest, "bitcoin.conf");
             this.Nodes.Add(node);
             this.Nodes.Remove(cloneNode);
             return node;
