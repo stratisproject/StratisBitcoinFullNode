@@ -386,6 +386,7 @@ namespace Stratis.Bitcoin.Features.Miner
             if (Interlocked.CompareExchange(ref this.stakeProgressFlag, StakeInProgress, StakeNotInProgress) == StakeInProgress)
             {
                 this.logger.LogTrace("(-)[ALREADY_MINING]");
+                return;
             }
 
             this.rpcGetStakingInfoModel.Enabled = true;
@@ -463,7 +464,7 @@ namespace Stratis.Bitcoin.Features.Miner
 
             BlockTemplate blockTemplate = null;
 
-            while (!this.stakeCancellationTokenSource.Token.IsCancellationRequested)
+            while (this.stakeCancellationTokenSource != null && !this.stakeCancellationTokenSource.Token.IsCancellationRequested)
             {
                 // Prevent mining if the system time is not in sync with that of other members on the network.
                 if (this.timeSyncBehaviorState.IsSystemTimeOutOfSync)
