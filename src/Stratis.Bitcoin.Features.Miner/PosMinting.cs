@@ -447,9 +447,15 @@ namespace Stratis.Bitcoin.Features.Miner
             }
 
             this.stakeCancellationTokenSource.Cancel();
-            this.stakingLoop.Dispose();
+            this.logger.LogTrace("Waiting for staking loop to cancel...");
+            this.stakingLoop?.RunningTask?.GetAwaiter().OnCompleted(() =>
+            {
+                this.logger.LogTrace("Staking loop cancelled.");                              
+            });
+            this.logger.LogTrace("Disposing of staking loop.");
+            this.stakingLoop?.Dispose();
             this.stakingLoop = null;
-            this.stakeCancellationTokenSource.Dispose();
+            this.stakeCancellationTokenSource?.Dispose();
             this.stakeCancellationTokenSource = null;
             this.rpcGetStakingInfoModel = new Miner.Models.GetStakingInfoModel();
             this.rpcGetStakingInfoModel.Enabled = false;
