@@ -1,7 +1,6 @@
 ﻿using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
-using System.Text;
 using NBitcoin;
 using NBitcoin.DataEncoders;
 using Stratis.Bitcoin.Features.GeneralPurposeWallet;
@@ -81,12 +80,23 @@ namespace Stratis.FederatedPeg.IntegrationTests.Helpers
             var memberFolderManager = new MemberFolderManager(this.Folder);
             var federation = memberFolderManager.LoadFederation(m, n);
            
-            var publicKeys = (from f in federation.Members orderby f.PublicKeySideChain.ToHex() select f.PublicKeySideChain).ToArray();
+            var publicKeys = chain == Chain.Mainchain ?
+                  (from f in federation.Members orderby f.PublicKeyMainChain.ToHex() select f.PublicKeyMainChain).ToArray()
+                : (from f in federation.Members orderby f.PublicKeySideChain.ToHex() select f.PublicKeySideChain).ToArray();
             multiSigAddress.Create(new Key(Encoders.Hex.DecodeData(privateKeyDecryptString)), publicKeys, m, network);
 
             account.ImportMultiSigAddress(multiSigAddress);
 
+            generalWalletManager.SaveWallet(wallet);
+
             return account;
+        }
+
+        public void SaveGeneralWallet(CoreNode node, string walletName)
+        {
+            var generalWalletManager = node.FullNode.NodeService<IGeneralPurposeWalletManager>() as GeneralPurposeWalletManager;
+            var wallet = generalWalletManager.GetWallet(walletName);
+            generalWalletManager.SaveWallet(wallet);
         }
     }
 }

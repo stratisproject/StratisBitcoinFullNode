@@ -5,6 +5,10 @@ using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using NBitcoin;
+using Stratis.Bitcoin.Connection;
+using Stratis.Bitcoin.Features.GeneralPurposeWallet;
+using Stratis.Bitcoin.Features.GeneralPurposeWallet.Interfaces;
+using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Sidechains.Features.BlockchainGeneration.Tests.Common.EnvironmentMockUp;
 
 namespace Stratis.FederatedPeg.IntegrationTests
@@ -94,6 +98,44 @@ namespace Stratis.FederatedPeg.IntegrationTests
             if (node1.FullNode.WalletManager().WalletTipHash != node2.FullNode.WalletManager().WalletTipHash) return false;
             if (node1.CreateRPCClient().GetBestBlockHash() != node2.CreateRPCClient().GetBestBlockHash()) return false;
             return true;
+        }
+
+        private static IGeneralPurposeWalletManager GetGeneralWalletManager(CoreNode node)
+        {
+            return node.FullNode.NodeService<IGeneralPurposeWalletManager>();
+        }
+
+        public static bool AreNodeGeneralWalletsSynced(CoreNode node1, CoreNode node2)
+        {
+            return IntegrationTestUtils.GetGeneralWalletManager(node1).WalletTipHash == IntegrationTestUtils.GetGeneralWalletManager(node2).WalletTipHash;
+        }
+
+        public static void ResyncGeneralWallet(CoreNode node)
+        {
+            var generalPurposeWalletSyncManager = node.FullNode.NodeService<IGeneralPurposeWalletSyncManager>();
+            generalPurposeWalletSyncManager.SyncFromHeight(0);
+        }
+
+        public static bool IsGeneralWalletSyncedToHeight(CoreNode node, int height)
+        {
+            var generalWalletManager = node.FullNode.NodeService<IGeneralPurposeWalletManager>() as GeneralPurposeWalletManager;
+            return generalWalletManager.LastBlockHeight() >= height;
+        }
+
+        //todo: duplication
+        public static void SaveGeneralWallet(CoreNode node, string walletName)
+        {
+            var generalWalletManager = node.FullNode.NodeService<IGeneralPurposeWalletManager>() as GeneralPurposeWalletManager;
+            var wallet = generalWalletManager.GetWallet(walletName);
+            generalWalletManager.SaveWallet(wallet);
+        }
+
+        public static bool AreConnected(CoreNode node1, CoreNode node2)
+        {
+            var connectionManager = node1.FullNode.NodeService<IConnectionManager>();
+            foreach (INetworkPeer peer in connectionManager.ConnectedPeers)
+                if (peer.PeerEndPoint.Port == node2.Endpoint.Port) return true;
+            return false;
         }
     }
 }
