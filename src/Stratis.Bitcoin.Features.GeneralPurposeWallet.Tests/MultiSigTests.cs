@@ -306,8 +306,6 @@ namespace Stratis.Bitcoin.Features.GeneralPurposeWallet.Tests
 		[Fact]
 	    public void CanSignMultiSigTransaction()
 	    {
-			// TODO: The logic in this test should probably be incorporated into the wallet itself
-
 			var multiSig = this.MultiSigSetup();
 
 			// Create arbitrary coin so that we don't introduce the complexity of a node running and mining
@@ -522,7 +520,163 @@ namespace Stratis.Bitcoin.Features.GeneralPurposeWallet.Tests
 			}
 		}
 
-	    [Fact]
+		[Fact]
+		public void CanSignPartialTransaction()
+		{
+			var multiSig = this.MultiSigSetup();
+
+			using (NodeBuilder builder = NodeBuilder.Create())
+			{
+				CoreNode node1 = builder.CreateStratisPowNode(true, fullNodeBuilder =>
+				{
+					fullNodeBuilder
+						.UsePowConsensus()
+						.UseBlockStore()
+						.UseMempool()
+						.UseBlockNotification()
+						.UseTransactionNotification()
+						.UseWallet()
+						.UseWatchOnlyWallet()
+						.UseGeneralPurposeWallet()
+						.AddMining()
+						//.UseApi()
+						.AddRPC();
+				});
+
+				var rpc1 = node1.CreateRPCClient();
+
+				var wm1 = node1.FullNode.NodeService<IWalletManager>() as WalletManager;
+				wm1.CreateWallet("Multisig1", "multisig");
+
+				var wth1 = node1.FullNode.NodeService<IWalletTransactionHandler>() as WalletTransactionHandler;
+
+				var bm1 = node1.FullNode.NodeService<IBroadcasterManager>() as FullNodeBroadcasterManager;
+
+				var wallet1 = wm1.GetWalletByName("multisig");
+				var account1 = wallet1.GetAccountsByCoinType((Wallet.CoinType)node1.FullNode.Network.Consensus.CoinType)
+					.First();
+				var address1 = account1.GetFirstUnusedReceivingAddress();
+				var secret1 = wallet1.GetExtendedPrivateKeyForAddress("Multisig1", address1);
+
+				node1.SetDummyMinerSecret(new BitcoinSecret(secret1.PrivateKey, node1.FullNode.Network));
+
+				var gwm1 = node1.FullNode.NodeService<IGeneralPurposeWalletManager>() as GeneralPurposeWalletManager;
+				gwm1.CreateWallet("Multisig1", "multisig");
+
+				var gwallet1 = gwm1.GetWalletByName("multisig");
+				var gaccount1 = gwallet1
+					.GetAccountsByCoinType(
+						(Stratis.Bitcoin.Features.GeneralPurposeWallet.CoinType)node1.FullNode.Network.Consensus.CoinType).First();
+
+				gaccount1.ImportMultiSigAddress(multiSig.multiSigAddress);
+
+				var gwth1 =
+					node1.FullNode.NodeService<IGeneralPurposeWalletTransactionHandler>() as GeneralPurposeWalletTransactionHandler;
+
+				rpc1.Generate(102);
+
+				wm1.SaveWallets();
+
+				var destination = BitcoinAddress.Create(multiSig.multiSigAddress.Address, Network.RegTest).ScriptPubKey;
+
+				var context = new Wallet.TransactionBuildContext(
+					new WalletAccountReference("multisig", "account 0"),
+					new[] { new Wallet.Recipient { Amount = Money.Coins(10m), ScriptPubKey = destination } }.ToList(),
+					"Multisig1")
+				{
+					TransactionFee = Money.Coins(0.01m),
+					MinConfirmations = 101, // The wallet does not appear to regard immature coinbases as unspendable
+					Shuffle = true
+				};
+
+				var transactionResult = wth1.BuildTransaction(context);
+
+				bm1.BroadcastTransactionAsync(transactionResult).GetAwaiter().GetResult();
+
+				rpc1.Generate(1);
+
+				var arbitraryDestination = gaccount1.ExternalAddresses.First().ScriptPubKey;
+
+				// Create template (unsigned) transaction
+				var multiSigContext = new Stratis.Bitcoin.Features.GeneralPurposeWallet.TransactionBuildContext(
+					new GeneralPurposeWalletAccountReference("multisig", "account 0"),
+					new[]
+					{
+						new Stratis.Bitcoin.Features.GeneralPurposeWallet.Recipient
+						{
+							Amount = Money.Coins(5m),
+							ScriptPubKey = arbitraryDestination
+						}
+					}.ToList(),
+					"Multisig1")
+				{
+					TransactionFee = Money.Coins(0.01m),
+					MinConfirmations = 1, // The funds in the multisig address have just been confirmed
+					Shuffle = true,
+					MultiSig = multiSig.multiSigAddress,
+					IgnoreVerify = true,
+					Sign = false
+				};
+
+				var multiSigTransactionResult = gwth1.BuildTransaction(multiSigContext);
+
+				List<ScriptCoin> coins = new List<ScriptCoin>();
+
+				foreach (var tempCoin in multiSig.multiSigAddress.Transactions.First().Transaction.Outputs.AsCoins())
+				{
+					if (tempCoin.ScriptPubKey == multiSig.multiSigAddress.ScriptPubKey)
+						coins.Add(tempCoin.ToScriptCoin(multiSig.multiSigAddress.RedeemScript));
+				}
+
+				// Sign the built unsigned transaction with first private key
+
+				Transaction partial = gaccount1.SignPartialTransaction(multiSigTransactionResult.Clone());
+
+				// Sign a copy of the built unsigned transaction with a second private key
+
+				TransactionBuilder aliceTxBuilder = new TransactionBuilder();
+
+				Transaction aliceSigned =
+					aliceTxBuilder
+						.AddCoins(coins)
+						.AddKeys(multiSig.alicePrivateKey)
+						.SignTransaction(multiSigTransactionResult);
+
+				Transaction final = gaccount1.CombinePartialTransactions(new Transaction[] { partial, aliceSigned });
+
+				Assert.NotNull(final);
+
+				bm1.BroadcastTransactionAsync(final).GetAwaiter().GetResult();
+
+				// Check that spending details for the input funds to the multisig transaction exist
+
+				rpc1.Generate(1);
+
+				Assert.NotEmpty(gaccount1.ExternalAddresses.First().Transactions);
+
+				var destTx = gaccount1.ExternalAddresses.First().Transactions.First();
+
+				// Check that the multisig address has a transaction in it with populated spending details.
+				// This must be the same transaction present in the first ExternalAddress as that is the
+				// destination of the multisig transaction.
+				bool found = false;
+				foreach (var tx in gaccount1.MultiSigAddresses.First().Transactions)
+				{
+					if (tx.SpendingDetails != null)
+					{
+						found = true;
+						Assert.Equal(tx.SpendingDetails.TransactionId, destTx.Id);
+					}
+				}
+
+				Assert.True(found);
+
+				// Check change output came back to multisig address. This is the same ID as destTx above.
+				Assert.NotNull(gaccount1.MultiSigAddresses.First().Transactions.FirstOrDefault(i => i.Id == destTx.Id));
+			}
+		}
+
+		[Fact]
 	    public void CanCombinePartialTransactions()
 	    {
 		    var multiSig = this.MultiSigSetup();
