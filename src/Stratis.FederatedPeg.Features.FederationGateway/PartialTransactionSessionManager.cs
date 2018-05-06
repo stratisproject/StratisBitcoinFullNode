@@ -182,6 +182,11 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
             this.logger.LogInformation("()");
             this.logger.LogInformation("${this.federationGatewaySettings.MemberName} Combing and Broadcasting transactions.");
             var account = this.generalPurposeWalletManager.GetAccounts("multisig_wallet").First();
+            if (account == null)
+            {
+                this.logger.LogInformation("InvalidAccount from GPWallet.");
+                return;
+            }
             var combinedTransaction = account.CombinePartialTransactions(partialTransactionSession.PartialTransactions);
             this.broadcastManager.BroadcastTransactionAsync(combinedTransaction).GetAwaiter().GetResult();
             this.logger.LogInformation("(-)");
