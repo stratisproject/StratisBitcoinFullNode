@@ -10,6 +10,13 @@ namespace NBitcoin.RPC
 {
     class SatoshiFormatter : RawFormatter
     {
+        private readonly Network network;
+
+        public SatoshiFormatter(Network network)
+        {
+            this.network = network;
+        }
+
         protected override void BuildTransaction(JObject json, Transaction tx)
         {
             tx.Version = (uint)json.GetValue("version");
@@ -105,17 +112,17 @@ namespace NBitcoin.RPC
                 WritePropertyValue(writer, "asm", txout.ScriptPubKey.ToString());
                 WritePropertyValue(writer, "hex", Encoders.Hex.EncodeData(txout.ScriptPubKey.ToBytes()));
 
-                var destinations = new List<TxDestination>() { txout.ScriptPubKey.GetDestination() };
+                var destinations = new List<TxDestination>() { txout.ScriptPubKey.GetDestination(this.network) };
                 if(destinations[0] == null)
                 {
-                    destinations = txout.ScriptPubKey.GetDestinationPublicKeys()
+                    destinations = txout.ScriptPubKey.GetDestinationPublicKeys(this.network)
                                                         .Select(p => p.Hash)
                                                         .ToList<TxDestination>();
                 }
                 if(destinations.Count == 1)
                 {
                     WritePropertyValue(writer, "reqSigs", 1);
-                    WritePropertyValue(writer, "type", GetScriptType(txout.ScriptPubKey.FindTemplate()));
+                    WritePropertyValue(writer, "type", GetScriptType(txout.ScriptPubKey.FindTemplate(this.network)));
                     writer.WritePropertyName("addresses");
                     writer.WriteStartArray();
                     writer.WriteValue(destinations[0].GetAddress(Network).ToString());
@@ -123,10 +130,10 @@ namespace NBitcoin.RPC
                 }
                 else
                 {
-                    var multi = PayToMultiSigTemplate.Instance.ExtractScriptPubKeyParameters(txout.ScriptPubKey);
+                    var multi = PayToMultiSigTemplate.Instance.ExtractScriptPubKeyParameters(this.network, txout.ScriptPubKey);
                     if (multi != null)
                         WritePropertyValue(writer, "reqSigs", multi.SignatureCount);
-                    WritePropertyValue(writer, "type", GetScriptType(txout.ScriptPubKey.FindTemplate()));
+                    WritePropertyValue(writer, "type", GetScriptType(txout.ScriptPubKey.FindTemplate(this.network)));
                     if (multi != null)
                     {
                         writer.WritePropertyName("addresses");

@@ -8,7 +8,7 @@ using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.Miner
 {
-    public class PosBlockAssembler : PowBlockAssembler
+    public class PosBlockAssembler : BlockAssembler
     {
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
@@ -21,55 +21,52 @@ namespace Stratis.Bitcoin.Features.Miner
 
         public PosBlockAssembler(
             IConsensusLoop consensusLoop,
-            Network network,
-            MempoolSchedulerLock mempoolLock,
-            ITxMempool mempool,
             IDateTimeProvider dateTimeProvider,
-            IStakeChain stakeChain,
-            IStakeValidator stakeValidator,
-            ChainedBlock chainTip,
             ILoggerFactory loggerFactory,
-            AssemblerOptions options = null)
-            : base(chainTip, consensusLoop, dateTimeProvider, loggerFactory, mempool, mempoolLock, network, options)
+            ITxMempool mempool,
+            MempoolSchedulerLock mempoolLock,
+            Network network,
+            IStakeChain stakeChain,
+            IStakeValidator stakeValidator)
+            : base(consensusLoop, dateTimeProvider, loggerFactory, mempool, mempoolLock, network, new AssemblerOptions() { IsProofOfStake = true })
         {
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.stakeChain = stakeChain;
             this.stakeValidator = stakeValidator;
         }
 
-        public override BlockTemplate CreateNewBlock(Script scriptPubKeyIn, bool fMineWitnessTx = true)
+        public override BlockTemplate Build(ChainedBlock chainTip, Script scriptPubKey)
         {
-            this.logger.LogTrace("({0}.{1}:{2},{3}:{4})", nameof(scriptPubKeyIn), nameof(scriptPubKeyIn.Length), scriptPubKeyIn.Length, nameof(fMineWitnessTx), fMineWitnessTx);
+            this.logger.LogTrace("({0}:'{1}',{2}.{3}:{4})", nameof(chainTip), chainTip, nameof(scriptPubKey), nameof(scriptPubKey.Length), scriptPubKey.Length);
 
-            base.CreateNewBlock(scriptPubKeyIn, fMineWitnessTx);
+            this.OnBuild(chainTip, scriptPubKey);
 
             this.coinbase.Outputs[0].ScriptPubKey = new Script();
             this.coinbase.Outputs[0].Value = Money.Zero;
 
-            IPosConsensusValidator posValidator = this.consensusLoop.Validator as IPosConsensusValidator;
+            IPosConsensusValidator posValidator = this.ConsensusLoop.Validator as IPosConsensusValidator;
             Guard.NotNull(posValidator, nameof(posValidator));
 
             this.logger.LogTrace("(-)");
-            return this.pblocktemplate;
+
+            return this.BlockTemplate;
         }
 
-        protected override void UpdateHeaders()
+        public override void OnUpdateHeaders()
         {
             this.logger.LogTrace("()");
 
-            base.UpdateHeaders();
-
-            var stake = new BlockStake(this.pblock);
-            this.pblock.Header.Bits = this.stakeValidator.GetNextTargetRequired(this.stakeChain, this.ChainTip, this.network.Consensus, this.options.IsProofOfStake);
+            this.block.Header.HashPrevBlock = this.ChainTip.HashBlock;
+            this.block.Header.UpdateTime(this.DateTimeProvider.GetTimeOffset(), this.Network, this.ChainTip);
+            this.block.Header.Nonce = 0;
+            this.block.Header.Bits = this.stakeValidator.GetNextTargetRequired(this.stakeChain, this.ChainTip, this.Network.Consensus, this.Options.IsProofOfStake);
 
             this.logger.LogTrace("(-)");
         }
 
-        protected override void TestBlockValidity()
+        public override void OnTestBlockValidity()
         {
             this.logger.LogTrace("()");
-
-            //base.TestBlockValidity();
 
             this.logger.LogTrace("(-)");
         }

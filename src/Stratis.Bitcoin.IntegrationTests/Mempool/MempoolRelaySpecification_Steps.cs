@@ -80,11 +80,11 @@ namespace Stratis.Bitcoin.IntegrationTests.Mempool
             var prevTrx = block.Transactions.First();
             var dest = new BitcoinSecret(new Key(), this.nodeA.FullNode.Network);
 
-            this.transaction = new Transaction();
+            this.transaction = this.nodeA.FullNode.Network.Consensus.ConsensusFactory.CreateTransaction();
             this.transaction.AddInput(new TxIn(new OutPoint(prevTrx.GetHash(), 0), PayToPubkeyHashTemplate.Instance.GenerateScriptPubKey(this.nodeA.MinerSecret.PubKey)));
             this.transaction.AddOutput(new TxOut("25", dest.PubKey.Hash));
             this.transaction.AddOutput(new TxOut("24", new Key().PubKey.Hash)); // 1 btc fee
-            this.transaction.Sign(this.nodeA.MinerSecret, new Coin(this.transaction.Inputs.First().PrevOut, prevTrx.Outputs.First()));
+            this.transaction.Sign(this.nodeA.FullNode.Network, this.nodeA.MinerSecret, new Coin(this.transaction.Inputs.First().PrevOut, prevTrx.Outputs.First()));
 
             this.nodeA.Broadcast(this.transaction);
         }

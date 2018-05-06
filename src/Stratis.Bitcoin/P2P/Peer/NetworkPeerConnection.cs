@@ -253,7 +253,8 @@ namespace Stratis.Bitcoin.P2P.Peer
                     message.ReadWrite(new BitcoinStream(ms, true)
                     {
                         ProtocolVersion = this.peer.Version,
-                        TransactionOptions = this.peer.SupportedTransactionOptions
+                        TransactionOptions = this.peer.SupportedTransactionOptions,
+                        ConsensusFactory = this.network.Consensus.ConsensusFactory
                     });
 
                     byte[] bytes = ms.ToArray();

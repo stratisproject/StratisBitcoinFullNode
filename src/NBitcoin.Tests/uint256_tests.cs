@@ -58,7 +58,8 @@ namespace NBitcoin.Tests
         {
             MemoryStream ms = new MemoryStream();
             BitcoinStream stream = new BitcoinStream(ms, true);
-
+            stream.ConsensusFactory = Network.Main.Consensus.ConsensusFactory;
+            
             var v = new uint256("00000000ffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
             var vless = new uint256("00000000fffffffffffffffffffffffffffffffffffffffffffffffffffffffe");
             var vplus = new uint256("00000001ffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
@@ -68,6 +69,7 @@ namespace NBitcoin.Tests
 
             ms.Position = 0;
             stream = new BitcoinStream(ms, false);
+            stream.ConsensusFactory = Network.Main.Consensus.ConsensusFactory;
 
             uint256 v2 = uint256.Zero;
             stream.ReadWrite(ref v2);
@@ -85,11 +87,13 @@ namespace NBitcoin.Tests
 
             ms = new MemoryStream();
             stream = new BitcoinStream(ms, true);
+            stream.ConsensusFactory = Network.Main.Consensus.ConsensusFactory;
             stream.ReadWrite(ref vs);
             Assert.True(vs.Count == 3);
 
             ms.Position = 0;
             stream = new BitcoinStream(ms, false);
+            stream.ConsensusFactory = Network.Main.Consensus.ConsensusFactory;
             List<uint256> vs2 = new List<uint256>();
             stream.ReadWrite(ref vs2);
             Assert.True(vs2.SequenceEqual(vs));

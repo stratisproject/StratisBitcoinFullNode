@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using NBitcoin;
 using Stratis.Bitcoin.Features.Wallet;
@@ -13,16 +14,15 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
 
         private NodeBuilder nodeBuilder;
 
-        public NetworkSimulator()
+        public NetworkSimulator([CallerMemberName] string caller = null)
         {
-            this.nodeBuilder = NodeBuilder.Create();
+            this.nodeBuilder = NodeBuilder.Create(caller: caller);
         }
 
         public void Initialize(int nodesCount)
         {
             this.Nodes = new List<CoreNode>();
 
-            //create nodes
             for (int i = 0; i < nodesCount; ++i)
             {
                 CoreNode node = this.nodeBuilder.CreateStratisPowNode(true);

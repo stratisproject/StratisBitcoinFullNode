@@ -102,43 +102,37 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
         [Fact]
         public void Get_Block_When_Block_Is_Found_And_Requesting_JsonOuput()
         {
-            using (new StaticFlagIsolator(Network.StratisTest))
-            {
-                var (cache, controller) = GetControllerAndCache();
+            var (cache, controller) = GetControllerAndCache();
 
-                cache.Setup(c => c.GetBlockAsync(It.IsAny<uint256>()))
-                    .Returns(Task.FromResult(Block.Parse(BlockAsHex)));
+            cache.Setup(c => c.GetBlockAsync(It.IsAny<uint256>()))
+                .Returns(Task.FromResult(Block.Parse(BlockAsHex, Network.StratisTest)));
 
-                var response = controller.GetBlockAsync(new SearchByHashRequest()
-                    {Hash = ValidHash, OutputJson = true});
+            var response = controller.GetBlockAsync(new SearchByHashRequest()
+                {Hash = ValidHash, OutputJson = true});
 
-                response.Result.Should().BeOfType<JsonResult>();
-                var result = (JsonResult) response.Result;
+            response.Result.Should().BeOfType<JsonResult>();
+            var result = (JsonResult) response.Result;
 
-                result.Value.Should().BeOfType<Models.BlockModel>();
-                ((BlockModel) result.Value).Hash.Should().Be(ValidHash);
-                ((BlockModel) result.Value).MerkleRoot.Should()
-                    .Be("ccd1444acea4b5600c5917985aa369ca5af4f0a2de6b1ed8b6bd3cf2ce4cdf0f");
-            }
+            result.Value.Should().BeOfType<Models.BlockModel>();
+            ((BlockModel) result.Value).Hash.Should().Be(ValidHash);
+            ((BlockModel) result.Value).MerkleRoot.Should()
+                .Be("ccd1444acea4b5600c5917985aa369ca5af4f0a2de6b1ed8b6bd3cf2ce4cdf0f");
         }
 
         [Fact]
         public void Get_Block_When_Block_Is_Found_And_Requesting_RawOuput()
         {
-            using (new StaticFlagIsolator(Network.StratisTest))
-            {
                 var (cache, controller) = GetControllerAndCache();
 
                 cache.Setup(c => c.GetBlockAsync(It.IsAny<uint256>()))
-                    .Returns(Task.FromResult(Block.Parse(BlockAsHex)));
+                    .Returns(Task.FromResult(Block.Parse(BlockAsHex, Network.StratisTest)));
 
                 var response = controller.GetBlockAsync(new SearchByHashRequest()
                 { Hash = ValidHash, OutputJson = false });
 
                 response.Result.Should().BeOfType<JsonResult>();
                 var result = (JsonResult)response.Result;
-                ((Block)(result.Value)).ToHex().Should().Be(BlockAsHex); 
-            }
+                ((Block)(result.Value)).ToHex(Network.StratisTest).Should().Be(BlockAsHex); 
         }
 
         private static (Mock<IBlockStoreCache> cache, BlockStoreController controller) GetControllerAndCache()

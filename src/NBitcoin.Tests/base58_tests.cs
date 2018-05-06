@@ -9,14 +9,6 @@ namespace NBitcoin.Tests
     [Trait("Core", "Core")]
     public class base58_tests
     {
-        public base58_tests()
-        {
-            // These flags may get set due to static network initializers
-            // which include the initializers for Stratis.
-            Transaction.TimeStamp = false;
-            Block.BlockSignature = false;
-        }
-
         public static IEnumerable<object[]> DataSet
         {
             get
@@ -203,7 +195,7 @@ namespace NBitcoin.Tests
                         BitcoinAddress addrOut = dest.GetAddress(network);
                         Assert.True(addrOut.ToString() == exp_base58string, "mismatch: " + strTest);
                         Assert.True(addrOut.ScriptPubKey == dest.ScriptPubKey);
-                        Assert.True(dest.ScriptPubKey.GetDestination() == dest);
+                        Assert.True(dest.ScriptPubKey.GetDestination(Network.Main) == dest);
                     }
                     catch(ArgumentException)
                     {

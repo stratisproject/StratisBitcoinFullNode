@@ -36,7 +36,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 
         public Transaction Spend(ICoin[] coins, Money amount)
         {
-            TransactionBuilder builder = new TransactionBuilder();
+            TransactionBuilder builder = new TransactionBuilder(this.network);
             builder.AddCoins(coins);
             builder.AddKeys(this.MinerKey);
             builder.Send(this.MinerScriptPubKey, amount);
@@ -85,7 +85,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 block.UpdateMerkleRoot();
                 while (!block.CheckProofOfWork(this.network.Consensus))
                     block.Header.Nonce = ++nonce;
-                block.Header.CacheHashes();
+                block.Header.PrecomputeHash();
                 blocks.Add(block);
                 this.transactions.Clear();
                 this.Chain.SetTip(block.Header);

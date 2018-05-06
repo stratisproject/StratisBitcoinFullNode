@@ -233,7 +233,7 @@ namespace NBitcoin
         /// <returns>The target proof of work.</returns>
         public Target GetNextWorkRequired(Consensus consensus)
         {
-            BlockHeader dummy = new BlockHeader();
+            BlockHeader dummy = consensus.ConsensusFactory.CreateBlockHeader();
             dummy.HashPrevBlock = this.HashBlock;
             dummy.BlockTime = DateTimeOffset.UtcNow;
             return this.GetNextWorkRequired(dummy, consensus);
@@ -258,7 +258,7 @@ namespace NBitcoin
         /// <returns>The target proof of work.</returns>
         public Target GetNextWorkRequired(BlockHeader block, Consensus consensus)
         {
-            return new ChainedBlock(block, block.GetHash(consensus.NetworkOptions), this).GetWorkRequired(consensus);
+            return new ChainedBlock(block, block.GetHash(), this).GetWorkRequired(consensus);
         }
 
         /// <summary>
@@ -311,20 +311,8 @@ namespace NBitcoin
                 return lastBlock.Header.Bits;
             }
 
-            long pastHeight = 0;
-            if (consensus.LitecoinWorkCalculation)
-            {
-                long blocksToGoBack = consensus.DifficultyAdjustmentInterval - 1;
-                if ((lastBlock.Height + 1) != consensus.DifficultyAdjustmentInterval)
-                    blocksToGoBack = consensus.DifficultyAdjustmentInterval;
-
-                pastHeight = lastBlock.Height - blocksToGoBack;
-            }
-            else
-            {
-                // Go back by what we want to be 14 days worth of blocks.
-                pastHeight = lastBlock.Height - (consensus.DifficultyAdjustmentInterval - 1);
-            }
+            // Go back by what we want to be 14 days worth of blocks.
+            long pastHeight = lastBlock.Height - (consensus.DifficultyAdjustmentInterval - 1);
 
             ChainedBlock firstChainedBlock = this.GetAncestor((int)pastHeight);
             if (firstChainedBlock == null)
@@ -380,7 +368,7 @@ namespace NBitcoin
             if (network == null)
                 throw new ArgumentNullException("network");
 
-            if (network.NetworkOptions.IsProofOfStake)
+            if (network.Consensus.IsProofOfStake)
                 return BlockStake.Validate(network, this);
 
             bool genesisCorrect = (this.Height != 0) || this.HashBlock == network.GetGenesis().GetHash();
@@ -402,7 +390,7 @@ namespace NBitcoin
 
             bool heightCorrect = (this.Height == 0) || (this.Height == this.Previous.Height + 1);
             bool hashPrevCorrect = (this.Height == 0) || (this.Header.HashPrevBlock == this.Previous.HashBlock);
-            bool hashCorrect = this.HashBlock == this.Header.GetHash(consensus.NetworkOptions);
+            bool hashCorrect = this.HashBlock == this.Header.GetHash();
             bool workCorrect = this.CheckProofOfWorkAndTarget(consensus);
 
             return heightCorrect && hashPrevCorrect && hashCorrect && workCorrect;
