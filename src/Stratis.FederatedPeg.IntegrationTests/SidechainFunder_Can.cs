@@ -927,7 +927,7 @@ namespace Stratis.FederatedPeg.IntegrationTests
                 amounts.ConfirmedAmount.Should().Be(new Money(98000204 - 3600 + 2500 + 0.01m, MoneyUnit.BTC));
 
                 //without this the VSTS version crashes on shutdown
-                await Task.Delay(30000);
+                await Task.Delay(300000);
             }
         }
     }
