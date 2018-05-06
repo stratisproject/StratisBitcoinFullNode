@@ -896,6 +896,8 @@ namespace Stratis.FederatedPeg.IntegrationTests
                 IntegrationTestUtils.SaveGeneralWallet(mainchain_FederationGateway2, "multisig_wallet");
                 IntegrationTestUtils.SaveGeneralWallet(mainchain_FederationGateway3, "multisig_wallet");
 
+                await Task.Delay(5000);
+
                 #endregion Experimental Code
 
                 //3804.001 (3600, 204 mining plus 0.01 transaction fee.)
@@ -924,8 +926,7 @@ namespace Stratis.FederatedPeg.IntegrationTests
                 var confirmedAmountDestinationMainchain = amounts.ConfirmedAmount.ToString();
                 amounts.ConfirmedAmount.Should().Be(new Money(98000204 - 3600 + 2500 + 0.01m, MoneyUnit.BTC));
 
-                // This test is a work in progress.
-                // More coming soon.
+                
             }
         }
     }
