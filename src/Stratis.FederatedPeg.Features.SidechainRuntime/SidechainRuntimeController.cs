@@ -13,16 +13,16 @@ using Stratis.Bitcoin.Features.Wallet.Models;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Utilities.JsonErrors;
-using Stratis.FederatedPeg.Features.MainchainRuntime.Models;
+using Stratis.FederatedPeg.Features.SidechainRuntime.Models;
 
 //This is experimental while we are waiting for a generic OP_RETURN function in the full node wallet.
 
-namespace Stratis.FederatedPeg.Features.MainchainRuntime
+namespace Stratis.FederatedPeg.Features.SidechainRuntime
 {
     [Route("api/[controller]")]
-    public class MainchainRuntimeController : Controller
+    public class SidechainRuntimeController : Controller
     {
-        private IMainchainRuntimeManager mainchainRuntimeManager;
+        private ISidechainRuntimeManager sidechainRuntimeManager;
         private IWalletTransactionHandler walletTransactionHandler;
         private IWalletManager walletManager;
         private IBroadcasterManager broadcasterManager;
@@ -30,10 +30,10 @@ namespace Stratis.FederatedPeg.Features.MainchainRuntime
 
         private Network network;
 
-        public MainchainRuntimeController(IMainchainRuntimeManager mainchainRuntimeManager, Network network, IWalletTransactionHandler walletTransactionHandler,
+        public SidechainRuntimeController(ISidechainRuntimeManager sidechainRuntimeManager, Network network, IWalletTransactionHandler walletTransactionHandler,
             IWalletManager walletManager, IBroadcasterManager broadcasterManager, IConnectionManager connectionManager)
         {
-            this.mainchainRuntimeManager = mainchainRuntimeManager;
+            this.sidechainRuntimeManager = sidechainRuntimeManager;
             this.network = network;
             this.walletTransactionHandler = walletTransactionHandler;
             this.walletManager = walletManager;
@@ -43,7 +43,7 @@ namespace Stratis.FederatedPeg.Features.MainchainRuntime
 
         [Route("build-transaction")]
         [HttpPost]
-        public IActionResult BuildTransaction([FromBody] SendFundsToSidechainRequest request)
+        public IActionResult BuildTransaction([FromBody] WithdrawFundsFromSidechainRequest request)
         {
             Guard.NotNull(request, nameof(request));
 
@@ -57,7 +57,7 @@ namespace Stratis.FederatedPeg.Features.MainchainRuntime
             {
                 var destination = BitcoinAddress.Create(request.DestinationAddress, this.network).ScriptPubKey;
 
-                byte[] bytes = Encoding.UTF8.GetBytes(request.SidechainDestinationAddress);
+                byte[] bytes = Encoding.UTF8.GetBytes(request.MainchainDestinationAddress);
                 var dataScript = TxNullDataTemplate.Instance.GenerateScriptPubKey(bytes);
 
                 var context = new FedPegTransactionBuildContext(
