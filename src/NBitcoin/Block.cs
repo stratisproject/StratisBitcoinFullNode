@@ -292,15 +292,15 @@ namespace NBitcoin
         /// <param name="consensusFactory">The network consensus factory.</param>
         /// <param name="options">Options to keep.</param>
         /// <returns>A new block with only the options wanted.</returns>
-        public Block WithOptions(ConsensusFactory consensusFactory, NetworkOptions options)
+        public Block WithOptions(ConsensusFactory consensusFactory, TransactionOptions options)
         {
             if (this.Transactions.Count == 0)
                 return this;
 
-            if ((options == NetworkOptions.Witness) && this.Transactions[0].HasWitness)
+            if ((options == TransactionOptions.Witness) && this.Transactions[0].HasWitness)
                 return this;
 
-            if ((options == NetworkOptions.None) && !this.Transactions[0].HasWitness)
+            if ((options == TransactionOptions.None) && !this.Transactions[0].HasWitness)
                 return this;
 
             Block instance = consensusFactory.CreateBlock();

@@ -1076,6 +1076,14 @@ namespace NBitcoin
         }
     }
 
+    [Flags]
+    public enum TransactionOptions : uint
+    {
+        None = 0x00000000,
+        Witness = 0x40000000,
+        All = Witness
+    }
+
     class Witness
     {
         TxInList _Inputs;
@@ -1239,7 +1247,7 @@ namespace NBitcoin
 
         public virtual void ReadWrite(BitcoinStream stream)
         {
-            var witSupported = (((uint)stream.TransactionOptions & (uint)NetworkOptions.Witness) != 0) &&
+            var witSupported = (((uint)stream.TransactionOptions & (uint)TransactionOptions.Witness) != 0) &&
                                 stream.ProtocolVersion >= ProtocolVersion.WITNESS_VERSION;
 
             byte flags = 0;
@@ -1351,7 +1359,7 @@ namespace NBitcoin
             {
                 this.ReadWrite(new BitcoinStream(hs, true)
                 {
-                    TransactionOptions = NetworkOptions.None
+                    TransactionOptions = TransactionOptions.None
                 });
                 h = hs.GetHash();
             }
@@ -1400,7 +1408,7 @@ namespace NBitcoin
             {
                 this.ReadWrite(new BitcoinStream(hs, true)
                 {
-                    TransactionOptions = NetworkOptions.Witness
+                    TransactionOptions = TransactionOptions.Witness
                 });
                 h = hs.GetHash();
             }
@@ -1486,8 +1494,8 @@ namespace NBitcoin
         /// <returns>Transaction size</returns>
         public int GetVirtualSize()
         {
-            var totalSize = this.GetSerializedSize(new NetworkOptions(NetworkOptions.Witness));
-            var strippedSize = this.GetSerializedSize(new NetworkOptions(NetworkOptions.None));
+            var totalSize = this.GetSerializedSize(TransactionOptions.Witness);
+            var strippedSize = this.GetSerializedSize(TransactionOptions.None);
             // This implements the weight = (stripped_size * 4) + witness_size formula,
             // using only serialization with and without witness data. As witness_size
             // is equal to total_size - stripped_size, this formula is identical to:
@@ -1878,11 +1886,11 @@ namespace NBitcoin
         /// <param name="options">Options to keep</param>
         /// <param name="consensusFactory">The network consensus factory.</param>
         /// <returns>A new transaction with only the options wanted</returns>
-        public Transaction WithOptions(NetworkOptions options, ConsensusFactory consensusFactory)
+        public Transaction WithOptions(TransactionOptions options, ConsensusFactory consensusFactory)
         {
-            if(options == NetworkOptions.Witness && HasWitness)
+            if(options == TransactionOptions.Witness && HasWitness)
                 return this;
-            if(options == NetworkOptions.None && !HasWitness)
+            if(options == TransactionOptions.None && !HasWitness)
                 return this;
             var instance = consensusFactory.CreateTransaction();
             var ms = new MemoryStream();

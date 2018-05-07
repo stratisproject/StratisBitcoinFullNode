@@ -396,9 +396,9 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <inheritdoc />
         public long GetBlockWeight(Block block)
         {
-            var options = NetworkOptions.TemporaryOptions;
-            return this.GetSize(block, options & ~NetworkOptions.Witness) * (this.ConsensusOptions.WitnessScaleFactor - 1) +
-                   this.GetSize(block, options | NetworkOptions.Witness);
+            return this.GetSize(block, TransactionOptions.None) 
+                   * (this.ConsensusOptions.WitnessScaleFactor - 1) 
+                   + this.GetSize(block, TransactionOptions.Witness);
         }
 
         /// <summary>
@@ -407,7 +407,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <param name="data">Data that we calculate serialized size of.</param>
         /// <param name="options">Serialization options.</param>
         /// <returns>Serialized size of <paramref name="data"/> in bytes.</returns>
-        private int GetSize(IBitcoinSerializable data, NetworkOptions options)
+        private int GetSize(IBitcoinSerializable data, TransactionOptions options)
         {
             var bms = new BitcoinStream(Stream.Null, true);
             bms.TransactionOptions = options;

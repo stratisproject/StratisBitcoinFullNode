@@ -25,7 +25,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
             // large by filling up the coinbase witness, which doesn't change
             // the block hash, so we couldn't mark the block as permanently
             // failed).
-            if (this.GetBlockWeight(context.BlockValidationContext.Block, options, context.Consensus.NetworkOptions) > options.MaxBlockWeight)
+            if (this.GetBlockWeight(context.BlockValidationContext.Block, options, TransactionOptions.All) > options.MaxBlockWeight)
             {
                 this.Logger.LogTrace("(-)[BAD_BLOCK_WEIGHT]");
                 ConsensusErrors.BadBlockWeight.Throw();
@@ -35,7 +35,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
 
             // Size limits.
             if ((block.Transactions.Count == 0) || (block.Transactions.Count > options.MaxBlockBaseSize) || 
-                (GetSize(this.Parent.Network, block, context.Consensus.NetworkOptions & ~NetworkOptions.All) > options.MaxBlockBaseSize))
+                (GetSize(this.Parent.Network, block, TransactionOptions.All & ~TransactionOptions.All) > options.MaxBlockBaseSize))
             {
                 this.Logger.LogTrace("(-)[BAD_BLOCK_LEN]");
                 ConsensusErrors.BadBlockLength.Throw();
@@ -54,9 +54,9 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         /// <param name="block">Block that we get weight of.</param>
         /// <param name="options">Options for POW networks.</param>
         /// <returns>Block weight.</returns>
-        public long GetBlockWeight(Block block, PowConsensusOptions powOptions, NetworkOptions options)
+        public long GetBlockWeight(Block block, PowConsensusOptions powOptions, TransactionOptions options)
         {
-            return GetSize(this.Parent.Network, block, options & ~NetworkOptions.Witness) * (powOptions.WitnessScaleFactor - 1) + GetSize(this.Parent.Network, block, options);
+            return GetSize(this.Parent.Network, block, options & ~TransactionOptions.Witness) * (powOptions.WitnessScaleFactor - 1) + GetSize(this.Parent.Network, block, options);
         }
 
         /// <summary>
@@ -66,7 +66,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         /// <param name="data">Data that we calculate serialized size of.</param>
         /// <param name="options">Serialization options.</param>
         /// <returns>Serialized size of <paramref name="data"/> in bytes.</returns>
-        public static int GetSize(Network network, IBitcoinSerializable data, NetworkOptions options)
+        public static int GetSize(Network network, IBitcoinSerializable data, TransactionOptions options)
         {
             var bms = new BitcoinStream(Stream.Null, true);
             bms.TransactionOptions = options;
