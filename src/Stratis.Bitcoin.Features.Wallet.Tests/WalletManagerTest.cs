@@ -17,30 +17,13 @@ using Xunit;
 
 namespace Stratis.Bitcoin.Features.Wallet.Tests
 {
-    public class WalletManagerTest : LogsTestBase, IDisposable, IClassFixture<WalletFixture>
+    public class WalletManagerTest : LogsTestBase, IClassFixture<WalletFixture>
     {
         private readonly WalletFixture walletFixture;
 
         public WalletManagerTest(WalletFixture walletFixture)
         {
             this.walletFixture = walletFixture;
-
-            // These flags are being set on an individual test case basis.
-            // Assume the default values for the static flags.
-            Transaction.TimeStamp = false;
-            Block.BlockSignature = false;
-        }
-
-        public void Dispose()
-        {
-            // This is needed here because of the fact that the Stratis network, when initialized, sets the
-            // Transaction.TimeStamp value to 'true' (look in Network.InitStratisTest() and Network.InitStratisMain()) in order
-            // for proof-of-stake to work.
-            // Now, there are a few tests where we're trying to parse Bitcoin transaction, but since the TimeStamp is set the true,
-            // the execution path is different and the bitcoin transaction tests are failing.
-            // Here we're resetting the TimeStamp after every test so it doesn't cause any trouble.
-            Transaction.TimeStamp = false;
-            Block.BlockSignature = false;
         }
 
         /// <summary>
@@ -49,9 +32,6 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         [Fact]
         public void CreateWalletWithoutPassphraseOrMnemonicCreatesWalletUsingPassword()
         {
-            Transaction.TimeStamp = true;
-            Block.BlockSignature = true;
-
             DataFolder dataFolder = CreateDataFolder(this);
 
             var chain = new ConcurrentChain(Network.StratisMain);
@@ -163,9 +143,6 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         [Fact]
         public void CreateWalletWithPasswordAndPassphraseCreatesWalletUsingPasswordAndPassphrase()
         {
-            Transaction.TimeStamp = true;
-            Block.BlockSignature = true;
-
             DataFolder dataFolder = CreateDataFolder(this);
 
             var chain = new ConcurrentChain(Network.StratisMain);
@@ -275,38 +252,28 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         [Fact]
         public void CreateWalletWithMnemonicListCreatesWalletUsingMnemonicList()
         {
-            Transaction.TimeStamp = true;
-            Block.BlockSignature = true;
-            try
-            {
-                DataFolder dataFolder = CreateDataFolder(this);
+            DataFolder dataFolder = CreateDataFolder(this);
 
-                var chain = new ConcurrentChain(Network.StratisMain);
-                var nonce = RandomUtils.GetUInt32();
-                var block = new Block();
-                block.AddTransaction(new Transaction());
-                block.UpdateMerkleRoot();
-                block.Header.HashPrevBlock = chain.Genesis.HashBlock;
-                block.Header.Nonce = nonce;
-                chain.SetTip(block.Header);
+            var chain = new ConcurrentChain(Network.StratisMain);
+            var nonce = RandomUtils.GetUInt32();
+            var block = new Block();
+            block.AddTransaction(new Transaction());
+            block.UpdateMerkleRoot();
+            block.Header.HashPrevBlock = chain.Genesis.HashBlock;
+            block.Header.Nonce = nonce;
+            chain.SetTip(block.Header);
 
-                var walletManager = new WalletManager(this.LoggerFactory.Object, Network.StratisMain, chain, NodeSettings.Default(), new Mock<WalletSettings>().Object,
-                                                     dataFolder, new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime(), DateTimeProvider.Default);
+            var walletManager = new WalletManager(this.LoggerFactory.Object, Network.StratisMain, chain, NodeSettings.Default(), new Mock<WalletSettings>().Object,
+                                                    dataFolder, new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime(), DateTimeProvider.Default);
 
-                var password = "test";
+            var password = "test";
 
-                var mnemonicList = new Mnemonic(Wordlist.French, WordCount.Eighteen);
+            var mnemonicList = new Mnemonic(Wordlist.French, WordCount.Eighteen);
 
-                // create the wallet
-                var mnemonic = walletManager.CreateWallet(password, "mywallet", mnemonicList: mnemonicList.ToString());
+            // create the wallet
+            var mnemonic = walletManager.CreateWallet(password, "mywallet", mnemonicList: mnemonicList.ToString());
 
-                Assert.Equal(mnemonic.DeriveSeed(), mnemonicList.DeriveSeed());
-            }
-            finally
-            {
-                Transaction.TimeStamp = false;
-                Block.BlockSignature = false;
-            }
+            Assert.Equal(mnemonic.DeriveSeed(), mnemonicList.DeriveSeed());
         }
 
         [Fact]
@@ -376,9 +343,6 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         [Fact]
         public void RecoverWalletWithEqualInputAsExistingWalletRecoversWallet()
         {
-            Transaction.TimeStamp = true;
-            Block.BlockSignature = true;
-
             DataFolder dataFolder = CreateDataFolder(this);
 
             var password = "test";
@@ -471,9 +435,6 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         [Fact]
         public void RecoverWalletOnlyWithPasswordWalletRecoversWallet()
         {
-            Transaction.TimeStamp = true;
-            Block.BlockSignature = true;
-
             DataFolder dataFolder = CreateDataFolder(this);
 
             var password = "test";
@@ -1093,9 +1054,6 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         [Fact]
         public void LastBlockHeightWithoutWalletsReturnsChainTipHeight()
         {
-            Transaction.TimeStamp = true;
-            Block.BlockSignature = true;
-
             var chain = new ConcurrentChain(Network.StratisMain);
             var nonce = RandomUtils.GetUInt32();
             var block = new Block();
@@ -1182,9 +1140,6 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         [Fact]
         public void LastReceivedBlockHashWithoutWalletsReturnsChainTipHashBlock()
         {
-            Transaction.TimeStamp = true;
-            Block.BlockSignature = true;
-
             var chain = new ConcurrentChain(Network.StratisMain);
             var nonce = RandomUtils.GetUInt32();
             var block = new Block();

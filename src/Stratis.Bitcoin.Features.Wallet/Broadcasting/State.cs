@@ -1,4 +1,4 @@
-﻿namespace Stratis.Bitcoin.Broadcasting
+﻿namespace Stratis.Bitcoin.Features.Wallet.Broadcasting
 {
     public enum State
     {

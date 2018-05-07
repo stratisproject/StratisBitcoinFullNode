@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using NBitcoin.DataEncoders;
 using Newtonsoft.Json.Linq;
@@ -79,29 +80,30 @@ namespace NBitcoin.RPC
             return json.ToObject<RPCBlock>();
         }
 
-        public static Block ToBlock(RPCBlock rpcBlock)
+        public static Block ToBlock(RPCBlock rpcBlock, ConsensusFactory consensusFactory)
         {
-            var header = new BlockHeader()
-            {
-                Time = rpcBlock.time,
+            var block = consensusFactory.CreateBlock();
+
+            block.Header.Time = rpcBlock.time;
                 //BlockStake = new BlockStake
                 //{
                 //    HashProof = uint256.Parse( rpcBlock.proofhash),
                 //    Mint = rpcBlock.mint,
                 //    StakeModifierV2 = uint256.Parse(rpcBlock.modifierv2)
                 //},
-                HashMerkleRoot = uint256.Parse(rpcBlock.merkleroot),
-                Bits = new Target(Encoders.Hex.DecodeData(rpcBlock.bits)),
-                HashPrevBlock = uint256.Parse(rpcBlock.previousblockhash),
-                Nonce = rpcBlock.nonce,
-                Version = rpcBlock.version,
-            };
-
-            var block = new Block(header);
+                block.Header.HashMerkleRoot = uint256.Parse(rpcBlock.merkleroot);
+            block.Header.Bits = new Target(Encoders.Hex.DecodeData(rpcBlock.bits));
+            block.Header.HashPrevBlock = uint256.Parse(rpcBlock.previousblockhash);
+            block.Header.Nonce = rpcBlock.nonce;
+            block.Header.Version = rpcBlock.version;
 
             if (!string.IsNullOrEmpty(rpcBlock.signature))
             {
-                block.BlockSignatur.Signature = Encoders.Hex.DecodeData(rpcBlock.signature);
+                PosBlock posBlock = block as PosBlock;
+                if (posBlock == null)
+                    throw new Exception();
+
+                posBlock.BlockSignature.Signature = Encoders.Hex.DecodeData(rpcBlock.signature);
             }
 
             // todo: parse transactions

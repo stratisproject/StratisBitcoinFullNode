@@ -317,7 +317,7 @@ namespace Stratis.Bitcoin.Features.Consensus
 
             var txData = new PrecomputedTransactionData(txTo);
             var checker = new TransactionChecker(txTo, txToInN, output.Value, txData);
-            var ctx = new ScriptEvaluationContext { ScriptVerify = flagScriptVerify };
+            var ctx = new ScriptEvaluationContext(this.chain.Network) { ScriptVerify = flagScriptVerify };
 
             bool res = ctx.VerifyScript(input.ScriptSig, output.ScriptPubKey, checker);
             this.logger.LogTrace("(-):{0}", res);

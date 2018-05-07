@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Threading.Tasks;
 using NBitcoin;
-using Stratis.Bitcoin.Broadcasting;
+using Stratis.Bitcoin.Features.Wallet.Broadcasting;
 
-namespace Stratis.Bitcoin.Interfaces
+namespace Stratis.Bitcoin.Features.Wallet.Interfaces
 {
     public interface IBroadcasterManager
     {
@@ -13,6 +13,6 @@ namespace Stratis.Bitcoin.Interfaces
 
         TransactionBroadcastEntry GetTransaction(uint256 transactionHash);
 
-        void AddOrUpdate(Transaction transaction, State state);
+        void AddOrUpdate(Transaction transaction, State state, string ErrorMessage = "");
     }
 }

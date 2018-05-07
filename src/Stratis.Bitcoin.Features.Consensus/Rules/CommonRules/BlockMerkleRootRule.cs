@@ -18,7 +18,12 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
     /// Check for merkle tree malleability (CVE-2012-2459): repeating sequences
     /// of transactions in a block without affecting the merkle root of a block,
     /// while still invalidating it.
-    /// </remarks>    
+    /// Validation cannot be skipped for this rule, someone might have been able to create a mutated
+    /// block (block with a duplicate transaction) with a valid hash, but we don't want to accept these 
+    /// kind of blocks.
+    /// <seealso cref="https://bitcointalk.org/index.php?topic=102395.0"/>
+    /// </remarks>
+    [ValidationRule(CanSkipValidation = false)]
     public class BlockMerkleRootRule : ConsensusRule
     {
         /// <inheritdoc />
@@ -26,22 +31,21 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         /// <exception cref="ConsensusErrors.BadTransactionDuplicate">One of the leaf nodes on the merkle tree has a duplicate hash within the subtree.</exception>
         public override Task RunAsync(RuleContext context)
         {
-            if (context.CheckMerkleRoot)
+            if (!context.CheckMerkleRoot) return Task.CompletedTask;
+            
+            var block = context.BlockValidationContext.Block;
+
+            uint256 hashMerkleRoot2 = BlockMerkleRoot(block, out bool mutated);
+            if (block.Header.HashMerkleRoot != hashMerkleRoot2)
             {
-                Block block = context.BlockValidationContext.Block;
+                this.Logger.LogTrace("(-)[BAD_MERKLE_ROOT]");
+                ConsensusErrors.BadMerkleRoot.Throw();
+            }
 
-                uint256 hashMerkleRoot2 = BlockMerkleRoot(block, out bool mutated);
-                if (block.Header.HashMerkleRoot != hashMerkleRoot2)
-                {
-                    this.Logger.LogTrace("(-)[BAD_MERKLE_ROOT]");
-                    ConsensusErrors.BadMerkleRoot.Throw();
-                }
-
-                if (mutated)
-                {
-                    this.Logger.LogTrace("(-)[BAD_TX_DUP]");
-                    ConsensusErrors.BadTransactionDuplicate.Throw();
-                }
+            if (mutated)
+            {
+                this.Logger.LogTrace("(-)[BAD_TX_DUP]");
+                ConsensusErrors.BadTransactionDuplicate.Throw();
             }
 
             return Task.CompletedTask;
@@ -70,63 +74,57 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         /// <param name="mutated"><c>true</c> if at least one leaf of the merkle tree has the same hash as any subtree. Otherwise: <c>false</c>.</param>
         public static uint256 ComputeMerkleRoot(List<uint256> leaves, out bool mutated)
         {
+            mutated = false;
+            if (leaves.Count == 0) return uint256.Zero;
+
             var branch = new List<uint256>();
 
-            mutated = false;
-            if (leaves.Count == 0)
-                return uint256.Zero;
-
-            // count is the number of leaves processed so far.
-            uint count = 0;
-
-            // inner is an array of eagerly computed subtree hashes, indexed by tree
+            // subTreeHashes is an array of eagerly computed subtree hashes, indexed by tree
             // level (0 being the leaves).
-            // For example, when count is 25 (11001 in binary), inner[4] is the hash of
-            // the first 16 leaves, inner[3] of the next 8 leaves, and inner[0] equal to
-            // the last leaf. The other inner entries are undefined.
-            var inner = new uint256[32];
+            // For example, when count is 25 (11001 in binary), subTreeHashes[4] is the hash of
+            // the first 16 leaves, subTreeHashes[3] of the next 8 leaves, and subTreeHashes[0] equal to
+            // the last leaf. The other subTreeHashes entries are undefined.
+            var subTreeHashes = new uint256[32];
 
-            for (int i = 0; i < inner.Length; i++)
-                inner[i] = uint256.Zero;
+            for (int i = 0; i < subTreeHashes.Length; i++)
+                subTreeHashes[i] = uint256.Zero;
 
             // Which position in inner is a hash that depends on the matching leaf.
             int matchLevel = -1;
+            uint processedLeavesCount = 0;
 
-            // First process all leaves into 'inner' values.
-            while (count < leaves.Count)
+            // First process all leaves into subTreeHashes values.
+            while (processedLeavesCount < leaves.Count)
             {
-                uint256 h = leaves[(int)count];
+                uint256 currentLeaveHash = leaves[(int)processedLeavesCount];
                 bool match = false;
-                count++;
+                processedLeavesCount++;
                 int level;
 
-                // For each of the lower bits in count that are 0, do 1 step. Each
-                // corresponds to an inner value that existed before processing the
+                // For each of the lower bits in processedLeavesCount that are 0, do 1 step. Each
+                // corresponds to an subTreeHash value that existed before processing the
                 // current leaf, and each needs a hash to combine it.
-                for (level = 0; (count & (((uint)1) << level)) == 0; level++)
+                for (level = 0; (processedLeavesCount & (((uint)1) << level)) == 0; level++)
                 {
-                    if (branch != null)
+                    if (match)
                     {
-                        if (match)
-                        {
-                            branch.Add(inner[level]);
-                        }
-                        else if (matchLevel == level)
-                        {
-                            branch.Add(h);
-                            match = true;
-                        }
+                        branch.Add(subTreeHashes[level]);
+                    }
+                    else if (matchLevel == level)
+                    {
+                        branch.Add(currentLeaveHash);
+                        match = true;
                     }
                     if (!mutated)
-                        mutated = inner[level] == h;
+                        mutated = subTreeHashes[level] == currentLeaveHash;
                     var hash = new byte[64];
-                    Buffer.BlockCopy(inner[level].ToBytes(), 0, hash, 0, 32);
-                    Buffer.BlockCopy(h.ToBytes(), 0, hash, 32, 32);
-                    h = Hashes.Hash256(hash);
+                    Buffer.BlockCopy(subTreeHashes[level].ToBytes(), 0, hash, 0, 32);
+                    Buffer.BlockCopy(currentLeaveHash.ToBytes(), 0, hash, 32, 32);
+                    currentLeaveHash = Hashes.Hash256(hash);
                 }
 
-                // Store the resulting hash at inner position level.
-                inner[level] = h;
+                // Store the resulting hash at subTreeHashes position level.
+                subTreeHashes[level] = currentLeaveHash;
                 if (match)
                     matchLevel = level;
             }
@@ -139,16 +137,16 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
                 // Level is the level (counted from the bottom) up to which we've sweeped.
                 int level = 0;
 
-                // As long as bit number level in count is zero, skip it. It means there
+                // As long as bit number level in processedLeavesCount is zero, skip it. It means there
                 // is nothing left at this level.
-                while ((count & (((uint)1) << level)) == 0)
+                while ((processedLeavesCount & (((uint)1) << level)) == 0)
                     level++;
 
-                root = inner[level];
+                root = subTreeHashes[level];
                 bool match = matchLevel == level;
-                while (count != (((uint)1) << level))
+                while (processedLeavesCount != (((uint)1) << level))
                 {
-                    // If we reach this point, h is an inner value that is not the top.
+                    // If we reach this point, hash is a subTreeHashes value that is not the top.
                     // We combine it with itself (Bitcoin's special rule for odd levels in
                     // the tree) to produce a higher level one.
                     if (match)
@@ -159,17 +157,17 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
                     Buffer.BlockCopy(root.ToBytes(), 0, hash, 32, 32);
                     root = Hashes.Hash256(hash);
 
-                    // Increment count to the value it would have if two entries at this
+                    // Increment processedLeavesCount to the value it would have if two entries at this
                     // level had existed.
-                    count += (((uint)1) << level);
+                    processedLeavesCount += (((uint)1) << level);
                     level++;
 
                     // And propagate the result upwards accordingly.
-                    while ((count & (((uint)1) << level)) == 0)
+                    while ((processedLeavesCount & (((uint)1) << level)) == 0)
                     {
                         if (match)
                         {
-                            branch.Add(inner[level]);
+                            branch.Add(subTreeHashes[level]);
                         }
                         else if (matchLevel == level)
                         {
@@ -178,7 +176,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
                         }
 
                         var hashh = new byte[64];
-                        Buffer.BlockCopy(inner[level].ToBytes(), 0, hashh, 0, 32);
+                        Buffer.BlockCopy(subTreeHashes[level].ToBytes(), 0, hashh, 0, 32);
                         Buffer.BlockCopy(root.ToBytes(), 0, hashh, 32, 32);
                         root = Hashes.Hash256(hashh);
 

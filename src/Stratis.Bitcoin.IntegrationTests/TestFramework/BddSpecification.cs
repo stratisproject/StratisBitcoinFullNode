@@ -15,7 +15,6 @@ namespace Stratis.Bitcoin.IntegrationTests.TestFramework
         private readonly ITestOutputHelper output;
         private readonly DateTime startOfTestTime;
         
-        private readonly StaticFlagIsolator staticFlagIsolator;
         private ITest currentTest;
 
         /// <summary>
@@ -31,14 +30,12 @@ namespace Stratis.Bitcoin.IntegrationTests.TestFramework
             this.output = output;
             this.startOfTestTime = DateTime.UtcNow;
 
-            this.staticFlagIsolator = new StaticFlagIsolator();
             this.BeforeTest();
         }
 
         public void Dispose()
         {
             this.AfterTest();
-            this.staticFlagIsolator.Dispose();
 
             var endOfTestTime = DateTime.UtcNow;
             this.output?.WriteLine($"({DateTime.UtcNow.ToLongTimeString()}) [End of test - {(endOfTestTime - this.startOfTestTime).TotalSeconds} seconds.]");

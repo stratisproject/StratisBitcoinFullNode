@@ -7,14 +7,6 @@ namespace NBitcoin.Tests
 {
     public class bip32_tests
     {
-        public bip32_tests()
-        {
-            // These flags may get set due to static network initializers
-            // which include the initializers for Stratis.
-            Transaction.TimeStamp = false;
-            Block.BlockSignature = false;
-        }
-
         class TestDerivation
         {
             public string pub;

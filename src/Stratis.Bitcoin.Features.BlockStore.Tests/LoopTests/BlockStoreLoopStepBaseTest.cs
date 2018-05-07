@@ -20,13 +20,6 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
     /// </summary>
     public class BlockStoreLoopStepBaseTest : LogsTestBase
     {
-        public BlockStoreLoopStepBaseTest()
-        {
-            // Ensure that these flags match the Network and NetworkOptions being used
-            Transaction.TimeStamp = false;
-            Block.BlockSignature = false;
-        }
-
         internal void AddBlockToPendingStorage(BlockStoreLoop blockStoreLoop, Block block)
         {
             var chainedBlock = blockStoreLoop.Chain.GetBlock(block.GetHash());

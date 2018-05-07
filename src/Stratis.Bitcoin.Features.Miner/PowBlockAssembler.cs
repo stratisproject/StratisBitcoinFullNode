@@ -9,176 +9,95 @@ using Stratis.Bitcoin.Features.Consensus.Interfaces;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.MemoryPool.Interfaces;
 using Stratis.Bitcoin.Utilities;
+using static Stratis.Bitcoin.Features.Miner.PowBlockAssembler;
 
 namespace Stratis.Bitcoin.Features.Miner
 {
     public abstract class BlockAssembler
     {
-        /// <summary>Tip of the chain that this instance will work with without touching any shared chain resources.</summary>
-        /// <remarks>Using a fixed value prevents race conditions in the methods of derived classes.</remarks>
-        protected ChainedBlock ChainTip { get; set; }
+        /// <summary>
+        /// Tip of the chain that this instance will work with without touching any shared chain resources.
+        /// </summary>
+        protected ChainedBlock ChainTip;
 
-        public abstract BlockTemplate CreateNewBlock(Script scriptPubKeyIn, bool fMineWitnessTx = true);
-    }
+        /// <summary>Manager of the longest fully validated chain of blocks.</summary>
+        protected readonly IConsensusLoop ConsensusLoop;
 
-    public class AssemblerOptions
-    {
-        public long BlockMaxWeight = PowMining.DefaultBlockMaxWeight;
+        /// <summary>Provider of date time functions.</summary>
+        protected readonly IDateTimeProvider DateTimeProvider;
 
-        public long BlockMaxSize = PowMining.DefaultBlockMaxSize;
+        /// <summary>Instance logger.</summary>
+        private readonly ILogger logger;
 
-        public FeeRate BlockMinFeeRate = new FeeRate(PowMining.DefaultBlockMinTxFee);
+        /// <summary>Transaction memory pool for managing transactions in the memory pool.</summary>
+        protected readonly ITxMempool Mempool;
 
-        public bool IsProofOfStake = false;
-    }
+        /// <summary>Lock for memory pool access.</summary>
+        protected readonly MempoolSchedulerLock MempoolLock;
 
-    public class BlockTemplate
-    {
-        public Block Block;
+        /// <summary>The current network.</summary>
+        protected readonly Network Network;
 
-        public List<Money> VTxFees;
-
-        public List<long> TxSigOpsCost;
-
-        public string CoinbaseCommitment;
-
-        public Money TotalFee;
-
-        public BlockTemplate()
-        {
-            this.Block = new Block();
-            this.VTxFees = new List<Money>();
-            this.TxSigOpsCost = new List<long>();
-        }
-    }
-
-    public class PowBlockAssembler : BlockAssembler
-    {
-        // Container for tracking updates to ancestor feerate as we include (parent)
-        // transactions in a block.
-        public class TxMemPoolModifiedEntry
-        {
-            public TxMemPoolModifiedEntry(TxMempoolEntry entry)
-            {
-                this.iter = entry;
-                this.SizeWithAncestors = entry.SizeWithAncestors;
-                this.ModFeesWithAncestors = entry.ModFeesWithAncestors;
-                this.SigOpCostWithAncestors = entry.SigOpCostWithAncestors;
-            }
-
-            public TxMempoolEntry iter;
-
-            public long SizeWithAncestors;
-
-            public Money ModFeesWithAncestors;
-
-            public long SigOpCostWithAncestors;
-        }
-
-        // This matches the calculation in CompareTxMemPoolEntryByAncestorFee,
-        // except operating on CTxMemPoolModifiedEntry.
-        // TODO: Refactor to avoid duplication of this logic.
-        public class CompareModifiedEntry : IComparer<TxMemPoolModifiedEntry>
-        {
-            public int Compare(TxMemPoolModifiedEntry a, TxMemPoolModifiedEntry b)
-            {
-                Money f1 = a.ModFeesWithAncestors * b.SizeWithAncestors;
-                Money f2 = b.ModFeesWithAncestors * a.SizeWithAncestors;
-
-                if (f1 == f2)
-                    return TxMempool.CompareIteratorByHash.InnerCompare(a.iter, b.iter);
-
-                return f1 > f2 ? 1 : -1;
-            }
-        }
-
-        // A comparator that sorts transactions based on number of ancestors.
-        // This is sufficient to sort an ancestor package in an order that is valid
-        // to appear in a block.
-        public class CompareTxIterByAncestorCount : IComparer<TxMempoolEntry>
-        {
-            public int Compare(TxMempoolEntry a, TxMempoolEntry b)
-            {
-                if (a.CountWithAncestors != b.CountWithAncestors)
-                    return a.CountWithAncestors < b.CountWithAncestors ? -1 : 1;
-
-                return TxMempool.CompareIteratorByHash.InnerCompare(a, b);
-            }
-        }
+        /// <summary>Assembler options specific to the assembler e.g. <see cref="AssemblerOptions.BlockMaxSize"/>.</summary>
+        protected AssemblerOptions Options;
 
         private const long TicksPerMicrosecond = 10;
 
         // Limit the number of attempts to add transactions to the block when it is
         // close to full; this is just a simple heuristic to finish quickly if the
         // mempool has a lot of entries.
-        private int MaxConsecutiveAddTransactionFailures = 1000;
+        protected const int MaxConsecutiveAddTransactionFailures = 1000;
 
         // Unconfirmed transactions in the memory pool often depend on other
         // transactions in the memory pool. When we select transactions from the
         // pool, we select by highest fee rate of a transaction combined with all
         // its ancestors.
-        private static long lastBlockTx = 0;
+        protected long LastBlockTx = 0;
 
-        private static long lastBlockSize = 0;
+        protected long LastBlockSize = 0;
 
-        private static long lastBlockWeight = 0;
+        protected long LastBlockWeight = 0;
 
-        private static long medianTimePast;
-
-        protected readonly IConsensusLoop consensusLoop;
-
-        protected readonly MempoolSchedulerLock mempoolLock;
-
-        protected readonly ITxMempool mempool;
-
-        protected readonly IDateTimeProvider dateTimeProvider;
-
-        /// <summary>Instance logger.</summary>
-        private readonly ILogger logger;
-
-        protected readonly AssemblerOptions options;
+        protected long MedianTimePast;
 
         // The constructed block template.
-        protected readonly BlockTemplate pblocktemplate;
+        protected BlockTemplate BlockTemplate;
 
         // A convenience pointer that always refers to the CBlock in pblocktemplate.
-        protected Block pblock;
+        protected Block block;
 
         // Configuration parameters for the block size.
-        private bool fIncludeWitness;
+        protected bool IncludeWitness;
 
-        private uint blockMaxWeight, blockMaxSize;
+        protected uint BlockMaxWeight, BlockMaxSize;
 
-        private bool needSizeAccounting;
+        protected bool NeedSizeAccounting;
 
-        private FeeRate blockMinFeeRate;
+        protected FeeRate BlockMinFeeRate;
 
         // Information on the current status of the block.
-        private long blockWeight;
+        protected long BlockWeight;
 
-        private long blockSize;
+        protected long BlockSize;
 
-        private long blockTx;
+        protected long BlockTx;
 
-        private long blockSigOpsCost;
+        protected long BlockSigOpsCost;
 
         public Money fees;
 
-        protected TxMempool.SetEntries inBlock { get; }
+        protected TxMempool.SetEntries inBlock;
 
         protected Transaction coinbase;
 
         // Chain context for the block.
         protected int height;
 
-        private long lockTimeCutoff;
+        protected long LockTimeCutoff;
 
-        protected Network network;
+        protected Script scriptPubKey;
 
-        protected Script scriptPubKeyIn;
-
-        public PowBlockAssembler(
-            ChainedBlock chainTip,
+        protected BlockAssembler(
             IConsensusLoop consensusLoop,
             IDateTimeProvider dateTimeProvider,
             ILoggerFactory loggerFactory,
@@ -187,69 +106,101 @@ namespace Stratis.Bitcoin.Features.Miner
             Network network,
             AssemblerOptions options = null)
         {
+            this.ConsensusLoop = consensusLoop;
+            this.DateTimeProvider = dateTimeProvider;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
+            this.Mempool = mempool;
+            this.MempoolLock = mempoolLock;
+            this.Network = network;
 
-            options = options ?? new AssemblerOptions();
-            this.blockMinFeeRate = options.BlockMinFeeRate;
+            this.Options = options ?? new AssemblerOptions();
+            this.BlockMinFeeRate = this.Options.BlockMinFeeRate;
 
             // Limit weight to between 4K and MAX_BLOCK_WEIGHT-4K for sanity.
-            this.blockMaxWeight = (uint)Math.Max(4000, Math.Min(PowMining.DefaultBlockMaxWeight - 4000, options.BlockMaxWeight));
+            this.BlockMaxWeight = (uint)Math.Max(4000, Math.Min(PowMining.DefaultBlockMaxWeight - 4000, this.Options.BlockMaxWeight));
 
             // Limit size to between 1K and MAX_BLOCK_SERIALIZED_SIZE-1K for sanity.
-            this.blockMaxSize = (uint)Math.Max(1000, Math.Min(network.Consensus.Option<PowConsensusOptions>().MaxBlockSerializedSize - 1000, options.BlockMaxSize));
+            this.BlockMaxSize = (uint)Math.Max(1000, Math.Min(network.Consensus.Option<PowConsensusOptions>().MaxBlockSerializedSize - 1000, this.Options.BlockMaxSize));
 
             // Whether we need to account for byte usage (in addition to weight usage).
-            this.needSizeAccounting = (this.blockMaxSize < network.Consensus.Option<PowConsensusOptions>().MaxBlockSerializedSize - 1000);
+            this.NeedSizeAccounting = (this.BlockMaxSize < network.Consensus.Option<PowConsensusOptions>().MaxBlockSerializedSize - 1000);
 
-            this.consensusLoop = consensusLoop;
-            this.mempoolLock = mempoolLock;
-            this.mempool = mempool;
-            this.dateTimeProvider = dateTimeProvider;
-            this.options = options;
-            this.network = network;
-
-            this.inBlock = new TxMempool.SetEntries();
-
-            // Reserve space for coinbase tx.
-            this.blockSize = 1000;
-            this.blockWeight = 4000;
-            this.blockSigOpsCost = 400;
-            this.fIncludeWitness = false;
-
-            // These counters do not include coinbase tx.
-            this.blockTx = 0;
-            this.fees = 0;
-
-            this.ChainTip = chainTip;
-            this.pblocktemplate = new BlockTemplate { Block = new Block(), VTxFees = new List<Money>() };
+            this.Configure();
         }
 
         private int ComputeBlockVersion(ChainedBlock prevChainedBlock, NBitcoin.Consensus consensus)
         {
-            uint nVersion = ThresholdConditionCache.VersionbitsTopBits;
+            uint version = ThresholdConditionCache.VersionbitsTopBits;
             var thresholdConditionCache = new ThresholdConditionCache(consensus);
 
-            IEnumerable<BIP9Deployments> deployments = Enum.GetValues(typeof(BIP9Deployments))
-                .OfType<BIP9Deployments>();
+            IEnumerable<BIP9Deployments> deployments = Enum.GetValues(typeof(BIP9Deployments)).OfType<BIP9Deployments>();
 
             foreach (BIP9Deployments deployment in deployments)
             {
                 ThresholdState state = thresholdConditionCache.GetState(prevChainedBlock, deployment);
                 if ((state == ThresholdState.LockedIn) || (state == ThresholdState.Started))
-                    nVersion |= thresholdConditionCache.Mask(deployment);
+                    version |= thresholdConditionCache.Mask(deployment);
             }
 
-            return (int)nVersion;
+            return (int)version;
         }
 
-        /** Construct a new block template with coinbase to scriptPubKeyIn */
-
-        public override BlockTemplate CreateNewBlock(Script scriptPubKeyIn, bool fMineWitnessTx = true)
+        /// <summary>
+        /// Compute the block version.
+        /// </summary>
+        protected virtual void ComputeBlockVersion()
         {
-            this.logger.LogTrace("({0}.{1}:{2},{3}:{4})", nameof(scriptPubKeyIn), nameof(scriptPubKeyIn.Length), scriptPubKeyIn.Length, nameof(fMineWitnessTx), fMineWitnessTx);
+            this.height = this.ChainTip.Height + 1;
+            this.block.Header.Version = this.ComputeBlockVersion(this.ChainTip, this.Network.Consensus);
+        }
 
-            this.pblock = this.pblocktemplate.Block; // Pointer for convenience.
-            this.scriptPubKeyIn = scriptPubKeyIn;
+        /// <summary>
+        /// Create coinbase transaction.
+        /// Set the coin base with zero money.
+        /// Once we have the fee we can update the amount.
+        /// </summary>
+        protected virtual void CreateCoinbase()
+        {
+            this.coinbase = this.Network.Consensus.ConsensusFactory.CreateTransaction();
+            this.coinbase.Time = (uint)this.DateTimeProvider.GetAdjustedTimeAsUnixTimestamp();
+            this.coinbase.AddInput(TxIn.CreateCoinbase(this.ChainTip.Height + 1));
+            this.coinbase.AddOutput(new TxOut(Money.Zero, this.scriptPubKey));
+
+            this.block.AddTransaction(this.coinbase);
+            this.BlockTemplate.VTxFees.Add(-1); // Updated at end.
+            this.BlockTemplate.TxSigOpsCost.Add(-1); // Updated at end.
+        }
+
+        /// <summary>
+        /// Configures (resets) the builder to its default state 
+        /// before constructing a new block.
+        /// </summary>
+        private void Configure()
+        {
+            this.BlockSize = 1000;
+            this.BlockTemplate = new BlockTemplate(this.Network);
+            this.BlockTx = 0;
+            this.BlockWeight = 4000;
+            this.BlockSigOpsCost = 400;
+            this.fees = 0;
+            this.inBlock = new TxMempool.SetEntries();
+            this.IncludeWitness = false;
+        }
+
+        /// <summary>
+        /// Constructs a block template which will be passed to consensus. 
+        /// </summary>
+        /// <param name="chainTip">Tip of the chain that this instance will work with without touching any shared chain resources.</param>
+        /// <param name="scriptPubKey">Script that explains what conditions must be met to claim ownership of a coin.</param>
+        /// <returns>The contructed <see cref="Miner.BlockTemplate"/>.</returns>
+        protected void OnBuild(ChainedBlock chainTip, Script scriptPubKey)
+        {
+            this.Configure();
+
+            this.ChainTip = chainTip;
+
+            this.block = this.BlockTemplate.Block;
+            this.scriptPubKey = scriptPubKey;
 
             this.CreateCoinbase();
             this.ComputeBlockVersion();
@@ -260,10 +211,10 @@ namespace Stratis.Bitcoin.Features.Miner
             //if (this.network. chainparams.MineBlocksOnDemand())
             //    pblock->nVersion = GetArg("-blockversion", pblock->nVersion);
 
-            medianTimePast = Utils.DateTimeToUnixTime(this.ChainTip.GetMedianTimePast());
-            this.lockTimeCutoff = PowConsensusValidator.StandardLocktimeVerifyFlags.HasFlag(Transaction.LockTimeFlags.MedianTimePast)
-                ? medianTimePast
-                : this.pblock.Header.Time;
+            this.MedianTimePast = Utils.DateTimeToUnixTime(this.ChainTip.GetMedianTimePast());
+            this.LockTimeCutoff = PowConsensusValidator.StandardLocktimeVerifyFlags.HasFlag(Transaction.LockTimeFlags.MedianTimePast)
+                ? this.MedianTimePast
+                : this.block.Header.Time;
 
             // TODO: Implement Witness Code
             // Decide whether to include witness transactions
@@ -272,87 +223,35 @@ namespace Stratis.Bitcoin.Features.Miner
             // -promiscuousmempoolflags is used.
             // TODO: replace this with a call to main to assess validity of a mempool
             // transaction (which in most cases can be a no-op).
-            this.fIncludeWitness = false; //IsWitnessEnabled(pindexPrev, chainparams.GetConsensus()) && fMineWitnessTx;
+            this.IncludeWitness = false; //IsWitnessEnabled(pindexPrev, chainparams.GetConsensus()) && fMineWitnessTx;
 
             // add transactions from the mempool
             int nPackagesSelected;
             int nDescendantsUpdated;
             this.AddTransactions(out nPackagesSelected, out nDescendantsUpdated);
 
-            lastBlockTx = this.blockTx;
-            lastBlockSize = this.blockSize;
-            lastBlockWeight = this.blockWeight;
+            this.LastBlockTx = this.BlockTx;
+            this.LastBlockSize = this.BlockSize;
+            this.LastBlockWeight = this.BlockWeight;
 
             // TODO: Implement Witness Code
             // pblocktemplate->CoinbaseCommitment = GenerateCoinbaseCommitment(*pblock, pindexPrev, chainparams.GetConsensus());
-            this.pblocktemplate.VTxFees[0] = -this.fees;
-            this.coinbase.Outputs[0].Value = this.fees + this.consensusLoop.Validator.GetProofOfWorkReward(this.height);
-            this.pblocktemplate.TotalFee = this.fees;
+            this.BlockTemplate.VTxFees[0] = -this.fees;
+            this.coinbase.Outputs[0].Value = this.fees + this.ConsensusLoop.Validator.GetProofOfWorkReward(this.height);
+            this.BlockTemplate.TotalFee = this.fees;
 
-            int nSerializeSize = this.pblock.GetSerializedSize();
-            this.logger.LogDebug("Serialized size is {0} bytes, block weight is {1}, number of txs is {2}, tx fees are {3}, number of sigops is {4}.", nSerializeSize, this.consensusLoop.Validator.GetBlockWeight(this.pblock), this.blockTx, this.fees, this.blockSigOpsCost);
+            int nSerializeSize = this.block.GetSerializedSize();
+            this.logger.LogDebug("Serialized size is {0} bytes, block weight is {1}, number of txs is {2}, tx fees are {3}, number of sigops is {4}.", nSerializeSize, this.ConsensusLoop.Validator.GetBlockWeight(this.block), this.BlockTx, this.fees, this.BlockSigOpsCost);
 
-            this.UpdateHeaders();
+            this.OnUpdateHeaders();
 
             //pblocktemplate->TxSigOpsCost[0] = WITNESS_SCALE_FACTOR * GetLegacySigOpCount(*pblock->vtx[0]);
 
-            this.TestBlockValidity();
+            this.OnTestBlockValidity();
 
             //int64_t nTime2 = GetTimeMicros();
 
             //LogPrint(BCLog::BENCH, "CreateNewBlock() packages: %.2fms (%d packages, %d updated descendants), validity: %.2fms (total %.2fms)\n", 0.001 * (nTime1 - nTimeStart), nPackagesSelected, nDescendantsUpdated, 0.001 * (nTime2 - nTime1), 0.001 * (nTime2 - nTimeStart));
-
-            this.logger.LogTrace("(-)");
-            return this.pblocktemplate;
-        }
-
-        protected virtual void ComputeBlockVersion()
-        {
-            // Compute the block version.
-            this.height = this.ChainTip.Height + 1;
-            this.pblock.Header.Version = this.ComputeBlockVersion(this.ChainTip, this.network.Consensus);
-        }
-
-        protected virtual void CreateCoinbase()
-        {
-            // Create coinbase transaction.
-            // Set the coin base with zero money.
-            // Once we have the fee we can update the amount.
-            this.coinbase = new Transaction();
-            this.coinbase.Time = (uint)this.dateTimeProvider.GetAdjustedTimeAsUnixTimestamp();
-            this.coinbase.AddInput(TxIn.CreateCoinbase(this.ChainTip.Height + 1));
-            this.coinbase.AddOutput(new TxOut(Money.Zero, this.scriptPubKeyIn));
-            this.pblock.AddTransaction(this.coinbase);
-            this.pblocktemplate.VTxFees.Add(-1); // Updated at end.
-            this.pblocktemplate.TxSigOpsCost.Add(-1); // Updated at end.
-        }
-
-        protected virtual void UpdateHeaders()
-        {
-            this.logger.LogTrace("()");
-
-            // Fill in header.
-            this.pblock.Header.HashPrevBlock = this.ChainTip.HashBlock;
-            this.pblock.Header.UpdateTime(this.dateTimeProvider.GetTimeOffset(), this.network, this.ChainTip);
-            this.pblock.Header.Bits = this.pblock.Header.GetWorkRequired(this.network, this.ChainTip);
-            this.pblock.Header.Nonce = 0;
-
-            this.logger.LogTrace("(-)");
-        }
-
-        protected virtual void TestBlockValidity()
-        {
-            this.logger.LogTrace("()");
-
-            var context = new RuleContext(new BlockValidationContext { Block = this.pblock }, this.network.Consensus, this.consensusLoop.Tip)
-            {
-                CheckPow = false,
-                CheckMerkleRoot = false,
-            };
-
-            this.consensusLoop.ValidateBlock(context);
-
-            this.logger.LogTrace("(-)");
         }
 
         // Add a tx to the block.
@@ -360,17 +259,17 @@ namespace Stratis.Bitcoin.Features.Miner
         {
             this.logger.LogTrace("({0}.{1}:'{2}')", nameof(iter), nameof(iter.TransactionHash), iter.TransactionHash);
 
-            this.pblock.AddTransaction(iter.Transaction);
+            this.block.AddTransaction(iter.Transaction);
 
-            this.pblocktemplate.VTxFees.Add(iter.Fee);
-            this.pblocktemplate.TxSigOpsCost.Add(iter.SigOpCost);
+            this.BlockTemplate.VTxFees.Add(iter.Fee);
+            this.BlockTemplate.TxSigOpsCost.Add(iter.SigOpCost);
 
-            if (this.needSizeAccounting)
-                this.blockSize += iter.Transaction.GetSerializedSize();
+            if (this.NeedSizeAccounting)
+                this.BlockSize += iter.Transaction.GetSerializedSize();
 
-            this.blockWeight += iter.TxWeight;
-            this.blockTx++;
-            this.blockSigOpsCost += iter.SigOpCost;
+            this.BlockWeight += iter.TxWeight;
+            this.BlockTx++;
+            this.BlockSigOpsCost += iter.SigOpCost;
             this.fees += iter.Fee;
             this.inBlock.Add(iter);
 
@@ -419,7 +318,7 @@ namespace Stratis.Bitcoin.Features.Miner
             // and modifying them for their already included ancestors.
             this.UpdatePackagesForAdded(this.inBlock, mapModifiedTx);
 
-            List<TxMempoolEntry> ancestorScoreList = this.mempoolLock.ReadAsync(() => this.mempool.MapTx.AncestorScore).GetAwaiter().GetResult().ToList();
+            List<TxMempoolEntry> ancestorScoreList = this.MempoolLock.ReadAsync(() => this.Mempool.MapTx.AncestorScore).GetAwaiter().GetResult().ToList();
 
             TxMempoolEntry iter;
 
@@ -495,7 +394,7 @@ namespace Stratis.Bitcoin.Features.Miner
                     packageSigOpsCost = modit.SigOpCostWithAncestors;
                 }
 
-                if (packageFees < this.blockMinFeeRate.GetFee((int)packageSize))
+                if (packageFees < this.BlockMinFeeRate.GetFee((int)packageSize))
                 {
                     // Everything else we might consider has a lower fee rate
                     return;
@@ -514,7 +413,7 @@ namespace Stratis.Bitcoin.Features.Miner
 
                     nConsecutiveFailed++;
 
-                    if ((nConsecutiveFailed > this.MaxConsecutiveAddTransactionFailures) && (this.blockWeight > this.blockMaxWeight - 4000))
+                    if ((nConsecutiveFailed > MaxConsecutiveAddTransactionFailures) && (this.BlockWeight > this.BlockMaxWeight - 4000))
                     {
                         // Give up if we're close to full and haven't succeeded in a while
                         break;
@@ -525,7 +424,7 @@ namespace Stratis.Bitcoin.Features.Miner
                 TxMempool.SetEntries ancestors = new TxMempool.SetEntries();
                 long nNoLimit = long.MaxValue;
                 string dummy;
-                this.mempool.CalculateMemPoolAncestors(iter, ancestors, nNoLimit, nNoLimit, nNoLimit, nNoLimit, out dummy, false);
+                this.Mempool.CalculateMemPoolAncestors(iter, ancestors, nNoLimit, nNoLimit, nNoLimit, nNoLimit, out dummy, false);
 
                 this.OnlyUnconfirmed(ancestors);
                 ancestors.Add(iter);
@@ -583,10 +482,10 @@ namespace Stratis.Bitcoin.Features.Miner
         private bool TestPackage(long packageSize, long packageSigOpsCost)
         {
             // TODO: Switch to weight-based accounting for packages instead of vsize-based accounting.
-            if (this.blockWeight + this.network.Consensus.Option<PowConsensusOptions>().WitnessScaleFactor * packageSize >= this.blockMaxWeight)
+            if (this.BlockWeight + this.Network.Consensus.Option<PowConsensusOptions>().WitnessScaleFactor * packageSize >= this.BlockMaxWeight)
                 return false;
 
-            if (this.blockSigOpsCost + packageSigOpsCost >= this.network.Consensus.Option<PowConsensusOptions>().MaxBlockSigopsCost)
+            if (this.BlockSigOpsCost + packageSigOpsCost >= this.Network.Consensus.Option<PowConsensusOptions>().MaxBlockSigopsCost)
                 return false;
 
             return true;
@@ -599,19 +498,19 @@ namespace Stratis.Bitcoin.Features.Miner
         // - serialized size (in case -blockmaxsize is in use)
         private bool TestPackageTransactions(TxMempool.SetEntries package)
         {
-            long nPotentialBlockSize = this.blockSize; // only used with needSizeAccounting
+            long nPotentialBlockSize = this.BlockSize; // only used with needSizeAccounting
             foreach (TxMempoolEntry it in package)
             {
-                if (!it.Transaction.IsFinal(Utils.UnixTimeToDateTime(this.lockTimeCutoff), this.height))
+                if (!it.Transaction.IsFinal(Utils.UnixTimeToDateTime(this.LockTimeCutoff), this.height))
                     return false;
 
-                if (!this.fIncludeWitness && it.Transaction.HasWitness)
+                if (!this.IncludeWitness && it.Transaction.HasWitness)
                     return false;
 
-                if (this.needSizeAccounting)
+                if (this.NeedSizeAccounting)
                 {
                     int nTxSize = it.Transaction.GetSerializedSize();
-                    if (nPotentialBlockSize + nTxSize >= this.blockMaxSize)
+                    if (nPotentialBlockSize + nTxSize >= this.BlockMaxSize)
                         return false;
 
                     nPotentialBlockSize += nTxSize;
@@ -630,7 +529,7 @@ namespace Stratis.Bitcoin.Features.Miner
             foreach (TxMempoolEntry setEntry in alreadyAdded)
             {
                 TxMempool.SetEntries setEntries = new TxMempool.SetEntries();
-                this.mempoolLock.ReadAsync(() => this.mempool.CalculateDescendants(setEntry, setEntries)).GetAwaiter().GetResult();
+                this.MempoolLock.ReadAsync(() => this.Mempool.CalculateDescendants(setEntry, setEntries)).GetAwaiter().GetResult();
                 foreach (var desc in setEntries)
                 {
                     if (alreadyAdded.Contains(desc))
@@ -650,6 +549,120 @@ namespace Stratis.Bitcoin.Features.Miner
             }
 
             return descendantsUpdated;
+        }
+
+        public abstract BlockTemplate Build(ChainedBlock chainTip, Script scriptPubKey);
+        public abstract void OnUpdateHeaders();
+        public abstract void OnTestBlockValidity();
+    }
+
+    public class PowBlockAssembler : BlockAssembler
+    {
+        /// <summary>Instance logger.</summary>
+        private readonly ILogger logger;
+
+        // Container for tracking updates to ancestor feerate as we include (parent)
+        // transactions in a block.
+        public class TxMemPoolModifiedEntry
+        {
+            public TxMemPoolModifiedEntry(TxMempoolEntry entry)
+            {
+                this.iter = entry;
+                this.SizeWithAncestors = entry.SizeWithAncestors;
+                this.ModFeesWithAncestors = entry.ModFeesWithAncestors;
+                this.SigOpCostWithAncestors = entry.SigOpCostWithAncestors;
+            }
+
+            public TxMempoolEntry iter;
+
+            public long SizeWithAncestors;
+
+            public Money ModFeesWithAncestors;
+
+            public long SigOpCostWithAncestors;
+        }
+
+        // This matches the calculation in CompareTxMemPoolEntryByAncestorFee,
+        // except operating on CTxMemPoolModifiedEntry.
+        // TODO: Refactor to avoid duplication of this logic.
+        public class CompareModifiedEntry : IComparer<TxMemPoolModifiedEntry>
+        {
+            public int Compare(TxMemPoolModifiedEntry a, TxMemPoolModifiedEntry b)
+            {
+                Money f1 = a.ModFeesWithAncestors * b.SizeWithAncestors;
+                Money f2 = b.ModFeesWithAncestors * a.SizeWithAncestors;
+
+                if (f1 == f2)
+                    return TxMempool.CompareIteratorByHash.InnerCompare(a.iter, b.iter);
+
+                return f1 > f2 ? 1 : -1;
+            }
+        }
+
+        // A comparator that sorts transactions based on number of ancestors.
+        // This is sufficient to sort an ancestor package in an order that is valid
+        // to appear in a block.
+        public class CompareTxIterByAncestorCount : IComparer<TxMempoolEntry>
+        {
+            public int Compare(TxMempoolEntry a, TxMempoolEntry b)
+            {
+                if (a.CountWithAncestors != b.CountWithAncestors)
+                    return a.CountWithAncestors < b.CountWithAncestors ? -1 : 1;
+
+                return TxMempool.CompareIteratorByHash.InnerCompare(a, b);
+            }
+        }
+
+        public PowBlockAssembler(
+            IConsensusLoop consensusLoop,
+            IDateTimeProvider dateTimeProvider,
+            ILoggerFactory loggerFactory,
+            ITxMempool mempool,
+            MempoolSchedulerLock mempoolLock,
+            Network network,
+            AssemblerOptions options = null)
+            : base(consensusLoop, dateTimeProvider, loggerFactory, mempool, mempoolLock, network)
+        {
+            this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
+        }
+
+        /// <inheritdoc/>
+        public override BlockTemplate Build(ChainedBlock chainTip, Script scriptPubKey)
+        {
+            this.logger.LogTrace("({0}:'{1}',{2}.{3}:{4})", nameof(chainTip), chainTip, nameof(scriptPubKey), nameof(scriptPubKey.Length), scriptPubKey.Length);
+
+            this.OnBuild(chainTip, scriptPubKey);
+
+            this.logger.LogTrace("(-)");
+
+            return this.BlockTemplate;
+        }
+
+        public override void OnUpdateHeaders()
+        {
+            this.logger.LogTrace("()");
+
+            this.block.Header.HashPrevBlock = this.ChainTip.HashBlock;
+            this.block.Header.UpdateTime(this.DateTimeProvider.GetTimeOffset(), this.Network, this.ChainTip);
+            this.block.Header.Bits = this.block.Header.GetWorkRequired(this.Network, this.ChainTip);
+            this.block.Header.Nonce = 0;
+
+            this.logger.LogTrace("(-)");
+        }
+
+        public override void OnTestBlockValidity()
+        {
+            this.logger.LogTrace("()");
+
+            var context = new RuleContext(new BlockValidationContext { Block = this.block }, this.Network.Consensus, this.ConsensusLoop.Tip)
+            {
+                CheckPow = false,
+                CheckMerkleRoot = false,
+            };
+
+            this.ConsensusLoop.ValidateBlock(context);
+
+            this.logger.LogTrace("(-)");
         }
     }
 }

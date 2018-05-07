@@ -17,32 +17,34 @@ namespace NBitcoin
             PayToWitTemplate.Instance
         };
 
-        public static bool IsStandardTransaction(Transaction tx)
+        public static bool IsStandardTransaction(Transaction tx, Network network = null)
         {
-            return new StandardTransactionPolicy().Check(tx, null).Length == 0;
+            network = network ?? Network.Main;
+
+            return new StandardTransactionPolicy(network).Check(tx, null).Length == 0;
         }
 
-        public static bool AreOutputsStandard(Transaction tx)
+        public static bool AreOutputsStandard(Network network, Transaction tx)
         {
-            return tx.Outputs.All(vout => IsStandardScriptPubKey(vout.ScriptPubKey));
+            return tx.Outputs.All(vout => IsStandardScriptPubKey(network, vout.ScriptPubKey));
         }
 
-        public static ScriptTemplate GetTemplateFromScriptPubKey(Script script)
+        public static ScriptTemplate GetTemplateFromScriptPubKey(Network network, Script script)
         {
-            return _StandardTemplates.FirstOrDefault(t => t.CheckScriptPubKey(script));
+            return _StandardTemplates.FirstOrDefault(t => t.CheckScriptPubKey(network, script));
         }
 
-        public static bool IsStandardScriptPubKey(Script scriptPubKey)
+        public static bool IsStandardScriptPubKey(Network network, Script scriptPubKey)
         {
-            return _StandardTemplates.Any(template => template.CheckScriptPubKey(scriptPubKey));
+            return _StandardTemplates.Any(template => template.CheckScriptPubKey(network, scriptPubKey));
         }
-        private static bool IsStandardScriptSig(Script scriptSig, Script scriptPubKey)
+        private static bool IsStandardScriptSig(Network network, Script scriptSig, Script scriptPubKey)
         {
-            var template = GetTemplateFromScriptPubKey(scriptPubKey);
+            var template = GetTemplateFromScriptPubKey(network, scriptPubKey);
             if(template == null)
                 return false;
 
-            return template.CheckScriptSig(scriptSig, scriptPubKey);
+            return template.CheckScriptSig(network, scriptSig, scriptPubKey);
         }
 
         //
@@ -56,7 +58,7 @@ namespace NBitcoin
         // expensive-to-check-upon-redemption script like:
         //   DUP CHECKSIG DROP ... repeated 100 times... OP_1
         //
-        public static bool AreInputsStandard(Transaction tx, CoinsView coinsView)
+        public static bool AreInputsStandard(Network network, Transaction tx, CoinsView coinsView)
         {
             if(tx.IsCoinBase)
                 return true; // Coinbases don't use vin normally
@@ -66,7 +68,7 @@ namespace NBitcoin
                 TxOut prev = coinsView.GetOutputFor(input);
                 if(prev == null)
                     return false;
-                if(!IsStandardScriptSig(input.ScriptSig, prev.ScriptPubKey))
+                if(!IsStandardScriptSig(network, input.ScriptSig, prev.ScriptPubKey))
                     return false;
             }
 

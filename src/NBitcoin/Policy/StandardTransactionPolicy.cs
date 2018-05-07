@@ -6,12 +6,16 @@ namespace NBitcoin.Policy
 {
     public class StandardTransactionPolicy : ITransactionPolicy
     {
-        public StandardTransactionPolicy()
+        private readonly Network network;
+
+        public StandardTransactionPolicy(Network network)
         {
+            this.network = network;
             ScriptVerify = NBitcoin.ScriptVerify.Standard;
             MaxTransactionSize = 100000;
+            // TODO: replace fee params with whats in Network.
             MaxTxFee = new FeeRate(Money.Coins(0.1m));
-            MinRelayTxFee = new FeeRate(Money.Satoshis(5000));
+            MinRelayTxFee = new FeeRate(Money.Satoshis(5000)); // TODO: new FeeRate(Money.Satoshis(network.MinRelayTxFee));
             CheckFee = true;
             CheckScriptPubKey = true;
         }
@@ -81,7 +85,7 @@ namespace NBitcoin.Policy
                     if(ScriptVerify != null)
                     {
                         ScriptError error;
-                        if(!VerifyScript(input, coin.TxOut.ScriptPubKey, coin.TxOut.Value, ScriptVerify.Value, out error))
+                        if(!this.VerifyScript(input, coin.TxOut.ScriptPubKey, coin.TxOut.Value, ScriptVerify.Value, out error))
                         {
                             errors.Add(new ScriptPolicyError(input, error, ScriptVerify.Value, coin.TxOut.ScriptPubKey));
                         }
@@ -108,7 +112,7 @@ namespace NBitcoin.Policy
                 foreach(var input in transaction.Inputs.AsIndexedInputs())
                 {
                     var coin = spentCoins.FirstOrDefault(s => s.Outpoint == input.PrevOut);
-                    if(coin != null && coin.GetHashVersion() != HashVersion.Witness)
+                    if(coin != null && coin.GetHashVersion(this.network) != HashVersion.Witness)
                         errors.Add(new InputPolicyError("Malleable input detected", input));
                 }
             }
@@ -117,7 +121,7 @@ namespace NBitcoin.Policy
             {
                 foreach(var txout in transaction.Outputs.AsCoins())
                 {
-                    var template = StandardScripts.GetTemplateFromScriptPubKey(txout.ScriptPubKey);
+                    var template = StandardScripts.GetTemplateFromScriptPubKey(this.network, txout.ScriptPubKey);
                     if(template == null)
                         errors.Add(new OutputPolicyError("Non-Standard scriptPubKey", (int)txout.Outpoint.N));
                 }
@@ -178,14 +182,14 @@ namespace NBitcoin.Policy
 #if !NOCONSENSUSLIB
             if(!UseConsensusLib)
 #endif
-                return input.VerifyScript(scriptPubKey, value, scriptVerify, out error);
+                return input.VerifyScript(this.network, scriptPubKey, value, scriptVerify, out error);
 #if !NOCONSENSUSLIB
             else
             {
                 var ok = Script.VerifyScriptConsensus(scriptPubKey, input.Transaction, input.Index, scriptVerify);
                 if(!ok)
                 {
-                    if(input.VerifyScript(scriptPubKey, scriptVerify, out error))
+                    if(input.VerifyScript(this.network, scriptPubKey, scriptVerify, out error))
                         error = ScriptError.UnknownError;
                     return false;
                 }
@@ -202,7 +206,7 @@ namespace NBitcoin.Policy
 
         public StandardTransactionPolicy Clone()
         {
-            return new StandardTransactionPolicy()
+            return new StandardTransactionPolicy(this.network)
             {
                 MaxTransactionSize = MaxTransactionSize,
                 MaxTxFee = MaxTxFee,
