@@ -446,17 +446,10 @@ namespace Stratis.Bitcoin.Features.Miner
                 return;
             }
 
-            this.stakeCancellationTokenSource.Cancel();
-            this.logger.LogTrace("Waiting for staking loop to cancel...");
-            this.stakingLoop?.RunningTask?.GetAwaiter().OnCompleted(() =>
-            {
-                this.logger.LogTrace("Staking loop cancelled.");                              
-            });
+            this.stakeCancellationTokenSource.Cancel();  
             this.logger.LogTrace("Disposing of staking loop.");
             this.stakingLoop?.Dispose();
-            this.stakingLoop = null;
             this.stakeCancellationTokenSource?.Dispose();
-            this.stakeCancellationTokenSource = null;
             this.rpcGetStakingInfoModel = new Miner.Models.GetStakingInfoModel();
             this.rpcGetStakingInfoModel.Enabled = false;
 
@@ -470,7 +463,7 @@ namespace Stratis.Bitcoin.Features.Miner
 
             BlockTemplate blockTemplate = null;
 
-            while (this.stakeCancellationTokenSource != null && !this.stakeCancellationTokenSource.Token.IsCancellationRequested)
+            while (!this.stakeCancellationTokenSource.Token.IsCancellationRequested)
             {
                 // Prevent mining if the system time is not in sync with that of other members on the network.
                 if (this.timeSyncBehaviorState.IsSystemTimeOutOfSync)
