@@ -14,14 +14,14 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
         {
             if (totalSupply == 0)
                 throw new ArgumentException("Token supply must be greater than 0", nameof(totalSupply));
-            this.Balances = this.PersistentState.GetMapping<ulong>(nameof(this.Balances));
-            this.Allowed = this.PersistentState.GetMapping<ISmartContractMapping<ulong>>(nameof(this.Allowed));
             this.Owner = this.Message.Sender;
             this.TotalSupply = totalSupply;
         }
 
-        public readonly ISmartContractMapping<ulong> Balances;
-        public readonly ISmartContractMapping<ISmartContractMapping<ulong>> Allowed;
+        // TODO: Re-enable allowed collection once nested mapping is implemented
+        // public readonly ISmartContractMapping<ISmartContractMapping<ulong>> Allowed;
+
+        public ISmartContractMapping<ulong> Balances => this.PersistentState.GetMapping<ulong>(nameof(this.Balances));
 
         public ulong TotalSupply
         {
@@ -73,18 +73,24 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
 
         public ulong GetAllowance(Address owner, Address spender)
         {
-            this.Assert(!string.IsNullOrWhiteSpace(owner.Value));
-            this.Assert(!string.IsNullOrWhiteSpace(spender.Value));
+            throw new NotImplementedException();
 
-            return this.Allowed[owner.Value][spender.Value];
+            // TODO: Re-enable allowed collection once nested mapping is implemented
+            // this.Assert(!string.IsNullOrWhiteSpace(owner.Value));
+            // this.Assert(!string.IsNullOrWhiteSpace(spender.Value));
+
+            // return this.Allowed[owner.Value][spender.Value];
         }
 
         public bool Approve(Address sender, ulong amountToApprove)
         {
-            this.Assert(!string.IsNullOrWhiteSpace(sender.Value));
+            throw new NotImplementedException();
 
-            this.Allowed[this.Owner.Value][sender.Value] = amountToApprove;
-            return true;
+            // TODO: Re-enable allowed collection once nested mapping is implemented
+            // this.Assert(!string.IsNullOrWhiteSpace(sender.Value));
+
+            // this.Allowed[this.Owner.Value][sender.Value] = amountToApprove;
+            // return true;
         }
     }
 }
