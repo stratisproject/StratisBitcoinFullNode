@@ -37,6 +37,12 @@ namespace Stratis.Bitcoin.Features.BlockStore
         Task<Block> GetAsync(uint256 hash);
 
         /// <summary>
+        /// Get the blocks from the database by using block hashes.
+        /// </summary>
+        /// <param name="hash">The block hash.</param>
+        Task<List<Block>> GetBlocksAsync(List<uint256> hashes);
+
+        /// <summary>
         /// Retreive the transaction information asynchronously using transaction id.
         /// </summary>
         /// <param name="trxid">The transaction id to find.</param>
@@ -503,6 +509,55 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
                 this.logger.LogTrace("(-):{0}", res);
                 return res;
+            });
+
+            this.logger.LogTrace("(-)");
+            return task;
+        }
+
+        /// <summary>
+        /// Get multiple blocks from the database by their block hashes.
+        /// </summary>
+        /// <param name="hashes">The block hashes.</param>
+        public Task<List<Block>> GetBlocksAsync(List<uint256> hashes)
+        {
+            this.logger.LogTrace("({0}:'{1}')", nameof(hashes.Count), hashes.Count);
+            Guard.NotNull(hashes, nameof(hashes));
+
+            var results = new Dictionary<uint256, Block>();
+
+            Task<List<Block>> task = Task.Run(() =>
+            {
+                this.logger.LogTrace("()");
+
+                using (DBreeze.Transactions.Transaction transaction = this.DBreeze.GetTransaction())
+                {
+                    transaction.ValuesLazyLoadingIsOn = false;
+
+                    // Access hashes in sorted order.
+                    var byteListComparer = new ByteListComparer();
+                    hashes.Sort((pair1, pair2) => byteListComparer.Compare(pair1.ToBytes(), pair2.ToBytes()));
+
+                    foreach (var hash in hashes)
+                    {
+                        byte[] key = hash.ToBytes();
+                        Row<byte[], Block> blockRow = transaction.Select<byte[], Block>("Block", key);
+                        if (blockRow.Exists)
+                        {
+                            results[hash] = blockRow.Value;
+                            this.PerformanceCounter.AddRepositoryHitCount(1);
+                        }
+                        else
+                        {
+                            this.PerformanceCounter.AddRepositoryMissCount(1);
+                        }
+                    }
+                }
+
+                this.logger.LogTrace("(-):{0}", results.Count);
+
+                // Return the result in the order that the hashes were presented.
+                return hashes.Select(hash => results[hash]).ToList();
             });
 
             this.logger.LogTrace("(-)");

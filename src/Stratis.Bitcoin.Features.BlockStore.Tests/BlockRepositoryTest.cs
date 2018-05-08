@@ -342,6 +342,33 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
         }
 
         [Fact]
+        public void GetAsyncWithExistingBlocksReturnsBlocks()
+        {
+            string dir = CreateTestDir(this);
+            var block1 = Network.Main.Consensus.ConsensusFactory.CreateBlock();
+            var block2 = Network.Main.Consensus.ConsensusFactory.CreateBlock();
+            block2.Header.HashPrevBlock = block1.Header.GetHash();
+
+            using (var engine = new DBreezeEngine(dir))
+            {
+                var transaction = engine.GetTransaction();
+                transaction.Insert<byte[], byte[]>("Block", block1.GetHash().ToBytes(), block1.ToBytes());
+                transaction.Insert<byte[], byte[]>("Block", block2.GetHash().ToBytes(), block2.ToBytes());
+                transaction.Commit();
+            }
+
+            using (var repository = this.SetupRepository(Network.Main, dir))
+            {
+                var task = repository.GetBlocksAsync(new[] { block1.GetHash(), block2.GetHash() }.ToList());
+                task.Wait();
+
+                Assert.Equal(2, task.Result.Count);
+                Assert.Equal(block1.GetHash(), task.Result[0].GetHash());
+                Assert.Equal(block2.GetHash(), task.Result[1].GetHash());
+            }
+        }
+
+        [Fact]
         public void GetAsyncWithoutExistingBlockReturnsNull()
         {
             string dir = CreateTestDir(this);
