@@ -39,7 +39,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// <summary>
         /// Get the blocks from the database by using block hashes.
         /// </summary>
-        /// <param name="hashes">The block hashes.</param>
+        /// <param name="hashes">A list of unique block hashes.</param>
         /// <returns>The blocks (or null if not found) in the same order as the hashes on input.</returns>
         Task<List<Block>> GetBlocksAsync(List<uint256> hashes);
 
