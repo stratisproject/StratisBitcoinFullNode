@@ -546,14 +546,14 @@ namespace Stratis.Bitcoin.Features.BlockStore
                             results[key.Item1] = blockRow.Value;
                             this.PerformanceCounter.AddRepositoryHitCount(1);
 
-                            this.logger.LogTrace("(-):{0}={1}", key.Item1, blockRow.Value);
+                            this.logger.LogTrace("Block hash '{0}' loaded from the store.", key.Item1);
                         }
                         else
                         {
                             results[key.Item1] = null;
                             this.PerformanceCounter.AddRepositoryMissCount(1);
 
-                            this.logger.LogTrace("(-):{0}=[NO_BLOCK]", key.Item1);
+                            this.logger.LogTrace("Block hash '{0}' not found in the store.", key.Item1);
                         }
                     }
                 }
