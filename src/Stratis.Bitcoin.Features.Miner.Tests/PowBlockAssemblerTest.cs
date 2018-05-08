@@ -357,7 +357,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
             var prevBlockHash = chain.Genesis.HashBlock;
             for (var i = 0; i < blockAmount; i++)
             {
-                var block = new Block();
+                var block = network.Consensus.ConsensusFactory.CreateBlock();
                 Transaction coinbase = CreateCoinbaseTransaction(network, key, chain.Height + 1);
 
                 block.AddTransaction(coinbase);

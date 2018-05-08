@@ -49,7 +49,7 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
 
         public NodeConfigParameters ConfigParameters { get; } = new NodeConfigParameters();
 
-        public CoreNode(NodeRunner runner, NodeBuilder builder, Network network, string configfile = "bitcoin.conf")
+        public CoreNode(NodeRunner runner, NodeBuilder builder, Network network, string configfile)
         {
             this.runner = runner;
 
