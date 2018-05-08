@@ -20,7 +20,7 @@ namespace Stratis.SmartContracts.Core.Util
         /// <param name="coinView"></param>
         /// <param name="blockTxs"></param>
         /// <returns></returns>
-        public static uint160 GetSender(Transaction tx, CoinView coinView, IList<Transaction> blockTxs)
+        public static GetSenderResult GetSender(Transaction tx, CoinView coinView, IList<Transaction> blockTxs)
         {
             // Check the txes in this block first
             if (blockTxs != null && blockTxs.Count > 0)
@@ -52,7 +52,7 @@ namespace Stratis.SmartContracts.Core.Util
                 return GetAddressFromScript(script);
             }
 
-            throw new Exception("Unable to get the sender of the transaction");
+            return GetSenderResult.CreateFailure("Unable to get the sender of the transaction");
         }
 
         /// <summary>
@@ -60,19 +60,55 @@ namespace Stratis.SmartContracts.Core.Util
         /// </summary>
         /// <param name="script"></param>
         /// <returns></returns>
-        public static uint160 GetAddressFromScript(Script script)
+        public static GetSenderResult GetAddressFromScript(Script script)
         {
             PubKey payToPubKey = PayToPubkeyTemplate.Instance.ExtractScriptPubKeyParameters(script);
 
             if (payToPubKey != null)
             {
-                return new uint160(payToPubKey.Hash.ToBytes());
+                var address = new uint160(payToPubKey.Hash.ToBytes());
+                return GetSenderResult.CreateSuccess(address);
             }
 
             if (PayToPubkeyHashTemplate.Instance.CheckScriptPubKey(script))
-                return new uint160(PayToPubkeyHashTemplate.Instance.ExtractScriptPubKeyParameters(script).ToBytes());
+            {
+                var address = new uint160(PayToPubkeyHashTemplate.Instance.ExtractScriptPubKeyParameters(script).ToBytes());
+                return GetSenderResult.CreateSuccess(address);
+            }
 
-            throw new Exception("Addresses can only be retrieved from Pay to Pub Key or Pay to Pub Key Hash");
+            return GetSenderResult.CreateFailure("Addresses can only be retrieved from Pay to Pub Key or Pay to Pub Key Hash");            
         }
+
+        public class GetSenderResult
+        {
+            private GetSenderResult(uint160 address)
+            {
+                this.Success = true;
+                this.Sender = address;
+            }
+
+            private GetSenderResult(string error)
+            {
+                this.Success = false;
+                this.Error = error;
+            }
+
+            public bool Success { get; }
+
+            public uint160 Sender { get; }
+
+            public string Error { get; }
+
+            public static GetSenderResult CreateSuccess(uint160 address)
+            {
+                return new GetSenderResult(address);
+            }
+
+            public static GetSenderResult CreateFailure(string error)
+            {
+                return new GetSenderResult(error);
+            }
+        }
+
     }
 }
