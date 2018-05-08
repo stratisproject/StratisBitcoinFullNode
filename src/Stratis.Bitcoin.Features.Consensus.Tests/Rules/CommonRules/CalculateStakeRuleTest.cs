@@ -30,7 +30,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
                             CreateCoinStakeTransaction(this.network, new Key(), 6, this.concurrentChain.GetBlock(5).HashBlock)
                         }
                 },
-                ChainedBlock = this.concurrentChain.GetBlock(4)
+                ChainedHeader = this.concurrentChain.GetBlock(4)
             };
 
             this.stakeValidator.Setup(s => s.GetNextTargetRequired(
@@ -66,7 +66,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
                         new Transaction()
                     }
                 },
-                ChainedBlock = this.concurrentChain.GetBlock(4)
+                ChainedHeader = this.concurrentChain.GetBlock(4)
             };
             this.ruleContext.CheckPow = false;
 
@@ -101,7 +101,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             this.ruleContext.BlockValidationContext = new BlockValidationContext()
             {
                 Block = TestRulesContextFactory.MineBlock(this.network, this.concurrentChain),
-                ChainedBlock = this.concurrentChain.Tip
+                ChainedHeader = this.concurrentChain.Tip
             };
             this.ruleContext.CheckPow = true;
             this.ruleContext.Consensus = this.network.Consensus;
@@ -139,7 +139,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
                         new Transaction()
                     }
                 },
-                ChainedBlock = this.concurrentChain.GetBlock(4)
+                ChainedHeader = this.concurrentChain.GetBlock(4)
             };
             this.ruleContext.CheckPow = true;
 

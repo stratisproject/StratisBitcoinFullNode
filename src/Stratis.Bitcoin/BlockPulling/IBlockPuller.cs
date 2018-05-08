@@ -16,7 +16,7 @@ namespace Stratis.Bitcoin.BlockPulling
         /// Array of block descriptions that need to be downloaded. Must not be empty.
         /// Blocks in the array have to be unique - it is not supported for a single block to be included twice in this array.
         /// </param>
-        void AskBlocks(ChainedBlock[] downloadRequests);
+        void AskBlocks(ChainedHeader[] downloadRequests);
 
         /// <summary>
         /// Inject blocks directly to the puller's list of downloaded blocks, which is used for testing.

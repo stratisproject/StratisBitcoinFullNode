@@ -36,21 +36,21 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
         /// <summary>Timestamp of the last flush of <see cref="DownloadStack"/> to the disk.</summary>
         internal DateTime LastDownloadStackFlushTime;
 
-        public BlockStoreInnerStepContext(CancellationToken cancellationToken, BlockStoreLoop blockStoreLoop, ChainedBlock nextChainedBlock, ILoggerFactory loggerFactory, IDateTimeProvider dateTimeProvider)
+        public BlockStoreInnerStepContext(CancellationToken cancellationToken, BlockStoreLoop blockStoreLoop, ChainedHeader nextChainedHeader, ILoggerFactory loggerFactory, IDateTimeProvider dateTimeProvider)
         {
             Guard.NotNull(blockStoreLoop, nameof(blockStoreLoop));
-            Guard.NotNull(nextChainedBlock, nameof(nextChainedBlock));
+            Guard.NotNull(nextChainedHeader, nameof(nextChainedHeader));
 
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
 
             this.BlockStoreLoop = blockStoreLoop;
             this.CancellationToken = cancellationToken;
             this.DateTimeProvider = dateTimeProvider;
-            this.DownloadStack = new Queue<ChainedBlock>();
+            this.DownloadStack = new Queue<ChainedHeader>();
             this.InnerSteps = new List<BlockStoreInnerStep> { new BlockStoreInnerStepFindBlocks(loggerFactory), new BlockStoreInnerStepReadBlocks(loggerFactory) };
             this.InsertBlockSize = 0;
             this.LastDownloadStackFlushTime = this.DateTimeProvider.GetUtcNow();
-            this.NextChainedBlock = nextChainedBlock;
+            this.NextChainedHeader = nextChainedHeader;
             this.StallCount = 0;
             this.Store = new List<BlockPair>();
         }
@@ -60,7 +60,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
         public int BlocksPushedCount { get; set; }
 
         /// <summary>A queue of blocks to be downloaded.</summary>
-        public Queue<ChainedBlock> DownloadStack { get; private set; }
+        public Queue<ChainedHeader> DownloadStack { get; private set; }
 
         /// <summary>The maximum number of blocks to ask for.</summary>
         public const int DownloadStackThreshold = 100;
@@ -70,10 +70,10 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
 
         public BlockStoreLoop BlockStoreLoop { get; private set; }
 
-        /// <summary>The chained block the inner step starts on.</summary>
-        public ChainedBlock InputChainedBlock { get; private set; }
+        /// <summary>The chained block header the inner step starts on.</summary>
+        public ChainedHeader InputChainedHeader { get; private set; }
 
-        public ChainedBlock NextChainedBlock { get; private set; }
+        public ChainedHeader NextChainedHeader { get; private set; }
 
         /// <summary>The routine (list of inner steps) the DownloadBlockStep executes.</summary>
         public List<BlockStoreInnerStep> InnerSteps { get; private set; }
@@ -89,15 +89,15 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
 
         public int StallCount;
 
-        /// <summary> Sets the next chained block to process.</summary>
+        /// <summary> Sets the next chained block header to process.</summary>
         internal void GetNextBlock()
         {
             this.logger.LogTrace("()");
 
-            this.InputChainedBlock = this.NextChainedBlock;
-            this.NextChainedBlock = this.BlockStoreLoop.Chain.GetBlock(this.InputChainedBlock.Height + 1);
+            this.InputChainedHeader = this.NextChainedHeader;
+            this.NextChainedHeader = this.BlockStoreLoop.Chain.GetBlock(this.InputChainedHeader.Height + 1);
 
-            this.logger.LogTrace("(-):{0}='{1}'", nameof(this.NextChainedBlock), this.NextChainedBlock);
+            this.logger.LogTrace("(-):{0}='{1}'", nameof(this.NextChainedHeader), this.NextChainedHeader);
         }
 
         /// <summary> Removes BlockStoreInnerStepFindBlocks from the routine.</summary>

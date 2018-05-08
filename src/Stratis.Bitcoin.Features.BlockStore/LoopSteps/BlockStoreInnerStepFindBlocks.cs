@@ -32,7 +32,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
         public override async Task<InnerStepResult> ExecuteAsync(BlockStoreInnerStepContext context)
         {
             var batchSize = BlockStoreInnerStepContext.DownloadStackThreshold - context.DownloadStack.Count;
-            var batchList = new List<ChainedBlock>(batchSize);
+            var batchList = new List<ChainedHeader>(batchSize);
 
             while (batchList.Count < batchSize)
             {
@@ -42,8 +42,8 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
                     break;
                 }
 
-                batchList.Add(context.NextChainedBlock);
-                context.DownloadStack.Enqueue(context.NextChainedBlock);
+                batchList.Add(context.NextChainedHeader);
+                context.DownloadStack.Enqueue(context.NextChainedHeader);
                 context.GetNextBlock();
             }
 
@@ -60,34 +60,34 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
         {
             this.logger.LogTrace("()");
 
-            if (context.NextChainedBlock == null)
+            if (context.NextChainedHeader == null)
             {
                 this.logger.LogTrace("(-)[NULL_NEXT]:true");
                 return true;
             }
 
-            if ((context.InputChainedBlock != null) && (context.NextChainedBlock.Header.HashPrevBlock != context.InputChainedBlock.HashBlock))
+            if ((context.InputChainedHeader != null) && (context.NextChainedHeader.Header.HashPrevBlock != context.InputChainedHeader.HashBlock))
             {
                 this.logger.LogTrace("(-)[NEXT_NEQ_INPUT]:true");
                 return true;
             }
 
-            if (context.NextChainedBlock.Height > context.BlockStoreLoop.ChainState.ConsensusTip?.Height)
+            if (context.NextChainedHeader.Height > context.BlockStoreLoop.ChainState.ConsensusTip?.Height)
             {
                 this.logger.LogTrace("(-)[NEXT_HEIGHT_GT_CONSENSUS_TIP]:true");
                 return true;
             }
 
-            if (context.BlockStoreLoop.PendingStorage.ContainsKey(context.NextChainedBlock.HashBlock))
+            if (context.BlockStoreLoop.PendingStorage.ContainsKey(context.NextChainedHeader.HashBlock))
             {
-                this.logger.LogTrace("Chained block '{0}' already exists in the pending storage.", context.NextChainedBlock);
+                this.logger.LogTrace("Chained block '{0}' already exists in the pending storage.", context.NextChainedHeader);
                 this.logger.LogTrace("(-)[NEXT_ALREADY_EXISTS_PENDING_STORE]:true");
                 return true;
             }
 
-            if (await context.BlockStoreLoop.BlockRepository.ExistAsync(context.NextChainedBlock.HashBlock))
+            if (await context.BlockStoreLoop.BlockRepository.ExistAsync(context.NextChainedHeader.HashBlock))
             {
-                this.logger.LogTrace("Chained block '{0}' already exists in the repository.", context.NextChainedBlock);
+                this.logger.LogTrace("Chained block '{0}' already exists in the repository.", context.NextChainedHeader);
                 this.logger.LogTrace("(-)[NEXT_ALREADY_EXISTS_REPOSITORY]:true");
                 return true;
             }

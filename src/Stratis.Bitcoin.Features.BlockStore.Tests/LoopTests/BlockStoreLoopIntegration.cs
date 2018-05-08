@@ -33,7 +33,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
 
                 // Create the last chained block without appending to the chain
                 var block03 = chain.GetBlock(blocks[3].GetHash());
-                var block04 = new ChainedBlock(blocks[4].Header, blocks[4].Header.GetHash(), block03);
+                var block04 = new ChainedHeader(blocks[4].Header, blocks[4].Header.GetHash(), block03);
 
                 fluent.Create(chain);
 
@@ -64,13 +64,13 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
                 var chain = new ConcurrentChain(blocks[0].Header);
                 this.AppendBlocksToChain(chain, blocks.Skip(1).Take(9));
 
-                // Create the last 5 chained blocks without appending to the chain
+                // Create the last 5 chained block headers without appending to the chain
                 var block9 = chain.GetBlock(blocks[9].Header.GetHash());
-                var block10 = new ChainedBlock(blocks[10].Header, blocks[10].Header.GetHash(), block9);
-                var block11 = new ChainedBlock(blocks[11].Header, blocks[11].Header.GetHash(), block10);
-                var block12 = new ChainedBlock(blocks[12].Header, blocks[12].Header.GetHash(), block11);
-                var block13 = new ChainedBlock(blocks[13].Header, blocks[13].Header.GetHash(), block12);
-                var block14 = new ChainedBlock(blocks[14].Header, blocks[14].Header.GetHash(), block13);
+                var block10 = new ChainedHeader(blocks[10].Header, blocks[10].Header.GetHash(), block9);
+                var block11 = new ChainedHeader(blocks[11].Header, blocks[11].Header.GetHash(), block10);
+                var block12 = new ChainedHeader(blocks[12].Header, blocks[12].Header.GetHash(), block11);
+                var block13 = new ChainedHeader(blocks[13].Header, blocks[13].Header.GetHash(), block12);
+                var block14 = new ChainedHeader(blocks[14].Header, blocks[14].Header.GetHash(), block13);
 
                 fluent.Create(chain);
                 fluent.Loop.SetStoreTip(block14);

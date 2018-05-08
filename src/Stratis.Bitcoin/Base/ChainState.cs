@@ -9,7 +9,7 @@ namespace Stratis.Bitcoin.Base
     public interface IChainState
     {
         /// <summary>ChainBehaviors sharing this state will not broadcast headers which are above <see cref="ConsensusTip"/>.</summary>
-        ChainedBlock ConsensusTip { get; set; }
+        ChainedHeader ConsensusTip { get; set; }
 
         /// <summary>Maximal length of reorganization that the node is willing to accept, or 0 to disable long reorganization protection.</summary>
         /// <remarks>TODO: This should be removed once consensus options are part of network.</remarks>
@@ -41,7 +41,7 @@ namespace Stratis.Bitcoin.Base
         private readonly IInvalidBlockHashStore invalidBlockHashStore;
 
         /// <summary>ChainBehaviors sharing this state will not broadcast headers which are above <see cref="ConsensusTip"/>.</summary>
-        public ChainedBlock ConsensusTip { get; set; }
+        public ChainedHeader ConsensusTip { get; set; }
 
         /// <summary>Maximal length of reorganization that the node is willing to accept, or 0 to disable long reorganization protection.</summary>
         /// <remarks>TODO: This should be removed once consensus options are part of network.</remarks>

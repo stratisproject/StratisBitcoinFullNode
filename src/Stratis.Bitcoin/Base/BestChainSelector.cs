@@ -22,10 +22,10 @@ namespace Stratis.Bitcoin.Base
         private readonly ConcurrentChain chain;
 
         /// <summary>Queue with tips from the disconnected peers.</summary>
-        private readonly AsyncQueue<ChainedBlock> unavailableTipsProcessingQueue;
+        private readonly AsyncQueue<ChainedHeader> unavailableTipsProcessingQueue;
 
         /// <summary>Collection of all available tips provided by connected peers.</summary>
-        private readonly Dictionary<int, ChainedBlock> availableTips;
+        private readonly Dictionary<int, ChainedHeader> availableTips;
         
         /// <summary>Information about node's chain.</summary>
         private readonly IChainState chainState;
@@ -49,15 +49,15 @@ namespace Stratis.Bitcoin.Base
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
 
             this.lockObject = new object();
-            this.availableTips = new Dictionary<int, ChainedBlock>();
+            this.availableTips = new Dictionary<int, ChainedHeader>();
 
-            this.unavailableTipsProcessingQueue = new AsyncQueue<ChainedBlock>(this.OnEnqueueAsync);
+            this.unavailableTipsProcessingQueue = new AsyncQueue<ChainedHeader>(this.OnEnqueueAsync);
         }
 
         /// <summary>Called when peer disconnects.</summary>
         /// <param name="tip">Tip that used to belong to a disconnected peer.</param>
         /// <param name="cancellationToken">The cancellation token.</param>
-        private Task OnEnqueueAsync(ChainedBlock tip, CancellationToken cancellationToken)
+        private Task OnEnqueueAsync(ChainedHeader tip, CancellationToken cancellationToken)
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(tip), tip);
 
@@ -71,10 +71,10 @@ namespace Stratis.Bitcoin.Base
                 }
 
                 // If better tip is not found consensus tip should be used.
-                ChainedBlock bestTip = this.chainState.ConsensusTip;
+                ChainedHeader bestTip = this.chainState.ConsensusTip;
 
                 // Find best tip from available ones.
-                foreach (ChainedBlock availableTip in this.availableTips.Values)
+                foreach (ChainedHeader availableTip in this.availableTips.Values)
                 {
                     if (availableTip == this.chain.Tip)
                     {
@@ -105,7 +105,7 @@ namespace Stratis.Bitcoin.Base
         /// <c>true</c> if the tip was added to the available tips collection, 
         /// <c>false</c> if it's invalid and violates the max reorg rule.
         /// </returns>
-        public bool TrySetAvailableTip(int peerConnectionId, ChainedBlock tip)
+        public bool TrySetAvailableTip(int peerConnectionId, ChainedHeader tip)
         {
             Guard.NotNull(tip, nameof(tip));
             this.logger.LogTrace("({0}:{1},{2}:'{3}')", nameof(peerConnectionId), peerConnectionId, nameof(tip), tip);
@@ -136,15 +136,15 @@ namespace Stratis.Bitcoin.Base
         /// <summary>Checks if <paramref name="tip"/> violates the max reorg rule for POS networks.</summary>
         /// <param name="tip">The tip.</param>
         /// <returns><c>true</c> if maximum reorg rule violated, <c>false</c> otherwise.</returns>
-        private bool IsMaxReorgRuleViolated(ChainedBlock tip)
+        private bool IsMaxReorgRuleViolated(ChainedHeader tip)
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(tip), tip);
 
             uint maxReorgLength = this.chainState.MaxReorgLength;
-            ChainedBlock consensusTip = this.chainState.ConsensusTip;
+            ChainedHeader consensusTip = this.chainState.ConsensusTip;
             if ((maxReorgLength != 0) && (consensusTip != null))
             {
-                ChainedBlock fork = tip.FindFork(consensusTip);
+                ChainedHeader fork = tip.FindFork(consensusTip);
 
                 if ((fork != null) && (fork != consensusTip))
                 {
@@ -175,7 +175,7 @@ namespace Stratis.Bitcoin.Base
 
             lock (this.lockObject)
             {
-                if (this.availableTips.TryGetValue(peerConnectionId, out ChainedBlock tip))
+                if (this.availableTips.TryGetValue(peerConnectionId, out ChainedHeader tip))
                 {
                     this.availableTips.Remove(peerConnectionId);
                     this.unavailableTipsProcessingQueue.Enqueue(tip);

@@ -22,9 +22,9 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
                 var chain = new ConcurrentChain(blocks[0].Header);
                 this.AppendBlocksToChain(chain, blocks.Skip(1).Take(3));
 
-                // Create the last chained block without appending to the chain
+                // Create the last chained block header without appending to the chain
                 var block03 = chain.GetBlock(blocks[3].GetHash());
-                var block04 = new ChainedBlock(blocks[4].Header, blocks[4].Header.GetHash(), block03);
+                var block04 = new ChainedHeader(blocks[4].Header, blocks[4].Header.GetHash(), block03);
 
                 fluent.Create(chain);
                 Assert.Null(fluent.Loop.StoreTip);

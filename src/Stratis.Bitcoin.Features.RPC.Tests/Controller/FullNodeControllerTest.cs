@@ -480,7 +480,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
         public void GetInfo_NoChainTip_ReturnsModel()
         {
             this.chainState.Setup(c => c.ConsensusTip)
-                .Returns((ChainedBlock)null);
+                .Returns((ChainedHeader)null);
 
             this.controller = new FullNodeController(this.LoggerFactory.Object, this.pooledTransaction.Object, this.pooledGetUnspentTransaction.Object, this.getUnspentTransaction.Object, this.networkDifficulty.Object,
                 this.consensusLoop.Object, this.fullNode.Object, this.nodeSettings, this.network, this.chain, this.chainState.Object, this.connectionManager.Object);

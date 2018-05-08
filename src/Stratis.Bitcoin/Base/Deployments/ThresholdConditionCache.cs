@@ -38,7 +38,7 @@ namespace Stratis.Bitcoin.Base.Deployments
             this.consensus = consensus;
         }
 
-        public ThresholdState[] GetStates(ChainedBlock pindexPrev)
+        public ThresholdState[] GetStates(ChainedHeader pindexPrev)
         {
             return Enum.GetValues(typeof(BIP9Deployments))
                 .OfType<BIP9Deployments>()
@@ -46,7 +46,7 @@ namespace Stratis.Bitcoin.Base.Deployments
                 .ToArray();
         }
 
-        public ThresholdState GetState(ChainedBlock indexPrev, BIP9Deployments deployment)
+        public ThresholdState GetState(ChainedHeader indexPrev, BIP9Deployments deployment)
         {
             int period = this.consensus.MinerConfirmationWindow;
             int threshold = this.consensus.RuleChangeActivationThreshold;
@@ -66,7 +66,7 @@ namespace Stratis.Bitcoin.Base.Deployments
             }
 
             // Walk backwards in steps of nPeriod to find a pindexPrev whose information is known
-            List<ChainedBlock> vToCompute = new List<ChainedBlock>();
+            List<ChainedHeader> vToCompute = new List<ChainedHeader>();
             while (!this.ContainsKey(indexPrev?.HashBlock, deployment))
             {
                 if (indexPrev.GetMedianTimePast() < timeStart)
@@ -111,7 +111,7 @@ namespace Stratis.Bitcoin.Base.Deployments
                                 break;
                             }
                             // We need to count
-                            ChainedBlock pindexCount = indexPrev;
+                            ChainedHeader pindexCount = indexPrev;
                             int count = 0;
                             for (int i = 0; i < period; i++)
                             {
@@ -181,7 +181,7 @@ namespace Stratis.Bitcoin.Base.Deployments
             return threshold[(int)deployment].HasValue;
         }
 
-        private bool Condition(ChainedBlock pindex, BIP9Deployments deployment)
+        private bool Condition(ChainedHeader pindex, BIP9Deployments deployment)
         {
             return (((pindex.Header.Version & VersionbitsTopMask) == VersionbitsTopBits) && (pindex.Header.Version & this.Mask(deployment)) != 0);
         }

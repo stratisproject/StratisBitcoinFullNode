@@ -45,7 +45,7 @@ namespace Stratis.Bitcoin.Base
                 using (DBreeze.Transactions.Transaction transaction = this.dbreeze.GetTransaction())
                 {
                     transaction.ValuesLazyLoadingIsOn = false;
-                    ChainedBlock tip = null;
+                    ChainedHeader tip = null;
                     Row<int, BlockHeader> firstRow = transaction.Select<int, BlockHeader>("Chain", 0);
 
                     if (!firstRow.Exists)
@@ -59,12 +59,12 @@ namespace Stratis.Bitcoin.Base
                         if ((tip != null) && (previousHeader.HashPrevBlock != tip.HashBlock))
                             break;
 
-                        tip = new ChainedBlock(previousHeader, row.Value.HashPrevBlock, tip);
+                        tip = new ChainedHeader(previousHeader, row.Value.HashPrevBlock, tip);
                         previousHeader = row.Value;
                     }
 
                     if (previousHeader != null)
-                        tip = new ChainedBlock(previousHeader, previousHeader.GetHash(), tip);
+                        tip = new ChainedHeader(previousHeader, previousHeader.GetHash(), tip);
 
                     if (tip == null)
                         return;
@@ -85,20 +85,20 @@ namespace Stratis.Bitcoin.Base
             {
                 using (DBreeze.Transactions.Transaction transaction = this.dbreeze.GetTransaction())
                 {
-                    ChainedBlock fork = this.locator == null ? null : chain.FindFork(this.locator);
-                    ChainedBlock tip = chain.Tip;
-                    ChainedBlock toSave = tip;
+                    ChainedHeader fork = this.locator == null ? null : chain.FindFork(this.locator);
+                    ChainedHeader tip = chain.Tip;
+                    ChainedHeader toSave = tip;
 
-                    List<ChainedBlock> blocks = new List<ChainedBlock>();
+                    List<ChainedHeader> headers = new List<ChainedHeader>();
                     while (toSave != fork)
                     {
-                        blocks.Add(toSave);
+                        headers.Add(toSave);
                         toSave = toSave.Previous;
                     }
 
                     // DBreeze is faster on ordered insert.
-                    IOrderedEnumerable<ChainedBlock> orderedChainedBlocks = blocks.OrderBy(b => b.Height);
-                    foreach (ChainedBlock block in orderedChainedBlocks)
+                    IOrderedEnumerable<ChainedHeader> orderedChainedHeaders = headers.OrderBy(b => b.Height);
+                    foreach (ChainedHeader block in orderedChainedHeaders)
                     {
                         transaction.Insert("Chain", block.Height, block.Header);
                     }
