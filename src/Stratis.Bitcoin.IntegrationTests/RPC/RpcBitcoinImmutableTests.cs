@@ -15,7 +15,7 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
         protected override void InitializeFixture()
         {
             this.Builder = NodeBuilder.Create();
-            this.Node = this.Builder.CreateNode();
+            this.Node = this.Builder.CreateBitcoinCoreNode();
             this.InitializeTestWallet(this.Node.DataFolder);
             this.Builder.StartAll();
 
