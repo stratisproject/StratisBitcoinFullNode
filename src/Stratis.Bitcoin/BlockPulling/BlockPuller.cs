@@ -287,7 +287,7 @@ namespace Stratis.Bitcoin.BlockPulling
 
             if (behavior != null)
             {
-                double penalty = this.peerQuality.CalculateNextBlockTimeoutQualityPenalty();
+                double penalty = -1;
                 this.logger.LogTrace("Block '{0}' assigned to peer {1:x}, penalty is {2}.", chainedBlock.HashBlock, behavior.GetHashCode(), penalty);
 
                 behavior.UpdateQualityScore(penalty);
