@@ -39,7 +39,8 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// <summary>
         /// Get the blocks from the database by using block hashes.
         /// </summary>
-        /// <param name="hash">The block hash.</param>
+        /// <param name="hashes">The block hashes.</param>
+        /// <returns>The blocks (or null if not found) in the same order as the hashes on input.</returns>
         Task<List<Block>> GetBlocksAsync(List<uint256> hashes);
 
         /// <summary>
@@ -515,10 +516,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             return task;
         }
 
-        /// <summary>
-        /// Get multiple blocks from the database by their block hashes.
-        /// </summary>
-        /// <param name="hashes">The block hashes.</param>
+        /// <inheritdoc />
         public Task<List<Block>> GetBlocksAsync(List<uint256> hashes)
         {
             Guard.NotNull(hashes, nameof(hashes));
@@ -552,6 +550,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
                         }
                         else
                         {
+                            results[key.Item1] = null;
                             this.PerformanceCounter.AddRepositoryMissCount(1);
 
                             this.logger.LogTrace("(-):{0}=[NO_BLOCK]", key.Item1);
