@@ -345,26 +345,31 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
         public void GetAsyncWithExistingBlocksReturnsBlocks()
         {
             string dir = CreateTestDir(this);
-            var block1 = Network.Main.Consensus.ConsensusFactory.CreateBlock();
-            var block2 = Network.Main.Consensus.ConsensusFactory.CreateBlock();
-            block2.Header.HashPrevBlock = block1.Header.GetHash();
+            var blocks = new Block[10];
+
+            blocks[0] = Network.Main.Consensus.ConsensusFactory.CreateBlock();
+            for (int i = 1; i < blocks.Length; i++)
+            {
+                blocks[i] = Network.Main.Consensus.ConsensusFactory.CreateBlock();
+                blocks[i].Header.HashPrevBlock = blocks[i - 1].Header.GetHash();
+            }
 
             using (var engine = new DBreezeEngine(dir))
             {
                 var transaction = engine.GetTransaction();
-                transaction.Insert<byte[], byte[]>("Block", block1.GetHash().ToBytes(), block1.ToBytes());
-                transaction.Insert<byte[], byte[]>("Block", block2.GetHash().ToBytes(), block2.ToBytes());
+                for (int i = 0; i < blocks.Length; i++)
+                    transaction.Insert<byte[], byte[]>("Block", blocks[i].GetHash().ToBytes(), blocks[i].ToBytes());
                 transaction.Commit();
             }
 
             using (var repository = this.SetupRepository(Network.Main, dir))
             {
-                var task = repository.GetBlocksAsync(new[] { block1.GetHash(), block2.GetHash() }.ToList());
+                var task = repository.GetBlocksAsync(blocks.Select(b => b.GetHash()).ToList());
                 task.Wait();
 
-                Assert.Equal(2, task.Result.Count);
-                Assert.Equal(block1.GetHash(), task.Result[0].GetHash());
-                Assert.Equal(block2.GetHash(), task.Result[1].GetHash());
+                Assert.Equal(blocks.Length, task.Result.Count);
+                for (int i = 0; i < 10; i++)
+                    Assert.Equal(blocks[i].GetHash(), task.Result[i].GetHash());
             }
         }
 

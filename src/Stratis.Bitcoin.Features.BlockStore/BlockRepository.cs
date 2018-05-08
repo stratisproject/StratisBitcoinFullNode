@@ -521,35 +521,40 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// <param name="hashes">The block hashes.</param>
         public Task<List<Block>> GetBlocksAsync(List<uint256> hashes)
         {
-            this.logger.LogTrace("({0}:'{1}')", nameof(hashes.Count), hashes.Count);
             Guard.NotNull(hashes, nameof(hashes));
-
-            var results = new Dictionary<uint256, Block>();
+            this.logger.LogTrace("({0}:{1})", nameof(hashes.Count), hashes.Count);
 
             Task<List<Block>> task = Task.Run(() =>
             {
                 this.logger.LogTrace("()");
 
+                var results = new Dictionary<uint256, Block>();
+
                 using (DBreeze.Transactions.Transaction transaction = this.DBreeze.GetTransaction())
                 {
                     transaction.ValuesLazyLoadingIsOn = false;
 
-                    // Access hashes in sorted order.
+                    // Access hash keys in sorted order.
                     var byteListComparer = new ByteListComparer();
-                    hashes.Sort((pair1, pair2) => byteListComparer.Compare(pair1.ToBytes(), pair2.ToBytes()));
+                    var keys = hashes.Select(hash => (hash, hash.ToBytes())).ToList();
 
-                    foreach (var hash in hashes)
+                    keys.Sort((key1, key2) => byteListComparer.Compare(key1.Item2, key2.Item2));
+
+                    foreach (var key in keys)
                     {
-                        byte[] key = hash.ToBytes();
-                        Row<byte[], Block> blockRow = transaction.Select<byte[], Block>("Block", key);
+                        Row<byte[], Block> blockRow = transaction.Select<byte[], Block>("Block", key.Item2);
                         if (blockRow.Exists)
                         {
-                            results[hash] = blockRow.Value;
+                            results[key.Item1] = blockRow.Value;
                             this.PerformanceCounter.AddRepositoryHitCount(1);
+
+                            this.logger.LogTrace("(-):{0}={1}", key.Item1, blockRow.Value);
                         }
                         else
                         {
                             this.PerformanceCounter.AddRepositoryMissCount(1);
+
+                            this.logger.LogTrace("(-):{0}=[NO_BLOCK]", key.Item1);
                         }
                     }
                 }
