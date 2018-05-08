@@ -192,7 +192,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
                 this.chain.SetTip(this.chain.GetBlock(0));
 
                 var blockBuilder = this.CreateProofOfWorkBlockBuilder();
-                blockBuilder.Setup(b => b.Build(It.IsAny<ChainedBlock>(), It.Is<Script>(r => r == this.fixture.ReserveScript.ReserveFullNodeScript))).Returns(blockTemplate);
+                blockBuilder.Setup(b => b.Build(It.IsAny<ChainedHeader>(), It.Is<Script>(r => r == this.fixture.ReserveScript.ReserveFullNodeScript))).Returns(blockTemplate);
 
                 var miner = this.CreateProofOfWorkMiner(blockBuilder.Object);
                 var blockHashes = miner.GenerateBlocks(this.fixture.ReserveScript, 1, uint.MaxValue);
@@ -223,7 +223,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
                 this.chain.SetTip(this.chain.GetBlock(0));
 
                 var blockBuilder = this.CreateProofOfWorkBlockBuilder();
-                blockBuilder.Setup(b => b.Build(It.IsAny<ChainedBlock>(), It.Is<Script>(r => r == this.fixture.ReserveScript.ReserveFullNodeScript))).Returns(blockTemplate);
+                blockBuilder.Setup(b => b.Build(It.IsAny<ChainedHeader>(), It.Is<Script>(r => r == this.fixture.ReserveScript.ReserveFullNodeScript))).Returns(blockTemplate);
 
                 var miner = this.CreateProofOfWorkMiner(blockBuilder.Object);
                 var blockHashes = miner.GenerateBlocks(this.fixture.ReserveScript, 1, uint.MaxValue);
@@ -254,7 +254,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
                 this.chain.SetTip(this.chain.GetBlock(0));
 
                 var blockBuilder = this.CreateProofOfWorkBlockBuilder();
-                blockBuilder.Setup(b => b.Build(It.IsAny<ChainedBlock>(), It.Is<Script>(r => r == this.fixture.ReserveScript.ReserveFullNodeScript))).Returns(blockTemplate);
+                blockBuilder.Setup(b => b.Build(It.IsAny<ChainedHeader>(), It.Is<Script>(r => r == this.fixture.ReserveScript.ReserveFullNodeScript))).Returns(blockTemplate);
 
                 var miner = this.CreateProofOfWorkMiner(blockBuilder.Object);
                 var blockHashes = miner.GenerateBlocks(this.fixture.ReserveScript, 1, uint.MaxValue);
@@ -292,7 +292,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
                 this.chain.SetTip(this.chain.GetBlock(0));
 
                 var blockBuilder = this.CreateProofOfWorkBlockBuilder();
-                blockBuilder.Setup(b => b.Build(It.IsAny<ChainedBlock>(), It.Is<Script>(r => r == this.fixture.ReserveScript.ReserveFullNodeScript))).Returns(blockTemplate);
+                blockBuilder.Setup(b => b.Build(It.IsAny<ChainedHeader>(), It.Is<Script>(r => r == this.fixture.ReserveScript.ReserveFullNodeScript))).Returns(blockTemplate);
 
                 var miner = this.CreateProofOfWorkMiner(blockBuilder.Object);
                 var blockHashes = miner.GenerateBlocks(this.fixture.ReserveScript, 1, uint.MaxValue);
@@ -323,7 +323,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
                 this.chain.SetTip(this.chain.GetBlock(0));
 
                 var blockBuilder = this.CreateProofOfWorkBlockBuilder();
-                blockBuilder.Setup(b => b.Build(It.IsAny<ChainedBlock>(), It.Is<Script>(r => r == this.fixture.ReserveScript.ReserveFullNodeScript))).Returns(blockTemplate);
+                blockBuilder.Setup(b => b.Build(It.IsAny<ChainedHeader>(), It.Is<Script>(r => r == this.fixture.ReserveScript.ReserveFullNodeScript))).Returns(blockTemplate);
 
                 var miner = CreateProofOfWorkMiner(blockBuilder.Object);
                 var blockHashes = miner.GenerateBlocks(this.fixture.ReserveScript, 1, 15);
@@ -375,7 +375,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
                 int attempts = 0;
 
                 var blockBuilder = this.CreateProofOfWorkBlockBuilder();
-                blockBuilder.Setup(b => b.Build(It.IsAny<ChainedBlock>(), It.Is<Script>(r => r == this.fixture.ReserveScript.ReserveFullNodeScript)))
+                blockBuilder.Setup(b => b.Build(It.IsAny<ChainedHeader>(), It.Is<Script>(r => r == this.fixture.ReserveScript.ReserveFullNodeScript)))
                     .Returns(() =>
                     {
                         if (lastChainedHeader == null)
@@ -441,7 +441,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
                 this.chain.SetTip(this.chain.GetBlock(0));
 
                 var blockBuilder = this.CreateProofOfWorkBlockBuilder();
-                blockBuilder.SetupSequence(b => b.Build(It.IsAny<ChainedBlock>(), It.Is<Script>(r => r == this.fixture.ReserveScript.ReserveFullNodeScript)))
+                blockBuilder.SetupSequence(b => b.Build(It.IsAny<ChainedHeader>(), It.Is<Script>(r => r == this.fixture.ReserveScript.ReserveFullNodeScript)))
                     .Returns(blockTemplate)
                     .Returns(blockTemplate2);
 
