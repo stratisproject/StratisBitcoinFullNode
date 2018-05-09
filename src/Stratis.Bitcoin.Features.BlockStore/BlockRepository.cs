@@ -526,42 +526,18 @@ namespace Stratis.Bitcoin.Features.BlockStore
             {
                 this.logger.LogTrace("()");
 
-                var results = new Dictionary<uint256, Block>();
+                List<Block> blocks;
 
                 using (DBreeze.Transactions.Transaction transaction = this.DBreeze.GetTransaction())
                 {
                     transaction.ValuesLazyLoadingIsOn = false;
 
-                    // Access hash keys in sorted order.
-                    var byteListComparer = new ByteListComparer();
-                    var keys = hashes.Select(hash => (hash, hash.ToBytes())).ToList();
-
-                    keys.Sort((key1, key2) => byteListComparer.Compare(key1.Item2, key2.Item2));
-
-                    foreach (var key in keys)
-                    {
-                        Row<byte[], Block> blockRow = transaction.Select<byte[], Block>("Block", key.Item2);
-                        if (blockRow.Exists)
-                        {
-                            results[key.Item1] = blockRow.Value;
-                            this.PerformanceCounter.AddRepositoryHitCount(1);
-
-                            this.logger.LogTrace("Block hash '{0}' loaded from the store.", key.Item1);
-                        }
-                        else
-                        {
-                            results[key.Item1] = null;
-                            this.PerformanceCounter.AddRepositoryMissCount(1);
-
-                            this.logger.LogTrace("Block hash '{0}' not found in the store.", key.Item1);
-                        }
-                    }
+                    blocks = this.GetBlocksFromHashes(transaction, hashes);
                 }
 
-                this.logger.LogTrace("(-):{0}", results.Count);
+                this.logger.LogTrace("(-)");
 
-                // Return the result in the order that the hashes were presented.
-                return hashes.Select(hash => results[hash]).ToList();
+                return blocks;
             });
 
             this.logger.LogTrace("(-)");
@@ -647,27 +623,38 @@ namespace Stratis.Bitcoin.Features.BlockStore
         private List<Block> GetBlocksFromHashes(DBreeze.Transactions.Transaction dbreezeTransaction, List<uint256> hashes)
         {
             this.logger.LogTrace("({0}.{1}:{2})", nameof(hashes), nameof(hashes.Count), hashes?.Count);
+            
+            var results = new Dictionary<uint256, Block>();
 
-            var blocks = new List<Block>();
+            // Access hash keys in sorted order.
+            var byteListComparer = new ByteListComparer();
+            var keys = hashes.Select(hash => (hash, hash.ToBytes())).ToList();
 
-            foreach (uint256 hash in hashes)
+            keys.Sort((key1, key2) => byteListComparer.Compare(key1.Item2, key2.Item2));
+
+            foreach (var key in keys)
             {
-                byte[] key = hash.ToBytes();
-
-                Row<byte[], Block> blockRow = dbreezeTransaction.Select<byte[], Block>("Block", key);
+                Row<byte[], Block> blockRow = dbreezeTransaction.Select<byte[], Block>("Block", key.Item2);
                 if (blockRow.Exists)
                 {
+                    results[key.Item1] = blockRow.Value;
                     this.PerformanceCounter.AddRepositoryHitCount(1);
-                    blocks.Add(blockRow.Value);
+
+                    this.logger.LogTrace("Block hash '{0}' loaded from the store.", key.Item1);
                 }
                 else
                 {
+                    results[key.Item1] = null;
                     this.PerformanceCounter.AddRepositoryMissCount(1);
+
+                    this.logger.LogTrace("Block hash '{0}' not found in the store.", key.Item1);
                 }
             }
+        
+            this.logger.LogTrace("(-):{0}", results.Count);
 
-            this.logger.LogTrace("(-):*.{0}={1}", nameof(blocks.Count), blocks.Count);
-            return blocks;
+            // Return the result in the order that the hashes were presented.
+            return hashes.Select(hash => results[hash]).ToList();
         }
 
         /// <summary>
