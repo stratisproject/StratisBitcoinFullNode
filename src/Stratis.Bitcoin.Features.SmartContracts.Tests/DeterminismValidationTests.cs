@@ -137,7 +137,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
         #endregion
 
-
         #region Async
 
         [Fact]
@@ -402,7 +401,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         }
 
         #endregion
-
 
         #region Globalisation
 

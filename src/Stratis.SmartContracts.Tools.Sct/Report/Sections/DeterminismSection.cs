@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using Stratis.SmartContracts.Core.ContractValidation;
 using Stratis.SmartContracts.Tools.Sct.Report.Elements;
 
 namespace Stratis.SmartContracts.Tools.Sct.Report.Sections
@@ -20,9 +21,9 @@ namespace Stratis.SmartContracts.Tools.Sct.Report.Sections
             yield return new ReportElement($"Determinism Validation Result");
             yield return new ReportElement($"Determinism Valid: {data.DeterminismValid}");
 
-            foreach (var error in data.DeterminismValidationErrors)
+            foreach (SmartContractValidationError error in data.DeterminismValidationErrors)
             {
-                yield return new ReportElement($"Method {error.MethodFullName}: {error.Message}");
+                yield return new ReportElement($"{error.Message}");
             }
 
             yield return new NewLineElement();
