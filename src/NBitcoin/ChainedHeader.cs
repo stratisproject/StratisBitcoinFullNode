@@ -5,6 +5,60 @@ using NBitcoin.BouncyCastle.Math;
 namespace NBitcoin
 {
     /// <summary>
+    /// Represent the avilability state of a block in regards to it's header.
+    /// </summary>
+    public enum BlockDataAvailabilityState
+    {
+        /// <summary>
+        /// A BlockHeader is found and is a valid header.
+        /// </summary>
+        HeaderOnly,
+
+        /// <summary>
+        /// We are interested in downloading a block that is being represented by that header. 
+        /// This happens when a header is a part of the chain that can potentially replace our consensus tip 
+        /// because its tip's total chainwork is greater comparing to what we currently have.
+        /// </summary>
+        BlockDataRequired,
+
+        /// <summary>
+        /// Block is downloaded, if the Block property is null the block needs to be asked from store.
+        /// </summary>
+        BlockDataAvailable
+    }
+
+    /// <summary>
+    /// Represent the validation level of a block.
+    /// </summary>
+    public enum ValidationState
+    {
+        /// <summary>
+        /// No validation was performed.
+        /// </summary>
+        Unknown,
+
+        /// <summary>
+        /// We have a valid block header.
+        /// </summary>
+        HeaderValidated,
+
+        /// <summary>
+        /// No validation required because the block is assumed to be valid.
+        /// </summary>
+        AssumedValid,
+
+        /// <summary>
+        /// Validated using all rules that don't require db state changes.
+        /// </summary>
+        PartiallyValidated,
+
+        /// <summary>
+        /// Validated using all the rules.
+        /// </summary>
+        FullyValidated
+    }
+
+    /// <summary>
     /// A BlockHeader chained with all its ancestors.
     /// </summary>
     public class ChainedHeader
@@ -36,6 +90,14 @@ namespace NBitcoin
         /// <summary>Total amount of work in the chain up to and including this block.</summary>
         public uint256 ChainWork { get { return Target.ToUInt256(this.chainWork); } }
 
+        public BlockDataAvailabilityState BlockDataAvailability { get; set; }
+
+        public ValidationState BlockValidationState { get; set; }
+
+        public Block Block { get; set; }
+
+        public List<ChainedHeader> Next { get; private set; }
+
         /// <summary>
         /// Constructs a chained block.
         /// </summary>
@@ -51,6 +113,7 @@ namespace NBitcoin
                 this.Height = previous.Height + 1;
 
             this.Previous = previous;
+            this.Next = new List<ChainedHeader>();
 
             if (previous == null)
             {
@@ -80,6 +143,7 @@ namespace NBitcoin
             this.Header = header ?? throw new ArgumentNullException("header");
             this.Height = height;
             this.HashBlock = headerHash;
+            this.Next = new List<ChainedHeader>();
             this.CalculateChainWork();
         }
 
@@ -413,7 +477,7 @@ namespace NBitcoin
         /// <returns>Whether proof of work is valid.</returns>
         public bool CheckProofOfWorkAndTarget(Consensus consensus)
         {
-            return (this.Height == 0) || (this.Header.CheckProofOfWork(consensus) && this.Header.Bits == GetWorkRequired(consensus));
+            return (this.Height == 0) || (this.Header.CheckProofOfWork(consensus) && this.Header.Bits == this.GetWorkRequired(consensus));
         }
 
         /// <summary>
