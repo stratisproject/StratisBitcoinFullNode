@@ -292,6 +292,15 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 scReceiver.GenerateSmartContractStratisWithMiner(2);
                 TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(scReceiver, scSender));
 
+                // Check wallet history is updating correctly
+                result = (JsonResult)senderWalletController.GetHistory(new WalletHistoryRequest
+                {
+                    AccountName = AccountName,
+                    WalletName = WalletName
+                });
+                var walletHistoryModel = (WalletHistoryModel)result.Value;
+                Assert.Single(walletHistoryModel.AccountsHistoryModel.First().TransactionsHistory.Where(x => x.Type == TransactionItemType.Send));
+
                 string storageRequestResult = (string)((JsonResult)senderSmartContractsController.GetStorage(new GetStorageRequest
                 {
                     ContractAddress = response.NewContractAddress.ToString(),
@@ -345,6 +354,15 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                     DataType = SmartContractDataType.Int
                 })).Value;
                 Assert.Equal("12346", counterRequestResult);
+
+                // Check wallet history again
+                result = (JsonResult)senderWalletController.GetHistory(new WalletHistoryRequest
+                {
+                    AccountName = AccountName,
+                    WalletName = WalletName
+                });
+                walletHistoryModel = (WalletHistoryModel)result.Value;
+                Assert.Equal(2, walletHistoryModel.AccountsHistoryModel.First().TransactionsHistory.Where(x => x.Type == TransactionItemType.Send).Count());
             }
         }
     }
