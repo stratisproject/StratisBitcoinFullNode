@@ -49,7 +49,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         {
             var transaction = new Transaction();
             transaction.Inputs.Add(new TxIn());
-            transaction = GenerateTransactionWithWeight(transaction, this.options.MaxBlockBaseSize + 1, TransactionOptions.All & ~TransactionOptions.Witness);
+            transaction = this.GenerateTransactionWithWeight(transaction, this.options.MaxBlockBaseSize + 1, TransactionOptions.None);
 
             var exception = Assert.Throws<ConsensusErrorException>(() => this.consensusRules.RegisterRule<CheckPowTransactionRule>().CheckTransaction(this.network, this.options, transaction));
 
