@@ -18,7 +18,7 @@ namespace Stratis.Bitcoin.Features.Miner
         /// <summary>
         /// Tip of the chain that this instance will work with without touching any shared chain resources.
         /// </summary>
-        protected ChainedBlock ChainTip;
+        protected ChainedHeader ChainTip;
 
         /// <summary>Manager of the longest fully validated chain of blocks.</summary>
         protected readonly IConsensusLoop ConsensusLoop;
@@ -27,7 +27,7 @@ namespace Stratis.Bitcoin.Features.Miner
         protected readonly IDateTimeProvider DateTimeProvider;
 
         /// <summary>Instance logger.</summary>
-        protected readonly ILogger Logger;
+        private readonly ILogger logger;
 
         /// <summary>Transaction memory pool for managing transactions in the memory pool.</summary>
         protected readonly ITxMempool Mempool;
@@ -108,7 +108,7 @@ namespace Stratis.Bitcoin.Features.Miner
         {
             this.ConsensusLoop = consensusLoop;
             this.DateTimeProvider = dateTimeProvider;
-            this.Logger = loggerFactory.CreateLogger(this.GetType().FullName);
+            this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.Mempool = mempool;
             this.MempoolLock = mempoolLock;
             this.Network = network;
@@ -128,7 +128,7 @@ namespace Stratis.Bitcoin.Features.Miner
             this.Configure();
         }
 
-        private int ComputeBlockVersion(ChainedBlock prevChainedBlock, NBitcoin.Consensus consensus)
+        private int ComputeBlockVersion(ChainedHeader prevChainedHeader, NBitcoin.Consensus consensus)
         {
             uint version = ThresholdConditionCache.VersionbitsTopBits;
             var thresholdConditionCache = new ThresholdConditionCache(consensus);
@@ -137,7 +137,7 @@ namespace Stratis.Bitcoin.Features.Miner
 
             foreach (BIP9Deployments deployment in deployments)
             {
-                ThresholdState state = thresholdConditionCache.GetState(prevChainedBlock, deployment);
+                ThresholdState state = thresholdConditionCache.GetState(prevChainedHeader, deployment);
                 if ((state == ThresholdState.LockedIn) || (state == ThresholdState.Started))
                     version |= thresholdConditionCache.Mask(deployment);
             }
@@ -146,7 +146,7 @@ namespace Stratis.Bitcoin.Features.Miner
         }
 
         /// <summary>
-        //// Compute the block version.
+        /// Compute the block version.
         /// </summary>
         protected virtual void ComputeBlockVersion()
         {
@@ -175,7 +175,7 @@ namespace Stratis.Bitcoin.Features.Miner
         /// Configures (resets) the builder to its default state 
         /// before constructing a new block.
         /// </summary>
-        protected void Configure()
+        private void Configure()
         {
             this.BlockSize = 1000;
             this.BlockTemplate = new BlockTemplate(this.Network);
@@ -193,7 +193,7 @@ namespace Stratis.Bitcoin.Features.Miner
         /// <param name="chainTip">Tip of the chain that this instance will work with without touching any shared chain resources.</param>
         /// <param name="scriptPubKey">Script that explains what conditions must be met to claim ownership of a coin.</param>
         /// <returns>The contructed <see cref="Miner.BlockTemplate"/>.</returns>
-        protected void OnBuild(ChainedBlock chainTip, Script scriptPubKey)
+        protected void OnBuild(ChainedHeader chainTip, Script scriptPubKey)
         {
             this.Configure();
 
@@ -241,7 +241,7 @@ namespace Stratis.Bitcoin.Features.Miner
             this.BlockTemplate.TotalFee = this.fees;
 
             int nSerializeSize = this.block.GetSerializedSize();
-            this.Logger.LogDebug("Serialized size is {0} bytes, block weight is {1}, number of txs is {2}, tx fees are {3}, number of sigops is {4}.", nSerializeSize, this.ConsensusLoop.Validator.GetBlockWeight(this.block), this.BlockTx, this.fees, this.BlockSigOpsCost);
+            this.logger.LogDebug("Serialized size is {0} bytes, block weight is {1}, number of txs is {2}, tx fees are {3}, number of sigops is {4}.", nSerializeSize, this.ConsensusLoop.Validator.GetBlockWeight(this.block), this.BlockTx, this.fees, this.BlockSigOpsCost);
 
             this.OnUpdateHeaders();
 
@@ -257,7 +257,7 @@ namespace Stratis.Bitcoin.Features.Miner
         // Add a tx to the block.
         private void AddToBlock(TxMempoolEntry iter)
         {
-            this.Logger.LogTrace("({0}.{1}:'{2}')", nameof(iter), nameof(iter.TransactionHash), iter.TransactionHash);
+            this.logger.LogTrace("({0}.{1}:'{2}')", nameof(iter), nameof(iter.TransactionHash), iter.TransactionHash);
 
             this.block.AddTransaction(iter.Transaction);
 
@@ -281,7 +281,7 @@ namespace Stratis.Bitcoin.Features.Miner
             //  iter->GetTx().GetHash().ToString());
 
             //}
-            this.Logger.LogTrace("(-)");
+            this.logger.LogTrace("(-)");
         }
 
         // Methods for how to add transactions to a block.
@@ -302,7 +302,7 @@ namespace Stratis.Bitcoin.Features.Miner
         {
             nPackagesSelected = 0;
             nDescendantsUpdated = 0;
-            this.Logger.LogTrace("({0}:{1},{2}:{3})", nameof(nPackagesSelected), nPackagesSelected, nameof(nDescendantsUpdated), nDescendantsUpdated);
+            this.logger.LogTrace("({0}:{1},{2}:{3})", nameof(nPackagesSelected), nPackagesSelected, nameof(nDescendantsUpdated), nDescendantsUpdated);
 
             // mapModifiedTx will store sorted packages after they are modified
             // because some of their txs are already in the block.
@@ -462,7 +462,7 @@ namespace Stratis.Bitcoin.Features.Miner
                 nDescendantsUpdated += this.UpdatePackagesForAdded(ancestors, mapModifiedTx);
             }
 
-            this.Logger.LogTrace("(-)");
+            this.logger.LogTrace("(-)");
         }
 
         // Remove confirmed (inBlock) entries from given set
@@ -551,13 +551,16 @@ namespace Stratis.Bitcoin.Features.Miner
             return descendantsUpdated;
         }
 
-        public abstract BlockTemplate Build(ChainedBlock chainTip, Script scriptPubKey);
+        public abstract BlockTemplate Build(ChainedHeader chainTip, Script scriptPubKey);
         public abstract void OnUpdateHeaders();
         public abstract void OnTestBlockValidity();
     }
 
     public class PowBlockAssembler : BlockAssembler
     {
+        /// <summary>Instance logger.</summary>
+        private readonly ILogger logger;
+
         // Container for tracking updates to ancestor feerate as we include (parent)
         // transactions in a block.
         public class TxMemPoolModifiedEntry
@@ -620,35 +623,36 @@ namespace Stratis.Bitcoin.Features.Miner
             AssemblerOptions options = null)
             : base(consensusLoop, dateTimeProvider, loggerFactory, mempool, mempoolLock, network)
         {
+            this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
         }
 
         /// <inheritdoc/>
-        public override BlockTemplate Build(ChainedBlock chainTip, Script scriptPubKey)
+        public override BlockTemplate Build(ChainedHeader chainTip, Script scriptPubKey)
         {
-            this.Logger.LogTrace("({0}:'{1}',{2}.{3}:{4})", nameof(chainTip), chainTip, nameof(scriptPubKey), nameof(scriptPubKey.Length), scriptPubKey.Length);
+            this.logger.LogTrace("({0}:'{1}',{2}.{3}:{4})", nameof(chainTip), chainTip, nameof(scriptPubKey), nameof(scriptPubKey.Length), scriptPubKey.Length);
 
             this.OnBuild(chainTip, scriptPubKey);
 
-            this.Logger.LogTrace("(-)");
+            this.logger.LogTrace("(-)");
 
             return this.BlockTemplate;
         }
 
         public override void OnUpdateHeaders()
         {
-            this.Logger.LogTrace("()");
+            this.logger.LogTrace("()");
 
             this.block.Header.HashPrevBlock = this.ChainTip.HashBlock;
             this.block.Header.UpdateTime(this.DateTimeProvider.GetTimeOffset(), this.Network, this.ChainTip);
             this.block.Header.Bits = this.block.Header.GetWorkRequired(this.Network, this.ChainTip);
             this.block.Header.Nonce = 0;
 
-            this.Logger.LogTrace("(-)");
+            this.logger.LogTrace("(-)");
         }
 
         public override void OnTestBlockValidity()
         {
-            this.Logger.LogTrace("()");
+            this.logger.LogTrace("()");
 
             var context = new RuleContext(new BlockValidationContext { Block = this.block }, this.Network.Consensus, this.ConsensusLoop.Tip)
             {
@@ -658,7 +662,7 @@ namespace Stratis.Bitcoin.Features.Miner
 
             this.ConsensusLoop.ValidateBlock(context);
 
-            this.Logger.LogTrace("(-)");
+            this.logger.LogTrace("(-)");
         }
     }
 }

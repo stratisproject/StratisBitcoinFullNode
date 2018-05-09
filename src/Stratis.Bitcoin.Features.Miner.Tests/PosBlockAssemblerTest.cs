@@ -363,7 +363,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
             var prevBlockHash = chain.Genesis.HashBlock;
             for (var i = 0; i < blockAmount; i++)
             {
-                var block = new Block();
+                var block = network.Consensus.ConsensusFactory.CreateBlock();
                 Transaction coinStake = CreateCoinStakeTransaction(network, key, chain.Height + 1, new uint256((ulong)12312312 + (ulong)i));
 
                 block.AddTransaction(coinStake);
@@ -386,7 +386,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
             var prevBlockHash = chain.Genesis.HashBlock;
             for (var i = 0; i < blockAmount; i++)
             {
-                var block = new Block();
+                var block = network.Consensus.ConsensusFactory.CreateBlock();
                 Transaction coinbase = CreateCoinStakeTransaction(network, key, chain.Height + 1, new uint256((ulong)12312312 + (ulong)i));
 
                 block.AddTransaction(coinbase);
@@ -503,14 +503,14 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
                 base.OnTestBlockValidity();
             }
 
-            public Block OnUpdateHeaders(ChainedBlock chainTip)
+            public Block OnUpdateHeaders(ChainedHeader chainTip)
             {
                 this.ChainTip = chainTip;
                 base.OnUpdateHeaders();
                 return this.block;
             }
 
-            public (int Height, int Version) ComputeBlockVersion(ChainedBlock chainTip)
+            public (int Height, int Version) ComputeBlockVersion(ChainedHeader chainTip)
             {
                 base.ChainTip = chainTip;
 
@@ -519,7 +519,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
                 return (base.height, base.block.Header.Version);
             }
 
-            public BlockTemplate CreateCoinBase(ChainedBlock chainTip, Script scriptPubKeyIn)
+            public BlockTemplate CreateCoinBase(ChainedHeader chainTip, Script scriptPubKeyIn)
             {
                 base.scriptPubKey = scriptPubKeyIn;
                 base.ChainTip = chainTip;

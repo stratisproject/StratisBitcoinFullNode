@@ -28,9 +28,9 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <summary>Global application life cycle control - triggers when application shuts down.</summary>
         private readonly INodeLifetime nodeLifetime;
 
-        protected ChainedBlock walletTip;
+        protected ChainedHeader walletTip;
 
-        public ChainedBlock WalletTip => this.walletTip;
+        public ChainedHeader WalletTip => this.walletTip;
 
         public WalletSyncManager(ILoggerFactory loggerFactory, IWalletManager walletManager, ConcurrentChain chain,
             Network network, IBlockStoreCache blockStoreCache, StoreSettings storeSettings, INodeLifetime nodeLifetime)
@@ -79,7 +79,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                 // state (behind the best chain).
                 ICollection<uint256> locators = this.walletManager.GetFirstWalletBlockLocator();
                 BlockLocator blockLocator = new BlockLocator { Blocks = locators.ToList() };
-                ChainedBlock fork = this.chain.FindFork(blockLocator);
+                ChainedHeader fork = this.chain.FindFork(blockLocator);
                 this.walletManager.RemoveBlocks(fork);
                 this.walletManager.WalletTipHash = fork.HashBlock;
                 this.walletTip = fork;
@@ -101,7 +101,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             Guard.NotNull(block, nameof(block));
             this.logger.LogTrace("({0}:'{1}')", nameof(block), block.GetHash());
 
-            ChainedBlock newTip = this.chain.GetBlock(block.GetHash());
+            ChainedHeader newTip = this.chain.GetBlock(block.GetHash());
             if (newTip == null)
             {
                 this.logger.LogTrace("(-)[NEW_TIP_REORG]");
@@ -114,12 +114,12 @@ namespace Stratis.Bitcoin.Features.Wallet
             {
                 // If previous block does not match there might have
                 // been a reorg, check if the wallet is still on the main chain.
-                ChainedBlock inBestChain = this.chain.GetBlock(this.walletTip.HashBlock);
+                ChainedHeader inBestChain = this.chain.GetBlock(this.walletTip.HashBlock);
                 if (inBestChain == null)
                 {
                     // The current wallet hash was not found on the main chain.
                     // A reorg happened so bring the wallet back top the last known fork.
-                    ChainedBlock fork = this.walletTip;
+                    ChainedHeader fork = this.walletTip;
 
                     // We walk back the chained block object to find the fork.
                     while (this.chain.GetBlock(fork.HashBlock) == null)
@@ -139,7 +139,7 @@ namespace Stratis.Bitcoin.Features.Wallet
 
                 if (newTip.Height > this.walletTip.Height)
                 {
-                    ChainedBlock findTip = newTip.FindAncestorOrSelf(this.walletTip);
+                    ChainedHeader findTip = newTip.FindAncestorOrSelf(this.walletTip);
                     if (findTip == null)
                     {
                         this.logger.LogTrace("(-)[NEW_TIP_AHEAD_NOT_IN_WALLET]");
@@ -149,7 +149,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                     var token = this.nodeLifetime.ApplicationStopping;
                     this.logger.LogTrace("Wallet tip '{0}' is behind the new tip '{1}'.", this.walletTip, newTip);
 
-                    ChainedBlock next = this.walletTip;
+                    ChainedHeader next = this.walletTip;
                     while (next != newTip)
                     {
                         // While the wallet is catching up the entire node will wait.
@@ -197,7 +197,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                 }
                 else
                 {
-                    ChainedBlock findTip = this.walletTip.FindAncestorOrSelf(newTip);
+                    ChainedHeader findTip = this.walletTip.FindAncestorOrSelf(newTip);
                     if (findTip == null)
                     {
                         this.logger.LogTrace("(-)[NEW_TIP_BEHIND_NOT_IN_WALLET]");
@@ -243,9 +243,9 @@ namespace Stratis.Bitcoin.Features.Wallet
         {
             this.logger.LogTrace("({0}:{1})", nameof(height), height);
 
-            ChainedBlock chainedBlock = this.chain.GetBlock(height);
-            this.walletTip = chainedBlock ?? throw new WalletException("Invalid block height");
-            this.walletManager.WalletTipHash = chainedBlock.HashBlock;
+            ChainedHeader chainedHeader = this.chain.GetBlock(height);
+            this.walletTip = chainedHeader ?? throw new WalletException("Invalid block height");
+            this.walletManager.WalletTipHash = chainedHeader.HashBlock;
 
             this.logger.LogTrace("(-)");
         }

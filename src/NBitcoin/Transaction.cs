@@ -1616,7 +1616,7 @@ namespace NBitcoin
         /// <para>ScriptSigs should be filled with either previous scriptPubKeys or redeem script (for P2SH)</para>
         /// <para>For more complex scenario, use TransactionBuilder</para>
         /// </summary>
-        /// <param name="secret"></param>
+        /// <param name="key"></param>
         [Obsolete("Use Sign(Key,ICoin[]) instead)")]
         public void Sign(Network network, Key key, bool assumeP2SH)
         {
@@ -1749,7 +1749,7 @@ namespace NBitcoin
             return new FeeRate(fee, this.GetVirtualSize());
         }
 
-        public bool IsFinal(ChainedBlock block)
+        public bool IsFinal(ChainedHeader block)
         {
             if(block == null)
                 return IsFinal(Utils.UnixTimeToDateTime(0), 0);
@@ -1794,7 +1794,7 @@ namespace NBitcoin
         /// <param name="block">The block being evaluated</param>
         /// <param name="flags">If VerifySequence is not set, returns always true SequenceLock</param>
         /// <returns>Sequence lock of minimum SequenceLock to satisfy</returns>
-        public bool CheckSequenceLocks(int[] prevHeights, ChainedBlock block, LockTimeFlags flags = LockTimeFlags.VerifySequence)
+        public bool CheckSequenceLocks(int[] prevHeights, ChainedHeader block, LockTimeFlags flags = LockTimeFlags.VerifySequence)
         {
             return CalculateSequenceLocks(prevHeights, block, flags).Evaluate(block);
         }
@@ -1806,10 +1806,10 @@ namespace NBitcoin
         /// locked inputs as they do not affect the calculation.
         /// </summary>        
         /// <param name="prevHeights">Previous Height</param>
-        /// <param name="block">The block being evaluated</param>
+        /// <param name="chainedHeader">The Chained block header being evaluated</param>
         /// <param name="flags">If VerifySequence is not set, returns always true SequenceLock</param>
         /// <returns>Sequence lock of minimum SequenceLock to satisfy</returns>
-        public SequenceLock CalculateSequenceLocks(int[] prevHeights, ChainedBlock block, LockTimeFlags flags = LockTimeFlags.VerifySequence)
+        public SequenceLock CalculateSequenceLocks(int[] prevHeights, ChainedHeader chainedHeader, LockTimeFlags flags = LockTimeFlags.VerifySequence)
         {
             if(prevHeights.Length != Inputs.Count)
                 throw new ArgumentException("The number of element in prevHeights should be equal to the number of inputs", "prevHeights");
@@ -1853,7 +1853,7 @@ namespace NBitcoin
 
                 if((txin.Sequence & Sequence.SEQUENCE_LOCKTIME_TYPE_FLAG) != 0)
                 {
-                    long nCoinTime = (long)Utils.DateTimeToUnixTimeLong(block.GetAncestor(Math.Max(nCoinHeight - 1, 0)).GetMedianTimePast());
+                    long nCoinTime = (long)Utils.DateTimeToUnixTimeLong(chainedHeader.GetAncestor(Math.Max(nCoinHeight - 1, 0)).GetMedianTimePast());
 
                     // Time-based relative lock-times are measured from the
                     // smallest allowed timestamp of the block containing the

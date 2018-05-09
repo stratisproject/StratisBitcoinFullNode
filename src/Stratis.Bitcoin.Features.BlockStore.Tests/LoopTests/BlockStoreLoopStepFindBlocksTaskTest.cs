@@ -201,7 +201,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
                 var task = new BlockStoreInnerStepFindBlocks(this.LoggerFactory.Object);
                 task.ExecuteAsync(context).GetAwaiter().GetResult();
 
-                // DownloadStack should only contain nextChainedBlock
+                // DownloadStack should only contain nextChainedHeader
                 Assert.Single(context.DownloadStack);
                 Assert.Contains(context.DownloadStack, cb => cb.HashBlock == nextChainedBlock.HashBlock);
 

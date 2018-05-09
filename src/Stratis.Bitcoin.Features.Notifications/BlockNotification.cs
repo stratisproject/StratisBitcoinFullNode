@@ -27,7 +27,7 @@ namespace Stratis.Bitcoin.Features.Notifications
 
         private readonly ISignals signals;
 
-        private ChainedBlock tip;
+        private ChainedHeader tip;
 
         public BlockNotification(
             ILoggerFactory loggerFactory,
@@ -70,11 +70,11 @@ namespace Stratis.Bitcoin.Features.Notifications
             {
                 this.ReSync = true;
 
-                ChainedBlock startBlock = this.Chain.GetBlock(startHash);
+                ChainedHeader startBlock = this.Chain.GetBlock(startHash);
                 if (startBlock != null)
                 {
                     // Sets the location of the puller to the block preceding the one we want to receive.
-                    ChainedBlock previousBlock = this.Chain.GetBlock(startBlock.Height > 0 ? startBlock.Height - 1 : 0);
+                    ChainedHeader previousBlock = this.Chain.GetBlock(startBlock.Height > 0 ? startBlock.Height - 1 : 0);
                     this.Puller.SetLocation(previousBlock);
                     this.tip = previousBlock;
 
@@ -109,12 +109,12 @@ namespace Stratis.Bitcoin.Features.Notifications
                 return Task.CompletedTask;
 
             // Not syncing until the chain is downloaded at least up to this block.
-            ChainedBlock startBlock = this.Chain.GetBlock(this.StartHash);
+            ChainedHeader startBlock = this.Chain.GetBlock(this.StartHash);
             if (startBlock == null)
                 return Task.CompletedTask;
 
             // Sets the location of the puller to the block preceding the one we want to receive.
-            ChainedBlock previousBlock = this.Chain.GetBlock(startBlock.Height > 0 ? startBlock.Height - 1 : 0);
+            ChainedHeader previousBlock = this.Chain.GetBlock(startBlock.Height > 0 ? startBlock.Height - 1 : 0);
             this.Puller.SetLocation(previousBlock);
             this.tip = previousBlock;
 

@@ -40,7 +40,7 @@ namespace Stratis.Bitcoin.IntegrationTests
             using (NodeBuilder builder = NodeBuilder.Create())
             {
                 var stratisNode = builder.CreateStratisPowNode();
-                var coreNode = builder.CreateNode();
+                var coreNode = builder.CreateBitcoinCoreNode();
                 builder.StartAll();
 
                 stratisNode.NotInIBD();
@@ -70,7 +70,7 @@ namespace Stratis.Bitcoin.IntegrationTests
             {
                 var stratisNode = builder.CreateStratisPowNode();
                 var stratisNodeSync = builder.CreateStratisPowNode();
-                var coreCreateNode = builder.CreateNode();
+                var coreCreateNode = builder.CreateBitcoinCoreNode();
                 builder.StartAll();
 
                 stratisNode.NotInIBD();
@@ -101,8 +101,8 @@ namespace Stratis.Bitcoin.IntegrationTests
             using (NodeBuilder builder = NodeBuilder.Create())
             {
                 var stratisNode = builder.CreateStratisPowNode();
-                var coreNodeSync = builder.CreateNode();
-                var coreCreateNode = builder.CreateNode();
+                var coreNodeSync = builder.CreateBitcoinCoreNode();
+                var coreCreateNode = builder.CreateBitcoinCoreNode();
                 builder.StartAll();
 
                 stratisNode.NotInIBD();
