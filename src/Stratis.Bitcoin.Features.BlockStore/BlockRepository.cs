@@ -678,7 +678,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
                     transaction.ValuesLazyLoadingIsOn = false;
 
                     List<Block> blocks = this.GetBlocksFromHashes(transaction, hashes);
-                    this.OnDeleteBlocks(transaction, blocks);
+                    this.OnDeleteBlocks(transaction, blocks.Where(b => b != null).ToList());
                     this.SaveBlockHash(transaction, newBlockHash);
                     transaction.Commit();
                 }
