@@ -180,7 +180,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
         private void BroadcastTransaction(PartialTransactionSession partialTransactionSession)
         {
             this.logger.LogInformation("()");
-            this.logger.LogInformation("${this.federationGatewaySettings.MemberName} Combing and Broadcasting transactions.");
+            this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} Combing and Broadcasting transactions.");
             var account = this.generalPurposeWalletManager.GetAccounts("multisig_wallet").First();
             if (account == null)
             {
