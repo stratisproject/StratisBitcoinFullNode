@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using FluentAssertions;
@@ -13,19 +14,22 @@ using Stratis.Bitcoin.Features.Miner.Interfaces;
 using Stratis.Bitcoin.Features.Notifications;
 using Stratis.Bitcoin.Features.RPC;
 using Stratis.Bitcoin.Features.Wallet;
+using Stratis.Bitcoin.Features.Wallet.Controllers;
 using Stratis.Bitcoin.Features.Wallet.Models;
 using Stratis.FederatedPeg.Features.FederationGateway;
 using Stratis.FederatedPeg.Features.MainchainGeneratorServices;
-using Stratis.FederatedPeg.Features.MainchainRuntime;
-using Stratis.FederatedPeg.Features.MainchainRuntime.Models;
 using Stratis.FederatedPeg.Features.SidechainGeneratorServices;
-using Stratis.FederatedPeg.Features.SidechainRuntime;
-using Stratis.FederatedPeg.Features.SidechainRuntime.Models;
 using Stratis.FederatedPeg.IntegrationTests.Helpers;
 using Stratis.Sidechains.Features.BlockchainGeneration;
 using Stratis.Sidechains.Features.BlockchainGeneration.Tests.Common;
 using Stratis.Sidechains.Features.BlockchainGeneration.Tests.Common.EnvironmentMockUp;
 using Xunit;
+using FeeType = Stratis.Bitcoin.Features.Wallet.FeeType;
+using GpRecipient = Stratis.Bitcoin.Features.GeneralPurposeWallet.Recipient;
+using WtRecipient = Stratis.Bitcoin.Features.Wallet.Recipient;
+
+using GpTransactionBuildContext = Stratis.Bitcoin.Features.GeneralPurposeWallet.TransactionBuildContext;
+using WtTransactionBuildContext = Stratis.Bitcoin.Features.Wallet.TransactionBuildContext;
 
 //todo: this is pre-refactoring code
 //todo: ensure no duplicate or fake withdrawal or deposit transactions are possible (current work underway)
@@ -196,7 +200,6 @@ namespace Stratis.FederatedPeg.IntegrationTests
                             // node and use the wallet to confirm the premine is generated into
                             // the multi-sig address.
                             .UseGeneralPurposeWallet()
-                            .AddSidechainRuntime()
                             .UseApi()
                             .AddRPC();
                     },
@@ -212,7 +215,6 @@ namespace Stratis.FederatedPeg.IntegrationTests
                             .UseMempool()
                             .UseWallet()
                             .AddPowPosMining()
-                            .AddSidechainRuntime()
                             .UseApi()
                             .AddRPC();
                     },
@@ -341,7 +343,6 @@ namespace Stratis.FederatedPeg.IntegrationTests
                         .UseMempool()
                         .UseWallet()
                         .AddPowPosMining()
-                        .AddMainchainRuntime()
                         .UseApi()
                         .AddRPC();
                 }, agent: "MainchainSidechainFunder1 ");
@@ -355,7 +356,6 @@ namespace Stratis.FederatedPeg.IntegrationTests
                         .UseMempool()
                         .UseWallet()
                         .AddPowPosMining()
-                        .AddMainchainRuntime()
                         .UseApi()
                         .AddRPC();
                 }, agent: "MainchainSidechainFunder2 ");
@@ -388,40 +388,23 @@ namespace Stratis.FederatedPeg.IntegrationTests
                 amounts = account_mainchain_funder1.GetSpendableAmount();
                 amounts.ConfirmedAmount.Should().Be(new Money(98000196, MoneyUnit.BTC));
 
-                #region Experimental Code
-                // The following code is experimental while we are waiting for a general OP_RETURN feature
-                // to be added to the library.
+                // Send Funds (Deposit from Mainchain to Sidechain)
+                var sendingWalletAccountReference = new WalletAccountReference("mainchain_wallet", "account 0");
 
-                //send funds
-                //this construct extends the normal functionality of the BuildTransaction wallet method to add an OP_RETURN
-                //with our extra data <sidechain name>|<sidechain addess>
-                var sendFundsToSidechainRequest = new SendFundsToSidechainRequest
+                var transactionBuildContext = new WtTransactionBuildContext(
+                        sendingWalletAccountReference,
+                        new List<WtRecipient>() { new WtRecipient() { Amount = new Money(3600, MoneyUnit.BTC), ScriptPubKey = BitcoinAddress.Create(multiSigAddress_Mainchain, Network.StratisRegTest).ScriptPubKey } },
+                        "1234", addressSidechain)
                 {
-                    AccountName = "account 0",
-                    AllowUnconfirmed = false,
-                    Amount = "3600",
-                    DestinationAddress = multiSigAddress_Mainchain,
-                    FeeAmount = "0.001",
-                    FeeType = "low",
-                    Password = "1234",
-                    ShuffleOutputs = true,
-                    WalletName = "mainchain_wallet",
-
-                    SidechainDestinationAddress = addressSidechain,
-                    SidechainName = "enigma"
+                    MinConfirmations = 1,
+                    TransactionFee = new Money(0.001m, MoneyUnit.BTC),
+                    Shuffle = true
                 };
-                var walletBuildTransactionModel = await ApiCalls
-                    .BuildTransaction(mainchain_SidechainFunder1.ApiPort, sendFundsToSidechainRequest).ConfigureAwait(false);
 
                 // UCFund:  The actor issues the command to Send the transaction and the wallet 
                 //          confirms and broadcasts the transaction in the normal manner.
-
-                //this is currently hacked and only broadcasts the transaction. it does not add our transaction to the wallet.
-                var sendTransactionRequest = new SendTransactionRequest
-                {
-                    Hex = walletBuildTransactionModel.Hex
-                };
-                await ApiCalls.SendTransactionOnMainchain(mainchain_SidechainFunder1.ApiPort, sendTransactionRequest);
+                var transaction = mainchain_SidechainFunder1.FullNode.WalletTransactionHandler().BuildTransaction(transactionBuildContext);
+                mainchain_SidechainFunder1.FullNode.NodeService<WalletController>().SendTransaction(new SendTransactionRequest(transaction.ToHex()));
 
                 await Task.Delay(5000);
 
@@ -436,8 +419,6 @@ namespace Stratis.FederatedPeg.IntegrationTests
                 await IntegrationTestUtils.WaitLoop(() => IntegrationTestUtils.AreNodesSynced(mainchain_SidechainFunder1, mainchain_SidechainFunder2));
 
                 await Task.Delay(5000);
-
-                #endregion Experimental Code
 
                 //confirm our mainchain funder has sent some funds (less 3600 + 4 mining plus we get our fee back)
                 //amounts = account_mainchain_funder1.GetSpendableAmount();
@@ -816,46 +797,24 @@ namespace Stratis.FederatedPeg.IntegrationTests
                 //check thos funds were received by the sidechain destination address
                 var account_sidechain_funder = sidechainNode_Member1_Wallet.FullNode.WalletManager().GetAccounts("sidechain_wallet").First();
                 amounts = account_sidechain_funder.GetSpendableAmount();
-                var confirmedAmountDestinationSidechain = amounts.ConfirmedAmount.ToString();
                 amounts.ConfirmedAmount.Should().Be(new Money(3600 + 208 + 0.01m, MoneyUnit.BTC));
 
                 // Now use the newly arrived funds to create a withdrawal transaction.
 
-                #region Experimental Code
+                // Withdraw Funds (Withdraw from Sidechain to Mainchain)
+                sendingWalletAccountReference = new WalletAccountReference("sidechain_wallet", "account 0");
 
-                // The following code is experimental while we are waiting for a general OP_RETURN feature
-                // to be added to the library.
-
-                //withdraw funds
-                //this construct extends the normal functionality of the BuildTransaction wallet method to add an OP_RETURN
-                //with our extra data <sidechain name>|<sidechain addess>
-                var withdrawFundsFromSidechainRequest = new WithdrawFundsFromSidechainRequest
+                transactionBuildContext = new WtTransactionBuildContext(
+                    sendingWalletAccountReference,
+                    new List<WtRecipient>() { new WtRecipient() { Amount = new Money(2500, MoneyUnit.BTC), ScriptPubKey = BitcoinAddress.Create(multiSigAddress_Sidechain, SidechainNetwork.SidechainRegTest).ScriptPubKey } },
+                    "1234", addressMainchain)
                 {
-                    AccountName = "account 0",
-                    AllowUnconfirmed = false,
-                    Amount = "2500",
-                    DestinationAddress = multiSigAddress_Sidechain,
-                    FeeAmount = "0.001",
-                    FeeType = "low",
-                    Password = "1234",
-                    ShuffleOutputs = true,
-                    WalletName = "sidechain_wallet",
-
-                    MainchainDestinationAddress = addressMainchain,
-                    SidechainName = "enigma"
+                    MinConfirmations = 1,
+                    TransactionFee = new Money(0.001m, MoneyUnit.BTC),
+                    Shuffle = true
                 };
-                walletBuildTransactionModel = await ApiCalls
-                    .BuildTransaction(sidechainNode_Member1_Wallet.ApiPort, withdrawFundsFromSidechainRequest).ConfigureAwait(false);
-
-                // UCFund:  The actor issues the command to Send the transaction and the wallet 
-                //          confirms and broadcasts the transaction in the normal manner.
-
-                //this is currently hacked and only broadcasts the transaction. it does not add our transaction to the wallet.
-                sendTransactionRequest = new SendTransactionRequest
-                {
-                    Hex = walletBuildTransactionModel.Hex
-                };
-                await ApiCalls.SendTransactionOnSidechain(sidechainNode_Member1_Wallet.ApiPort, sendTransactionRequest);
+                transaction = sidechainNode_Member1_Wallet.FullNode.WalletTransactionHandler().BuildTransaction(transactionBuildContext);
+                sidechainNode_Member1_Wallet.FullNode.NodeService<WalletController>().SendTransaction(new SendTransactionRequest(transaction.ToHex()));
 
                 await Task.Delay(5000);
 
@@ -897,8 +856,6 @@ namespace Stratis.FederatedPeg.IntegrationTests
                 IntegrationTestUtils.SaveGeneralWallet(mainchain_FederationGateway3, "multisig_wallet");
 
                 await Task.Delay(5000);
-
-                #endregion Experimental Code
 
                 //3804.001 (3600, 204 mining plus 0.01 transaction fee.)
                 //check thos funds were received by the sidechain destination address
