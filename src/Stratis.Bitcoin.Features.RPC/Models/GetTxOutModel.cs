@@ -13,7 +13,7 @@ namespace Stratis.Bitcoin.Features.RPC.Models
         {
         }
 
-        public GetTxOutModel(UnspentOutputs unspentOutputs, uint vout, Network network, ChainedBlock tip)
+        public GetTxOutModel(UnspentOutputs unspentOutputs, uint vout, Network network, ChainedHeader tip)
         {
             if (unspentOutputs != null)
             {

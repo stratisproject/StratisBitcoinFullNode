@@ -7,7 +7,7 @@ namespace NBitcoin
     /// <summary>
     /// A BlockHeader chained with all its ancestors.
     /// </summary>
-    public class ChainedBlock
+    public class ChainedHeader
     {
         /// <summary>Value of 2^256.</summary>
         private static BigInteger Pow256 = BigInteger.ValueOf(2).Pow(256);
@@ -19,10 +19,10 @@ namespace NBitcoin
         public uint256 HashBlock { get; private set; }
 
         /// <summary>Predecessor of this block.</summary>
-        public ChainedBlock Previous { get; private set; }
+        public ChainedHeader Previous { get; private set; }
 
         /// <summary>Block to navigate from this block to the next in the skip list.</summary>
-        public ChainedBlock Skip { get; private set; }
+        public ChainedHeader Skip { get; private set; }
 
         /// <summary>Height of the entry in the chain. The genesis block has height 0.</summary>
         public int Height { get; private set; }
@@ -42,7 +42,7 @@ namespace NBitcoin
         /// <param name="header">Header for the block.</param>
         /// <param name="headerHash">Hash of the header of the block.</param>
         /// <param name="previous">Link to the previous block in the chain.</param>
-        public ChainedBlock(BlockHeader header, uint256 headerHash, ChainedBlock previous)
+        public ChainedHeader(BlockHeader header, uint256 headerHash, ChainedHeader previous)
         {
             this.Header = header ?? throw new ArgumentNullException("header");
             this.HashBlock = headerHash ?? throw new ArgumentNullException("headerHash");
@@ -70,12 +70,12 @@ namespace NBitcoin
         }
 
         /// <summary>
-        /// Constructs a chained block at the start of a chain.
+        /// Constructs a chained header at the start of a chain.
         /// </summary>
         /// <param name="header">The header for the block.</param>
         /// <param name="headerHash">The hash computed according to NetworkOptions.</param>
         /// <param name="height">The height of the block.</param>
-        public ChainedBlock(BlockHeader header, uint256 headerHash, int height)
+        public ChainedHeader(BlockHeader header, uint256 headerHash, int height)
         {
             this.Header = header ?? throw new ArgumentNullException("header");
             this.Height = height;
@@ -109,7 +109,7 @@ namespace NBitcoin
             int nStep = 1;
             List<uint256> blockHashes = new List<uint256>();
 
-            ChainedBlock pindex = this;
+            ChainedHeader pindex = this;
             while (pindex != null)
             {
                 blockHashes.Add(pindex.HashBlock);
@@ -133,7 +133,7 @@ namespace NBitcoin
         /// <inheritdoc />
         public override bool Equals(object obj)
         {
-            ChainedBlock item = obj as ChainedBlock;
+            ChainedHeader item = obj as ChainedHeader;
             if (item == null)
                 return false;
 
@@ -141,7 +141,7 @@ namespace NBitcoin
         }
 
         /// <inheritdoc />
-        public static bool operator ==(ChainedBlock a, ChainedBlock b)
+        public static bool operator ==(ChainedHeader a, ChainedHeader b)
         {
             if (System.Object.ReferenceEquals(a, b))
                 return true;
@@ -153,7 +153,7 @@ namespace NBitcoin
         }
 
         /// <inheritdoc />
-        public static bool operator !=(ChainedBlock a, ChainedBlock b)
+        public static bool operator !=(ChainedHeader a, ChainedHeader b)
         {
             return !(a == b);
         }
@@ -168,9 +168,9 @@ namespace NBitcoin
         /// Enumerator from this entry in the chain to the genesis block.
         /// </summary>
         /// <returns>The enumeration of the chain.</returns>
-        public IEnumerable<ChainedBlock> EnumerateToGenesis()
+        public IEnumerable<ChainedHeader> EnumerateToGenesis()
         {
-            ChainedBlock current = this;
+            ChainedHeader current = this;
             while (current != null)
             {
                 yield return current;
@@ -185,16 +185,16 @@ namespace NBitcoin
         }
 
         /// <summary>
-        /// Finds the ancestor of this entry in the chain that matches the chained block header specified.
+        /// Finds the ancestor of this entry in the chain that matches the chained header specified.
         /// </summary>
-        /// <param name="chainedBlockHeader">The chained block header to search for.</param>
+        /// <param name="chainedHeader">The chained header to search for.</param>
         /// <returns>The chained block header or <c>null</c> if can't be found.</returns>
         /// <remarks>This method compares the hash of the block header at the same height in the current chain 
         /// to verify the correct chained block header has been found.</remarks>
-        public ChainedBlock FindAncestorOrSelf(ChainedBlock chainedBlockHeader)
+        public ChainedHeader FindAncestorOrSelf(ChainedHeader chainedHeader)
         {
-            ChainedBlock found = this.GetAncestor(chainedBlockHeader.Height);
-            if ((found != null) && (found.HashBlock == chainedBlockHeader.HashBlock))
+            ChainedHeader found = this.GetAncestor(chainedHeader.Height);
+            if ((found != null) && (found.HashBlock == chainedHeader.HashBlock))
                 return found;
 
             return null;
@@ -205,9 +205,9 @@ namespace NBitcoin
         /// </summary>
         /// <param name="blockHash">The block hash to search for.</param>
         /// <returns>The ancestor of this chain that matches the block hash.</returns>
-        public ChainedBlock FindAncestorOrSelf(uint256 blockHash)
+        public ChainedHeader FindAncestorOrSelf(uint256 blockHash)
         {
-            ChainedBlock currentBlock = this;
+            ChainedHeader currentBlock = this;
             while ((currentBlock != null) && (currentBlock.HashBlock != blockHash))
             {
                 currentBlock = currentBlock.Previous;
@@ -258,7 +258,7 @@ namespace NBitcoin
         /// <returns>The target proof of work.</returns>
         public Target GetNextWorkRequired(BlockHeader block, Consensus consensus)
         {
-            return new ChainedBlock(block, block.GetHash(), this).GetWorkRequired(consensus);
+            return new ChainedHeader(block, block.GetHash(), this).GetWorkRequired(consensus);
         }
 
         /// <summary>
@@ -283,7 +283,7 @@ namespace NBitcoin
                 return consensus.PowLimit;
 
             Target proofOfWorkLimit = consensus.PowLimit;
-            ChainedBlock lastBlock = this.Previous;
+            ChainedHeader lastBlock = this.Previous;
             var height = this.Height;
 
             if (lastBlock == null)
@@ -301,11 +301,11 @@ namespace NBitcoin
                         return proofOfWorkLimit;
                  
                     // Return the last non-special-min-difficulty-rules-block.
-                    ChainedBlock chainedBlock = lastBlock;
-                    while ((chainedBlock.Previous != null) && ((chainedBlock.Height % consensus.DifficultyAdjustmentInterval) != 0) && (chainedBlock.Header.Bits == proofOfWorkLimit))
-                        chainedBlock = chainedBlock.Previous;
+                    ChainedHeader chainedHeader = lastBlock;
+                    while ((chainedHeader.Previous != null) && ((chainedHeader.Height % consensus.DifficultyAdjustmentInterval) != 0) && (chainedHeader.Header.Bits == proofOfWorkLimit))
+                        chainedHeader = chainedHeader.Previous;
 
-                    return chainedBlock.Header.Bits;
+                    return chainedHeader.Header.Bits;
                 }
 
                 return lastBlock.Header.Bits;
@@ -314,15 +314,15 @@ namespace NBitcoin
             // Go back by what we want to be 14 days worth of blocks.
             long pastHeight = lastBlock.Height - (consensus.DifficultyAdjustmentInterval - 1);
 
-            ChainedBlock firstChainedBlock = this.GetAncestor((int)pastHeight);
-            if (firstChainedBlock == null)
+            ChainedHeader firstChainedHeader = this.GetAncestor((int)pastHeight);
+            if (firstChainedHeader == null)
                 throw new NotSupportedException("Can only calculate work of a full chain");
 
             if (consensus.PowNoRetargeting)
                 return lastBlock.Header.Bits;
 
             // Limit adjustment step.
-            TimeSpan actualTimespan = lastBlock.Header.BlockTime - firstChainedBlock.Header.BlockTime;
+            TimeSpan actualTimespan = lastBlock.Header.BlockTime - firstChainedHeader.Header.BlockTime;
             if (actualTimespan < TimeSpan.FromTicks(consensus.PowTargetTimespan.Ticks / 4))
                 actualTimespan = TimeSpan.FromTicks(consensus.PowTargetTimespan.Ticks / 4);
             if (actualTimespan > TimeSpan.FromTicks(consensus.PowTargetTimespan.Ticks * 4))
@@ -350,9 +350,9 @@ namespace NBitcoin
             int begin = MedianTimeSpan;
             int end = MedianTimeSpan;
 
-            ChainedBlock chainedBlock = this;
-            for (int i = 0; i < MedianTimeSpan && chainedBlock != null; i++, chainedBlock = chainedBlock.Previous)
-                median[--begin] = chainedBlock.Header.BlockTime;
+            ChainedHeader chainedHeader = this;
+            for (int i = 0; i < MedianTimeSpan && chainedHeader != null; i++, chainedHeader = chainedHeader.Previous)
+                median[--begin] = chainedHeader.Header.BlockTime;
 
             Array.Sort(median);
             return median[begin + ((end - begin) / 2)];
@@ -421,13 +421,13 @@ namespace NBitcoin
         /// </summary>
         /// <param name="block">The tip of the other chain.</param>
         /// <returns>First common block or <c>null</c>.</returns>
-        public ChainedBlock FindFork(ChainedBlock block)
+        public ChainedHeader FindFork(ChainedHeader block)
         {
             if (block == null)
                 throw new ArgumentNullException("block");
 
-            ChainedBlock highChain = this.Height > block.Height ? this : block;
-            ChainedBlock lowChain = highChain == this ? block : this;
+            ChainedHeader highChain = this.Height > block.Height ? this : block;
+            ChainedHeader lowChain = highChain == this ? block : this;
 
             highChain = highChain.GetAncestor(lowChain.Height);
 
@@ -457,12 +457,12 @@ namespace NBitcoin
         /// </summary>
         /// <param name="ancestorHeight">The block height to search for.</param>
         /// <returns>The ancestor of this chain that matches the block height.</returns>
-        public ChainedBlock GetAncestor(int ancestorHeight)
+        public ChainedHeader GetAncestor(int ancestorHeight)
         {
             if (ancestorHeight > this.Height)
                 return null;
 
-            ChainedBlock walk = this;
+            ChainedHeader walk = this;
             while ((walk != null) && (walk.Height != ancestorHeight))
             {
                 // No skip so follow previous.

@@ -145,7 +145,7 @@ namespace Stratis.Bitcoin.Features.LightWallet.Tests
             lightWalletSyncManager.Start();
 
             // verify that the walletmanager removes blocks using the block locator.
-            this.walletManager.Verify(v => v.RemoveBlocks(It.Is<ChainedBlock>(c => c.HashBlock == this.chain.GetBlock(2).HashBlock)));
+            this.walletManager.Verify(v => v.RemoveBlocks(It.Is<ChainedHeader>(c => c.HashBlock == this.chain.GetBlock(2).HashBlock)));
 
             // verify that the sync is started using the height from GetEarliestWalletHeight
             var expectedBlockHash = this.chain.GetBlock(1).HashBlock;
@@ -179,7 +179,7 @@ namespace Stratis.Bitcoin.Features.LightWallet.Tests
             lightWalletSyncManager.Start();
 
             // verify that the walletmanager removes blocks using the block locator.
-            this.walletManager.Verify(v => v.RemoveBlocks(It.Is<ChainedBlock>(c => c.HashBlock == this.chain.Genesis.HashBlock)));
+            this.walletManager.Verify(v => v.RemoveBlocks(It.Is<ChainedHeader>(c => c.HashBlock == this.chain.Genesis.HashBlock)));
 
             // verify that the sync is started using the height from GetEarliestWalletHeight
             var expectedBlockHash = this.chain.Genesis.HashBlock;
@@ -217,7 +217,7 @@ namespace Stratis.Bitcoin.Features.LightWallet.Tests
             lightWalletSyncManager.Start();
 
             // verify that the walletmanager removes blocks using the block locator.
-            this.walletManager.Verify(v => v.RemoveBlocks(It.Is<ChainedBlock>(c => c.HashBlock == this.chain.GetBlock(3).HashBlock)));
+            this.walletManager.Verify(v => v.RemoveBlocks(It.Is<ChainedHeader>(c => c.HashBlock == this.chain.GetBlock(3).HashBlock)));
 
             // verify that the sync is started using the height from GetEarliestWalletHeight
             var expectedBlockHash = this.chain.GetBlock(1).HashBlock;
@@ -255,7 +255,7 @@ namespace Stratis.Bitcoin.Features.LightWallet.Tests
             lightWalletSyncManager.Start();
 
             // verify that the walletmanager removes blocks using the block locator.
-            this.walletManager.Verify(v => v.RemoveBlocks(It.Is<ChainedBlock>(c => c.HashBlock == this.chain.Genesis.HashBlock)));
+            this.walletManager.Verify(v => v.RemoveBlocks(It.Is<ChainedHeader>(c => c.HashBlock == this.chain.Genesis.HashBlock)));
 
             // verify that the sync is started using the first block.
             var expectedBlockHash = this.chain.GetBlock(1).HashBlock;
@@ -491,7 +491,7 @@ namespace Stratis.Bitcoin.Features.LightWallet.Tests
 
             var expectedBlockHash = this.chain.GetBlock(4).Header.GetHash();
             Assert.Equal(expectedBlockHash, lightWalletSyncManager.WalletTip.Header.GetHash());
-            this.walletManager.Verify(w => w.ProcessBlock(It.Is<Block>(b => b.GetHash() == blockToProcess.GetHash()), It.Is<ChainedBlock>(c => c.Header.GetHash() == expectedBlockHash)));
+            this.walletManager.Verify(w => w.ProcessBlock(It.Is<Block>(b => b.GetHash() == blockToProcess.GetHash()), It.Is<ChainedHeader>(c => c.Header.GetHash() == expectedBlockHash)));
         }
 
         /// <summary>
@@ -518,7 +518,7 @@ namespace Stratis.Bitcoin.Features.LightWallet.Tests
 
             var expectedBlockHash = this.chain.GetBlock(2).Header.GetHash();
             Assert.Equal(expectedBlockHash, lightWalletSyncManager.WalletTip.Header.GetHash());
-            this.walletManager.Verify(w => w.ProcessBlock(It.IsAny<Block>(), It.IsAny<ChainedBlock>()), Times.Exactly(0));
+            this.walletManager.Verify(w => w.ProcessBlock(It.IsAny<Block>(), It.IsAny<ChainedHeader>()), Times.Exactly(0));
         }
 
         /// <summary>
@@ -576,7 +576,7 @@ namespace Stratis.Bitcoin.Features.LightWallet.Tests
             Assert.Equal(this.chain.GetBlock(2).HashBlock, lightWalletSyncManager.WalletTip.HashBlock);
             this.blockNotification.Verify(w => w.SyncFrom(this.chain.GetBlock(2).HashBlock));
             // expect no blocks to be processed.
-            this.walletManager.Verify(w => w.ProcessBlock(It.IsAny<Block>(), It.IsAny<ChainedBlock>()), Times.Exactly(0));
+            this.walletManager.Verify(w => w.ProcessBlock(It.IsAny<Block>(), It.IsAny<ChainedHeader>()), Times.Exactly(0));
         }
 
         /// <summary>
@@ -613,9 +613,9 @@ namespace Stratis.Bitcoin.Features.LightWallet.Tests
             this.walletManager.Verify(w => w.ProcessBlock(ExpectBlock(result.RightForkBlocks[1]), ExpectChainedBlock(this.chain.GetBlock(2))));
         }
 
-        private static ChainedBlock ExpectChainedBlock(ChainedBlock block)
+        private static ChainedHeader ExpectChainedBlock(ChainedHeader block)
         {
-            return It.Is<ChainedBlock>(c => c.Header.GetHash() == block.Header.GetHash());
+            return It.Is<ChainedHeader>(c => c.Header.GetHash() == block.Header.GetHash());
         }
 
         private static Block ExpectBlock(Block block)
@@ -631,7 +631,7 @@ namespace Stratis.Bitcoin.Features.LightWallet.Tests
             {
             }
 
-            public void SetWalletTip(ChainedBlock tip)
+            public void SetWalletTip(ChainedHeader tip)
             {
                 this.walletTip = tip;
             }

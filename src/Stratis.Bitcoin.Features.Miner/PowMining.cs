@@ -182,7 +182,7 @@ namespace Stratis.Bitcoin.Features.Miner
             {
                 this.miningCancellationTokenSource.Token.ThrowIfCancellationRequested();
 
-                ChainedBlock chainTip = this.consensusLoop.Tip;
+                ChainedHeader chainTip = this.consensusLoop.Tip;
                 if (this.chain.Tip != chainTip)
                 {
                     Task.Delay(TimeSpan.FromMinutes(1), this.nodeLifetime.ApplicationStopping).GetAwaiter().GetResult();
@@ -216,7 +216,7 @@ namespace Stratis.Bitcoin.Features.Miner
                 if (block.Header.Nonce == InnerLoopCount)
                     continue;
 
-                var newChain = new ChainedBlock(block.Header, block.GetHash(), chainTip);
+                var newChain = new ChainedHeader(block.Header, block.GetHash(), chainTip);
 
                 if (newChain.ChainWork <= chainTip.ChainWork)
                     continue;
@@ -225,7 +225,7 @@ namespace Stratis.Bitcoin.Features.Miner
 
                 this.consensusLoop.AcceptBlockAsync(blockValidationContext).GetAwaiter().GetResult();
 
-                if (blockValidationContext.ChainedBlock == null)
+                if (blockValidationContext.ChainedHeader == null)
                 {
                     this.logger.LogTrace("(-)[REORG-2]");
                     return blocks;
@@ -240,7 +240,7 @@ namespace Stratis.Bitcoin.Features.Miner
                     return blocks;
                 }
 
-                this.logger.LogInformation("Mined new {0} block: '{1}'.", BlockStake.IsProofOfStake(blockValidationContext.Block) ? "POS" : "POW", blockValidationContext.ChainedBlock);
+                this.logger.LogInformation("Mined new {0} block: '{1}'.", BlockStake.IsProofOfStake(blockValidationContext.Block) ? "POS" : "POW", blockValidationContext.ChainedHeader);
 
                 nHeight++;
                 blocks.Add(block.GetHash());
@@ -252,7 +252,7 @@ namespace Stratis.Bitcoin.Features.Miner
         }
 
         ///<inheritdoc/>
-        public int IncrementExtraNonce(Block pblock, ChainedBlock pindexPrev, int nExtraNonce)
+        public int IncrementExtraNonce(Block pblock, ChainedHeader pindexPrev, int nExtraNonce)
         {
             // Update nExtraNonce
             if (this.hashPrevBlock != pblock.Header.HashPrevBlock)

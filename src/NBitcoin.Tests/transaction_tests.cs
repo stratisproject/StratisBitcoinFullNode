@@ -60,7 +60,7 @@ namespace NBitcoin.Tests
             Assert.Equal(CreateBlock(now, 5).Header.BlockTime, chain.Tip.GetMedianTimePast()); // x -1 0 1 2 3 4 5 6 7 8 9 10
         }
 
-        private ChainedBlock CreateBlock(DateTimeOffset now, int offset, ChainBase chain = null)
+        private ChainedHeader CreateBlock(DateTimeOffset now, int offset, ChainBase chain = null)
         {
             Block b = new Block(new BlockHeader()
             {
@@ -69,10 +69,10 @@ namespace NBitcoin.Tests
             if(chain != null)
             {
                 b.Header.HashPrevBlock = chain.Tip.HashBlock;
-                return new ChainedBlock(b.Header, b.Header.GetHash(), chain.Tip);
+                return new ChainedHeader(b.Header, b.Header.GetHash(), chain.Tip);
             }
             else
-                return new ChainedBlock(b.Header, b.Header.GetHash(), 0);
+                return new ChainedHeader(b.Header, b.Header.GetHash(), 0);
         }
 
         [Fact]

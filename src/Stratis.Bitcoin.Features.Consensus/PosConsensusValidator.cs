@@ -122,7 +122,7 @@ namespace Stratis.Bitcoin.Features.Consensus
 
             base.ExecuteBlock(context, taskScheduler);
 
-            this.stakeChain.Set(context.BlockValidationContext.ChainedBlock, context.Stake.BlockStake);
+            this.stakeChain.Set(context.BlockValidationContext.ChainedHeader, context.Stake.BlockStake);
 
             this.logger.LogTrace("(-)");
         }
@@ -172,30 +172,30 @@ namespace Stratis.Bitcoin.Features.Consensus
         {
             this.logger.LogTrace("()");
 
-            ChainedBlock chainedBlock = context.BlockValidationContext.ChainedBlock;
+            ChainedHeader chainedHeader = context.BlockValidationContext.ChainedHeader;
             Block block = context.BlockValidationContext.Block;
             BlockStake blockStake = context.Stake.BlockStake;
 
             // Verify hash target and signature of coinstake tx.
             if (BlockStake.IsProofOfStake(block))
             {
-                ChainedBlock prevChainedBlock = chainedBlock.Previous;
+                ChainedHeader prevChainedHeader = chainedHeader.Previous;
 
-                BlockStake prevBlockStake = this.stakeChain.Get(prevChainedBlock.HashBlock);
+                BlockStake prevBlockStake = this.stakeChain.Get(prevChainedHeader.HashBlock);
                 if (prevBlockStake == null)
                     ConsensusErrors.PrevStakeNull.Throw();
 
                 // Only do proof of stake validation for blocks that are after the assumevalid block or after the last checkpoint.
                 if (!context.SkipValidation)
                 {
-                    this.StakeValidator.CheckProofOfStake(context.Stake, prevChainedBlock, prevBlockStake, block.Transactions[1], chainedBlock.Header.Bits.ToCompact());
+                    this.StakeValidator.CheckProofOfStake(context.Stake, prevChainedHeader, prevBlockStake, block.Transactions[1], chainedHeader.Header.Bits.ToCompact());
                 }
-                else this.logger.LogTrace("POS validation skipped for block at height {0}.", chainedBlock.Height);
+                else this.logger.LogTrace("POS validation skipped for block at height {0}.", chainedHeader.Height);
             }
 
             // PoW is checked in CheckBlock().
             if (BlockStake.IsProofOfWork(block))
-                context.Stake.HashProofOfStake = chainedBlock.Header.GetPoWHash();
+                context.Stake.HashProofOfStake = chainedHeader.Header.GetPoWHash();
 
             // Compute stake entropy bit for stake modifier.
             if (!blockStake.SetStakeEntropyBit(blockStake.GetStakeEntropyBit()))
@@ -208,21 +208,21 @@ namespace Stratis.Bitcoin.Features.Consensus
             blockStake.HashProof = context.Stake.HashProofOfStake;
 
             int lastCheckpointHeight = this.Checkpoints.GetLastCheckpointHeight();
-            if (chainedBlock.Height > lastCheckpointHeight)
+            if (chainedHeader.Height > lastCheckpointHeight)
             {
                 // Compute stake modifier.
-                ChainedBlock prevChainedBlock = chainedBlock.Previous;
-                BlockStake blockStakePrev = prevChainedBlock == null ? null : this.stakeChain.Get(prevChainedBlock.HashBlock);
-                blockStake.StakeModifierV2 = this.StakeValidator.ComputeStakeModifierV2(prevChainedBlock, blockStakePrev, blockStake.IsProofOfWork() ? chainedBlock.HashBlock : blockStake.PrevoutStake.Hash);
+                ChainedHeader prevChainedHeader = chainedHeader.Previous;
+                BlockStake blockStakePrev = prevChainedHeader == null ? null : this.stakeChain.Get(prevChainedHeader.HashBlock);
+                blockStake.StakeModifierV2 = this.StakeValidator.ComputeStakeModifierV2(prevChainedHeader, blockStakePrev, blockStake.IsProofOfWork() ? chainedHeader.HashBlock : blockStake.PrevoutStake.Hash);
             }
-            else if (chainedBlock.Height == lastCheckpointHeight)
+            else if (chainedHeader.Height == lastCheckpointHeight)
             {
                 // Copy checkpointed stake modifier.
                 CheckpointInfo checkpoint = this.Checkpoints.GetCheckpoint(lastCheckpointHeight);
                 blockStake.StakeModifierV2 = checkpoint.StakeModifierV2;
                 this.logger.LogTrace("Last checkpoint stake modifier V2 loaded: '{0}'.", blockStake.StakeModifierV2);
             }
-            else this.logger.LogTrace("POS stake modifier computation skipped for block at height {0} because it is not above last checkpoint block height {1}.", chainedBlock.Height, lastCheckpointHeight);
+            else this.logger.LogTrace("POS stake modifier computation skipped for block at height {0} because it is not above last checkpoint block height {1}.", chainedHeader.Height, lastCheckpointHeight);
 
             this.logger.LogTrace("(-)[OK]");
         }

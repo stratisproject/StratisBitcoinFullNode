@@ -39,11 +39,11 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
         }
 
         /// <inheritdoc/>
-        internal override async Task<StepResult> ExecuteAsync(ChainedBlock nextChainedBlock, CancellationToken cancellationToken, bool disposeMode)
+        internal override async Task<StepResult> ExecuteAsync(ChainedHeader nextChainedHeader, CancellationToken cancellationToken, bool disposeMode)
         {
-            this.logger.LogTrace("({0}:'{1}',{2}:{3})", nameof(nextChainedBlock), nextChainedBlock, nameof(disposeMode), disposeMode);
+            this.logger.LogTrace("({0}:'{1}',{2}:{3})", nameof(nextChainedHeader), nextChainedHeader, nameof(disposeMode), disposeMode);
 
-            if (this.BlockStoreLoop.StoreTip.HashBlock != nextChainedBlock.Header.HashPrevBlock)
+            if (this.BlockStoreLoop.StoreTip.HashBlock != nextChainedHeader.Header.HashPrevBlock)
             {
                 if (disposeMode)
                 {
@@ -52,17 +52,17 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
                 }
 
                 var blocksToDelete = new List<uint256>();
-                ChainedBlock blockToDelete = this.BlockStoreLoop.StoreTip;
+                ChainedHeader headerToDelete = this.BlockStoreLoop.StoreTip;
 
-                while (this.BlockStoreLoop.Chain.GetBlock(blockToDelete.HashBlock) == null)
+                while (this.BlockStoreLoop.Chain.GetBlock(headerToDelete.HashBlock) == null)
                 {
-                    blocksToDelete.Add(blockToDelete.HashBlock);
-                    blockToDelete = blockToDelete.Previous;
+                    blocksToDelete.Add(headerToDelete.HashBlock);
+                    headerToDelete = headerToDelete.Previous;
                 }
 
-                await this.BlockStoreLoop.BlockRepository.DeleteAsync(blockToDelete.HashBlock, blocksToDelete);
+                await this.BlockStoreLoop.BlockRepository.DeleteAsync(headerToDelete.HashBlock, blocksToDelete);
 
-                this.BlockStoreLoop.SetStoreTip(blockToDelete);
+                this.BlockStoreLoop.SetStoreTip(headerToDelete);
 
                 this.logger.LogTrace("(-)[MISMATCH]:{0}", StepResult.Stop);
                 return StepResult.Stop;

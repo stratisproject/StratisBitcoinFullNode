@@ -45,14 +45,14 @@ namespace Stratis.Bitcoin.Base
         /// </para>
         /// </summary>
         /// <remarks>It might be different than concurrent's chain tip, in the rare event of large fork > 2000 blocks.</remarks>
-        private ChainedBlock pendingTip;
+        private ChainedHeader pendingTip;
 
         /// <summary>Information about the peer's announcement of its tip using "headers" message.</summary>
-        public ChainedBlock PendingTip
+        public ChainedHeader PendingTip
         {
             get
             {
-                ChainedBlock tip = this.pendingTip;
+                ChainedHeader tip = this.pendingTip;
                 if (tip == null)
                     return null;
 
@@ -135,7 +135,7 @@ namespace Stratis.Bitcoin.Base
             this.RegisterDisposable(this.refreshTimer);
             if (this.AttachedPeer.State == NetworkPeerState.Connected)
             {
-                ChainedBlock highPoW = this.chainState.ConsensusTip;
+                ChainedHeader highPoW = this.chainState.ConsensusTip;
                 this.AttachedPeer.MyVersion.StartHeight = highPoW?.Height ?? 0;
             }
 
@@ -244,10 +244,10 @@ namespace Stratis.Bitcoin.Base
             }
 
             HeadersPayload headers = new HeadersPayload();
-            ChainedBlock consensusTip = this.chainState.ConsensusTip;
+            ChainedHeader consensusTip = this.chainState.ConsensusTip;
             consensusTip = this.Chain.GetBlock(consensusTip.HashBlock);
 
-            ChainedBlock fork = this.Chain.FindFork(getHeadersPayload.BlockLocators);
+            ChainedHeader fork = this.Chain.FindFork(getHeadersPayload.BlockLocators);
             if (fork != null)
             {
                 if ((consensusTip == null) || (fork.Height > consensusTip.Height))
@@ -258,7 +258,7 @@ namespace Stratis.Bitcoin.Base
 
                 if (fork != null)
                 {
-                    foreach (ChainedBlock header in this.Chain.EnumerateToTip(fork).Skip(1))
+                    foreach (ChainedHeader header in this.Chain.EnumerateToTip(fork).Skip(1))
                     {
                         if (header.Height > consensusTip.Height)
                             break;
@@ -314,17 +314,17 @@ namespace Stratis.Bitcoin.Base
                 return;
             }
 
-            ChainedBlock pendingTipBefore = this.pendingTip;
+            ChainedHeader pendingTipBefore = this.pendingTip;
             this.logger.LogTrace("Pending tip is '{0}', received {1} new headers.", pendingTipBefore, headersPayload.Headers.Count);
 
             bool doTrySync = false;
 
             // TODO: implement MAX_HEADERS_RESULTS in NBitcoin.HeadersPayload
 
-            ChainedBlock tip = pendingTipBefore;
+            ChainedHeader tip = pendingTipBefore;
             foreach (BlockHeader header in headersPayload.Headers)
             {
-                ChainedBlock prev = tip?.FindAncestorOrSelf(header.HashPrevBlock);
+                ChainedHeader prev = tip?.FindAncestorOrSelf(header.HashPrevBlock);
                 if (prev == null)
                 {
                     this.logger.LogTrace("Previous header of the new header '{0}' was not found on the peer's chain, the view of the peer's chain is probably outdated.", header);
@@ -352,7 +352,7 @@ namespace Stratis.Bitcoin.Base
                     // Now we know the previous block header and thus we can connect the new header.
                 }
 
-                tip = new ChainedBlock(header, header.GetHash(), prev);
+                tip = new ChainedHeader(header, header.GetHash(), prev);
                 bool validated = this.Chain.GetBlock(tip.HashBlock) != null || tip.Validate(peer.Network);
                 validated &= !this.chainState.IsMarkedInvalid(tip.HashBlock);
                 if (!validated)
@@ -371,7 +371,7 @@ namespace Stratis.Bitcoin.Base
             if ((this.pendingTip != null) && !this.bestChainSelector.TrySetAvailableTip(this.AttachedPeer.Connection.Id, this.pendingTip))
                 this.InvalidHeaderReceived = true;
             
-            ChainedBlock chainedPendingTip = this.pendingTip == null ? null : this.Chain.GetBlock(this.pendingTip.HashBlock);
+            ChainedHeader chainedPendingTip = this.pendingTip == null ? null : this.Chain.GetBlock(this.pendingTip.HashBlock);
             if (chainedPendingTip != null)
             {
                 // This allows garbage collection to collect the duplicated pendingTip and ancestors.
@@ -385,13 +385,13 @@ namespace Stratis.Bitcoin.Base
             this.logger.LogTrace("(-)");
         }
 
-        public void SetPendingTip(ChainedBlock newTip)
+        public void SetPendingTip(ChainedHeader newTip)
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(newTip), newTip);
 
             if ((this.PendingTip == null) || (newTip.ChainWork  > this.PendingTip.ChainWork))
             {
-                ChainedBlock chainedPendingTip = this.Chain.GetBlock(newTip.HashBlock);
+                ChainedHeader chainedPendingTip = this.Chain.GetBlock(newTip.HashBlock);
                 if (chainedPendingTip != null)
                 {
                     // This allows garbage collection to collect the duplicated pendingtip and ancestors.

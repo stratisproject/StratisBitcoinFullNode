@@ -17,7 +17,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         {
         }
 
-        public ContextBlockInformation(ChainedBlock bestBlock, NBitcoin.Consensus consensus)
+        public ContextBlockInformation(ChainedHeader bestBlock, NBitcoin.Consensus consensus)
         {
             Guard.NotNull(bestBlock, nameof(bestBlock));
 
@@ -67,7 +67,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         public bool SkipValidation { get; set; }
 
         /// <summary>The current tip of the chain that has been validated.</summary>
-        public ChainedBlock ConsensusTip { get; set; }
+        public ChainedHeader ConsensusTip { get; set; }
 
         public bool IsPoS
         {
@@ -78,7 +78,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         {
         }
 
-        public RuleContext(BlockValidationContext blockValidationContext, NBitcoin.Consensus consensus, ChainedBlock consensusTip)
+        public RuleContext(BlockValidationContext blockValidationContext, NBitcoin.Consensus consensus, ChainedHeader consensusTip)
         {
             Guard.NotNull(blockValidationContext, nameof(blockValidationContext));
             Guard.NotNull(consensus, nameof(consensus));
@@ -97,7 +97,7 @@ namespace Stratis.Bitcoin.Features.Consensus
 
         public void SetBestBlock(DateTimeOffset now)
         {
-            this.BestBlock = new ContextBlockInformation(this.BlockValidationContext.ChainedBlock.Previous, this.Consensus);
+            this.BestBlock = new ContextBlockInformation(this.BlockValidationContext.ChainedHeader.Previous, this.Consensus);
             this.Time = now;
         }
 

@@ -33,15 +33,15 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// </list>
         /// </para>
         /// </summary>
-        /// <param name="nextChainedBlock">Next chained block to process.</param>
+        /// <param name="nextChainedHeader">Next chained block to process.</param>
         /// <param name="disposeMode">This is <c>true</c> if <see cref="BlockStoreLoop.ShutDown"/> was called.</param>
         /// <param name="cancellationToken">Cancellation token to check.</param>
         /// <returns>BlockStoreLoopStepResult</returns>
-        internal async Task<StepResult> ExecuteAsync(ChainedBlock nextChainedBlock, bool disposeMode, CancellationToken cancellationToken)
+        internal async Task<StepResult> ExecuteAsync(ChainedHeader nextChainedHeader, bool disposeMode, CancellationToken cancellationToken)
         {
             foreach (var step in this.steps)
             {
-                var stepResult = await step.ExecuteAsync(nextChainedBlock, cancellationToken, disposeMode);
+                var stepResult = await step.ExecuteAsync(nextChainedHeader, cancellationToken, disposeMode);
                 if ((stepResult == StepResult.Continue) || (stepResult == StepResult.Stop))
                     return stepResult;
             }
@@ -66,7 +66,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
         internal BlockStoreLoop BlockStoreLoop;
 
-        internal abstract Task<StepResult> ExecuteAsync(ChainedBlock nextChainedBlock, CancellationToken cancellationToken, bool disposeMode);
+        internal abstract Task<StepResult> ExecuteAsync(ChainedHeader nextChainedHeader, CancellationToken cancellationToken, bool disposeMode);
     }
 
     /// <summary>

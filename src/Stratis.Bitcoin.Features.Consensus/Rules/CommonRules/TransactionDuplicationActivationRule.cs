@@ -38,7 +38,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
                     }
                 }
             }
-            else this.Logger.LogTrace("BIP30 validation skipped for checkpointed block at height {0}.", context.BlockValidationContext.ChainedBlock.Height);
+            else this.Logger.LogTrace("BIP30 validation skipped for checkpointed block at height {0}.", context.BlockValidationContext.ChainedHeader.Height);
 
             return Task.CompletedTask;
         }

@@ -18,7 +18,7 @@ namespace Stratis.Bitcoin.Features.Miner
         /// <summary>
         /// Tip of the chain that this instance will work with without touching any shared chain resources.
         /// </summary>
-        protected ChainedBlock ChainTip;
+        protected ChainedHeader ChainTip;
 
         /// <summary>Manager of the longest fully validated chain of blocks.</summary>
         protected readonly IConsensusLoop ConsensusLoop;
@@ -128,7 +128,7 @@ namespace Stratis.Bitcoin.Features.Miner
             this.Configure();
         }
 
-        private int ComputeBlockVersion(ChainedBlock prevChainedBlock, NBitcoin.Consensus consensus)
+        private int ComputeBlockVersion(ChainedHeader prevChainedHeader, NBitcoin.Consensus consensus)
         {
             uint version = ThresholdConditionCache.VersionbitsTopBits;
             var thresholdConditionCache = new ThresholdConditionCache(consensus);
@@ -137,7 +137,7 @@ namespace Stratis.Bitcoin.Features.Miner
 
             foreach (BIP9Deployments deployment in deployments)
             {
-                ThresholdState state = thresholdConditionCache.GetState(prevChainedBlock, deployment);
+                ThresholdState state = thresholdConditionCache.GetState(prevChainedHeader, deployment);
                 if ((state == ThresholdState.LockedIn) || (state == ThresholdState.Started))
                     version |= thresholdConditionCache.Mask(deployment);
             }
@@ -193,7 +193,7 @@ namespace Stratis.Bitcoin.Features.Miner
         /// <param name="chainTip">Tip of the chain that this instance will work with without touching any shared chain resources.</param>
         /// <param name="scriptPubKey">Script that explains what conditions must be met to claim ownership of a coin.</param>
         /// <returns>The contructed <see cref="Miner.BlockTemplate"/>.</returns>
-        protected void OnBuild(ChainedBlock chainTip, Script scriptPubKey)
+        protected void OnBuild(ChainedHeader chainTip, Script scriptPubKey)
         {
             this.Configure();
 
@@ -551,7 +551,7 @@ namespace Stratis.Bitcoin.Features.Miner
             return descendantsUpdated;
         }
 
-        public abstract BlockTemplate Build(ChainedBlock chainTip, Script scriptPubKey);
+        public abstract BlockTemplate Build(ChainedHeader chainTip, Script scriptPubKey);
         public abstract void OnUpdateHeaders();
         public abstract void OnTestBlockValidity();
     }
@@ -627,7 +627,7 @@ namespace Stratis.Bitcoin.Features.Miner
         }
 
         /// <inheritdoc/>
-        public override BlockTemplate Build(ChainedBlock chainTip, Script scriptPubKey)
+        public override BlockTemplate Build(ChainedHeader chainTip, Script scriptPubKey)
         {
             this.logger.LogTrace("({0}:'{1}',{2}.{3}:{4})", nameof(chainTip), chainTip, nameof(scriptPubKey), nameof(scriptPubKey.Length), scriptPubKey.Length);
 
