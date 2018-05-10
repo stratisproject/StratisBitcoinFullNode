@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup Label="Globals">
+    <SccProjectName>SAK</SccProjectName>
+    <SccProvider>SAK</SccProvider>
+    <SccAuxPath>SAK</SccAuxPath>
+    <SccLocalPath>SAK</SccLocalPath>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>netcoreapp2.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Stratis.Bitcoin" Version="1.0.879" />
+    <PackageReference Include="Stratis.Bitcoin.Api" Version="1.0.879" />
+    <PackageReference Include="Stratis.Bitcoin.Features.BlockStore" Version="1.0.879" />
+    <PackageReference Include="Stratis.Bitcoin.Features.Consensus" Version="1.0.879" />
+    <PackageReference Include="Stratis.Bitcoin.Features.MemoryPool" Version="1.0.879" />
+    <PackageReference Include="Stratis.Bitcoin.Features.Miner" Version="1.0.879" />
+    <PackageReference Include="Stratis.Bitcoin.Features.RPC" Version="1.0.879" />
+    <PackageReference Include="Stratis.Bitcoin.Features.Wallet" Version="1.0.879" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Stratis.FederatedPeg.Features.FederationGateway\Stratis.FederatedPeg.Features.FederationGateway.csproj" />
+  </ItemGroup>
+
+</Project>
