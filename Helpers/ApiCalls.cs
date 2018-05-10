@@ -8,8 +8,6 @@ using Newtonsoft.Json;
 using Stratis.Bitcoin.Features.Wallet.Models;
 using Stratis.Bitcoin.Utilities.JsonErrors;
 using Stratis.FederatedPeg.Features.MainchainGeneratorServices.Models;
-using Stratis.FederatedPeg.Features.MainchainRuntime.Models;
-using Stratis.FederatedPeg.Features.SidechainRuntime.Models;
 
 namespace Stratis.FederatedPeg.IntegrationTests
 {
@@ -126,40 +124,6 @@ namespace Stratis.FederatedPeg.IntegrationTests
                 var httpResponseMessage = await client.PostAsync(uri, request);
                 string json = await httpResponseMessage.Content.ReadAsStringAsync();
                 return JsonConvert.DeserializeObject<string>(json);
-            }
-        }
-
-        public static async Task<WalletBuildTransactionModel> BuildTransaction(int apiPortForSidechain,
-            SendFundsToSidechainRequest sendFundsToSidechainRequest)
-        {
-            using (var client = new HttpClient())
-            {
-                client.DefaultRequestHeaders.Accept.Clear();
-                client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-
-                var uri = new Uri(
-                    $"http://localhost:{apiPortForSidechain}/api/MainchainRuntime/build-transaction");
-                var request = new JsonContent(sendFundsToSidechainRequest);
-                var httpResponseMessage = await client.PostAsync(uri, request);
-                string json = await httpResponseMessage.Content.ReadAsStringAsync();
-                return JsonConvert.DeserializeObject<WalletBuildTransactionModel>(json, new UInt256JsonConverter());
-            }
-        }
-
-        public static async Task<WalletBuildTransactionModel> BuildTransaction(int apiPortForSidechain,
-            WithdrawFundsFromSidechainRequest withdrawFundsFromSidechainRequest)
-        {
-            using (var client = new HttpClient())
-            {
-                client.DefaultRequestHeaders.Accept.Clear();
-                client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-
-                var uri = new Uri(
-                    $"http://localhost:{apiPortForSidechain}/api/SidechainRuntime/build-transaction");
-                var request = new JsonContent(withdrawFundsFromSidechainRequest);
-                var httpResponseMessage = await client.PostAsync(uri, request);
-                string json = await httpResponseMessage.Content.ReadAsStringAsync();
-                return JsonConvert.DeserializeObject<WalletBuildTransactionModel>(json, new UInt256JsonConverter());
             }
         }
 
