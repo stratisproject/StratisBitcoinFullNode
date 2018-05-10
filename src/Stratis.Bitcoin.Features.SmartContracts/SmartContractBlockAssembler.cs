@@ -2,6 +2,7 @@
 using System.Linq;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
+using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.Consensus.Interfaces;
 using Stratis.Bitcoin.Features.MemoryPool;
@@ -51,7 +52,15 @@ namespace Stratis.Bitcoin.Features.SmartContracts
 
         public override BlockTemplate CreateNewBlock(Script scriptPubKeyIn, bool mineWitnessTx = true)
         {
-            this.coinbaseAddress = GetSenderUtil.GetAddressFromScript(scriptPubKeyIn);
+            GetSenderUtil.GetSenderResult getSenderResult = GetSenderUtil.GetAddressFromScript(scriptPubKeyIn);
+            
+            if (!getSenderResult.Success)
+            {
+                throw new ConsensusErrorException(new ConsensusError("sc-block-assembler-createnewblock", getSenderResult.Error));
+            }
+
+            this.coinbaseAddress = getSenderResult.Sender;
+
             this.stateSnapshot = this.stateRoot.GetSnapshotTo(this.consensusLoop.Tip.Header.HashStateRoot.ToBytes());
 
             base.CreateNewBlock(scriptPubKeyIn, mineWitnessTx);
@@ -98,7 +107,15 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         private void AddContractToBlock(TxMempoolEntry mempoolEntry, TxOut smartContractTxOut)
         {
             var carrier = SmartContractCarrier.Deserialize(mempoolEntry.Transaction, smartContractTxOut);
-            carrier.Sender = GetSenderUtil.GetSender(mempoolEntry.Transaction, this.coinView, this.inBlock.Select(x => x.Transaction).ToList());
+            
+            GetSenderUtil.GetSenderResult getSenderResult = GetSenderUtil.GetSender(mempoolEntry.Transaction, this.coinView, this.inBlock.Select(x => x.Transaction).ToList());
+
+            if (!getSenderResult.Success)
+            {
+                throw new ConsensusErrorException(new ConsensusError("sc-block-assembler-addcontracttoblock", getSenderResult.Error));
+            }
+
+            carrier.Sender = getSenderResult.Sender;
 
             SmartContractExecutor executor = this.executorFactory.CreateExecutor(carrier, mempoolEntry.Fee, this.stateSnapshot);
             ISmartContractExecutionResult result = executor.Execute((ulong)this.height, this.coinbaseAddress);
