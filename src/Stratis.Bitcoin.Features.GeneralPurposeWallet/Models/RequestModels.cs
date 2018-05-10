@@ -138,6 +138,8 @@ namespace Stratis.Bitcoin.Features.GeneralPurposeWallet.Models
 
         [Required(ErrorMessage = "A password is required.")]
         public string Password { get; set; }
+
+        public string OpReturnData { get; set; }
     }
 
     public class SendTransactionRequest : RequestModel

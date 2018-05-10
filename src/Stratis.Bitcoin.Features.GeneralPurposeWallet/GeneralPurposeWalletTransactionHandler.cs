@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
+using System.Text;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NBitcoin.Policy;
@@ -195,6 +196,7 @@ namespace Stratis.Bitcoin.Features.GeneralPurposeWallet
             context.TransactionBuilder = new TransactionBuilder();
 
             this.AddRecipients(context);
+            this.AddOpReturnOutput(context);
             this.AddCoins(context);
             this.AddSecrets(context);
             this.FindChangeAddress(context);
@@ -441,6 +443,19 @@ namespace Stratis.Bitcoin.Features.GeneralPurposeWallet
             context.TransactionBuilder.SendFees(fee);
             context.TransactionFee = fee;
         }
+
+        /// <summary>
+        /// Add extra unspendable output to the transaction if there is anything in OpReturnData.
+        /// </summary>
+        /// <param name="context">The context associated with the current transaction being built.</param>
+        private void AddOpReturnOutput(TransactionBuildContext context)
+        {
+            if (string.IsNullOrEmpty(context.OpReturnData)) return;
+
+            byte[] bytes = Encoding.UTF8.GetBytes(context.OpReturnData);
+            var opReturnScript = TxNullDataTemplate.Instance.GenerateScriptPubKey(bytes);
+            context.TransactionBuilder.Send(opReturnScript, Money.Zero);
+        }
     }
 
     public class TransactionBuildContext
@@ -461,7 +476,7 @@ namespace Stratis.Bitcoin.Features.GeneralPurposeWallet
         /// <param name="accountReference">The wallet and account from which to build this transaction</param>
         /// <param name="recipients">The target recipients to send coins to.</param>
         /// <param name="walletPassword">The password that protects the wallet in <see cref="accountReference"/></param>
-        public TransactionBuildContext(GeneralPurposeWalletAccountReference accountReference, List<Recipient> recipients, string walletPassword)
+        public TransactionBuildContext(GeneralPurposeWalletAccountReference accountReference, List<Recipient> recipients, string walletPassword = "", string opReturnData = null)
         {
             Guard.NotNull(recipients, nameof(recipients));
 
@@ -473,6 +488,7 @@ namespace Stratis.Bitcoin.Features.GeneralPurposeWallet
             this.SelectedInputs = new List<OutPoint>();
             this.AllowOtherInputs = false;
             this.Sign = !string.IsNullOrEmpty(walletPassword);
+            this.OpReturnData = opReturnData;
 	        this.MultiSig = null;
 	        this.IgnoreVerify = false;
         }
@@ -573,10 +589,15 @@ namespace Stratis.Bitcoin.Features.GeneralPurposeWallet
         /// </summary>
         public bool Shuffle { get; set; }
 
-	    /// <summary>
-	    /// If not null, indicates the multisig address details that funds can be sourced from.
-	    /// </summary>
-	    public MultiSigAddress MultiSig { get; set; }
+        /// <summary>
+        /// Optional data to be added as an extra OP_RETURN transaction output with Money.Zero value.
+        /// </summary>
+        public string OpReturnData { get; set; }
+
+        /// <summary>
+        /// If not null, indicates the multisig address details that funds can be sourced from.
+        /// </summary>
+        public MultiSigAddress MultiSig { get; set; }
 
 	    /// <summary>
 	    /// If true, do not perform verification on the built transaction (e.g. it is partially signed)
