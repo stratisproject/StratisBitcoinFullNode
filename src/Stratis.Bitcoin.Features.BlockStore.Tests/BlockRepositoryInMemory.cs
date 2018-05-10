@@ -54,10 +54,11 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
         {
             return Task.FromResult(this.store[hash]);
         }
-
+        
+        /// <inheritdoc />
         public Task<List<Block>> GetBlocksAsync(List<uint256> hashes)
         {
-            return Task.FromResult(hashes.Select(hash => this.store[hash]).ToList());
+            return Task.FromResult(hashes.Select(hash => this.store.TryGetValue(hash, out Block block) ? block : null).ToList());
         }
 
         public Task PutAsync(uint256 nextBlockHash, List<Block> blocks)
