@@ -15,13 +15,13 @@
 
   <ItemGroup>
     <PackageReference Include="FluentAssertions" Version="5.1.2" />
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.7.0-preview-20180307-01" />
-    <PackageReference Include="NStratis" Version="1.0.468" />
-    <PackageReference Include="Stratis.Bitcoin" Version="1.0.468" />
-    <PackageReference Include="Stratis.Bitcoin.Api" Version="1.0.468" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.7.0" />
+    <PackageReference Include="NStratis" Version="4.0.0.54" />
+    <PackageReference Include="Stratis.Bitcoin" Version="1.1.2-beta" />
+    <PackageReference Include="Stratis.Bitcoin.Api" Version="1.1.2-beta" />
     <PackageReference Include="Stratis.Sidechains.Features.BlockchainGeneration.Tests.Common" Version="1.0.453" />
-    <PackageReference Include="xunit" Version="2.4.0-beta.1.build3958" />
-    <PackageReference Include="xunit.runner.visualstudio" Version="2.4.0-beta.1.build3958" />
+    <PackageReference Include="xunit" Version="2.3.1" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.3.1" />
   </ItemGroup>
 
   <ItemGroup>
