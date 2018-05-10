@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
+using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
@@ -215,11 +216,15 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
 
             var destination = BitcoinAddress.Create(destinationAddress, this.network).ScriptPubKey;
 
-            //we are the Boss so first I build the multisig transation template.
+            // Encode the sessionId into a string.
+            string sessionIdAsString = Encoding.UTF8.GetString(sessionId.ToBytes());
+            this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} SessionId encoded bytes length = {sessionId.ToBytes().Length}.");
+
+            // We are the Boss so first I build the multisig transaction template.
             var multiSigContext = new TransactionBuildContext(
                 new GeneralPurposeWalletAccountReference("multisig_wallet", "account 0"),
                 new[] { new Recipient { Amount = amount, ScriptPubKey = destination } }.ToList(),
-                "password")
+                "password", sessionIdAsString)
             {
                 TransactionFee = Money.Coins(0.01m),
                 MinConfirmations = 1, // The funds in the multisig address have just been confirmed
