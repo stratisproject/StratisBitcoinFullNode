@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Utilities;
 using Stratis.SmartContracts.Core.Backend;
@@ -21,6 +22,7 @@ namespace Stratis.SmartContracts.Core
         protected readonly IContractStateRepository stateSnapshot;
         protected readonly SmartContractValidator validator;
         protected readonly IKeyEncodingStrategy keyEncodingStrategy;
+        protected readonly ILoggerFactory loggerFactory;
 
         protected ulong blockHeight;
         protected uint160 coinbaseAddress;
@@ -29,19 +31,21 @@ namespace Stratis.SmartContracts.Core
         internal ISmartContractExecutionResult Result { get; set; }
 
         protected SmartContractExecutor(SmartContractCarrier carrier,
+            IKeyEncodingStrategy keyEncodingStrategy,
+            ILoggerFactory loggerFactory,
+            Money mempoolFee,
             Network network,
             IContractStateRepository stateSnapshot,
-            SmartContractValidator validator,
-            IKeyEncodingStrategy keyEncodingStrategy,
-            Money mempoolFee)
+            SmartContractValidator validator)
         {
             this.carrier = carrier;
+            this.gasMeter = new GasMeter(this.carrier.GasLimit);
+            this.keyEncodingStrategy = keyEncodingStrategy;
+            this.loggerFactory = loggerFactory;
+            this.mempoolFee = mempoolFee;
             this.network = network;
             this.stateSnapshot = stateSnapshot.StartTracking();
             this.validator = validator;
-            this.keyEncodingStrategy = keyEncodingStrategy;
-            this.mempoolFee = mempoolFee;
-            this.gasMeter = new GasMeter(this.carrier.GasLimit);
         }
 
         /// <summary>
@@ -52,12 +56,13 @@ namespace Stratis.SmartContracts.Core
             IContractStateRepository stateRepository,
             SmartContractValidator validator,
             IKeyEncodingStrategy keyEncodingStrategy,
+            ILoggerFactory loggerFactory,
             Money mempoolFee)
         {
             if (carrier.OpCodeType == OpcodeType.OP_CREATECONTRACT)
-                return new CreateSmartContract(carrier, network, stateRepository, validator, keyEncodingStrategy, mempoolFee);
+                return new CreateSmartContract(carrier, keyEncodingStrategy, loggerFactory, mempoolFee, network, stateRepository, validator);
             else
-                return new CallSmartContract(carrier, network, stateRepository, validator, keyEncodingStrategy, mempoolFee);
+                return new CallSmartContract(carrier, keyEncodingStrategy, loggerFactory, mempoolFee, network, stateRepository, validator);
         }
 
         public ISmartContractExecutionResult Execute(ulong blockHeight, uint160 coinbaseAddress)
@@ -99,12 +104,13 @@ namespace Stratis.SmartContracts.Core
     public sealed class CreateSmartContract : SmartContractExecutor
     {
         public CreateSmartContract(SmartContractCarrier carrier,
+            IKeyEncodingStrategy keyEncodingStrategy,
+            ILoggerFactory loggerFactory,
+            Money mempoolFee,
             Network network,
             IContractStateRepository stateRepository,
-            SmartContractValidator validator,
-            IKeyEncodingStrategy keyEncodingStrategy,
-            Money mempoolFee)
-            : base(carrier, network, stateRepository, validator, keyEncodingStrategy, mempoolFee)
+            SmartContractValidator validator)
+            : base(carrier, keyEncodingStrategy, loggerFactory, mempoolFee, network, stateRepository, validator)
         {
             Guard.Assert(carrier.OpCodeType == OpcodeType.OP_CREATECONTRACT);
         }
@@ -147,7 +153,7 @@ namespace Stratis.SmartContracts.Core
             var persistentState = new PersistentState(persistenceStrategy, newContractAddress, this.network);
 
             // TODO push TXExecutorFactory to DI
-            var vm = new ReflectionVirtualMachine(persistentState, new InternalTransactionExecutorFactory(this.network, this.keyEncodingStrategy), this.stateSnapshot);
+            var vm = new ReflectionVirtualMachine(persistentState, new InternalTransactionExecutorFactory(this.keyEncodingStrategy, this.loggerFactory, this.network), this.stateSnapshot);
 
             // Push internal tx executor and getbalance down into VM
             this.Result = vm.Create(
@@ -169,12 +175,13 @@ namespace Stratis.SmartContracts.Core
     public sealed class CallSmartContract : SmartContractExecutor
     {
         public CallSmartContract(SmartContractCarrier carrier,
+            IKeyEncodingStrategy keyEncodingStrategy,
+            ILoggerFactory loggerFactory,
+            Money mempoolFee,
             Network network,
             IContractStateRepository stateRepository,
-            SmartContractValidator validator,
-            IKeyEncodingStrategy keyEncodingStrategy,
-            Money mempoolFee)
-            : base(carrier, network, stateRepository, validator, keyEncodingStrategy, mempoolFee)
+            SmartContractValidator validator)
+            : base(carrier, keyEncodingStrategy, loggerFactory, mempoolFee, network, stateRepository, validator)
         {
             Guard.Assert(carrier.OpCodeType == OpcodeType.OP_CALLCONTRACT);
         }
@@ -218,7 +225,7 @@ namespace Stratis.SmartContracts.Core
             IPersistenceStrategy persistenceStrategy = new MeteredPersistenceStrategy(this.stateSnapshot, this.gasMeter, this.keyEncodingStrategy);
             var persistentState = new PersistentState(persistenceStrategy, contractAddress, this.network);
 
-            var vm = new ReflectionVirtualMachine(persistentState, new InternalTransactionExecutorFactory(this.network, this.keyEncodingStrategy), this.stateSnapshot);
+            var vm = new ReflectionVirtualMachine(persistentState, new InternalTransactionExecutorFactory(this.keyEncodingStrategy, this.loggerFactory, this.network), this.stateSnapshot);
             ISmartContractExecutionResult result = vm.ExecuteMethod(
                 contractCode,
                 methodName,
@@ -227,7 +234,6 @@ namespace Stratis.SmartContracts.Core
 
             return result;
         }
-
 
         /// <summary>
         /// Contract execution completed successfully, commit state.

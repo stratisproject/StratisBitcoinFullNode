@@ -1,4 +1,6 @@
 ﻿using System;
+using Microsoft.Extensions.Logging;
+using Moq;
 using NBitcoin;
 using Stratis.SmartContracts;
 using Stratis.SmartContracts.Core;
@@ -19,14 +21,15 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         private readonly ContractStateRepositoryRoot repository;
         private readonly Network network;
         private readonly IKeyEncodingStrategy keyEncodingStrategy;
-        private static readonly Address TestAddress = (Address) "mipcBbFg9gMiCh81Kj8tqqdgoZub1ZJRfn";
+        private readonly ILoggerFactory loggerFactory;
+        private static readonly Address TestAddress = (Address)"mipcBbFg9gMiCh81Kj8tqqdgoZub1ZJRfn";
 
         public SmartContractExceptionTests()
         {
-            this.repository =
-                new ContractStateRepositoryRoot(new NoDeleteSource<byte[], byte[]>(new MemoryDictionarySource()));
-            this.network = Network.SmartContractsRegTest;
+            this.repository = new ContractStateRepositoryRoot(new NoDeleteSource<byte[], byte[]>(new MemoryDictionarySource()));
             this.keyEncodingStrategy = BasicKeyEncodingStrategy.Default;
+            this.loggerFactory = new Mock<ILoggerFactory>().Object;
+            this.network = Network.SmartContractsRegTest;
         }
 
         [Fact]
@@ -37,13 +40,12 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             byte[] contractCode = compilationResult.Compilation;
 
-            var gasLimit = (Gas) 100;
+            var gasLimit = (Gas)100;
             var gasMeter = new GasMeter(gasLimit);
             var persistenceStrategy = new MeteredPersistenceStrategy(this.repository, gasMeter, this.keyEncodingStrategy);
             var persistentState = new PersistentState(persistenceStrategy,
                 TestAddress.ToUint160(this.network), this.network);
-            var internalTxExecutorFactory =
-                new InternalTransactionExecutorFactory(this.network, this.keyEncodingStrategy);
+            var internalTxExecutorFactory = new InternalTransactionExecutorFactory(this.keyEncodingStrategy, this.loggerFactory, this.network);
             var vm = new ReflectionVirtualMachine(persistentState, internalTxExecutorFactory, this.repository);
 
             var context = new SmartContractExecutionContext(
@@ -53,7 +55,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 1,
                 new object[] { }
             );
-            
+
             ISmartContractExecutionResult result = vm.ExecuteMethod(
                 contractCode,
                 "ThrowException",

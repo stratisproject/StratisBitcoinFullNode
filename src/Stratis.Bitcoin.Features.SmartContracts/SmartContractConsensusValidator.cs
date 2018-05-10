@@ -191,7 +191,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                 base.UpdateCoinView(context, transaction);
                 return;
             }
-            
+
             // If we are here, was definitely submitted by someone
             ValidateSubmittedTransaction(transaction);
             TxOut smartContractTxOut = transaction.Outputs.FirstOrDefault(txOut => txOut.ScriptPubKey.IsSmartContractExec);
@@ -218,7 +218,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             this.generatedTransaction = null;
             return;
         }
-        
+
         /// <summary>
         /// Validates that a submitted transacction doesn't contain illegal operations
         /// </summary>
@@ -228,7 +228,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             if (transaction.Inputs.Any(x => x.ScriptSig.IsSmartContractSpend))
                 SmartContractConsensusErrors.UserOpSpend.Throw();
             if (transaction.Outputs.Any(x => x.ScriptPubKey.IsSmartContractInternalCall))
-                SmartContractConsensusErrors.UserInternalCall.Throw(); 
+                SmartContractConsensusErrors.UserInternalCall.Throw();
         }
 
         /// <summary>
@@ -277,7 +277,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
 
         private void ValidateRefunds(List<TxOut> refunds, Transaction coinbaseTransaction)
         {
-            foreach(TxOut refund in refunds)
+            foreach (TxOut refund in refunds)
             {
                 TxOut refundToMatch = coinbaseTransaction.Outputs[this.refundCounter];
                 if (refund.Value != refundToMatch.Value || refund.ScriptPubKey != refundToMatch.ScriptPubKey)

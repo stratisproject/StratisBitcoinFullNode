@@ -53,7 +53,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         public override BlockTemplate CreateNewBlock(Script scriptPubKeyIn, bool mineWitnessTx = true)
         {
             GetSenderUtil.GetSenderResult getSenderResult = GetSenderUtil.GetAddressFromScript(scriptPubKeyIn);
-            
+
             if (!getSenderResult.Success)
             {
                 throw new ConsensusErrorException(new ConsensusError("sc-block-assembler-createnewblock", getSenderResult.Error));
@@ -107,7 +107,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         private void AddContractToBlock(TxMempoolEntry mempoolEntry, TxOut smartContractTxOut)
         {
             var carrier = SmartContractCarrier.Deserialize(mempoolEntry.Transaction, smartContractTxOut);
-            
+
             GetSenderUtil.GetSenderResult getSenderResult = GetSenderUtil.GetSender(mempoolEntry.Transaction, this.coinView, this.inBlock.Select(x => x.Transaction).ToList());
 
             if (!getSenderResult.Success)
@@ -142,7 +142,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             this.inBlock.Add(mempoolEntry);
 
             // Add internal transactions made during execution
-            if(result.InternalTransaction != null)
+            if (result.InternalTransaction != null)
             {
                 this.pblock.AddTransaction(result.InternalTransaction);
                 if (this.needSizeAccounting)

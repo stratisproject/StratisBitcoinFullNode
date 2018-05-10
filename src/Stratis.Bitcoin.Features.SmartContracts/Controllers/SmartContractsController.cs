@@ -184,7 +184,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Controllers
                 ret.Add(new
                 {
                     Address = grouping.Key.Address,
-                    Sum = grouping.Sum(x=>x.Transaction.SpendableAmount(false))
+                    Sum = grouping.Sum(x => x.Transaction.SpendableAmount(false))
                 });
             }
             return Json(ret);
@@ -212,7 +212,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Controllers
                 Wallet.Wallet wallet = this.walletManager.GetWallet(request.WalletName);
                 HdAccount account = wallet.GetAccountByCoinType(request.AccountName, this.coinType);
                 senderAddress = account.GetCombinedAddresses().FirstOrDefault(x => x.Address == request.Sender);
-                selectedInputs = this.walletManager.GetSpendableTransactionsInWallet(request.WalletName, 10).Where(x => x.Address.Address == request.Sender).Select(x=>x.ToOutPoint()).ToList();
+                selectedInputs = this.walletManager.GetSpendableTransactionsInWallet(request.WalletName, 10).Where(x => x.Address.Address == request.Sender).Select(x => x.ToOutPoint()).ToList();
             }
 
             ulong totalFee = gasPrice * gasLimit + ulong.Parse(request.FeeAmount);
@@ -239,7 +239,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Controllers
 
         private BuildCallContractTransactionResponse BuildCallTx(BuildCallContractTransactionRequest request)
         {
-
             ulong gasPrice = ulong.Parse(request.GasPrice);
             ulong gasLimit = ulong.Parse(request.GasLimit);
             uint160 addressNumeric = new Address(request.ContractAddress).ToUint160(this.network);
@@ -284,8 +283,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Controllers
                 TransactionId = transactionResult.GetHash()
             };
         }
-
-
 
         private object GetStorageValue(SmartContractDataType dataType, byte[] bytes)
         {

@@ -13,24 +13,23 @@ namespace Stratis.Bitcoin.Features.SmartContracts
 {
     public class SmartContractPowMining : PowMining
     {
-        private readonly ContractStateRepositoryRoot stateRoot;
         private readonly CoinView coinView;
         private readonly SmartContractExecutorFactory executorFactory;
-
+        private readonly ContractStateRepositoryRoot stateRoot;
 
         public SmartContractPowMining(
             IAsyncLoopFactory asyncLoopFactory,
             IConsensusLoop consensusLoop,
             ConcurrentChain chain,
             IDateTimeProvider dateTimeProvider,
-            ITxMempool mempool, 
+            ITxMempool mempool,
             MempoolSchedulerLock mempoolLock,
-            Network network, 
+            Network network,
             INodeLifetime nodeLifetime,
             ILoggerFactory loggerFactory,
             ContractStateRepositoryRoot stateRoot,
             CoinView coinView,
-            SmartContractExecutorFactory executorFactory) 
+            SmartContractExecutorFactory executorFactory)
             : base(asyncLoopFactory, consensusLoop, chain, dateTimeProvider, mempool, mempoolLock, network, nodeLifetime, loggerFactory)
         {
             this.stateRoot = stateRoot;

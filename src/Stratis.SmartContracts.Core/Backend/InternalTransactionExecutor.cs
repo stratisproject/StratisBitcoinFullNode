@@ -1,4 +1,5 @@
-﻿using NBitcoin;
+﻿using Microsoft.Extensions.Logging;
+using NBitcoin;
 using Stratis.SmartContracts.Core.Exceptions;
 using Stratis.SmartContracts.Core.State;
 using Stratis.SmartContracts.Core.State.AccountAbstractionLayer;
@@ -9,25 +10,32 @@ namespace Stratis.SmartContracts.Core.Backend
     public sealed class InternalTransactionExecutor : IInternalTransactionExecutor
     {
         private readonly IContractStateRepository contractStateRepository;
-        private readonly Network network;
-        private readonly IKeyEncodingStrategy keyEncodingStrategy;
         private readonly InternalTransferList internalTransferList;
+        private readonly IKeyEncodingStrategy keyEncodingStrategy;
+        private readonly ILogger logger;
+        private readonly ILoggerFactory loggerFactory;
+        private readonly Network network;
 
         public InternalTransactionExecutor(
-            IContractStateRepository contractStateRepository, 
-            Network network, 
+            IContractStateRepository contractStateRepository,
+            InternalTransferList internalTransferList,
             IKeyEncodingStrategy keyEncodingStrategy,
-            InternalTransferList internalTransferList)
+            ILoggerFactory loggerFactory,
+            Network network)
         {
             this.contractStateRepository = contractStateRepository;
-            this.network = network;
-            this.keyEncodingStrategy = keyEncodingStrategy;
             this.internalTransferList = internalTransferList;
+            this.keyEncodingStrategy = keyEncodingStrategy;
+            this.loggerFactory = loggerFactory;
+            this.logger = loggerFactory.CreateLogger(this.GetType());
+            this.network = network;
         }
 
         ///<inheritdoc/>
         public ITransferResult TransferFunds(ISmartContractState smartContractState, Address addressTo, ulong amountToTransfer, TransferFundsToContract contractDetails)
         {
+            this.logger.LogTrace("({0}:{1},{2}:{3})", nameof(addressTo), addressTo, nameof(amountToTransfer), amountToTransfer);
+
             // TODO: The act of calling this should cost a lot of gas!
             var balance = smartContractState.GetBalance();
             if (balance < amountToTransfer)
@@ -38,7 +46,6 @@ namespace Stratis.SmartContracts.Core.Backend
 
             if (contractCode == null || contractCode.Length == 0)
             {
-                // If it is not a contract, just record the transfer and return.
                 this.internalTransferList.Add(new TransferInfo
                 {
                     From = smartContractState.Message.ContractAddress.ToUint160(this.network),
@@ -46,8 +53,12 @@ namespace Stratis.SmartContracts.Core.Backend
                     Value = amountToTransfer
                 });
 
+                this.logger.LogTrace("Transfer {0} from {1} to {2}.", smartContractState.Message.ContractAddress.ToUint160(this.network), addressTo.ToUint160(this.network), amountToTransfer);
+                this.logger.LogTrace("(-)[TRANSFER_TO_SENDER]");
                 return TransferResult.Empty();
             }
+
+            this.logger.LogTrace("(-)[TRANSFER_TO_CONTRACT]");
 
             return ExecuteTransferFundsToContract(contractCode, smartContractState, addressTo, amountToTransfer, contractDetails);
         }
@@ -57,6 +68,8 @@ namespace Stratis.SmartContracts.Core.Backend
         /// </summary>
         private ITransferResult ExecuteTransferFundsToContract(byte[] contractCode, ISmartContractState smartContractState, Address addressTo, ulong amountToTransfer, TransferFundsToContract contractDetails)
         {
+            this.logger.LogTrace("({0}:{1},{2}:{3})", nameof(addressTo), addressTo, nameof(amountToTransfer), amountToTransfer);
+
             IContractStateRepository track = this.contractStateRepository.StartTracking();
             IPersistenceStrategy persistenceStrategy = new MeteredPersistenceStrategy(track, smartContractState.GasMeter, this.keyEncodingStrategy);
             IPersistentState newPersistentState = new PersistentState(persistenceStrategy, addressTo.ToUint160(this.network), this.network);
@@ -65,7 +78,7 @@ namespace Stratis.SmartContracts.Core.Backend
 
             ISmartContractExecutionContext newContext = new SmartContractExecutionContext(smartContractState.Block, newMessage, addressTo.ToUint160(this.network), 0, contractDetails.MethodParameters);
 
-            ISmartContractVirtualMachine vm = new ReflectionVirtualMachine(newPersistentState, new InternalTransactionExecutorFactory(this.network, this.keyEncodingStrategy), track);
+            ISmartContractVirtualMachine vm = new ReflectionVirtualMachine(newPersistentState, new InternalTransactionExecutorFactory(this.keyEncodingStrategy, this.loggerFactory, this.network), track);
 
             ISmartContractExecutionResult executionResult = vm.ExecuteMethod(
                 contractCode,
@@ -89,7 +102,9 @@ namespace Stratis.SmartContracts.Core.Backend
                 To = addressTo.ToUint160(this.network),
                 Value = amountToTransfer
             });
-            
+
+            this.logger.LogTrace("(-)");
+
             return TransferResult.Transferred(executionResult.Return);
         }
     }
