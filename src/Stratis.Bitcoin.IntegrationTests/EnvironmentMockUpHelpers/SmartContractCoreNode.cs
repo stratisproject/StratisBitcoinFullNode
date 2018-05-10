@@ -13,6 +13,8 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
 
         public override void Start()
         {
+            NodeBuilder.CreateDataFolder(this.DataFolder);
+
             var config = new NodeConfigParameters();
             config.Add("scregtest", "1");
             config.Add("rest", "1");

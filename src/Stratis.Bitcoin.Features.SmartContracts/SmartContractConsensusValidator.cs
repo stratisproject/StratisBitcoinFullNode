@@ -248,7 +248,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
 
             GetSenderUtil.GetSenderResult getSenderResult = GetSenderUtil.GetSender(transaction, this.coinView, this.blockTxsProcessed);
 
-            if (getSenderResult.Success)
+            if (!getSenderResult.Success)
             {
                 throw new ConsensusErrorException(new ConsensusError("sc-consensusvalidator-executecontracttransaction-sender", getSenderResult.Error));
             }
@@ -259,7 +259,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
 
             GetSenderUtil.GetSenderResult getCoinbaseResult = GetSenderUtil.GetAddressFromScript(coinbaseScriptPubKey);
 
-            if (getCoinbaseResult.Success)
+            if (!getCoinbaseResult.Success)
             {
                 throw new ConsensusErrorException(new ConsensusError("sc-consensusvalidator-executecontracttransaction-coinbase", getCoinbaseResult.Error));
             }
