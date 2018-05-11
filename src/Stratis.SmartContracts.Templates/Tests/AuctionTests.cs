@@ -68,7 +68,7 @@ namespace $safeprojectname$
 
             ((TestMessage)smartContractState.Message).Value = 90;
             Assert.ThrowsException<Exception>(() => contract.Bid());
-    }
+        }
     }
 
     public class TestSmartContractState : ISmartContractState
