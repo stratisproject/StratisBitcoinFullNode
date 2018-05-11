@@ -1,6 +1,6 @@
 ﻿using Newtonsoft.Json;
 
-namespace Stratis.Bitcoin.Models
+namespace Stratis.Bitcoin.Controllers.Models
 {
     /// <summary>
     /// Represents a connected peer.
