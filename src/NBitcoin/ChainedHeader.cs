@@ -5,7 +5,7 @@ using NBitcoin.BouncyCastle.Math;
 namespace NBitcoin
 {
     /// <summary>
-    /// Represent the state of the availability of a block.
+    /// Represents the state of the availability of a block.
     /// </summary>
     public enum BlockDataAvailabilityState
     {
@@ -90,11 +90,17 @@ namespace NBitcoin
         /// <summary>Total amount of work in the chain up to and including this block.</summary>
         public uint256 ChainWork { get { return Target.ToUInt256(this.chainWork); } }
 
+        /// <summary>
+        /// Represents the state of the availability of a block.
+        /// </summary>
         public BlockDataAvailabilityState BlockDataAvailability { get; set; }
 
+        /// <summary>
+        /// Represents the validation level of a block.
+        /// </summary>
         public ValidationState BlockValidationState { get; set; }
 
-        /// <summary>A pointer to the block data if available, its availability will be represented by <see cref="BlockDataAvailability"/>.</summary>
+        /// <summary>A pointer to the block data if available (this can be <c>null</c>), its availability will be represented by <see cref="BlockDataAvailability"/>.</summary>
         public Block Block { get; set; }
 
         /// <summary>
