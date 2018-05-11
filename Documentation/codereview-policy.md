@@ -17,16 +17,16 @@ The requirement for each PR policy
 
 *pr-review-critical*
 - Code must be reviewed by at least two core devs
-- All tests must pass (Unit-test and Integration-tests) (run by auther and the two reviewers)
-- All 4 chains (Bitcoin main/test, Stratis main/test) need to have been synced (to an agreed height) (run by auther and 2 reviewers)
+- All tests must pass (Unit-test and Integration-tests) (run by author and the two reviewers)
+- All 4 chains (Bitcoin main/test, Stratis main/test) need to have been synced (to an agreed height) (run by author and 2 reviewers)
 
 *pr-review-high*
 - Code must be reviewed by at least two core devs
-- All tests must pass (Unit-test and Integration-tests) (run by auther and the two reviewers)
+- All tests must pass (Unit-test and Integration-tests) (run by author and the two reviewers)
 - All 4 chains (Bitcoin main/test, Stratis main/test) need to have been synced (to an agreed height)
 
 *pr-review-medium*
-- Code must be reviewed by at least two core dev (run by auther and reviewr)
+- Code must be reviewed by at least two core dev (run by author and reviewr)
 - All tests must pass (Unit-test and Integration-tests) 
 
 *pr-review-low*
