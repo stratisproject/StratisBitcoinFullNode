@@ -39,11 +39,13 @@ namespace Stratis.SmartContracts.Core.Backend
             // TODO: The act of calling this should cost a lot of gas!
             var balance = smartContractState.GetBalance();
             if (balance < amountToTransfer)
+            {
+                this.logger.LogTrace("(-)[INSUFFICIENT_BALANCE] {0}={1}", nameof(balance), balance);
                 throw new InsufficientBalanceException();
+            }
 
             // Discern whether this is a contract or an ordinary address.
             byte[] contractCode = this.contractStateRepository.GetCode(addressTo.ToUint160(this.network));
-
             if (contractCode == null || contractCode.Length == 0)
             {
                 this.internalTransferList.Add(new TransferInfo
@@ -78,7 +80,7 @@ namespace Stratis.SmartContracts.Core.Backend
 
             ISmartContractExecutionContext newContext = new SmartContractExecutionContext(smartContractState.Block, newMessage, addressTo.ToUint160(this.network), 0, contractDetails.MethodParameters);
 
-            ISmartContractVirtualMachine vm = new ReflectionVirtualMachine(newPersistentState, new InternalTransactionExecutorFactory(this.keyEncodingStrategy, this.loggerFactory, this.network), track);
+            ISmartContractVirtualMachine vm = new ReflectionVirtualMachine(new InternalTransactionExecutorFactory(this.keyEncodingStrategy, this.loggerFactory, this.network), this.loggerFactory, newPersistentState, track);
 
             ISmartContractExecutionResult executionResult = vm.ExecuteMethod(
                 contractCode,

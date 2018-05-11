@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Text;
 using Microsoft.Extensions.Logging;
-using Moq;
 using NBitcoin;
+using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.SmartContracts;
 using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.Backend;
@@ -29,7 +29,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         {
             this.network = Network.SmartContractsRegTest;
             this.keyEncodingStrategy = BasicKeyEncodingStrategy.Default;
-            this.loggerFactory = new Mock<ILoggerFactory>().Object;
+            this.loggerFactory = new ExtendedLoggerFactory();
+            this.loggerFactory.AddConsoleWithFilters();
             this.gasLimit = (Gas)10000;
             this.gasMeter = new GasMeter(this.gasLimit);
 
@@ -69,7 +70,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             var internalTxExecutorFactory =
                 new InternalTransactionExecutorFactory(this.keyEncodingStrategy, this.loggerFactory, this.network);
-            var vm = new ReflectionVirtualMachine(persistentState, internalTxExecutorFactory, repository);
+            var vm = new ReflectionVirtualMachine(internalTxExecutorFactory, this.loggerFactory, persistentState, repository);
 
             var sender = deserializedCall.Sender?.ToString() ?? TestAddress.ToString();
 
@@ -133,7 +134,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             var internalTxExecutorFactory =
                 new InternalTransactionExecutorFactory(this.keyEncodingStrategy, this.loggerFactory, this.network);
-            var vm = new ReflectionVirtualMachine(persistentState, internalTxExecutorFactory, repository);
+            var vm = new ReflectionVirtualMachine(internalTxExecutorFactory, this.loggerFactory, persistentState, repository);
 
             var sender = deserializedCall.Sender?.ToString() ?? TestAddress;
 
@@ -197,7 +198,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             var persistentState = new PersistentState(persistenceStrategy, TestAddress.ToUint160(this.network), this.network);
             var internalTxExecutorFactory =
                 new InternalTransactionExecutorFactory(this.keyEncodingStrategy, this.loggerFactory, this.network);
-            var vm = new ReflectionVirtualMachine(persistentState, internalTxExecutorFactory, repository);
+            var vm = new ReflectionVirtualMachine(internalTxExecutorFactory, this.loggerFactory, persistentState, repository);
 
             var context = new SmartContractExecutionContext(
                             new Block(1, TestAddress),

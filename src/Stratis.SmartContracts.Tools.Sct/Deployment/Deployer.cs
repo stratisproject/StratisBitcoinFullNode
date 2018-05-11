@@ -1,8 +1,6 @@
-﻿using System;
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using System.IO;
 using System.Net.Http;
-using System.Text;
 using System.Threading.Tasks;
 using McMaster.Extensions.CommandLineUtils;
 using Stratis.SmartContracts.Core.Compilation;
@@ -135,7 +133,7 @@ namespace Stratis.SmartContracts.Tools.Sct.Deployment
             foreach (string err in response.Errors)
             {
                 console.WriteLine(err);
-            }            
+            }
         }
 
         public static bool ValidateFile(string fileName, string source, IConsole console, out SmartContractCompilationResult compilationResult)
@@ -167,8 +165,8 @@ namespace Stratis.SmartContracts.Tools.Sct.Deployment
 
             SmartContractValidationResult determinismValidationResult = determinismValidator.Validate(decompilation);
 
-            return compilationResult.Success 
-                   && formatValidationResult.IsValid 
+            return compilationResult.Success
+                   && formatValidationResult.IsValid
                    && determinismValidationResult.IsValid;
         }
     }

@@ -9,9 +9,6 @@ namespace Stratis.SmartContracts.Core.Lifecycle
         /// <summary>
         /// Restores a smart contract and sets its state fields without invoking the constructor
         /// </summary>
-        /// <param name="type"></param>
-        /// <param name="state"></param>
-        /// <returns></returns>
         public static LifecycleResult Restore(Type type, ISmartContractState state)
         {
             try

@@ -1,7 +1,7 @@
 ﻿using System;
 using Microsoft.Extensions.Logging;
-using Moq;
 using NBitcoin;
+using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.SmartContracts;
 using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.Backend;
@@ -28,7 +28,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         {
             this.repository = new ContractStateRepositoryRoot(new NoDeleteSource<byte[], byte[]>(new MemoryDictionarySource()));
             this.keyEncodingStrategy = BasicKeyEncodingStrategy.Default;
-            this.loggerFactory = new Mock<ILoggerFactory>().Object;
+            this.loggerFactory = new ExtendedLoggerFactory();
+            this.loggerFactory.AddConsoleWithFilters();
             this.network = Network.SmartContractsRegTest;
         }
 
@@ -46,7 +47,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             var persistentState = new PersistentState(persistenceStrategy,
                 TestAddress.ToUint160(this.network), this.network);
             var internalTxExecutorFactory = new InternalTransactionExecutorFactory(this.keyEncodingStrategy, this.loggerFactory, this.network);
-            var vm = new ReflectionVirtualMachine(persistentState, internalTxExecutorFactory, this.repository);
+            var vm = new ReflectionVirtualMachine(internalTxExecutorFactory, this.loggerFactory, persistentState, this.repository);
 
             var context = new SmartContractExecutionContext(
                 new Block(0, TestAddress),

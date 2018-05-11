@@ -7,10 +7,6 @@ namespace Stratis.SmartContracts.Core.Lifecycle
         /// <summary>
         /// Invokes a smart contract's constructor with the provided parameters
         /// </summary>
-        /// <param name="type"></param>
-        /// <param name="state"></param>
-        /// <param name="parameters"></param>
-        /// <returns></returns>
         public static LifecycleResult Construct(Type type, ISmartContractState state, params object[] parameters)
         {
             object[] newParams;
@@ -24,12 +20,12 @@ namespace Stratis.SmartContracts.Core.Lifecycle
             }
             else
             {
-                newParams = new object[] {state};
+                newParams = new object[] { state };
             }
-            
+
             try
             {
-                var smartContract = (SmartContract) Activator.CreateInstance(type, newParams);
+                var smartContract = (SmartContract)Activator.CreateInstance(type, newParams);
                 return new LifecycleResult(smartContract);
             }
             catch (Exception e)

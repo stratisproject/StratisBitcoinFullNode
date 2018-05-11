@@ -33,10 +33,7 @@ namespace Stratis.SmartContracts.Core
         /// After the contract has been executed, it will process any fees and/or refunds.
         /// </para>
         /// </summary>
-        public SmartContractExecutor CreateExecutor(
-            SmartContractCarrier carrier,
-            Money mempoolFee,
-            IContractStateRepository stateRepository)
+        public SmartContractExecutor CreateExecutor(SmartContractCarrier carrier, Money mempoolFee, IContractStateRepository stateRepository)
         {
             return SmartContractExecutor.Initialize(carrier, this.network, stateRepository, this.validator, this.keyEncodingStrategy, this.loggerFactory, mempoolFee);
         }

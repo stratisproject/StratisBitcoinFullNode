@@ -97,12 +97,14 @@ namespace Stratis.SmartContracts.Core
         private void PostExecute()
         {
             if (this.mempoolFee != null)
-                new SmartContractExecutorResultProcessor(this.Result).Process(this.carrier, this.mempoolFee);
+                new SmartContractExecutorResultProcessor(this.Result, this.loggerFactory).Process(this.carrier, this.mempoolFee);
         }
     }
 
     public sealed class CreateSmartContract : SmartContractExecutor
     {
+        private readonly ILogger logger;
+
         public CreateSmartContract(SmartContractCarrier carrier,
             IKeyEncodingStrategy keyEncodingStrategy,
             ILoggerFactory loggerFactory,
@@ -113,10 +115,14 @@ namespace Stratis.SmartContracts.Core
             : base(carrier, keyEncodingStrategy, loggerFactory, mempoolFee, network, stateRepository, validator)
         {
             Guard.Assert(carrier.OpCodeType == OpcodeType.OP_CREATECONTRACT);
+
+            this.logger = loggerFactory.CreateLogger(this.GetType());
         }
 
         public override void OnExecute()
         {
+            this.logger.LogTrace("()");
+
             // Create a new address for the contract.
             uint160 newContractAddress = this.carrier.GetNewContractAddress();
 
@@ -131,6 +137,7 @@ namespace Stratis.SmartContracts.Core
             if (!validation.IsValid)
             {
                 this.Result = SmartContractExecutionResult.ValidationFailed(this.carrier, validation);
+                this.logger.LogTrace("(-)[CONTRACT_VALIDATION_FAILED]");
                 return;
             }
 
@@ -149,31 +156,37 @@ namespace Stratis.SmartContracts.Core
                 this.carrier.MethodParameters
             );
 
+            this.logger.LogTrace("{0}", executionContext.ToString());
+
             IPersistenceStrategy persistenceStrategy = new MeteredPersistenceStrategy(this.stateSnapshot, this.gasMeter, new BasicKeyEncodingStrategy());
             var persistentState = new PersistentState(persistenceStrategy, newContractAddress, this.network);
 
             // TODO push TXExecutorFactory to DI
-            var vm = new ReflectionVirtualMachine(persistentState, new InternalTransactionExecutorFactory(this.keyEncodingStrategy, this.loggerFactory, this.network), this.stateSnapshot);
+            var vm = new ReflectionVirtualMachine(new InternalTransactionExecutorFactory(this.keyEncodingStrategy, this.loggerFactory, this.network), this.loggerFactory, persistentState, this.stateSnapshot);
 
             // Push internal tx executor and getbalance down into VM
-            this.Result = vm.Create(
-                this.carrier.ContractExecutionCode,
-                executionContext,
-                this.gasMeter);
+            this.Result = vm.Create(this.carrier.ContractExecutionCode, executionContext, this.gasMeter);
 
-            if (!this.Result.Revert)
+            if (this.Result.Revert)
             {
-                this.Result.NewContractAddress = newContractAddress;
-
-                // To start with, no value transfers on create. Can call other contracts but send 0 only.
-                this.stateSnapshot.SetCode(newContractAddress, this.carrier.ContractExecutionCode);
-                this.stateSnapshot.Commit();
+                this.logger.LogTrace("(-)[CONTRACT_EXECUTION_FAILED]");
+                return;
             }
+
+            this.Result.NewContractAddress = newContractAddress;
+
+            // To start with, no value transfers on create. Can call other contracts but send 0 only.
+            this.stateSnapshot.SetCode(newContractAddress, this.carrier.ContractExecutionCode);
+            this.stateSnapshot.Commit();
+
+            this.logger.LogTrace("(-):{0}={1}", nameof(newContractAddress), newContractAddress);
         }
     }
 
     public sealed class CallSmartContract : SmartContractExecutor
     {
+        private readonly ILogger logger;
+
         public CallSmartContract(SmartContractCarrier carrier,
             IKeyEncodingStrategy keyEncodingStrategy,
             ILoggerFactory loggerFactory,
@@ -184,10 +197,13 @@ namespace Stratis.SmartContracts.Core
             : base(carrier, keyEncodingStrategy, loggerFactory, mempoolFee, network, stateRepository, validator)
         {
             Guard.Assert(carrier.OpCodeType == OpcodeType.OP_CALLCONTRACT);
+            this.logger = loggerFactory.CreateLogger(this.GetType());
         }
 
         public override void OnExecute()
         {
+            this.logger.LogTrace("()");
+
             // Get the contract code (dll) from the repository.
             byte[] contractExecutionCode = this.stateSnapshot.GetCode(this.carrier.ContractAddress);
             if (contractExecutionCode == null)
@@ -200,13 +216,21 @@ namespace Stratis.SmartContracts.Core
             this.Result = this.CreateContextAndExecute(this.carrier.ContractAddress, contractExecutionCode, this.carrier.MethodName);
 
             if (this.Result.Revert)
+            {
+                this.logger.LogTrace("(-)[CALL_CONTRACT_FAILED]:{0}={1}", nameof(this.carrier.ContractAddress), this.carrier.ContractAddress);
                 this.RevertExecution();
+            }
             else
+            {
+                this.logger.LogTrace("(-)[CALL_CONTRACT_SUCCEEDED]:{0}={1}", nameof(this.carrier.ContractAddress), this.carrier.ContractAddress);
                 this.CommitExecution(this.Result.InternalTransfers);
+            }
         }
 
         private ISmartContractExecutionResult CreateContextAndExecute(uint160 contractAddress, byte[] contractCode, string methodName)
         {
+            this.logger.LogTrace("()");
+
             var block = new Block(this.blockHeight, this.coinbaseAddress.ToAddress(this.network));
             var executionContext = new SmartContractExecutionContext
             (
@@ -222,15 +246,19 @@ namespace Stratis.SmartContracts.Core
                 this.carrier.MethodParameters
             );
 
+            this.logger.LogTrace("{0}", executionContext.ToString());
+
             IPersistenceStrategy persistenceStrategy = new MeteredPersistenceStrategy(this.stateSnapshot, this.gasMeter, this.keyEncodingStrategy);
             var persistentState = new PersistentState(persistenceStrategy, contractAddress, this.network);
 
-            var vm = new ReflectionVirtualMachine(persistentState, new InternalTransactionExecutorFactory(this.keyEncodingStrategy, this.loggerFactory, this.network), this.stateSnapshot);
+            var vm = new ReflectionVirtualMachine(new InternalTransactionExecutorFactory(this.keyEncodingStrategy, this.loggerFactory, this.network), this.loggerFactory, persistentState, this.stateSnapshot);
             ISmartContractExecutionResult result = vm.ExecuteMethod(
                 contractCode,
                 methodName,
                 executionContext,
                 this.gasMeter);
+
+            this.logger.LogTrace("(-)");
 
             return result;
         }
@@ -244,13 +272,19 @@ namespace Stratis.SmartContracts.Core
         /// <param name="transfers"></param>
         private void CommitExecution(IList<TransferInfo> transfers)
         {
+            this.logger.LogTrace("()");
+
             if (transfers != null && transfers.Any() || this.carrier.TxOutValue > 0)
             {
+                this.logger.LogTrace("[CREATE_CONDENSING_TX] {0}={1},{2}={3}", nameof(transfers), transfers.Count, nameof(this.carrier.TxOutValue), this.carrier.TxOutValue);
                 var condensingTx = new CondensingTx(this.carrier, transfers, this.stateSnapshot, this.network);
                 this.Result.InternalTransaction = condensingTx.CreateCondensingTransaction();
             }
 
             this.stateSnapshot.Commit();
+
+            this.logger.LogTrace("(-)");
+
         }
 
         /// <summary>
@@ -258,11 +292,16 @@ namespace Stratis.SmartContracts.Core
         /// </summary>
         private void RevertExecution()
         {
+            this.logger.LogTrace("()");
+
             if (this.carrier.TxOutValue > 0)
             {
+                this.logger.LogTrace("[CREATE_REFUND_TX] {0}={1}", nameof(this.carrier.TxOutValue), this.carrier.TxOutValue);
                 Transaction tx = new CondensingTx(this.carrier, this.network).CreateRefundTransaction();
                 this.Result.InternalTransaction = tx;
             }
+
+            this.logger.LogTrace("(-)");
         }
     }
 }
