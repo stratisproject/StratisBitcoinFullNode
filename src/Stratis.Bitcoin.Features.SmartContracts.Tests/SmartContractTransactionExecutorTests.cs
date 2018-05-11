@@ -2,8 +2,8 @@
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using Moq;
 using NBitcoin;
+using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.SmartContracts;
 using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.Backend;
@@ -25,7 +25,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         public SmartContractTransactionExecutorTests()
         {
             this.keyEncodingStrategy = BasicKeyEncodingStrategy.Default;
-            this.loggerFactory = new Mock<ILoggerFactory>().Object;
+            this.loggerFactory = new ExtendedLoggerFactory();
+            this.loggerFactory.AddConsoleWithFilters();
+
             this.network = Network.SmartContractsRegTest;
             this.stateRepository = new ContractStateRepositoryRoot(new NoDeleteSource<byte[], byte[]>(new MemoryDictionarySource()));
         }
