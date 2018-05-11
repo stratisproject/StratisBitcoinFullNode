@@ -5,30 +5,30 @@ using NBitcoin.BouncyCastle.Math;
 namespace NBitcoin
 {
     /// <summary>
-    /// Represent the avilability state of a block in regards to it's header.
+    /// Represent the state of the availability of a block.
     /// </summary>
     public enum BlockDataAvailabilityState
     {
         /// <summary>
-        /// A BlockHeader is found and is a valid header.
+        /// A <see cref="BlockHeader"/> is found and is a valid header.
         /// </summary>
         HeaderOnly,
 
         /// <summary>
-        /// We are interested in downloading a block that is being represented by that header. 
+        /// We are interested in downloading the <see cref="Block"/> that is being represented by the current <see cref="BlockHeader"/>. 
         /// This happens when a header is a part of the chain that can potentially replace our consensus tip 
-        /// because its tip's total chainwork is greater comparing to what we currently have.
+        /// because its tip's total chain work is greater comparing to what we currently have.
         /// </summary>
-        BlockDataRequired,
+        BlockRequired,
 
         /// <summary>
-        /// Block is downloaded, if the Block property is null the block needs to be asked from store.
+        /// The <see cref="Block"/> is downloaded, if the Block property is null the block needs to be asked from store.
         /// </summary>
-        BlockDataAvailable
+        BlockAvailable
     }
 
     /// <summary>
-    /// Represent the validation level of a block.
+    /// Represents the validation level of a block.
     /// </summary>
     public enum ValidationState
     {
@@ -94,8 +94,12 @@ namespace NBitcoin
 
         public ValidationState BlockValidationState { get; set; }
 
+        /// <summary>A pointer to the block data if available, its availability will be represented by <see cref="BlockDataAvailability"/>.</summary>
         public Block Block { get; set; }
 
+        /// <summary>
+        /// Points to the next <see cref="ChainedHeader"/>, if a new branch of the chain is presented there can be more then one <see cref="Next"/> header.
+        /// </summary>
         public List<ChainedHeader> Next { get; private set; }
 
         /// <summary>
@@ -104,16 +108,12 @@ namespace NBitcoin
         /// <param name="header">Header for the block.</param>
         /// <param name="headerHash">Hash of the header of the block.</param>
         /// <param name="previous">Link to the previous block in the chain.</param>
-        public ChainedHeader(BlockHeader header, uint256 headerHash, ChainedHeader previous)
+        public ChainedHeader(BlockHeader header, uint256 headerHash, ChainedHeader previous) : this(header, headerHash)
         {
-            this.Header = header ?? throw new ArgumentNullException("header");
-            this.HashBlock = headerHash ?? throw new ArgumentNullException("headerHash");
-
             if (previous != null)
                 this.Height = previous.Height + 1;
 
             this.Previous = previous;
-            this.Next = new List<ChainedHeader>();
 
             if (previous == null)
             {
@@ -138,13 +138,22 @@ namespace NBitcoin
         /// <param name="header">The header for the block.</param>
         /// <param name="headerHash">The hash computed according to NetworkOptions.</param>
         /// <param name="height">The height of the block.</param>
-        public ChainedHeader(BlockHeader header, uint256 headerHash, int height)
+        public ChainedHeader(BlockHeader header, uint256 headerHash, int height) : this(header, headerHash)
         {
-            this.Header = header ?? throw new ArgumentNullException("header");
             this.Height = height;
-            this.HashBlock = headerHash;
-            this.Next = new List<ChainedHeader>();
             this.CalculateChainWork();
+        }
+
+        /// <summary>
+        /// Constructs a chained header at the start of a chain.
+        /// </summary>
+        /// <param name="header">The header for the block.</param>
+        /// <param name="headerHash">The hash computed according to NetworkOptions.</param>
+        private ChainedHeader(BlockHeader header, uint256 headerHash)
+        {
+            this.Header = header ?? throw new ArgumentNullException(nameof(header));
+            this.HashBlock = headerHash ?? throw new ArgumentNullException(nameof(headerHash));
+            this.Next = new List<ChainedHeader>(1);
         }
 
         /// <summary>
