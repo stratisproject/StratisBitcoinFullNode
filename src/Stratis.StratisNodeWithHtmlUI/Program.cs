@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis.CSharp;
@@ -9,14 +9,14 @@ using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.Api;
 using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.Features.Consensus;
+using Stratis.Bitcoin.Features.Dashboard;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.Miner;
 using Stratis.Bitcoin.Features.RPC;
-using Stratis.Bitcoin.Features.TestFeature;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Utilities;
 
-namespace Stratis.StratisD
+namespace Stratis.StratisNodeWithHtmlUI
 {
     public class Program
     {
@@ -29,7 +29,7 @@ namespace Stratis.StratisD
         {
             try
             {
-                NodeSettings nodeSettings = new NodeSettings(protocolVersion:ProtocolVersion.ALT_PROTOCOL_VERSION, args:args, loadConfiguration:false);
+                NodeSettings nodeSettings = new NodeSettings(protocolVersion: ProtocolVersion.ALT_PROTOCOL_VERSION, args: args, loadConfiguration: false);
 
                 // NOTES: running BTC and STRAT side by side is not possible yet as the flags for serialization are static
                 var node = new FullNodeBuilder()
@@ -38,10 +38,10 @@ namespace Stratis.StratisD
                     .UseBlockStore()
                     .UseMempool()
                     .UseWallet()
-                    .UseTestFeature()
                     .AddPowPosMining()
                     .UseApi()
                     .AddRPC()
+                    .UseDashboard()
                     .Build();
 
                 if (node != null)

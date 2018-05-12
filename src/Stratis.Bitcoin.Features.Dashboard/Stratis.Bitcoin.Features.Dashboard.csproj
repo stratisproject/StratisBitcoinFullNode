@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netcoreapp2.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Folder Include="Controllers\" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\NBitcoin\NBitcoin.csproj" />
+    <ProjectReference Include="..\Stratis.Bitcoin\Stratis.Bitcoin.csproj" />
+    <ProjectReference Include="..\Stratis.Bitcoin.Features.Api\Stratis.Bitcoin.Features.Api.csproj" />
+  </ItemGroup>
+</Project>
