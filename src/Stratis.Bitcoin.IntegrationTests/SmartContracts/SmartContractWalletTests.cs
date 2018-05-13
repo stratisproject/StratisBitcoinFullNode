@@ -79,7 +79,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 HdAddress sendto = scReceiver.FullNode.WalletManager().GetUnusedAddress(new WalletAccountReference(WalletName, AccountName));
                 var txBuildContext = new TransactionBuildContext(new WalletAccountReference(WalletName, AccountName), new[] { new Recipient { Amount = Money.COIN * 100, ScriptPubKey = sendto.ScriptPubKey } }.ToList(), Password)
                 {
-                    MinConfirmations = 101,
+                    MinConfirmations = maturity,
                     FeeType = FeeType.Medium
                 };
 
@@ -136,7 +136,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
 
                 // The mining should add coins to the wallet.
                 var total = scSender.FullNode.WalletManager().GetSpendableTransactionsInWallet(WalletName).Sum(s => s.Transaction.Amount);
-                Assert.Equal(Money.COIN * 105 * 50, total);
+                Assert.Equal(Money.COIN * (maturity + 5) * 50, total);
 
                 // Create a token contract
                 ulong gasPrice = 1;
@@ -150,7 +150,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 var contractCreateScript = new Script(contractCarrier.Serialize());
                 var txBuildContext = new TransactionBuildContext(new WalletAccountReference(WalletName, AccountName), new[] { new Recipient { Amount = 0, ScriptPubKey = contractCreateScript } }.ToList(), Password)
                 {
-                    MinConfirmations = 101,
+                    MinConfirmations = maturity,
                     FeeType = FeeType.High,
                 };
 
@@ -185,7 +185,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 contractCreateScript = new Script(contractCarrier.Serialize());
                 txBuildContext = new TransactionBuildContext(new WalletAccountReference(WalletName, AccountName), new[] { new Recipient { Amount = 0, ScriptPubKey = contractCreateScript } }.ToList(), Password)
                 {
-                    MinConfirmations = 101,
+                    MinConfirmations = maturity,
                     FeeType = FeeType.High,
                 };
 
@@ -216,7 +216,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 Script contractCallScript = new Script(contractCarrier.Serialize());
                 txBuildContext = new TransactionBuildContext(new WalletAccountReference(WalletName, AccountName), new[] { new Recipient { Amount = 1000, ScriptPubKey = contractCallScript } }.ToList(), Password)
                 {
-                    MinConfirmations = 101,
+                    MinConfirmations = maturity,
                     FeeType = FeeType.High,
                 };
 
@@ -262,7 +262,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 scSender.GenerateSmartContractStratisWithMiner(maturity + 5);
                 TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(scSender));
                 var total = scSender.FullNode.WalletManager().GetSpendableTransactionsInWallet(WalletName).Sum(s => s.Transaction.Amount);
-                Assert.Equal(Money.COIN * 105 * 50, total);
+                Assert.Equal(Money.COIN * (maturity + 5) * 50, total);
 
                 SmartContractsController senderSmartContractsController = scSender.FullNode.NodeService<SmartContractsController>();
                 WalletController senderWalletController = scSender.FullNode.NodeService<WalletController>();
@@ -277,7 +277,8 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                     ContractCode = compilationResult.Compilation.ToHexString(),
                     FeeAmount = "30000",
                     Password = Password,
-                    WalletName = WalletName
+                    WalletName = WalletName,
+                    Sender = addr.Address
                 };
 
                 JsonResult result = (JsonResult)senderSmartContractsController.BuildCreateSmartContractTransaction(buildRequest);
@@ -335,7 +336,8 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                     ContractAddress = response.NewContractAddress,
                     FeeAmount = "30000",
                     Password = Password,
-                    WalletName = WalletName
+                    WalletName = WalletName,
+                    Sender = addr.Address
                 };
                 result = (JsonResult)senderSmartContractsController.BuildCallSmartContractTransaction(callRequest);
                 var callResponse = (BuildCallContractTransactionResponse)result.Value;
