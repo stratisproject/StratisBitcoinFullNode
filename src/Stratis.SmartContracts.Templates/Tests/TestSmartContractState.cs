@@ -184,4 +184,32 @@ namespace $safeprojectname$
 
         public uint Count => (uint)this.list.Count;
     }
+
+    public class TestGasMeter : IGasMeter
+    {
+        public Gas GasAvailable { get; private set; }
+
+        public Gas GasConsumed => (Gas)(this.GasLimit - this.GasAvailable);
+
+        public Gas GasLimit { get; }
+
+        public TestGasMeter(Gas gasAvailable)
+        {
+            this.GasAvailable = gasAvailable;
+            this.GasLimit = gasAvailable;
+        }
+
+        public void Spend(Gas gasToSpend)
+        {
+            if (this.GasAvailable >= gasToSpend)
+            {
+                this.GasAvailable -= gasToSpend;
+                return;
+            }
+
+            this.GasAvailable = (Gas)0;
+
+            throw new Exception("Went over gas limit of " + this.GasLimit);
+        }
+    }
 }

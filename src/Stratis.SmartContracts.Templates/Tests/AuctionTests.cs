@@ -48,11 +48,13 @@ namespace $safeprojectname$
             var getContractBalance = new Func<ulong>(() => BlockchainBalances[ContractAddress]);
             var persistentState = new TestPersistentState();
             var internalTransactionExecutor = new TestInternalTransactionExecutor(BlockchainBalances, ContractAddress);
+            var gasMeter = new TestGasMeter((Gas)GasLimit);
+
             this.SmartContractState = new TestSmartContractState(
                 block,
                 message,
                 persistentState,
-                null,
+                gasMeter,
                 internalTransactionExecutor,
                 getContractBalance,
                 null
