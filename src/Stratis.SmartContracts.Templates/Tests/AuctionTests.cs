@@ -132,24 +132,26 @@ namespace $safeprojectname$
             auction.AuctionEnd();
 
             // Verify end balances
-            var expectedBlockchainBalances = new Dictionary<Address, ulong>() {
+            var expectedBlockchainBalances = new Dictionary<Address, ulong> {
                         { ContractAddress, 11 },
                         { ContractOwnerAddress, 12 },
                         { bidderA, 1 },
                         { bidderB, 2 }
                     };
-            var expectedReturnBalances = new Dictionary<Address, ulong>() {
+
+            var expectedReturnBalances = new Dictionary<Address, ulong> {
                         { bidderA, 0 },
                         { bidderB, 11 }
                     };
 
-            foreach (var K in expectedBlockchainBalances.Keys)
+            foreach (var k in expectedBlockchainBalances.Keys)
             {
-                Assert.IsTrue(BlockchainBalances[K] == expectedBlockchainBalances[K]);
+                Assert.IsTrue(BlockchainBalances[k] == expectedBlockchainBalances[k]);
             }
-            foreach (var K in expectedReturnBalances.Keys)
+
+            foreach (var k in expectedReturnBalances.Keys)
             {
-                Assert.IsTrue(auction.ReturnBalances[K] == expectedReturnBalances[K]);
+                Assert.IsTrue(auction.ReturnBalances[k] == expectedReturnBalances[k]);
             }
 
             // Sanity check
@@ -159,9 +161,9 @@ namespace $safeprojectname$
         private ulong SumDictionary(Dictionary<Address, ulong> balances)
         {
             ulong sum = 0u;
-            foreach (var K in balances.Keys)
+            foreach (var k in balances.Keys)
             {
-                sum = sum + balances[K];
+                sum = sum + balances[k];
             }
             return sum;
         }
