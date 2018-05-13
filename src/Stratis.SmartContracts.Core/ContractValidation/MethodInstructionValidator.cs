@@ -64,7 +64,7 @@ namespace Stratis.SmartContracts.Core.ContractValidation
                     method.Name,
                     method.FullName,
                     "Float usage",
-                    $"Float used."
+                    $"Float or double used."
                 ));
             }
 
