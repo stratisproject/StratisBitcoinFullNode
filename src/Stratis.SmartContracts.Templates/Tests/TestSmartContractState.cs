@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using Stratis.SmartContracts;
+using System.Text;
 
 namespace $safeprojectname$
 {
@@ -210,6 +211,14 @@ namespace $safeprojectname$
             this.GasAvailable = (Gas)0;
 
             throw new Exception("Went over gas limit of " + this.GasLimit);
+        }
+    }
+
+    public class TestInternalHashHelper : IInternalHashHelper
+    {
+        public byte[] Keccak256(byte[] toHash)
+        {
+            return Encoding.ASCII.GetBytes("DO NOT USE");
         }
     }
 }

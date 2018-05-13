@@ -49,6 +49,7 @@ namespace $safeprojectname$
             var persistentState = new TestPersistentState();
             var internalTransactionExecutor = new TestInternalTransactionExecutor(BlockchainBalances, ContractAddress);
             var gasMeter = new TestGasMeter((Gas)GasLimit);
+            var hashHelper = new TestInternalHashHelper();
 
             this.SmartContractState = new TestSmartContractState(
                 block,
@@ -57,7 +58,7 @@ namespace $safeprojectname$
                 gasMeter,
                 internalTransactionExecutor,
                 getContractBalance,
-                null
+                hashHelper
             );
         }
 
