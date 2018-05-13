@@ -17,7 +17,8 @@ namespace Stratis.SmartContracts.Core.ContractValidation
         /// </summary>
         private static readonly HashSet<string> GreenLightMethods = new HashSet<string>
         {
-            "System.String System.SR::GetResourceString(System.String,System.String)"
+            "System.String System.SR::GetResourceString(System.String,System.String)",
+            "System.Type System.Object::GetType()"
         };
 
         /// <summary>
@@ -33,7 +34,6 @@ namespace Stratis.SmartContracts.Core.ContractValidation
             "System.UInt32",
             "System.Int64",
             "System.UInt64",
-            "System.Object",
             "System.String",
             "System.Array",
             "System.Exception",
@@ -168,7 +168,8 @@ namespace Stratis.SmartContracts.Core.ContractValidation
             IEnumerable<MethodDefinition> referenced = methodDefinition.Body.Instructions
                 .Select(instr => instr.Operand)
                 .OfType<MethodReference>()
-                .Where(referencedMethod => !(GreenLightMethods.Contains(methodDefinition.FullName) || GreenLightTypes.Contains(methodDefinition.DeclaringType.FullName)))
+                .Where(referencedMethod => !(GreenLightMethods.Contains(referencedMethod.FullName) 
+                                             || GreenLightTypes.Contains(referencedMethod.DeclaringType.FullName)))
                 .Select(m => m.Resolve());
 
             return referenced;

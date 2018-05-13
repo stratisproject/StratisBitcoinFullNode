@@ -384,6 +384,20 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
         #endregion Exceptions
 
+        [Fact]
+        public void Validate_Determinism_GetType()
+        {
+            string adjustedSource = TestString.Replace(ReplaceCodeString, "var type = GetType();").Replace(ReplaceReferencesString, "");
+
+            SmartContractCompilationResult compilationResult = SmartContractCompiler.Compile(adjustedSource);
+            Assert.True(compilationResult.Success);
+
+            byte[] assemblyBytes = compilationResult.Compilation;
+            SmartContractDecompilation decomp = SmartContractDecompiler.GetModuleDefinition(assemblyBytes);
+            SmartContractValidationResult result = this.validator.Validate(decomp);
+            Assert.True(result.IsValid);
+        }
+
         #region GetHashCode
 
         [Fact]
@@ -399,6 +413,25 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             SmartContractValidationResult result = this.validator.Validate(decomp);
             Assert.False(result.IsValid);
         }
+
+        [Fact]
+        public void Validate_Determinism_GetHashCode_Overridden()
+        {
+            string adjustedSource = TestString.Replace(ReplaceCodeString, @"
+                }
+                    public override int GetHashCode()
+                {
+                return base.GetHashCode();
+            ").Replace(ReplaceReferencesString, "");
+
+            SmartContractCompilationResult compilationResult = SmartContractCompiler.Compile(adjustedSource);
+            Assert.True(compilationResult.Success);
+
+            byte[] assemblyBytes = compilationResult.Compilation;
+            SmartContractDecompilation decomp = SmartContractDecompiler.GetModuleDefinition(assemblyBytes);
+            SmartContractValidationResult result = this.validator.Validate(decomp);
+            Assert.False(result.IsValid);
+        }    
 
         #endregion
 
@@ -690,6 +723,25 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             SmartContractDecompilation decomp = SmartContractDecompiler.GetModuleDefinition(assemblyBytes);
             SmartContractValidationResult result = this.validator.Validate(decomp);
             Assert.False(result.IsValid);
+        }
+
+        [Fact]
+        public void Validate_Determinism_StringIteration()
+        {
+            string adjustedSource = TestString.Replace(ReplaceCodeString,            
+                @"int randomNumber = 0;
+                  foreach (byte c in ""Abcdefgh"")
+                  {
+                    randomNumber += c;
+                  }").Replace(ReplaceReferencesString, "");
+
+            SmartContractCompilationResult compilationResult = SmartContractCompiler.Compile(adjustedSource);
+            Assert.True(compilationResult.Success);
+
+            byte[] assemblyBytes = compilationResult.Compilation;
+            SmartContractDecompilation decomp = SmartContractDecompiler.GetModuleDefinition(assemblyBytes);
+            SmartContractValidationResult result = this.validator.Validate(decomp);
+            Assert.True(result.IsValid);
         }
     }
 }
