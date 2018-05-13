@@ -159,7 +159,7 @@ namespace $safeprojectname$
 
     }
 
-    public class TestList<T> : ISmartContractList<T>
+    public class TestList<T> : TestList, ISmartContractList<T>
     {
         private readonly List<T> list;
 
