@@ -12,7 +12,7 @@ namespace Stratis.SmartContracts.Core.ContractValidation
     {
         public static readonly string ErrorType = "Known Non-Deterministic Method";
 
-        public static readonly string GetHashCodeString = "System.Int32 System.Object::GetHashCode()";
+        public static readonly string GetHashCodeString = "System.Int32 System.Object::GetHashCode()"; // TODO: get via reflection?
 
         public IEnumerable<SmartContractValidationError> Validate(MethodDefinition method)
         {

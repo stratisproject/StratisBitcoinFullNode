@@ -15,7 +15,7 @@ namespace Stratis.SmartContracts.Core.ContractValidation
         /// </summary>
         private static readonly HashSet<string> RedLightFields = new HashSet<string>
         {
-            "System.Boolean System.BitConverter::IsLittleEndian"
+            "System.Boolean System.BitConverter::IsLittleEndian" // Can we get this from reflection rather than hard code?
         };
 
         /// <summary>
@@ -64,7 +64,7 @@ namespace Stratis.SmartContracts.Core.ContractValidation
                     method.Name,
                     method.FullName,
                     "Float usage",
-                    $"Float used within {method.FullName}"
+                    $"Float used."
                 ));
             }
 
@@ -76,7 +76,7 @@ namespace Stratis.SmartContracts.Core.ContractValidation
                         method.Name,
                         method.FullName,
                         $"Use of {fieldReference.FullName}",
-                        $"{fieldReference.FullName} in {method.FullName} is not deterministic."
+                        $"{fieldReference.FullName} is not deterministic."
                     ));
                 }
             }
