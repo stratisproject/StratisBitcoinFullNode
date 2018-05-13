@@ -54,6 +54,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="Tests\TestSmartContractState.cs" />
     <None Include="Tests\AuctionTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
@@ -77,7 +78,9 @@
     </VSTemplate>
   </ItemGroup>
   <ItemGroup>
-    <VSTemplate Include="Tests\Stratis.SmartContracts.Tests.vstemplate" />
+    <VSTemplate Include="Tests\Stratis.SmartContracts.Tests.vstemplate">
+      <SubType>Designer</SubType>
+    </VSTemplate>
   </ItemGroup>
   <ItemGroup>
     <Content Include="Contract\__TemplateIcon.png" />
