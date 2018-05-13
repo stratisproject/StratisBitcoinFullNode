@@ -19,10 +19,13 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Deployer
         {
             var mockMessageHandler = new Mock<HttpMessageHandler>();
             var contractAddress = "Test";
+            var successMessage = "Contract was successfully deployed";
 
             var response = new BuildCreateContractTransactionResponse
             {
-                NewContractAddress = contractAddress
+                NewContractAddress = contractAddress,
+                Success = true,
+                Message = successMessage
             };
 
             mockMessageHandler.Protected()
@@ -39,6 +42,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Deployer
 
             Assert.True(result.Success);
             Assert.Equal(contractAddress, result.ContractAddress);
+            Assert.Equal(successMessage, response.Message);
         }
 
         [Fact]
