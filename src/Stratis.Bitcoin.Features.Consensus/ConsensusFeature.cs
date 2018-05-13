@@ -115,7 +115,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <inheritdoc />
         public override void LoadConfiguration()
         {
-            this.consensusSettings.Load(nodeSettings);
+            this.consensusSettings.Load(this.nodeSettings);
         }
 
         /// <inheritdoc />
@@ -163,7 +163,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                 cache.FlushAsync().GetAwaiter().GetResult();
                 cache.Dispose();
             }
-           
+
             this.dBreezeCoinView.Dispose();
         }
     }
@@ -185,10 +185,10 @@ namespace Stratis.Bitcoin.Features.Consensus
                 .FeatureServices(services =>
                 {
                     // TODO: this should be set on the network build
-                    fullNodeBuilder.Network.Consensus.Options = new PowConsensusOptions();
+                    fullNodeBuilder.Network.Consensus.Options = new SmartContractConsensusOptions();
 
                     services.AddSingleton<ICheckpoints, Checkpoints>();
-                    services.AddSingleton<NBitcoin.Consensus.ConsensusOptions, PowConsensusOptions>();
+                    services.AddSingleton<NBitcoin.Consensus.ConsensusOptions, SmartContractConsensusOptions>();
                     services.AddSingleton<IPowConsensusValidator, PowConsensusValidator>();
                     services.AddSingleton<DBreezeCoinView>();
                     services.AddSingleton<CoinView, CachedCoinView>();

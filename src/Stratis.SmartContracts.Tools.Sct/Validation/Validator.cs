@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using McMaster.Extensions.CommandLineUtils;
-using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.Compilation;
 using Stratis.SmartContracts.Core.ContractValidation;
 using Stratis.SmartContracts.Tools.Sct.Report;
@@ -15,7 +14,7 @@ namespace Stratis.SmartContracts.Tools.Sct.Validation
     [HelpOption]
     class Validator
     {
-        [Argument(0, Description = "The paths of the files to validate", 
+        [Argument(0, Description = "The paths of the files to validate",
             Name = "[FILES]")]
         public List<string> InputFiles { get; }
 

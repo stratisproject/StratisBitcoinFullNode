@@ -11,6 +11,7 @@ using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.Extensions.Logging;
 using Mono.Cecil;
 using NBitcoin;
+using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.Interfaces;
 using Stratis.Bitcoin.Features.SmartContracts.Models;
 using Stratis.Bitcoin.Features.Wallet;
@@ -40,14 +41,14 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Controllers
         private readonly IBroadcasterManager broadcasterManager;
 
         public SmartContractsController(
-            ContractStateRepositoryRoot stateRoot,
+            IBroadcasterManager broadcasterManager,
             IConsensusLoop consensus,
-            IWalletTransactionHandler walletTransactionHandler,
-            IWalletManager walletManager,
             IDateTimeProvider dateTimeProvider,
             ILoggerFactory loggerFactory,
-            IBroadcasterManager broadcasterManager,
-            Network network)
+            Network network,
+            ContractStateRepositoryRoot stateRoot,
+            IWalletManager walletManager,
+            IWalletTransactionHandler walletTransactionHandler)
         {
             this.stateRoot = stateRoot;
             this.consensus = consensus;
@@ -67,13 +68,11 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Controllers
             uint160 addressNumeric = new Address(address).ToUint160(this.network);
             byte[] contractCode = this.stateRoot.GetCode(addressNumeric);
 
-            // In the future, we could be more explicit about whether a contract exists (or indeed, did ever exist)
             if (contractCode == null || !contractCode.Any())
             {
                 return Json(new GetCodeResponse
                 {
-                    CSharp = "",
-                    Bytecode = ""
+                    Message = string.Format("No contract execution code exists at {0}", address)
                 });
             }
 
@@ -84,8 +83,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Controllers
                 string cSharp = decompiler.DecompileAsString(modDefinition.Types.FirstOrDefault(x => x.FullName != "<Module>"));
                 return Json(new GetCodeResponse
                 {
-                    CSharp = cSharp,
-                    Bytecode = contractCode.ToHexString()
+                    Message = string.Format("Contract execution code retrieved at {0}", address),
+                    Bytecode = contractCode.ToHexString(),
+                    CSharp = cSharp
                 });
             }
         }
@@ -104,9 +104,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Controllers
         public IActionResult GetStorage([FromQuery] GetStorageRequest request)
         {
             if (!this.ModelState.IsValid)
-            {
                 return BuildErrorResponse(this.ModelState);
-            }
 
             uint160 addressNumeric = new Address(request.ContractAddress).ToUint160(this.network);
             byte[] storageValue = this.stateRoot.GetStorageValue(addressNumeric, Encoding.UTF8.GetBytes(request.StorageKey));
@@ -130,9 +128,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Controllers
         public IActionResult BuildCallSmartContractTransaction([FromBody] BuildCallContractTransactionRequest request)
         {
             if (!this.ModelState.IsValid)
-            {
                 return BuildErrorResponse(this.ModelState);
-            }
 
             return Json(BuildCallTx(request));
         }
@@ -143,14 +139,16 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Controllers
         public IActionResult BuildAndSendCreateSmartContractTransaction([FromBody] BuildCreateContractTransactionRequest request)
         {
             if (!this.ModelState.IsValid)
-            {
                 return BuildErrorResponse(this.ModelState);
-            }
 
             BuildCreateContractTransactionResponse response = BuildCreateTx(request);
+            if (!response.Success)
+                return Json(response);
+
             var transaction = new Transaction(response.Hex);
             this.walletManager.ProcessTransaction(transaction, null, null, false);
             this.broadcasterManager.BroadcastTransactionAsync(transaction).GetAwaiter().GetResult();
+
             return Json(response);
         }
 
@@ -159,60 +157,63 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Controllers
         public IActionResult BuildAndSendCallSmartContractTransaction([FromBody] BuildCallContractTransactionRequest request)
         {
             if (!this.ModelState.IsValid)
-            {
                 return BuildErrorResponse(this.ModelState);
-            }
 
             BuildCallContractTransactionResponse response = BuildCallTx(request);
+            if (!response.Success)
+                return Json(response);
+
             var transaction = new Transaction(response.Hex);
             this.walletManager.ProcessTransaction(transaction, null, null, false);
             this.broadcasterManager.BroadcastTransactionAsync(transaction).GetAwaiter().GetResult();
 
-            return Json(BuildCallTx(request));
+            return Json(response);
         }
 
         [Route("address-balances")]
         [HttpGet]
         public IActionResult GetAddressesWithBalances([FromQuery] string walletName)
         {
-            var allSpendable = this.walletManager.GetSpendableTransactionsInWallet(walletName, 10).GroupBy(x => x.Address);
-
-            List<object> ret = new List<object>();
-
+            IEnumerable<IGrouping<HdAddress, UnspentOutputReference>> allSpendable = this.walletManager.GetSpendableTransactionsInWallet(walletName, 10).GroupBy(x => x.Address);
+            var result = new List<object>();
             foreach (IGrouping<HdAddress, UnspentOutputReference> grouping in allSpendable)
             {
-                ret.Add(new
+                result.Add(new
                 {
-                    Address = grouping.Key.Address,
-                    Sum = grouping.Sum(x=>x.Transaction.SpendableAmount(false))
+                    grouping.Key.Address,
+                    Sum = grouping.Sum(x => x.Transaction.SpendableAmount(false))
                 });
             }
-            return Json(ret);
+            return Json(result);
         }
 
         private BuildCreateContractTransactionResponse BuildCreateTx(BuildCreateContractTransactionRequest request)
         {
+            AddressBalance addressBalance = this.walletManager.GetAddressBalance(request.Sender);
+            if (addressBalance.AmountConfirmed == 0)
+                return BuildCreateContractTransactionResponse.Failed("Your wallet does not contain any spendable transactions, balance is 0.0");
+
+            var selectedInputs = new List<OutPoint>();
+            var coinbaseMaturity = Convert.ToInt32(this.network.Consensus.Option<SmartContractConsensusOptions>().CoinbaseMaturity);
+            selectedInputs = this.walletManager.GetSpendableTransactionsInWallet(request.WalletName, coinbaseMaturity).Where(x => x.Address.Address == request.Sender).Select(x => x.ToOutPoint()).ToList();
+            if (!selectedInputs.Any())
+                return BuildCreateContractTransactionResponse.Failed(string.Format("Your wallet does not contain any spendable transactions. Received funds needs to reach maturity of {0}", coinbaseMaturity));
+
             ulong gasPrice = ulong.Parse(request.GasPrice);
             ulong gasLimit = ulong.Parse(request.GasLimit);
 
             SmartContractCarrier carrier;
             if (request.Parameters != null && request.Parameters.Any())
-            {
                 carrier = SmartContractCarrier.CreateContract(ReflectionVirtualMachine.VmVersion, request.ContractCode.HexToByteArray(), gasPrice, new Gas(gasLimit), request.Parameters);
-            }
             else
-            {
                 carrier = SmartContractCarrier.CreateContract(ReflectionVirtualMachine.VmVersion, request.ContractCode.HexToByteArray(), gasPrice, new Gas(gasLimit));
-            }
 
-            List<OutPoint> selectedInputs = new List<OutPoint>();
             HdAddress senderAddress = null;
             if (!string.IsNullOrWhiteSpace(request.Sender))
             {
                 Wallet.Wallet wallet = this.walletManager.GetWallet(request.WalletName);
                 HdAccount account = wallet.GetAccountByCoinType(request.AccountName, this.coinType);
                 senderAddress = account.GetCombinedAddresses().FirstOrDefault(x => x.Address == request.Sender);
-                selectedInputs = this.walletManager.GetSpendableTransactionsInWallet(request.WalletName, 10).Where(x => x.Address.Address == request.Sender).Select(x=>x.ToOutPoint()).ToList();
             }
 
             ulong totalFee = gasPrice * gasLimit + ulong.Parse(request.FeeAmount);
@@ -226,19 +227,22 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Controllers
                 SelectedInputs = selectedInputs
             };
 
-            Transaction transactionResult = this.walletTransactionHandler.BuildTransaction(context);
+            Transaction transaction = this.walletTransactionHandler.BuildTransaction(context);
 
-            return new BuildCreateContractTransactionResponse
-            {
-                Hex = transactionResult.ToHex(),
-                Fee = context.TransactionFee,
-                TransactionId = transactionResult.GetHash(),
-                NewContractAddress = transactionResult.GetNewContractAddress().ToAddress(this.network)
-            };
+            return BuildCreateContractTransactionResponse.Succeeded(transaction, context.TransactionFee, transaction.GetNewContractAddress().ToAddress(this.network));
         }
 
         private BuildCallContractTransactionResponse BuildCallTx(BuildCallContractTransactionRequest request)
         {
+            AddressBalance addressBalance = this.walletManager.GetAddressBalance(request.Sender);
+            if (addressBalance.AmountConfirmed == 0)
+                return BuildCallContractTransactionResponse.Failed("Your wallet does not contain any spendable transactions, balance is 0.0");
+
+            var selectedInputs = new List<OutPoint>();
+            var coinbaseMaturity = Convert.ToInt32(this.network.Consensus.Option<SmartContractConsensusOptions>().CoinbaseMaturity);
+            selectedInputs = this.walletManager.GetSpendableTransactionsInWallet(request.WalletName, coinbaseMaturity).Where(x => x.Address.Address == request.Sender).Select(x => x.ToOutPoint()).ToList();
+            if (!selectedInputs.Any())
+                return BuildCallContractTransactionResponse.Failed(string.Format("Your wallet does not contain any spendable transactions. Received funds needs to reach maturity of {0}", coinbaseMaturity));
 
             ulong gasPrice = ulong.Parse(request.GasPrice);
             ulong gasLimit = ulong.Parse(request.GasLimit);
@@ -246,22 +250,16 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Controllers
 
             SmartContractCarrier carrier;
             if (request.Parameters != null && request.Parameters.Any())
-            {
                 carrier = SmartContractCarrier.CallContract(ReflectionVirtualMachine.VmVersion, addressNumeric, request.MethodName, gasPrice, new Gas(gasLimit), request.Parameters);
-            }
             else
-            {
                 carrier = SmartContractCarrier.CallContract(ReflectionVirtualMachine.VmVersion, addressNumeric, request.MethodName, gasPrice, new Gas(gasLimit));
-            }
 
-            List<OutPoint> selectedInputs = new List<OutPoint>();
             HdAddress senderAddress = null;
             if (!string.IsNullOrWhiteSpace(request.Sender))
             {
                 Wallet.Wallet wallet = this.walletManager.GetWallet(request.WalletName);
                 HdAccount account = wallet.GetAccountByCoinType(request.AccountName, this.coinType);
                 senderAddress = account.GetCombinedAddresses().FirstOrDefault(x => x.Address == request.Sender);
-                selectedInputs = this.walletManager.GetSpendableTransactionsInWallet(request.WalletName, 10).Where(x => x.Address.Address == request.Sender).Select(x => x.ToOutPoint()).ToList();
             }
 
             ulong totalFee = gasPrice * gasLimit + ulong.Parse(request.FeeAmount);
@@ -277,15 +275,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Controllers
 
             Transaction transactionResult = this.walletTransactionHandler.BuildTransaction(context);
 
-            return new BuildCallContractTransactionResponse
-            {
-                Hex = transactionResult.ToHex(),
-                Fee = context.TransactionFee,
-                TransactionId = transactionResult.GetHash()
-            };
+            return BuildCallContractTransactionResponse.Succeeded(request.MethodName, transactionResult, context.TransactionFee);
         }
-
-
 
         private object GetStorageValue(SmartContractDataType dataType, byte[] bytes)
         {

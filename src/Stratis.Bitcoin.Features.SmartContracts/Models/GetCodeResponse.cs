@@ -1,8 +1,16 @@
-﻿namespace Stratis.Bitcoin.Features.SmartContracts.Models
+﻿using Newtonsoft.Json;
+
+namespace Stratis.Bitcoin.Features.SmartContracts.Models
 {
-    public class GetCodeResponse
+    public sealed class GetCodeResponse
     {
-        public string CSharp { get; set; }
+        [JsonProperty(PropertyName = "bytecode")]
         public string Bytecode { get; set; }
+
+        [JsonProperty(PropertyName = "csharp")]
+        public string CSharp { get; set; }
+
+        [JsonProperty(PropertyName = "message")]
+        public string Message { get; set; }
     }
 }

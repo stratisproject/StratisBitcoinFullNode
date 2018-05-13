@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using Stratis.SmartContracts.Tools.Sct.Report.Elements;
 
 namespace Stratis.SmartContracts.Tools.Sct.Report.Sections
@@ -20,12 +21,23 @@ namespace Stratis.SmartContracts.Tools.Sct.Report.Sections
             yield return new ReportElement($"Determinism Validation Result");
             yield return new ReportElement($"Determinism Valid: {data.DeterminismValid}");
 
-            foreach (var error in data.DeterminismValidationErrors)
-            {
-                yield return new ReportElement($"Method {error.MethodFullName}: {error.Message}");
-            }
-
             yield return new NewLineElement();
+
+            if (!data.DeterminismValid)
+            {
+                var grouped = data.DeterminismValidationErrors.GroupBy(x => x.MethodName);
+                foreach(var method in grouped)
+                {
+                    yield return new ReportElement($"{method.Key}:");
+
+                    foreach(var error in method)
+                    {
+                        yield return new ReportElement($"   {error.Message}");
+                    }
+
+                    yield return new NewLineElement();
+                }
+            }
         }
     }
 }

@@ -1,4 +1,5 @@
-﻿using NBitcoin;
+﻿using Microsoft.Extensions.Logging;
+using NBitcoin;
 using Stratis.SmartContracts.Core.ContractValidation;
 using Stratis.SmartContracts.Core.State;
 
@@ -7,19 +8,23 @@ namespace Stratis.SmartContracts.Core
     /// <summary>
     /// Spawns SmartContractExecutor instances
     /// </summary>
-    public class SmartContractExecutorFactory
+    public sealed class SmartContractExecutorFactory
     {
-        private SmartContractValidator validator;
-        private Network network;
-        private IKeyEncodingStrategy keyEncodingStrategy;
+        private readonly IKeyEncodingStrategy keyEncodingStrategy;
+        private readonly ILoggerFactory loggerFactory;
+        private readonly Network network;
+        private readonly SmartContractValidator validator;
 
-        public SmartContractExecutorFactory(SmartContractValidator validator,
+        public SmartContractExecutorFactory(
             IKeyEncodingStrategy keyEncodingStrategy,
-            Network network)
+            ILoggerFactory loggerFactory,
+            Network network,
+            SmartContractValidator validator)
         {
-            this.validator = validator;
-            this.network = network;
             this.keyEncodingStrategy = keyEncodingStrategy;
+            this.loggerFactory = loggerFactory;
+            this.network = network;
+            this.validator = validator;
         }
 
         /// <summary>
@@ -28,12 +33,9 @@ namespace Stratis.SmartContracts.Core
         /// After the contract has been executed, it will process any fees and/or refunds.
         /// </para>
         /// </summary>
-        public SmartContractExecutor CreateExecutor(
-            SmartContractCarrier carrier,
-            Money mempoolFee,
-            IContractStateRepository stateRepository)
+        public SmartContractExecutor CreateExecutor(SmartContractCarrier carrier, Money mempoolFee, IContractStateRepository stateRepository)
         {
-            return SmartContractExecutor.Initialize(carrier, this.network, stateRepository, this.validator, this.keyEncodingStrategy, mempoolFee);
+            return SmartContractExecutor.Initialize(carrier, this.network, stateRepository, this.validator, this.keyEncodingStrategy, this.loggerFactory, mempoolFee);
         }
     }
 }

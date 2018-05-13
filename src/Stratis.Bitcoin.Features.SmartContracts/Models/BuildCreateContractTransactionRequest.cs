@@ -6,10 +6,16 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Models
 {
     public class BuildCreateContractTransactionRequest
     {
+        public BuildCreateContractTransactionRequest()
+        {
+            this.AccountName = "account 0";
+            this.GasPrice = "1";
+            this.GasLimit = "10000";
+        }
+
         [Required(ErrorMessage = "The name of the wallet is missing.")]
         public string WalletName { get; set; }
 
-        [Required(ErrorMessage = "The name of the account is missing.")]
         public string AccountName { get; set; }
 
         [MoneyFormat(isRequired: false, ErrorMessage = "The fee is not in the correct format.")]
@@ -21,14 +27,13 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Models
         [Required(ErrorMessage = "Contract code is required.")]
         public string ContractCode { get; set; }
 
-        [Required(ErrorMessage = "Gas price is required.")]
         [Range(GasBudgetRule.GasPriceMinimum, GasBudgetRule.GasPriceMaximum)]
         public string GasPrice { get; set; }
 
-        [Required(ErrorMessage = "Gas limit is required.")]
         [Range(GasBudgetRule.GasLimitMinimum, GasBudgetRule.GasLimitMaximum)]
         public string GasLimit { get; set; }
 
+        [Required(ErrorMessage = "Sender is required.")]
         public string Sender { get; set; }
 
         public string[] Parameters { get; set; }

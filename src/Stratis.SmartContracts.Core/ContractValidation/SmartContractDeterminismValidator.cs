@@ -80,10 +80,11 @@ namespace Stratis.SmartContracts.Core.ContractValidation
             var errors = new List<SmartContractValidationError>();
             var visited = new Dictionary<string, List<SmartContractValidationError>>();
 
-            foreach (MethodDefinition userMethod in decompilation.ContractType.Methods.Where(method => method.Body != null))
+            List<MethodDefinition> userMethods = decompilation.ContractType.Methods.Where(method => method.Body != null).ToList();
+            foreach (MethodDefinition userMethod in userMethods)
             {
                 ValidateUserMethod(errors, visited, userMethod);
-                ValidatedReferencedMethods(errors, visited, userMethod);
+                ValidatedReferencedMethods(errors, visited, userMethods, userMethod);
             }
 
             return new SmartContractValidationResult(errors);
@@ -98,49 +99,59 @@ namespace Stratis.SmartContracts.Core.ContractValidation
 
             foreach (IMethodDefinitionValidator validator in UserDefinedMethodValidators)
             {
-                IEnumerable<SmartContractValidationError> result = validator.Validate(userMethod);
-
-                if (result.Any())
+                IEnumerable<SmartContractValidationError> validatorResult = validator.Validate(userMethod);
+                if (validatorResult.Any())
                 {
-                    errors.Add(NonDeterministicError(userMethod));
-                    visited[userMethod.FullName] = result.ToList();
+                    errors.Add(validatorResult.First());
+                    visited[userMethod.FullName] = validatorResult.ToList();
                 }
             }
         }
 
-
         /// <summary>
         /// Validates all methods referenced inside of a user method.
         /// </summary>
-        private void ValidatedReferencedMethods(List<SmartContractValidationError> errors, Dictionary<string, List<SmartContractValidationError>> visited, MethodDefinition userMethod)
+        private void ValidatedReferencedMethods(List<SmartContractValidationError> errors, Dictionary<string, List<SmartContractValidationError>> visited, List<MethodDefinition> userMethods, MethodDefinition userMethod)
         {
             foreach (MethodDefinition referencedMethod in GetReferencedMethods(userMethod))
             {
-                ValidateReferencedMethod(errors, visited, userMethod, referencedMethod);
+                if (userMethods.Contains(referencedMethod))
+                    continue;
+
+                bool isValid = ValidateReferencedMethod(visited, userMethod, referencedMethod);
+                if (!isValid)
+                    errors.Add(NonDeterministicError(userMethod, referencedMethod));
             }
         }
 
         /// <summary>
         /// Recursively validates all methods referenced inside of a referenced method.
         /// </summary>
-        private static void ValidateReferencedMethod(List<SmartContractValidationError> errors, Dictionary<string, List<SmartContractValidationError>> visited, MethodDefinition userMethod, MethodDefinition referencedMethod)
+        private static bool ValidateReferencedMethod(Dictionary<string, List<SmartContractValidationError>> visited, MethodDefinition userMethod, MethodDefinition referencedMethod)
         {
-            if (!TryAddToVisited(visited, referencedMethod)) return;
-
-            foreach (MethodDefinition internalMethod in GetReferencedMethods(referencedMethod))
+            if (TryAddToVisited(visited, referencedMethod))
             {
-                ValidateReferencedMethod(errors, visited, referencedMethod, internalMethod);
-            }
-
-            foreach (IMethodDefinitionValidator validator in NonUserMethodValidators)
-            {
-                IEnumerable<SmartContractValidationError> result = validator.Validate(referencedMethod);
-                if (result.Any())
+                foreach (MethodDefinition internalMethod in GetReferencedMethods(referencedMethod))
                 {
-                    errors.Add(NonDeterministicError(userMethod, referencedMethod));
-                    visited[referencedMethod.FullName] = result.ToList();
+                    bool isValid = ValidateReferencedMethod(visited, referencedMethod, internalMethod);
+                    if (!isValid)
+                        return isValid;
                 }
+
+                foreach (IMethodDefinitionValidator validator in NonUserMethodValidators)
+                {
+                    List<SmartContractValidationError> result = validator.Validate(referencedMethod).ToList();
+                    if (result.Any())
+                    {
+                        visited[referencedMethod.FullName] = result;
+                        return false;
+                    }
+                }
+
+                return true;
             }
+            else
+                return true;
         }
 
         /// <summary>
@@ -154,11 +165,13 @@ namespace Stratis.SmartContracts.Core.ContractValidation
             if (methodDefinition.Body == null)
                 return Enumerable.Empty<MethodDefinition>();
 
-            return methodDefinition.Body.Instructions
+            IEnumerable<MethodDefinition> referenced = methodDefinition.Body.Instructions
                 .Select(instr => instr.Operand)
                 .OfType<MethodReference>()
                 .Where(referencedMethod => !(GreenLightMethods.Contains(methodDefinition.FullName) || GreenLightTypes.Contains(methodDefinition.DeclaringType.FullName)))
                 .Select(m => m.Resolve());
+
+            return referenced;
         }
 
         /// <summary>
@@ -178,14 +191,6 @@ namespace Stratis.SmartContracts.Core.ContractValidation
         }
 
         /// <summary>
-        /// Returns an error when a method is non-deterministic.
-        /// </summary>
-        public static SmartContractValidationError NonDeterministicError(MethodDefinition userMethod)
-        {
-            return new SmartContractValidationError(userMethod, NonDeterministicMethodReference, $"Use of {userMethod.FullName} is not deterministic.");
-        }
-
-        /// <summary>
         /// Returns an error when a referenced method is non-deterministic in a containing method.
         /// <para>I.e. if in method A, method B is referenced and it is non-deterministic, use this method.</para>
         /// </summary>
@@ -193,7 +198,7 @@ namespace Stratis.SmartContracts.Core.ContractValidation
         /// <param name="referencedMethod">The method that is non-deterministic in the containing method.</param>
         public static SmartContractValidationError NonDeterministicError(MethodDefinition userMethod, MethodDefinition referencedMethod)
         {
-            return new SmartContractValidationError(userMethod, NonDeterministicMethodReference, $"Use of {referencedMethod.FullName} is not deterministic.");
+            return new SmartContractValidationError(userMethod, NonDeterministicMethodReference, $"{referencedMethod.FullName} is non-deterministic.");
         }
     }
 }

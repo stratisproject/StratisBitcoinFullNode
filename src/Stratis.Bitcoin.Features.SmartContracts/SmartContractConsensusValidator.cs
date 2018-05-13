@@ -179,35 +179,32 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         }
 
         /// <summary>
-        /// TODO: Could be incomplete. Should handle transactions just like blockassembler (e.g. exactly the same
-        /// in terms of what happens when contracts fail,  Rollback() etc.)
+        /// Executes contracts as necessary and updates the coinview / UTXOset after execution.
         /// </summary>
         /// <param name="context"></param>
         /// <param name="transaction"></param>
         protected void UpdateCoinViewAndExecuteContracts(RuleContext context, Transaction transaction, IContractStateRepository trackedState)
         {
-            Money mempoolFee = 0;
-            if (!transaction.IsCoinBase)
-            {
-                mempoolFee = transaction.GetFee(context.Set);
-            }
-
-            base.UpdateCoinView(context, transaction);
-
             if (this.generatedTransaction != null)
             {
                 ValidateGeneratedTransaction(transaction);
+                base.UpdateCoinView(context, transaction);
                 return;
             }
-            
+
             // If we are here, was definitely submitted by someone
             ValidateSubmittedTransaction(transaction);
-
             TxOut smartContractTxOut = transaction.Outputs.FirstOrDefault(txOut => txOut.ScriptPubKey.IsSmartContractExec);
             if (smartContractTxOut == null)
+            {
+                // Someone submitted a standard transaction - no smart contract opcodes.
+                base.UpdateCoinView(context, transaction);
                 return;
+            }
 
-            ExecuteContractTransaction(context, transaction, smartContractTxOut, mempoolFee);
+            // Someone submitted a smart contract transaction.
+            ExecuteContractTransaction(context, transaction, smartContractTxOut);
+            base.UpdateCoinView(context, transaction);
         }
 
         /// <summary>
@@ -221,7 +218,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             this.generatedTransaction = null;
             return;
         }
-        
+
         /// <summary>
         /// Validates that a submitted transacction doesn't contain illegal operations
         /// </summary>
@@ -231,7 +228,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             if (transaction.Inputs.Any(x => x.ScriptSig.IsSmartContractSpend))
                 SmartContractConsensusErrors.UserOpSpend.Throw();
             if (transaction.Outputs.Any(x => x.ScriptPubKey.IsSmartContractInternalCall))
-                SmartContractConsensusErrors.UserInternalCall.Throw(); 
+                SmartContractConsensusErrors.UserInternalCall.Throw();
         }
 
         /// <summary>
@@ -240,7 +237,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         /// <param name="context"></param>
         /// <param name="transaction"></param>
         /// <param name="smartContractTxOut"></param>
-        private void ExecuteContractTransaction(RuleContext context, Transaction transaction, TxOut smartContractTxOut, Money mempoolFee)
+        private void ExecuteContractTransaction(RuleContext context, Transaction transaction, TxOut smartContractTxOut)
         {
             ulong blockHeight = Convert.ToUInt64(context.BlockValidationContext.ChainedBlock.Height);
 
@@ -266,6 +263,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts
 
             uint160 coinbaseAddress = getCoinbaseResult.Sender;
 
+            Money mempoolFee = transaction.GetFee(context.Set);
+
             SmartContractExecutor executor = this.executorFactory.CreateExecutor(smartContractCarrier, mempoolFee, this.originalStateRoot);
 
             ISmartContractExecutionResult result = executor.Execute(blockHeight, coinbaseAddress);
@@ -278,7 +277,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
 
         private void ValidateRefunds(List<TxOut> refunds, Transaction coinbaseTransaction)
         {
-            foreach(TxOut refund in refunds)
+            foreach (TxOut refund in refunds)
             {
                 TxOut refundToMatch = coinbaseTransaction.Outputs[this.refundCounter];
                 if (refund.Value != refundToMatch.Value || refund.ScriptPubKey != refundToMatch.ScriptPubKey)

@@ -6,6 +6,7 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Builder.Feature;
+using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.Interfaces;
 using Stratis.Bitcoin.Features.Consensus.Rules;
@@ -43,6 +44,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts
     {
         public static IFullNodeBuilder AddSmartContracts(this IFullNodeBuilder fullNodeBuilder)
         {
+            LoggingConfiguration.RegisterFeatureNamespace<SmartContractFeature>("smartcontracts");
+
             fullNodeBuilder.ConfigureFeature(features =>
             {
                 features
