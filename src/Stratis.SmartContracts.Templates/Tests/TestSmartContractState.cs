@@ -92,13 +92,13 @@ namespace $safeprojectname$
             throw new NotImplementedException();
         }
 
-        public ISmartContractMapping<V> GetMapping<V>(string name)
+        public ISmartContractMapping<T> GetMapping<T>(string name)
         {
             if (mappings.ContainsKey(name))
-                return (ISmartContractMapping<V>)mappings[name];
+                return (ISmartContractMapping<T>)mappings[name];
 
-            mappings[name] = new TestMapping<V>();
-            return (ISmartContractMapping<V>)mappings[name];
+            mappings[name] = new TestMapping<T>();
+            return (ISmartContractMapping<T>)mappings[name];
         }
 
         public T GetObject<T>(string key)
