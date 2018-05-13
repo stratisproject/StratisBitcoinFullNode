@@ -193,7 +193,7 @@ namespace $safeprojectname$
         public T this[uint key] { get => GetValue(key); set => SetValue(key, value); }
     }
 
-public class TestGasMeter : IGasMeter
+    public class TestGasMeter : IGasMeter
     {
         public Gas GasAvailable { get; private set; }
 
