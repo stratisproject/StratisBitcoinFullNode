@@ -86,10 +86,15 @@ namespace $safeprojectname$
     {
         private Dictionary<string, object> objects = new Dictionary<string, object>();
         private Dictionary<string, TestMapping> mappings = new Dictionary<string, TestMapping>();
-
+        private Dictionary<string, TestList> lists = new Dictionary<string, TestList>();
+        
         public ISmartContractList<T> GetList<T>(string name)
         {
-            throw new NotImplementedException();
+            if (lists.ContainsKey(name))
+                return (ISmartContractList<T>)lists[name];
+
+            lists[name] = new TestList<T>();
+            return (ISmartContractList<T>)lists[name];
         }
 
         public ISmartContractMapping<T> GetMapping<T>(string name)
@@ -147,5 +152,36 @@ namespace $safeprojectname$
         {
             mapping[key] = value;
         }
+    }
+
+    public abstract class TestList
+    {
+
+    }
+
+    public class TestList<T> : ISmartContractList<T>
+    {
+        private readonly List<T> list;
+
+        public TestList()
+        {
+            this.list = new List<T>();
+        }
+        public void Add(T item)
+        {
+            this.list.Add(item);
+        }
+
+        public T Get(uint index)
+        {
+            return this.list[(int)index];
+        }
+
+        public IEnumerator<T> GetEnumerator()
+        {
+            return this.list.GetEnumerator();
+        }
+
+        public uint Count => (uint)this.list.Count;
     }
 }
