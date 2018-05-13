@@ -173,9 +173,14 @@ namespace $safeprojectname$
             this.list.Add(item);
         }
 
-        public T Get(uint index)
+        public T GetValue(uint index)
         {
             return this.list[(int)index];
+        }
+
+        public void SetValue(uint index, T value)
+        {
+            list[(int)index] = value;
         }
 
         public IEnumerator<T> GetEnumerator()
@@ -184,9 +189,11 @@ namespace $safeprojectname$
         }
 
         public uint Count => (uint)this.list.Count;
+
+        public T this[uint key] { get => GetValue(key); set => SetValue(key, value); }
     }
 
-    public class TestGasMeter : IGasMeter
+public class TestGasMeter : IGasMeter
     {
         public Gas GasAvailable { get; private set; }
 
