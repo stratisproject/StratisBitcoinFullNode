@@ -36,7 +36,10 @@ namespace Stratis.SmartContracts.Core.Compilation
                 AssemblyName,
                 new[] { syntaxTree },
                 GetReferences(),
-                new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
+                new CSharpCompilationOptions(
+                    OutputKind.DynamicallyLinkedLibrary, 
+                    checkOverflow: true,
+                    optimizationLevel: OptimizationLevel.Release));
 
             using (var dllStream = new MemoryStream())
             {
