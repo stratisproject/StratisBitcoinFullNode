@@ -189,6 +189,10 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Controllers
 
         private BuildCreateContractTransactionResponse BuildCreateTx(BuildCreateContractTransactionRequest request)
         {
+            AddressBalance addressBalance = this.walletManager.GetAddressBalance(request.Sender);
+            if (addressBalance.AmountConfirmed == 0)
+                return BuildCreateContractTransactionResponse.Failed("Your wallet does not contain any spendable transactions, balance is 0.0");
+
             var selectedInputs = new List<OutPoint>();
             var coinbaseMaturity = Convert.ToInt32(this.network.Consensus.Option<SmartContractConsensusOptions>().CoinbaseMaturity);
             selectedInputs = this.walletManager.GetSpendableTransactionsInWallet(request.WalletName, coinbaseMaturity).Where(x => x.Address.Address == request.Sender).Select(x => x.ToOutPoint()).ToList();
@@ -230,6 +234,10 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Controllers
 
         private BuildCallContractTransactionResponse BuildCallTx(BuildCallContractTransactionRequest request)
         {
+            AddressBalance addressBalance = this.walletManager.GetAddressBalance(request.Sender);
+            if (addressBalance.AmountConfirmed == 0)
+                return BuildCallContractTransactionResponse.Failed("Your wallet does not contain any spendable transactions, balance is 0.0");
+
             var selectedInputs = new List<OutPoint>();
             var coinbaseMaturity = Convert.ToInt32(this.network.Consensus.Option<SmartContractConsensusOptions>().CoinbaseMaturity);
             selectedInputs = this.walletManager.GetSpendableTransactionsInWallet(request.WalletName, coinbaseMaturity).Where(x => x.Address.Address == request.Sender).Select(x => x.ToOutPoint()).ToList();

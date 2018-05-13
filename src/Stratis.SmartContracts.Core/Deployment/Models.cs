@@ -4,7 +4,7 @@ namespace Stratis.SmartContracts.Core.Deployment
 {
     public class BuildCreateContractTransactionRequest
     {
-        public string WalletName { get; set; }        
+        public string WalletName { get; set; }
         public string AccountName { get; set; }
         public string FeeAmount { get; set; }
         public string Password { get; set; }
@@ -16,9 +16,15 @@ namespace Stratis.SmartContracts.Core.Deployment
     }
 
     public class BuildCreateContractTransactionResponse
-    {       
+    {
+        [NetJSON.NetJSONProperty("message")]
+        public string Message { get; set; }
+
         [NetJSON.NetJSONProperty("newContractAddress")]
         public string NewContractAddress { get; set; }
+
+        [NetJSON.NetJSONProperty("success")]
+        public bool Success { get; set; }
     }
 
     public class ErrorResponse

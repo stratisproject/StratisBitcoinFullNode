@@ -4,37 +4,43 @@ namespace Stratis.SmartContracts.Core.Deployment
 {
     public class DeploymentResult
     {
-        private DeploymentResult(string contractAddress)
+        public string ContractAddress { get; private set; }
+        public IEnumerable<string> Errors { get; private set; }
+        public string Message { get; private set; }
+        public bool Success { get; private set; }
+
+        private DeploymentResult()
         {
-            this.Success = true;
-            this.ContractAddress = contractAddress;
+            this.Errors = new List<string>();
         }
 
-        private DeploymentResult(IEnumerable<string> errors)
+        public static DeploymentResult DeploymentSuccess(BuildCreateContractTransactionResponse response)
         {
-            this.Success = false;
-            this.Errors = errors;
-        }
-
-        public IEnumerable<string> Errors { get; }
-
-        public string ContractAddress { get; }
-
-        public bool Success { get; }
-
-        public static DeploymentResult DeploymentSuccess(string contractAddress)
-        {
-            return new DeploymentResult(contractAddress);
+            return new DeploymentResult()
+            {
+                ContractAddress = response.NewContractAddress,
+                Message = response.Message,
+                Success = true
+            };
         }
 
         public static DeploymentResult DeploymentFailure(IEnumerable<string> errors)
         {
-            return new DeploymentResult(errors);
+            return new DeploymentResult() { Errors = errors, Success = false };
         }
 
         public static DeploymentResult DeploymentFailure(string error)
         {
-            return new DeploymentResult(new [] { error });
+            return new DeploymentResult() { Errors = new[] { error } };
+        }
+
+        public static DeploymentResult DeploymentFailure(BuildCreateContractTransactionResponse response)
+        {
+            return new DeploymentResult()
+            {
+                Message = response.Message,
+                Success = false
+            };
         }
     }
 }
