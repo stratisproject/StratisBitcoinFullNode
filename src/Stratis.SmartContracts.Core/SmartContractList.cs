@@ -31,6 +31,19 @@ namespace Stratis.SmartContracts.Core
             }
         }
 
+        public T this[uint index]
+        {
+            get
+            {
+                return GetValue(index);
+            }
+            set
+            {
+                SetValue(index, value);
+            }
+
+        }
+
         public SmartContractList(IPersistentState persistentState, string name)
         {
             if (string.IsNullOrWhiteSpace(name))
@@ -44,13 +57,18 @@ namespace Stratis.SmartContracts.Core
 
         public void Add(T item)
         {
-            this.persistentState.SetObject(this.GetKeyString(this.FormatIndex(this.Count)), item);
+            SetValue(this.Count, item);
             this.Count = this.Count + 1;
         }
 
-        public T Get(uint index)
+        public T GetValue(uint index)
         {
             return this.persistentState.GetObject<T>(this.GetKeyString(this.FormatIndex(index)));
+        }
+
+        public void SetValue(uint index, T value)
+        {
+            this.persistentState.SetObject(this.GetKeyString(this.FormatIndex(index)), value);
         }
 
         IEnumerator IEnumerable.GetEnumerator()
@@ -62,7 +80,7 @@ namespace Stratis.SmartContracts.Core
         {
             for (uint i = 0; i < this.Count; i++)
             {
-                yield return this.Get(i);
+                yield return this.GetValue(i);
             }
         }
 
