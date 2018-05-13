@@ -198,7 +198,7 @@ namespace Stratis.SmartContracts.Core.ContractValidation
         /// <param name="referencedMethod">The method that is non-deterministic in the containing method.</param>
         public static SmartContractValidationError NonDeterministicError(MethodDefinition userMethod, MethodDefinition referencedMethod)
         {
-            return new SmartContractValidationError(userMethod, NonDeterministicMethodReference, $"{userMethod.FullName} references {referencedMethod.FullName}, which is non-deterministic.");
+            return new SmartContractValidationError(userMethod, NonDeterministicMethodReference, $"{referencedMethod.FullName} is non-deterministic.");
         }
     }
 }
