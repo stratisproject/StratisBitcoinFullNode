@@ -17,11 +17,15 @@ namespace Stratis.SmartContracts
         /// <summary>
         /// Return the item at the given index in the list.
         /// </summary>
-        T Get(uint index);
+        T GetValue(uint index);
+
+        void SetValue(uint index, T value);
 
         /// <summary>
         /// Get the enumerator for the list.
         /// </summary>
         IEnumerator<T> GetEnumerator();
+
+        T this[uint key] { get; set; }
     }
 }

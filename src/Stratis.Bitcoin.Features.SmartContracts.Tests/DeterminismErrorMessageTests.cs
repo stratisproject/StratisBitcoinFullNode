@@ -36,7 +36,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             Assert.False(result.IsValid);
             Assert.Single(result.Errors);
             Assert.Equal("Float usage", result.Errors.First().ErrorType);
-            Assert.Equal("Float used within System.Void MessageTest::MessageTestFloat()", result.Errors.First().Message);
         }
 
         [Fact]
@@ -67,7 +66,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             Assert.False(result.IsValid);
             Assert.Single(result.Errors);
             Assert.Equal(SmartContractDeterminismValidator.NonDeterministicMethodReference, result.Errors.First().ErrorType);
-            Assert.Equal("System.Void MessageTest::MessageTestDateTime() references System.DateTime System.DateTime::get_Now(), which is non-deterministic.", result.Errors.First().Message);
         }
 
         [Fact]
@@ -102,9 +100,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             Assert.False(result.IsValid);
             Assert.Equal(2, result.Errors.Count());
             Assert.Equal("Float usage", result.Errors.First().ErrorType);
-            Assert.Equal("Float used within System.Void MessageTest::MessageTestFloat1()", result.Errors.First().Message);
             Assert.Equal("Float usage", result.Errors.Skip(1).Take(1).First().ErrorType);
-            Assert.Equal("Float used within System.Void MessageTest::MessageTestFloat2()", result.Errors.Skip(1).Take(1).First().Message);
         }
 
         [Fact]
@@ -146,9 +142,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             Assert.False(result.IsValid);
             Assert.Equal(2, result.Errors.Count());
             Assert.Equal("Float usage", result.Errors.First().ErrorType);
-            Assert.Equal("Float used within System.Void MessageTest::MessageTestFloat1()", result.Errors.First().Message);
             Assert.Equal("Float usage", result.Errors.Skip(1).Take(1).First().ErrorType);
-            Assert.Equal("Float used within System.Void MessageTest::MessageTestFloat3()", result.Errors.Skip(1).Take(1).First().Message);
         }
 
         [Fact]
@@ -183,7 +177,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             Assert.False(result.IsValid);
             Assert.Single(result.Errors);
             Assert.Equal("Float usage", result.Errors.First().ErrorType);
-            Assert.Equal("Float used within System.Void MessageTest::MessageTestFloat1()", result.Errors.First().Message);
         }
 
         [Fact]
@@ -223,7 +216,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             Assert.False(result.IsValid);
             Assert.Single(result.Errors);
             Assert.Equal("Float usage", result.Errors.First().ErrorType);
-            Assert.Equal("Float used within System.Void MessageTest::MessageTestFloat1()", result.Errors.First().Message);
         }
 
         [Fact]
@@ -268,7 +260,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             Assert.False(result.IsValid);
             Assert.Single(result.Errors);
             Assert.Equal("Float usage", result.Errors.First().ErrorType);
-            Assert.Equal("Float used within System.Void MessageTest::MessageTestFloat1()", result.Errors.First().Message);
         }
 
         [Fact]
@@ -305,7 +296,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             Assert.False(result.IsValid);
             Assert.Single(result.Errors);
             Assert.Equal("Float usage", result.Errors.First().ErrorType);
-            Assert.Equal("Float used within System.Void MessageTest::MessageTestValid1()", result.Errors.First().Message);
         }
     }
 }

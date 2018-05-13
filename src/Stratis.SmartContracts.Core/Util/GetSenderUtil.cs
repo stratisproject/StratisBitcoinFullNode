@@ -32,7 +32,6 @@ namespace Stratis.SmartContracts.Core.Util
                     if (btx.GetHash() == prevOut.Hash)
                     {
                         Script script = btx.Outputs[prevOut.N].ScriptPubKey;
-
                         return GetAddressFromScript(script);
                     }
                 }
@@ -77,8 +76,7 @@ namespace Stratis.SmartContracts.Core.Util
                 var address = new uint160(PayToPubkeyHashTemplate.Instance.ExtractScriptPubKeyParameters(script).ToBytes());
                 return GetSenderResult.CreateSuccess(address);
             }
-
-            return GetSenderResult.CreateFailure("Addresses can only be retrieved from Pay to Pub Key or Pay to Pub Key Hash");            
+            return GetSenderResult.CreateFailure("Addresses can only be retrieved from Pay to Pub Key or Pay to Pub Key Hash");
         }
 
         public class GetSenderResult

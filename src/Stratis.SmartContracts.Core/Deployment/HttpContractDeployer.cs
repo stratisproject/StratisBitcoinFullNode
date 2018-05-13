@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using System.Text;
@@ -12,7 +13,6 @@ namespace Stratis.SmartContracts.Core.Deployment
     public class HttpContractDeployer
     {
         private readonly HttpClient client;
-
         private readonly string deploymentResource;
 
         public HttpContractDeployer(HttpClient httpClient, string deploymentResource = "")
@@ -24,12 +24,7 @@ namespace Stratis.SmartContracts.Core.Deployment
         /// <summary>
         /// Deploys a contract's bytecode to the provided node via HTTP
         /// </summary>
-        /// <param name="node"></param>
-        /// <param name="model"></param>
-        /// <returns></returns>
-        public async Task<DeploymentResult> DeployAsync(
-            string node,
-            BuildCreateContractTransactionRequest model)
+        public async Task<DeploymentResult> DeployAsync(string nodeUrl, BuildCreateContractTransactionRequest model)
         {
             string json = NetJSON.NetJSON.Serialize(model);
 
@@ -38,21 +33,34 @@ namespace Stratis.SmartContracts.Core.Deployment
             try
             {
                 response = await this.client.PostAsync(
-                    GetDeploymentUri(node, this.deploymentResource),
+                    GetDeploymentUri(nodeUrl, this.deploymentResource),
                     new StringContent(json, Encoding.UTF8, "application/json"));
             }
             catch (HttpRequestException e)
             {
-                return DeploymentResult.DeploymentFailure(e.Message);
+                var errors = new List<string>
+                {
+                    e.Message,
+                };
+
+                if (e.InnerException != null)
+                    errors.Add(e.InnerException.Message);
+
+                errors.Add("Please ensure that an instance of your full node is running before trying to deploy a smart contract.");
+
+                return DeploymentResult.DeploymentFailure(errors);
             }
 
             if (response.IsSuccessStatusCode)
             {
                 string successJson = await response.Content.ReadAsStringAsync();
-                var successResponse =
+                BuildCreateContractTransactionResponse successResponse =
                     NetJSON.NetJSON.Deserialize<BuildCreateContractTransactionResponse>(successJson);
 
-                return DeploymentResult.DeploymentSuccess(successResponse.NewContractAddress);
+                if (successResponse.Success)
+                    return DeploymentResult.DeploymentSuccess(successResponse);
+                else
+                    return DeploymentResult.DeploymentFailure(successResponse);
             }
 
             if (response.Content == null)
@@ -64,11 +72,11 @@ namespace Stratis.SmartContracts.Core.Deployment
 
             try
             {
-                var resp = NetJSON.NetJSON.Deserialize<ErrorResponse>(responseBody);
+                ErrorResponse resp = NetJSON.NetJSON.Deserialize<ErrorResponse>(responseBody);
 
                 return DeploymentResult.DeploymentFailure(resp.Errors.Select(err => err.Message));
             }
-            catch (Exception e)
+            catch (Exception)
             {
                 return DeploymentResult.DeploymentFailure(responseBody);
             }
@@ -77,12 +85,9 @@ namespace Stratis.SmartContracts.Core.Deployment
         /// <summary>
         /// Creates a new URI based on a node and a resource
         /// </summary>
-        /// <param name="node"></param>
-        /// <param name="resource"></param>
-        /// <returns></returns>
-        public static Uri GetDeploymentUri(string node, string resource)
+        public static Uri GetDeploymentUri(string nodeUrl, string resource)
         {
-            return new Uri(new Uri(node), resource);
+            return new Uri(new Uri(nodeUrl), resource);
         }
     }
 }
