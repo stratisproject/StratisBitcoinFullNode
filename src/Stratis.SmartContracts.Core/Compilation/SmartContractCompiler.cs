@@ -32,6 +32,7 @@ namespace Stratis.SmartContracts.Core.Compilation
         {
             SyntaxTree syntaxTree = CSharpSyntaxTree.ParseText(source);
 
+            // @TODO - Use OptimizationLevel.Release once we switch to injecting compiler options
             CSharpCompilation compilation = CSharpCompilation.Create(
                 AssemblyName,
                 new[] { syntaxTree },
