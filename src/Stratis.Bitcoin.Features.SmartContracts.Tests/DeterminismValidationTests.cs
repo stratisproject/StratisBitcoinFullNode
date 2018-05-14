@@ -176,10 +176,30 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
         #region Arrays
 
+        /*
+         * The compiler handles arrays differently when they're initialised with less
+         * than 2 or more than 2 elements.
+         * 
+         * In the case where it's more than 2 items it adds a <PrivateImplementationDetails> type to the module.
+         * 
+         * We test for both cases below.
+         */
+
         [Fact]
-        public void Validate_Determinism_Passes_ArrayConstruction()
+        public void Validate_Determinism_Passes_ArrayConstruction_MoreThan2()
         {
             string adjustedSource = TestString.Replace(ReplaceCodeString, @"var test = new int[]{2,2,3};").Replace(ReplaceReferencesString, "");
+
+            byte[] assemblyBytes = SmartContractCompiler.Compile(adjustedSource).Compilation;
+            SmartContractDecompilation decomp = SmartContractDecompiler.GetModuleDefinition(assemblyBytes);
+            SmartContractValidationResult result = this.validator.Validate(decomp);
+            Assert.True(result.IsValid);
+        }
+
+        [Fact]
+        public void Validate_Determinism_Passes_ArrayConstruction_LessThan2()
+        {
+            string adjustedSource = TestString.Replace(ReplaceCodeString, @"var test = new int[]{10167};").Replace(ReplaceReferencesString, "");
 
             byte[] assemblyBytes = SmartContractCompiler.Compile(adjustedSource).Compilation;
             SmartContractDecompilation decomp = SmartContractDecompiler.GetModuleDefinition(assemblyBytes);
