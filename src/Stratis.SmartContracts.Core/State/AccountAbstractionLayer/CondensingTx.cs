@@ -53,10 +53,10 @@ namespace Stratis.SmartContracts.Core.State.AccountAbstractionLayer
 
             this.smartContractCarrier = smartContractCarrier;
 
+            this.network = network;
             this.nVouts = new Dictionary<uint160, uint>();
             this.txBalances = new Dictionary<uint160, ulong>();
             this.unspents = new List<ContractUnspentOutput>();
-            this.network = network;
         }
 
         public CondensingTx(ILoggerFactory loggerFactory, SmartContractCarrier smartContractCarrier, IList<TransferInfo> transfers, IContractStateRepository stateRepository, Network network)
@@ -229,26 +229,26 @@ namespace Stratis.SmartContracts.Core.State.AccountAbstractionLayer
                 uniqueAddresses.Add(transferInfo.From);
             }
 
-            foreach (uint160 unique in uniqueAddresses)
+            foreach (uint160 uniqueAddress in uniqueAddresses)
             {
-                this.logger.LogTrace("{0}:{1}", nameof(unique), unique);
+                this.logger.LogTrace("{0}:{1}", nameof(uniqueAddress), uniqueAddress.ToAddress(this.network));
 
-                ContractUnspentOutput unspent = this.stateRepository.GetUnspent(unique);
+                ContractUnspentOutput unspent = this.stateRepository.GetUnspent(uniqueAddress);
                 if (unspent != null && unspent.Value > 0)
                 {
-                    this.logger.LogTrace("{0}:{1},{2}:{3}", nameof(unspent), unspent, nameof(unspent.Value), unspent.Value);
+                    this.logger.LogTrace("{0}:{1},{2}:{3}", nameof(unspent.Hash), unspent.Hash, nameof(unspent.Nvout), unspent.Nvout, nameof(unspent.Value), unspent.Value);
 
                     this.unspents.Add(unspent);
 
-                    if (this.txBalances.ContainsKey(unique))
+                    if (this.txBalances.ContainsKey(uniqueAddress))
                     {
                         this.logger.LogTrace("[TXBALANCE_CONTAINS_KEY]");
-                        this.txBalances[unique] += unspent.Value;
+                        this.txBalances[uniqueAddress] += unspent.Value;
                     }
                     else
                     {
                         this.logger.LogTrace("[TXBALANCE_DOESNOT_CONTAIN_KEY]");
-                        this.txBalances[unique] = unspent.Value;
+                        this.txBalances[uniqueAddress] = unspent.Value;
                     }
                 }
             }
@@ -256,7 +256,7 @@ namespace Stratis.SmartContracts.Core.State.AccountAbstractionLayer
             // Lastly update the funds to be distributed based on the transfers that have taken place.
             foreach (TransferInfo transfer in this.transfers.Where(x => x.Value > 0))
             {
-                this.logger.LogTrace("{0}:{1},{2}:{3}", nameof(transfer), transfer.To, nameof(transfer.Value), transfer.Value);
+                this.logger.LogTrace("{0}:{1},{2}:{3}", nameof(transfer.To), transfer.To.ToAddress(this.network), nameof(transfer.Value), transfer.Value);
 
                 if (this.txBalances.ContainsKey(transfer.To))
                 {
