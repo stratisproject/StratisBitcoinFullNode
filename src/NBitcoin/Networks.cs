@@ -10,14 +10,6 @@ namespace NBitcoin
 {
     public partial class Network
     {
-        static Network()
-        {
-            // initialize the networks
-            Network main = Network.Main;
-            Network testNet = Network.TestNet;
-            Network regTest = Network.RegTest;
-        }
-
         /// <summary> Bitcoin maximal value for the calculated time offset. If the value is over this limit, the time syncing feature will be switched off. </summary>
         public const int BitcoinMaxTimeOffsetSeconds = 70 * 60;
 
