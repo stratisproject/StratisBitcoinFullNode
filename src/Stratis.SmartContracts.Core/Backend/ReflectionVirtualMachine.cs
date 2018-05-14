@@ -131,17 +131,10 @@ namespace Stratis.SmartContracts.Core.Backend
             {
                 MethodInfo methodToInvoke = contractType.GetMethod(contractMethodName);
                 if (methodToInvoke == null)
-                {
-                    var errorMessage = string.Format("[CALLCONTRACT_METHODTOINVOKE_NULL_DOESNOT_EXIST]:{0}={1}", nameof(contractMethodName), contractMethodName);
-                    this.logger.LogTrace("(-){0}", errorMessage);
-                    throw new ArgumentException(errorMessage);
-                }
+                    throw new ArgumentException(string.Format("[CALLCONTRACT_METHODTOINVOKE_NULL_DOESNOT_EXIST]:{0}={1}", nameof(contractMethodName), contractMethodName));
 
                 if (methodToInvoke.IsConstructor)
-                {
-                    this.logger.LogTrace("(-)[CALLCONTRACT_CANNOT_INVOKE_CTOR]");
-                    throw new ConstructorInvocationException("Cannot invoke constructor");
-                }
+                    throw new ConstructorInvocationException("[CALLCONTRACT_CANNOT_INVOKE_CTOR]");
 
                 SmartContract smartContract = result.Object;
                 executionResult.Return = methodToInvoke.Invoke(smartContract, context.Parameters);
