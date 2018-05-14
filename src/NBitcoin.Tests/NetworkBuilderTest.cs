@@ -433,7 +433,7 @@ namespace NBitcoin.Tests
 
             Network result = this.builder.BuildAndRegister();
 
-            Assert.Equal(new byte[] { (196) }, result.base58Prefixes[(int)Base58Type.SCRIPT_ADDRESS]);
+            Assert.Equal(new byte[] { (196) }, result.Base58Prefixes[(int)Base58Type.SCRIPT_ADDRESS]);
         }
 
         [Fact]
@@ -444,7 +444,7 @@ namespace NBitcoin.Tests
 
             Network result = this.builder.BuildAndRegister();
 
-            Assert.Equal(Encoders.Bech32("bc").HumanReadablePart, result.bech32Encoders[(int)Bech32Type.WITNESS_PUBKEY_ADDRESS].HumanReadablePart);
+            Assert.Equal(Encoders.Bech32("bc").HumanReadablePart, result.Bech32Encoders[(int)Bech32Type.WITNESS_PUBKEY_ADDRESS].HumanReadablePart);
         }
 
         [Fact]
@@ -456,7 +456,7 @@ namespace NBitcoin.Tests
 
             Network result = this.builder.BuildAndRegister();
 
-            Assert.Equal(encoder.HumanReadablePart, result.bech32Encoders[(int)Bech32Type.WITNESS_PUBKEY_ADDRESS].HumanReadablePart);
+            Assert.Equal(encoder.HumanReadablePart, result.Bech32Encoders[(int)Bech32Type.WITNESS_PUBKEY_ADDRESS].HumanReadablePart);
         }
 
         [Fact]

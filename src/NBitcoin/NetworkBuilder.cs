@@ -103,11 +103,11 @@ namespace NBitcoin
             this.Base58Prefixes.Clear();
             this.Bech32Prefixes.Clear();
 
-            for (int i = 0; i < network.base58Prefixes.Length; i++)
-                this.SetBase58Bytes((Base58Type)i, network.base58Prefixes[i]);
+            for (int i = 0; i < network.Base58Prefixes.Length; i++)
+                this.SetBase58Bytes((Base58Type)i, network.Base58Prefixes[i]);
 
-            for (int i = 0; i < network.bech32Encoders.Length; i++)
-                this.SetBech32((Bech32Type)i, network.bech32Encoders[i]);
+            for (int i = 0; i < network.Bech32Encoders.Length; i++)
+                this.SetBech32((Bech32Type)i, network.Bech32Encoders[i]);
 
             this.SetConsensus(network.Consensus)
                 .SetCheckpoints(network.Checkpoints)
