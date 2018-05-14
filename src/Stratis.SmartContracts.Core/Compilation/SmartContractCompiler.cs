@@ -32,14 +32,14 @@ namespace Stratis.SmartContracts.Core.Compilation
         {
             SyntaxTree syntaxTree = CSharpSyntaxTree.ParseText(source);
 
+            // @TODO - Use OptimizationLevel.Release once we switch to injecting compiler options
             CSharpCompilation compilation = CSharpCompilation.Create(
                 AssemblyName,
                 new[] { syntaxTree },
                 GetReferences(),
                 new CSharpCompilationOptions(
                     OutputKind.DynamicallyLinkedLibrary, 
-                    checkOverflow: true,
-                    optimizationLevel: OptimizationLevel.Release));
+                    checkOverflow: true));
 
             using (var dllStream = new MemoryStream())
             {
