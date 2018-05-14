@@ -304,8 +304,8 @@ namespace Stratis.SmartContracts.Core
 
             if (transfers != null && transfers.Any() || this.carrier.TxOutValue > 0)
             {
-                this.logger.LogTrace("[CREATE_CONDENSING_TX] {0}={1},{2}={3}", nameof(transfers), transfers.Count, nameof(this.carrier.TxOutValue), this.carrier.TxOutValue);
-                var condensingTx = new CondensingTx(this.carrier, transfers, this.stateSnapshot, this.network);
+                this.logger.LogTrace("[CREATE_CONDENSING_TX]:{0}={1},{2}={3}", nameof(transfers), transfers.Count, nameof(this.carrier.TxOutValue), this.carrier.TxOutValue);
+                var condensingTx = new CondensingTx(this.loggerFactory, this.carrier, transfers, this.stateSnapshot, this.network);
                 this.Result.InternalTransaction = condensingTx.CreateCondensingTransaction();
             }
 
@@ -324,8 +324,8 @@ namespace Stratis.SmartContracts.Core
 
             if (this.carrier.TxOutValue > 0)
             {
-                this.logger.LogTrace("[CREATE_REFUND_TX] {0}={1}", nameof(this.carrier.TxOutValue), this.carrier.TxOutValue);
-                Transaction tx = new CondensingTx(this.carrier, this.network).CreateRefundTransaction();
+                this.logger.LogTrace("[CREATE_REFUND_TX]:{0}={1}", nameof(this.carrier.TxOutValue), this.carrier.TxOutValue);
+                Transaction tx = new CondensingTx(this.loggerFactory, this.carrier, this.network).CreateRefundTransaction();
                 this.Result.InternalTransaction = tx;
             }
 
