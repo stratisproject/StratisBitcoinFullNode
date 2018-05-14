@@ -9,9 +9,15 @@ namespace Stratis.SmartContracts.Core.ContractValidation
     /// </summary>
     public class SingleTypeValidator : IModuleDefinitionValidator
     {
+        private static readonly HashSet<string> IgnoredInCount = new HashSet<string>
+        {
+            "<Module>", // Part of every module
+            "<PrivateImplementationDetails>" // Added when constructing an array
+        };
+
         public IEnumerable<SmartContractValidationError> Validate(ModuleDefinition module)
         {
-            List<TypeDefinition> typeDefinitions = module.Types.Where(x => x.FullName != "<Module>").ToList();
+            List<TypeDefinition> typeDefinitions = module.Types.Where(x => !IgnoredInCount.Contains(x.FullName)).ToList();
 
             if (typeDefinitions.Count != 1)
             {
