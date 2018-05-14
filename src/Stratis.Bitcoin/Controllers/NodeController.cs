@@ -7,6 +7,7 @@ using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Controllers.Models;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.Utilities;
+using System.Diagnostics;
 
 namespace Stratis.Bitcoin.Controllers
 {
@@ -53,6 +54,7 @@ namespace Stratis.Bitcoin.Controllers
             {
                 Version = this.fullNode.Version?.ToString() ?? "0",
                 Agent = this.nodeSettings.Agent,
+                PID = Process.GetCurrentProcess().Id,
                 Network = this.fullNode.Network.Name,
                 ConsensusHeight = this.chainState.ConsensusTip.Height,
                 DataDirectoryPath = this.nodeSettings.DataDir,

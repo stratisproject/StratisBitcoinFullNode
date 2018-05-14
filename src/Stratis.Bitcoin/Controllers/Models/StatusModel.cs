@@ -27,6 +27,9 @@ namespace Stratis.Bitcoin.Controllers.Models
         /// <summary>The network the current node is running on.</summary>
         public string Network { get; set; }
 
+        /// <summary> The processId of the node.</summary>
+        public int PID { get; set; }
+
         /// <summary>The height of the consensus.</summary>
         public int ConsensusHeight { get; set; }
 
