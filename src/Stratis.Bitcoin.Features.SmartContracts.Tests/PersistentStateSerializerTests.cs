@@ -33,11 +33,34 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             TestType<string>("Test String");
         }
 
+        [Fact]
+        public void PersistentState_CanSerializeValueType()
+        {
+        }
+
         private void TestType<T>(T input)
         {
             byte[] testBytes = this.serializer.Serialize(input, Network.SmartContractsRegTest);
             T output = this.serializer.Deserialize<T>(testBytes, Network.SmartContractsRegTest);
             Assert.Equal(input, output);
         }
+    }
+
+    public struct TestValueType
+    {
+        public Address AddressField;
+        public Address AddressProp { get; set; }
+
+        public bool BoolField;
+        public bool BoolProp { get; set; }
+
+        public int IntField;
+        public int IntProp { get; set; }
+
+        public long LongField;
+        public long LongProp { get; set; }
+
+        public uint UintField;
+        public uint UintProp { get; set; }
     }
 }
