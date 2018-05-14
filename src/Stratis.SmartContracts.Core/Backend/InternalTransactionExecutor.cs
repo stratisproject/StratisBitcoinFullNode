@@ -40,7 +40,7 @@ namespace Stratis.SmartContracts.Core.Backend
             var balance = smartContractState.GetBalance();
             if (balance < amountToTransfer)
             {
-                this.logger.LogTrace("(-)[INSUFFICIENT_BALANCE] {0}={1}", nameof(balance), balance);
+                this.logger.LogTrace("(-)[INSUFFICIENT_BALANCE]:{0}={1}", nameof(balance), balance);
                 throw new InsufficientBalanceException();
             }
 
@@ -55,8 +55,7 @@ namespace Stratis.SmartContracts.Core.Backend
                     Value = amountToTransfer
                 });
 
-                this.logger.LogTrace("Transfer {0} from {1} to {2}.", smartContractState.Message.ContractAddress.ToUint160(this.network), addressTo.ToUint160(this.network), amountToTransfer);
-                this.logger.LogTrace("(-)[TRANSFER_TO_SENDER]");
+                this.logger.LogTrace("(-)[TRANSFER_TO_SENDER]:Transfer {0} from {1} to {2}.", smartContractState.Message.ContractAddress, addressTo, amountToTransfer);
                 return TransferResult.Empty();
             }
 
