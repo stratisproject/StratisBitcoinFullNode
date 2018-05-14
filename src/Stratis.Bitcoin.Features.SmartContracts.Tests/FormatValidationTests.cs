@@ -116,7 +116,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             Assert.Single(validationResult);
         }
 
-
         [Fact]
         public void SmartContract_ValidateFormat_ArrayInitialization()
         {
@@ -126,6 +125,78 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             IEnumerable<SmartContractValidationError> validationResult = validator.Validate(type);
 
             Assert.Empty(validationResult);
+        }
+
+        [Fact]
+        public void SmartContract_ValidateFormat_One_CustomStruct()
+        {
+            var adjustedSource = @"
+                using System;
+                using Stratis.SmartContracts;
+
+                public class StructTest : SmartContract
+                {
+                    public struct Item
+                    {
+                        public int Number;
+                        public string Name;
+                    }
+
+                    public StructTest(ISmartContractState state) : base(state)
+                    {
+                    }
+                }
+            ";
+
+            SmartContractCompilationResult compilationResult = SmartContractCompiler.Compile(adjustedSource);
+            Assert.True(compilationResult.Success);
+
+            var validator = new NestedTypeValidator();
+
+            byte[] assemblyBytes = compilationResult.Compilation;
+            SmartContractDecompilation decomp = SmartContractDecompiler.GetModuleDefinition(assemblyBytes);
+            IEnumerable<SmartContractValidationError> result = validator.Validate(decomp.ContractType);
+
+            Assert.Empty(result);
+        }
+
+        [Fact]
+        public void SmartContract_ValidateFormat_Two_CustomStructs()
+        {
+            var adjustedSource = @"
+                using System;
+                using Stratis.SmartContracts;
+
+                public class StructTest : SmartContract
+                {
+                    public struct Item
+                    {
+                        public int Number;
+                        public string Name;
+                    }
+
+                    public struct Nested
+                    {
+                        public Item AnItem;
+                        public int Id;
+                    }
+
+                    public StructTest(ISmartContractState state) : base(state)
+                    {
+                    }
+                }
+            ";
+
+            SmartContractCompilationResult compilationResult = SmartContractCompiler.Compile(adjustedSource);
+            Assert.True(compilationResult.Success);
+
+            var validator = new NestedTypeValidator();
+
+            byte[] assemblyBytes = compilationResult.Compilation;
+            SmartContractDecompilation decomp = SmartContractDecompiler.GetModuleDefinition(assemblyBytes);
+            IEnumerable<SmartContractValidationError> result = validator.Validate(decomp.ContractType);
+
+            Assert.Empty(result);
         }
     }
 }

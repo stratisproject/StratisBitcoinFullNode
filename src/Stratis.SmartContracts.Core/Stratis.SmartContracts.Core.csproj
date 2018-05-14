@@ -10,6 +10,7 @@
     <PackageReference Include="Mono.Cecil" Version="0.10.0-beta7" />
     <PackageReference Include="Nethereum.RLP" Version="2.2.3" />
     <PackageReference Include="NetJSON" Version="1.2.2" />
+    <PackageReference Include="Newtonsoft.Json" Version="11.0.2" />
     <PackageReference Include="NStratis.HashLib" Version="1.0.0.1" />
   </ItemGroup>
 
