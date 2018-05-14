@@ -56,7 +56,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
         public bool Mint(Address to, ulong amountToMint)
         {
             this.EnsureOwnerExecution();
-            if (!this.HasMintingFinished)
+            if (this.HasMintingFinished)
             {
                 return false;
             }
