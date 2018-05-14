@@ -38,8 +38,7 @@ namespace Stratis.SmartContracts.Core.Compilation
                 GetReferences(),
                 new CSharpCompilationOptions(
                     OutputKind.DynamicallyLinkedLibrary, 
-                    checkOverflow: true,
-                    optimizationLevel: OptimizationLevel.Release));
+                    checkOverflow: true));
 
             using (var dllStream = new MemoryStream())
             {
