@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Text;
 using NBitcoin;
+using Newtonsoft.Json;
 
 namespace Stratis.SmartContracts.Core.Serialization
 {
@@ -45,9 +46,10 @@ namespace Stratis.SmartContracts.Core.Serialization
 
             if (o is string)
                 return Encoding.UTF8.GetBytes((string)o);
-
+            
+            // This is obviously nasty, but our goal is to add custom data type support first and optimize later
             if (o.GetType().IsValueType)
-                return Encoding.UTF8.GetBytes(NetJSON.NetJSON.Serialize(o));
+                return Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(o, Formatting.None));            
 
             throw new Exception(string.Format("{0} is not supported.", o.GetType().Name));
         }
@@ -91,7 +93,7 @@ namespace Stratis.SmartContracts.Core.Serialization
                 return (T)(object)(BitConverter.ToUInt64(stream, 0));
 
             if (typeof(T).IsValueType)
-                return NetJSON.NetJSON.Deserialize<T>(Encoding.UTF8.GetString(stream));
+                return JsonConvert.DeserializeObject<T>(Encoding.UTF8.GetString(stream));
 
             throw new Exception(string.Format("{0} is not supported.", typeof(T).Name));
         }
