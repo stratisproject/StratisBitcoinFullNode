@@ -166,8 +166,8 @@ namespace NBitcoin
             network.Checkpoints.Add(486000, new CheckpointInfo(new uint256("0x000000000000000000a2a8104d61651f76c666b70754d6e9346176385f7afa24")));
             network.Checkpoints.Add(491800, new CheckpointInfo(new uint256("0x000000000000000000d80de1f855902b50941bc3a3d0f71064d9613fd3943dc4")));
 
-            NetworksContainer.TryAdd("mainnet", network);
-            NetworksContainer.TryAdd(network.Name.ToLowerInvariant(), network);
+            Network.Register(network);
+            Network.Register(network, "mainnet");
 
             return network;
         }
@@ -249,8 +249,8 @@ namespace NBitcoin
             // Our own new checkpoints.
             network.Checkpoints.Add(1210000, new CheckpointInfo(new uint256("00000000461201277cf8c635fc10d042d6f0a7eaa57f6c9e8c099b9e0dbc46dc")));
 
-            NetworksContainer.TryAdd("test", network);
-            NetworksContainer.TryAdd(network.Name.ToLowerInvariant(), network);
+            Network.Register(network);
+            Network.Register(network, "test");
 
             return network;
         }
@@ -315,8 +315,8 @@ namespace NBitcoin
             network.FallbackFee = 20000;
             network.MinRelayTxFee = 1000;
 
-            NetworksContainer.TryAdd("reg", network);
-            NetworksContainer.TryAdd(network.Name.ToLowerInvariant(), network);
+            Network.Register(network);
+            Network.Register(network, "reg");
 
             return network;
         }
@@ -452,8 +452,8 @@ namespace NBitcoin
             }
 
             network.SeedNodes.AddRange(fixedSeeds);
-            
-            NetworksContainer.TryAdd(network.Name.ToLowerInvariant(), network);
+
+            Network.Register(network);
             return network;
         }
 
@@ -539,7 +539,7 @@ namespace NBitcoin
                 new NetworkAddress(IPAddress.Parse("52.232.58.52"), 26178), // neurosploit public node
             });
 
-            NetworksContainer.TryAdd(network.Name.ToLowerInvariant(), network);
+            Network.Register(network);
             return network;
         }
 
@@ -600,7 +600,7 @@ namespace NBitcoin
             network.Bech32Encoders[(int)Bech32Type.WITNESS_PUBKEY_ADDRESS] = encoder;
             network.Bech32Encoders[(int)Bech32Type.WITNESS_SCRIPT_ADDRESS] = encoder;
 
-            NetworksContainer.TryAdd(network.Name.ToLowerInvariant(), network);
+            Network.Register(network);
 
             return network;
         }

@@ -403,6 +403,32 @@ namespace NBitcoin
             return network;
         }
 
+        /// <summary>
+        /// Create an immutable Network instance, and register it globally so it is queriable through Network.GetNetwork(string name) and Network.GetNetworks().
+        /// </summary>
+        /// <returns></returns>
+        internal static Network Register(Network network, string nameOverride = null)
+        {
+            string networkName = !string.IsNullOrEmpty(nameOverride) ? nameOverride : network.Name;
+
+            // Performs a series of checks before registering the network to the list of available networks.
+            if (string.IsNullOrEmpty(networkName))
+                throw new InvalidOperationException("A network name needs to be provided.");
+
+            if (GetNetwork(networkName) != null)
+                throw new InvalidOperationException("The network " + networkName + " is already registered.");
+
+            if (network.GetGenesis() == null)
+                throw new InvalidOperationException("A genesis block needs to be provided.");
+
+            if (network.Consensus == null)
+                throw new InvalidOperationException("A consensus needs to be provided.");
+
+            NetworksContainer.TryAdd(networkName.ToLowerInvariant(), network);
+
+            return network;
+        }
+
         private static void Assert(bool condition)
         {
             // TODO: use Guard when this moves to the FN.
