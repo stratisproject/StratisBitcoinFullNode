@@ -46,6 +46,9 @@ namespace Stratis.SmartContracts.Core.Serialization
             if (o is string)
                 return Encoding.UTF8.GetBytes((string)o);
 
+            if (o.GetType().IsValueType)
+                return Encoding.UTF8.GetBytes(NetJSON.NetJSON.Serialize(o));
+
             throw new Exception(string.Format("{0} is not supported.", o.GetType().Name));
         }
 
@@ -86,6 +89,9 @@ namespace Stratis.SmartContracts.Core.Serialization
 
             if (typeof(T) == typeof(ulong))
                 return (T)(object)(BitConverter.ToUInt64(stream, 0));
+
+            if (typeof(T).IsValueType)
+                return NetJSON.NetJSON.Deserialize<T>(Encoding.UTF8.GetString(stream));
 
             throw new Exception(string.Format("{0} is not supported.", typeof(T).Name));
         }
