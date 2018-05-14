@@ -13,13 +13,23 @@ namespace Stratis.SmartContracts.Core.ContractValidation
         {
             if (type.HasNestedTypes)
             {
-                return new List<SmartContractValidationError>
+                if (HasForbiddenNestedTypes(type.NestedTypes))
                 {
-                    new SmartContractValidationError("Only the compilation of a single class is allowed. Includes inner types.")
-                };
+                    return new List<SmartContractValidationError>
+                    {
+                        new SmartContractValidationError(
+                            "Only the compilation of a single class is allowed. Includes nested reference types.")
+                    };
+                }
             }
 
             return Enumerable.Empty<SmartContractValidationError>();
+        }
+
+        private static bool HasForbiddenNestedTypes(IEnumerable<TypeDefinition> nestedTypes)
+        {
+            // We allow nested value types but forbid all others
+            return !nestedTypes.All(n => n.IsValueType);
         }
     }
 }
