@@ -110,6 +110,21 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             Assert.Equal(valueType.StringProp, nested.StringProp);
         }
 
+        [Fact]
+        public void PersistentState_CanSerialize_Deserialize_NullValueType()
+        {
+            var network = Network.SmartContractsRegTest;
+
+            var nestedValueType = new HasReferenceTypeValueType();
+            nestedValueType.ReferenceType = null;
+
+            var serialized = this.serializer.Serialize(nestedValueType, network);
+
+            var deserialized = this.serializer.Deserialize<HasReferenceTypeValueType>(serialized, network);
+
+            Assert.Equal(nestedValueType.ReferenceType, deserialized.ReferenceType);
+        }
+
         private TestValueType NewTestValueType()
         {
             var instance = new TestValueType();
@@ -145,6 +160,11 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             T output = this.serializer.Deserialize<T>(testBytes, Network.SmartContractsRegTest);
             Assert.Equal(input, output);
         }
+    }
+
+    public struct HasReferenceTypeValueType
+    {
+        public string ReferenceType;
     }
 
     public struct NestedValueType
