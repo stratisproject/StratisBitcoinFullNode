@@ -18,7 +18,8 @@ namespace Stratis.SmartContracts.Core.ContractValidation
         private static readonly HashSet<string> GreenLightMethods = new HashSet<string>
         {
             "System.String System.SR::GetResourceString(System.String,System.String)",
-            "System.Type System.Object::GetType()"
+            "System.Type System.Object::GetType()",
+            "System.Void System.Runtime.CompilerServices.RuntimeHelpers::InitializeArray(System.Array,System.RuntimeFieldHandle)"
         };
 
         /// <summary>

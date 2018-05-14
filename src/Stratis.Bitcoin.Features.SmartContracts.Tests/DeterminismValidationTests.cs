@@ -174,6 +174,21 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
         #endregion
 
+        #region Arrays
+
+        [Fact]
+        public void Validate_Determinism_Passes_ArrayConstruction()
+        {
+            string adjustedSource = TestString.Replace(ReplaceCodeString, @"var test = new int[]{2,2,3};").Replace(ReplaceReferencesString, "");
+
+            byte[] assemblyBytes = SmartContractCompiler.Compile(adjustedSource).Compilation;
+            SmartContractDecompilation decomp = SmartContractDecompiler.GetModuleDefinition(assemblyBytes);
+            SmartContractValidationResult result = this.validator.Validate(decomp);
+            Assert.True(result.IsValid);
+        }
+
+        #endregion
+
         #region BitConverter
 
         [Fact]
