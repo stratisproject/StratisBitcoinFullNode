@@ -332,79 +332,9 @@ namespace NBitcoin
                 return this.MagicBytesArray;
             }
         }
-
-        internal static Network Register(NetworkBuilder builder)
-        {
-            if (builder.Name == null)
-                throw new InvalidOperationException("A network name needs to be provided.");
-
-            if (GetNetwork(builder.Name) != null)
-                throw new InvalidOperationException("The network " + builder.Name + " is already registered.");
-
-            if (builder.Genesis == null)
-                throw new InvalidOperationException("A genesis block needs to be provided.");
-
-            if (builder.Consensus == null)
-                throw new InvalidOperationException("A consensus needs to be provided.");
-
-            Network network = new Network();
-            network.Name = builder.Name;
-            network.RootFolderName = builder.RootFolderName;
-            network.DefaultConfigFilename = builder.DefaultConfigFilename;
-            network.Consensus = builder.Consensus;
-            network.Magic = builder.Magic;
-            network.DefaultPort = builder.Port;
-            network.RPCPort = builder.RPCPort;
-            network.genesis = builder.Genesis;
-            network.Consensus.HashGenesisBlock = network.genesis.GetHash();
-
-            foreach (DNSSeedData seed in builder.Seeds)
-            {
-                network.DNSSeeds.Add(seed);
-            }
-
-            foreach (NetworkAddress seed in builder.FixedSeeds)
-            {
-                network.SeedNodes.Add(seed);
-            }
-
-            network.Base58Prefixes = Network.Main.Base58Prefixes.ToArray();
-
-            foreach (KeyValuePair<Base58Type, byte[]> kv in builder.Base58Prefixes)
-            {
-                network.Base58Prefixes[(int) kv.Key] = kv.Value;
-            }
-
-            network.Bech32Encoders = Network.Main.Bech32Encoders.ToArray();
-
-            foreach (KeyValuePair<Bech32Type, Bech32Encoder> kv in builder.Bech32Prefixes)
-            {
-                network.Bech32Encoders[(int) kv.Key] = kv.Value;
-            }
-
-            foreach (string alias in builder.Aliases)
-            {
-                NetworksContainer.TryAdd(alias.ToLowerInvariant(), network);
-            }
-
-            NetworksContainer.TryAdd(network.Name.ToLowerInvariant(), network);
-
-            network.MaxTimeOffsetSeconds = builder.MaxTimeOffsetSeconds;
-            network.MaxTipAge = builder.MaxTipAge;
-            network.MinTxFee = builder.MinTxFee;
-            network.FallbackFee = builder.FallbackFee;
-            network.MinRelayTxFee = builder.MinRelayTxFee;
-
-            foreach (KeyValuePair<int, CheckpointInfo> checkpoint in builder.Checkpoints)
-            {
-                network.Checkpoints.Add(checkpoint.Key, checkpoint.Value);
-            }
-
-            return network;
-        }
-
+        
         /// <summary>
-        /// Create an immutable Network instance, and register it globally so it is queriable through Network.GetNetwork(string name) and Network.GetNetworks().
+        /// Register an immutable Network instance so it is queriable through Network.GetNetwork(string name) and Network.GetNetworks().
         /// </summary>
         /// <returns></returns>
         internal static Network Register(Network network, string nameOverride = null)

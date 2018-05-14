@@ -21,25 +21,23 @@ namespace NBitcoin.Tests
 
         [Fact]
         [Trait("UnitTest", "UnitTest")]
-        public void CanCreateNetwork()
+        public void RegisterNetworkTwiceFails()
         {
-            NetworkBuilder builder = new NetworkBuilder();
-            builder.CopyFrom(Network.Main);
-            builder.SetName(null);
-            Assert.Throws<InvalidOperationException>(() => builder.BuildAndRegister());
-            builder.SetName("new");
-            builder.AddAlias("newalias");
-            var network = builder.BuildAndRegister();
-            Assert.Throws<InvalidOperationException>(() => builder.BuildAndRegister());
-
-            Assert.Equal(network, Network.GetNetwork("new"));
-            Assert.Equal(network, Network.GetNetwork("newalias"));
-
-            CanGetNetworkFromName();
-
-            Assert.Contains(network, Network.GetNetworks());
+            Network main = Network.Main;
+            var error = Assert.Throws<InvalidOperationException>(() => Network.Register(main));
+            Assert.Contains("is already registered", error.Message);
         }
 
+        [Fact]
+        [Trait("UnitTest", "UnitTest")]
+        public void RegisterNetworkTwiceWithDifferentNamesSucceeds()
+        {
+            Network main = Network.Main;
+            Network main2 = Network.Register(main, "main2");
+
+            Assert.Equal(Network.GetNetwork("main"), Network.GetNetwork("main2"));
+        }
+        
         [Fact]
         [Trait("UnitTest", "UnitTest")]
         public void ReadMagicByteWithFirstByteDuplicated()
@@ -54,4 +52,9 @@ namespace NBitcoin.Tests
             }
         }
     }
+}
+
+namespace NBitcoin
+{
+   
 }
