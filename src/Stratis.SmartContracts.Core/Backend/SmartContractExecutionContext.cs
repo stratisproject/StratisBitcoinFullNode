@@ -1,5 +1,4 @@
-﻿using System.Text;
-using NBitcoin;
+﻿using NBitcoin;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.SmartContracts.Core.Backend
@@ -36,17 +35,6 @@ namespace Stratis.SmartContracts.Core.Backend
 
             if (methodParameters != null && methodParameters.Length > 0)
                 this.Parameters = methodParameters;
-        }
-
-        public override string ToString()
-        {
-            var builder = new StringBuilder();
-            builder.AppendLine(string.Format("{0}:{1},{2}:{3}", nameof(this.Block.Coinbase), this.Block.Coinbase, nameof(this.Block.Number), this.Block.Number));
-            builder.AppendLine(string.Format("{0}:{1}", nameof(this.ContractAddress), this.ContractAddress));
-            builder.AppendLine(string.Format("{0}:{1}", nameof(this.GasPrice), this.GasPrice));
-            builder.AppendLine(string.Format("{0}:{1},{2}:{3},{4}:{5},{6}:{7}", nameof(this.Message.ContractAddress), this.Message.ContractAddress, nameof(this.Message.GasLimit), this.Message.GasLimit, nameof(this.Message.Sender), this.Message.Sender, nameof(this.Message.Value), this.Message.Value));
-            builder.AppendLine(string.Format("{0}:{1}", nameof(this.Parameters), this.Parameters));
-            return builder.ToString();
         }
     }
 }

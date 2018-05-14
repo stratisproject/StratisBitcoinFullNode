@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Utilities;
@@ -99,6 +100,21 @@ namespace Stratis.SmartContracts.Core
             if (this.mempoolFee != null)
                 new SmartContractExecutorResultProcessor(this.Result, this.loggerFactory).Process(this.carrier, this.mempoolFee);
         }
+
+        internal void LogExecutionContext(ILogger logger, IBlock block, IMessage message, uint160 contractAddress, SmartContractCarrier carrier)
+        {
+            var builder = new StringBuilder();
+
+            builder.Append(string.Format("{0}:{1},{2}:{3},", nameof(block.Coinbase), block.Coinbase, nameof(block.Number), block.Number));
+            builder.Append(string.Format("{0}:{1},", nameof(contractAddress), contractAddress.ToAddress(this.network)));
+            builder.Append(string.Format("{0}:{1},", nameof(carrier.GasPrice), carrier.GasPrice));
+            builder.Append(string.Format("{0}:{1},{2}:{3},{4}:{5},{6}:{7}", nameof(message.ContractAddress), message.ContractAddress, nameof(message.GasLimit), message.GasLimit, nameof(message.Sender), message.Sender, nameof(message.Value), message.Value));
+
+            if (carrier.MethodParameters != null && carrier.MethodParameters.Length > 0)
+                builder.Append(string.Format(",{0}:{1}", nameof(carrier.MethodParameters), carrier.MethodParameters));
+
+            logger.LogTrace("{0}", builder.ToString());
+        }
     }
 
     public sealed class CreateSmartContract : SmartContractExecutor
@@ -156,7 +172,7 @@ namespace Stratis.SmartContracts.Core
                 this.carrier.MethodParameters
             );
 
-            this.logger.LogTrace("{0}", executionContext.ToString());
+            LogExecutionContext(this.logger, block, executionContext.Message, newContractAddress, this.carrier);
 
             IPersistenceStrategy persistenceStrategy = new MeteredPersistenceStrategy(this.stateSnapshot, this.gasMeter, new BasicKeyEncodingStrategy());
             var persistentState = new PersistentState(persistenceStrategy, newContractAddress, this.network);
@@ -246,7 +262,7 @@ namespace Stratis.SmartContracts.Core
                 this.carrier.MethodParameters
             );
 
-            this.logger.LogTrace("{0}", executionContext.ToString());
+            LogExecutionContext(this.logger, block, executionContext.Message, contractAddress, this.carrier);
 
             IPersistenceStrategy persistenceStrategy = new MeteredPersistenceStrategy(this.stateSnapshot, this.gasMeter, this.keyEncodingStrategy);
             var persistentState = new PersistentState(persistenceStrategy, contractAddress, this.network);
