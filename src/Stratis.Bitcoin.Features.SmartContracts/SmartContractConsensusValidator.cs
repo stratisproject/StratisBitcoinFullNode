@@ -234,9 +234,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         /// <summary>
         /// Executes the smart contract part of a transaction
         /// </summary>
-        /// <param name="context"></param>
-        /// <param name="transaction"></param>
-        /// <param name="smartContractTxOut"></param>
         private void ExecuteContractTransaction(RuleContext context, Transaction transaction, TxOut smartContractTxOut)
         {
             ulong blockHeight = Convert.ToUInt64(context.BlockValidationContext.ChainedBlock.Height);
@@ -285,6 +282,5 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                 this.refundCounter++;
             }
         }
-
     }
 }

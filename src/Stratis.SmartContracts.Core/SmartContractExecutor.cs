@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using Microsoft.Extensions.Logging;
@@ -23,6 +24,7 @@ namespace Stratis.SmartContracts.Core
         protected readonly IContractStateRepository stateSnapshot;
         protected readonly SmartContractValidator validator;
         protected readonly IKeyEncodingStrategy keyEncodingStrategy;
+        private readonly ILogger logger;
         protected readonly ILoggerFactory loggerFactory;
 
         protected ulong blockHeight;
@@ -43,6 +45,7 @@ namespace Stratis.SmartContracts.Core
             this.gasMeter = new GasMeter(this.carrier.GasLimit);
             this.keyEncodingStrategy = keyEncodingStrategy;
             this.loggerFactory = loggerFactory;
+            this.logger = loggerFactory.CreateLogger(this.GetType());
             this.mempoolFee = mempoolFee;
             this.network = network;
             this.stateSnapshot = stateSnapshot.StartTracking();
@@ -71,9 +74,18 @@ namespace Stratis.SmartContracts.Core
             this.blockHeight = blockHeight;
             this.coinbaseAddress = coinbaseAddress;
 
-            PreExecute();
-            OnExecute();
-            PostExecute();
+            try
+            {
+                PreExecute();
+                OnExecute();
+                PostExecute();
+            }
+            catch (Exception unhandled)
+            {
+                this.logger.LogError("An unhandled exception occurred {0}", unhandled.Message);
+                if (unhandled.InnerException != null)
+                    this.logger.LogError("{0}", unhandled.InnerException.Message);
+            }
 
             return this.Result;
         }
