@@ -10,6 +10,7 @@ using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Features.GeneralPurposeWallet.Interfaces;
 using Stratis.Bitcoin.Features.Notifications;
+using Stratis.Bitcoin.P2P.Protocol.Payloads;
 using Stratis.Bitcoin.Signals;
 using Stratis.FederatedPeg.Features.FederationGateway.Controllers;
 using Stratis.FederatedPeg.Features.FederationGateway.Notifications;
@@ -63,8 +64,8 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
             this.network = network;
 
             // add our payload
-            //var payloadProvider = this.fullNode.Services.ServiceProvider.GetService(typeof(PayloadProvider)) as PayloadProvider;
-            //payloadProvider.AddPayload(typeof(RequestPartialTransactionPayload));
+            var payloadProvider = this.fullNode.Services.ServiceProvider.GetService(typeof(PayloadProvider)) as PayloadProvider;
+            payloadProvider.AddPayload(typeof(RequestPartialTransactionPayload));
         }
 
         public override void Initialize()
