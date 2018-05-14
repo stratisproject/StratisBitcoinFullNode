@@ -242,9 +242,8 @@ namespace NBitcoin
         private PubKey alertPubKey;
         private readonly List<DNSSeedData> seeds;
         private readonly List<NetworkAddress> fixedSeeds;
-        private readonly Dictionary<int, CheckpointInfo> checkpoints = new Dictionary<int, CheckpointInfo>();
         private Block genesis;
-        private Consensus consensus = new Consensus();
+        private Consensus consensus;
 
         public NetworkOptions NetworkOptions
         {
@@ -258,6 +257,8 @@ namespace NBitcoin
         {
             this.seeds = new List<DNSSeedData>();
             this.fixedSeeds = new List<NetworkAddress>();
+            this.Checkpoints = new Dictionary<int, CheckpointInfo>();
+            this.consensus = new Consensus();
         }
 
         public PubKey AlertPubKey
@@ -302,7 +303,7 @@ namespace NBitcoin
 
         public IEnumerable<DNSSeedData> DNSSeeds => this.seeds;
 
-        public Dictionary<int, CheckpointInfo> Checkpoints => this.checkpoints;
+        public Dictionary<int, CheckpointInfo> Checkpoints { get; private set; }
 
         public byte[] MagicBytesArray;
 
@@ -394,7 +395,7 @@ namespace NBitcoin
 
             foreach (KeyValuePair<int, CheckpointInfo> checkpoint in builder.Checkpoints)
             {
-                network.checkpoints.Add(checkpoint.Key, checkpoint.Value);
+                network.Checkpoints.Add(checkpoint.Key, checkpoint.Value);
             }
 
             return network;

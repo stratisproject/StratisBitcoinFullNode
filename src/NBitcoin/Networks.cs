@@ -149,22 +149,22 @@ namespace NBitcoin
             network.MinRelayTxFee = 1000;
 
             // Partially obtained from https://github.com/bitcoin/bitcoin/blob/b1973d6181eacfaaf45effb67e0c449ea3a436b8/src/chainparams.cpp#L146
-            network.checkpoints.Add(11111, new CheckpointInfo(new uint256("0x0000000069e244f73d78e8fd29ba2fd2ed618bd6fa2ee92559f542fdb26e7c1d")));
-            network.checkpoints.Add(33333, new CheckpointInfo(new uint256("0x000000002dd5588a74784eaa7ab0507a18ad16a236e7b1ce69f00d7ddfb5d0a6")));
-            network.checkpoints.Add(74000, new CheckpointInfo(new uint256("0x0000000000573993a3c9e41ce34471c079dcf5f52a0e824a81e7f953b8661a20")));
-            network.checkpoints.Add(105000, new CheckpointInfo(new uint256("0x00000000000291ce28027faea320c8d2b054b2e0fe44a773f3eefb151d6bdc97")));
-            network.checkpoints.Add(134444, new CheckpointInfo(new uint256("0x00000000000005b12ffd4cd315cd34ffd4a594f430ac814c91184a0d42d2b0fe")));
-            network.checkpoints.Add(168000, new CheckpointInfo(new uint256("0x000000000000099e61ea72015e79632f216fe6cb33d7899acb35b75c8303b763")));
-            network.checkpoints.Add(193000, new CheckpointInfo(new uint256("0x000000000000059f452a5f7340de6682a977387c17010ff6e6c3bd83ca8b1317")));
-            network.checkpoints.Add(210000, new CheckpointInfo(new uint256("0x000000000000048b95347e83192f69cf0366076336c639f9b7228e9ba171342e")));
-            network.checkpoints.Add(216116, new CheckpointInfo(new uint256("0x00000000000001b4f4b433e81ee46494af945cf96014816a4e2370f11b23df4e")));
-            network.checkpoints.Add(225430, new CheckpointInfo(new uint256("0x00000000000001c108384350f74090433e7fcf79a606b8e797f065b130575932")));
-            network.checkpoints.Add(250000, new CheckpointInfo(new uint256("0x000000000000003887df1f29024b06fc2200b55f8af8f35453d7be294df2d214")));
-            network.checkpoints.Add(279000, new CheckpointInfo(new uint256("0x0000000000000001ae8c72a0b0c301f67e3afca10e819efa9041e458e9bd7e40")));
-            network.checkpoints.Add(295000, new CheckpointInfo(new uint256("0x00000000000000004d9b4ef50f0f9d686fd69db2e03af35a100370c64632a983")));
+            network.Checkpoints.Add(11111, new CheckpointInfo(new uint256("0x0000000069e244f73d78e8fd29ba2fd2ed618bd6fa2ee92559f542fdb26e7c1d")));
+            network.Checkpoints.Add(33333, new CheckpointInfo(new uint256("0x000000002dd5588a74784eaa7ab0507a18ad16a236e7b1ce69f00d7ddfb5d0a6")));
+            network.Checkpoints.Add(74000, new CheckpointInfo(new uint256("0x0000000000573993a3c9e41ce34471c079dcf5f52a0e824a81e7f953b8661a20")));
+            network.Checkpoints.Add(105000, new CheckpointInfo(new uint256("0x00000000000291ce28027faea320c8d2b054b2e0fe44a773f3eefb151d6bdc97")));
+            network.Checkpoints.Add(134444, new CheckpointInfo(new uint256("0x00000000000005b12ffd4cd315cd34ffd4a594f430ac814c91184a0d42d2b0fe")));
+            network.Checkpoints.Add(168000, new CheckpointInfo(new uint256("0x000000000000099e61ea72015e79632f216fe6cb33d7899acb35b75c8303b763")));
+            network.Checkpoints.Add(193000, new CheckpointInfo(new uint256("0x000000000000059f452a5f7340de6682a977387c17010ff6e6c3bd83ca8b1317")));
+            network.Checkpoints.Add(210000, new CheckpointInfo(new uint256("0x000000000000048b95347e83192f69cf0366076336c639f9b7228e9ba171342e")));
+            network.Checkpoints.Add(216116, new CheckpointInfo(new uint256("0x00000000000001b4f4b433e81ee46494af945cf96014816a4e2370f11b23df4e")));
+            network.Checkpoints.Add(225430, new CheckpointInfo(new uint256("0x00000000000001c108384350f74090433e7fcf79a606b8e797f065b130575932")));
+            network.Checkpoints.Add(250000, new CheckpointInfo(new uint256("0x000000000000003887df1f29024b06fc2200b55f8af8f35453d7be294df2d214")));
+            network.Checkpoints.Add(279000, new CheckpointInfo(new uint256("0x0000000000000001ae8c72a0b0c301f67e3afca10e819efa9041e458e9bd7e40")));
+            network.Checkpoints.Add(295000, new CheckpointInfo(new uint256("0x00000000000000004d9b4ef50f0f9d686fd69db2e03af35a100370c64632a983")));
             // Our own new checkpoints.
-            network.checkpoints.Add(486000, new CheckpointInfo(new uint256("0x000000000000000000a2a8104d61651f76c666b70754d6e9346176385f7afa24")));
-            network.checkpoints.Add(491800, new CheckpointInfo(new uint256("0x000000000000000000d80de1f855902b50941bc3a3d0f71064d9613fd3943dc4")));
+            network.Checkpoints.Add(486000, new CheckpointInfo(new uint256("0x000000000000000000a2a8104d61651f76c666b70754d6e9346176385f7afa24")));
+            network.Checkpoints.Add(491800, new CheckpointInfo(new uint256("0x000000000000000000d80de1f855902b50941bc3a3d0f71064d9613fd3943dc4")));
 
             NetworksContainer.TryAdd("mainnet", network);
             NetworksContainer.TryAdd(network.Name.ToLowerInvariant(), network);
@@ -245,9 +245,9 @@ namespace NBitcoin
             network.MinRelayTxFee = 1000;
 
             // Partially obtained from https://github.com/bitcoin/bitcoin/blob/b1973d6181eacfaaf45effb67e0c449ea3a436b8/src/chainparams.cpp#L246
-            network.checkpoints.Add(546, new CheckpointInfo(new uint256("000000002a936ca763904c3c35fce2f3556c559c0214345d31b1bcebf76acb70")));
+            network.Checkpoints.Add(546, new CheckpointInfo(new uint256("000000002a936ca763904c3c35fce2f3556c559c0214345d31b1bcebf76acb70")));
             // Our own new checkpoints.
-            network.checkpoints.Add(1210000, new CheckpointInfo(new uint256("00000000461201277cf8c635fc10d042d6f0a7eaa57f6c9e8c099b9e0dbc46dc")));
+            network.Checkpoints.Add(1210000, new CheckpointInfo(new uint256("00000000461201277cf8c635fc10d042d6f0a7eaa57f6c9e8c099b9e0dbc46dc")));
 
             NetworksContainer.TryAdd("test", network);
             NetworksContainer.TryAdd(network.Name.ToLowerInvariant(), network);
@@ -394,43 +394,45 @@ namespace NBitcoin
 
             Assert(consensus.HashGenesisBlock == uint256.Parse("0x0000066e91e46e5a264d42c89e1204963b2ee6be230b443e9159020539d972af"));
             Assert(genesis.Header.HashMerkleRoot == uint256.Parse("0x65a26bc20b0351aebf05829daefa8f7db2f800623439f3c114257c91447f1518"));
+            
+            Network network = new Network();
+            network.Name = "StratisMain";
+            network.RootFolderName = StratisRootFolderName;
+            network.DefaultConfigFilename = StratisDefaultConfigFilename;
+            network.consensus = consensus?.Clone();
+            network.Checkpoints = checkpoints;
+            network.magic = magic;
+            network.genesis = genesis;
+            network.DefaultPort = 16178;
+            network.RPCPort = 16174;
+            network.MinTxFee = 10000;
+            network.FallbackFee = 60000;
+            network.MinRelayTxFee = 10000;
+            network.MaxTimeOffsetSeconds = StratisMaxTimeOffsetSeconds;
+            network.MaxTipAge = StratisDefaultMaxTipAgeInSeconds;
+            network.seeds.AddRange(new[]
+            {
+                new DNSSeedData("seednode1.stratisplatform.com", "seednode1.stratisplatform.com"),
+                new DNSSeedData("seednode2.stratis.cloud", "seednode2.stratis.cloud"),
+                new DNSSeedData("seednode3.stratisplatform.com", "seednode3.stratisplatform.com"),
+                new DNSSeedData("seednode4.stratis.cloud", "seednode4.stratis.cloud")
+            });
+            network.base58Prefixes[(int)Base58Type.PUBKEY_ADDRESS] = new byte[] { (63) };
+            network.base58Prefixes[(int)Base58Type.SCRIPT_ADDRESS] = new byte[] { (125) };
+            network.base58Prefixes[(int)Base58Type.SECRET_KEY] = new byte[] { (63 + 128) };
+            network.base58Prefixes[(int)Base58Type.ENCRYPTED_SECRET_KEY_NO_EC] = new byte[] { 0x01, 0x42 };
+            network.base58Prefixes[(int)Base58Type.ENCRYPTED_SECRET_KEY_EC] = new byte[] { 0x01, 0x43 };
+            network.base58Prefixes[(int)Base58Type.EXT_PUBLIC_KEY] = new byte[] { (0x04), (0x88), (0xB2), (0x1E) };
+            network.base58Prefixes[(int)Base58Type.EXT_SECRET_KEY] = new byte[] { (0x04), (0x88), (0xAD), (0xE4) };
+            network.base58Prefixes[(int)Base58Type.PASSPHRASE_CODE] = new byte[] { 0x2C, 0xE9, 0xB3, 0xE1, 0xFF, 0x39, 0xE2 };
+            network.base58Prefixes[(int)Base58Type.CONFIRMATION_CODE] = new byte[] { 0x64, 0x3B, 0xF6, 0xA8, 0x9A };
+            network.base58Prefixes[(int)Base58Type.STEALTH_ADDRESS] = new byte[] { 0x2a };
+            network.base58Prefixes[(int)Base58Type.ASSET_ID] = new byte[] { 23 };
+            network.base58Prefixes[(int)Base58Type.COLORED_ADDRESS] = new byte[] { 0x13 };
 
-            NetworkBuilder builder = new NetworkBuilder()
-                    .SetName("StratisMain")
-                    .SetRootFolderName(StratisRootFolderName)
-                    .SetDefaultConfigFilename(StratisDefaultConfigFilename)
-                    .SetConsensus(consensus)
-                    .SetCheckpoints(checkpoints)
-                    .SetMagic(magic)
-                    .SetGenesis(genesis)
-                    .SetPort(16178)
-                    .SetRPCPort(16174)
-                    .SetTxFees(10000, 60000, 10000)
-                    .SetMaxTimeOffsetSeconds(StratisMaxTimeOffsetSeconds)
-                    .SetMaxTipAge(StratisDefaultMaxTipAgeInSeconds)
-
-                    .AddDNSSeeds(new[]
-                    {
-                        new DNSSeedData("seednode1.stratisplatform.com", "seednode1.stratisplatform.com"),
-                        new DNSSeedData("seednode2.stratis.cloud", "seednode2.stratis.cloud"),
-                        new DNSSeedData("seednode3.stratisplatform.com", "seednode3.stratisplatform.com"),
-                        new DNSSeedData("seednode4.stratis.cloud", "seednode4.stratis.cloud")
-                    })
-
-                    .SetBase58Bytes(Base58Type.PUBKEY_ADDRESS, new byte[] { (63) })
-                    .SetBase58Bytes(Base58Type.SCRIPT_ADDRESS, new byte[] { (125) })
-                    .SetBase58Bytes(Base58Type.SECRET_KEY, new byte[] { (63 + 128) })
-                    .SetBase58Bytes(Base58Type.ENCRYPTED_SECRET_KEY_NO_EC, new byte[] { 0x01, 0x42 })
-                    .SetBase58Bytes(Base58Type.ENCRYPTED_SECRET_KEY_EC, new byte[] { 0x01, 0x43 })
-                    .SetBase58Bytes(Base58Type.EXT_PUBLIC_KEY, new byte[] { (0x04), (0x88), (0xB2), (0x1E) })
-                    .SetBase58Bytes(Base58Type.EXT_SECRET_KEY, new byte[] { (0x04), (0x88), (0xAD), (0xE4) })
-                    .SetBase58Bytes(Base58Type.PASSPHRASE_CODE, new byte[] { 0x2C, 0xE9, 0xB3, 0xE1, 0xFF, 0x39, 0xE2 })
-                    .SetBase58Bytes(Base58Type.CONFIRMATION_CODE, new byte[] { 0x64, 0x3B, 0xF6, 0xA8, 0x9A })
-                    .SetBase58Bytes(Base58Type.STEALTH_ADDRESS, new byte[] { 0x2a })
-                    .SetBase58Bytes(Base58Type.ASSET_ID, new byte[] { 23 })
-                    .SetBase58Bytes(Base58Type.COLORED_ADDRESS, new byte[] { 0x13 })
-                    .SetBech32(Bech32Type.WITNESS_PUBKEY_ADDRESS, "bc")
-                    .SetBech32(Bech32Type.WITNESS_SCRIPT_ADDRESS, "bc");
+            var encoder = new Bech32Encoder("bc");
+            network.bech32Encoders[(int)Bech32Type.WITNESS_PUBKEY_ADDRESS] = encoder;
+            network.bech32Encoders[(int)Bech32Type.WITNESS_SCRIPT_ADDRESS] = encoder;
 
             var seed = new[] { "101.200.198.155", "103.24.76.21", "104.172.24.79" };
             var fixedSeeds = new List<NetworkAddress>();
@@ -445,12 +447,14 @@ namespace NBitcoin
                 // Seed nodes are given a random 'last seen time' of between one and two
                 // weeks ago.
                 addr.Time = DateTime.UtcNow - (TimeSpan.FromSeconds(rand.NextDouble() * oneWeek.TotalSeconds)) - oneWeek;
-                addr.Endpoint = Utils.ParseIpEndpoint(seed[i], builder.Port);
+                addr.Endpoint = Utils.ParseIpEndpoint(seed[i], network.DefaultPort);
                 fixedSeeds.Add(addr);
             }
 
-            builder.AddSeeds(fixedSeeds);
-            return builder.BuildAndRegister();
+            network.fixedSeeds.AddRange(fixedSeeds);
+            
+            NetworksContainer.TryAdd(network.Name.ToLowerInvariant(), network);
+            return network;
         }
 
         private static Network InitStratisTest()
@@ -488,44 +492,55 @@ namespace NBitcoin
                 { 163000, new CheckpointInfo(new uint256("0x4e44a9e0119a2e7cbf15e570a3c649a5605baa601d953a465b5ebd1c1982212a"), new uint256("0x0646fc7db8f3426eb209e1228c7d82724faa46a060f5bbbd546683ef30be245c")) },
             };
 
-            NetworkBuilder builder = new NetworkBuilder()
-                    .SetName("StratisTest")
-                    .SetRootFolderName(StratisRootFolderName)
-                    .SetDefaultConfigFilename(StratisDefaultConfigFilename)
-                    .SetConsensus(consensus)
-                    .SetCheckpoints(checkpoints)
-                    .SetMagic(magic)
-                    .SetGenesis(genesis)
-                    .SetPort(26178)
-                    .SetRPCPort(26174)
-                    .SetMaxTimeOffsetSeconds(StratisMaxTimeOffsetSeconds)
-                    .SetMaxTipAge(StratisDefaultMaxTipAgeInSeconds)
-                    .SetTxFees(10000, 60000, 10000)
-                    .SetBase58Bytes(Base58Type.PUBKEY_ADDRESS, new byte[] { (65) })
-                    .SetBase58Bytes(Base58Type.SCRIPT_ADDRESS, new byte[] { (196) })
-                    .SetBase58Bytes(Base58Type.SECRET_KEY, new byte[] { (65 + 128) })
-                    .SetBase58Bytes(Base58Type.ENCRYPTED_SECRET_KEY_NO_EC, new byte[] { 0x01, 0x42 })
-                    .SetBase58Bytes(Base58Type.ENCRYPTED_SECRET_KEY_EC, new byte[] { 0x01, 0x43 })
-                    .SetBase58Bytes(Base58Type.EXT_PUBLIC_KEY, new byte[] { (0x04), (0x88), (0xB2), (0x1E) })
-                    .SetBase58Bytes(Base58Type.EXT_SECRET_KEY, new byte[] { (0x04), (0x88), (0xAD), (0xE4) })
+            Network network = new Network();
+            network.Name = "StratisTest";
+            network.RootFolderName = StratisRootFolderName;
+            network.DefaultConfigFilename = StratisDefaultConfigFilename;
+            network.consensus = consensus?.Clone();
+            network.Checkpoints = checkpoints;
+            network.magic = magic;
+            network.genesis = genesis;
+            network.DefaultPort = 26178;
+            network.RPCPort = 26174;
+            network.MaxTimeOffsetSeconds = StratisMaxTimeOffsetSeconds;
+            network.MaxTipAge = StratisDefaultMaxTipAgeInSeconds;
+            network.MinTxFee = 10000;
+            network.FallbackFee = 60000;
+            network.MinRelayTxFee = 10000;
+            network.base58Prefixes[(int)Base58Type.PUBKEY_ADDRESS] = new byte[] { (65) };
+            network.base58Prefixes[(int)Base58Type.SCRIPT_ADDRESS] = new byte[] { (196) };
+            network.base58Prefixes[(int)Base58Type.SECRET_KEY] = new byte[] { (65 + 128) };
+            network.base58Prefixes[(int)Base58Type.ENCRYPTED_SECRET_KEY_NO_EC] = new byte[] { 0x01, 0x42 };
+            network.base58Prefixes[(int)Base58Type.ENCRYPTED_SECRET_KEY_EC] = new byte[] { 0x01, 0x43 };
+            network.base58Prefixes[(int)Base58Type.EXT_PUBLIC_KEY] = new byte[] { (0x04), (0x88), (0xB2), (0x1E) };
+            network.base58Prefixes[(int)Base58Type.EXT_SECRET_KEY] = new byte[] { (0x04), (0x88), (0xAD), (0xE4) };
+            network.base58Prefixes[(int)Base58Type.PASSPHRASE_CODE] = new byte[] { 0x2C, 0xE9, 0xB3, 0xE1, 0xFF, 0x39, 0xE2 };
+            network.base58Prefixes[(int)Base58Type.CONFIRMATION_CODE] = new byte[] { 0x64, 0x3B, 0xF6, 0xA8, 0x9A };
+            network.base58Prefixes[(int)Base58Type.STEALTH_ADDRESS] = new byte[] { 0x2a };
+            network.base58Prefixes[(int)Base58Type.ASSET_ID] = new byte[] { 23 };
+            network.base58Prefixes[(int)Base58Type.COLORED_ADDRESS] = new byte[] { 0x13 };
 
-                    .AddDNSSeeds(new[]
-                    {
-                        new DNSSeedData("testnet1.stratisplatform.com", "testnet1.stratisplatform.com"),
-                        new DNSSeedData("testnet2.stratisplatform.com", "testnet2.stratisplatform.com"),
-                        new DNSSeedData("testnet3.stratisplatform.com", "testnet3.stratisplatform.com"),
-                        new DNSSeedData("testnet4.stratisplatform.com", "testnet4.stratisplatform.com")
-                    });
+            var encoder = new Bech32Encoder("bc");
+            network.bech32Encoders[(int)Bech32Type.WITNESS_PUBKEY_ADDRESS] = encoder;
+            network.bech32Encoders[(int)Bech32Type.WITNESS_SCRIPT_ADDRESS] = encoder;
 
-            builder.AddSeeds(new[]
+            network.seeds.AddRange(new[]
             {
-                new NetworkAddress(IPAddress.Parse("51.140.231.125"), builder.Port), // danger cloud node
+                new DNSSeedData("testnet1.stratisplatform.com", "testnet1.stratisplatform.com"),
+                new DNSSeedData("testnet2.stratisplatform.com", "testnet2.stratisplatform.com"),
+                new DNSSeedData("testnet3.stratisplatform.com", "testnet3.stratisplatform.com"),
+                new DNSSeedData("testnet4.stratisplatform.com", "testnet4.stratisplatform.com")
+            });
+            network.fixedSeeds.AddRange(new[]
+            {
+                new NetworkAddress(IPAddress.Parse("51.140.231.125"), network.DefaultPort), // danger cloud node
                 new NetworkAddress(IPAddress.Parse("13.70.81.5"), 3389), // beard cloud node  
                 new NetworkAddress(IPAddress.Parse("191.235.85.131"), 3389), // fassa cloud node  
                 new NetworkAddress(IPAddress.Parse("52.232.58.52"), 26178), // neurosploit public node
             });
 
-            return builder.BuildAndRegister();
+            NetworksContainer.TryAdd(network.Name.ToLowerInvariant(), network);
+            return network;
         }
 
         private static Network InitStratisRegTest()
@@ -557,26 +572,37 @@ namespace NBitcoin
 
             consensus.DefaultAssumeValid = null; // turn off assumevalid for regtest.
 
-            NetworkBuilder builder = new NetworkBuilder()
-                .SetName("StratisRegTest")
-                .SetRootFolderName(StratisRootFolderName)
-                .SetDefaultConfigFilename(StratisDefaultConfigFilename)
-                .SetConsensus(consensus)
-                .SetMagic(magic)
-                .SetGenesis(genesis)
-                .SetPort(18444)
-                .SetRPCPort(18442)
-                .SetMaxTimeOffsetSeconds(StratisMaxTimeOffsetSeconds)
-                .SetMaxTipAge(StratisDefaultMaxTipAgeInSeconds)
-                .SetBase58Bytes(Base58Type.PUBKEY_ADDRESS, new byte[] { (65) })
-                .SetBase58Bytes(Base58Type.SCRIPT_ADDRESS, new byte[] { (196) })
-                .SetBase58Bytes(Base58Type.SECRET_KEY, new byte[] { (65 + 128) })
-                .SetBase58Bytes(Base58Type.ENCRYPTED_SECRET_KEY_NO_EC, new byte[] { 0x01, 0x42 })
-                .SetBase58Bytes(Base58Type.ENCRYPTED_SECRET_KEY_EC, new byte[] { 0x01, 0x43 })
-                .SetBase58Bytes(Base58Type.EXT_PUBLIC_KEY, new byte[] { (0x04), (0x88), (0xB2), (0x1E) })
-                .SetBase58Bytes(Base58Type.EXT_SECRET_KEY, new byte[] { (0x04), (0x88), (0xAD), (0xE4) });
+            Network network = new Network();
+            network.Name = "StratisRegTest";
+            network.RootFolderName = StratisRootFolderName;
+            network.DefaultConfigFilename = StratisDefaultConfigFilename;
+            network.consensus = consensus?.Clone();
+            network.magic = magic;
+            network.genesis = genesis;
+            network.DefaultPort = 18444;
+            network.RPCPort = 18442;
+            network.MaxTimeOffsetSeconds = StratisMaxTimeOffsetSeconds;
+            network.MaxTipAge = StratisDefaultMaxTipAgeInSeconds;
+            network.base58Prefixes[(int)Base58Type.PUBKEY_ADDRESS] = new byte[] { (65) };
+            network.base58Prefixes[(int)Base58Type.SCRIPT_ADDRESS] = new byte[] { (196) };
+            network.base58Prefixes[(int)Base58Type.SECRET_KEY] = new byte[] { (65 + 128) };
+            network.base58Prefixes[(int)Base58Type.ENCRYPTED_SECRET_KEY_NO_EC] = new byte[] { 0x01, 0x42 };
+            network.base58Prefixes[(int)Base58Type.ENCRYPTED_SECRET_KEY_EC] = new byte[] { 0x01, 0x43 };
+            network.base58Prefixes[(int)Base58Type.EXT_PUBLIC_KEY] = new byte[] { (0x04), (0x88), (0xB2), (0x1E) };
+            network.base58Prefixes[(int)Base58Type.EXT_SECRET_KEY] = new byte[] { (0x04), (0x88), (0xAD), (0xE4) };
+            network.base58Prefixes[(int)Base58Type.PASSPHRASE_CODE] = new byte[] { 0x2C, 0xE9, 0xB3, 0xE1, 0xFF, 0x39, 0xE2 };
+            network.base58Prefixes[(int)Base58Type.CONFIRMATION_CODE] = new byte[] { 0x64, 0x3B, 0xF6, 0xA8, 0x9A };
+            network.base58Prefixes[(int)Base58Type.STEALTH_ADDRESS] = new byte[] { 0x2a };
+            network.base58Prefixes[(int)Base58Type.ASSET_ID] = new byte[] { 23 };
+            network.base58Prefixes[(int)Base58Type.COLORED_ADDRESS] = new byte[] { 0x13 };
 
-            return builder.BuildAndRegister();
+            var encoder = new Bech32Encoder("bc");
+            network.bech32Encoders[(int)Bech32Type.WITNESS_PUBKEY_ADDRESS] = encoder;
+            network.bech32Encoders[(int)Bech32Type.WITNESS_SCRIPT_ADDRESS] = encoder;
+
+            NetworksContainer.TryAdd(network.Name.ToLowerInvariant(), network);
+
+            return network;
         }
 
         private static Block CreateGenesisBlock(ConsensusFactory consensusFactory, uint nTime, uint nNonce, uint nBits, int nVersion, Money genesisReward)
