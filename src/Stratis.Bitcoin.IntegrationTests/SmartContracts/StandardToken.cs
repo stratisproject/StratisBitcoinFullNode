@@ -131,7 +131,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
 
         private static void EnsureValidAddress(Address address, string paramName = null)
         {
-            if (!string.IsNullOrWhiteSpace(address.Value))
+            if (string.IsNullOrWhiteSpace(address.Value))
             {
                 throw new ApplicationException($"Invalid {(string.IsNullOrEmpty(paramName) ? string.Empty : $"'{paramName}' ")}address");
             }
