@@ -65,14 +65,14 @@ namespace Stratis.SmartContracts.Core.Backend
 
             if (!result.Success)
             {
-                this.logger.LogTrace("(-)[CREATE_CONTRACT_INSTANTIATION_FAILED] {0}={1}", nameof(gasMeter.GasConsumed), gasMeter.GasConsumed);
+                this.logger.LogTrace("(-)[CREATE_CONTRACT_INSTANTIATION_FAILED]:{0}={1}", nameof(gasMeter.GasConsumed), gasMeter.GasConsumed);
                 executionResult.Exception = result.Exception.InnerException ?? result.Exception;
                 return executionResult;
             }
 
             executionResult.Return = result.Object;
 
-            this.logger.LogTrace("(-) {0}={1}", nameof(gasMeter.GasConsumed), gasMeter.GasConsumed);
+            this.logger.LogTrace("(-):{0}={1}", nameof(gasMeter.GasConsumed), gasMeter.GasConsumed);
 
             return executionResult;
         }
@@ -86,18 +86,18 @@ namespace Stratis.SmartContracts.Core.Backend
             IGasMeter gasMeter)
         {
             ISmartContractExecutionResult executionResult = new SmartContractExecutionResult();
+
             if (contractMethodName == null)
             {
-                this.logger.LogTrace("(-)[CALL_CONTRACT_CONTRACTMETHODNAME_NULL]");
+                this.logger.LogTrace("(-)[CALLCONTRACT_METHODNAME_NOT_GIVEN]");
                 return executionResult;
             }
 
             byte[] gasInjectedCode = SmartContractGasInjector.AddGasCalculationToContractMethod(contractCode, contractMethodName);
-
             Type contractType = Load(gasInjectedCode);
             if (contractType == null)
             {
-                this.logger.LogTrace("(-)[CALL_CONTRACT_CONTRACTTYPE_NULL]");
+                this.logger.LogTrace("(-)[CALLCONTRACT_CONTRACTTYPE_NULL]");
                 return executionResult;
             }
 
@@ -121,24 +121,22 @@ namespace Stratis.SmartContracts.Core.Backend
 
             if (!result.Success)
             {
-                this.logger.LogTrace("(-)[CALL_CONTRACT_INSTANTIATION_FAILED] {0}={1}", nameof(gasMeter.GasConsumed), gasMeter.GasConsumed);
+                this.logger.LogTrace("(-)[CALLCONTRACT_INSTANTIATION_FAILED]:{0}={1}", nameof(gasMeter.GasConsumed), gasMeter.GasConsumed);
                 executionResult.Exception = result.Exception.InnerException ?? result.Exception;
                 executionResult.GasConsumed = gasMeter.GasConsumed;
                 return executionResult;
             }
 
-            SmartContract smartContract = result.Object;
-
             try
             {
                 MethodInfo methodToInvoke = contractType.GetMethod(contractMethodName);
+                if (methodToInvoke == null)
+                    throw new ArgumentException(string.Format("[CALLCONTRACT_METHODTOINVOKE_NULL_DOESNOT_EXIST]:{0}={1}", nameof(contractMethodName), contractMethodName));
 
                 if (methodToInvoke.IsConstructor)
-                {
-                    this.logger.LogTrace("(-)[CALL_CONTRACT_CANNOT_INVOKE_CTOR]");
-                    throw new ConstructorInvocationException("Cannot invoke constructor");
-                }
+                    throw new ConstructorInvocationException("[CALLCONTRACT_CANNOT_INVOKE_CTOR]");
 
+                SmartContract smartContract = result.Object;
                 executionResult.Return = methodToInvoke.Invoke(smartContract, context.Parameters);
 
                 executionResult.InternalTransfers = internalTransferList.Transfers;
@@ -168,7 +166,7 @@ namespace Stratis.SmartContracts.Core.Backend
                 executionResult.GasConsumed = gasMeter.GasConsumed;
             }
 
-            this.logger.LogTrace("(-) {0}={1}", nameof(gasMeter.GasConsumed), gasMeter.GasConsumed);
+            this.logger.LogTrace("(-):{0}={1}", nameof(gasMeter.GasConsumed), gasMeter.GasConsumed);
 
             return executionResult;
         }

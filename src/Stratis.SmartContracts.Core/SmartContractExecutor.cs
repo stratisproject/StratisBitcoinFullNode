@@ -1,5 +1,7 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Utilities;
@@ -22,6 +24,7 @@ namespace Stratis.SmartContracts.Core
         protected readonly IContractStateRepository stateSnapshot;
         protected readonly SmartContractValidator validator;
         protected readonly IKeyEncodingStrategy keyEncodingStrategy;
+        private readonly ILogger logger;
         protected readonly ILoggerFactory loggerFactory;
 
         protected ulong blockHeight;
@@ -42,6 +45,7 @@ namespace Stratis.SmartContracts.Core
             this.gasMeter = new GasMeter(this.carrier.GasLimit);
             this.keyEncodingStrategy = keyEncodingStrategy;
             this.loggerFactory = loggerFactory;
+            this.logger = loggerFactory.CreateLogger(this.GetType());
             this.mempoolFee = mempoolFee;
             this.network = network;
             this.stateSnapshot = stateSnapshot.StartTracking();
@@ -70,9 +74,18 @@ namespace Stratis.SmartContracts.Core
             this.blockHeight = blockHeight;
             this.coinbaseAddress = coinbaseAddress;
 
-            PreExecute();
-            OnExecute();
-            PostExecute();
+            try
+            {
+                PreExecute();
+                OnExecute();
+                PostExecute();
+            }
+            catch (Exception unhandled)
+            {
+                this.logger.LogError("An unhandled exception occurred {0}", unhandled.Message);
+                if (unhandled.InnerException != null)
+                    this.logger.LogError("{0}", unhandled.InnerException.Message);
+            }
 
             return this.Result;
         }
@@ -98,6 +111,21 @@ namespace Stratis.SmartContracts.Core
         {
             if (this.mempoolFee != null)
                 new SmartContractExecutorResultProcessor(this.Result, this.loggerFactory).Process(this.carrier, this.mempoolFee);
+        }
+
+        internal void LogExecutionContext(ILogger logger, IBlock block, IMessage message, uint160 contractAddress, SmartContractCarrier carrier)
+        {
+            var builder = new StringBuilder();
+
+            builder.Append(string.Format("{0}:{1},{2}:{3},", nameof(block.Coinbase), block.Coinbase, nameof(block.Number), block.Number));
+            builder.Append(string.Format("{0}:{1},", nameof(contractAddress), contractAddress.ToAddress(this.network)));
+            builder.Append(string.Format("{0}:{1},", nameof(carrier.GasPrice), carrier.GasPrice));
+            builder.Append(string.Format("{0}:{1},{2}:{3},{4}:{5},{6}:{7}", nameof(message.ContractAddress), message.ContractAddress, nameof(message.GasLimit), message.GasLimit, nameof(message.Sender), message.Sender, nameof(message.Value), message.Value));
+
+            if (carrier.MethodParameters != null && carrier.MethodParameters.Length > 0)
+                builder.Append(string.Format(",{0}:{1}", nameof(carrier.MethodParameters), carrier.MethodParameters));
+
+            logger.LogTrace("{0}", builder.ToString());
         }
     }
 
@@ -156,7 +184,7 @@ namespace Stratis.SmartContracts.Core
                 this.carrier.MethodParameters
             );
 
-            this.logger.LogTrace("{0}", executionContext.ToString());
+            LogExecutionContext(this.logger, block, executionContext.Message, newContractAddress, this.carrier);
 
             IPersistenceStrategy persistenceStrategy = new MeteredPersistenceStrategy(this.stateSnapshot, this.gasMeter, new BasicKeyEncodingStrategy());
             var persistentState = new PersistentState(persistenceStrategy, newContractAddress, this.network);
@@ -246,7 +274,7 @@ namespace Stratis.SmartContracts.Core
                 this.carrier.MethodParameters
             );
 
-            this.logger.LogTrace("{0}", executionContext.ToString());
+            LogExecutionContext(this.logger, block, executionContext.Message, contractAddress, this.carrier);
 
             IPersistenceStrategy persistenceStrategy = new MeteredPersistenceStrategy(this.stateSnapshot, this.gasMeter, this.keyEncodingStrategy);
             var persistentState = new PersistentState(persistenceStrategy, contractAddress, this.network);
@@ -276,8 +304,8 @@ namespace Stratis.SmartContracts.Core
 
             if (transfers != null && transfers.Any() || this.carrier.TxOutValue > 0)
             {
-                this.logger.LogTrace("[CREATE_CONDENSING_TX] {0}={1},{2}={3}", nameof(transfers), transfers.Count, nameof(this.carrier.TxOutValue), this.carrier.TxOutValue);
-                var condensingTx = new CondensingTx(this.carrier, transfers, this.stateSnapshot, this.network);
+                this.logger.LogTrace("[CREATE_CONDENSING_TX]:{0}={1},{2}={3}", nameof(transfers), transfers.Count, nameof(this.carrier.TxOutValue), this.carrier.TxOutValue);
+                var condensingTx = new CondensingTx(this.loggerFactory, this.carrier, transfers, this.stateSnapshot, this.network);
                 this.Result.InternalTransaction = condensingTx.CreateCondensingTransaction();
             }
 
@@ -296,8 +324,8 @@ namespace Stratis.SmartContracts.Core
 
             if (this.carrier.TxOutValue > 0)
             {
-                this.logger.LogTrace("[CREATE_REFUND_TX] {0}={1}", nameof(this.carrier.TxOutValue), this.carrier.TxOutValue);
-                Transaction tx = new CondensingTx(this.carrier, this.network).CreateRefundTransaction();
+                this.logger.LogTrace("[CREATE_REFUND_TX]:{0}={1}", nameof(this.carrier.TxOutValue), this.carrier.TxOutValue);
+                Transaction tx = new CondensingTx(this.loggerFactory, this.carrier, this.network).CreateRefundTransaction();
                 this.Result.InternalTransaction = tx;
             }
 
