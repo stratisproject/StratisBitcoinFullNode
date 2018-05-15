@@ -133,6 +133,14 @@ namespace Stratis.SmartContracts.Core.State.AccountAbstractionLayer
                 {
                     this.logger.LogTrace("{0}:{1}", nameof(balance.Key), balance.Key.ToAddress(this.network));
 
+                    if (balance.Value == 0)
+                    {
+                        // We need to clear the unspent from the db. There is no output to point to.
+                        this.stateRepository.ClearUnspent(balance.Key);
+                        continue;
+                    }
+
+                    // There is an output to point to. Update the db so we know which one to spend next time.
                     var newContractVin = new ContractUnspentOutput
                     {
                         Hash = tx.GetHash(),
