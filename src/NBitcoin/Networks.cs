@@ -611,8 +611,8 @@ namespace NBitcoin
             Network network = new Network
             {
                 Name = "SmartContractsTestNet",
-                RootFolderName = BitcoinRootFolderName,
-                DefaultConfigFilename = BitcoinDefaultConfigFilename
+                RootFolderName = StratisRootFolderName,
+                DefaultConfigFilename = StratisDefaultConfigFilename
             };
 
             network.consensus.SubsidyHalvingInterval = 210000;
@@ -690,8 +690,8 @@ namespace NBitcoin
             Network network = new Network
             {
                 Name = "SmartContractRegTest",
-                RootFolderName = StratisSmartContractFolderName,
-                DefaultConfigFilename = BitcoinDefaultConfigFilename
+                RootFolderName = StratisRootFolderName,
+                DefaultConfigFilename = StratisDefaultConfigFilename
             };
 
             network.consensus.SubsidyHalvingInterval = 150;

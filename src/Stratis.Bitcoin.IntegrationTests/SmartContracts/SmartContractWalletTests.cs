@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using Microsoft.AspNetCore.Mvc;
 using NBitcoin;
+using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.SmartContracts.Controllers;
 using Stratis.Bitcoin.Features.SmartContracts.Models;
@@ -237,6 +239,14 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
             }
         }
 
+        /*
+         * Tests the most basic end-to-end functionality of the Auction contract. 
+         * 
+         * NOTE: This tests the situation where a contract leaves itself with a 0 balance, and
+         * hence hits 'ClearUnspent' in CondensingTx.cs. If about to remove this test,
+         * ensure that we have this case covered in SmartContractMinerTests.cs.
+         */
+
         [Fact]
         public void SendAndReceiveSmartContractTransactionsUsingController()
         {
@@ -365,6 +375,136 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 });
                 walletHistoryModel = (WalletHistoryModel)result.Value;
                 Assert.Equal(2, walletHistoryModel.AccountsHistoryModel.First().TransactionsHistory.Where(x => x.Type == TransactionItemType.Send).Count());
+            }
+        }
+
+        [Fact]
+        public void AuctionTest()
+        {
+            using (NodeBuilder builder = NodeBuilder.Create())
+            {
+                CoreNode scSender = builder.CreateSmartContractNode();
+                CoreNode scReceiver = builder.CreateSmartContractNode();
+
+                builder.StartAll();
+
+                scSender.NotInIBD();
+                scReceiver.NotInIBD();
+
+                scSender.FullNode.WalletManager().CreateWallet(Password, WalletName);
+                scReceiver.FullNode.WalletManager().CreateWallet(Password, WalletName);
+                HdAddress addr = scSender.FullNode.WalletManager().GetUnusedAddress(new WalletAccountReference(WalletName, AccountName));
+                Features.Wallet.Wallet wallet = scSender.FullNode.WalletManager().GetWalletByName(WalletName);
+                Key key = wallet.GetExtendedPrivateKeyForAddress(Password, addr).PrivateKey;
+
+                scSender.SetDummyMinerSecret(new BitcoinSecret(key, scSender.FullNode.Network));
+                scReceiver.SetDummyMinerSecret(new BitcoinSecret(key, scReceiver.FullNode.Network));
+                var maturity = (int)scSender.FullNode.Network.Consensus.Option<PowConsensusOptions>().CoinbaseMaturity;
+                scSender.GenerateSmartContractStratisWithMiner(maturity + 5);
+                TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(scSender));
+                var total = scSender.FullNode.WalletManager().GetSpendableTransactionsInWallet(WalletName).Sum(s => s.Transaction.Amount);
+                Assert.Equal(Money.COIN * (maturity + 5) * 50, total);
+
+                SmartContractsController senderSmartContractsController = scSender.FullNode.NodeService<SmartContractsController>();
+                WalletController senderWalletController = scSender.FullNode.NodeService<WalletController>();
+                SmartContractCompilationResult compilationResult = SmartContractCompiler.CompileFile("SmartContracts/Auction.cs");
+                Assert.True(compilationResult.Success);
+
+                var buildRequest = new BuildCreateContractTransactionRequest
+                {
+                    AccountName = AccountName,
+                    GasLimit = "10000",
+                    GasPrice = "1",
+                    ContractCode = compilationResult.Compilation.ToHexString(),
+                    FeeAmount = "30000",
+                    Password = Password,
+                    WalletName = WalletName,
+                    Sender = addr.Address,
+                    Parameters = new string[] {"10#20"}
+                };
+
+                JsonResult result = (JsonResult)senderSmartContractsController.BuildCreateSmartContractTransaction(buildRequest);
+                var response = (BuildCreateContractTransactionResponse)result.Value;
+                scSender.CreateRPCClient().AddNode(scReceiver.Endpoint, true);
+                senderWalletController.SendTransaction(new SendTransactionRequest
+                {
+                    Hex = response.Hex
+                });
+
+                TestHelper.WaitLoop(() => scReceiver.CreateRPCClient().GetRawMempool().Length > 0);
+                scReceiver.GenerateSmartContractStratisWithMiner(2);
+                TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(scReceiver, scSender));
+
+                // Contract deployed.
+                ContractStateRepositoryRoot senderState = scSender.FullNode.NodeService<ContractStateRepositoryRoot>();
+                string contractAddress = response.NewContractAddress.ToString();
+                uint160 contractAddressUint160 = new Address(contractAddress).ToUint160(scSender.FullNode.Network);
+                Assert.NotNull(senderState.GetCode(contractAddressUint160));
+
+                var callRequest = new BuildCallContractTransactionRequest
+                {
+                    AccountName = AccountName,
+                    GasLimit = "10000",
+                    GasPrice = "1",
+                    Amount = "2",
+                    MethodName = "Bid",
+                    ContractAddress = response.NewContractAddress,
+                    FeeAmount = "30000",
+                    Password = Password,
+                    WalletName = WalletName,
+                    Sender = addr.Address
+                };
+                result = (JsonResult)senderSmartContractsController.BuildCallSmartContractTransaction(callRequest);
+                var callResponse = (BuildCallContractTransactionResponse)result.Value;
+                senderWalletController.SendTransaction(new SendTransactionRequest
+                {
+                    Hex = callResponse.Hex
+                });
+                TestHelper.WaitLoop(() => scReceiver.CreateRPCClient().GetRawMempool().Length > 0);
+                scReceiver.GenerateSmartContractStratisWithMiner(2);
+                TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(scReceiver, scSender));
+
+                // Here, test that Sender and HighestBidder are the same.
+                var ownerBytes = senderState.GetStorageValue(contractAddressUint160, Encoding.UTF8.GetBytes("Owner"));
+                var highestBidderBytes = senderState.GetStorageValue(contractAddressUint160, Encoding.UTF8.GetBytes("HighestBidder"));
+                Assert.Equal(new uint160(ownerBytes), new uint160(highestBidderBytes));
+                var hasEndedBytes =  senderState.GetStorageValue(contractAddressUint160, Encoding.UTF8.GetBytes("HasEnded"));
+                var endBlockBytes = senderState.GetStorageValue(contractAddressUint160, Encoding.UTF8.GetBytes("EndBlock"));
+                bool hasEnded = BitConverter.ToBoolean(hasEndedBytes, 0);
+                ulong endBlock = BitConverter.ToUInt64(endBlockBytes, 0);
+
+                // Wait 20 blocks to end auction
+                scReceiver.GenerateSmartContractStratisWithMiner(20);
+                TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(scReceiver, scSender));
+
+                var endAuctionRequest = new BuildCallContractTransactionRequest
+                {
+                    AccountName = AccountName,
+                    GasLimit = "10000",
+                    GasPrice = "1",
+                    Amount = "0",
+                    MethodName = "AuctionEnd",
+                    ContractAddress = response.NewContractAddress,
+                    FeeAmount = "30000",
+                    Password = Password,
+                    WalletName = WalletName,
+                    Sender = addr.Address
+                };
+                var endAuctionResult = (JsonResult)senderSmartContractsController.BuildCallSmartContractTransaction(endAuctionRequest);
+                var endAuctionResponse = (BuildCallContractTransactionResponse)endAuctionResult.Value;
+                senderWalletController.SendTransaction(new SendTransactionRequest
+                {
+                    Hex = endAuctionResponse.Hex
+                });
+                TestHelper.WaitLoop(() => scReceiver.CreateRPCClient().GetRawMempool().Length > 0);
+                var heightBeforeMine = scReceiver.FullNode.Chain.Height;
+                scReceiver.GenerateSmartContractStratisWithMiner(2);
+                TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(scReceiver, scSender));
+                Assert.Equal(heightBeforeMine + 2, scReceiver.FullNode.Chain.Height);
+                // Check that transaction did in fact go through with condensing tx as well
+                var blockStoreCache = scSender.FullNode.NodeService<IBlockStoreCache>();
+                var secondLastBlock = blockStoreCache.GetBlockAsync(scSender.FullNode.Chain.Tip.Previous.HashBlock).Result;
+                Assert.Equal(3, secondLastBlock.Transactions.Count);
             }
         }
     }

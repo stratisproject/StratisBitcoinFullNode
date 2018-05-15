@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using NBitcoin;
 using Stratis.SmartContracts.Core.Hashing;
 using Stratis.SmartContracts.Core.State.AccountAbstractionLayer;
@@ -181,6 +179,14 @@ namespace Stratis.SmartContracts.Core.State
         {
             byte[] unspentHash = this.GetUnspentHash(address);
             return this.vinCache.Get(unspentHash);
+        }
+
+        public void ClearUnspent(uint160 address)
+        {
+            AccountState accountState = this.GetOrCreateAccountState(address);
+            accountState.UnspentHash = null;
+            this.accountStateCache.Put(address.ToBytes(), accountState);
+            // TODO: Delete old unspent from cache?
         }
 
         public void SetUnspent(uint160 address, ContractUnspentOutput vin)

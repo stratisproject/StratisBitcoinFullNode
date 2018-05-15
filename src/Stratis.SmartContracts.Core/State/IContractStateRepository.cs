@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using NBitcoin;
+﻿using NBitcoin;
 using Stratis.SmartContracts.Core.State.AccountAbstractionLayer;
 
 namespace Stratis.SmartContracts.Core.State
@@ -31,7 +30,7 @@ namespace Stratis.SmartContracts.Core.State
         ContractUnspentOutput GetUnspent(uint160 address);
         void SetUnspent(uint160 address, ContractUnspentOutput vin);
         byte[] GetUnspentHash(uint160 address);
-
+        void ClearUnspent(uint160 address);
         #endregion
     }
 }
