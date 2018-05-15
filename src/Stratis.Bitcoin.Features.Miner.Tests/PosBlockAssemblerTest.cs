@@ -440,9 +440,6 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
                 {
                     this.callbackRuleContext = c;
                 }).Verifiable();
-
-            this.consensusLoop.Setup(c => c.Validator)
-                .Returns(this.validator.Object);
         }
 
         private void SetupValidator()

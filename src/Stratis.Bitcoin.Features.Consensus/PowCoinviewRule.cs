@@ -5,83 +5,81 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
-using NBitcoin.Crypto;
 using Stratis.Bitcoin.Base.Deployments;
 using Stratis.Bitcoin.Features.Consensus.Interfaces;
+using Stratis.Bitcoin.Features.Consensus.Rules;
 using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.Consensus
 {
     /// <summary>
-    /// Provides functionality for verifying validity of PoW block.
+    /// The proof of work coinview rules - BIP68, MaxSigOps and BlockReward checks
     /// </summary>
-    /// <remarks>PoW blocks are not accepted after block with height <see cref="Consensus.LastPOWBlock"/>.</remarks>
-    public class PowConsensusValidator : IPowConsensusValidator
+    [ExecutionRule]
+    public class PowCoinviewRule : ConsensusRule, IPowConsensusValidator
     {
         /// <summary>Flags that determine how transaction should be validated in non-consensus code.</summary>
         public static Transaction.LockTimeFlags StandardLocktimeVerifyFlags = Transaction.LockTimeFlags.VerifySequence | Transaction.LockTimeFlags.MedianTimePast;
-
-        /// <summary>Instance logger.</summary>
-        private readonly ILogger logger;
 
         /// <summary>Provider of block header hash checkpoints.</summary>
         protected readonly ICheckpoints Checkpoints;
 
         /// <summary>Consensus parameters.</summary>
-        public NBitcoin.Consensus ConsensusParams { get; }
+        public NBitcoin.Consensus ConsensusParams { get; set; }
 
         /// <summary>Consensus options.</summary>
-        public PowConsensusOptions ConsensusOptions { get; }
-
-        /// <summary>Keeps track of how much time different actions took to execute and how many times they were executed.</summary>
-        public ConsensusPerformanceCounter PerformanceCounter { get; }
-
-        private readonly Network network;
+        public PowConsensusOptions ConsensusOptions { get; set; }
 
         /// <summary>Provider of time functions.</summary>
         protected readonly IDateTimeProvider dateTimeProvider;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="PowConsensusValidator"/> class.
+        /// Initializes a new instance of the <see cref="PowCoinviewRule"/> class.
         /// </summary>
         /// <param name="network">Specification of the network the node runs on - regtest/testnet/mainnet.</param>
         /// <param name="checkpoints">Provider of block header hash checkpoints.</param>
         /// <param name="dateTimeProvider">Provider of time functions.</param>
         /// <param name="loggerFactory">Factory for creating loggers.</param>
-        public PowConsensusValidator(Network network, ICheckpoints checkpoints, IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory)
+        public PowCoinviewRule(Network network, ICheckpoints checkpoints, IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory)
         {
             Guard.NotNull(network, nameof(network));
             Guard.NotNull(network.Consensus.Option<PowConsensusOptions>(), nameof(network.Consensus.Options));
 
-            this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
-            this.ConsensusParams = network.Consensus;
-            this.ConsensusOptions = network.Consensus.Option<PowConsensusOptions>();
-            this.network = network;
+            this.Logger = loggerFactory.CreateLogger(this.GetType().FullName);
+            
             this.dateTimeProvider = dateTimeProvider;
-            this.PerformanceCounter = new ConsensusPerformanceCounter(this.dateTimeProvider);
             this.Checkpoints = checkpoints;
         }
 
-        /// <inheritdoc />
-        public virtual void ExecuteBlock(RuleContext context, TaskScheduler taskScheduler = null)
+        public PowCoinviewRule()
         {
-            this.logger.LogTrace("()");
+        }
+
+        public override void Initialize()
+        {
+            this.ConsensusParams = this.Parent.Network.Consensus;
+            this.ConsensusOptions = this.ConsensusParams.Option<PowConsensusOptions>();
+        }
+
+        public override Task RunAsync(RuleContext context)
+        {
+            this.Logger.LogTrace("()");
 
             Block block = context.BlockValidationContext.Block;
             ChainedHeader index = context.BlockValidationContext.ChainedHeader;
             DeploymentFlags flags = context.Flags;
             UnspentOutputSet view = context.Set;
 
-            this.PerformanceCounter.AddProcessedBlocks(1);
-            taskScheduler = taskScheduler ?? TaskScheduler.Default;
+            this.Parent.PerformanceCounter.AddProcessedBlocks(1);
+            var taskScheduler = TaskScheduler.Default;
 
             long sigOpsCost = 0;
             Money fees = Money.Zero;
             var checkInputs = new List<Task<bool>>();
             for (int txIndex = 0; txIndex < block.Transactions.Count; txIndex++)
             {
-                this.PerformanceCounter.AddProcessedTransactions(1);
+                this.Parent.PerformanceCounter.AddProcessedTransactions(1);
                 Transaction tx = block.Transactions[txIndex];
                 if (!context.SkipValidation)
                 {
@@ -92,7 +90,7 @@ namespace Stratis.Bitcoin.Features.Consensus
 
                         if (!view.HaveInputs(tx))
                         {
-                            this.logger.LogTrace("(-)[BAD_TX_NO_INPUT]");
+                            this.Logger.LogTrace("(-)[BAD_TX_NO_INPUT]");
                             ConsensusErrors.BadTransactionMissingInput.Throw();
                         }
 
@@ -107,7 +105,7 @@ namespace Stratis.Bitcoin.Features.Consensus
 
                         if (!tx.CheckSequenceLocks(prevheights, index, flags.LockTimeFlags))
                         {
-                            this.logger.LogTrace("(-)[BAD_TX_NON_FINAL]");
+                            this.Logger.LogTrace("(-)[BAD_TX_NON_FINAL]");
                             ConsensusErrors.BadTransactionNonFinal.Throw();
                         }
                     }
@@ -128,14 +126,14 @@ namespace Stratis.Bitcoin.Features.Consensus
                         var txData = new PrecomputedTransactionData(tx);
                         for (int inputIndex = 0; inputIndex < tx.Inputs.Count; inputIndex++)
                         {
-                            this.PerformanceCounter.AddProcessedInputs(1);
+                            this.Parent.PerformanceCounter.AddProcessedInputs(1);
                             TxIn input = tx.Inputs[inputIndex];
                             int inputIndexCopy = inputIndex;
                             TxOut txout = view.GetOutputFor(input);
                             var checkInput = new Task<bool>(() =>
                             {
                                 var checker = new TransactionChecker(tx, inputIndexCopy, txout.Value, txData);
-                                var ctx = new ScriptEvaluationContext(this.network);
+                                var ctx = new ScriptEvaluationContext(this.Parent.Network);
                                 ctx.ScriptVerify = flags.ScriptFlags;
                                 return ctx.VerifyScript(input.ScriptSig, txout.ScriptPubKey, checker);
                             });
@@ -155,13 +153,15 @@ namespace Stratis.Bitcoin.Features.Consensus
                 bool passed = checkInputs.All(c => c.GetAwaiter().GetResult());
                 if (!passed)
                 {
-                    this.logger.LogTrace("(-)[BAD_TX_SCRIPT]");
+                    this.Logger.LogTrace("(-)[BAD_TX_SCRIPT]");
                     ConsensusErrors.BadTransactionScriptError.Throw();
                 }
             }
-            else this.logger.LogTrace("BIP68, SigOp cost, and block reward validation skipped for block at height {0}.", index.Height);
+            else this.Logger.LogTrace("BIP68, SigOp cost, and block reward validation skipped for block at height {0}.", index.Height);
 
-            this.logger.LogTrace("(-)");
+            this.Logger.LogTrace("(-)");
+
+            return Task.CompletedTask;
         }
 
         /// <summary>
@@ -171,14 +171,14 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <param name="transaction">Transaction which outputs will be added to the context's <see cref="UnspentOutputSet"/> and which inputs will be removed from it.</param>
         protected virtual void UpdateCoinView(RuleContext context, Transaction transaction)
         {
-            this.logger.LogTrace("()");
+            this.Logger.LogTrace("()");
 
             ChainedHeader index = context.BlockValidationContext.ChainedHeader;
             UnspentOutputSet view = context.Set;
 
             view.Update(transaction, index.Height);
 
-            this.logger.LogTrace("(-)");
+            this.Logger.LogTrace("(-)");
         }
 
         /// <summary>
@@ -191,16 +191,16 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <exception cref="ConsensusErrors.BadCoinbaseAmount">Thrown if coinbase transaction output value is larger than expected.</exception>
         protected virtual void CheckBlockReward(RuleContext context, Money fees, int height, Block block)
         {
-            this.logger.LogTrace("()");
+            this.Logger.LogTrace("()");
 
             Money blockReward = fees + this.GetProofOfWorkReward(height);
             if (block.Transactions[0].TotalOut > blockReward)
             {
-                this.logger.LogTrace("(-)[BAD_COINBASE_AMOUNT]");
+                this.Logger.LogTrace("(-)[BAD_COINBASE_AMOUNT]");
                 ConsensusErrors.BadCoinbaseAmount.Throw();
             }
 
-            this.logger.LogTrace("(-)");
+            this.Logger.LogTrace("(-)");
         }
 
         /// <summary>
@@ -211,26 +211,26 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <exception cref="ConsensusErrors.BadTransactionPrematureCoinbaseSpending">Thrown if transaction tries to spend coins that are not mature.</exception>
         protected virtual void CheckMaturity(UnspentOutputs coins, int spendHeight)
         {
-            this.logger.LogTrace("({0}:'{1}/{2}',{3}:{4})", nameof(coins), coins.TransactionId, coins.Height, nameof(spendHeight), spendHeight);
+            this.Logger.LogTrace("({0}:'{1}/{2}',{3}:{4})", nameof(coins), coins.TransactionId, coins.Height, nameof(spendHeight), spendHeight);
 
             // If prev is coinbase, check that it's matured
             if (coins.IsCoinbase)
             {
                 if ((spendHeight - coins.Height) < this.ConsensusOptions.CoinbaseMaturity)
                 {
-                    this.logger.LogTrace("Coinbase transaction height {0} spent at height {1}, but maturity is set to {2}.", coins.Height, spendHeight, this.ConsensusOptions.CoinbaseMaturity);
-                    this.logger.LogTrace("(-)[COINBASE_PREMATURE_SPENDING]");
+                    this.Logger.LogTrace("Coinbase transaction height {0} spent at height {1}, but maturity is set to {2}.", coins.Height, spendHeight, this.ConsensusOptions.CoinbaseMaturity);
+                    this.Logger.LogTrace("(-)[COINBASE_PREMATURE_SPENDING]");
                     ConsensusErrors.BadTransactionPrematureCoinbaseSpending.Throw();
                 }
             }
 
-            this.logger.LogTrace("(-)");
+            this.Logger.LogTrace("(-)");
         }
 
         /// <inheritdoc />
         public virtual void CheckInputs(Transaction transaction, UnspentOutputSet inputs, int spendHeight)
         {
-            this.logger.LogTrace("({0}:{1})", nameof(spendHeight), spendHeight);
+            this.Logger.LogTrace("({0}:{1})", nameof(spendHeight), spendHeight);
 
             if (!inputs.HaveInputs(transaction))
                 ConsensusErrors.BadTransactionMissingInput.Throw();
@@ -248,14 +248,14 @@ namespace Stratis.Bitcoin.Features.Consensus
                 valueIn += coins.TryGetOutput(prevout.N).Value;
                 if (!this.MoneyRange(coins.TryGetOutput(prevout.N).Value) || !this.MoneyRange(valueIn))
                 {
-                    this.logger.LogTrace("(-)[BAD_TX_INPUT_VALUE]");
+                    this.Logger.LogTrace("(-)[BAD_TX_INPUT_VALUE]");
                     ConsensusErrors.BadTransactionInputValueOutOfRange.Throw();
                 }
             }
 
             if (valueIn < transaction.TotalOut)
             {
-                this.logger.LogTrace("(-)[TX_IN_BELOW_OUT]");
+                this.Logger.LogTrace("(-)[TX_IN_BELOW_OUT]");
                 ConsensusErrors.BadTransactionInBelowOut.Throw();
             }
 
@@ -263,18 +263,23 @@ namespace Stratis.Bitcoin.Features.Consensus
             Money txFee = valueIn - transaction.TotalOut;
             if (txFee < 0)
             {
-                this.logger.LogTrace("(-)[NEGATIVE_FEE]");
+                this.Logger.LogTrace("(-)[NEGATIVE_FEE]");
                 ConsensusErrors.BadTransactionNegativeFee.Throw();
             }
 
             fees += txFee;
             if (!this.MoneyRange(fees))
             {
-                this.logger.LogTrace("(-)[BAD_FEE]");
+                this.Logger.LogTrace("(-)[BAD_FEE]");
                 ConsensusErrors.BadTransactionFeeOutOfRange.Throw();
             }
 
-            this.logger.LogTrace("(-)");
+            this.Logger.LogTrace("(-)");
+        }
+
+        public void ExecuteBlock(RuleContext context, TaskScheduler taskScheduler = null)
+        {
+            throw new NotImplementedException();
         }
 
         /// <inheritdoc />
@@ -327,7 +332,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             if (!flags.ScriptFlags.HasFlag(ScriptVerify.Witness))
                 return 0;
 
-            WitProgramParameters witParams = PayToWitTemplate.Instance.ExtractScriptPubKeyParameters2(this.network, scriptPubKey);
+            WitProgramParameters witParams = PayToWitTemplate.Instance.ExtractScriptPubKeyParameters2(this.Parent.Network, scriptPubKey);
 
             if (witParams?.Version == 0)
             {
@@ -359,8 +364,8 @@ namespace Stratis.Bitcoin.Features.Consensus
             for (int i = 0; i < transaction.Inputs.Count; i++)
             {
                 TxOut prevout = inputs.GetOutputFor(transaction.Inputs[i]);
-                if (prevout.ScriptPubKey.IsPayToScriptHash(this.network))
-                    sigOps += prevout.ScriptPubKey.GetSigOpCount(this.network, transaction.Inputs[i].ScriptSig);
+                if (prevout.ScriptPubKey.IsPayToScriptHash(this.Parent.Network))
+                    sigOps += prevout.ScriptPubKey.GetSigOpCount(this.Parent.Network, transaction.Inputs[i].ScriptSig);
             }
 
             return sigOps;
@@ -411,7 +416,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         {
             var bms = new BitcoinStream(Stream.Null, true);
             bms.TransactionOptions = options;
-            bms.ConsensusFactory = this.network.Consensus.ConsensusFactory;
+            bms.ConsensusFactory = this.Parent.Network.Consensus.ConsensusFactory;
             data.ReadWrite(bms);
             return (int)bms.Counter.WrittenBytes;
         }

@@ -172,6 +172,11 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules
                 }
             }
         }
+
+        public T GetRule<T>() where T : ConsensusRule
+        {
+            return (T)this.Rules.Single(r => r.Rule is T).Rule;
+        }
     }
 
     /// <summary>

@@ -64,8 +64,6 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
             this.asyncLoopFactory = new Mock<IAsyncLoopFactory>();
             this.timeSyncBehaviorState = new Mock<ITimeSyncBehaviorState>();
 
-            this.consensusLoop.Setup(c => c.Validator).Returns(this.consensusValidator.Object);
-
             this.cancellationTokenSource = new CancellationTokenSource();
             this.nodeLifetime.Setup(n => n.ApplicationStopping).Returns(this.cancellationTokenSource.Token);
 

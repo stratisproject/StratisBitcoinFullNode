@@ -349,7 +349,7 @@ namespace Stratis.Bitcoin.IntegrationTests
             Network.Main.Consensus.Options = new PowConsensusOptions();
             context.Consensus = Network.Main.Consensus;
             ConsensusSettings consensusSettings = new ConsensusSettings().Load(NodeSettings.Default());
-            var validator = new PowConsensusValidator(Network.Main, new Checkpoints(Network.Main, consensusSettings), DateTimeProvider.Default, this.loggerFactory);
+            var validator = new PowCoinviewRule(Network.Main, new Checkpoints(Network.Main, consensusSettings), DateTimeProvider.Default, this.loggerFactory);
             new WitnessCommitmentsRule().RunAsync(context).GetAwaiter().GetResult();
 
             CheckPowTransactionRule rule = new CheckPowTransactionRule();

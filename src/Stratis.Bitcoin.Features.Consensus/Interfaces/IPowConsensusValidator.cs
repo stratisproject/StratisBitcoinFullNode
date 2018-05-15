@@ -16,9 +16,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Interfaces
         /// <summary>Consensus parameters.</summary>
         NBitcoin.Consensus ConsensusParams { get; }
 
-        /// <summary>Keeps track of how much time different actions took to execute and how many times they were executed.</summary>
-        ConsensusPerformanceCounter PerformanceCounter { get; }
-
         /// <summary>
         /// Calculates merkle root for block's trasnactions.
         /// </summary>

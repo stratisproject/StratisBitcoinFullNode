@@ -18,22 +18,20 @@ namespace Stratis.Bitcoin.Features.Consensus
 
         public Network Network { get; private set; }
 
-        public IPowConsensusValidator ConsensusValidator { get; private set; }
 
-        public ConsensusManager(IConsensusLoop consensusLoop = null, IDateTimeProvider dateTimeProvider = null, NodeSettings nodeSettings = null, Network network = null,
-            IPowConsensusValidator consensusValidator = null)
+        public ConsensusManager(IConsensusLoop consensusLoop = null, IDateTimeProvider dateTimeProvider = null, NodeSettings nodeSettings = null, Network network = null)
         {
             this.ConsensusLoop = consensusLoop;
             this.DateTimeProvider = dateTimeProvider;
             this.NodeSettings = nodeSettings;
             this.Network = network;
-            this.ConsensusValidator = consensusValidator;
         }
 
         public Target GetNetworkDifficulty()
         {
-            if ((this.ConsensusValidator?.ConsensusParams != null) && (this.ConsensusLoop?.Tip != null))
-                return this.ConsensusLoop?.Tip?.GetWorkRequired(this.ConsensusValidator.ConsensusParams);
+            var powCoinviewRule = this.ConsensusLoop.ConsensusRules.GetRule<PowCoinviewRule>();
+            if ((powCoinviewRule.ConsensusParams != null) && (this.ConsensusLoop?.Tip != null))
+                return this.ConsensusLoop?.Tip?.GetWorkRequired(powCoinviewRule.ConsensusParams);
             else
                 return null;
         }

@@ -39,7 +39,7 @@ namespace Stratis.Bitcoin.Features.Miner
     /// <item>Each of the tasks mentioned above will try to find a solution for proof of stake target. This is done by creating a coinstake
     /// transaction with each of the available UTXOs combined with all valid unix timestamps that were not checked.
     /// Those timestamps are within a time interval from now to now - searchInterval seconds. Only timestamps that are divisible by
-    /// <c><see cref="PosConsensusValidator.StakeTimestampMask"/> + 1</c> are valid candidates (this is done to decrease granularity of timestamps).
+    /// <c><see cref="PosCoinviewRule.StakeTimestampMask"/> + 1</c> are valid candidates (this is done to decrease granularity of timestamps).
     /// Search interval is a length of an unexplored block time space in seconds.
     /// Task calculates the kernel's hash (kernel is the first input in the coinstake transaction) using the next formula:
     /// <c>hash(stakeModifierV2 + stakingCoins.Time + prevout.Hash + prevout.N + transactionTime)</c>.
@@ -232,7 +232,7 @@ namespace Stratis.Bitcoin.Features.Miner
         private readonly IWalletManager walletManager;
 
         /// <summary>Provides value for PoS reward and checks PoS kernel.</summary>
-        private readonly IPosConsensusValidator posConsensusValidator;
+        //private readonly IPosConsensusValidator posConsensusValidator;
 
         /// <summary>Factory for creating loggers.</summary>
         private readonly ILoggerFactory loggerFactory;
@@ -373,7 +373,7 @@ namespace Stratis.Bitcoin.Features.Miner
             this.targetReserveBalance = 0; // TOOD:settings.targetReserveBalance
             this.stakeProgressFlag = StakeNotInProgress;
 
-            this.posConsensusValidator = consensusLoop.Validator as IPosConsensusValidator;
+            //this.posConsensusValidator = consensusLoop.Validator as IPosConsensusValidator;
 
             this.rpcGetStakingInfoModel = new Miner.Models.GetStakingInfoModel();
         }
@@ -501,7 +501,7 @@ namespace Stratis.Bitcoin.Features.Miner
                     blockTemplate = null;
                 }
 
-                uint coinstakeTimestamp = (uint)this.dateTimeProvider.GetAdjustedTimeAsUnixTimestamp() & ~PosConsensusValidator.StakeTimestampMask;
+                uint coinstakeTimestamp = (uint)this.dateTimeProvider.GetAdjustedTimeAsUnixTimestamp() & ~PosCoinviewRule.StakeTimestampMask;
                 if (coinstakeTimestamp <= this.lastCoinStakeSearchTime)
                 {
                     this.logger.LogTrace("Current coinstake time {0} is not greater than last search timestamp {1}.", coinstakeTimestamp, this.lastCoinStakeSearchTime);
@@ -741,7 +741,7 @@ namespace Stratis.Bitcoin.Features.Miner
 
             // If the time after applying the mask is lower than minimal allowed time,
             // it is simply too early for us to mine, there can't be any valid solution.
-            if ((coinstakeContext.CoinstakeTx.Time & ~PosConsensusValidator.StakeTimestampMask) < minimalAllowedTime)
+            if ((coinstakeContext.CoinstakeTx.Time & ~PosCoinviewRule.StakeTimestampMask) < minimalAllowedTime)
             {
                 this.logger.LogTrace("(-)[TOO_EARLY_TIME_AFTER_LAST_BLOCK]:false");
                 return false;
@@ -783,8 +783,9 @@ namespace Stratis.Bitcoin.Features.Miner
             }
 
             this.logger.LogTrace("Worker #{0} found the kernel.", workersResult.KernelFoundIndex);
+            //DAN
             // Get reward for newly created block.
-            long reward = fees + this.posConsensusValidator.GetProofOfStakeReward(chainTip.Height + 1);
+            long reward = fees + this.consensusLoop.ConsensusRules.Rules.OfType<PosCoinviewRule>().Single().GetProofOfStakeReward(chainTip.Height + 1);
             if (reward <= 0)
             {
                 // TODO: This can't happen unless we remove reward for mined block.
@@ -908,7 +909,7 @@ namespace Stratis.Bitcoin.Features.Miner
                     if (txTime < minimalAllowedTime)
                         break;
 
-                    if ((txTime & PosConsensusValidator.StakeTimestampMask) != 0)
+                    if ((txTime & PosCoinviewRule.StakeTimestampMask) != 0)
                         continue;
 
                     context.Logger.LogTrace("Trying with transaction time {0}...", txTime);
@@ -920,8 +921,8 @@ namespace Stratis.Bitcoin.Features.Miner
                         {
                             BlockStake = new BlockStake(block)
                         };
-
-                        this.posConsensusValidator.StakeValidator.CheckKernel(contextInformation, chainTip, block.Header.Bits, txTime, prevoutStake);
+                        //DAN
+                        this.consensusLoop.ConsensusRules.Rules.OfType<PosCoinviewRule>().Single().StakeValidator.CheckKernel(contextInformation, chainTip, block.Header.Bits, txTime, prevoutStake);
 
                         if (context.Result.SetKernelFoundIndex(context.Index))
                         {
@@ -1186,7 +1187,7 @@ namespace Stratis.Bitcoin.Features.Miner
 
             if (stakesTime != 0) res = stakeKernelsAvg / stakesTime;
 
-            res *= PosConsensusValidator.StakeTimestampMask + 1;
+            res *= PosCoinviewRule.StakeTimestampMask + 1;
 
             this.logger.LogTrace("(-):{0}", res);
             return res;

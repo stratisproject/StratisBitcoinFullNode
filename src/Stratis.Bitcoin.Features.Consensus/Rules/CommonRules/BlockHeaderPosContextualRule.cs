@@ -66,7 +66,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         /// <returns><c>true</c> if block timestamp is equal to transaction timestamp, <c>false</c> otherwise.</returns>
         private bool CheckCoinStakeTimestamp(long blockTime, long transactionTime)
         {
-            return (blockTime == transactionTime) && ((transactionTime & PosConsensusValidator.StakeTimestampMask) == 0);
+            return (blockTime == transactionTime) && ((transactionTime & PosCoinviewRule.StakeTimestampMask) == 0);
         }
     }
 }
