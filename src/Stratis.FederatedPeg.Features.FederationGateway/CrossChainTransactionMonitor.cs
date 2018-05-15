@@ -1,4 +1,6 @@
-﻿using System.Text;
+﻿using System.Net.NetworkInformation;
+using System.Runtime.CompilerServices;
+using System.Text;
 using Microsoft.Extensions.Logging;
 
 using NBitcoin;
@@ -6,6 +8,7 @@ using NBitcoin.JsonConverters;
 using Newtonsoft.Json;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Utilities;
+using System;
 
 namespace Stratis.FederatedPeg.Features.FederationGateway
 {
@@ -90,8 +93,10 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
         // The network we are running on. Will be a Stratis chain for mainchain or a sidechain.
         private readonly Network network;
 
+        private ConcurrentChain concurrentChain;
+
         public CrossChainTransactionMonitor(ILoggerFactory loggerFactory, Network network, DataFolder dataFolder,
-            FederationGatewaySettings federationGatewaySettings,
+            ConcurrentChain concurrentChain, FederationGatewaySettings federationGatewaySettings,
             IPartialTransactionSessionManager partialTransactionSessionManager)
         {
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
@@ -99,6 +104,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
             this.network = network;
             this.partialTransactionSessionManager = partialTransactionSessionManager;
             this.federationGatewaySettings = federationGatewaySettings;
+            this.concurrentChain = concurrentChain;
         }
 
         /// <summary>
@@ -178,8 +184,8 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
         /// <inheritdoc/>>
         public void ProcessBlock(Block block)
         {
-            //todo: use chained block?
-            this.blockNumber += 1;
+            var chainBlockTip = this.concurrentChain.GetBlock(block.GetHash());
+            this.blockNumber = chainBlockTip.Height;
 
             this.logger.LogDebug(
                 $"{this.federationGatewaySettings.MemberName} Monitor Processing Block: {blockNumber} on {this.network.ToChain()}");
@@ -208,17 +214,38 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
         }
 
         // Examines the outputs of the transaction to see if an OP_RETURN is present.
-        // Assumes a positive result yields an address: todo: is this safe?
-        private static string GetDestinationFromOpReturn(Transaction transaction)
+        // Validates the base58 result against the counter chain network checksum.
+        private string GetDestinationFromOpReturn(Transaction transaction)
         {
             string destination = null;
             foreach (var txOut in transaction.Outputs)
             {
                 var data = txOut.ScriptPubKey.ToBytes();
                 if ((OpcodeType) data[0] == OpcodeType.OP_RETURN)
-                    destination = Encoding.UTF8.GetString(data).Remove(0, 2);
+                    destination = ConvertValidOpReturnDataToAddress(data);
             }
             return destination;
+        }
+
+        // Converts the raw bytes from the output into a BitcoinAddress.
+        // The address is parsed using the target network bytes and returns null if validation fails.
+        private string ConvertValidOpReturnDataToAddress(byte[] data)
+        {
+            // Remove the RETURN operator and convert the remaining bytes to our candidate address.
+            string destination = Encoding.UTF8.GetString(data).Remove(0, 2);
+
+            // Attempt to parse the string. Validates the base58 string.
+            try
+            {
+                var bitcoinAddress = this.network.ToCounterChainNetwork().Parse<BitcoinAddress>(destination);
+                this.logger.LogInformation($"ConvertValidOpReturnDataToAddress received {destination} and network.Parse received {bitcoinAddress}.");
+                return destination;
+            }
+            catch (Exception ex)
+            {
+                this.logger.LogInformation($"Address {destination} could not be converted to a valid address. Reason {ex.Message}.");
+                return null;
+            }
         }
     }
 }
