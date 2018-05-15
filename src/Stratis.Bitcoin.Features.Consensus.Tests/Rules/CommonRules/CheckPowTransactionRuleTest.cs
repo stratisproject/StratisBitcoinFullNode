@@ -49,7 +49,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         {
             var transaction = new Transaction();
             transaction.Inputs.Add(new TxIn());
-            transaction = GenerateTransactionWithWeight(transaction, this.options.MaxBlockBaseSize + 1, NetworkOptions.TemporaryOptions & ~NetworkOptions.Witness);
+            transaction = this.GenerateTransactionWithWeight(transaction, this.options.MaxBlockBaseSize + 1, TransactionOptions.None);
 
             var exception = Assert.Throws<ConsensusErrorException>(() => this.consensusRules.RegisterRule<CheckPowTransactionRule>().CheckTransaction(this.network, this.options, transaction));
 
@@ -237,7 +237,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             Assert.Equal(ConsensusErrors.BadTransactionNoInput, exception.ConsensusError);
         }
 
-        private Transaction GenerateTransactionWithWeight(Transaction transaction, int weight, NetworkOptions options)
+        private Transaction GenerateTransactionWithWeight(Transaction transaction, int weight, TransactionOptions options)
         {
             transaction.Outputs.Add(new TxOut(new Money(10000000000), new Script()));
 
@@ -259,7 +259,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             return null;
         }
 
-        private int CalculateBlockWeight(Transaction transaction, NetworkOptions options)
+        private int CalculateBlockWeight(Transaction transaction, TransactionOptions options)
         {
             using (var stream = new MemoryStream())
             {
