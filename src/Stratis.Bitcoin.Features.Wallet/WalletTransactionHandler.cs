@@ -42,7 +42,7 @@ namespace Stratis.Bitcoin.Features.Wallet
 
         private readonly ILogger logger;
 
-        private MemoryCache privateKeyCache = new MemoryCache(new MemoryCacheOptions(){ExpirationScanFrequency = new TimeSpan(0,1,0)});
+        private readonly MemoryCache privateKeyCache;
 
         public WalletTransactionHandler(
             ILoggerFactory loggerFactory,
@@ -55,6 +55,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             this.walletFeePolicy = walletFeePolicy;
             this.coinType = (CoinType)network.Consensus.CoinType;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
+            this.privateKeyCache = new MemoryCache(new MemoryCacheOptions() { ExpirationScanFrequency = new TimeSpan(0, 1, 0) });
         }
 
         /// <inheritdoc />
