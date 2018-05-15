@@ -2,10 +2,9 @@
 using System.Text;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
-using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Utilities;
 
-namespace Stratis.Bitcoin.Features.Consensus
+namespace Stratis.Bitcoin.Configuration.Settings
 {
     /// <summary>
     /// Configurable settings for the consensus feature.
