@@ -10,7 +10,7 @@ namespace NBitcoin
     public enum BlockDataAvailabilityState
     {
         /// <summary>
-        /// A <see cref="BlockHeader"/> is found and is a valid header.
+        /// A <see cref="BlockHeader"/> is presented, the block data is not available.
         /// </summary>
         HeaderOnly,
 
@@ -22,7 +22,7 @@ namespace NBitcoin
         BlockRequired,
 
         /// <summary>
-        /// The <see cref="Block"/> is downloaded, if the Block property is null the block needs to be asked from store.
+        /// The <see cref="Block"/> was downloaded and is available, but it may not be reachable directly but via a store.
         /// </summary>
         BlockAvailable
     }
@@ -43,17 +43,20 @@ namespace NBitcoin
         HeaderValidated,
 
         /// <summary>
-        /// No validation required because the block is assumed to be valid.
+        /// Minimum validation required because the block is assumed to be valid.
+        /// This state is used for blocks before the last checkpoint or for blocks that are on the chain of assume valid block.
+        /// Once a block is fully validated this state will change to FullyValidated.
         /// </summary>
         AssumedValid,
 
         /// <summary>
-        /// Validated using all rules that don't require db state changes.
+        /// Validated using all rules that don't require change of state.
         /// </summary>
         PartiallyValidated,
 
         /// <summary>
         /// Validated using all the rules.
+        /// Some rules validation may be skipped for blocks marked as AssumedValid. 
         /// </summary>
         FullyValidated
     }
@@ -492,7 +495,7 @@ namespace NBitcoin
         /// <returns>Whether proof of work is valid.</returns>
         public bool CheckProofOfWorkAndTarget(Consensus consensus)
         {
-            return (this.Height == 0) || (this.Header.CheckProofOfWork(consensus) && this.Header.Bits == this.GetWorkRequired(consensus));
+            return (this.Height == 0) || (this.Header.CheckProofOfWork(consensus) && (this.Header.Bits == this.GetWorkRequired(consensus)));
         }
 
         /// <summary>
