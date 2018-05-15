@@ -5,6 +5,7 @@ using Stratis.Bitcoin.Builder.Feature;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Controllers.Models;
+using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.Utilities;
 using System.Diagnostics;
@@ -32,7 +33,9 @@ namespace Stratis.Bitcoin.Controllers
         /// <summary>The connection manager.</summary>
         private readonly IConnectionManager connectionManager;
 
-        public NodeController(IFullNode fullNode, ILoggerFactory loggerFactory, IDateTimeProvider dateTimeProvider, IChainState chainState, NodeSettings nodeSettings, IConnectionManager connectionManager)
+        private readonly IStoreStateProvider storeStateProvider;
+
+        public NodeController(IFullNode fullNode, ILoggerFactory loggerFactory, IDateTimeProvider dateTimeProvider, IChainState chainState, IStoreStateProvider storeStateProvider, NodeSettings nodeSettings, IConnectionManager connectionManager)
         {
             this.fullNode = fullNode;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
@@ -40,6 +43,7 @@ namespace Stratis.Bitcoin.Controllers
             this.chainState = chainState;
             this.nodeSettings = nodeSettings;
             this.connectionManager = connectionManager;
+            this.storeStateProvider = storeStateProvider;
         }
 
         /// <summary>
@@ -57,6 +61,7 @@ namespace Stratis.Bitcoin.Controllers
                 PID = Process.GetCurrentProcess().Id,
                 Network = this.fullNode.Network.Name,
                 ConsensusHeight = this.chainState.ConsensusTip.Height,
+                BlockStoreHeight = storeStateProvider.StoreTip.Height,
                 DataDirectoryPath = this.nodeSettings.DataDir,
                 RunningTime = this.dateTimeProvider.GetUtcNow() - this.fullNode.StartTime
             };

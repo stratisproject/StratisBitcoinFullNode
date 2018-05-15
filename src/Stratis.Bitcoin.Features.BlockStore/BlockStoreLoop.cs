@@ -16,7 +16,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
     /// <summary>
     /// The BlockStoreLoop simultaneously finds and downloads blocks and stores them in the BlockRepository.
     /// </summary>
-    public class BlockStoreLoop
+    public class BlockStoreLoop : IStoreStateProvider
     {
         /// <summary>Factory for creating background async loop tasks.</summary>
         private readonly IAsyncLoopFactory asyncLoopFactory;
@@ -85,7 +85,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         private readonly StoreSettings storeSettings;
 
         /// <summary>The highest stored block in the repository.</summary>
-        internal ChainedHeader StoreTip { get; private set; }
+        public ChainedHeader StoreTip { get; private set; }
 
         /// <summary>Public constructor for unit testing.</summary>
         public BlockStoreLoop(IAsyncLoopFactory asyncLoopFactory,

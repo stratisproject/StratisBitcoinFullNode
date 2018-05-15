@@ -33,6 +33,9 @@ namespace Stratis.Bitcoin.Controllers.Models
         /// <summary>The height of the consensus.</summary>
         public int ConsensusHeight { get; set; }
 
+        /// <summary> The height of the full blocks downloaded to BlockStore </summary>
+        public int BlockStoreHeight { get; set; }
+
         /// <summary>A collection of inbound peers.</summary>
         public List<ConnectedPeerModel> InboundPeers { get; set; }
 
