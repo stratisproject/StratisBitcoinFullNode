@@ -8,6 +8,7 @@ using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.Utilities;
+using Stratis.Bitcoin.Utilities.Extensions;
 
 namespace Stratis.Bitcoin.Consensus
 {
@@ -79,7 +80,13 @@ namespace Stratis.Bitcoin.Consensus
 
         private readonly object lockObject;
 
-        public ChainedHeaderTree(Network network, ILoggerFactory loggerFactory, IChainedHeaderValidator chainedHeaderValidator, ICheckpoints checkpoints, ChainState chainState, ConsensusSettings consensusSettings)
+        public ChainedHeaderTree(
+            Network network, 
+            ILoggerFactory loggerFactory, 
+            IChainedHeaderValidator chainedHeaderValidator, 
+            ICheckpoints checkpoints, 
+            ChainState chainState, 
+            ConsensusSettings consensusSettings)
         {
             this.network = network;
             this.chainedHeaderValidator = chainedHeaderValidator;
@@ -106,11 +113,13 @@ namespace Stratis.Bitcoin.Consensus
 
             this.CreateNewHeaders(headers, out List<ChainedHeader> newChainedHeaders);
             
-            if (newChainedHeaders.Any())
+            if (newChainedHeaders.Empty())
             {
-                this.AddChainClaim(networkPeer.Connection.Id, newChainedHeaders.Last().HashBlock, out uint256 oldTip);
-                this.RemoveChainClaim(networkPeer.Connection.Id, oldTip);
+                return new ConnectedHeaders();
             }
+
+            this.AddChainClaim(networkPeer.Connection.Id, newChainedHeaders.Last().HashBlock, out uint256 oldTip);
+            this.RemoveChainClaim(networkPeer.Connection.Id, oldTip);
 
             ChainedHeader bestTip = this.chainState.ConsensusTip;
             ChainedHeader firstNewHeader = newChainedHeaders.First();
@@ -122,53 +131,17 @@ namespace Stratis.Bitcoin.Consensus
                 {
                     if (chainedHeader.HashBlock == this.consensusSettings.BlockAssumedValid)
                     {
-                        if (lastNewHeader.ChainWork > bestTip.ChainWork)
-                        {
-                            // last.DataRequired;
-
-                            ChainedHeader current = chainedHeader;
-                            while (current != null)
-                            {
-                                //if(current == AssumedValid)
-                                //    break;
-
-                                //current.AssumedValid 
-                                current = current.Previous;
-                            }
-
-                            return new ConnectedHeaders() { DownloadFrom = firstNewHeader, DownloadTo = lastNewHeader, Consumed = chainedHeader};
-                        }
+                        return this.HandleAssumedValid(chainedHeader, firstNewHeader, lastNewHeader);
                     }
 
                     CheckpointInfo checkpoint = this.checkpoints.GetCheckpoint(chainedHeader.Height);
                     if (checkpoint != null)
                     {
-                        if (checkpoint.Hash != chainedHeader.HashBlock)
-                        {
-                            throw new InvalidHeaderException();
-                        }
-
-                        ChainedHeader subchainTip = chainedHeader;
-                        if (chainedHeader.Height == this.checkpoints.GetLastCheckpointHeight())
-                            subchainTip = lastNewHeader;
-
-                        ChainedHeader current = subchainTip;
-                        while (current != null)
-                        {
-                            //current.DataRequired
-
-                            //if(current == AssumedValid)
-                            //    break;
-
-                            //current.AssumedValid 
-                            current = current.Previous;
-                        }
-
-                        return new ConnectedHeaders() { DownloadFrom = firstNewHeader, DownloadTo = lastNewHeader, Consumed = chainedHeader };
+                        return this.HandleCheckpoint(chainedHeader, firstNewHeader, lastNewHeader, checkpoint);
                     }
-
-                    return new ConnectedHeaders();
                 }
+
+                return new ConnectedHeaders();
             }
 
             var lastHeader = newChainedHeaders.Last();
@@ -181,6 +154,54 @@ namespace Stratis.Bitcoin.Consensus
             return new ConnectedHeaders();
         }
 
+        private ConnectedHeaders HandleAssumedValid(ChainedHeader chainedHeader, ChainedHeader firstNewHeader, ChainedHeader lastNewHeader)
+        {
+            ChainedHeader bestTip = this.chainState.ConsensusTip;
+
+            if (lastNewHeader.ChainWork > bestTip.ChainWork)
+            {
+                // last.DataRequired;
+            }
+
+            ChainedHeader current = chainedHeader;
+            while (current != null)
+            {
+                //if(current == AssumedValid)
+                //    break;
+
+                //current.AssumedValid 
+                current = current.Previous;
+            }
+
+           return new ConnectedHeaders() { DownloadFrom = firstNewHeader, DownloadTo = lastNewHeader, Consumed = chainedHeader };
+        }
+
+        private ConnectedHeaders HandleCheckpoint(ChainedHeader chainedHeader, ChainedHeader firstNewHeader, ChainedHeader lastNewHeader, CheckpointInfo checkpoint)
+        {
+            if (checkpoint.Hash != chainedHeader.HashBlock)
+            {
+                throw new InvalidHeaderException();
+            }
+
+            ChainedHeader subchainTip = chainedHeader;
+            if (chainedHeader.Height == this.checkpoints.GetLastCheckpointHeight())
+                subchainTip = lastNewHeader;
+
+            ChainedHeader current = subchainTip;
+            while (current != null)
+            {
+                //current.DataRequired
+
+                //if(current == AssumedValid)
+                //    break;
+
+                //current.AssumedValid 
+                current = current.Previous;
+            }
+
+            return new ConnectedHeaders() { DownloadFrom = firstNewHeader, DownloadTo = lastNewHeader, Consumed = chainedHeader };
+
+        }
 
         public void PeerDisconnect(NetworkPeer networkPeer)
         {
@@ -201,6 +222,9 @@ namespace Stratis.Bitcoin.Consensus
             // wait for .Next
         }
 
+        /// <summary>
+        /// Add a claim for a network to be on a certain chain tip, and remove the previous claim.
+        /// </summary>
         private void AddChainClaim(int networkPeerId, uint256 newTip, out uint256 oldTip)
         {
             this.logger.LogTrace("()");
