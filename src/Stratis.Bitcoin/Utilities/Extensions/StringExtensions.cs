@@ -18,5 +18,10 @@ namespace Stratis.Bitcoin.Utilities.Extensions
 
             return output;
         }
+
+        public static string FromSecureString(this SecureString input)
+        {
+            return new System.Net.NetworkCredential(string.Empty, input).Password;
+        }
     }
 }

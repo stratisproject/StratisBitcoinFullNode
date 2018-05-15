@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Security;
+using System.Security.Cryptography;
 using System.Text;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
@@ -213,13 +214,14 @@ namespace Stratis.Bitcoin.Features.Wallet
                 return;
 
             Wallet wallet = this.walletManager.GetWalletByName(context.AccountReference.WalletName);
-            Key privateKey;
+            Key privateKey; 
+            SHA256 sha256 = SHA256.Create();
             // get extended private key
-            string cacheKey = $"{wallet.EncryptedSeed}{context.WalletPassword}{wallet.Network}";
+            string cacheKey = Encoding.Default.GetString(sha256.ComputeHash(Encoding.UTF8.GetBytes(wallet.EncryptedSeed)));
 
             if (this.privateKeyCache.TryGetValue(cacheKey, out SecureString secretValue))
             {
-                privateKey = wallet.Network.CreateBitcoinSecret(new System.Net.NetworkCredential(string.Empty, secretValue).Password).PrivateKey;
+                privateKey = wallet.Network.CreateBitcoinSecret(secretValue.FromSecureString()).PrivateKey;
                 this.privateKeyCache.Set(cacheKey, secretValue, new TimeSpan(0, 5, 0));
             }
             else
