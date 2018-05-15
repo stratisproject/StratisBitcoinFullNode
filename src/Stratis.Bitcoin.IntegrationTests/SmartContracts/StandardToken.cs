@@ -4,10 +4,6 @@ using Stratis.SmartContracts.Standards;
 
 namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
 {
-    /// <summary>
-    /// TODO: investigare improvements for Assert checks
-    /// TODO: investigate implementation of 2D mapping arrays
-    /// </summary>
     public class StandardToken : SmartContract, IStandardToken
     {
         public StandardToken(ISmartContractState smartContractState, ulong totalSupply) : base(smartContractState)
@@ -17,10 +13,6 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
             this.Owner = this.Message.Sender;
             this.TotalSupply = totalSupply;
         }
-
-        // TODO: Re-enable allowed collection once nested mapping is implemented
-        // public readonly ISmartContractMapping<ISmartContractMapping<ulong>> Allowed;
-
         public ISmartContractMapping<ulong> Balances => this.PersistentState.GetMapping<ulong>(nameof(this.Balances));
 
         public ulong TotalSupply
@@ -69,28 +61,6 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
 
                 return true;
             }
-        }
-
-        public ulong GetAllowance(Address owner, Address spender)
-        {
-            throw new NotImplementedException();
-
-            // TODO: Re-enable allowed collection once nested mapping is implemented
-            // this.Assert(!string.IsNullOrWhiteSpace(owner.Value));
-            // this.Assert(!string.IsNullOrWhiteSpace(spender.Value));
-
-            // return this.Allowed[owner.Value][spender.Value];
-        }
-
-        public bool Approve(Address sender, ulong amountToApprove)
-        {
-            throw new NotImplementedException();
-
-            // TODO: Re-enable allowed collection once nested mapping is implemented
-            // this.Assert(!string.IsNullOrWhiteSpace(sender.Value));
-
-            // this.Allowed[this.Owner.Value][sender.Value] = amountToApprove;
-            // return true;
         }
     }
 }
