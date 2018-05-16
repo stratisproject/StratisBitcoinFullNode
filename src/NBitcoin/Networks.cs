@@ -487,7 +487,7 @@ namespace NBitcoin
             messageStart[3] = 0x11;
             var magic = BitConverter.ToUInt32(messageStart, 0); //0x5223570; 
 
-            Block genesis = Network.StratisMain.GetGenesis();
+            Block genesis = CreateStratisGenesisBlock(network.Consensus.ConsensusFactory, 1470467000, 1831645, 0x1e0fffff, 1, Money.Zero);
             genesis.Header.Time = 1493909211;
             genesis.Header.Nonce = 2433759;
             genesis.Header.Bits = network.Consensus.PowLimit;
@@ -593,7 +593,7 @@ namespace NBitcoin
             messageStart[3] = 0xef;
             var magic = BitConverter.ToUInt32(messageStart, 0);
 
-            Block genesis = Network.StratisMain.GetGenesis();
+            Block genesis = CreateStratisGenesisBlock(network.Consensus.ConsensusFactory, 1470467000, 1831645, 0x1e0fffff, 1, Money.Zero);
             genesis.Header.Time = 1494909211;
             genesis.Header.Nonce = 2433759;
             genesis.Header.Bits = network.Consensus.PowLimit;
