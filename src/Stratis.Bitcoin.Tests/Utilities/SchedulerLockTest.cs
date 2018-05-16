@@ -4,9 +4,9 @@ using System.Threading.Tasks;
 using Stratis.Bitcoin.Utilities;
 using Xunit;
 
-namespace Stratis.Bitcoin.IntegrationTests
+namespace Stratis.Bitcoin.Tests.Utilities
 {
-    public class UtilTests
+    public class SchedulerLockTest
     {
         // TODO: write test scenarios for the AsyncLock
         // example when a exclusive delegate breaks in to a concurrent delegate
