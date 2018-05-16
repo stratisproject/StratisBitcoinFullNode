@@ -51,6 +51,7 @@ namespace NBitcoin
 
         /// <summary>
         /// Validated using all rules that don't require change of state.
+        /// Some rules validation may be skipped for blocks previously marked as <see cref="AssumedValid"/>.
         /// </summary>
         PartiallyValidated,
 
