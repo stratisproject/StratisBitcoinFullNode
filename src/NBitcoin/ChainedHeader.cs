@@ -10,7 +10,7 @@ namespace NBitcoin
     public enum BlockDataAvailabilityState
     {
         /// <summary>
-        /// A <see cref="BlockHeader"/> is presented, the block data is not available.
+        /// A <see cref="BlockHeader"/> is present, the block data is not available.
         /// </summary>
         HeaderOnly,
 
@@ -56,7 +56,7 @@ namespace NBitcoin
 
         /// <summary>
         /// Validated using all the rules.
-        /// Some rules validation may be skipped for blocks marked as <see cref="AssumedValid"/>. 
+        /// Some rules validation may be skipped for blocks previously marked as <see cref="AssumedValid"/>. 
         /// </summary>
         FullyValidated
     }
