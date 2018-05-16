@@ -95,7 +95,6 @@ namespace NBitcoin
         }
 
         public ConsensusOptions Options { get; set; }
-        public NetworkOptions NetworkOptions { get; set; } = NetworkOptions.TemporaryOptions;
 
         public class BuriedDeploymentsArray
         {
@@ -230,7 +229,6 @@ namespace NBitcoin
                 ProofOfStakeLimitV2 = this.ProofOfStakeLimitV2,
                 DefaultAssumeValid = this.DefaultAssumeValid,
                 ConsensusFactory = this.ConsensusFactory,
-                NetworkOptions = this.NetworkOptions.Clone()
             };
         }
     }
@@ -243,14 +241,6 @@ namespace NBitcoin
         private PubKey alertPubKey;
         private Block genesis;
         
-        public NetworkOptions NetworkOptions
-        {
-            get
-            {
-                return this.Consensus.NetworkOptions;
-            }
-        }
-
         private Network()
         {
             this.DNSSeeds = new List<DNSSeedData>();

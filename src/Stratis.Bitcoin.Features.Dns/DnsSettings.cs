@@ -101,14 +101,36 @@ namespace Stratis.Bitcoin.Features.Dns
         {
             var builder = new StringBuilder();
 
-            builder.AppendLine($"-dnslistenport=<0-65535>  The DNS listen port. Defaults to '{ DefaultDnsListenPort }'.");
+            builder.AppendLine($"-dnslistenport=<0-65535>  The DNS listen port. Defaults to {DefaultDnsListenPort}.");
             builder.AppendLine($"-dnsfullnode=<0 or 1>     Enables running the DNS Seed service as a full node.");
-            builder.AppendLine($"-dnspeerblacklistthresholdinseconds=<seconds>  The number of seconds since a peer last connected before being blacklisted from the DNS nodes. Default: {DefaultDnsPeerBlacklistThresholdInSeconds }.");
+            builder.AppendLine($"-dnspeerblacklistthresholdinseconds=<seconds>  The number of seconds since a peer last connected before being blacklisted from the DNS nodes. Defaults to {DefaultDnsPeerBlacklistThresholdInSeconds}.");
             builder.AppendLine($"-dnshostname=<string>     The host name for the node when running as a DNS Seed service.");
             builder.AppendLine($"-dnsnameserver=<string>   The DNS Seed Service nameserver.");
             builder.AppendLine($"-dnsmailbox=<string>      The e-mail address used as the administrative point of contact for the domain.");
 
             NodeSettings.Default().Logger.LogInformation(builder.ToString());
+        }
+
+        /// <summary>
+        /// Get the default configuration.
+        /// </summary>
+        /// <param name="builder">The string builder to add the settings to.</param>
+        /// <param name="network">The network to base the defaults off.</param>
+        public static void BuildDefaultConfigurationFile(StringBuilder builder, Network network)
+        {
+            builder.AppendLine("####DNS Settings####");
+            builder.AppendLine($"#The DNS listen port. Defaults to {DefaultDnsListenPort}");
+            builder.AppendLine($"#dnslistenport={DefaultDnsListenPort}");
+            builder.AppendLine($"#Enables running the DNS Seed service as a full node.");
+            builder.AppendLine($"#dnsfullnode=0");
+            builder.AppendLine($"#The number of seconds since a peer last connected before being blacklisted from the DNS nodes. Defaults to {DefaultDnsPeerBlacklistThresholdInSeconds}.");
+            builder.AppendLine($"#dnspeerblacklistthresholdinseconds={DefaultDnsPeerBlacklistThresholdInSeconds}");
+            builder.AppendLine($"#The host name for the node when running as a DNS Seed service.");
+            builder.AppendLine($"#dnshostname=<string>");
+            builder.AppendLine($"#The DNS Seed Service nameserver.");
+            builder.AppendLine($"#dnsnameserver=<string>");
+            builder.AppendLine($"#The e-mail address used as the administrative point of contact for the domain.");
+            builder.AppendLine($"#dnsmailbox=<string>");
         }
     }
 }

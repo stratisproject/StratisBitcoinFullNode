@@ -315,7 +315,6 @@ namespace NBitcoin
             network.RootFolderName = StratisRootFolderName;
             network.DefaultConfigFilename = StratisDefaultConfigFilename;
 
-            network.Consensus.NetworkOptions = new NetworkOptions();
             network.Consensus.SubsidyHalvingInterval = 210000;
             network.Consensus.MajorityEnforceBlockUpgrade = 750;
             network.Consensus.MajorityRejectBlockOutdated = 950;
@@ -444,7 +443,6 @@ namespace NBitcoin
             network.RootFolderName = StratisRootFolderName;
             network.DefaultConfigFilename = StratisDefaultConfigFilename;
 
-            network.Consensus.NetworkOptions = new NetworkOptions();
             network.Consensus.SubsidyHalvingInterval = 210000;
             network.Consensus.MajorityEnforceBlockUpgrade = 750;
             network.Consensus.MajorityRejectBlockOutdated = 950;
@@ -553,7 +551,6 @@ namespace NBitcoin
             network.RootFolderName = StratisRootFolderName;
             network.DefaultConfigFilename = StratisDefaultConfigFilename;
 
-            network.Consensus.NetworkOptions = new NetworkOptions();
             network.Consensus.SubsidyHalvingInterval = 210000;
             network.Consensus.MajorityEnforceBlockUpgrade = 750;
             network.Consensus.MajorityRejectBlockOutdated = 950;
