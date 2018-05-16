@@ -128,6 +128,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
 
         /// <summary>Coin view of the memory pool.</summary>
         private readonly CoinView coinView;
+        private readonly IConsensusRules consensusRules;
 
         /// <summary>Transaction memory pool for managing transactions in the memory pool.</summary>
         private readonly ITxMempool memPool;
@@ -150,8 +151,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         private Network network;
 
 
-        private PowCoinviewRule coinviewRule;
-
         /// <summary>
         /// Constructs a memory pool validator object.
         /// </summary>
@@ -163,6 +162,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <param name="coinView">Coin view of the memory pool.</param>
         /// <param name="loggerFactory">Logger factory for creating instance logger.</param>
         /// <param name="nodeSettings">Full node settings.</param>
+        /// <param name="consensusRules">Consensus rules engine.</param>
         public MempoolValidator(
             ITxMempool memPool,
             MempoolSchedulerLock mempoolLock,
@@ -186,8 +186,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             // this.freeLimiter = new FreeLimiterSection();
             this.PerformanceCounter = new MempoolPerformanceCounter(this.dateTimeProvider);
             this.minRelayTxFee = nodeSettings.MinRelayTxFeeRate;
-            
-            this.coinviewRule = consensusRules.GetRule<PowCoinviewRule>();
+            this.consensusRules = consensusRules;
         }
 
         /// <summary>Gets a counter for tracking memory pool performance.</summary>
@@ -746,7 +745,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             if (context.Transaction.HasWitness && this.mempoolSettings.NodeSettings.RequireStandard && !this.IsWitnessStandard(context.Transaction, context.View))
                 context.State.Invalid(MempoolErrors.NonstandardWitness).Throw();
 
-            context.SigOpsCost = this.coinviewRule.GetTransactionSignatureOperationCost(context.Transaction, context.View.Set,
+            context.SigOpsCost = consensusRules.GetRule<PowCoinviewRule>().GetTransactionSignatureOperationCost(context.Transaction, context.View.Set,
                 new DeploymentFlags { ScriptFlags = ScriptVerify.Standard });
 
             Money nValueIn = context.View.GetValueIn(context.Transaction);
@@ -1044,7 +1043,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             Transaction tx = context.Transaction;
             if (!context.Transaction.IsCoinBase)
             {
-               this.coinviewRule.CheckInputs(context.Transaction, context.View.Set, this.chain.Height + 1);
+                this.consensusRules.GetRule<PowCoinviewRule>().CheckInputs(context.Transaction, context.View.Set, this.chain.Height + 1);
 
                 for (int iInput = 0; iInput < tx.Inputs.Count; iInput++)
                 {

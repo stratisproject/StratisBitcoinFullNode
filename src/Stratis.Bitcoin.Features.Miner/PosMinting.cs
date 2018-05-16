@@ -787,7 +787,7 @@ namespace Stratis.Bitcoin.Features.Miner
             this.logger.LogTrace("Worker #{0} found the kernel.", workersResult.KernelFoundIndex);
             //DAN
             // Get reward for newly created block.
-            long reward = fees + this.consensusLoop.ConsensusRules.Rules.OfType<PosCoinviewRule>().Single().GetProofOfStakeReward(chainTip.Height + 1);
+            long reward = fees + this.consensusLoop.ConsensusRules.GetRule<PosCoinviewRule>().GetProofOfStakeReward(chainTip.Height + 1);
             if (reward <= 0)
             {
                 // TODO: This can't happen unless we remove reward for mined block.
@@ -923,8 +923,8 @@ namespace Stratis.Bitcoin.Features.Miner
                         {
                             BlockStake = new BlockStake(block)
                         };
-                        //DAN
-                        this.consensusLoop.ConsensusRules.Rules.OfType<PosCoinviewRule>().Single().StakeValidator.CheckKernel(contextInformation, chainTip, block.Header.Bits, txTime, prevoutStake);
+
+                        this.consensusLoop.ConsensusRules.GetRule<PosCoinviewRule>().StakeValidator.CheckKernel(contextInformation, chainTip, block.Header.Bits, txTime, prevoutStake);
 
                         if (context.Result.SetKernelFoundIndex(context.Index))
                         {

@@ -238,8 +238,8 @@ namespace Stratis.Bitcoin.Features.Miner
             // TODO: Implement Witness Code
             // pblocktemplate->CoinbaseCommitment = GenerateCoinbaseCommitment(*pblock, pindexPrev, chainparams.GetConsensus());
             this.BlockTemplate.VTxFees[0] = -this.fees;
-            //DAN - if correct, perhaps we implement a generic get of the rule
-            var powCoinviewRule = (PowCoinviewRule)this.ConsensusLoop.ConsensusRules.Rules.Single(r => r.Rule.GetType() == typeof(PowCoinviewRule)).Rule;
+
+            var powCoinviewRule = this.ConsensusLoop.ConsensusRules.GetRule<PowCoinviewRule>();
 
             this.coinbase.Outputs[0].Value = this.fees + powCoinviewRule.GetProofOfWorkReward(this.height);
             this.BlockTemplate.TotalFee = this.fees;

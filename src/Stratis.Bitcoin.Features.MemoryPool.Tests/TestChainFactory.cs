@@ -98,7 +98,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             BlockTemplate newBlock = blockAssembler.Build(chain.Tip, scriptPubKey);
             chain.SetTip(newBlock.Block.Header);
             
-            //DAN
             var ruleContext = new RuleContext(new BlockValidationContext { Block = newBlock.Block }, network.Consensus, consensusLoop.Tip)
             {
                 CheckPow = false,
