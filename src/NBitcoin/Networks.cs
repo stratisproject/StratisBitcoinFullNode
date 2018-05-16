@@ -325,8 +325,6 @@ namespace NBitcoin
         {
             var consensus = new Consensus();
 
-            consensus.NetworkOptions = new NetworkOptions();
-
             consensus.SubsidyHalvingInterval = 210000;
             consensus.MajorityEnforceBlockUpgrade = 750;
             consensus.MajorityRejectBlockOutdated = 950;

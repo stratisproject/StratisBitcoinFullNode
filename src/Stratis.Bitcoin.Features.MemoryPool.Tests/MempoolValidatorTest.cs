@@ -400,7 +400,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             Assert.True(txBuilder.Verify(p2shOverp2wpkh)); //check fully signed
 
             // remove witness data from tx
-            Transaction noWitTx = p2shOverp2wpkh.WithOptions(NetworkOptions.None, Network.RegTest.Consensus.ConsensusFactory);
+            Transaction noWitTx = p2shOverp2wpkh.WithOptions(TransactionOptions.None, Network.RegTest.Consensus.ConsensusFactory);
 
             Assert.Equal(p2shOverp2wpkh.GetHash(), noWitTx.GetHash());
             Assert.True(noWitTx.GetSerializedSize() < p2shOverp2wpkh.GetSerializedSize());

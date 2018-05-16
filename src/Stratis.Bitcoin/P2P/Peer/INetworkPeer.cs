@@ -65,7 +65,7 @@ namespace Stratis.Bitcoin.P2P.Peer
         VersionPayload PeerVersion { get; }
 
         /// <summary>Transaction options supported by the peer.</summary>
-        NetworkOptions SupportedTransactionOptions { get; }
+        TransactionOptions SupportedTransactionOptions { get; }
 
         /// <summary>When a peer is disconnected this is set to human readable information about why it happened.</summary>
         NetworkPeerDisconnectReason DisconnectReason { get; }
