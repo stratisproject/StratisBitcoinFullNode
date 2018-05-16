@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace Stratis.Bitcoin.Models
+namespace Stratis.Bitcoin.Controllers.Models
 {
     /// <summary>
     /// Clas representing the status of the currently running node.

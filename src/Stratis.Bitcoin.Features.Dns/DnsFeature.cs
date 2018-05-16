@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
@@ -184,6 +185,16 @@ namespace Stratis.Bitcoin.Features.Dns
         public static void PrintHelp(Network network)
         {
             DnsSettings.PrintHelp(network);
+        }
+
+        /// <summary>
+        /// Get the default configuration.
+        /// </summary>
+        /// <param name="builder">The string builder to add the settings to.</param>
+        /// <param name="network">The network to base the defaults off.</param>
+        public static void BuildDefaultConfigurationFile(StringBuilder builder, Network network)
+        {
+            DnsSettings.BuildDefaultConfigurationFile(builder, network);
         }
 
         /// <summary>

@@ -95,7 +95,6 @@ namespace NBitcoin
         }
 
         public ConsensusOptions Options { get; set; }
-        public NetworkOptions NetworkOptions { get; set; } = NetworkOptions.TemporaryOptions;
 
         public class BuriedDeploymentsArray
         {
@@ -230,7 +229,6 @@ namespace NBitcoin
                 ProofOfStakeLimitV2 = this.ProofOfStakeLimitV2,
                 DefaultAssumeValid = this.DefaultAssumeValid,
                 ConsensusFactory = this.ConsensusFactory,
-                NetworkOptions = this.NetworkOptions.Clone()
             };
         }
     }
@@ -245,14 +243,6 @@ namespace NBitcoin
         private readonly Dictionary<int, CheckpointInfo> checkpoints = new Dictionary<int, CheckpointInfo>();
         private Block genesis;
         private Consensus consensus = new Consensus();
-
-        public NetworkOptions NetworkOptions
-        {
-            get
-            {
-                return this.consensus.NetworkOptions;
-            }
-        }
 
         private Network()
         {

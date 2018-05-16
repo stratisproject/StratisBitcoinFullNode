@@ -790,7 +790,7 @@ namespace NBitcoin
             HashStream hs = new HashStream();
             BitcoinStream stream = new BitcoinStream(hs, true);
             stream.Type = SerializationType.Hash;
-            stream.TransactionOptions = version == HashVersion.Original ? NetworkOptions.None : NetworkOptions.Witness;
+            stream.TransactionOptions = version == HashVersion.Original ? TransactionOptions.None : TransactionOptions.Witness;
             return stream;
         }
 
