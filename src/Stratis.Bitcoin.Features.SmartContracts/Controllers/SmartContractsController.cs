@@ -191,7 +191,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Controllers
         {
             AddressBalance addressBalance = this.walletManager.GetAddressBalance(request.Sender);
             if (addressBalance.AmountConfirmed == 0)
-                return BuildCreateContractTransactionResponse.Failed("Your wallet does not contain any spendable transactions, balance is 0.0");
+                return BuildCreateContractTransactionResponse.Failed($"The 'Sender' address you're trying to spend from doesn't have a confirmed balance. Current unconfirmed balance: {addressBalance.AmountUnconfirmed}. Please check the 'Sender' address.");
 
             var selectedInputs = new List<OutPoint>();
             var coinbaseMaturity = Convert.ToInt32(this.network.Consensus.Option<SmartContractConsensusOptions>().CoinbaseMaturity);
@@ -236,7 +236,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Controllers
         {
             AddressBalance addressBalance = this.walletManager.GetAddressBalance(request.Sender);
             if (addressBalance.AmountConfirmed == 0)
-                return BuildCallContractTransactionResponse.Failed("Your wallet does not contain any spendable transactions, balance is 0.0");
+                return BuildCallContractTransactionResponse.Failed($"The 'Sender' address you're trying to spend from doesn't have a confirmed balance. Current unconfirmed balance: {addressBalance.AmountUnconfirmed}. Please check the 'Sender' address.");
 
             var selectedInputs = new List<OutPoint>();
             var coinbaseMaturity = Convert.ToInt32(this.network.Consensus.Option<SmartContractConsensusOptions>().CoinbaseMaturity);
