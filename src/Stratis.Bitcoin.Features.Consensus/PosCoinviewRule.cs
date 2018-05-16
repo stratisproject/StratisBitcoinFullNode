@@ -26,16 +26,17 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <summary>Database of stake related data for the current blockchain.</summary>
         private IStakeChain stakeChain;
 
-        /// <summary>Proof of Stake consensus options.</summary>
-        private PosConsensusOptions consensusOptions;
+        private PosConsensusOptions posConsensusOptions;
 
         public override void Initialize()
         {
+            base.Initialize();
+
             var consensusRules = (PosConsensusRules)this.Parent;
 
             this.StakeValidator = consensusRules.StakeValidator;
             this.stakeChain = consensusRules.StakeChain;
-            this.consensusOptions = this.Parent.Network.Consensus.Option<PosConsensusOptions>();
+            this.posConsensusOptions = (PosConsensusOptions)this.ConsensusOptions;
         }
 
         /// <inheritdoc />
@@ -110,9 +111,9 @@ namespace Stratis.Bitcoin.Features.Consensus
 
             if (coins.IsCoinstake)
             {
-                if ((spendHeight - coins.Height) < this.consensusOptions.CoinbaseMaturity)
+                if ((spendHeight - coins.Height) < this.posConsensusOptions.CoinbaseMaturity)
                 {
-                    this.Logger.LogTrace("Coinstake transaction height {0} spent at height {1}, but maturity is set to {2}.", coins.Height, spendHeight, this.consensusOptions.CoinbaseMaturity);
+                    this.Logger.LogTrace("Coinstake transaction height {0} spent at height {1}, but maturity is set to {2}.", coins.Height, spendHeight, this.posConsensusOptions.CoinbaseMaturity);
                     this.Logger.LogTrace("(-)[COINSTAKE_PREMATURE_SPENDING]");
                     ConsensusErrors.BadTransactionPrematureCoinstakeSpending.Throw();
                 }
@@ -190,9 +191,9 @@ namespace Stratis.Bitcoin.Features.Consensus
         public override Money GetProofOfWorkReward(int height)
         {
             if (this.IsPremine(height))
-                return this.consensusOptions.PremineReward;
+                return this.posConsensusOptions.PremineReward;
 
-            return this.consensusOptions.ProofOfWorkReward;
+            return this.posConsensusOptions.ProofOfWorkReward;
         }
 
         /// <summary>
@@ -203,9 +204,9 @@ namespace Stratis.Bitcoin.Features.Consensus
         public Money GetProofOfStakeReward(int height)
         {
             if (this.IsPremine(height))
-                return this.consensusOptions.PremineReward;
+                return this.posConsensusOptions.PremineReward;
 
-            return this.consensusOptions.ProofOfStakeReward;
+            return this.posConsensusOptions.ProofOfStakeReward;
         }
 
         /// <summary>
@@ -215,9 +216,9 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <returns><c>true</c> if the block with provided height is premined, <c>false</c> otherwise.</returns>
         private bool IsPremine(int height)
         {
-            return (this.consensusOptions.PremineHeight > 0) &&
-                   (this.consensusOptions.PremineReward > 0) &&
-                   (height == this.consensusOptions.PremineHeight);
+            return (this.posConsensusOptions.PremineHeight > 0) &&
+                   (this.posConsensusOptions.PremineReward > 0) &&
+                   (height == this.posConsensusOptions.PremineHeight);
         }
     }
 }

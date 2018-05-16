@@ -390,8 +390,17 @@ namespace Stratis.Bitcoin.Features.Consensus
             return ((value >= 0) && (value <= this.ConsensusOptions.MaxMoney));
         }
 
-        /// <inheritdoc />
-        public long GetBlockWeight(Block block)
+        /// <summary>
+        /// Gets the block weight.
+        /// </summary>
+        /// <remarks>
+        /// This implements the <c>weight = (stripped_size * 4) + witness_size</c> formula, using only serialization with and without witness data.
+        /// As witness_size is equal to total_size - stripped_size, this formula is identical to: <c>weight = (stripped_size * 3) + total_size</c>.
+        /// </remarks>
+        /// <param name="block">Block that we get weight of.</param>
+        /// <returns>Block weight.</returns>
+        /// TODO: this is a duplicate of the same method in BlockSizeRule <see cref="BlockSizeRule.GetBlockWeight"/>
+        public long GetBlockWeight(Block block)  
         {
             return this.GetSize(block, TransactionOptions.None) 
                    * (this.ConsensusOptions.WitnessScaleFactor - 1) 
@@ -404,6 +413,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <param name="data">Data that we calculate serialized size of.</param>
         /// <param name="options">Serialization options.</param>
         /// <returns>Serialized size of <paramref name="data"/> in bytes.</returns>
+        /// TODO: this is a duplicate of the same method in BlockSizeRule <see cref="BlockSizeRule.GetSize"/>
         private int GetSize(IBitcoinSerializable data, TransactionOptions options)
         {
             var bms = new BitcoinStream(Stream.Null, true);
@@ -411,23 +421,6 @@ namespace Stratis.Bitcoin.Features.Consensus
             bms.ConsensusFactory = this.Parent.Network.Consensus.ConsensusFactory;
             data.ReadWrite(bms);
             return (int)bms.Counter.WrittenBytes;
-        }
-
-        /// <summary>
-        /// Checks if first <paramref name="lenght"/> entries are equal between two arrays.
-        /// </summary>
-        /// <param name="a">First array.</param>
-        /// <param name="b">Second array.</param>
-        /// <param name="lenght">Number of entries to be checked.</param>
-        /// <returns><c>true</c> if <paramref name="lenght"/> entries are equal between two arrays. Otherwise <c>false</c>.</returns>
-        private bool EqualsArray(byte[] a, byte[] b, int lenght)
-        {
-            for (int i = 0; i < lenght; i++)
-            {
-                if (a[i] != b[i])
-                    return false;
-            }
-            return true;
         }
 
         /// <summary>
@@ -493,26 +486,6 @@ namespace Stratis.Bitcoin.Features.Consensus
             }
 
             return commitpos;
-        }
-
-        /// <summary>
-        /// Checks if first <paramref name="subset.Lenght"/> entries are equal between two arrays.
-        /// </summary>
-        /// <param name="bytes">Main array.</param>
-        /// <param name="subset">Subset array.</param>
-        /// <returns><c>true</c> if <paramref name="subset.Lenght"/> entries are equal between two arrays. Otherwise <c>false</c>.</returns>
-        private bool StartWith(byte[] bytes, byte[] subset)
-        {
-            if (bytes.Length < subset.Length)
-                return false;
-
-            for (int i = 0; i < subset.Length; i++)
-            {
-                if (subset[i] != bytes[i])
-                    return false;
-            }
-
-            return true;
         }
     }
 }
