@@ -13,10 +13,26 @@ namespace NBitcoin.Tests
         [Trait("UnitTest", "UnitTest")]
         public void CanGetNetworkFromName()
         {
-            Assert.Equal(Network.GetNetwork("main"), Network.Main);
-            Assert.Equal(Network.GetNetwork("reg"), Network.RegTest);
-            Assert.Equal(Network.GetNetwork("regtest"), Network.RegTest);
-            Assert.Equal(Network.GetNetwork("testnet"), Network.TestNet);
+            Network bitcoinMain = Network.Main;
+            Network bitcoinTestnet = Network.TestNet;
+            Network bitcoinRegtest = Network.RegTest;
+            Network stratisMain = Network.StratisMain;
+            Network stratisTestnet = Network.StratisTest;
+            Network stratisRegtest = Network.StratisRegTest;
+
+            Assert.Equal(Network.GetNetwork("main"), bitcoinMain);
+            Assert.Equal(Network.GetNetwork("mainnet"), bitcoinMain);
+            Assert.Equal(Network.GetNetwork("MainNet"), bitcoinMain);
+            Assert.Equal(Network.GetNetwork("test"), bitcoinTestnet);
+            Assert.Equal(Network.GetNetwork("testnet"), bitcoinTestnet);
+            Assert.Equal(Network.GetNetwork("regtest"), bitcoinRegtest);
+            Assert.Equal(Network.GetNetwork("reg"), bitcoinRegtest);
+            Assert.Equal(Network.GetNetwork("stratismain"), stratisMain);
+            Assert.Equal(Network.GetNetwork("StratisMain"), stratisMain);
+            Assert.Equal(Network.GetNetwork("StratisTest"), stratisTestnet);
+            Assert.Equal(Network.GetNetwork("stratistest"), stratisTestnet);
+            Assert.Equal(Network.GetNetwork("StratisRegTest"), stratisRegtest);
+            Assert.Equal(Network.GetNetwork("stratisregtest"), stratisRegtest);
             Assert.Null(Network.GetNetwork("invalid"));
         }
 
@@ -62,6 +78,20 @@ namespace NBitcoin.Tests
             Assert.Equal(6, network.DNSSeeds.Count);
             Assert.Equal(512, network.SeedNodes.Count);
 
+            Assert.Equal(12, network.Base58Prefixes.Length);
+            Assert.Equal(new byte[] { 0 }, network.Base58Prefixes[(int)Base58Type.PUBKEY_ADDRESS]);
+            Assert.Equal(new byte[] { (5) }, network.Base58Prefixes[(int)Base58Type.SCRIPT_ADDRESS]);
+            Assert.Equal(new byte[] { (128) }, network.Base58Prefixes[(int)Base58Type.SECRET_KEY]);
+            Assert.Equal(new byte[] { 0x01, 0x42 }, network.Base58Prefixes[(int)Base58Type.ENCRYPTED_SECRET_KEY_NO_EC]);
+            Assert.Equal(new byte[] { 0x01, 0x43 }, network.Base58Prefixes[(int)Base58Type.ENCRYPTED_SECRET_KEY_EC]);
+            Assert.Equal(new byte[] { (0x04), (0x88), (0xB2), (0x1E) }, network.Base58Prefixes[(int)Base58Type.EXT_PUBLIC_KEY]);
+            Assert.Equal(new byte[] { (0x04), (0x88), (0xAD), (0xE4) }, network.Base58Prefixes[(int)Base58Type.EXT_SECRET_KEY]);
+            Assert.Equal(new byte[] { 0x2C, 0xE9, 0xB3, 0xE1, 0xFF, 0x39, 0xE2 }, network.Base58Prefixes[(int)Base58Type.PASSPHRASE_CODE]);
+            Assert.Equal(new byte[] { 0x64, 0x3B, 0xF6, 0xA8, 0x9A }, network.Base58Prefixes[(int)Base58Type.CONFIRMATION_CODE]);
+            Assert.Equal(new byte[] { 0x2a }, network.Base58Prefixes[(int)Base58Type.STEALTH_ADDRESS]);
+            Assert.Equal(new byte[] { 23 }, network.Base58Prefixes[(int)Base58Type.ASSET_ID]);
+            Assert.Equal(new byte[] { 0x13 }, network.Base58Prefixes[(int)Base58Type.COLORED_ADDRESS]);
+
             Assert.Equal(210000, network.Consensus.SubsidyHalvingInterval);
             Assert.Equal(750, network.Consensus.MajorityEnforceBlockUpgrade);
             Assert.Equal(950, network.Consensus.MajorityRejectBlockOutdated);
@@ -104,6 +134,20 @@ namespace NBitcoin.Tests
 
             Assert.Equal(3, network.DNSSeeds.Count);
             Assert.Empty(network.SeedNodes);
+
+            Assert.Equal(12, network.Base58Prefixes.Length);
+            Assert.Equal(new byte[] { 111 }, network.Base58Prefixes[(int)Base58Type.PUBKEY_ADDRESS]);
+            Assert.Equal(new byte[] { (196) }, network.Base58Prefixes[(int)Base58Type.SCRIPT_ADDRESS]);
+            Assert.Equal(new byte[] { (239) }, network.Base58Prefixes[(int)Base58Type.SECRET_KEY]);
+            Assert.Equal(new byte[] { 0x01, 0x42 }, network.Base58Prefixes[(int)Base58Type.ENCRYPTED_SECRET_KEY_NO_EC]);
+            Assert.Equal(new byte[] { 0x01, 0x43 }, network.Base58Prefixes[(int)Base58Type.ENCRYPTED_SECRET_KEY_EC]);
+            Assert.Equal(new byte[] { (0x04), (0x35), (0x87), (0xCF) }, network.Base58Prefixes[(int)Base58Type.EXT_PUBLIC_KEY]);
+            Assert.Equal(new byte[] { (0x04), (0x35), (0x83), (0x94) }, network.Base58Prefixes[(int)Base58Type.EXT_SECRET_KEY]);
+            Assert.Equal(new byte[] { 0x2C, 0xE9, 0xB3, 0xE1, 0xFF, 0x39, 0xE2 }, network.Base58Prefixes[(int)Base58Type.PASSPHRASE_CODE]);
+            Assert.Equal(new byte[] { 0x64, 0x3B, 0xF6, 0xA8, 0x9A }, network.Base58Prefixes[(int)Base58Type.CONFIRMATION_CODE]);
+            Assert.Equal(new byte[] { 0x2b }, network.Base58Prefixes[(int)Base58Type.STEALTH_ADDRESS]);
+            Assert.Equal(new byte[] { 115 }, network.Base58Prefixes[(int)Base58Type.ASSET_ID]);
+            Assert.Equal(new byte[] { 0x13 }, network.Base58Prefixes[(int)Base58Type.COLORED_ADDRESS]);
 
             Assert.Equal(210000, network.Consensus.SubsidyHalvingInterval);
             Assert.Equal(51, network.Consensus.MajorityEnforceBlockUpgrade);
@@ -148,6 +192,20 @@ namespace NBitcoin.Tests
             Assert.Empty(network.DNSSeeds);
             Assert.Empty(network.SeedNodes);
 
+            Assert.Equal(12, network.Base58Prefixes.Length);
+            Assert.Equal(new byte[] { 111 }, network.Base58Prefixes[(int)Base58Type.PUBKEY_ADDRESS]);
+            Assert.Equal(new byte[] { (196) }, network.Base58Prefixes[(int)Base58Type.SCRIPT_ADDRESS]);
+            Assert.Equal(new byte[] { (239) }, network.Base58Prefixes[(int)Base58Type.SECRET_KEY]);
+            Assert.Equal(new byte[] { 0x01, 0x42 }, network.Base58Prefixes[(int)Base58Type.ENCRYPTED_SECRET_KEY_NO_EC]);
+            Assert.Equal(new byte[] { 0x01, 0x43 }, network.Base58Prefixes[(int)Base58Type.ENCRYPTED_SECRET_KEY_EC]);
+            Assert.Equal(new byte[] { (0x04), (0x35), (0x87), (0xCF) }, network.Base58Prefixes[(int)Base58Type.EXT_PUBLIC_KEY]);
+            Assert.Equal(new byte[] { (0x04), (0x35), (0x83), (0x94) }, network.Base58Prefixes[(int)Base58Type.EXT_SECRET_KEY]);
+            Assert.Equal(new byte[] { 0x2C, 0xE9, 0xB3, 0xE1, 0xFF, 0x39, 0xE2 }, network.Base58Prefixes[(int)Base58Type.PASSPHRASE_CODE]);
+            Assert.Equal(new byte[] { 0x64, 0x3B, 0xF6, 0xA8, 0x9A }, network.Base58Prefixes[(int)Base58Type.CONFIRMATION_CODE]);
+            Assert.Equal(new byte[] { 0x2b }, network.Base58Prefixes[(int)Base58Type.STEALTH_ADDRESS]);
+            Assert.Equal(new byte[] { 115 }, network.Base58Prefixes[(int)Base58Type.ASSET_ID]);
+            Assert.Equal(new byte[] { 0x13 }, network.Base58Prefixes[(int)Base58Type.COLORED_ADDRESS]);
+
             Assert.Equal(150, network.Consensus.SubsidyHalvingInterval);
             Assert.Equal(750, network.Consensus.MajorityEnforceBlockUpgrade);
             Assert.Equal(950, network.Consensus.MajorityRejectBlockOutdated);
@@ -191,7 +249,21 @@ namespace NBitcoin.Tests
             Assert.Equal(4, network.DNSSeeds.Count);
             Assert.Equal(3, network.SeedNodes.Count);
 
-			Assert.Equal(210000, network.Consensus.SubsidyHalvingInterval);
+            Assert.Equal(12, network.Base58Prefixes.Length);
+            Assert.Equal(new byte[] { (63) }, network.Base58Prefixes[(int)Base58Type.PUBKEY_ADDRESS]);
+            Assert.Equal(new byte[] { (125) }, network.Base58Prefixes[(int)Base58Type.SCRIPT_ADDRESS]);
+            Assert.Equal(new byte[] { (63 + 128) }, network.Base58Prefixes[(int)Base58Type.SECRET_KEY]);
+            Assert.Equal(new byte[] { 0x01, 0x42 }, network.Base58Prefixes[(int)Base58Type.ENCRYPTED_SECRET_KEY_NO_EC]);
+            Assert.Equal(new byte[] { 0x01, 0x43 }, network.Base58Prefixes[(int)Base58Type.ENCRYPTED_SECRET_KEY_EC]);
+            Assert.Equal(new byte[] { (0x04), (0x88), (0xB2), (0x1E) }, network.Base58Prefixes[(int)Base58Type.EXT_PUBLIC_KEY]);
+            Assert.Equal(new byte[] { (0x04), (0x88), (0xAD), (0xE4) }, network.Base58Prefixes[(int)Base58Type.EXT_SECRET_KEY]);
+            Assert.Equal(new byte[] { 0x2C, 0xE9, 0xB3, 0xE1, 0xFF, 0x39, 0xE2 }, network.Base58Prefixes[(int)Base58Type.PASSPHRASE_CODE]);
+            Assert.Equal(new byte[] { 0x64, 0x3B, 0xF6, 0xA8, 0x9A }, network.Base58Prefixes[(int)Base58Type.CONFIRMATION_CODE]);
+            Assert.Equal(new byte[] { 0x2a }, network.Base58Prefixes[(int)Base58Type.STEALTH_ADDRESS]);
+            Assert.Equal(new byte[] { 23 }, network.Base58Prefixes[(int)Base58Type.ASSET_ID]);
+            Assert.Equal(new byte[] { 0x13 }, network.Base58Prefixes[(int)Base58Type.COLORED_ADDRESS]);
+
+            Assert.Equal(210000, network.Consensus.SubsidyHalvingInterval);
             Assert.Equal(750, network.Consensus.MajorityEnforceBlockUpgrade);
             Assert.Equal(950, network.Consensus.MajorityRejectBlockOutdated);
             Assert.Equal(1000, network.Consensus.MajorityWindow);
@@ -237,7 +309,21 @@ namespace NBitcoin.Tests
             Assert.Equal(4, network.DNSSeeds.Count);
             Assert.Equal(4, network.SeedNodes.Count);
 
-			Assert.Equal(210000, network.Consensus.SubsidyHalvingInterval);
+            Assert.Equal(12, network.Base58Prefixes.Length);
+            Assert.Equal(new byte[] { (65) }, network.Base58Prefixes[(int)Base58Type.PUBKEY_ADDRESS]);
+            Assert.Equal(new byte[] { (196) }, network.Base58Prefixes[(int)Base58Type.SCRIPT_ADDRESS]);
+            Assert.Equal(new byte[] { (65 + 128) }, network.Base58Prefixes[(int)Base58Type.SECRET_KEY]);
+            Assert.Equal(new byte[] { 0x01, 0x42 }, network.Base58Prefixes[(int)Base58Type.ENCRYPTED_SECRET_KEY_NO_EC]);
+            Assert.Equal(new byte[] { 0x01, 0x43 }, network.Base58Prefixes[(int)Base58Type.ENCRYPTED_SECRET_KEY_EC]);
+            Assert.Equal(new byte[] { (0x04), (0x88), (0xB2), (0x1E) }, network.Base58Prefixes[(int)Base58Type.EXT_PUBLIC_KEY]);
+            Assert.Equal(new byte[] { (0x04), (0x88), (0xAD), (0xE4) }, network.Base58Prefixes[(int)Base58Type.EXT_SECRET_KEY]);
+            Assert.Equal(new byte[] { 0x2C, 0xE9, 0xB3, 0xE1, 0xFF, 0x39, 0xE2 }, network.Base58Prefixes[(int)Base58Type.PASSPHRASE_CODE]);
+            Assert.Equal(new byte[] { 0x64, 0x3B, 0xF6, 0xA8, 0x9A }, network.Base58Prefixes[(int)Base58Type.CONFIRMATION_CODE]);
+            Assert.Equal(new byte[] { 0x2a }, network.Base58Prefixes[(int)Base58Type.STEALTH_ADDRESS]);
+            Assert.Equal(new byte[] { 23 }, network.Base58Prefixes[(int)Base58Type.ASSET_ID]);
+            Assert.Equal(new byte[] { 0x13 }, network.Base58Prefixes[(int)Base58Type.COLORED_ADDRESS]);
+
+            Assert.Equal(210000, network.Consensus.SubsidyHalvingInterval);
             Assert.Equal(750, network.Consensus.MajorityEnforceBlockUpgrade);
             Assert.Equal(950, network.Consensus.MajorityRejectBlockOutdated);
             Assert.Equal(1000, network.Consensus.MajorityWindow);
@@ -283,7 +369,21 @@ namespace NBitcoin.Tests
             Assert.Empty(network.DNSSeeds);
             Assert.Empty(network.SeedNodes);
 
-			Assert.Equal(210000, network.Consensus.SubsidyHalvingInterval);
+            Assert.Equal(12, network.Base58Prefixes.Length);
+            Assert.Equal(new byte[] { (65) }, network.Base58Prefixes[(int)Base58Type.PUBKEY_ADDRESS]);
+            Assert.Equal(new byte[] { (196) }, network.Base58Prefixes[(int)Base58Type.SCRIPT_ADDRESS]);
+            Assert.Equal(new byte[] { (65 + 128) }, network.Base58Prefixes[(int)Base58Type.SECRET_KEY]);
+            Assert.Equal(new byte[] { 0x01, 0x42 }, network.Base58Prefixes[(int)Base58Type.ENCRYPTED_SECRET_KEY_NO_EC]);
+            Assert.Equal(new byte[] { 0x01, 0x43 }, network.Base58Prefixes[(int)Base58Type.ENCRYPTED_SECRET_KEY_EC]);
+            Assert.Equal(new byte[] { (0x04), (0x88), (0xB2), (0x1E) }, network.Base58Prefixes[(int)Base58Type.EXT_PUBLIC_KEY]);
+            Assert.Equal(new byte[] { (0x04), (0x88), (0xAD), (0xE4) }, network.Base58Prefixes[(int)Base58Type.EXT_SECRET_KEY]);
+            Assert.Equal(new byte[] { 0x2C, 0xE9, 0xB3, 0xE1, 0xFF, 0x39, 0xE2 }, network.Base58Prefixes[(int)Base58Type.PASSPHRASE_CODE]);
+            Assert.Equal(new byte[] { 0x64, 0x3B, 0xF6, 0xA8, 0x9A }, network.Base58Prefixes[(int)Base58Type.CONFIRMATION_CODE]);
+            Assert.Equal(new byte[] { 0x2a }, network.Base58Prefixes[(int)Base58Type.STEALTH_ADDRESS]);
+            Assert.Equal(new byte[] { 23 }, network.Base58Prefixes[(int)Base58Type.ASSET_ID]);
+            Assert.Equal(new byte[] { 0x13 }, network.Base58Prefixes[(int)Base58Type.COLORED_ADDRESS]);
+
+            Assert.Equal(210000, network.Consensus.SubsidyHalvingInterval);
             Assert.Equal(750, network.Consensus.MajorityEnforceBlockUpgrade);
             Assert.Equal(950, network.Consensus.MajorityRejectBlockOutdated);
             Assert.Equal(1000, network.Consensus.MajorityWindow);

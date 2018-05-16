@@ -207,12 +207,15 @@ namespace NBitcoin
 
             Assert(network.Consensus.HashGenesisBlock == uint256.Parse("0x000000000933ea01ad0ee984209779baaec3ced90fa3f408719526f8d77f4943"));
 
-            network.Base58Prefixes = Network.Main.Base58Prefixes.ToArray();
             network.Base58Prefixes[(int)Base58Type.PUBKEY_ADDRESS] = new byte[] { (111) };
             network.Base58Prefixes[(int)Base58Type.SCRIPT_ADDRESS] = new byte[] { (196) };
             network.Base58Prefixes[(int)Base58Type.SECRET_KEY] = new byte[] { (239) };
+            network.Base58Prefixes[(int)Base58Type.ENCRYPTED_SECRET_KEY_NO_EC] = new byte[] { 0x01, 0x42 };
+            network.Base58Prefixes[(int)Base58Type.ENCRYPTED_SECRET_KEY_EC] = new byte[] { 0x01, 0x43 };
             network.Base58Prefixes[(int)Base58Type.EXT_PUBLIC_KEY] = new byte[] { (0x04), (0x35), (0x87), (0xCF) };
             network.Base58Prefixes[(int)Base58Type.EXT_SECRET_KEY] = new byte[] { (0x04), (0x35), (0x83), (0x94) };
+            network.Base58Prefixes[(int)Base58Type.PASSPHRASE_CODE] = new byte[] { 0x2C, 0xE9, 0xB3, 0xE1, 0xFF, 0x39, 0xE2 };
+            network.Base58Prefixes[(int)Base58Type.CONFIRMATION_CODE] = new byte[] { 0x64, 0x3B, 0xF6, 0xA8, 0x9A };
             network.Base58Prefixes[(int)Base58Type.STEALTH_ADDRESS] = new byte[] { 0x2b };
             network.Base58Prefixes[(int)Base58Type.ASSET_ID] = new byte[] { 115 };
             network.Base58Prefixes[(int)Base58Type.COLORED_ADDRESS] = new byte[] { 0x13 };
@@ -284,12 +287,17 @@ namespace NBitcoin
 
             Assert(network.Consensus.HashGenesisBlock == uint256.Parse("0x0f9188f13cb7b2c71f2a335e3a4fc328bf5beb436012afca590b1a11466e2206"));
 
-            network.Base58Prefixes = Network.TestNet.Base58Prefixes.ToArray();
             network.Base58Prefixes[(int)Base58Type.PUBKEY_ADDRESS] = new byte[] { (111) };
             network.Base58Prefixes[(int)Base58Type.SCRIPT_ADDRESS] = new byte[] { (196) };
             network.Base58Prefixes[(int)Base58Type.SECRET_KEY] = new byte[] { (239) };
+            network.Base58Prefixes[(int)Base58Type.ENCRYPTED_SECRET_KEY_NO_EC] = new byte[] { 0x01, 0x42 };
+            network.Base58Prefixes[(int)Base58Type.ENCRYPTED_SECRET_KEY_EC] = new byte[] { 0x01, 0x43 };
             network.Base58Prefixes[(int)Base58Type.EXT_PUBLIC_KEY] = new byte[] { (0x04), (0x35), (0x87), (0xCF) };
             network.Base58Prefixes[(int)Base58Type.EXT_SECRET_KEY] = new byte[] { (0x04), (0x35), (0x83), (0x94) };
+            network.Base58Prefixes[(int)Base58Type.PASSPHRASE_CODE] = new byte[] { 0x2C, 0xE9, 0xB3, 0xE1, 0xFF, 0x39, 0xE2 };
+            network.Base58Prefixes[(int)Base58Type.CONFIRMATION_CODE] = new byte[] { 0x64, 0x3B, 0xF6, 0xA8, 0x9A };
+            network.Base58Prefixes[(int)Base58Type.STEALTH_ADDRESS] = new byte[] { 0x2b };
+            network.Base58Prefixes[(int)Base58Type.ASSET_ID] = new byte[] { 115 };
             network.Base58Prefixes[(int)Base58Type.COLORED_ADDRESS] = new byte[] { 0x13 };
 
             var encoder = new Bech32Encoder("tb");
@@ -507,6 +515,7 @@ namespace NBitcoin
             network.MinTxFee = 10000;
             network.FallbackFee = 60000;
             network.MinRelayTxFee = 10000;
+
             network.Base58Prefixes[(int)Base58Type.PUBKEY_ADDRESS] = new byte[] { (65) };
             network.Base58Prefixes[(int)Base58Type.SCRIPT_ADDRESS] = new byte[] { (196) };
             network.Base58Prefixes[(int)Base58Type.SECRET_KEY] = new byte[] { (65 + 128) };
@@ -598,6 +607,7 @@ namespace NBitcoin
             network.RPCPort = 18442;
             network.MaxTimeOffsetSeconds = StratisMaxTimeOffsetSeconds;
             network.MaxTipAge = StratisDefaultMaxTipAgeInSeconds;
+
             network.Base58Prefixes[(int)Base58Type.PUBKEY_ADDRESS] = new byte[] { (65) };
             network.Base58Prefixes[(int)Base58Type.SCRIPT_ADDRESS] = new byte[] { (196) };
             network.Base58Prefixes[(int)Base58Type.SECRET_KEY] = new byte[] { (65 + 128) };
