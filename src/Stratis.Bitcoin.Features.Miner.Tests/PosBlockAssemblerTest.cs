@@ -20,16 +20,14 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
 {
     public class PosBlockAssemblerTest : LogsTestBase
     {
-        private RuleContext callbackRuleContext = null;
-        private Mock<IConsensusLoop> consensusLoop;
-        private Mock<IDateTimeProvider> dateTimeProvider;
-        private Key key;
-        private Mock<ITxMempool> mempool;
-        private Network network;
-        private Money powReward;
-        private Mock<IStakeChain> stakeChain;
-        private Mock<IStakeValidator> stakeValidator;
-        private Mock<IPosConsensusValidator> validator;
+        private RuleContext callbackRuleContext;
+        private readonly Mock<IConsensusLoop> consensusLoop;
+        private readonly Mock<IDateTimeProvider> dateTimeProvider;
+        private readonly Key key;
+        private readonly Mock<ITxMempool> mempool;
+        private readonly Network network;
+        private readonly Mock<IStakeChain> stakeChain;
+        private readonly Mock<IStakeValidator> stakeValidator;
 
         public PosBlockAssemblerTest()
         {
@@ -38,8 +36,6 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
             this.dateTimeProvider = new Mock<IDateTimeProvider>();
             this.stakeValidator = new Mock<IStakeValidator>();
             this.stakeChain = new Mock<IStakeChain>();
-            this.powReward = new Money(100 * 1000 * 1000);
-            this.validator = new Mock<IPosConsensusValidator>();
             this.network = Network.StratisTest;
             this.key = new Key();
 
@@ -536,9 +532,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
 
             public (Block Block, int Selected, int Updated) AddTransactions()
             {
-                int selected;
-                int updated;
-                base.AddTransactions(out selected, out updated);
+                base.AddTransactions(out int selected, out int updated);
 
                 return (base.block, selected, updated);
             }

@@ -14,16 +14,17 @@ using Stratis.Bitcoin.Utilities;
 namespace Stratis.Bitcoin.Features.Consensus
 {
     /// <summary>
-    /// The proof of work coinview rules - BIP68, MaxSigOps and BlockReward checks
+    /// The proof of work coinview update rules. Validates the UTXO set is correctly spent.
     /// </summary>
+    /// <exception cref="ConsensusErrors.BadTransactionMissingInput">Thrown if transaction tries to spend inputs that are missing.</exception>
+    /// <exception cref="ConsensusErrors.BadTransactionNonFinal">Thrown if transaction's height or time is lower then provided by SequenceLock for this block.</exception>
+    /// <exception cref="ConsensusErrors.BadBlockSigOps">Thrown if signature operation cost is greater then maximum block signature operation cost.</exception>
+    /// <exception cref="ConsensusErrors.BadTransactionScriptError">Thrown if not all inputs are valid (no double spends, scripts & sigs, amounts).</exception>
     [ExecutionRule]
-    public class PowCoinviewRule : ConsensusRule, IPowConsensusValidator
+    public class PowCoinviewRule : ConsensusRule
     {
         /// <summary>Flags that determine how transaction should be validated in non-consensus code.</summary>
         public static Transaction.LockTimeFlags StandardLocktimeVerifyFlags = Transaction.LockTimeFlags.VerifySequence | Transaction.LockTimeFlags.MedianTimePast;
-
-        /// <summary>Provider of block header hash checkpoints.</summary>
-        protected readonly ICheckpoints Checkpoints;
 
         /// <summary>Consensus parameters.</summary>
         public NBitcoin.Consensus ConsensusParams { get; set; }
@@ -31,37 +32,13 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <summary>Consensus options.</summary>
         public PowConsensusOptions ConsensusOptions { get; set; }
 
-        /// <summary>Provider of time functions.</summary>
-        protected readonly IDateTimeProvider dateTimeProvider;
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="PowCoinviewRule"/> class.
-        /// </summary>
-        /// <param name="network">Specification of the network the node runs on - regtest/testnet/mainnet.</param>
-        /// <param name="checkpoints">Provider of block header hash checkpoints.</param>
-        /// <param name="dateTimeProvider">Provider of time functions.</param>
-        /// <param name="loggerFactory">Factory for creating loggers.</param>
-        public PowCoinviewRule(Network network, ICheckpoints checkpoints, IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory)
-        {
-            Guard.NotNull(network, nameof(network));
-            Guard.NotNull(network.Consensus.Option<PowConsensusOptions>(), nameof(network.Consensus.Options));
-
-            this.Logger = loggerFactory.CreateLogger(this.GetType().FullName);
-            
-            this.dateTimeProvider = dateTimeProvider;
-            this.Checkpoints = checkpoints;
-        }
-
-        public PowCoinviewRule()
-        {
-        }
-
         public override void Initialize()
         {
             this.ConsensusParams = this.Parent.Network.Consensus;
             this.ConsensusOptions = this.ConsensusParams.Option<PowConsensusOptions>();
         }
 
+        /// <inheritdoc />
         public override Task RunAsync(RuleContext context)
         {
             this.Logger.LogTrace("()");
@@ -227,7 +204,17 @@ namespace Stratis.Bitcoin.Features.Consensus
             this.Logger.LogTrace("(-)");
         }
 
-        /// <inheritdoc />
+        /// <summary>
+        /// Checks that transaction's inputs are valid.
+        /// </summary>
+        /// <param name="transaction">Transaction to check.</param>
+        /// <param name="inputs">Map of previous transactions that have outputs we're spending.</param>
+        /// <param name="spendHeight">Height at which we are spending coins.</param>
+        /// <exception cref="ConsensusErrors.BadTransactionMissingInput">Thrown if transaction's inputs are missing.</exception>
+        /// <exception cref="ConsensusErrors.BadTransactionInputValueOutOfRange">Thrown if input value is out of range.</exception>
+        /// <exception cref="ConsensusErrors.BadTransactionInBelowOut">Thrown if transaction inputs are less then outputs.</exception>
+        /// <exception cref="ConsensusErrors.BadTransactionNegativeFee">Thrown if fees sum is negative.</exception>
+        /// <exception cref="ConsensusErrors.BadTransactionFeeOutOfRange">Thrown if fees value is out of range.</exception>
         public virtual void CheckInputs(Transaction transaction, UnspentOutputSet inputs, int spendHeight)
         {
             this.Logger.LogTrace("({0}:{1})", nameof(spendHeight), spendHeight);
@@ -277,12 +264,11 @@ namespace Stratis.Bitcoin.Features.Consensus
             this.Logger.LogTrace("(-)");
         }
 
-        public void ExecuteBlock(RuleContext context, TaskScheduler taskScheduler = null)
-        {
-            throw new NotImplementedException();
-        }
-
-        /// <inheritdoc />
+        /// <summary>
+        /// Gets the proof of work reward amount for the block at provided height.
+        /// </summary>
+        /// <param name="height">Height of the block that we're calculating the reward for.</param>
+        /// <returns>Reward amount.</returns>
         public virtual Money GetProofOfWorkReward(int height)
         {
             int halvings = height / this.ConsensusParams.SubsidyHalvingInterval;
@@ -296,7 +282,13 @@ namespace Stratis.Bitcoin.Features.Consensus
             return subsidy;
         }
 
-        /// <inheritdoc />
+        /// <summary>
+        /// Calculates total signature operation cost of a transaction.
+        /// </summary>
+        /// <param name="transaction">Transaction for which we are computing the cost.</param>
+        /// <param name="inputs">Map of previous transactions that have outputs we're spending.</param>
+        /// <param name="flags">Script verification flags.</param>
+        /// <returns>Signature operation cost for all transaction's inputs.</returns>
         public long GetTransactionSignatureOperationCost(Transaction transaction, UnspentOutputSet inputs, DeploymentFlags flags)
         {
             long signatureOperationCost = this.GetLegacySignatureOperationsCount(transaction) * this.ConsensusOptions.WitnessScaleFactor;
@@ -438,7 +430,12 @@ namespace Stratis.Bitcoin.Features.Consensus
             return true;
         }
 
-        /// <inheritdoc />
+        /// <summary>
+        /// Calculates merkle root for witness data.
+        /// </summary>
+        /// <param name="block">Block which transactions witness data is used for calculation.</param>
+        /// <param name="mutated"><c>true</c> if at least one leaf of the merkle tree has the same hash as any subtree. Otherwise: <c>false</c>.</param>
+        /// <returns>Merkle root.</returns>
         public uint256 BlockWitnessMerkleRoot(Block block, out bool mutated)
         {
             var leaves = new List<uint256>();
@@ -449,7 +446,12 @@ namespace Stratis.Bitcoin.Features.Consensus
             return BlockMerkleRootRule.ComputeMerkleRoot(leaves, out mutated);
         }
 
-        /// <inheritdoc />
+        /// <summary>
+        /// Calculates merkle root for block's trasnactions.
+        /// </summary>
+        /// <param name="block">Block which transactions are used for calculation.</param>
+        /// <param name="mutated"><c>true</c> if block contains repeating sequences of transactions without affecting the merkle root of a block. Otherwise: <c>false</c>.</param>
+        /// <returns>Merkle root.</returns>
         public uint256 BlockMerkleRoot(Block block, out bool mutated)
         {
             var leaves = new List<uint256>(block.Transactions.Count);

@@ -23,7 +23,6 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
     public class PosMintingTest : LogsTestBase
     {
         private PosMinting posMinting;
-        private readonly Mock<IPosConsensusValidator> consensusValidator;
         private readonly Mock<IConsensusLoop> consensusLoop;
         private ConcurrentChain chain;
         private readonly Network network;
@@ -44,7 +43,6 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
 
         public PosMintingTest()
         {
-            this.consensusValidator = new Mock<IPosConsensusValidator>();
             this.consensusLoop = new Mock<IConsensusLoop>();
             this.network = Network.StratisTest;
             this.network.Consensus.Options = new PowConsensusOptions();

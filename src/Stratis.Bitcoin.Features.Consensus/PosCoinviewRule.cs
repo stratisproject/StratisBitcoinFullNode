@@ -11,7 +11,7 @@ namespace Stratis.Bitcoin.Features.Consensus
     /// Proof of stake override for the coinview rules - BIP68, MaxSigOps and BlockReward checks
     /// </summary>
     [ExecutionRule]
-    public class PosCoinviewRule : PowCoinviewRule, IPosConsensusValidator
+    public class PosCoinviewRule : PowCoinviewRule
     {
         /// <summary>PoS block's timestamp mask.</summary>
         /// <remarks>Used to decrease granularity of timestamp. Supposed to be 2^n-1.</remarks>
@@ -166,7 +166,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             // Record proof hash value.
             blockStake.HashProof = context.Stake.HashProofOfStake;
 
-            int lastCheckpointHeight = this.Checkpoints.GetLastCheckpointHeight();
+            int lastCheckpointHeight = this.Parent.Checkpoints.GetLastCheckpointHeight();
             if (chainedHeader.Height > lastCheckpointHeight)
             {
                 // Compute stake modifier.
@@ -177,7 +177,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             else if (chainedHeader.Height == lastCheckpointHeight)
             {
                 // Copy checkpointed stake modifier.
-                CheckpointInfo checkpoint = this.Checkpoints.GetCheckpoint(lastCheckpointHeight);
+                CheckpointInfo checkpoint = this.Parent.Checkpoints.GetCheckpoint(lastCheckpointHeight);
                 blockStake.StakeModifierV2 = checkpoint.StakeModifierV2;
                 this.Logger.LogTrace("Last checkpoint stake modifier V2 loaded: '{0}'.", blockStake.StakeModifierV2);
             }
@@ -195,7 +195,11 @@ namespace Stratis.Bitcoin.Features.Consensus
             return this.consensusOptions.ProofOfWorkReward;
         }
 
-        /// <inheritdoc />
+        /// <summary>
+        /// Gets miner's coin stake reward.
+        /// </summary>
+        /// <param name="height">Target block height.</param>
+        /// <returns>Miner's coin stake reward.</returns>
         public Money GetProofOfStakeReward(int height)
         {
             if (this.IsPremine(height))
