@@ -447,7 +447,7 @@ namespace Stratis.Bitcoin.Features.Miner
             }
 
             this.stakeCancellationTokenSource?.Cancel();  
-            this.logger.LogTrace("Disposing of staking loop.");
+            this.logger.LogTrace("Disposing staking loop.");
             this.stakingLoop?.Dispose();
             this.stakingLoop = null;
             this.stakeCancellationTokenSource?.Dispose();
