@@ -227,9 +227,15 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Controllers
                 SelectedInputs = selectedInputs
             };
 
-            Transaction transaction = this.walletTransactionHandler.BuildTransaction(context);
-
-            return BuildCreateContractTransactionResponse.Succeeded(transaction, context.TransactionFee, transaction.GetNewContractAddress().ToAddress(this.network));
+            try
+            {
+                Transaction transaction = this.walletTransactionHandler.BuildTransaction(context);
+                return BuildCreateContractTransactionResponse.Succeeded(transaction, context.TransactionFee, transaction.GetNewContractAddress().ToAddress(this.network));
+            }
+            catch (Exception exception)
+            {
+                return BuildCreateContractTransactionResponse.Failed(exception.Message);
+            }
         }
 
         private BuildCallContractTransactionResponse BuildCallTx(BuildCallContractTransactionRequest request)
@@ -273,9 +279,15 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Controllers
                 SelectedInputs = selectedInputs
             };
 
-            Transaction transactionResult = this.walletTransactionHandler.BuildTransaction(context);
-
-            return BuildCallContractTransactionResponse.Succeeded(request.MethodName, transactionResult, context.TransactionFee);
+            try
+            {
+                Transaction transaction = this.walletTransactionHandler.BuildTransaction(context);
+                return BuildCallContractTransactionResponse.Succeeded(request.MethodName, transaction, context.TransactionFee);
+            }
+            catch (Exception exception)
+            {
+                return BuildCallContractTransactionResponse.Failed(exception.Message);
+            }
         }
 
         private object GetStorageValue(SmartContractDataType dataType, byte[] bytes)
