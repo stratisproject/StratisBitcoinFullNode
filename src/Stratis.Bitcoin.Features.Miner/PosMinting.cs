@@ -386,6 +386,7 @@ namespace Stratis.Bitcoin.Features.Miner
             if (Interlocked.CompareExchange(ref this.stakeProgressFlag, StakeInProgress, StakeNotInProgress) == StakeInProgress)
             {
                 this.logger.LogTrace("(-)[ALREADY_MINING]");
+                return;
             }
 
             this.rpcGetStakingInfoModel.Enabled = true;
@@ -445,10 +446,11 @@ namespace Stratis.Bitcoin.Features.Miner
                 return;
             }
 
-            this.stakeCancellationTokenSource.Cancel();
-            this.stakingLoop.Dispose();
+            this.stakeCancellationTokenSource?.Cancel();  
+            this.logger.LogTrace("Disposing staking loop.");
+            this.stakingLoop?.Dispose();
             this.stakingLoop = null;
-            this.stakeCancellationTokenSource.Dispose();
+            this.stakeCancellationTokenSource?.Dispose();
             this.stakeCancellationTokenSource = null;
             this.rpcGetStakingInfoModel = new Miner.Models.GetStakingInfoModel();
             this.rpcGetStakingInfoModel.Enabled = false;
