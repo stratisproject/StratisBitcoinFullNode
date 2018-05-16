@@ -75,7 +75,7 @@ namespace Stratis.Bitcoin.Consensus
         private readonly ChainState chainState;
         private readonly ConsensusSettings consensusSettings;
 
-        private readonly Dictionary<uint256, List<int>> peerTipsByHash;
+        private readonly Dictionary<uint256, HashSet<int>> peerTipsByHash;
         private readonly Dictionary<uint256, ChainedHeader> chainedHeadersByHash;
 
         private readonly object lockObject;
@@ -95,7 +95,7 @@ namespace Stratis.Bitcoin.Consensus
             this.consensusSettings = consensusSettings;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
 
-            this.peerTipsByHash = new Dictionary<uint256, List<int>>();
+            this.peerTipsByHash = new Dictionary<uint256, HashSet<int>>();
             this.chainedHeadersByHash = new Dictionary<uint256, ChainedHeader>();
 
             this.lockObject = new object();
@@ -107,7 +107,7 @@ namespace Stratis.Bitcoin.Consensus
 
             if (!this.chainedHeadersByHash.ContainsKey(headers.First().HashPrevBlock))
             {
-                this.logger.LogTrace("(-)[HEADER_COULD_NOT_CONNECT] '{0}' .", headers.First().HashPrevBlock);
+                this.logger.LogTrace("(-)[HEADER_COULD_NOT_CONNECT] '{0}'", headers.First().HashPrevBlock);
                 throw new ConnectHeaderException();
             }
 
@@ -115,6 +115,7 @@ namespace Stratis.Bitcoin.Consensus
             
             if (newChainedHeaders.Empty())
             {
+                this.logger.LogTrace("(-)[NO_NEW_HEADER]");
                 return new ConnectedHeaders();
             }
 
@@ -217,9 +218,48 @@ namespace Stratis.Bitcoin.Consensus
             return false;
         }
 
+        private void RemoveAllClaims(uint256 headerTip, ChainedHeader stopHeader = null)
+        {
+
+        }
+
         private void RemoveChainClaim(int networkPeerId, uint256 headerTip, ChainedHeader stopHeader = null)
         {
-            // wait for .Next
+            ChainedHeader currentHeader = null;
+            while (currentHeader != stopHeader)
+            {
+                bool nextExists = false; //currentHeader.Next.Lenght != 0;
+
+                var listOfPeersClaimingThisHeader = this.peerTipsByHash.TryGet(currentHeader.HashBlock);
+
+                bool isEmpty = false;
+
+                if (listOfPeersClaimingThisHeader != null)
+                {
+                    listOfPeersClaimingThisHeader.Remove(networkPeerId);
+
+                    if (listOfPeersClaimingThisHeader.Count == 0)
+                    {
+                        this.peerTipsByHash.Remove(currentHeader.HashBlock);
+                        isEmpty = true;
+                    }
+                }
+                else
+                {
+                    isEmpty = true;
+                }
+
+                if (!isEmpty || nextExists)
+                    break;
+
+                this.chainedHeadersByHash.Remove(currentHeader.HashBlock);
+                //currentHeader.Previous.Next.Remove(currentHeader);
+
+                currentHeader = currentHeader.Previous;
+
+                if (currentHeader.Next.Length != 0)
+                    break;
+            }
         }
 
         /// <summary>
@@ -232,7 +272,7 @@ namespace Stratis.Bitcoin.Consensus
 
             foreach (var tipItem in this.peerTipsByHash)
             {
-                List<int> peers = tipItem.Value;
+                HashSet<int> peers = tipItem.Value;
                 if (peers.Contains(networkPeerId))
                 {
                     oldTip = tipItem.Key;
@@ -244,7 +284,7 @@ namespace Stratis.Bitcoin.Consensus
 
             if (currentTips == null)
             {
-                currentTips = new List<int>();
+                currentTips = new HashSet<int>();
                 this.peerTipsByHash.Add(newTip, currentTips);
             }
 
@@ -267,7 +307,7 @@ namespace Stratis.Bitcoin.Consensus
         /// <returns>A list of newly created <see cref="ChainedHeader"/>.</returns>
         private void CreateNewHeaders(List<BlockHeader> headers, out List<ChainedHeader> newChainedHeaders)
         {
-            this.logger.LogTrace("()");
+            this.logger.LogTrace("({0}:'{1}')", nameof(headers), headers.Count);
 
             newChainedHeaders = new List<ChainedHeader>();
             bool newChainedHeaderFound = false;
@@ -293,7 +333,7 @@ namespace Stratis.Bitcoin.Consensus
 
                         if (previousChainedHeader == null)
                         {
-                            this.logger.LogTrace("(-)The previous chained header was not found in the tree '{0}'.", currentBlockHeader.HashPrevBlock);
+                            this.logger.LogTrace("(-)[PREVIOUS_HEADER_NOT_FOUND]");
                             throw new ConnectHeaderException();
                         }
                     }
@@ -308,6 +348,7 @@ namespace Stratis.Bitcoin.Consensus
 
                         if (this.IsMaxReorgRuleViolated(forkDistanceFromConsensusTip))
                         {
+                            this.logger.LogTrace("(-)[MAX_REORG_VIOLATION]");
                             throw new MaxReorgViolationException();
                         }
 
@@ -323,7 +364,7 @@ namespace Stratis.Bitcoin.Consensus
                 }
             }
 
-            this.logger.LogTrace("(-)");
+            this.logger.LogTrace("({0}:'{1}')", nameof(newChainedHeaders), newChainedHeaders.Count);
         }
 
         /// <summary>
