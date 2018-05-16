@@ -61,10 +61,18 @@ namespace Stratis.Bitcoin.Controllers
                 ProcessId = Process.GetCurrentProcess().Id,
                 Network = this.fullNode.Network.Name,
                 ConsensusHeight = this.chainState.ConsensusTip.Height,
-                BlockStoreHeight = storeStateProvider.HighestPersistedBlock.Height,
+                BlockStoreHeight = 0,
                 DataDirectoryPath = this.nodeSettings.DataDir,
                 RunningTime = this.dateTimeProvider.GetUtcNow() - this.fullNode.StartTime
             };
+
+            // If BlockStore is populated, add BlockHeight to staus
+            foreach (var feature in this.fullNode.Services.Features)
+                if (feature.GetType().ToString() == "Stratis.Bitcoin.Features.BlockStore.BlockStoreFeature")
+                {
+                    model.BlockStoreHeight = storeStateProvider.HighestPersistedBlock.Height;
+                    break;
+                }
 
             // Add the list of features that are enabled.
             foreach (IFullNodeFeature feature in this.fullNode.Services.Features)
