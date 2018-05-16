@@ -14,6 +14,9 @@ namespace Stratis.Bitcoin.IntegrationTests
         public static Money GetProofOfWorkRewardForMinedBlocks(this CoreNode node, int numberOfBlocks)
         {
             var coinviewRule = node.FullNode.NodeService<IRuleRegistration>().GetRules().OfType<PowCoinviewRule>().Single();
+            coinviewRule.ConsensusParams = new Consensus { SubsidyHalvingInterval = 150 };
+            coinviewRule.ConsensusOptions = new PowConsensusOptions();
+
             var halvingInterval = coinviewRule.ConsensusParams.SubsidyHalvingInterval;
             var startBlock = node.FullNode.Chain.Height - numberOfBlocks + 1;
 
