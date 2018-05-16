@@ -107,7 +107,7 @@ namespace Stratis.Bitcoin.Consensus
 
             if (!this.chainedHeadersByHash.ContainsKey(headers.First().HashPrevBlock))
             {
-                this.logger.LogTrace("(-)[HEADER_COULD_NOT_CONNECT] '{0}'", headers.First().HashPrevBlock);
+                this.logger.LogTrace("(-)[HEADER_COULD_NOT_CONNECT]");
                 throw new ConnectHeaderException();
             }
 
@@ -228,11 +228,12 @@ namespace Stratis.Bitcoin.Consensus
             ChainedHeader currentHeader = null;
             while (currentHeader != stopHeader)
             {
-                bool nextExists = false; //currentHeader.Next.Lenght != 0;
+                bool headerIsAChainChild = currentHeader.Next.Count != 0;
+                bool headerIsAPeerTip = true;
 
                 var listOfPeersClaimingThisHeader = this.peerTipsByHash.TryGet(currentHeader.HashBlock);
 
-                bool isEmpty = false;
+                
 
                 if (listOfPeersClaimingThisHeader != null)
                 {
@@ -241,15 +242,11 @@ namespace Stratis.Bitcoin.Consensus
                     if (listOfPeersClaimingThisHeader.Count == 0)
                     {
                         this.peerTipsByHash.Remove(currentHeader.HashBlock);
-                        isEmpty = true;
+                        headerIsAPeerTip = false;
                     }
                 }
-                else
-                {
-                    isEmpty = true;
-                }
 
-                if (!isEmpty || nextExists)
+                if (headerIsAPeerTip || headerIsAChainChild)
                     break;
 
                 this.chainedHeadersByHash.Remove(currentHeader.HashBlock);
@@ -257,7 +254,7 @@ namespace Stratis.Bitcoin.Consensus
 
                 currentHeader = currentHeader.Previous;
 
-                if (currentHeader.Next.Length != 0)
+                if (currentHeader.Next.Count != 0)
                     break;
             }
         }
@@ -267,7 +264,8 @@ namespace Stratis.Bitcoin.Consensus
         /// </summary>
         private void AddChainClaim(int networkPeerId, uint256 newTip, out uint256 oldTip)
         {
-            this.logger.LogTrace("()");
+            this.logger.LogTrace("({0}:'{1}',{0}:'{1}')", nameof(networkPeerId), networkPeerId, nameof(newTip), newTip);
+
             oldTip = null;
 
             foreach (var tipItem in this.peerTipsByHash)
@@ -355,8 +353,7 @@ namespace Stratis.Bitcoin.Consensus
                         verifyMaxReorgViolation = false;
                     }
 
-                    // add to previousChainedHeader.Next
-
+                    previousChainedHeader.Next.Add(newChainedHeader);
                     previousChainedHeader = newChainedHeader;
                     this.chainedHeadersByHash.Add(newChainedHeader.HashBlock, newChainedHeader);
                     newChainedHeaders.Add(newChainedHeader);
