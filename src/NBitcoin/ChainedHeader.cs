@@ -5,7 +5,7 @@ using NBitcoin.BouncyCastle.Math;
 namespace NBitcoin
 {
     /// <summary>
-    /// Represents the state of the availability of a block.
+    /// Represents the availability state of a block.
     /// </summary>
     public enum BlockDataAvailabilityState
     {
@@ -16,8 +16,8 @@ namespace NBitcoin
 
         /// <summary>
         /// We are interested in downloading the <see cref="Block"/> that is being represented by the current <see cref="BlockHeader"/>. 
-        /// This happens when a header is a part of the chain that can potentially replace our consensus tip 
-        /// because its tip's total chain work is greater comparing to what we currently have.
+        /// This happens when we don't have block which is represented by this header and the header is a part of a chain that
+        /// can potentially replace our consensus tip because its chain work is greater than our consensus tip's chain work.
         /// </summary>
         BlockRequired,
 
@@ -28,7 +28,7 @@ namespace NBitcoin
     }
 
     /// <summary>
-    /// Represents the validation level of a block.
+    /// Represents the validation state of a block.
     /// </summary>
     public enum ValidationState
     {
@@ -43,9 +43,9 @@ namespace NBitcoin
         HeaderValidated,
 
         /// <summary>
-        /// Minimum validation required because the block is assumed to be valid.
+        /// Blocks represented by headers with this state are assumed to be valid and only minimal validation is required for them when they are downloaded.
         /// This state is used for blocks before the last checkpoint or for blocks that are on the chain of assume valid block.
-        /// Once a block is fully validated this state will change to FullyValidated.
+        /// Once a block is fully validated this state will change to <see cref="PartiallyValidated"/>.
         /// </summary>
         AssumedValid,
 
@@ -56,7 +56,7 @@ namespace NBitcoin
 
         /// <summary>
         /// Validated using all the rules.
-        /// Some rules validation may be skipped for blocks marked as AssumedValid. 
+        /// Some rules validation may be skipped for blocks marked as <see cref="AssumedValid"/>. 
         /// </summary>
         FullyValidated
     }
@@ -93,14 +93,10 @@ namespace NBitcoin
         /// <summary>Total amount of work in the chain up to and including this block.</summary>
         public uint256 ChainWork { get { return Target.ToUInt256(this.chainWork); } }
 
-        /// <summary>
-        /// Represents the state of the availability of a block.
-        /// </summary>
+        /// <inheritdoc cref="BlockDataAvailabilityState" />
         public BlockDataAvailabilityState BlockDataAvailability { get; set; }
 
-        /// <summary>
-        /// Represents the validation level of a block.
-        /// </summary>
+        /// <inheritdoc cref="ValidationState" />
         public ValidationState BlockValidationState { get; set; }
 
         /// <summary>A pointer to the block data if available (this can be <c>null</c>), its availability will be represented by <see cref="BlockDataAvailability"/>.</summary>
@@ -157,7 +153,7 @@ namespace NBitcoin
         /// Constructs a chained header at the start of a chain.
         /// </summary>
         /// <param name="header">The header for the block.</param>
-        /// <param name="headerHash">The hash computed according to NetworkOptions.</param>
+        /// <param name="headerHash">The hash of the block's header.</param>
         private ChainedHeader(BlockHeader header, uint256 headerHash)
         {
             this.Header = header ?? throw new ArgumentNullException(nameof(header));
