@@ -216,7 +216,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Controllers
                 senderAddress = account.GetCombinedAddresses().FirstOrDefault(x => x.Address == request.Sender);
             }
 
-            ulong totalFee = gasPrice * gasLimit + ulong.Parse(request.FeeAmount);
+            ulong totalFee = (gasPrice * gasLimit) + Money.Parse(request.FeeAmount);
             var context = new TransactionBuildContext(
                 new WalletAccountReference(request.WalletName, request.AccountName),
                 new[] { new Recipient { Amount = 0, ScriptPubKey = new Script(carrier.Serialize()) } }.ToList(),
@@ -268,7 +268,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Controllers
                 senderAddress = account.GetCombinedAddresses().FirstOrDefault(x => x.Address == request.Sender);
             }
 
-            ulong totalFee = gasPrice * gasLimit + ulong.Parse(request.FeeAmount);
+            ulong totalFee = (gasPrice * gasLimit) + Money.Parse(request.FeeAmount);
             var context = new TransactionBuildContext(
                 new WalletAccountReference(request.WalletName, request.AccountName),
                 new[] { new Recipient { Amount = request.Amount, ScriptPubKey = new Script(carrier.Serialize()) } }.ToList(),
