@@ -27,13 +27,14 @@ namespace Stratis.Bitcoin.Controllers.Models
         /// <summary>The network the current node is running on.</summary>
         public string Network { get; set; }
 
-        /// <summary> The processId of the node.</summary>
-        public int PID { get; set; }
+        /// <summary>System identifier of the node's process.</summary>
+        public int ProcessId { get; set; }
 
         /// <summary>The height of the consensus.</summary>
         public int ConsensusHeight { get; set; }
 
-        /// <summary> The height of the full blocks downloaded to BlockStore </summary>
+        /// <summary>Height of the highestfull block in persistent storage.</summary>
+        /// <see cref="Stratis.Bitcoin.Features.BlockRepository.HighestPersistedBlock.Height"/>
         public int BlockStoreHeight { get; set; }
 
         /// <summary>A collection of inbound peers.</summary>

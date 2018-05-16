@@ -58,10 +58,10 @@ namespace Stratis.Bitcoin.Controllers
             {
                 Version = this.fullNode.Version?.ToString() ?? "0",
                 Agent = this.nodeSettings.Agent,
-                PID = Process.GetCurrentProcess().Id,
+                ProcessId = Process.GetCurrentProcess().Id,
                 Network = this.fullNode.Network.Name,
                 ConsensusHeight = this.chainState.ConsensusTip.Height,
-                BlockStoreHeight = storeStateProvider.StoreTip.Height,
+                BlockStoreHeight = storeStateProvider.HighestPersistedBlock.Height,
                 DataDirectoryPath = this.nodeSettings.DataDir,
                 RunningTime = this.dateTimeProvider.GetUtcNow() - this.fullNode.StartTime
             };

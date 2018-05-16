@@ -7,6 +7,7 @@ namespace Stratis.Bitcoin.Interfaces
 {
     public interface IStoreStateProvider
     {
-        ChainedHeader StoreTip { get; }
+        /// <summary>Represents the last block stored to disk.</summary>
+        ChainedHeader HighestPersistedBlock { get; }
     }
 }

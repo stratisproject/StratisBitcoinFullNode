@@ -8,6 +8,7 @@ using DBreeze.Utils;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Configuration;
+using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.BlockStore
@@ -16,7 +17,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
     /// <see cref="IBlockRepository"/> is the interface to all the logics interacting with the blocks stored in the database.
     /// </summary>
     /// <seealso cref="System.IDisposable" />
-    public interface IBlockRepository : IDisposable
+    public interface IBlockRepository : IDisposable, IStoreStateProvider
     {
         /// <summary>
         /// Initializes the blockchain storage and ensure the genesis block has been created in the database.
@@ -85,9 +86,6 @@ namespace Stratis.Bitcoin.Features.BlockStore
         BlockStoreRepositoryPerformanceCounter PerformanceCounter { get; }
 
         bool TxIndex { get; }
-
-        /// <summary>Represents the last block stored to disk.</summary>
-        ChainedHeader HighestPersistedBlock { get; }
     }
 
     public class BlockRepository : IBlockRepository

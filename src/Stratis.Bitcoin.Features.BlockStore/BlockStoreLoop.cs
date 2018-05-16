@@ -16,7 +16,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
     /// <summary>
     /// The BlockStoreLoop simultaneously finds and downloads blocks and stores them in the BlockRepository.
     /// </summary>
-    public class BlockStoreLoop : IStoreStateProvider
+    public class BlockStoreLoop
     {
         /// <summary>Factory for creating background async loop tasks.</summary>
         private readonly IAsyncLoopFactory asyncLoopFactory;
