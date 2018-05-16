@@ -322,11 +322,10 @@ namespace NBitcoin
                 return this.MagicBytesArray;
             }
         }
-        
+
         /// <summary>
-        /// Register an immutable Network instance so it is queriable through Network.GetNetwork(string name) and Network.GetNetworks().
+        /// Register an immutable <see cref="Network"/> instance so it is queryable through <see cref="GetNetwork(string)"/> and <see cref="GetNetworks()"/>.
         /// </summary>
-        /// <returns></returns>
         internal static Network Register(Network network, string nameOverride = null)
         {
             string networkName = !string.IsNullOrEmpty(nameOverride) ? nameOverride : network.Name;
