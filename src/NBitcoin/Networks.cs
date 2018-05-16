@@ -52,7 +52,19 @@ namespace NBitcoin
             {
                 Name = "Main",
                 RootFolderName = BitcoinRootFolderName,
-                DefaultConfigFilename = BitcoinDefaultConfigFilename
+                DefaultConfigFilename = BitcoinDefaultConfigFilename,
+                // The message start string is designed to be unlikely to occur in normal data.
+                // The characters are rarely used upper ASCII, not valid as UTF-8, and produce
+                // a large 4-byte int at any alignment.
+                Magic = 0xD9B4BEF9,
+                alertPubKeyArray = Encoders.Hex.DecodeData("04fc9702847840aaf195de8442ebecedf5b095cdbb9bc716bda9110971b28a49e0ead8564ff0db22209e0374782c093bb899692d524e9d6a6956e7c5ecbcd68284"),
+                DefaultPort = 8333,
+                RPCPort = 8332,
+                MaxTimeOffsetSeconds = BitcoinMaxTimeOffsetSeconds,
+                MaxTipAge = BitcoinDefaultMaxTipAgeInSeconds,
+                MinTxFee = 1000,
+                FallbackFee = 20000,
+                MinRelayTxFee = 1000
             };
 
             network.Consensus.SubsidyHalvingInterval = 210000;
@@ -77,14 +89,6 @@ namespace NBitcoin
             network.Consensus.CoinType = 0;
             network.Consensus.DefaultAssumeValid = new uint256("0x000000000000000000174f783cc20c1415f90c4d17c9a5bcd06ba67207c9bc80"); // 518180
 
-            // The message start string is designed to be unlikely to occur in normal data.
-            // The characters are rarely used upper ASCII, not valid as UTF-8, and produce
-            // a large 4-byte int at any alignment.
-            network.Magic = 0xD9B4BEF9;
-            network.alertPubKeyArray = Encoders.Hex.DecodeData("04fc9702847840aaf195de8442ebecedf5b095cdbb9bc716bda9110971b28a49e0ead8564ff0db22209e0374782c093bb899692d524e9d6a6956e7c5ecbcd68284");
-            network.DefaultPort = 8333;
-            network.RPCPort = 8332;
-
             network.genesis = CreateGenesisBlock(network.Consensus.ConsensusFactory, 1231006505, 2083236893, 0x1d00ffff, 1, Money.Coins(50m));
             network.Consensus.HashGenesisBlock = network.genesis.GetHash();
             Assert(network.Consensus.HashGenesisBlock == uint256.Parse("0x000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f"));
@@ -107,12 +111,6 @@ namespace NBitcoin
             network.Bech32Encoders[(int)Bech32Type.WITNESS_PUBKEY_ADDRESS] = encoder;
             network.Bech32Encoders[(int)Bech32Type.WITNESS_SCRIPT_ADDRESS] = encoder;
 
-            network.MaxTimeOffsetSeconds = BitcoinMaxTimeOffsetSeconds;
-            network.MaxTipAge = BitcoinDefaultMaxTipAgeInSeconds;
-            network.MinTxFee = 1000;
-            network.FallbackFee = 20000;
-            network.MinRelayTxFee = 1000;
-
             // Partially obtained from https://github.com/bitcoin/bitcoin/blob/b1973d6181eacfaaf45effb67e0c449ea3a436b8/src/chainparams.cpp#L146
             network.Checkpoints.Add(11111, new CheckpointInfo(new uint256("0x0000000069e244f73d78e8fd29ba2fd2ed618bd6fa2ee92559f542fdb26e7c1d")));
             network.Checkpoints.Add(33333, new CheckpointInfo(new uint256("0x000000002dd5588a74784eaa7ab0507a18ad16a236e7b1ce69f00d7ddfb5d0a6")));
@@ -127,7 +125,6 @@ namespace NBitcoin
             network.Checkpoints.Add(250000, new CheckpointInfo(new uint256("0x000000000000003887df1f29024b06fc2200b55f8af8f35453d7be294df2d214")));
             network.Checkpoints.Add(279000, new CheckpointInfo(new uint256("0x0000000000000001ae8c72a0b0c301f67e3afca10e819efa9041e458e9bd7e40")));
             network.Checkpoints.Add(295000, new CheckpointInfo(new uint256("0x00000000000000004d9b4ef50f0f9d686fd69db2e03af35a100370c64632a983")));
-            // Our own new checkpoints.
             network.Checkpoints.Add(486000, new CheckpointInfo(new uint256("0x000000000000000000a2a8104d61651f76c666b70754d6e9346176385f7afa24")));
             network.Checkpoints.Add(491800, new CheckpointInfo(new uint256("0x000000000000000000d80de1f855902b50941bc3a3d0f71064d9613fd3943dc4")));
 
@@ -171,7 +168,16 @@ namespace NBitcoin
             {
                 Name = "TestNet",
                 RootFolderName = BitcoinRootFolderName,
-                DefaultConfigFilename = BitcoinDefaultConfigFilename
+                DefaultConfigFilename = BitcoinDefaultConfigFilename,
+                Magic = 0x0709110B,
+                alertPubKeyArray = Encoders.Hex.DecodeData("04302390343f91cc401d56d68b123028bf52e5fca1939df127f63c6467cdf9c8e2c14b61104cf817d0b780da337893ecc4aaff1309e536162dabbdb45200ca2b0a"),
+                DefaultPort = 18333,
+                RPCPort = 18332,
+                MaxTimeOffsetSeconds = BitcoinMaxTimeOffsetSeconds,
+                MaxTipAge = BitcoinDefaultMaxTipAgeInSeconds,
+                MinTxFee = 1000,
+                FallbackFee = 20000,
+                MinRelayTxFee = 1000
             };
 
             network.Consensus.SubsidyHalvingInterval = 210000;
@@ -196,15 +202,9 @@ namespace NBitcoin
             network.Consensus.CoinType = 1;
             network.Consensus.DefaultAssumeValid = new uint256("0x000000000000015682a21fc3b1e5420435678cba99cace2b07fe69b668467651"); // 1292762
 
-            network.Magic = 0x0709110B;
-            network.alertPubKeyArray = DataEncoders.Encoders.Hex.DecodeData("04302390343f91cc401d56d68b123028bf52e5fca1939df127f63c6467cdf9c8e2c14b61104cf817d0b780da337893ecc4aaff1309e536162dabbdb45200ca2b0a");
-            network.DefaultPort = 18333;
-            network.RPCPort = 18332;
-
             // Modify the testnet genesis block so the timestamp is valid for a later start.
             network.genesis = CreateGenesisBlock(network.Consensus.ConsensusFactory, 1296688602, 414098458, 0x1d00ffff, 1, Money.Coins(50m));
             network.Consensus.HashGenesisBlock = network.genesis.GetHash();
-
             Assert(network.Consensus.HashGenesisBlock == uint256.Parse("0x000000000933ea01ad0ee984209779baaec3ced90fa3f408719526f8d77f4943"));
 
             network.Base58Prefixes[(int)Base58Type.PUBKEY_ADDRESS] = new byte[] { (111) };
@@ -224,15 +224,8 @@ namespace NBitcoin
             network.Bech32Encoders[(int)Bech32Type.WITNESS_PUBKEY_ADDRESS] = encoder;
             network.Bech32Encoders[(int)Bech32Type.WITNESS_SCRIPT_ADDRESS] = encoder;
 
-            network.MaxTimeOffsetSeconds = BitcoinMaxTimeOffsetSeconds;
-            network.MaxTipAge = BitcoinDefaultMaxTipAgeInSeconds;
-            network.MinTxFee = 1000;
-            network.FallbackFee = 20000;
-            network.MinRelayTxFee = 1000;
-
             // Partially obtained from https://github.com/bitcoin/bitcoin/blob/b1973d6181eacfaaf45effb67e0c449ea3a436b8/src/chainparams.cpp#L246
             network.Checkpoints.Add(546, new CheckpointInfo(new uint256("000000002a936ca763904c3c35fce2f3556c559c0214345d31b1bcebf76acb70")));
-            // Our own new checkpoints.
             network.Checkpoints.Add(1210000, new CheckpointInfo(new uint256("00000000461201277cf8c635fc10d042d6f0a7eaa57f6c9e8c099b9e0dbc46dc")));
 
             network.DNSSeeds.AddRange(new[]
@@ -254,7 +247,15 @@ namespace NBitcoin
             {
                 Name = "RegTest",
                 RootFolderName = BitcoinRootFolderName,
-                DefaultConfigFilename = BitcoinDefaultConfigFilename
+                DefaultConfigFilename = BitcoinDefaultConfigFilename,
+                Magic = 0xDAB5BFFA,
+                DefaultPort = 18444,
+                RPCPort = 18332,
+                MaxTimeOffsetSeconds = BitcoinMaxTimeOffsetSeconds,
+                MaxTipAge = BitcoinDefaultMaxTipAgeInSeconds,
+                MinTxFee = 1000,
+                FallbackFee = 20000,
+                MinRelayTxFee = 1000
             };
 
             network.Consensus.SubsidyHalvingInterval = 150;
@@ -278,13 +279,8 @@ namespace NBitcoin
             network.Consensus.BIP9Deployments[BIP9Deployments.Segwit] = new BIP9DeploymentsParameters(1, BIP9DeploymentsParameters.AlwaysActive, 999999999);
             network.Consensus.DefaultAssumeValid = null; // turn off assumevalid for regtest.
 
-            network.Magic = 0xDAB5BFFA;
-
             network.genesis = CreateGenesisBlock(network.Consensus.ConsensusFactory, 1296688602, 2, 0x207fffff, 1, Money.Coins(50m));
             network.Consensus.HashGenesisBlock = network.genesis.GetHash();
-            network.DefaultPort = 18444;
-            network.RPCPort = 18332;
-
             Assert(network.Consensus.HashGenesisBlock == uint256.Parse("0x0f9188f13cb7b2c71f2a335e3a4fc328bf5beb436012afca590b1a11466e2206"));
 
             network.Base58Prefixes[(int)Base58Type.PUBKEY_ADDRESS] = new byte[] { (111) };
@@ -304,12 +300,6 @@ namespace NBitcoin
             network.Bech32Encoders[(int)Bech32Type.WITNESS_PUBKEY_ADDRESS] = encoder;
             network.Bech32Encoders[(int)Bech32Type.WITNESS_SCRIPT_ADDRESS] = encoder;
 
-            network.MaxTimeOffsetSeconds = BitcoinMaxTimeOffsetSeconds;
-            network.MaxTipAge = BitcoinDefaultMaxTipAgeInSeconds;
-            network.MinTxFee = 1000;
-            network.FallbackFee = 20000;
-            network.MinRelayTxFee = 1000;
-
             Network.Register(network);
             Network.Register(network, "reg");
 
@@ -318,10 +308,30 @@ namespace NBitcoin
 
         private static Network InitStratisMain()
         {
-            Network network = new Network();
-            network.Name = "StratisMain";
-            network.RootFolderName = StratisRootFolderName;
-            network.DefaultConfigFilename = StratisDefaultConfigFilename;
+            // The message start string is designed to be unlikely to occur in normal data.
+            // The characters are rarely used upper ASCII, not valid as UTF-8, and produce
+            // a large 4-byte int at any alignment.
+            var messageStart = new byte[4];
+            messageStart[0] = 0x70;
+            messageStart[1] = 0x35;
+            messageStart[2] = 0x22;
+            messageStart[3] = 0x05;
+            var magic = BitConverter.ToUInt32(messageStart, 0); //0x5223570; 
+
+            Network network = new Network
+            {
+                Name = "StratisMain",
+                RootFolderName = StratisRootFolderName,
+                DefaultConfigFilename = StratisDefaultConfigFilename,
+                Magic = magic,
+                DefaultPort = 16178,
+                RPCPort = 16174,
+                MinTxFee = 10000,
+                FallbackFee = 60000,
+                MinRelayTxFee = 10000,
+                MaxTimeOffsetSeconds = StratisMaxTimeOffsetSeconds,
+                MaxTipAge = StratisDefaultMaxTipAgeInSeconds
+            };
 
             network.Consensus.SubsidyHalvingInterval = 210000;
             network.Consensus.MajorityEnforceBlockUpgrade = 750;
@@ -349,10 +359,12 @@ namespace NBitcoin
             network.Consensus.CoinType = 105;
             network.Consensus.DefaultAssumeValid = new uint256("0x55a8205ae4bbf18f4d238c43f43005bd66e0b1f679b39e2c5c62cf6903693a5e"); // 795970
 
-            Block genesis = CreateStratisGenesisBlock(network.Consensus.ConsensusFactory, 1470467000, 1831645, 0x1e0fffff, 1, Money.Zero);
-            network.Consensus.HashGenesisBlock = genesis.GetHash();
+            network.genesis = CreateStratisGenesisBlock(network.Consensus.ConsensusFactory, 1470467000, 1831645, 0x1e0fffff, 1, Money.Zero);
+            network.Consensus.HashGenesisBlock = network.genesis.GetHash();
+            Assert(network.Consensus.HashGenesisBlock == uint256.Parse("0x0000066e91e46e5a264d42c89e1204963b2ee6be230b443e9159020539d972af"));
+            Assert(network.genesis.Header.HashMerkleRoot == uint256.Parse("0x65a26bc20b0351aebf05829daefa8f7db2f800623439f3c114257c91447f1518"));
 
-            var checkpoints = new Dictionary<int, CheckpointInfo>
+            network.Checkpoints = new Dictionary<int, CheckpointInfo>
             {
                 { 0, new CheckpointInfo(new uint256("0x0000066e91e46e5a264d42c89e1204963b2ee6be230b443e9159020539d972af"), new uint256("0x0000000000000000000000000000000000000000000000000000000000000000")) },
                 { 2, new CheckpointInfo(new uint256("0xbca5936f638181e74a5f1e9999c95b0ce77da48c2688399e72bcc53a00c61eff"), new uint256("0x7d61c139a471821caa6b7635a4636e90afcfe5e195040aecbc1ad7d24924db1e")) }, // Premine
@@ -372,30 +384,6 @@ namespace NBitcoin
                 { 528000, new CheckpointInfo(new uint256("0x7aff2c48b398446595d01e27b5cd898087cec63f94ff73f9ad695c6c9bcee33a"), new uint256("0x3bdc865661390c7681b078e52ed3ad3c53ec7cff97b8c45b74abed3ace289fcc")) },
                 { 576000, new CheckpointInfo(new uint256("0xe705476b940e332098d1d5b475d7977312ff8c08cbc8256ce46a3e2c6d5408b8"), new uint256("0x10e31bb5e245ea19650280cfd3ac1a76259fa0002d02e861d2ab5df290534b56")) },
             };
-
-            // The message start string is designed to be unlikely to occur in normal data.
-            // The characters are rarely used upper ASCII, not valid as UTF-8, and produce
-            // a large 4-byte int at any alignment.
-            var messageStart = new byte[4];
-            messageStart[0] = 0x70;
-            messageStart[1] = 0x35;
-            messageStart[2] = 0x22;
-            messageStart[3] = 0x05;
-            var magic = BitConverter.ToUInt32(messageStart, 0); //0x5223570; 
-
-            Assert(network.Consensus.HashGenesisBlock == uint256.Parse("0x0000066e91e46e5a264d42c89e1204963b2ee6be230b443e9159020539d972af"));
-            Assert(genesis.Header.HashMerkleRoot == uint256.Parse("0x65a26bc20b0351aebf05829daefa8f7db2f800623439f3c114257c91447f1518"));
-            
-            network.Checkpoints = checkpoints;
-            network.Magic = magic;
-            network.genesis = genesis;
-            network.DefaultPort = 16178;
-            network.RPCPort = 16174;
-            network.MinTxFee = 10000;
-            network.FallbackFee = 60000;
-            network.MinRelayTxFee = 10000;
-            network.MaxTimeOffsetSeconds = StratisMaxTimeOffsetSeconds;
-            network.MaxTipAge = StratisDefaultMaxTipAgeInSeconds;
             
             network.Base58Prefixes[(int)Base58Type.PUBKEY_ADDRESS] = new byte[] { (63) };
             network.Base58Prefixes[(int)Base58Type.SCRIPT_ADDRESS] = new byte[] { (125) };
@@ -446,10 +434,30 @@ namespace NBitcoin
 
         private static Network InitStratisTest()
         {
-            Network network = new Network();
-            network.Name = "StratisTest";
-            network.RootFolderName = StratisRootFolderName;
-            network.DefaultConfigFilename = StratisDefaultConfigFilename;
+            // The message start string is designed to be unlikely to occur in normal data.
+            // The characters are rarely used upper ASCII, not valid as UTF-8, and produce
+            // a large 4-byte int at any alignment.
+            var messageStart = new byte[4];
+            messageStart[0] = 0x71;
+            messageStart[1] = 0x31;
+            messageStart[2] = 0x21;
+            messageStart[3] = 0x11;
+            var magic = BitConverter.ToUInt32(messageStart, 0); // 0x11213171;
+
+            Network network = new Network
+            {
+                Name = "StratisTest",
+                RootFolderName = StratisRootFolderName,
+                DefaultConfigFilename = StratisDefaultConfigFilename,
+                Magic = magic,
+                DefaultPort = 26178,
+                RPCPort = 26174,
+                MaxTimeOffsetSeconds = StratisMaxTimeOffsetSeconds,
+                MaxTipAge = StratisDefaultMaxTipAgeInSeconds,
+                MinTxFee = 10000,
+                FallbackFee = 60000,
+                MinRelayTxFee = 10000
+            };
 
             network.Consensus.SubsidyHalvingInterval = 210000;
             network.Consensus.MajorityEnforceBlockUpgrade = 750;
@@ -477,25 +485,15 @@ namespace NBitcoin
             network.Consensus.CoinType = 105;
             network.Consensus.DefaultAssumeValid = new uint256("0x98fa6ef0bca5b431f15fd79dc6f879dc45b83ed4b1bbe933a383ef438321958e"); // 372652
 
-            // The message start string is designed to be unlikely to occur in normal data.
-            // The characters are rarely used upper ASCII, not valid as UTF-8, and produce
-            // a large 4-byte int at any alignment.
-            var messageStart = new byte[4];
-            messageStart[0] = 0x71;
-            messageStart[1] = 0x31;
-            messageStart[2] = 0x21;
-            messageStart[3] = 0x11;
-            var magic = BitConverter.ToUInt32(messageStart, 0); //0x5223570; 
-
             Block genesis = CreateStratisGenesisBlock(network.Consensus.ConsensusFactory, 1470467000, 1831645, 0x1e0fffff, 1, Money.Zero);
             genesis.Header.Time = 1493909211;
             genesis.Header.Nonce = 2433759;
             genesis.Header.Bits = network.Consensus.PowLimit;
+            network.genesis = genesis;
             network.Consensus.HashGenesisBlock = genesis.GetHash();
-            
             Assert(network.Consensus.HashGenesisBlock == uint256.Parse("0x00000e246d7b73b88c9ab55f2e5e94d9e22d471def3df5ea448f5576b1d156b9"));
 
-            var checkpoints = new Dictionary<int, CheckpointInfo>
+            network.Checkpoints = new Dictionary<int, CheckpointInfo>
             {
                 { 0, new CheckpointInfo(new uint256("0x00000e246d7b73b88c9ab55f2e5e94d9e22d471def3df5ea448f5576b1d156b9"), new uint256("0x0000000000000000000000000000000000000000000000000000000000000000")) },
                 { 2, new CheckpointInfo(new uint256("0x56959b1c8498631fb0ca5fe7bd83319dccdc6ac003dccb3171f39f553ecfa2f2"), new uint256("0x13f4c27ca813aefe2d9018077f8efeb3766796b9144fcc4cd51803bf4376ab02")) },
@@ -504,17 +502,6 @@ namespace NBitcoin
                 { 115000, new CheckpointInfo(new uint256("0x8496c77060c8a2b5c9a888ade991f25aa33c232b4413594d556daf9043fad400"), new uint256("0x1886430484a9a36b56a7eb8bd25e9ebe4fc8eec8f9a84f5073f71e08f2feac90")) },
                 { 163000, new CheckpointInfo(new uint256("0x4e44a9e0119a2e7cbf15e570a3c649a5605baa601d953a465b5ebd1c1982212a"), new uint256("0x0646fc7db8f3426eb209e1228c7d82724faa46a060f5bbbd546683ef30be245c")) },
             };
-
-            network.Checkpoints = checkpoints;
-            network.Magic = magic;
-            network.genesis = genesis;
-            network.DefaultPort = 26178;
-            network.RPCPort = 26174;
-            network.MaxTimeOffsetSeconds = StratisMaxTimeOffsetSeconds;
-            network.MaxTipAge = StratisDefaultMaxTipAgeInSeconds;
-            network.MinTxFee = 10000;
-            network.FallbackFee = 60000;
-            network.MinRelayTxFee = 10000;
 
             network.Base58Prefixes[(int)Base58Type.PUBKEY_ADDRESS] = new byte[] { (65) };
             network.Base58Prefixes[(int)Base58Type.SCRIPT_ADDRESS] = new byte[] { (196) };
@@ -555,10 +542,24 @@ namespace NBitcoin
 
         private static Network InitStratisRegTest()
         {
-            Network network = new Network();
-            network.Name = "StratisRegTest";
-            network.RootFolderName = StratisRootFolderName;
-            network.DefaultConfigFilename = StratisDefaultConfigFilename;
+            var messageStart = new byte[4];
+            messageStart[0] = 0xcd;
+            messageStart[1] = 0xf2;
+            messageStart[2] = 0xc0;
+            messageStart[3] = 0xef;
+            var magic = BitConverter.ToUInt32(messageStart, 0); // 0xefc0f2cd
+
+            Network network = new Network
+            {
+                Name = "StratisRegTest",
+                RootFolderName = StratisRootFolderName,
+                DefaultConfigFilename = StratisDefaultConfigFilename,
+                Magic = magic,
+                DefaultPort = 18444,
+                RPCPort = 18442,
+                MaxTimeOffsetSeconds = StratisMaxTimeOffsetSeconds,
+                MaxTipAge = StratisDefaultMaxTipAgeInSeconds
+            };
 
             network.Consensus.SubsidyHalvingInterval = 210000;
             network.Consensus.MajorityEnforceBlockUpgrade = 750;
@@ -586,27 +587,13 @@ namespace NBitcoin
             network.Consensus.CoinType = 105;
             network.Consensus.DefaultAssumeValid = null; // turn off assumevalid for regtest.
 
-            var messageStart = new byte[4];
-            messageStart[0] = 0xcd;
-            messageStart[1] = 0xf2;
-            messageStart[2] = 0xc0;
-            messageStart[3] = 0xef;
-            var magic = BitConverter.ToUInt32(messageStart, 0);
-
             Block genesis = CreateStratisGenesisBlock(network.Consensus.ConsensusFactory, 1470467000, 1831645, 0x1e0fffff, 1, Money.Zero);
             genesis.Header.Time = 1494909211;
             genesis.Header.Nonce = 2433759;
             genesis.Header.Bits = network.Consensus.PowLimit;
-            network.Consensus.HashGenesisBlock = genesis.GetHash();
-
-            Assert(network.Consensus.HashGenesisBlock == uint256.Parse("0x93925104d664314f581bc7ecb7b4bad07bcfabd1cfce4256dbd2faddcf53bd1f"));
-
-            network.Magic = magic;
             network.genesis = genesis;
-            network.DefaultPort = 18444;
-            network.RPCPort = 18442;
-            network.MaxTimeOffsetSeconds = StratisMaxTimeOffsetSeconds;
-            network.MaxTipAge = StratisDefaultMaxTipAgeInSeconds;
+            network.Consensus.HashGenesisBlock = genesis.GetHash();
+            Assert(network.Consensus.HashGenesisBlock == uint256.Parse("0x93925104d664314f581bc7ecb7b4bad07bcfabd1cfce4256dbd2faddcf53bd1f"));
 
             network.Base58Prefixes[(int)Base58Type.PUBKEY_ADDRESS] = new byte[] { (65) };
             network.Base58Prefixes[(int)Base58Type.SCRIPT_ADDRESS] = new byte[] { (196) };

@@ -3,6 +3,7 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using NBitcoin.BouncyCastle.Math;
+using NBitcoin.DataEncoders;
 using Xunit;
 
 namespace NBitcoin.Tests
@@ -75,9 +76,26 @@ namespace NBitcoin.Tests
         {
             Network network = Network.Main;
 
-            Assert.Equal(6, network.DNSSeeds.Count);
-            Assert.Equal(512, network.SeedNodes.Count);
+            Assert.Equal(Network.GetNetwork("main"), network);
+            Assert.Equal(Network.GetNetwork("mainnet"), network);
 
+            Assert.Equal("Main", network.Name);
+            Assert.Equal(Network.BitcoinRootFolderName, network.RootFolderName);
+            Assert.Equal(Network.BitcoinDefaultConfigFilename, network.DefaultConfigFilename);
+            Assert.Equal(0xD9B4BEF9, network.Magic);
+            Assert.Equal(new PubKey(Encoders.Hex.DecodeData("04fc9702847840aaf195de8442ebecedf5b095cdbb9bc716bda9110971b28a49e0ead8564ff0db22209e0374782c093bb899692d524e9d6a6956e7c5ecbcd68284")), network.AlertPubKey);
+            Assert.Equal(8333, network.DefaultPort);
+            Assert.Equal(8332, network.RPCPort);
+            Assert.Equal(Network.BitcoinMaxTimeOffsetSeconds, network.MaxTimeOffsetSeconds);
+            Assert.Equal(Network.BitcoinDefaultMaxTipAgeInSeconds, network.MaxTipAge);
+            Assert.Equal(1000, network.MinTxFee);
+            Assert.Equal(20000, network.FallbackFee);
+            Assert.Equal(1000, network.MinRelayTxFee);
+
+            Assert.Equal(2, network.Bech32Encoders.Length);
+            Assert.Equal(new Bech32Encoder("bc").ToString(), network.Bech32Encoders[(int)Bech32Type.WITNESS_PUBKEY_ADDRESS].ToString());
+            Assert.Equal(new Bech32Encoder("bc").ToString(), network.Bech32Encoders[(int)Bech32Type.WITNESS_SCRIPT_ADDRESS].ToString());
+            
             Assert.Equal(12, network.Base58Prefixes.Length);
             Assert.Equal(new byte[] { 0 }, network.Base58Prefixes[(int)Base58Type.PUBKEY_ADDRESS]);
             Assert.Equal(new byte[] { (5) }, network.Base58Prefixes[(int)Base58Type.SCRIPT_ADDRESS]);
@@ -134,6 +152,23 @@ namespace NBitcoin.Tests
 
             Assert.Equal(3, network.DNSSeeds.Count);
             Assert.Empty(network.SeedNodes);
+
+            Assert.Equal("TestNet", network.Name);
+            Assert.Equal(Network.BitcoinRootFolderName, network.RootFolderName);
+            Assert.Equal(Network.BitcoinDefaultConfigFilename, network.DefaultConfigFilename);
+            Assert.Equal(0x0709110B.ToString(), network.Magic.ToString());
+            Assert.Equal(new PubKey(Encoders.Hex.DecodeData("04302390343f91cc401d56d68b123028bf52e5fca1939df127f63c6467cdf9c8e2c14b61104cf817d0b780da337893ecc4aaff1309e536162dabbdb45200ca2b0a")), network.AlertPubKey);
+            Assert.Equal(18333, network.DefaultPort);
+            Assert.Equal(18332, network.RPCPort);
+            Assert.Equal(Network.BitcoinMaxTimeOffsetSeconds, network.MaxTimeOffsetSeconds);
+            Assert.Equal(Network.BitcoinDefaultMaxTipAgeInSeconds, network.MaxTipAge);
+            Assert.Equal(1000, network.MinTxFee);
+            Assert.Equal(20000, network.FallbackFee);
+            Assert.Equal(1000, network.MinRelayTxFee);
+
+            Assert.Equal(2, network.Bech32Encoders.Length);
+            Assert.Equal(new Bech32Encoder("tb").ToString(), network.Bech32Encoders[(int)Bech32Type.WITNESS_PUBKEY_ADDRESS].ToString());
+            Assert.Equal(new Bech32Encoder("tb").ToString(), network.Bech32Encoders[(int)Bech32Type.WITNESS_SCRIPT_ADDRESS].ToString());
 
             Assert.Equal(12, network.Base58Prefixes.Length);
             Assert.Equal(new byte[] { 111 }, network.Base58Prefixes[(int)Base58Type.PUBKEY_ADDRESS]);
@@ -192,6 +227,22 @@ namespace NBitcoin.Tests
             Assert.Empty(network.DNSSeeds);
             Assert.Empty(network.SeedNodes);
 
+            Assert.Equal("RegTest", network.Name);
+            Assert.Equal(Network.BitcoinRootFolderName, network.RootFolderName);
+            Assert.Equal(Network.BitcoinDefaultConfigFilename, network.DefaultConfigFilename);
+            Assert.Equal(0xDAB5BFFA, network.Magic);
+            Assert.Equal(18444, network.DefaultPort);
+            Assert.Equal(18332, network.RPCPort);
+            Assert.Equal(Network.BitcoinMaxTimeOffsetSeconds, network.MaxTimeOffsetSeconds);
+            Assert.Equal(Network.BitcoinDefaultMaxTipAgeInSeconds, network.MaxTipAge);
+            Assert.Equal(1000, network.MinTxFee);
+            Assert.Equal(20000, network.FallbackFee);
+            Assert.Equal(1000, network.MinRelayTxFee);
+
+            Assert.Equal(2, network.Bech32Encoders.Length);
+            Assert.Equal(new Bech32Encoder("tb").ToString(), network.Bech32Encoders[(int)Bech32Type.WITNESS_PUBKEY_ADDRESS].ToString());
+            Assert.Equal(new Bech32Encoder("tb").ToString(), network.Bech32Encoders[(int)Bech32Type.WITNESS_SCRIPT_ADDRESS].ToString());
+
             Assert.Equal(12, network.Base58Prefixes.Length);
             Assert.Equal(new byte[] { 111 }, network.Base58Prefixes[(int)Base58Type.PUBKEY_ADDRESS]);
             Assert.Equal(new byte[] { (196) }, network.Base58Prefixes[(int)Base58Type.SCRIPT_ADDRESS]);
@@ -248,6 +299,22 @@ namespace NBitcoin.Tests
 
             Assert.Equal(4, network.DNSSeeds.Count);
             Assert.Equal(3, network.SeedNodes.Count);
+
+            Assert.Equal("StratisMain", network.Name);
+            Assert.Equal(Network.StratisRootFolderName, network.RootFolderName);
+            Assert.Equal(Network.StratisDefaultConfigFilename, network.DefaultConfigFilename);
+            Assert.Equal(0x5223570.ToString(), network.Magic.ToString());
+            Assert.Equal(16178, network.DefaultPort);
+            Assert.Equal(16174, network.RPCPort);
+            Assert.Equal(Network.StratisMaxTimeOffsetSeconds, network.MaxTimeOffsetSeconds);
+            Assert.Equal(Network.StratisDefaultMaxTipAgeInSeconds, network.MaxTipAge);
+            Assert.Equal(10000, network.MinTxFee);
+            Assert.Equal(60000, network.FallbackFee);
+            Assert.Equal(10000, network.MinRelayTxFee);
+
+            Assert.Equal(2, network.Bech32Encoders.Length);
+            Assert.Equal(new Bech32Encoder("bc").ToString(), network.Bech32Encoders[(int)Bech32Type.WITNESS_PUBKEY_ADDRESS].ToString());
+            Assert.Equal(new Bech32Encoder("bc").ToString(), network.Bech32Encoders[(int)Bech32Type.WITNESS_SCRIPT_ADDRESS].ToString());
 
             Assert.Equal(12, network.Base58Prefixes.Length);
             Assert.Equal(new byte[] { (63) }, network.Base58Prefixes[(int)Base58Type.PUBKEY_ADDRESS]);
@@ -308,6 +375,22 @@ namespace NBitcoin.Tests
 
             Assert.Equal(4, network.DNSSeeds.Count);
             Assert.Equal(4, network.SeedNodes.Count);
+            
+            Assert.Equal("StratisTest", network.Name);
+            Assert.Equal(Network.StratisRootFolderName, network.RootFolderName);
+            Assert.Equal(Network.StratisDefaultConfigFilename, network.DefaultConfigFilename);
+            Assert.Equal(0x11213171.ToString(), network.Magic.ToString());
+            Assert.Equal(26178, network.DefaultPort);
+            Assert.Equal(26174, network.RPCPort);
+            Assert.Equal(Network.StratisMaxTimeOffsetSeconds, network.MaxTimeOffsetSeconds);
+            Assert.Equal(Network.StratisDefaultMaxTipAgeInSeconds, network.MaxTipAge);
+            Assert.Equal(10000, network.MinTxFee);
+            Assert.Equal(60000, network.FallbackFee);
+            Assert.Equal(10000, network.MinRelayTxFee);
+
+            Assert.Equal(2, network.Bech32Encoders.Length);
+            Assert.Equal(new Bech32Encoder("bc").ToString(), network.Bech32Encoders[(int)Bech32Type.WITNESS_PUBKEY_ADDRESS].ToString());
+            Assert.Equal(new Bech32Encoder("bc").ToString(), network.Bech32Encoders[(int)Bech32Type.WITNESS_SCRIPT_ADDRESS].ToString());
 
             Assert.Equal(12, network.Base58Prefixes.Length);
             Assert.Equal(new byte[] { (65) }, network.Base58Prefixes[(int)Base58Type.PUBKEY_ADDRESS]);
@@ -368,6 +451,22 @@ namespace NBitcoin.Tests
 
             Assert.Empty(network.DNSSeeds);
             Assert.Empty(network.SeedNodes);
+
+            Assert.Equal("StratisRegTest", network.Name);
+            Assert.Equal(Network.StratisRootFolderName, network.RootFolderName);
+            Assert.Equal(Network.StratisDefaultConfigFilename, network.DefaultConfigFilename);
+            Assert.Equal(0xefc0f2cd, network.Magic);
+            Assert.Equal(18444, network.DefaultPort);
+            Assert.Equal(18442, network.RPCPort);
+            Assert.Equal(Network.StratisMaxTimeOffsetSeconds, network.MaxTimeOffsetSeconds);
+            Assert.Equal(Network.StratisDefaultMaxTipAgeInSeconds, network.MaxTipAge);
+            Assert.Equal(0, network.MinTxFee);
+            Assert.Equal(0, network.FallbackFee);
+            Assert.Equal(0, network.MinRelayTxFee);
+
+            Assert.Equal(2, network.Bech32Encoders.Length);
+            Assert.Equal(new Bech32Encoder("bc").ToString(), network.Bech32Encoders[(int)Bech32Type.WITNESS_PUBKEY_ADDRESS].ToString());
+            Assert.Equal(new Bech32Encoder("bc").ToString(), network.Bech32Encoders[(int)Bech32Type.WITNESS_SCRIPT_ADDRESS].ToString());
 
             Assert.Equal(12, network.Base58Prefixes.Length);
             Assert.Equal(new byte[] { (65) }, network.Base58Prefixes[(int)Base58Type.PUBKEY_ADDRESS]);
