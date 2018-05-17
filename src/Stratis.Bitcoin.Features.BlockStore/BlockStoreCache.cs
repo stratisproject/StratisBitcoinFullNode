@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
@@ -10,6 +11,13 @@ namespace Stratis.Bitcoin.Features.BlockStore
     public interface IBlockStoreCache
     {
         Task<Block> GetBlockAsync(uint256 blockid);
+
+        /// <summary>
+        /// Get the blocks from the database by using block hashes.
+        /// </summary>
+        /// <param name="blockids">A list of unique Block id hashes.</param>
+        /// <returns>The blocks (or null if not found) in the same order as the hashes on input.</returns
+        Task<List<Block>> GetBlockAsync(List<uint256> blockids);
 
         void AddToCache(Block block);
 
@@ -88,6 +96,46 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.logger.LogTrace("(-)[CACHE_MISS]:'{0}'", block);
             return block;
         }
+
+        /// <inheritdoc />
+        public async Task<List<Block>> GetBlockAsync(List<uint256> blockids)
+        {
+            Guard.NotNull(blockids, nameof(blockids));
+
+            var blocks = await this.blockRepository.GetBlocksAsync(blockids);
+
+            List<Block> returnBlocks = new List<Block>();
+
+            Block cachedBlock;
+
+            foreach (var block in blocks)
+            {
+                if (this.cache.TryGetValue(block.GetHash(), out cachedBlock))
+                {
+                    this.PerformanceCounter.AddCacheHitCount(1);
+                    this.logger.LogTrace("(-)[CACHE_HIT]:'{0}'", block);
+                }
+
+                this.PerformanceCounter.AddCacheMissCount(1);
+
+                if (cachedBlock == null)
+                {
+                    this.cache.AddOrUpdate(block.GetHash(), block);
+                    this.PerformanceCounter.AddCacheSetCount(1);
+
+                    returnBlocks.Add(block);
+                }
+                else
+                {
+                    returnBlocks.Add(cachedBlock);
+                }
+
+                this.logger.LogTrace("(-)[CACHE_MISS]:'{0}'", block);                
+            }
+
+            return returnBlocks;
+        }
+
 
         public void AddToCache(Block block)
         {

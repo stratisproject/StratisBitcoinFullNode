@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Threading.Tasks.Dataflow;
 using NBitcoin;
 
 namespace Stratis.Bitcoin.Features.Wallet.Interfaces
@@ -14,7 +16,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Interfaces
         /// Stops the walletSyncManager.
         /// <para>
         /// We need to call <see cref="Stop"/> explicitly to check that the internal async loop isn't still running
-        /// and subsequentlly dispose of it properly.
+        /// and subsequently dispose of it properly.
         /// </para>
         /// </summary>
         void Stop();
@@ -23,8 +25,8 @@ namespace Stratis.Bitcoin.Features.Wallet.Interfaces
         /// Processes a new block.
         /// </summary>
         /// <param name="block"></param>
-        void ProcessBlock(Block block);
-
+        void ProcessBlock(Block block, bool useProducerConsumer = false);
+  
         /// <summary>
         /// Processes a new transaction which is in a pending state (not included in a block).
         /// </summary>

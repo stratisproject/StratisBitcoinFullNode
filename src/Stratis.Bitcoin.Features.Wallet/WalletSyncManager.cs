@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
+using System.Threading.Tasks.Dataflow;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Features.BlockStore;
@@ -10,7 +12,7 @@ using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.Wallet
 {
-    public class WalletSyncManager : IWalletSyncManager
+    public class WalletSyncManager : IWalletSyncManager, IWalletBlockProducerConsumer
     {
         protected readonly IWalletManager walletManager;
 
@@ -32,6 +34,12 @@ namespace Stratis.Bitcoin.Features.Wallet
 
         public ChainedHeader WalletTip => this.walletTip;
 
+        /// <inheritdoc />
+        public BufferBlock<IList<Block>> BlockListBuffer { get; }
+
+        private readonly IList<uint256> hashblocks = new List<uint256>();
+        private readonly IList<Block> blocksReceived = new List<Block>();
+
         public WalletSyncManager(ILoggerFactory loggerFactory, IWalletManager walletManager, ConcurrentChain chain,
             Network network, IBlockStoreCache blockStoreCache, StoreSettings storeSettings, INodeLifetime nodeLifetime)
         {
@@ -50,6 +58,8 @@ namespace Stratis.Bitcoin.Features.Wallet
             this.storeSettings = storeSettings;
             this.nodeLifetime = nodeLifetime;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
+
+            this.BlockListBuffer = new BufferBlock<IList<Block>>();
         }
 
         /// <inheritdoc />
@@ -96,8 +106,46 @@ namespace Stratis.Bitcoin.Features.Wallet
         }
 
         /// <inheritdoc />
-        public virtual void ProcessBlock(Block block)
+        public void Produce(ITargetBlock<IList<Block>> target, Block block)
         {
+            this.blocksReceived.Add(block);
+
+            if (this.blocksReceived.Count >= 50)
+            {
+                target.Post(this.blocksReceived);                
+            }
+        }
+
+        /// <inheritdoc />
+        public async Task ConsumeAsync(ISourceBlock<IList<Block>> source)
+        {
+            while (await source.OutputAvailableAsync())
+            {
+                var blocks = source.Receive();
+
+                foreach(var block in blocks)
+                {
+                    ProcessBlock(block);
+                }
+
+                this.blocksReceived.Clear();
+            }
+        }
+
+        /// <inheritdoc />
+        public void ProducerConsumerProcessBlock(Block block)
+        {
+            ConsumeAsync(this.BlockListBuffer).GetAwaiter().GetResult();
+
+            Produce(this.BlockListBuffer, block);
+        }
+
+        /// <inheritdoc />
+        public void ProcessBlock(Block block, bool useProducerConsumer = false)
+        {
+            if (useProducerConsumer)
+                this.ProducerConsumerProcessBlock(block);
+
             Guard.NotNull(block, nameof(block));
             this.logger.LogTrace("({0}:'{1}')", nameof(block), block.GetHash());
 
@@ -152,47 +200,11 @@ namespace Stratis.Bitcoin.Features.Wallet
                     ChainedHeader next = this.walletTip;
                     while (next != newTip)
                     {
-                        // While the wallet is catching up the entire node will wait.
-                        // If a wallet is recovered to a date in the past. Consensus will stop till the wallet is up to date.
-
-                        // TODO: This code should be replaced with a different approach
-                        // Similar to BlockStore the wallet should be standalone and not depend on consensus.
-                        // The block should be put in a queue and pushed to the wallet in an async way.
-                        // If the wallet is behind it will just read blocks from store (or download in case of a pruned node).
-
                         token.ThrowIfCancellationRequested();
 
                         next = newTip.GetAncestor(next.Height + 1);
-                        Block nextblock = null;
-                        int index = 0;
-                        while (true)
-                        {
-                            token.ThrowIfCancellationRequested();
 
-                            nextblock = this.blockStoreCache.GetBlockAsync(next.HashBlock).GetAwaiter().GetResult();
-                            if (nextblock == null)
-                            {
-                                // The idea in this abandoning of the loop is to release consensus to push the block.
-                                // That will make the block available in the next push from consensus.
-                                index++;
-                                if (index > 10)
-                                {
-                                    this.logger.LogTrace("(-)[WALLET_CATCHUP_INDEX_MAX]");
-                                    return;
-                                }
-
-                                // Really ugly hack to let store catch up.
-                                // This will block the entire consensus pulling.
-                                this.logger.LogWarning("Wallet is behind the best chain and the next block is not found in store.");
-                                Thread.Sleep(100);
-                                continue;
-                            }
-
-                            break;
-                        }
-
-                        this.walletTip = next;
-                        this.walletManager.ProcessBlock(nextblock, next);
+                        ProcessBlockInBatches(next, token);
                     }
                 }
                 else
@@ -206,6 +218,7 @@ namespace Stratis.Bitcoin.Features.Wallet
 
                     this.logger.LogTrace("Wallet tip '{0}' is ahead or equal to the new tip '{1}'.", this.walletTip, newTip);
                 }
+
             }
             else this.logger.LogTrace("New block follows the previously known block '{0}'.", this.walletTip);
 
@@ -213,6 +226,29 @@ namespace Stratis.Bitcoin.Features.Wallet
             this.walletManager.ProcessBlock(block, newTip);
 
             this.logger.LogTrace("(-)");
+        }
+
+        private void ProcessBlockInBatches(ChainedHeader blockHeader, CancellationToken token)
+        {
+            this.hashblocks.Add(blockHeader.HashBlock);
+
+            if (this.hashblocks.Count >= 50)
+            {
+                List<Block> blocks = this.blockStoreCache.GetBlockAsync(this.hashblocks.ToList()).GetAwaiter().GetResult();
+
+                foreach (var block in blocks)
+                {
+                    token.ThrowIfCancellationRequested();
+
+                    ChainedHeader blockChainedHeader = this.chain.GetBlock(block.GetHash());
+
+                    this.walletTip = blockChainedHeader;
+
+                    this.walletManager.ProcessBlock(block, blockChainedHeader);
+                }
+
+                this.hashblocks.Clear();
+            }
         }
 
         /// <inheritdoc />
