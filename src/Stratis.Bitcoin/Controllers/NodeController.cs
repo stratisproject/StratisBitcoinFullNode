@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
+using NBitcoin;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Builder.Feature;
 using Stratis.Bitcoin.Configuration;
@@ -8,7 +9,9 @@ using Stratis.Bitcoin.Controllers.Models;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.Utilities;
+using System;
 using System.Diagnostics;
+using System.Reflection;
 
 namespace Stratis.Bitcoin.Controllers
 {
@@ -32,10 +35,8 @@ namespace Stratis.Bitcoin.Controllers
 
         /// <summary>The connection manager.</summary>
         private readonly IConnectionManager connectionManager;
-
-        private readonly IStoreStateProvider storeStateProvider;
-
-        public NodeController(IFullNode fullNode, ILoggerFactory loggerFactory, IDateTimeProvider dateTimeProvider, IChainState chainState, IStoreStateProvider storeStateProvider, NodeSettings nodeSettings, IConnectionManager connectionManager)
+        
+        public NodeController(IFullNode fullNode, ILoggerFactory loggerFactory, IDateTimeProvider dateTimeProvider, IChainState chainState, NodeSettings nodeSettings, IConnectionManager connectionManager)
         {
             this.fullNode = fullNode;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
@@ -43,7 +44,6 @@ namespace Stratis.Bitcoin.Controllers
             this.chainState = chainState;
             this.nodeSettings = nodeSettings;
             this.connectionManager = connectionManager;
-            this.storeStateProvider = storeStateProvider;
         }
 
         /// <summary>
@@ -61,18 +61,14 @@ namespace Stratis.Bitcoin.Controllers
                 ProcessId = Process.GetCurrentProcess().Id,
                 Network = this.fullNode.Network.Name,
                 ConsensusHeight = this.chainState.ConsensusTip.Height,
-                BlockStoreHeight = 0,
                 DataDirectoryPath = this.nodeSettings.DataDir,
                 RunningTime = this.dateTimeProvider.GetUtcNow() - this.fullNode.StartTime
             };
 
-            // If BlockStore is populated, add BlockHeight to staus
-            foreach (var feature in this.fullNode.Services.Features)
-                if (feature.GetType().ToString() == "Stratis.Bitcoin.Features.BlockStore.BlockStoreFeature")
-                {
-                    model.BlockStoreHeight = storeStateProvider.HighestPersistedBlock.Height;
-                    break;
-                }
+            // Include BlockStore Height if enabled
+            foreach (var blockStore in this.fullNode.Services.Features)
+                if (blockStore is IBlockStore)
+                    model.BlockStoreHeight = ((IBlockStore)blockStore).GetHighestPersistedBlock().Height;
 
             // Add the list of features that are enabled.
             foreach (IFullNodeFeature feature in this.fullNode.Services.Features)

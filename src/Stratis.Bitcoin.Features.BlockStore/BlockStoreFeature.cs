@@ -119,6 +119,11 @@ namespace Stratis.Bitcoin.Features.BlockStore
             return this.blockRepository.GetTrxBlockIdAsync(trxid);
         }
 
+        public ChainedHeader GetHighestPersistedBlock()
+        {
+            return this.blockRepository.HighestPersistedBlock;
+        }
+
         public override void Initialize()
         {
             this.logger.LogTrace("()");
@@ -186,7 +191,6 @@ namespace Stratis.Bitcoin.Features.BlockStore
                         services.AddSingleton<IBlockStoreCache, BlockStoreCache>();
                         services.AddSingleton<StoreBlockPuller>();
                         services.AddSingleton<BlockStoreLoop>();
-                        services.AddSingleton<IStoreStateProvider>(x => x.GetService<IBlockRepository>());
                         services.AddSingleton<BlockStoreManager>();
                         services.AddSingleton<BlockStoreSignaled>();
                         services.AddSingleton<StoreSettings>(new StoreSettings(setup));
