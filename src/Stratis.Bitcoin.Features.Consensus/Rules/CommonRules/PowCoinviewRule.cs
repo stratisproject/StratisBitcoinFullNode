@@ -1,17 +1,13 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Base.Deployments;
-using Stratis.Bitcoin.Features.Consensus.Interfaces;
-using Stratis.Bitcoin.Features.Consensus.Rules;
-using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
 using Stratis.Bitcoin.Utilities;
 
-namespace Stratis.Bitcoin.Features.Consensus
+namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
 {
     /// <summary>
     /// The proof of work coinview update rules. Validates the UTXO set is correctly spent.
@@ -32,10 +28,15 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <summary>Consensus options.</summary>
         public PowConsensusOptions ConsensusOptions { get; set; }
 
+        /// <inheritdoc />
         public override void Initialize()
         {
+            this.Logger.LogTrace("()");
+
             this.ConsensusParams = this.Parent.Network.Consensus;
             this.ConsensusOptions = this.ConsensusParams.Option<PowConsensusOptions>();
+
+            this.Logger.LogTrace("(-)");
         }
 
         /// <inheritdoc />

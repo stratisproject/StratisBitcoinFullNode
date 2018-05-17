@@ -2,10 +2,9 @@
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Features.Consensus.Interfaces;
-using Stratis.Bitcoin.Features.Consensus.Rules;
 using Stratis.Bitcoin.Utilities;
 
-namespace Stratis.Bitcoin.Features.Consensus
+namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
 {
     /// <summary>
     /// Proof of stake override for the coinview rules - BIP68, MaxSigOps and BlockReward checks
@@ -30,6 +29,8 @@ namespace Stratis.Bitcoin.Features.Consensus
 
         public override void Initialize()
         {
+            this.Logger.LogTrace("()");
+
             base.Initialize();
 
             var consensusRules = (PosConsensusRules)this.Parent;
@@ -37,6 +38,8 @@ namespace Stratis.Bitcoin.Features.Consensus
             this.StakeValidator = consensusRules.StakeValidator;
             this.stakeChain = consensusRules.StakeChain;
             this.posConsensusOptions = (PosConsensusOptions)this.ConsensusOptions;
+
+            this.Logger.LogTrace("(-)");
         }
 
         /// <inheritdoc />
