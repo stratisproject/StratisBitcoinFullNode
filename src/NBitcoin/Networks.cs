@@ -337,9 +337,9 @@ namespace NBitcoin
             network.Consensus.MajorityEnforceBlockUpgrade = 750;
             network.Consensus.MajorityRejectBlockOutdated = 950;
             network.Consensus.MajorityWindow = 1000;
-            network.Consensus.BuriedDeployments[BuriedDeployments.BIP34] = 227931;
-            network.Consensus.BuriedDeployments[BuriedDeployments.BIP65] = 388381;
-            network.Consensus.BuriedDeployments[BuriedDeployments.BIP66] = 363725;
+            network.Consensus.BuriedDeployments[BuriedDeployments.BIP34] = 0;
+            network.Consensus.BuriedDeployments[BuriedDeployments.BIP65] = 0;
+            network.Consensus.BuriedDeployments[BuriedDeployments.BIP66] = 0;
             network.Consensus.BIP34Hash = new uint256("0x000000000000024b89b42a942fe0d9fea3bb44ab7bd1b19115dd6a759c0808b8");
             network.Consensus.PowLimit = new Target(new uint256("00000fffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"));
             network.Consensus.PowTargetTimespan = TimeSpan.FromSeconds(14 * 24 * 60 * 60); // two weeks
@@ -348,9 +348,6 @@ namespace NBitcoin
             network.Consensus.PowNoRetargeting = false;
             network.Consensus.RuleChangeActivationThreshold = 1916; // 95% of 2016
             network.Consensus.MinerConfirmationWindow = 2016; // nPowTargetTimespan / nPowTargetSpacing
-            network.Consensus.BIP9Deployments[BIP9Deployments.TestDummy] = new BIP9DeploymentsParameters(28, 1199145601, 1230767999);
-            network.Consensus.BIP9Deployments[BIP9Deployments.CSV] = new BIP9DeploymentsParameters(0, 1462060800, 1493596800);
-            network.Consensus.BIP9Deployments[BIP9Deployments.Segwit] = new BIP9DeploymentsParameters(1, 0, 0);
             network.Consensus.LastPOWBlock = 12500;
             network.Consensus.IsProofOfStake = true;
             network.Consensus.ConsensusFactory = new PosConsensusFactory() { Consensus = network.Consensus };
@@ -463,9 +460,9 @@ namespace NBitcoin
             network.Consensus.MajorityEnforceBlockUpgrade = 750;
             network.Consensus.MajorityRejectBlockOutdated = 950;
             network.Consensus.MajorityWindow = 1000;
-            network.Consensus.BuriedDeployments[BuriedDeployments.BIP34] = 227931;
-            network.Consensus.BuriedDeployments[BuriedDeployments.BIP65] = 388381;
-            network.Consensus.BuriedDeployments[BuriedDeployments.BIP66] = 363725;
+            network.Consensus.BuriedDeployments[BuriedDeployments.BIP34] = 0;
+            network.Consensus.BuriedDeployments[BuriedDeployments.BIP65] = 0;
+            network.Consensus.BuriedDeployments[BuriedDeployments.BIP66] = 0;
             network.Consensus.BIP34Hash = new uint256("0x000000000000024b89b42a942fe0d9fea3bb44ab7bd1b19115dd6a759c0808b8");
             network.Consensus.PowLimit = new Target(new uint256("0000ffff00000000000000000000000000000000000000000000000000000000"));
             network.Consensus.PowTargetTimespan = TimeSpan.FromSeconds(14 * 24 * 60 * 60); // two weeks
@@ -474,9 +471,6 @@ namespace NBitcoin
             network.Consensus.PowNoRetargeting = false;
             network.Consensus.RuleChangeActivationThreshold = 1916; // 95% of 2016
             network.Consensus.MinerConfirmationWindow = 2016; // nPowTargetTimespan / nPowTargetSpacing
-            network.Consensus.BIP9Deployments[BIP9Deployments.TestDummy] = new BIP9DeploymentsParameters(28, 1199145601, 1230767999);
-            network.Consensus.BIP9Deployments[BIP9Deployments.CSV] = new BIP9DeploymentsParameters(0, 1462060800, 1493596800);
-            network.Consensus.BIP9Deployments[BIP9Deployments.Segwit] = new BIP9DeploymentsParameters(1, 0, 0);
             network.Consensus.LastPOWBlock = 12500;
             network.Consensus.IsProofOfStake = true;
             network.Consensus.ConsensusFactory = new PosConsensusFactory() { Consensus = network.Consensus };
@@ -565,9 +559,9 @@ namespace NBitcoin
             network.Consensus.MajorityEnforceBlockUpgrade = 750;
             network.Consensus.MajorityRejectBlockOutdated = 950;
             network.Consensus.MajorityWindow = 1000;
-            network.Consensus.BuriedDeployments[BuriedDeployments.BIP34] = 227931;
-            network.Consensus.BuriedDeployments[BuriedDeployments.BIP65] = 388381;
-            network.Consensus.BuriedDeployments[BuriedDeployments.BIP66] = 363725;
+            network.Consensus.BuriedDeployments[BuriedDeployments.BIP34] = 0;
+            network.Consensus.BuriedDeployments[BuriedDeployments.BIP65] = 0;
+            network.Consensus.BuriedDeployments[BuriedDeployments.BIP66] = 0;
             network.Consensus.BIP34Hash = new uint256("0x000000000000024b89b42a942fe0d9fea3bb44ab7bd1b19115dd6a759c0808b8");
             network.Consensus.PowLimit = new Target(uint256.Parse("7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"));
             network.Consensus.PowTargetTimespan = TimeSpan.FromSeconds(14 * 24 * 60 * 60); // two weeks
@@ -576,9 +570,6 @@ namespace NBitcoin
             network.Consensus.PowNoRetargeting = true;
             network.Consensus.RuleChangeActivationThreshold = 1916; // 95% of 2016
             network.Consensus.MinerConfirmationWindow = 2016; // nPowTargetTimespan / nPowTargetSpacing
-            network.Consensus.BIP9Deployments[BIP9Deployments.TestDummy] = new BIP9DeploymentsParameters(28, 1199145601, 1230767999);
-            network.Consensus.BIP9Deployments[BIP9Deployments.CSV] = new BIP9DeploymentsParameters(0, 1462060800, 1493596800);
-            network.Consensus.BIP9Deployments[BIP9Deployments.Segwit] = new BIP9DeploymentsParameters(1, 0, 0);
             network.Consensus.LastPOWBlock = 12500;
             network.Consensus.IsProofOfStake = true;
             network.Consensus.ConsensusFactory = new PosConsensusFactory() { Consensus = network.Consensus };
