@@ -124,7 +124,7 @@ namespace Stratis.SmartContracts.Tools.Sct.Deployment
 
             if (response.Success)
             {
-                console.WriteLine("Deployment Success!");
+                console.WriteLine("Contract creation transaction successful!");
                 console.WriteLine($"Contract Address: {response.ContractAddress}");
                 return;
             }
