@@ -39,5 +39,16 @@ namespace Stratis.Bitcoin.Utilities.Extensions
         {
             return !source.Any();
         }
+
+        /// <summary>
+        /// An extension that will check if an <see cref="IList{T}"/> is empty.
+        /// </summary>
+        /// <typeparam name="TSource">The type of enumerable.</typeparam>
+        /// <param name="source">The enumerable to check.</param>
+        /// <returns><o>True</o> if empty otherwise <o>False</o>.</returns>
+        public static bool Empty<TSource>(this IList<TSource> source)
+        {
+            return source.Count == 0;
+        }
     }
 }
