@@ -37,7 +37,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <inheritdoc />
         public BufferBlock<IList<Block>> BlockListBuffer { get; }
 
-        private readonly IList<uint256> hashblocks = new List<uint256>();
+        private readonly IList<uint256> hashBlocks = new List<uint256>();
         private readonly IList<Block> blocksReceived = new List<Block>();
 
         public WalletSyncManager(ILoggerFactory loggerFactory, IWalletManager walletManager, ConcurrentChain chain,
@@ -112,7 +112,7 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             if (this.blocksReceived.Count >= 50)
             {
-                target.Post(this.blocksReceived);                
+                target.Post(this.blocksReceived);
             }
         }
 
@@ -121,11 +121,11 @@ namespace Stratis.Bitcoin.Features.Wallet
         {
             while (await source.OutputAvailableAsync())
             {
-                var blocks = source.Receive();
+                IList<Block> blocks = source.Receive();
 
                 foreach(var block in blocks)
                 {
-                    ProcessBlock(block);
+                    this.ProcessBlock(block);
                 }
 
                 this.blocksReceived.Clear();
@@ -135,9 +135,9 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <inheritdoc />
         public void ProducerConsumerProcessBlock(Block block)
         {
-            ConsumeAsync(this.BlockListBuffer).GetAwaiter().GetResult();
+            this.ConsumeAsync(this.BlockListBuffer).GetAwaiter().GetResult();
 
-            Produce(this.BlockListBuffer, block);
+            this.Produce(this.BlockListBuffer, block);
         }
 
         /// <inheritdoc />
@@ -204,7 +204,7 @@ namespace Stratis.Bitcoin.Features.Wallet
 
                         next = newTip.GetAncestor(next.Height + 1);
 
-                        ProcessBlockInBatches(next, token);
+                        this.ProcessBlockInBatches(next, token);
                     }
                 }
                 else
@@ -226,29 +226,6 @@ namespace Stratis.Bitcoin.Features.Wallet
             this.walletManager.ProcessBlock(block, newTip);
 
             this.logger.LogTrace("(-)");
-        }
-
-        private void ProcessBlockInBatches(ChainedHeader blockHeader, CancellationToken token)
-        {
-            this.hashblocks.Add(blockHeader.HashBlock);
-
-            if (this.hashblocks.Count >= 50)
-            {
-                List<Block> blocks = this.blockStoreCache.GetBlockAsync(this.hashblocks.ToList()).GetAwaiter().GetResult();
-
-                foreach (var block in blocks)
-                {
-                    token.ThrowIfCancellationRequested();
-
-                    ChainedHeader blockChainedHeader = this.chain.GetBlock(block.GetHash());
-
-                    this.walletTip = blockChainedHeader;
-
-                    this.walletManager.ProcessBlock(block, blockChainedHeader);
-                }
-
-                this.hashblocks.Clear();
-            }
         }
 
         /// <inheritdoc />
@@ -284,6 +261,33 @@ namespace Stratis.Bitcoin.Features.Wallet
             this.walletManager.WalletTipHash = chainedHeader.HashBlock;
 
             this.logger.LogTrace("(-)");
+        }
+
+        /// <summary>
+        /// Builds a list of Chain headers to be processed in batches of 50.
+        /// </summary>
+        /// <param name="blockHeader"></param>
+        /// <param name="token"></param>
+        private void ProcessBlockInBatches(ChainedHeader blockHeader, CancellationToken token)
+        {
+            this.hashBlocks.Add(blockHeader.HashBlock);
+
+            if (this.hashBlocks.Count < 50) return;
+
+            List<Block> blocks = this.blockStoreCache.GetBlockAsync(this.hashBlocks.ToList()).GetAwaiter().GetResult();
+
+            foreach (var block in blocks)
+            {
+                token.ThrowIfCancellationRequested();
+
+                ChainedHeader blockChainedHeader = this.chain.GetBlock(block.GetHash());
+
+                this.walletTip = blockChainedHeader;
+
+                this.walletManager.ProcessBlock(block, blockChainedHeader);
+            }
+
+            this.hashBlocks.Clear();
         }
     }
 }

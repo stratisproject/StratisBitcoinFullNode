@@ -25,6 +25,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Interfaces
         /// Processes a new block.
         /// </summary>
         /// <param name="block"></param>
+        /// <param name="useProducerConsumer">Will use the Producer/Consumer pattern to process Blocks</param>
         void ProcessBlock(Block block, bool useProducerConsumer = false);
   
         /// <summary>
