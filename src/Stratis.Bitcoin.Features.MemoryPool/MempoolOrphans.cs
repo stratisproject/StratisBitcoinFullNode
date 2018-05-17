@@ -74,7 +74,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <param name="chain">Thread safe access to the best chain of block headers (that the node is aware of) from genesis.</param>
         /// <param name="signals">Node notifications available to subscribe to.</param>
         /// <param name="validator">Memory pool validator for validating transactions.</param>
-        /// <param name="consensusValidator">Proof of work consensus validator used for validating orphan transactions.</param>
         /// <param name="coinView">Coin view of the memory pool.</param>
         /// <param name="dateTimeProvider">Date and time information provider.</param>
         /// <param name="mempoolSettings">Settings from the memory pool.</param>
@@ -127,8 +126,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             /// <summary>The time when this orphan transaction will expire.</summary>
             public long TimeExpire;
         }
-
-;
 
         /// <summary>
         /// Gets a list of all the orphan transactions.
@@ -431,7 +428,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                 if (erased > 0)
                     this.mempoolLogger.LogInformation($"Erased {erased} orphan tx from peer {peer}");
 
-                //return true;
             }).Unwrap();
         }
     }
