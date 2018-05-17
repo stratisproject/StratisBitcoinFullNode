@@ -33,8 +33,8 @@ namespace Stratis.Bitcoin.Controllers.Models
         /// <summary>The height of the consensus.</summary>
         public int ConsensusHeight { get; set; }
 
-        /// <summary>Height of the highestfull block in persistent storage.</summary>
-        /// <see cref="Stratis.Bitcoin.Features.BlockRepository.HighestPersistedBlock.Height"/>
+        /// <summary>Height of the most recent block in persistent storage.</summary>
+        /// <seealso cref="Stratis.Bitcoin.Features.BlockRepository.HighestPersistedBlock.Height"/>
         public int BlockStoreHeight { get; set; }
 
         /// <summary>A collection of inbound peers.</summary>
