@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -36,7 +37,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Transactions
         }
         protected override void BeforeTest()
         {
-            this.builder = NodeBuilder.Create(caller: this.CurrentTest.DisplayName);
+            this.builder = NodeBuilder.Create(Path.Combine(this.GetType().Name, this.CurrentTest.DisplayName));
         }
 
         protected override void AfterTest()

@@ -32,7 +32,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         [Fact]
         public void AddToMempool()
         {
-            using (NodeBuilder builder = NodeBuilder.Create())
+            using (NodeBuilder builder = NodeBuilder.Create(this))
             {
                 var stratisNodeSync = builder.CreateStratisPowNode();
                 builder.StartAll();
@@ -61,7 +61,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         [Fact]
         public void AddToMempoolTrxSpendingTwoOutputFromSameTrx()
         {
-            using (NodeBuilder builder = NodeBuilder.Create())
+            using (NodeBuilder builder = NodeBuilder.Create(this))
             {
                 var stratisNodeSync = builder.CreateStratisPowNode();
                 builder.StartAll();
@@ -104,7 +104,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         [Fact]
         public void MempoolReceiveFromManyNodes()
         {
-            using (NodeBuilder builder = NodeBuilder.Create())
+            using (NodeBuilder builder = NodeBuilder.Create(this))
             {
                 var stratisNodeSync = builder.CreateStratisPowNode();
                 builder.StartAll();
@@ -142,7 +142,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         [Fact]
         public void TxMempoolBlockDoublespend()
         {
-            using (NodeBuilder builder = NodeBuilder.Create())
+            using (NodeBuilder builder = NodeBuilder.Create(this))
             {
                 var stratisNodeSync = builder.CreateStratisPowNode();
                 builder.StartAll();
@@ -217,7 +217,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 return new uint256(randByte);
             };
 
-            using (NodeBuilder builder = NodeBuilder.Create())
+            using (NodeBuilder builder = NodeBuilder.Create(this))
             {
                 var stratisNode = builder.CreateStratisPowNode();
                 builder.StartAll();
@@ -284,7 +284,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         [Fact]
         public void MempoolAddNodeWithOrphans()
         {
-            using (NodeBuilder builder = NodeBuilder.Create())
+            using (NodeBuilder builder = NodeBuilder.Create(this))
             {
                 var stratisNodeSync = builder.CreateStratisPowNode();
                 builder.StartAll();
@@ -326,7 +326,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         [Fact]
         public void MempoolSyncTransactions()
         {
-            using (NodeBuilder builder = NodeBuilder.Create())
+            using (NodeBuilder builder = NodeBuilder.Create(this))
             {
                 var stratisNodeSync = builder.CreateStratisPowNode();
                 var stratisNode1 = builder.CreateStratisPowNode();

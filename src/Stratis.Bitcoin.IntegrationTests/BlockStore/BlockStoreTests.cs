@@ -6,6 +6,7 @@ using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers;
+using Stratis.Bitcoin.Tests.Common;
 using Stratis.Bitcoin.Utilities;
 using Xunit;
 
@@ -26,121 +27,69 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
             serializer.Initialize(Network.Main);
         }
 
-        private void BlockRepositoryBench()
-        {
-            using (var dir = TestDirectory.Create())
-            {
-                using (var blockRepo = new BlockRepository(Network.Main, dir.FolderName, DateTimeProvider.Default, this.loggerFactory))
-                {
-                    var lst = new List<Block>();
-                    for (int i = 0; i < 30; i++)
-                    {
-                        // roughly 1mb blocks
-                        var block = new Block();
-                        for (int j = 0; j < 3000; j++)
-                        {
-                            var trx = new Transaction();
-                            block.AddTransaction(new Transaction());
-                            trx.AddInput(new TxIn(Script.Empty));
-                            trx.AddOutput(Money.COIN + j + i, new Script(Guid.NewGuid().ToByteArray()
-                                .Concat(Guid.NewGuid().ToByteArray())
-                                .Concat(Guid.NewGuid().ToByteArray())
-                                .Concat(Guid.NewGuid().ToByteArray())
-                                .Concat(Guid.NewGuid().ToByteArray())
-                                .Concat(Guid.NewGuid().ToByteArray())));
-                            trx.AddInput(new TxIn(Script.Empty));
-                            trx.AddOutput(Money.COIN + j + i + 1, new Script(Guid.NewGuid().ToByteArray()
-                                .Concat(Guid.NewGuid().ToByteArray())
-                                .Concat(Guid.NewGuid().ToByteArray())
-                                .Concat(Guid.NewGuid().ToByteArray())
-                                .Concat(Guid.NewGuid().ToByteArray())
-                                .Concat(Guid.NewGuid().ToByteArray())));
-                            block.AddTransaction(trx);
-                        }
-                        block.UpdateMerkleRoot();
-                        block.Header.HashPrevBlock = lst.Any() ? lst.Last().GetHash() : Network.Main.GenesisHash;
-                        lst.Add(block);
-                    }
-
-                    Stopwatch stopwatch = new Stopwatch();
-                    stopwatch.Start();
-                    blockRepo.PutAsync(lst.Last().GetHash(), lst).GetAwaiter().GetResult();
-                    var first = stopwatch.ElapsedMilliseconds;
-                    blockRepo.PutAsync(lst.Last().GetHash(), lst).GetAwaiter().GetResult();
-                    var second = stopwatch.ElapsedMilliseconds;
-                }
-            }
-        }
-
         [Fact]
         public void BlockRepositoryPutBatch()
         {
-            using (var dir = TestDirectory.Create())
+            using (var blockRepo = new BlockRepository(Network.Main, TestBase.CreateDataFolder(this), DateTimeProvider.Default, this.loggerFactory))
             {
-                using (var blockRepo = new BlockRepository(Network.Main, dir.FolderName, DateTimeProvider.Default, this.loggerFactory))
+                blockRepo.SetTxIndexAsync(true).Wait();
+
+                var lst = new List<Block>();
+                for (int i = 0; i < 5; i++)
                 {
-                    blockRepo.SetTxIndexAsync(true).Wait();
-
-                    var lst = new List<Block>();
-                    for (int i = 0; i < 5; i++)
-                    {
-                        // put
-                        var block = new Block();
-                        block.AddTransaction(new Transaction());
-                        block.AddTransaction(new Transaction());
-                        block.Transactions[0].AddInput(new TxIn(Script.Empty));
-                        block.Transactions[0].AddOutput(Money.COIN + i * 2, Script.Empty);
-                        block.Transactions[1].AddInput(new TxIn(Script.Empty));
-                        block.Transactions[1].AddOutput(Money.COIN + i * 2 + 1, Script.Empty);
-                        block.UpdateMerkleRoot();
-                        block.Header.HashPrevBlock = lst.Any() ? lst.Last().GetHash() : Network.Main.GenesisHash;
-                        lst.Add(block);
-                    }
-
-                    blockRepo.PutAsync(lst.Last().GetHash(), lst).GetAwaiter().GetResult();
-
-                    // check each block
-                    foreach (var block in lst)
-                    {
-                        var received = blockRepo.GetAsync(block.GetHash()).GetAwaiter().GetResult();
-                        Assert.True(block.ToBytes().SequenceEqual(received.ToBytes()));
-
-                        foreach (var transaction in block.Transactions)
-                        {
-                            var trx = blockRepo.GetTrxAsync(transaction.GetHash()).GetAwaiter().GetResult();
-                            Assert.True(trx.ToBytes().SequenceEqual(transaction.ToBytes()));
-                        }
-                    }
-
-                    // delete
-                    blockRepo.DeleteAsync(lst.ElementAt(2).GetHash(), new[] { lst.ElementAt(2).GetHash() }.ToList()).GetAwaiter().GetResult();
-                    var deleted = blockRepo.GetAsync(lst.ElementAt(2).GetHash()).GetAwaiter().GetResult();
-                    Assert.Null(deleted);
+                    // put
+                    var block = new Block();
+                    block.AddTransaction(new Transaction());
+                    block.AddTransaction(new Transaction());
+                    block.Transactions[0].AddInput(new TxIn(Script.Empty));
+                    block.Transactions[0].AddOutput(Money.COIN + i * 2, Script.Empty);
+                    block.Transactions[1].AddInput(new TxIn(Script.Empty));
+                    block.Transactions[1].AddOutput(Money.COIN + i * 2 + 1, Script.Empty);
+                    block.UpdateMerkleRoot();
+                    block.Header.HashPrevBlock = lst.Any() ? lst.Last().GetHash() : Network.Main.GenesisHash;
+                    lst.Add(block);
                 }
+
+                blockRepo.PutAsync(lst.Last().GetHash(), lst).GetAwaiter().GetResult();
+
+                // check each block
+                foreach (var block in lst)
+                {
+                    var received = blockRepo.GetAsync(block.GetHash()).GetAwaiter().GetResult();
+                    Assert.True(block.ToBytes().SequenceEqual(received.ToBytes()));
+
+                    foreach (var transaction in block.Transactions)
+                    {
+                        var trx = blockRepo.GetTrxAsync(transaction.GetHash()).GetAwaiter().GetResult();
+                        Assert.True(trx.ToBytes().SequenceEqual(transaction.ToBytes()));
+                    }
+                }
+
+                // delete
+                blockRepo.DeleteAsync(lst.ElementAt(2).GetHash(), new[] { lst.ElementAt(2).GetHash() }.ToList()).GetAwaiter().GetResult();
+                var deleted = blockRepo.GetAsync(lst.ElementAt(2).GetHash()).GetAwaiter().GetResult();
+                Assert.Null(deleted);
             }
         }
 
         [Fact]
         public void BlockRepositoryBlockHash()
         {
-            using (var dir = TestDirectory.Create())
+            using (var blockRepo = new BlockRepository(Network.Main, TestBase.CreateDataFolder(this), DateTimeProvider.Default, this.loggerFactory))
             {
-                using (var blockRepo = new BlockRepository(Network.Main, dir.FolderName, DateTimeProvider.Default, this.loggerFactory))
-                {
-                    blockRepo.InitializeAsync().GetAwaiter().GetResult();
+                blockRepo.InitializeAsync().GetAwaiter().GetResult();
 
-                    Assert.Equal(Network.Main.GenesisHash, blockRepo.BlockHash);
-                    var hash = new Block().GetHash();
-                    blockRepo.SetBlockHashAsync(hash).GetAwaiter().GetResult();
-                    Assert.Equal(hash, blockRepo.BlockHash);
-                }
+                Assert.Equal(Network.Main.GenesisHash, blockRepo.BlockHash);
+                var hash = new Block().GetHash();
+                blockRepo.SetBlockHashAsync(hash).GetAwaiter().GetResult();
+                Assert.Equal(hash, blockRepo.BlockHash);
             }
         }
 
         [Fact]
         public void BlockBroadcastInv()
         {
-            using (NodeBuilder builder = NodeBuilder.Create())
+            using (NodeBuilder builder = NodeBuilder.Create(this))
             {
                 var stratisNodeSync = builder.CreateStratisPowNode();
                 var stratisNode1 = builder.CreateStratisPowNode();
@@ -182,7 +131,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
         [Fact]
         public void BlockStoreCanRecoverOnStartup()
         {
-            using (NodeBuilder builder = NodeBuilder.Create())
+            using (NodeBuilder builder = NodeBuilder.Create(this))
             {
                 var stratisNodeSync = builder.CreateStratisPowNode();
                 builder.StartAll();
@@ -214,7 +163,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
         [Fact]
         public void BlockStoreCanReorg()
         {
-            using (NodeBuilder builder = NodeBuilder.Create())
+            using (NodeBuilder builder = NodeBuilder.Create(this))
             {
                 var stratisNodeSync = builder.CreateStratisPowNode();
                 var stratisNode1 = builder.CreateStratisPowNode();
@@ -267,7 +216,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
         [Fact]
         public void BlockStoreIndexTx()
         {
-            using (NodeBuilder builder = NodeBuilder.Create())
+            using (NodeBuilder builder = NodeBuilder.Create(this))
             {
                 var stratisNode1 = builder.CreateStratisPowNode();
                 var stratisNode2 = builder.CreateStratisPowNode();

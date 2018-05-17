@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using FluentAssertions;
 using NBitcoin;
@@ -40,7 +41,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         public ProofOfStakeSteps(string displayName) 
         {
             this.sharedSteps = new SharedSteps();
-            this.nodeGroupBuilder = new NodeGroupBuilder(displayName);
+            this.nodeGroupBuilder = new NodeGroupBuilder(Path.Combine(this.GetType().Name, displayName));
         }
 
         public void GenerateCoins()

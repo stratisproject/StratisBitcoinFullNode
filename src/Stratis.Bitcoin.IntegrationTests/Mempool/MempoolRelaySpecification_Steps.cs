@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System.IO;
+using System.Linq;
 using FluentAssertions;
 using FluentAssertions.Common;
 using NBitcoin;
@@ -25,7 +26,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Mempool
 
         protected override void BeforeTest()
         {
-            this.nodeBuilder = NodeBuilder.Create(caller: this.CurrentTest.DisplayName);
+            this.nodeBuilder = NodeBuilder.Create(Path.Combine(this.GetType().Name, this.CurrentTest.DisplayName));
         }
 
         protected override void AfterTest()

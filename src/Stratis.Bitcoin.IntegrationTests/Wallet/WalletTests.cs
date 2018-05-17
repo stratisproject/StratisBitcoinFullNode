@@ -19,7 +19,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         [Fact]
         public void WalletCanReceiveAndSendCorrectly()
         {
-            using (NodeBuilder builder = NodeBuilder.Create())
+            using (NodeBuilder builder = NodeBuilder.Create(this))
             {
                 var stratisSender = builder.CreateStratisPowNode();
                 var stratisReceiver = builder.CreateStratisPowNode();
@@ -83,7 +83,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         [Fact]
         public void CanMineAndSendToAddress()
         {
-            using (NodeBuilder builder = NodeBuilder.Create())
+            using (NodeBuilder builder = NodeBuilder.Create(this))
             {
                 CoreNode stratisNodeSync = builder.CreateStratisPowNode();
                 builder.StartAll();
@@ -112,7 +112,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             // connected to a longer chain that couse a reorg back so the second trasnaction is undone
             // mine the second transaction back in to the main chain
 
-            using (NodeBuilder builder = NodeBuilder.Create())
+            using (NodeBuilder builder = NodeBuilder.Create(this))
             {
                 var stratisSender = builder.CreateStratisPowNode();
                 var stratisReceiver = builder.CreateStratisPowNode();
@@ -265,7 +265,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         [Fact]
         public void Given_TheNodeHadAReorg_And_WalletTipIsBehindConsensusTip_When_ANewBlockArrives_Then_WalletCanRecover()
         {
-            using (NodeBuilder builder = NodeBuilder.Create())
+            using (NodeBuilder builder = NodeBuilder.Create(this))
             {
                 var stratisSender = builder.CreateStratisPowNode();
                 var stratisReceiver = builder.CreateStratisPowNode();
@@ -327,7 +327,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         [Fact]
         public void Given_TheNodeHadAReorg_And_ConensusTipIsdifferentFromWalletTip_When_ANewBlockArrives_Then_WalletCanRecover()
         {
-            using (NodeBuilder builder = NodeBuilder.Create())
+            using (NodeBuilder builder = NodeBuilder.Create(this))
             {
                 var stratisSender = builder.CreateStratisPowNode();
                 var stratisReceiver = builder.CreateStratisPowNode();
@@ -387,7 +387,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         [Fact]
         public void WalletCanCatchupWithBestChain()
         {
-            using (NodeBuilder builder = NodeBuilder.Create())
+            using (NodeBuilder builder = NodeBuilder.Create(this))
             {
                 var stratisminer = builder.CreateStratisPowNode();
 
@@ -418,7 +418,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         [Fact]
         public void WalletCanRecoverOnStartup()
         {
-            using (NodeBuilder builder = NodeBuilder.Create())
+            using (NodeBuilder builder = NodeBuilder.Create(this))
             {
                 var stratisNodeSync = builder.CreateStratisPowNode();
                 builder.StartAll();

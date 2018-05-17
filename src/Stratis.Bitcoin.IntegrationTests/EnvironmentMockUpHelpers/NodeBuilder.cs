@@ -17,6 +17,7 @@ using Stratis.Bitcoin.Features.Consensus.Interfaces;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
+using Stratis.Bitcoin.Tests.Common;
 
 namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
 {
@@ -108,12 +109,18 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
             this.BitcoinD = bitcoindPath;
         }
 
-        public static NodeBuilder Create([CallerMemberName] string caller = null, string version = "0.13.1")
+        public static NodeBuilder Create(object caller, [CallerMemberName] string callingMethod = null, string version = "0.13.1")
         {
             KillAnyBitcoinInstances();
-            caller = Path.Combine("TestData", caller);
-            CreateTestFolder(caller);
-            return new NodeBuilder(caller, DownloadBitcoinCore(version));
+            var testFolderPath = TestBase.CreateTestDir(caller, callingMethod);
+            return new NodeBuilder(testFolderPath, DownloadBitcoinCore(version));
+        }
+
+        public static NodeBuilder Create(string testDirectory, string version = "0.13.1")
+        {
+            KillAnyBitcoinInstances();
+            var testFolderPath = TestBase.CreateTestDir(testDirectory);
+            return new NodeBuilder(testFolderPath, DownloadBitcoinCore(version));
         }
 
         private static string DownloadBitcoinCore(string version)
@@ -123,6 +130,8 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
             {
                 return version;
             }
+
+            Directory.CreateDirectory("TestData");
 
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
@@ -244,40 +253,6 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
                     Thread.Sleep(1000);
                 }
             }
-        }
-
-        internal static void CreateTestFolder(string folderName)
-        {
-            var deleteAttempts = 0;
-            while (deleteAttempts < 50)
-            {
-                if (Directory.Exists(folderName))
-                {
-                    try
-                    {
-                        Directory.Delete(folderName, true);
-                        break;
-                    }
-                    catch
-                    {
-                        deleteAttempts++;
-                        Thread.Sleep(200);
-                    }
-                }
-                else
-                    break;
-            }
-
-            if (deleteAttempts >= 50)
-                throw new Exception(string.Format("The test folder: {0} could not be created.", folderName));
-
-            Directory.CreateDirectory(folderName);
-        }
-
-        internal static void CreateDataFolder(string dataFolder)
-        {
-            if (!Directory.Exists(dataFolder))
-                Directory.CreateDirectory(dataFolder);
         }
     }
 }

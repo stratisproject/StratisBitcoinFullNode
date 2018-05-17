@@ -13,7 +13,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         [Fact]
         public void NodesCanConnectToEachOthers()
         {
-            using (NodeBuilder builder = NodeBuilder.Create())
+            using (NodeBuilder builder = NodeBuilder.Create(this))
             {
                 var node1 = builder.CreateStratisPowNode();
                 var node2 = builder.CreateStratisPowNode();
@@ -37,7 +37,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         [Fact]
         public void CanStratisSyncFromCore()
         {
-            using (NodeBuilder builder = NodeBuilder.Create())
+            using (NodeBuilder builder = NodeBuilder.Create(this))
             {
                 var stratisNode = builder.CreateStratisPowNode();
                 var coreNode = builder.CreateBitcoinCoreNode();
@@ -66,7 +66,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         [Fact]
         public void CanStratisSyncFromStratis()
         {
-            using (NodeBuilder builder = NodeBuilder.Create())
+            using (NodeBuilder builder = NodeBuilder.Create(this))
             {
                 var stratisNode = builder.CreateStratisPowNode();
                 var stratisNodeSync = builder.CreateStratisPowNode();
@@ -98,7 +98,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         [Fact]
         public void CanCoreSyncFromStratis()
         {
-            using (NodeBuilder builder = NodeBuilder.Create())
+            using (NodeBuilder builder = NodeBuilder.Create(this))
             {
                 var stratisNode = builder.CreateStratisPowNode();
                 var coreNodeSync = builder.CreateBitcoinCoreNode();
@@ -133,7 +133,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             // Temporary fix so the Network static initialize will not break.
             var m = Network.Main;
-            using (NodeBuilder builder = NodeBuilder.Create())
+            using (NodeBuilder builder = NodeBuilder.Create(this))
             {
                 var stratisMiner = builder.CreateStratisPosNode();
                 var stratisSyncer = builder.CreateStratisPosNode();
@@ -219,7 +219,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             // Temporary fix so the Network static initialize will not break.
             var m = Network.Main;
-            using (NodeBuilder builder = NodeBuilder.Create())
+            using (NodeBuilder builder = NodeBuilder.Create(this))
             {
                 // This represents local node.
                 var stratisMinerLocal = builder.CreateStratisPosNode();
@@ -279,7 +279,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         [Fact]
         public void MiningNodeWithOneConnectionAlwaysSynced()
         {
-            NetworkSimulator simulator = new NetworkSimulator();
+            NetworkSimulator simulator = new NetworkSimulator(this);
 
             simulator.Initialize(4);
 

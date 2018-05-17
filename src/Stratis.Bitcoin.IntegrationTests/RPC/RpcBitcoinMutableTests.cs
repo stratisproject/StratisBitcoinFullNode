@@ -17,7 +17,7 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
         [Fact]
         public void GetRawMemPoolWithValidTxThenReturnsSameTx()
         {
-            using (NodeBuilder builder = NodeBuilder.Create())
+            using (NodeBuilder builder = NodeBuilder.Create(this))
             {
                 CoreNode node = builder.CreateBitcoinCoreNode();
                 builder.StartAll();
@@ -40,7 +40,7 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
         [Fact]
         public void AddNodeWithValidNodeThenExecutesSuccessfully()
         {
-            using (NodeBuilder builder = NodeBuilder.Create())
+            using (NodeBuilder builder = NodeBuilder.Create(this))
             {
                 CoreNode nodeA = builder.CreateBitcoinCoreNode();
                 CoreNode nodeB = builder.CreateBitcoinCoreNode();

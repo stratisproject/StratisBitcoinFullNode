@@ -118,8 +118,8 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
 
         public void Start()
         {
-            NodeBuilder.CreateDataFolder(this.runner.DataFolder);
-
+            Directory.CreateDirectory(this.runner.DataFolder);
+            
             var config = new NodeConfigParameters();
             config.Add("regtest", "1");
             config.Add("rest", "1");
