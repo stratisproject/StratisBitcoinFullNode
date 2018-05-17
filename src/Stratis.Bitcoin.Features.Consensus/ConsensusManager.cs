@@ -32,8 +32,8 @@ namespace Stratis.Bitcoin.Features.Consensus
             var powCoinviewRule = this.ConsensusLoop.ConsensusRules.GetRule<PowCoinviewRule>();
             if ((powCoinviewRule.ConsensusParams != null) && (this.ConsensusLoop?.Tip != null))
                 return this.ConsensusLoop?.Tip?.GetWorkRequired(powCoinviewRule.ConsensusParams);
-            else
-                return null;
+
+            return null;
         }
 
         /// <inheritdoc />
