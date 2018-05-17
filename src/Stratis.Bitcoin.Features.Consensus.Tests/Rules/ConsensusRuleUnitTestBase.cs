@@ -30,6 +30,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
         protected List<ConsensusRule> ruleRegistrations;
         protected Mock<IRuleRegistration> ruleRegistration;
         protected RuleContext ruleContext;
+        protected Transaction lastAddedTransaction;
 
         protected ConsensusRuleUnitTestBase(Network network)
         {
@@ -56,20 +57,27 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
             };
         }
 
-        protected static void AddBlocksToChain(ConcurrentChain chain, int blockAmount)
+        protected void AddBlocksToChain(ConcurrentChain chain, int blockAmount)
         {
             var nonce = RandomUtils.GetUInt32();
             var prevBlockHash = chain.Tip.HashBlock;
+
+            this.ruleContext.Set = new UnspentOutputSet();
+            this.ruleContext.Set.SetCoins(new UnspentOutputs[0]);
+
             for (var i = 0; i < blockAmount; i++)
             {
                 var block = chain.Network.Consensus.ConsensusFactory.CreateBlock();
-                block.AddTransaction(chain.Network.Consensus.ConsensusFactory.CreateTransaction());
+                Transaction transaction = chain.Network.Consensus.ConsensusFactory.CreateTransaction();
+                block.AddTransaction(transaction);
                 block.UpdateMerkleRoot();
                 block.Header.BlockTime = new DateTimeOffset(new DateTime(2017, 1, 1, 0, 0, 0, DateTimeKind.Utc).AddDays(i));
                 block.Header.HashPrevBlock = prevBlockHash;
                 block.Header.Nonce = nonce;
                 chain.SetTip(block.Header);
                 prevBlockHash = block.GetHash();
+                this.ruleContext.Set.Update(transaction, i);
+                this.lastAddedTransaction = transaction;
             }
         }
     }

@@ -56,8 +56,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules
         /// <summary>
         /// Gets the consensus rule that is assignable to the supplied generic type.
         /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <returns></returns>
         T GetRule<T>() where T : ConsensusRule;
     }
 
