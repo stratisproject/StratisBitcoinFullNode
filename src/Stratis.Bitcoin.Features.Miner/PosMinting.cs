@@ -373,8 +373,6 @@ namespace Stratis.Bitcoin.Features.Miner
             this.targetReserveBalance = 0; // TOOD:settings.targetReserveBalance
             this.stakeProgressFlag = StakeNotInProgress;
 
-            //this.posConsensusValidator = consensusLoop.Validator as IPosConsensusValidator;
-
             this.rpcGetStakingInfoModel = new Miner.Models.GetStakingInfoModel();
         }
 
