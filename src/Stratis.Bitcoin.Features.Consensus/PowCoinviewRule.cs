@@ -453,39 +453,5 @@ namespace Stratis.Bitcoin.Features.Consensus
 
             return BlockMerkleRootRule.ComputeMerkleRoot(leaves, out mutated);
         }
-
-        /// <summary>
-        /// Gets index of the last coinbase transaction output with SegWit flag.
-        /// </summary>
-        /// <param name="block">Block which coinbase transaction's outputs will be checked for SegWit flags.</param>
-        /// <returns>
-        /// <c>-1</c> if no SegWit flags were found.
-        /// If SegWit flag is found index of the last transaction's output that has SegWit flag is returned.
-        /// </returns>
-        private int GetWitnessCommitmentIndex(Block block)
-        {
-            int commitpos = -1;
-            for (int i = 0; i < block.Transactions[0].Outputs.Count; i++)
-            {
-                var scriptPubKey = block.Transactions[0].Outputs[i].ScriptPubKey;
-
-                if (scriptPubKey.Length >= 38)
-                {
-                    byte[] scriptBytes = scriptPubKey.ToBytes(true);
-
-                    if ((scriptBytes[0] == (byte)OpcodeType.OP_RETURN) &&
-                        (scriptBytes[1] == 0x24) &&
-                        (scriptBytes[2] == 0xaa) &&
-                        (scriptBytes[3] == 0x21) &&
-                        (scriptBytes[4] == 0xa9) &&
-                        (scriptBytes[5] == 0xed))
-                    {
-                        commitpos = i;
-                    }
-                }
-            }
-
-            return commitpos;
-        }
     }
 }
