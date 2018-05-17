@@ -13,7 +13,7 @@ using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.BlockStore
 {
-    /// <summary>Ch
+    /// <summary>
     /// <see cref="IBlockRepository"/> is the interface to all the logics interacting with the blocks stored in the database.
     /// </summary>
     /// <seealso cref="System.IDisposable" />
