@@ -174,8 +174,6 @@ namespace Stratis.SmartContracts.Core.Backend
         /// <summary>
         /// Loads the Assembly bytecode into the current AppDomain
         /// </summary>
-        /// <param name="byteCode"></param>
-        /// <returns></returns>
         private static Type Load(byte[] byteCode)
         {
             Assembly contractAssembly = Assembly.Load(byteCode);

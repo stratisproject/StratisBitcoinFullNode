@@ -3,8 +3,6 @@ using System.IO;
 using System.Net.Http;
 using System.Threading.Tasks;
 using McMaster.Extensions.CommandLineUtils;
-using Stratis.SmartContracts.Core.Compilation;
-using Stratis.SmartContracts.Core.ContractValidation;
 using Stratis.SmartContracts.Core.Deployment;
 
 namespace Stratis.SmartContracts.Tools.Sct.Deployment
@@ -63,7 +61,9 @@ namespace Stratis.SmartContracts.Tools.Sct.Deployment
 
         private async Task<int> OnExecuteAsync(CommandLineApplication app, IConsole console)
         {
+            console.WriteLine();
             console.WriteLine("Smart Contract Deployer");
+            console.WriteLine();
 
             if (!File.Exists(this.InputFile))
             {
@@ -81,6 +81,7 @@ namespace Stratis.SmartContracts.Tools.Sct.Deployment
             }
 
             console.WriteLine($"Read {this.InputFile} OK");
+            console.WriteLine();
 
             if (string.IsNullOrWhiteSpace(source))
             {
@@ -88,13 +89,14 @@ namespace Stratis.SmartContracts.Tools.Sct.Deployment
                 return 1;
             }
 
-            if (!ValidateFile(this.InputFile, source, console, out SmartContractCompilationResult compilationResult))
-            {
-                console.WriteLine("Smart Contract failed validation. Run validate [FILE] for more info.");
+            ValidationServiceResult validationResult = new ValidatorService().Validate(this.InputFile, source, console, this.Params);
+            if (!validationResult.Success)
                 return 1;
-            }
+            else
+                console.WriteLine("Validation passed!");
 
-            await this.DeployAsync(compilationResult.Compilation, console);
+            await DeployAsync(validationResult.CompilationResult.Compilation, console);
+            console.WriteLine();
 
             return 1;
         }
@@ -132,40 +134,6 @@ namespace Stratis.SmartContracts.Tools.Sct.Deployment
             {
                 console.WriteLine(error);
             }
-        }
-
-        public static bool ValidateFile(string fileName, string source, IConsole console, out SmartContractCompilationResult compilationResult)
-        {
-            var determinismValidator = new SmartContractDeterminismValidator();
-            var formatValidator = new SmartContractFormatValidator();
-
-            console.WriteLine($"Compiling...");
-            compilationResult = SmartContractCompiler.Compile(source);
-
-            if (!compilationResult.Success)
-            {
-                console.WriteLine("Compilation failed!");
-            }
-
-            console.WriteLine($"Compilation OK");
-
-            byte[] compilation = compilationResult.Compilation;
-
-            console.WriteLine("Building ModuleDefinition");
-
-            SmartContractDecompilation decompilation = SmartContractDecompiler.GetModuleDefinition(compilation, new DotNetCoreAssemblyResolver());
-
-            console.WriteLine("ModuleDefinition built successfully");
-
-            console.WriteLine($"Validating file {fileName}...");
-
-            SmartContractValidationResult formatValidationResult = formatValidator.Validate(decompilation);
-
-            SmartContractValidationResult determinismValidationResult = determinismValidator.Validate(decompilation);
-
-            return compilationResult.Success
-                   && formatValidationResult.IsValid
-                   && determinismValidationResult.IsValid;
         }
     }
 }

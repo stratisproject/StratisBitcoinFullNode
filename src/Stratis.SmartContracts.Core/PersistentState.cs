@@ -1,7 +1,6 @@
 ﻿using System.Text;
 using NBitcoin;
 using Stratis.SmartContracts.Core.Serialization;
-using Stratis.SmartContracts.Core.State;
 
 namespace Stratis.SmartContracts.Core
 {

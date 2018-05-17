@@ -1,12 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using System.IO;
-using System.Text;
 using McMaster.Extensions.CommandLineUtils;
-using Stratis.SmartContracts.Core;
-using Stratis.SmartContracts.Core.Compilation;
-using Stratis.SmartContracts.Tools.Sct.Deployment;
 
 namespace Stratis.SmartContracts.Tools.Sct.Build
 {
@@ -14,20 +8,32 @@ namespace Stratis.SmartContracts.Tools.Sct.Build
     [HelpOption]
     class Builder
     {
-        [Argument(0, Description = "The file containing the source code of the smart contract to deploy",
+        [Argument(
+            0,
+            Description = "The file containing the source code of the smart contract to deploy",
             Name = "<File>")]
         [Required]
         [FileExists]
         public string InputFile { get; }
 
-        [Argument(1, Description = "The destination path",
+        [Argument(
+            1,
+            Description = "The destination path",
             Name = "<Path>")]
         [Required]
         public string OutputPath { get; }
 
+        [Option(
+            "-params|--params",
+            CommandOptionType.MultipleValue,
+            Description = "Params to be passed to the constructor when instantiating the contract")]
+        public string[] Params { get; }
+
         public int OnExecute(CommandLineApplication app, IConsole console)
         {
+            console.WriteLine();
             console.WriteLine("Smart Contract Deployer");
+            console.WriteLine();
 
             if (!File.Exists(this.InputFile))
             {
@@ -41,16 +47,16 @@ namespace Stratis.SmartContracts.Tools.Sct.Build
                 return 1;
             }
 
+            console.WriteLine($"Reading {this.InputFile}...");
+
             string source;
-
-            console.WriteLine($"Reading {this.InputFile}");
-
             using (var sr = new StreamReader(File.OpenRead(this.InputFile)))
             {
                 source = sr.ReadToEnd();
             }
 
-            console.WriteLine($"Read {this.InputFile} OK");
+            console.WriteLine($"Read {this.InputFile} OK!");
+            console.WriteLine();
 
             if (string.IsNullOrWhiteSpace(source))
             {
@@ -58,13 +64,14 @@ namespace Stratis.SmartContracts.Tools.Sct.Build
                 return 1;
             }
 
-            if (!Deployer.ValidateFile(this.InputFile, source, console, out SmartContractCompilationResult compilationResult))
-            {
-                console.WriteLine("Smart Contract failed validation. Run validate [FILE] for more info.");
+            ValidationServiceResult validationResult = new ValidatorService().Validate(this.InputFile, source, console, this.Params);
+            if (!validationResult.Success)
                 return 1;
-            }
+            else
+                console.WriteLine("Validation passed!");
 
-            this.WriteDll(compilationResult.Compilation);
+            this.WriteDll(validationResult.CompilationResult.Compilation);
+            console.WriteLine($"File {this.OutputPath} written.");
 
             return 1;
         }

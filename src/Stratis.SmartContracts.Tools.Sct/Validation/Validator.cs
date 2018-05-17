@@ -30,7 +30,9 @@ namespace Stratis.SmartContracts.Tools.Sct.Validation
                 return 1;
             }
 
+            Console.WriteLine();
             Console.WriteLine("Smart Contract Validator");
+            Console.WriteLine();
 
             var determinismValidator = new SmartContractDeterminismValidator();
             var formatValidator = new SmartContractFormatValidator();
@@ -55,10 +57,12 @@ namespace Stratis.SmartContracts.Tools.Sct.Validation
                 }
 
                 Console.WriteLine($"Read {file} OK");
+                Console.WriteLine();
 
                 if (string.IsNullOrWhiteSpace(source))
                 {
                     Console.WriteLine($"Empty file at {file}");
+                    Console.WriteLine();
                     continue;
                 }
 
@@ -80,6 +84,7 @@ namespace Stratis.SmartContracts.Tools.Sct.Validation
                 if (!compilationResult.Success)
                 {
                     Console.WriteLine("Compilation failed!");
+                    Console.WriteLine();
 
                     validationData.CompilationErrors
                         .AddRange(compilationResult
@@ -92,6 +97,7 @@ namespace Stratis.SmartContracts.Tools.Sct.Validation
                 validationData.CompilationBytes = compilationResult.Compilation;
 
                 Console.WriteLine($"Compilation OK");
+                Console.WriteLine();
 
                 byte[] compilation = compilationResult.Compilation;
 
@@ -100,8 +106,10 @@ namespace Stratis.SmartContracts.Tools.Sct.Validation
                 SmartContractDecompilation decompilation = SmartContractDecompiler.GetModuleDefinition(compilation, new DotNetCoreAssemblyResolver());
 
                 Console.WriteLine("ModuleDefinition built successfully");
+                Console.WriteLine();
 
                 Console.WriteLine($"Validating file {file}...");
+                Console.WriteLine();
 
                 SmartContractValidationResult formatValidationResult = formatValidator.Validate(decompilation);
 
