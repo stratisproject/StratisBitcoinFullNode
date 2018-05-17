@@ -231,9 +231,6 @@ namespace Stratis.Bitcoin.Features.Miner
         /// <summary>A manager providing operations on wallets.</summary>
         private readonly IWalletManager walletManager;
 
-        /// <summary>Provides value for PoS reward and checks PoS kernel.</summary>
-        //private readonly IPosConsensusValidator posConsensusValidator;
-
         /// <summary>Factory for creating loggers.</summary>
         private readonly ILoggerFactory loggerFactory;
 
