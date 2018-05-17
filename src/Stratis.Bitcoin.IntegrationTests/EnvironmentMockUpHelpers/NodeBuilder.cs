@@ -89,8 +89,6 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
 
     public class NodeBuilder : IDisposable
     {
-        public string BitcoinD { get; }
-
         public List<CoreNode> Nodes { get; }
 
         public NodeConfigParameters ConfigParameters { get; }
@@ -99,28 +97,27 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
 
         private string rootFolder;
 
-        public NodeBuilder(string rootFolder, string bitcoindPath)
+        public NodeBuilder(string rootFolder)
         {
             this.lastDataFolderIndex = 0;
             this.Nodes = new List<CoreNode>();
             this.ConfigParameters = new NodeConfigParameters();
 
             this.rootFolder = rootFolder;
-            this.BitcoinD = bitcoindPath;
         }
 
-        public static NodeBuilder Create(object caller, [CallerMemberName] string callingMethod = null, string version = "0.13.1")
+        public static NodeBuilder Create(object caller, [CallerMemberName] string callingMethod = null)
         {
             KillAnyBitcoinInstances();
             var testFolderPath = TestBase.CreateTestDir(caller, callingMethod);
-            return new NodeBuilder(testFolderPath, DownloadBitcoinCore(version));
+            return new NodeBuilder(testFolderPath);
         }
 
-        public static NodeBuilder Create(string testDirectory, string version = "0.13.1")
+        public static NodeBuilder Create(string testDirectory)
         {
             KillAnyBitcoinInstances();
             var testFolderPath = TestBase.CreateTestDir(testDirectory);
-            return new NodeBuilder(testFolderPath, DownloadBitcoinCore(version));
+            return new NodeBuilder(testFolderPath);
         }
 
         private static string DownloadBitcoinCore(string version)
@@ -182,9 +179,10 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
             return node;
         }
 
-        public CoreNode CreateBitcoinCoreNode(bool start = false)
+        public CoreNode CreateBitcoinCoreNode(bool start = false, string version = "0.13.1")
         {
-            return CreateNode(new BitcoinCoreRunner(this.GetNextDataFolderName(), this.BitcoinD), Network.RegTest, start);
+            string bitcoinDPath = DownloadBitcoinCore(version);
+            return CreateNode(new BitcoinCoreRunner(this.GetNextDataFolderName(), bitcoinDPath), Network.RegTest, start);
         }
 
         public CoreNode CreateStratisPowNode(bool start = false)

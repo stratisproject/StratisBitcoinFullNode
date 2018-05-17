@@ -14,9 +14,9 @@ namespace Stratis.Bitcoin.IntegrationTests
         [Fact]
         public void TestSegwit_MinedOnCore_ActivatedOn_StratisNode()
         {
-            using (NodeBuilder builder = NodeBuilder.Create(this, version: "0.15.1"))
+            using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                CoreNode coreNode = builder.CreateBitcoinCoreNode();
+                CoreNode coreNode = builder.CreateBitcoinCoreNode(version: "0.15.1");
 
                 coreNode.ConfigParameters.AddOrReplace("debug", "1");
                 coreNode.ConfigParameters.AddOrReplace("printtoconsole", "0");
