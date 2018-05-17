@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using NBitcoin;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.Consensus.Interfaces;
+using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Utilities;
 
