@@ -1103,9 +1103,8 @@ namespace Stratis.Bitcoin.Features.Miner
             ChainedHeader chainedBlock = this.chain.GetBlock(utxoStakeDescription.HashBlock);
 
             if (chainedBlock == null)
-                return -1;
+                return this.mempool.Exists(utxoStakeDescription.HashBlock) ? 0 : -1;
 
-            // TODO: Check if in memory pool then return 0.
             return this.chain.Tip.Height - chainedBlock.Height + 1;
         }
 
