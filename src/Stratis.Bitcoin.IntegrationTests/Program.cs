@@ -2,8 +2,10 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using Stratis.Bitcoin.IntegrationTests.Miners;
 using Stratis.Bitcoin.IntegrationTests.Wallet;
 using Xunit;
+using Xunit.Sdk;
 
 namespace Stratis.Bitcoin.IntegrationTests
 {
@@ -11,8 +13,10 @@ namespace Stratis.Bitcoin.IntegrationTests
     {
         public static void Main(string[] args)
         {
-            RunAllTestsOf<WalletTests>();
-            RunAllTestsOf<NodeSyncTests>();
+            new ProofOfStakeMintCoinsSpecification(new TestOutputHelper()).Staking_wallet_can_mint_new_coins();
+
+            //RunAllTestsOf<WalletTests>();
+            //RunAllTestsOf<NodeSyncTests>();
         }
 
         public static void RunAllTestsOf<T>()
