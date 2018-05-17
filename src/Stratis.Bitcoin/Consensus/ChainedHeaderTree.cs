@@ -77,11 +77,14 @@ namespace Stratis.Bitcoin.Consensus
         private readonly IChainedHeaderValidator chainedHeaderValidator;
         private readonly ILogger logger;
         private readonly ICheckpoints checkpoints;
-        private readonly ChainState chainState;
+        private readonly IChainState chainState;
         private readonly ConsensusSettings consensusSettings;
 
         private readonly Dictionary<uint256, HashSet<int>> peerTipsByHash;
         private readonly Dictionary<uint256, ChainedHeader> chainedHeadersByHash;
+
+        internal Dictionary<uint256, ChainedHeader> GetChainedHeadersByHash => this.chainedHeadersByHash;
+        internal Dictionary<uint256, HashSet<int>> GetPeerTipsByHash => this.peerTipsByHash;
 
         private readonly object lockObject;
 
@@ -90,7 +93,7 @@ namespace Stratis.Bitcoin.Consensus
             ILoggerFactory loggerFactory, 
             IChainedHeaderValidator chainedHeaderValidator, 
             ICheckpoints checkpoints, 
-            ChainState chainState, 
+            IChainState chainState, 
             ConsensusSettings consensusSettings)
         {
             this.network = network;
@@ -106,9 +109,25 @@ namespace Stratis.Bitcoin.Consensus
             this.lockObject = new object();
         }
 
+        public void Initialize(ChainedHeader chainedHeader)
+        {
+            ChainedHeader current = chainedHeader;
+            while (current.Previous != null)
+            {
+                current.Previous.Next.Add(current);
+                this.chainedHeadersByHash.Add(current.HashBlock, current);
+                current = current.Previous;
+            }
+
+            if (current.HashBlock != this.network.GenesisHash)
+            {
+                throw new ConsensusException();
+            }
+        }
+
         /// <summary>
         /// A new list of headers are presented from a given peer, the headers will try to be connected to the chain.
-        /// Headers that are interesting (i.e may extend our consensus tip) will marked to download there full bloocks.
+        /// Headers that are interesting (i.e may extend our consensus tip) will marked to download there full blocks.
         /// </summary>
         /// <remarks>
         /// The headers are assumed to be consecutive in order. 
@@ -127,15 +146,19 @@ namespace Stratis.Bitcoin.Consensus
             }
 
             this.CreateNewHeaders(headers, out List<ChainedHeader> newChainedHeaders);
-            
+
+            var oldTip = this.SetPeerTip(networkPeerId, headers.Last().GetHash());
+
+            if (oldTip != null)
+            {
+                this.RemoveChainClaim(networkPeerId, this.chainedHeadersByHash.TryGet(oldTip));
+            }
+
             if (newChainedHeaders.Empty())
             {
                 this.logger.LogTrace("(-)[NO_NEW_HEADER]");
                 return new ConnectedHeaders();
             }
-
-            var oldTip = this.SetAPeerTip(networkPeerId, newChainedHeaders.Last().HashBlock);
-            this.RemoveChainClaim(networkPeerId, this.chainedHeadersByHash.TryGet(oldTip));
 
             ChainedHeader bestTip = this.chainState.ConsensusTip;
             ChainedHeader earliestNewHeader = newChainedHeaders.First();
@@ -402,7 +425,7 @@ namespace Stratis.Bitcoin.Consensus
         /// <param name="networkPeerId">The peer id that sets a new tip.</param>
         /// <param name="newTip">The new tip to set.</param>
         /// <returns>The old tip.</returns>
-        private uint256 SetAPeerTip(int networkPeerId, uint256 newTip)
+        private uint256 SetPeerTip(int networkPeerId, uint256 newTip)
         {
             this.logger.LogTrace("({0}:'{1}',{0}:'{1}')", nameof(networkPeerId), networkPeerId, nameof(newTip), newTip);
 
