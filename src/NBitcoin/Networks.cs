@@ -642,7 +642,7 @@ namespace NBitcoin
             NetworkOptions.SetSmartContracts(true);
             network.consensus.NetworkOptions = NetworkOptions.TemporaryOptions;
 
-            network.magic = 0x0709110B;
+            network.magic = 0x0709110C; //Incremented 17/05
 
             network.alertPubKeyArray = DataEncoders.Encoders.Hex.DecodeData("04302390343f91cc401d56d68b123028bf52e5fca1939df127f63c6467cdf9c8e2c14b61104cf817d0b780da337893ecc4aaff1309e536162dabbdb45200ca2b0a");
             network.DefaultPort = 18333;
@@ -651,8 +651,8 @@ namespace NBitcoin
             // Modify the testnet genesis block so the timestamp is valid for a later start.
             network.genesis = CreateGenesisBlock(1296688602, 414098458, 0x1d00ffff, 1, Money.Coins(50m));
             network.genesis.Header.HashStateRoot = new uint256("21B463E3B52F6201C0AD6C991BE0485B6EF8C092E64583FFA655CC1B171FE856");
+            network.genesis.Header.Nonce = 1;
             network.consensus.HashGenesisBlock = network.genesis.GetHash();
-            Assert(network.consensus.HashGenesisBlock == uint256.Parse("2cdaa49c236b7a277d01eed518b39bccfdf59e027e694e4e9b30dc7e925b246e"));
 
             network.fixedSeeds.Clear();
             network.seeds.Clear();

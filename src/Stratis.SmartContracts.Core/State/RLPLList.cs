@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using Nethereum.RLP;
 
 namespace Stratis.SmartContracts.Core.State
@@ -135,6 +136,7 @@ namespace Stratis.SmartContracts.Core.State
                     int lenlen = prefix - OFFSET_LONG_ITEM; // length of length the encoded bytes
                     byte[] copy = new byte[lenlen];
                     Array.Copy(data, pos + 1, copy,0, lenlen);
+                    copy = copy.Reverse().ToArray();
                     copy = PadBytesForInt(copy);
                     int lenbytes =  BitConverter.ToInt32(copy, 0); // length of encoded bytes
                     ret.Add(pos + 1 + lenlen, lenbytes, false);
@@ -151,6 +153,7 @@ namespace Stratis.SmartContracts.Core.State
                     int lenlen = prefix - OFFSET_LONG_LIST; // length of length the encoded list
                     byte[] copy = new byte[lenlen];
                     Array.Copy(data, pos + 1, copy, 0, lenlen);
+                    copy = copy.Reverse().ToArray();
                     copy = PadBytesForInt(copy);
                     int lenlist = BitConverter.ToInt32(copy, 0); // length of encoded bytes
                     ret.Add(pos + 1 + lenlen, lenlist, true);
