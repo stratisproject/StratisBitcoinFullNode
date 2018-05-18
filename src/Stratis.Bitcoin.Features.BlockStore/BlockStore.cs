@@ -204,7 +204,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
                 if (saveBatch)
                 {
-                    if (batch.Count == 0)
+                    if (batch.Count != 0)
                     {
                         await this.SaveBatchAsync(batch).ConfigureAwait(false);
 
@@ -285,6 +285,6 @@ namespace Stratis.Bitcoin.Features.BlockStore
     }
 }
 
-
 //when we initialize block store- load block store tip. if it's below consensus tip- rewind consensus
 //todo tests
+//TODO comment this class properly

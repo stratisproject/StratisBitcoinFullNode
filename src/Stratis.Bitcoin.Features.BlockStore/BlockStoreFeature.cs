@@ -30,8 +30,6 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
         protected readonly IBlockStoreCache blockStoreCache;
 
-        protected readonly StoreBlockPuller blockPuller;
-
         protected readonly BlockStore blockStore;
 
         protected readonly BlockStoreManager blockStoreManager;
@@ -60,7 +58,6 @@ namespace Stratis.Bitcoin.Features.BlockStore
             Signals.Signals signals,
             IBlockRepository blockRepository,
             IBlockStoreCache blockStoreCache,
-            StoreBlockPuller blockPuller,
             BlockStore blockStore,
             BlockStoreManager blockStoreManager,
             BlockStoreSignaled blockStoreSignaled,
@@ -75,7 +72,6 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.signals = signals;
             this.blockRepository = blockRepository;
             this.blockStoreCache = blockStoreCache;
-            this.blockPuller = blockPuller;
             this.blockStore = blockStore;
             this.blockStoreManager = blockStoreManager;
             this.blockStoreSignaled = blockStoreSignaled;
@@ -124,7 +120,6 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.logger.LogTrace("()");
 
             this.connectionManager.Parameters.TemplateBehaviors.Add(this.BlockStoreBehaviorFactory());
-            this.connectionManager.Parameters.TemplateBehaviors.Add(new BlockPullerBehavior(this.blockPuller, this.loggerFactory));
 
             // signal to peers that this node can serve blocks
             this.connectionManager.Parameters.Services = (this.storeSettings.Prune ? NetworkPeerServices.Nothing : NetworkPeerServices.Network) | NetworkPeerServices.NODE_WITNESS;
