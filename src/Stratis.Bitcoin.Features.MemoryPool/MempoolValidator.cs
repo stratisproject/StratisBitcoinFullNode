@@ -127,6 +127,8 @@ namespace Stratis.Bitcoin.Features.MemoryPool
 
         /// <summary>Coin view of the memory pool.</summary>
         private readonly CoinView coinView;
+
+        /// <inheritdoc cref="IConsensusRules" />
         private readonly IConsensusRules consensusRules;
 
         /// <summary>Transaction memory pool for managing transactions in the memory pool.</summary>

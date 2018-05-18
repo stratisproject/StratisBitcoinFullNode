@@ -13,10 +13,8 @@ namespace Stratis.Bitcoin.IntegrationTests
     {
         public static void Main(string[] args)
         {
-            new ProofOfStakeMintCoinsSpecification(new TestOutputHelper()).Staking_wallet_can_mint_new_coins();
-
-            //RunAllTestsOf<WalletTests>();
-            //RunAllTestsOf<NodeSyncTests>();
+            RunAllTestsOf<WalletTests>();
+            RunAllTestsOf<NodeSyncTests>();
         }
 
         public static void RunAllTestsOf<T>()

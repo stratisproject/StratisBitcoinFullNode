@@ -9,6 +9,7 @@ using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Base.Deployments;
 using Stratis.Bitcoin.BlockPulling;
 using Stratis.Bitcoin.Configuration;
+using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.Consensus.Interfaces;
@@ -73,8 +74,8 @@ namespace Stratis.Bitcoin.Features.Consensus
     /// </summary>
     /// <remarks>
     /// <para>
-    /// Blocks are coming from <see cref="ILookaheadBlockPuller"/> or Miner/Staker and get validated by
-    /// either the <see cref="PowCoinviewRule"/> for PoW or the <see cref="PosCoinviewRule"/> for PoS.
+    /// Blocks are coming from <see cref="ILookaheadBlockPuller"/> or Miner/Staker and get validated by get validated by the <see cref="IConsensusRules" /> engine.
+    /// See either the <see cref="FullNodeBuilderConsensusExtension.PowConsensusRulesRegistration"/> for PoW or the <see cref="FullNodeBuilderConsensusExtension.PowConsensusRulesRegistration"/> for PoS.
     /// </para>
     /// </remarks>
     public class ConsensusLoop : IConsensusLoop
@@ -171,7 +172,6 @@ namespace Stratis.Bitcoin.Features.Consensus
             IStakeChain stakeChain = null)
         {
             Guard.NotNull(asyncLoopFactory, nameof(asyncLoopFactory));
-            Guard.NotNull(consensusRules, nameof(consensusRules));
             Guard.NotNull(nodeLifetime, nameof(nodeLifetime));
             Guard.NotNull(chain, nameof(chain));
             Guard.NotNull(utxoSet, nameof(utxoSet));
