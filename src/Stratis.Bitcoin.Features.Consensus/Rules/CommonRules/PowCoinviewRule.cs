@@ -10,7 +10,7 @@ using Stratis.Bitcoin.Utilities;
 namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
 {
     /// <summary>
-    /// The proof of work coinview update rules. Validates the UTXO set is correctly spent.
+    /// The proof of work coinview update rules. Validates the UTXO set is correctly spent and creating new outputs.
     /// </summary>
     /// <exception cref="ConsensusErrors.BadTransactionMissingInput">Thrown if transaction tries to spend inputs that are missing.</exception>
     /// <exception cref="ConsensusErrors.BadTransactionNonFinal">Thrown if transaction's height or time is lower then provided by SequenceLock for this block.</exception>
@@ -23,10 +23,10 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         public static Transaction.LockTimeFlags StandardLocktimeVerifyFlags = Transaction.LockTimeFlags.VerifySequence | Transaction.LockTimeFlags.MedianTimePast;
 
         /// <summary>Consensus parameters.</summary>
-        public NBitcoin.Consensus ConsensusParams { get; set; }
+        public NBitcoin.Consensus ConsensusParams { get; private set; }
 
         /// <summary>Consensus options.</summary>
-        public PowConsensusOptions ConsensusOptions { get; set; }
+        public PowConsensusOptions ConsensusOptions { get; private set; }
 
         /// <inheritdoc />
         public override void Initialize()
@@ -50,7 +50,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
             UnspentOutputSet view = context.Set;
 
             this.Parent.PerformanceCounter.AddProcessedBlocks(1);
-            var taskScheduler = TaskScheduler.Default;
 
             long sigOpsCost = 0;
             Money fees = Money.Zero;
@@ -115,7 +114,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
                                 ctx.ScriptVerify = flags.ScriptFlags;
                                 return ctx.VerifyScript(input.ScriptSig, txout.ScriptPubKey, checker);
                             });
-                            checkInput.Start(taskScheduler);
+                            checkInput.Start();
                             checkInputs.Add(checkInput);
                         }
                     }
