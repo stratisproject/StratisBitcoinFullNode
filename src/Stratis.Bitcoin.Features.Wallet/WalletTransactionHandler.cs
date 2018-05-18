@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security;
 using System.Text;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
@@ -199,6 +200,19 @@ namespace Stratis.Bitcoin.Features.Wallet
         }
 
         /// <summary>
+        /// Retrieves the underlying string from a SecureString object.
+        /// </summary>
+        /// <param name="secstrPassword">The SecureString object.</param>
+        /// <returns>The underlying string contained in this object.</returns>
+        public string convertToUNSecureString(SecureString secstrPassword)
+        {
+            if (secstrPassword == null)
+                return null;
+
+            return new System.Net.NetworkCredential(string.Empty, secstrPassword).Password;
+        }
+
+        /// <summary>
         /// Load's all the private keys for each of the <see cref="HdAddress"/> in <see cref="TransactionBuildContext.UnspentOutputs"/>
         /// </summary>
         /// <param name="context">The context associated with the current transaction being built.</param>
@@ -210,7 +224,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             Wallet wallet = this.walletManager.GetWalletByName(context.AccountReference.WalletName);
 
             // get extended private key
-            var privateKey = Key.Parse(wallet.EncryptedSeed, context.WalletPassword, wallet.Network);
+            var privateKey = Key.Parse(wallet.EncryptedSeed, convertToUNSecureString(context.WalletPassword), wallet.Network);
             var seedExtKey = new ExtKey(privateKey, wallet.ChainCode);
 
             var signingKeys = new HashSet<ISecret>();
@@ -380,7 +394,13 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             this.AccountReference = accountReference;
             this.Recipients = recipients;
-            this.WalletPassword = walletPassword;
+            this.WalletPassword = null;
+            if (walletPassword != null)
+            {
+                this.WalletPassword = new SecureString();
+                foreach (var ch in walletPassword.ToCharArray())
+                    this.WalletPassword.AppendChar(ch);
+            }
             this.FeeType = FeeType.Medium;
             this.MinConfirmations = 1;
             this.SelectedInputs = new List<OutPoint>();
@@ -445,10 +465,9 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// The password that protects the wallet in <see cref="WalletAccountReference"/>.
         /// </summary>
         /// <remarks>
-        /// TODO: replace this with System.Security.SecureString (https://github.com/dotnet/corefx/tree/master/src/System.Security.SecureString)
         /// More info (https://github.com/dotnet/corefx/issues/1387)
         /// </remarks>
-        public string WalletPassword { get; set; }
+        public SecureString WalletPassword { get; set; }
 
         /// <summary>
         /// The inputs that must be used when building the transaction.
