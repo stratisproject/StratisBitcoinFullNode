@@ -76,7 +76,12 @@ namespace Stratis.Bitcoin.Features.BlockStore.Controllers
             }
         }
 
-
+        /// <summary>
+        /// Gets a raw transaction 
+        /// Uses the same models as the RPC function.
+        /// </summary>
+        /// <param name="query">A query containing the txid to fetch</param>
+        /// <returns>A model of the transaction if it exists</returns>
         [Route("getrawtransaction")]
         [HttpGet]
         public async Task<IActionResult> GetRawTransactionAsync([FromQuery] GetRawTransactionRequest query)
