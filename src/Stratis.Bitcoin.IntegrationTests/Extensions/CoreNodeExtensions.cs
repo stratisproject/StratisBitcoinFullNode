@@ -19,6 +19,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 .Sum(p => coinviewRule.GetProofOfWorkReward(p));
         }
 
+
         public static Money WalletBalance(this CoreNode node, string walletName)
         {
             return node.FullNode.WalletManager().GetSpendableTransactionsInWallet(walletName).Sum(s => s.Transaction.Amount);
