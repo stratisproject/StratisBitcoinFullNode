@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -35,10 +36,11 @@ namespace Stratis.Bitcoin.Features.Wallet
         public ChainedHeader WalletTip => this.walletTip;
 
         /// <inheritdoc />
-        public BufferBlock<IList<Block>> BlockListBuffer { get; }
+        public BufferBlock<Block> BlockBuffer { get; }
 
         private readonly IList<uint256> hashBlocks = new List<uint256>();
-        private readonly IList<Block> blocksReceived = new List<Block>();
+
+        private readonly ConcurrentQueue<Block> blocksQueue = new ConcurrentQueue<Block>();
 
         public WalletSyncManager(ILoggerFactory loggerFactory, IWalletManager walletManager, ConcurrentChain chain,
             Network network, IBlockStoreCache blockStoreCache, StoreSettings storeSettings, INodeLifetime nodeLifetime)
@@ -59,7 +61,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             this.nodeLifetime = nodeLifetime;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
 
-            this.BlockListBuffer = new BufferBlock<IList<Block>>();
+            this.BlockBuffer = new BufferBlock<Block>();
         }
 
         /// <inheritdoc />
@@ -106,45 +108,40 @@ namespace Stratis.Bitcoin.Features.Wallet
         }
 
         /// <inheritdoc />
-        public void Produce(ITargetBlock<IList<Block>> target, Block block)
+        public void Produce(ITargetBlock<Block> target, Block block)
         {
-            this.blocksReceived.Add(block);
-
-            if (this.blocksReceived.Count >= 50)
-            {
-                target.Post(this.blocksReceived);
-            }
+            target.Post(block);
         }
 
         /// <inheritdoc />
-        public async Task ConsumeAsync(ISourceBlock<IList<Block>> source)
+        public async Task ConsumeAsync(ISourceBlock<Block> source)
         {
             while (await source.OutputAvailableAsync())
             {
-                IList<Block> blocks = source.Receive();
+                Block block = source.Receive();
 
-                foreach(var block in blocks)
-                {
-                    this.ProcessBlock(block);
-                }
 
-                this.blocksReceived.Clear();
+
+                this.ProcessBlock(block);
             }
         }
 
         /// <inheritdoc />
         public void ProducerConsumerProcessBlock(Block block)
         {
-            this.ConsumeAsync(this.BlockListBuffer).GetAwaiter().GetResult();
+            var x = this.ConsumeAsync(this.BlockBuffer);
 
-            this.Produce(this.BlockListBuffer, block);
+            this.Produce(this.BlockBuffer, block);
         }
 
         /// <inheritdoc />
         public void ProcessBlock(Block block, bool useProducerConsumer = false)
         {
             if (useProducerConsumer)
+            {
                 this.ProducerConsumerProcessBlock(block);
+                return;
+            }
 
             Guard.NotNull(block, nameof(block));
             this.logger.LogTrace("({0}:'{1}')", nameof(block), block.GetHash());
@@ -272,7 +269,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         {
             this.hashBlocks.Add(blockHeader.HashBlock);
 
-            if (this.hashBlocks.Count < 50) return;
+            //if (this.hashBlocks.Count < 50) return;
 
             List<Block> blocks = this.blockStoreCache.GetBlockAsync(this.hashBlocks.ToList()).GetAwaiter().GetResult();
 

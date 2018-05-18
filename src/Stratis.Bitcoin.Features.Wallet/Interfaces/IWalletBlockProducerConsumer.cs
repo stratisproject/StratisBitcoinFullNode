@@ -22,18 +22,18 @@ namespace Stratis.Bitcoin.Features.Wallet.Interfaces
         /// </summary>
         /// <param name="target"></param>
         /// <param name="block">The <see cref="Block>"/>.</param>
-        void Produce(ITargetBlock<IList<Block>> target, Block block);
+        void Produce(ITargetBlock<Block> target, Block block);
 
         /// <summary>
         /// Reads the list of NBitcoin Blocks against the System.Threading.Task.Dataflow.ISourceBlock object
         /// </summary>
         /// <param name="source"></param>
-        Task ConsumeAsync(ISourceBlock<IList<Block>> source);
+        Task ConsumeAsync(ISourceBlock<Block> source);
 
         /// <summary>
         /// Provides a Buffer that is a list NBitCoin Blocks. 
         /// This serves as the target buffer for the producer and the source buffer for the consumer.
         /// </summary>
-        BufferBlock<IList<Block>> BlockListBuffer { get; }
+        BufferBlock<Block> BlockBuffer { get; }
     }
 }
