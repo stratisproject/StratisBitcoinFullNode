@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 
@@ -48,7 +49,17 @@ namespace Stratis.Bitcoin.Utilities.Extensions
         /// <returns><o>True</o> if empty otherwise <o>False</o>.</returns>
         public static bool Empty<TSource>(this IList<TSource> source)
         {
-            return source.Count == 0;
+            return (source == null) || (source.Count == 0);
+        }
+
+        /// <summary>
+        /// An extension that will check if an <see cref="Ar{T}"/> is empty.
+        /// </summary>
+        /// <param name="source">The enumerable to check.</param>
+        /// <returns><o>True</o> if empty otherwise <o>False</o>.</returns>
+        public static bool Empty(this Array source)
+        {
+            return (source == null) || (source.Length == 0);
         }
     }
 }

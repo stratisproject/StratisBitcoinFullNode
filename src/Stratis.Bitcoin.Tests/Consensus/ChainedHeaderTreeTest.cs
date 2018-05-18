@@ -129,6 +129,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
 
             var chainTip = testContext.ExtendAChain(10);
             chainedHeaderTree.Initialize(chainTip); // initialize the tree with 10 headers
+            chainTip.BlockDataAvailability = BlockDataAvailabilityState.BlockAvailable;
             ChainedHeader newChainTip = testContext.ExtendAChain(10, chainTip); // create 10 more headers
 
             var listOfExistingHeaders = testContext.ChainedHeaderToList(newChainTip, 10);
@@ -138,9 +139,8 @@ namespace Stratis.Bitcoin.Tests.Consensus
 
             var connectedHeaders = chainedHeaderTree.ConnectNewHeaders(1, listOfExistingHeaders);
 
-
-            Assert.Equal(listOfExistingHeaders.Last(), connectedHeaders.DownloadFrom.Header);
-            Assert.Equal(listOfExistingHeaders.First(), connectedHeaders.DownloadTo.Header);
+            Assert.Equal(listOfExistingHeaders.Last(), connectedHeaders.DownloadTo.Header);
+            Assert.Equal(listOfExistingHeaders.First(), connectedHeaders.DownloadFrom.Header);
         }
     }
 }
