@@ -120,55 +120,21 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
             return new NodeBuilder(testFolderPath);
         }
 
-        private static string DownloadBitcoinCore(string version)
+        private static string GetBitcoinCorePath(string version)
         {
-            //is a file
-            if (version.Length >= 2 && version[1] == ':')
-            {
-                return version;
-            }
-
-            Directory.CreateDirectory("TestData");
-
+            string path;
+            
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-            {
-                var bitcoind = string.Format("TestData/bitcoin-{0}/bin/bitcoind.exe", version);
-                if (File.Exists(bitcoind))
-                    return bitcoind;
-                var zip = string.Format("TestData/bitcoin-{0}-win32.zip", version);
-                string url = string.Format("https://bitcoin.org/bin/bitcoin-core-{0}/" + Path.GetFileName(zip), version);
-                var client = new HttpClient
-                {
-                    Timeout = TimeSpan.FromMinutes(10.0)
-                };
-
-                var data = client.GetByteArrayAsync(url).GetAwaiter().GetResult();
-                File.WriteAllBytes(zip, data);
-                ZipFile.ExtractToDirectory(zip, new FileInfo(zip).Directory.FullName);
-                return bitcoind;
-            }
+                path = $"../../../../External Libs/Bitcoin Core/{version}/Windows/bitcoind.exe";
+            else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+                path = $"../../../../External Libs/Bitcoin Core/{version}/Linux/bitcoind";
             else
-            {
-                string bitcoind = string.Format("TestData/bitcoin-{0}/bin/bitcoind", version);
-                if (File.Exists(bitcoind))
-                    return bitcoind;
+                path = $"../../../../External Libs/Bitcoin Core/{version}/OSX/bitcoind";
+            
+            if (File.Exists(path))
+                return path;
 
-                var zip = RuntimeInformation.IsOSPlatform(OSPlatform.Linux)
-                    ? string.Format("TestData/bitcoin-{0}-x86_64-linux-gnu.tar.gz", version)
-                    : string.Format("TestData/bitcoin-{0}-osx64.tar.gz", version);
-
-                string url = string.Format("https://bitcoin.org/bin/bitcoin-core-{0}/" + Path.GetFileName(zip), version);
-
-                var client = new HttpClient
-                {
-                    Timeout = TimeSpan.FromMinutes(10.0)
-                };
-
-                var data = client.GetByteArrayAsync(url).GetAwaiter().GetResult();
-                File.WriteAllBytes(zip, data);
-                Process.Start("tar", "-zxvf " + zip + " -C TestData");
-                return bitcoind;
-            }
+            throw new FileNotFoundException($"Could not load the file {path}.");
         }
 
         private CoreNode CreateNode(NodeRunner runner, Network network, bool start, string configFile = "bitcoin.conf")
@@ -181,7 +147,7 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
 
         public CoreNode CreateBitcoinCoreNode(bool start = false, string version = "0.13.1")
         {
-            string bitcoinDPath = DownloadBitcoinCore(version);
+            string bitcoinDPath = GetBitcoinCorePath(version);
             return CreateNode(new BitcoinCoreRunner(this.GetNextDataFolderName(), bitcoinDPath), Network.RegTest, start);
         }
 
@@ -241,7 +207,7 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
             while (true)
             {
                 var bitcoinDProcesses = Process.GetProcessesByName("bitcoind");
-                var applicableBitcoinDProcesses = bitcoinDProcesses.Where(b => b.MainModule.FileName.Contains("Stratis.Bitcoin.IntegrationTests"));
+                var applicableBitcoinDProcesses = bitcoinDProcesses.Where(b => b.MainModule.FileName.Contains("External Libs"));
                 if (!applicableBitcoinDProcesses.Any())
                     break;
 

@@ -306,19 +306,6 @@ namespace Stratis.Bitcoin.IntegrationTests
             return this.AppendBlock(index, chains);
         }
 
-        private byte[] GetFile(string fileName, string url)
-        {
-            fileName = Path.Combine("TestData", fileName);
-            if (File.Exists(fileName))
-                return File.ReadAllBytes(fileName);
-
-            HttpClient client = new HttpClient();
-            client.Timeout = TimeSpan.FromMinutes(10);
-            var data = client.GetByteArrayAsync(url).Result;
-            File.WriteAllBytes(fileName, data);
-            return data;
-        }
-
         [Fact]
         public void CanCheckBlockWithWitness()
         {
