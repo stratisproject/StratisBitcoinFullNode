@@ -55,9 +55,7 @@ namespace Stratis.SmartContracts.Core.Backend
                 () => balanceState.GetBalance(context.ContractAddress));
 
             // Invoke the constructor of the provided contract code
-            LifecycleResult result = SmartContractConstructor
-                .Construct(contractType, contractState, context.Parameters);
-
+            LifecycleResult result = SmartContractConstructor.Construct(contractType, contractState, context.Parameters);
             ISmartContractExecutionResult executionResult = new SmartContractExecutionResult
             {
                 GasConsumed = gasMeter.GasConsumed
@@ -65,10 +63,15 @@ namespace Stratis.SmartContracts.Core.Backend
 
             if (!result.Success)
             {
+                LogException(result.Exception);
+
                 this.logger.LogTrace("(-)[CREATE_CONTRACT_INSTANTIATION_FAILED]:{0}={1}", nameof(gasMeter.GasConsumed), gasMeter.GasConsumed);
+
                 executionResult.Exception = result.Exception.InnerException ?? result.Exception;
                 return executionResult;
             }
+            else
+                this.logger.LogTrace("[CREATE_CONTRACT_INSTANTIATION_SUCCEEDED]");
 
             executionResult.Return = result.Object;
 
@@ -85,6 +88,8 @@ namespace Stratis.SmartContracts.Core.Backend
             ISmartContractExecutionContext context,
             IGasMeter gasMeter)
         {
+            this.logger.LogTrace("(){0}:{1}", nameof(contractMethodName), contractMethodName);
+
             ISmartContractExecutionResult executionResult = new SmartContractExecutionResult();
 
             if (contractMethodName == null)
@@ -103,8 +108,7 @@ namespace Stratis.SmartContracts.Core.Backend
 
             var internalTransferList = new InternalTransferList();
 
-            IInternalTransactionExecutor internalTransactionExecutor =
-                this.internalTransactionExecutorFactory.Create(this.repository, internalTransferList);
+            IInternalTransactionExecutor internalTransactionExecutor = this.internalTransactionExecutorFactory.Create(this.repository, internalTransferList);
 
             var balanceState = new BalanceState(this.repository, context.Message.Value, internalTransferList);
 
@@ -121,11 +125,17 @@ namespace Stratis.SmartContracts.Core.Backend
 
             if (!result.Success)
             {
+                LogException(result.Exception);
+
                 this.logger.LogTrace("(-)[CALLCONTRACT_INSTANTIATION_FAILED]:{0}={1}", nameof(gasMeter.GasConsumed), gasMeter.GasConsumed);
+
                 executionResult.Exception = result.Exception.InnerException ?? result.Exception;
                 executionResult.GasConsumed = gasMeter.GasConsumed;
+
                 return executionResult;
             }
+            else
+                this.logger.LogTrace("[CALL_CONTRACT_INSTANTIATION_SUCCEEDED]");
 
             try
             {
@@ -143,22 +153,22 @@ namespace Stratis.SmartContracts.Core.Backend
             }
             catch (ArgumentException argumentException)
             {
-                this.logger.LogTrace("{0}", argumentException.Message);
+                LogException(argumentException);
                 executionResult.Exception = argumentException;
             }
             catch (TargetInvocationException targetException)
             {
-                this.logger.LogTrace("{0}", targetException.Message);
+                LogException(targetException);
                 executionResult.Exception = targetException.InnerException ?? targetException;
             }
             catch (TargetParameterCountException parameterExcepion)
             {
-                this.logger.LogTrace("{0}", parameterExcepion.Message);
+                LogException(parameterExcepion);
                 executionResult.Exception = parameterExcepion;
             }
             catch (ConstructorInvocationException constructorInvocationException)
             {
-                this.logger.LogTrace("{0}", constructorInvocationException.Message);
+                LogException(constructorInvocationException);
                 executionResult.Exception = constructorInvocationException;
             }
             finally
@@ -171,14 +181,22 @@ namespace Stratis.SmartContracts.Core.Backend
             return executionResult;
         }
 
+        private void LogException(Exception exception)
+        {
+            this.logger.LogTrace("{0}", exception.Message);
+            if (exception.InnerException != null)
+                this.logger.LogTrace("{0}", exception.InnerException.Message);
+        }
+
         /// <summary>
-        /// Loads the Assembly bytecode into the current AppDomain
+        /// Loads the Assembly bytecode into the current AppDomain.
+        /// <para>
+        /// The contract should always be the only exported type.
+        /// </para>
         /// </summary>
         private static Type Load(byte[] byteCode)
         {
             Assembly contractAssembly = Assembly.Load(byteCode);
-
-            // The contract should always be the only exported type
             return contractAssembly.ExportedTypes.FirstOrDefault();
         }
     }

@@ -11,7 +11,6 @@ using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.Extensions.Logging;
 using Mono.Cecil;
 using NBitcoin;
-using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.Interfaces;
 using Stratis.Bitcoin.Features.SmartContracts.Models;
 using Stratis.Bitcoin.Features.Wallet;
@@ -65,6 +64,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Controllers
         [HttpGet]
         public IActionResult GetCode([FromQuery]string address)
         {
+            this.logger.LogTrace("(){0}:{1}", nameof(address), address);
+
             uint160 addressNumeric = new Address(address).ToUint160(this.network);
             byte[] contractCode = this.stateRoot.GetCode(addressNumeric);
 
@@ -81,6 +82,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Controllers
                 var modDefinition = ModuleDefinition.ReadModule(memStream);
                 var decompiler = new CSharpDecompiler(modDefinition, new DecompilerSettings { });
                 string cSharp = decompiler.DecompileAsString(modDefinition.Types.FirstOrDefault(x => x.FullName != "<Module>"));
+
+                this.logger.LogTrace("(-)");
+
                 return Json(new GetCodeResponse
                 {
                     Message = string.Format("Contract execution code retrieved at {0}", address),
@@ -94,8 +98,13 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Controllers
         [HttpGet]
         public IActionResult GetBalance([FromQuery]string address)
         {
+            this.logger.LogTrace("(){0}:{1}", nameof(address), address);
+
             uint160 addressNumeric = new Address(address).ToUint160(this.network);
             ulong balance = this.stateRoot.GetCurrentBalance(addressNumeric);
+
+            this.logger.LogTrace("(-)");
+
             return Json(balance);
         }
 
@@ -103,11 +112,18 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Controllers
         [HttpGet]
         public IActionResult GetStorage([FromQuery] GetStorageRequest request)
         {
+            this.logger.LogTrace("(){0}:{1},{2}:{3},{4}:{5}", nameof(request.ContractAddress), request.ContractAddress, nameof(request.DataType), request.DataType, nameof(request.StorageKey), request.StorageKey);
+
             if (!this.ModelState.IsValid)
+            {
+                this.logger.LogTrace("(-)[MODELSTATE_INVALID]");
                 return BuildErrorResponse(this.ModelState);
+            }
 
             uint160 addressNumeric = new Address(request.ContractAddress).ToUint160(this.network);
             byte[] storageValue = this.stateRoot.GetStorageValue(addressNumeric, Encoding.UTF8.GetBytes(request.StorageKey));
+            this.logger.LogTrace("(-){0}:{1}", nameof(storageValue), storageValue);
+
             return Json(GetStorageValue(request.DataType, storageValue).ToString());
         }
 
@@ -116,9 +132,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Controllers
         public IActionResult BuildCreateSmartContractTransaction([FromBody] BuildCreateContractTransactionRequest request)
         {
             if (!this.ModelState.IsValid)
-            {
                 return BuildErrorResponse(this.ModelState);
-            }
 
             return Json(BuildCreateTx(request));
         }
@@ -174,7 +188,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Controllers
         [HttpGet]
         public IActionResult GetAddressesWithBalances([FromQuery] string walletName)
         {
-            IEnumerable<IGrouping<HdAddress, UnspentOutputReference>> allSpendable = this.walletManager.GetSpendableTransactionsInWallet(walletName, 10).GroupBy(x => x.Address);
+            this.logger.LogTrace("(){0}:{1}", nameof(walletName), walletName);
+
+            IEnumerable<IGrouping<HdAddress, UnspentOutputReference>> allSpendable = this.walletManager.GetSpendableTransactionsInWallet(walletName).GroupBy(x => x.Address);
             var result = new List<object>();
             foreach (IGrouping<HdAddress, UnspentOutputReference> grouping in allSpendable)
             {
@@ -184,20 +200,22 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Controllers
                     Sum = grouping.Sum(x => x.Transaction.SpendableAmount(false))
                 });
             }
+
+            this.logger.LogTrace("(-)");
+
             return Json(result);
         }
 
         private BuildCreateContractTransactionResponse BuildCreateTx(BuildCreateContractTransactionRequest request)
         {
+            this.logger.LogTrace(request.ToString());
+
             AddressBalance addressBalance = this.walletManager.GetAddressBalance(request.Sender);
             if (addressBalance.AmountConfirmed == 0)
                 return BuildCreateContractTransactionResponse.Failed($"The 'Sender' address you're trying to spend from doesn't have a confirmed balance. Current unconfirmed balance: {addressBalance.AmountUnconfirmed}. Please check the 'Sender' address.");
 
             var selectedInputs = new List<OutPoint>();
-            var coinbaseMaturity = Convert.ToInt32(this.network.Consensus.Option<SmartContractConsensusOptions>().CoinbaseMaturity);
-            selectedInputs = this.walletManager.GetSpendableTransactionsInWallet(request.WalletName, coinbaseMaturity).Where(x => x.Address.Address == request.Sender).Select(x => x.ToOutPoint()).ToList();
-            if (!selectedInputs.Any())
-                return BuildCreateContractTransactionResponse.Failed(string.Format("Your wallet does not contain any spendable transactions. Received funds needs to reach maturity of {0}", coinbaseMaturity));
+            selectedInputs = this.walletManager.GetSpendableTransactionsInWallet(request.WalletName).Where(x => x.Address.Address == request.Sender).Select(x => x.ToOutPoint()).ToList();
 
             ulong gasPrice = ulong.Parse(request.GasPrice);
             ulong gasLimit = ulong.Parse(request.GasLimit);
@@ -224,7 +242,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Controllers
             {
                 TransactionFee = totalFee,
                 ChangeAddress = senderAddress,
-                SelectedInputs = selectedInputs
+                SelectedInputs = selectedInputs,
+                MinConfirmations = 0
             };
 
             try
@@ -240,15 +259,14 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Controllers
 
         private BuildCallContractTransactionResponse BuildCallTx(BuildCallContractTransactionRequest request)
         {
+            this.logger.LogTrace(request.ToString());
+
             AddressBalance addressBalance = this.walletManager.GetAddressBalance(request.Sender);
             if (addressBalance.AmountConfirmed == 0)
                 return BuildCallContractTransactionResponse.Failed($"The 'Sender' address you're trying to spend from doesn't have a confirmed balance. Current unconfirmed balance: {addressBalance.AmountUnconfirmed}. Please check the 'Sender' address.");
 
             var selectedInputs = new List<OutPoint>();
-            var coinbaseMaturity = Convert.ToInt32(this.network.Consensus.Option<SmartContractConsensusOptions>().CoinbaseMaturity);
-            selectedInputs = this.walletManager.GetSpendableTransactionsInWallet(request.WalletName, coinbaseMaturity).Where(x => x.Address.Address == request.Sender).Select(x => x.ToOutPoint()).ToList();
-            if (!selectedInputs.Any())
-                return BuildCallContractTransactionResponse.Failed(string.Format("Your wallet does not contain any spendable transactions. Received funds needs to reach maturity of {0}", coinbaseMaturity));
+            selectedInputs = this.walletManager.GetSpendableTransactionsInWallet(request.WalletName).Where(x => x.Address.Address == request.Sender).Select(x => x.ToOutPoint()).ToList();
 
             ulong gasPrice = ulong.Parse(request.GasPrice);
             ulong gasLimit = ulong.Parse(request.GasLimit);
@@ -276,7 +294,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Controllers
             {
                 TransactionFee = totalFee,
                 ChangeAddress = senderAddress,
-                SelectedInputs = selectedInputs
+                SelectedInputs = selectedInputs,
+                MinConfirmations = 0
             };
 
             try
