@@ -66,9 +66,9 @@ namespace Stratis.Bitcoin.Controllers
             };
 
             // Include BlockStore Height if enabled
-            foreach (var blockStore in this.fullNode.Services.Features)
-                if (blockStore is IBlockStore)
-                    model.BlockStoreHeight = ((IBlockStore)blockStore).GetHighestPersistedBlock().Height;
+            foreach (var feature in this.fullNode.Services.Features)
+                if (feature is IBlockStore)
+                    model.BlockStoreHeight = ((IBlockStore)feature).GetHighestPersistedBlock().Height;
 
             // Add the list of features that are enabled.
             foreach (IFullNodeFeature feature in this.fullNode.Services.Features)
