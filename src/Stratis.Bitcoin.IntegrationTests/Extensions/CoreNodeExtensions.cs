@@ -11,14 +11,14 @@ namespace Stratis.Bitcoin.IntegrationTests
         public static Money GetProofOfWorkRewardForMinedBlocks(this CoreNode node, int numberOfBlocks)
         {
             var powValidator = node.FullNode.NodeService<IPowConsensusValidator>();
-            var halvingInterval = powValidator.ConsensusParams.SubsidyHalvingInterval;
+
             var startBlock = node.FullNode.Chain.Height - numberOfBlocks + 1;
 
-            var halvingRange = Enumerable.Range(startBlock, numberOfBlocks).Partition(halvingInterval - 1);
-            var totalReward = halvingRange.Sum(p => powValidator.GetProofOfWorkReward(p.First()) * p.Count());
+            var totalReward = Enumerable.Range(startBlock, numberOfBlocks).Sum(p => powValidator.GetProofOfWorkReward(p));
 
             return totalReward;
         }
+
 
         public static Money WalletBalance(this CoreNode node, string walletName)
         {
