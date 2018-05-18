@@ -85,7 +85,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         private readonly StoreSettings storeSettings;
 
         /// <summary>The highest stored block in the repository.</summary>
-        public ChainedHeader StoreTip { get; private set; }
+        internal ChainedHeader StoreTip { get; private set; }
 
         /// <summary>Public constructor for unit testing.</summary>
         public BlockStoreLoop(IAsyncLoopFactory asyncLoopFactory,
