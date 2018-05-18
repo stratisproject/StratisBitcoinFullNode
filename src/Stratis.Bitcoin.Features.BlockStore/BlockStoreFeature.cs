@@ -32,7 +32,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
         protected readonly StoreBlockPuller blockPuller;
 
-        protected readonly BlockStoreLoop blockStoreLoop;
+        protected readonly BlockStore blockStore;
 
         protected readonly BlockStoreManager blockStoreManager;
 
@@ -61,7 +61,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             IBlockRepository blockRepository,
             IBlockStoreCache blockStoreCache,
             StoreBlockPuller blockPuller,
-            BlockStoreLoop blockStoreLoop,
+            BlockStore blockStore,
             BlockStoreManager blockStoreManager,
             BlockStoreSignaled blockStoreSignaled,
             INodeLifetime nodeLifetime,
@@ -76,7 +76,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.blockRepository = blockRepository;
             this.blockStoreCache = blockStoreCache;
             this.blockPuller = blockPuller;
-            this.blockStoreLoop = blockStoreLoop;
+            this.blockStore = blockStore;
             this.blockStoreManager = blockStoreManager;
             this.blockStoreSignaled = blockStoreSignaled;
             this.nodeLifetime = nodeLifetime;
@@ -132,7 +132,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.signals.SubscribeForBlocks(this.blockStoreSignaled);
 
             this.blockRepository.InitializeAsync().GetAwaiter().GetResult();
-            this.blockStoreLoop.InitializeAsync().GetAwaiter().GetResult();
+            this.blockStore.InitializeAsync().GetAwaiter().GetResult();
 
             this.logger.LogTrace("(-)");
         }
