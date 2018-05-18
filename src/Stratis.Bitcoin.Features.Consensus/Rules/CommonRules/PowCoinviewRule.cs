@@ -60,18 +60,16 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
                 Transaction tx = block.Transactions[txIndex];
                 if (!context.SkipValidation)
                 {
-                    
+                    // TODO: Simplify this condition.
                     if (!tx.IsCoinBase && (!context.IsPoS || (context.IsPoS && !tx.IsCoinStake)))
                     {
-                        int[] prevheights;
-
                         if (!view.HaveInputs(tx))
                         {
                             this.Logger.LogTrace("(-)[BAD_TX_NO_INPUT]");
                             ConsensusErrors.BadTransactionMissingInput.Throw();
                         }
 
-                        prevheights = new int[tx.Inputs.Count];
+                        var prevheights = new int[tx.Inputs.Count];
                         // Check that transaction is BIP68 final.
                         // BIP68 lock checks (as opposed to nLockTime checks) must
                         // be in ConnectBlock because they require the UTXO set.
@@ -93,7 +91,10 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
                     // * witness (when witness enabled in flags and excludes coinbase).
                     sigOpsCost += this.GetTransactionSignatureOperationCost(tx, view, flags);
                     if (sigOpsCost > this.ConsensusOptions.MaxBlockSigopsCost)
+                    {
+                        this.Logger.LogTrace("(-)[BAD_BLOCK_SIG_OPS]");
                         ConsensusErrors.BadBlockSigOps.Throw();
+                    }
 
                     // TODO: Simplify this condition.
                     if (!tx.IsCoinBase && (!context.IsPoS || (context.IsPoS && !tx.IsCoinStake)))
@@ -304,7 +305,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
             for (int i = 0; i < transaction.Inputs.Count; i++)
             {
                 TxOut prevout = inputs.GetOutputFor(transaction.Inputs[i]);
-                signatureOperationCost += this.CountWitnessSignatureOperation(transaction.Inputs[i].ScriptSig, prevout.ScriptPubKey, transaction.Inputs[i].WitScript, flags);
+                signatureOperationCost += this.CountWitnessSignatureOperation(prevout.ScriptPubKey, transaction.Inputs[i].WitScript, flags);
             }
 
             return signatureOperationCost;
@@ -313,12 +314,11 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         /// <summary>
         /// Calculates signature operation cost for single transaction input.
         /// </summary>
-        /// <param name="scriptSig">Signature script.</param>
         /// <param name="scriptPubKey">Script public key.</param>
         /// <param name="witness">Witness script.</param>
         /// <param name="flags">Script verification flags.</param>
         /// <returns>Signature operation cost for single transaction input.</returns>
-        private long CountWitnessSignatureOperation(Script scriptSig, Script scriptPubKey, WitScript witness, DeploymentFlags flags)
+        private long CountWitnessSignatureOperation(Script scriptPubKey, WitScript witness, DeploymentFlags flags)
         {
             witness = witness ?? WitScript.Empty;
             if (!flags.ScriptFlags.HasFlag(ScriptVerify.Witness))

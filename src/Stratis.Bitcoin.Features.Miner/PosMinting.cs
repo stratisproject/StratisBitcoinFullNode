@@ -499,7 +499,7 @@ namespace Stratis.Bitcoin.Features.Miner
                     blockTemplate = null;
                 }
 
-                uint coinstakeTimestamp = (uint)this.dateTimeProvider.GetAdjustedTimeAsUnixTimestamp() & ~PosCoinviewRule.StakeTimestampMask;
+                uint coinstakeTimestamp = (uint)this.dateTimeProvider.GetAdjustedTimeAsUnixTimestamp() & ~BlockHeaderPosContextualRule.StakeTimestampMask;
                 if (coinstakeTimestamp <= this.lastCoinStakeSearchTime)
                 {
                     this.logger.LogTrace("Current coinstake time {0} is not greater than last search timestamp {1}.", coinstakeTimestamp, this.lastCoinStakeSearchTime);
@@ -739,7 +739,7 @@ namespace Stratis.Bitcoin.Features.Miner
 
             // If the time after applying the mask is lower than minimal allowed time,
             // it is simply too early for us to mine, there can't be any valid solution.
-            if ((coinstakeContext.CoinstakeTx.Time & ~PosCoinviewRule.StakeTimestampMask) < minimalAllowedTime)
+            if ((coinstakeContext.CoinstakeTx.Time & ~BlockHeaderPosContextualRule.StakeTimestampMask) < minimalAllowedTime)
             {
                 this.logger.LogTrace("(-)[TOO_EARLY_TIME_AFTER_LAST_BLOCK]:false");
                 return false;
@@ -781,7 +781,7 @@ namespace Stratis.Bitcoin.Features.Miner
             }
 
             this.logger.LogTrace("Worker #{0} found the kernel.", workersResult.KernelFoundIndex);
-            //DAN
+            
             // Get reward for newly created block.
             long reward = fees + this.consensusLoop.ConsensusRules.GetRule<PosCoinviewRule>().GetProofOfStakeReward(chainTip.Height + 1);
             if (reward <= 0)
@@ -907,7 +907,7 @@ namespace Stratis.Bitcoin.Features.Miner
                     if (txTime < minimalAllowedTime)
                         break;
 
-                    if ((txTime & PosCoinviewRule.StakeTimestampMask) != 0)
+                    if ((txTime & BlockHeaderPosContextualRule.StakeTimestampMask) != 0)
                         continue;
 
                     context.Logger.LogTrace("Trying with transaction time {0}...", txTime);
@@ -1185,7 +1185,7 @@ namespace Stratis.Bitcoin.Features.Miner
 
             if (stakesTime != 0) res = stakeKernelsAvg / stakesTime;
 
-            res *= PosCoinviewRule.StakeTimestampMask + 1;
+            res *= BlockHeaderPosContextualRule.StakeTimestampMask + 1;
 
             this.logger.LogTrace("(-):{0}", res);
             return res;

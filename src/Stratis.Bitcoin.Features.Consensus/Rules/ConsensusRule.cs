@@ -19,7 +19,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules
 
         //TODO: should this be IConsensusRules?
         /// <summary>The engine this rule belongs to.</summary>
-        public ConsensusRules Parent { get; set; } 
+        public ConsensusRules Parent { get; set; }
 
         /// <summary>
         /// Allow a rule to initialize itself.

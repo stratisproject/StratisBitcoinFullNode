@@ -7,23 +7,20 @@ using Stratis.Bitcoin.Utilities;
 namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
 {
     /// <summary>
-    /// Proof of stake override for the coinview rules - BIP68, MaxSigOps and BlockReward checks
+    /// Proof of stake override for the coinview rules - BIP68, MaxSigOps and BlockReward checks.
     /// </summary>
     [ExecutionRule]
     public class PosCoinviewRule : PowCoinviewRule
     {
-        /// <summary>PoS block's timestamp mask.</summary>
-        /// <remarks>Used to decrease granularity of timestamp. Supposed to be 2^n-1.</remarks>
-        public const uint StakeTimestampMask = 0x0000000F;
-
         /// <summary>Provides functionality for checking validity of PoS blocks.</summary>
-        public IStakeValidator StakeValidator { get; set; }
+        public IStakeValidator StakeValidator { get; private set; }
 
         /// <summary>Database of stake related data for the current blockchain.</summary>
         private IStakeChain stakeChain;
 
         private PosConsensusOptions posConsensusOptions;
 
+        /// <inheritdoc />
         public override void Initialize()
         {
             this.Logger.LogTrace("()");
