@@ -38,7 +38,6 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
         public BlockStore(
             IBlockRepository blockRepository,
-            IBlockStoreCache cache,
             ConcurrentChain chain,
             IChainState chainState,
             StoreSettings storeSettings,
@@ -91,6 +90,13 @@ namespace Stratis.Bitcoin.Features.BlockStore
                     await this.blockRepository.SetTxIndexAsync(this.storeSettings.TxIndex).ConfigureAwait(false);
             }
 
+            if (this.storeTip.Height < this.chainState.ConsensusTip.Height)
+            {
+                //TODO rewind consensus, don't throw
+                this.logger.LogError("Block store initialized behind consensus!");
+                throw new Exception("BLOCKSTOREERROR");
+            }
+
             // Start dequeuing.
             this.currentBatchSizeBytes = 0;
             this.dequeueLoopTask = this.DequeueBlocksContinuouslyAsync();
@@ -110,7 +116,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             var blockStoreResetList = new List<uint256>();
             Block resetBlock = await this.blockRepository.GetAsync(this.blockRepository.BlockHash).ConfigureAwait(false);
             uint256 resetBlockHash = resetBlock.GetHash();
-
+            
             while (this.chain.GetBlock(resetBlockHash) == null)
             {
                 blockStoreResetList.Add(resetBlockHash);
@@ -156,7 +162,8 @@ namespace Stratis.Bitcoin.Features.BlockStore
             Task<BlockPair> dequeueTask = null;
             Task timerTask = null;
 
-            while (!this.nodeLifetime.ApplicationStopping.IsCancellationRequested)
+          
+            while (!this.nodeLifetime.ApplicationStopping.IsCancellationRequested || batch.Count != 0)
             {
                 // Start new dequeue task if not started already.
                 dequeueTask = dequeueTask ?? this.blocksQueue.DequeueAsync();
@@ -183,7 +190,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 if (dequeueTask.Status == TaskStatus.RanToCompletion)
                 {
                     BlockPair item = dequeueTask.Result;
-                    
+
                     // Set the dequeue task to null so it can be assigned on the next iteration.
                     dequeueTask = null;
 
@@ -246,6 +253,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
                 await this.blockRepository.DeleteAsync(currentHeader.HashBlock, blocksToDelete).ConfigureAwait(false);
 
+                this.logger.LogDebug("Store tip rewinded to '{0}'", this.storeTip);
                 this.storeTip = expectedStoreTip;
             }
 
@@ -297,7 +305,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
             // Let current batch saving task finish.
             this.blocksQueue.Dispose();
-            this.dequeueLoopTask.GetAwaiter().GetResult();
+            this.dequeueLoopTask?.GetAwaiter().GetResult();
 
             this.logger.LogTrace("(-)");
         }
