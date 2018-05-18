@@ -12,10 +12,9 @@ namespace Stratis.Bitcoin.Utilities.Extensions
         public static SecureString ToSecureString(this string input)
         {
             var output = new SecureString();
+
             foreach (char c in input.ToCharArray())
-            {
                 output.AppendChar(c);
-            }
 
             return output;
         }
@@ -27,9 +26,6 @@ namespace Stratis.Bitcoin.Utilities.Extensions
         /// <returns>The underlying string contained in this object.</returns>
         public static string FromSecureString(this SecureString secstrPassword)
         {
-            if (secstrPassword == null)
-                return null;
-
             return new System.Net.NetworkCredential(string.Empty, secstrPassword).Password;
         }
     }
