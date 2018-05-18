@@ -10,7 +10,7 @@ using Stratis.Bitcoin.Utilities;
 namespace Stratis.Bitcoin.Features.BlockStore
 {
     /// <summary>
-    /// TODO
+    /// Saves blocks to the database in batches, removes reorged blocks from the database.
     /// </summary>
     public class BlockStore : IDisposable
     {
@@ -53,9 +53,9 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.blocksQueue = new AsyncQueue<BlockPair>();
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
         }
-        
-        /// <summary> TODO review comment
-        /// Initialize the BlockStore
+
+        /// <summary>
+        /// Initializes the <see cref="BlockStore"/>.
         /// <para>
         /// If StoreTip is <c>null</c>, the store is out of sync. This can happen when:</para>
         /// <list>
@@ -63,8 +63,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         ///     <item>2. The node was not closed down properly.</item>
         /// </list>
         /// <para>
-        /// To recover we walk back the chain until a common block header is found
-        /// and set the BlockStore's StoreTip to that.
+        /// To recover we walk back the chain until a common block header is found and set the BlockStore's StoreTip to that.
         /// </para>
         /// </summary>
         public async Task InitializeAsync()
@@ -104,11 +103,17 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.logger.LogTrace("(-)");
         }
 
+        /// <summary>
+        /// Provides current block store tip.
+        /// </summary>
         public ChainedHeader GetStoreTip()
         {
             return this.storeTip;
         }
 
+        /// <summary>
+        /// Sets block store tip to the last block that exists both in the repository and in the <see cref="ConcurrentChain"/>.
+        /// </summary>
         private async Task RecoverStoreTipAsync()
         {
             this.logger.LogTrace("()");
@@ -116,7 +121,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             var blockStoreResetList = new List<uint256>();
             Block resetBlock = await this.blockRepository.GetAsync(this.blockRepository.BlockHash).ConfigureAwait(false);
             uint256 resetBlockHash = resetBlock.GetHash();
-            
+
             while (this.chain.GetBlock(resetBlockHash) == null)
             {
                 blockStoreResetList.Add(resetBlockHash);
@@ -149,10 +154,15 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.logger.LogTrace("({0}:'{1}')", nameof(blockPair), blockPair.ChainedHeader);
 
             this.blocksQueue.Enqueue(blockPair);
-            
+
             this.logger.LogTrace("(-)");
         }
 
+
+        /// <summary>
+        /// Dequeues the blocks continuously and saves them to the database when max batch size is reached or timer ran out.
+        /// </summary>
+        /// <remarks>Batch is always saved on shutdown.</remarks>
         private async Task DequeueBlocksContinuouslyAsync()
         {
             this.logger.LogTrace("()");
@@ -162,7 +172,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             Task<BlockPair> dequeueTask = null;
             Task timerTask = null;
 
-          
+
             while (!this.nodeLifetime.ApplicationStopping.IsCancellationRequested || batch.Count != 0)
             {
                 // Start new dequeue task if not started already.
@@ -229,6 +239,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.logger.LogTrace("(-)");
         }
 
+        /// <summary>Checks if repository contains reorged blocks and deletes them; saves batch on top.</summary>
         private async Task SaveBatchAsync(List<BlockPair> batch)
         {
             this.logger.LogTrace("()");
@@ -263,13 +274,17 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.logger.LogDebug("Saving batch of {0} blocks, total size: {1} bytes.", batchCleared.Count, this.currentBatchSizeBytes);
 
             await this.blockRepository.PutAsync(newTip.HashBlock, batchCleared.Select(b => b.Block).ToList()).ConfigureAwait(false);
-            
+
             this.storeTip = newTip;
 
             this.logger.LogDebug("Store tip set to '{0}'", this.storeTip);
             this.logger.LogTrace("(-)");
         }
 
+        /// <summary>
+        /// Cleans the batch in a way that all headers from the latest one are consecutive. 
+        /// Those that violate consecutiveness are removed.
+        /// </summary>
         private List<BlockPair> GetBatchWithoutReorgedBlocks(List<BlockPair> batch)
         {
             this.logger.LogTrace("()");
@@ -299,6 +314,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             return batchCleared;
         }
 
+        /// <inheritdoc />
         public void Dispose()
         {
             this.logger.LogTrace("()");
