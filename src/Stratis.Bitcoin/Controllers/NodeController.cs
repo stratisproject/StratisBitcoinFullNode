@@ -65,14 +65,15 @@ namespace Stratis.Bitcoin.Controllers
                 RunningTime = this.dateTimeProvider.GetUtcNow() - this.fullNode.StartTime
             };
 
-            foreach (var feature in this.fullNode.Services.Features)
+            // Add the list of features that are enabled.
+            foreach (IFullNodeFeature feature in this.fullNode.Services.Features)
+            {
+                model.EnabledFeatures.Add(feature.GetType().ToString());
+
                 // Include BlockStore Height if enabled
                 if (feature is IBlockStore)
                     model.BlockStoreHeight = ((IBlockStore)feature).GetHighestPersistedBlock().Height;
-
-            // Add the list of features that are enabled.
-            foreach (IFullNodeFeature feature in this.fullNode.Services.Features)
-                model.EnabledFeatures.Add(feature.GetType().ToString());
+            }
 
             // Add the details of connected nodes.
             foreach (INetworkPeer peer in this.connectionManager.ConnectedPeers)
