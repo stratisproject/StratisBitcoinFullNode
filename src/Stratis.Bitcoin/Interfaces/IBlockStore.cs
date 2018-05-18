@@ -9,7 +9,7 @@ namespace Stratis.Bitcoin.Interfaces
 
         Task<uint256> GetTrxBlockIdAsync(uint256 trxid);
 
-        // <summary>Fetch the last block stored to disk.</summary>
+        /// <summary>Fetch the last block stored to disk.</summary>
         ChainedHeader GetHighestPersistedBlock();
     }
 }
