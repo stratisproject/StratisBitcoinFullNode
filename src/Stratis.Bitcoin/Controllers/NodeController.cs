@@ -65,8 +65,8 @@ namespace Stratis.Bitcoin.Controllers
                 RunningTime = this.dateTimeProvider.GetUtcNow() - this.fullNode.StartTime
             };
 
-            // Include BlockStore Height if enabled
             foreach (var feature in this.fullNode.Services.Features)
+                // Include BlockStore Height if enabled
                 if (feature is IBlockStore)
                     model.BlockStoreHeight = ((IBlockStore)feature).GetHighestPersistedBlock().Height;
 
