@@ -29,15 +29,15 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
         }
 
         /// <inheritdoc/>
-        internal override async Task<StepResult> ExecuteAsync(ChainedBlock nextChainedBlock, CancellationToken cancellationToken, bool disposeMode)
+        internal override async Task<StepResult> ExecuteAsync(ChainedHeader nextChainedHeader, CancellationToken cancellationToken, bool disposeMode)
         {
-            this.logger.LogTrace("({0}:'{1}',{2}:{3})", nameof(nextChainedBlock), nextChainedBlock, nameof(disposeMode), disposeMode);
+            this.logger.LogTrace("({0}:'{1}',{2}:{3})", nameof(nextChainedHeader), nextChainedHeader, nameof(disposeMode), disposeMode);
 
-            if (await this.BlockStoreLoop.BlockRepository.ExistAsync(nextChainedBlock.HashBlock))
+            if (await this.BlockStoreLoop.BlockRepository.ExistAsync(nextChainedHeader.HashBlock))
             {
-                await this.BlockStoreLoop.BlockRepository.SetBlockHashAsync(nextChainedBlock.HashBlock);
+                await this.BlockStoreLoop.BlockRepository.SetBlockHashAsync(nextChainedHeader.HashBlock);
 
-                this.BlockStoreLoop.SetStoreTip(nextChainedBlock);
+                this.BlockStoreLoop.SetStoreTip(nextChainedHeader);
 
                 this.logger.LogTrace("(-)[EXIST]:{0}", StepResult.Continue);
                 return StepResult.Continue;

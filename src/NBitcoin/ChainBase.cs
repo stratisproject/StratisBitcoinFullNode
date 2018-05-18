@@ -11,17 +11,17 @@ namespace NBitcoin
         /// </summary>
         /// <param name="id">Block ID to retreive.</param>
         /// <returns>The chained block header.</returns>
-        public abstract ChainedBlock GetBlock(uint256 id);
+        public abstract ChainedHeader GetBlock(uint256 id);
 
         /// <summary>
         /// Gets the chained block header at a given block height.
         /// </summary>
         /// <param name="height">Height to retrieve chained block header at.</param>
         /// <returns>The chained block header.</returns>
-        public abstract ChainedBlock GetBlock(int height);
+        public abstract ChainedHeader GetBlock(int height);
 
         /// <summary>Gets the chained block header at the tip of the chain.</summary>
-        public abstract ChainedBlock Tip { get; }
+        public abstract ChainedHeader Tip { get; }
 
         /// <summary>The network associated with the chain.</summary>
         public abstract Network Network { get; }
@@ -33,33 +33,33 @@ namespace NBitcoin
         /// Enumerates chained block headers from start of the chain.
         /// </summary>
         /// <returns>An enumerable iterator.</returns>
-        protected abstract IEnumerable<ChainedBlock> EnumerateFromStart();
+        protected abstract IEnumerable<ChainedHeader> EnumerateFromStart();
 
         /// <summary>
         /// Force a new tip for the chain.
         /// </summary>
-        /// <param name="chainedBlock">New tip for the chain.</param>
+        /// <param name="chainedHeader">New tip for the chain.</param>
         /// <returns>Forking point.</returns>
-        public abstract ChainedBlock SetTip(ChainedBlock chainedBlock);
+        public abstract ChainedHeader SetTip(ChainedHeader chainedHeader);
 
         /// <summary>Gets the genesis block for the chain.</summary>
-        public virtual ChainedBlock Genesis { get { return this.GetBlock(0); } }
+        public virtual ChainedHeader Genesis { get { return this.GetBlock(0); } }
 
         /// <summary>
         /// Gets an enumerable iterator for the chain.
         /// </summary>
         /// <param name="fromTip">Whether to iterate back from tip to find start or whether from start of chain.</param>
         /// <returns>An enumerable iterator for the chain.</returns>
-        public IEnumerable<ChainedBlock> ToEnumerable(bool fromTip)
+        public IEnumerable<ChainedHeader> ToEnumerable(bool fromTip)
         {
             if (fromTip)
             {
-                foreach (ChainedBlock block in this.Tip.EnumerateToGenesis())
+                foreach (ChainedHeader block in this.Tip.EnumerateToGenesis())
                     yield return block;
             }
             else
             {
-                foreach (ChainedBlock block in this.EnumerateFromStart())
+                foreach (ChainedHeader block in this.EnumerateFromStart())
                     yield return block;
             }
         }
@@ -69,7 +69,7 @@ namespace NBitcoin
         /// </summary>
         /// <param name="otherChain">The other chain whose tip to apply to this chain.</param>
         /// <returns>The new tip.</returns>
-        public ChainedBlock SetTip(ChainBase otherChain)
+        public ChainedHeader SetTip(ChainBase otherChain)
         {
             if (otherChain == null)
                 throw new ArgumentNullException("otherChain");
@@ -84,7 +84,7 @@ namespace NBitcoin
         /// <returns>Whether the tip was set successfully.</returns>
         public bool SetTip(BlockHeader header)
         {
-            ChainedBlock chainedHeader;
+            ChainedHeader chainedHeader;
             return this.TrySetTip(header, out chainedHeader);
         }
 
@@ -96,17 +96,17 @@ namespace NBitcoin
         /// <returns>Whether the tip was set successfully. The method fails (and returns <c>false</c>)
         /// if the <paramref name="header"/>'s link to a previous header does not point to any block
         /// in the current chain.</returns>
-        public bool TrySetTip(BlockHeader header, out ChainedBlock chainedHeader)
+        public bool TrySetTip(BlockHeader header, out ChainedHeader chainedHeader)
         {
             if (header == null)
                 throw new ArgumentNullException("header");
 
             chainedHeader = null;
-            ChainedBlock prev = this.GetBlock(header.HashPrevBlock);
+            ChainedHeader prev = this.GetBlock(header.HashPrevBlock);
             if (prev == null)
                 return false;
 
-            chainedHeader = new ChainedBlock(header, header.GetHash(), this.GetBlock(header.HashPrevBlock));
+            chainedHeader = new ChainedHeader(header, header.GetHash(), this.GetBlock(header.HashPrevBlock));
             this.SetTip(chainedHeader);
             return true;
         }
@@ -118,7 +118,7 @@ namespace NBitcoin
         /// <returns>Whether the chain contains the chained block header.</returns>
         public bool Contains(uint256 hash)
         {
-            ChainedBlock block = this.GetBlock(hash);
+            ChainedHeader block = this.GetBlock(hash);
             return block != null;
         }
 
@@ -151,7 +151,7 @@ namespace NBitcoin
         /// </summary>
         /// <param name="hashes">Hash to search for.</param>
         /// <returns>First found chained block header or <c>null</c> if not found.</returns>
-        public ChainedBlock FindFork(IEnumerable<uint256> hashes)
+        public ChainedHeader FindFork(IEnumerable<uint256> hashes)
         {
             if (hashes == null)
                 throw new ArgumentNullException("hashes");
@@ -159,7 +159,7 @@ namespace NBitcoin
             // Find the first block the caller has in the main chain.
             foreach (uint256 hash in hashes)
             {
-                ChainedBlock mi = this.GetBlock(hash);
+                ChainedHeader mi = this.GetBlock(hash);
                 if (mi != null)
                     return mi;
             }
@@ -172,7 +172,7 @@ namespace NBitcoin
         /// </summary>
         /// <param name="locator">The block locator.</param>
         /// <returns>The first chained block header that exists in the chain from the block locator.</returns>
-        public ChainedBlock FindFork(BlockLocator locator)
+        public ChainedHeader FindFork(BlockLocator locator)
         {
             if (locator == null)
                 throw new ArgumentNullException("locator");
@@ -185,12 +185,12 @@ namespace NBitcoin
         /// </summary>
         /// <param name="blockHash">Block hash to enumerate after.</param>
         /// <returns>Enumeration of chained block headers after given block hash.</returns>
-        public IEnumerable<ChainedBlock> EnumerateAfter(uint256 blockHash)
+        public IEnumerable<ChainedHeader> EnumerateAfter(uint256 blockHash)
         {
-            ChainedBlock block = this.GetBlock(blockHash);
+            ChainedHeader block = this.GetBlock(blockHash);
 
             if (block == null)
-                return new ChainedBlock[0];
+                return new ChainedHeader[0];
 
             return this.EnumerateAfter(block);
         }
@@ -200,7 +200,7 @@ namespace NBitcoin
         /// </summary>
         /// <param name="block">Chained block header to enumerate from.</param>
         /// <returns>Enumeration of chained block headers from given chained block header to tip.</returns>
-        public IEnumerable<ChainedBlock> EnumerateToTip(ChainedBlock block)
+        public IEnumerable<ChainedHeader> EnumerateToTip(ChainedHeader block)
         {
             if (block == null)
                 throw new ArgumentNullException("block");
@@ -213,15 +213,15 @@ namespace NBitcoin
         /// </summary>
         /// <param name="blockHash">Block hash to enumerate from.</param>
         /// <returns>Enumeration of chained block headers from the given block hash to tip.</returns>
-        public IEnumerable<ChainedBlock> EnumerateToTip(uint256 blockHash)
+        public IEnumerable<ChainedHeader> EnumerateToTip(uint256 blockHash)
         {
-            ChainedBlock block = this.GetBlock(blockHash);
+            ChainedHeader block = this.GetBlock(blockHash);
             if (block == null)
                 yield break;
 
             yield return block;
 
-            foreach (ChainedBlock chainedBlock in this.EnumerateAfter(blockHash))
+            foreach (ChainedHeader chainedBlock in this.EnumerateAfter(blockHash))
                 yield return chainedBlock;
         }
 
@@ -230,14 +230,14 @@ namespace NBitcoin
         /// </summary>
         /// <param name="block">The chained block header to enumerate after.</param>
         /// <returns>Enumeration of chained block headers after the given block.</returns>
-        public virtual IEnumerable<ChainedBlock> EnumerateAfter(ChainedBlock block)
+        public virtual IEnumerable<ChainedHeader> EnumerateAfter(ChainedHeader block)
         {
             int i = block.Height + 1;
-            ChainedBlock prev = block;
+            ChainedHeader prev = block;
 
             while (true)
             {
-                ChainedBlock b = this.GetBlock(i);
+                ChainedHeader b = this.GetBlock(i);
                 if ((b == null) || (b.Previous != prev))
                     yield break;
 

@@ -12,21 +12,21 @@ namespace Stratis.Bitcoin.Features.BlockStore
         public Block Block { get; private set; }
 
         /// <summary>Chained header of the <see cref="Block"/>.</summary>
-        public ChainedBlock ChainedBlock { get; private set; }
+        public ChainedHeader ChainedHeader { get; private set; }
 
         /// <summary>
         /// Creates instance of <see cref="BlockPair" />.
         /// </summary>
         /// <param name="block">The block.</param>
-        /// <param name="chainedBlock">Chained header of the <paramref name="block"/>.</param>
-        public BlockPair(Block block, ChainedBlock chainedBlock)
+        /// <param name="chainedHeader">Chained header of the <paramref name="block"/>.</param>
+        public BlockPair(Block block, ChainedHeader chainedHeader)
         {
             Guard.NotNull(block, nameof(block));
-            Guard.NotNull(chainedBlock, nameof(chainedBlock));
-            Guard.Assert(block.GetHash() == chainedBlock.HashBlock);
+            Guard.NotNull(chainedHeader, nameof(chainedHeader));
+            Guard.Assert(block.GetHash() == chainedHeader.HashBlock);
 
             this.Block = block;
-            this.ChainedBlock = chainedBlock;
+            this.ChainedHeader = chainedHeader;
         }
     }
 }

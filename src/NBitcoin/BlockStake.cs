@@ -120,18 +120,18 @@ namespace NBitcoin
         /// Check PoW and that the blocks connect correctly
         /// </summary>
         /// <param name="network">The network being used</param>
-        /// <param name="chainedBlock">The chain representing a block header.</param>
+        /// <param name="chainedHeader">Chained block header</param>
         /// <returns>True if PoW is correct</returns>
-        public static bool Validate(Network network, ChainedBlock chainedBlock)
+        public static bool Validate(Network network, ChainedHeader chainedHeader)
         {
             if (network == null)
                 throw new ArgumentNullException("network");
-            if (chainedBlock.Height != 0 && chainedBlock.Previous == null)
+            if (chainedHeader.Height != 0 && chainedHeader.Previous == null)
                 return false;
-            var heightCorrect = chainedBlock.Height == 0 || chainedBlock.Height == chainedBlock.Previous.Height + 1;
-            var genesisCorrect = chainedBlock.Height != 0 || chainedBlock.HashBlock == network.GetGenesis().GetHash();
-            var hashPrevCorrect = chainedBlock.Height == 0 || chainedBlock.Header.HashPrevBlock == chainedBlock.Previous.HashBlock;
-            var hashCorrect = chainedBlock.HashBlock == chainedBlock.Header.GetHash();
+            var heightCorrect = chainedHeader.Height == 0 || chainedHeader.Height == chainedHeader.Previous.Height + 1;
+            var genesisCorrect = chainedHeader.Height != 0 || chainedHeader.HashBlock == network.GetGenesis().GetHash();
+            var hashPrevCorrect = chainedHeader.Height == 0 || chainedHeader.Header.HashPrevBlock == chainedHeader.Previous.HashBlock;
+            var hashCorrect = chainedHeader.HashBlock == chainedHeader.Header.GetHash();
 
             return heightCorrect && genesisCorrect && hashPrevCorrect && hashCorrect;
         }

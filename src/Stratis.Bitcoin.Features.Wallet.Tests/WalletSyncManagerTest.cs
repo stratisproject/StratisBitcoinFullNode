@@ -62,7 +62,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             walletSyncManager.Start();
 
             this.walletManager.Verify(w => w.GetFirstWalletBlockLocator(), Times.Exactly(0));
-            this.walletManager.Verify(w => w.RemoveBlocks(It.IsAny<ChainedBlock>()), Times.Exactly(0));
+            this.walletManager.Verify(w => w.RemoveBlocks(It.IsAny<ChainedHeader>()), Times.Exactly(0));
         }
 
         [Fact]
@@ -84,7 +84,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             walletSyncManager.Start();
 
             // verify the walletmanager is reorged using the fork block and it's tip is set to it.
-            this.walletManager.Verify(w => w.RemoveBlocks(It.Is<ChainedBlock>(c => c.Header.GetHash() == forkBlockHash)));
+            this.walletManager.Verify(w => w.RemoveBlocks(It.Is<ChainedHeader>(c => c.Header.GetHash() == forkBlockHash)));
             this.walletManager.VerifySet(w => w.WalletTipHash = forkBlockHash);
             Assert.Equal(walletSyncManager.WalletTip.HashBlock.ToString(), forkBlock.HashBlock.ToString());
         }
@@ -108,7 +108,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
             var expectedBlockHash = this.chain.GetBlock(4).Header.GetHash();
             Assert.Equal(expectedBlockHash, walletSyncManager.WalletTip.Header.GetHash());
-            this.walletManager.Verify(w => w.ProcessBlock(It.Is<Block>(b => b.GetHash() == blockToProcess.GetHash()), It.Is<ChainedBlock>(c => c.Header.GetHash() == expectedBlockHash)));
+            this.walletManager.Verify(w => w.ProcessBlock(It.Is<Block>(b => b.GetHash() == blockToProcess.GetHash()), It.Is<ChainedHeader>(c => c.Header.GetHash() == expectedBlockHash)));
         }
 
         /// <summary>
@@ -336,9 +336,9 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             });
         }
 
-        private static ChainedBlock ExpectChainedBlock(ChainedBlock block)
+        private static ChainedHeader ExpectChainedBlock(ChainedHeader block)
         {
-            return It.Is<ChainedBlock>(c => c.Header.GetHash() == block.Header.GetHash());
+            return It.Is<ChainedHeader>(c => c.Header.GetHash() == block.Header.GetHash());
         }
 
         private static Block ExpectBlock(Block block)
@@ -354,7 +354,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             {
             }
 
-            public void SetWalletTip(ChainedBlock tip)
+            public void SetWalletTip(ChainedHeader tip)
             {
                 this.walletTip = tip;
             }

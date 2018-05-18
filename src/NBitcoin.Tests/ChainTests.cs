@@ -122,7 +122,7 @@ namespace NBitcoin.Tests
             Assert.Equal(cchain.GetBlock(5), b5b);
         }
 
-        private ChainedBlock AddBlock(ConcurrentChain chain)
+        private ChainedHeader AddBlock(ConcurrentChain chain)
         {
             BlockHeader header = new BlockHeader();
             header.Nonce = RandomUtils.GetUInt32();
@@ -184,7 +184,7 @@ namespace NBitcoin.Tests
             AssertFork(chain, chain2, tip);
         }
 
-        private void AssertFork(ConcurrentChain chain, ConcurrentChain chain2, ChainedBlock expectedFork)
+        private void AssertFork(ConcurrentChain chain, ConcurrentChain chain2, ChainedHeader expectedFork)
         {
             var fork = this.FindFork(chain, chain2);
             Assert.Equal(expectedFork, fork);
@@ -425,12 +425,12 @@ namespace NBitcoin.Tests
         }
 
         /// <summary> 
-        /// Adapted from bitcoin core test, verify GetAncestor is using skip list in <see cref="ChainedBlock"/>.
+        /// Adapted from bitcoin core test, verify GetAncestor is using skip list in <see cref="ChainedHeader"/>.
         /// <seealso cref="https://github.com/bitcoin/bitcoin/blob/master/src/test/skiplist_tests.cpp"/>
         /// </summary>
         [Fact]
         [Trait("UnitTest", "UnitTest")]
-        public void ChainedBlockVerifySkipListForGetAncestor()
+        public void ChainedHeaderVerifySkipListForGetAncestor()
         {
             int skipListLength = 300000;
 
@@ -438,10 +438,10 @@ namespace NBitcoin.Tests
             ConcurrentChain chain = this.CreateChain(skipListLength - 1);
 
             // Also want a copy in array form so can quickly verify indexing.
-            ChainedBlock[] chainArray = new ChainedBlock[skipListLength];
+            ChainedHeader[] chainArray = new ChainedHeader[skipListLength];
 
             // Check skip height and build out array copy.
-            foreach (ChainedBlock block in chain.EnumerateToTip(chain.Genesis))
+            foreach (ChainedHeader block in chain.EnumerateToTip(chain.Genesis))
             {
                 if (block.Height > 0)
                     Assert.True(block.Skip.Height < block.Height);
@@ -465,12 +465,12 @@ namespace NBitcoin.Tests
         }
 
         /// <summary> 
-        /// Adapted from bitcoin core test, verify GetLocator is using skip list in <see cref="ChainedBlock"/>.
+        /// Adapted from bitcoin core test, verify GetLocator is using skip list in <see cref="ChainedHeader"/>.
         /// <seealso cref="https://github.com/bitcoin/bitcoin/blob/master/src/test/skiplist_tests.cpp"/>
         /// </summary>
         [Fact]
         [Trait("UnitTest", "UnitTest")]
-        public void ChainedBlockVerifySkipListForGetLocator()
+        public void ChainedHeaderVerifySkipListForGetLocator()
         {
             int mainLength = 100000;
             int branchLength = 50000;
@@ -479,15 +479,15 @@ namespace NBitcoin.Tests
             ConcurrentChain chain = this.CreateChain(mainLength - 1);
 
             // Make a branch that splits off at block 49999, 50000 blocks long.
-            ChainedBlock mainTip = chain.Tip;
-            ChainedBlock block = mainTip.GetAncestor(branchLength - 1);
+            ChainedHeader mainTip = chain.Tip;
+            ChainedHeader block = mainTip.GetAncestor(branchLength - 1);
             for (int i = 0; i < branchLength; i++)
             {
                 Block newBlock = TestUtils.CreateFakeBlock();
                 newBlock.Header.HashPrevBlock = block.Header.GetHash();
-                block = new ChainedBlock(newBlock.Header, newBlock.Header.GetHash(), block);
+                block = new ChainedHeader(newBlock.Header, newBlock.Header.GetHash(), block);
             }
-            ChainedBlock branchTip = block;
+            ChainedHeader branchTip = block;
 
             // Test 100 random starting points for locators.
             Random rand = new Random();
@@ -497,7 +497,7 @@ namespace NBitcoin.Tests
                 int r = rand.Next(mainLength + branchLength);
 
                 // Block to get locator for.
-                ChainedBlock tip = r < mainLength ? mainTip.GetAncestor(r) : branchTip.GetAncestor(r - mainLength);
+                ChainedHeader tip = r < mainLength ? mainTip.GetAncestor(r) : branchTip.GetAncestor(r - mainLength);
 
                 // Get a block locator.
                 BlockLocator locator = tip.GetLocator();
@@ -509,7 +509,7 @@ namespace NBitcoin.Tests
                 // Entries 1 through 11 (inclusive) go back one step each.
                 for (int i = 1; (i < 12) && (i < (locator.Blocks.Count - 1)); i++)
                 {
-                    ChainedBlock expectedBlock = tip.GetAncestor(tip.Height - i);
+                    ChainedHeader expectedBlock = tip.GetAncestor(tip.Height - i);
                     Assert.Equal(expectedBlock.HashBlock, locator.Blocks[i]);
                 }
 
@@ -518,7 +518,7 @@ namespace NBitcoin.Tests
                 int height = tip.Height - 11 - dist;
                 for (int i = 12; i < locator.Blocks.Count() - 1; i++)
                 {
-                    ChainedBlock expectedBlock = tip.GetAncestor(height);
+                    ChainedHeader expectedBlock = tip.GetAncestor(height);
                     Assert.Equal(expectedBlock.HashBlock, locator.Blocks[i]);
                     dist *= 2;
                     height -= dist;
@@ -544,9 +544,9 @@ namespace NBitcoin.Tests
         }
 
 
-        public ChainedBlock AppendBlock(ChainedBlock previous, params ConcurrentChain[] chains)
+        public ChainedHeader AppendBlock(ChainedHeader previous, params ConcurrentChain[] chains)
         {
-            ChainedBlock last = null;
+            ChainedHeader last = null;
             var nonce = RandomUtils.GetUInt32();
             foreach (var chain in chains)
             {
@@ -559,9 +559,9 @@ namespace NBitcoin.Tests
             return last;
         }
 
-        private ChainedBlock AppendBlock(params ConcurrentChain[] chains)
+        private ChainedHeader AppendBlock(params ConcurrentChain[] chains)
         {
-            ChainedBlock index = null;
+            ChainedHeader index = null;
             return AppendBlock(index, chains);
         }
 
@@ -571,7 +571,7 @@ namespace NBitcoin.Tests
         /// <param name="chainSrc">The source chain.</param>
         /// <param name="otherChain">The other chain.</param>
         /// <returns>First common chained block header or <c>null</c>.</returns>
-        private ChainedBlock FindFork(ChainBase chainSrc, ChainBase otherChain)
+        private ChainedHeader FindFork(ChainBase chainSrc, ChainBase otherChain)
         {
             if (otherChain == null)
                 throw new ArgumentNullException("otherChain");

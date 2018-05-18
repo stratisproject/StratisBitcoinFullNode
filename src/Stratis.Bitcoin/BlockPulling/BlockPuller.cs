@@ -185,12 +185,12 @@ namespace Stratis.Bitcoin.BlockPulling
         }
 
         /// <inheritdoc />
-        public virtual void AskBlocks(ChainedBlock[] downloadRequests)
+        public virtual void AskBlocks(ChainedHeader[] downloadRequests)
         {
             this.logger.LogTrace("({0}:[{1}])", nameof(downloadRequests), string.Join(",", downloadRequests.Select(r => r.Height)));
 
             var vectors = new Dictionary<int, InventoryVector>();
-            foreach (ChainedBlock request in downloadRequests)
+            foreach (ChainedHeader request in downloadRequests)
             {
                 InventoryVector vector = new InventoryVector(InventoryType.MSG_BLOCK, request.HashBlock);
                 vectors.Add(request.Height, vector);
@@ -239,14 +239,14 @@ namespace Stratis.Bitcoin.BlockPulling
             {
                 InventoryVector vector = new InventoryVector(InventoryType.MSG_BLOCK, blockHash);
 
-                ChainedBlock chainedBlock = this.Chain.GetBlock(vector.Hash);
-                if (chainedBlock == null) // Reorg might have happened.
+                ChainedHeader chainedHeader = this.Chain.GetBlock(vector.Hash);
+                if (chainedHeader == null) // Reorg might have happened.
                     continue;
 
-                minHeight = Math.Min(chainedBlock.Height, minHeight);
+                minHeight = Math.Min(chainedHeader.Height, minHeight);
 
-                if (!vectors.ContainsKey(chainedBlock.Height))
-                    vectors.Add(chainedBlock.Height, vector);
+                if (!vectors.ContainsKey(chainedHeader.Height))
+                    vectors.Add(chainedHeader.Height, vector);
             }
 
             if (vectors.Count > 0) this.DistributeDownload(vectors, minHeight);
@@ -274,21 +274,21 @@ namespace Stratis.Bitcoin.BlockPulling
         /// <para>This function is called when something goes wrong with the peer.</para>
         /// <para>If the score reaches the minimal value, the tasks assigned for the node are released.</para>
         /// </summary>
-        /// <param name="chainedBlock">Block the node wanted to download, but something went wrong during the process.</param>
-        protected void OnStalling(ChainedBlock chainedBlock)
+        /// <param name="chainedHeader>Block the node wanted to download, but something went wrong during the process.</param>
+        protected void OnStalling(ChainedHeader chainedHeader)
         {
-            this.logger.LogTrace("({0}:'{1}')", nameof(chainedBlock), chainedBlock.HashBlock);
+            this.logger.LogTrace("({0}:'{1}')", nameof(chainedHeader), chainedHeader.HashBlock);
             BlockPullerBehavior behavior = null;
 
             lock (this.lockObject)
             {
-                this.assignedBlockTasks.TryGetValue(chainedBlock.HashBlock, out behavior);
+                this.assignedBlockTasks.TryGetValue(chainedHeader.HashBlock, out behavior);
             }
 
             if (behavior != null)
             {
-                double penalty = this.peerQuality.CalculateNextBlockTimeoutQualityPenalty();
-                this.logger.LogTrace("Block '{0}' assigned to peer {1:x}, penalty is {2}.", chainedBlock.HashBlock, behavior.GetHashCode(), penalty);
+                double penalty = -1;
+                this.logger.LogTrace("Block '{0}' assigned to peer {1:x}, penalty is {2}.", chainedHeader.HashBlock, behavior.GetHashCode(), penalty);
 
                 behavior.UpdateQualityScore(penalty);
                 if (Math.Abs(behavior.QualityScore - QualityScore.MinScore) < 0.00001)
@@ -299,7 +299,7 @@ namespace Stratis.Bitcoin.BlockPulling
             }
             else
             {
-                this.logger.LogTrace("Block '{0}' not assigned to any peer.", chainedBlock.HashBlock);
+                this.logger.LogTrace("Block '{0}' not assigned to any peer.", chainedHeader.HashBlock);
                 this.AssignPendingVectors();
             }
 

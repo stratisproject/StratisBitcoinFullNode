@@ -26,11 +26,11 @@ namespace Stratis.Bitcoin.BlockPulling
         Block TryGetLookahead(int count);
 
         /// <summary>Gets the current location of the puller to a specific block header.</summary>
-        ChainedBlock Location { get; }
+        ChainedHeader Location { get; }
 
         /// <summary>Sets the current location of the puller to a specific block header.</summary>
         /// <param name="location">Block header to set the location to.</param>
-        void SetLocation(ChainedBlock location);
+        void SetLocation(ChainedHeader location);
 
         /// <summary>
         /// Waits for a next block to be available (downloaded) and returns it to the consumer.
@@ -43,7 +43,7 @@ namespace Stratis.Bitcoin.BlockPulling
         /// Adds a specific requirement to all peer nodes.
         /// </summary>
         /// <param name="transactionOptions">Specifies the requirement on nodes to add.</param>
-        void RequestOptions(NetworkOptions transactionOptions);
+        void RequestOptions(TransactionOptions transactionOptions);
     }
 
     /// <summary>
@@ -153,7 +153,7 @@ namespace Stratis.Bitcoin.BlockPulling
 
         /// <summary>Queue of download requests that couldn't be asked for due to <see cref="MaxBufferedSize"/> limit.</summary>
         /// <remarks>All access to this object has to be protected by <see cref="bufferLock"/>.</remarks>
-        private readonly Queue<ChainedBlock> askBlockQueue = new Queue<ChainedBlock>();
+        private readonly Queue<ChainedHeader> askBlockQueue = new Queue<ChainedHeader>();
 
         /// <summary>Current number of bytes that unconsumed blocks are occupying.</summary>
         /// <remarks>All access to this object has to be protected by <see cref="bufferLock"/>.</remarks>
@@ -175,10 +175,10 @@ namespace Stratis.Bitcoin.BlockPulling
 
         /// <summary>Points to a block that was consumed last time. The next block returned by the puller to the consumer will be at location + 1.</summary>
         /// <remarks>Write access to this object has to be protected by <see cref="locationLock"/>.</remarks>
-        private ChainedBlock location;
+        private ChainedHeader location;
 
         /// <summary>Identifies the last block that is currently being requested/downloaded.</summary>
-        private ChainedBlock lookaheadLocation;
+        private ChainedHeader lookaheadLocation;
 
         /// <summary>Event that signals when a downloaded block is consumed.</summary>
         private readonly AutoResetEvent consumed = new AutoResetEvent(false);
@@ -234,13 +234,13 @@ namespace Stratis.Bitcoin.BlockPulling
         }
 
         /// <inheritdoc />
-        public ChainedBlock Location
+        public ChainedHeader Location
         {
             get { return this.location; }
         }
 
         /// <inheritdoc />
-        public void SetLocation(ChainedBlock tip)
+        public void SetLocation(ChainedHeader tip)
         {
             Guard.NotNull(tip, nameof(tip));
             lock (this.locationLock)
@@ -250,11 +250,11 @@ namespace Stratis.Bitcoin.BlockPulling
         }
 
         /// <inheritdoc />
-        public void RequestOptions(NetworkOptions transactionOptions)
+        public void RequestOptions(TransactionOptions transactionOptions)
         {
             this.logger.LogTrace("({0}:{1})", nameof(transactionOptions), transactionOptions);
 
-            if (transactionOptions == NetworkOptions.Witness)
+            if (transactionOptions == TransactionOptions.Witness)
             {
                 this.Requirements.RequiredServices |= NetworkPeerServices.NODE_WITNESS;
                 foreach (BlockPullerBehavior node in this.Nodes.Select(n => n.Behaviors.Find<BlockPullerBehavior>()))
@@ -366,14 +366,14 @@ namespace Stratis.Bitcoin.BlockPulling
         {
             this.logger.LogTrace("({0}:{1})", nameof(count), count);
 
-            ChainedBlock chainedBlock = this.Chain.GetBlock(this.location.Height + 1 + count);
-            if (chainedBlock == null)
+            ChainedHeader chainedHeader = this.Chain.GetBlock(this.location.Height + 1 + count);
+            if (chainedHeader == null)
             {
                 this.logger.LogTrace("(-)[NOT_KNOWN]");
                 return null;
             }
 
-            DownloadedBlock block = this.GetDownloadedBlock(chainedBlock.HashBlock);
+            DownloadedBlock block = this.GetDownloadedBlock(chainedHeader.HashBlock);
             if (block == null)
             {
                 this.logger.LogTrace("(-)[NOT_AVAILABLE]");
@@ -422,19 +422,19 @@ namespace Stratis.Bitcoin.BlockPulling
             if ((this.lookaheadLocation != null) && !this.Chain.Contains(this.lookaheadLocation.HashBlock))
                 this.lookaheadLocation = null;
 
-            ChainedBlock lookaheadBlock = this.lookaheadLocation ?? this.location;
-            ChainedBlock nextLookaheadBlock = this.Chain.GetBlock(Math.Min(lookaheadBlock.Height + this.ActualLookahead, this.Chain.Height));
+            ChainedHeader lookaheadBlock = this.lookaheadLocation ?? this.location;
+            ChainedHeader nextLookaheadBlock = this.Chain.GetBlock(Math.Min(lookaheadBlock.Height + this.ActualLookahead, this.Chain.Height));
             if (nextLookaheadBlock == null)
                 return;
 
-            ChainedBlock fork = nextLookaheadBlock.FindFork(lookaheadBlock);
+            ChainedHeader fork = nextLookaheadBlock.FindFork(lookaheadBlock);
 
             this.lookaheadLocation = nextLookaheadBlock;
 
             int requestsCount = nextLookaheadBlock.Height - fork.Height;
             if (requestsCount > 0)
             {
-                ChainedBlock[] downloadRequests = new ChainedBlock[requestsCount];
+                ChainedHeader[] downloadRequests = new ChainedHeader[requestsCount];
                 for (int i = 0; i < requestsCount; i++)
                 {
                     downloadRequests[requestsCount - i - 1] = nextLookaheadBlock;
@@ -458,7 +458,7 @@ namespace Stratis.Bitcoin.BlockPulling
         /// Array of block descriptions that need to be downloaded. Must not be empty.
         /// Blocks in the array have to be unique - it is not supported for a single block to be included twice in this array.
         /// </param>
-        private void QueueRequests(ChainedBlock[] downloadRequests)
+        private void QueueRequests(ChainedHeader[] downloadRequests)
         {
             this.logger.LogTrace("({0}.{1}:{2})", nameof(downloadRequests), nameof(downloadRequests.Length), downloadRequests.Length);
 
@@ -479,7 +479,7 @@ namespace Stratis.Bitcoin.BlockPulling
         {
             this.logger.LogTrace("()");
 
-            var requestsToAsk = new List<ChainedBlock>();
+            var requestsToAsk = new List<ChainedHeader>();
             lock (this.bufferLock)
             {
                 // We estimate the space needed for the next block as the average size of unconsumed blocks
@@ -492,7 +492,7 @@ namespace Stratis.Bitcoin.BlockPulling
                 {
                     while (this.askBlockQueue.Count > 0)
                     {
-                        ChainedBlock request = this.askBlockQueue.Peek();
+                        ChainedHeader request = this.askBlockQueue.Peek();
                         bool isNextBlock = request.Height == this.location.Height + 1;
 
                         // Buffer is full if the current buffered size plus expected size of all blocks we will ask,
@@ -540,7 +540,7 @@ namespace Stratis.Bitcoin.BlockPulling
                 cancellationToken.ThrowIfCancellationRequested();
 
                 this.logger.LogTrace("Requesting block at height {0}.", this.location.Height + 1);
-                ChainedBlock header = this.Chain.GetBlock(this.location.Height + 1);
+                ChainedHeader header = this.Chain.GetBlock(this.location.Height + 1);
                 DownloadedBlock block;
 
                 bool isDownloading = false;
@@ -587,7 +587,7 @@ namespace Stratis.Bitcoin.BlockPulling
                         this.logger.LogTrace("Block not available.");
 
                         // Or the block is still being downloaded or we need to ask for this block to be downloaded.
-                        if (!isDownloading) this.AskBlocks(new ChainedBlock[] { header });
+                        if (!isDownloading) this.AskBlocks(new ChainedHeader[] { header });
 
                         this.OnStalling(header);
                     }

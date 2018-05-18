@@ -34,7 +34,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         public const int BanDurationDefaultBan = 0;
 
         /// <summary>The chain of headers associated with the block.</summary>
-        public ChainedBlock ChainedBlock { get; set; }
+        public ChainedHeader ChainedHeader { get; set; }
 
         /// <summary>Downloaded or mined block to be validated.</summary>
         public Block Block { get; set; }
@@ -97,7 +97,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         public IPowConsensusValidator Validator { get; }
 
         /// <summary>The current tip of the chain that has been validated.</summary>
-        public ChainedBlock Tip { get; private set; }
+        public ChainedHeader Tip { get; private set; }
 
         /// <summary>Contain information about deployment and activation of features in the chain.</summary>
         public NodeDeployments NodeDeployments { get; private set; }
@@ -271,7 +271,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                 using (new StopwatchDisposable(o => this.Validator.PerformanceCounter.AddBlockFetchingTime(o)))
                 {
                     // Save the current consensus tip to later check if it changed.
-                    ChainedBlock consensusTip = this.Tip;
+                    ChainedHeader consensusTip = this.Tip;
 
                     this.logger.LogTrace("Asking block puller to deliver next block.");
 
@@ -317,10 +317,10 @@ namespace Stratis.Bitcoin.Features.Consensus
         {
             this.logger.LogTrace("()");
 
-            ChainedBlock lastTip = this.Tip;
+            ChainedHeader lastTip = this.Tip;
             CancellationToken token = this.nodeLifetime.ApplicationStopping;
 
-            ChainedBlock rewinded = null;
+            ChainedHeader rewinded = null;
             while (rewinded == null)
             {
                 token.ThrowIfCancellationRequested();
@@ -389,7 +389,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                     {
                         this.logger.LogInformation("You probably need witness information, activating witness requirement for peers.");
                         this.connectionManager.AddDiscoveredNodesRequirement(NetworkPeerServices.NODE_WITNESS);
-                        this.Puller.RequestOptions(NetworkOptions.Witness);
+                        this.Puller.RequestOptions(TransactionOptions.Witness);
 
                         this.logger.LogTrace("(-)[BAD_WITNESS_NONCE_SIZE]");
                         return;
@@ -422,7 +422,7 @@ namespace Stratis.Bitcoin.Features.Consensus
 
                     // We really want to flush if we are at the top of the chain.
                     // Otherwise, we just allow the flush to happen if it is needed.
-                    bool forceFlush = this.Chain.Tip.HashBlock == blockValidationContext.ChainedBlock?.HashBlock;
+                    bool forceFlush = this.Chain.Tip.HashBlock == blockValidationContext.ChainedHeader?.HashBlock;
                     await this.FlushAsync(forceFlush).ConfigureAwait(false);
 
                     if (this.Tip.ChainWork > this.Chain.Tip.ChainWork)
@@ -438,7 +438,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                 }
             }
 
-            this.logger.LogTrace("(-):*.{0}='{1}',*.{2}='{3}'", nameof(blockValidationContext.ChainedBlock), blockValidationContext.ChainedBlock, nameof(blockValidationContext.Error), blockValidationContext.Error?.Message);
+            this.logger.LogTrace("(-):*.{0}='{1}',*.{2}='{3}'", nameof(blockValidationContext.ChainedHeader), blockValidationContext.ChainedHeader, nameof(blockValidationContext.Error), blockValidationContext.Error?.Message);
         }
 
         /// <inheritdoc/>
@@ -471,10 +471,10 @@ namespace Stratis.Bitcoin.Features.Consensus
             // Persist the changes to the coinview. This will likely only be stored in memory,
             // unless the coinview treashold is reached.
             this.logger.LogTrace("Saving coinview changes.");
-            await this.UTXOSet.SaveChangesAsync(context.Set.GetCoins(this.UTXOSet), null, this.Tip.HashBlock, context.BlockValidationContext.ChainedBlock.HashBlock).ConfigureAwait(false);
+            await this.UTXOSet.SaveChangesAsync(context.Set.GetCoins(this.UTXOSet), null, this.Tip.HashBlock, context.BlockValidationContext.ChainedHeader.HashBlock).ConfigureAwait(false);
 
             // Set the new tip.
-            this.Tip = context.BlockValidationContext.ChainedBlock;
+            this.Tip = context.BlockValidationContext.ChainedHeader;
             this.logger.LogTrace("(-)[OK]");
         }
 

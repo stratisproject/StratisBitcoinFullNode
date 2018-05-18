@@ -80,18 +80,18 @@ namespace Stratis.Bitcoin.IntegrationTests
             {2, 0xbbbeb305}, {2, 0xfe1c810a}
         };
 
-        public ChainedBlock CreateBlockIndex(ChainedBlock prev)
+        public ChainedHeader CreateBlockIndex(ChainedHeader prev)
         {
-            ChainedBlock index = new ChainedBlock(new BlockHeader(), new BlockHeader().GetHash(), prev);
+            var index = new ChainedHeader(new BlockHeader(), new BlockHeader().GetHash(), prev);
             return index;
         }
 
-        public bool TestSequenceLocks(TestContext testContext, ChainedBlock chainedBlock, Transaction tx, Transaction.LockTimeFlags flags, LockPoints uselock = null)
+        public bool TestSequenceLocks(TestContext testContext, ChainedHeader chainedHeader, Transaction tx, Transaction.LockTimeFlags flags, LockPoints uselock = null)
         {
             var context = new MempoolValidationContext(tx, new MempoolValidationState(false));
             context.View = new MempoolCoinView(testContext.cachedCoinView, testContext.mempool, testContext.mempoolLock, null);
             context.View.LoadViewAsync(tx).GetAwaiter().GetResult();
-            return MempoolValidator.CheckSequenceLocks(testContext.network, chainedBlock, context, flags, uselock, false);
+            return MempoolValidator.CheckSequenceLocks(testContext.network, chainedHeader, context, flags, uselock, false);
         }
 
         // TODO: There may be an opportunity to share the logic for populating the chain (TestContext) using TestChainFactory in the mempool unit tests.
@@ -699,7 +699,7 @@ namespace Stratis.Bitcoin.IntegrationTests
             //    block.AddTransaction(coinbase);
             //    block.UpdateMerkleRoot();
             //    block.Header.Nonce = 0;
-            //    chain.SetTip(new ChainedBlock(block.Header, block.GetHash(), chain.Tip));
+            //    chain.SetTip(new ChainedHeader(block.Header, block.GetHash(), chain.Tip));
             //}
             //pblocktemplate = AssemblerForTest(consensus, network, date as DateTimeProvider, mempool, scheduler, chain).CreateNewBlock(scriptPubKey);
             //Assert.NotNull(pblocktemplate);

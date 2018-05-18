@@ -48,7 +48,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             this.ruleContext.SkipValidation = false;
             this.ruleContext.BestBlock = new ContextBlockInformation() { Height = 1 };
             this.ruleContext.BlockValidationContext.Block = new Block();
-            this.ruleContext.BlockValidationContext.ChainedBlock = this.concurrentChain.GetBlock(5);
+            this.ruleContext.BlockValidationContext.ChainedHeader = this.concurrentChain.GetBlock(5);
 
             this.checkpoints.Setup(c => c.CheckHardened(2, this.ruleContext.BlockValidationContext.Block.GetHash()))
                 .Returns(true);
@@ -68,7 +68,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             this.ruleContext.SkipValidation = false;
             this.ruleContext.BestBlock = new ContextBlockInformation() { Height = 1 };
             this.ruleContext.BlockValidationContext.Block = new Block();
-            this.ruleContext.BlockValidationContext.ChainedBlock = this.concurrentChain.GetBlock(5);
+            this.ruleContext.BlockValidationContext.ChainedHeader = this.concurrentChain.GetBlock(5);
 
             this.checkpoints.Setup(c => c.CheckHardened(2, this.ruleContext.BlockValidationContext.Block.GetHash()))
                 .Returns(true);
@@ -88,7 +88,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             this.ruleContext.SkipValidation = false;
             this.ruleContext.BestBlock = new ContextBlockInformation() { Height = 1 };
             this.ruleContext.BlockValidationContext.Block = new Block();
-            this.ruleContext.BlockValidationContext.ChainedBlock = this.concurrentChain.GetBlock(5);
+            this.ruleContext.BlockValidationContext.ChainedHeader = this.concurrentChain.GetBlock(5);
 
             this.checkpoints.Setup(c => c.CheckHardened(2, this.ruleContext.BlockValidationContext.Block.GetHash()))
                 .Returns(true);

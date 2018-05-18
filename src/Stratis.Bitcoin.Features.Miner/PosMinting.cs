@@ -386,6 +386,7 @@ namespace Stratis.Bitcoin.Features.Miner
             if (Interlocked.CompareExchange(ref this.stakeProgressFlag, StakeInProgress, StakeNotInProgress) == StakeInProgress)
             {
                 this.logger.LogTrace("(-)[ALREADY_MINING]");
+                return;
             }
 
             this.rpcGetStakingInfoModel.Enabled = true;
@@ -445,10 +446,11 @@ namespace Stratis.Bitcoin.Features.Miner
                 return;
             }
 
-            this.stakeCancellationTokenSource.Cancel();
-            this.stakingLoop.Dispose();
+            this.stakeCancellationTokenSource?.Cancel();  
+            this.logger.LogTrace("Disposing staking loop.");
+            this.stakingLoop?.Dispose();
             this.stakingLoop = null;
-            this.stakeCancellationTokenSource.Dispose();
+            this.stakeCancellationTokenSource?.Dispose();
             this.stakeCancellationTokenSource = null;
             this.rpcGetStakingInfoModel = new Miner.Models.GetStakingInfoModel();
             this.rpcGetStakingInfoModel.Enabled = false;
@@ -484,7 +486,7 @@ namespace Stratis.Bitcoin.Features.Miner
                     continue;
                 }
 
-                ChainedBlock chainTip = this.chain.Tip;
+                ChainedHeader chainTip = this.chain.Tip;
                 if (chainTip != this.consensusLoop.Tip)
                 {
                     this.logger.LogTrace("(-)[SYNC_OR_REORG]");
@@ -576,7 +578,7 @@ namespace Stratis.Bitcoin.Features.Miner
         /// </summary>
         /// <param name="block">The new block.</param>
         /// <param name="chainTip">Block that was considered as a chain tip when the block staking started.</param>
-        private void CheckStake(Block block, ChainedBlock chainTip)
+        private void CheckStake(Block block, ChainedHeader chainTip)
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(chainTip), chainTip);
 
@@ -598,7 +600,7 @@ namespace Stratis.Bitcoin.Features.Miner
             var blockValidationContext = new BlockValidationContext { Block = block };
             this.consensusLoop.AcceptBlockAsync(blockValidationContext).GetAwaiter().GetResult();
 
-            if (blockValidationContext.ChainedBlock == null)
+            if (blockValidationContext.ChainedHeader == null)
             {
                 this.logger.LogTrace("(-)[REORG-2]");
                 return;
@@ -611,7 +613,7 @@ namespace Stratis.Bitcoin.Features.Miner
             }
 
             this.logger.LogInformation("==================================================================");
-            this.logger.LogInformation("Found new POS block hash '{0}' at height {1}.", blockValidationContext.ChainedBlock.HashBlock, blockValidationContext.ChainedBlock.Height);
+            this.logger.LogInformation("Found new POS block hash '{0}' at height {1}.", blockValidationContext.ChainedHeader.HashBlock, blockValidationContext.ChainedHeader.Height);
             this.logger.LogInformation("==================================================================");
         }
 
@@ -625,7 +627,7 @@ namespace Stratis.Bitcoin.Features.Miner
         /// <param name="fees">Transaction fees from the transactions included in the block if we mine it.</param>
         /// <param name="coinstakeTimestamp">Maximal timestamp of the coinstake transaction. The actual timestamp can be lower, but not higher.</param>
         /// <returns><c>true</c> if the function succeeds, <c>false</c> otherwise.</returns>
-        private async Task<bool> StakeAndSignBlockAsync(List<UtxoStakeDescription> utxoStakeDescriptions, PosBlock block, ChainedBlock chainTip, long fees, uint coinstakeTimestamp)
+        private async Task<bool> StakeAndSignBlockAsync(List<UtxoStakeDescription> utxoStakeDescriptions, PosBlock block, ChainedHeader chainTip, long fees, uint coinstakeTimestamp)
         {
             this.logger.LogTrace("({0}.{1}:{2},{3}:'{4}',{5}:{6},{7}:{8})", nameof(utxoStakeDescriptions), nameof(utxoStakeDescriptions.Count), utxoStakeDescriptions.Count, nameof(chainTip), chainTip, nameof(fees), fees, nameof(coinstakeTimestamp), coinstakeTimestamp);
 
@@ -695,7 +697,7 @@ namespace Stratis.Bitcoin.Features.Miner
         }
 
         /// <inheritdoc/>
-        public async Task<bool> CreateCoinstakeAsync(List<UtxoStakeDescription> utxoStakeDescriptions, Block block, ChainedBlock chainTip, long searchInterval, long fees, CoinstakeContext coinstakeContext)
+        public async Task<bool> CreateCoinstakeAsync(List<UtxoStakeDescription> utxoStakeDescriptions, Block block, ChainedHeader chainTip, long searchInterval, long fees, CoinstakeContext coinstakeContext)
         {
             this.logger.LogTrace("({0}.{1}:{2},{3}:'{4}',{5}:{6},{7}:{8})", nameof(utxoStakeDescriptions), nameof(utxoStakeDescriptions.Count), utxoStakeDescriptions.Count, nameof(chainTip), chainTip, nameof(searchInterval), searchInterval, nameof(fees), fees);
 
@@ -854,7 +856,7 @@ namespace Stratis.Bitcoin.Features.Miner
         /// <param name="block">Template of the block that we are trying to mine.</param>
         /// <param name="minimalAllowedTime">Minimal valid timestamp for new coinstake transaction.</param>
         /// <param name="searchInterval">Length of an unexplored block time space in seconds. It only makes sense to look for a solution within this interval.</param>
-        private void CoinstakeWorker(CoinstakeWorkerContext context, ChainedBlock chainTip, Block block, long minimalAllowedTime, long searchInterval)
+        private void CoinstakeWorker(CoinstakeWorkerContext context, ChainedHeader chainTip, Block block, long minimalAllowedTime, long searchInterval)
         {
             context.Logger.LogTrace("({0}:'{1}',{2}:{3},{4}:{5})", nameof(chainTip), chainTip, nameof(minimalAllowedTime), minimalAllowedTime, nameof(searchInterval), searchInterval);
 
@@ -1098,7 +1100,7 @@ namespace Stratis.Bitcoin.Features.Miner
         /// </returns>
         private int GetDepthInMainChain(UtxoStakeDescription utxoStakeDescription)
         {
-            ChainedBlock chainedBlock = this.chain.GetBlock(utxoStakeDescription.HashBlock);
+            ChainedHeader chainedBlock = this.chain.GetBlock(utxoStakeDescription.HashBlock);
 
             if (chainedBlock == null)
                 return -1;
@@ -1108,7 +1110,7 @@ namespace Stratis.Bitcoin.Features.Miner
         }
 
         ///<inheritdoc/>
-        public double GetDifficulty(ChainedBlock block)
+        public double GetDifficulty(ChainedHeader block)
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(block), block);
 
@@ -1118,7 +1120,7 @@ namespace Stratis.Bitcoin.Features.Miner
             {
                 // Use consensus loop's tip rather than concurrent chain's tip
                 // because consensus loop's tip is guaranteed to have block stake in the database.
-                ChainedBlock tip = this.consensusLoop.Tip;
+                ChainedHeader tip = this.consensusLoop.Tip;
                 if (tip == null)
                 {
                     this.logger.LogTrace("(-)[DEFAULT]:{0}", res);
@@ -1162,8 +1164,8 @@ namespace Stratis.Bitcoin.Features.Miner
 
             // Use consensus loop's tip rather than concurrent chain's tip
             // because consensus loop's tip is guaranteed to have block stake in the database.
-            ChainedBlock block = this.consensusLoop.Tip;
-            ChainedBlock prevStakeBlock = null;
+            ChainedHeader block = this.consensusLoop.Tip;
+            ChainedHeader prevStakeBlock = null;
 
             double res = 0.0;
             while ((block != null) && (stakesHandled < interval))

@@ -189,7 +189,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
 
             var blockValidationContext = new BlockValidationContext()
             {
-                ChainedBlock = this.concurrentChain.Tip,
+                ChainedHeader = this.concurrentChain.Tip,
                 RuleContext = new RuleContext()
                 {
                     SkipValidation = true

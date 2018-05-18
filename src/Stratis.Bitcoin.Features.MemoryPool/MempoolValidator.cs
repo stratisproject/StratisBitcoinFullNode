@@ -291,12 +291,12 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <param name="lp">Optional- existing lock points to use, and update during evaluation.</param>
         /// <param name="useExistingLockPoints">Whether to use the existing lock points during evaluation.</param>
         /// <returns>Whether sequence lock validated.</returns>
-        /// <seealso cref="SequenceLock.Evaluate(ChainedBlock)"/>
-        public static bool CheckSequenceLocks(Network network, ChainedBlock tip, MempoolValidationContext context, Transaction.LockTimeFlags flags, LockPoints lp = null, bool useExistingLockPoints = false)
+        /// <seealso cref="SequenceLock.Evaluate(ChainedHeader)"/>
+        public static bool CheckSequenceLocks(Network network, ChainedHeader tip, MempoolValidationContext context, Transaction.LockTimeFlags flags, LockPoints lp = null, bool useExistingLockPoints = false)
         {
             var dummyBlock = network.Consensus.ConsensusFactory.CreateBlock();
             dummyBlock.Header.HashPrevBlock = tip.HashBlock;
-            ChainedBlock index = new ChainedBlock(dummyBlock.Header, dummyBlock.GetHash(), tip);
+            ChainedHeader index = new ChainedHeader(dummyBlock.Header, dummyBlock.GetHash(), tip);
 
             // CheckSequenceLocks() uses chainActive.Height()+1 to evaluate
             // height based locks because when SequenceLocks() is called within

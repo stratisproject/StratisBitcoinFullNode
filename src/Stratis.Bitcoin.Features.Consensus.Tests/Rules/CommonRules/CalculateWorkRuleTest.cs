@@ -19,7 +19,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             this.concurrentChain = MineChainWithHeight(2, this.network);
             this.consensusRules = this.InitializeConsensusRules();
 
-            this.ruleContext.BlockValidationContext.ChainedBlock = this.concurrentChain.Tip;
+            this.ruleContext.BlockValidationContext.ChainedHeader = this.concurrentChain.Tip;
             this.ruleContext.BlockValidationContext.Block = TestRulesContextFactory.MineBlock(this.network, this.concurrentChain);
             this.ruleContext.CheckPow = false;
             this.ruleContext.Consensus = this.network.Consensus;
@@ -36,7 +36,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             this.concurrentChain = MineChainWithHeight(2, this.network);
             this.consensusRules = this.InitializeConsensusRules();
 
-            this.ruleContext.BlockValidationContext.ChainedBlock = this.concurrentChain.Tip;
+            this.ruleContext.BlockValidationContext.ChainedHeader = this.concurrentChain.Tip;
             this.ruleContext.BlockValidationContext.Block = TestRulesContextFactory.MineBlock(this.network, this.concurrentChain);
             this.ruleContext.CheckPow = true;
             this.ruleContext.Consensus = this.network.Consensus;
@@ -58,7 +58,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
                             new NBitcoin.Transaction()
                         }
                 },
-                ChainedBlock = this.concurrentChain.GetBlock(4)
+                ChainedHeader = this.concurrentChain.GetBlock(4)
             };
             this.ruleContext.CheckPow = true;
 

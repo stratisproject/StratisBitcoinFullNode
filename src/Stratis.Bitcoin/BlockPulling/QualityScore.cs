@@ -143,46 +143,6 @@ namespace Stratis.Bitcoin.BlockPulling
             if (timePerKb < 2 * avgTimePerKb) res = avgTimePerKb / timePerKb;
             else if (Math.Abs(avgTimePerKb) >= 0.00001) res = -timePerKb / (2 * avgTimePerKb);
 
-            if ((res < 0) && this.IsPenaltyDiscarded())
-                res = 0;
-
-            this.logger.LogTrace("(-):{0}", res);
-            return res;
-        }
-
-        /// <summary>
-        /// Calculates peer's penalty when the wait for the next block times out.
-        /// </summary>
-        /// <returns>Quality score penalty for the peer.</returns>
-        public double CalculateNextBlockTimeoutQualityPenalty()
-        {
-            this.logger.LogTrace("()");
-
-            double res = this.IsPenaltyDiscarded() ? 0 : -1;
-
-            this.logger.LogTrace("(-):{0}", res);
-            return res;
-        }
-
-        /// <summary>
-        /// Checks whether penalty should be avoided. This is when sum(score) of all peers is lower than 2x number of peers peerCount.
-        /// This mechanism also prevents single peer to go to minimum if it is alone.
-        /// </summary>
-        /// <returns><c>true</c> if the penalty should be discarded, <c>false</c> otherwise.</returns>
-        public bool IsPenaltyDiscarded()
-        {
-            this.logger.LogTrace("()");
-
-            int peerCount = 0;
-            double peerQualitySum = 0;
-            lock (this.lockObject)
-            {
-                peerCount = this.peerReferenceCounter.Keys.Count;
-                peerQualitySum = this.peerReferenceCounter.Keys.Sum(p => p.QualityScore);
-            }
-            this.logger.LogTrace("Number of peers is {0}, sum of peer qualities is {1}.", peerCount, peerQualitySum);
-            bool res = peerQualitySum < 2 * peerCount;
-
             this.logger.LogTrace("(-):{0}", res);
             return res;
         }

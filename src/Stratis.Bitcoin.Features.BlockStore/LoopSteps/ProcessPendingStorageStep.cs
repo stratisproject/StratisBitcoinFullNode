@@ -40,14 +40,14 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
         }
 
         /// <inheritdoc/>
-        internal override async Task<StepResult> ExecuteAsync(ChainedBlock nextChainedBlock, CancellationToken cancellationToken, bool disposeMode)
+        internal override async Task<StepResult> ExecuteAsync(ChainedHeader nextChainedHeader, CancellationToken cancellationToken, bool disposeMode)
         {
-            this.logger.LogTrace("({0}:'{1}',{2}:{3})", nameof(nextChainedBlock), nextChainedBlock, nameof(disposeMode), disposeMode);
+            this.logger.LogTrace("({0}:'{1}',{2}:{3})", nameof(nextChainedHeader), nextChainedHeader, nameof(disposeMode), disposeMode);
 
-            var context = new ProcessPendingStorageContext(this.logger, this.BlockStoreLoop, nextChainedBlock, cancellationToken);
+            var context = new ProcessPendingStorageContext(this.logger, this.BlockStoreLoop, nextChainedHeader, cancellationToken);
 
             // Next block does not exist in pending storage, continue onto the download blocks step.
-            if (!this.BlockStoreLoop.PendingStorage.ContainsKey(context.NextChainedBlock.HashBlock))
+            if (!this.BlockStoreLoop.PendingStorage.ContainsKey(context.NextChainedHeader.HashBlock))
             {
                 this.logger.LogTrace("(-)[NOT_FOUND]:{0}", StepResult.Next);
                 return StepResult.Next;
@@ -84,7 +84,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
         /// <param name="context"><see cref="ProcessPendingStorageContext"/></param>
         private StepResult PrepareNextBlockFromPendingStorage(ProcessPendingStorageContext context)
         {
-            var blockIsInPendingStorage = this.BlockStoreLoop.PendingStorage.TryRemove(context.NextChainedBlock.HashBlock, out context.PendingBlockPairToStore);
+            var blockIsInPendingStorage = this.BlockStoreLoop.PendingStorage.TryRemove(context.NextChainedHeader.HashBlock, out context.PendingBlockPairToStore);
             if (blockIsInPendingStorage)
             {
                 context.PendingBlockPairsToStore.Push(context.PendingBlockPairToStore);
@@ -95,15 +95,15 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
         }
 
         /// <summary>
-        /// Store missing blocks and remove them from pending blocks and set the Store's tip to <see cref="ProcessPendingStorageContext.NextChainedBlock"/>
+        /// Store missing blocks and remove them from pending blocks and set the Store's tip to <see cref="ProcessPendingStorageContext.NextChainedHeader"/>
         /// </summary>
         /// <param name="context"><see cref="ProcessPendingStorageContext"/></param>
         private async Task PushBlocksToRepositoryAsync(ProcessPendingStorageContext context)
         {
             this.logger.LogDebug(context.ToString());
 
-            await this.BlockStoreLoop.BlockRepository.PutAsync(context.PendingBlockPairsToStore.First().ChainedBlock.HashBlock, context.PendingBlockPairsToStore.Select(b => b.Block).ToList());
-            this.BlockStoreLoop.SetStoreTip(context.PendingBlockPairsToStore.First().ChainedBlock);
+            await this.BlockStoreLoop.BlockRepository.PutAsync(context.PendingBlockPairsToStore.First().ChainedHeader.HashBlock, context.PendingBlockPairsToStore.Select(b => b.Block).ToList());
+            this.BlockStoreLoop.SetStoreTip(context.PendingBlockPairsToStore.First().ChainedHeader);
 
             context.PendingBlockPairToStore = null;
             context.PendingBlockPairsToStore.Clear();
@@ -116,11 +116,11 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
     /// </summary>
     internal sealed class ProcessPendingStorageContext
     {
-        internal ProcessPendingStorageContext(ILogger logger, BlockStoreLoop blockStoreLoop, ChainedBlock nextChainedBlock, CancellationToken cancellationToken)
+        internal ProcessPendingStorageContext(ILogger logger, BlockStoreLoop blockStoreLoop, ChainedHeader nextChainedHeader, CancellationToken cancellationToken)
         {
             this.logger = logger;
             this.BlockStoreLoop = blockStoreLoop;
-            this.NextChainedBlock = nextChainedBlock;
+            this.NextChainedHeader = nextChainedHeader;
             this.CancellationToken = cancellationToken;
         }
 
@@ -132,7 +132,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
         /// Used to check if we should break execution when the next block's previous hash doesn't
         /// match this block's hash.
         /// </summary>
-        internal ChainedBlock PreviousChainedBlock { get; private set; }
+        internal ChainedHeader PreviousChainedHeader { get; private set; }
 
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
@@ -140,7 +140,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
         /// <summary>
         /// The block currently being processed.
         /// </summary>
-        internal ChainedBlock NextChainedBlock { get; private set; }
+        internal ChainedHeader NextChainedHeader { get; private set; }
 
         /// <summary>
         /// If this value reaches <see cref="BlockStoreLoop.MaxPendingInsertBlockSize"/> the step will exit./>
@@ -170,22 +170,22 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
         {
             this.logger.LogTrace("()");
 
-            this.PreviousChainedBlock = this.NextChainedBlock;
-            this.NextChainedBlock = this.BlockStoreLoop.Chain.GetBlock(this.NextChainedBlock.Height + 1);
+            this.PreviousChainedHeader = this.NextChainedHeader;
+            this.NextChainedHeader = this.BlockStoreLoop.Chain.GetBlock(this.NextChainedHeader.Height + 1);
 
-            if (this.NextChainedBlock == null)
+            if (this.NextChainedHeader == null)
             {
                 this.logger.LogTrace("(-)[NO_NEXT]:false");
                 return false;
             }
 
-            if (this.NextChainedBlock.Header.HashPrevBlock != this.PreviousChainedBlock.HashBlock)
+            if (this.NextChainedHeader.Header.HashPrevBlock != this.PreviousChainedHeader.HashBlock)
             {
                 this.logger.LogTrace("(-)[REORG]:false");
                 return false;
             }
 
-            if (this.NextChainedBlock.Height > this.BlockStoreLoop.ChainState.ConsensusTip?.Height)
+            if (this.NextChainedHeader.Height > this.BlockStoreLoop.ChainState.ConsensusTip?.Height)
             {
                 this.logger.LogTrace("(-)[NEXT_GT_CONSENSUS_TIP]:false");
                 return false;

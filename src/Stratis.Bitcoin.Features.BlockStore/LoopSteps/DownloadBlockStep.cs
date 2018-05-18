@@ -39,9 +39,9 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
         }
 
         /// <inheritdoc/>
-        internal override async Task<StepResult> ExecuteAsync(ChainedBlock nextChainedBlock, CancellationToken token, bool disposeMode)
+        internal override async Task<StepResult> ExecuteAsync(ChainedHeader nextChainedHeader, CancellationToken token, bool disposeMode)
         {
-            this.logger.LogTrace("({0}:'{1}',{2}:{3})", nameof(nextChainedBlock), nextChainedBlock, nameof(disposeMode), disposeMode);
+            this.logger.LogTrace("({0}:'{1}',{2}:{3})", nameof(nextChainedHeader), nextChainedHeader, nameof(disposeMode), disposeMode);
 
             if (disposeMode)
             {
@@ -49,7 +49,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
                 return StepResult.Stop;
             }
 
-            var context = new BlockStoreInnerStepContext(token, this.BlockStoreLoop, nextChainedBlock, this.loggerFactory, this.dateTimeProvider);
+            var context = new BlockStoreInnerStepContext(token, this.BlockStoreLoop, nextChainedHeader, this.loggerFactory, this.dateTimeProvider);
             while (!token.IsCancellationRequested)
             {
                 foreach (BlockStoreInnerStep innerStep in context.InnerSteps.ToList())

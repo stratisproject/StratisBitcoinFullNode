@@ -170,7 +170,7 @@ namespace NBitcoin
         /// <param name="now">The expected date.</param>
         /// <param name="consensus">Consensus.</param>
         /// <param name="prev">Previous block.</param>
-        public void UpdateTime(DateTimeOffset now, Consensus consensus, ChainedBlock prev)
+        public void UpdateTime(DateTimeOffset now, Consensus consensus, ChainedHeader prev)
         {
             DateTimeOffset nOldTime = this.BlockTime;
             DateTimeOffset mtp = prev.GetMedianTimePast() + TimeSpan.FromSeconds(1);
@@ -190,19 +190,19 @@ namespace NBitcoin
         /// <param name="now">The expected date.</param>
         /// <param name="network">Network.</param>
         /// <param name="prev">Previous block.</param>
-        public void UpdateTime(DateTimeOffset now, Network network, ChainedBlock prev)
+        public void UpdateTime(DateTimeOffset now, Network network, ChainedHeader prev)
         {
             this.UpdateTime(now, network.Consensus, prev);
         }
 
-        public Target GetWorkRequired(Network network, ChainedBlock prev)
+        public Target GetWorkRequired(Network network, ChainedHeader prev)
         {
             return this.GetWorkRequired(network.Consensus, prev);
         }
 
-        public Target GetWorkRequired(Consensus consensus, ChainedBlock prev)
+        public Target GetWorkRequired(Consensus consensus, ChainedHeader prev)
         {
-            return new ChainedBlock(this, this.GetHash(), prev).GetWorkRequired(consensus);
+            return new ChainedHeader(this, this.GetHash(), prev).GetWorkRequired(consensus);
         }
     }
 
@@ -292,15 +292,15 @@ namespace NBitcoin
         /// <param name="consensusFactory">The network consensus factory.</param>
         /// <param name="options">Options to keep.</param>
         /// <returns>A new block with only the options wanted.</returns>
-        public Block WithOptions(ConsensusFactory consensusFactory, NetworkOptions options)
+        public Block WithOptions(ConsensusFactory consensusFactory, TransactionOptions options)
         {
             if (this.Transactions.Count == 0)
                 return this;
 
-            if ((options == NetworkOptions.Witness) && this.Transactions[0].HasWitness)
+            if ((options == TransactionOptions.Witness) && this.Transactions[0].HasWitness)
                 return this;
 
-            if ((options == NetworkOptions.None) && !this.Transactions[0].HasWitness)
+            if ((options == TransactionOptions.None) && !this.Transactions[0].HasWitness)
                 return this;
 
             Block instance = consensusFactory.CreateBlock();

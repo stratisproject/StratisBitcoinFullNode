@@ -4,7 +4,7 @@ using NBitcoin;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Configuration;
 
-namespace Stratis.Bitcoin
+namespace Stratis.Bitcoin.Controllers
 {
     [AttributeUsage(AttributeTargets.Method)]
     public class ActionDescription : Attribute
