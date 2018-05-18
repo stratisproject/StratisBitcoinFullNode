@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using Microsoft.Extensions.Logging;
@@ -12,55 +11,9 @@ using Stratis.Bitcoin.Utilities.Extensions;
 
 namespace Stratis.Bitcoin.Consensus
 {
-    public class ConsensusException : Exception
-    {
-        public ConsensusException() : base()
-        {
-        }
-
-        public ConsensusException(string messsage) : base(messsage)
-        {
-        }
-    }
-
-    public class MaxReorgViolationException : ConsensusException
-    {
-        public MaxReorgViolationException() : base()
-        {
-        }
-    }
-
-    public class ConnectHeaderException : ConsensusException
-    {
-        public ConnectHeaderException() : base()
-        {
-        }
-    }
-
-    public class InvalidHeaderException : ConsensusException
-    {
-        public InvalidHeaderException() : base()
-        {
-        }
-    }
-
     public interface IChainedHeaderValidator
     {
         void Validate(ChainedHeader chainedHeader);
-    }
-
-    public class ConnectedHeaders
-    {
-        public ChainedHeader DownloadFrom { get; set; }
-
-        public ChainedHeader DownloadTo { get; set; }
-
-        public ChainedHeader Consumed { get; set; }
-
-        public override string ToString()
-        {
-            return $"DownloadFrom={this.DownloadFrom},DownloadTo={this.DownloadTo},Consumed={this.Consumed}";
-        }
     }
 
     /// <summary>
@@ -80,13 +33,16 @@ namespace Stratis.Bitcoin.Consensus
         private readonly IChainState chainState;
         private readonly ConsensusSettings consensusSettings;
 
+        private readonly object lockObject;
+
+        /// <summary>A list of headers that represent the tips of peers.</summary>
         private readonly Dictionary<uint256, HashSet<int>> peerTipsByHash;
+        
+        /// <summary>An indexed collection of <see cref="ChainedHeader"/> that represents a tree of chains.</summary>
         private readonly Dictionary<uint256, ChainedHeader> chainedHeadersByHash;
 
         internal Dictionary<uint256, ChainedHeader> GetChainedHeadersByHash => this.chainedHeadersByHash;
         internal Dictionary<uint256, HashSet<int>> GetPeerTipsByHash => this.peerTipsByHash;
-
-        private readonly object lockObject;
 
         public ChainedHeaderTree(
             Network network, 
@@ -323,10 +279,16 @@ namespace Stratis.Bitcoin.Consensus
         }
 
         /// <summary>
-        /// Check whether a header is in one of the following states <see cref="ValidationState.AssumedValid"/>, <see cref="ValidationState.PartiallyValidated"/>, <see cref="ValidationState.FullyValidated"/>. 
+        /// Check whether a header is the genesis block or in one of the following states
+        /// <see cref="ValidationState.AssumedValid"/>, <see cref="ValidationState.PartiallyValidated"/>, <see cref="ValidationState.FullyValidated"/>.
         /// </summary>
         private bool IsHeaderInAValidatedState(ChainedHeader chainedHeader)
         {
+            if (chainedHeader.Previous == null)
+            {
+                return true;
+            }
+
             if (chainedHeader.BlockValidationState == ValidationState.AssumedValid
                 || chainedHeader.BlockValidationState == ValidationState.PartiallyValidated
                 || chainedHeader.BlockValidationState == ValidationState.FullyValidated)
@@ -576,6 +538,23 @@ namespace Stratis.Bitcoin.Consensus
 
             this.logger.LogTrace("(-):false");
             return false;
+        }
+    }
+
+    /// <summary>
+    /// Represents the response form the <see cref="ChainedHeaderTree.ConnectNewHeaders"/> method.
+    /// </summary>
+    public class ConnectedHeaders
+    {
+        public ChainedHeader DownloadFrom { get; set; }
+
+        public ChainedHeader DownloadTo { get; set; }
+
+        public ChainedHeader Consumed { get; set; }
+
+        public override string ToString()
+        {
+            return $"DownloadFrom={this.DownloadFrom},DownloadTo={this.DownloadTo},Consumed={this.Consumed}";
         }
     }
 }

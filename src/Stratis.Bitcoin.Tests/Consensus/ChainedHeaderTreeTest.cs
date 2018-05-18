@@ -38,7 +38,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
                 {
                     BlockHeader header  = this.Network.Consensus.ConsensusFactory.CreateBlockHeader();
                     header.HashPrevBlock = previousHeader.HashBlock;
-                    header.Bits = previousHeader.Header.Bits +  1000; // just increment it so its more then previous.
+                    header.Bits = previousHeader.Header.Bits - 1000; // just increase difficulty.
                     ChainedHeader newHeader = new ChainedHeader(header, header.GetHash(), previousHeader);
                     previousHeader = newHeader;
                 }
@@ -95,7 +95,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
 
             var connectedHeaders = chainedHeaderTree.ConnectNewHeaders(1, listOfExistingHeaders);
 
-           testContext.ConnectedHeadersIsEmpty(connectedHeaders);
+            Assert.True(testContext.ConnectedHeadersIsEmpty(connectedHeaders));
         }
 
         [Fact]
@@ -119,6 +119,28 @@ namespace Stratis.Bitcoin.Tests.Consensus
 
             Assert.True(testContext.ConnectedHeadersIsEmpty(connectedHeaders1));
             Assert.True(testContext.ConnectedHeadersIsEmpty(connectedHeaders2));
+        }
+
+        [Fact]
+        public void ConnectHeaders_NewAndExistingHeaders_ShouldCreateNewHeaders()
+        {
+            TestContext testContext = new TestContext();
+            ChainedHeaderTree chainedHeaderTree = testContext.CreateChainedHeaderTree();
+
+            var chainTip = testContext.ExtendAChain(10);
+            chainedHeaderTree.Initialize(chainTip); // initialize the tree with 10 headers
+            ChainedHeader newChainTip = testContext.ExtendAChain(10, chainTip); // create 10 more headers
+
+            var listOfExistingHeaders = testContext.ChainedHeaderToList(newChainTip, 10);
+
+            testContext.ChainStateMock.Setup(s => s.ConsensusTip).Returns(chainTip);
+            chainTip.BlockValidationState = ValidationState.FullyValidated;
+
+            var connectedHeaders = chainedHeaderTree.ConnectNewHeaders(1, listOfExistingHeaders);
+
+
+            Assert.Equal(listOfExistingHeaders.Last(), connectedHeaders.DownloadFrom.Header);
+            Assert.Equal(listOfExistingHeaders.First(), connectedHeaders.DownloadTo.Header);
         }
     }
 }
