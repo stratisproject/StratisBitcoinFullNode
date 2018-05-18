@@ -138,6 +138,9 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <summary>Minimum fee rate for a relay transaction.</summary>
         private readonly FeeRate minRelayTxFee;
 
+        /// <summary>Flags that determine how transaction should be validated in non-consensus code.</summary>
+        public static Transaction.LockTimeFlags StandardLocktimeVerifyFlags = Transaction.LockTimeFlags.VerifySequence | Transaction.LockTimeFlags.MedianTimePast;
+
         // TODO: Implement Later with CheckRateLimit()
         //private readonly FreeLimiterSection freeLimiter;
 
@@ -267,7 +270,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             // When the next block is created its previous block will be the current
             // chain tip, so we use that to calculate the median time passed to
             // IsFinalTx() if LOCKTIME_MEDIAN_TIME_PAST is set.
-            DateTimeOffset blockTime = flags.HasFlag(PowCoinviewRule.StandardLocktimeVerifyFlags)
+            DateTimeOffset blockTime = flags.HasFlag(StandardLocktimeVerifyFlags)
                 ? chain.Tip.Header.BlockTime
                 : DateTimeOffset.FromUnixTimeMilliseconds(dateTimeProvider.GetTime());
 
@@ -571,7 +574,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             // Only accept nLockTime-using transactions that can be mined in the next
             // block; we don't want our mempool filled up with transactions that can't
             // be mined yet.
-            if (!CheckFinalTransaction(this.chain, this.dateTimeProvider, context.Transaction, PowCoinviewRule.StandardLocktimeVerifyFlags))
+            if (!CheckFinalTransaction(this.chain, this.dateTimeProvider, context.Transaction, MempoolValidator.StandardLocktimeVerifyFlags))
                 context.State.Fail(MempoolErrors.NonFinal).Throw();
         }
 
@@ -733,7 +736,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             // be mined yet.
             // Must keep pool.cs for this unless we change CheckSequenceLocks to take a
             // CoinsViewCache instead of create its own
-            if (!CheckSequenceLocks(this.network, this.chain.Tip, context, PowCoinviewRule.StandardLocktimeVerifyFlags, context.LockPoints))
+            if (!CheckSequenceLocks(this.network, this.chain.Tip, context, StandardLocktimeVerifyFlags, context.LockPoints))
                 context.State.Fail(MempoolErrors.NonBIP68Final).Throw();
 
             // Check for non-standard pay-to-script-hash in inputs

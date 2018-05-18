@@ -19,9 +19,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
     [ExecutionRule]
     public class PowCoinviewRule : ConsensusRule
     {
-        /// <summary>Flags that determine how transaction should be validated in non-consensus code.</summary>
-        public static Transaction.LockTimeFlags StandardLocktimeVerifyFlags = Transaction.LockTimeFlags.VerifySequence | Transaction.LockTimeFlags.MedianTimePast;
-
         /// <summary>Consensus parameters.</summary>
         public NBitcoin.Consensus ConsensusParams { get; private set; }
 

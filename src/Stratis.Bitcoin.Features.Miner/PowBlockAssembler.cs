@@ -214,7 +214,7 @@ namespace Stratis.Bitcoin.Features.Miner
             //    pblock->nVersion = GetArg("-blockversion", pblock->nVersion);
 
             this.MedianTimePast = Utils.DateTimeToUnixTime(this.ChainTip.GetMedianTimePast());
-            this.LockTimeCutoff = PowCoinviewRule.StandardLocktimeVerifyFlags.HasFlag(Transaction.LockTimeFlags.MedianTimePast)
+            this.LockTimeCutoff = MempoolValidator.StandardLocktimeVerifyFlags.HasFlag(Transaction.LockTimeFlags.MedianTimePast)
                 ? this.MedianTimePast
                 : this.block.Header.Time;
 
