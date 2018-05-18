@@ -31,8 +31,8 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         private const string WalletAccountName = "account 0";
         private const string NodeOne = "one";
         private const string NodeTwo = "two";
-        private const int UnderPolicyByteLimitUnspentTransactionOutputs = 2460;
-        private const int OverPolicyByteLimitUnspentTransactionOutputs = 2500;
+        private const int UnderPolicyByteLimitUnspentTransactionOutputs = 2700;
+        private const int OverPolicyByteLimitUnspentTransactionOutputs = 2900;
 
         public SendingTransactionOverPolicyByteLimit(ITestOutputHelper outputHelper) : base(outputHelper) { }
 
@@ -98,7 +98,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
 
         private void transaction_is_just_under_100KB_limit()
         {
-            this.transaction.GetSerializedSize().Should().BeInRange(98000, 100000);
+            this.transaction.GetSerializedSize().Should().BeInRange(99000, 100000);
         }
 
         private void node1_fails_with_oversize_tx_wallet_error()
