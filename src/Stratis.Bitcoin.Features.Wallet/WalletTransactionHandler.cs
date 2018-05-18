@@ -8,6 +8,7 @@ using NBitcoin;
 using NBitcoin.Policy;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Utilities;
+using Stratis.Bitcoin.Utilities.Extensions;
 
 namespace Stratis.Bitcoin.Features.Wallet
 {
@@ -200,19 +201,6 @@ namespace Stratis.Bitcoin.Features.Wallet
         }
 
         /// <summary>
-        /// Retrieves the underlying string from a SecureString object.
-        /// </summary>
-        /// <param name="secstrPassword">The SecureString object.</param>
-        /// <returns>The underlying string contained in this object.</returns>
-        public string convertToUNSecureString(SecureString secstrPassword)
-        {
-            if (secstrPassword == null)
-                return null;
-
-            return new System.Net.NetworkCredential(string.Empty, secstrPassword).Password;
-        }
-
-        /// <summary>
         /// Load's all the private keys for each of the <see cref="HdAddress"/> in <see cref="TransactionBuildContext.UnspentOutputs"/>
         /// </summary>
         /// <param name="context">The context associated with the current transaction being built.</param>
@@ -224,7 +212,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             Wallet wallet = this.walletManager.GetWalletByName(context.AccountReference.WalletName);
 
             // get extended private key
-            var privateKey = Key.Parse(wallet.EncryptedSeed, convertToUNSecureString(context.WalletPassword), wallet.Network);
+            var privateKey = Key.Parse(wallet.EncryptedSeed, context.WalletPassword?.FromSecureString(), wallet.Network);
             var seedExtKey = new ExtKey(privateKey, wallet.ChainCode);
 
             var signingKeys = new HashSet<ISecret>();
@@ -394,13 +382,7 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             this.AccountReference = accountReference;
             this.Recipients = recipients;
-            this.WalletPassword = null;
-            if (walletPassword != null)
-            {
-                this.WalletPassword = new SecureString();
-                foreach (var ch in walletPassword.ToCharArray())
-                    this.WalletPassword.AppendChar(ch);
-            }
+            this.WalletPassword = walletPassword?.ToSecureString();
             this.FeeType = FeeType.Medium;
             this.MinConfirmations = 1;
             this.SelectedInputs = new List<OutPoint>();
