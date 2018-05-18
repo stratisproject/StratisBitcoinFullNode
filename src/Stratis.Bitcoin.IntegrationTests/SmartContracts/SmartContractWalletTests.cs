@@ -239,14 +239,6 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
             }
         }
 
-        /*
-         * Tests the most basic end-to-end functionality of the Auction contract. 
-         * 
-         * NOTE: This tests the situation where a contract leaves itself with a 0 balance, and
-         * hence hits 'ClearUnspent' in CondensingTx.cs. If about to remove this test,
-         * ensure that we have this case covered in SmartContractMinerTests.cs.
-         */
-
         [Fact]
         public void SendAndReceiveSmartContractTransactionsUsingController()
         {
@@ -285,7 +277,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                     GasLimit = "10000",
                     GasPrice = "1",
                     ContractCode = compilationResult.Compilation.ToHexString(),
-                    FeeAmount = "30000",
+                    FeeAmount = "0.02",
                     Password = Password,
                     WalletName = WalletName,
                     Sender = addr.Address
@@ -378,6 +370,14 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
             }
         }
 
+        /*
+        * Tests the most basic end-to-end functionality of the Auction contract. 
+        * 
+        * NOTE: This tests the situation where a contract leaves itself with a 0 balance, and
+        * hence hits 'ClearUnspent' in CondensingTx.cs. If about to remove this test,
+        * ensure that we have this case covered in SmartContractMinerTests.cs.
+        */
+
         [Fact]
         public void AuctionTest()
         {
@@ -416,7 +416,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                     GasLimit = "10000",
                     GasPrice = "1",
                     ContractCode = compilationResult.Compilation.ToHexString(),
-                    FeeAmount = "30000",
+                    FeeAmount = "0.02",
                     Password = Password,
                     WalletName = WalletName,
                     Sender = addr.Address,
@@ -449,7 +449,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                     Amount = "2",
                     MethodName = "Bid",
                     ContractAddress = response.NewContractAddress,
-                    FeeAmount = "30000",
+                    FeeAmount = "0.02",
                     Password = Password,
                     WalletName = WalletName,
                     Sender = addr.Address
@@ -485,7 +485,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                     Amount = "0",
                     MethodName = "AuctionEnd",
                     ContractAddress = response.NewContractAddress,
-                    FeeAmount = "30000",
+                    FeeAmount = "0.02",
                     Password = Password,
                     WalletName = WalletName,
                     Sender = addr.Address
