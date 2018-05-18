@@ -6,15 +6,15 @@ namespace Stratis.Bitcoin.Features.BlockStore
     {
         public IBlockRepository BlockRepository { get; }
 
-        public BlockStoreLoop BlockStoreLoop { get; }
+        public BlockStore BlockStore { get; }
 
         public IChainState ChainState { get; }
 
-        public BlockStoreManager(IBlockRepository blockRepository, IChainState chainState, BlockStoreLoop blockStoreLoop)
+        public BlockStoreManager(IBlockRepository blockRepository, IChainState chainState, BlockStore blockStore)
         {
             this.BlockRepository = blockRepository;
             this.ChainState = chainState;
-            this.BlockStoreLoop = blockStoreLoop;
+            this.BlockStore = blockStore;
         }
     }
 }

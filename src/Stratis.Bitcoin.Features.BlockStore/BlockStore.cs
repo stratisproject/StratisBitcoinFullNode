@@ -5,7 +5,6 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Base;
-using Stratis.Bitcoin.Features.BlockStore.LoopSteps;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.BlockStore
@@ -287,6 +286,5 @@ namespace Stratis.Bitcoin.Features.BlockStore
 }
 
 
-//TODO remove store block puller, block store loop, loopsteps
-
 //when we initialize block store- load block store tip. if it's below consensus tip- rewind consensus
+//todo tests

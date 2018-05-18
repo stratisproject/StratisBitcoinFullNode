@@ -162,7 +162,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.logger.LogInformation("Stopping {0}...", this.name);
 
             this.blockStoreSignaled.Dispose();
-            this.blockStoreManager.BlockStoreLoop.ShutDown();
+            this.blockStoreManager.BlockStore.Dispose();
             this.blockRepository.Dispose();
         }
     }
