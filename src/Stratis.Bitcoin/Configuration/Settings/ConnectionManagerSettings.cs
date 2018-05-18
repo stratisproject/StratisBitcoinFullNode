@@ -97,7 +97,7 @@ namespace Stratis.Bitcoin.Configuration.Settings
             }
 
             this.BanTimeSeconds = config.GetOrDefault<int>("bantime", ConnectionManagerSettings.DefaultMisbehavingBantimeSeconds);
-            this.MaxOutboundConnections = config.GetOrDefault<int>("maxOutboundConnections", ConnectionManagerSettings.DefaultMaxOutboundConnections);
+            this.MaxOutboundConnections = config.GetOrDefault<int>("maxoutboundconnections", ConnectionManagerSettings.DefaultMaxOutboundConnections);
         }
 
         /// <summary>List of exclusive end points that the node should be connected to.</summary>
