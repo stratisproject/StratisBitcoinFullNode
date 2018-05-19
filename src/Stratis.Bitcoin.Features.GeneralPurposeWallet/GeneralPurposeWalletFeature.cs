@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using Microsoft.Extensions.DependencyInjection;
@@ -85,26 +86,46 @@ namespace Stratis.Bitcoin.Features.GeneralPurposeWallet
 			}
 		}
 
-		/// <inheritdoc />
-		public void AddFeatureStats(StringBuilder benchLog)
-		{
-			var walletNames = this.walletManager.GetWalletsNames();
+        /// <inheritdoc />
+        public void AddFeatureStats(StringBuilder benchLog)
+        {
+            var walletNames = this.walletManager.GetWalletsNames();
 
-			if (walletNames.Any())
-			{
-				benchLog.AppendLine();
-				benchLog.AppendLine("======Wallets======");
+            if (walletNames.Any())
+            {
+                benchLog.AppendLine();
+                benchLog.AppendLine("====== General Purpose Wallets======");
 
-				foreach (var walletName in walletNames)
-				{
-					var items = this.walletManager.GetSpendableTransactionsInWallet(walletName, 1);
-					benchLog.AppendLine("Wallet: " + (walletName + ",").PadRight(LoggingConfiguration.ColumnLength) + " Confirmed balance: " + new Money(items.Sum(s => s.Transaction.Amount)).ToString());
-				}
-			}
-		}
+                foreach (var walletName in walletNames)
+                {
+                    var items = this.walletManager.GetSpendableTransactionsInWallet(walletName, 1);
+                    benchLog.AppendLine("Wallet: " + (walletName + ",").PadRight(LoggingConfiguration.ColumnLength) + " Confirmed balance: " + new Money(items.Sum(s => s.Transaction.Amount)).ToString());
+                }
 
-		/// <inheritdoc />
-		public override void Initialize()
+                benchLog.AppendLine();
+                benchLog.AppendLine("====== Multisig Balances======");
+
+                foreach (var walletName in walletNames)
+                {
+                    GeneralPurposeWallet wallet = this.walletManager.GetWalletByName(walletName);
+                    foreach (var account in wallet.GetAccountsByCoinType((CoinType)this.chain.Network.Consensus.CoinType))
+                    {
+                        foreach (MultiSigAddress multiSigAddress in account.MultiSigAddresses)
+                        {
+                            List<TransactionData> allTransactions = multiSigAddress.UnspentTransactions().ToList();
+
+                            var confirmed = allTransactions.Sum(t => t.SpendableAmount(true));
+                            var total = allTransactions.Sum(t => t.SpendableAmount(false));
+
+                            benchLog.AppendLine("Address: " + (multiSigAddress.Address + ",").PadRight(LoggingConfiguration.ColumnLength) + " Confirmed balance: " + confirmed);
+                        }
+                    }
+                }
+            }
+        }
+
+        /// <inheritdoc />
+        public override void Initialize()
 		{
 			// subscribe to receiving blocks and transactions
 			this.blockSubscriberDisposable = this.signals.SubscribeForBlocks(new BlockObserver(this.walletSyncManager));

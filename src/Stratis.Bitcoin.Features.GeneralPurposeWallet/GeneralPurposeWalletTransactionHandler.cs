@@ -450,10 +450,9 @@ namespace Stratis.Bitcoin.Features.GeneralPurposeWallet
         /// <param name="context">The context associated with the current transaction being built.</param>
         private void AddOpReturnOutput(TransactionBuildContext context)
         {
-            if (string.IsNullOrEmpty(context.OpReturnData)) return;
+            if (context.OpReturnData == null) return;
 
-            byte[] bytes = Encoding.UTF8.GetBytes(context.OpReturnData);
-            var opReturnScript = TxNullDataTemplate.Instance.GenerateScriptPubKey(bytes);
+            var opReturnScript = TxNullDataTemplate.Instance.GenerateScriptPubKey(context.OpReturnData);
             context.TransactionBuilder.Send(opReturnScript, Money.Zero);
         }
     }
@@ -476,7 +475,7 @@ namespace Stratis.Bitcoin.Features.GeneralPurposeWallet
         /// <param name="accountReference">The wallet and account from which to build this transaction</param>
         /// <param name="recipients">The target recipients to send coins to.</param>
         /// <param name="walletPassword">The password that protects the wallet in <see cref="accountReference"/></param>
-        public TransactionBuildContext(GeneralPurposeWalletAccountReference accountReference, List<Recipient> recipients, string walletPassword = "", string opReturnData = null)
+        public TransactionBuildContext(GeneralPurposeWalletAccountReference accountReference, List<Recipient> recipients, string walletPassword = "", byte[] opReturnData = null)
         {
             Guard.NotNull(recipients, nameof(recipients));
 
@@ -592,7 +591,7 @@ namespace Stratis.Bitcoin.Features.GeneralPurposeWallet
         /// <summary>
         /// Optional data to be added as an extra OP_RETURN transaction output with Money.Zero value.
         /// </summary>
-        public string OpReturnData { get; set; }
+        public byte[] OpReturnData { get; set; }
 
         /// <summary>
         /// If not null, indicates the multisig address details that funds can be sourced from.

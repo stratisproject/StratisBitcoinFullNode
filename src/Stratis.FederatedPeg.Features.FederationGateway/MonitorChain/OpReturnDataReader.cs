@@ -95,7 +95,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
         private static string ConvertValidOpReturnDataToHash(ILogger logger, byte[] data)
         {
             // Remove the RETURN operator.
-            byte[] hashBytes = data.Skip(1).ToArray(); ;
+            byte[] hashBytes = data.Skip(2).ToArray(); ;
 
             // Attempt to parse the hash. Validates the uint256 string.
             try
