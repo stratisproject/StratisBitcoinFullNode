@@ -22,7 +22,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         private int currentBatchSizeBytes;
 
         /// <summary>The highest stored block in the repository.</summary>
-        private ChainedHeader storeTip;
+        public ChainedHeader StoreTip { get; private set; }
 
         private readonly ILogger logger;
         private readonly INodeLifetime nodeLifetime;
@@ -73,23 +73,23 @@ namespace Stratis.Bitcoin.Features.BlockStore
             if (this.storeSettings.ReIndex)
                 throw new NotImplementedException();
 
-            this.storeTip = this.chain.GetBlock(this.blockRepository.BlockHash);
+            this.StoreTip = this.chain.GetBlock(this.blockRepository.BlockHash);
 
-            if (this.storeTip == null)
+            if (this.StoreTip == null)
                 await this.RecoverStoreTipAsync().ConfigureAwait(false);
 
-            this.logger.LogDebug("Initialized block store tip at '{0}'", this.storeTip);
+            this.logger.LogDebug("Initialized block store tip at '{0}'", this.StoreTip);
 
             if (this.storeSettings.TxIndex != this.blockRepository.TxIndex)
             {
-                if (this.storeTip != this.chain.Genesis)
+                if (this.StoreTip != this.chain.Genesis)
                     throw new BlockStoreException("You need to rebuild the block store database using -reindex-chainstate to change -txindex");
 
                 if (this.storeSettings.TxIndex)
                     await this.blockRepository.SetTxIndexAsync(this.storeSettings.TxIndex).ConfigureAwait(false);
             }
 
-            if (this.storeTip.Height < this.chainState.ConsensusTip.Height)
+            if (this.StoreTip.Height < this.chainState.ConsensusTip.Height)
             {
                 //TODO rewind consensus, don't throw
                 this.logger.LogError("Block store initialized behind consensus!");
@@ -101,14 +101,6 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.dequeueLoopTask = this.DequeueBlocksContinuouslyAsync();
 
             this.logger.LogTrace("(-)");
-        }
-
-        /// <summary>
-        /// Provides current block store tip.
-        /// </summary>
-        public ChainedHeader GetStoreTip()
-        {
-            return this.storeTip;
         }
 
         /// <summary>
@@ -139,7 +131,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
             ChainedHeader newTip = this.chain.GetBlock(resetBlockHash);
             await this.blockRepository.DeleteAsync(newTip.HashBlock, blockStoreResetList).ConfigureAwait(false);
-            this.storeTip = newTip;
+            this.StoreTip = newTip;
             this.logger.LogWarning("Block store tip recovered to block '{0}'.", newTip);
 
             this.logger.LogTrace("(-)");
@@ -157,8 +149,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
             this.logger.LogTrace("(-)");
         }
-
-
+        
         /// <summary>
         /// Dequeues the blocks continuously and saves them to the database when max batch size is reached or timer ran out.
         /// </summary>
@@ -249,10 +240,10 @@ namespace Stratis.Bitcoin.Features.BlockStore
             ChainedHeader expectedStoreTip = batchCleared.First().ChainedHeader.Previous;
 
             // Check if block repository contains reorged blocks. If it does - delete them.
-            if (expectedStoreTip.HashBlock != this.storeTip.HashBlock)
+            if (expectedStoreTip.HashBlock != this.StoreTip.HashBlock)
             {
                 var blocksToDelete = new List<uint256>();
-                ChainedHeader currentHeader = this.storeTip;
+                ChainedHeader currentHeader = this.StoreTip;
 
                 while (currentHeader.HashBlock != expectedStoreTip.HashBlock)
                 {
@@ -264,8 +255,8 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
                 await this.blockRepository.DeleteAsync(currentHeader.HashBlock, blocksToDelete).ConfigureAwait(false);
 
-                this.logger.LogDebug("Store tip rewinded to '{0}'", this.storeTip);
-                this.storeTip = expectedStoreTip;
+                this.logger.LogDebug("Store tip rewinded to '{0}'", this.StoreTip);
+                this.StoreTip = expectedStoreTip;
             }
 
             // Save batch.
@@ -275,9 +266,9 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
             await this.blockRepository.PutAsync(newTip.HashBlock, batchCleared.Select(b => b.Block).ToList()).ConfigureAwait(false);
 
-            this.storeTip = newTip;
+            this.StoreTip = newTip;
 
-            this.logger.LogDebug("Store tip set to '{0}'", this.storeTip);
+            this.logger.LogDebug("Store tip set to '{0}'", this.StoreTip);
             this.logger.LogTrace("(-)");
         }
 

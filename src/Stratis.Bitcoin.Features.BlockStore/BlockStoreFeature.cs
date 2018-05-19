@@ -96,7 +96,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
         public void AddNodeStats(StringBuilder benchLogs)
         {
-            var highestBlock = this.blockStore.GetStoreTip();
+            var highestBlock = this.blockStore.StoreTip;
 
             if (highestBlock != null)
                 benchLogs.AppendLine($"{this.name}.Height: ".PadRight(LoggingConfiguration.ColumnLength + 1) +
