@@ -9,6 +9,7 @@ using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Base.Deployments;
 using Stratis.Bitcoin.BlockPulling;
 using Stratis.Bitcoin.Configuration;
+using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.Consensus.Interfaces;
@@ -221,12 +222,11 @@ namespace Stratis.Bitcoin.Features.Consensus
             while (true)
             {
                 this.Tip = this.Chain.GetBlock(utxoHash);
-                if (this.Tip != null)
+                if (this.Tip != null && (this.chainState.BlockStoreTip == null || this.chainState.BlockStoreTip.Height >= this.Tip.Height))
                     break;
 
-                // TODO: this rewind code may never happen.
-                // The node will complete loading before connecting to peers so the
-                // chain will never know if a reorg happened.
+                // In case block store initialized behind- rewind until or before the block store tip.
+                // The node will complete loading before connecting to peers so the chain will never know if a reorg happened.
                 utxoHash = await this.UTXOSet.Rewind().ConfigureAwait(false);
             }
 

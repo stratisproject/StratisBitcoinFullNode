@@ -9,6 +9,9 @@ using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.BlockStore
 {
+    // run tests
+    // todo write tests
+
     /// <summary>
     /// Saves blocks to the database in batches, removes reorged blocks from the database.
     /// </summary>
@@ -54,6 +57,12 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
         }
 
+        private void SetStoreTip(ChainedHeader newTip)
+        {
+            this.StoreTip = newTip;
+            this.chainState.BlockStoreTip = newTip;
+        }
+
         /// <summary>
         /// Initializes the <see cref="BlockStore"/>.
         /// <para>
@@ -73,8 +82,8 @@ namespace Stratis.Bitcoin.Features.BlockStore
             if (this.storeSettings.ReIndex)
                 throw new NotImplementedException();
 
-            this.StoreTip = this.chain.GetBlock(this.blockRepository.BlockHash);
-
+            this.SetStoreTip(this.chain.GetBlock(this.blockRepository.BlockHash));
+            
             if (this.StoreTip == null)
                 await this.RecoverStoreTipAsync().ConfigureAwait(false);
 
@@ -88,12 +97,13 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 if (this.storeSettings.TxIndex)
                     await this.blockRepository.SetTxIndexAsync(this.storeSettings.TxIndex).ConfigureAwait(false);
             }
-
-            if (this.StoreTip.Height < this.chainState.ConsensusTip.Height)
+            
+            // Make sure that block store initializes before the consensus. 
+            // This is needed in order to rewind consensus in case it is initialized ahead of the block store.
+            if (this.chainState.ConsensusTip != null)
             {
-                //TODO rewind consensus, don't throw
-                this.logger.LogError("Block store initialized behind consensus!");
-                throw new Exception("BLOCKSTOREERROR");
+                this.logger.LogError("Block store initialized after the consensus!");
+                throw new Exception("Block store initialized after consensus!");
             }
 
             // Start dequeuing.
@@ -131,7 +141,9 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
             ChainedHeader newTip = this.chain.GetBlock(resetBlockHash);
             await this.blockRepository.DeleteAsync(newTip.HashBlock, blockStoreResetList).ConfigureAwait(false);
-            this.StoreTip = newTip;
+
+            this.SetStoreTip(newTip);
+
             this.logger.LogWarning("Block store tip recovered to block '{0}'.", newTip);
 
             this.logger.LogTrace("(-)");
@@ -256,7 +268,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 await this.blockRepository.DeleteAsync(currentHeader.HashBlock, blocksToDelete).ConfigureAwait(false);
 
                 this.logger.LogDebug("Store tip rewinded to '{0}'", this.StoreTip);
-                this.StoreTip = expectedStoreTip;
+                this.SetStoreTip(expectedStoreTip);
             }
 
             // Save batch.
@@ -266,7 +278,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
             await this.blockRepository.PutAsync(newTip.HashBlock, batchCleared.Select(b => b.Block).ToList()).ConfigureAwait(false);
 
-            this.StoreTip = newTip;
+            this.SetStoreTip(newTip);
 
             this.logger.LogDebug("Store tip set to '{0}'", this.StoreTip);
             this.logger.LogTrace("(-)");
@@ -318,8 +330,3 @@ namespace Stratis.Bitcoin.Features.BlockStore
         }
     }
 }
-
-// run tests
-//when we initialize block store- load block store tip. if it's below consensus tip- rewind consensus
-//todo write tests
-//TODO comment this class properly
