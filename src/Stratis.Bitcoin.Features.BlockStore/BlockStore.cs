@@ -260,13 +260,13 @@ namespace Stratis.Bitcoin.Features.BlockStore
             // Save batch.
             ChainedHeader newTip = batchCleared.Last().ChainedHeader;
 
-            this.logger.LogDebug("Saving batch of {0} blocks, total size: {1} bytes.", batchCleared.Count, this.currentBatchSizeBytes);
+            this.logger.LogDebug("Saving batch of {0} blocks, total size is {1} bytes.", batchCleared.Count, this.currentBatchSizeBytes);
 
             await this.blockRepository.PutAsync(newTip.HashBlock, batchCleared.Select(b => b.Block).ToList()).ConfigureAwait(false);
 
             this.SetStoreTip(newTip);
+            this.logger.LogDebug("Store tip set to '{0}'.", this.StoreTip);
 
-            this.logger.LogDebug("Store tip set to '{0}'", this.StoreTip);
             this.logger.LogTrace("(-)");
         }
 
