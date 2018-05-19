@@ -1,12 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security;
 using System.Text;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NBitcoin.Policy;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Utilities;
+using Stratis.Bitcoin.Utilities.Extensions;
 
 namespace Stratis.Bitcoin.Features.Wallet
 {
@@ -210,7 +212,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             Wallet wallet = this.walletManager.GetWalletByName(context.AccountReference.WalletName);
 
             // get extended private key
-            var privateKey = Key.Parse(wallet.EncryptedSeed, context.WalletPassword, wallet.Network);
+            var privateKey = Key.Parse(wallet.EncryptedSeed, context.WalletPassword?.FromSecureString(), wallet.Network);
             var seedExtKey = new ExtKey(privateKey, wallet.ChainCode);
 
             var signingKeys = new HashSet<ISecret>();
@@ -380,7 +382,7 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             this.AccountReference = accountReference;
             this.Recipients = recipients;
-            this.WalletPassword = walletPassword;
+            this.WalletPassword = walletPassword?.ToSecureString();
             this.FeeType = FeeType.Medium;
             this.MinConfirmations = 1;
             this.SelectedInputs = new List<OutPoint>();
@@ -445,10 +447,9 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// The password that protects the wallet in <see cref="WalletAccountReference"/>.
         /// </summary>
         /// <remarks>
-        /// TODO: replace this with System.Security.SecureString (https://github.com/dotnet/corefx/tree/master/src/System.Security.SecureString)
         /// More info (https://github.com/dotnet/corefx/issues/1387)
         /// </remarks>
-        public string WalletPassword { get; set; }
+        public SecureString WalletPassword { get; set; }
 
         /// <summary>
         /// The inputs that must be used when building the transaction.
