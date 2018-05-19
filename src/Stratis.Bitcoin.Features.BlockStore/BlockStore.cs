@@ -87,7 +87,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             if (this.StoreTip == null)
                 await this.RecoverStoreTipAsync().ConfigureAwait(false);
 
-            this.logger.LogDebug("Initialized block store tip at '{0}'", this.StoreTip);
+            this.logger.LogDebug("Initialized block store tip at '{0}'.", this.StoreTip);
 
             if (this.storeSettings.TxIndex != this.blockRepository.TxIndex)
             {
@@ -102,7 +102,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             // This is needed in order to rewind consensus in case it is initialized ahead of the block store.
             if (this.chainState.ConsensusTip != null)
             {
-                this.logger.LogError("Block store initialized after the consensus!");
+                this.logger.LogCritical("Block store initialized after the consensus!");
                 throw new Exception("Block store initialized after consensus!");
             }
 

@@ -222,10 +222,12 @@ namespace Stratis.Bitcoin.Features.Consensus
             while (true)
             {
                 this.Tip = this.Chain.GetBlock(utxoHash);
-                if (this.Tip != null && (this.chainState.BlockStoreTip == null || this.chainState.BlockStoreTip.Height >= this.Tip.Height))
+
+                bool blockStoreDisabled = this.chainState.BlockStoreTip == null;
+                if ((this.Tip != null) && (blockStoreDisabled || (this.chainState.BlockStoreTip.Height >= this.Tip.Height)))
                     break;
 
-                // In case block store initialized behind- rewind until or before the block store tip.
+                // In case block store initialized behind, rewind until or before the block store tip.
                 // The node will complete loading before connecting to peers so the chain will never know if a reorg happened.
                 utxoHash = await this.UTXOSet.Rewind().ConfigureAwait(false);
             }
