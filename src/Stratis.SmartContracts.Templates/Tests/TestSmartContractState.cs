@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using Stratis.SmartContracts;
 using System.Text;
+using System.Diagnostics;
+using Newtonsoft.Json;
 
 namespace $safeprojectname$
 {
@@ -92,31 +94,62 @@ namespace $safeprojectname$
         public ISmartContractList<T> GetList<T>(string name)
         {
             if (lists.ContainsKey(name))
-                return (ISmartContractList<T>)lists[name];
+            {
+                var list = (TestList<T>)lists[name];
+                Debug.WriteLine("GetList:\t'" + name + "' = " + JsonConvert.SerializeObject(list));
+                foreach (var item1 in list)
+                {
+                    Debug.WriteLine("GetList:\t'" + name + "' = " + JsonConvert.SerializeObject(item1));
+                }
+                var list1 = (ISmartContractList<T>)lists[name];
+                return list1;
+            }
 
             lists[name] = new TestList<T>();
-            return (ISmartContractList<T>)lists[name];
+            var list2 = (ISmartContractList<T>)lists[name];
+            Debug.WriteLine("GetList:\t'" + name + "' = " + JsonConvert.SerializeObject(list2));
+            return list2;
         }
 
         public ISmartContractMapping<T> GetMapping<T>(string name)
         {
             if (mappings.ContainsKey(name))
-                return (ISmartContractMapping<T>)mappings[name];
+            {
+                var mapping = (TestMapping<T>)mappings[name];
+                Debug.WriteLine("GetMapping:\t'" + name + "' = " + JsonConvert.SerializeObject(mapping));
+                foreach (var item in mapping)
+                {
+                    Debug.WriteLine("GetMapping:\t'" + name + "' = " + JsonConvert.SerializeObject(item));
+                }
+                var mapping1 = (ISmartContractMapping<T>)mappings[name];
+                return mapping1;
+            }
 
             mappings[name] = new TestMapping<T>();
-            return (ISmartContractMapping<T>)mappings[name];
+            var mapping2 = (ISmartContractMapping<T>)mappings[name];
+            Debug.WriteLine("GetMapping:\t'" + name + "' = " + JsonConvert.SerializeObject(mapping2));
+            return mapping2;
         }
 
         public T GetObject<T>(string key)
         {
             if (objects.ContainsKey(key))
-                return (T)objects[key];
+            {
+                T obj =  (T)objects[key];
+                Debug.WriteLine("GetObject:\t'" + key + "' = " + JsonConvert.SerializeObject(obj));
+                return obj;
+            }
+            else
+            {
+                Debug.WriteLine("GetObject:\t'" + key + "' = " + "missing");
+            }
 
             return default(T);
         }
 
         public void SetObject<T>(string key, T obj)
         {
+            Debug.WriteLine("SetObject:\t'" + key + "' = " + JsonConvert.SerializeObject(obj));
             objects[key] = obj;
         }
     }
@@ -144,15 +177,28 @@ namespace $safeprojectname$
         public T Get(string key)
         {
             if (mapping.ContainsKey(key))
-                return mapping[key];
+            {
+                var value = mapping[key];
+                Debug.WriteLine("Mapping.Get:\t['" + key + "'] = " + JsonConvert.SerializeObject(value));
+                return value;
+            }
 
             return default(T);
         }
 
         public void Put(string key, T value)
         {
+            if (mapping.ContainsKey(key)) Debug.WriteLine("Mapping.Put:\t['" + key + "'] = " + JsonConvert.SerializeObject(value) + " (previous value)");
+            Debug.WriteLine("Mapping.Put:\t['" + key + "'] = " + JsonConvert.SerializeObject(value));
             mapping[key] = value;
         }
+
+        public IEnumerator<T> GetEnumerator()
+        {
+            return this.mapping.Values.GetEnumerator();
+        }
+
+        public uint Count => (uint)this.mapping.Count;
     }
 
     public abstract class TestList
@@ -175,11 +221,14 @@ namespace $safeprojectname$
 
         public T GetValue(uint index)
         {
-            return this.list[(int)index];
+            var value = this.list[(int)index];
+            Debug.WriteLine("List.GetValue:\t(" + index.ToString() + ") = " + JsonConvert.SerializeObject(value));
+            return value;
         }
 
         public void SetValue(uint index, T value)
         {
+            Debug.WriteLine("List.SetValue:\t(" + index.ToString() + ") = " + JsonConvert.SerializeObject(value));
             list[(int)index] = value;
         }
 
