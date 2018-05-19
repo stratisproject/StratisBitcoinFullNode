@@ -166,7 +166,7 @@ namespace Stratis.FederatedPeg.IntegrationTests
                 }, agent: "MainchainGeneratorRole ");
                 mainchainNode_GeneratorRole.Start();
 
-                await Task.Delay(10000);
+                await Task.Delay(3000);
 
                 //Create sidechain with SidechainGeneratorServices.
                 var sidechainNode_GeneratorRole = nodeBuilder.CreatePosSidechainNode("enigma", false, fullNodeBuilder =>
@@ -226,9 +226,7 @@ namespace Stratis.FederatedPeg.IntegrationTests
 
                 // Start the engines! 
                 sidechainNode_GeneratorRole.Start();
-                await Task.Delay(10000);
                 sidechainNode_Member1_Wallet.Start();
-                await Task.Delay(10000);
                 sidechainNode_FunderRole.Start();
 
                 //give nodes startup time
@@ -368,9 +366,9 @@ namespace Stratis.FederatedPeg.IntegrationTests
                 mainchain_SidechainFunder1.ConfigParameters.Add("addnode", $"127.0.0.1:{mainchain_SidechainFunder2.ProtocolPort}");
                 mainchain_SidechainFunder2.ConfigParameters.Add("addnode", $"127.0.0.1:{mainchain_SidechainFunder1.ProtocolPort}");
                 mainchain_SidechainFunder1.Start();
-                await Task.Delay(10000);
                 mainchain_SidechainFunder2.Start();
-                await Task.Delay(10000);
+
+                await Task.Delay(5000);
 
                 //mine some strat mainchain coins
                 string mainchainWallet = "mainchain_wallet";
@@ -588,23 +586,18 @@ namespace Stratis.FederatedPeg.IntegrationTests
 
                 //start mainchain and sidechain
                 mainchain_FederationGateway1.Start();
-                await Task.Delay(1000);
                 mainchain_FederationGateway2.Start();
-                await Task.Delay(1000);
                 mainchain_FederationGateway3.Start();
 
                 //give nodes a chance to start
-                await Task.Delay(1000);
+                await Task.Delay(60000);
 
                 sidechain_FederationGateway1.Start();
-                await Task.Delay(1000);
                 sidechain_FederationGateway2.Start();
-                await Task.Delay(1000);
                 sidechain_FederationGateway3.Start();
-                await Task.Delay(1000);
-
+              
                 //give nodes a chance to start
-                await Task.Delay(10000);
+                await Task.Delay(60000);
 
                 //add mainchain nodes
                 var rpcClient1 = mainchain_FederationGateway1.CreateRPCClient();
@@ -915,9 +908,7 @@ namespace Stratis.FederatedPeg.IntegrationTests
 
                 //connect the nodes
                 mainchain_FederationGateway3v2.Start();
-                await Task.Delay(1000);
                 sidechain_FederationGateway3.Start();
-                await Task.Delay(1000);
 
                 //give the node time to start
                 await Task.Delay(15000);
@@ -925,20 +916,20 @@ namespace Stratis.FederatedPeg.IntegrationTests
                 //add mainchain nodes
                 rpcClient1 = mainchain_FederationGateway1.CreateRPCClient();
                 rpcClient1.AddNode(mainchain_FederationGateway3v2.Endpoint);
-                await Task.Delay(addNodeDelay + 20000);
+                await Task.Delay(addNodeDelay);
 
                 rpcClient2 = mainchain_FederationGateway2.CreateRPCClient();
                 rpcClient2.AddNode(mainchain_FederationGateway3v2.Endpoint);
-                await Task.Delay(addNodeDelay + 20000);
+                await Task.Delay(addNodeDelay);
 
                 rpcClient3 = mainchain_FederationGateway3v2.CreateRPCClient();
-                await Task.Delay(addNodeDelay + 20000);
+                await Task.Delay(addNodeDelay);
                 rpcClient3.AddNode(mainchain_SidechainFunder2.Endpoint);
-                await Task.Delay(addNodeDelay + 20000);
+                await Task.Delay(addNodeDelay);
                 rpcClient3.AddNode(mainchain_FederationGateway1.Endpoint);
-                await Task.Delay(addNodeDelay + 20000);
+                await Task.Delay(addNodeDelay);
                 rpcClient3.AddNode(mainchain_FederationGateway2.Endpoint);
-                await Task.Delay(addNodeDelay + 20000);
+                await Task.Delay(addNodeDelay);
 
                 // Check our network is still intact.
                 //IntegrationTestUtils.AreConnected(mainchain_FederationGateway1, mainchain_FederationGateway2).Should().BeTrue();
