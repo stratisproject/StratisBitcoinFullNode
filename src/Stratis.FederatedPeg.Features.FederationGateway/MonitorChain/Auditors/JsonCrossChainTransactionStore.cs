@@ -38,8 +38,8 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
 
         public void AddCrossChainTransactionId(uint256 sessionId, uint256 crossChainTransactionId)
         {
-            var crossChainTransactionInfo = this.GetCrossChainTransactionInfo(sessionId);
-            crossChainTransactionInfo.CrossChainTransactionId = crossChainTransactionId;
+            //var crossChainTransactionInfo = this.GetCrossChainTransactionInfo(sessionId);
+            //crossChainTransactionInfo.CrossChainTransactionId = crossChainTransactionId;
         }
 
         private CrossChainTransactionInfo GetCrossChainTransactionInfo(uint256 sessionId)
