@@ -48,7 +48,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Models
         /// The final destination address of the user to receive the funds. For a deposit this is a user address on the sidechain,
         /// for a withdrawal it is an address on the mainchain.
         /// </summary>
-        [Required(ErrorMessage = "Destination Address.")]
+        [Required(ErrorMessage = "Destination Address required.")]
         public string DestinationAddress { get; set; }
     }
 }
