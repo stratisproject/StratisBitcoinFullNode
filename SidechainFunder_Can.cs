@@ -166,6 +166,8 @@ namespace Stratis.FederatedPeg.IntegrationTests
                 }, agent: "MainchainGeneratorRole ");
                 mainchainNode_GeneratorRole.Start();
 
+                await Task.Delay(10000);
+
                 //Create sidechain with SidechainGeneratorServices.
                 var sidechainNode_GeneratorRole = nodeBuilder.CreatePosSidechainNode("enigma", false, fullNodeBuilder =>
                     {
@@ -224,7 +226,9 @@ namespace Stratis.FederatedPeg.IntegrationTests
 
                 // Start the engines! 
                 sidechainNode_GeneratorRole.Start();
+                await Task.Delay(10000);
                 sidechainNode_Member1_Wallet.Start();
+                await Task.Delay(10000);
                 sidechainNode_FunderRole.Start();
 
                 //give nodes startup time
@@ -364,7 +368,9 @@ namespace Stratis.FederatedPeg.IntegrationTests
                 mainchain_SidechainFunder1.ConfigParameters.Add("addnode", $"127.0.0.1:{mainchain_SidechainFunder2.ProtocolPort}");
                 mainchain_SidechainFunder2.ConfigParameters.Add("addnode", $"127.0.0.1:{mainchain_SidechainFunder1.ProtocolPort}");
                 mainchain_SidechainFunder1.Start();
+                await Task.Delay(10000);
                 mainchain_SidechainFunder2.Start();
+                await Task.Delay(10000);
 
                 //mine some strat mainchain coins
                 string mainchainWallet = "mainchain_wallet";
@@ -411,18 +417,7 @@ namespace Stratis.FederatedPeg.IntegrationTests
                 //sync our node to distrubute the mempool
                 await IntegrationTestUtils.WaitLoop(() => IntegrationTestUtils.AreNodesSynced(mainchain_SidechainFunder1, mainchain_SidechainFunder2));
 
-                //generate a block to include our transaction
-                //powMinting.GenerateBlocks(new ReserveScript(bitcoinAddress.ScriptPubKey), 1UL, int.MaxValue);
-
-                //sync nodes
-                //at this point our transaction has made its way into a block
-                await IntegrationTestUtils.WaitLoop(() => IntegrationTestUtils.AreNodesSynced(mainchain_SidechainFunder1, mainchain_SidechainFunder2));
-
                 await Task.Delay(5000);
-
-                //confirm our mainchain funder has sent some funds (less 3600 + 4 mining plus we get our fee back)
-                //amounts = account_mainchain_funder1.GetSpendableAmount();
-                //amounts.ConfirmedAmount.Should().Be(new Money(97996600, MoneyUnit.BTC));
 
                 // First we'll need to mine more blocks on the multi-sig so we can spend mature funds.
                 var powMinting_Sidechain = sidechainNode_Member1_Wallet.FullNode.NodeService<IPowMining>();
@@ -455,6 +450,8 @@ namespace Stratis.FederatedPeg.IntegrationTests
                 mainchain_FederationGateway1.ConfigParameters.Add("publickey", publickey);
                 mainchain_FederationGateway1.ConfigParameters.Add("membername", "member1");
 
+                await Task.Delay(5000);
+
                 var mainchain_FederationGateway2 = nodeBuilder.CreateStratisPosNode(false, fullNodeBuilder =>
                 {
                     fullNodeBuilder
@@ -476,6 +473,8 @@ namespace Stratis.FederatedPeg.IntegrationTests
                 mainchain_FederationGateway2.ConfigParameters.Add("publickey", publickey);
                 mainchain_FederationGateway2.ConfigParameters.Add("membername", "member2");
 
+                await Task.Delay(5000);
+
                 var mainchain_FederationGateway3 = nodeBuilder.CreateStratisPosNode(false, fullNodeBuilder =>
                 {
                     fullNodeBuilder
@@ -496,6 +495,8 @@ namespace Stratis.FederatedPeg.IntegrationTests
                 mainchain_FederationGateway3.ConfigParameters.Add("memberprivatefolder", Path.Combine(Directory.GetCurrentDirectory(), "Federations\\deposit_funds_to_sidechain\\member3"));
                 mainchain_FederationGateway3.ConfigParameters.Add("publickey", publickey);
                 mainchain_FederationGateway3.ConfigParameters.Add("membername", "member3");
+
+                await Task.Delay(5000);
 
                 //
                 // Act as a Federation Gateway (sidechain)
@@ -524,6 +525,8 @@ namespace Stratis.FederatedPeg.IntegrationTests
                 sidechain_FederationGateway1.ConfigParameters.Add("publickey", publickey);
                 sidechain_FederationGateway1.ConfigParameters.Add("membername", "member1");
 
+                await Task.Delay(5000);
+
                 var sidechain_FederationGateway2 = nodeBuilder.CreatePosSidechainNode("enigma", false, fullNodeBuilder =>
                 {
                     fullNodeBuilder
@@ -546,6 +549,8 @@ namespace Stratis.FederatedPeg.IntegrationTests
                 sidechain_FederationGateway2.ConfigParameters.Add("memberprivatefolder", Path.Combine(Directory.GetCurrentDirectory(), "Federations\\deposit_funds_to_sidechain\\member2"));
                 sidechain_FederationGateway2.ConfigParameters.Add("publickey", publickey);
                 sidechain_FederationGateway2.ConfigParameters.Add("membername", "member2");
+
+                await Task.Delay(5000);
 
                 var sidechain_FederationGateway3 = nodeBuilder.CreatePosSidechainNode("enigma", false, fullNodeBuilder =>
                 {
@@ -579,17 +584,24 @@ namespace Stratis.FederatedPeg.IntegrationTests
                 sidechain_FederationGateway2.ConfigParameters.Add("counterchainapiport", mainchain_FederationGateway2.ApiPort.ToString());
                 sidechain_FederationGateway3.ConfigParameters.Add("counterchainapiport", mainchain_FederationGateway3.ApiPort.ToString());
 
+                await Task.Delay(5000);
+
                 //start mainchain and sidechain
                 mainchain_FederationGateway1.Start();
+                await Task.Delay(1000);
                 mainchain_FederationGateway2.Start();
+                await Task.Delay(1000);
                 mainchain_FederationGateway3.Start();
 
                 //give nodes a chance to start
-                await Task.Delay(10000);
+                await Task.Delay(1000);
 
                 sidechain_FederationGateway1.Start();
+                await Task.Delay(1000);
                 sidechain_FederationGateway2.Start();
+                await Task.Delay(1000);
                 sidechain_FederationGateway3.Start();
+                await Task.Delay(1000);
 
                 //give nodes a chance to start
                 await Task.Delay(10000);
@@ -899,9 +911,13 @@ namespace Stratis.FederatedPeg.IntegrationTests
                 sidechain_FederationGateway3.ConfigParameters.AddOrReplace("counterchainapiport", mainchain_FederationGateway3v2.ApiPort.ToString());
                 mainchain_FederationGateway3v2.ConfigParameters.Add("counterchainapiport", sidechain_FederationGateway3.ApiPort.ToString());
 
+                await Task.Delay(1000);
+
                 //connect the nodes
                 mainchain_FederationGateway3v2.Start();
+                await Task.Delay(1000);
                 sidechain_FederationGateway3.Start();
+                await Task.Delay(1000);
 
                 //give the node time to start
                 await Task.Delay(15000);
