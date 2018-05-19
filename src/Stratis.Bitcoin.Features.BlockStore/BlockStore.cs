@@ -255,23 +255,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
             // Check if block repository contains reorged blocks. If it does - delete them.
             if (expectedStoreTip.HashBlock != this.StoreTip.HashBlock)
-            {
-                var blocksToDelete = new List<uint256>();
-                ChainedHeader currentHeader = this.StoreTip;
-
-                while (currentHeader.HashBlock != expectedStoreTip.HashBlock)
-                {
-                    blocksToDelete.Add(currentHeader.HashBlock);
-                    currentHeader = currentHeader.Previous;
-                }
-
-                this.logger.LogDebug("Block store reorg detected. Removing {0} blocks from the database.", blocksToDelete.Count);
-
-                await this.blockRepository.DeleteAsync(currentHeader.HashBlock, blocksToDelete).ConfigureAwait(false);
-
-                this.logger.LogDebug("Store tip rewinded to '{0}'", this.StoreTip);
-                this.SetStoreTip(expectedStoreTip);
-            }
+                await this.RemoveReorgedBlocksFromStoreAsync(expectedStoreTip).ConfigureAwait(false);
 
             // Save batch.
             ChainedHeader newTip = batchCleared.Last().ChainedHeader;
@@ -319,6 +303,31 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
             this.logger.LogTrace("(-):*.{0}={1}", nameof(batchCleared.Count), batchCleared.Count);
             return batchCleared;
+        }
+
+        /// <summary>Removes reorged blocks from the database.</summary>
+        /// <param name="expectedStoreTip">Highest block that should be in the store.</param>
+        private async Task RemoveReorgedBlocksFromStoreAsync(ChainedHeader expectedStoreTip)
+        {
+            this.logger.LogTrace("()");
+
+            var blocksToDelete = new List<uint256>();
+            ChainedHeader currentHeader = this.StoreTip;
+
+            while (currentHeader.HashBlock != expectedStoreTip.HashBlock)
+            {
+                blocksToDelete.Add(currentHeader.HashBlock);
+                currentHeader = currentHeader.Previous;
+            }
+
+            this.logger.LogDebug("Block store reorg detected. Removing {0} blocks from the database.", blocksToDelete.Count);
+
+            await this.blockRepository.DeleteAsync(currentHeader.HashBlock, blocksToDelete).ConfigureAwait(false);
+            
+            this.SetStoreTip(expectedStoreTip);
+            this.logger.LogDebug("Store tip rewound to '{0}'.", this.StoreTip);
+
+            this.logger.LogTrace("(-)");
         }
 
         /// <inheritdoc />
