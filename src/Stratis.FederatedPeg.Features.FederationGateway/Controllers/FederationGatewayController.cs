@@ -58,6 +58,32 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Controllers
             }
         }
 
+        [Route("create-sessiononcounterchain")]
+        [HttpPost]
+        public IActionResult CreateSessionOnCounterChain([FromBody] CreatePartialTransactionSessionRequest createPartialTransactionSessionRequest)
+        {
+            Guard.NotNull(createPartialTransactionSessionRequest, nameof(createPartialTransactionSessionRequest));
+
+            // checks the request is valid
+            if (!this.ModelState.IsValid)
+            {
+                return BuildErrorResponse(this.ModelState);
+            }
+
+            try
+            {
+                var result = this.partialTransactionSessionManager.CreateSessionOnCounterChain(
+                    createPartialTransactionSessionRequest.SessionId,
+                    createPartialTransactionSessionRequest.Amount,
+                    createPartialTransactionSessionRequest.DestinationAddress);
+                return this.Json(uint256.Zero); //todo: this is temp.
+            }
+            catch (Exception e)
+            {
+                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, $"Could not initialize sidechain:{e.Message}", e.ToString());
+            }
+        }
+
         /// <summary>
         /// Builds an <see cref="IActionResult"/> containing errors contained in the <see cref="ControllerBase.ModelState"/>.
         /// </summary>

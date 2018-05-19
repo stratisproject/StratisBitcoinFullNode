@@ -111,6 +111,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
                         services.AddSingleton(new FederationGatewaySettings(setup));
                         services.AddSingleton<ICrossChainTransactionMonitor, CrossChainTransactionMonitor>();
                         services.AddSingleton<IPartialTransactionSessionManager, PartialTransactionSessionManager>();
+                        services.AddSingleton<ICrossChainTransactionAuditor, JsonCrossChainTransactionAuditor>();
                     });
             });
             return fullNodeBuilder;

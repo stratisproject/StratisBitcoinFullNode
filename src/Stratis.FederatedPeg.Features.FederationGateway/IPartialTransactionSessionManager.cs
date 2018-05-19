@@ -11,10 +11,16 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
     {
         void Initialize();
 
-        void CreateBuildAndBroadcastSession(CrossChainTransactionInfo crossChainTransactionInfo);
+        uint256 CreateBuildAndBroadcastSession(CrossChainTransactionInfo crossChainTransactionInfo);
+
+        uint256 CreateSessionOnCounterChain(uint256 transactionId, Money amount, string detinationAddress);
 
         Task<uint256> CreatePartialTransactionSession(uint256 transactionId, Money amount, string detinationAddress);
 
         void ReceivePartial(uint256 sessionId, Transaction partialTransaction, uint256 bossCard);
+
+        PartialTransactionSession VerifySession(uint256 sessionId, Transaction partialTransactionTemplate);
+
+        void MarkSessionAsSigned(PartialTransactionSession session);
     }
 }

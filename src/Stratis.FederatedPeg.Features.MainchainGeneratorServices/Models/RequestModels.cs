@@ -1,8 +1,19 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using System.Net.Http;
+using System.Text;
 using Newtonsoft.Json;
 
 namespace Stratis.FederatedPeg.Features.MainchainGeneratorServices.Models
 {
+    public class JsonContent : StringContent
+    {
+        public JsonContent(object obj) :
+            base(JsonConvert.SerializeObject(obj), Encoding.UTF8, "application/json")
+        {
+
+        }
+    }
+
     public class RequestModel
     {
         public override string ToString()

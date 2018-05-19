@@ -11,7 +11,6 @@ using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Features.GeneralPurposeWallet;
 using Stratis.Bitcoin.Features.GeneralPurposeWallet.Interfaces;
 using Stratis.Bitcoin.Interfaces;
-using Stratis.Bitcoin.P2P.Protocol.Payloads;
 using Stratis.Bitcoin.P2P.Peer;
 using System.Threading;
 using NBitcoin.JsonConverters;
@@ -23,11 +22,15 @@ using Stratis.FederatedPeg.Features.FederationGateway.Models;
 
 namespace Stratis.FederatedPeg.Features.FederationGateway
 {
-    class PartialTransactionSession
+    public class PartialTransactionSession
     {
         private Transaction[] partialTransactions;
-        private uint256 sessionId;
 
+        public uint256 SessionId { get; }
+        public Money Amount { get; }
+        public string Destination { get; }
+
+        // todo: we can remove this if we just use a list for the partials
         private BossTable bossTable;
 
         public bool HasReachedQuorum { get; private set; }
@@ -36,64 +39,48 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
 
         private ILogger logger;
 
-        public PartialTransactionSession(ILogger logger, int federationSize, uint256 sessionId, string[] addresses)
+        public bool HaveISigned { get; set; } = false;
+
+        public PartialTransactionSession(ILogger logger, int federationSize, uint256 sessionId, string[] addresses, Money amount, string destination)
         {
             this.logger = logger;
             this.partialTransactions = new Transaction[federationSize];
-            this.sessionId = sessionId;
+            this.SessionId = sessionId;
+            this.Amount = amount;
+            this.Destination = destination;
             this.bossTable = new BossTableBuilder().Build(sessionId, addresses);
         }
 
-        internal bool AddPartial(Transaction partialTransaction, string bossCard)
+        internal bool AddPartial(string memberName, Transaction partialTransaction, string bossCard)
         {
             this.logger.LogInformation("()");
-            this.logger.LogInformation($"HasQuorum: {this.HasReachedQuorum}");
+            this.logger.LogInformation($"{memberName} Adding Partial to BuildAndBroadcastSession.");
 
-            this.logger.LogInformation("AddPartial");
-            this.logger.LogInformation("");
-            this.logger.LogInformation("BossTableBuilder");
-            this.logger.LogInformation("---------");
-
-            foreach (string bc in bossTable.BossTableEntries)
-                this.logger.LogInformation(bc);
-
-            this.logger.LogInformation("---------");
-
-            this.logger.LogInformation($"AddPartial: Incoming bossCard - {bossCard}");
-
-            this.logger.LogInformation("Partials Before");
-            this.logger.LogInformation("---------");
-
-            foreach (var p in partialTransactions)
-            {
-                if (p == null)
-                    this.logger.LogInformation("null");
-                else
-                    this.logger.LogInformation($"{p?.ToHex()}");
-            }
-
-            this.logger.LogInformation("---------");
-
+            // Insert the partial transaction in the session.
             int positionInTable = 0;
             for (; positionInTable < 3; ++positionInTable )
                 if (bossCard == bossTable.BossTableEntries[positionInTable])
                     break;
             this.partialTransactions[positionInTable] = partialTransaction;
 
-            this.logger.LogInformation("Partials After");
-            this.logger.LogInformation("---------");
+            // Have we reached Quorum?
+            this.HasReachedQuorum = this.CountPartials() >= 2;
 
+            // Output parts info.
+            this.logger.LogInformation($"{memberName} New Partials");
+            this.logger.LogInformation($"{memberName} ---------");
             foreach (var p in partialTransactions)
             {
                 if (p == null)
-                    this.logger.LogInformation("null");
+                    this.logger.LogInformation($"{memberName} null");
                 else
-                    this.logger.LogInformation($"{p?.ToHex()}");
+                    this.logger.LogInformation($"{memberName} {p?.ToHex()}");
             }
-            this.logger.LogInformation("---------");
+            this.logger.LogInformation($"{memberName} ---------");
+            this.logger.LogInformation($"{memberName} HasQuorum: {this.HasReachedQuorum}");
+            this.logger.LogInformation("(-)");
+            // End output. 
 
-            this.HasReachedQuorum = this.CountPartials() >=2;
-            this.logger.LogInformation($"HasQuorum: {this.HasReachedQuorum}");
             return this.HasReachedQuorum;
         }
 
@@ -110,8 +97,12 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
 
     internal class PartialTransactionSessionManager : IPartialTransactionSessionManager
     {
+        private const int BlockSecurityDelay = 0;
+
         private IGeneralPurposeWalletManager generalPurposeWalletManager;
+
         private IGeneralPurposeWalletTransactionHandler generalPurposeWalletTransactionHandler;
+
         private IConnectionManager connectionManager;
 
         private Network network;
@@ -122,21 +113,26 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
 
         private IBroadcasterManager broadcastManager;
 
+        private IInitialBlockDownloadState initialBlockDownloadState;
+
+        private ConcurrentChain concurrentChain;
+
         private readonly ILogger logger;
 
-        //from babsman
         private Timer actionTimer;
 
-        private ConcurrentBag<BuildAndBroadcastSession> buildAndBroadcastSessions = new ConcurrentBag<BuildAndBroadcastSession>();
+        private ConcurrentDictionary<uint256, BuildAndBroadcastSession> buildAndBroadcastSessions = new ConcurrentDictionary<uint256, BuildAndBroadcastSession>();
 
         private object locker = new object();
 
         private TimeSpan sessionRunInterval = new TimeSpan(hours: 0, minutes: 0, seconds: 30);
 
+        private ICrossChainTransactionAuditor crossChainTransactionAuditor;
+
         public PartialTransactionSessionManager(ILoggerFactory loggerFactory, IGeneralPurposeWalletManager generalPurposeWalletManager,
             IGeneralPurposeWalletTransactionHandler generalPurposeWalletTransactionHandler, IConnectionManager connectionManager, Network network,
-            FederationGatewaySettings federationGatewaySettings,
-            IBroadcasterManager broadcastManager)
+            FederationGatewaySettings federationGatewaySettings, IInitialBlockDownloadState initialBlockDownloadState,
+            IBroadcasterManager broadcastManager, ConcurrentChain concurrentChain, ICrossChainTransactionAuditor crossChainTransactionAuditor = null)
         {
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.generalPurposeWalletManager = generalPurposeWalletManager;
@@ -145,6 +141,9 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
             this.network = network;
             this.federationGatewaySettings = federationGatewaySettings;
             this.broadcastManager = broadcastManager;
+            this.initialBlockDownloadState = initialBlockDownloadState;
+            this.concurrentChain = concurrentChain;
+            this.crossChainTransactionAuditor = crossChainTransactionAuditor;
         }
 
         public void Initialize()
@@ -160,6 +159,141 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
             this.actionTimer?.Dispose();
         }
 
+        // Creates the BuildAndBroadcast session.
+        // A session is added when the CrossChainTransactionMonitor identifies a transaction that needs to be completed cross chain.
+        public uint256 CreateBuildAndBroadcastSession(CrossChainTransactionInfo crossChainTransactionInfo)
+        {
+            var buildAndBroadcastSession = new BuildAndBroadcastSession(
+                DateTime.Now,
+                crossChainTransactionInfo.TransactionHash,
+                crossChainTransactionInfo.Amount,
+                crossChainTransactionInfo.DestinationAddress,
+                this.network.ToChain(),
+                this.federationGatewaySettings.FederationFolder,
+                this.federationGatewaySettings.PublicKey
+            );
+                
+            buildAndBroadcastSession.CrossChainTransactionInfo = crossChainTransactionInfo;
+            this.buildAndBroadcastSessions.TryAdd(buildAndBroadcastSession.SessionId, buildAndBroadcastSession);
+
+            this.logger.LogInformation("()");
+            this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} BuildAndBroadcastSession  added: {buildAndBroadcastSession}");
+            this.logger.LogInformation("(-)");
+
+            return this.CreateSessionOnCounterChain(this.federationGatewaySettings.CounterChainApiPort,
+                crossChainTransactionInfo.TransactionHash,
+                crossChainTransactionInfo.Amount, crossChainTransactionInfo.DestinationAddress);
+        }
+
+        // Calls into the counter chain and registers the session there.
+        private uint256 CreateSessionOnCounterChain(int apiPortForSidechain, uint256 transactionId, Money amount, string destination)
+        {
+            var createPartialTransactionSessionRequest = new CreatePartialTransactionSessionRequest
+            {
+                SessionId = transactionId,
+                Amount = amount.ToString(),
+                DestinationAddress = destination
+            };
+
+            using (var client = new HttpClient())
+            {
+                client.DefaultRequestHeaders.Accept.Clear();
+                client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+
+                var uri = new Uri(
+                    $"http://localhost:{apiPortForSidechain}/api/FederationGateway/create-sessiononcounterchain");
+                var request = new JsonContent(createPartialTransactionSessionRequest);
+                var httpResponseMessage = client.PostAsync(uri, request).Result;
+                string json = httpResponseMessage.Content.ReadAsStringAsync().Result;
+                return JsonConvert.DeserializeObject<uint256>(json, new UInt256JsonConverter());
+            }
+        }
+
+        public uint256 CreateSessionOnCounterChain(uint256 sessionId, Money amount, string destinationAddress)
+        {
+            // We don't process sessions if our chain is not past IBD.
+            if (this.initialBlockDownloadState.IsInitialBlockDownload())
+            {
+                this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} RunSessionsAsync() CounterChain is in IBD exiting. Height:{this.concurrentChain.Height}.");
+                return uint256.Zero;
+            }
+
+            this.RegisterSession(3, sessionId, amount, destinationAddress);
+            return uint256.Zero;
+        }
+
+        private PartialTransactionSession RegisterSession(int n, uint256 transactionId, Money amount, string destination)
+        {
+            //todo: not efficient
+            var memberFolderManager = new MemberFolderManager(this.federationGatewaySettings.FederationFolder);
+            IFederation federation = memberFolderManager.LoadFederation(2, n);
+
+            this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} RegisterSession transactionId:{transactionId}");
+            this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} RegisterSession amount:{amount}");
+            this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} RegisterSession destination:{destination}");
+
+            var partialTransactionSession = new PartialTransactionSession(this.logger, n, transactionId, federation.GetPublicKeys(this.network.ToChain()), amount, destination);
+            this.sessions.AddOrReplace(transactionId, partialTransactionSession);
+            return partialTransactionSession;
+        }
+
+        private async Task RunSessionsAsync()
+        {
+            this.logger.LogInformation("()");
+            this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} RunSessionsAsync()");
+
+            // We don't process sessions if our chain is not past IBD.
+            if (this.initialBlockDownloadState.IsInitialBlockDownload())
+            {
+                this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} RunSessionsAsync() Monitor chain is in IBD exiting. Height:{this.concurrentChain.Height}.");
+                return;
+            }
+
+            //foreach (var buildAndBroadcastSession in this.buildAndBroadcastSessions.Values)
+            //{
+                // Don't do anything if we are within the block security delay.
+            //    if (!this.IsBeyondBlockSecurityDelay(buildAndBroadcastSession)) return;
+            //}
+
+            foreach (var buildAndBroadcastSession in this.buildAndBroadcastSessions.Values)
+            {
+                lock (this.locker)
+                {
+                    var time = DateTime.Now;
+
+                    this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} RunSessionsAsync() MyBossCard:{buildAndBroadcastSession.BossCard}");
+                    this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} At {time} AmITheBoss: {buildAndBroadcastSession.AmITheBoss(time)} WhoHoldsTheBossCard: {buildAndBroadcastSession.WhoHoldsTheBossCard(time)}");
+
+                    // We don't start the process until we are beyond the BlockSecurityDelay.
+                    if (buildAndBroadcastSession.Status == BuildAndBroadcastSession.SessionStatus.Created
+                        && buildAndBroadcastSession.AmITheBoss(time) && IsBeyondBlockSecurityDelay(buildAndBroadcastSession))
+                    {
+                        this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} RunSessionsAsync() - Session State: Created -> Requesting.");
+                        buildAndBroadcastSession.Status = BuildAndBroadcastSession.SessionStatus.Requesting;
+                    }
+                }
+
+                if (buildAndBroadcastSession.Status == BuildAndBroadcastSession.SessionStatus.Requesting)
+                {
+                    buildAndBroadcastSession.Status = BuildAndBroadcastSession.SessionStatus.RequestSending;
+                    this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} RunSessionsAsync() - CreateBuildAndBroadcastSession.");
+                    var requestPartialsResult = await CreateBuildAndBroadcastSession(this.federationGatewaySettings.CounterChainApiPort, buildAndBroadcastSession.Amount, buildAndBroadcastSession.DestinationAddress, buildAndBroadcastSession.SessionId).ConfigureAwait(false);
+
+                    if (requestPartialsResult == uint256.Zero)
+                    {
+                        this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} RunSessionsAsync() - Session State: Requesting -> Requested.");
+                        buildAndBroadcastSession.Status = BuildAndBroadcastSession.SessionStatus.Requested;
+                    }
+                    else
+                    {
+                        this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} RunSessionsAsync() - Completing Session {requestPartialsResult}.");
+                        buildAndBroadcastSession.Complete(requestPartialsResult);
+                        buildAndBroadcastSession.CrossChainTransactionInfo.CrossChainTransactionId = requestPartialsResult;
+                    }
+                }
+            }
+        }
+
         public void ReceivePartial(uint256 sessionId, Transaction partialTransaction, uint256 bossCard)
         {
             this.logger.LogInformation("()");
@@ -168,7 +302,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
 
             string bc = bossCard.ToString();
             var partialTransactionSession = sessions[sessionId];
-            bool hasQuorum = partialTransactionSession.AddPartial(partialTransaction, bc);
+            bool hasQuorum = partialTransactionSession.AddPartial(this.federationGatewaySettings.MemberName, partialTransaction, bc);
 
             if (hasQuorum)
             {
@@ -181,7 +315,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
         private void BroadcastTransaction(PartialTransactionSession partialTransactionSession)
         {
             this.logger.LogInformation("()");
-            this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} Combing and Broadcasting transactions.");
+            this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} Combining and Broadcasting transaction.");
             var account = this.generalPurposeWalletManager.GetAccounts("multisig_wallet").First();
             if (account == null)
             {
@@ -200,13 +334,13 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
             this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} CreatePartialTransactionSession: TransactionId - {sessionId}");
             this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} CreatePartialTransactionSession: Destination   - {destinationAddress}");
             
-            var session = this.RegisterSession(3, sessionId);
+            //var session = this.RegisterSession(3, sessionId, amount, destinationAddress);
 
             this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} CreatePartialTransactionSession: Session Registered.");
 
             //Todo: check if this has already been done
             //todo: then we just return the transctionId
-
+            
             //create the partial transaction template
             var wallet = this.generalPurposeWalletManager.GetWallet("multisig_wallet");
             var account = wallet.GetAccountsByCoinType((CoinType)this.network.Consensus.CoinType).First();
@@ -240,6 +374,10 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
 
             //add my own partial
             this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} CreatePartialTransactionSession: Signing own partial.");
+            var partialTransactionSession = this.VerifySession(sessionId, templateTransaction);
+            //todo: this is not right!
+            if (partialTransactionSession == null) return uint256.Zero;
+            this.MarkSessionAsSigned(partialTransactionSession);
             var partialTransaction = account.SignPartialTransaction(templateTransaction);
 
             uint256 bossCard = BossTable.MakeBossTableEntry(sessionId, this.federationGatewaySettings.PublicKey);
@@ -256,6 +394,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
             {
                 try
                 {
+                    if (peer.Inbound) continue;
                     this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} Broadcasting Partial Transaction Request: SendMessageAsync.");
                     await peer.SendMessageAsync(requestPartialTransactionPayload).ConfigureAwait(false);
                 }
@@ -267,85 +406,84 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
             return uint256.One;
         }
 
-        private PartialTransactionSession RegisterSession(int n, uint256 transactionId)
+       //private PartialTransactionSession RegisterSession(int n, uint256 transactionId, Money amount, string destination)
+        //{
+        //    // We only create a partial session once. Before we create the session we must verify the info we receive against our
+        //    // own crosschainTransactionInfo to ensure none of the nodes have gone rouge.
+        //    // We check....
+        //    // 1) The amount matches (check the magnitude and the units).
+        //    // 2) The destination address matches.
+        //    // 3) That the session exists in our build and broadcast session.
+        //    lock (this.locker)
+        //    {
+        //        //todo: not efficient
+        //        var memberFolderManager = new MemberFolderManager(this.federationGatewaySettings.FederationFolder);
+        //        IFederation federation = memberFolderManager.LoadFederation(2, n);
+
+        //        bool retrieved = this.sessions.TryGetValue(transactionId, out PartialTransactionSession partialTransactionSession);
+        //        if (retrieved)
+        //        {
+        //            this.logger.LogInformation(
+        //                $"{this.federationGatewaySettings.MemberName} PartialTransactionSession exists: {transactionId}. Not adding.");
+        //        }
+        //        else
+        //        {
+        //            partialTransactionSession = new PartialTransactionSession(this.logger, n, transactionId,
+        //                federation.GetPublicKeys(this.network.ToChain()), amount, destination);
+        //            this.logger.LogInformation(
+        //                $"{this.federationGatewaySettings.MemberName} PartialTransactionSession adding: {transactionId}.");
+        //            this.sessions.AddOrReplace(transactionId, partialTransactionSession);
+        //        }
+        //        return partialTransactionSession;
+        //    }
+        //}
+
+        public PartialTransactionSession VerifySession(uint256 sessionId, Transaction partialTransactionTemplate)
         {
-            //todo: not efficient
-            var memberFolderManager = new MemberFolderManager(this.federationGatewaySettings.FederationFolder);
-            IFederation federation = memberFolderManager.LoadFederation(2, n);
-            
-            var partialTransactionSession = new PartialTransactionSession(this.logger, n, transactionId, federation.GetPublicKeys(this.network.ToChain()));
-            this.sessions.AddOrReplace(transactionId, partialTransactionSession);
+            var exists = this.sessions.TryGetValue(sessionId, out var partialTransactionSession);
+            this.logger.LogInformation("()");
+            this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} PartialTransactionSession exists: {exists} sessionId: {sessionId}");
+            this.logger.LogInformation("(-)");
+
+            // We do not have this session, either because we have not yet discovered it or because this is a fake session.
+            if (!exists) return null;
+
+            // What does the session expect to receive?
+            var scriptPubKeyFromSession = BitcoinAddress.Create(partialTransactionSession.Destination, this.network).ScriptPubKey;
+            var amountFromSession = partialTransactionSession.Amount;
+
+            foreach (var output in partialTransactionTemplate.Outputs)
+            {
+                if (output.ScriptPubKey == scriptPubKeyFromSession)
+                {
+                    this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} Found it!");
+                    if (output.Value == amountFromSession)
+                        this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} Amount matches!");
+                }
+            }
+
+            this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} HaveISigned:{partialTransactionSession.HaveISigned}");
+
+            //if (partialTransactionSession.HaveISigned)
+            //    throw new ArgumentException($"Fatal: the session {sessionId} has already signed a partial transaction.");
+
+            //if (amount != partialTransactionSession.Amount)
+            //    throw new ArgumentException($"Fatal the session amount does not match chain.");
+
+            //if (destination != partialTransactionSession.Destination)
+            //    throw new ArgumentException($"Fatal the session destination does not match chain.");
             return partialTransactionSession;
         }
 
-        public void CreateBuildAndBroadcastSession(CrossChainTransactionInfo crossChainTransactionInfo)
+        private bool IsBeyondBlockSecurityDelay(BuildAndBroadcastSession buildAndBroadcastSession)
         {
-            var buildAndBroadcastSession = new BuildAndBroadcastSession(this.network.ToChain(),
-                DateTime.Now,
-                this.federationGatewaySettings.FederationFolder,
-                crossChainTransactionInfo.TransactionHash,
-                this.federationGatewaySettings.PublicKey,
-                crossChainTransactionInfo.DestinationAddress,
-                crossChainTransactionInfo.Amount);
-            buildAndBroadcastSession.CrossChainTransactionInfo = crossChainTransactionInfo;
-            this.buildAndBroadcastSessions.Add(buildAndBroadcastSession);
+            this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} IsBeyondBlockSecurityDelay() ");
+            this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} IsBeyondBlockSecurityDelay() SessionBlock: {buildAndBroadcastSession.CrossChainTransactionInfo.BlockNumber}");
+            this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} IsBeyondBlockSecurityDelay() BlockDelay: {BlockSecurityDelay}");
+            this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} IsBeyondBlockSecurityDelay() Height: {this.concurrentChain.Tip.Height}");
 
-            this.logger.LogInformation("()");
-            this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} BuildAndBroadcastSession  added: {this.network.ToChain()}");
-            this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} BuildAndBroadcastSession  added: Amount                  - {buildAndBroadcastSession.Amount}");
-            this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} BuildAndBroadcastSession  added: Destination             - {buildAndBroadcastSession.DestinationAddress}");
-            this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} BuildAndBroadcastSession  added: SessionId               - {buildAndBroadcastSession.SessionId}");
-            this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} BuildAndBroadcastSession  added: Status                  - {buildAndBroadcastSession.Status}");
-            this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} CrossChainTransactionInfo added: Amount                  - {buildAndBroadcastSession.CrossChainTransactionInfo.Amount}");
-            this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} CrossChainTransactionInfo added: BlockHash               - {buildAndBroadcastSession.CrossChainTransactionInfo.BlockHash}");
-            this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} CrossChainTransactionInfo added: BlockNumber             - {buildAndBroadcastSession.CrossChainTransactionInfo.BlockNumber}");
-            this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} CrossChainTransactionInfo added: CrossChainTransactionId - {buildAndBroadcastSession.CrossChainTransactionInfo.CrossChainTransactionId}");
-            this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} CrossChainTransactionInfo added: DestinationAddress      - {buildAndBroadcastSession.CrossChainTransactionInfo.DestinationAddress}");
-            this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} CrossChainTransactionInfo added: TransactionHash         - {buildAndBroadcastSession.CrossChainTransactionInfo.TransactionHash}");
-            this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} BuildAndBroacastSession   added: SessionCount            - {this.sessions.Count}");
-            this.logger.LogInformation("()");
-        }
-
-        private async Task RunSessionsAsync()
-        {
-            this.logger.LogInformation("()");
-            this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} RunSessionsAsync()");
-
-            foreach (var buildAndBroadcastSession in this.buildAndBroadcastSessions)
-            {
-                lock (this.locker)
-                {
-                    var time = DateTime.Now;
-
-                    this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} RunSessionsAsync() MyBossCard:{buildAndBroadcastSession.BossCard}");
-                    this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} At {time} AmITheBoss: {buildAndBroadcastSession.AmITheBoss(time)} WhoHoldsTheBossCard: {buildAndBroadcastSession.WhoHoldsTheBossCard(time)}");
-
-                    if (buildAndBroadcastSession.Status == BuildAndBroadcastSession.SessionStatus.Created
-                        && buildAndBroadcastSession.AmITheBoss(time))
-                    {
-                        this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} RunSessionsAsync() - Session State: Created -> Requesting.");
-                        buildAndBroadcastSession.Status = BuildAndBroadcastSession.SessionStatus.Requesting;
-                    }
-                }
-
-                if (buildAndBroadcastSession.Status == BuildAndBroadcastSession.SessionStatus.Requesting)
-                {
-                    this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} RunSessionsAsync() - RequestingPartials.");
-                    var requestPartialsResult = await CreateBuildAndBroadcastSession(this.federationGatewaySettings.CounterChainApiPort, buildAndBroadcastSession.Amount, buildAndBroadcastSession.DestinationAddress, buildAndBroadcastSession.SessionId);
-
-                    if (requestPartialsResult == uint256.Zero)
-                    {
-                        this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} RunSessionsAsync() - Session State: Requesting -> Requested.");
-                        buildAndBroadcastSession.Status = BuildAndBroadcastSession.SessionStatus.Requested;
-                    }
-                    else
-                    {
-                        this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} RunSessionsAsync() - Completing Session {requestPartialsResult}.");
-                        buildAndBroadcastSession.Complete(requestPartialsResult);
-                        buildAndBroadcastSession.CrossChainTransactionInfo.CrossChainTransactionId = requestPartialsResult;
-                    }
-                }
-            }
+            return buildAndBroadcastSession.CrossChainTransactionInfo.BlockNumber >=
+                   BlockSecurityDelay + this.concurrentChain.Tip.Height;
         }
 
         //Calls into the counter chain and sets off the process to build the multi-sig transaction.
@@ -370,6 +508,12 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
                 string json = await httpResponseMessage.Content.ReadAsStringAsync();
                 return JsonConvert.DeserializeObject<uint256>(json, new UInt256JsonConverter());
             }
+        }
+
+        public void MarkSessionAsSigned(PartialTransactionSession session)
+        {
+            this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} has signed session {session.SessionId}.");
+            session.HaveISigned = true;
         }
     }
 }

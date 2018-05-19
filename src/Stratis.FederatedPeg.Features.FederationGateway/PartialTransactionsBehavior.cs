@@ -6,7 +6,6 @@ using Stratis.Bitcoin.Features.GeneralPurposeWallet.Interfaces;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.P2P.Protocol;
 using Stratis.Bitcoin.P2P.Protocol.Behaviors;
-using Stratis.Bitcoin.P2P.Protocol.Payloads;
 using GpCoinType = Stratis.Bitcoin.Features.GeneralPurposeWallet.CoinType;
 
 //todo: this is pre-refactoring code
@@ -93,6 +92,10 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
                     this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} OnMessageReceivedAsync: Payload has no bossCard -> signing partial.");
 
                     var template = payload.TemplateTransaction;
+
+                    var partialTransactionSession = this.partialTransactionSessionManager.VerifySession(payload.SessionId, template);
+                    if (partialTransactionSession == null) return;
+                    this.partialTransactionSessionManager.MarkSessionAsSigned(partialTransactionSession);
 
                     var wallet = this.generalPurposeWalletManager.GetWallet("multisig_wallet");
                     var account = wallet.GetAccountsByCoinType((GpCoinType) this.network.Consensus.CoinType).First();
