@@ -57,12 +57,6 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
         }
 
-        private void SetStoreTip(ChainedHeader newTip)
-        {
-            this.StoreTip = newTip;
-            this.chainState.BlockStoreTip = newTip;
-        }
-
         /// <summary>
         /// Initializes the <see cref="BlockStore"/>.
         /// <para>
@@ -82,7 +76,8 @@ namespace Stratis.Bitcoin.Features.BlockStore
             if (this.storeSettings.ReIndex)
                 throw new NotImplementedException();
 
-            this.SetStoreTip(this.chain.GetBlock(this.blockRepository.BlockHash));
+            ChainedHeader initializationTip = this.chain.GetBlock(this.blockRepository.BlockHash);
+            this.SetStoreTip(initializationTip);
             
             if (this.StoreTip == null)
                 await this.RecoverStoreTipAsync().ConfigureAwait(false);
@@ -103,7 +98,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             if (this.chainState.ConsensusTip != null)
             {
                 this.logger.LogCritical("Block store initialized after the consensus!");
-                throw new Exception("Block store initialized after consensus!");
+                throw new BlockStoreException("Block store initialized after consensus!");
             }
 
             // Start dequeuing.
@@ -111,6 +106,13 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.dequeueLoopTask = this.DequeueBlocksContinuouslyAsync();
 
             this.logger.LogTrace("(-)");
+        }
+        
+        /// <summary>Sets the store tip.</summary>
+        private void SetStoreTip(ChainedHeader newTip)
+        {
+            this.StoreTip = newTip;
+            this.chainState.BlockStoreTip = newTip;
         }
 
         /// <summary>
@@ -175,14 +177,13 @@ namespace Stratis.Bitcoin.Features.BlockStore
             Task<BlockPair> dequeueTask = null;
             Task timerTask = null;
 
-
-            while (!this.nodeLifetime.ApplicationStopping.IsCancellationRequested || batch.Count != 0)
+            while (!this.nodeLifetime.ApplicationStopping.IsCancellationRequested)
             {
                 // Start new dequeue task if not started already.
                 dequeueTask = dequeueTask ?? this.blocksQueue.DequeueAsync();
 
                 // Wait for one of the tasks: dequeue or timer (if available) to finish.
-                Task task = timerTask == null ? dequeueTask : await Task.WhenAny(dequeueTask, timerTask).ConfigureAwait(false);
+                Task task = (timerTask == null) ? dequeueTask : await Task.WhenAny(dequeueTask, timerTask).ConfigureAwait(false);
 
                 bool saveBatch = false;
 
@@ -199,7 +200,8 @@ namespace Stratis.Bitcoin.Features.BlockStore
                     this.logger.LogDebug("Node is shutting down. Save batch.");
                 }
 
-                // Save batch if timer ran out or we've dequeued a new block and reached the consensus tip or the max batch size is reached.  
+                // Save batch if timer ran out or we've dequeued a new block and reached the consensus tip 
+                // or the max batch size is reached or the node is shutting down.  
                 if (dequeueTask.Status == TaskStatus.RanToCompletion)
                 {
                     BlockPair item = dequeueTask.Result;
@@ -211,8 +213,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
                     this.currentBatchSizeBytes += item.Block.GetSerializedSize();
 
-                    if (saveBatch == false)
-                        saveBatch = (item.ChainedHeader == this.chain.Tip) || (this.currentBatchSizeBytes >= BatchThresholdSizeBytes);
+                    saveBatch |= (item.ChainedHeader == this.chain.Tip) || (this.currentBatchSizeBytes >= BatchThresholdSizeBytes);
                 }
                 else
                 {
@@ -242,10 +243,11 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.logger.LogTrace("(-)");
         }
 
-        /// <summary>Checks if repository contains reorged blocks and deletes them; saves batch on top.</summary>
+        /// <summary>Checks if repository contains reorged blocks and deletes them; saves batch on top. </summary>
+        /// <param name="batch">List of batched blocks. Cannot be empty.</param>
         private async Task SaveBatchAsync(List<BlockPair> batch)
         {
-            this.logger.LogTrace("()");
+            this.logger.LogTrace("({0}.{1}:{2})", nameof(batch), nameof(batch.Count), batch.Count);
 
             List<BlockPair> batchCleared = this.GetBatchWithoutReorgedBlocks(batch);
 
@@ -285,21 +287,21 @@ namespace Stratis.Bitcoin.Features.BlockStore
         }
 
         /// <summary>
-        /// Cleans the batch in a way that all headers from the latest one are consecutive. 
+        /// Cleans the batch in a way that all headers from the latest one are consecutive.
         /// Those that violate consecutiveness are removed.
         /// </summary>
+        /// <param name="batch">Uncleaned batch that might contain non-consecutive blocks. Cannot be empty.</param>
+        /// <returns>List of consecutive blocks.</returns>
         private List<BlockPair> GetBatchWithoutReorgedBlocks(List<BlockPair> batch)
         {
-            this.logger.LogTrace("()");
+            this.logger.LogTrace("({0}.{1}:{2})", nameof(batch), nameof(batch.Count), batch.Count);
 
-            // Initialize current with highest block from the batch (it's consensus tip).
+            // Initialize current with highest block from the batch.
             BlockPair current = batch.Last();
 
             // List of consecutive blocks. It's a cleaned out version of batch that doesn't have blocks that were reorged.
-            var batchCleared = new List<BlockPair>();
-
-            batchCleared.Add(current);
-
+            var batchCleared = new List<BlockPair>(batch.Count) {current};
+            
             // Select only those blocks that were not reorged away.
             for (int i = batch.Count - 2; i >= 0; i--)
             {
@@ -309,11 +311,13 @@ namespace Stratis.Bitcoin.Features.BlockStore
                     continue;
                 }
 
-                batchCleared.Insert(0, batch[i]);
+                batchCleared.Add(batch[i]);
                 current = batch[i];
             }
 
-            this.logger.LogTrace("(-)");
+            batchCleared.Reverse();
+
+            this.logger.LogTrace("(-):*.{0}={1}", nameof(batchCleared.Count), batchCleared.Count);
             return batchCleared;
         }
 
