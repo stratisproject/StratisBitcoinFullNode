@@ -737,23 +737,7 @@ namespace Stratis.FederatedPeg.IntegrationTests
                 bitcoinAddress = new BitcoinPubKeyAddress(addressMainchain, Network.StratisRegTest);
                 powMinting.GenerateBlocks(new ReserveScript(bitcoinAddress.ScriptPubKey), 1UL, int.MaxValue);
 
-                //IntegrationTestUtils.ResyncGeneralWallet(mainchain_FederationGateway1);
-                //IntegrationTestUtils.ResyncGeneralWallet(mainchain_FederationGateway2);
-                //IntegrationTestUtils.ResyncGeneralWallet(mainchain_FederationGateway3);
-
-                //sync all the federation gateway nodes
-                //await IntegrationTestUtils.WaitLoop(() => IntegrationTestUtils.AreNodesSynced(mainchain_FederationGateway1, mainchain_SidechainFunder1));
-                //await IntegrationTestUtils.WaitLoop(() => IntegrationTestUtils.AreNodesSynced(mainchain_FederationGateway2, mainchain_SidechainFunder1));
-                //await IntegrationTestUtils.WaitLoop(() => IntegrationTestUtils.AreNodesSynced(mainchain_FederationGateway3, mainchain_SidechainFunder1));
-
-                //await IntegrationTestUtils.WaitLoop(() => IntegrationTestUtils.IsGeneralWalletSyncedToHeight(mainchain_FederationGateway1, 51));
-                //await IntegrationTestUtils.WaitLoop(() => IntegrationTestUtils.IsGeneralWalletSyncedToHeight(mainchain_FederationGateway2, 51));
-                //await IntegrationTestUtils.WaitLoop(() => IntegrationTestUtils.IsGeneralWalletSyncedToHeight(mainchain_FederationGateway3, 51));
-
-                await Task.Delay(15000);
-
-                //the session process occurs every 30 seconds so give it enough time to kick in.
-                await Task.Delay(60000);
+                await Task.Delay(35000);
 
                 await IntegrationTestUtils.WaitLoop(() => IntegrationTestUtils.AreNodesSynced(sidechain_FederationGateway1, sidechainNode_Member1_Wallet));
                 await IntegrationTestUtils.WaitLoop(() => IntegrationTestUtils.AreNodesSynced(sidechain_FederationGateway2, sidechainNode_Member1_Wallet));
@@ -784,13 +768,13 @@ namespace Stratis.FederatedPeg.IntegrationTests
 
                 //check the mainchain multi-sig has the sent funds locked. 
                 amounts = account_fed_member1_mainchain.GetSpendableAmount(true);
-                var confirmedAmountLockedOnMainchain = amounts.ConfirmedAmount.ToString();
                 amounts.ConfirmedAmount.Should().Be(new Money(3600, MoneyUnit.BTC));
+
+                await Task.Delay(35000);
 
                 //97996407.99000000 (98,000,008 - 3600 - 0.01 fee)
                 //check the sidechain multi-sig has sent funds out of the multisig. 
                 amounts = account_fed_member1_sidechain.GetSpendableAmount(true);
-                var confirmedAmountMultiSigOnSidechain = amounts.ConfirmedAmount.ToString();
                 amounts.ConfirmedAmount.Should().Be(new Money(98000008 - 3600 - 0.01m, MoneyUnit.BTC));
 
                 //3804.001 (3600, 204 mining plus 0.01 transaction fee.)
@@ -816,8 +800,6 @@ namespace Stratis.FederatedPeg.IntegrationTests
                 transaction = sidechainNode_Member1_Wallet.FullNode.WalletTransactionHandler().BuildTransaction(transactionBuildContext);
                 sidechainNode_Member1_Wallet.FullNode.NodeService<WalletController>().SendTransaction(new SendTransactionRequest(transaction.ToHex()));
 
-                await Task.Delay(5000);
-
                 //sync our node to distrubute the mempool
                 await IntegrationTestUtils.WaitLoop(() => IntegrationTestUtils.AreNodesSynced(sidechainNode_FunderRole, sidechainNode_Member1_Wallet));
 
@@ -837,7 +819,7 @@ namespace Stratis.FederatedPeg.IntegrationTests
                 IntegrationTestUtils.SaveGeneralWallet(sidechain_FederationGateway2, "multisig_wallet");
                 IntegrationTestUtils.SaveGeneralWallet(sidechain_FederationGateway3, "multisig_wallet");
 
-                await Task.Delay(60000);
+                await Task.Delay(35000);
 
                 //mine a block on mainchain
                 bitcoinAddress = new BitcoinPubKeyAddress(addressMainchain, Network.StratisRegTest);
@@ -855,7 +837,8 @@ namespace Stratis.FederatedPeg.IntegrationTests
                 IntegrationTestUtils.SaveGeneralWallet(mainchain_FederationGateway2, "multisig_wallet");
                 IntegrationTestUtils.SaveGeneralWallet(mainchain_FederationGateway3, "multisig_wallet");
 
-                await Task.Delay(5000);
+                /// was 60000
+                await Task.Delay(35000);
 
                 //3804.001 (3600, 204 mining plus 0.01 transaction fee.)
                 //check thos funds were received by the sidechain destination address
@@ -882,6 +865,74 @@ namespace Stratis.FederatedPeg.IntegrationTests
                 amounts = account_mainchain_funder.GetSpendableAmount();
                 var confirmedAmountDestinationMainchain = amounts.ConfirmedAmount.ToString();
                 amounts.ConfirmedAmount.Should().Be(new Money(98000204 - 3600 + 2500 + 0.01m, MoneyUnit.BTC));
+
+                //now kill the member three nodes
+                mainchain_FederationGateway3.Kill();
+                sidechain_FederationGateway3.Kill();
+
+                //time to die
+                await Task.Delay(5000);
+
+                //create a new node three
+                var mainchain_FederationGateway3v2 = nodeBuilder.CreateStratisPosNode(false, fullNodeBuilder =>
+                {
+                    fullNodeBuilder
+                        .UsePosConsensus()
+                        .UseBlockStore()
+                        .UseMempool()
+                        .UseWallet()
+                        .AddPowPosMining()
+                        .AddFederationGateway()
+                        .UseGeneralPurposeWallet()
+                        .UseBlockNotification()
+                        .UseApi()
+                        .AddRPC();
+                }, agent: "MainchainFederationGateway3v2 ");
+
+                publickey = File.ReadAllText(Path.Combine(Directory.GetCurrentDirectory(), "Federations\\deposit_funds_to_sidechain\\member3\\PUBLIC_mainchain_member3.txt"));
+                mainchain_FederationGateway3v2.ConfigParameters.Add("federationfolder", Path.Combine(Directory.GetCurrentDirectory(), "Federations\\deposit_funds_to_sidechain"));
+                mainchain_FederationGateway3v2.ConfigParameters.Add("memberprivatefolder", Path.Combine(Directory.GetCurrentDirectory(), "Federations\\deposit_funds_to_sidechain\\member3"));
+                mainchain_FederationGateway3v2.ConfigParameters.Add("publickey", publickey);
+                mainchain_FederationGateway3v2.ConfigParameters.Add("membername", "member3v2");
+
+                // change the fed3 sidechain api port
+                sidechain_FederationGateway3.ConfigParameters.AddOrReplace("counterchainapiport", mainchain_FederationGateway3v2.ApiPort.ToString());
+                mainchain_FederationGateway3v2.ConfigParameters.Add("counterchainapiport", sidechain_FederationGateway3.ApiPort.ToString());
+
+                //connect the nodes
+                mainchain_FederationGateway3v2.Start();
+                sidechain_FederationGateway3.Start();
+
+                //give the node time to start
+                await Task.Delay(15000);
+
+                //add mainchain nodes
+                rpcClient1 = mainchain_FederationGateway1.CreateRPCClient();
+                rpcClient1.AddNode(mainchain_FederationGateway3v2.Endpoint);
+                await Task.Delay(addNodeDelay + 20000);
+
+                rpcClient2 = mainchain_FederationGateway2.CreateRPCClient();
+                rpcClient2.AddNode(mainchain_FederationGateway3v2.Endpoint);
+                await Task.Delay(addNodeDelay + 20000);
+
+                rpcClient3 = mainchain_FederationGateway3v2.CreateRPCClient();
+                await Task.Delay(addNodeDelay + 20000);
+                rpcClient3.AddNode(mainchain_SidechainFunder2.Endpoint);
+                await Task.Delay(addNodeDelay + 20000);
+                rpcClient3.AddNode(mainchain_FederationGateway1.Endpoint);
+                await Task.Delay(addNodeDelay + 20000);
+                rpcClient3.AddNode(mainchain_FederationGateway2.Endpoint);
+                await Task.Delay(addNodeDelay + 20000);
+
+                // Check our network is still intact.
+                //IntegrationTestUtils.AreConnected(mainchain_FederationGateway1, mainchain_FederationGateway2).Should().BeTrue();
+                //IntegrationTestUtils.AreConnected(mainchain_FederationGateway1, mainchain_FederationGateway3v2).Should().BeTrue();
+                //IntegrationTestUtils.AreConnected(mainchain_FederationGateway2, mainchain_FederationGateway1).Should().BeTrue();
+                //IntegrationTestUtils.AreConnected(mainchain_FederationGateway2, mainchain_FederationGateway3v2).Should().BeTrue();
+                //IntegrationTestUtils.AreConnected(mainchain_FederationGateway3v2, mainchain_FederationGateway1).Should().BeTrue();
+                //IntegrationTestUtils.AreConnected(mainchain_FederationGateway3v2, mainchain_FederationGateway2).Should().BeTrue();
+
+                await Task.Delay(90000);
             }
         }
     }
