@@ -1,12 +1,8 @@
 ﻿using System;
 
-namespace Stratis.SmartContracts.Core.State
+namespace Stratis.PatriciaTrie
 {
-    /// <summary>
-    /// Adapted from EthereumJ.
-    /// Used as the key for every entry in the PatriciaTrie class.
-    /// </summary>
-    public class TrieKey
+    internal sealed class Key
     {
         public const int ODD_OFFSET_FLAG = 0x1;
         public const int TERMINATOR_FLAG = 0x2;
@@ -38,36 +34,36 @@ namespace Stratis.SmartContracts.Core.State
             }
         }
 
-        public static TrieKey FromNormal(byte[] key)
+        public static Key FromNormal(byte[] key)
         {
-            return new TrieKey(key);
+            return new Key(key);
         }
 
-        public static TrieKey FromPacked(byte[] key)
+        public static Key FromPacked(byte[] key)
         {
-            return new TrieKey(key, ((key[0] >> 4) & ODD_OFFSET_FLAG) != 0 ? 1 : 2, ((key[0] >> 4) & TERMINATOR_FLAG) != 0);
+            return new Key(key, ((key[0] >> 4) & ODD_OFFSET_FLAG) != 0 ? 1 : 2, ((key[0] >> 4) & TERMINATOR_FLAG) != 0);
         }
 
-        public static TrieKey Empty(bool terminal)
+        public static Key Empty(bool terminal)
         {
-            return new TrieKey(new byte[0], 0, terminal);
+            return new Key(new byte[0], 0, terminal);
         }
 
-        public static TrieKey SingleHex(int hex)
+        public static Key SingleHex(int hex)
         {
-            TrieKey ret = new TrieKey(new byte[1], 1, false);
+            Key ret = new Key(new byte[1], 1, false);
             ret.SetHex(0, hex);
             return ret;
         }
 
-        public TrieKey(byte[] key, int off, bool terminal)
+        public Key(byte[] key, int off, bool terminal)
         {
             this.terminal = terminal;
             this.off = off;
             this.key = key;
         }
 
-        private TrieKey(byte[] key) : this(key, 0, true)
+        private Key(byte[] key) : this(key, 0, true)
         {
         }
 
@@ -89,9 +85,9 @@ namespace Stratis.SmartContracts.Core.State
             return (((this.off + idx) & 1) == 0 ? (b >> 4) : b) & 0xF;
         }
 
-        public TrieKey Shift(int hexCnt)
+        public Key Shift(int hexCnt)
         {
-            return new TrieKey(this.key, this.off + hexCnt, this.terminal);
+            return new Key(this.key, this.off + hexCnt, this.terminal);
         }
 
         private void SetHex(int idx, int hex)
@@ -109,7 +105,7 @@ namespace Stratis.SmartContracts.Core.State
             }
         }
 
-        public TrieKey MatchAndShift(TrieKey k)
+        public Key MatchAndShift(Key k)
         {
             int len = this.Length;
             int kLen = k.Length;
@@ -140,14 +136,14 @@ namespace Stratis.SmartContracts.Core.State
             return this.Shift(kLen);
         }
 
-        public TrieKey Concat(TrieKey k)
+        public Key Concat(Key k)
         {
             if (this.IsTerminal) throw new Exception("Can' append to terminal key: " + this + " + " + k);
             int len = this.Length;
             int kLen = k.Length;
             int newLen = len + kLen;
             byte[] newKeyBytes = new byte[(newLen + 1) >> 1];
-            TrieKey ret = new TrieKey(newKeyBytes, newLen & 1, k.IsTerminal);
+            Key ret = new Key(newKeyBytes, newLen & 1, k.IsTerminal);
             for (int i = 0; i < len; i++)
             {
                 ret.SetHex(i, this.GetHex(i));
@@ -159,7 +155,7 @@ namespace Stratis.SmartContracts.Core.State
             return ret;
         }
 
-        public TrieKey GetCommonPrefix(TrieKey k)
+        public Key GetCommonPrefix(Key k)
         {
             // TODO can be optimized
             int prefixLen = 0;
@@ -168,7 +164,7 @@ namespace Stratis.SmartContracts.Core.State
             while (prefixLen < thisLenght && prefixLen < kLength && this.GetHex(prefixLen) == k.GetHex(prefixLen))
                 prefixLen++;
             byte[] prefixKey = new byte[(prefixLen + 1) >> 1];
-            TrieKey ret = new TrieKey(prefixKey, (prefixLen & 1) == 0 ? 0 : 1,
+            Key ret = new Key(prefixKey, (prefixLen & 1) == 0 ? 0 : 1,
                     prefixLen == this.Length && prefixLen == k.Length && this.IsTerminal && k.IsTerminal);
             for (int i = 0; i < prefixLen; i++)
             {
@@ -179,7 +175,7 @@ namespace Stratis.SmartContracts.Core.State
 
         public override bool Equals(object obj)
         {
-            TrieKey k = (TrieKey)obj;
+            Key k = (Key)obj;
             int len = this.Length;
 
             if (len != k.Length) return false;

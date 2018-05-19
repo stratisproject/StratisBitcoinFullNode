@@ -1,17 +1,15 @@
-﻿using System;
-using System.Collections.Generic;
-using Stratis.PatriciaTrie;
+﻿using System.Collections.Generic;
 
-namespace Stratis.SmartContracts.Core.State
+namespace Stratis.PatriciaTrie
 {
     /// <summary>
     /// Acts as a very basic in-memory database. Used for testing.
     /// </summary>
-    public class MemoryDictionarySource : ISource<byte[], byte[]>
+    public class DictionaryDataStore : IDataStore
     {
         public Dictionary<byte[], byte[]> Db { get; private set; }
 
-        public MemoryDictionarySource()
+        public DictionaryDataStore()
         {
             this.Db = new Dictionary<byte[], byte[]>(new ByteArrayComparer());
         }
@@ -19,11 +17,6 @@ namespace Stratis.SmartContracts.Core.State
         public void Delete(byte[] key)
         {
             this.Db.Remove(key);
-        }
-
-        public bool Flush()
-        {
-            throw new NotImplementedException();
         }
 
         public byte[] Get(byte[] key)
