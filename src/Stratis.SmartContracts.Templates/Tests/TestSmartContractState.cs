@@ -90,7 +90,7 @@ namespace $safeprojectname$
         private Dictionary<string, object> objects = new Dictionary<string, object>();
         private Dictionary<string, TestMapping> mappings = new Dictionary<string, TestMapping>();
         private Dictionary<string, TestList> lists = new Dictionary<string, TestList>();
-        
+
         public ISmartContractList<T> GetList<T>(string name)
         {
             if (lists.ContainsKey(name))
@@ -135,9 +135,12 @@ namespace $safeprojectname$
         {
             if (objects.ContainsKey(key))
             {
-                T obj =  (T)objects[key];
+                T obj = (T)objects[key];
                 Debug.WriteLine("GetObject:\t'" + key + "' = " + JsonConvert.SerializeObject(obj));
-                return obj;
+
+                string json = JsonConvert.SerializeObject(obj); // MWHERMAN2000 - Simulate reading from storage
+                T newobj = JsonConvert.DeserializeObject<T>(json);
+                return newobj;
             }
             else
             {
@@ -150,7 +153,10 @@ namespace $safeprojectname$
         public void SetObject<T>(string key, T obj)
         {
             Debug.WriteLine("SetObject:\t'" + key + "' = " + JsonConvert.SerializeObject(obj));
-            objects[key] = obj;
+
+            string json = JsonConvert.SerializeObject(obj); // MWHERMAN2000 - Simulate writing to storage
+            T newobj = JsonConvert.DeserializeObject<T>(json);
+            objects[key] = newobj;
         }
     }
 
@@ -180,7 +186,10 @@ namespace $safeprojectname$
             {
                 var value = mapping[key];
                 Debug.WriteLine("Mapping.Get:\t['" + key + "'] = " + JsonConvert.SerializeObject(value));
-                return value;
+
+                string json = JsonConvert.SerializeObject(value);  // MWHERMAN2000 - Simulate reading from storage
+                T newvalue = JsonConvert.DeserializeObject<T>(json);
+                return newvalue;
             }
 
             return default(T);
@@ -190,7 +199,10 @@ namespace $safeprojectname$
         {
             if (mapping.ContainsKey(key)) Debug.WriteLine("Mapping.Put:\t['" + key + "'] = " + JsonConvert.SerializeObject(value) + " (previous value)");
             Debug.WriteLine("Mapping.Put:\t['" + key + "'] = " + JsonConvert.SerializeObject(value));
-            mapping[key] = value;
+
+            string json = JsonConvert.SerializeObject(value); // MWHERMAN2000 - Simulate writing to storage
+            T newvalue = JsonConvert.DeserializeObject<T>(json);
+            mapping[key] = newvalue;
         }
 
         public IEnumerator<T> GetEnumerator()
@@ -223,13 +235,19 @@ namespace $safeprojectname$
         {
             var value = this.list[(int)index];
             Debug.WriteLine("List.GetValue:\t(" + index.ToString() + ") = " + JsonConvert.SerializeObject(value));
-            return value;
+
+            string json = JsonConvert.SerializeObject(value); // MWHERMAN2000 - Simulate reading from storage
+            T newvalue = JsonConvert.DeserializeObject<T>(json);
+            return newvalue;
         }
 
         public void SetValue(uint index, T value)
         {
             Debug.WriteLine("List.SetValue:\t(" + index.ToString() + ") = " + JsonConvert.SerializeObject(value));
-            list[(int)index] = value;
+
+            string json = JsonConvert.SerializeObject(value); // MWHERMAN2000 - Simulate writing to storage
+            T newvalue = JsonConvert.DeserializeObject<T>(json);
+            list[(int)index] = newvalue;
         }
 
         public IEnumerator<T> GetEnumerator()
