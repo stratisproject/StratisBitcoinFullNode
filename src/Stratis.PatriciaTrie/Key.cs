@@ -9,6 +9,8 @@ namespace Stratis.Patricia
         private readonly byte[] key;
         private readonly int off;
 
+        public bool IsTerminal { get; set; }
+
         public int Length
         {
             get
@@ -24,8 +26,6 @@ namespace Stratis.Patricia
                 return this.Length == 0;
             }
         }
-
-        public bool IsTerminal { get; set; }
 
         public static Key FromNormal(byte[] key)
         {

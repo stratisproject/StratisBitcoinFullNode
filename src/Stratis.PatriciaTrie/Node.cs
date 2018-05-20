@@ -48,10 +48,9 @@ namespace Stratis.Patricia
         /// <summary>
         /// Get a node from a hash or raw RLP-encoded data.
         /// </summary>
-        /// <param name="hashOrRlp"></param>
-        /// <param name="trieKvStore"></param>
         public Node(byte[] hashOrRlp, ISource<byte[], byte[]> trieKvStore)
         {
+            // If length is 32, we know it's a hash as the RLP-encoded data will always have a length greater than 32. (TODO: Verify)
             if (hashOrRlp.Length == 32)
             {
                 this.Hash = hashOrRlp;
@@ -64,10 +63,8 @@ namespace Stratis.Patricia
         }
 
         /// <summary>
-        /// Get a node 
+        /// Get a node from a parsed RLP object
         /// </summary>
-        /// <param name="parsedRlp"></param>
-        /// <param name="trieKvStore"></param>
         public Node(RLPCollection parsedRlp, ISource<byte[], byte[]> trieKvStore)
         {
             this.parsedRlp = parsedRlp;
@@ -130,7 +127,7 @@ namespace Stratis.Patricia
                 {
                     byte[] value = this.KvNodeGetValue();
                     ret = RLP.EncodeList(RLP.EncodeElement(this.KvNodeGetKey().ToPacked()),
-                                    RLP.EncodeElement(value == null ? HashHelper.EmptyByteArray : value));
+                                    RLP.EncodeElement(value ?? HashHelper.EmptyByteArray));
                 }
                 if (this.Hash != null)
                 {
@@ -169,7 +166,9 @@ namespace Stratis.Patricia
                 }
                 else
                 {
-                    this.children[1] = (list[1] is RLPCollection) ? new Node((RLPCollection)list[1], this.trieKvStore) : new Node(list[1].RLPData, this.trieKvStore);
+                    this.children[1] = (list[1] is RLPCollection collection)
+                        ? new Node(collection, this.trieKvStore) 
+                        : new Node(list[1].RLPData, this.trieKvStore);
                 }
             }
             else
@@ -209,7 +208,7 @@ namespace Stratis.Patricia
         public Node BranchNodeSetChild(int hex, Node node)
         {
             this.Parse();
-            this.children[hex] = node == null ? NullNode : node;
+            this.children[hex] = node ?? NullNode;
             this.Dirty = true;
             return this;
         }

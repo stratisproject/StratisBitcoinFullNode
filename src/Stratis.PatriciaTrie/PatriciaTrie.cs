@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace Stratis.Patricia
+﻿namespace Stratis.Patricia
 {
     /// <summary>
     /// A merkle patricia trie implementation. Stores data in a trie and key/mapping structure
@@ -167,8 +165,9 @@ namespace Stratis.Patricia
                     }
                     else
                     {
-                        newChildNode = NodeOrValue is Node ?
-                            (Node)NodeOrValue : new Node(childKey, NodeOrValue, this.trieKvStore);
+                        newChildNode = NodeOrValue is Node node 
+                            ? node 
+                            : new Node(childKey, NodeOrValue, this.trieKvStore);
                     }
                     return n.BranchNodeSetChild(k.GetHex(0), newChildNode);
                 }
@@ -267,7 +266,8 @@ namespace Stratis.Patricia
                 else
                 {
                     Node newChild = this.Delete(n.KvNodeGetChildNode(), k1);
-                    if (newChild == null) throw new PatriciaTreeResolutionException("New node failed instantiation after deletion.");
+                    if (newChild == null)
+                        throw new PatriciaTreeResolutionException("New node failed instantiation after deletion.");
                     newKvNode = n.KvNodeSetValueOrNode(newChild);
                 }
             }
