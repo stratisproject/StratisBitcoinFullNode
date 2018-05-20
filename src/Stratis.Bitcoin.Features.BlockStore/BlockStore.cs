@@ -9,9 +9,6 @@ using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.BlockStore
 {
-    // run tests
-    // todo write tests
-
     /// <summary>
     /// Saves blocks to the database in batches, removes reorged blocks from the database.
     /// </summary>

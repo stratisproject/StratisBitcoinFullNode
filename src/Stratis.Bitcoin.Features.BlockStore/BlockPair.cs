@@ -23,7 +23,6 @@ namespace Stratis.Bitcoin.Features.BlockStore
         {
             Guard.NotNull(block, nameof(block));
             Guard.NotNull(chainedHeader, nameof(chainedHeader));
-            Guard.Assert(block.GetHash() == chainedHeader.HashBlock);
 
             this.Block = block;
             this.ChainedHeader = chainedHeader;
