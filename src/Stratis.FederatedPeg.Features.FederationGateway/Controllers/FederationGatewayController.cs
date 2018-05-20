@@ -8,7 +8,9 @@ using Microsoft.AspNetCore.Mvc.ModelBinding;
 using NBitcoin;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Utilities.JsonErrors;
+using Stratis.FederatedPeg.Features.FederationGateway.CounterChain;
 using Stratis.FederatedPeg.Features.FederationGateway.Models;
+using Stratis.FederatedPeg.Features.FederationGateway.MonitorChain;
 
 namespace Stratis.FederatedPeg.Features.FederationGateway.Controllers
 {
@@ -21,9 +23,16 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Controllers
     {
         private IPartialTransactionSessionManager partialTransactionSessionManager;
 
-        public FederationGatewayController(IPartialTransactionSessionManager partialTransactionSessionManager)
+        private ICounterChainSessionManager counterChainSessionManager;
+
+        private IMonitorChainSessionManager monitorChainSessionManager;
+
+        public FederationGatewayController(IPartialTransactionSessionManager partialTransactionSessionManager,
+        ICounterChainSessionManager counterChainSessionManager, IMonitorChainSessionManager monitorChainSessionManager)
         {
             this.partialTransactionSessionManager = partialTransactionSessionManager;
+            this.monitorChainSessionManager = monitorChainSessionManager;
+            this.counterChainSessionManager = counterChainSessionManager;
         }
 
         /// <summary>
@@ -46,7 +55,8 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Controllers
 
             try
             {
-                var result = this.partialTransactionSessionManager.CreatePartialTransactionSession(
+                //var result = this.partialTransactionSessionManager.CreatePartialTransactionSession(
+                var result = this.counterChainSessionManager.CreatePartialTransactionSession(
                     createPartialTransactionSessionRequest.SessionId,
                     createPartialTransactionSessionRequest.Amount,
                     createPartialTransactionSessionRequest.DestinationAddress);
@@ -72,7 +82,8 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Controllers
 
             try
             {
-                var result = this.partialTransactionSessionManager.CreateSessionOnCounterChain(
+                //var result = this.partialTransactionSessionManager.CreateSessionOnCounterChain(
+                var result = this.counterChainSessionManager.CreateSessionOnCounterChain(
                     createPartialTransactionSessionRequest.SessionId,
                     createPartialTransactionSessionRequest.Amount,
                     createPartialTransactionSessionRequest.DestinationAddress);
