@@ -2,28 +2,41 @@
 
 namespace Stratis.Patricia
 {
+    /// <summary>
+    /// A merkle patricia trie implementation. Stores data in a trie and key/mapping structure
+    /// in such a way that all of the data can be represented by a 32-bit hash.
+    /// Full definition at: https://github.com/ethereum/wiki/wiki/Patricia-Tree
+    /// </summary>
     public class PatriciaTrie : IPatriciaTrie
     {
-        private ISource<byte[], byte[]> cache;
+        /// <summary>
+        /// The key/value store used to store nodes and data by their hashes.
+        /// </summary>
+        private readonly ISource<byte[], byte[]> trieKvStore;
+
+        /// <summary>
+        /// The root of the trie.
+        /// </summary>
         private Node root;
 
         public PatriciaTrie() : this((byte[])null) { }
 
         public PatriciaTrie(byte[] root) : this(new MemoryDictionarySource(), root) { }
 
-        public PatriciaTrie(ISource<byte[], byte[]> cache) : this(cache, null) { }
+        public PatriciaTrie(ISource<byte[], byte[]> trieKvStore) : this(trieKvStore, null) { }
 
-        public PatriciaTrie(ISource<byte[],byte[]> cache, byte[] root)
+        public PatriciaTrie(ISource<byte[],byte[]> trieKvStore, byte[] root)
         {
-            this.cache = cache;
+            this.trieKvStore = trieKvStore;
             this.SetRootHash(root);
         }
 
-        public void SetRootHash(byte[] root)
+        /// <inheritdoc />
+        public void SetRootHash(byte[] hash)
         {
-            if (root != null && !new ByteArrayComparer().Equals(root, HashHelper.EmptyTrieHash))
+            if (hash != null && !new ByteArrayComparer().Equals(hash, HashHelper.EmptyTrieHash))
             {
-                this.root = new Node(root, this);
+                this.root = new Node(hash, this.trieKvStore);
             }
             else
             {
@@ -31,30 +44,76 @@ namespace Stratis.Patricia
             }
         }
 
-        private bool HasRoot()
+        /// <inheritdoc />
+        public byte[] GetRootHash()
         {
-            return this.root != null && this.root.ResolveCheck();
+            this.Encode();
+            return this.root != null ? this.root.Hash : HashHelper.EmptyTrieHash;
         }
 
-        internal byte[] GetHash(byte[] hash)
-        {
-            return this.cache.Get(hash);
-        }
-        internal void AddHash(byte[] hash, byte[] ret)
-        {
-            this.cache.Put(hash, ret);
-        }
-        internal void DeleteHash(byte[] hash)
-        {
-            this.cache.Delete(hash);
-        }
-
+        /// <inheritdoc />
         public byte[] Get(byte[] key)
         {
             if (!this.HasRoot())
                 return null;
             Key k = Key.FromNormal(key);
             return this.Get(this.root, k);
+        }
+
+        /// <inheritdoc />
+        public void Put(byte[] key, byte[] value)
+        {
+            Key k = Key.FromNormal(key);
+            if (this.root == null)
+            {
+                if (value != null && value.Length > 0)
+                {
+                    this.root = new Node(k, value, this.trieKvStore);
+                }
+            }
+            else
+            {
+                if (value == null || value.Length == 0)
+                {
+                    this.root = this.Delete(this.root, k);
+                }
+                else
+                {
+                    this.root = this.Insert(this.root, k, value);
+                }
+            }
+        }
+
+        /// <inheritdoc />
+        public void Delete(byte[] key)
+        {
+            Key k = Key.FromNormal(key);
+            if (this.root != null)
+            {
+                this.root = this.Delete(this.root, k);
+            }
+        }
+
+        /// <inheritdoc />
+        public bool Flush()
+        {
+            if (this.root != null && this.root.Dirty)
+            {
+                // persist all dirty Nodes to underlying Source
+                this.Encode();
+                // release all Trie Node instances for GC
+                this.root = new Node(this.root.Hash, this.trieKvStore);
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
+
+        private bool HasRoot()
+        {
+            return this.root != null && this.root.ResolveCheck();
         }
 
         private byte[] Get(Node n, Key k)
@@ -87,29 +146,6 @@ namespace Stratis.Patricia
             }
         }
 
-        public void Put(byte[] key, byte[] value)
-        {
-            Key k = Key.FromNormal(key);
-            if (this.root == null)
-            {
-                if (value != null && value.Length > 0)
-                {
-                    this.root = new Node(k, value, this);
-                }
-            }
-            else
-            {
-                if (value == null || value.Length == 0)
-                {
-                    this.root = this.Delete(this.root, k);
-                }
-                else
-                {
-                    this.root = this.Insert(this.root, k, value);
-                }
-            }
-        }
-
         private Node Insert(Node n, Key k, object NodeOrValue)
         {
             NodeType type = n.NodeType;
@@ -127,12 +163,12 @@ namespace Stratis.Patricia
                     Node newChildNode;
                     if (!childKey.IsEmpty)
                     {
-                        newChildNode = new Node(childKey, NodeOrValue, this);
+                        newChildNode = new Node(childKey, NodeOrValue, this.trieKvStore);
                     }
                     else
                     {
                         newChildNode = NodeOrValue is Node ?
-                            (Node)NodeOrValue : new Node(childKey, NodeOrValue, this);
+                            (Node)NodeOrValue : new Node(childKey, NodeOrValue, this.trieKvStore);
                     }
                     return n.BranchNodeSetChild(k.GetHex(0), newChildNode);
                 }
@@ -142,7 +178,7 @@ namespace Stratis.Patricia
                 Key commonPrefix = k.GetCommonPrefix(n.KvNodeGetKey());
                 if (commonPrefix.IsEmpty)
                 {
-                    Node newBranchNode = new Node(this);
+                    Node newBranchNode = new Node(this.trieKvStore);
                     this.Insert(newBranchNode, n.KvNodeGetKey(), n.KvNodeGetValueOrNode());
                     this.Insert(newBranchNode, k, NodeOrValue);
                     n.Dispose();
@@ -159,23 +195,14 @@ namespace Stratis.Patricia
                 }
                 else
                 {
-                    Node newBranchNode = new Node(this);
-                    Node newKvNode = new Node(commonPrefix, newBranchNode, this);
+                    Node newBranchNode = new Node(this.trieKvStore);
+                    Node newKvNode = new Node(commonPrefix, newBranchNode, this.trieKvStore);
                     // TODO can be optimized
                     this.Insert(newKvNode, n.KvNodeGetKey(), n.KvNodeGetValueOrNode());
                     this.Insert(newKvNode, k, NodeOrValue);
                     n.Dispose();
                     return newKvNode;
                 }
-            }
-        }
-
-        public void Delete(byte[] key)
-        {
-            Key k = Key.FromNormal(key);
-            if (this.root != null)
-            {
-                this.root = this.Delete(this.root, k);
             }
         }
 
@@ -208,11 +235,11 @@ namespace Stratis.Patricia
                 n.Dispose();
                 if (compactIdx == 16)
                 { // only value left
-                    return new Node(Key.Empty(true), n.BranchNodeGetValue(), this);
+                    return new Node(Key.Empty(true), n.BranchNodeGetValue(), this.trieKvStore);
                 }
                 else
                 { // only single child left
-                    newKvNode = new Node(Key.SingleHex(compactIdx), n.BranchNodeGetChild(compactIdx), this);
+                    newKvNode = new Node(Key.SingleHex(compactIdx), n.BranchNodeGetChild(compactIdx), this.trieKvStore);
                 }
             }
             else
@@ -240,7 +267,7 @@ namespace Stratis.Patricia
                 else
                 {
                     Node newChild = this.Delete(n.KvNodeGetChildNode(), k1);
-                    if (newChild == null) throw new Exception("Shouldn't happen");
+                    if (newChild == null) throw new PatriciaTreeResolutionException("New node failed instantiation after deletion.");
                     newKvNode = n.KvNodeSetValueOrNode(newChild);
                 }
             }
@@ -252,7 +279,7 @@ namespace Stratis.Patricia
             {
                 // two kvNodes should be compacted into a single one
                 Key newKey = newKvNode.KvNodeGetKey().Concat(nChild.KvNodeGetKey());
-                Node newNode = new Node(newKey, nChild.KvNodeGetValueOrNode(), this);
+                Node newNode = new Node(newKey, nChild.KvNodeGetValueOrNode(), this.trieKvStore);
                 nChild.Dispose();
                 return newNode;
             }
@@ -263,32 +290,9 @@ namespace Stratis.Patricia
             }
         }
 
-        public bool Flush()
-        {
-            if (this.root != null && this.root.Dirty)
-            {
-                // persist all dirty Nodes to underlying Source
-                this.Encode();
-                // release all Trie Node instances for GC
-                this.root = new Node(this.root.Hash, this);
-                return true;
-            }
-            else
-            {
-                return false;
-            }
-        }
-
-        public byte[] GetRootHash()
-        {
-            this.Encode();
-            return this.root != null ? this.root.Hash : HashHelper.EmptyTrieHash;
-        }
-
         private void Encode()
         {
-            if (this.root != null)
-                this.root.Encode();
+            this.root?.Encode();
         }
     }
 }
