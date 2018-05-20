@@ -1,13 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
-using Stratis.PatriciaTrie;
 
-namespace Stratis.SmartContracts.Core.State
+namespace Stratis.Patricia
 {
     /// <summary>
     /// Acts as a very basic in-memory database. Used for testing.
     /// </summary>
-    public class MemoryDictionarySource : ISource<byte[], byte[]>
+    internal class MemoryDictionarySource : ISource<byte[], byte[]>
     {
         public Dictionary<byte[], byte[]> Db { get; private set; }
 

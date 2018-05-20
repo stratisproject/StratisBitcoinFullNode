@@ -2,6 +2,7 @@
 using DBreeze;
 using DBreeze.DataTypes;
 using Stratis.Bitcoin.Configuration;
+using Stratis.Patricia;
 
 namespace Stratis.SmartContracts.Core.State
 {

@@ -5,6 +5,7 @@ using Microsoft.Extensions.Logging;
 using Mono.Cecil;
 using NBitcoin;
 using Stratis.Bitcoin.Configuration.Logging;
+using Stratis.Patricia;
 using Stratis.SmartContracts;
 using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.Backend;

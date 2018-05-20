@@ -1,4 +1,4 @@
-﻿namespace Stratis.PatriciaTrie
+﻿namespace Stratis.Patricia
 {
     internal enum NodeType
     {

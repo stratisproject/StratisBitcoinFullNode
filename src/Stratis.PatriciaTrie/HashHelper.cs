@@ -1,7 +1,7 @@
 ﻿using HashLib;
 using Nethereum.RLP;
 
-namespace Stratis.PatriciaTrie
+namespace Stratis.Patricia
 {
     internal static class HashHelper
     {

@@ -1,6 +1,7 @@
 ﻿using System.Text;
-using Stratis.SmartContracts.Core.State;
+using Stratis.Patricia;
 using Xunit;
+using MemoryDictionarySource = Stratis.Patricia.MemoryDictionarySource;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 {
@@ -121,7 +122,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             byte[] savedHash = trie.GetRootHash();
 
             var trie2 = new PatriciaTrie(memDb);
-            trie2.SetRoot(savedHash);
+            trie2.SetRootHash(savedHash);
 
             Assert.Equal(cat, trie.Get(dog));
             Assert.Equal(cat, trie2.Get(dog));

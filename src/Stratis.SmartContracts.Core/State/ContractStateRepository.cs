@@ -1,6 +1,6 @@
 ﻿using System;
 using NBitcoin;
-using Stratis.SmartContracts.Core.Hashing;
+using Stratis.Patricia;
 using Stratis.SmartContracts.Core.State.AccountAbstractionLayer;
 
 namespace Stratis.SmartContracts.Core.State
@@ -68,7 +68,7 @@ namespace Stratis.SmartContracts.Core.State
 
         public void SetCode(uint160 addr, byte[] code)
         {
-            byte[] codeHash = HashHelper.Keccak256(code);
+            byte[] codeHash = Hashing.HashHelper.Keccak256(code);
             this.codeCache.Put(codeHash, code);
             AccountState accountState = this.GetOrCreateAccountState(addr);
             accountState.CodeHash = codeHash;
@@ -191,7 +191,7 @@ namespace Stratis.SmartContracts.Core.State
 
         public void SetUnspent(uint160 address, ContractUnspentOutput vin)
         {
-            byte[] vinHash = HashHelper.Keccak256(vin.ToBytes());
+            byte[] vinHash = Hashing.HashHelper.Keccak256(vin.ToBytes());
             this.vinCache.Put(vinHash, vin);
             AccountState accountState = this.GetOrCreateAccountState(address);
             accountState.UnspentHash = vinHash;

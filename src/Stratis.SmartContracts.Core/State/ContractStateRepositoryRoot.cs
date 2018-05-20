@@ -1,5 +1,5 @@
-﻿using Stratis.SmartContracts.Core.State.AccountAbstractionLayer;
-
+﻿using Stratis.Patricia;
+using Stratis.SmartContracts.Core.State.AccountAbstractionLayer;
 namespace Stratis.SmartContracts.Core.State
 {
     /// <summary>
@@ -26,9 +26,9 @@ namespace Stratis.SmartContracts.Core.State
     {
         private class StorageCache : ReadWriteCache<byte[]>
         {
-            public ITrie<byte[]> trie;
+            public IPatriciaTrie trie;
 
-            public StorageCache(ITrie<byte[]> trie) : base(new SourceCodec<byte[], byte[], byte[], byte[]>(trie, new Serializers.NoSerializer<byte[]>(), new Serializers.NoSerializer<byte[]>()), WriteCache<byte[]>.CacheType.SIMPLE)
+            public StorageCache(IPatriciaTrie trie) : base(new SourceCodec<byte[], byte[], byte[], byte[]>(trie, new Serializers.NoSerializer<byte[]>(), new Serializers.NoSerializer<byte[]>()), WriteCache<byte[]>.CacheType.SIMPLE)
             {
                 this.trie = trie;
             }
@@ -46,7 +46,7 @@ namespace Stratis.SmartContracts.Core.State
             protected override ICachedSource<byte[], byte[]> Create(byte[] key, ICachedSource<byte[], byte[]> srcCache)
             {
                 AccountState accountState = this.parentRepo.accountStateCache.Get(key);
-                PatriciaTrie storageTrie = this.parentRepo.CreateTrie(this.parentRepo.trieCache, accountState?.StateRoot);
+                IPatriciaTrie storageTrie = this.parentRepo.CreateTrie(this.parentRepo.trieCache, accountState?.StateRoot);
                 return new StorageCache(storageTrie);
             }
 
@@ -90,7 +90,7 @@ namespace Stratis.SmartContracts.Core.State
         private ISource<byte[], byte[]> stateDS;
 
         private ICachedSource<byte[], byte[]> trieCache;
-        private ITrie<byte[]> stateTrie;
+        private IPatriciaTrie stateTrie;
 
         public ContractStateRepositoryRoot(NoDeleteContractStateSource stateDS) : this(stateDS, null) { }
 
@@ -139,7 +139,7 @@ namespace Stratis.SmartContracts.Core.State
 
         public void SyncToRoot(byte[] root)
         {
-            this.stateTrie.SetRoot(root);
+            this.stateTrie.SetRootHash(root);
         }
 
         protected PatriciaTrie CreateTrie(ICachedSource<byte[], byte[]> trieCache, byte[] root)

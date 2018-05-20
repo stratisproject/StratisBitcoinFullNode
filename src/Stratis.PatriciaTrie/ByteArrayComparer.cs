@@ -1,12 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace Stratis.PatriciaTrie
+namespace Stratis.Patricia
 {
     /// <summary>
-    /// Used to compare byte arrays in dictionaries. They are otherwise compared via reference, which isn't very useful for us.
+    /// Compares byte arrays by value rather than reference.
     /// </summary>
-    public class ByteArrayComparer : IEqualityComparer<byte[]>
+    internal class ByteArrayComparer : IEqualityComparer<byte[]>
     {
         public bool Equals(byte[] left, byte[] right)
         {
@@ -27,10 +27,11 @@ namespace Stratis.PatriciaTrie
             }
             return true;
         }
+
         public int GetHashCode(byte[] key)
         {
             if (key == null)
-                throw new ArgumentNullException("key");
+                throw new ArgumentNullException(nameof(key));
             int sum = 0;
             foreach (byte cur in key)
             {

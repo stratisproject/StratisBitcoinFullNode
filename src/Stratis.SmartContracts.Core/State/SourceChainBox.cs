@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using Stratis.Patricia;
 
 namespace Stratis.SmartContracts.Core.State
 {

@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Stratis.PatriciaTrie
+namespace Stratis.Patricia
 {
     internal sealed class Key
     {

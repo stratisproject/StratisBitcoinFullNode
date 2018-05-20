@@ -1,19 +1,19 @@
 ﻿using System;
 
-namespace Stratis.PatriciaTrie
+namespace Stratis.Patricia
 {
     public class PatriciaTrie : IPatriciaTrie
     {
-        private IDataStore cache;
+        private ISource<byte[], byte[]> cache;
         private Node root;
 
         public PatriciaTrie() : this((byte[])null) { }
 
-        public PatriciaTrie(byte[] root) : this(new DictionaryDataStore(), root) { }
+        public PatriciaTrie(byte[] root) : this(new MemoryDictionarySource(), root) { }
 
-        public PatriciaTrie(IDataStore cache) : this(cache, null) { }
+        public PatriciaTrie(ISource<byte[], byte[]> cache) : this(cache, null) { }
 
-        public PatriciaTrie(IDataStore cache, byte[] root)
+        public PatriciaTrie(ISource<byte[],byte[]> cache, byte[] root)
         {
             this.cache = cache;
             this.SetRootHash(root);

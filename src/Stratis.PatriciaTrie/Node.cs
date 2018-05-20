@@ -1,7 +1,7 @@
 ﻿using System;
 using Nethereum.RLP;
 
-namespace Stratis.PatriciaTrie
+namespace Stratis.Patricia
 {
     internal sealed class Node
     {
