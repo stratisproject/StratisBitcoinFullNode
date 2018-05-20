@@ -17,23 +17,37 @@ namespace Stratis.Bitcoin.Features.BlockStore
     /// </summary>
     public class BlockStore : IDisposable
     {
+        /// <summary>Maximum interval between saving batches.</summary>
         private const int BatchMaxSaveIntervalSeconds = 37;
 
         /// <summary>Maximum number of bytes the batch can hold until the downloaded blocks are stored to the disk.</summary>
         private const uint BatchThresholdSizeBytes = 5 * 1000 * 1000;
 
+        /// <summary>The current batch size in bytes.</summary>
         private int currentBatchSizeBytes;
 
         /// <summary>The highest stored block in the repository.</summary>
         public ChainedHeader StoreTip { get; private set; }
 
+        /// <inheritdoc cref="ILogger"/>
         private readonly ILogger logger;
+
+        /// <inheritdoc cref="INodeLifetime"/>
         private readonly INodeLifetime nodeLifetime;
+
+        /// <inheritdoc cref="IChainState"/>
         private readonly IChainState chainState;
+
+        /// <inheritdoc cref="StoreSettings"/>
         private readonly StoreSettings storeSettings;
+
+        /// <inheritdoc cref="ConcurrentChain"/>
         private readonly ConcurrentChain chain;
+
+        /// <inheritdoc cref="IBlockRepository"/>
         private readonly IBlockRepository blockRepository;
 
+        /// <inheritdoc cref="AsyncQueue{T}"/>
         private readonly AsyncQueue<BlockPair> blocksQueue;
 
         /// <summary>Task that runs <see cref="DequeueBlocksContinuouslyAsync"/>.</summary>
