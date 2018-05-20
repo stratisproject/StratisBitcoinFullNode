@@ -8,8 +8,6 @@ using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NBitcoin.JsonConverters;
 using Newtonsoft.Json;
-using Stratis.Bitcoin.Connection;
-using Stratis.Bitcoin.Features.GeneralPurposeWallet.Interfaces;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.FederatedPeg.Features.FederationGateway.Models;
 
