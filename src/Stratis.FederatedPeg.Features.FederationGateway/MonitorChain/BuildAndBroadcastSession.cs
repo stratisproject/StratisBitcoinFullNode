@@ -8,7 +8,7 @@ using Newtonsoft.Json;
 
 namespace Stratis.FederatedPeg.Features.FederationGateway
 {
-    internal class BuildAndBroadcastSession
+    internal class MonitorChainSession
     {
         // Time when the session started.
         private DateTime startTime;
@@ -35,7 +35,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
 
         public CrossChainTransactionInfo CrossChainTransactionInfo { get; set; }
 
-        public BuildAndBroadcastSession(DateTime startTime, uint256 transactionHash, Money amount, string destinationAddress,
+        public MonitorChainSession(DateTime startTime, uint256 transactionHash, Money amount, string destinationAddress,
             Chain chain,  string memberFolderPath, string myPublicKey)
         {
             this.startTime = startTime;

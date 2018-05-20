@@ -13,6 +13,35 @@ using Stratis.FederatedPeg.Features.FederationGateway.Models;
 
 namespace Stratis.FederatedPeg.Features.FederationGateway.MonitorChain
 {
+    /// <summary>
+    /// The MonitorChainSessionManager creates a session that is used to communicate transaction info
+    /// to the CounterChain.  When a federation member is asked to sign a transaction, the details of
+    /// that transaction (amount and destination address) are checked against this session data. 
+    /// 
+    /// A federation member runs full node versions of both chains that trust each other and communicate
+    /// through a local API.  However, other federation members are not immediately trusted and requests
+    /// to sign a partial transaction are checked for validity before the transaction is signed.  
+    /// This means checking:
+    ///   a) That a session exists (prevents a rouge gateway from generating fake transactions).
+    ///   b) That the address matches (prevents a rouge gateway from diverting funds).
+    ///   c) That the amount matches (enforces exactly matching of debits and credits across the two chains).
+    ///   d) It is also necessary to check that a federation member has not already signed the transaction.
+    ///      The federation gateway ensures that transactions are only ever signed once. (If a rouge
+    ///      federation gateway circulates multiple transaction templates with difference spending inputs this
+    ///      rule ensures that these are not signed.)
+    /// 
+    /// Both nodes need to be fully synced before any processing is done and nodes only process cross chain transactions from 
+    /// new blocks. They never look backwards to do any corrective processing of transactions that may have failed. It is assumed
+    /// that the other gateways have reached a quorum on those transactions. Should that have not happened then corrective action
+    /// involves an offline agreement between nodes to post any corrective measures. Processing is never done if either node is
+    /// in initialBlockDownload.
+    /// 
+    /// Gateways monitor the Mainchain for deposit transactions and the Sidechain for withdrawals.
+    /// Deposits are an exact mirror image of withdrawals and the exact same process (and code) is used.
+    /// We have therefore, a MonitorChain and a CounterChain. For a deposit, the MonitorChain is
+    /// Mainchain and the CounterChain is our Sidechain. For withdrawals the MonitorChain is the
+    /// Sidechain and the CounterChain is Mainchain.
+    /// </summary>
     public class MonitorChainSessionManager : IMonitorChainSessionManager
     {
         private const int BlockSecurityDelay = 0;
@@ -25,9 +54,10 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.MonitorChain
 
         private Network network;
 
+        // Settings from the config files. 
         private FederationGatewaySettings federationGatewaySettings;
 
-        private ConcurrentDictionary<uint256, BuildAndBroadcastSession> buildAndBroadcastSessions = new ConcurrentDictionary<uint256, BuildAndBroadcastSession>();
+        private ConcurrentDictionary<uint256, MonitorChainSession> monitorSessions = new ConcurrentDictionary<uint256, MonitorChainSession>();
 
         private IInitialBlockDownloadState initialBlockDownloadState;
 
@@ -35,6 +65,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.MonitorChain
 
         private ConcurrentChain concurrentChain;
 
+        // The auditor can capture the details of the transactions that the monitor discovers.
         private ICrossChainTransactionAuditor crossChainTransactionAuditor;
 
         public MonitorChainSessionManager(
@@ -55,6 +86,8 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.MonitorChain
 
         public void Initialize()
         {
+            // todo: move this to as task that is created when a session is created?
+            // todo: we don't know anything about the regularity of blocks on the sidechain so may be better to keep as a timer.
             this.actionTimer = new Timer(async (o) =>
             {
                 await this.RunSessionsAsync().ConfigureAwait(false);
@@ -66,11 +99,11 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.MonitorChain
             this.actionTimer?.Dispose();
         }
 
-        // Creates the BuildAndBroadcast session.
+        // Creates the Monitor session.
         // A session is added when the CrossChainTransactionMonitor identifies a transaction that needs to be completed cross chain.
-        public uint256 CreateBuildAndBroadcastSession(CrossChainTransactionInfo crossChainTransactionInfo)
+        public void CreateMonitorSession(CrossChainTransactionInfo crossChainTransactionInfo)
         {
-            var buildAndBroadcastSession = new BuildAndBroadcastSession(
+            var buildAndBroadcastSession = new MonitorChainSession(
                 DateTime.Now,
                 crossChainTransactionInfo.TransactionHash,
                 crossChainTransactionInfo.Amount,
@@ -81,19 +114,19 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.MonitorChain
             );
 
             buildAndBroadcastSession.CrossChainTransactionInfo = crossChainTransactionInfo;
-            this.buildAndBroadcastSessions.TryAdd(buildAndBroadcastSession.SessionId, buildAndBroadcastSession);
+            this.monitorSessions.TryAdd(buildAndBroadcastSession.SessionId, buildAndBroadcastSession);
 
             this.logger.LogInformation("()");
-            this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} BuildAndBroadcastSession  added: {buildAndBroadcastSession}");
+            this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} MonitorChainSession  added: {buildAndBroadcastSession}");
             this.logger.LogInformation("(-)");
 
-            return this.CreateSessionOnCounterChain(this.federationGatewaySettings.CounterChainApiPort,
+            this.CreateSessionOnCounterChain(this.federationGatewaySettings.CounterChainApiPort,
                 crossChainTransactionInfo.TransactionHash,
                 crossChainTransactionInfo.Amount, crossChainTransactionInfo.DestinationAddress);
         }
 
         // Calls into the counter chain and registers the session there.
-        private uint256 CreateSessionOnCounterChain(int apiPortForSidechain, uint256 transactionId, Money amount, string destination)
+        private void CreateSessionOnCounterChain(int apiPortForSidechain, uint256 transactionId, Money amount, string destination)
         {
             var createPartialTransactionSessionRequest = new CreatePartialTransactionSessionRequest
             {
@@ -112,7 +145,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.MonitorChain
                 var request = new JsonContent(createPartialTransactionSessionRequest);
                 var httpResponseMessage = client.PostAsync(uri, request).Result;
                 string json = httpResponseMessage.Content.ReadAsStringAsync().Result;
-                return JsonConvert.DeserializeObject<uint256>(json, new UInt256JsonConverter());
+                uint256 result = JsonConvert.DeserializeObject<uint256>(json, new UInt256JsonConverter());
             }
         }
 
@@ -128,13 +161,13 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.MonitorChain
                 return;
             }
 
-            //foreach (var buildAndBroadcastSession in this.buildAndBroadcastSessions.Values)
+            //foreach (var monitorChainSession in this.monitorSessions.Values)
             //{
             // Don't do anything if we are within the block security delay.
-            //    if (!this.IsBeyondBlockSecurityDelay(buildAndBroadcastSession)) return;
+            //    if (!this.IsBeyondBlockSecurityDelay(monitorChainSession)) return;
             //}
 
-            foreach (var buildAndBroadcastSession in this.buildAndBroadcastSessions.Values)
+            foreach (var buildAndBroadcastSession in this.monitorSessions.Values)
             {
                 lock (this.locker)
                 {
@@ -144,24 +177,24 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.MonitorChain
                     this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} At {time} AmITheBoss: {buildAndBroadcastSession.AmITheBoss(time)} WhoHoldsTheBossCard: {buildAndBroadcastSession.WhoHoldsTheBossCard(time)}");
 
                     // We don't start the process until we are beyond the BlockSecurityDelay.
-                    if (buildAndBroadcastSession.Status == BuildAndBroadcastSession.SessionStatus.Created
+                    if (buildAndBroadcastSession.Status == MonitorChainSession.SessionStatus.Created
                         && buildAndBroadcastSession.AmITheBoss(time) && IsBeyondBlockSecurityDelay(buildAndBroadcastSession))
                     {
                         this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} RunSessionsAsync() - Session State: Created -> Requesting.");
-                        buildAndBroadcastSession.Status = BuildAndBroadcastSession.SessionStatus.Requesting;
+                        buildAndBroadcastSession.Status = MonitorChainSession.SessionStatus.Requesting;
                     }
                 }
 
-                if (buildAndBroadcastSession.Status == BuildAndBroadcastSession.SessionStatus.Requesting)
+                if (buildAndBroadcastSession.Status == MonitorChainSession.SessionStatus.Requesting)
                 {
-                    buildAndBroadcastSession.Status = BuildAndBroadcastSession.SessionStatus.RequestSending;
-                    this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} RunSessionsAsync() - CreateBuildAndBroadcastSession.");
-                    var requestPartialsResult = await CreateBuildAndBroadcastSession(this.federationGatewaySettings.CounterChainApiPort, buildAndBroadcastSession.Amount, buildAndBroadcastSession.DestinationAddress, buildAndBroadcastSession.SessionId).ConfigureAwait(false);
+                    buildAndBroadcastSession.Status = MonitorChainSession.SessionStatus.RequestSending;
+                    this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} RunSessionsAsync() - CreateMonitorSession.");
+                    var requestPartialsResult = await CreateCounterChainSession(this.federationGatewaySettings.CounterChainApiPort, buildAndBroadcastSession.Amount, buildAndBroadcastSession.DestinationAddress, buildAndBroadcastSession.SessionId).ConfigureAwait(false);
 
                     if (requestPartialsResult == uint256.Zero)
                     {
                         this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} RunSessionsAsync() - Session State: Requesting -> Requested.");
-                        buildAndBroadcastSession.Status = BuildAndBroadcastSession.SessionStatus.Requested;
+                        buildAndBroadcastSession.Status = MonitorChainSession.SessionStatus.Requested;
                     }
                     else
                     {
@@ -173,19 +206,19 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.MonitorChain
             }
         }
 
-        private bool IsBeyondBlockSecurityDelay(BuildAndBroadcastSession buildAndBroadcastSession)
+        private bool IsBeyondBlockSecurityDelay(MonitorChainSession monitorChainSession)
         {
             this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} IsBeyondBlockSecurityDelay() ");
-            this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} IsBeyondBlockSecurityDelay() SessionBlock: {buildAndBroadcastSession.CrossChainTransactionInfo.BlockNumber}");
+            this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} IsBeyondBlockSecurityDelay() SessionBlock: {monitorChainSession.CrossChainTransactionInfo.BlockNumber}");
             this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} IsBeyondBlockSecurityDelay() BlockDelay: {BlockSecurityDelay}");
             this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} IsBeyondBlockSecurityDelay() Height: {this.concurrentChain.Tip.Height}");
 
-            return buildAndBroadcastSession.CrossChainTransactionInfo.BlockNumber >=
+            return monitorChainSession.CrossChainTransactionInfo.BlockNumber >=
                    BlockSecurityDelay + this.concurrentChain.Tip.Height;
         }
 
-        //Calls into the counter chain and sets off the process to build the multi-sig transaction.
-        private async Task<uint256> CreateBuildAndBroadcastSession(int apiPortForSidechain, Money amount, string destination, uint256 transactionId)
+        // Calls into the counter chain and sets off the process to build the multi-sig transaction.
+        private async Task<uint256> CreateCounterChainSession(int apiPortForSidechain, Money amount, string destination, uint256 transactionId)
         {
             var createPartialTransactionSessionRequest = new CreatePartialTransactionSessionRequest
             {
