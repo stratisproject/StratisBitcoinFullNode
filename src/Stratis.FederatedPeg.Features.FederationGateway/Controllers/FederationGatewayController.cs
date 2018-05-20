@@ -30,7 +30,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Controllers
         public FederationGatewayController(ICounterChainSessionManager counterChainSessionManager,
             IMonitorChainSessionManager monitorChainSessionManager)
         {
-            this.partialTransactionSessionManager = partialTransactionSessionManager;
+            //this.partialTransactionSessionManager = partialTransactionSessionManager;
             this.monitorChainSessionManager = monitorChainSessionManager;
             this.counterChainSessionManager = counterChainSessionManager;
         }
