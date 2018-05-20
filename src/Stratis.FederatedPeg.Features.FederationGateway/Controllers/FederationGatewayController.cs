@@ -27,8 +27,8 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Controllers
 
         private IMonitorChainSessionManager monitorChainSessionManager;
 
-        public FederationGatewayController(IPartialTransactionSessionManager partialTransactionSessionManager,
-        ICounterChainSessionManager counterChainSessionManager, IMonitorChainSessionManager monitorChainSessionManager)
+        public FederationGatewayController(ICounterChainSessionManager counterChainSessionManager,
+            IMonitorChainSessionManager monitorChainSessionManager)
         {
             this.partialTransactionSessionManager = partialTransactionSessionManager;
             this.monitorChainSessionManager = monitorChainSessionManager;
