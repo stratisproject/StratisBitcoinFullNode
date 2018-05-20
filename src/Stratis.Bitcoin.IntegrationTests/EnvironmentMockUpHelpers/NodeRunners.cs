@@ -90,8 +90,8 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
 
             this.FullNode = (FullNode)new FullNodeBuilder()
                             .UseNodeSettings(settings)
-                            .UsePosConsensus()
                             .UseBlockStore()
+                            .UsePosConsensus()
                             .UseMempool()
                             .UseWallet()
                             .AddPowPosMining()
@@ -118,8 +118,8 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
             var nodeSettings = new NodeSettings(args: new string[] { $"-datadir={dataDir}", $"-stake={(staking ? 1 : 0)}", "-walletname=dummy", "-walletpassword=dummy" }, loadConfiguration: false);
             var fullNodeBuilder = new FullNodeBuilder(nodeSettings);
             IFullNode fullNode = fullNodeBuilder
-                                .UsePosConsensus()
                                 .UseBlockStore()
+                                .UsePosConsensus()
                                 .UseMempool()
                                 .UseWallet()
                                 .AddPowPosMining()
@@ -144,8 +144,8 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
 
             this.FullNode = (FullNode)new FullNodeBuilder()
                             .UseNodeSettings(settings)
-                            .UsePosConsensus()
                             .UseBlockStore()
+                            .UsePosConsensus()
                             .UseMempool()
                             .AddPowPosMining()
                             .UseWallet()
@@ -173,8 +173,8 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
 
             this.FullNode = (FullNode)new FullNodeBuilder()
                             .UseNodeSettings(settings)
-                            .UsePowConsensus()
                             .UseBlockStore()
+                            .UsePowConsensus()
                             .UseMempool()
                             .AddMining()
                             .UseWallet()
@@ -202,8 +202,8 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
 
             this.FullNode = (FullNode)new FullNodeBuilder()
                             .UseNodeSettings(settings)
-                            .UsePosConsensus()
                             .UseBlockStore()
+                            .UsePosConsensus()
                             .UseMempool()
                             .AddMining()
                             .UseWallet()
