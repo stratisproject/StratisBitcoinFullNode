@@ -1,18 +1,13 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Text;
 using System.Threading.Tasks;
 using NBitcoin;
 
-//todo: this is pre-refactoring code
-//todo: ensure no duplicate or fake withdrawal or deposit transactions are possible (current work underway)
-
-namespace Stratis.FederatedPeg.Features.FederationGateway
+namespace Stratis.FederatedPeg.Features.FederationGateway.CounterChain
 {
-    public interface IPartialTransactionSessionManager : IDisposable
+    public interface ICounterChainSessionManager
     {
-        void Initialize();
-
-        uint256 CreateBuildAndBroadcastSession(CrossChainTransactionInfo crossChainTransactionInfo);
-
         uint256 CreateSessionOnCounterChain(uint256 transactionId, Money amount, string detinationAddress);
 
         Task<uint256> CreatePartialTransactionSession(uint256 transactionId, Money amount, string destinationAddress);
