@@ -6,6 +6,7 @@ using Stratis.Bitcoin.Features.GeneralPurposeWallet.Interfaces;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.P2P.Protocol;
 using Stratis.Bitcoin.P2P.Protocol.Behaviors;
+using Stratis.FederatedPeg.Features.FederationGateway.CounterChain;
 using GpCoinType = Stratis.Bitcoin.Features.GeneralPurposeWallet.CoinType;
 
 //todo: this is pre-refactoring code
@@ -25,20 +26,21 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
 
         private IGeneralPurposeWalletManager generalPurposeWalletManager;
 
-        private IPartialTransactionSessionManager partialTransactionSessionManager;
+        //private IPartialTransactionSessionManager partialTransactionSessionManager;
+        private ICounterChainSessionManager counterChainSessionManager;
 
         private Network network;
 
         private FederationGatewaySettings federationGatewaySettings;
 
         public PartialTransactionsBehavior(ILoggerFactory loggerFactory, ICrossChainTransactionMonitor crossChainTransactionMonitor,
-            IGeneralPurposeWalletManager generalPurposeWalletManager, IPartialTransactionSessionManager partialTransactionSessionManager, Network network, FederationGatewaySettings federationGatewaySettings)
+            IGeneralPurposeWalletManager generalPurposeWalletManager, ICounterChainSessionManager counterChainSessionManager, Network network, FederationGatewaySettings federationGatewaySettings)
         {
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.loggerFactory = loggerFactory;
             this.crossChainTransactionMonitor = crossChainTransactionMonitor;
             this.generalPurposeWalletManager = generalPurposeWalletManager;
-            this.partialTransactionSessionManager = partialTransactionSessionManager;
+            this.counterChainSessionManager = counterChainSessionManager;
             this.network = network;
             this.federationGatewaySettings = federationGatewaySettings;
         }
@@ -93,9 +95,9 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
 
                     var template = payload.TemplateTransaction;
 
-                    var partialTransactionSession = this.partialTransactionSessionManager.VerifySession(payload.SessionId, template);
+                    var partialTransactionSession = this.counterChainSessionManager.VerifySession(payload.SessionId, template);
                     if (partialTransactionSession == null) return;
-                    this.partialTransactionSessionManager.MarkSessionAsSigned(partialTransactionSession);
+                    this.counterChainSessionManager.MarkSessionAsSigned(partialTransactionSession);
 
                     var wallet = this.generalPurposeWalletManager.GetWallet("multisig_wallet");
                     var account = wallet.GetAccountsByCoinType((GpCoinType) this.network.Consensus.CoinType).First();
@@ -117,7 +119,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
                     this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} RequestPartialTransactionPayload: TemplateTransaction - {payload.TemplateTransaction}.");
 
                     //we got a partial back
-                    this.partialTransactionSessionManager.ReceivePartial(payload.SessionId, payload.PartialTransaction, payload.BossCard);
+                    this.counterChainSessionManager.ReceivePartial(payload.SessionId, payload.PartialTransaction, payload.BossCard);
                 }
 
                 this.logger.LogInformation("(-)");
