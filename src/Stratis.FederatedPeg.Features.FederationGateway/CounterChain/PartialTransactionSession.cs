@@ -26,7 +26,7 @@ public class PartialTransactionSession
         internal bool AddPartial(string memberName, Transaction partialTransaction, string bossCard)
         {
             this.logger.LogInformation("()");
-            this.logger.LogInformation($"{memberName} Adding Partial to BuildAndBroadcastSession.");
+            this.logger.LogInformation($"{memberName} Adding Partial to MonitorChainSession.");
             // Insert the partial transaction in the session.
             int positionInTable = 0;
             for (; positionInTable < 3; ++positionInTable )

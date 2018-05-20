@@ -157,7 +157,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
         public void CreateSession(CrossChainTransactionInfo crossChainTransactionInfo)
         {
             // Tell our Session Manager that we can start a new session.
-            this.monitorChainSessionManager.CreateBuildAndBroadcastSession(crossChainTransactionInfo);
+            this.monitorChainSessionManager.CreateMonitorSession(crossChainTransactionInfo);
         }
 
         /// <inheritdoc/>>
@@ -167,7 +167,6 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
             int blockNumber = chainBlockTip.Height;
 
             // If we are in IBD we do nothing.
-            // TODO: This may not be required as the BlockObserver seems to only trigger for new blocks.
             if (this.initialBlockDownloadState.IsInitialBlockDownload())
             {
                 this.logger.LogInformation($"{this.federationGatewaySettings.MemberName}  MonitorChain ({this.network.ToChain()}) in IBD: blockNumber {blockNumber} not processed.");

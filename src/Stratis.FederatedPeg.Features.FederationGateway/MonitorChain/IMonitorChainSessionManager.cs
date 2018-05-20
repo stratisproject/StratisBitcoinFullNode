@@ -7,6 +7,6 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.MonitorChain
     {
         void Initialize();
 
-        uint256 CreateBuildAndBroadcastSession(CrossChainTransactionInfo crossChainTransactionInfo);
+        void CreateMonitorSession(CrossChainTransactionInfo crossChainTransactionInfo);
     }
 }
