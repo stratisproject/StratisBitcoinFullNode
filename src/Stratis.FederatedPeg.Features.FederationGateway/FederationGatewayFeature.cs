@@ -43,8 +43,6 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
 
         private ILoggerFactory loggerFactory;
 
-        private IPartialTransactionSessionManager partialTransactionSessionManager;
-
         private IGeneralPurposeWalletManager generalPurposeWalletManager;
 
         private Network network;
@@ -66,7 +64,6 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
             this.federationGatewaySettings = federationGatewaySettings;
             this.nodeSettings = nodeSettings;
             this.fullNode = fullNode;
-            this.partialTransactionSessionManager = partialTransactionSessionManager;
             this.generalPurposeWalletManager = generalPurposeWalletManager;
             this.network = network;
 
@@ -84,7 +81,6 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
             this.blockSubscriberDisposable = this.signals.SubscribeForBlocks(new BlockObserver(this.crossChainTransactionMonitor));
 
             this.crossChainTransactionMonitor.Initialize();
-            //this.partialTransactionSessionManager.Initialize();
             this.monitorChainSessionManager.Initialize();
 
             var networkPeerConnectionParameters = this.connectionManager.Parameters;
@@ -100,7 +96,6 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
         {
             this.blockSubscriberDisposable.Dispose();
             this.crossChainTransactionMonitor.Dispose();
-            //this.partialTransactionSessionManager.Dispose();
             this.monitorChainSessionManager.Dispose();
         }
     }

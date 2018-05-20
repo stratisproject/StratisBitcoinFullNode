@@ -16,13 +16,10 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Controllers
 {
     /// <summary>
     /// API used to communicate across to the counter chain.
-    /// todo: Should this be changed to RPC for authentication feature.
     /// </summary>
     [Route("api/[controller]")]
     public class FederationGatewayController : Controller
     {
-        private IPartialTransactionSessionManager partialTransactionSessionManager;
-
         private ICounterChainSessionManager counterChainSessionManager;
 
         private IMonitorChainSessionManager monitorChainSessionManager;
@@ -30,7 +27,6 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Controllers
         public FederationGatewayController(ICounterChainSessionManager counterChainSessionManager,
             IMonitorChainSessionManager monitorChainSessionManager)
         {
-            //this.partialTransactionSessionManager = partialTransactionSessionManager;
             this.monitorChainSessionManager = monitorChainSessionManager;
             this.counterChainSessionManager = counterChainSessionManager;
         }
@@ -55,7 +51,6 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Controllers
 
             try
             {
-                //var result = this.partialTransactionSessionManager.CreatePartialTransactionSession(
                 var result = this.counterChainSessionManager.CreatePartialTransactionSession(
                     createPartialTransactionSessionRequest.SessionId,
                     createPartialTransactionSessionRequest.Amount,
@@ -82,7 +77,6 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Controllers
 
             try
             {
-                //var result = this.partialTransactionSessionManager.CreateSessionOnCounterChain(
                 var result = this.counterChainSessionManager.CreateSessionOnCounterChain(
                     createPartialTransactionSessionRequest.SessionId,
                     createPartialTransactionSessionRequest.Amount,
