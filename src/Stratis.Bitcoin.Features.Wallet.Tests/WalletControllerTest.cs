@@ -1695,6 +1695,90 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         }
 
         [Fact]
+        public void ListAccountsWithValidModelStateReturnsAccounts()
+        {
+            var walletName = "wallet 1";
+            Wallet wallet = WalletTestsHelpers.CreateWallet(walletName);
+
+            wallet.AccountsRoot.Add(new AccountRoot()
+            {
+                Accounts = new List<HdAccount>()
+                {
+                    new HdAccount
+                    {
+                        Name = "account 0"
+                    },
+                    new HdAccount
+                    {
+                        Name = "account 1"
+                    }
+                }
+            });
+
+            var mockWalletWrapper = new Mock<IWalletManager>();
+            mockWalletWrapper.Setup(m => m.GetAccounts(walletName)).Returns(wallet.AccountsRoot.SelectMany(x => x.Accounts));
+
+            var controller = new WalletController(this.LoggerFactory.Object, mockWalletWrapper.Object, new Mock<IWalletTransactionHandler>().Object, new Mock<IWalletSyncManager>().Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, new Mock<IBroadcasterManager>().Object, DateTimeProvider.Default);
+            IActionResult result = controller.ListAccounts(new ListAccountsModel
+            {
+                WalletName = "wallet 1"
+            });
+
+            JsonResult viewResult = Assert.IsType<JsonResult>(result);
+            var model = viewResult.Value as IEnumerable<string>;
+
+            Assert.NotNull(model);
+            Assert.Equal(2, model.Count());
+            Assert.Equal("account 0", model.First());
+            Assert.Equal("account 1", model.Last());
+        }
+
+        [Fact]
+        public void ListAccountsWithInvalidModelReturnsBadRequest()
+        {
+            var mockWalletWrapper = new Mock<IWalletManager>();
+
+            var controller = new WalletController(this.LoggerFactory.Object, mockWalletWrapper.Object, new Mock<IWalletTransactionHandler>().Object, new Mock<IWalletSyncManager>().Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, new Mock<IBroadcasterManager>().Object, DateTimeProvider.Default);
+            controller.ModelState.AddModelError("WalletName", "A wallet name is required.");
+
+            IActionResult result = controller.ListAccounts(new ListAccountsModel
+            {
+                WalletName = ""
+            });
+
+            ErrorResult errorResult = Assert.IsType<ErrorResult>(result);
+            ErrorResponse errorResponse = Assert.IsType<ErrorResponse>(errorResult.Value);
+            Assert.Single(errorResponse.Errors);
+
+            ErrorModel error = errorResponse.Errors[0];
+            Assert.Equal(400, error.Status);
+            Assert.Equal("A wallet name is required.", error.Message);
+        }
+
+        [Fact]
+        public void ListAccountsWithExceptionReturnsBadRequest()
+        {
+            var mockWalletWrapper = new Mock<IWalletManager>();
+            mockWalletWrapper.Setup(m => m.GetAccounts("wallet 0"))
+                .Throws(new InvalidOperationException("Wallet not found."));
+
+            var controller = new WalletController(this.LoggerFactory.Object, mockWalletWrapper.Object, new Mock<IWalletTransactionHandler>().Object, new Mock<IWalletSyncManager>().Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, new Mock<IBroadcasterManager>().Object, DateTimeProvider.Default);
+            IActionResult result = controller.ListAccounts(new ListAccountsModel
+            {
+                WalletName = "wallet 0",
+            });
+
+            ErrorResult errorResult = Assert.IsType<ErrorResult>(result);
+            ErrorResponse errorResponse = Assert.IsType<ErrorResponse>(errorResult.Value);
+            Assert.Single(errorResponse.Errors);
+
+            ErrorModel error = errorResponse.Errors[0];
+            Assert.Equal(400, error.Status);
+            Assert.StartsWith("System.InvalidOperationException", error.Description);
+            Assert.StartsWith("Wallet not found.", error.Message);
+        }
+
+        [Fact]
         public void GetUnusedAddressWithValidModelReturnsUnusedAddress()
         {
             HdAddress address = WalletTestsHelpers.CreateAddress();
