@@ -26,7 +26,6 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
 
         private IGeneralPurposeWalletManager generalPurposeWalletManager;
 
-        //private IPartialTransactionSessionManager partialTransactionSessionManager;
         private ICounterChainSessionManager counterChainSessionManager;
 
         private Network network;
