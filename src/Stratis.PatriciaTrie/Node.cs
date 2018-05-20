@@ -6,17 +6,17 @@ namespace Stratis.Patricia
     {
         private static readonly object NullNode = new object();
 
-        public byte[] Hash { get; private set; }
-        private byte[] rlp = null;
-        private RLPCollection parsedRlp = null;
-        public bool Dirty { get; private set; } = false;
-
-        private object[] children;
-
         /// <summary>
         /// The key/value store used to store nodes and data by their hashes.
         /// </summary>
-        private readonly ISource<byte[],byte[]> trieKvStore;
+        private readonly ISource<byte[], byte[]> trieKvStore;
+
+        private byte[] rlp;
+        private object[] children;
+        private RLPCollection parsedRlp;
+
+        public byte[] Hash { get; private set; }
+        public bool Dirty { get; private set; }
 
         public NodeType NodeType
         {
@@ -27,7 +27,9 @@ namespace Stratis.Patricia
             }
         }
 
-        // new empty BranchNode
+        /// <summary>
+        /// Create a new empty branch node.
+        /// </summary>
         public Node(ISource<byte[], byte[]> trieKvStore)
         {
             this.children = new object[17];
@@ -35,13 +37,19 @@ namespace Stratis.Patricia
             this.trieKvStore = trieKvStore;
         }
 
-        // new KVNode with key and (value or node)
+        /// <summary>
+        /// Create a new key/value node.
+        /// </summary>
         public Node(Key key, object valueOrNode, ISource<byte[], byte[]> trieKvStore) : this(new object[] { key, valueOrNode }, trieKvStore)
         {
             this.Dirty = true;
         }
 
-        // new Node with hash or RLP
+        /// <summary>
+        /// Get a node from a hash or raw RLP-encoded data.
+        /// </summary>
+        /// <param name="hashOrRlp"></param>
+        /// <param name="trieKvStore"></param>
         public Node(byte[] hashOrRlp, ISource<byte[], byte[]> trieKvStore)
         {
             if (hashOrRlp.Length == 32)
@@ -55,6 +63,11 @@ namespace Stratis.Patricia
             this.trieKvStore = trieKvStore;
         }
 
+        /// <summary>
+        /// Get a node 
+        /// </summary>
+        /// <param name="parsedRlp"></param>
+        /// <param name="trieKvStore"></param>
         public Node(RLPCollection parsedRlp, ISource<byte[], byte[]> trieKvStore)
         {
             this.parsedRlp = parsedRlp;
@@ -143,7 +156,7 @@ namespace Stratis.Patricia
             if (this.children != null) return;
             this.Resolve();
 
-            RLPCollection list = (this.parsedRlp == null) ? RLP.Decode(this.rlp)[0] as RLPCollection : this.parsedRlp;
+            RLPCollection list = this.parsedRlp ?? RLP.Decode(this.rlp)[0] as RLPCollection;
 
             if (list.Count == 2)
             {

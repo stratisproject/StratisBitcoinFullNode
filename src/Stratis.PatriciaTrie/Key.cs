@@ -8,7 +8,6 @@ namespace Stratis.Patricia
         public const int TERMINATOR_FLAG = 0x2;
         private readonly byte[] key;
         private readonly int off;
-        private readonly bool terminal;
 
         public int Length
         {
@@ -26,13 +25,7 @@ namespace Stratis.Patricia
             }
         }
 
-        public bool IsTerminal
-        {
-            get
-            {
-                return this.terminal;
-            }
-        }
+        public bool IsTerminal { get; set; }
 
         public static Key FromNormal(byte[] key)
         {
@@ -56,20 +49,16 @@ namespace Stratis.Patricia
             return ret;
         }
 
-        public Key(byte[] key, int off, bool terminal)
+        public Key(byte[] key, int off = 0, bool terminal = true)
         {
-            this.terminal = terminal;
+            this.IsTerminal = terminal;
             this.off = off;
             this.key = key;
         }
 
-        private Key(byte[] key) : this(key, 0, true)
-        {
-        }
-
         public byte[] ToPacked()
         {
-            int flags = ((this.off & 1) != 0 ? ODD_OFFSET_FLAG : 0) | (this.terminal ? TERMINATOR_FLAG : 0);
+            int flags = ((this.off & 1) != 0 ? ODD_OFFSET_FLAG : 0) | (this.IsTerminal ? TERMINATOR_FLAG : 0);
             byte[] ret = new byte[this.Length / 2 + 1];
             int toCopy = (flags & ODD_OFFSET_FLAG) != 0 ? ret.Length : ret.Length - 1;
             Array.Copy(this.key, this.key.Length - toCopy, ret, ret.Length - toCopy, toCopy); // absolutely no idea if this is right
@@ -87,7 +76,7 @@ namespace Stratis.Patricia
 
         public Key Shift(int hexCnt)
         {
-            return new Key(this.key, this.off + hexCnt, this.terminal);
+            return new Key(this.key, this.off + hexCnt, this.IsTerminal);
         }
 
         private void SetHex(int idx, int hex)
@@ -138,7 +127,7 @@ namespace Stratis.Patricia
 
         public Key Concat(Key k)
         {
-            if (this.IsTerminal) throw new Exception("Can' append to terminal key: " + this + " + " + k);
+            if (this.IsTerminal) throw new PatriciaTreeResolutionException("Can't append to terminal key: " + this + " + " + k);
             int len = this.Length;
             int kLen = k.Length;
             int newLen = len + kLen;
