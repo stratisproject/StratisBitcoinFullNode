@@ -13,6 +13,8 @@ using Stratis.Bitcoin.Features.Notifications;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
 using Stratis.Bitcoin.Signals;
 using Stratis.FederatedPeg.Features.FederationGateway.Controllers;
+using Stratis.FederatedPeg.Features.FederationGateway.CounterChain;
+using Stratis.FederatedPeg.Features.FederationGateway.MonitorChain;
 using Stratis.FederatedPeg.Features.FederationGateway.Notifications;
 
 [assembly: InternalsVisibleTo("Stratis.FederatedPeg.Features.FederationGateway.Tests")]
@@ -47,10 +49,15 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
 
         private Network network;
 
+        private IMonitorChainSessionManager monitorChainSessionManager;
+        
+        private ICounterChainSessionManager counterChainSessionManager;
+
         public FederationGatewayFeature(ILoggerFactory loggerFactory, ICrossChainTransactionMonitor crossChainTransactionMonitor, Signals signals,
             IConnectionManager connectionManager,
             FederationGatewaySettings federationGatewaySettings, NodeSettings nodeSettings, IFullNode fullNode, IPartialTransactionSessionManager partialTransactionSessionManager,
-            IGeneralPurposeWalletManager generalPurposeWalletManager, Network network)
+            IGeneralPurposeWalletManager generalPurposeWalletManager, Network network,
+            IMonitorChainSessionManager monitorChainSessionManager, ICounterChainSessionManager counterChainSessionManager)
         {
             this.loggerFactory = loggerFactory;
             this.crossChainTransactionMonitor = crossChainTransactionMonitor;
@@ -63,6 +70,9 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
             this.generalPurposeWalletManager = generalPurposeWalletManager;
             this.network = network;
 
+            this.counterChainSessionManager = counterChainSessionManager;
+            this.monitorChainSessionManager = monitorChainSessionManager;
+
             // add our payload
             var payloadProvider = this.fullNode.Services.ServiceProvider.GetService(typeof(PayloadProvider)) as PayloadProvider;
             payloadProvider.AddPayload(typeof(RequestPartialTransactionPayload));
@@ -74,7 +84,8 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
             this.blockSubscriberDisposable = this.signals.SubscribeForBlocks(new BlockObserver(this.crossChainTransactionMonitor));
 
             this.crossChainTransactionMonitor.Initialize();
-            this.partialTransactionSessionManager.Initialize();
+            //this.partialTransactionSessionManager.Initialize();
+            this.monitorChainSessionManager.Initialize();
 
             var networkPeerConnectionParameters = this.connectionManager.Parameters;
             networkPeerConnectionParameters.TemplateBehaviors.Add(new PartialTransactionsBehavior(this.loggerFactory, this.crossChainTransactionMonitor, this.generalPurposeWalletManager, this.partialTransactionSessionManager, this.network, this.federationGatewaySettings ));
@@ -89,7 +100,8 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
         {
             this.blockSubscriberDisposable.Dispose();
             this.crossChainTransactionMonitor.Dispose();
-            this.partialTransactionSessionManager.Dispose();
+            //this.partialTransactionSessionManager.Dispose();
+            this.monitorChainSessionManager.Dispose();
         }
     }
 
@@ -110,8 +122,9 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
                         services.AddSingleton<FederationGatewayController>();
                         services.AddSingleton(new FederationGatewaySettings(setup));
                         services.AddSingleton<ICrossChainTransactionMonitor, CrossChainTransactionMonitor>();
-                        services.AddSingleton<IPartialTransactionSessionManager, PartialTransactionSessionManager>();
                         services.AddSingleton<ICrossChainTransactionAuditor, JsonCrossChainTransactionAuditor>();
+                        services.AddSingleton<IMonitorChainSessionManager, MonitorChainSessionManager>();
+                        services.AddSingleton<ICounterChainSessionManager, CounterChainSessionManager>();
                     });
             });
             return fullNodeBuilder;
