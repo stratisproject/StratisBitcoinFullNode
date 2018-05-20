@@ -7,6 +7,7 @@ using Newtonsoft.Json;
 using System;
 using DBreeze.Utils;
 using Stratis.Bitcoin.Interfaces;
+using Stratis.FederatedPeg.Features.FederationGateway.MonitorChain;
 
 namespace Stratis.FederatedPeg.Features.FederationGateway
 {
@@ -68,7 +69,8 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
         private readonly ILogger logger;
 
         // Our session manager.
-        private IPartialTransactionSessionManager partialTransactionSessionManager;
+        //private IPartialTransactionSessionManager partialTransactionSessionManager;
+        private IMonitorChainSessionManager monitorChainSessionManager;
 
         // The redeem Script we are monitoring.
         private Script script;
@@ -89,13 +91,15 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
             Network network,
             ConcurrentChain concurrentChain,
             FederationGatewaySettings federationGatewaySettings,
-            IPartialTransactionSessionManager partialTransactionSessionManager,
+            //IPartialTransactionSessionManager partialTransactionSessionManager,
+            IMonitorChainSessionManager monitorChainSessionManager,
             IInitialBlockDownloadState initialBlockDownloadState,
             ICrossChainTransactionAuditor crossChainTransactionAuditor = null)
         {
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.network = network;
-            this.partialTransactionSessionManager = partialTransactionSessionManager;
+            //this.partialTransactionSessionManager = partialTransactionSessionManager;
+            this.monitorChainSessionManager = monitorChainSessionManager;
             this.federationGatewaySettings = federationGatewaySettings;
             this.concurrentChain = concurrentChain;
             this.initialBlockDownloadState = initialBlockDownloadState;
@@ -159,7 +163,8 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
         public void CreateSession(CrossChainTransactionInfo crossChainTransactionInfo)
         {
             // Tell our Session Manager that we can start a new session.
-            this.partialTransactionSessionManager.CreateBuildAndBroadcastSession(crossChainTransactionInfo);
+            //this.partialTransactionSessionManager.CreateBuildAndBroadcastSession(crossChainTransactionInfo);
+            this.monitorChainSessionManager.CreateBuildAndBroadcastSession(crossChainTransactionInfo);
         }
 
         /// <inheritdoc/>>
