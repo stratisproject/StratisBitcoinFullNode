@@ -88,7 +88,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
             this.monitorChainSessionManager.Initialize();
 
             var networkPeerConnectionParameters = this.connectionManager.Parameters;
-            networkPeerConnectionParameters.TemplateBehaviors.Add(new PartialTransactionsBehavior(this.loggerFactory, this.crossChainTransactionMonitor, this.generalPurposeWalletManager, this.partialTransactionSessionManager, this.network, this.federationGatewaySettings ));
+            networkPeerConnectionParameters.TemplateBehaviors.Add(new PartialTransactionsBehavior(this.loggerFactory, this.crossChainTransactionMonitor, this.generalPurposeWalletManager, this.counterChainSessionManager, this.network, this.federationGatewaySettings ));
         }
 
         public override void LoadConfiguration()
