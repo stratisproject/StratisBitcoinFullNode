@@ -47,7 +47,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
 
         public override object Clone()
         {
-            return new PartialTransactionsBehavior(this.loggerFactory, this.crossChainTransactionMonitor, this.generalPurposeWalletManager, this.partialTransactionSessionManager, this.network, this.federationGatewaySettings);
+            return new PartialTransactionsBehavior(this.loggerFactory, this.crossChainTransactionMonitor, this.generalPurposeWalletManager, this.counterChainSessionManager, this.network, this.federationGatewaySettings);
         }
 
         protected override void AttachCore()
