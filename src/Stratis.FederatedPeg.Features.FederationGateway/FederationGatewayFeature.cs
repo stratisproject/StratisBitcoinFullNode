@@ -55,7 +55,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
 
         public FederationGatewayFeature(ILoggerFactory loggerFactory, ICrossChainTransactionMonitor crossChainTransactionMonitor, Signals signals,
             IConnectionManager connectionManager,
-            FederationGatewaySettings federationGatewaySettings, NodeSettings nodeSettings, IFullNode fullNode, IPartialTransactionSessionManager partialTransactionSessionManager,
+            FederationGatewaySettings federationGatewaySettings, NodeSettings nodeSettings, IFullNode fullNode,
             IGeneralPurposeWalletManager generalPurposeWalletManager, Network network,
             IMonitorChainSessionManager monitorChainSessionManager, ICounterChainSessionManager counterChainSessionManager)
         {
