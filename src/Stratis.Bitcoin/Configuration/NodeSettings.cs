@@ -47,7 +47,7 @@ namespace Stratis.Bitcoin.Configuration
         /// <param name="args">The command-line arguments.</param>
         /// <param name="loadConfiguration">Determines whether to load the configuration file.</param>
         public NodeSettings(Network innerNetwork = null, ProtocolVersion protocolVersion = SupportedProtocolVersion, 
-            string agent = "StratisBitcoin", string[] args = null, bool loadConfiguration = true)
+            string agent = "StratisBitcoin", string[] args = null)
         {
             this.Agent = agent;
             this.Network = innerNetwork;
@@ -105,7 +105,7 @@ namespace Stratis.Bitcoin.Configuration
                     this.Network = testNet ? Network.StratisTest : regTest ? Network.StratisRegTest : Network.StratisMain;
                 else
                     this.Network = testNet ? Network.TestNet : regTest ? Network.RegTest : Network.Main;
-            }
+            }    
 
             // Setting the data directory.
             if (this.DataDir == null)
@@ -121,10 +121,9 @@ namespace Stratis.Bitcoin.Configuration
             }
 
             this.DataFolder = new DataFolder(this.DataDir);
+            this.ConfigurationFile = Path.Combine(this.DataDir, this.Network.DefaultConfigFilename);
 
-            // Load configuration from .ctor?
-            if (loadConfiguration)
-                this.LoadConfiguration();
+            LoadConfiguration();
         }
 
         /// <summary>Factory to create instance logger.</summary>
@@ -200,28 +199,39 @@ namespace Stratis.Bitcoin.Configuration
         }
 
         /// <summary>
-        /// Loads the configuration file.
+        /// Creates the configuration file if it does not exist.
         /// </summary>
         /// <param name="features">The features to include in the configuration file if a default file has to be created.</param>
-        /// <returns>Initialized node configuration.</returns>
-        /// <exception cref="ConfigurationException">Thrown in case of any problems with the configuration file or command line arguments.</exception>
-        public NodeSettings LoadConfiguration(List<IFeatureRegistration> features = null)
+        /// <returns>Returns <c>true</c> if the file was created and <c>false</c> otherwise.</returns>
+        public bool CreateDefaultConfigurationFile(List<IFeatureRegistration> features)
         {
-            // Configuration already loaded?
-            if (this.ConfigReader != null)
-                return this;
-
-            // Get the arguments set previously
-            var args = this.LoadArgs;
-
-            // If no configuration file path is passed in the args, load the default file.
-            if (this.ConfigurationFile == null)
+            // If the config file does not exist yet then create it now.
+            if (this.ConfigurationFile != null && !File.Exists(this.ConfigurationFile))
             {
-                this.ConfigurationFile = this.CreateDefaultConfigurationFile(features);
+                File.WriteAllText(this.ConfigurationFile, this.GetDefaultConfiguration(features));
+                return true;
             }
 
+            return false;
+        }
+
+        /// <summary>
+        /// Loads the configuration file.
+        /// </summary>
+        /// <returns>Initialized node configuration.</returns>
+        /// <exception cref="ConfigurationException">Thrown in case of any problems with the configuration file or command line arguments.</exception>
+        public NodeSettings LoadConfiguration()
+        {
+            // Read the configuration file if it exists.
+            string configText = "";
+            if (this.ConfigurationFile != null && File.Exists(this.ConfigurationFile))
+                configText = File.ReadAllText(this.ConfigurationFile);
+
+            // Get the arguments set previously.
+            var args = this.LoadArgs;
+
             // Add the file configuration to the command-line configuration.
-            var fileConfig = new TextFileConfiguration(File.ReadAllText(this.ConfigurationFile));
+            var fileConfig = new TextFileConfiguration(configText);
             var config = new TextFileConfiguration(args);
             this.ConfigReader = config;
             fileConfig.MergeInto(config);
@@ -305,38 +315,28 @@ namespace Stratis.Bitcoin.Configuration
         }
 
         /// <summary>
-        /// Creates a default configuration file if no configuration file is found.
+        /// Gets the default configuration.
         /// </summary>
         /// <param name="features">The features to include in the configuration file if a default file has to be created.</param>
-        /// <returns>Path to the configuration file.</returns>
-        private string CreateDefaultConfigurationFile(List<IFeatureRegistration> features = null)
+        /// <returns>The default configuration.</returns>
+        private string GetDefaultConfiguration(List<IFeatureRegistration> features = null)
         {
-            string configFilePath = Path.Combine(this.DataDir, this.Network.DefaultConfigFilename);
-            this.Logger.LogDebug("Configuration file set to '{0}'.", configFilePath);
+            StringBuilder builder = new StringBuilder();
 
-            // Create a config file if none exist.
-            if (!File.Exists(configFilePath))
+            if (features != null)
             {
-                this.Logger.LogDebug("Creating configuration file...");
-
-                StringBuilder builder = new StringBuilder();
-
-                if (features != null)
+                foreach (var featureRegistration in features)
                 {
-                    foreach (var featureRegistration in features)
+                    MethodInfo getDefaultConfiguration = featureRegistration.FeatureType.GetMethod("BuildDefaultConfigurationFile", BindingFlags.Public | BindingFlags.Static);
+                    if (getDefaultConfiguration != null)
                     {
-                        MethodInfo getDefaultConfiguration = featureRegistration.FeatureType.GetMethod("BuildDefaultConfigurationFile", BindingFlags.Public | BindingFlags.Static);
-                        if (getDefaultConfiguration != null)
-                        {
-                            getDefaultConfiguration.Invoke(null, new object[] { builder, this.Network });
-                            builder.AppendLine();
-                        }
+                        getDefaultConfiguration.Invoke(null, new object[] { builder, this.Network });
+                        builder.AppendLine();
                     }
                 }
-
-                File.WriteAllText(configFilePath, builder.ToString());
             }
-            return configFilePath;
+
+            return builder.ToString();
         }
 
         /// <summary>
@@ -430,7 +430,7 @@ namespace Stratis.Bitcoin.Configuration
         /// <param name="network">The network to base the defaults off.</param>
         public static void BuildDefaultConfigurationFile(StringBuilder builder, Network network)
         {
-            var defaults = Default();
+            var defaults = Default(network:network);
 
             builder.AppendLine("####Node Settings####");
             builder.AppendLine($"#Accept non-standard transactions. Default {(defaults.RequireStandard?1:0)}.");
