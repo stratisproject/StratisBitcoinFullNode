@@ -7,7 +7,7 @@ public class PartialTransactionSession
         private Transaction[] partialTransactions;
         public uint256 SessionId { get; }
 
-        public uint256 CompletedTransactionId { get; set; } = null;
+        public uint256 CompletedTransactionId { get; set; } = uint256.Zero;
 
         public Money Amount { get; }
         public string Destination { get; }
