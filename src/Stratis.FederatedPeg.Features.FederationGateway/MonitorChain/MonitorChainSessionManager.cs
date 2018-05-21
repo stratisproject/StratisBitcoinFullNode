@@ -237,7 +237,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.MonitorChain
                 client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
 
                 var uri = new Uri(
-                    $"http://localhost:{apiPortForSidechain}/api/FederationGateway/create-buildbroadcast-session");
+                    $"http://localhost:{apiPortForSidechain}/api/FederationGateway/request-counter-completion");
                 var request = new JsonContent(createPartialTransactionSessionRequest);
                 var httpResponseMessage = await client.PostAsync(uri, request);
                 string json = await httpResponseMessage.Content.ReadAsStringAsync();
