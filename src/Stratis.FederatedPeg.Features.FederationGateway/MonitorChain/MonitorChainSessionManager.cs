@@ -190,24 +190,24 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.MonitorChain
                     this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} At {time} AmITheBoss: {buildAndBroadcastSession.AmITheBoss(time)} WhoHoldsTheBossCard: {buildAndBroadcastSession.WhoHoldsTheBossCard(time)}");
 
                     // We don't start the process until we are beyond the BlockSecurityDelay.
-                    if (buildAndBroadcastSession.Status == MonitorChainSession.SessionStatus.Created
+                    if (buildAndBroadcastSession.Status == SessionStatus.Created
                         && buildAndBroadcastSession.AmITheBoss(time) && IsBeyondBlockSecurityDelay(buildAndBroadcastSession))
                     {
                         this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} RunSessionsAsync() - Session State: Created -> Requesting.");
-                        buildAndBroadcastSession.Status = MonitorChainSession.SessionStatus.Requesting;
+                        buildAndBroadcastSession.Status = SessionStatus.Requesting;
                     }
                 }
 
-                if (buildAndBroadcastSession.Status == MonitorChainSession.SessionStatus.Requesting)
+                if (buildAndBroadcastSession.Status == SessionStatus.Requesting)
                 {
-                    buildAndBroadcastSession.Status = MonitorChainSession.SessionStatus.RequestSending;
+                    buildAndBroadcastSession.Status = SessionStatus.RequestSending;
                     this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} RunSessionsAsync() - CreateMonitorSession.");
                     var requestPartialsResult = await CreateCounterChainSession(this.federationGatewaySettings.CounterChainApiPort, buildAndBroadcastSession.Amount, buildAndBroadcastSession.DestinationAddress, buildAndBroadcastSession.SessionId).ConfigureAwait(false);
 
                     if (requestPartialsResult == uint256.Zero)
                     {
                         this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} RunSessionsAsync() - Session State: Requesting -> Requested.");
-                        buildAndBroadcastSession.Status = MonitorChainSession.SessionStatus.Requested;
+                        buildAndBroadcastSession.Status = SessionStatus.Requested;
                     }
                     else
                     {
