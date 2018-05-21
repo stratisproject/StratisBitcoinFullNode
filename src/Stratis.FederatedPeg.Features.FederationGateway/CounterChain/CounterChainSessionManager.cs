@@ -117,7 +117,11 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.CounterChain
             }
 
             this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} Combine Partials");
-            this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} ${partialTransactionSession}");
+            this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} {partialTransactionSession}");
+            this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} {partialTransactionSession.PartialTransactions[0]}");
+            this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} {partialTransactionSession.PartialTransactions[1]}");
+            this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} {partialTransactionSession.PartialTransactions[2]}");
+
 
             var combinedTransaction = account.CombinePartialTransactions(partialTransactionSession.PartialTransactions);
             this.broadcastManager.BroadcastTransactionAsync(combinedTransaction).GetAwaiter().GetResult();
