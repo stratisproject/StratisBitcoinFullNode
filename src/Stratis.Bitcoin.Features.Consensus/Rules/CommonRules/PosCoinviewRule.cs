@@ -10,7 +10,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
     /// Proof of stake override for the coinview rules - BIP68, MaxSigOps and BlockReward checks.
     /// </summary>
     [ExecutionRule]
-    public class PosCoinviewRule : PowCoinviewRule
+    public class PosCoinViewRule : PowCoinViewRule
     {
         /// <summary>Provides functionality for checking validity of PoS blocks.</summary>
         private IStakeValidator stakeValidator;

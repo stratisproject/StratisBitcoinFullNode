@@ -16,7 +16,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
     /// <summary>
     /// These tests only cover the first part of BIP68 and not the MaxSigOps, coinview update or scripts verify or calculate block rewards
     /// </summary>
-    public class CoinviewRuleTests 
+    public class PowCoinViewRuleTests 
     {
         private Exception caughtExecption;
         private Mock<ILogger> logger;
@@ -24,11 +24,11 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         private RuleContext ruleContext;
         private UnspentOutputSet coinView;
         private Transaction transactionWithCoinbaseFromPreviousBlock;
-        private readonly PowCoinviewRule rule;
+        private readonly PowCoinViewRule rule;
 
-        public CoinviewRuleTests()
+        public PowCoinViewRuleTests()
         {
-            this.rule = new PowCoinviewRule();
+            this.rule = new PowCoinViewRule();
         }
 
         [Fact]

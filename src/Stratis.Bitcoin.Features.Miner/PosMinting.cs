@@ -40,7 +40,7 @@ namespace Stratis.Bitcoin.Features.Miner
     /// <item>Each of the tasks mentioned above will try to find a solution for proof of stake target. This is done by creating a coinstake
     /// transaction with each of the available UTXOs combined with all valid unix timestamps that were not checked.
     /// Those timestamps are within a time interval from now to now - searchInterval seconds. Only timestamps that are divisible by
-    /// <c><see cref="PosCoinviewRule.StakeTimestampMask"/> + 1</c> are valid candidates (this is done to decrease granularity of timestamps).
+    /// <c><see cref="PosCoinViewRule.StakeTimestampMask"/> + 1</c> are valid candidates (this is done to decrease granularity of timestamps).
     /// Search interval is a length of an unexplored block time space in seconds.
     /// Task calculates the kernel's hash (kernel is the first input in the coinstake transaction) using the next formula:
     /// <c>hash(stakeModifierV2 + stakingCoins.Time + prevout.Hash + prevout.N + transactionTime)</c>.
@@ -783,7 +783,7 @@ namespace Stratis.Bitcoin.Features.Miner
             this.logger.LogTrace("Worker #{0} found the kernel.", workersResult.KernelFoundIndex);
             
             // Get reward for newly created block.
-            long reward = fees + this.consensusLoop.ConsensusRules.GetRule<PosCoinviewRule>().GetProofOfStakeReward(chainTip.Height + 1);
+            long reward = fees + this.consensusLoop.ConsensusRules.GetRule<PosCoinViewRule>().GetProofOfStakeReward(chainTip.Height + 1);
             if (reward <= 0)
             {
                 // TODO: This can't happen unless we remove reward for mined block.
