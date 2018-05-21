@@ -268,6 +268,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.MonitorChain
                 var request = new JsonContent(createCounterChainSessionRequest);
                 var httpResponseMessage = await client.PostAsync(uri, request);
                 string json = await httpResponseMessage.Content.ReadAsStringAsync();
+                this.logger.LogInformation($"JSON:{json}");
                 return JsonConvert.DeserializeObject<uint256>(json, new UInt256JsonConverter());
             }
         }
