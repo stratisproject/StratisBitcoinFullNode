@@ -1,4 +1,6 @@
-﻿namespace Stratis.Patricia
+﻿using Nethereum.RLP;
+
+namespace Stratis.Patricia
 {
     /// <summary>
     /// A merkle patricia trie implementation. Stores data in a trie and key/mapping structure
@@ -7,34 +9,51 @@
     /// </summary>
     public class PatriciaTrie : IPatriciaTrie
     {
+        internal static readonly byte[] EmptyByteArray = new byte[0];
+        internal static readonly byte[] EmptyElementRlp = RLP.EncodeElement(EmptyByteArray);
+        private readonly byte[] emptyDataHash;
+        private readonly byte[] emptyTrieHash;
+
         /// <summary>
         /// The key/value store used to store nodes and data by their hashes.
         /// </summary>
-        private readonly ISource<byte[], byte[]> trieKvStore;
+        internal ISource<byte[], byte[]> TrieKvStore { get; }
+
+        /// <summary>
+        /// Used to hash nodes and values.
+        /// </summary>
+        internal IHasher Hasher { get; }
+
 
         /// <summary>
         /// The root of the trie.
         /// </summary>
         private Node root;
 
-        public PatriciaTrie() : this((byte[])null) { }
 
-        public PatriciaTrie(byte[] root) : this(new MemoryDictionarySource(), root) { }
+        public PatriciaTrie() : this(null, new MemoryDictionarySource(), new Keccak256Hasher()) { }
 
-        public PatriciaTrie(ISource<byte[], byte[]> trieKvStore) : this(trieKvStore, null) { }
+        public PatriciaTrie(byte[] root) : this(root, new MemoryDictionarySource(), new Keccak256Hasher()) { }
 
-        public PatriciaTrie(ISource<byte[],byte[]> trieKvStore, byte[] root)
+        public PatriciaTrie(ISource<byte[],byte[]> trieKvStore) : this(null, trieKvStore, new Keccak256Hasher()) { }
+
+        public PatriciaTrie(byte[] root, ISource<byte[], byte[]> trieKvStore) : this(root, trieKvStore, new Keccak256Hasher()) { }
+
+        public PatriciaTrie(byte[] root, ISource<byte[],byte[]> trieKvStore, IHasher hasher)
         {
-            this.trieKvStore = trieKvStore;
+            this.TrieKvStore = trieKvStore;
+            this.Hasher = hasher;
             this.SetRootHash(root);
+            this.emptyDataHash = hasher.Hash(EmptyByteArray);
+            this.emptyTrieHash = hasher.Hash(EmptyElementRlp);
         }
 
         /// <inheritdoc />
         public void SetRootHash(byte[] hash)
         {
-            if (hash != null && !new ByteArrayComparer().Equals(hash, HashHelper.EmptyTrieHash))
+            if (hash != null && !new ByteArrayComparer().Equals(hash, this.emptyTrieHash))
             {
-                this.root = new Node(hash, this.trieKvStore);
+                this.root = new Node(hash, this);
             }
             else
             {
@@ -46,7 +65,7 @@
         public byte[] GetRootHash()
         {
             this.Encode();
-            return this.root != null ? this.root.Hash : HashHelper.EmptyTrieHash;
+            return this.root != null ? this.root.Hash : this.emptyTrieHash;
         }
 
         /// <inheritdoc />
@@ -66,7 +85,7 @@
             {
                 if (value != null && value.Length > 0)
                 {
-                    this.root = new Node(k, value, this.trieKvStore);
+                    this.root = new Node(k, value, this);
                 }
             }
             else
@@ -100,7 +119,7 @@
                 // persist all dirty Nodes to underlying Source
                 this.Encode();
                 // release all Trie Node instances for GC
-                this.root = new Node(this.root.Hash, this.trieKvStore);
+                this.root = new Node(this.root.Hash, this);
                 return true;
             }
             else
@@ -161,13 +180,13 @@
                     Node newChildNode;
                     if (!childKey.IsEmpty)
                     {
-                        newChildNode = new Node(childKey, NodeOrValue, this.trieKvStore);
+                        newChildNode = new Node(childKey, NodeOrValue, this);
                     }
                     else
                     {
                         newChildNode = NodeOrValue is Node node 
                             ? node 
-                            : new Node(childKey, NodeOrValue, this.trieKvStore);
+                            : new Node(childKey, NodeOrValue, this);
                     }
                     return n.BranchNodeSetChild(k.GetHex(0), newChildNode);
                 }
@@ -177,7 +196,7 @@
                 Key commonPrefix = k.GetCommonPrefix(n.KvNodeGetKey());
                 if (commonPrefix.IsEmpty)
                 {
-                    Node newBranchNode = new Node(this.trieKvStore);
+                    Node newBranchNode = new Node(this);
                     this.Insert(newBranchNode, n.KvNodeGetKey(), n.KvNodeGetValueOrNode());
                     this.Insert(newBranchNode, k, NodeOrValue);
                     n.Dispose();
@@ -194,8 +213,8 @@
                 }
                 else
                 {
-                    Node newBranchNode = new Node(this.trieKvStore);
-                    Node newKvNode = new Node(commonPrefix, newBranchNode, this.trieKvStore);
+                    Node newBranchNode = new Node(this);
+                    Node newKvNode = new Node(commonPrefix, newBranchNode, this);
                     // TODO can be optimized
                     this.Insert(newKvNode, n.KvNodeGetKey(), n.KvNodeGetValueOrNode());
                     this.Insert(newKvNode, k, NodeOrValue);
@@ -234,11 +253,11 @@
                 n.Dispose();
                 if (compactIdx == 16)
                 { // only value left
-                    return new Node(Key.Empty(true), n.BranchNodeGetValue(), this.trieKvStore);
+                    return new Node(Key.Empty(true), n.BranchNodeGetValue(), this);
                 }
                 else
                 { // only single child left
-                    newKvNode = new Node(Key.SingleHex(compactIdx), n.BranchNodeGetChild(compactIdx), this.trieKvStore);
+                    newKvNode = new Node(Key.SingleHex(compactIdx), n.BranchNodeGetChild(compactIdx), this);
                 }
             }
             else
@@ -279,7 +298,7 @@
             {
                 // two kvNodes should be compacted into a single one
                 Key newKey = newKvNode.KvNodeGetKey().Concat(nChild.KvNodeGetKey());
-                Node newNode = new Node(newKey, nChild.KvNodeGetValueOrNode(), this.trieKvStore);
+                Node newNode = new Node(newKey, nChild.KvNodeGetValueOrNode(), this);
                 nChild.Dispose();
                 return newNode;
             }

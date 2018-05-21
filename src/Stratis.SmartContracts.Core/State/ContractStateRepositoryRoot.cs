@@ -100,7 +100,7 @@ namespace Stratis.SmartContracts.Core.State
         {
             this.stateDS = stateDS;
             this.trieCache = new WriteCache<byte[]>(stateDS, WriteCache<byte[]>.CacheType.COUNTING);
-            this.stateTrie = new PatriciaTrie(this.trieCache, stateRoot);
+            this.stateTrie = new PatriciaTrie(stateRoot, this.trieCache);
 
             SourceCodec<byte[], AccountState, byte[], byte[]> accountStateCodec = new SourceCodec<byte[], AccountState, byte[], byte[]>(this.stateTrie, new Serializers.NoSerializer<byte[]>(), Serializers.AccountSerializer);
             ReadWriteCache<AccountState> accountStateCache = new ReadWriteCache<AccountState>(accountStateCodec, WriteCache<AccountState>.CacheType.SIMPLE);
@@ -144,7 +144,7 @@ namespace Stratis.SmartContracts.Core.State
 
         protected PatriciaTrie CreateTrie(ICachedSource<byte[], byte[]> trieCache, byte[] root)
         {
-            return new PatriciaTrie(trieCache, root);
+            return new PatriciaTrie(root, trieCache);
         }
     }
 }

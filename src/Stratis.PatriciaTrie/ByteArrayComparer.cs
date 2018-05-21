@@ -6,7 +6,7 @@ namespace Stratis.Patricia
     /// <summary>
     /// Compares byte arrays by value rather than reference.
     /// </summary>
-    internal class ByteArrayComparer : IEqualityComparer<byte[]>
+    public class ByteArrayComparer : IEqualityComparer<byte[]>
     {
         public bool Equals(byte[] left, byte[] right)
         {

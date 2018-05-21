@@ -9,7 +9,7 @@ namespace Stratis.Patricia
         /// <summary>
         /// The key/value store used to store nodes and data by their hashes.
         /// </summary>
-        private readonly ISource<byte[], byte[]> trieKvStore;
+        private readonly PatriciaTrie trie;
 
         private byte[] rlp;
         private object[] children;
@@ -30,17 +30,17 @@ namespace Stratis.Patricia
         /// <summary>
         /// Create a new empty branch node.
         /// </summary>
-        public Node(ISource<byte[], byte[]> trieKvStore)
+        public Node(PatriciaTrie trie)
         {
             this.children = new object[17];
             this.Dirty = true;
-            this.trieKvStore = trieKvStore;
+            this.trie = trie;
         }
 
         /// <summary>
         /// Create a new key/value node.
         /// </summary>
-        public Node(Key key, object valueOrNode, ISource<byte[], byte[]> trieKvStore) : this(new object[] { key, valueOrNode }, trieKvStore)
+        public Node(Key key, object valueOrNode, PatriciaTrie trie) : this(new object[] { key, valueOrNode }, trie)
         {
             this.Dirty = true;
         }
@@ -48,7 +48,7 @@ namespace Stratis.Patricia
         /// <summary>
         /// Get a node from a hash or raw RLP-encoded data.
         /// </summary>
-        public Node(byte[] hashOrRlp, ISource<byte[], byte[]> trieKvStore)
+        public Node(byte[] hashOrRlp, PatriciaTrie trie)
         {
             // If length is 32, we know it's a hash as the RLP-encoded data will always have a length greater than 32. (TODO: Verify)
             if (hashOrRlp.Length == 32)
@@ -59,23 +59,23 @@ namespace Stratis.Patricia
             {
                 this.rlp = hashOrRlp;
             }
-            this.trieKvStore = trieKvStore;
+            this.trie = trie;
         }
 
         /// <summary>
         /// Get a node from a parsed RLP object
         /// </summary>
-        public Node(RLPCollection parsedRlp, ISource<byte[], byte[]> trieKvStore)
+        public Node(RLPCollection parsedRlp, PatriciaTrie trie)
         {
             this.parsedRlp = parsedRlp;
             this.rlp = RLP.EncodeElement(parsedRlp.RLPData);
-            this.trieKvStore = trieKvStore;
+            this.trie = trie;
         }
 
-        private Node(object[] children, ISource<byte[], byte[]> trieKvStore)
+        private Node(object[] children, PatriciaTrie trie)
         {
             this.children = children;
-            this.trieKvStore = trieKvStore;
+            this.trie = trie;
         }
 
         public byte[] Encode()
@@ -86,7 +86,7 @@ namespace Stratis.Patricia
         public bool ResolveCheck()
         {
             if (this.rlp != null || this.parsedRlp != null || this.Hash == null) return true;
-            this.rlp = this.trieKvStore.Get(this.Hash);
+            this.rlp = this.trie.TrieKvStore.Get(this.Hash);
             return this.rlp != null;
         }
 
@@ -113,7 +113,7 @@ namespace Stratis.Patricia
                     for (int i = 0; i < 16; i++)
                     {
                         Node child = this.BranchNodeGetChild(i);
-                        encoded[i] = child == null ? HashHelper.EmptyElementRlp : child.Encode(depth + 1, false);
+                        encoded[i] = child == null ? PatriciaTrie.EmptyElementRlp : child.Encode(depth + 1, false);
                     }
                     byte[] value = this.BranchNodeGetValue();
                     encoded[16] = RLP.EncodeElement(value);
@@ -127,11 +127,11 @@ namespace Stratis.Patricia
                 {
                     byte[] value = this.KvNodeGetValue();
                     ret = RLP.EncodeList(RLP.EncodeElement(this.KvNodeGetKey().ToPacked()),
-                                    RLP.EncodeElement(value ?? HashHelper.EmptyByteArray));
+                                    RLP.EncodeElement(value ?? PatriciaTrie.EmptyByteArray));
                 }
                 if (this.Hash != null)
                 {
-                    this.trieKvStore.Delete(this.Hash);
+                    this.trie.TrieKvStore.Delete(this.Hash);
                 }
                 this.Dirty = false;
                 if (ret.Length < 32 && !forceHash)
@@ -141,8 +141,8 @@ namespace Stratis.Patricia
                 }
                 else
                 {
-                    this.Hash = HashHelper.Keccak256(ret);
-                    this.trieKvStore.Put(this.Hash, ret);
+                    this.Hash = this.trie.Hasher.Hash(ret);
+                    this.trie.TrieKvStore.Put(this.Hash, ret);
                     return RLP.EncodeElement(this.Hash);
                 }
             }
@@ -167,8 +167,8 @@ namespace Stratis.Patricia
                 else
                 {
                     this.children[1] = (list[1] is RLPCollection collection)
-                        ? new Node(collection, this.trieKvStore) 
-                        : new Node(list[1].RLPData, this.trieKvStore);
+                        ? new Node(collection, this.trie) 
+                        : new Node(list[1].RLPData, this.trie);
                 }
             }
             else
@@ -186,7 +186,7 @@ namespace Stratis.Patricia
             {
                 if (this.parsedRlp[hex] is RLPCollection)
                 {
-                    n = new Node((RLPCollection)this.parsedRlp[hex], this.trieKvStore);
+                    n = new Node((RLPCollection)this.parsedRlp[hex], this.trie);
                 }
                 else
                 {
@@ -197,7 +197,7 @@ namespace Stratis.Patricia
                     }
                     else
                     {
-                        n = new Node(bytes, this.trieKvStore);
+                        n = new Node(bytes, this.trie);
                     }
                 }
                 this.children[hex] = n;
@@ -314,7 +314,7 @@ namespace Stratis.Patricia
         {
             if (this.Hash != null)
             {
-                this.trieKvStore.Delete(this.Hash);
+                this.trie.TrieKvStore.Delete(this.Hash);
             }
         }
 
