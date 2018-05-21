@@ -37,9 +37,9 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Controllers
         /// </summary>
         /// <param name="createCounterChainSessionRequest">Used to pass the SessionId, Amount and Destination address to the counter chain.</param>
         /// <returns></returns>
-        [Route("process-counterchain-session")]
+        [Route("create-buildbroadcast-session")]
         [HttpPost]
-        public async Task<IActionResult> ProcessCounterChainSession([FromBody] CreateCounterChainSessionRequest createCounterChainSessionRequest)
+        public async Task<IActionResult> CreatePartialTransactionSession([FromBody] CreateCounterChainSessionRequest createCounterChainSessionRequest)
         {
             Guard.NotNull(createCounterChainSessionRequest, nameof(createCounterChainSessionRequest));
 
@@ -51,11 +51,11 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Controllers
 
             try
             {
-                var result = this.counterChainSessionManager.ProcessCounterChainSession(
+                var result = this.counterChainSessionManager.CreatePartialTransactionSession(
                     createCounterChainSessionRequest.SessionId,
                     createCounterChainSessionRequest.Amount,
                     createCounterChainSessionRequest.DestinationAddress);
-                return this.Json(result);
+                return this.Json(uint256.Zero); //todo: this is temp.
             }
             catch (Exception e)
             {

@@ -8,9 +8,9 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.CounterChain
 {
     public interface ICounterChainSessionManager
     {
-        void CreateSessionOnCounterChain(uint256 transactionId, Money amount, string detinationAddress);
+        uint256 CreateSessionOnCounterChain(uint256 transactionId, Money amount, string detinationAddress);
 
-        Task<uint256> ProcessCounterChainSession(uint256 transactionId, Money amount, string destinationAddress);
+        Task<uint256> CreatePartialTransactionSession(uint256 transactionId, Money amount, string destinationAddress);
 
         void ReceivePartial(uint256 sessionId, Transaction partialTransaction, uint256 bossCard);
 

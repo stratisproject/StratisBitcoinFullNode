@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Concurrent;
-using System.Data;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Threading;
@@ -174,67 +173,50 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.MonitorChain
                 return;
             }
 
-            foreach (var monitorChainSession in this.monitorSessions.Values)
+            // todo: this currently causes our integration test to fail.
+            //foreach (var monitorChainSession in this.monitorSessions.Values)
+            //{
+            // Don't do anything if we are within the block security delay.
+            //    if (!this.IsBeyondBlockSecurityDelay(monitorChainSession)) return;
+            //}
+
+            foreach (var buildAndBroadcastSession in this.monitorSessions.Values)
             {
-                var time = DateTime.Now;
-
-                // Don't start the session if we are still in the SecurityDelay
-                if (!IsBeyondBlockSecurityDelay(monitorChainSession)) continue;
-
-                if (monitorChainSession.Status != SessionStatus.Completed && monitorChainSession.AmITheBoss(time))
+                lock (this.locker)
                 {
-                    this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} RunSessionsAsync() MyBossCard:{monitorChainSession.BossCard}");
-                    this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} At {time} AmITheBoss: {monitorChainSession.AmITheBoss(time)} WhoHoldsTheBossCard: {monitorChainSession.WhoHoldsTheBossCard(time)}");
+                    var time = DateTime.Now;
 
-                    // We can keep sending this session until we get a result.
-                    var result = await ProcessCounterChainSession(
-                        this.federationGatewaySettings.CounterChainApiPort,
-                        monitorChainSession.Amount,
-                        monitorChainSession.DestinationAddress,
-                        monitorChainSession.SessionId).ConfigureAwait(false);
+                    this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} RunSessionsAsync() MyBossCard:{buildAndBroadcastSession.BossCard}");
+                    this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} At {time} AmITheBoss: {buildAndBroadcastSession.AmITheBoss(time)} WhoHoldsTheBossCard: {buildAndBroadcastSession.WhoHoldsTheBossCard(time)}");
 
-                    if (result != uint256.Zero)
+                    // We don't start the process until we are beyond the BlockSecurityDelay.
+                    if (buildAndBroadcastSession.Status == SessionStatus.Created
+                        && buildAndBroadcastSession.AmITheBoss(time) && IsBeyondBlockSecurityDelay(buildAndBroadcastSession))
                     {
-                        monitorChainSession.Complete(result);
-                        this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} RunSessionsAsync() - Completing Session {result}.");
+                        this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} RunSessionsAsync() - Session State: Created -> Requesting.");
+                        buildAndBroadcastSession.Status = SessionStatus.Requesting;
                     }
                 }
 
-                //lock (this.locker)
-                //{
-                //    var time = DateTime.Now;
+                if (buildAndBroadcastSession.Status == SessionStatus.Requesting)
+                {
+                    buildAndBroadcastSession.Status = SessionStatus.RequestSending;
+                    this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} RunSessionsAsync() - CreateMonitorSession.");
+                    var requestPartialsResult = await CreateCounterChainSession(this.federationGatewaySettings.CounterChainApiPort, buildAndBroadcastSession.Amount, buildAndBroadcastSession.DestinationAddress, buildAndBroadcastSession.SessionId).ConfigureAwait(false);
 
-                //    this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} RunSessionsAsync() MyBossCard:{buildAndBroadcastSession.BossCard}");
-                //    this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} At {time} AmITheBoss: {buildAndBroadcastSession.AmITheBoss(time)} WhoHoldsTheBossCard: {buildAndBroadcastSession.WhoHoldsTheBossCard(time)}");
-
-                //    // We don't start the process until we are beyond the BlockSecurityDelay.
-                //    if (buildAndBroadcastSession.Status == SessionStatus.Created
-                //        && buildAndBroadcastSession.AmITheBoss(time) && IsBeyondBlockSecurityDelay(buildAndBroadcastSession))
-                //    {
-                //        this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} RunSessionsAsync() - Session State: Created -> Requesting.");
-                //        buildAndBroadcastSession.Status = SessionStatus.Requesting;
-                //    }
-                //}
-
-                //if (buildAndBroadcastSession.Status == SessionStatus.Requesting)
-                //{
-                //    buildAndBroadcastSession.Status = SessionStatus.RequestSending;
-                //    this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} RunSessionsAsync() - CreateMonitorSession.");
-                //    var requestPartialsResult = await CreateCounterChainSession(this.federationGatewaySettings.CounterChainApiPort, buildAndBroadcastSession.Amount, buildAndBroadcastSession.DestinationAddress, buildAndBroadcastSession.SessionId).ConfigureAwait(false);
-
-                //    if (requestPartialsResult == uint256.Zero)
-                //    {
-                //        this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} RunSessionsAsync() - Session State: Requesting -> Requested.");
-                //        buildAndBroadcastSession.Status = SessionStatus.Requested;
-                //    }
-                //    else
-                //    {
-                //        //todo: move this to an API callback on completion of trx
-                //        //this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} RunSessionsAsync() - Completing Session {requestPartialsResult}.");
-                //        //buildAndBroadcastSession.Complete(requestPartialsResult);
-                //        //buildAndBroadcastSession.CrossChainTransactionInfo.CrossChainTransactionId = requestPartialsResult;
-                //    }
-                //}
+                    if (requestPartialsResult == uint256.Zero)
+                    {
+                        this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} RunSessionsAsync() - Session State: Requesting -> Requested.");
+                        buildAndBroadcastSession.Status = SessionStatus.Requested;
+                    }
+                    else
+                    {
+                        //todo: move this to an API callback on completion of trx
+                        //this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} RunSessionsAsync() - Completing Session {requestPartialsResult}.");
+                        //buildAndBroadcastSession.Complete(requestPartialsResult);
+                        //buildAndBroadcastSession.CrossChainTransactionInfo.CrossChainTransactionId = requestPartialsResult;
+                    }
+                }
             }
         }
 
@@ -249,9 +231,9 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.MonitorChain
         }
 
         // Calls into the counter chain and sets off the process to build the multi-sig transaction.
-        private async Task<uint256> ProcessCounterChainSession(int apiPortForSidechain, Money amount, string destination, uint256 transactionId)
+        private async Task<uint256> CreateCounterChainSession(int apiPortForSidechain, Money amount, string destination, uint256 transactionId)
         {
-            var createCounterChainSessionRequest = new CreateCounterChainSessionRequest
+            var createPartialTransactionSessionRequest = new CreateCounterChainSessionRequest
             {
                 SessionId = transactionId,
                 Amount = amount.ToString(),
@@ -264,11 +246,10 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.MonitorChain
                 client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
 
                 var uri = new Uri(
-                    $"http://localhost:{apiPortForSidechain}/api/FederationGateway/process-counterchain-session");
-                var request = new JsonContent(createCounterChainSessionRequest);
+                    $"http://localhost:{apiPortForSidechain}/api/FederationGateway/create-buildbroadcast-session");
+                var request = new JsonContent(createPartialTransactionSessionRequest);
                 var httpResponseMessage = await client.PostAsync(uri, request);
                 string json = await httpResponseMessage.Content.ReadAsStringAsync();
-                this.logger.LogInformation($"JSON:{json}");
                 return JsonConvert.DeserializeObject<uint256>(json, new UInt256JsonConverter());
             }
         }
