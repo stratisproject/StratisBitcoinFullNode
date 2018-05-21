@@ -123,7 +123,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.CounterChain
             if (!exists) return uint256.Zero;
 
             // If this has been completed we just return the id. 
-            if (partialTransactionSession.CompletedTransactionId != null)
+            if (partialTransactionSession.CompletedTransactionId != uint256.Zero)
                 return partialTransactionSession.CompletedTransactionId;
 
             //Todo: check if this has already been done
