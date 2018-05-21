@@ -1,31 +1,33 @@
 ﻿using System;
 using NBitcoin;
-using NBitcoin.JsonConverters;
 using Newtonsoft.Json;
-
-//todo: this is pre-refactoring code
-//todo: ensure no duplicate or fake withdrawal or deposit transactions are possible (current work underway)
 
 namespace Stratis.FederatedPeg.Features.FederationGateway
 {
+    public enum SessionStatus
+    {
+        Created,
+        Requesting,
+        Requested,
+        RequestSending,
+        Completed
+    }
+
     internal class MonitorChainSession
     {
+        public SessionStatus Status { get; set; } = SessionStatus.Created;
+
         // Time when the session started.
-        private DateTime startTime;
+        private readonly DateTime startTime;
 
         //Id of the session.
-        [JsonConverter(typeof(UInt256JsonConverter))]
         public uint256 SessionId { get; }
 
         public Money Amount { get; set; }
 
         public string DestinationAddress { get; set; }
 
-        public enum SessionStatus { Created, Requesting, Requested, RequestSending, Completed }
-        public SessionStatus Status { get; set; } = SessionStatus.Created;
-
-        [JsonConverter(typeof(UInt256JsonConverter))]
-        private uint256 completedCounterChainTransactionId;
+        public int BlockNumber { get; }
 
         // Boss table.
         public BossTable BossTable { get; }
@@ -33,15 +35,14 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
         // My boss card. I only get to build and broadcast the transaction when my boss card is in play.
         public string BossCard { get; }       
 
-        public CrossChainTransactionInfo CrossChainTransactionInfo { get; set; }
-
         public MonitorChainSession(DateTime startTime, uint256 transactionHash, Money amount, string destinationAddress,
-            Chain chain,  string memberFolderPath, string myPublicKey)
+            int blockNumber, Chain chain,  string memberFolderPath, string myPublicKey)
         {
             this.startTime = startTime;
             this.SessionId = transactionHash;
             this.Amount = amount;
             this.DestinationAddress = destinationAddress;
+            this.BlockNumber = blockNumber;
 
             // Build the boss table.
             var memberFolderManager = new MemberFolderManager(memberFolderPath);
@@ -52,7 +53,6 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
 
         public void Complete(uint256 counterChainTransactionId)
         {
-            this.completedCounterChainTransactionId = counterChainTransactionId;
             this.Status = SessionStatus.Completed;
         }
 

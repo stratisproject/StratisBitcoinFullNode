@@ -44,25 +44,35 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.MonitorChain
     /// </summary>
     public class MonitorChainSessionManager : IMonitorChainSessionManager
     {
+        // The number of blocks to wait before we create the session.
+        // This is typically used for reorgs protection.
         private const int BlockSecurityDelay = 0;
 
-        private readonly ILogger logger;
-
-        private Timer actionTimer;
-
+        // The time between sessions.
         private TimeSpan sessionRunInterval = new TimeSpan(hours: 0, minutes: 0, seconds: 30);
 
+        // The logger.
+        private readonly ILogger logger;
+
+        // Timer used to trigger session processing.
+        private Timer actionTimer;
+        
+        // The network we are running.
         private Network network;
 
         // Settings from the config files. 
         private FederationGatewaySettings federationGatewaySettings;
 
+        // Our monitor sessions.
         private ConcurrentDictionary<uint256, MonitorChainSession> monitorSessions = new ConcurrentDictionary<uint256, MonitorChainSession>();
 
+        // The IBD state.
         private IInitialBlockDownloadState initialBlockDownloadState;
 
+        // A locker object.
         private object locker = new object();
 
+        // The blockchain.
         private ConcurrentChain concurrentChain;
 
         // The auditor can capture the details of the transactions that the monitor discovers.
@@ -103,32 +113,34 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.MonitorChain
         // A session is added when the CrossChainTransactionMonitor identifies a transaction that needs to be completed cross chain.
         public void CreateMonitorSession(CrossChainTransactionInfo crossChainTransactionInfo)
         {
-            var buildAndBroadcastSession = new MonitorChainSession(
+            var monitorChainSession = new MonitorChainSession(
                 DateTime.Now,
                 crossChainTransactionInfo.TransactionHash,
                 crossChainTransactionInfo.Amount,
                 crossChainTransactionInfo.DestinationAddress,
+                crossChainTransactionInfo.BlockNumber,
                 this.network.ToChain(),
                 this.federationGatewaySettings.FederationFolder,
                 this.federationGatewaySettings.PublicKey
             );
 
-            buildAndBroadcastSession.CrossChainTransactionInfo = crossChainTransactionInfo;
-            this.monitorSessions.TryAdd(buildAndBroadcastSession.SessionId, buildAndBroadcastSession);
+            this.monitorSessions.TryAdd(monitorChainSession.SessionId, monitorChainSession);
 
             this.logger.LogInformation("()");
-            this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} MonitorChainSession  added: {buildAndBroadcastSession}");
+            this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} MonitorChainSession  added: {monitorChainSession}");
             this.logger.LogInformation("(-)");
 
+            // Call to the counter chain and tell it to also create a session.
             this.CreateSessionOnCounterChain(this.federationGatewaySettings.CounterChainApiPort,
                 crossChainTransactionInfo.TransactionHash,
-                crossChainTransactionInfo.Amount, crossChainTransactionInfo.DestinationAddress);
+                crossChainTransactionInfo.Amount,
+                crossChainTransactionInfo.DestinationAddress);
         }
 
         // Calls into the counter chain and registers the session there.
         private void CreateSessionOnCounterChain(int apiPortForSidechain, uint256 transactionId, Money amount, string destination)
         {
-            var createPartialTransactionSessionRequest = new CreatePartialTransactionSessionRequest
+            var createCounterChainSessionRequest = new CreatePartialTransactionSessionRequest
             {
                 SessionId = transactionId,
                 Amount = amount.ToString(),
@@ -142,7 +154,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.MonitorChain
 
                 var uri = new Uri(
                     $"http://localhost:{apiPortForSidechain}/api/FederationGateway/create-sessiononcounterchain");
-                var request = new JsonContent(createPartialTransactionSessionRequest);
+                var request = new JsonContent(createCounterChainSessionRequest);
                 var httpResponseMessage = client.PostAsync(uri, request).Result;
                 string json = httpResponseMessage.Content.ReadAsStringAsync().Result;
                 uint256 result = JsonConvert.DeserializeObject<uint256>(json, new UInt256JsonConverter());
@@ -161,6 +173,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.MonitorChain
                 return;
             }
 
+            // todo: this currently causes our integration test to fail.
             //foreach (var monitorChainSession in this.monitorSessions.Values)
             //{
             // Don't do anything if we are within the block security delay.
@@ -198,9 +211,10 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.MonitorChain
                     }
                     else
                     {
-                        this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} RunSessionsAsync() - Completing Session {requestPartialsResult}.");
-                        buildAndBroadcastSession.Complete(requestPartialsResult);
-                        buildAndBroadcastSession.CrossChainTransactionInfo.CrossChainTransactionId = requestPartialsResult;
+                        //todo: move this to an API callback on completion of trx
+                        //this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} RunSessionsAsync() - Completing Session {requestPartialsResult}.");
+                        //buildAndBroadcastSession.Complete(requestPartialsResult);
+                        //buildAndBroadcastSession.CrossChainTransactionInfo.CrossChainTransactionId = requestPartialsResult;
                     }
                 }
             }
@@ -209,12 +223,11 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.MonitorChain
         private bool IsBeyondBlockSecurityDelay(MonitorChainSession monitorChainSession)
         {
             this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} IsBeyondBlockSecurityDelay() ");
-            this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} IsBeyondBlockSecurityDelay() SessionBlock: {monitorChainSession.CrossChainTransactionInfo.BlockNumber}");
+            this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} IsBeyondBlockSecurityDelay() SessionBlock: {monitorChainSession.BlockNumber}");
             this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} IsBeyondBlockSecurityDelay() BlockDelay: {BlockSecurityDelay}");
             this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} IsBeyondBlockSecurityDelay() Height: {this.concurrentChain.Tip.Height}");
 
-            return monitorChainSession.CrossChainTransactionInfo.BlockNumber >=
-                   BlockSecurityDelay + this.concurrentChain.Tip.Height;
+            return monitorChainSession.BlockNumber >= BlockSecurityDelay + this.concurrentChain.Tip.Height;
         }
 
         // Calls into the counter chain and sets off the process to build the multi-sig transaction.
