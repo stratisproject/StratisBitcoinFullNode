@@ -18,6 +18,7 @@ using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.MemoryPool.Fee;
 using Stratis.Bitcoin.Features.Miner;
+using Stratis.Bitcoin.Mining;
 using Stratis.Bitcoin.P2P;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.Tests.Common;
@@ -110,7 +111,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
             return testChainContext;
         }
 
-        public static async Task<List<Block>> MineBlocksWithLastBlockMutatedAsync(TestChainContext testChainContext, 
+        public static async Task<List<Block>> MineBlocksWithLastBlockMutatedAsync(TestChainContext testChainContext,
             int count, Script receiver)
         {
             return await MineBlocksAsync(testChainContext, count, receiver, true);
@@ -135,7 +136,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
             List<Block> blocks = new List<Block>();
             for (int i = 0; i < count; ++i)
             {
-                BlockTemplate newBlock = await MineBlockAsync(testChainContext, receiver, mempool, mempoolLock, mutateLastBlock && i == count-1);
+                BlockTemplate newBlock = await MineBlockAsync(testChainContext, receiver, mempool, mempoolLock, mutateLastBlock && i == count - 1);
 
                 blocks.Add(newBlock.Block);
             }
@@ -207,7 +208,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
 
         private static async Task ValidateBlock(TestChainContext testChainContext, BlockTemplate newBlock)
         {
-            var context = new BlockValidationContext {Block = newBlock.Block};
+            var context = new BlockValidationContext { Block = newBlock.Block };
             await testChainContext.Consensus.AcceptBlockAsync(context);
             Assert.Null(context.Error);
         }

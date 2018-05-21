@@ -8,6 +8,7 @@ using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.Interfaces;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.MemoryPool.Interfaces;
+using Stratis.Bitcoin.Mining;
 using Stratis.Bitcoin.Tests.Common.Logging;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Utilities.Extensions;
@@ -465,7 +466,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
                 MempoolSchedulerLock mempoolLock,
                 Network network,
                 AssemblerOptions options = null)
-                : base(consensusLoop, dateTimeProvider, loggerFactory, mempool, mempoolLock, network, options)
+                : base(consensusLoop, dateTimeProvider, loggerFactory, mempool, mempoolLock, network)
             {
                 this.block = this.BlockTemplate.Block;
             }

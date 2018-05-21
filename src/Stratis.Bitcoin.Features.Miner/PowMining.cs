@@ -9,6 +9,7 @@ using Stratis.Bitcoin.Features.Consensus.Interfaces;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.MemoryPool.Interfaces;
 using Stratis.Bitcoin.Features.Miner.Interfaces;
+using Stratis.Bitcoin.Mining;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.Miner
@@ -33,7 +34,7 @@ namespace Stratis.Bitcoin.Features.Miner
         private readonly IAsyncLoopFactory asyncLoopFactory;
 
         /// <summary>Builder that creates a proof-of-work block template.</summary>
-        private readonly PowBlockAssembler blockBuilder;
+        private readonly IBlockBuilder blockBuilder;
 
         /// <summary>Thread safe chain of block headers from genesis.</summary>
         private readonly ConcurrentChain chain;
@@ -90,7 +91,7 @@ namespace Stratis.Bitcoin.Features.Miner
 
         public PowMining(
             IAsyncLoopFactory asyncLoopFactory,
-            PowBlockAssembler blockBuilder,
+            IBlockBuilder blockBuilder,
             IConsensusLoop consensusLoop,
             ConcurrentChain chain,
             IDateTimeProvider dateTimeProvider,
@@ -189,7 +190,7 @@ namespace Stratis.Bitcoin.Features.Miner
                     continue;
                 }
 
-                BlockTemplate blockTemplate = this.blockBuilder.Build(chainTip, reserveScript.ReserveFullNodeScript);
+                BlockTemplate blockTemplate = this.blockBuilder.Build(this.network, chainTip, reserveScript.ReserveFullNodeScript);
 
                 if (this.network.Consensus.IsProofOfStake)
                 {

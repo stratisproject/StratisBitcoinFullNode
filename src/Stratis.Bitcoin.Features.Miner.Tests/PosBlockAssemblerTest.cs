@@ -8,6 +8,7 @@ using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.Interfaces;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.MemoryPool.Interfaces;
+using Stratis.Bitcoin.Mining;
 using Stratis.Bitcoin.Tests.Common.Logging;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Utilities.Extensions;
@@ -18,15 +19,15 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
     public class PosBlockAssemblerTest : LogsTestBase
     {
         private RuleContext callbackRuleContext = null;
-        private Mock<IConsensusLoop> consensusLoop;
-        private Mock<IDateTimeProvider> dateTimeProvider;
-        private Key key;
-        private Mock<ITxMempool> mempool;
-        private Network network;
-        private Money powReward;
-        private Mock<IStakeChain> stakeChain;
-        private Mock<IStakeValidator> stakeValidator;
-        private Mock<IPosConsensusValidator> validator;
+        private readonly Mock<IConsensusLoop> consensusLoop;
+        private readonly Mock<IDateTimeProvider> dateTimeProvider;
+        private readonly Key key;
+        private readonly Mock<ITxMempool> mempool;
+        private readonly Network network;
+        private readonly Money powReward;
+        private readonly Mock<IStakeChain> stakeChain;
+        private readonly Mock<IStakeValidator> stakeValidator;
+        private readonly Mock<IPosConsensusValidator> validator;
 
         public PosBlockAssemblerTest()
         {

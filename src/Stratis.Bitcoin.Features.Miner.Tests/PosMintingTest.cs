@@ -418,7 +418,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
 
         private PosMinting InitializePosMinting()
         {
-            var posBlockBuilder = new Mock<PosBlockAssembler>(
+            var posBlockAssembler = new Mock<PosBlockAssembler>(
                 this.consensusLoop.Object,
                 this.dateTimeProvider.Object,
                 this.LoggerFactory.Object,
@@ -428,8 +428,10 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
                 this.stakeChain.Object,
                 this.stakeValidator.Object);
 
+            var blockBuilder = new BlockBuilder(posBlockAssembler.Object);
+
             return new PosMinting(
-                posBlockBuilder.Object,
+                blockBuilder,
                 this.consensusLoop.Object,
                 this.chain,
                 this.network,
