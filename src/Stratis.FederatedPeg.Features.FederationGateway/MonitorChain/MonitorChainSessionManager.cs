@@ -100,7 +100,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.MonitorChain
             // processing sessions on new blocks we use a timer.
             this.actionTimer = new Timer(async (o) =>
             {
-                await this.RunSessionsAsync().ConfigureAwait(false);
+                await this.RunSessionAsync().ConfigureAwait(false);
             }, null, 0, (int)this.sessionRunInterval.TotalMilliseconds);
         }
 
@@ -161,60 +161,51 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.MonitorChain
             }
         }
 
-       private async Task RunSessionsAsync()
-       {
+        private async Task RunSessionAsync()
+        {
             this.logger.LogInformation("()");
-            this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} RunSessionsAsync()");
+            this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} RunSessionAsync()");
 
             // We don't process sessions if our chain is not past IBD.
             if (this.initialBlockDownloadState.IsInitialBlockDownload())
             {
-                this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} RunSessionsAsync() Monitor chain is in IBD exiting. Height:{this.concurrentChain.Height}.");
+                this.logger.LogInformation(
+                    $"{this.federationGatewaySettings.MemberName} RunSessionAsync() Monitor chain is in IBD exiting. Height:{this.concurrentChain.Height}.");
                 return;
             }
 
-            // todo: this currently causes our integration test to fail.
-            //foreach (var monitorChainSession in this.monitorSessions.Values)
-            //{
-            // Don't do anything if we are within the block security delay.
-            //    if (!this.IsBeyondBlockSecurityDelay(monitorChainSession)) return;
-            //}
-
-            foreach (var buildAndBroadcastSession in this.monitorSessions.Values)
+            foreach (var monitorChainSession in this.monitorSessions.Values)
             {
-                lock (this.locker)
+                // Don't start the session if we are still in the SecurityDelay
+                if (!IsBeyondBlockSecurityDelay(monitorChainSession)) continue;
+
+                var time = DateTime.Now;
+
+                this.logger.LogInformation(
+                    $"{this.federationGatewaySettings.MemberName} RunSessionAsync() MyBossCard:{monitorChainSession.BossCard}");
+                this.logger.LogInformation(
+                    $"{this.federationGatewaySettings.MemberName} At {time} AmITheBoss: {monitorChainSession.AmITheBoss(time)} WhoHoldsTheBossCard: {monitorChainSession.WhoHoldsTheBossCard(time)}");
+
+                if (monitorChainSession.Status == SessionStatus.Created && monitorChainSession.AmITheBoss(time))
                 {
-                    var time = DateTime.Now;
+                    monitorChainSession.Status = SessionStatus.Requesting;
 
-                    this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} RunSessionsAsync() MyBossCard:{buildAndBroadcastSession.BossCard}");
-                    this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} At {time} AmITheBoss: {buildAndBroadcastSession.AmITheBoss(time)} WhoHoldsTheBossCard: {buildAndBroadcastSession.WhoHoldsTheBossCard(time)}");
+                    this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} RunSessionAsync() MyBossCard:{monitorChainSession.BossCard}");
+                    this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} At {time} AmITheBoss: {monitorChainSession.AmITheBoss(time)} WhoHoldsTheBossCard: {monitorChainSession.WhoHoldsTheBossCard(time)}");
 
-                    // We don't start the process until we are beyond the BlockSecurityDelay.
-                    if (buildAndBroadcastSession.Status == SessionStatus.Created
-                        && buildAndBroadcastSession.AmITheBoss(time) && IsBeyondBlockSecurityDelay(buildAndBroadcastSession))
+                    // We can keep sending this session until we get a result.
+                    var result = await CreateCounterChainSession(
+                        this.federationGatewaySettings.CounterChainApiPort,
+                        monitorChainSession.Amount,
+                        monitorChainSession.DestinationAddress,
+                        monitorChainSession.SessionId).ConfigureAwait(false);
+
+                    monitorChainSession.Status = SessionStatus.Requested;
+
+                    if (result != uint256.Zero)
                     {
-                        this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} RunSessionsAsync() - Session State: Created -> Requesting.");
-                        buildAndBroadcastSession.Status = SessionStatus.Requesting;
-                    }
-                }
-
-                if (buildAndBroadcastSession.Status == SessionStatus.Requesting)
-                {
-                    buildAndBroadcastSession.Status = SessionStatus.RequestSending;
-                    this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} RunSessionsAsync() - CreateMonitorSession.");
-                    var requestPartialsResult = await CreateCounterChainSession(this.federationGatewaySettings.CounterChainApiPort, buildAndBroadcastSession.Amount, buildAndBroadcastSession.DestinationAddress, buildAndBroadcastSession.SessionId).ConfigureAwait(false);
-
-                    if (requestPartialsResult == uint256.Zero)
-                    {
-                        this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} RunSessionsAsync() - Session State: Requesting -> Requested.");
-                        buildAndBroadcastSession.Status = SessionStatus.Requested;
-                    }
-                    else
-                    {
-                        //todo: move this to an API callback on completion of trx
-                        //this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} RunSessionsAsync() - Completing Session {requestPartialsResult}.");
-                        //buildAndBroadcastSession.Complete(requestPartialsResult);
-                        //buildAndBroadcastSession.CrossChainTransactionInfo.CrossChainTransactionId = requestPartialsResult;
+                        monitorChainSession.Complete(result);
+                        this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} RunSessionAsync() - Completing Session {result}.");
                     }
                 }
             }
