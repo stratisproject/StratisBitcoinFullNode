@@ -12,6 +12,10 @@ namespace Stratis.Bitcoin.Features.BlockStore
     /// <summary>
     /// Saves blocks to the database in batches, removes reorged blocks from the database.
     /// </summary>
+    /// <remarks>
+    /// The batch is saved when total serialized size of all blocks in a batch reaches <see cref="BatchThresholdSizeBytes"/>,
+    /// when more than <see cref="BatchMaxSaveIntervalSeconds"/> passed since last batch was saved or when node is shutting down.
+    /// </remarks>
     public class BlockStore : IDisposable
     {
         /// <summary>Maximum interval between saving batches.</summary>
@@ -44,7 +48,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// <inheritdoc cref="IBlockRepository"/>
         private readonly IBlockRepository blockRepository;
 
-        /// <inheritdoc cref="AsyncQueue{T}"/>
+        /// <summary>Queue which contains blocks that should be saved to the database.</summary>
         private readonly AsyncQueue<BlockPair> blocksQueue;
 
         /// <summary>Task that runs <see cref="DequeueBlocksContinuouslyAsync"/>.</summary>
@@ -73,11 +77,11 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// <para>
         /// If StoreTip is <c>null</c>, the store is out of sync. This can happen when:</para>
         /// <list>
-        ///     <item>1. The node crashed.</item>
-        ///     <item>2. The node was not closed down properly.</item>
+        ///     <item>The node crashed.</item>
+        ///     <item>The node was not closed down properly.</item>
         /// </list>
         /// <para>
-        /// To recover we walk back the chain until a common block header is found and set the BlockStore's StoreTip to that.
+        /// To recover we walk back the chain until a common block header is found and set the <see cref="BlockStore"/>'s <see cref="StoreTip"/> to that.
         /// </para>
         /// </summary>
         public async Task InitializeAsync()

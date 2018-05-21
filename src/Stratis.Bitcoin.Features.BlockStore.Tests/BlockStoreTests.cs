@@ -38,7 +38,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
         {
             var chain = new ConcurrentChain(Network.StratisMain);
 
-            for (int i = 0; i < blocksCount; ++i)
+            for (int i = 0; i < blocksCount; i++)
             {
                 var header = new BlockHeader()
                 {
