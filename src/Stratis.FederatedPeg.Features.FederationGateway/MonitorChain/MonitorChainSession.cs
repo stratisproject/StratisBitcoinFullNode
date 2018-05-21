@@ -35,8 +35,6 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
         // My boss card. I only get to build and broadcast the transaction when my boss card is in play.
         public string BossCard { get; }       
 
-        uint256 counterChainTransactionId = uint256.Zero;
-
         public MonitorChainSession(DateTime startTime, uint256 transactionHash, Money amount, string destinationAddress,
             int blockNumber, Chain chain,  string memberFolderPath, string myPublicKey)
         {
@@ -55,7 +53,6 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
 
         public void Complete(uint256 counterChainTransactionId)
         {
-            this.counterChainTransactionId = counterChainTransactionId;
             this.Status = SessionStatus.Completed;
         }
 
