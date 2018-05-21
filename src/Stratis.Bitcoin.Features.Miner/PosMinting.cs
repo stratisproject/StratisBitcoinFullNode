@@ -543,7 +543,7 @@ namespace Stratis.Bitcoin.Features.Miner
                 this.logger.LogTrace("Wallet contains {0} coins.", new Money(totalBalance));
 
                 if (blockTemplate == null)
-                    blockTemplate = this.blockBuilder.Build(this.network, chainTip, new Script());
+                    blockTemplate = this.blockBuilder.Build(BlockBuilderMode.Staking, chainTip, new Script());
 
                 if (!(blockTemplate.Block is PosBlock block))
                 {

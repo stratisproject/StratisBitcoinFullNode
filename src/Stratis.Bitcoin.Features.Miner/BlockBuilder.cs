@@ -30,9 +30,9 @@ namespace Stratis.Bitcoin.Features.Miner
             this.posBlockAssembler = posBlockAssembler;
         }
 
-        public BlockTemplate Build(Network network, ChainedHeader chainTip, Script script)
+        public BlockTemplate Build(BlockBuilderMode mode, ChainedHeader chainTip, Script script)
         {
-            if (network.Consensus.IsProofOfStake)
+            if (mode == BlockBuilderMode.Staking)
                 return this.posBlockAssembler.Build(chainTip, script);
             else
                 return this.powBlockAssembler.Build(chainTip, script);

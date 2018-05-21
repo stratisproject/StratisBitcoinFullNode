@@ -4,6 +4,12 @@ namespace Stratis.Bitcoin.Mining
 {
     public interface IBlockBuilder
     {
-        BlockTemplate Build(Network network, ChainedHeader chainTip, Script script);
+        BlockTemplate Build(BlockBuilderMode mode, ChainedHeader chainTip, Script script);
+    }
+
+    public enum BlockBuilderMode
+    {
+        Mining = 0,
+        Staking
     }
 }
