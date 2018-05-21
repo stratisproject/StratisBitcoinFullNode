@@ -52,7 +52,7 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
             return fullNode.NodeService<BlockStoreManager>();
         }
 
-        public static ChainedHeader HighestPersistedBlock(this FullNode fullNode)
+        public static ChainedHeader GetBlockStoreTip(this FullNode fullNode)
         {
             return fullNode.NodeService<Features.BlockStore.BlockStore>().StoreTip;
         }
