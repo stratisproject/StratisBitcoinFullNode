@@ -31,38 +31,6 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Controllers
             this.counterChainSessionManager = counterChainSessionManager;
         }
 
-        /// <summary>
-        /// Our deposit and withdrawal transactions start on mainchain and sidechain respectively. Two transactions are used, one on each chain, to complete
-        /// the 'movement'.  This API call asks the counter chain to action it's transaction.
-        /// </summary>
-        /// <param name="createCounterChainSessionRequest">Used to pass the SessionId, Amount and Destination address to the counter chain.</param>
-        /// <returns></returns>
-        [Route("create-buildbroadcast-session")]
-        [HttpPost]
-        public async Task<IActionResult> CreatePartialTransactionSession([FromBody] CreateCounterChainSessionRequest createCounterChainSessionRequest)
-        {
-            Guard.NotNull(createCounterChainSessionRequest, nameof(createCounterChainSessionRequest));
-
-            // checks the request is valid
-            if (!this.ModelState.IsValid)
-            {
-                return BuildErrorResponse(this.ModelState);
-            }
-
-            try
-            {
-                var result = this.counterChainSessionManager.CreatePartialTransactionSession(
-                    createCounterChainSessionRequest.SessionId,
-                    createCounterChainSessionRequest.Amount,
-                    createCounterChainSessionRequest.DestinationAddress);
-                return this.Json(uint256.Zero); //todo: this is temp.
-            }
-            catch (Exception e)
-            {
-                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, $"Could not initialize sidechain:{e.Message}", e.ToString());
-            }
-        }
-
         [Route("create-session-oncounterchain")]
         [HttpPost]
         public IActionResult CreateSessionOnCounterChain([FromBody] CreateCounterChainSessionRequest createCounterChainSessionRequest)
@@ -82,6 +50,38 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Controllers
                     createCounterChainSessionRequest.Amount,
                     createCounterChainSessionRequest.DestinationAddress);
                 return this.Ok();
+            }
+            catch (Exception e)
+            {
+                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, $"Could not initialize sidechain:{e.Message}", e.ToString());
+            }
+        }
+
+        /// <summary>
+        /// Our deposit and withdrawal transactions start on mainchain and sidechain respectively. Two transactions are used, one on each chain, to complete
+        /// the 'movement'.  This API call asks the counter chain to action it's transaction.
+        /// </summary>
+        /// <param name="createCounterChainSessionRequest">Used to pass the SessionId, Amount and Destination address to the counter chain.</param>
+        /// <returns></returns>
+        [Route("request-counter-completion")]
+        [HttpPost]
+        public async Task<IActionResult> CreatePartialTransactionSession([FromBody] CreateCounterChainSessionRequest createCounterChainSessionRequest)
+        {
+            Guard.NotNull(createCounterChainSessionRequest, nameof(createCounterChainSessionRequest));
+
+            // checks the request is valid
+            if (!this.ModelState.IsValid)
+            {
+                return BuildErrorResponse(this.ModelState);
+            }
+
+            try
+            {
+                var result = this.counterChainSessionManager.CreatePartialTransactionSession(
+                    createCounterChainSessionRequest.SessionId,
+                    createCounterChainSessionRequest.Amount,
+                    createCounterChainSessionRequest.DestinationAddress);
+                return this.Json(uint256.Zero); //todo: this is temp.
             }
             catch (Exception e)
             {
