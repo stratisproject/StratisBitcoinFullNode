@@ -291,7 +291,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             //  filterrate = pto->minFeeFilter;
             //}
 
- // MPD TODO: LOCK
             List<TxMempoolInfo> sends = new List<TxMempoolInfo>();
             this.logger.LogTrace("Locking '{0}'.", nameof(this.inventoryTxToSend));
             lock (this.inventoryTxToSend)
@@ -316,23 +315,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                     }
                 }
             }
-
-            // MPD TODO: Is this right?!? looks like logic is send an empty list?!?
-            //List<TxMempoolInfo> sends = await this.manager.MempoolLock.WriteAsync(() =>
-            //{
-            //    List<TxMempoolInfo> ret = new List<TxMempoolInfo>();
-            //    foreach (TxMempoolInfo txinfo in vtxinfo)
-            //    {
-            //        uint256 hash = txinfo.Trx.GetHash();
-            //        this.inventoryTxToSend.Remove(hash);
-            //        if (filterrate != Money.Zero)
-            //            if (txinfo.FeeRate.FeePerK < filterrate)
-            //                continue;
-            //        this.filterInventoryKnown.TryAdd(hash, hash);
-            //    }
-            //    return ret;
-            //});
- // MPD TODO: DONE
 
             this.logger.LogTrace("Sending transaction inventory to peer '{0}'.", peer.RemoteSocketEndpoint);
             await this.SendAsTxInventoryAsync(peer, sends.Select(s => s.Trx.GetHash()));
@@ -395,7 +377,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                 send.Inventory.Add(inv);
             }
 
-// MPD TODO: LOCK
             // add to known inventory
             this.logger.LogTrace("Locking '{0}'.", nameof(this.filterInventoryKnown));
             lock (this.filterInventoryKnown)
@@ -406,14 +387,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                     this.logger.LogTrace("Added inventory transaction ID '{0}' to known inventory filter.", inventoryVector.Hash);
                 }
             }
-
-            // add to known inventory
-            //await this.manager.MempoolLock.WriteAsync(() =>
-            //{
-            //    foreach (InventoryVector inventoryVector in send.Inventory)
-            //        this.filterInventoryKnown.TryAdd(inventoryVector.Hash, inventoryVector.Hash);
-            //});
-// MPD TODO: END
 
             if (peer.IsConnected)
             {
@@ -471,7 +444,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             Transaction trx = transactionPayload.Obj;
             uint256 trxHash = trx.GetHash();
 
-// MPD TODO: LOCK
             // add to local filter
             this.logger.LogTrace("Locking '{0}'.", nameof(this.filterInventoryKnown));
             lock (this.filterInventoryKnown)
@@ -480,9 +452,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                 this.filterInventoryKnown.TryAdd(trxHash, trxHash);
                 this.logger.LogTrace("Added transaction ID '{0}' to known inventory filter.", trxHash);
             }
-
-            //await this.manager.MempoolLock.WriteAsync(() => this.filterInventoryKnown.TryAdd(trxHash, trxHash));
-// MPD TODO: DONE
 
             MempoolValidationState state = new MempoolValidationState(true);
             if (!await this.orphans.AlreadyHaveAsync(trxHash) && await this.validator.AcceptToMemoryPool(state, trx))
@@ -559,9 +528,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             // find all behaviours then start an exclusive task
             // to add the hash to each local collection
             IEnumerable<MempoolBehavior> behaviours = peers.Select(s => s.Behavior<MempoolBehavior>());
-            this.logger.LogTrace("(-)");
-
- // MPD TODO: LOCK
+            
             this.logger.LogTrace("Locking '{0}'.", nameof(this.manager.MempoolLock));
             return this.manager.MempoolLock.WriteAsync(() =>
             { 
@@ -585,18 +552,9 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                         }
                     }
                 }
-            });
 
-            //return this.manager.MempoolLock.WriteAsync(() =>
-            //{
-            //    foreach (MempoolBehavior mempoolBehavior in behaviours)
-            //    {
-            //        if (mempoolBehavior?.AttachedPeer.PeerVersion.Relay ?? false)
-            //            if (!mempoolBehavior.filterInventoryKnown.ContainsKey(hash))
-            //                mempoolBehavior.inventoryTxToSend.TryAdd(hash, hash);
-            //    }
-            //});
-// MPD TODO: DONE
+                this.logger.LogTrace("(-)");
+            });
         }
 
         /// <summary>
@@ -620,7 +578,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                 return;
             }
 
-// MPD TODO: LOCK
             // before locking an exclusive task
             // check if there is anything to processes
             this.logger.LogTrace("Locking '{0}'.", nameof(this.inventoryTxToSend));
@@ -632,13 +589,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                     return;
                 }
             }
-            // before locking an exclusive task
-            // check if there is anything to processes
-            //if (!await this.manager.MempoolLock.ReadAsync(() => this.inventoryTxToSend.Keys.Any()))
-            //{
-            //    this.logger.LogTrace("(-)[NO_TXS]");
-            //    return;
-            //}
 
             List<uint256> sends = new List<uint256>();
             this.logger.LogTrace("Locking '{0}'.", nameof(this.inventoryTxToSend));
@@ -685,40 +635,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                     this.logger.LogTrace("Transaction inventory list created.");
                 }
             }
-
-            //List<uint256> sends = await this.manager.MempoolLock.WriteAsync(() =>
-            //{
-            //    this.logger.LogTrace("Creating list of transaction inventory to send.");
-                
-            //    // Determine transactions to relay
-            //    // Produce a vector with all candidates for sending
-            //    List<uint256> invs = this.inventoryTxToSend.Keys.Take(InventoryBroadcastMax).ToList();
-            //    List<uint256> ret = new List<uint256>();
-            //    foreach (uint256 hash in invs)
-            //    {
-            //        // Remove it from the to-be-sent set
-            //        this.inventoryTxToSend.Remove(hash);
-
-            //        // Check if not in the filter already
-            //        if (this.filterInventoryKnown.ContainsKey(hash))
-            //            continue;
-                    
-            //        // Not in the mempool anymore? don't bother sending it.
-            //        TxMempoolInfo txInfo = this.manager.Info(hash);
-            //        if (txInfo == null)
-            //            continue;
-                    
-            //        //if (filterrate && txinfo.feeRate.GetFeePerK() < filterrate) // TODO:filterrate
-            //        //{
-            //        //  continue;
-            //        //}
-            //        ret.Add(hash);
-            //    }
-
-            //    this.logger.LogTrace("Transaction inventory list created.");
-            //    return ret;
-            //});
-// MPD TODO: END
 
             if (sends.Any())
             {
