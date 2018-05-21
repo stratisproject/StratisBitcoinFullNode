@@ -55,6 +55,15 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             return chain;
         }
 
+        private async Task WaitUntilQueueIsEmpty()
+        {
+            while (this.blockStore.BlocksQueueCount != 0)
+                await Task.Delay(100).ConfigureAwait(false);
+            
+            // For very slow environments.
+            await Task.Delay(100).ConfigureAwait(false);
+        }
+
         /// <summary>Checks that block store tip initializes from the hash of the last saved block.</summary>
         [Fact]
         public async Task BlockStoreInitializesTipAtHashBlockAsync()
@@ -75,8 +84,8 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
 
             this.blockStore.AddToPending(new BlockPair(new Block(), this.chain.Tip));
 
-            await Task.Delay(1000).ConfigureAwait(false);
-
+            await this.WaitUntilQueueIsEmpty().ConfigureAwait(false);
+            
             Assert.Equal(this.blockStore.StoreTip, this.chain.Tip);
             Assert.Equal(this.chain.Tip.HashBlock, this.repository.BlockHash);
         }
@@ -97,14 +106,14 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
 
             await this.blockStore.InitializeAsync().ConfigureAwait(false);
 
-            for (int i = 1; i < count; ++i)
+            for (int i = 1; i < count; i++)
             {
                 ChainedHeader header = longChain.GetBlock(i);
 
                 this.blockStore.AddToPending(new BlockPair(block, header));
             }
             
-            await Task.Delay(5000).ConfigureAwait(false);
+            await this.WaitUntilQueueIsEmpty().ConfigureAwait(false);
             Assert.Equal(this.blockStore.StoreTip, longChain.GetBlock(count - 1));
             Assert.Equal(1, this.repository.SavesCount);
         }
@@ -118,13 +127,13 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
 
             ChainedHeader lastHeader = null;
 
-            for (int i = 1; i < this.chain.Height - 1; ++i)
+            for (int i = 1; i < this.chain.Height - 1; i++)
             {
                 lastHeader = this.chain.GetBlock(i);
                 this.blockStore.AddToPending(new BlockPair(new Block(), lastHeader));
             }
 
-            await Task.Delay(1000).ConfigureAwait(false);
+            await this.WaitUntilQueueIsEmpty().ConfigureAwait(false);
 
             Assert.Equal(this.blockStore.StoreTip, this.chain.Genesis);
             Assert.Equal(0, this.repository.SavesCount);
@@ -144,15 +153,13 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
 
             await this.blockStore.InitializeAsync().ConfigureAwait(false);
 
-            ChainedHeader lastHeader = null;
-
-            for (int i = 1; i <= this.chain.Height; ++i)
+            for (int i = 1; i <= this.chain.Height; i++)
             {
-                lastHeader = this.chain.GetBlock(i);
+                ChainedHeader lastHeader = this.chain.GetBlock(i);
                 this.blockStore.AddToPending(new BlockPair(new Block(), lastHeader));
             }
 
-            await Task.Delay(1000).ConfigureAwait(false);
+            await this.WaitUntilQueueIsEmpty().ConfigureAwait(false);
             
             Assert.Equal(this.blockStore.StoreTip, this.chain.Tip);
             Assert.Equal(1, this.repository.SavesCount);

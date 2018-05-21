@@ -30,6 +30,9 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// <summary>The highest stored block in the repository.</summary>
         public ChainedHeader StoreTip { get; private set; }
 
+        /// <summary>Items count in the <see cref="blocksQueue"/>.</summary>
+        internal int BlocksQueueCount => this.blocksQueue.Count;
+
         /// <inheritdoc cref="ILogger"/>
         private readonly ILogger logger;
 
