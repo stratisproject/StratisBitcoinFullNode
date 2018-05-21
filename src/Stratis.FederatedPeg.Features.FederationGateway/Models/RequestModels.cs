@@ -28,7 +28,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Models
     /// Used to create a session that builds a multi-sig transaction by requesting
     /// signing from other Federation nodes and then broadcasts the transaction.
     /// </summary>
-    public class CreatePartialTransactionSessionRequest : RequestModel
+    public class CreateCounterChainSessionRequest : RequestModel
     {
         /// <summary>
         /// An Id used to identify the session. (Since sessions are currently 'per transaction' the hash of the

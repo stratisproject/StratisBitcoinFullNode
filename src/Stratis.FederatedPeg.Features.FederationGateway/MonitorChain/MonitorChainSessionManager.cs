@@ -96,8 +96,8 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.MonitorChain
 
         public void Initialize()
         {
-            // todo: move this to as task that is created when a session is created?
-            // todo: we don't know anything about the regularity of blocks on the sidechain so may be better to keep as a timer.
+            // We don't know how regular blocks will be on the sidechain so instead of
+            // processing sessions on new blocks we use a timer.
             this.actionTimer = new Timer(async (o) =>
             {
                 await this.RunSessionsAsync().ConfigureAwait(false);
@@ -140,7 +140,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.MonitorChain
         // Calls into the counter chain and registers the session there.
         private void CreateSessionOnCounterChain(int apiPortForSidechain, uint256 transactionId, Money amount, string destination)
         {
-            var createCounterChainSessionRequest = new CreatePartialTransactionSessionRequest
+            var createCounterChainSessionRequest = new CreateCounterChainSessionRequest
             {
                 SessionId = transactionId,
                 Amount = amount.ToString(),
@@ -153,11 +153,11 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.MonitorChain
                 client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
 
                 var uri = new Uri(
-                    $"http://localhost:{apiPortForSidechain}/api/FederationGateway/create-sessiononcounterchain");
+                    $"http://localhost:{apiPortForSidechain}/api/FederationGateway/create-session-oncounterchain");
                 var request = new JsonContent(createCounterChainSessionRequest);
                 var httpResponseMessage = client.PostAsync(uri, request).Result;
                 string json = httpResponseMessage.Content.ReadAsStringAsync().Result;
-                uint256 result = JsonConvert.DeserializeObject<uint256>(json, new UInt256JsonConverter());
+                //todo: handler error
             }
         }
 
@@ -233,7 +233,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.MonitorChain
         // Calls into the counter chain and sets off the process to build the multi-sig transaction.
         private async Task<uint256> CreateCounterChainSession(int apiPortForSidechain, Money amount, string destination, uint256 transactionId)
         {
-            var createPartialTransactionSessionRequest = new CreatePartialTransactionSessionRequest
+            var createPartialTransactionSessionRequest = new CreateCounterChainSessionRequest
             {
                 SessionId = transactionId,
                 Amount = amount.ToString(),

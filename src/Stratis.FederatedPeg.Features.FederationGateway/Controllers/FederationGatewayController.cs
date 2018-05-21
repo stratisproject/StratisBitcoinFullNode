@@ -35,13 +35,13 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Controllers
         /// Our deposit and withdrawal transactions start on mainchain and sidechain respectively. Two transactions are used, one on each chain, to complete
         /// the 'movement'.  This API call asks the counter chain to action it's transaction.
         /// </summary>
-        /// <param name="createPartialTransactionSessionRequest">Used to pass the SessionId, Amount and Destination address to the counter chain.</param>
+        /// <param name="createCounterChainSessionRequest">Used to pass the SessionId, Amount and Destination address to the counter chain.</param>
         /// <returns></returns>
         [Route("create-buildbroadcast-session")]
         [HttpPost]
-        public async Task<IActionResult> CreatePartialTransactionSession([FromBody] CreatePartialTransactionSessionRequest createPartialTransactionSessionRequest)
+        public async Task<IActionResult> CreatePartialTransactionSession([FromBody] CreateCounterChainSessionRequest createCounterChainSessionRequest)
         {
-            Guard.NotNull(createPartialTransactionSessionRequest, nameof(createPartialTransactionSessionRequest));
+            Guard.NotNull(createCounterChainSessionRequest, nameof(createCounterChainSessionRequest));
 
             // checks the request is valid
             if (!this.ModelState.IsValid)
@@ -52,9 +52,9 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Controllers
             try
             {
                 var result = this.counterChainSessionManager.CreatePartialTransactionSession(
-                    createPartialTransactionSessionRequest.SessionId,
-                    createPartialTransactionSessionRequest.Amount,
-                    createPartialTransactionSessionRequest.DestinationAddress);
+                    createCounterChainSessionRequest.SessionId,
+                    createCounterChainSessionRequest.Amount,
+                    createCounterChainSessionRequest.DestinationAddress);
                 return this.Json(uint256.Zero); //todo: this is temp.
             }
             catch (Exception e)
@@ -63,11 +63,11 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Controllers
             }
         }
 
-        [Route("create-sessiononcounterchain")]
+        [Route("create-session-oncounterchain")]
         [HttpPost]
-        public IActionResult CreateSessionOnCounterChain([FromBody] CreatePartialTransactionSessionRequest createPartialTransactionSessionRequest)
+        public IActionResult CreateSessionOnCounterChain([FromBody] CreateCounterChainSessionRequest createCounterChainSessionRequest)
         {
-            Guard.NotNull(createPartialTransactionSessionRequest, nameof(createPartialTransactionSessionRequest));
+            Guard.NotNull(createCounterChainSessionRequest, nameof(createCounterChainSessionRequest));
 
             // checks the request is valid
             if (!this.ModelState.IsValid)
@@ -77,11 +77,11 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Controllers
 
             try
             {
-                var result = this.counterChainSessionManager.CreateSessionOnCounterChain(
-                    createPartialTransactionSessionRequest.SessionId,
-                    createPartialTransactionSessionRequest.Amount,
-                    createPartialTransactionSessionRequest.DestinationAddress);
-                return this.Json(uint256.Zero); //todo: this is temp.
+                this.counterChainSessionManager.CreateSessionOnCounterChain(
+                    createCounterChainSessionRequest.SessionId,
+                    createCounterChainSessionRequest.Amount,
+                    createCounterChainSessionRequest.DestinationAddress);
+                return this.Ok();
             }
             catch (Exception e)
             {
