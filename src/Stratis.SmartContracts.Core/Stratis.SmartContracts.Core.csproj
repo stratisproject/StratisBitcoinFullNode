@@ -12,13 +12,13 @@
     <PackageReference Include="NetJSON" Version="1.2.2" />
     <PackageReference Include="Newtonsoft.Json" Version="11.0.2" />
     <PackageReference Include="NStratis.HashLib" Version="1.0.0.1" />
+    <PackageReference Include="Stratis.Patricia" Version="1.0.0" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\NBitcoin\NBitcoin.csproj" />
     <ProjectReference Include="..\Stratis.Bitcoin.Features.Consensus\Stratis.Bitcoin.Features.Consensus.csproj" />
     <ProjectReference Include="..\Stratis.Bitcoin\Stratis.Bitcoin.csproj" />
-    <ProjectReference Include="..\Stratis.PatriciaTrie\Stratis.Patricia.csproj" />
     <ProjectReference Include="..\Stratis.SmartContracts\Stratis.SmartContracts.csproj" />
   </ItemGroup>
 
