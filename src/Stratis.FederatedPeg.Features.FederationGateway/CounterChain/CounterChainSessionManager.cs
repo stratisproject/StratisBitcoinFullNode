@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
+using Stratis.Bitcoin;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Features.GeneralPurposeWallet;
 using Stratis.Bitcoin.Features.GeneralPurposeWallet.Interfaces;
@@ -34,9 +35,11 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.CounterChain
 
         private readonly ILogger logger;
 
+        private IFullNode fullnode;
+
         public CounterChainSessionManager(ILoggerFactory loggerFactory, IGeneralPurposeWalletManager generalPurposeWalletManager,
             IGeneralPurposeWalletTransactionHandler generalPurposeWalletTransactionHandler, IConnectionManager connectionManager, Network network,
-            FederationGatewaySettings federationGatewaySettings, IInitialBlockDownloadState initialBlockDownloadState,
+            FederationGatewaySettings federationGatewaySettings, IInitialBlockDownloadState initialBlockDownloadState, IFullNode fullnode,
             IBroadcasterManager broadcastManager, ConcurrentChain concurrentChain, ICrossChainTransactionAuditor crossChainTransactionAuditor = null)
         {
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
@@ -48,19 +51,19 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.CounterChain
             this.broadcastManager = broadcastManager;
             this.initialBlockDownloadState = initialBlockDownloadState;
             this.concurrentChain = concurrentChain;
+            this.fullnode = fullnode;
         }
 
-        public uint256 CreateSessionOnCounterChain(uint256 sessionId, Money amount, string destinationAddress)
+        public void CreateSessionOnCounterChain(uint256 sessionId, Money amount, string destinationAddress)
         {
             // We don't process sessions if our chain is not past IBD.
             if (this.initialBlockDownloadState.IsInitialBlockDownload())
             {
                 this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} RunSessionsAsync() CounterChain is in IBD exiting. Height:{this.concurrentChain.Height}.");
-                return uint256.Zero;
+                return;
             }
 
             this.RegisterSession(3, sessionId, amount, destinationAddress);
-            return uint256.Zero;
         }
 
         private PartialTransactionSession RegisterSession(int n, uint256 transactionId, Money amount, string destination)
@@ -98,6 +101,12 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.CounterChain
 
         private void BroadcastTransaction(PartialTransactionSession partialTransactionSession)
         {
+            if (this.fullnode.State == FullNodeState.Disposed || this.fullnode.State == FullNodeState.Disposing)
+            {
+                this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} Full node disposing during broadcast. Do nothing.");
+                return;
+            }
+
             this.logger.LogInformation("()");
             this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} Combining and Broadcasting transaction.");
             var account = this.generalPurposeWalletManager.GetAccounts("multisig_wallet").First();
