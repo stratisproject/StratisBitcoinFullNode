@@ -37,7 +37,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         }
 
         /// <inheritdoc />
-        public override Task RunAsync(RuleContext context)
+        public override async Task RunAsync(RuleContext context)
         {
             this.Logger.LogTrace("()");
 
@@ -125,7 +125,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
             {
                 this.CheckBlockReward(context, fees, index.Height, block);
 
-                bool passed = checkInputs.All(c => c.GetAwaiter().GetResult());
+                bool passed = (await Task.WhenAll(checkInputs)).All(b => b);
                 if (!passed)
                 {
                     this.Logger.LogTrace("(-)[BAD_TX_SCRIPT]");
@@ -135,8 +135,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
             else this.Logger.LogTrace("BIP68, SigOp cost, and block reward validation skipped for block at height {0}.", index.Height);
 
             this.Logger.LogTrace("(-)");
-
-            return Task.CompletedTask;
         }
 
         /// <summary>

@@ -37,20 +37,18 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         }
 
         /// <inheritdoc />
-        public override Task RunAsync(RuleContext context)
+        public override async Task RunAsync(RuleContext context)
         {
             this.Logger.LogTrace("()");
 
             // Compute and store the stake proofs.
             this.CheckAndComputeStake(context);
 
-            base.RunAsync(context);
+            await base.RunAsync(context);
 
-            this.stakeChain.Set(context.BlockValidationContext.ChainedHeader, context.Stake.BlockStake);
+            await this.stakeChain.SetAsync(context.BlockValidationContext.ChainedHeader, context.Stake.BlockStake);
 
             this.Logger.LogTrace("(-)");
-
-            return Task.CompletedTask;
         }
 
         /// <inheritdoc />
