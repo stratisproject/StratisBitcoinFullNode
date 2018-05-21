@@ -36,6 +36,7 @@ namespace Stratis.SmartContracts.Tools.Sct.Validation
 
             var determinismValidator = new SmartContractDeterminismValidator();
             var formatValidator = new SmartContractFormatValidator();
+            var warningValidator = new SmartContractWarningValidator();
 
             var reportData = new List<ValidationReportData>();
 
@@ -71,7 +72,8 @@ namespace Stratis.SmartContracts.Tools.Sct.Validation
                     FileName = file,
                     CompilationErrors = new List<CompilationError>(),
                     DeterminismValidationErrors = new List<SmartContractValidationError>(),
-                    FormatValidationErrors = new List<ValidationError>()
+                    FormatValidationErrors = new List<ValidationError>(),
+                    Warnings = new List<Warning>()
                 };
 
                 reportData.Add(validationData);
@@ -128,6 +130,14 @@ namespace Stratis.SmartContracts.Tools.Sct.Validation
                 validationData
                     .DeterminismValidationErrors
                     .AddRange(determinismValidationResult.Errors);
+
+                SmartContractValidationResult warningResult = warningValidator.Validate(decompilation);
+
+                validationData
+                    .Warnings
+                    .AddRange(warningResult
+                        .Errors
+                        .Select(e => new Warning { Message = e.Message }));
             }
 
             List<IReportSection> reportStructure = new List<IReportSection>();
@@ -136,6 +146,8 @@ namespace Stratis.SmartContracts.Tools.Sct.Validation
 
             reportStructure.Add(new FormatSection());
             reportStructure.Add(new DeterminismSection());
+
+            reportStructure.Add(new WarningsSection());
 
             if (this.ShowBytes)
                 reportStructure.Add(new ByteCodeSection());
