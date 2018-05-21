@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace Stratis.Bitcoin.Models
+namespace Stratis.Bitcoin.Controllers.Models
 {
     /// <summary>
     /// Clas representing the status of the currently running node.
@@ -27,8 +27,15 @@ namespace Stratis.Bitcoin.Models
         /// <summary>The network the current node is running on.</summary>
         public string Network { get; set; }
 
+        /// <summary>System identifier of the node's process.</summary>
+        public int ProcessId { get; set; }
+
         /// <summary>The height of the consensus.</summary>
         public int ConsensusHeight { get; set; }
+
+        /// <summary>Height of the most recent block in persistent storage.</summary>
+        /// <seealso cref="Stratis.Bitcoin.Features.BlockRepository.HighestPersistedBlock.Height"/>
+        public int BlockStoreHeight { get; set; }
 
         /// <summary>A collection of inbound peers.</summary>
         public List<ConnectedPeerModel> InboundPeers { get; set; }

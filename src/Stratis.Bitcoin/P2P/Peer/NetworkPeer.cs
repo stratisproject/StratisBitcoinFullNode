@@ -227,10 +227,10 @@ namespace Stratis.Bitcoin.P2P.Peer
         private readonly AsyncLocal<DisconnectedExecutionAsyncContext> onDisconnectedAsyncContext;
 
         /// <summary>Transaction options we would like.</summary>
-        private NetworkOptions preferredTransactionOptions;
+        private TransactionOptions preferredTransactionOptions;
 
         /// <inheritdoc/>
-        public NetworkOptions SupportedTransactionOptions { get; private set; }
+        public TransactionOptions SupportedTransactionOptions { get; private set; }
 
         /// <inheritdoc/>
         public NetworkPeerDisconnectReason DisconnectReason { get; private set; }
@@ -276,8 +276,8 @@ namespace Stratis.Bitcoin.P2P.Peer
             this.loggerFactory = loggerFactory;
             this.dateTimeProvider = dateTimeProvider;
 
-            this.preferredTransactionOptions = network.NetworkOptions;
-            this.SupportedTransactionOptions = network.NetworkOptions & ~NetworkOptions.All;
+            this.preferredTransactionOptions = parameters.PreferredTransactionOptions;
+            this.SupportedTransactionOptions = parameters.PreferredTransactionOptions & ~TransactionOptions.All;
 
             this.State = inbound ? NetworkPeerState.Connected : NetworkPeerState.Created;
             this.Inbound = inbound;
@@ -505,7 +505,7 @@ namespace Stratis.Bitcoin.P2P.Peer
                         break;
 
                     case HaveWitnessPayload unused:
-                        this.SupportedTransactionOptions |= NetworkOptions.Witness;
+                        this.SupportedTransactionOptions |= TransactionOptions.Witness;
                         break;
                 }
             }
@@ -571,7 +571,7 @@ namespace Stratis.Bitcoin.P2P.Peer
 
             this.TimeOffset = this.dateTimeProvider.GetTimeOffset() - version.Timestamp;
             if ((version.Services & NetworkPeerServices.NODE_WITNESS) != 0)
-                this.SupportedTransactionOptions |= NetworkOptions.Witness;
+                this.SupportedTransactionOptions |= TransactionOptions.Witness;
 
             this.logger.LogTrace("(-)");
         }
@@ -886,9 +886,9 @@ namespace Stratis.Bitcoin.P2P.Peer
         public InventoryType AddSupportedOptions(InventoryType inventoryType)
         {
             // Transaction options we prefer and which are also supported by peer.
-            NetworkOptions actualTransactionOptions = this.preferredTransactionOptions & this.SupportedTransactionOptions;
+            TransactionOptions actualTransactionOptions = this.preferredTransactionOptions & this.SupportedTransactionOptions;
 
-            if ((actualTransactionOptions & NetworkOptions.Witness) != 0)
+            if ((actualTransactionOptions & TransactionOptions.Witness) != 0)
                 inventoryType |= InventoryType.MSG_WITNESS_FLAG;
 
             return inventoryType;

@@ -389,7 +389,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                     {
                         this.logger.LogInformation("You probably need witness information, activating witness requirement for peers.");
                         this.connectionManager.AddDiscoveredNodesRequirement(NetworkPeerServices.NODE_WITNESS);
-                        this.Puller.RequestOptions(NetworkOptions.Witness);
+                        this.Puller.RequestOptions(TransactionOptions.Witness);
 
                         this.logger.LogTrace("(-)[BAD_WITNESS_NONCE_SIZE]");
                         return;

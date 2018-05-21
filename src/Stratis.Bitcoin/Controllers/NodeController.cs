@@ -1,12 +1,17 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
+using NBitcoin;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Builder.Feature;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Connection;
-using Stratis.Bitcoin.Models;
+using Stratis.Bitcoin.Controllers.Models;
+using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.Utilities;
+using System;
+using System.Diagnostics;
+using System.Reflection;
 
 namespace Stratis.Bitcoin.Controllers
 {
@@ -30,7 +35,7 @@ namespace Stratis.Bitcoin.Controllers
 
         /// <summary>The connection manager.</summary>
         private readonly IConnectionManager connectionManager;
-
+        
         public NodeController(IFullNode fullNode, ILoggerFactory loggerFactory, IDateTimeProvider dateTimeProvider, IChainState chainState, NodeSettings nodeSettings, IConnectionManager connectionManager)
         {
             this.fullNode = fullNode;
@@ -53,6 +58,7 @@ namespace Stratis.Bitcoin.Controllers
             {
                 Version = this.fullNode.Version?.ToString() ?? "0",
                 Agent = this.nodeSettings.Agent,
+                ProcessId = Process.GetCurrentProcess().Id,
                 Network = this.fullNode.Network.Name,
                 ConsensusHeight = this.chainState.ConsensusTip.Height,
                 DataDirectoryPath = this.nodeSettings.DataDir,
@@ -61,7 +67,13 @@ namespace Stratis.Bitcoin.Controllers
 
             // Add the list of features that are enabled.
             foreach (IFullNodeFeature feature in this.fullNode.Services.Features)
+            {
                 model.EnabledFeatures.Add(feature.GetType().ToString());
+
+                // Include BlockStore Height if enabled
+                if (feature is IBlockStore)
+                    model.BlockStoreHeight = ((IBlockStore)feature).GetHighestPersistedBlock().Height;
+            }
 
             // Add the details of connected nodes.
             foreach (INetworkPeer peer in this.connectionManager.ConnectedPeers)
