@@ -115,6 +115,10 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.CounterChain
                 this.logger.LogInformation("InvalidAccount from GPWallet.");
                 return;
             }
+
+            this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} Combine Partials");
+            this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} ${partialTransactionSession}");
+
             var combinedTransaction = account.CombinePartialTransactions(partialTransactionSession.PartialTransactions);
             this.broadcastManager.BroadcastTransactionAsync(combinedTransaction).GetAwaiter().GetResult();
             this.logger.LogInformation("(-)");
