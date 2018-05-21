@@ -920,7 +920,7 @@ namespace Stratis.Bitcoin.Features.Miner
                             BlockStake = new BlockStake(block)
                         };
 
-                        this.consensusLoop.ConsensusRules.GetRule<PosCoinviewRule>().StakeValidator.CheckKernel(contextInformation, chainTip, block.Header.Bits, txTime, prevoutStake);
+                        this.stakeValidator.CheckKernel(contextInformation, chainTip, block.Header.Bits, txTime, prevoutStake);
 
                         if (context.Result.SetKernelFoundIndex(context.Index))
                         {

@@ -154,7 +154,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
 
         private Network network;
 
-
         /// <summary>
         /// Constructs a memory pool validator object.
         /// </summary>

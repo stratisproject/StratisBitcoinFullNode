@@ -446,16 +446,26 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
 
         private void SetupRulesEngine(ConcurrentChain chain)
         {
-                var posConsensusRules = new PosConsensusRules(this.network,
-                    this.LoggerFactory.Object, this.dateTimeProvider.Object, chain,
-                    new NodeDeployments(this.network, chain), new ConsensusSettings(), new Checkpoints(),
-                    new Mock<CoinView>().Object, new Mock<ILookaheadBlockPuller>().Object,new Mock<IStakeChain>().Object, new Mock<IStakeValidator>().Object);
+            var posConsensusRules = new PosConsensusRules(
+                this.network,
+                this.LoggerFactory.Object, 
+                this.dateTimeProvider.Object, 
+                chain,
+                new NodeDeployments(this.network, chain), 
+                new ConsensusSettings(), 
+                new Checkpoints(),
+                new Mock<CoinView>().Object, 
+                new Mock<ILookaheadBlockPuller>().Object, 
+                new Mock<IStakeChain>().Object, 
+                new Mock<IStakeValidator>().Object);
 
-                posConsensusRules.Register(new FullNodeBuilderConsensusExtension.PowConsensusRulesRegistration());
-                this.consensusLoop.SetupGet(x => x.ConsensusRules).Returns(posConsensusRules);
-            }
+            posConsensusRules.Register(new FullNodeBuilderConsensusExtension.PosConsensusRulesRegistration());
 
-            private TxMempoolEntry[] SetupTxMempool(ConcurrentChain chain, PosConsensusOptions newOptions, Money txFee, params Transaction[] transactions)
+            this.consensusLoop.SetupGet(x => x.ConsensusRules)
+                .Returns(posConsensusRules);
+        }
+
+        private TxMempoolEntry[] SetupTxMempool(ConcurrentChain chain, PosConsensusOptions newOptions, Money txFee, params Transaction[] transactions)
         {
             var txTime = Utils.DateTimeToUnixTime(chain.Tip.Header.BlockTime.AddSeconds(25));
             var lockPoints = new LockPoints()

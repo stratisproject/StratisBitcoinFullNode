@@ -13,7 +13,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
     public class PosCoinviewRule : PowCoinviewRule
     {
         /// <summary>Provides functionality for checking validity of PoS blocks.</summary>
-        public IStakeValidator StakeValidator { get; private set; }
+        private IStakeValidator stakeValidator;
 
         /// <summary>Database of stake related data for the current blockchain.</summary>
         private IStakeChain stakeChain;
@@ -29,9 +29,9 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
 
             var consensusRules = (PosConsensusRules)this.Parent;
 
-            this.StakeValidator = consensusRules.StakeValidator;
+            this.stakeValidator = consensusRules.StakeValidator;
             this.stakeChain = consensusRules.StakeChain;
-            this.posConsensusOptions = (PosConsensusOptions)this.ConsensusOptions;
+            this.posConsensusOptions = this.Parent.ConsensusParams.Option<PosConsensusOptions>();
 
             this.Logger.LogTrace("(-)");
         }
@@ -145,7 +145,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
                 // Only do proof of stake validation for blocks that are after the assumevalid block or after the last checkpoint.
                 if (!context.SkipValidation)
                 {
-                    this.StakeValidator.CheckProofOfStake(context.Stake, prevChainedHeader, prevBlockStake, block.Transactions[1], chainedHeader.Header.Bits.ToCompact());
+                    this.stakeValidator.CheckProofOfStake(context.Stake, prevChainedHeader, prevBlockStake, block.Transactions[1], chainedHeader.Header.Bits.ToCompact());
                 }
                 else this.Logger.LogTrace("POS validation skipped for block at height {0}.", chainedHeader.Height);
             }
@@ -170,7 +170,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
                 // Compute stake modifier.
                 ChainedHeader prevChainedHeader = chainedHeader.Previous;
                 BlockStake blockStakePrev = prevChainedHeader == null ? null : this.stakeChain.Get(prevChainedHeader.HashBlock);
-                blockStake.StakeModifierV2 = this.StakeValidator.ComputeStakeModifierV2(prevChainedHeader, blockStakePrev, blockStake.IsProofOfWork() ? chainedHeader.HashBlock : blockStake.PrevoutStake.Hash);
+                blockStake.StakeModifierV2 = this.stakeValidator.ComputeStakeModifierV2(prevChainedHeader, blockStakePrev, blockStake.IsProofOfWork() ? chainedHeader.HashBlock : blockStake.PrevoutStake.Hash);
             }
             else if (chainedHeader.Height == lastCheckpointHeight)
             {
