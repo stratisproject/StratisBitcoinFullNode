@@ -121,7 +121,9 @@ namespace Stratis.Bitcoin.Configuration
             }
 
             this.DataFolder = new DataFolder(this.DataDir);
-            this.ConfigurationFile = Path.Combine(this.DataDir, this.Network.DefaultConfigFilename);
+
+            if (this.ConfigurationFile == null)
+                this.ConfigurationFile = Path.Combine(this.DataDir, this.Network.DefaultConfigFilename);
 
             LoadConfiguration();
         }
