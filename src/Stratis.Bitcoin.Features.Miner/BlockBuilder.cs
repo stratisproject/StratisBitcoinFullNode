@@ -20,16 +20,6 @@ namespace Stratis.Bitcoin.Features.Miner
             this.posBlockAssembler = assemblers.FirstOrDefault(a => a.GetType() == typeof(PosBlockAssembler)) as PosBlockAssembler;
         }
 
-        public BlockBuilder(PowBlockAssembler powBlockAssembler)
-        {
-            this.powBlockAssembler = powBlockAssembler;
-        }
-
-        public BlockBuilder(PosBlockAssembler posBlockAssembler)
-        {
-            this.posBlockAssembler = posBlockAssembler;
-        }
-
         public BlockTemplate Build(BlockBuilderMode mode, ChainedHeader chainTip, Script script)
         {
             if (mode == BlockBuilderMode.Staking)

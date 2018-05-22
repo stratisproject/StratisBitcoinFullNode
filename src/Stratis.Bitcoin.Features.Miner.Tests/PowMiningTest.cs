@@ -515,7 +515,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
 
         private PowMining CreateProofOfWorkMiner(PowBlockAssembler blockDefinition)
         {
-            var blockBuilder = new BlockBuilder(blockDefinition);
+            var blockBuilder = new MockPowBlockBuilder(blockDefinition);
             return new PowMining(this.asyncLoopFactory.Object, blockBuilder, this.consensusLoop.Object, this.chain, DateTimeProvider.Default, this.mempool.Object, this.mempoolLock, this.network, this.nodeLifetime.Object, this.LoggerFactory.Object);
         }
 
@@ -558,6 +558,21 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
         private void ExecuteUsingNonProofOfStakeSettings(Action action)
         {
             action();
+        }
+    }
+
+    public sealed class MockPowBlockBuilder : IBlockBuilder
+    {
+        private readonly PowBlockAssembler blockAssembler;
+
+        public MockPowBlockBuilder(PowBlockAssembler blockAssembler)
+        {
+            this.blockAssembler = blockAssembler;
+        }
+
+        public BlockTemplate Build(BlockBuilderMode mode, ChainedHeader chainTip, Script script)
+        {
+            return this.blockAssembler.Build(chainTip, script);
         }
     }
 

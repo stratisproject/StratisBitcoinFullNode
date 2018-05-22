@@ -13,6 +13,7 @@ using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.MemoryPool.Interfaces;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Interfaces;
+using Stratis.Bitcoin.Mining;
 using Stratis.Bitcoin.Tests.Common.Logging;
 using Stratis.Bitcoin.Tests.Wallet.Common;
 using Stratis.Bitcoin.Utilities;
@@ -428,7 +429,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
                 this.stakeChain.Object,
                 this.stakeValidator.Object);
 
-            var blockBuilder = new BlockBuilder(posBlockAssembler.Object);
+            var blockBuilder = new MockPosBlockBuilder(posBlockAssembler.Object);
 
             return new PosMinting(
                 blockBuilder,
@@ -457,6 +458,21 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
             blockHeader.Bits = new Target(bits);
             var chainedHeader = new ChainedHeader(blockHeader, blockHeader.GetHash(), 46367);
             return chainedHeader;
+        }
+    }
+
+    public sealed class MockPosBlockBuilder : IBlockBuilder
+    {
+        private readonly PosBlockAssembler blockAssembler;
+
+        public MockPosBlockBuilder(PosBlockAssembler blockAssembler)
+        {
+            this.blockAssembler = blockAssembler;
+        }
+
+        public BlockTemplate Build(BlockBuilderMode mode, ChainedHeader chainTip, Script script)
+        {
+            return this.blockAssembler.Build(chainTip, script);
         }
     }
 }
