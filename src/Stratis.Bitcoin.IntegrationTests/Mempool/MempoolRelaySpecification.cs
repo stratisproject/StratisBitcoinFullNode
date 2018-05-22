@@ -1,4 +1,4 @@
-﻿using Stratis.Bitcoin.IntegrationTests.TestFramework;
+﻿using Stratis.Bitcoin.Tests.Common.TestFramework;
 using Xunit;
 
 namespace Stratis.Bitcoin.IntegrationTests.Mempool
