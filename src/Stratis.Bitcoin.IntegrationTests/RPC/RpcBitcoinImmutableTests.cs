@@ -148,5 +148,12 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
             Assert.True(result.ChangePos != -1);
             Assert.Equal(Money.Coins(50m) - result.Transaction.Outputs.Select(txout => txout.Value).Sum(), result.Fee);
         }
+
+        [Fact]
+        public void InvalidCommandSendRPCException()
+        {
+            RPCException ex = Assert.Throws<RPCException>(() => this.rpcTestFixture.RpcClient.SendCommand("donotexist"));
+            Assert.True(ex.RPCCode == RPCErrorCode.RPC_METHOD_NOT_FOUND);
+        }
     }
 }

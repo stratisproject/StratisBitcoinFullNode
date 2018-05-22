@@ -18,21 +18,7 @@ namespace NBitcoin.Tests
     public class RPCClientTests
     {
         const string TestAccount = "NBitcoin.RPCClientTests";
-        [Fact]
-        public void InvalidCommandSendRPCException()
-        {
-            using(var builder = NodeBuilder.Create())
-            {
-                var rpc = builder.CreateNode(true).CreateRPCClient();
-                builder.StartAll();
-                AssertException<RPCException>(() => rpc.SendCommand("donotexist"), (ex) =>
-                {
-                    Assert.True(ex.RPCCode == RPCErrorCode.RPC_METHOD_NOT_FOUND);
-                });
-            }
-        }
-
-
+       
         [Fact]
         public void CanSendCommand()
         {
@@ -199,7 +185,7 @@ namespace NBitcoin.Tests
 
                 Transaction raw = Transaction.Parse(testData, format, network);
 
-                AssertJsonEquals(raw.ToString(format, network), testData);
+                TestUtils.AssertJsonEquals(raw.ToString(format, network), testData);
 
                 var raw3 = Transaction.Parse(raw.ToString(format, network), format);
                 Assert.Equal(raw.ToString(format, network), raw3.ToString(format, network));
@@ -307,7 +293,7 @@ namespace NBitcoin.Tests
                 var tx = Network.TestNet.GetGenesis().Transactions[0];
 
                 var tx2 = rpc.DecodeRawTransaction(tx.ToBytes());
-                AssertJsonEquals(tx.ToString(RawFormat.Satoshi), tx2.ToString(RawFormat.Satoshi));
+                TestUtils.AssertJsonEquals(tx.ToString(RawFormat.Satoshi), tx2.ToString(RawFormat.Satoshi));
             }
         }
         [Fact]
@@ -431,30 +417,6 @@ namespace NBitcoin.Tests
 #endif
         }
 
-
-
-        [Fact]
-        public void RPCSendRPCException()
-        {
-            using(var builder = NodeBuilder.Create())
-            {
-                var node = builder.CreateNode();
-                builder.StartAll();
-                var rpcClient = node.CreateRPCClient();
-                try
-                {
-                    rpcClient.SendCommand("whatever");
-                    Assert.False(true, "Should have thrown");
-                }
-                catch(RPCException ex)
-                {
-                    if(ex.RPCCode != RPCErrorCode.RPC_METHOD_NOT_FOUND)
-                    {
-                        Assert.False(true, "Should have thrown RPC_METHOD_NOT_FOUND");
-                    }
-                }
-            }
-        }
 #endif
         [Fact]
         public void CanBackupWallet()
@@ -477,17 +439,6 @@ namespace NBitcoin.Tests
                         File.Delete(filePath);
                 }
             }
-        }
-
-        private void AssertJsonEquals(string json1, string json2)
-        {
-            foreach(var c in new[] { "\r\n", " ", "\t" })
-            {
-                json1 = json1.Replace(c, "");
-                json2 = json2.Replace(c, "");
-            }
-
-            Assert.Equal(json1, json2);
         }
 
         void AssertException<T>(Action act, Action<T> assert) where T : Exception

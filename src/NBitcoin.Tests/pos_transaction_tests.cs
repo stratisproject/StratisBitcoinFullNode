@@ -3075,6 +3075,26 @@ namespace NBitcoin.Tests
             Assert.True(!StandardScripts.IsStandardTransaction(t));
         }
 
+        //[Fact]
+        //public void CanDecodeAndEncodeRawTransaction()
+        //{
+        //    //var a = new Protocol.AddressManager().Select();
+        //    var tests = TestCase.read_json("data/tx_raw.json");
+        //    foreach (var test in tests)
+        //    {
+        //        var format = (RawFormat)Enum.Parse(typeof(RawFormat), (string)test[0], true);
+        //        var network = ((string)test[1]) == "Main" ? Network.StratisMain : Network.StratisMain;
+        //        var testData = ((JObject)test[2]).ToString();
+
+        //        Transaction raw = Transaction.Parse(testData, format, network);
+
+        //        TestUtils.AssertJsonEquals(raw.ToString(format, network), testData);
+
+        //        var raw3 = Transaction.Parse(raw.ToString(format, network), format);
+        //        Assert.Equal(raw.ToString(format, network), raw3.ToString(format, network));
+        //    }
+        //}
+
         private byte[] ParseHex(string data)
         {
             return Encoders.Hex.DecodeData(data);

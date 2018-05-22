@@ -2,6 +2,7 @@
 using System.IO;
 using System.Threading;
 using NBitcoin.DataEncoders;
+using Xunit;
 
 namespace NBitcoin.Tests
 {
@@ -64,6 +65,17 @@ namespace NBitcoin.Tests
                 }
             }
 
+        }
+
+        internal static void AssertJsonEquals(string json1, string json2)
+        {
+            foreach (var c in new[] { "\r\n", " ", "\t" })
+            {
+                json1 = json1.Replace(c, "");
+                json2 = json2.Replace(c, "");
+            }
+
+            Assert.Equal(json1, json2);
         }
     }
 }

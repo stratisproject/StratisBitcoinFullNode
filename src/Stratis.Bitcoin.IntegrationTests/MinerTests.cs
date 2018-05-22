@@ -615,7 +615,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         [Fact]
         public void GetProofOfWorkRewardForMinedBlocksTest()
         {
-            using (NodeBuilder builder = NodeBuilder.Create())
+            using (NodeBuilder builder = NodeBuilder.Create(this))
             {
                 var node = builder.CreateStratisPowNode();
                 builder.StartAll();
