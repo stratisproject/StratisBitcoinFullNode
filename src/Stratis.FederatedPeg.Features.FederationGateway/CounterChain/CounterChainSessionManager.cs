@@ -67,7 +67,6 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.CounterChain
 
         private CounterChainSession RegisterSession(int n, uint256 transactionId, Money amount, string destination)
         {
-            //todo: not efficient
             var memberFolderManager = new MemberFolderManager(this.federationGatewaySettings.FederationFolder);
             IFederation federation = memberFolderManager.LoadFederation(2, n);
 
@@ -108,6 +107,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.CounterChain
 
             this.logger.LogInformation("()");
             this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} Combining and Broadcasting transaction.");
+
             var account = this.generalPurposeWalletManager.GetAccounts("multisig_wallet").First();
             if (account == null)
             {
@@ -121,22 +121,21 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.CounterChain
             this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} {counterChainSession.PartialTransactions[1]}");
             this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} {counterChainSession.PartialTransactions[2]}");
 
+            var partials = from t in counterChainSession.PartialTransactions where t != null select t;
 
-            var combinedTransaction = account.CombinePartialTransactions(counterChainSession.PartialTransactions);
+            var combinedTransaction = account.CombinePartialTransactions(partials.ToArray());
             this.broadcastManager.BroadcastTransactionAsync(combinedTransaction).GetAwaiter().GetResult();
             this.logger.LogInformation("(-)");
         }
 
-        public async Task<uint256> CreatePartialTransactionSession(uint256 sessionId, Money amount, string destinationAddress)
+        public async Task<uint256> ProcessCounterChainSession(uint256 sessionId, Money amount, string destinationAddress)
         {
             this.logger.LogInformation("()");
-            this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} CreatePartialTransactionSession: Amount        - {amount}");
-            this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} CreatePartialTransactionSession: TransactionId - {sessionId}");
-            this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} CreatePartialTransactionSession: Destination   - {destinationAddress}");
+            this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} ProcessCounterChainSession: Amount        - {amount}");
+            this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} ProcessCounterChainSession: TransactionId - {sessionId}");
+            this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} ProcessCounterChainSession: Destination   - {destinationAddress}");
 
-            //var session = this.RegisterSession(3, sessionId, amount, destinationAddress);
-
-            this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} CreatePartialTransactionSession: Session Registered.");
+            this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} ProcessCounterChainSession: Session Registered.");
 
             //Todo: check if this has already been done
             //todo: then we just return the transctionId
@@ -144,8 +143,6 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.CounterChain
             //create the partial transaction template
             var wallet = this.generalPurposeWalletManager.GetWallet("multisig_wallet");
             var account = wallet.GetAccountsByCoinType((CoinType)this.network.Consensus.CoinType).First();
-
-            //TODO: we need to look this up
             var multiSigAddress = account.MultiSigAddresses.First();
 
             var destination = BitcoinAddress.Create(destinationAddress, this.network).ScriptPubKey;
@@ -160,27 +157,26 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.CounterChain
                 "password", sessionId.ToBytes())
             {
                 TransactionFee = Money.Coins(0.01m),
-                MinConfirmations = 1, // The funds in the multisig address have just been confirmed
+                MinConfirmations = 1,
                 Shuffle = true,
                 MultiSig = multiSigAddress,
                 IgnoreVerify = true,
                 Sign = false
             };
 
-            this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} CreatePartialTransactionSession: Building Transaction.");
+            this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} ProcessCounterChainSession: Building Transaction.");
             var templateTransaction = this.generalPurposeWalletTransactionHandler.BuildTransaction(multiSigContext);
-            this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} CreatePartialTransactionSession: Transaction Built.");
 
             //add my own partial
-            this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} CreatePartialTransactionSession: Signing own partial.");
+            this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} ProcessCounterChainSession: Signing own partial.");
             var partialTransactionSession = this.VerifySession(sessionId, templateTransaction);
-            //todo: this is not right!
-            if (partialTransactionSession == null) return uint256.Zero;
+
+            if (partialTransactionSession == null) return uint256.One;
             this.MarkSessionAsSigned(partialTransactionSession);
             var partialTransaction = account.SignPartialTransaction(templateTransaction);
 
             uint256 bossCard = BossTable.MakeBossTableEntry(sessionId, this.federationGatewaySettings.PublicKey);
-            this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} CreatePartialTransactionSession: My bossCard: {bossCard}.");
+            this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} ProcessCounterChainSession: My bossCard: {bossCard}.");
             this.ReceivePartial(sessionId, partialTransaction, bossCard);
 
             //now build the requests for the partials
@@ -204,38 +200,6 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.CounterChain
             this.logger.LogInformation("(-)");
             return uint256.One;
         }
-
-        //private CounterChainSession RegisterSession(int n, uint256 transactionId, Money amount, string destination)
-        //{
-        //    // We only create a partial session once. Before we create the session we must verify the info we receive against our
-        //    // own crosschainTransactionInfo to ensure none of the nodes have gone rouge.
-        //    // We check....
-        //    // 1) The amount matches (check the magnitude and the units).
-        //    // 2) The destination address matches.
-        //    // 3) That the session exists in our build and broadcast session.
-        //    lock (this.locker)
-        //    {
-        //        //todo: not efficient
-        //        var memberFolderManager = new MemberFolderManager(this.federationGatewaySettings.FederationFolder);
-        //        IFederation federation = memberFolderManager.LoadFederation(2, n);
-
-        //        bool retrieved = this.sessions.TryGetValue(transactionId, out CounterChainSession counterChainSession);
-        //        if (retrieved)
-        //        {
-        //            this.logger.LogInformation(
-        //                $"{this.federationGatewaySettings.MemberName} CounterChainSession exists: {transactionId}. Not adding.");
-        //        }
-        //        else
-        //        {
-        //            counterChainSession = new CounterChainSession(this.logger, n, transactionId,
-        //                federation.GetPublicKeys(this.network.ToChain()), amount, destination);
-        //            this.logger.LogInformation(
-        //                $"{this.federationGatewaySettings.MemberName} CounterChainSession adding: {transactionId}.");
-        //            this.sessions.AddOrReplace(transactionId, counterChainSession);
-        //        }
-        //        return counterChainSession;
-        //    }
-        //}
 
         public CounterChainSession VerifySession(uint256 sessionId, Transaction partialTransactionTemplate)
         {

@@ -77,7 +77,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Controllers
 
             try
             {
-                var result = this.counterChainSessionManager.CreatePartialTransactionSession(
+                var result = this.counterChainSessionManager.ProcessCounterChainSession(
                     createCounterChainSessionRequest.SessionId,
                     createCounterChainSessionRequest.Amount,
                     createCounterChainSessionRequest.DestinationAddress);
