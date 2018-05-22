@@ -111,7 +111,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
                     await this.blockRepository.SetTxIndexAsync(this.storeSettings.TxIndex).ConfigureAwait(false);
             }
             
-            // Make sure that block store initializes before the consensus. 
+            // Throw if block store initializes after the consensus. 
             // This is needed in order to rewind consensus in case it is initialized ahead of the block store.
             if (this.chainState.ConsensusTip != null)
             {
@@ -231,7 +231,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
                     this.currentBatchSizeBytes += item.Block.GetSerializedSize();
 
-                    saveBatch |= (item.ChainedHeader == this.chain.Tip) || (this.currentBatchSizeBytes >= BatchThresholdSizeBytes);
+                    saveBatch = saveBatch || (item.ChainedHeader == this.chain.Tip) || (this.currentBatchSizeBytes >= BatchThresholdSizeBytes);
                 }
                 else
                 {
