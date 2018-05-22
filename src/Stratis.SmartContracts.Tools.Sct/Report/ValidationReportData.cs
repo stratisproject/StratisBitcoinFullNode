@@ -23,6 +23,8 @@ namespace Stratis.SmartContracts.Tools.Sct.Report
         public bool DeterminismValid { get; set; }
 
         public List<SmartContractValidationError> DeterminismValidationErrors { get; set; }
+        
+        public List<Warning> Warnings { get; set; }
     }
 
     public class CompilationError
@@ -31,6 +33,11 @@ namespace Stratis.SmartContracts.Tools.Sct.Report
     }
 
     public class ValidationError
+    {
+        public string Message { get; set; }
+    }
+
+    public class Warning
     {
         public string Message { get; set; }
     }
