@@ -22,7 +22,7 @@ namespace Stratis.SmartContracts.Core.ContractValidation
                      "",
                      "",
                      "Field usage",
-                     $"Non-constant field {field.Name} defined in Type \"{type.Name}\". Fields are not persisted and thus may change values between calls."
+                     $"Non-constant field {field.Name} defined in Type \"{type.Name}\". Fields are not persisted and may change values between calls."
                  ));
              }
 
