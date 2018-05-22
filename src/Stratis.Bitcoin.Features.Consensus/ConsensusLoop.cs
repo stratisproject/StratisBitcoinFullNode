@@ -76,6 +76,9 @@ namespace Stratis.Bitcoin.Features.Consensus
     /// Blocks are coming from <see cref="ILookaheadBlockPuller"/> or Miner/Staker and get validated by
     /// either the <see cref="PowConsensusValidator"/> for PoW or the <see cref="PosConsensusValidator"/> for PoS.
     /// </para>
+    /// <para>
+    /// When consensus loop is being initialized we rewind it in case block store is behind or the <see cref="Tip"/> is not part of the best chain.
+    /// </para>
     /// </remarks>
     public class ConsensusLoop : IConsensusLoop
     {

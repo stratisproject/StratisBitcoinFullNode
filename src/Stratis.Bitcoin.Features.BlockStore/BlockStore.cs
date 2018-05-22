@@ -13,8 +13,17 @@ namespace Stratis.Bitcoin.Features.BlockStore
     /// Saves blocks to the database in batches, removes reorged blocks from the database.
     /// </summary>
     /// <remarks>
+    /// <para>
     /// The batch is saved when total serialized size of all blocks in a batch reaches <see cref="BatchThresholdSizeBytes"/>,
-    /// when more than <see cref="BatchMaxSaveIntervalSeconds"/> passed since last batch was saved or when node is shutting down.
+    /// or when more than <see cref="BatchMaxSaveIntervalSeconds"/> passed since last batch was saved, or when node is shutting down.
+    /// </para>
+    /// <para>
+    /// When we save new blocks to the database, in case <see cref="IBlockRepository"/> contains blocks that
+    /// are no longer a part of our best chain, they are removed from the database.
+    /// </para>
+    /// <para>
+    /// Block store is being initialized we delete blocks that are not on the best chain.
+    /// </para>
     /// </remarks>
     public class BlockStore : IDisposable
     {
@@ -22,7 +31,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         private const int BatchMaxSaveIntervalSeconds = 37;
 
         /// <summary>Maximum number of bytes the batch can hold until the downloaded blocks are stored to the disk.</summary>
-        private const uint BatchThresholdSizeBytes = 5 * 1000 * 1000;
+        internal const int BatchThresholdSizeBytes = 5 * 1000 * 1000;
 
         /// <summary>The current batch size in bytes.</summary>
         private int currentBatchSizeBytes;
