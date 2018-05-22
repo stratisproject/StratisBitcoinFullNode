@@ -12,15 +12,11 @@ namespace Stratis.SmartContracts.Tools.Sct.Report.Sections
     {
         public IEnumerable<IReportElement> CreateSection(ValidationReportData data)
         {
-            yield return new ReportElement($"Warnings");
-
-            yield return new SpacerElement();
-
             yield return new NewLineElement();
 
             foreach (Warning warning in data.Warnings)
             {
-                yield return new ReportElement($"   {warning.Message}");
+                yield return new ReportElement($"Warning: {warning.Message}");
             }
 
             yield return new NewLineElement();
