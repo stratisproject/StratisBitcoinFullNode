@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
+using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.BlockPulling;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Builder.Feature;
@@ -22,35 +23,37 @@ namespace Stratis.Bitcoin.Features.BlockStore
 {
     public class BlockStoreFeature : FullNodeFeature, IBlockStore, INodeStats
     {
-        protected readonly ConcurrentChain chain;
+        private readonly ConcurrentChain chain;
 
-        protected readonly Signals.Signals signals;
+        private readonly Signals.Signals signals;
 
-        protected readonly IBlockRepository blockRepository;
+        private readonly IBlockRepository blockRepository;
 
-        protected readonly IBlockStoreCache blockStoreCache;
+        private readonly IBlockStoreCache blockStoreCache;
 
-        protected readonly BlockStore blockStore;
+        private readonly BlockStore blockStore;
 
-        protected readonly BlockStoreManager blockStoreManager;
+        private readonly BlockStoreManager blockStoreManager;
 
-        protected readonly BlockStoreSignaled blockStoreSignaled;
+        private readonly BlockStoreSignaled blockStoreSignaled;
 
-        protected readonly INodeLifetime nodeLifetime;
+        private readonly INodeLifetime nodeLifetime;
 
-        protected readonly IConnectionManager connectionManager;
+        private readonly IConnectionManager connectionManager;
 
-        protected readonly NodeSettings nodeSettings;
+        private readonly NodeSettings nodeSettings;
 
-        protected readonly StoreSettings storeSettings;
+        private readonly StoreSettings storeSettings;
+
+        private readonly IChainState chainState;
 
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
 
         /// <summary>Factory for creating loggers.</summary>
-        protected readonly ILoggerFactory loggerFactory;
+        private readonly ILoggerFactory loggerFactory;
 
-        protected readonly string name;
+        private readonly string name;
 
         public BlockStoreFeature(
             ConcurrentChain chain,
@@ -65,6 +68,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             NodeSettings nodeSettings,
             ILoggerFactory loggerFactory,
             StoreSettings storeSettings,
+            IChainState chainState,
             string name = "BlockStore")
         {
             this.name = name;
@@ -81,6 +85,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.loggerFactory = loggerFactory;
             this.storeSettings = storeSettings;
+            this.chainState = chainState;
         }
 
         /// <inheritdoc />
@@ -96,7 +101,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
         public void AddNodeStats(StringBuilder benchLogs)
         {
-            var highestBlock = this.blockStore.StoreTip;
+            ChainedHeader highestBlock = this.chainState.BlockStoreTip;
 
             if (highestBlock != null)
                 benchLogs.AppendLine($"{this.name}.Height: ".PadRight(LoggingConfiguration.ColumnLength + 1) +

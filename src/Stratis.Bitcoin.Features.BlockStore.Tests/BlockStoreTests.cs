@@ -22,6 +22,8 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
         private uint256 repositoryBlockHash;
         private int repositorySavesCount = 0;
 
+        private ChainedHeader chainStateBlockStoreTip;
+
         private ChainedHeader consensusTip;
 
         public BlockStoreTests()
@@ -41,7 +43,10 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
 
             this.repository = reposMoq.Object;
 
-            this.chainState = new Mock<IChainState>().SetupProperty(x => x.ConsensusTip, this.consensusTip).Object;
+            var chainStateMoq = new Mock<IChainState>().SetupProperty(x => x.ConsensusTip, this.consensusTip);
+            chainStateMoq.SetupProperty(x => x.BlockStoreTip, this.chainStateBlockStoreTip);
+
+            this.chainState = chainStateMoq.Object;
 
             this.chain = this.CreateChain(10);
             this.consensusTip = this.chain.Tip;
@@ -88,7 +93,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             this.repositoryBlockHash = initializationHeader.HashBlock;
 
             await this.blockStore.InitializeAsync().ConfigureAwait(false);
-            Assert.Equal(initializationHeader, this.blockStore.StoreTip);
+            Assert.Equal(initializationHeader, this.chainState.BlockStoreTip);
         }
         
         [Fact]
@@ -116,7 +121,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             }
             
             await this.WaitUntilQueueIsEmptyAsync().ConfigureAwait(false);
-            Assert.Equal(longChain.GetBlock(count - 1), this.blockStore.StoreTip);
+            Assert.Equal(longChain.GetBlock(count - 1), this.chainState.BlockStoreTip);
             Assert.Equal(1, this.repositorySavesCount);
         }
 
@@ -137,13 +142,13 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
 
             await this.WaitUntilQueueIsEmptyAsync().ConfigureAwait(false);
 
-            Assert.Equal(this.blockStore.StoreTip, this.chain.Genesis);
+            Assert.Equal(this.chainState.BlockStoreTip, this.chain.Genesis);
             Assert.Equal(0, this.repositorySavesCount);
             
             this.nodeLifetime.StopApplication();
             this.blockStore.Dispose();
 
-            Assert.Equal(this.blockStore.StoreTip, lastHeader);
+            Assert.Equal(this.chainState.BlockStoreTip, lastHeader);
             Assert.Equal(1, this.repositorySavesCount);
         }
 
@@ -163,7 +168,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
 
             await this.WaitUntilQueueIsEmptyAsync().ConfigureAwait(false);
             
-            Assert.Equal(this.blockStore.StoreTip, this.chain.Tip);
+            Assert.Equal(this.chainState.BlockStoreTip, this.chain.Tip);
             Assert.Equal(1, this.repositorySavesCount);
         }
     }

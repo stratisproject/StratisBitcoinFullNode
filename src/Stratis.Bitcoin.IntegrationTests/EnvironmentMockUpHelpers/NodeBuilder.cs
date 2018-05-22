@@ -10,6 +10,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
 using NBitcoin;
+using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
@@ -54,7 +55,7 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
 
         public static ChainedHeader GetBlockStoreTip(this FullNode fullNode)
         {
-            return fullNode.NodeService<Features.BlockStore.BlockStore>().StoreTip;
+            return fullNode.NodeService<IChainState>().BlockStoreTip;
         }
     }
 
