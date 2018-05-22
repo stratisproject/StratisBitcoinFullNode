@@ -14,8 +14,8 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.CounterChain
 
         void ReceivePartial(uint256 sessionId, Transaction partialTransaction, uint256 bossCard);
 
-        PartialTransactionSession VerifySession(uint256 sessionId, Transaction partialTransactionTemplate);
+        CounterChainSession VerifySession(uint256 sessionId, Transaction partialTransactionTemplate);
 
-        void MarkSessionAsSigned(PartialTransactionSession session);
+        void MarkSessionAsSigned(CounterChainSession session);
     }
 }

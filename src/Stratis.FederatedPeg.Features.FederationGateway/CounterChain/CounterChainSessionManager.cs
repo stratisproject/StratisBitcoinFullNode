@@ -23,7 +23,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.CounterChain
 
         private Network network;
 
-        private ConcurrentDictionary<uint256, PartialTransactionSession> sessions = new ConcurrentDictionary<uint256, PartialTransactionSession>();
+        private ConcurrentDictionary<uint256, CounterChainSession> sessions = new ConcurrentDictionary<uint256, CounterChainSession>();
 
         private FederationGatewaySettings federationGatewaySettings;
 
@@ -43,15 +43,15 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.CounterChain
             IBroadcasterManager broadcastManager, ConcurrentChain concurrentChain, ICrossChainTransactionAuditor crossChainTransactionAuditor = null)
         {
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
-            this.generalPurposeWalletManager = generalPurposeWalletManager;
-            this.generalPurposeWalletTransactionHandler = generalPurposeWalletTransactionHandler;
-            this.connectionManager = connectionManager;
             this.network = network;
-            this.federationGatewaySettings = federationGatewaySettings;
-            this.broadcastManager = broadcastManager;
+            this.connectionManager = connectionManager;
             this.initialBlockDownloadState = initialBlockDownloadState;
             this.concurrentChain = concurrentChain;
             this.fullnode = fullnode;
+            this.broadcastManager = broadcastManager;
+            this.generalPurposeWalletManager = generalPurposeWalletManager;
+            this.generalPurposeWalletTransactionHandler = generalPurposeWalletTransactionHandler;
+            this.federationGatewaySettings = federationGatewaySettings;
         }
 
         public void CreateSessionOnCounterChain(uint256 sessionId, Money amount, string destinationAddress)
@@ -62,11 +62,10 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.CounterChain
                 this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} RunSessionsAsync() CounterChain is in IBD exiting. Height:{this.concurrentChain.Height}.");
                 return;
             }
-
             this.RegisterSession(3, sessionId, amount, destinationAddress);
         }
 
-        private PartialTransactionSession RegisterSession(int n, uint256 transactionId, Money amount, string destination)
+        private CounterChainSession RegisterSession(int n, uint256 transactionId, Money amount, string destination)
         {
             //todo: not efficient
             var memberFolderManager = new MemberFolderManager(this.federationGatewaySettings.FederationFolder);
@@ -76,7 +75,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.CounterChain
             this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} RegisterSession amount:{amount}");
             this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} RegisterSession destination:{destination}");
 
-            var partialTransactionSession = new PartialTransactionSession(this.logger, n, transactionId, federation.GetPublicKeys(this.network.ToChain()), amount, destination);
+            var partialTransactionSession = new CounterChainSession(this.logger, n, transactionId, federation.GetPublicKeys(this.network.ToChain()), amount, destination);
             this.sessions.AddOrReplace(transactionId, partialTransactionSession);
             return partialTransactionSession;
         }
@@ -99,7 +98,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.CounterChain
             this.logger.LogInformation("(-)");
         }
 
-        private void BroadcastTransaction(PartialTransactionSession partialTransactionSession)
+        private void BroadcastTransaction(CounterChainSession counterChainSession)
         {
             if (this.fullnode.State == FullNodeState.Disposed || this.fullnode.State == FullNodeState.Disposing)
             {
@@ -117,13 +116,13 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.CounterChain
             }
 
             this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} Combine Partials");
-            this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} {partialTransactionSession}");
-            this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} {partialTransactionSession.PartialTransactions[0]}");
-            this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} {partialTransactionSession.PartialTransactions[1]}");
-            this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} {partialTransactionSession.PartialTransactions[2]}");
+            this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} {counterChainSession}");
+            this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} {counterChainSession.PartialTransactions[0]}");
+            this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} {counterChainSession.PartialTransactions[1]}");
+            this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} {counterChainSession.PartialTransactions[2]}");
 
 
-            var combinedTransaction = account.CombinePartialTransactions(partialTransactionSession.PartialTransactions);
+            var combinedTransaction = account.CombinePartialTransactions(counterChainSession.PartialTransactions);
             this.broadcastManager.BroadcastTransactionAsync(combinedTransaction).GetAwaiter().GetResult();
             this.logger.LogInformation("(-)");
         }
@@ -206,7 +205,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.CounterChain
             return uint256.One;
         }
 
-        //private PartialTransactionSession RegisterSession(int n, uint256 transactionId, Money amount, string destination)
+        //private CounterChainSession RegisterSession(int n, uint256 transactionId, Money amount, string destination)
         //{
         //    // We only create a partial session once. Before we create the session we must verify the info we receive against our
         //    // own crosschainTransactionInfo to ensure none of the nodes have gone rouge.
@@ -220,29 +219,29 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.CounterChain
         //        var memberFolderManager = new MemberFolderManager(this.federationGatewaySettings.FederationFolder);
         //        IFederation federation = memberFolderManager.LoadFederation(2, n);
 
-        //        bool retrieved = this.sessions.TryGetValue(transactionId, out PartialTransactionSession partialTransactionSession);
+        //        bool retrieved = this.sessions.TryGetValue(transactionId, out CounterChainSession counterChainSession);
         //        if (retrieved)
         //        {
         //            this.logger.LogInformation(
-        //                $"{this.federationGatewaySettings.MemberName} PartialTransactionSession exists: {transactionId}. Not adding.");
+        //                $"{this.federationGatewaySettings.MemberName} CounterChainSession exists: {transactionId}. Not adding.");
         //        }
         //        else
         //        {
-        //            partialTransactionSession = new PartialTransactionSession(this.logger, n, transactionId,
+        //            counterChainSession = new CounterChainSession(this.logger, n, transactionId,
         //                federation.GetPublicKeys(this.network.ToChain()), amount, destination);
         //            this.logger.LogInformation(
-        //                $"{this.federationGatewaySettings.MemberName} PartialTransactionSession adding: {transactionId}.");
-        //            this.sessions.AddOrReplace(transactionId, partialTransactionSession);
+        //                $"{this.federationGatewaySettings.MemberName} CounterChainSession adding: {transactionId}.");
+        //            this.sessions.AddOrReplace(transactionId, counterChainSession);
         //        }
-        //        return partialTransactionSession;
+        //        return counterChainSession;
         //    }
         //}
 
-        public PartialTransactionSession VerifySession(uint256 sessionId, Transaction partialTransactionTemplate)
+        public CounterChainSession VerifySession(uint256 sessionId, Transaction partialTransactionTemplate)
         {
             var exists = this.sessions.TryGetValue(sessionId, out var partialTransactionSession);
             this.logger.LogInformation("()");
-            this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} PartialTransactionSession exists: {exists} sessionId: {sessionId}");
+            this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} CounterChainSession exists: {exists} sessionId: {sessionId}");
             this.logger.LogInformation("(-)");
 
             // We do not have this session, either because we have not yet discovered it or because this is a fake session.
@@ -264,18 +263,18 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.CounterChain
 
             this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} HaveISigned:{partialTransactionSession.HaveISigned}");
 
-            //if (partialTransactionSession.HaveISigned)
+            //if (counterChainSession.HaveISigned)
             //    throw new ArgumentException($"Fatal: the session {sessionId} has already signed a partial transaction.");
 
-            //if (amount != partialTransactionSession.Amount)
+            //if (amount != counterChainSession.Amount)
             //    throw new ArgumentException($"Fatal the session amount does not match chain.");
 
-            //if (destination != partialTransactionSession.Destination)
+            //if (destination != counterChainSession.Destination)
             //    throw new ArgumentException($"Fatal the session destination does not match chain.");
             return partialTransactionSession;
         }
 
-        public void MarkSessionAsSigned(PartialTransactionSession session)
+        public void MarkSessionAsSigned(CounterChainSession session)
         {
             this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} has signed session {session.SessionId}.");
             session.HaveISigned = true;
