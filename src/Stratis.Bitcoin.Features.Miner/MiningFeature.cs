@@ -253,7 +253,6 @@ namespace Stratis.Bitcoin.Features.Miner
                     .FeatureServices(services =>
                     {
                         services.AddSingleton<IPowMining, PowMining>();
-                        services.AddSingleton<BlockDefinitionProofOfWork>();
                         services.AddSingleton<IPosMinting, PosMinting>();
                         services.AddSingleton<IBlockBuilder, BlockBuilder>();
                         services.AddSingleton<BlockDefinition, BlockDefinitionProofOfWork>();

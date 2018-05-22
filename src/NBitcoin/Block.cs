@@ -276,6 +276,7 @@ namespace NBitcoin
 
         public uint256 GetHash()
         {
+            // Block's hash is his header's hash.
             return this.header.GetHash();
         }
 

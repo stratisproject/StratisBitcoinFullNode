@@ -394,8 +394,8 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <inheritdoc />
         public long GetBlockWeight(Block block)
         {
-            return this.GetSize(block, TransactionOptions.None)
-                   * (this.ConsensusOptions.WitnessScaleFactor - 1)
+            return this.GetSize(block, TransactionOptions.None) 
+                   * (this.ConsensusOptions.WitnessScaleFactor - 1) 
                    + this.GetSize(block, TransactionOptions.Witness);
         }
 

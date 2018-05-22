@@ -349,7 +349,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             using (await this.consensusLock.LockAsync(this.nodeLifetime.ApplicationStopping).ConfigureAwait(false))
             {
                 blockValidationContext.RuleContext = new RuleContext(blockValidationContext, this.Validator.ConsensusParams, this.Tip);
-
+                
                 // TODO: Once all code is migrated to rules this can be uncommented and the logic in this method moved to the IConsensusRules.AcceptBlockAsync()
                 // await this.consensusRules.AcceptBlockAsync(blockValidationContext);
 
@@ -412,7 +412,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                         // Since ChainHeadersBehavior check PoW, MarkBlockInvalid can't be spammed.
                         this.logger.LogError("Marking block '{0}' as invalid{1}.", rejectedBlockHash, blockValidationContext.RejectUntil != null ? string.Format(" until {0:yyyy-MM-dd HH:mm:ss}", blockValidationContext.RejectUntil.Value) : "");
                         this.chainState.MarkBlockInvalid(rejectedBlockHash, blockValidationContext.RejectUntil);
-                    }
+                    } 
                 }
                 else
                 {

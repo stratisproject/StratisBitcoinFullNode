@@ -46,7 +46,7 @@ namespace Stratis.Bitcoin.Configuration
         /// <param name="agent">The nodes user agent that will be shared with peers.</param>
         /// <param name="args">The command-line arguments.</param>
         /// <param name="loadConfiguration">Determines whether to load the configuration file.</param>
-        public NodeSettings(Network innerNetwork = null, ProtocolVersion protocolVersion = SupportedProtocolVersion, 
+        public NodeSettings(Network innerNetwork = null, ProtocolVersion protocolVersion = SupportedProtocolVersion,
             string agent = "StratisBitcoin", string[] args = null, bool loadConfiguration = true)
         {
             this.Agent = agent;
@@ -420,11 +420,12 @@ namespace Stratis.Bitcoin.Configuration
             builder.AppendLine($"-mintxfee=<number>        Minimum fee rate. Defaults to network specific value.");
             builder.AppendLine($"-fallbackfee=<number>     Fallback fee rate. Defaults to network specific value.");
             builder.AppendLine($"-minrelaytxfee=<number>   Minimum relay fee rate. Defaults to network specific value.");
-            builder.AppendLine($"-bantime=<number>         Number of seconds to keep misbehaving peers from reconnecting (Default 24-hour ban).");
+            builder.AppendLine($"-bantime=<number>         Number of seconds to keep misbehaving peers from reconnecting. Default {ConnectionManagerSettings.DefaultMisbehavingBantimeSeconds}.");
+            builder.AppendLine($"-maxoutboundconnections=<number> The maximum number of outbound connections. Default {ConnectionManagerSettings.DefaultMaxOutboundConnections}.");
 
             defaults.Logger.LogInformation(builder.ToString());
         }
-        
+
         /// <summary>
         /// Get the default configuration.
         /// </summary>
@@ -435,8 +436,8 @@ namespace Stratis.Bitcoin.Configuration
             var defaults = Default();
 
             builder.AppendLine("####Node Settings####");
-            builder.AppendLine($"#Accept non-standard transactions. Default {(defaults.RequireStandard?1:0)}.");
-            builder.AppendLine($"#acceptnonstdtxn={(defaults.RequireStandard?1:0)}");
+            builder.AppendLine($"#Accept non-standard transactions. Default {(defaults.RequireStandard ? 1 : 0)}.");
+            builder.AppendLine($"#acceptnonstdtxn={(defaults.RequireStandard ? 1 : 0)}");
             builder.AppendLine($"#Max tip age. Default {network.MaxTipAge}.");
             builder.AppendLine($"#maxtipage={network.MaxTipAge}");
             builder.AppendLine($"#Specified node to connect to. Can be specified multiple times.");
@@ -455,8 +456,10 @@ namespace Stratis.Bitcoin.Configuration
             builder.AppendLine($"#fallbackfee={network.FallbackFee}");
             builder.AppendLine($"#Minimum relay fee rate. Defaults to {network.MinRelayTxFee}.");
             builder.AppendLine($"#minrelaytxfee={network.MinRelayTxFee}");
-            builder.AppendLine($"#Number of seconds to keep misbehaving peers from reconnecting (Default 24-hour ban).");
+            builder.AppendLine($"#Number of seconds to keep misbehaving peers from reconnecting. Default {ConnectionManagerSettings.DefaultMisbehavingBantimeSeconds}.");
             builder.AppendLine($"#bantime=<number>");
+            builder.AppendLine($"#The maximum number of outbound connections. Default {ConnectionManagerSettings.DefaultMaxOutboundConnections}.");
+            builder.AppendLine($"#maxoutboundconnections=<number>");
         }
     }
 }
