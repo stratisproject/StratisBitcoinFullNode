@@ -1,3 +1,5 @@
+using NBitcoin;
+using Stratis.Bitcoin.Utilities;
 using Stratis.SmartContracts.Core.Backend;
 using Stratis.SmartContracts.Core.State;
 
