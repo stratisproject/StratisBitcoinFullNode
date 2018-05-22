@@ -501,9 +501,9 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
             });
         }
 
-        private Mock<PowBlockAssembler> CreateProofOfWorkBlockBuilder()
+        private Mock<PowBlockDefinition> CreateProofOfWorkBlockBuilder()
         {
-            return new Mock<PowBlockAssembler>(
+            return new Mock<PowBlockDefinition>(
                     this.consensusLoop.Object,
                     DateTimeProvider.Default,
                     this.LoggerFactory.Object,
@@ -513,9 +513,9 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
                     null);
         }
 
-        private PowMining CreateProofOfWorkMiner(PowBlockAssembler blockDefinition)
+        private PowMining CreateProofOfWorkMiner(PowBlockDefinition blockDefinition)
         {
-            var blockBuilder = new MockPowBlockBuilder(blockDefinition);
+            var blockBuilder = new MockPowBlockProvider(blockDefinition);
             return new PowMining(this.asyncLoopFactory.Object, blockBuilder, this.consensusLoop.Object, this.chain, DateTimeProvider.Default, this.mempool.Object, this.mempoolLock, this.network, this.nodeLifetime.Object, this.LoggerFactory.Object);
         }
 
@@ -561,18 +561,23 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
         }
     }
 
-    public sealed class MockPowBlockBuilder : IBlockBuilder
+    public sealed class MockPowBlockProvider : IBlockProvider
     {
-        private readonly PowBlockAssembler blockAssembler;
+        private readonly PowBlockDefinition blockProvider;
 
-        public MockPowBlockBuilder(PowBlockAssembler blockAssembler)
+        public MockPowBlockProvider(PowBlockDefinition blockProvider)
         {
-            this.blockAssembler = blockAssembler;
+            this.blockProvider = blockProvider;
         }
 
-        public BlockTemplate Build(BlockBuilderMode mode, ChainedHeader chainTip, Script script)
+        public BlockTemplate BuildPosBlock(ChainedHeader chainTip, Script script)
         {
-            return this.blockAssembler.Build(chainTip, script);
+            throw new NotImplementedException();
+        }
+
+        public BlockTemplate BuildPowBlock(ChainedHeader chainTip, Script script)
+        {
+            return this.blockProvider.Build(chainTip, script);
         }
     }
 

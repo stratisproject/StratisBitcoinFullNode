@@ -96,7 +96,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             MempoolSchedulerLock mempoolLock = new MempoolSchedulerLock();
 
             // Simple block creation, nothing special yet:
-            PowBlockAssembler blockAssembler = CreatePowBlockAssembler(consensus, dateTimeProvider, loggerFactory as LoggerFactory, mempool, mempoolLock, network);
+            PowBlockDefinition blockAssembler = CreatePowBlockAssembler(consensus, dateTimeProvider, loggerFactory as LoggerFactory, mempool, mempoolLock, network);
             BlockTemplate newBlock = blockAssembler.Build(chain.Tip, scriptPubKey);
             chain.SetTip(newBlock.Block.Header);
             await consensus.ValidateAndExecuteBlockAsync(new RuleContext(new BlockValidationContext { Block = newBlock.Block }, network.Consensus, consensus.Tip) { CheckPow = false, CheckMerkleRoot = false });
@@ -218,9 +218,9 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
         /// <param name="mempoolLock">Async lock for memory pool.</param>
         /// <param name="network">Network running on.</param>
         /// <returns>Proof of work block assembler.</returns>
-        private static PowBlockAssembler CreatePowBlockAssembler(IConsensusLoop consensusLoop, IDateTimeProvider dateTimeProvider, LoggerFactory loggerFactory, TxMempool mempool, MempoolSchedulerLock mempoolLock, Network network)
+        private static PowBlockDefinition CreatePowBlockAssembler(IConsensusLoop consensusLoop, IDateTimeProvider dateTimeProvider, LoggerFactory loggerFactory, TxMempool mempool, MempoolSchedulerLock mempoolLock, Network network)
         {
-            var options = new AssemblerOptions
+            var options = new BlockDefinitionOptions
             {
                 BlockMaxWeight = network.Consensus.Option<PowConsensusOptions>().MaxBlockWeight,
                 BlockMaxSize = network.Consensus.Option<PowConsensusOptions>().MaxBlockSerializedSize
@@ -229,7 +229,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             var blockMinFeeRate = new FeeRate(PowMining.DefaultBlockMinTxFee);
             options.BlockMinFeeRate = blockMinFeeRate;
 
-            return new PowBlockAssembler(consensusLoop, dateTimeProvider, loggerFactory, mempool, mempoolLock, network, options);
+            return new PowBlockDefinition(consensusLoop, dateTimeProvider, loggerFactory, mempool, mempoolLock, network, options);
         }
     }
 }

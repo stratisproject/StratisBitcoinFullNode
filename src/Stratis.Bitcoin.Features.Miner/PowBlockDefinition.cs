@@ -10,7 +10,7 @@ using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.Miner
 {
-    public class PowBlockAssembler : BlockAssembler
+    public class PowBlockDefinition : BlockDefinition
     {
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
@@ -67,14 +67,14 @@ namespace Stratis.Bitcoin.Features.Miner
             }
         }
 
-        public PowBlockAssembler(
+        public PowBlockDefinition(
             IConsensusLoop consensusLoop,
             IDateTimeProvider dateTimeProvider,
             ILoggerFactory loggerFactory,
             ITxMempool mempool,
             MempoolSchedulerLock mempoolLock,
             Network network,
-            AssemblerOptions options = null)
+            BlockDefinitionOptions options = null)
             : base(consensusLoop, dateTimeProvider, loggerFactory, mempool, mempoolLock, network)
         {
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);

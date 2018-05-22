@@ -419,7 +419,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
 
         private PosMinting InitializePosMinting()
         {
-            var posBlockAssembler = new Mock<PosBlockAssembler>(
+            var posBlockAssembler = new Mock<PosBlockDefinition>(
                 this.consensusLoop.Object,
                 this.dateTimeProvider.Object,
                 this.LoggerFactory.Object,
@@ -429,7 +429,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
                 this.stakeChain.Object,
                 this.stakeValidator.Object);
 
-            var blockBuilder = new MockPosBlockBuilder(posBlockAssembler.Object);
+            var blockBuilder = new MockPosBlockProvider(posBlockAssembler.Object);
 
             return new PosMinting(
                 blockBuilder,
@@ -461,18 +461,23 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
         }
     }
 
-    public sealed class MockPosBlockBuilder : IBlockBuilder
+    public sealed class MockPosBlockProvider : IBlockProvider
     {
-        private readonly PosBlockAssembler blockAssembler;
+        private readonly PosBlockDefinition blockProvider;
 
-        public MockPosBlockBuilder(PosBlockAssembler blockAssembler)
+        public MockPosBlockProvider(PosBlockDefinition blockProvider)
         {
-            this.blockAssembler = blockAssembler;
+            this.blockProvider = blockProvider;
         }
 
-        public BlockTemplate Build(BlockBuilderMode mode, ChainedHeader chainTip, Script script)
+        public BlockTemplate BuildPosBlock(ChainedHeader chainTip, Script script)
         {
-            return this.blockAssembler.Build(chainTip, script);
+            return this.blockProvider.Build(chainTip, script);
+        }
+
+        public BlockTemplate BuildPowBlock(ChainedHeader chainTip, Script script)
+        {
+            throw new NotImplementedException();
         }
     }
 }

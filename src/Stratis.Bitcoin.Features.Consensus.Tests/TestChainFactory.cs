@@ -164,7 +164,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
         private static BlockTemplate CreateBlockTemplate(TestChainContext testChainContext, Script scriptPubKey,
             TxMempool mempool, MempoolSchedulerLock mempoolLock)
         {
-            PowBlockAssembler blockAssembler = CreatePowBlockAssembler(testChainContext.Consensus,
+            PowBlockDefinition blockAssembler = CreatePowBlockAssembler(testChainContext.Consensus,
                 testChainContext.DateTimeProvider, testChainContext.LoggerFactory as LoggerFactory, mempool, mempoolLock,
                 testChainContext.Network);
 
@@ -223,9 +223,9 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
         /// <param name="mempool">Memory pool for transactions.</param>
         /// <param name="dateTimeProvider">Date and time provider.</param>
         /// <returns>Proof of work block assembler.</returns>
-        private static PowBlockAssembler CreatePowBlockAssembler(IConsensusLoop consensusLoop, IDateTimeProvider dateTimeProvider, LoggerFactory loggerFactory, TxMempool mempool, MempoolSchedulerLock mempoolLock, Network network)
+        private static PowBlockDefinition CreatePowBlockAssembler(IConsensusLoop consensusLoop, IDateTimeProvider dateTimeProvider, LoggerFactory loggerFactory, TxMempool mempool, MempoolSchedulerLock mempoolLock, Network network)
         {
-            var options = new AssemblerOptions
+            var options = new BlockDefinitionOptions
             {
                 BlockMaxWeight = network.Consensus.Option<PowConsensusOptions>().MaxBlockWeight,
                 BlockMaxSize = network.Consensus.Option<PowConsensusOptions>().MaxBlockSerializedSize
@@ -234,7 +234,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
             var blockMinFeeRate = new FeeRate(PowMining.DefaultBlockMinTxFee);
             options.BlockMinFeeRate = blockMinFeeRate;
 
-            return new PowBlockAssembler(consensusLoop, dateTimeProvider, loggerFactory, mempool, mempoolLock, network, options);
+            return new PowBlockDefinition(consensusLoop, dateTimeProvider, loggerFactory, mempool, mempoolLock, network, options);
         }
     }
 }

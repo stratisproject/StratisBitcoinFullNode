@@ -9,7 +9,7 @@ using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.Miner
 {
-    public class PosBlockAssembler : BlockAssembler
+    public class PosBlockDefinition : BlockDefinition
     {
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
@@ -20,7 +20,7 @@ namespace Stratis.Bitcoin.Features.Miner
         /// <summary>Provides functionality for checking validity of PoS blocks.</summary>
         private readonly IStakeValidator stakeValidator;
 
-        public PosBlockAssembler(
+        public PosBlockDefinition(
             IConsensusLoop consensusLoop,
             IDateTimeProvider dateTimeProvider,
             ILoggerFactory loggerFactory,
@@ -29,7 +29,7 @@ namespace Stratis.Bitcoin.Features.Miner
             Network network,
             IStakeChain stakeChain,
             IStakeValidator stakeValidator)
-            : base(consensusLoop, dateTimeProvider, loggerFactory, mempool, mempoolLock, network, new AssemblerOptions() { IsProofOfStake = true })
+            : base(consensusLoop, dateTimeProvider, loggerFactory, mempool, mempoolLock, network, new BlockDefinitionOptions() { IsProofOfStake = true })
         {
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.stakeChain = stakeChain;

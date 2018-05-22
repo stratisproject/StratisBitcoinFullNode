@@ -39,4 +39,10 @@
     <ProjectReference Include="..\Stratis.Bitcoin.Tests.Wallet.Common\Stratis.Bitcoin.Tests.Wallet.Common.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Compile Update="PowMiningTest.cs">
+      <Generator>fe24r3qzd\fx</Generator>
+    </Compile>
+  </ItemGroup>
+
 </Project>
