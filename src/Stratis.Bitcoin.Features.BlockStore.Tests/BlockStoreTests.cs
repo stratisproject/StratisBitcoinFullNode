@@ -229,11 +229,11 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
 
             await this.blockStore.InitializeAsync().ConfigureAwait(false);
 
-            // Sending 500 blocks to the queue
+            // Sending 500 blocks to the queue.
             for (int i = 1; i < 500; i++)
                 this.blockStore.AddToPending(new BlockPair(new Block(), this.chain.GetBlock(i)));
             
-            // Create alternative chain with fork point at 450
+            // Create alternative chain with fork point at 450.
             ChainedHeader prevBlock = this.chain.GetBlock(450);
             var alternativeBlocks = new List<ChainedHeader>();
             for (int i = 0; i < 100; i++)
@@ -255,8 +255,6 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             this.chain.SetTip(alternativeBlocks.Last());
             this.consensusTip = this.chain.Tip;
 
-            await this.WaitUntilQueueIsEmptyAsync().ConfigureAwait(false);
-
             // Present alternative chain and trigger save.
             foreach (ChainedHeader header in alternativeBlocks)
                 this.blockStore.AddToPending(new BlockPair(new Block(), header));
@@ -267,7 +265,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             Assert.Equal(1, this.repositorySavesCount);
             Assert.Equal(this.chain.Tip.Height, this.repositoryTotalBlocksSaved);
 
-            // Present a new longer chain that will reorg the repository,
+            // Present a new longer chain that will reorg the repository.
             this.chain.SetTip(savedHeader);
             this.consensusTip = this.chain.Tip;
 
