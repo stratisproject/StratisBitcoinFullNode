@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
-VisualStudioVersion = 15.0.27004.2010
+VisualStudioVersion = 15.0.27004.2009
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Sbfn", "Sbfn", "{8931252B-E101-4E5C-8181-B4FFA44DE948}"
 EndProject
@@ -174,7 +174,7 @@ Global
 		SolutionGuid = {034BDA2C-1CEE-4128-B444-CE1D425CB11C}
 	EndGlobalSection
 	GlobalSection(TeamFoundationVersionControl) = preSolution
-		SccNumberOfProjects = 12
+		SccNumberOfProjects = 13
 		SccEnterpriseProvider = {4CA58AB2-18FA-4F8D-95D4-32DDF27D184C}
 		SccTeamFoundationServer = https://stratisplatformuk.visualstudio.com/
 		SccLocalPath0 = .
@@ -211,5 +211,8 @@ Global
 		SccProjectUniqueName11 = Stratis.FederatedPeg.Features.FederationGateway.Tests\\Stratis.FederatedPeg.Features.FederationGateway.Tests.csproj
 		SccProjectName11 = Stratis.FederatedPeg.Features.FederationGateway.Tests
 		SccLocalPath11 = Stratis.FederatedPeg.Features.FederationGateway.Tests
+		SccProjectUniqueName12 = Stratis.Bitcoin.Features.GeneralPurposeWallet\\Stratis.Bitcoin.Features.GeneralPurposeWallet.csproj
+		SccProjectName12 = Stratis.Bitcoin.Features.GeneralPurposeWallet
+		SccLocalPath12 = Stratis.Bitcoin.Features.GeneralPurposeWallet
 	EndGlobalSection
 EndGlobal
