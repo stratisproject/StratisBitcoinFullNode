@@ -14,7 +14,7 @@ using Stratis.Bitcoin.Features.RPC.Models;
 using Stratis.Bitcoin.Features.Wallet.Models;
 using Stratis.Bitcoin.IntegrationTests.Builders;
 using Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers;
-using Stratis.Bitcoin.IntegrationTests.TestFramework;
+using Stratis.Bitcoin.Tests.Common.TestFramework;
 using Xunit.Abstractions;
 
 namespace Stratis.Bitcoin.IntegrationTests.API
