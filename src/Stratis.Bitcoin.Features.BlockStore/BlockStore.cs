@@ -111,7 +111,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
                     await this.blockRepository.SetTxIndexAsync(this.storeSettings.TxIndex).ConfigureAwait(false);
             }
             
-            // Throw if block store initializes after the consensus. 
+            // Throw if block store was initialized after the consensus.
             // This is needed in order to rewind consensus in case it is initialized ahead of the block store.
             if (this.chainState.ConsensusTip != null)
             {
@@ -275,7 +275,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             if (expectedStoreTip.HashBlock != this.storeTip.HashBlock)
                 await this.RemoveReorgedBlocksFromStoreAsync(expectedStoreTip).ConfigureAwait(false);
 
-            // Save batch.
+            // Save the batch.
             ChainedHeader newTip = batchCleared.Last().ChainedHeader;
 
             this.logger.LogDebug("Saving batch of {0} blocks, total size: {1} bytes.", batchCleared.Count, this.currentBatchSizeBytes);
@@ -283,8 +283,8 @@ namespace Stratis.Bitcoin.Features.BlockStore
             await this.blockRepository.PutAsync(newTip.HashBlock, batchCleared.Select(b => b.Block).ToList()).ConfigureAwait(false);
 
             this.SetStoreTip(newTip);
+            this.logger.LogDebug("Store tip set to '{0}'.", this.storeTip);
 
-            this.logger.LogDebug("Store tip set to '{0}'", this.storeTip);
             this.logger.LogTrace("(-)");
         }
 
@@ -302,7 +302,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             BlockPair current = batch.Last();
 
             // List of consecutive blocks. It's a cleaned out version of batch that doesn't have blocks that were reorged.
-            var batchCleared = new List<BlockPair>(batch.Count) {current};
+            var batchCleared = new List<BlockPair>(batch.Count) { current };
             
             // Select only those blocks that were not reorged away.
             for (int i = batch.Count - 2; i >= 0; i--)

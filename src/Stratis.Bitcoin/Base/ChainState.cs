@@ -11,8 +11,7 @@ namespace Stratis.Bitcoin.Base
         /// <summary>ChainBehaviors sharing this state will not broadcast headers which are above <see cref="ConsensusTip"/>.</summary>
         ChainedHeader ConsensusTip { get; set; }
 
-        /// <summary>The highest stored block in the repository.</summary>
-        /// <remarks>Null if BlockStore is not enabled.</remarks>
+        /// <summary>The highest stored block in the repository or <c>null</c> if block store feature is not enabled.</summary>
         ChainedHeader BlockStoreTip { get; set; }
 
         /// <summary>Maximal length of reorganization that the node is willing to accept, or 0 to disable long reorganization protection.</summary>
