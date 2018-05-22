@@ -1,9 +1,11 @@
 ﻿using System.Text;
 using DBreeze;
 using NBitcoin;
+using Stratis.Patricia;
 using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.State;
 using Xunit;
+using MemoryDictionarySource = Stratis.Patricia.MemoryDictionarySource;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 {

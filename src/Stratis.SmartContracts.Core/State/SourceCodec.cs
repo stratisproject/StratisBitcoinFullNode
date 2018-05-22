@@ -1,4 +1,6 @@
-﻿namespace Stratis.SmartContracts.Core.State
+﻿using Stratis.Patricia;
+
+namespace Stratis.SmartContracts.Core.State
 {
     /// <summary>
     /// Adapted from EthereumJ. Used to transform one datatype into another on the way in or out of a source.

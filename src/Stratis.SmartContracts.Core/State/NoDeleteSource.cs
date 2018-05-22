@@ -1,4 +1,6 @@
-﻿namespace Stratis.SmartContracts.Core.State
+﻿using Stratis.Patricia;
+
+namespace Stratis.SmartContracts.Core.State
 {
     /// <summary>
     /// Adapted from EthereumJ.

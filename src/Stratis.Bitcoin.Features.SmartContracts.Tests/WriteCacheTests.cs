@@ -1,9 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using Stratis.SmartContracts.Core.Hashing;
+using Stratis.Patricia;
 using Stratis.SmartContracts.Core.State;
 using Xunit;
+using MemoryDictionarySource = Stratis.Patricia.MemoryDictionarySource;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 {
@@ -11,7 +10,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
     {
         private byte[] IntToKey(int i)
         {
-            return HashHelper.Keccak256(BitConverter.GetBytes(i));
+            return Stratis.SmartContracts.Core.Hashing.HashHelper.Keccak256(BitConverter.GetBytes(i));
         }
 
         private byte[] IntToValue(int i)
