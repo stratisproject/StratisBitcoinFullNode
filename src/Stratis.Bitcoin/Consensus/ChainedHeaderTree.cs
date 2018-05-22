@@ -108,7 +108,7 @@ namespace Stratis.Bitcoin.Consensus
 
             if (oldTip != null)
             {
-                this.RemoveChainClaim(networkPeerId, oldTip);
+                this.RemoveChainsNotClaimedByPeer(networkPeerId, oldTip);
             }
 
             if (newChainedHeaders.Empty())
@@ -134,14 +134,18 @@ namespace Stratis.Bitcoin.Consensus
                 {
                     if (currentChainedHeader.HashBlock == this.consensusSettings.BlockAssumedValid)
                     {
-                        connectedHeaders = this.MarkAssumedValidAsRequired(currentChainedHeader, latestNewHeader);
+                        this.logger.LogDebug("Chained header '{0}' represents an assumed valid block.", currentChainedHeader);
+
+                        connectedHeaders = this.HandleAssumedValidHeader(currentChainedHeader, latestNewHeader);
                         break;
                     }
 
                     CheckpointInfo checkpoint = this.checkpoints.GetCheckpoint(currentChainedHeader.Height);
                     if (checkpoint != null)
                     {
-                        connectedHeaders = this.MarkCheckpointsAsRequired(currentChainedHeader, latestNewHeader, checkpoint);
+                        this.logger.LogDebug("Chained header '{0}' is a checkpoint.", currentChainedHeader);
+
+                        connectedHeaders = this.HandleCheckpointsHeader(currentChainedHeader, latestNewHeader, checkpoint);
                         break;
                     }
 
@@ -163,7 +167,9 @@ namespace Stratis.Bitcoin.Consensus
 
             if (latestNewHeader.ChainWork > bestTip.ChainWork)
             {
-                connectedHeaders = this.MarkChaindHeadersAsRequired(latestNewHeader);
+                this.logger.LogDebug("Chained header '{0}' is the tip of a chain with more work than our current consensus tip.", latestNewHeader);
+
+                connectedHeaders = this.MarkBetterChainAsRequired(latestNewHeader);
             }
 
             this.logger.LogTrace("(-):{0}", connectedHeaders);
@@ -171,11 +177,11 @@ namespace Stratis.Bitcoin.Consensus
         }
 
         /// <summary>
-        /// 
+        /// A chain with more work than our current consensus tip was found so mark all it's descendants as required.
         /// </summary>
-        /// <param name="latestNewHeader"></param>
-        /// <returns></returns>
-        private ConnectedHeaders MarkChaindHeadersAsRequired(ChainedHeader latestNewHeader)
+        /// <param name="latestNewHeader">The new header that represents a longer chain.</param>
+        /// <returns>The new headers that need to be downloaded.</returns>
+        private ConnectedHeaders MarkBetterChainAsRequired(ChainedHeader latestNewHeader)
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(latestNewHeader), latestNewHeader);
 
@@ -184,126 +190,112 @@ namespace Stratis.Bitcoin.Consensus
 
             ChainedHeader current = latestNewHeader;
             ChainedHeader next = current;
-            while (current != null)
-            {
-                if (this.HeaderWasRequested(current))
-                {
-                    connectedHeaders.DownloadFrom = next;
-                    break;
-                }
 
-                this.logger.LogTrace("Header marked as BlockRequired '{0}'", current);
+            while (this.HeaderWasNotRequested(current))
+            {
                 current.BlockDataAvailability = BlockDataAvailabilityState.BlockRequired;
 
                 next = current;
                 current = current.Previous;
             }
 
+            connectedHeaders.DownloadFrom = next;
+
             this.logger.LogTrace("(-):{0}", connectedHeaders);
             return connectedHeaders;
         }
 
         /// <summary>
-        /// The header is AssumedValid, the header and all of its previous headers will be marked as AssumedValid.
+        /// A chain with more work than our current consensus tip was found so mark all it's descendants as required.
         /// </summary>
-        /// <remarks>
-        /// If the header's commutative work is better then <see cref="IChainState.ConsensusTip"/> the header and all its predecessors will be marked with <see cref="BlockDataAvailabilityState.BlockRequired"/>.
-        /// Once a previous header that is already marked as <see cref="ValidationState.AssumedValid"/> is found then we stop iterating over previous headers.
-        /// </remarks>
-        /// <param name="assumedValidHeader">The header that is assumed to be valid.</param>
-        /// <param name="latestNewHeader">The last header in the list of presented new headers.</param>
-        private ConnectedHeaders MarkAssumedValidAsRequired(ChainedHeader assumedValidHeader, ChainedHeader latestNewHeader)
+        /// <param name="chainedHeader">The new header that represents a longer chain.</param>
+        /// <returns>The new headers that need to be downloaded.</returns>
+        private ConnectedHeaders MarkTrustedChainAsAssumedValid(ChainedHeader chainedHeader)
         {
-            this.logger.LogTrace("({0}:'{1}')", nameof(assumedValidHeader), assumedValidHeader);
+            this.logger.LogTrace("({0}:'{1}')", nameof(chainedHeader), chainedHeader);
 
-            ChainedHeader bestTip = this.chainState.ConsensusTip;
-            var connectedHeaders = new ConnectedHeaders();
+            ConnectedHeaders connectedHeaders = new ConnectedHeaders();
+            connectedHeaders.DownloadTo = connectedHeaders.Consumed = chainedHeader;
 
-            bool newHeaderWorkIsHigher = false;
-            if (latestNewHeader.ChainWork > bestTip.ChainWork)
-            {
-                newHeaderWorkIsHigher = true;
-                connectedHeaders.DownloadTo = connectedHeaders.Consumed = latestNewHeader;
-                latestNewHeader.BlockDataAvailability = BlockDataAvailabilityState.BlockRequired;
-                this.logger.LogTrace("Found a header with more chain work '{0}'", latestNewHeader);
-
-                ChainedHeader currentBlockRequired = latestNewHeader;
-                while (currentBlockRequired != assumedValidHeader)
-                {
-                    currentBlockRequired.BlockDataAvailability = BlockDataAvailabilityState.BlockRequired;
-                    currentBlockRequired = currentBlockRequired.Previous;
-                }
-            }
-
-            ChainedHeader current = assumedValidHeader;
+            ChainedHeader current = chainedHeader;
             ChainedHeader next = current;
-            while (current != null)
+
+            while (this.HeaderWasNotMarkedAsTrusted(current))
             {
-                if (this.HeaderWasRequested(current))
-                {
-                    if (newHeaderWorkIsHigher)
-                    {
-                        connectedHeaders.DownloadFrom = next;
-                    }
-
-                    break;
-                }
-
-                this.logger.LogTrace("Header marked as AssumedValid '{0}'", current);
                 current.BlockValidationState = ValidationState.AssumedValid;
-
-                if (newHeaderWorkIsHigher)
-                {
-                    current.BlockDataAvailability = BlockDataAvailabilityState.BlockRequired;
-                }
 
                 next = current;
                 current = current.Previous;
             }
-            
+
+            connectedHeaders.DownloadFrom = next;
+
             this.logger.LogTrace("(-):{0}", connectedHeaders);
             return connectedHeaders;
+        }
+
+
+        /// <summary>
+        /// The header is assumed to be valid, the header and all of its previous headers will be marked as <see cref="ValidationState.AssumedValid"/>.
+        /// If the header's cumulative work is better then <see cref="IChainState.ConsensusTip"/> the header and all its predecessors will be marked with <see cref="BlockDataAvailabilityState.BlockRequired"/>.
+        /// </summary>
+        /// <param name="assumedValidHeader">The header that is assumed to be valid.</param>
+        /// <param name="latestNewHeader">The last header in the list of presented new headers.</param>
+        private ConnectedHeaders HandleAssumedValidHeader(ChainedHeader assumedValidHeader, ChainedHeader latestNewHeader)
+        {
+            this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(assumedValidHeader), assumedValidHeader, nameof(latestNewHeader), latestNewHeader);
+
+            ChainedHeader bestTip = this.chainState.ConsensusTip;
+            ConnectedHeaders betterChain = null;
+
+            if (latestNewHeader.ChainWork > bestTip.ChainWork)
+            {
+                this.logger.LogDebug("Chained header '{0}' is the tip of a chain with more work than our current consensus tip.", latestNewHeader);
+
+                betterChain = this.MarkBetterChainAsRequired(latestNewHeader);
+            }
+
+            ConnectedHeaders assumedValid = this.MarkTrustedChainAsAssumedValid(assumedValidHeader);
+
+            ConnectedHeaders connectedHeaders = this.GetConnectedHeadersWithBetterHeight(latestNewHeader, betterChain, assumedValid);
+
+            this.logger.LogTrace("(-):{0}", connectedHeaders);
+            return connectedHeaders;
+        }
+
+        private ConnectedHeaders GetConnectedHeadersWithBetterHeight(ChainedHeader consumedHeader, ConnectedHeaders first, ConnectedHeaders second)
+        {
+            return new ConnectedHeaders()
+            {
+                Consumed = consumedHeader,
+
+                DownloadTo = first?.DownloadTo.Height > second?.DownloadTo.Height ? first.DownloadTo : second.DownloadTo,
+                DownloadFrom = first?.DownloadFrom.Height < second?.DownloadFrom.Height ? first.DownloadFrom : second.DownloadFrom,
+            };
         }
 
         /// <summary>
         /// When a header is before the last checkpoint it will be asked to be marked as AssumedValid and we'll ask to download it.
         /// </summary>
-        private ConnectedHeaders MarkCheckpointsAsRequired(ChainedHeader chainedHeader, ChainedHeader latestNewHeader, CheckpointInfo checkpoint)
+        private ConnectedHeaders HandleCheckpointsHeader(ChainedHeader chainedHeader, ChainedHeader latestNewHeader, CheckpointInfo checkpoint)
         {
-            this.logger.LogTrace("({0}:'{1}')", nameof(chainedHeader), chainedHeader);
+            this.logger.LogTrace("({0}:'{1}',{2}:'{3}',{4}.{5}:'{6}')", nameof(chainedHeader), chainedHeader, nameof(latestNewHeader), latestNewHeader, nameof(checkpoint), nameof(checkpoint.Hash), checkpoint.Hash);
 
             if (checkpoint.Hash != chainedHeader.HashBlock)
             {
+                this.logger.LogDebug("Chained header '{0}' does not match checkpoint '{1}'.", chainedHeader, checkpoint.Hash);
                 this.logger.LogTrace("(-)[INVALID_HEADER_NOT_MATCHING_CHECKPOINT]");
                 throw new InvalidHeaderException();
             }
-
-            var connectedHeaders = new ConnectedHeaders();
 
             ChainedHeader subchainTip = chainedHeader;
             if (chainedHeader.Height == this.checkpoints.GetLastCheckpointHeight())
                 subchainTip = latestNewHeader;
 
-            connectedHeaders.DownloadTo = connectedHeaders.Consumed = subchainTip;
+            ConnectedHeaders betterChain = this.MarkBetterChainAsRequired(latestNewHeader);
+            ConnectedHeaders assumedValid = this.MarkTrustedChainAsAssumedValid(subchainTip);
 
-            ChainedHeader current = subchainTip;
-            ChainedHeader next = current;
-            while (current != null)
-            {
-                if (this.HeaderWasRequested(current))
-                {
-                    connectedHeaders.DownloadFrom = next;
-                    break;
-                }
-
-                this.logger.LogTrace("Header marked as AssumedValid '{0}'", current);
-                current.BlockValidationState = ValidationState.AssumedValid;
-
-                current.BlockDataAvailability = BlockDataAvailabilityState.BlockRequired;
-
-                next = current;
-                current = current.Previous;
-            }
+            ConnectedHeaders connectedHeaders = this.GetConnectedHeadersWithBetterHeight(latestNewHeader, betterChain, assumedValid);
 
             this.logger.LogTrace("(-):{0}", connectedHeaders);
             return connectedHeaders;
@@ -313,17 +305,23 @@ namespace Stratis.Bitcoin.Consensus
         /// Check whether a header is in one of the following states
         /// <see cref="BlockDataAvailabilityState.BlockAvailable"/>, <see cref="BlockDataAvailabilityState.BlockRequired"/>.
         /// </summary>
-        private bool HeaderWasRequested(ChainedHeader chainedHeader)
+        private bool HeaderWasNotRequested(ChainedHeader chainedHeader)
         {
-            if (chainedHeader.BlockDataAvailability == BlockDataAvailabilityState.BlockAvailable
-             || chainedHeader.BlockDataAvailability == BlockDataAvailabilityState.BlockRequired)
-            {
-                return true;
-            }
-
-            return false;
+            return !((chainedHeader.BlockDataAvailability == BlockDataAvailabilityState.BlockAvailable)
+                  || (chainedHeader.BlockDataAvailability == BlockDataAvailabilityState.BlockRequired));
         }
-        
+
+        /// <summary>
+        /// Check whether a header is in one of the following states
+        /// <see cref="ValidationState.AssumedValid"/>, <see cref="ValidationState.PartiallyValidated"/>, <see cref="ValidationState.FullyValidated"/>.
+        /// </summary>
+        private bool HeaderWasNotMarkedAsTrusted(ChainedHeader chainedHeader)
+        {
+            return !((chainedHeader.BlockValidationState == ValidationState.AssumedValid)
+                  || (chainedHeader.BlockValidationState == ValidationState.PartiallyValidated)
+                  || (chainedHeader.BlockValidationState == ValidationState.FullyValidated));
+        }
+
         /// <summary>
         /// Remove the peer's tip and all the headers claimed by this peer unless they are also claimed by other peers.
         /// Headers that are parents of <see cref="stopHeader"/> will stay in the tree.
@@ -332,7 +330,7 @@ namespace Stratis.Bitcoin.Consensus
         /// <param name="peerTip">The peers header tip.</param>
         /// <param name="stopHeader">A stop header that indicates that all headers that are previous should remain in the tree.</param>
         /// <param name="removeAllPeers">A flat which if <c>true</c> will remove all peers.</param>
-        private void RemoveChainClaim(int networkPeerId, ChainedHeader peerTip, ChainedHeader stopHeader = null, bool removeAllPeers = false)
+        private void RemoveChainsNotClaimedByPeer(int networkPeerId, ChainedHeader peerTip, ChainedHeader stopHeader = null, bool removeAllPeers = false)
         {
             this.logger.LogTrace("({0}:'{1}',{0}:'{1}',{0}:'{1}')", nameof(networkPeerId), networkPeerId, nameof(stopHeader), stopHeader);
 
