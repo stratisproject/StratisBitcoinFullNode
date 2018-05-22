@@ -66,6 +66,11 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         private readonly Dictionary<uint256, uint256> filterInventoryKnown;
 
         /// <summary>
+        /// Locking object for memory pool behaviour.
+        /// </summary>
+        private readonly AsyncLock asyncLock = new AsyncLock();
+
+        /// <summary>
         /// Constructs an instance of memory pool behavior.
         /// </summary>
         /// <param name="validator">Memory pool validator for validating transactions.</param>
@@ -292,27 +297,22 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             //}
 
             List<TxMempoolInfo> sends = new List<TxMempoolInfo>();
-            this.logger.LogTrace("Locking '{0}'.", nameof(this.inventoryTxToSend));
-            lock (this.inventoryTxToSend)
+            using (this.asyncLock.Lock())
             {
-                this.logger.LogTrace("Locking '{0}'.", nameof(this.filterInventoryKnown));
-                lock (this.filterInventoryKnown)
-                {                   
-                    foreach (TxMempoolInfo txinfo in vtxinfo)
-                    {
-                        uint256 hash = txinfo.Trx.GetHash();
-                        this.inventoryTxToSend.Remove(hash);
-                        if (filterrate != Money.Zero)
-                            if (txinfo.FeeRate.FeePerK < filterrate)
-                            {
-                                this.logger.LogTrace("Fee too low, transaction ID '{0}' not added to inventory list.", hash);
-                                continue;
-                            }
-                        this.filterInventoryKnown.TryAdd(hash, hash);
-                        this.logger.LogTrace("Added transaction ID '{0}' to known inventory filter.", hash);
-                        sends.Add(txinfo);
-                        this.logger.LogTrace("Added transaction ID '{0}' to inventory list.", hash);
-                    }
+                foreach (TxMempoolInfo txinfo in vtxinfo)
+                {
+                    uint256 hash = txinfo.Trx.GetHash();
+                    this.inventoryTxToSend.Remove(hash);
+                    if (filterrate != Money.Zero)
+                        if (txinfo.FeeRate.FeePerK < filterrate)
+                        {
+                            this.logger.LogTrace("Fee too low, transaction ID '{0}' not added to inventory list.", hash);
+                            continue;
+                        }
+                    this.filterInventoryKnown.TryAdd(hash, hash);
+                    this.logger.LogTrace("Added transaction ID '{0}' to known inventory filter.", hash);
+                    sends.Add(txinfo);
+                    this.logger.LogTrace("Added transaction ID '{0}' to inventory list.", hash);
                 }
             }
 
@@ -378,9 +378,8 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             }
 
             // add to known inventory
-            this.logger.LogTrace("Locking '{0}'.", nameof(this.filterInventoryKnown));
-            lock (this.filterInventoryKnown)
-            {               
+            using (this.asyncLock.Lock())
+            {
                 foreach (InventoryVector inventoryVector in send.Inventory)
                 {
                     this.filterInventoryKnown.TryAdd(inventoryVector.Hash, inventoryVector.Hash);
@@ -445,10 +444,9 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             uint256 trxHash = trx.GetHash();
 
             // add to local filter
-            this.logger.LogTrace("Locking '{0}'.", nameof(this.filterInventoryKnown));
-            lock (this.filterInventoryKnown)
+            using (this.asyncLock.Lock())
             {
-                
+               
                 this.filterInventoryKnown.TryAdd(trxHash, trxHash);
                 this.logger.LogTrace("Added transaction ID '{0}' to known inventory filter.", trxHash);
             }
@@ -527,28 +525,21 @@ namespace Stratis.Bitcoin.Features.MemoryPool
 
             // find all behaviours then start an exclusive task
             // to add the hash to each local collection
-            IEnumerable<MempoolBehavior> behaviours = peers.Select(s => s.Behavior<MempoolBehavior>());
-            
-            this.logger.LogTrace("Locking '{0}'.", nameof(this.manager.MempoolLock));
+            IEnumerable<MempoolBehavior> behaviours = peers.Select(s => s.Behavior<MempoolBehavior>());           
             return this.manager.MempoolLock.WriteAsync(() =>
             { 
                 foreach (MempoolBehavior mempoolBehavior in behaviours)
                 {
                     if (mempoolBehavior?.AttachedPeer.PeerVersion.Relay ?? false)
                     {
-                        this.logger.LogTrace("Locking '{0}'.", nameof(mempoolBehavior.filterInventoryKnown));
-                        lock (mempoolBehavior.filterInventoryKnown)
-                        {
+                        using (mempoolBehavior.asyncLock.Lock())
+                        { 
                             if (!mempoolBehavior.filterInventoryKnown.ContainsKey(hash))
                             {
                                 this.logger.LogTrace("Could not find transaction ID '{0}' in known inventory filter.", hash);
-                                this.logger.LogTrace("Locking '{0}'.", nameof(this.inventoryTxToSend));
-                                lock (mempoolBehavior.inventoryTxToSend)
-                                {
-                                    mempoolBehavior.inventoryTxToSend.TryAdd(hash, hash);
-                                    this.logger.LogTrace("Added transaction ID '{0}' to inventory to send.", hash);
-                                }
-                            }
+                                 mempoolBehavior.inventoryTxToSend.TryAdd(hash, hash);
+                                this.logger.LogTrace("Added transaction ID '{0}' to inventory to send.", hash);
+                             }
                         }
                     }
                 }
@@ -580,9 +571,8 @@ namespace Stratis.Bitcoin.Features.MemoryPool
 
             // before locking an exclusive task
             // check if there is anything to processes
-            this.logger.LogTrace("Locking '{0}'.", nameof(this.inventoryTxToSend));
-            lock (this.inventoryTxToSend)
-            {
+            using (this.asyncLock.Lock())
+            { 
                 if (!this.inventoryTxToSend.Keys.Any())
                 {
                     this.logger.LogTrace("(-)[NO_TXS]");
@@ -591,49 +581,44 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             }
 
             List<uint256> sends = new List<uint256>();
-            this.logger.LogTrace("Locking '{0}'.", nameof(this.inventoryTxToSend));
-            lock (this.inventoryTxToSend)
-            {
+            using (this.asyncLock.Lock())
+            { 
                 this.logger.LogTrace("Creating list of transaction inventory to send.");
 
                 // Determine transactions to relay
                 // Produce a vector with all candidates for sending
                 List<uint256> invs = this.inventoryTxToSend.Keys.Take(InventoryBroadcastMax).ToList();
 
-                this.logger.LogTrace("Locking '{0}'.", nameof(this.filterInventoryKnown));
-                lock (this.filterInventoryKnown)
+                foreach (uint256 hash in invs)
                 {
-                    foreach (uint256 hash in invs)
+                    // Remove it from the to-be-sent set
+                    this.inventoryTxToSend.Remove(hash);
+                    this.logger.LogTrace("Transaction ID '{0}' removed from pending sends list.", hash);
+
+                    // Check if not in the filter already
+                    if (this.filterInventoryKnown.ContainsKey(hash))
                     {
-                        // Remove it from the to-be-sent set
-                        this.inventoryTxToSend.Remove(hash);
-                        this.logger.LogTrace("Transaction ID '{0}' removed from pending sends list.", hash);
-
-                        // Check if not in the filter already
-                        if (this.filterInventoryKnown.ContainsKey(hash))
-                        {
-                            this.logger.LogTrace("Transaction ID '{0}' not added to inventory list, exists in known inventory filter.", hash);
-                            continue;
-                        }
-
-                        // Not in the mempool anymore? don't bother sending it.
-                        TxMempoolInfo txInfo = this.manager.Info(hash);
-                        if (txInfo == null)
-                        {
-                            this.logger.LogTrace("Transaction ID '{0}' not added to inventory list, no longer in mempool.", hash);
-                            continue;
-                        }
-
-                        //if (filterrate && txinfo.feeRate.GetFeePerK() < filterrate) // TODO:filterrate
-                        //{
-                        //  continue;
-                        //}
-                        sends.Add(hash);
-                        this.logger.LogTrace("Transaction ID '{0}' added to inventory list.", hash);
+                        this.logger.LogTrace("Transaction ID '{0}' not added to inventory list, exists in known inventory filter.", hash);
+                        continue;
                     }
 
-                    this.logger.LogTrace("Transaction inventory list created.");
+                    // Not in the mempool anymore? don't bother sending it.
+                    TxMempoolInfo txInfo = this.manager.Info(hash);
+                    if (txInfo == null)
+                    {
+                        this.logger.LogTrace("Transaction ID '{0}' not added to inventory list, no longer in mempool.", hash);
+                        continue;
+                    }
+
+                    //if (filterrate && txinfo.feeRate.GetFeePerK() < filterrate) // TODO:filterrate
+                    //{
+                    //  continue;
+                    //}
+                    sends.Add(hash);
+                    this.logger.LogTrace("Transaction ID '{0}' added to inventory list.", hash);
                 }
+
+                this.logger.LogTrace("Transaction inventory list created.");
             }
 
             if (sends.Any())
