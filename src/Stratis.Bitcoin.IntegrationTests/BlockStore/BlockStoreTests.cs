@@ -30,14 +30,13 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
         [Fact]
         public void BlockRepositoryPutBatch()
         {
-            using (var blockRepo = new BlockRepository(Network.Main, TestBase.CreateDataFolder(this), DateTimeProvider.Default, this.loggerFactory))
+            using (var blockRepository = new BlockRepository(Network.Main, TestBase.CreateDataFolder(this), DateTimeProvider.Default, this.loggerFactory))
             {
-                blockRepo.SetTxIndexAsync(true).Wait();
+                blockRepository.SetTxIndexAsync(true).Wait();
 
-                var lst = new List<Block>();
+                var blocks = new List<Block>();
                 for (int i = 0; i < 5; i++)
                 {
-                    // put
                     var block = new Block();
                     block.AddTransaction(new Transaction());
                     block.AddTransaction(new Transaction());
@@ -46,28 +45,29 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
                     block.Transactions[1].AddInput(new TxIn(Script.Empty));
                     block.Transactions[1].AddOutput(Money.COIN + i * 2 + 1, Script.Empty);
                     block.UpdateMerkleRoot();
-                    block.Header.HashPrevBlock = lst.Any() ? lst.Last().GetHash() : Network.Main.GenesisHash;
-                    lst.Add(block);
+                    block.Header.HashPrevBlock = blocks.Any() ? blocks.Last().GetHash() : Network.Main.GenesisHash;
+                    blocks.Add(block);
                 }
 
-                blockRepo.PutAsync(lst.Last().GetHash(), lst).GetAwaiter().GetResult();
+                // put
+                blockRepository.PutAsync(blocks.Last().GetHash(), blocks).GetAwaiter().GetResult();
 
-                // check each block
-                foreach (var block in lst)
+                // check the presence of each block in the repository
+                foreach (var block in blocks)
                 {
-                    var received = blockRepo.GetAsync(block.GetHash()).GetAwaiter().GetResult();
+                    var received = blockRepository.GetAsync(block.GetHash()).GetAwaiter().GetResult();
                     Assert.True(block.ToBytes().SequenceEqual(received.ToBytes()));
 
                     foreach (var transaction in block.Transactions)
                     {
-                        var trx = blockRepo.GetTrxAsync(transaction.GetHash()).GetAwaiter().GetResult();
+                        var trx = blockRepository.GetTrxAsync(transaction.GetHash()).GetAwaiter().GetResult();
                         Assert.True(trx.ToBytes().SequenceEqual(transaction.ToBytes()));
                     }
                 }
 
                 // delete
-                blockRepo.DeleteAsync(lst.ElementAt(2).GetHash(), new[] { lst.ElementAt(2).GetHash() }.ToList()).GetAwaiter().GetResult();
-                var deleted = blockRepo.GetAsync(lst.ElementAt(2).GetHash()).GetAwaiter().GetResult();
+                blockRepository.DeleteAsync(blocks.ElementAt(2).GetHash(), new[] { blocks.ElementAt(2).GetHash() }.ToList()).GetAwaiter().GetResult();
+                var deleted = blockRepository.GetAsync(blocks.ElementAt(2).GetHash()).GetAwaiter().GetResult();
                 Assert.Null(deleted);
             }
         }
