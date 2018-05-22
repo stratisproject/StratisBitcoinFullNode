@@ -63,9 +63,6 @@ namespace Stratis.SmartContracts.Core.Serialization
                 else if (parameterSignature[0] == "11")
                     processedParameters.Add(new Address(parameterSignature[1]));
 
-                else if (parameterSignature[0] == "12")
-                    processedParameters.Add(long.Parse(parameterSignature[1]));
-
                 else
                     throw new Exception(string.Format("{0} is not supported.", parameterSignature[0]));
             }

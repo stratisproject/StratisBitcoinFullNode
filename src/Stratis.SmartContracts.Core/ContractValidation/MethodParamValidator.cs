@@ -24,7 +24,6 @@ namespace Stratis.SmartContracts.Core.ContractValidation
             typeof(string).FullName,
             typeof(uint).FullName,
             typeof(ulong).FullName,
-            typeof(long).FullName,
             typeof(Address).FullName
         };
 
