@@ -6,16 +6,10 @@ using Xunit;
 
 namespace Stratis.Bitcoin.Features.Consensus.Tests
 {
-    public class CheckPointsTest : IDisposable
+    public class CheckPointsTest
     {
         public CheckPointsTest()
         {
-        }
-
-        public void Dispose()
-        {
-            Block.BlockSignature = false;
-            Transaction.TimeStamp = false;
         }
 
         [Fact]

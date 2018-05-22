@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Text;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
@@ -13,6 +14,7 @@ using Stratis.Bitcoin.Features.Miner.Controllers;
 using Stratis.Bitcoin.Features.Miner.Interfaces;
 using Stratis.Bitcoin.Features.RPC;
 using Stratis.Bitcoin.Features.Wallet;
+using Stratis.Bitcoin.Mining;
 
 namespace Stratis.Bitcoin.Features.Miner
 {
@@ -83,6 +85,16 @@ namespace Stratis.Bitcoin.Features.Miner
         public static void PrintHelp(Network network)
         {
             MinerSettings.PrintHelp(network);
+        }
+        
+        /// <summary>
+        /// Get the default configuration.
+        /// </summary>
+        /// <param name="builder">The string builder to add the settings to.</param>
+        /// <param name="network">The network to base the defaults off.</param>
+        public static void BuildDefaultConfigurationFile(StringBuilder builder, Network network)
+        {
+            MinerSettings.BuildDefaultConfigurationFile(builder, network);
         }
 
         /// <summary>
@@ -210,6 +222,8 @@ namespace Stratis.Bitcoin.Features.Miner
                     .FeatureServices(services =>
                     {
                         services.AddSingleton<IPowMining, PowMining>();
+                        services.AddSingleton<IBlockBuilder, BlockBuilder>();
+                        services.AddSingleton<BlockDefinition, BlockDefinitionProofOfWork>();
                         services.AddSingleton<MinerController>();
                         services.AddSingleton<MiningRPCController>();
                         services.AddSingleton<MinerSettings>(new MinerSettings(setup));
@@ -239,7 +253,11 @@ namespace Stratis.Bitcoin.Features.Miner
                     .FeatureServices(services =>
                     {
                         services.AddSingleton<IPowMining, PowMining>();
+                        services.AddSingleton<BlockDefinitionProofOfWork>();
                         services.AddSingleton<IPosMinting, PosMinting>();
+                        services.AddSingleton<IBlockBuilder, BlockBuilder>();
+                        services.AddSingleton<BlockDefinition, BlockDefinitionProofOfWork>();
+                        services.AddSingleton<BlockDefinition, BlockDefinitionProofOfStake>();
                         services.AddSingleton<MinerController>();
                         services.AddSingleton<MiningRPCController>();
                         services.AddSingleton<MinerSettings>(new MinerSettings(setup));

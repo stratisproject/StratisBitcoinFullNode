@@ -23,13 +23,6 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 {
     public class WalletControllerTest : LogsTestBase
     {
-        public WalletControllerTest()
-        {
-            // Ensure that these flags have these expected values.
-            Transaction.TimeStamp = false;
-            Block.BlockSignature = false;
-        }
-
         [Fact]
         public void GenerateMnemonicWithoutParametersCreatesMnemonicWithDefaults()
         {
@@ -605,7 +598,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             };
 
             var concurrentChain = new ConcurrentChain(Network.Main);
-            ChainedBlock tip = WalletTestsHelpers.AppendBlock(null, new[] { concurrentChain });
+            ChainedHeader tip = WalletTestsHelpers.AppendBlock(null, new[] { concurrentChain });
 
             var connectionManagerMock = new Mock<IConnectionManager>();
             connectionManagerMock.Setup(c => c.ConnectedPeers)

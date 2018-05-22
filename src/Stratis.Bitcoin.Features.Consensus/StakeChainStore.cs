@@ -54,7 +54,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             this.logger.LogTrace("()");
 
             uint256 hash = await this.dBreezeCoinView.GetBlockHashAsync().ConfigureAwait(false);
-            ChainedBlock next = this.chain.GetBlock(hash);
+            ChainedHeader next = this.chain.GetBlock(hash);
             var load = new List<StakeItem>();
 
             while (next != this.chain.Genesis)
@@ -117,19 +117,19 @@ namespace Stratis.Bitcoin.Features.Consensus
             return res;
         }
 
-        public async Task SetAsync(ChainedBlock chainedBlock, BlockStake blockStake)
+        public async Task SetAsync(ChainedHeader chainedHeader, BlockStake blockStake)
         {
-            this.logger.LogTrace("({0}:'{1}',{2}.{3}:'{4}')", nameof(chainedBlock), chainedBlock, nameof(blockStake), nameof(blockStake.HashProof), blockStake.HashProof);
+            this.logger.LogTrace("({0}:'{1}',{2}.{3}:'{4}')", nameof(chainedHeader), chainedHeader, nameof(blockStake), nameof(blockStake.HashProof), blockStake.HashProof);
 
-            if (this.items.ContainsKey(chainedBlock.HashBlock))
+            if (this.items.ContainsKey(chainedHeader.HashBlock))
             {
                 this.logger.LogTrace("(-)[ALREADY_EXISTS]");
                 return;
             }
 
-            //var chainedBlock = this.chain.GetBlock(blockid);
-            StakeItem item = new StakeItem { BlockId = chainedBlock.HashBlock, Height = chainedBlock.Height, BlockStake = blockStake, InStore = false };
-            bool added = this.items.TryAdd(chainedBlock.HashBlock, item);
+            //var chainedHeader = this.chain.GetBlock(blockid);
+            StakeItem item = new StakeItem { BlockId = chainedHeader.HashBlock, Height = chainedHeader.Height, BlockStake = blockStake, InStore = false };
+            bool added = this.items.TryAdd(chainedHeader.HashBlock, item);
             if (added)
                 await this.FlushAsync(false).ConfigureAwait(false);
 
@@ -161,9 +161,9 @@ namespace Stratis.Bitcoin.Features.Consensus
             this.logger.LogTrace("(-)");
         }
 
-        public void Set(ChainedBlock chainedBlock, BlockStake blockStake)
+        public void Set(ChainedHeader chainedHeader, BlockStake blockStake)
         {
-            this.SetAsync(chainedBlock, blockStake).GetAwaiter().GetResult();
+            this.SetAsync(chainedHeader, blockStake).GetAwaiter().GetResult();
         }
     }
 }

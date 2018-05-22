@@ -75,7 +75,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// TODO: remove this quick fix later and solve the race condition by replacing the async loop with trigger-based invoking of <see cref="DownloadAndStoreBlocksAsync"/>.
         /// </para>
         /// </remarks>
-        private ChainedBlock CachedConsensusTip;
+        private ChainedHeader CachedConsensusTip;
 
         public virtual string StoreName
         {
@@ -85,7 +85,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         private readonly StoreSettings storeSettings;
 
         /// <summary>The highest stored block in the repository.</summary>
-        internal ChainedBlock StoreTip { get; private set; }
+        internal ChainedHeader StoreTip { get; private set; }
 
         /// <summary>Public constructor for unit testing.</summary>
         public BlockStoreLoop(IAsyncLoopFactory asyncLoopFactory,
@@ -159,7 +159,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
                     resetBlockHash = resetBlock.GetHash();
                 }
 
-                ChainedBlock newTip = this.Chain.GetBlock(resetBlockHash);
+                ChainedHeader newTip = this.Chain.GetBlock(resetBlockHash);
                 await this.BlockRepository.DeleteAsync(newTip.HashBlock, blockStoreResetList).ConfigureAwait(false);
                 this.StoreTip = newTip;
                 this.logger.LogWarning("{0} Initialize recovering to block height = {1}, hash = {2}.", this.StoreName, newTip.Height, newTip.HashBlock);
@@ -199,12 +199,12 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// <remarks>TODO: Possibly check the size of pending in memory</remarks>
         public void AddToPending(BlockPair blockPair)
         {
-            this.logger.LogTrace("({0}:'{1}')", nameof(blockPair), blockPair.ChainedBlock);
+            this.logger.LogTrace("({0}:'{1}')", nameof(blockPair), blockPair.ChainedHeader);
 
-            if (this.StoreTip.Height < blockPair.ChainedBlock.Height)
+            if (this.StoreTip.Height < blockPair.ChainedHeader.Height)
             {
-                this.PendingStorage.TryAdd(blockPair.ChainedBlock.HashBlock, blockPair);
-                this.CachedConsensusTip = blockPair.ChainedBlock;
+                this.PendingStorage.TryAdd(blockPair.ChainedHeader.HashBlock, blockPair);
+                this.CachedConsensusTip = blockPair.ChainedHeader;
             }
 
             this.logger.LogTrace("(-)");
@@ -287,19 +287,19 @@ namespace Stratis.Bitcoin.Features.BlockStore
         }
 
         /// <summary>Set the store's tip</summary>
-        internal void SetStoreTip(ChainedBlock chainedBlock)
+        internal void SetStoreTip(ChainedHeader chainedHeader)
         {
-            this.logger.LogTrace("({0}:'{1}')", nameof(chainedBlock), chainedBlock?.HashBlock);
-            Guard.NotNull(chainedBlock, nameof(chainedBlock));
+            this.logger.LogTrace("({0}:'{1}')", nameof(chainedHeader), chainedHeader?.HashBlock);
+            Guard.NotNull(chainedHeader, nameof(chainedHeader));
 
-            this.StoreTip = chainedBlock;
-            this.SetHighestPersistedBlock(chainedBlock);
+            this.StoreTip = chainedHeader;
+            this.SetHighestPersistedBlock(chainedHeader);
 
             this.logger.LogTrace("(-)");
         }
 
         /// <summary>Set the highest persisted block in the chain.</summary>
-        protected virtual void SetHighestPersistedBlock(ChainedBlock block)
+        protected virtual void SetHighestPersistedBlock(ChainedHeader block)
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(block), block?.HashBlock);
 

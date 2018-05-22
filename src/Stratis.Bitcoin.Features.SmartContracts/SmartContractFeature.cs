@@ -4,6 +4,7 @@ using System.Linq;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
+using NBitcoin;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Builder.Feature;
 using Stratis.Bitcoin.Configuration.Logging;
@@ -14,6 +15,7 @@ using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.Miner;
 using Stratis.Bitcoin.Features.Miner.Interfaces;
 using Stratis.Bitcoin.Features.SmartContracts.Controllers;
+using Stratis.Bitcoin.Mining;
 using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.ContractValidation;
 using Stratis.SmartContracts.Core.State;
@@ -35,7 +37,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
 
         public override void Initialize()
         {
-            this.stateRoot.SyncToRoot(this.consensusLoop.Chain.Tip.Header.HashStateRoot.ToBytes());
+            this.stateRoot.SyncToRoot(((SmartContractBlockHeader)this.consensusLoop.Chain.Tip.Header).HashStateRoot.ToBytes());
             this.logger.LogInformation("Smart Contract Feature Injected.");
         }
     }
@@ -68,7 +70,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                         services.AddSingleton<IKeyEncodingStrategy, BasicKeyEncodingStrategy>();
 
                         services.AddSingleton<IPowConsensusValidator, SmartContractConsensusValidator>();
-                        services.AddSingleton<IPowMining, SmartContractPowMining>();
+                        services.AddSingleton<IPowMining, PowMining>();
+                        services.AddSingleton<IBlockBuilder, SmartContractBlockBuilder>();
+                        services.AddSingleton<SmartContractBlockDefinition>();
                         services.AddSingleton<IMempoolValidator, SmartContractMempoolValidator>();
 
                         services.AddSingleton<SmartContractsController>();

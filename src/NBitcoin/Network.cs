@@ -95,7 +95,6 @@ namespace NBitcoin
         }
 
         public ConsensusOptions Options { get; set; }
-        public NetworkOptions NetworkOptions { get; set; } = NetworkOptions.TemporaryOptions;
 
         public class BuriedDeploymentsArray
         {
@@ -128,8 +127,8 @@ namespace NBitcoin
 
             public BIP9DeploymentsParameters this[BIP9Deployments index]
             {
-                get { return this.parameters[(int) index]; }
-                set { this.parameters[(int) index] = value; }
+                get { return this.parameters[(int)index]; }
+                set { this.parameters[(int)index] = value; }
             }
         }
 
@@ -137,6 +136,11 @@ namespace NBitcoin
         {
             this.BuriedDeployments = new BuriedDeploymentsArray(this);
             this.BIP9Deployments = new BIP9DeploymentsArray(this);
+
+            this.ConsensusFactory = new ConsensusFactory()
+            {
+                Consensus = this
+            };
         }
 
         public BuriedDeploymentsArray BuriedDeployments { get; }
@@ -144,8 +148,6 @@ namespace NBitcoin
         public BIP9DeploymentsArray BIP9Deployments { get; }
 
         public int SubsidyHalvingInterval { get; set; }
-
-        public Func<NetworkOptions, BlockHeader, uint256> GetPoWHash { get; set; } = (n,h) => h.GetHash(n);
 
         public int MajorityEnforceBlockUpgrade { get; set; }
 
@@ -171,7 +173,7 @@ namespace NBitcoin
 
         public long DifficultyAdjustmentInterval
         {
-            get { return ((long) this.PowTargetTimespan.TotalSeconds / (long) this.PowTargetSpacing.TotalSeconds); }
+            get { return ((long)this.PowTargetTimespan.TotalSeconds / (long)this.PowTargetSpacing.TotalSeconds); }
         }
 
         public int MinerConfirmationWindow { get; set; }
@@ -183,19 +185,29 @@ namespace NBitcoin
         /// </summary>
         public int CoinType { get; set; }
 
-        /// <summary>
-        /// Specify using litecoin calculation for difficulty
-        /// </summary>
-        public bool LitecoinWorkCalculation { get; set; }
-
         public BigInteger ProofOfStakeLimit { get; set; }
 
         public BigInteger ProofOfStakeLimitV2 { get; set; }
 
         public int LastPOWBlock { get; set; }
 
+        /// <summary>
+        /// An indicator whether this is a Proof Of Stake network.
+        /// </summary>
+        public bool IsProofOfStake { get; set; }
+
+        /// <summary>
+        /// An indicator whether this is a Smart Contract network.
+        /// </summary>
+        public bool IsSmartContracts { get; set; }
+
         /// <summary>The default hash to use for assuming valid blocks.</summary>
         public uint256 DefaultAssumeValid { get; set; }
+
+        /// <summary>
+        /// A factory that enables overloading base types.
+        /// </summary>
+        public ConsensusFactory ConsensusFactory { get; set; }
 
         public virtual Consensus Clone()
         {
@@ -215,14 +227,14 @@ namespace NBitcoin
                 RuleChangeActivationThreshold = this.RuleChangeActivationThreshold,
                 SubsidyHalvingInterval = this.SubsidyHalvingInterval,
                 MinimumChainWork = this.MinimumChainWork,
-                GetPoWHash = this.GetPoWHash,
                 CoinType = this.CoinType,
-                LitecoinWorkCalculation = this.LitecoinWorkCalculation,
+                IsProofOfStake = this.IsProofOfStake,
+                IsSmartContracts = this.IsSmartContracts,
                 LastPOWBlock = this.LastPOWBlock,
                 ProofOfStakeLimit = this.ProofOfStakeLimit,
                 ProofOfStakeLimitV2 = this.ProofOfStakeLimitV2,
                 DefaultAssumeValid = this.DefaultAssumeValid,
-                NetworkOptions = this.NetworkOptions.Clone()
+                ConsensusFactory = this.ConsensusFactory,
             };
         }
     }
@@ -232,23 +244,16 @@ namespace NBitcoin
         private uint magic;
         private byte[] alertPubKeyArray;
         private PubKey alertPubKey;
-        private readonly List<DNSSeedData> seeds = new List<DNSSeedData>();
-        private readonly List<NetworkAddress> fixedSeeds = new List<NetworkAddress>();
+        private readonly List<DNSSeedData> seeds;
+        private readonly List<NetworkAddress> fixedSeeds;
         private readonly Dictionary<int, CheckpointInfo> checkpoints = new Dictionary<int, CheckpointInfo>();
         private Block genesis;
         private Consensus consensus = new Consensus();
 
-        public NetworkOptions NetworkOptions
-        {
-            get
-            {
-                return this.consensus.NetworkOptions;
-            }
-        }
-
         private Network()
         {
-            this.genesis = new Block();
+            this.seeds = new List<DNSSeedData>();
+            this.fixedSeeds = new List<NetworkAddress>();
         }
 
         public PubKey AlertPubKey
@@ -319,8 +324,7 @@ namespace NBitcoin
 
         public uint Magic => this.magic;
 
-        static readonly ConcurrentDictionary<string, Network> NetworksContainer =
-            new ConcurrentDictionary<string, Network>();
+        private static readonly ConcurrentDictionary<string, Network> NetworksContainer = new ConcurrentDictionary<string, Network>();
 
         internal static Network Register(NetworkBuilder builder)
         {
@@ -361,14 +365,14 @@ namespace NBitcoin
 
             foreach (KeyValuePair<Base58Type, byte[]> kv in builder.Base58Prefixes)
             {
-                network.base58Prefixes[(int) kv.Key] = kv.Value;
+                network.base58Prefixes[(int)kv.Key] = kv.Value;
             }
 
             network.bech32Encoders = Network.Main.bech32Encoders.ToArray();
 
             foreach (KeyValuePair<Bech32Type, Bech32Encoder> kv in builder.Bech32Prefixes)
             {
-                network.bech32Encoders[(int) kv.Key] = kv.Value;
+                network.bech32Encoders[(int)kv.Key] = kv.Value;
             }
 
             foreach (string alias in builder.Aliases)
@@ -440,7 +444,7 @@ namespace NBitcoin
                 if (bytes.Length < prefix.Length)
                     continue;
                 if (Utils.ArrayEqual(bytes, 0, prefix, 0, prefix.Length))
-                    return (Base58Type) i;
+                    return (Base58Type)i;
             }
             return null;
         }
@@ -490,7 +494,7 @@ namespace NBitcoin
             if (str == null)
                 throw new ArgumentNullException("str");
 
-            IEnumerable<Network> networks = expectedNetwork == null ? GetNetworks() : new[] {expectedNetwork};
+            IEnumerable<Network> networks = expectedNetwork == null ? GetNetworks() : new[] { expectedNetwork };
             var maybeb58 = true;
             for (int i = 0; i < str.Length; i++)
             {
@@ -518,7 +522,7 @@ namespace NBitcoin
                         bool rightNetwork = expectedNetwork == null || (candidate.Network == expectedNetwork);
                         bool rightType = candidate is T;
                         if (rightNetwork && rightType)
-                            return (T) (object) candidate;
+                            return (T)(object)candidate;
                     }
                     throw new FormatException("Invalid base58 string");
                 }
@@ -532,7 +536,7 @@ namespace NBitcoin
                     i++;
                     if (encoder == null)
                         continue;
-                    var type = (Bech32Type) i;
+                    var type = (Bech32Type)i;
                     try
                     {
                         byte witVersion;
@@ -545,7 +549,7 @@ namespace NBitcoin
                             candidate = new BitcoinWitScriptAddress(str, network);
 
                         if (candidate is T)
-                            return (T) (object) candidate;
+                            return (T)(object)candidate;
                     }
                     catch (Bech32FormatException)
                     {
@@ -692,7 +696,7 @@ namespace NBitcoin
 
         public Block GetGenesis()
         {
-            return this.genesis.Clone(options:this.NetworkOptions);
+            return this.genesis.Clone(network: this);
         }
 
         public uint256 GenesisHash => this.consensus.HashGenesisBlock;

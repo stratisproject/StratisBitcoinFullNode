@@ -50,7 +50,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             this.logger.LogTrace("()");
             this.blockTxsProcessed = new List<Transaction>();
             NBitcoin.Block block = context.BlockValidationContext.Block;
-            ChainedBlock index = context.BlockValidationContext.ChainedBlock;
+            ChainedHeader index = context.BlockValidationContext.ChainedHeader;
             DeploymentFlags flags = context.Flags;
             UnspentOutputSet view = context.Set;
 
@@ -58,7 +58,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             taskScheduler = taskScheduler ?? TaskScheduler.Default;
 
             // Start state from previous block's root
-            this.originalStateRoot.SyncToRoot(context.ConsensusTip.Header.HashStateRoot.ToBytes());
+            this.originalStateRoot.SyncToRoot(((SmartContractBlockHeader)context.ConsensusTip.Header).HashStateRoot.ToBytes());
             IContractStateRepository trackedState = this.originalStateRoot.StartTracking();
 
             this.refundCounter = 1;
@@ -143,7 +143,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                                 }
 
                                 var checker = new TransactionChecker(tx, inputIndexCopy, txout.Value, txData);
-                                var ctx = new ScriptEvaluationContext();
+                                var ctx = new ScriptEvaluationContext(this.network);
                                 ctx.ScriptVerify = flags.ScriptFlags;
                                 return ctx.VerifyScript(input.ScriptSig, txout.ScriptPubKey, checker);
                             });
@@ -170,7 +170,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             }
             else this.logger.LogTrace("BIP68, SigOp cost, and block reward validation skipped for block at height {0}.", index.Height);
 
-            if (new uint256(this.originalStateRoot.Root) != block.Header.HashStateRoot)
+            if (new uint256(this.originalStateRoot.Root) != ((SmartContractBlockHeader)block.Header).HashStateRoot)
                 SmartContractConsensusErrors.UnequalStateRoots.Throw();
 
             this.originalStateRoot.Commit();
@@ -236,11 +236,11 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         /// </summary>
         private void ExecuteContractTransaction(RuleContext context, Transaction transaction, TxOut smartContractTxOut)
         {
-            ulong blockHeight = Convert.ToUInt64(context.BlockValidationContext.ChainedBlock.Height);
+            ulong blockHeight = Convert.ToUInt64(context.BlockValidationContext.ChainedHeader.Height);
 
             var smartContractCarrier = SmartContractCarrier.Deserialize(transaction, smartContractTxOut);
 
-            GetSenderUtil.GetSenderResult getSenderResult = GetSenderUtil.GetSender(transaction, this.coinView, this.blockTxsProcessed);
+            GetSenderUtil.GetSenderResult getSenderResult = GetSenderUtil.GetSender(this.network, transaction, this.coinView, this.blockTxsProcessed);
 
             if (!getSenderResult.Success)
             {
@@ -251,7 +251,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
 
             Script coinbaseScriptPubKey = context.BlockValidationContext.Block.Transactions[0].Outputs[0].ScriptPubKey;
 
-            GetSenderUtil.GetSenderResult getCoinbaseResult = GetSenderUtil.GetAddressFromScript(coinbaseScriptPubKey);
+            GetSenderUtil.GetSenderResult getCoinbaseResult = GetSenderUtil.GetAddressFromScript(this.network, coinbaseScriptPubKey);
 
             if (!getCoinbaseResult.Success)
             {

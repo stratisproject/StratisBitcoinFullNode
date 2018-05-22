@@ -1,13 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Net;
-using System.Text;
 using System.Threading.Tasks;
 using Moq;
 using NBitcoin;
 using NBitcoin.DataEncoders;
 using NBitcoin.Protocol;
-using Newtonsoft.Json.Linq;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Connection;
@@ -23,7 +21,7 @@ using Xunit;
 
 namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
 {
-    public class FullNodeControllerTest : LogsTestBase, IDisposable
+    public class FullNodeControllerTest : LogsTestBase
     {
         private ConcurrentChain chain;
         private readonly Mock<IFullNode> fullNode;
@@ -37,14 +35,9 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
         private readonly Mock<IConsensusLoop> consensusLoop;
         private readonly Mock<INetworkDifficulty> networkDifficulty;
         private FullNodeController controller;
-        private readonly bool initialBlockSignature;
 
         public FullNodeControllerTest()
         {
-            this.initialBlockSignature = Block.BlockSignature;
-
-            Block.BlockSignature = false;
-
             this.fullNode = new Mock<IFullNode>();
             this.chainState = new Mock<IChainState>();
             this.connectionManager = new Mock<IConnectionManager>();
@@ -58,11 +51,6 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
             this.networkDifficulty = new Mock<INetworkDifficulty>();
             this.controller = new FullNodeController(this.LoggerFactory.Object, this.pooledTransaction.Object, this.pooledGetUnspentTransaction.Object, this.getUnspentTransaction.Object, this.networkDifficulty.Object,
                 this.consensusLoop.Object, this.fullNode.Object, this.nodeSettings, this.network, this.chain, this.chainState.Object, this.connectionManager.Object);
-        }
-
-        public void Dispose()
-        {
-            Block.BlockSignature = this.initialBlockSignature;
         }
 
         [Fact]
@@ -489,7 +477,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
         public void GetInfo_NoChainTip_ReturnsModel()
         {
             this.chainState.Setup(c => c.ConsensusTip)
-                .Returns((ChainedBlock)null);
+                .Returns((ChainedHeader)null);
 
             this.controller = new FullNodeController(this.LoggerFactory.Object, this.pooledTransaction.Object, this.pooledGetUnspentTransaction.Object, this.getUnspentTransaction.Object, this.networkDifficulty.Object,
                 this.consensusLoop.Object, this.fullNode.Object, this.nodeSettings, this.network, this.chain, this.chainState.Object, this.connectionManager.Object);

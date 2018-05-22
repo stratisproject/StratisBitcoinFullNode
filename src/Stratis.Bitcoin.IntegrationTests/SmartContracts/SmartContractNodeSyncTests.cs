@@ -45,10 +45,10 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
             var networkNode1 = simulator.Nodes[2];
             var networkNode2 = simulator.Nodes[3];
 
-            var test1 = miner.FullNode.NodeService<Network>();
-            var test2 = connector.FullNode.NodeService<Network>();
-            var test3 = networkNode1.FullNode.NodeService<Network>();
-            var test4 = networkNode2.FullNode.NodeService<Network>();
+            var minerNetwork = miner.FullNode.NodeService<Network>();
+            var connectorNetwork = connector.FullNode.NodeService<Network>();
+            var nodeOneNetwork = networkNode1.FullNode.NodeService<Network>();
+            var nodeTwoNetwork = networkNode2.FullNode.NodeService<Network>();
 
             miner.CreateRPCClient().AddNode(connector.Endpoint, true);
             connector.CreateRPCClient().AddNode(networkNode1.Endpoint, true);

@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
 using Microsoft.Extensions.Logging;
 using Moq;
 using NBitcoin;
@@ -9,6 +8,7 @@ using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.Interfaces;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.MemoryPool.Interfaces;
+using Stratis.Bitcoin.Mining;
 using Stratis.Bitcoin.Tests.Common.Logging;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Utilities.Extensions;
@@ -39,9 +39,6 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
 
             SetupValidator();
             SetupConsensusLoop();
-
-            Transaction.TimeStamp = true;
-            Block.BlockSignature = true;
         }
 
         [Fact]
@@ -56,10 +53,9 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
                 var txFee = new Money(1000);
                 SetupTxMempool(chain, this.network.Consensus.Options as PowConsensusOptions, txFee, transaction);
 
-                var powBlockAssembler = new PowBlockAssembler(chain.Tip, this.consensusLoop.Object, this.dateTimeProvider.Object, this.LoggerFactory.Object,
-                    this.txMempool.Object, new MempoolSchedulerLock(), this.network);
+                var powBlockAssembler = new BlockDefinitionProofOfWork(this.consensusLoop.Object, this.dateTimeProvider.Object, this.LoggerFactory.Object, this.txMempool.Object, new MempoolSchedulerLock(), this.network);
 
-                var blockTemplate = powBlockAssembler.CreateNewBlock(this.key.ScriptPubKey);
+                var blockTemplate = powBlockAssembler.Build(chain.Tip, this.key.ScriptPubKey);
 
                 Assert.Null(blockTemplate.CoinbaseCommitment);
                 Assert.Equal(new Money(1000), blockTemplate.TotalFee);
@@ -116,11 +112,9 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
                 var txFee = new Money(1000);
                 SetupTxMempool(chain, this.network.Consensus.Options as PowConsensusOptions, txFee, transaction);
 
-                var powBlockAssembler = new PowBlockAssembler(chain.Tip, this.consensusLoop.Object, this.dateTimeProvider.Object, this.LoggerFactory.Object,
-                    this.txMempool.Object, new MempoolSchedulerLock(), this.network);
+                var powBlockAssembler = new BlockDefinitionProofOfWork(this.consensusLoop.Object, this.dateTimeProvider.Object, this.LoggerFactory.Object, this.txMempool.Object, new MempoolSchedulerLock(), this.network);
 
-                var blockTemplate = powBlockAssembler.CreateNewBlock(this.key.ScriptPubKey);
-
+                var blockTemplate = powBlockAssembler.Build(chain.Tip, this.key.ScriptPubKey);
                 Assert.NotNull(this.callbackRuleContext);
 
                 Assert.False(this.callbackRuleContext.CheckMerkleRoot);
@@ -139,8 +133,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
             {
                 var chain = GenerateChainWithHeight(5, this.network, new Key());
 
-                var powBlockAssembler = new PowTestBlockAssembler(this.consensusLoop.Object, this.network, new MempoolSchedulerLock(), this.txMempool.Object,
-                                                         this.dateTimeProvider.Object, chain.Tip, this.LoggerFactory.Object);
+                var powBlockAssembler = new PowTestBlockAssembler(this.consensusLoop.Object, this.dateTimeProvider.Object, this.LoggerFactory.Object, this.txMempool.Object, new MempoolSchedulerLock(), this.network);
 
                 var result = powBlockAssembler.ComputeBlockVersion(chain.GetBlock(4));
 
@@ -149,7 +142,6 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
                 Assert.Equal((int)version, result.Version);
             });
         }
-
 
         [Fact]
         public void ComputeBlockVersion_UsingChainTipAndConsensus_Bip9DeploymentActive_UpdatesHeightAndVersion()
@@ -169,8 +161,8 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
 
                 var chain = GenerateChainWithHeightAndActivatedBip9(5, this.network, new Key(), this.network.Consensus.BIP9Deployments[0]);
 
-                var powBlockAssembler = new PowTestBlockAssembler(this.consensusLoop.Object, this.network, new MempoolSchedulerLock(), this.txMempool.Object,
-                                                         this.dateTimeProvider.Object, chain.Tip, this.LoggerFactory.Object);
+                var powBlockAssembler = new PowTestBlockAssembler(this.consensusLoop.Object, this.dateTimeProvider.Object, this.LoggerFactory.Object, this.txMempool.Object,
+                    new MempoolSchedulerLock(), this.network);
 
                 var result = powBlockAssembler.ComputeBlockVersion(chain.GetBlock(4));
 
@@ -199,11 +191,11 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
                 this.dateTimeProvider.Setup(d => d.GetAdjustedTimeAsUnixTimestamp())
                     .Returns(new DateTime(2017, 1, 7, 0, 0, 1, DateTimeKind.Utc).ToUnixTimestamp());
 
-                var powBlockAssembler = new PowTestBlockAssembler(this.consensusLoop.Object, this.network, new MempoolSchedulerLock(), this.txMempool.Object,
-                                                         this.dateTimeProvider.Object, chain.Tip, this.LoggerFactory.Object);
+                var powBlockAssembler = new PowTestBlockAssembler(this.consensusLoop.Object, this.dateTimeProvider.Object, this.LoggerFactory.Object, this.txMempool.Object,
+                    new MempoolSchedulerLock(), this.network);
 
                 var result = powBlockAssembler.CreateCoinBase(chain.Tip, this.key.ScriptPubKey);
-                
+
                 Assert.NotEmpty(result.Block.Transactions);
                 Assert.Equal(-1, result.TxSigOpsCost[0]);
                 Assert.Equal(new Money(-1), result.VTxFees[0]);
@@ -228,20 +220,17 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
         {
             this.ExecuteWithConsensusOptions(new PowConsensusOptions(), () =>
             {
-                this.dateTimeProvider.Setup(d => d.GetTimeOffset())
-                    .Returns(new DateTimeOffset(new DateTime(2017, 1, 7, 0, 0, 0, DateTimeKind.Utc)));
+                this.dateTimeProvider.Setup(d => d.GetTimeOffset()).Returns(new DateTimeOffset(new DateTime(2017, 1, 7, 0, 0, 0, DateTimeKind.Utc)));
 
                 var chain = GenerateChainWithHeight(5, this.network, new Key(), new Target(235325239));
 
-                var powBlockAssembler = new PowTestBlockAssembler(this.consensusLoop.Object, this.network, new MempoolSchedulerLock(), this.txMempool.Object,
-                                                         this.dateTimeProvider.Object, chain.Tip, this.LoggerFactory.Object);
+                var powBlockAssembler = new PowTestBlockAssembler(this.consensusLoop.Object, this.dateTimeProvider.Object, this.LoggerFactory.Object, this.txMempool.Object, new MempoolSchedulerLock(), this.network);
+                var block = powBlockAssembler.OnUpdateHeaders(chain.Tip);
 
-                var result = powBlockAssembler.UpdateHeaders(chain.Tip);
-
-                Assert.Equal(chain.Tip.HashBlock, result.Header.HashPrevBlock);
-                Assert.Equal((uint)1483747200, result.Header.Time);
-                Assert.Equal(1.9610088966776103E+35, result.Header.Bits.Difficulty);
-                Assert.Equal((uint)0, result.Header.Nonce);
+                Assert.Equal(chain.Tip.HashBlock, block.Header.HashPrevBlock);
+                Assert.Equal((uint)1483747200, block.Header.Time);
+                Assert.Equal(1.9610088966776103E+35, block.Header.Bits.Difficulty);
+                Assert.Equal((uint)0, block.Header.Nonce);
             });
         }
 
@@ -253,19 +242,16 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
             this.ExecuteWithConsensusOptions(newOptions, () =>
             {
                 var chain = GenerateChainWithHeight(5, this.network, new Key());
-                this.consensusLoop.Setup(c => c.Tip)
-                    .Returns(chain.GetBlock(5));
+                this.consensusLoop.Setup(c => c.Tip).Returns(chain.GetBlock(5));
 
-                var powBlockAssembler = new PowTestBlockAssembler(this.consensusLoop.Object, this.network, new MempoolSchedulerLock(), this.txMempool.Object,
-                                                          this.dateTimeProvider.Object, chain.Tip, this.LoggerFactory.Object);
-
-                var blockTemplate = powBlockAssembler.TestBlockValidity();
+                var powBlockAssembler = new PowTestBlockAssembler(this.consensusLoop.Object, this.dateTimeProvider.Object, this.LoggerFactory.Object, this.txMempool.Object, new MempoolSchedulerLock(), this.network);
+                var block = powBlockAssembler.OnTestBlockValidity();
 
                 Assert.NotNull(this.callbackRuleContext);
 
                 Assert.False(this.callbackRuleContext.CheckMerkleRoot);
                 Assert.False(this.callbackRuleContext.CheckPow);
-                Assert.Equal(blockTemplate.Block.GetHash(), this.callbackRuleContext.BlockValidationContext.Block.GetHash());
+                Assert.Equal(block.GetHash(), this.callbackRuleContext.BlockValidationContext.Block.GetHash());
                 Assert.Equal(chain.GetBlock(5).HashBlock, this.callbackRuleContext.ConsensusTip.HashBlock);
                 Assert.Equal(1500, this.callbackRuleContext.Consensus.Option<PowConsensusOptions>().MaxBlockWeight);
                 this.consensusLoop.Verify();
@@ -286,8 +272,8 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
                 this.txMempool.Setup(t => t.MapTx)
                     .Returns(indexedTransactionSet);
 
-                var powBlockAssembler = new PowTestBlockAssembler(this.consensusLoop.Object, this.network, new MempoolSchedulerLock(), this.txMempool.Object,
-                                                          this.dateTimeProvider.Object, chain.Tip, this.LoggerFactory.Object);
+                var powBlockAssembler = new PowTestBlockAssembler(this.consensusLoop.Object, this.dateTimeProvider.Object, this.LoggerFactory.Object, this.txMempool.Object,
+                    new MempoolSchedulerLock(), this.network);
 
                 var result = powBlockAssembler.AddTransactions();
 
@@ -305,14 +291,13 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
             this.ExecuteWithConsensusOptions(newOptions, () =>
             {
                 var chain = GenerateChainWithHeight(5, this.network, this.key);
-                this.consensusLoop.Setup(c => c.Tip)
-                    .Returns(chain.GetBlock(5));
+                this.consensusLoop.Setup(c => c.Tip).Returns(chain.GetBlock(5));
                 var transaction = CreateTransaction(this.network, this.key, 5, new Money(400 * 1000 * 1000), new Key(), new uint256(124124));
                 var txFee = new Money(1000);
                 SetupTxMempool(chain, newOptions, txFee, transaction);
 
-                var powBlockAssembler = new PowTestBlockAssembler(this.consensusLoop.Object, this.network, new MempoolSchedulerLock(), this.txMempool.Object,
-                                                          this.dateTimeProvider.Object, chain.Tip, this.LoggerFactory.Object);
+                var powBlockAssembler = new PowTestBlockAssembler(this.consensusLoop.Object, this.dateTimeProvider.Object, this.LoggerFactory.Object, this.txMempool.Object,
+                    new MempoolSchedulerLock(), this.network);
 
                 var result = powBlockAssembler.AddTransactions();
 
@@ -338,8 +323,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
                 var txFee = new Money(1000);
                 var entries = SetupTxMempool(chain, newOptions, txFee, transaction);
 
-                var powBlockAssembler = new PowTestBlockAssembler(this.consensusLoop.Object, this.network, new MempoolSchedulerLock(), this.txMempool.Object,
-                                                          this.dateTimeProvider.Object, chain.Tip, this.LoggerFactory.Object);
+                var powBlockAssembler = new PowTestBlockAssembler(this.consensusLoop.Object, this.dateTimeProvider.Object, this.LoggerFactory.Object, this.txMempool.Object, new MempoolSchedulerLock(), this.network);
                 powBlockAssembler.AddInBlockTxEntries(entries);
 
                 var result = powBlockAssembler.AddTransactions();
@@ -374,7 +358,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
             var prevBlockHash = chain.Genesis.HashBlock;
             for (var i = 0; i < blockAmount; i++)
             {
-                var block = new Block();
+                var block = network.Consensus.ConsensusFactory.CreateBlock();
                 Transaction coinbase = CreateCoinbaseTransaction(network, key, chain.Height + 1);
 
                 block.AddTransaction(coinbase);
@@ -427,14 +411,12 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
         {
             this.callbackRuleContext = null;
 
-            this.consensusLoop.Setup(c => c.ValidateBlock(It.IsAny<RuleContext>()))
-                .Callback<RuleContext>(c =>
-                {
-                    this.callbackRuleContext = c;
-                }).Verifiable();
+            this.consensusLoop.Setup(c => c.ValidateBlock(It.IsAny<RuleContext>())).Callback<RuleContext>(context =>
+            {
+                this.callbackRuleContext = context;
+            }).Verifiable();
 
-            this.consensusLoop.Setup(c => c.Validator)
-                .Returns(this.validator.Object);
+            this.consensusLoop.Setup(c => c.Validator).Returns(this.validator.Object);
         }
 
         private void SetupValidator()
@@ -474,20 +456,26 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
             return resultingTransactionEntries.ToArray();
         }
 
-        private class PowTestBlockAssembler : PowBlockAssembler
+        private class PowTestBlockAssembler : BlockDefinitionProofOfWork
         {
             public PowTestBlockAssembler(
-              IConsensusLoop consensusLoop,
-              Network network,
-              MempoolSchedulerLock mempoolLock,
-              ITxMempool mempool,
-              IDateTimeProvider dateTimeProvider,
-              ChainedBlock chainTip,
-              ILoggerFactory loggerFactory,
-              AssemblerOptions options = null) :
-                base(chainTip, consensusLoop, dateTimeProvider, loggerFactory, mempool, mempoolLock, network, options)
+                IConsensusLoop consensusLoop,
+                IDateTimeProvider dateTimeProvider,
+                ILoggerFactory loggerFactory,
+                ITxMempool mempool,
+                MempoolSchedulerLock mempoolLock,
+                Network network,
+                BlockBuilderOptions options = null)
+                : base(consensusLoop, dateTimeProvider, loggerFactory, mempool, mempoolLock, network)
             {
-                base.pblock = this.pblocktemplate.Block;
+                this.block = this.BlockTemplate.Block;
+            }
+
+            public override BlockTemplate Build(ChainedHeader chainTip, Script scriptPubKey)
+            {
+                base.OnBuild(chainTip, scriptPubKey);
+
+                return base.BlockTemplate;
             }
 
             public void AddInBlockTxEntries(params TxMempoolEntry[] entries)
@@ -498,41 +486,38 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
                 }
             }
 
-            public (int Height, int Version) ComputeBlockVersion(ChainedBlock chainTip)
+            public (int Height, int Version) ComputeBlockVersion(ChainedHeader chainTip)
             {
                 base.ChainTip = chainTip;
 
                 base.ComputeBlockVersion();
 
-                return (base.height, base.pblock.Header.Version);
+                return (base.height, base.block.Header.Version);
             }
 
-            public BlockTemplate CreateCoinBase(ChainedBlock chainTip, Script scriptPubKeyIn)
+            public BlockTemplate CreateCoinBase(ChainedHeader chainTip, Script scriptPubKeyIn)
             {
-                base.scriptPubKeyIn = scriptPubKeyIn;
+                base.scriptPubKey = scriptPubKeyIn;
                 base.ChainTip = chainTip;
 
                 base.CreateCoinbase();
 
-                base.pblocktemplate.Block = base.pblock;
+                base.BlockTemplate.Block = base.block;
 
-                return base.pblocktemplate;
+                return base.BlockTemplate;
             }
 
-            public Block UpdateHeaders(ChainedBlock chainTip)
+            public Block OnUpdateHeaders(ChainedHeader chainTip)
             {
                 base.ChainTip = chainTip;
-
-                base.UpdateHeaders();
-
-                return this.pblock;
+                base.OnUpdateHeaders();
+                return this.BlockTemplate.Block;
             }
 
-            public new BlockTemplate TestBlockValidity()
+            public new Block OnTestBlockValidity()
             {
-                base.TestBlockValidity();
-
-                return base.pblocktemplate;
+                base.OnTestBlockValidity();
+                return this.block;
             }
 
             public (Block Block, int Selected, int Updated) AddTransactions()
@@ -541,7 +526,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
                 int updated;
                 base.AddTransactions(out selected, out updated);
 
-                return (base.pblock, selected, updated);
+                return (base.block, selected, updated);
             }
         }
     }

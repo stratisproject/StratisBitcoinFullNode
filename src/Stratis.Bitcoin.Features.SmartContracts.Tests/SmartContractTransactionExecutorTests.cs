@@ -70,7 +70,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             Assert.Single(result.InternalTransaction.Inputs);
             Assert.Single(result.InternalTransaction.Outputs);
 
-            var actualSender = new uint160(result.InternalTransaction.Outputs[0].ScriptPubKey.GetDestination().ToBytes());
+            var actualSender = new uint160(result.InternalTransaction.Outputs[0].ScriptPubKey.GetDestination(this.network).ToBytes());
             Assert.Equal(senderAddress, actualSender);
             Assert.Equal(100, result.InternalTransaction.Outputs[0].Value);
         }

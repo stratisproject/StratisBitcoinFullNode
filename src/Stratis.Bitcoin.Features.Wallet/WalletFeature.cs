@@ -3,7 +3,6 @@ using System.Linq;
 using System.Text;
 using Microsoft.Extensions.DependencyInjection;
 using NBitcoin;
-using Stratis.Bitcoin.Broadcasting;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Builder.Feature;
 using Stratis.Bitcoin.Configuration;
@@ -93,6 +92,16 @@ namespace Stratis.Bitcoin.Features.Wallet
             WalletSettings.PrintHelp(network);
         }
 
+        /// <summary>
+        /// Get the default configuration.
+        /// </summary>
+        /// <param name="builder">The string builder to add the settings to.</param>
+        /// <param name="network">The network to base the defaults off.</param>
+        public static void BuildDefaultConfigurationFile(StringBuilder builder, Network network)
+        {
+            WalletSettings.BuildDefaultConfigurationFile(builder, network);
+        }
+
         /// <inheritdoc />
         public void AddNodeStats(StringBuilder benchLogs)
         {
@@ -101,7 +110,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             if (walletManager != null)
             {
                 int height = walletManager.LastBlockHeight();
-                ChainedBlock block = this.chain.GetBlock(height);
+                ChainedHeader block = this.chain.GetBlock(height);
                 uint256 hashBlock = block == null ? 0 : block.HashBlock;
 
                 benchLogs.AppendLine("Wallet.Height: ".PadRight(LoggingConfiguration.ColumnLength + 1) +

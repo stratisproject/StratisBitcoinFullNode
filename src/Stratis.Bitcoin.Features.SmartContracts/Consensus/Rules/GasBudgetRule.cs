@@ -91,7 +91,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Consensus.Rules
                     this.ThrowGasGreaterThanFee();
                 }
             }
-            catch (OverflowException e)
+            catch (OverflowException)
             {
                 this.ThrowGasOverflowException();
             }

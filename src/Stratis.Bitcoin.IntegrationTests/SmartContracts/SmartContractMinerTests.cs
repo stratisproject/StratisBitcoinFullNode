@@ -22,6 +22,7 @@ using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.MemoryPool.Fee;
 using Stratis.Bitcoin.Features.Miner;
 using Stratis.Bitcoin.Features.SmartContracts;
+using Stratis.Bitcoin.Mining;
 using Stratis.Bitcoin.P2P;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
@@ -44,27 +45,18 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
     {
         private static FeeRate blockMinFeeRate = new FeeRate(PowMining.DefaultBlockMinTxFee);
 
-        public static PowBlockAssembler AssemblerForTest(TestContext testContext)
+        public static BlockDefinition AssemblerForTest(TestContext testContext)
         {
-            var options = new AssemblerOptions
-            {
-                BlockMaxWeight = testContext.network.Consensus.Option<PowConsensusOptions>().MaxBlockWeight,
-                BlockMaxSize = testContext.network.Consensus.Option<PowConsensusOptions>().MaxBlockSerializedSize,
-                BlockMinFeeRate = blockMinFeeRate
-            };
-
-            return new SmartContractBlockAssembler(
-                testContext.chain.Tip,
+            return new SmartContractBlockDefinition(
+                testContext.cachedCoinView,
                 testContext.consensus,
                 testContext.date,
+                testContext.executorFactory,
                 new LoggerFactory(),
                 testContext.mempool,
                 testContext.mempoolLock,
                 testContext.network,
-                testContext.stateRoot,
-                testContext.executorFactory,
-                testContext.cachedCoinView,
-                options);
+                testContext.stateRoot);
         }
 
         public class Blockinfo
@@ -105,13 +97,13 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
             {2, 0xbbbeb305}, {2, 0xfe1c810a}
         };
 
-        public ChainedBlock CreateBlockIndex(ChainedBlock prev)
+        public ChainedHeader CreateBlockIndex(ChainedHeader prev)
         {
-            var index = new ChainedBlock(new BlockHeader(), new BlockHeader().GetHash(), prev);
+            var index = new ChainedHeader(new BlockHeader(), new BlockHeader().GetHash(), prev);
             return index;
         }
 
-        public bool TestSequenceLocks(TestContext testContext, ChainedBlock chainedBlock, Transaction tx, Transaction.LockTimeFlags flags, LockPoints uselock = null)
+        public bool TestSequenceLocks(TestContext testContext, ChainedHeader chainedBlock, Transaction tx, Transaction.LockTimeFlags flags, LockPoints uselock = null)
         {
             var context = new MempoolValidationContext(tx, new MempoolValidationState(false))
             {
@@ -120,7 +112,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
 
             context.View.LoadViewAsync(tx).GetAwaiter().GetResult();
 
-            return MempoolValidator.CheckSequenceLocks(chainedBlock, context, flags, uselock, false);
+            return MempoolValidator.CheckSequenceLocks(testContext.network, chainedBlock, context, flags, uselock, false);
         }
 
         public class TestContext
@@ -168,7 +160,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 this.network = Network.SmartContractsRegTest;
                 this.privateKey = new Key();
                 this.scriptPubKey = PayToPubkeyHashTemplate.Instance.GenerateScriptPubKey(this.privateKey.PubKey);
-                this.newBlock = new BlockTemplate();
+                this.newBlock = new BlockTemplate(this.network);
 
                 this.entry = new TestMemPoolEntryHelper();
                 this.chain = new ConcurrentChain(this.network);
@@ -186,7 +178,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
 
                 this.keyEncodingStrategy = BasicKeyEncodingStrategy.Default;
 
-                var folder = TestDirectory.Create(Path.Combine(AppContext.BaseDirectory, callingMethod));
+                var folder = TestDirectory.Create(Path.Combine(AppContext.BaseDirectory, "TestData", callingMethod));
 
                 var engine = new DBreezeEngine(folder.FolderName);
                 var byteStore = new DBreezeByteStore(engine, "ContractState1");
@@ -228,7 +220,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 this.mempoolLock = new MempoolSchedulerLock();
 
                 // Simple block creation, nothing special yet:
-                this.newBlock = AssemblerForTest(this).CreateNewBlock(this.scriptPubKey);
+                this.newBlock = AssemblerForTest(this).Build(this.chain.Tip, this.scriptPubKey);
                 this.chain.SetTip(this.newBlock.Block.Header);
                 await this.consensus.ValidateAndExecuteBlockAsync(new RuleContext(new BlockValidationContext { Block = this.newBlock.Block }, this.network.Consensus, this.consensus.Tip) { CheckPow = false, CheckMerkleRoot = false });
 
@@ -239,7 +231,8 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 this.txFirst = new List<Transaction>();
                 for (int i = 0; i < this.blockinfo.Count; ++i)
                 {
-                    var pblock = this.newBlock.Block.Clone(); // pointer for convenience
+                    var pblock = this.newBlock.Block.Clone(network: this.network); // pointer for convenience
+                    ((SmartContractBlockHeader)pblock.Header).HashStateRoot = ((SmartContractBlockHeader)this.newBlock.Block.Header).HashStateRoot;
                     pblock.Header.HashPrevBlock = this.chain.Tip.HashBlock;
                     pblock.Header.Version = 1;
                     pblock.Header.Time = Utils.DateTimeToUnixTime(this.chain.Tip.GetMedianTimePast()) + 1;
@@ -265,7 +258,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 }
 
                 // Just to make sure we can still make simple blocks
-                this.newBlock = AssemblerForTest(this).CreateNewBlock(this.scriptPubKey);
+                this.newBlock = AssemblerForTest(this).Build(this.chain.Tip, this.scriptPubKey);
                 Assert.NotNull(this.newBlock);
             }
 
@@ -339,7 +332,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
             var maliciousPerson = new Key();
             var entryFee = 10000;
             TestMemPoolEntryHelper entry = new TestMemPoolEntryHelper();
-            var maliciousTxBuilder = new TransactionBuilder();
+            var maliciousTxBuilder = new TransactionBuilder(context.network);
             var maliciousAmount = 500000000; // 5 BTC
             var maliciousPaymentScript = PayToPubkeyHashTemplate.Instance.GenerateScriptPubKey(maliciousPerson.PubKey);
 
@@ -717,7 +710,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
             txIn.ScriptSig = context.privateKey.ScriptPubKey;
             preTx.AddInput(txIn);
             preTx.AddOutput(new TxOut(new Money(49, MoneyUnit.BTC), PayToPubkeyHashTemplate.Instance.GenerateScriptPubKey(context.privateKey.PubKey)));
-            preTx.Sign(context.privateKey, false);
+            preTx.Sign(context.network, context.privateKey, false);
             context.mempool.AddUnchecked(preTx.GetHash(), entry.Fee(30000).Time(context.date.GetTime()).SpendsCoinbase(true).FromTx(preTx));
 
             // Add the smart contract transaction to the mempool and mine as normal.
@@ -736,7 +729,6 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
             Assert.NotNull(context.stateRoot.GetCode(newContractAddress));
         }
 
-
         private async Task<BlockTemplate> AddTransactionToMemPoolAndBuildBlockAsync(TestContext context, SmartContractCarrier smartContractCarrier, uint256 prevOutHash, ulong value, ulong gasBudget)
         {
             this.AddTransactionToMempool(context, smartContractCarrier, prevOutHash, value, gasBudget);
@@ -748,18 +740,20 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
             var entryFee = gasBudget;
             TestMemPoolEntryHelper entry = new TestMemPoolEntryHelper();
             Transaction tx = new Transaction();
-            var txIn = new TxIn(new OutPoint(prevOutHash, 0));
-            txIn.ScriptSig = context.privateKey.ScriptPubKey;
+            var txIn = new TxIn(new OutPoint(prevOutHash, 0))
+            {
+                ScriptSig = context.privateKey.ScriptPubKey
+            };
             tx.AddInput(txIn);
             tx.AddOutput(new TxOut(new Money(value), new Script(smartContractCarrier.Serialize())));
-            tx.Sign(context.privateKey, false);
+            tx.Sign(context.network, context.privateKey, false);
             context.mempool.AddUnchecked(tx.GetHash(), entry.Fee(entryFee).Time(context.date.GetTime()).SpendsCoinbase(spendsCoinbase).FromTx(tx));
             return tx;
         }
 
         private async Task<BlockTemplate> BuildBlockAsync(TestContext context)
         {
-            BlockTemplate pblocktemplate = AssemblerForTest(context).CreateNewBlock(context.scriptPubKey);
+            BlockTemplate pblocktemplate = AssemblerForTest(context).Build(context.chain.Tip, context.scriptPubKey);
             context.chain.SetTip(pblocktemplate.Block.Header);
             await context.consensus.ValidateAndExecuteBlockAsync(new RuleContext(new BlockValidationContext { Block = pblocktemplate.Block }, context.network.Consensus, context.consensus.Tip) { CheckPow = false, CheckMerkleRoot = false });
             return pblocktemplate;

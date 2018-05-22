@@ -3,14 +3,6 @@ namespace NBitcoin.Tests
 {
     public class pos_ProtocolTests
     {
-        public pos_ProtocolTests()
-        {
-            // These tests should be using the Stratis network.
-            // Set these expected values accordingly.
-            Transaction.TimeStamp = true;
-            Block.BlockSignature = true;
-        }
-
         /*
          * TODO: Consider importing to FN.
 

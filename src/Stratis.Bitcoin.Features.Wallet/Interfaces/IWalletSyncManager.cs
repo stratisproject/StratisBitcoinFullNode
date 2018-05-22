@@ -48,6 +48,6 @@ namespace Stratis.Bitcoin.Features.Wallet.Interfaces
         /// <summary>
         /// The current tip of the wallet.
         /// </summary>
-        ChainedBlock WalletTip { get; }
+        ChainedHeader WalletTip { get; }
     }
 }

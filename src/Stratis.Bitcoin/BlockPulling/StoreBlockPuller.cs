@@ -26,7 +26,7 @@ namespace Stratis.Bitcoin.BlockPulling
         /// <summary>
         /// Prepares and invokes a download task for multiple blocks.
         /// </summary>
-        public void AskForMultipleBlocks(ChainedBlock[] downloadRequests)
+        public void AskForMultipleBlocks(ChainedHeader[] downloadRequests)
         {
             this.logger.LogTrace("({0}.{1}:{2})", nameof(downloadRequests), nameof(downloadRequests.Length), downloadRequests.Length);
 
@@ -38,20 +38,20 @@ namespace Stratis.Bitcoin.BlockPulling
         /// <summary>
         /// Tries to retrieve a specific downloaded block from the list of downloaded blocks.
         /// </summary>
-        /// <param name="chainedBlock">Header of the block to retrieve.</param>
+        /// <param name="chainedHeader">Header of the block to retrieve.</param>
         /// <param name="block">If the function succeeds, the downloaded block is returned in this parameter.</param>
         /// <returns>true if the function succeeds, false otherwise.</returns>
-        public bool TryGetBlock(ChainedBlock chainedBlock, out DownloadedBlock block)
+        public bool TryGetBlock(ChainedHeader chainedHeader, out DownloadedBlock block)
         {
-            this.logger.LogTrace("({0}:'{1}')", nameof(chainedBlock), chainedBlock);
+            this.logger.LogTrace("({0}:'{1}')", nameof(chainedHeader), chainedHeader);
 
-            if (this.TryRemoveDownloadedBlock(chainedBlock.HashBlock, out block))
+            if (this.TryRemoveDownloadedBlock(chainedHeader.HashBlock, out block))
             {
                 this.logger.LogTrace("(-):true");
                 return true;
             }
 
-            this.OnStalling(chainedBlock);
+            this.OnStalling(chainedHeader);
             this.logger.LogTrace("(-):false");
             return false;
         }

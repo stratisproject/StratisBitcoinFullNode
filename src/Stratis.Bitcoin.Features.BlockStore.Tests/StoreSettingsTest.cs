@@ -8,11 +8,8 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
 {
     public class StoreSettingsTest : TestBase
     {
-        public StoreSettingsTest()
+        public StoreSettingsTest() : base(Network.Main)
         {
-            // Ensure that these flags match the Network and NetworkOptions being used
-            Transaction.TimeStamp = false;
-            Block.BlockSignature = false;
         }
 
         [Fact]

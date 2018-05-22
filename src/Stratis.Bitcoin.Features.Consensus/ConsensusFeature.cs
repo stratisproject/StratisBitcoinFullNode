@@ -147,6 +147,16 @@ namespace Stratis.Bitcoin.Features.Consensus
             ConsensusSettings.PrintHelp(network);
         }
 
+        /// <summary>
+        /// Get the default configuration.
+        /// </summary>
+        /// <param name="builder">The string builder to add the settings to.</param>
+        /// <param name="network">The network to base the defaults off.</param>
+        public static void BuildDefaultConfigurationFile(StringBuilder builder, Network network)
+        {
+            ConsensusSettings.BuildDefaultConfigurationFile(builder, network);
+        }
+
         /// <inheritdoc />
         public override void Dispose()
         {
@@ -185,7 +195,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                 .FeatureServices(services =>
                 {
                     // TODO: this should be set on the network build
-                    fullNodeBuilder.Network.Consensus.Options = new SmartContractConsensusOptions();
+                    fullNodeBuilder.Network.Consensus.Options = new PowConsensusOptions();
 
                     services.AddSingleton<ICheckpoints, Checkpoints>();
                     services.AddSingleton<NBitcoin.Consensus.ConsensusOptions, SmartContractConsensusOptions>();
@@ -244,6 +254,41 @@ namespace Stratis.Bitcoin.Features.Consensus
                         services.AddSingleton<IConsensusRules, PosConsensusRules>();
                         services.AddSingleton<IRuleRegistration, PosConsensusRulesRegistration>();
                     });
+            });
+
+            return fullNodeBuilder;
+        }
+
+        public static IFullNodeBuilder UseSmartContractConsensus(this IFullNodeBuilder fullNodeBuilder)
+        {
+            LoggingConfiguration.RegisterFeatureNamespace<ConsensusFeature>("consensus");
+            LoggingConfiguration.RegisterFeatureClass<ConsensusStats>("bench");
+
+            fullNodeBuilder.ConfigureFeature(features =>
+            {
+                features
+                .AddFeature<ConsensusFeature>()
+                .FeatureServices(services =>
+                {
+                    // TODO: this should be set on the network build
+                    fullNodeBuilder.Network.Consensus.Options = new SmartContractConsensusOptions();
+
+                    services.AddSingleton<ICheckpoints, Checkpoints>();
+                    services.AddSingleton<NBitcoin.Consensus.ConsensusOptions, SmartContractConsensusOptions>();
+                    services.AddSingleton<IPowConsensusValidator, PowConsensusValidator>();
+                    services.AddSingleton<DBreezeCoinView>();
+                    services.AddSingleton<CoinView, CachedCoinView>();
+                    services.AddSingleton<LookaheadBlockPuller>().AddSingleton<ILookaheadBlockPuller, LookaheadBlockPuller>(provider => provider.GetService<LookaheadBlockPuller>()); ;
+                    services.AddSingleton<IConsensusLoop, ConsensusLoop>();
+                    services.AddSingleton<ConsensusManager>().AddSingleton<INetworkDifficulty, ConsensusManager>();
+                    services.AddSingleton<IInitialBlockDownloadState, InitialBlockDownloadState>();
+                    services.AddSingleton<IGetUnspentTransaction, ConsensusManager>();
+                    services.AddSingleton<ConsensusController>();
+                    services.AddSingleton<ConsensusStats>();
+                    services.AddSingleton<ConsensusSettings>();
+                    services.AddSingleton<IConsensusRules, PowConsensusRules>();
+                    services.AddSingleton<IRuleRegistration, PowConsensusRulesRegistration>();
+                });
             });
 
             return fullNodeBuilder;

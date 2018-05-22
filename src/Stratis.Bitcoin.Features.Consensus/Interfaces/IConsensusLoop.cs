@@ -25,7 +25,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Interfaces
         IStakeChain StakeChain { get; }
 
         /// <summary>The current tip of the chain that has been validated.</summary>
-        ChainedBlock Tip { get; }
+        ChainedHeader Tip { get; }
 
         /// <summary>The consensus db, containing all unspent UTXO in the chain.</summary>
         CoinView UTXOSet { get; }

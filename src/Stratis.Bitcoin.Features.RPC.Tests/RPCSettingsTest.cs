@@ -10,6 +10,10 @@ namespace Stratis.Bitcoin.Features.RPC.Tests
 {
     public class RPCSettingsTest : TestBase
     {
+        public RPCSettingsTest() : base(Network.TestNet)
+        {
+        }
+
         [Fact]
         public void Load_ValidNodeSettings_UpdatesRpcSettingsFromNodeSettings()
         {

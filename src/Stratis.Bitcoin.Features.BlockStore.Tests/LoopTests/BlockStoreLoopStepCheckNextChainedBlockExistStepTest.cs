@@ -22,9 +22,9 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
                 var chain = new ConcurrentChain(blocks[0].Header);
                 this.AppendBlocksToChain(chain, blocks.Skip(1).Take(3));
 
-                // Create the last chained block without appending to the chain
+                // Create the last chained block header without appending to the chain
                 var block03 = chain.GetBlock(blocks[3].GetHash());
-                var block04 = new ChainedBlock(blocks[4].Header, blocks[4].Header.GetHash(), block03);
+                var block04 = new ChainedHeader(blocks[4].Header, blocks[4].Header.GetHash(), block03);
 
                 fluent.Create(chain);
                 Assert.Null(fluent.Loop.StoreTip);
@@ -33,9 +33,8 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
                 var checkExistsStep = new CheckNextChainedBlockExistStep(fluent.Loop, this.LoggerFactory.Object);
                 checkExistsStep.ExecuteAsync(nextChainedBlock, new CancellationToken(), false).GetAwaiter().GetResult();
 
-                var options = NetworkOptions.TemporaryOptions;
-                Assert.Equal(fluent.Loop.StoreTip.Header.GetHash(options), block04.Header.GetHash(options));
-                Assert.Equal(fluent.Loop.BlockRepository.BlockHash, block04.Header.GetHash(options));
+                Assert.Equal(fluent.Loop.StoreTip.Header.GetHash(), block04.Header.GetHash());
+                Assert.Equal(fluent.Loop.BlockRepository.BlockHash, block04.Header.GetHash());
             }
         }
     }

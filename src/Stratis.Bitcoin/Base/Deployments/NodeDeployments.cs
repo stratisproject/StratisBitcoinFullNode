@@ -23,7 +23,7 @@ namespace Stratis.Bitcoin.Base.Deployments
             this.BIP9 = new ThresholdConditionCache(network.Consensus);
         }
 
-        public virtual DeploymentFlags GetFlags(ChainedBlock block)
+        public virtual DeploymentFlags GetFlags(ChainedHeader block)
         {
             Guard.NotNull(block, nameof(block));
 

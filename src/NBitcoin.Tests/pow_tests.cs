@@ -7,14 +7,6 @@ namespace NBitcoin.Tests
 {
     public class pow_tests
     {
-        public pow_tests()
-        {
-            // These tests should be using the Bitcoin network.
-            // Set these expected values accordingly.
-            Transaction.TimeStamp = false;
-            Block.BlockSignature = false;
-        }
-
         [Fact]
         [Trait("UnitTest", "UnitTest")]
         public void CanCalculatePowCorrectly()

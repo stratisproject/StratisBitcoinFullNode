@@ -15,7 +15,6 @@ using Stratis.Bitcoin.Features.Consensus.Interfaces;
 using Stratis.Bitcoin.Features.SmartContracts.Models;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
-using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Utilities.JsonErrors;
 using Stratis.SmartContracts;
@@ -29,15 +28,15 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Controllers
     [Route("api/[controller]")]
     public class SmartContractsController : Controller
     {
-        private readonly ContractStateRepositoryRoot stateRoot;
+        private readonly IBroadcasterManager broadcasterManager;
+        private readonly CoinType coinType;
         private readonly IConsensusLoop consensus;
-        private readonly IWalletTransactionHandler walletTransactionHandler;
         private readonly IDateTimeProvider dateTimeProvider;
         private readonly ILogger logger;
         private readonly Network network;
-        private readonly CoinType coinType;
+        private readonly ContractStateRepositoryRoot stateRoot;
         private readonly IWalletManager walletManager;
-        private readonly IBroadcasterManager broadcasterManager;
+        private readonly IWalletTransactionHandler walletTransactionHandler;
 
         public SmartContractsController(
             IBroadcasterManager broadcasterManager,
@@ -159,7 +158,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Controllers
             if (!response.Success)
                 return Json(response);
 
-            var transaction = new Transaction(response.Hex);
+            var transaction = Transaction.Load(response.Hex, this.network);
             this.walletManager.ProcessTransaction(transaction, null, null, false);
             this.broadcasterManager.BroadcastTransactionAsync(transaction).GetAwaiter().GetResult();
 
@@ -177,7 +176,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Controllers
             if (!response.Success)
                 return Json(response);
 
-            var transaction = new Transaction(response.Hex);
+            var transaction = Transaction.Load(response.Hex, this.network);
             this.walletManager.ProcessTransaction(transaction, null, null, false);
             this.broadcasterManager.BroadcastTransactionAsync(transaction).GetAwaiter().GetResult();
 

@@ -10,9 +10,9 @@ using Stratis.Bitcoin.Features.SmartContracts.Controllers;
 using Stratis.Bitcoin.Features.SmartContracts.Models;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Controllers;
+using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Features.Wallet.Models;
 using Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers;
-using Stratis.Bitcoin.Interfaces;
 using Stratis.SmartContracts;
 using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.Compilation;
@@ -21,24 +21,11 @@ using Xunit;
 
 namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
 {
-    public sealed class SmartContractWalletTests : IDisposable
+    public sealed class SmartContractWalletTests
     {
         private const string WalletName = "mywallet";
         private const string Password = "123456";
         private const string AccountName = "account 0";
-
-        private bool initialBlockSignature;
-
-        public SmartContractWalletTests()
-        {
-            this.initialBlockSignature = NBitcoin.Block.BlockSignature;
-            NBitcoin.Block.BlockSignature = false;
-        }
-
-        public void Dispose()
-        {
-            NBitcoin.Block.BlockSignature = this.initialBlockSignature;
-        }
 
         /// <summary>
         /// This is the same test in WalletTests.cs, just using all of the smart contract classes
@@ -126,7 +113,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 scSender.FullNode.WalletManager().CreateWallet(Password, WalletName);
                 scReceiver.FullNode.WalletManager().CreateWallet(Password, WalletName);
                 HdAddress addr = scSender.FullNode.WalletManager().GetUnusedAddress(new WalletAccountReference(WalletName, AccountName));
-                Stratis.Bitcoin.Features.Wallet.Wallet wallet = scSender.FullNode.WalletManager().GetWalletByName(WalletName);
+                Features.Wallet.Wallet wallet = scSender.FullNode.WalletManager().GetWalletByName(WalletName);
                 Key key = wallet.GetExtendedPrivateKeyForAddress(Password, addr).PrivateKey;
 
                 scSender.SetDummyMinerSecret(new BitcoinSecret(key, scSender.FullNode.Network));
@@ -277,7 +264,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                     GasLimit = "10000",
                     GasPrice = "1",
                     ContractCode = compilationResult.Compilation.ToHexString(),
-                    FeeAmount = "0.02",
+                    FeeAmount = "0.001",
                     Password = Password,
                     WalletName = WalletName,
                     Sender = addr.Address
@@ -336,7 +323,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                     Amount = "0",
                     MethodName = "Increment",
                     ContractAddress = response.NewContractAddress,
-                    FeeAmount = "30000",
+                    FeeAmount = "0.001",
                     Password = Password,
                     WalletName = WalletName,
                     Sender = addr.Address
@@ -416,11 +403,11 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                     GasLimit = "10000",
                     GasPrice = "1",
                     ContractCode = compilationResult.Compilation.ToHexString(),
-                    FeeAmount = "0.02",
+                    FeeAmount = "0.001",
                     Password = Password,
                     WalletName = WalletName,
                     Sender = addr.Address,
-                    Parameters = new string[] {"10#20"}
+                    Parameters = new string[] { "10#20" }
                 };
 
                 JsonResult result = (JsonResult)senderSmartContractsController.BuildCreateSmartContractTransaction(buildRequest);
@@ -449,7 +436,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                     Amount = "2",
                     MethodName = "Bid",
                     ContractAddress = response.NewContractAddress,
-                    FeeAmount = "0.02",
+                    FeeAmount = "0.001",
                     Password = Password,
                     WalletName = WalletName,
                     Sender = addr.Address
@@ -468,7 +455,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 var ownerBytes = senderState.GetStorageValue(contractAddressUint160, Encoding.UTF8.GetBytes("Owner"));
                 var highestBidderBytes = senderState.GetStorageValue(contractAddressUint160, Encoding.UTF8.GetBytes("HighestBidder"));
                 Assert.Equal(new uint160(ownerBytes), new uint160(highestBidderBytes));
-                var hasEndedBytes =  senderState.GetStorageValue(contractAddressUint160, Encoding.UTF8.GetBytes("HasEnded"));
+                var hasEndedBytes = senderState.GetStorageValue(contractAddressUint160, Encoding.UTF8.GetBytes("HasEnded"));
                 var endBlockBytes = senderState.GetStorageValue(contractAddressUint160, Encoding.UTF8.GetBytes("EndBlock"));
                 bool hasEnded = BitConverter.ToBoolean(hasEndedBytes, 0);
                 ulong endBlock = BitConverter.ToUInt64(endBlockBytes, 0);
@@ -485,7 +472,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                     Amount = "0",
                     MethodName = "AuctionEnd",
                     ContractAddress = response.NewContractAddress,
-                    FeeAmount = "0.02",
+                    FeeAmount = "0.001",
                     Password = Password,
                     WalletName = WalletName,
                     Sender = addr.Address

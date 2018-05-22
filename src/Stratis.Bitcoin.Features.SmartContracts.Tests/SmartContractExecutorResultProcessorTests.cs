@@ -13,11 +13,13 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
     public sealed class SmartContractExecutorResultProcessorTests
     {
         private readonly ILoggerFactory loggerFactory;
+        private readonly Network network;
 
         public SmartContractExecutorResultProcessorTests()
         {
             this.loggerFactory = new ExtendedLoggerFactory();
             this.loggerFactory.AddConsoleWithFilters();
+            this.network = Network.SmartContractsRegTest;
         }
 
         [Fact]
@@ -37,7 +39,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             Assert.Equal((ulong)6450, result.Fee);
             Assert.Single(result.Refunds);
-            Assert.Equal(carrier.Sender.ToBytes(), result.Refunds.First().ScriptPubKey.GetDestination().ToBytes());
+            Assert.Equal(carrier.Sender.ToBytes(), result.Refunds.First().ScriptPubKey.GetDestination(this.network).ToBytes());
             Assert.Equal(4050, result.Refunds.First().Value);
         }
 

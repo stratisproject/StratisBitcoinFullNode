@@ -48,17 +48,17 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
             while (context.BlocksPushedCount <= BlockStoreInnerStepContext.DownloadStackPushThreshold)
             {
                 DownloadedBlock downloadedBlock;
-                ChainedBlock nextBlock = context.DownloadStack.Peek();
+                ChainedHeader nextBlock = context.DownloadStack.Peek();
 
                 if (context.BlockStoreLoop.BlockPuller.TryGetBlock(nextBlock, out downloadedBlock))
                 {
                     this.logger.LogTrace("Puller provided block '{0}', length {1}.", nextBlock, downloadedBlock.Length);
 
-                    ChainedBlock lastBlockToPush = this.AddDownloadedBlockToStore(context, downloadedBlock);
+                    ChainedHeader lastHeaderToPush = this.AddDownloadedBlockToStore(context, downloadedBlock);
 
                     if (this.ShouldBlocksBePushedToRepository(context))
                     {
-                        await this.PushBlocksToRepositoryAsync(context, lastBlockToPush);
+                        await this.PushBlocksToRepositoryAsync(context, lastHeaderToPush);
 
                         if (!context.DownloadStack.Any())
                         {
@@ -93,18 +93,18 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
         }
 
         /// <summary> Adds the downloaded block to the store and resets the stall count.</summary>
-        private ChainedBlock AddDownloadedBlockToStore(BlockStoreInnerStepContext context, DownloadedBlock downloadedBlock)
+        private ChainedHeader AddDownloadedBlockToStore(BlockStoreInnerStepContext context, DownloadedBlock downloadedBlock)
         {
             this.logger.LogTrace("({0}.{1}:{2})", nameof(downloadedBlock), nameof(downloadedBlock.Length), downloadedBlock.Length);
 
-            ChainedBlock chainedBlockToStore = context.DownloadStack.Dequeue();
-            context.Store.Add(new BlockPair(downloadedBlock.Block, chainedBlockToStore));
+            ChainedHeader chainedHeaderToStore = context.DownloadStack.Dequeue();
+            context.Store.Add(new BlockPair(downloadedBlock.Block, chainedHeaderToStore));
 
             context.InsertBlockSize += downloadedBlock.Length;
             context.StallCount = 0;
 
-            this.logger.LogTrace("(-):'{0}'", chainedBlockToStore);
-            return chainedBlockToStore;
+            this.logger.LogTrace("(-):'{0}'", chainedHeaderToStore);
+            return chainedHeaderToStore;
         }
 
         /// <summary> Determines whether or not its time for <see cref="BlockStoreInnerStepReadBlocks"/>
@@ -131,17 +131,17 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
         /// <summary>
         /// Push (persist) the downloaded blocks to the block repository
         /// </summary>
-        /// <param name="lastDownloadedBlock">Last block in the list to store, also used to set the store tip.</param>
-        private async Task PushBlocksToRepositoryAsync(BlockStoreInnerStepContext context, ChainedBlock lastDownloadedBlock)
+        /// <param name="lastDownloadedHeader>Last block in the list to store, also used to set the store tip.</param>
+        private async Task PushBlocksToRepositoryAsync(BlockStoreInnerStepContext context, ChainedHeader lastDownloadedHeader)
         {
             this.logger.LogTrace("()");
 
             List<Block> blocksToStore = context.Store.Select(bp => bp.Block).ToList();
-            await context.BlockStoreLoop.BlockRepository.PutAsync(lastDownloadedBlock.HashBlock, blocksToStore);
+            await context.BlockStoreLoop.BlockRepository.PutAsync(lastDownloadedHeader.HashBlock, blocksToStore);
             context.BlocksPushedCount += blocksToStore.Count;
             this.logger.LogTrace("{0} blocks pushed to the repository, {1} blocks pushed in total.", blocksToStore.Count, context.BlocksPushedCount);
 
-            context.BlockStoreLoop.SetStoreTip(lastDownloadedBlock);
+            context.BlockStoreLoop.SetStoreTip(lastDownloadedHeader);
             context.InsertBlockSize = 0;
             context.LastDownloadStackFlushTime = context.DateTimeProvider.GetUtcNow();
 

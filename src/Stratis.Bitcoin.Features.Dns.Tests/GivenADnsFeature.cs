@@ -5,6 +5,7 @@ using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Internal;
 using Moq;
+using NBitcoin;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.P2P;
 using Stratis.Bitcoin.Tests.Common;
@@ -18,6 +19,10 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
     /// </summary>
     public class GivenADnsFeature : TestBase
     {
+        public GivenADnsFeature() : base(Network.Main)
+        {
+        }
+
         [Fact]
         [Trait("DNS", "UnitTest")]
         public void WhenConstructorCalled_AndDnsServerIsNull_ThenArgumentNullExceptionIsThrown()

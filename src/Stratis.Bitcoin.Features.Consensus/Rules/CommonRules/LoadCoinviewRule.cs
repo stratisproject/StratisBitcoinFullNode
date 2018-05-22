@@ -57,7 +57,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         /// <returns>A list of transaction ids to fetch from store</returns>
         private uint256[] GetIdsToFetch(Block block, bool enforceBIP30)
         {
-            this.Logger.LogTrace("({0}:'{1}',{2}:{3})", nameof(block), block.GetHash(NetworkOptions.TemporaryOptions), nameof(enforceBIP30), enforceBIP30);
+            this.Logger.LogTrace("({0}:'{1}',{2}:{3})", nameof(block), block.GetHash(), nameof(enforceBIP30), enforceBIP30);
 
             HashSet<uint256> ids = new HashSet<uint256>();
             foreach (Transaction tx in block.Transactions)

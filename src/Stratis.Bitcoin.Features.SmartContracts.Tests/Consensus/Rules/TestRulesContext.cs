@@ -16,7 +16,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
 {
     // Borrowed from Stratis.Bitcoin.Features.Consensus.Tests
 
-
     /// <summary>
     /// Concrete instance of the test chain.
     /// </summary>
@@ -82,7 +81,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
 
         public static Block MineBlock(Network network, ConcurrentChain chain)
         {
-            var block = new Block();
+            Block block = network.Consensus.ConsensusFactory.CreateBlock();
+
             var coinbase = new Transaction();
             coinbase.AddInput(TxIn.CreateCoinbase(chain.Height + 1));
             coinbase.AddOutput(new TxOut(Money.Zero, new Key()));
@@ -108,6 +108,5 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
 
             return block;
         }
-
     }
 }

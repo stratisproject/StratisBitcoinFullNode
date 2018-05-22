@@ -36,13 +36,13 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         [Fact]
         public void PersistentState_CanSerialize_Deserialize_ValueType()
         {
-            var network = Network.SmartContractsRegTest;
+            Network network = Network.SmartContractsRegTest;
 
             TestValueType valueType = this.NewTestValueType();
 
             var serialized = this.serializer.Serialize(valueType, network);
 
-            var deserialized = this.serializer.Deserialize<TestValueType>(serialized, network);
+            TestValueType deserialized = this.serializer.Deserialize<TestValueType>(serialized, network);
 
             Assert.Equal(valueType.AddressField, deserialized.AddressField);
             Assert.Equal(valueType.AddressProp, deserialized.AddressProp);
@@ -57,9 +57,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             Assert.Equal(valueType.UlongField, deserialized.UlongField);
             Assert.Equal(valueType.UlongProp, deserialized.UlongProp);
             Assert.Equal(valueType.ByteField, deserialized.ByteField);
-            Assert.Equal(valueType.ByteProp, deserialized.ByteProp);        
+            Assert.Equal(valueType.ByteProp, deserialized.ByteProp);
             Assert.Equal(valueType.SbyteField, deserialized.SbyteField);
-            Assert.Equal(valueType.SbyteProp, deserialized.SbyteProp);        
+            Assert.Equal(valueType.SbyteProp, deserialized.SbyteProp);
             Assert.Equal(valueType.ByteArrayField, deserialized.ByteArrayField);
             Assert.Equal(valueType.ByteArrayProp, deserialized.ByteArrayProp);
             Assert.Equal(valueType.CharField, deserialized.CharField);
@@ -71,7 +71,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         [Fact]
         public void PersistentState_CanSerialize_Deserialize_NestedValueType()
         {
-            var network = Network.SmartContractsRegTest;
+            Network network = Network.SmartContractsRegTest;
 
             TestValueType valueType = this.NewTestValueType();
 
@@ -81,9 +81,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             var serialized = this.serializer.Serialize(nestedValueType, network);
 
-            var deserialized = this.serializer.Deserialize<NestedValueType>(serialized, network);
+            NestedValueType deserialized = this.serializer.Deserialize<NestedValueType>(serialized, network);
 
-            var nested = deserialized.ValueType;
+            TestValueType nested = deserialized.ValueType;
 
             Assert.Equal(nestedValueType.Id, deserialized.Id);
             Assert.Equal(valueType.AddressField, nested.AddressField);
@@ -113,14 +113,14 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         [Fact]
         public void PersistentState_CanSerialize_Deserialize_NullValueType()
         {
-            var network = Network.SmartContractsRegTest;
+            Network network = Network.SmartContractsRegTest;
 
             var nestedValueType = new HasReferenceTypeValueType();
             nestedValueType.ReferenceType = null;
 
             var serialized = this.serializer.Serialize(nestedValueType, network);
 
-            var deserialized = this.serializer.Deserialize<HasReferenceTypeValueType>(serialized, network);
+            HasReferenceTypeValueType deserialized = this.serializer.Deserialize<HasReferenceTypeValueType>(serialized, network);
 
             Assert.Equal(nestedValueType.ReferenceType, deserialized.ReferenceType);
         }

@@ -16,20 +16,20 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 {
     public sealed class SmartContractExecutorTests
     {
+        private readonly IKeyEncodingStrategy keyEncodingStrategy;
+        private readonly ILoggerFactory loggerFactory;
         private readonly Network network;
         private readonly IContractStateRepository state;
         private readonly SmartContractValidator validator;
-        private readonly IKeyEncodingStrategy keyEncodingStrategy;
-        private readonly ILoggerFactory loggerFactory;
 
         public SmartContractExecutorTests()
         {
-            this.network = Network.SmartContractsRegTest;
-            this.state = new ContractStateRepositoryRoot(new NoDeleteSource<byte[], byte[]>(new MemoryDictionarySource()));
-            this.validator = new SmartContractValidator(new ISmartContractValidator[] { });
             this.keyEncodingStrategy = BasicKeyEncodingStrategy.Default;
             this.loggerFactory = new ExtendedLoggerFactory();
             this.loggerFactory.AddConsoleWithFilters();
+            this.network = Network.SmartContractsRegTest;
+            this.state = new ContractStateRepositoryRoot(new NoDeleteSource<byte[], byte[]>(new MemoryDictionarySource()));
+            this.validator = new SmartContractValidator(new ISmartContractValidator[] { });
         }
 
         [Fact]
@@ -69,7 +69,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             Assert.Single(result.InternalTransaction.Inputs);
             Assert.Single(result.InternalTransaction.Outputs);
 
-            var actualSender = new uint160(result.InternalTransaction.Outputs[0].ScriptPubKey.GetDestination().ToBytes());
+            var actualSender = new uint160(result.InternalTransaction.Outputs[0].ScriptPubKey.GetDestination(this.network).ToBytes());
             Assert.Equal(senderAddress, actualSender);
             Assert.Equal(100, result.InternalTransaction.Outputs[0].Value);
         }
