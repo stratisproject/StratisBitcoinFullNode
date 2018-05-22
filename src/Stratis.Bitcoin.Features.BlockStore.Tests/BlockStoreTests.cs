@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
@@ -14,13 +15,14 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
     {
         private BlockStore blockStore;
         private readonly IBlockRepository repository;
-        private readonly ConcurrentChain chain;
         private readonly IChainState chainState;
         private readonly NodeLifetime nodeLifetime;
+        private ConcurrentChain chain;
 
         private uint256 repositoryBlockHash;
         private int repositorySavesCount = 0;
         private int repositoryTotalBlocksSaved = 0;
+        private int repositoryTotalBlocksDeleted = 0;
 
         private ChainedHeader chainStateBlockStoreTip;
 
@@ -34,6 +36,12 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
                 this.repositoryBlockHash = nextBlockHash;
                 this.repositorySavesCount++;
                 this.repositoryTotalBlocksSaved += blocks.Count;
+                return Task.CompletedTask;
+            });
+
+            reposMoq.Setup(x => x.DeleteAsync(It.IsAny<uint256>(), It.IsAny<List<uint256>>())).Returns((uint256 nextBlockHash, List<uint256> blocks) =>
+            {
+                this.repositoryTotalBlocksDeleted += blocks.Count;
                 return Task.CompletedTask;
             });
 
@@ -185,7 +193,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             
             // First present a short chain.
             ConcurrentChain alternativeChain = this.CreateChain(reorgedChainLenght);
-            for (int i = 1; i < alternativeChain.Height; ++i)
+            for (int i = 1; i < alternativeChain.Height; i++)
                 this.blockStore.AddToPending(new BlockPair(new Block(), alternativeChain.GetBlock(i)));
 
             // Present second chain which has more work and reorgs blocks from genesis. 
@@ -205,6 +213,77 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             Assert.Equal(this.chain.GetBlock(realChainLenght - 1), this.chainState.BlockStoreTip);
             Assert.Equal(1, this.repositorySavesCount);
             Assert.Equal(realChainLenght - 1, this.repositoryTotalBlocksSaved);
+        }
+
+        /// <summary>
+        /// Tests reorgs inside the batch and inside the database at the same time.
+        /// </summary>
+        [Fact]
+        public async Task ReorgedBlocksAreDeleteFromRepositoryIfReorgDetectedAsync()
+        {
+            this.chain = this.CreateChain(1000);
+            this.consensusTip = this.chain.Tip;
+            this.repositoryBlockHash = this.chain.Genesis.HashBlock;
+
+            this.blockStore = new BlockStore(this.repository, this.chain, this.chainState, new StoreSettings(), this.nodeLifetime, new LoggerFactory());
+
+            await this.blockStore.InitializeAsync().ConfigureAwait(false);
+
+            // Sending 500 blocks to the queue
+            for (int i = 1; i < 500; i++)
+                this.blockStore.AddToPending(new BlockPair(new Block(), this.chain.GetBlock(i)));
+            
+            // Create alternative chain with fork point at 450
+            ChainedHeader prevBlock = this.chain.GetBlock(450);
+            var alternativeBlocks = new List<ChainedHeader>();
+            for (int i = 0; i < 100; i++)
+            {
+                var header = new BlockHeader()
+                {
+                    Nonce = RandomUtils.GetUInt32(),
+                    HashPrevBlock = prevBlock.HashBlock,
+                    Bits = Target.Difficulty1
+                };
+
+                var chainedHeader = new ChainedHeader(header, header.GetHash(), prevBlock);
+                alternativeBlocks.Add(chainedHeader);
+                prevBlock = chainedHeader;
+            }
+
+            ChainedHeader savedHeader = this.chain.Tip;
+
+            this.chain.SetTip(alternativeBlocks.Last());
+            this.consensusTip = this.chain.Tip;
+
+            await this.WaitUntilQueueIsEmptyAsync().ConfigureAwait(false);
+
+            // Present alternative chain and trigger save.
+            foreach (ChainedHeader header in alternativeBlocks)
+                this.blockStore.AddToPending(new BlockPair(new Block(), header));
+
+            await this.WaitUntilQueueIsEmptyAsync().ConfigureAwait(false);
+
+            // Make sure only longest chain is saved.
+            Assert.Equal(1, this.repositorySavesCount);
+            Assert.Equal(this.chain.Tip.Height, this.repositoryTotalBlocksSaved);
+
+            // Present a new longer chain that will reorg the repository,
+            this.chain.SetTip(savedHeader);
+            this.consensusTip = this.chain.Tip;
+
+            for (int i = 451; i <= this.chain.Height; i++)
+                this.blockStore.AddToPending(new BlockPair(new Block(), this.chain.GetBlock(i)));
+
+            await this.WaitUntilQueueIsEmptyAsync().ConfigureAwait(false);
+            
+            // Make sure chain is saved.
+            Assert.Equal(2, this.repositorySavesCount);
+            Assert.Equal(this.chain.Tip.Height + alternativeBlocks.Count, this.repositoryTotalBlocksSaved);
+            Assert.Equal(alternativeBlocks.Count, this.repositoryTotalBlocksDeleted);
+
+            // Dispose block store.
+            this.nodeLifetime.StopApplication();
+            this.blockStore.Dispose();
         }
     }
 }
