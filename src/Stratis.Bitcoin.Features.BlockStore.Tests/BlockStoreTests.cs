@@ -20,6 +20,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
 
         private uint256 repositoryBlockHash;
         private int repositorySavesCount = 0;
+        private int repositoryTotalBlocksSaved = 0;
 
         private ChainedHeader chainStateBlockStoreTip;
 
@@ -32,6 +33,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             {
                 this.repositoryBlockHash = nextBlockHash;
                 this.repositorySavesCount++;
+                this.repositoryTotalBlocksSaved += blocks.Count;
                 return Task.CompletedTask;
             });
 
@@ -169,6 +171,40 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             
             Assert.Equal(this.chainState.BlockStoreTip, this.chain.Tip);
             Assert.Equal(1, this.repositorySavesCount);
+        }
+
+        [Fact]
+        public async Task ReorgedBlocksAreNotSavedAsync()
+        {
+            this.repositoryBlockHash = this.chain.Genesis.HashBlock;
+
+            await this.blockStore.InitializeAsync().ConfigureAwait(false);
+
+            int reorgedChainLenght = 3;
+            int realChainLenght = 6;
+            
+            // First present a short chain.
+            ConcurrentChain alternativeChain = this.CreateChain(reorgedChainLenght);
+            for (int i = 1; i < alternativeChain.Height; ++i)
+                this.blockStore.AddToPending(new BlockPair(new Block(), alternativeChain.GetBlock(i)));
+
+            // Present second chain which has more work and reorgs blocks from genesis. 
+            for (int i = 1; i < realChainLenght; i++)
+                this.blockStore.AddToPending(new BlockPair(new Block(), this.chain.GetBlock(i)));
+            
+            await this.WaitUntilQueueIsEmptyAsync().ConfigureAwait(false);
+
+            Assert.Equal(this.chainState.BlockStoreTip, this.chain.Genesis);
+            Assert.Equal(0, this.repositorySavesCount);
+
+            // Dispose block store to trigger save.
+            this.nodeLifetime.StopApplication();
+            this.blockStore.Dispose();
+            
+            // Make sure that blocks only from 2nd chain were saved.
+            Assert.Equal(this.chain.GetBlock(realChainLenght - 1), this.chainState.BlockStoreTip);
+            Assert.Equal(1, this.repositorySavesCount);
+            Assert.Equal(realChainLenght - 1, this.repositoryTotalBlocksSaved);
         }
     }
 }
