@@ -9,6 +9,7 @@ using System.Net;
 using System.Net.Http;
 using System.Net.Sockets;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -53,35 +54,45 @@ namespace NBitcoin.Tests
         /// <returns>Returns true if the folder was successfully removed and false otherwise.</returns>
         public static bool CleanupTestFolder(string folder, bool tryKill = true)
         {
-            for (int retry = 0; retry < 2; retry++)
+            var deleteAttempts = 0;
+            while (deleteAttempts < 50)
             {
-                try
+                if (Directory.Exists(folder))
                 {
-                    Directory.Delete(folder, true);
-                    return true;
+                    try
+                    {
+                        Directory.Delete(folder, true);
+                        break;
+                    }
+                    catch
+                    {
+                        deleteAttempts++;
+                        Thread.Sleep(200);
+                    }
                 }
-                catch (DirectoryNotFoundException)
-                {
-                    return true;
-                }
-                catch (Exception)
-                {
-                }
-
-                if (tryKill)
-                {
-                    tryKill = false;
-
-                    var x = typeof(NodeBuilder);
-
-                    foreach (var bitcoind in Process.GetProcessesByName("bitcoind"))
-                        if (bitcoind.MainModule.FileName.Contains("NBitcoin.Tests"))
-                            bitcoind.Kill();
-
-                    Thread.Sleep(1000);
-                }
+                else
+                    break;
             }
 
+            if (deleteAttempts >= 50)
+                throw new Exception(string.Format("The test folder: {0} could not be deleted.", folder));
+
+            if (tryKill)
+            {
+                while (true)
+                {
+                    var bitcoinDProcesses = Process.GetProcessesByName("bitcoind");
+                    var applicableBitcoinDProcesses = bitcoinDProcesses.Where(b => b.MainModule.FileName.Contains("External Libs"));
+                    if (!applicableBitcoinDProcesses.Any())
+                        break;
+
+                    foreach (var process in applicableBitcoinDProcesses)
+                    {
+                        process.Kill();
+                        Thread.Sleep(1000);
+                    }
+                }
+            }
             return false;
         }
 
@@ -89,37 +100,24 @@ namespace NBitcoin.Tests
         {
             CleanupTestFolder(caller);
             Directory.CreateDirectory(caller);    
-            return new NodeBuilder(caller, EnsureDownloaded(version));
+            return new NodeBuilder(caller, GetBitcoinCorePath(version));
         }
 
-        private static string EnsureDownloaded(string version)
+        private static string GetBitcoinCorePath(string version)
         {
-            //is a file
-            if(version.Length >= 2 && version[1] == ':')
-            {
-                return version;
-            }
+            string path;
 
-            var bitcoind = String.Format("bitcoin-{0}/bin/bitcoind.exe", version);
-            if(File.Exists(bitcoind))
-                return bitcoind;
-            var zip = String.Format("bitcoin-{0}-win32.zip", version);
-            string url = String.Format("https://bitcoin.org/bin/bitcoin-core-{0}/" + zip, version);
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                path = $"../../../../External Libs/Bitcoin Core/{version}/Windows/bitcoind.exe";
+            else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+                path = $"../../../../External Libs/Bitcoin Core/{version}/Linux/bitcoind";
+            else
+                path = $"../../../../External Libs/Bitcoin Core/{version}/OSX/bitcoind";
 
-            HttpClient client = new HttpClient();
-            client.Timeout = TimeSpan.FromMinutes(5.0);
-            var bytes = client.GetByteArrayAsync(url).GetAwaiter().GetResult();
-            File.WriteAllBytes(zip, bytes);
+            if (File.Exists(path))
+                return path;
 
-            try
-            {
-                ZipFile.ExtractToDirectory(zip, new FileInfo(zip).Directory.FullName);
-            }
-            catch(IOException)
-            {
-                //The file probably already exist, continue
-            }
-            return bitcoind;
+            throw new FileNotFoundException($"Could not load the file {path}.");
         }
 
         int last = 0;
