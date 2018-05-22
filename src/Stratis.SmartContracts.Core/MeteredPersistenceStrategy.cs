@@ -1,5 +1,3 @@
-using NBitcoin;
-using Stratis.Bitcoin.Utilities;
 using Stratis.SmartContracts.Core.Backend;
 using Stratis.SmartContracts.Core.State;
 
@@ -29,7 +27,7 @@ namespace Stratis.SmartContracts.Core
         public byte[] FetchBytes(uint160 address, byte[] key)
         {
             byte[] encodedKey = this.keyEncodingStrategy.GetBytes(key);
-            return this.stateDb.GetStorageValue(address, key);
+            return this.stateDb.GetStorageValue(address, encodedKey);
         }
 
         public void StoreBytes(uint160 address, byte[] key, byte[] value)
