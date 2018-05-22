@@ -169,7 +169,7 @@ namespace Stratis.Bitcoin.Connection
             this.Parameters.ConnectCancellation = this.nodeLifetime.ApplicationStopping;
 
             if (network.Consensus.IsSmartContracts)
-                this.Parameters.UserAgent = $"{this.NodeSettings.Agent}:0.8.1";
+                this.Parameters.UserAgent = $"{this.NodeSettings.Agent}:0.8.2";
             else
                 this.Parameters.UserAgent = $"{this.NodeSettings.Agent}:{this.GetVersion()}";
 
