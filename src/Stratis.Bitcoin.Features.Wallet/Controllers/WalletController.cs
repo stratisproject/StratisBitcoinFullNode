@@ -789,6 +789,34 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         }
 
         /// <summary>
+        /// Gets a list of accounts for the specified wallet.
+        /// </summary>
+        /// <returns>The list of accounts for the specified wallet</returns>
+        [Route("accounts")]
+        [HttpGet]
+        public IActionResult ListAccounts([FromQuery]ListAccountsModel request)
+        {
+            Guard.NotNull(request, nameof(request));
+
+            // checks the request is valid
+            if (!this.ModelState.IsValid)
+            {
+                return BuildErrorResponse(this.ModelState);
+            }
+
+            try
+            {
+                var result = this.walletManager.GetAccounts(request.WalletName);
+                return this.Json(result.Select(a => a.Name));
+            }
+            catch(Exception e)
+            {
+                this.logger.LogError("Exception occurred: {0}", e.ToString());
+                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
+            }
+        }
+
+        /// <summary>
         /// Gets an unused address.
         /// </summary>
         /// <returns>The last created and unused address or creates a new address (in Base58 format).</returns>
