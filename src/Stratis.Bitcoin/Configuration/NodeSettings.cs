@@ -105,7 +105,7 @@ namespace Stratis.Bitcoin.Configuration
                     this.Network = testNet ? Network.StratisTest : regTest ? Network.StratisRegTest : Network.StratisMain;
                 else
                     this.Network = testNet ? Network.TestNet : regTest ? Network.RegTest : Network.Main;
-            }    
+            }
 
             // Setting the data directory.
             if (this.DataDir == null)
