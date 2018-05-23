@@ -26,12 +26,23 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
         private int repositoryTotalBlocksSaved = 0;
         private int repositoryTotalBlocksDeleted = 0;
 
+        private Dictionary<uint256, Block> listOfSavedBlocks;
+
         private ChainedHeader chainStateBlockStoreTip;
 
         private ChainedHeader consensusTip;
 
+        private string testBlockHex = "07000000af72d939050259913e440b23bee62e3b9604129ec8424d265a6ee4916e060000a5a2cbad28617657336403daf202b797bfc4b9c5cfc65a258f32ec33ec9ad485314ea957ffff0f1e812b07000101000000184ea957010000000000000000000000000000000000000000000000000000000000000000ffffffff03510101ffffffff010084d717000000001976a9140099e795d9ee809dc74dce32c79d26db0265072488ac0000000000";
+
         public BlockStoreTests()
         {
+            this.listOfSavedBlocks = new Dictionary<uint256, Block>();
+            this.listOfSavedBlocks.Add(uint256.One, Block.Parse(this.testBlockHex, Network.StratisMain));
+
+            this.chain = this.CreateChain(10);
+            this.consensusTip = null;
+            this.nodeLifetime = new NodeLifetime();
+
             var reposMoq = new Mock<IBlockRepository>();
             reposMoq.Setup(x => x.PutAsync(It.IsAny<uint256>(), It.IsAny<List<Block>>())).Returns((uint256 nextBlockHash, List<Block> blocks) =>
             {
@@ -47,6 +58,16 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
                 return Task.CompletedTask;
             });
 
+            reposMoq.Setup(x => x.GetAsync(It.IsAny<uint256>())).Returns((uint256 hash) =>
+            {
+                Block block = null;
+
+                if (this.listOfSavedBlocks.ContainsKey(hash))
+                    block = this.listOfSavedBlocks[hash];
+
+                return Task.FromResult(block);
+            });
+
             reposMoq.Setup(x => x.BlockHash).Returns(() =>
             {
                 return this.repositoryBlockHash;
@@ -54,14 +75,11 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
 
             this.repository = reposMoq.Object;
 
-            var chainStateMoq = new Mock<IChainState>().SetupProperty(x => x.ConsensusTip, this.consensusTip);
+            var chainStateMoq = new Mock<IChainState>();
+            chainStateMoq.Setup(x => x.ConsensusTip).Returns(() => this.consensusTip);
             chainStateMoq.SetupProperty(x => x.BlockStoreTip, this.chainStateBlockStoreTip);
 
             this.chainState = chainStateMoq.Object;
-
-            this.chain = this.CreateChain(10);
-            this.consensusTip = this.chain.Tip;
-            this.nodeLifetime = new NodeLifetime();
 
             this.blockStore = new BlockStore(this.repository, this.chain, this.chainState, new StoreSettings(), this.nodeLifetime, new LoggerFactory());
         }
@@ -121,23 +139,33 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             await this.blockStore.InitializeAsync().ConfigureAwait(false);
             Assert.Equal(initializationHeader, this.chainState.BlockStoreTip);
         }
-        
+
+        [Fact]
+        public async Task BlockStoreRecoversToLastCommonBlockOnInitializationAsync()
+        {
+            this.repositoryBlockHash = uint256.One;
+
+            await this.blockStore.InitializeAsync().ConfigureAwait(false);
+            
+            Assert.Equal(this.chain.Genesis, this.chainState.BlockStoreTip);
+        }
+
         [Fact]
         public async Task BatchIsSavedAfterSizeThresholdReachedAsync()
         {
-            string blockHex = "000000202f6f6a130549473222411b5c6f54150d63b32aadf10e57f7d563cfc7010000001e28204471ef9ef11acd73543894a96a3044932b85e99889e731322a8ec28a9f9ae9fc56ffff011d0011b40202010000000001010000000000000000000000000000000000000000000000000000000000000000ffffffff2c028027266a24aa21a9ed09154465f26a2a4144739eba3e83b3e9ae6a1f69566eae7dc3747d48f1183779010effffffff0250b5062a0100000023210263ed47e995cbbf1bc560101e3b76c6bdb1b094a185450cea533781ce598ff2b6ac0000000000000000266a24aa21a9ed09154465f26a2a4144739eba3e83b3e9ae6a1f69566eae7dc3747d48f1183779012000000000000000000000000000000000000000000000000000000000000000000000000001000000000101cecd90cd38ac6858c47f2fe9f28145d6e18f9c5abc7ef1a41e2f19e6fe0362580100000000ffffffff0130b48d06000000001976a91405481b7f1d90c5a167a15b00e8af76eb6984ea5988ac0247304402206104c335e4adbb920184957f9f710b09de17d015329fde6807b9d321fd2142db02200b24ad996b4aa4ff103000348b5ad690abfd9fddae546af9e568394ed4a83113012103a65786c1a48d4167aca08cf6eb8eed081e13f45c02dc6000fd8f3bb16242579a00000000";
-            Block block = Block.Load(Encoders.Hex.DecodeData(blockHex), Network.Main);
+            Block block = Block.Load(Encoders.Hex.DecodeData(this.testBlockHex), Network.StratisMain);
             int blockSize = block.GetSerializedSize();
+            this.consensusTip = null;
 
             int count = BlockStore.BatchThresholdSizeBytes / blockSize + 2;
 
             ConcurrentChain longChain = this.CreateChain(count);
-            this.consensusTip = longChain.Tip;
             this.repositoryBlockHash = longChain.Genesis.HashBlock;
 
             this.blockStore = new BlockStore(this.repository, longChain, this.chainState, new StoreSettings(), new NodeLifetime(), new LoggerFactory());
 
             await this.blockStore.InitializeAsync().ConfigureAwait(false);
+            this.consensusTip = longChain.Tip;
 
             // Send all the blocks to the block store except for the last one because that will trigger batch saving because of reaching the tip.
             for (int i = 1; i < count; i++)
@@ -156,7 +184,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
         public async Task BatchIsSavedOnShutdownAsync()
         {
             this.repositoryBlockHash = this.chain.Genesis.HashBlock;
-            
+
             await this.blockStore.InitializeAsync().ConfigureAwait(false);
 
             ChainedHeader lastHeader = null;
@@ -183,9 +211,9 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
         public async Task BatchIsSavedWhenAtConsensusTipAsync()
         {
             this.repositoryBlockHash = this.chain.Genesis.HashBlock;
-            this.consensusTip = this.chain.Tip;
 
             await this.blockStore.InitializeAsync().ConfigureAwait(false);
+            this.consensusTip = this.chain.Tip;
 
             for (int i = 1; i <= this.chain.Height; i++)
             {
@@ -240,12 +268,12 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
         public async Task ReorgedBlocksAreDeletedFromRepositoryIfReorgDetectedAsync()
         {
             this.chain = this.CreateChain(1000);
-            this.consensusTip = this.chain.Tip;
             this.repositoryBlockHash = this.chain.Genesis.HashBlock;
 
             this.blockStore = new BlockStore(this.repository, this.chain, this.chainState, new StoreSettings(), this.nodeLifetime, new LoggerFactory());
 
             await this.blockStore.InitializeAsync().ConfigureAwait(false);
+            this.consensusTip = this.chain.Tip;
 
             // Sending 500 blocks to the queue.
             for (int i = 1; i < 500; i++)
@@ -300,6 +328,18 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             // Dispose block store.
             this.nodeLifetime.StopApplication();
             this.blockStore.Dispose();
+        }
+
+        [Fact]
+        public async Task ThrowIfConsensusIsInitializedBeforeBlockStoreAsync()
+        {
+            this.repositoryBlockHash = this.chain.Genesis.HashBlock;
+            this.consensusTip = this.chain.Tip;
+
+            await Assert.ThrowsAsync<BlockStoreException>(async () =>
+            {
+                await this.blockStore.InitializeAsync().ConfigureAwait(false);
+            }).ConfigureAwait(false);
         }
     }
 

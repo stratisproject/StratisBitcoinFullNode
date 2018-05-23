@@ -149,7 +149,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
             var blockStoreResetList = new List<uint256>();
             Block resetBlock = await this.blockRepository.GetAsync(this.blockRepository.BlockHash).ConfigureAwait(false);
-            uint256 resetBlockHash = resetBlock.GetHash();
+            uint256 resetBlockHash = this.blockRepository.BlockHash;
 
             while (this.chain.GetBlock(resetBlockHash) == null)
             {
@@ -276,20 +276,20 @@ namespace Stratis.Bitcoin.Features.BlockStore
         {
             this.logger.LogTrace("({0}.{1}:{2})", nameof(batch), nameof(batch.Count), batch.Count);
 
-            List<BlockPair> batchCleared = this.GetBatchWithoutReorgedBlocks(batch);
+            List<BlockPair> clearedBatch= this.GetBatchWithoutReorgedBlocks(batch);
 
-            ChainedHeader expectedStoreTip = batchCleared.First().ChainedHeader.Previous;
+            ChainedHeader expectedStoreTip = clearedBatch.First().ChainedHeader.Previous;
 
             // Check if block repository contains reorged blocks. If it does - delete them.
             if (expectedStoreTip.HashBlock != this.storeTip.HashBlock)
                 await this.RemoveReorgedBlocksFromStoreAsync(expectedStoreTip).ConfigureAwait(false);
 
             // Save the batch.
-            ChainedHeader newTip = batchCleared.Last().ChainedHeader;
+            ChainedHeader newTip = clearedBatch.Last().ChainedHeader;
 
-            this.logger.LogDebug("Saving batch of {0} blocks, total size: {1} bytes.", batchCleared.Count, this.currentBatchSizeBytes);
+            this.logger.LogDebug("Saving batch of {0} blocks, total size: {1} bytes.", clearedBatch.Count, this.currentBatchSizeBytes);
 
-            await this.blockRepository.PutAsync(newTip.HashBlock, batchCleared.Select(b => b.Block).ToList()).ConfigureAwait(false);
+            await this.blockRepository.PutAsync(newTip.HashBlock, clearedBatch.Select(b => b.Block).ToList()).ConfigureAwait(false);
 
             this.SetStoreTip(newTip);
             this.logger.LogDebug("Store tip set to '{0}'.", this.storeTip);
