@@ -62,19 +62,19 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.CounterChain
                 this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} RunSessionsAsync() CounterChain is in IBD exiting. Height:{this.concurrentChain.Height}.");
                 return;
             }
-            this.RegisterSession(3, sessionId, amount, destinationAddress);
+            this.RegisterSession(sessionId, amount, destinationAddress);
         }
 
-        private CounterChainSession RegisterSession(int n, uint256 transactionId, Money amount, string destination)
+        private CounterChainSession RegisterSession(uint256 transactionId, Money amount, string destination)
         {
             var memberFolderManager = new MemberFolderManager(this.federationGatewaySettings.FederationFolder);
-            IFederation federation = memberFolderManager.LoadFederation(2, n);
+            IFederation federation = memberFolderManager.LoadFederation(this.federationGatewaySettings.MultiSigM, this.federationGatewaySettings.MultiSigN);
 
             this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} RegisterSession transactionId:{transactionId}");
             this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} RegisterSession amount:{amount}");
             this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} RegisterSession destination:{destination}");
 
-            var partialTransactionSession = new CounterChainSession(this.logger, n, transactionId, federation.GetPublicKeys(this.network.ToChain()), amount, destination);
+            var partialTransactionSession = new CounterChainSession(this.logger, this.federationGatewaySettings.MultiSigN, transactionId, federation.GetPublicKeys(this.network.ToChain()), amount, destination);
             this.sessions.AddOrReplace(transactionId, partialTransactionSession);
             return partialTransactionSession;
         }

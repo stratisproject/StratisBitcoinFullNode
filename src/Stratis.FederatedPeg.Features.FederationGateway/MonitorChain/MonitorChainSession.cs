@@ -36,7 +36,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
         public string BossCard { get; }       
 
         public MonitorChainSession(DateTime startTime, uint256 transactionHash, Money amount, string destinationAddress,
-            int blockNumber, Chain chain,  string memberFolderPath, string myPublicKey)
+            int blockNumber, Chain chain,  string memberFolderPath, string myPublicKey, int m, int n)
         {
             this.startTime = startTime;
             this.SessionId = transactionHash;
@@ -46,7 +46,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
 
             // Build the boss table.
             var memberFolderManager = new MemberFolderManager(memberFolderPath);
-            var federation = memberFolderManager.LoadFederation(2, 3);
+            var federation = memberFolderManager.LoadFederation(m, n);
             this.BossTable = new BossTableBuilder().Build(this.SessionId, federation.GetPublicKeys(chain));
             this.BossCard = BossTable.MakeBossTableEntry(transactionHash, myPublicKey).ToString();
         }
