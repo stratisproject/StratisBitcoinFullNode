@@ -237,7 +237,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
         /// Tests reorgs inside the batch and inside the database at the same time.
         /// </summary>
         [Fact]
-        public async Task ReorgedBlocksAreDeleteFromRepositoryIfReorgDetectedAsync()
+        public async Task ReorgedBlocksAreDeletedFromRepositoryIfReorgDetectedAsync()
         {
             this.chain = this.CreateChain(1000);
             this.consensusTip = this.chain.Tip;

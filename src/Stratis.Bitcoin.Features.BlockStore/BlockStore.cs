@@ -167,7 +167,9 @@ namespace Stratis.Bitcoin.Features.BlockStore
             }
 
             ChainedHeader newTip = this.chain.GetBlock(resetBlockHash);
-            await this.blockRepository.DeleteAsync(newTip.HashBlock, blockStoreResetList).ConfigureAwait(false);
+
+            if (blockStoreResetList.Count != 0)
+                await this.blockRepository.DeleteAsync(newTip.HashBlock, blockStoreResetList).ConfigureAwait(false);
 
             this.SetStoreTip(newTip);
 
@@ -268,7 +270,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.logger.LogTrace("(-)");
         }
 
-        /// <summary>Checks if repository contains reorged blocks and deletes them; saves batch on top. </summary>
+        /// <summary>Checks if repository contains reorged blocks and deletes them; saves batch on top.</summary>
         /// <param name="batch">List of batched blocks. Cannot be empty.</param>
         private async Task SaveBatchAsync(List<BlockPair> batch)
         {
@@ -334,7 +336,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// <param name="expectedStoreTip">Highest block that should be in the store.</param>
         private async Task RemoveReorgedBlocksFromStoreAsync(ChainedHeader expectedStoreTip)
         {
-            this.logger.LogTrace("()");
+            this.logger.LogTrace("({0}:'{1}')", nameof(expectedStoreTip), expectedStoreTip);
 
             var blocksToDelete = new List<uint256>();
             ChainedHeader currentHeader = this.storeTip;
