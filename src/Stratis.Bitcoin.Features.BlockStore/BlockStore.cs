@@ -28,6 +28,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
     public class BlockStore : IDisposable
     {
         /// <summary>Maximum interval between saving batches.</summary>
+        /// <remarks>Interval value is a prime number that wasn't used as an interval in any other component. That prevents having CPU consumption spikes.</remarks>
         private const int BatchMaxSaveIntervalSeconds = 37;
 
         /// <summary>Maximum number of bytes the batch can hold until the downloaded blocks are stored to the disk.</summary>
