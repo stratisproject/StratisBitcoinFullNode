@@ -99,7 +99,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.logger.LogTrace("()");
 
             if (this.storeSettings.ReIndex)
-                throw new NotImplementedException();
+                throw new NotSupportedException();
 
             ChainedHeader initializationTip = this.chain.GetBlock(this.blockRepository.BlockHash);
             this.SetStoreTip(initializationTip);
