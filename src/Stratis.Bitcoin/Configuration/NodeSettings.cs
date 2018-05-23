@@ -119,7 +119,7 @@ namespace Stratis.Bitcoin.Configuration
                 this.DataDir = Directory.CreateDirectory(directoryPath).FullName;
                 this.Logger.LogDebug("Data directory initialized with path {0}.", this.DataDir);
             }
-
+            
             this.DataFolder = new DataFolder(this.DataDir);
 
             if (this.ConfigurationFile == null)
@@ -230,7 +230,12 @@ namespace Stratis.Bitcoin.Configuration
             // Read the configuration file if it exists.
             string configText = "";
             if (this.ConfigurationFile != null && File.Exists(this.ConfigurationFile))
+            {
+                this.Logger.LogDebug("Reading configuration file '{0}'.", this.ConfigurationFile);
                 configText = File.ReadAllText(this.ConfigurationFile);
+            }
+            else
+                this.Logger.LogDebug("No configuration file. Proceeding with defaults.");
 
             // Get the arguments set previously.
             var args = this.LoadArgs;
@@ -245,10 +250,6 @@ namespace Stratis.Bitcoin.Configuration
             this.Log.Load(config);
             this.LoggerFactory.AddFilters(this.Log, this.DataFolder);
             this.LoggerFactory.ConfigureConsoleFilters(this.LoggerFactory.GetConsoleSettings(), this.Log);
-
-            this.Logger.LogDebug("Data directory set to '{0}'.", this.DataDir);
-            this.Logger.LogDebug("Configuration file set to '{0}'.", this.ConfigurationFile);
-
             this.RequireStandard = config.GetOrDefault("acceptnonstdtxn", !(this.Network.IsTest()));
             this.MaxTipAge = config.GetOrDefault("maxtipage", this.Network.MaxTipAge);
             this.Logger.LogDebug("Network: IsTest='{0}', IsBitcoin='{1}'.", this.Network.IsTest(), this.Network.IsBitcoin());
