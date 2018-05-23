@@ -133,10 +133,10 @@ namespace Stratis.Bitcoin.Configuration
         public ILogger Logger { get; private set; }
 
         /// <summary>Configuration related to logging.</summary>
-        public LogSettings Log { get; set; }
+        public LogSettings Log { get; private set; }
 
         /// <summary>List of paths to important files and folders.</summary>
-        public DataFolder DataFolder { get; set; }
+        public DataFolder DataFolder { get; private set; }
 
         /// <summary>Path to the data directory. This value is read-only and is set in the constructor's args.</summary>
         public string DataDir { get; private set; }
