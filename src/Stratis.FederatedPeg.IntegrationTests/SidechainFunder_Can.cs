@@ -447,6 +447,8 @@ namespace Stratis.FederatedPeg.IntegrationTests
                 mainchain_FederationGateway1.ConfigParameters.Add("memberprivatefolder", Path.Combine(Directory.GetCurrentDirectory(), "Federations\\deposit_funds_to_sidechain\\member1"));
                 mainchain_FederationGateway1.ConfigParameters.Add("publickey", publickey);
                 mainchain_FederationGateway1.ConfigParameters.Add("membername", "member1");
+                mainchain_FederationGateway1.ConfigParameters.Add("multisigM", "2");
+                mainchain_FederationGateway1.ConfigParameters.Add("multisigN", "3");
 
                 await Task.Delay(5000);
 
@@ -470,6 +472,8 @@ namespace Stratis.FederatedPeg.IntegrationTests
                 mainchain_FederationGateway2.ConfigParameters.Add("memberprivatefolder", Path.Combine(Directory.GetCurrentDirectory(), "Federations\\deposit_funds_to_sidechain\\member2"));
                 mainchain_FederationGateway2.ConfigParameters.Add("publickey", publickey);
                 mainchain_FederationGateway2.ConfigParameters.Add("membername", "member2");
+                mainchain_FederationGateway2.ConfigParameters.Add("multisigM", "2");
+                mainchain_FederationGateway2.ConfigParameters.Add("multisigN", "3");
 
                 await Task.Delay(5000);
 
@@ -493,7 +497,9 @@ namespace Stratis.FederatedPeg.IntegrationTests
                 mainchain_FederationGateway3.ConfigParameters.Add("memberprivatefolder", Path.Combine(Directory.GetCurrentDirectory(), "Federations\\deposit_funds_to_sidechain\\member3"));
                 mainchain_FederationGateway3.ConfigParameters.Add("publickey", publickey);
                 mainchain_FederationGateway3.ConfigParameters.Add("membername", "member3");
-
+                mainchain_FederationGateway3.ConfigParameters.Add("multisigM", "2");
+                mainchain_FederationGateway3.ConfigParameters.Add("multisigN", "3");
+                
                 await Task.Delay(5000);
 
                 //
@@ -522,6 +528,8 @@ namespace Stratis.FederatedPeg.IntegrationTests
                 sidechain_FederationGateway1.ConfigParameters.Add("memberprivatefolder", Path.Combine(Directory.GetCurrentDirectory(), "Federations\\deposit_funds_to_sidechain\\member1"));
                 sidechain_FederationGateway1.ConfigParameters.Add("publickey", publickey);
                 sidechain_FederationGateway1.ConfigParameters.Add("membername", "member1");
+                sidechain_FederationGateway1.ConfigParameters.Add("multisigM", "2");
+                sidechain_FederationGateway1.ConfigParameters.Add("multisigN", "3");
 
                 await Task.Delay(5000);
 
@@ -547,6 +555,8 @@ namespace Stratis.FederatedPeg.IntegrationTests
                 sidechain_FederationGateway2.ConfigParameters.Add("memberprivatefolder", Path.Combine(Directory.GetCurrentDirectory(), "Federations\\deposit_funds_to_sidechain\\member2"));
                 sidechain_FederationGateway2.ConfigParameters.Add("publickey", publickey);
                 sidechain_FederationGateway2.ConfigParameters.Add("membername", "member2");
+                sidechain_FederationGateway2.ConfigParameters.Add("multisigM", "2");
+                sidechain_FederationGateway2.ConfigParameters.Add("multisigN", "3");
 
                 await Task.Delay(5000);
 
@@ -573,6 +583,8 @@ namespace Stratis.FederatedPeg.IntegrationTests
                 sidechain_FederationGateway3.ConfigParameters.Add("memberprivatefolder", Path.Combine(Directory.GetCurrentDirectory(), "Federations\\deposit_funds_to_sidechain\\member3"));
                 sidechain_FederationGateway3.ConfigParameters.Add("publickey", publickey);
                 sidechain_FederationGateway3.ConfigParameters.Add("membername", "member3");
+                sidechain_FederationGateway3.ConfigParameters.Add("multisigM", "2");
+                sidechain_FederationGateway3.ConfigParameters.Add("multisigN", "3");
 
                 //link the mainchain and sidechain nodes together
                 mainchain_FederationGateway1.ConfigParameters.Add("counterchainapiport", sidechain_FederationGateway1.ApiPort.ToString());
@@ -899,6 +911,8 @@ namespace Stratis.FederatedPeg.IntegrationTests
                 mainchain_FederationGateway3v2.ConfigParameters.Add("memberprivatefolder", Path.Combine(Directory.GetCurrentDirectory(), "Federations\\deposit_funds_to_sidechain\\member3"));
                 mainchain_FederationGateway3v2.ConfigParameters.Add("publickey", publickey);
                 mainchain_FederationGateway3v2.ConfigParameters.Add("membername", "member3v2");
+                mainchain_FederationGateway3v2.ConfigParameters.Add("multisigM", "2");
+                mainchain_FederationGateway3v2.ConfigParameters.Add("multisigN", "3");
 
                 // change the fed3 sidechain api port
                 sidechain_FederationGateway3.ConfigParameters.AddOrReplace("counterchainapiport", mainchain_FederationGateway3v2.ApiPort.ToString());

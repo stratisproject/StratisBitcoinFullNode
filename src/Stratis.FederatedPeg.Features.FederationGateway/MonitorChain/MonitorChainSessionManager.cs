@@ -121,7 +121,9 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.MonitorChain
                 crossChainTransactionInfo.BlockNumber,
                 this.network.ToChain(),
                 this.federationGatewaySettings.FederationFolder,
-                this.federationGatewaySettings.PublicKey
+                this.federationGatewaySettings.PublicKey,
+                this.federationGatewaySettings.MultiSigM,
+                this.federationGatewaySettings.MultiSigN
             );
 
             this.monitorSessions.TryAdd(monitorChainSession.SessionId, monitorChainSession);
