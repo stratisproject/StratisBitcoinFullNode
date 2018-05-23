@@ -127,16 +127,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
 
                 foreach (Task<bool> checkInput in checkInputs)
                 {
-                    var result = await checkInput;
-                    if(!result)
-                    {
-                        this.Logger.LogTrace("(-)[BAD_TX_SCRIPT]");
-                        ConsensusErrors.BadTransactionScriptError.Throw();
-                    }
-                }
-
-                foreach (Task<bool> checkInput in checkInputs)
-                {
                     if (await checkInput.ConfigureAwait(false))
                         continue;
 
