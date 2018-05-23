@@ -112,10 +112,14 @@ namespace Stratis.Bitcoin.Tests.Consensus
             var connectedHeaders1 = chainedHeaderTree.ConnectNewHeaders(1, listOfExistingHeaders);
             var connectedHeaders2 = chainedHeaderTree.ConnectNewHeaders(2, listOfExistingHeaders);
 
-            Assert.Single(chainedHeaderTree.GetPeerTipsByHash);
-            Assert.Equal(2, chainedHeaderTree.GetPeerTipsByHash.First().Value.Count);
-            Assert.Equal(1, chainedHeaderTree.GetPeerTipsByHash.First().Value.First());
-            Assert.Equal(2, chainedHeaderTree.GetPeerTipsByHash.First().Value.Last());
+            Assert.Single(chainedHeaderTree.GetPeerIdsByTipHash);
+            Assert.Equal(10, chainedHeaderTree.GetChainedHeadersByHash.Count);
+
+            Assert.Equal(3, chainedHeaderTree.GetPeerIdsByTipHash.First().Value.Count);
+
+            Assert.Equal(ChainedHeaderTree.LocalPeerId, chainedHeaderTree.GetPeerIdsByTipHash.First().Value.ElementAt(0));
+            Assert.Equal(1, chainedHeaderTree.GetPeerIdsByTipHash.First().Value.ElementAt(1));
+            Assert.Equal(2, chainedHeaderTree.GetPeerIdsByTipHash.First().Value.ElementAt(2));
 
             Assert.True(testContext.ConnectedHeadersIsEmpty(connectedHeaders1));
             Assert.True(testContext.ConnectedHeadersIsEmpty(connectedHeaders2));
@@ -139,6 +143,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
 
             var connectedHeaders = chainedHeaderTree.ConnectNewHeaders(1, listOfExistingHeaders);
 
+            Assert.Equal(20, chainedHeaderTree.GetChainedHeadersByHash.Count);
             Assert.Equal(listOfExistingHeaders.Last(), connectedHeaders.DownloadTo.Header);
             Assert.Equal(listOfExistingHeaders.First(), connectedHeaders.DownloadFrom.Header);
         }

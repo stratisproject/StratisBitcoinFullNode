@@ -35,14 +35,21 @@ namespace Stratis.Bitcoin.Consensus
 
         private readonly object lockObject;
 
+        /// <summary>A special peer identifier that represents our local node.</summary>
+        internal const int LocalPeerId = -1;
+
         /// <summary>A list of headers that represent the tips of peers.</summary>
-        private readonly Dictionary<uint256, HashSet<int>> peerTipsByHash;
-        
+        private readonly Dictionary<uint256, HashSet<int>> peerIdsByTipHash;
+
+        /// <summary>A list of peer identifiers that map to the peers tip has.</summary>
+        private readonly Dictionary<int, uint256> peerTipsByPeerId;
+
         /// <summary>An indexed collection of <see cref="ChainedHeader"/> that represents a tree of chains.</summary>
         private readonly Dictionary<uint256, ChainedHeader> chainedHeadersByHash;
 
         internal Dictionary<uint256, ChainedHeader> GetChainedHeadersByHash => this.chainedHeadersByHash;
-        internal Dictionary<uint256, HashSet<int>> GetPeerTipsByHash => this.peerTipsByHash;
+        internal Dictionary<uint256, HashSet<int>> GetPeerIdsByTipHash => this.peerIdsByTipHash;
+        internal Dictionary<int, uint256> GetPeerTipsByPeerId => this.peerTipsByPeerId;
 
         public ChainedHeaderTree(
             Network network, 
@@ -59,15 +66,22 @@ namespace Stratis.Bitcoin.Consensus
             this.consensusSettings = consensusSettings;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
 
-            this.peerTipsByHash = new Dictionary<uint256, HashSet<int>>();
+            this.peerTipsByPeerId = new Dictionary<int, uint256>();
+            this.peerIdsByTipHash = new Dictionary<uint256, HashSet<int>>();
             this.chainedHeadersByHash = new Dictionary<uint256, ChainedHeader>();
 
             this.lockObject = new object();
         }
 
-        public void Initialize(ChainedHeader chainedHeader)
+        /// <summary>
+        /// Initialize the tree with a <see cref="ChainedHeader"/> that is the tip of our best known consensus chain.
+        /// </summary>
+        /// <param name="consensusTip">The consensus tip.</param>
+        public void Initialize(ChainedHeader consensusTip)
         {
-            ChainedHeader current = chainedHeader;
+            this.logger.LogTrace("({0}:'{1}')", nameof(consensusTip), consensusTip);
+
+            ChainedHeader current = consensusTip;
             while (current.Previous != null)
             {
                 current.Previous.Next.Add(current);
@@ -77,8 +91,13 @@ namespace Stratis.Bitcoin.Consensus
 
             if (current.HashBlock != this.network.GenesisHash)
             {
+                this.logger.LogTrace("(-)[INVALID_NETWORK]");
                 throw new ConsensusException();
             }
+
+            this.SetPeerTip(LocalPeerId, consensusTip.HashBlock);
+
+            this.logger.LogTrace("(-)");
         }
 
         /// <summary>
@@ -104,12 +123,7 @@ namespace Stratis.Bitcoin.Consensus
 
             List<ChainedHeader> newChainedHeaders = this.CreateNewHeaders(headers);
 
-            ChainedHeader oldTip = this.SetPeerTip(networkPeerId, headers.Last().GetHash());
-
-            if (oldTip != null)
-            {
-                this.RemoveChainsNotClaimedByPeer(networkPeerId, oldTip);
-            }
+            this.SetPeerTip(networkPeerId, headers.Last().GetHash());
 
             if (newChainedHeaders.Empty())
             {
@@ -206,34 +220,23 @@ namespace Stratis.Bitcoin.Consensus
         }
 
         /// <summary>
-        /// A chain with more work than our current consensus tip was found so mark all it's descendants as required.
+        /// Mark all previous blocks to <see cref="chainedHeader"/> as <see cref="ValidationState.AssumedValid"/>.
         /// </summary>
         /// <param name="chainedHeader">The new header that represents a longer chain.</param>
-        /// <returns>The new headers that need to be downloaded.</returns>
-        private ConnectedHeaders MarkTrustedChainAsAssumedValid(ChainedHeader chainedHeader)
+        private void MarkTrustedChainAsAssumedValid(ChainedHeader chainedHeader)
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(chainedHeader), chainedHeader);
 
-            ConnectedHeaders connectedHeaders = new ConnectedHeaders();
-            connectedHeaders.DownloadTo = connectedHeaders.Consumed = chainedHeader;
-
             ChainedHeader current = chainedHeader;
-            ChainedHeader next = current;
 
-            while (this.HeaderWasNotMarkedAsTrusted(current))
+            while (this.HeaderWasNotMarkedAsValidated(current))
             {
                 current.BlockValidationState = ValidationState.AssumedValid;
-
-                next = current;
                 current = current.Previous;
             }
 
-            connectedHeaders.DownloadFrom = next;
-
-            this.logger.LogTrace("(-):{0}", connectedHeaders);
-            return connectedHeaders;
+            this.logger.LogTrace("(-)");
         }
-
 
         /// <summary>
         /// The header is assumed to be valid, the header and all of its previous headers will be marked as <see cref="ValidationState.AssumedValid"/>.
@@ -246,32 +249,19 @@ namespace Stratis.Bitcoin.Consensus
             this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(assumedValidHeader), assumedValidHeader, nameof(latestNewHeader), latestNewHeader);
 
             ChainedHeader bestTip = this.chainState.ConsensusTip;
-            ConnectedHeaders betterChain = null;
+            ConnectedHeaders connectedHeaders = new ConnectedHeaders() {Consumed = latestNewHeader};
 
             if (latestNewHeader.ChainWork > bestTip.ChainWork)
             {
                 this.logger.LogDebug("Chained header '{0}' is the tip of a chain with more work than our current consensus tip.", latestNewHeader);
 
-                betterChain = this.MarkBetterChainAsRequired(latestNewHeader);
+                connectedHeaders = this.MarkBetterChainAsRequired(latestNewHeader);
             }
 
-            ConnectedHeaders assumedValid = this.MarkTrustedChainAsAssumedValid(assumedValidHeader);
-
-            ConnectedHeaders connectedHeaders = this.GetConnectedHeadersWithBetterHeight(latestNewHeader, betterChain, assumedValid);
+            this.MarkTrustedChainAsAssumedValid(assumedValidHeader);
 
             this.logger.LogTrace("(-):{0}", connectedHeaders);
             return connectedHeaders;
-        }
-
-        private ConnectedHeaders GetConnectedHeadersWithBetterHeight(ChainedHeader consumedHeader, ConnectedHeaders first, ConnectedHeaders second)
-        {
-            return new ConnectedHeaders()
-            {
-                Consumed = consumedHeader,
-
-                DownloadTo = first?.DownloadTo.Height > second?.DownloadTo.Height ? first.DownloadTo : second.DownloadTo,
-                DownloadFrom = first?.DownloadFrom.Height < second?.DownloadFrom.Height ? first.DownloadFrom : second.DownloadFrom,
-            };
         }
 
         /// <summary>
@@ -292,10 +282,8 @@ namespace Stratis.Bitcoin.Consensus
             if (chainedHeader.Height == this.checkpoints.GetLastCheckpointHeight())
                 subchainTip = latestNewHeader;
 
-            ConnectedHeaders betterChain = this.MarkBetterChainAsRequired(latestNewHeader);
-            ConnectedHeaders assumedValid = this.MarkTrustedChainAsAssumedValid(subchainTip);
-
-            ConnectedHeaders connectedHeaders = this.GetConnectedHeadersWithBetterHeight(latestNewHeader, betterChain, assumedValid);
+            ConnectedHeaders connectedHeaders = this.MarkBetterChainAsRequired(subchainTip);
+            this.MarkTrustedChainAsAssumedValid(chainedHeader);
 
             this.logger.LogTrace("(-):{0}", connectedHeaders);
             return connectedHeaders;
@@ -315,72 +303,65 @@ namespace Stratis.Bitcoin.Consensus
         /// Check whether a header is in one of the following states
         /// <see cref="ValidationState.AssumedValid"/>, <see cref="ValidationState.PartiallyValidated"/>, <see cref="ValidationState.FullyValidated"/>.
         /// </summary>
-        private bool HeaderWasNotMarkedAsTrusted(ChainedHeader chainedHeader)
+        private bool HeaderWasNotMarkedAsValidated(ChainedHeader chainedHeader)
         {
             return !((chainedHeader.BlockValidationState == ValidationState.AssumedValid)
                   || (chainedHeader.BlockValidationState == ValidationState.PartiallyValidated)
                   || (chainedHeader.BlockValidationState == ValidationState.FullyValidated));
         }
 
-        /// <summary>
-        /// Remove the peer's tip and all the headers claimed by this peer unless they are also claimed by other peers.
-        /// Headers that are parents of <see cref="stopHeader"/> will stay in the tree.
-        /// </summary>
-        /// <param name="networkPeerId">The peer id that is removed.</param>
-        /// <param name="peerTip">The peers header tip.</param>
-        /// <param name="stopHeader">A stop header that indicates that all headers that are previous should remain in the tree.</param>
-        /// <param name="removeAllPeers">A flat which if <c>true</c> will remove all peers.</param>
-        private void RemoveChainsNotClaimedByPeer(int networkPeerId, ChainedHeader peerTip, ChainedHeader stopHeader = null, bool removeAllPeers = false)
+        private void RemoveUnclaimedBranch(ChainedHeader chainedHeader)
         {
-            this.logger.LogTrace("({0}:'{1}',{0}:'{1}',{0}:'{1}')", nameof(networkPeerId), networkPeerId, nameof(stopHeader), stopHeader);
+            this.logger.LogTrace("({0}:{1})", nameof(chainedHeader), chainedHeader);
 
-            // TODO: what if peer tip is not correct? why not dicover peer tip inside the mothod, 
-            // TODO: is there a reason we might traveres a tip that is not the tip of the peer
-
-            ChainedHeader currentHeader = peerTip;
-            while (currentHeader != stopHeader)
+            ChainedHeader currentHeader = chainedHeader;
+            while (true)
             {
-                bool headerHasNextHeader = currentHeader.Next.Count != 0;
-                bool headerIsAPeerTip = false;
+                bool headerHasNextHeader = currentHeader.Next.Count > 0;
+                bool headerHasPeerClaim = this.peerIdsByTipHash.ContainsKey(chainedHeader.HashBlock);
 
-                var listOfPeersClaimingThisHeader = this.peerTipsByHash.TryGet(currentHeader.HashBlock);
-
-                if (listOfPeersClaimingThisHeader != null)
+                if (headerHasNextHeader || headerHasPeerClaim)
                 {
-                    if (removeAllPeers)
-                    {
-                        this.logger.LogTrace("Removed all networkPeers.");
-                        listOfPeersClaimingThisHeader.Clear();
-                    }
-                    else
-                    {
-                        this.logger.LogTrace("Removed networkPeerId = '{0}' .", networkPeerId);
-                        listOfPeersClaimingThisHeader.Remove(networkPeerId);
-                    }
-
-                    if (listOfPeersClaimingThisHeader.Count == 0)
-                    {
-                        this.logger.LogTrace("Header is not the tip of a peer, tip = '{0}' .", currentHeader);
-                        this.peerTipsByHash.Remove(currentHeader.HashBlock);
-                    }
-                    else
-                    {
-                        headerIsAPeerTip = true;
-                    }
+                    break;
                 }
 
-                if (headerIsAPeerTip || headerHasNextHeader)
-                    break;
-
-                this.logger.LogTrace("Header removed from tree, header = '{0}' .", currentHeader);
+                this.logger.LogTrace("Header '{0}' removed from tree.", currentHeader);
                 this.chainedHeadersByHash.Remove(currentHeader.HashBlock);
                 currentHeader.Previous.Next.Remove(currentHeader);
 
                 currentHeader = currentHeader.Previous;
-
-                if (currentHeader.Next.Count != 0)
-                    break;
             }
+
+            this.logger.LogTrace("(-)");
+        }
+
+        /// <summary>
+        /// Remove the peer's tip and all the headers claimed by this peer unless they are also claimed by other peers.
+        /// </summary>
+        /// <param name="chainedHeader">The header where we start walking back the chain from.</param>
+        /// <param name="networkPeerId">The peer id that is removed.</param>
+        private void RemovePeerClaim(int networkPeerId, ChainedHeader chainedHeader)
+        {
+            this.logger.LogTrace("({0}:{1},{2}:'{3}')", nameof(networkPeerId), networkPeerId, nameof(chainedHeader), chainedHeader);
+
+            var listOfPeersClaimingThisHeader = this.peerIdsByTipHash.TryGet(chainedHeader.HashBlock);
+
+            if (listOfPeersClaimingThisHeader == null)
+            {
+                this.logger.LogTrace("(-)[PEER_TIP_NOT_FOUND]:{0}.", networkPeerId);
+                throw new ConsensusException();
+            }
+
+            this.logger.LogTrace("Removed networkPeerId = '{0}'.", networkPeerId);
+            listOfPeersClaimingThisHeader.Remove(networkPeerId);
+
+            if (listOfPeersClaimingThisHeader.Count == 0)
+            {
+                this.logger.LogTrace("Header '{0}' is not the tip of a peer.", chainedHeader);
+                this.peerIdsByTipHash.Remove(chainedHeader.HashBlock);
+            }
+
+            this.RemoveUnclaimedBranch(chainedHeader);
 
             this.logger.LogTrace("(-)");
         }
@@ -390,50 +371,29 @@ namespace Stratis.Bitcoin.Consensus
         /// </summary>
         /// <param name="networkPeerId">The peer id that sets a new tip.</param>
         /// <param name="newTip">The new tip to set.</param>
-        /// <returns>The old tip.</returns>
-        private ChainedHeader SetPeerTip(int networkPeerId, uint256 newTip)
+        private void SetPeerTip(int networkPeerId, uint256 newTip)
         {
-            this.logger.LogTrace("({0}:'{1}',{0}:'{1}')", nameof(networkPeerId), networkPeerId, nameof(newTip), newTip);
+            this.logger.LogTrace("({0}:{1},{2}:'{3}')", nameof(networkPeerId), networkPeerId, nameof(newTip), newTip);
 
-            ChainedHeader oldTip = null;
+            uint256 oldTipHash = this.peerTipsByPeerId.TryGet(networkPeerId);
 
-            List<uint256> hashesToRemove = new List<uint256>();
-
-            foreach (var tipItem in this.peerTipsByHash)
+            var listOfPeersClaimingThisHeader = this.peerIdsByTipHash.TryGet(newTip);
+            if (listOfPeersClaimingThisHeader == null)
             {
-                HashSet<int> listOfPeers = tipItem.Value;
-                if (listOfPeers.Contains(networkPeerId))
-                {
-                    oldTip = this.chainedHeadersByHash.TryGet(tipItem.Key);
-
-                    this.logger.LogTrace("Peer id removed '{0}' for tip header '{1}'", networkPeerId, oldTip);
-                    listOfPeers.Remove(networkPeerId);
-
-                    if (listOfPeers.Count == 0)
-                    {
-                        hashesToRemove.Add(tipItem.Key);
-                    }
-                }
+                listOfPeersClaimingThisHeader = new HashSet<int>();
+                this.peerIdsByTipHash.Add(newTip, listOfPeersClaimingThisHeader);
             }
 
-            foreach (var hash in hashesToRemove)
+            listOfPeersClaimingThisHeader.Add(networkPeerId);
+            this.peerTipsByPeerId.AddOrReplace(networkPeerId, newTip);
+
+            if (oldTipHash != null)
             {
-                this.logger.LogTrace("Header tip removed '{0}'", hash);
-                this.peerTipsByHash.Remove(hash);
+                ChainedHeader oldTip = this.chainedHeadersByHash.TryGet(oldTipHash);
+                this.RemovePeerClaim(networkPeerId, oldTip);
             }
 
-            var currentTips = this.peerTipsByHash.TryGet(newTip);
-
-            if (currentTips == null)
-            {
-                currentTips = new HashSet<int>();
-                this.peerTipsByHash.Add(newTip, currentTips);
-            }
-
-            currentTips.Add(networkPeerId);
-
-            this.logger.LogTrace("(-) '{0}'", oldTip);
-            return oldTip;
+            this.logger.LogTrace("(-)");
         }
 
         /// <summary>
