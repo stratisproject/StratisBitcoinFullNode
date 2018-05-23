@@ -99,7 +99,10 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.logger.LogTrace("()");
 
             if (this.storeSettings.ReIndex)
+            {
+                this.logger.LogTrace("(-)[REINDEX_NOT_SUPPORTED]");
                 throw new NotSupportedException("Re-indexing the block store in currently not supported.");
+            }
 
             ChainedHeader initializationTip = this.chain.GetBlock(this.blockRepository.BlockHash);
             this.SetStoreTip(initializationTip);
@@ -112,7 +115,10 @@ namespace Stratis.Bitcoin.Features.BlockStore
             if (this.storeSettings.TxIndex != this.blockRepository.TxIndex)
             {
                 if (this.storeTip != this.chain.Genesis)
+                {
+                    this.logger.LogTrace("(-)[REBUILD_REQUIRED]");
                     throw new BlockStoreException("You need to rebuild the block store database using -reindex-chainstate to change -txindex");
+                }
 
                 if (this.storeSettings.TxIndex)
                     await this.blockRepository.SetTxIndexAsync(this.storeSettings.TxIndex).ConfigureAwait(false);
@@ -123,6 +129,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             if (this.chainState.ConsensusTip != null)
             {
                 this.logger.LogCritical("Block store initialized after the consensus!");
+                this.logger.LogTrace("(-)[INITIALIZATION_ERROR]");
                 throw new BlockStoreException("Block store initialized after consensus!");
             }
 
