@@ -525,7 +525,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             // find all behaviours then start an exclusive task
             // to add the hash to each local collection
             IEnumerable<MempoolBehavior> behaviours = peers.Select(s => s.Behavior<MempoolBehavior>());
-            return new Task(() =>
+            return this.manager.MempoolLock.WriteAsync(() => 
             {
                 foreach (MempoolBehavior mempoolBehavior in behaviours)
                 {

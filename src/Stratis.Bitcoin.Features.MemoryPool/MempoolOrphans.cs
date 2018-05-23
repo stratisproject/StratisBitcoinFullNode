@@ -159,6 +159,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                     // might be now valid, e.g. due to a nLockTime'd tx becoming valid,
                     // or a double-spend. Reset the rejects filter and give those
                     // txs a second chance.
+                    this.mempoolLogger.LogTrace("Executing task to clear rejected transactions.");
                     this.hashRecentRejectsChainTip = this.chain.Tip.HashBlock;
                     this.recentRejects.Clear();
                 });
@@ -268,6 +269,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             // It may be the case that the orphans parents have all been rejected
             var rejectedParents = await this.MempoolLock.ReadAsync(() =>
             {
+                this.mempoolLogger.LogTrace("Executing task to query if orphans parents have all been rejected.");
                 return tx.Inputs.Any(txin => this.recentRejects.ContainsKey(txin.PrevOut.Hash));
             });
 
@@ -335,6 +337,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             }
             await await this.MempoolLock.ReadAsync(async () =>
             {
+                this.mempoolLogger.LogTrace("Executing task to prune orphan txs to max limit.");
                 while (this.mapOrphanTransactions.Count > maxOrphanTx)
                 {
                     // Evict a random orphan:
@@ -453,6 +456,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             this.mempoolLogger.LogTrace("(-)");
             return this.MempoolLock.ReadAsync(async () =>
             {
+                this.mempoolLogger.LogTrace("Executing task to erase orphan transactions.");
                 int erased = 0;
                 foreach (OrphanTx erase in this.mapOrphanTransactions.Values.Where(w => w.NodeId == peer).ToList())
                     erased += await this.EraseOrphanTx(erase.Tx.GetHash()) ? 1 : 0;
