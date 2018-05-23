@@ -125,6 +125,8 @@ namespace Stratis.Bitcoin.Configuration
             if (this.ConfigurationFile == null)
                 this.ConfigurationFile = Path.Combine(this.DataDir, this.Network.DefaultConfigFilename);
 
+            this.Logger.LogDebug("Configuration file set to '{0}'.", this.ConfigurationFile);
+
             LoadConfiguration();
         }
 
@@ -210,6 +212,7 @@ namespace Stratis.Bitcoin.Configuration
             // If the config file does not exist yet then create it now.
             if (this.ConfigurationFile != null && !File.Exists(this.ConfigurationFile))
             {
+                this.Logger.LogDebug("Creating configuration file...");
                 File.WriteAllText(this.ConfigurationFile, this.GetDefaultConfiguration(features));
                 return true;
             }
