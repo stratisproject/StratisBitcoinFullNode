@@ -49,6 +49,8 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
 
         public NodeConfigParameters ConfigParameters { get; } = new NodeConfigParameters();
 
+        public bool CookieAuth { get; internal set; }
+
         public CoreNode(NodeRunner runner, NodeBuilder builder, Network network, string configfile)
         {
             this.runner = runner;
@@ -96,6 +98,14 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
             get { return this.ports[0]; }
         }
 
+        private string GetRPCAuth()
+        {
+            if (!CookieAuth)
+                return creds.UserName + ":" + creds.Password;
+            else
+                return "cookiefile=" + Path.Combine(this.runner.DataFolder, "regtest", ".cookie");
+        }
+
         public void NotInIBD()
         {
             (this.FullNode.NodeService<IInitialBlockDownloadState>() as InitialBlockDownloadStateMock).SetIsInitialBlockDownload(false, DateTime.UtcNow.AddMinutes(5));
@@ -103,7 +113,7 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
 
         public RPCClient CreateRPCClient()
         {
-            return new RPCClient(this.creds, new Uri("http://127.0.0.1:" + this.ports[1].ToString() + "/"), Network.RegTest);
+            return new RPCClient(this.GetRPCAuth(), new Uri("http://127.0.0.1:" + this.ports[1].ToString() + "/"), Network.RegTest);
         }
 
         public RestClient CreateRESTClient()
@@ -125,8 +135,11 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
             config.Add("rest", "1");
             config.Add("server", "1");
             config.Add("txindex", "1");
-            config.Add("rpcuser", this.creds.UserName);
-            config.Add("rpcpassword", this.creds.Password);
+            if (!CookieAuth)
+            {
+                config.Add("rpcuser", creds.UserName);
+                config.Add("rpcpassword", creds.Password);
+            }
             config.Add("port", this.ports[0].ToString());
             config.Add("rpcport", this.ports[1].ToString());
             config.Add("printtoconsole", "1");
@@ -147,6 +160,12 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
                 StartStratisRunner();
 
             this.State = CoreNodeState.Running;
+        }
+
+        public void Restart()
+        {
+            this.Kill();
+            this.Start();
         }
 
         private void StartBitcoinCoreRunner()

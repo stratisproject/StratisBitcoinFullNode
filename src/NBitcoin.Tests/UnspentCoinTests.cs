@@ -72,5 +72,32 @@ namespace NBitcoin.Tests
             Console.WriteLine("Redeem Script: {0}", unspentCoin.RedeemScript);
             Assert.NotNull(unspentCoin.RedeemScript);
         }
+
+        [Fact]
+        public void CanDecodeUnspentTransaction()
+        {
+            var testJson =
+@"{
+    ""bestblock"": ""d54994ece1d11b19785c7248868696250ab195605b469632b7bd68130e880c9a"",
+    ""confirmations"": 1,
+    ""value"": 7.744E-05,
+    ""scriptPubKey"": {
+        ""asm"": ""OP_DUP OP_HASH160 fdb12c93cf639eb38d1998959cfd2f35eb730ede OP_EQUALVERIFY OP_CHECKSIG"",
+        ""hex"": ""76a914fdb12c93cf639eb38d1998959cfd2f35eb730ede88ac"",
+        ""reqSigs"": 1,
+        ""type"": ""pubkeyhash"",
+        ""addresses"": [
+          ""n4eMVrvNqe4EtZDEeei3o63hymTKZNZGhf""
+        ]
+    },
+    ""coinbase"": true
+}";
+            var testData = JObject.Parse(testJson);
+            var unspentTransaction = new UnspentTransaction(testData);
+            Assert.Equal(1, unspentTransaction.confirmations);
+            Assert.Equal(1, unspentTransaction.scriptPubKey.reqSigs);
+            Assert.Single(unspentTransaction.scriptPubKey.addresses);
+            Assert.Equal(7.744E-05m, unspentTransaction.value);
+        }
     }
 }
