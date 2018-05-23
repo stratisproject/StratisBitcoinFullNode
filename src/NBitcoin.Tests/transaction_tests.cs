@@ -3358,7 +3358,7 @@ namespace NBitcoin.Tests
 
                 Transaction raw = Transaction.Parse(testData, format, network);
 
-                TestUtils.AssertJsonEquals(raw.ToString(format, network), testData);
+                Assert.True(JToken.DeepEquals(raw.ToString(format, network), testData));
 
                 var raw3 = Transaction.Parse(raw.ToString(format, network), format);
                 Assert.Equal(raw.ToString(format, network), raw3.ToString(format, network));
