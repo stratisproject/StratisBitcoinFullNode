@@ -10,7 +10,7 @@ ANYFAILURES=false
 for testProject in *.Tests; do
 
 # exclude integration tests
-if [[ "$testProject" == *"Integration.Tests"* ]] || [[ "$testProject" == *"IntegrationTests"* ]] || [[ "$testProject" == *"NBitcoin.Tests"* ]] ; then
+if [[ "$testProject" == *"Integration.Tests"* ]] || [[ "$testProject" == *"IntegrationTests"* ]] ; then
     continue
 fi
 
