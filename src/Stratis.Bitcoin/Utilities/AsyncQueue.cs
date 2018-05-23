@@ -108,20 +108,6 @@ namespace Stratis.Bitcoin.Utilities
         }
 
         /// <summary>
-        /// Gets the items count in the queue. For test purposes only.
-        /// </summary>
-        private int Count
-        {
-            get
-            {
-                lock (this.lockObject)
-                {
-                    return this.items.Count;
-                }
-            }
-        }
-
-        /// <summary>
         /// Consumer of the newly added items to the queue that waits for the signal 
         /// and then executes the user-defined callback.
         /// <para>

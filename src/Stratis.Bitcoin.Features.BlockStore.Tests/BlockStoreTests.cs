@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
@@ -88,16 +89,23 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
 
         private async Task WaitUntilQueueIsEmptyAsync()
         {
+            int iterations = 0;
+
             var queue = this.blockStore.GetMemberValue("blocksQueue") as AsyncQueue<BlockPair>;
             
             while (true)
             {
-                var itemsCount = (int)queue.GetMemberValue("Count");
+                int itemsCount = ((Queue<BlockPair>)queue.GetMemberValue("items")).Count;
 
                 if (itemsCount != 0)
                     await Task.Delay(100).ConfigureAwait(false);
                 else
                     break;
+
+                iterations++;
+
+                if (iterations > 500)
+                    throw new Exception("Unexpected queue processing delay!");
             }
             
             // For very slow environments.
