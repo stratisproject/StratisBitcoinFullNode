@@ -276,7 +276,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         {
             this.logger.LogTrace("({0}.{1}:{2})", nameof(batch), nameof(batch.Count), batch.Count);
 
-            List<BlockPair> clearedBatch= this.GetBatchWithoutReorgedBlocks(batch);
+            List<BlockPair> clearedBatch = this.GetBatchWithoutReorgedBlocks(batch);
 
             ChainedHeader expectedStoreTip = clearedBatch.First().ChainedHeader.Previous;
 
