@@ -72,6 +72,13 @@ namespace Stratis.Bitcoin.Features.BlockStore
             INodeLifetime nodeLifetime,
             ILoggerFactory loggerFactory)
         {
+            Guard.NotNull(blockRepository, nameof(blockRepository));
+            Guard.NotNull(chain, nameof(chain));
+            Guard.NotNull(chainState, nameof(chainState));
+            Guard.NotNull(storeSettings, nameof(storeSettings));
+            Guard.NotNull(nodeLifetime, nameof(nodeLifetime));
+            Guard.NotNull(loggerFactory, nameof(loggerFactory));
+            
             this.chainState = chainState;
             this.nodeLifetime = nodeLifetime;
             this.storeSettings = storeSettings;
