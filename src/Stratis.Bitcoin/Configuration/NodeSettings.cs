@@ -207,7 +207,7 @@ namespace Stratis.Bitcoin.Configuration
             {
                 this.Logger.LogDebug("Creating configuration file '{0}'.", this.ConfigurationFile);
 
-                File.WriteAllText(this.ConfigurationFile, this.GetDefaultConfiguration(features));
+                File.WriteAllText(this.ConfigurationFile, this.GetFeaturesConfiguration(features));
                 this.SetCombinedConfiguration();
                 this.LoadConfiguration();
 
@@ -323,7 +323,7 @@ namespace Stratis.Bitcoin.Configuration
         /// </summary>
         /// <param name="features">The features to include in the configuration file if a default file has to be created.</param>
         /// <returns>The default configuration.</returns>
-        private string GetDefaultConfiguration(List<IFeatureRegistration> features = null)
+        private string GetFeaturesConfiguration(List<IFeatureRegistration> features = null)
         {
             StringBuilder builder = new StringBuilder();
 
