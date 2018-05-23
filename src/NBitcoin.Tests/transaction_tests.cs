@@ -2134,7 +2134,7 @@ namespace NBitcoin.Tests
         public void CanParseTransaction()
         {
 
-            var tests = TestCase.read_json("data/can_parse_transaction.json");
+            var tests = TestCase.read_json(TestDataLocations.GetFileFromDataFolder("can_parse_transaction.json"));
 
             foreach(var test in tests.Select(t => t.GetDynamic(0)))
             {
@@ -2699,7 +2699,7 @@ namespace NBitcoin.Tests
             // Inner arrays are either [ "comment" ]
             // or [[[prevout hash, prevout index, prevout scriptPubKey], [input 2], ...],"], serializedTransaction, enforceP2SH
             // ... where all scripts are stringified scripts.
-            var tests = TestCase.read_json("data/tx_valid.json");
+            var tests = TestCase.read_json(TestDataLocations.GetFileFromDataFolder("tx_valid.json"));
             foreach(var test in tests)
             {
                 string strTest = test.ToString();
@@ -2817,7 +2817,7 @@ namespace NBitcoin.Tests
             // Inner arrays are either [ "comment" ]
             // or [[[prevout hash, prevout index, prevout scriptPubKey], [input 2], ...],"], serializedTransaction, enforceP2SH
             // ... where all scripts are stringified scripts.
-            var tests = TestCase.read_json("data/tx_invalid.json");
+            var tests = TestCase.read_json(TestDataLocations.GetFileFromDataFolder("tx_invalid.json"));
             string comment = null;
             foreach(var test in tests)
             {
@@ -3349,7 +3349,7 @@ namespace NBitcoin.Tests
         [Fact]
         public void CanDecodeAndEncodeRawTransaction()
         {
-            var tests = TestCase.read_json("data/tx_raw.json");
+            var tests = TestCase.read_json(TestDataLocations.GetFileFromDataFolder("tx_raw.json"));
             foreach (var test in tests)
             {
                 var format = (RawFormat)Enum.Parse(typeof(RawFormat), (string)test[0], true);

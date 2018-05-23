@@ -146,7 +146,7 @@ namespace NBitcoin.Tests
         [Trait("UnitTest", "UnitTest")]
         public void DeterministicSignatureTestVectors()
         {
-            foreach(var test in ParseTestsDump(File.ReadAllText("Data/determiniticECDSA.txt")))
+            foreach(var test in ParseTestsDump(File.ReadAllText(TestDataLocations.GetFileFromDataFolder("determiniticECDSA.txt"))))
             {
                 TestSig(test);
             }
