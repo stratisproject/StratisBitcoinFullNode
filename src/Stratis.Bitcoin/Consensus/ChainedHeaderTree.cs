@@ -67,8 +67,6 @@ namespace Stratis.Bitcoin.Consensus
             this.peerTipsByPeerId = new Dictionary<int, uint256>();
             this.peerIdsByTipHash = new Dictionary<uint256, HashSet<int>>();
             this.chainedHeadersByHash = new Dictionary<uint256, ChainedHeader>();
-
-            this.lockObject = new object();
         }
 
         /// <summary>
