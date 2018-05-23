@@ -99,7 +99,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.logger.LogTrace("()");
 
             if (this.storeSettings.ReIndex)
-                throw new NotSupportedException();
+                throw new NotSupportedException("Re-indexing the block store in currently not supported.");
 
             ChainedHeader initializationTip = this.chain.GetBlock(this.blockRepository.BlockHash);
             this.SetStoreTip(initializationTip);
@@ -148,8 +148,8 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.logger.LogTrace("()");
 
             var blockStoreResetList = new List<uint256>();
-            Block resetBlock = await this.blockRepository.GetAsync(this.blockRepository.BlockHash).ConfigureAwait(false);
             uint256 resetBlockHash = this.blockRepository.BlockHash;
+            Block resetBlock = await this.blockRepository.GetAsync(resetBlockHash).ConfigureAwait(false);
 
             while (this.chain.GetBlock(resetBlockHash) == null)
             {
@@ -162,7 +162,13 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 }
 
                 resetBlock = await this.blockRepository.GetAsync(resetBlock.Header.HashPrevBlock).ConfigureAwait(false);
-                Guard.NotNull(resetBlock, nameof(resetBlock));
+
+                if (resetBlock == null)
+                {
+                    // This can happen only if block store is corrupted.
+                    throw new BlockStoreException("Block store failed to recover.");
+                }
+
                 resetBlockHash = resetBlock.GetHash();
             }
 
