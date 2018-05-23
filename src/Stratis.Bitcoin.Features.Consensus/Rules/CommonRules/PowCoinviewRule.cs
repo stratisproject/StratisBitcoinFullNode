@@ -125,9 +125,21 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
             {
                 this.CheckBlockReward(context, fees, index.Height, block);
 
-                bool passed = (await Task.WhenAll(checkInputs)).All(b => b);
-                if (!passed)
+                foreach (Task<bool> checkInput in checkInputs)
                 {
+                    var result = await checkInput;
+                    if(!result)
+                    {
+                        this.Logger.LogTrace("(-)[BAD_TX_SCRIPT]");
+                        ConsensusErrors.BadTransactionScriptError.Throw();
+                    }
+                }
+
+                foreach (Task<bool> checkInput in checkInputs)
+                {
+                    if (await checkInput.ConfigureAwait(false))
+                        continue;
+
                     this.Logger.LogTrace("(-)[BAD_TX_SCRIPT]");
                     ConsensusErrors.BadTransactionScriptError.Throw();
                 }

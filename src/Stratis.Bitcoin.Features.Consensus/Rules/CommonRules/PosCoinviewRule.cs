@@ -44,9 +44,9 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
             // Compute and store the stake proofs.
             this.CheckAndComputeStake(context);
 
-            await base.RunAsync(context);
+            await base.RunAsync(context).ConfigureAwait(false);
 
-            await this.stakeChain.SetAsync(context.BlockValidationContext.ChainedHeader, context.Stake.BlockStake);
+            await this.stakeChain.SetAsync(context.BlockValidationContext.ChainedHeader, context.Stake.BlockStake).ConfigureAwait(false);
 
             this.Logger.LogTrace("(-)");
         }
