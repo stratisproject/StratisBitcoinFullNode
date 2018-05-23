@@ -174,7 +174,7 @@ namespace Stratis.Bitcoin.Builder
                 return null;
             }
 
-            // Load configuration file
+            // Create configuration file if required
             if (this.NodeSettings?.CreateDefaultConfigurationFile(this.Features.FeatureRegistrations) ?? false)
                 this.NodeSettings.LoadConfiguration();
 
