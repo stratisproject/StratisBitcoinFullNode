@@ -33,8 +33,6 @@ namespace Stratis.Bitcoin.Consensus
         private readonly IChainState chainState;
         private readonly ConsensusSettings consensusSettings;
 
-        private readonly object lockObject;
-
         /// <summary>A special peer identifier that represents our local node.</summary>
         internal const int LocalPeerId = -1;
 
@@ -415,37 +413,38 @@ namespace Stratis.Bitcoin.Consensus
         {
             this.logger.LogTrace("({0}.{1}:{2})", nameof(headers), nameof(headers.Count), headers.Count);
 
-            if (!this.FindFirstNewHeader(headers,  out int newHeaderPosition))
+            if (!this.FindFirstNewHeader(headers, out int newHeaderPosition))
             {
-                this.logger.LogTrace("(-)[NO_NEW_HEADERS_FOUND]");
+                this.logger.LogTrace("(-)[NO_NEW_HEADERS_FOUND]:null");
                 return null;
             }
 
             ChainedHeader previousChainedHeader = this.chainedHeadersByHash.TryGet(headers[newHeaderPosition].HashPrevBlock);
             if (previousChainedHeader == null)
             {
-                this.logger.LogTrace("(-)[PREVIOUS_HEADER_NOT_FOUND]");
+                this.logger.LogTrace("(-)[PREVIOUS_HEADER_NOT_FOUND]: Previous hash `{0}` of block hash `{1}` was not found.", headers[newHeaderPosition].GetHash(), headers[newHeaderPosition].HashPrevBlock);
                 throw new ConnectHeaderException();
             }
 
             var newChainedHeaders = new List<ChainedHeader>();
 
             ChainedHeader newChainedHeader = this.CreateAndValidateNewChainedHeader(newChainedHeaders, headers[newHeaderPosition], previousChainedHeader);
+            newHeaderPosition++;
             this.logger.LogTrace("New chained header was added to the tree '{0}'.", newChainedHeader);
 
             this.CheckMaxReorgRuleViolated(newChainedHeader);
 
             previousChainedHeader = newChainedHeader;
 
-            for (newHeaderPosition++; newHeaderPosition < headers.Count; newHeaderPosition++)
+            for (; newHeaderPosition < headers.Count; newHeaderPosition++)
             {
                 newChainedHeader = this.CreateAndValidateNewChainedHeader(newChainedHeaders, headers[newHeaderPosition], previousChainedHeader);
                 this.logger.LogTrace("New chained header was added to the tree '{0}'.", newChainedHeader);
 
                 previousChainedHeader = newChainedHeader;
             }
-            
-            this.logger.LogTrace("({0}:'{1}')", nameof(newChainedHeaders), newChainedHeaders.Count);
+
+            this.logger.LogTrace("(-):*.{0}:{1}", nameof(newChainedHeaders.Count), newChainedHeaders.Count);
             return newChainedHeaders;
         }
 
@@ -477,7 +476,7 @@ namespace Stratis.Bitcoin.Consensus
                 }
             }
 
-            this.logger.LogTrace("(-):false");
+            this.logger.LogTrace("(-):false,{0}:{1}", nameof(newHeaderPosition), newHeaderPosition);
             return false;
         }
 
