@@ -3,6 +3,7 @@
 	<s:String x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=4D5CA268BE4FCC48BB555E5B82CFF411/Description/@EntryValue">BddSpecificationTemplate</s:String>
 	<s:String x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=4D5CA268BE4FCC48BB555E5B82CFF411/Text/@EntryValue">$HEADER$using Stratis.Bitcoin.IntegrationTests.TestFramework;&#xD;
 using Xunit;&#xD;
+using Stratis.Bitcoin.Tests.Common.TestFramework;&#xD;
 // Disable warnings about "this" qualifier to make the Specification more readable&#xD;
 // ReSharper disable ArrangeThisQualifier&#xD;
 &#xD;
@@ -60,7 +61,7 @@ namespace $NAMESPACE$&#xD;
 	<s:Int64 x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=4D5CA268BE4FCC48BB555E5B82CFF411/Section/=AA27F2FA714E4B428DCB24B2E7453910/Order/@EntryValue">0</s:Int64>
 	<s:String x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=4D5CA268BE4FCC48BB555E5B82CFF411/Section/=AA27F2FA714E4B428DCB24B2E7453910/SectionPlain/Text/@EntryValue">using System.Threading.Tasks;
 using FluentAssertions;
-using Stratis.Bitcoin.IntegrationTests.TestFramework;
+using Stratis.Bitcoin.Tests.Common.TestFramework;
 using Xunit.Abstractions;
 
 namespace $NAMESPACE$
