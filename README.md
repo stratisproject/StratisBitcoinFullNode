@@ -11,6 +11,10 @@ https://Discord
 
 # Release Notes
 
+v0.8.2-alpha
+- Significant improvements to the underlying architecture to improve stability
+- Sct tool now displays warnings when fields are declared in a smart contract, to avoid confusion about what data is persisted between calls
+
 v0.8.1-alpha
 - Removed get spendable balance check from SmartContractController.
 - Added extra logging to SmartContractController and ReflectionVirtualMachine.
