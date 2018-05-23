@@ -201,43 +201,62 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.CounterChain
             return uint256.One;
         }
 
+        ///<inheritdoc/>
         public CounterChainSession VerifySession(uint256 sessionId, Transaction partialTransactionTemplate)
         {
+            //TODO: This has a critical flaw in the transaction checking. It's not enough to find one ok output. There could be additional rouge outputs.
+            //TODO: What are other ways this code can be circumvented?
+
             var exists = this.sessions.TryGetValue(sessionId, out var counterChainSession);
+
             this.logger.LogInformation("()");
             this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} CounterChainSession exists: {exists} sessionId: {sessionId}");
-            this.logger.LogInformation("(-)");
 
-            // We do not have this session, either because we have not yet discovered it or because this is a fake session.
+            // We do not have this session.
             if (!exists) return null;
 
-            // What does the session expect to receive?
-            var scriptPubKeyFromSession = BitcoinAddress.Create(counterChainSession.Destination, this.network).ScriptPubKey;
-            var amountFromSession = counterChainSession.Amount;
-
-            foreach (var output in partialTransactionTemplate.Outputs)
-            {
-                if (output.ScriptPubKey == scriptPubKeyFromSession)
-                {
-                    this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} Found it!");
-                    if (output.Value == amountFromSession)
-                        this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} Amount matches!");
-                }
-            }
-
+            // Have I already signed this session?
             this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} HaveISigned:{counterChainSession.HaveISigned}");
-
             if (counterChainSession.HaveISigned)
             {
                 this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} Fatal: the session {sessionId} has already signed a partial transaction.");
                 return null;
             }
 
-            //if (amount != counterChainSession.Amount)
-            //    throw new ArgumentException($"Fatal the session amount does not match chain.");
+            // We compare our session values with the values we read from the transaction.
+            var scriptPubKeyFromSession = BitcoinAddress.Create(counterChainSession.Destination, this.network).ScriptPubKey;
+            var amountFromSession = counterChainSession.Amount;
 
-            //if (destination != counterChainSession.Destination)
-            //    throw new ArgumentException($"Fatal the session destination does not match chain.");
+            bool addressMatches = false;
+            bool amountMatches = false;
+            foreach (var output in partialTransactionTemplate.Outputs)
+            {
+                if (output.ScriptPubKey == scriptPubKeyFromSession)
+                {
+                    addressMatches = true;
+                    this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} Session {sessionId} found the matching destination address.");
+                    if (output.Value == amountFromSession)
+                    {
+                        amountMatches = true;
+                        this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} Session {sessionId} found the matching amount.");
+                    }
+                }
+            }
+
+            // The addess does not match. exit.
+            if (!addressMatches)
+            {
+                this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} Fatal: The destination address did not match in session {sessionId}.");
+                return null;
+            }
+
+            // The amount does not match. exit.
+            if (!amountMatches)
+            {
+                this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} Fatal: The amount did not match in session {sessionId}.");
+                return null;
+            }
+
             return counterChainSession;
         }
 
