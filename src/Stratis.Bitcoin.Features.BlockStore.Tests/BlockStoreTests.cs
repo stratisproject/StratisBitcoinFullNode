@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
@@ -87,8 +88,17 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
 
         private async Task WaitUntilQueueIsEmptyAsync()
         {
-            while (this.blockStore.BlocksQueueCount != 0)
-                await Task.Delay(100).ConfigureAwait(false);
+            var queue = this.blockStore.GetMemberValue("blocksQueue") as AsyncQueue<BlockPair>;
+            
+            while (true)
+            {
+                var itemsCount = (int)queue.GetMemberValue("Count");
+
+                if (itemsCount != 0)
+                    await Task.Delay(100).ConfigureAwait(false);
+                else
+                    break;
+            }
             
             // For very slow environments.
             await Task.Delay(500).ConfigureAwait(false);
@@ -282,6 +292,66 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             // Dispose block store.
             this.nodeLifetime.StopApplication();
             this.blockStore.Dispose();
+        }
+    }
+
+    /// <summary>Extensions methos for using reflection to get / set member values.</summary>
+    public static class ReflectionExtensions
+    {
+        /// <summary>
+        /// Gets the public or private member using reflection.
+        /// </summary>
+        /// <param name="obj">The source target.</param>
+        /// <param name="memberName">Name of the field or property.</param>
+        /// <returns>the value of member</returns>
+        public static object GetMemberValue(this object obj, string memberName)
+        {
+            var memInf = GetMemberInfo(obj, memberName);
+
+            if (memInf == null)
+                throw new System.Exception("memberName");
+
+            if (memInf is PropertyInfo)
+                return memInf.As<PropertyInfo>().GetValue(obj, null);
+
+            if (memInf is FieldInfo)
+                return memInf.As<FieldInfo>().GetValue(obj);
+
+            throw new System.Exception();
+        }
+
+        /// <summary>
+        /// Gets the member info.
+        /// </summary>
+        /// <param name="obj">Source object.</param>
+        /// <param name="memberName">Name of member.</param>
+        /// <returns>Instanse of MemberInfo corresponsing to member.</returns>
+        private static MemberInfo GetMemberInfo(object obj, string memberName)
+        {
+            var prps = new List<PropertyInfo>();
+
+            prps.Add(obj.GetType().GetProperty(memberName, BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance | BindingFlags.FlattenHierarchy));
+            prps = Enumerable.ToList(Enumerable.Where(prps, i => !ReferenceEquals(i, null)));
+            if (prps.Count != 0)
+                return prps[0];
+
+            var flds = new List<FieldInfo>();
+
+            flds.Add(obj.GetType().GetField(memberName, BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.FlattenHierarchy));
+
+            // To add more types of properties.
+            flds = Enumerable.ToList(Enumerable.Where(flds, i => !ReferenceEquals(i, null)));
+
+            if (flds.Count != 0)
+                return flds[0];
+
+            return null;
+        }
+
+        [System.Diagnostics.DebuggerHidden]
+        private static T As<T>(this object obj)
+        {
+            return (T)obj;
         }
     }
 }
