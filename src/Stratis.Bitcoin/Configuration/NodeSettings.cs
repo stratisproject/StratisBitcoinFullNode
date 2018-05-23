@@ -49,23 +49,21 @@ namespace Stratis.Bitcoin.Configuration
         public NodeSettings(Network innerNetwork = null, ProtocolVersion protocolVersion = SupportedProtocolVersion, 
             string agent = "StratisBitcoin", string[] args = null)
         {
-            this.Agent = agent;
             this.Network = innerNetwork;
             this.ProtocolVersion = protocolVersion;
+            this.Agent = agent;
+            this.LoadArgs = args ?? new string[] { };
 
             this.Log = new LogSettings();
             this.LoggerFactory = new ExtendedLoggerFactory();
             this.LoggerFactory.AddConsoleWithFilters();
             this.LoggerFactory.AddNLog();
             this.Logger = this.LoggerFactory.CreateLogger(typeof(NodeSettings).FullName);
-
-            // Load arguments or configuration from .ctor?
-            this.LoadArgs = args ?? new string[] { };
-
+            
             // By default, we look for a file named '<network>.conf' in the network's data directory,
             // but both the data directory and the configuration file path may be changed using the -datadir and -conf command-line arguments.
             this.ConfigurationFile = this.LoadArgs.GetValueOf("-conf")?.NormalizeDirectorySeparator();
-            this.DataDir = this.LoadArgs.GetValueOf("-datadir")?.NormalizeDirectorySeparator();
+            this.DataDir = this.LoadArgs.GetValueOf("-datadir")?.NormalizeDirectorySeparator();        
 
             // If the configuration file is relative then assume it is relative to the data folder and combine the paths
             if (this.DataDir != null && this.ConfigurationFile != null)
@@ -75,28 +73,19 @@ namespace Stratis.Bitcoin.Configuration
                     this.ConfigurationFile = Path.Combine(this.DataDir, this.ConfigurationFile);
             }
 
+            // If the configuration file was specified on the command line we can load it earlier.
+            if (this.ConfigurationFile != null && !File.Exists(this.ConfigurationFile))
+                throw new ConfigurationException($"Configuration file does not exist at {this.ConfigurationFile}.");
+
+            // Sets the ConfigReader based on the arguments and the configuration file if it exists.
+            SetCombinedConfiguration();
+
             // If the network is not known then derive it from the command line arguments
             if (this.Network == null)
             {
-                var regTest = false;
-                var testNet = false;
-
                 // Find out if we need to run on testnet or regtest from the config file.
-                if (this.ConfigurationFile != null)
-                {
-                    AssertConfigFileExists(this.ConfigurationFile);
-                    var configTemp = new TextFileConfiguration(File.ReadAllText(this.ConfigurationFile));
-                    testNet = configTemp.GetOrDefault<bool>("testnet", false);
-                    regTest = configTemp.GetOrDefault<bool>("regtest", false);
-                }
-
-                // Only if args contains -testnet, do we set it to true, otherwise it overwrites file configuration
-                if (this.LoadArgs.Contains("-testnet", StringComparer.CurrentCultureIgnoreCase))
-                    testNet = true;
-
-                // Only if args contains -regtest, do we set it to true, otherwise it overwrites file configuration
-                if (this.LoadArgs.Contains("-regtest", StringComparer.CurrentCultureIgnoreCase))
-                    regTest = true;
+                var testNet = this.ConfigReader.GetOrDefault<bool>("testnet", false);
+                var regTest = this.ConfigReader.GetOrDefault<bool>("regtest", false);
 
                 if (testNet && regTest)
                     throw new ConfigurationException("Invalid combination of -regtest and -testnet.");
@@ -122,11 +111,15 @@ namespace Stratis.Bitcoin.Configuration
             
             this.DataFolder = new DataFolder(this.DataDir);
 
+            // Determine and load the configuration file now if it was not specified on the command line.
             if (this.ConfigurationFile == null)
+            {
                 this.ConfigurationFile = Path.Combine(this.DataDir, this.Network.DefaultConfigFilename);
 
-            this.Logger.LogDebug("Configuration file set to '{0}'.", this.ConfigurationFile);
+                this.Logger.LogDebug("Configuration file set to '{0}'.", this.ConfigurationFile);
+            }
 
+            // Load the configuration.
             LoadConfiguration();
         }
 
@@ -221,11 +214,10 @@ namespace Stratis.Bitcoin.Configuration
         }
 
         /// <summary>
-        /// Loads the configuration file.
+        /// Sets the ConfigReader based on the arguments and the configuration file if it exists.
+        /// Also sets the logging settings for the configuration.
         /// </summary>
-        /// <returns>Initialized node configuration.</returns>
-        /// <exception cref="ConfigurationException">Thrown in case of any problems with the configuration file or command line arguments.</exception>
-        public NodeSettings LoadConfiguration()
+        private void SetCombinedConfiguration()
         {
             // Read the configuration file if it exists.
             string configText = "";
@@ -243,11 +235,27 @@ namespace Stratis.Bitcoin.Configuration
             // Add the file configuration to the command-line configuration.
             var fileConfig = new TextFileConfiguration(configText);
             var config = new TextFileConfiguration(args);
-            this.ConfigReader = config;
             fileConfig.MergeInto(config);
 
-            // Set the configuration filter and file path.
+            // Set logging settings for this configuration.
             this.Log.Load(config);
+
+            this.ConfigReader = config;
+        }
+
+        /// <summary>
+        /// Loads the configuration file.
+        /// </summary>
+        /// <returns>Initialized node configuration.</returns>
+        /// <exception cref="ConfigurationException">Thrown in case of any problems with the configuration file or command line arguments.</exception>
+        public NodeSettings LoadConfiguration()
+        {
+            // Sets the ConfigReader based on the arguments and the configuration file if it exists.
+            SetCombinedConfiguration();
+
+            // Set the configuration filter and file path.
+            var config = this.ConfigReader;
+
             this.LoggerFactory.AddFilters(this.Log, this.DataFolder);
             this.LoggerFactory.ConfigureConsoleFilters(this.LoggerFactory.GetConsoleSettings(), this.Log);
             this.RequireStandard = config.GetOrDefault("acceptnonstdtxn", !(this.Network.IsTest()));
@@ -269,17 +277,6 @@ namespace Stratis.Bitcoin.Configuration
             this.Agent = string.IsNullOrEmpty(agentPrefix) ? this.Agent : $"{agentPrefix}-{this.Agent}"; 
 
             return this;
-        }
-
-        /// <summary>
-        /// Asserts the configuration file exists.
-        /// </summary>
-        /// <param name="configurationFilePath">The configuration file path.</param>
-        /// <exception cref="ConfigurationException">Thrown if the configuration file does not exist.</exception>
-        private static void AssertConfigFileExists(string configurationFilePath)
-        {
-            if (!File.Exists(configurationFilePath))
-                throw new ConfigurationException($"Configuration file does not exist at {configurationFilePath}.");
         }
 
         /// <summary>
