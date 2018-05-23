@@ -446,7 +446,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             // add to local filter
             using (this.asyncLock.Lock())
             {
-               
                 this.filterInventoryKnown.TryAdd(trxHash, trxHash);
                 this.logger.LogTrace("Added transaction ID '{0}' to known inventory filter.", trxHash);
             }
