@@ -125,13 +125,12 @@ namespace Stratis.Bitcoin.Consensus
 
             this.SetPeerTip(networkPeerId, headers.Last().GetHash());
 
-            if (newChainedHeaders.Empty())
+            if (newChainedHeaders == null)
             {
                 this.logger.LogTrace("(-)[NO_NEW_HEADER]");
                 return new ConnectedHeaders();
             }
 
-            ChainedHeader bestTip = this.chainState.ConsensusTip;
             ChainedHeader earliestNewHeader = newChainedHeaders.First();
             ChainedHeader latestNewHeader = newChainedHeaders.Last();
 
@@ -179,7 +178,7 @@ namespace Stratis.Bitcoin.Consensus
                 }
             }
 
-            if (latestNewHeader.ChainWork > bestTip.ChainWork)
+            if (latestNewHeader.ChainWork > this.chainState.ConsensusTip.ChainWork)
             {
                 this.logger.LogDebug("Chained header '{0}' is the tip of a chain with more work than our current consensus tip.", latestNewHeader);
 
@@ -312,20 +311,26 @@ namespace Stratis.Bitcoin.Consensus
 
         private void RemoveUnclaimedBranch(ChainedHeader chainedHeader)
         {
-            this.logger.LogTrace("({0}:{1})", nameof(chainedHeader), chainedHeader);
+            this.logger.LogTrace("({0}:'{1}')", nameof(chainedHeader), chainedHeader);
 
             ChainedHeader currentHeader = chainedHeader;
             while (true)
             {
                 bool headerHasNextHeader = currentHeader.Next.Count > 0;
-                bool headerHasPeerClaim = this.peerIdsByTipHash.ContainsKey(chainedHeader.HashBlock);
-
-                if (headerHasNextHeader || headerHasPeerClaim)
+                if (headerHasNextHeader)
                 {
+                    this.logger.LogTrace("Header '{0}' is part of another branch.", currentHeader);
                     break;
                 }
 
-                this.logger.LogTrace("Header '{0}' removed from tree.", currentHeader);
+                bool headerHasPeerClaim = this.peerIdsByTipHash.ContainsKey(chainedHeader.HashBlock);
+                if (headerHasPeerClaim)
+                {
+                    this.logger.LogTrace("Header '{0}' is claimed by a peer and wont be removed.", currentHeader);
+                    break;
+                }
+
+                this.logger.LogTrace("Header '{0}' was removed from the chain tree.", currentHeader);
                 this.chainedHeadersByHash.Remove(currentHeader.HashBlock);
                 currentHeader.Previous.Next.Remove(currentHeader);
 
@@ -348,20 +353,19 @@ namespace Stratis.Bitcoin.Consensus
 
             if (listOfPeersClaimingThisHeader == null)
             {
-                this.logger.LogTrace("(-)[PEER_TIP_NOT_FOUND]:{0}.", networkPeerId);
+                this.logger.LogTrace("(-)[PEER_TIP_NOT_FOUND]");
                 throw new ConsensusException();
             }
 
-            this.logger.LogTrace("Removed networkPeerId = '{0}'.", networkPeerId);
+            this.logger.LogTrace("Peer id {0 } removed.", networkPeerId);
             listOfPeersClaimingThisHeader.Remove(networkPeerId);
 
             if (listOfPeersClaimingThisHeader.Count == 0)
             {
-                this.logger.LogTrace("Header '{0}' is not the tip of a peer.", chainedHeader);
+                this.logger.LogTrace("Header '{0}' is not the tip of any peer.", chainedHeader);
                 this.peerIdsByTipHash.Remove(chainedHeader.HashBlock);
+                this.RemoveUnclaimedBranch(chainedHeader);
             }
-
-            this.RemoveUnclaimedBranch(chainedHeader);
 
             this.logger.LogTrace("(-)");
         }
@@ -406,78 +410,87 @@ namespace Stratis.Bitcoin.Consensus
         /// This will append to the ChainedHeader.Next of the previous header.
         /// </remarks>
         /// <param name="headers">The new headers that should be connected to a chain.</param>
-        /// <returns>A list of newly created <see cref="ChainedHeader"/>.</returns>
+        /// <returns>A list of newly created <see cref="ChainedHeader"/> or <c>null</c> if no new headers were found.</returns>
         private List<ChainedHeader> CreateNewHeaders(List<BlockHeader> headers)
         {
-            this.logger.LogTrace("({0}:'{1}')", nameof(headers), headers.Count);
+            this.logger.LogTrace("({0}.{1}:{2})", nameof(headers), nameof(headers.Count), headers.Count);
+
+            if (!this.FindFirstNewHeader(headers,  out int newHeaderPosition))
+            {
+                this.logger.LogTrace("(-)[NO_NEW_HEADERS_FOUND]");
+                return null;
+            }
+
+            ChainedHeader previousChainedHeader = this.chainedHeadersByHash.TryGet(headers[newHeaderPosition].HashPrevBlock);
+            if (previousChainedHeader == null)
+            {
+                this.logger.LogTrace("(-)[PREVIOUS_HEADER_NOT_FOUND]");
+                throw new ConnectHeaderException();
+            }
 
             var newChainedHeaders = new List<ChainedHeader>();
-            bool newChainedHeaderFound = false;
-            bool verifyMaxReorgViolation = true;
-            ChainedHeader previousChainedHeader = null;
 
-            foreach (BlockHeader currentBlockHeader in headers)
+            ChainedHeader newChainedHeader = this.CreateAndValidateNewChainedHeader(newChainedHeaders, headers[newHeaderPosition], previousChainedHeader);
+            this.logger.LogTrace("New chained header was added to the tree '{0}'.", newChainedHeader);
+
+            this.CheckMaxReorgRuleViolated(newChainedHeader);
+
+            previousChainedHeader = newChainedHeader;
+
+            for (newHeaderPosition++; newHeaderPosition < headers.Count; newHeaderPosition++)
             {
-                var currentBlockHash = currentBlockHeader.GetHash();
+                newChainedHeader = this.CreateAndValidateNewChainedHeader(newChainedHeaders, headers[newHeaderPosition], previousChainedHeader);
+                this.logger.LogTrace("New chained header was added to the tree '{0}'.", newChainedHeader);
 
-                if (!newChainedHeaderFound && !this.chainedHeadersByHash.ContainsKey(currentBlockHash))
-                {
-                    this.logger.LogTrace("New header that is not connected to the tree was found '{0}' .", currentBlockHash);
-                    newChainedHeaderFound = true;
-                }
-
-                if (newChainedHeaderFound)
-                {
-                    if (previousChainedHeader == null)
-                    {
-                        this.logger.LogTrace("Find the previous chained header '{0}' .", currentBlockHeader.HashPrevBlock);
-                        previousChainedHeader = this.chainedHeadersByHash.TryGet(currentBlockHeader.HashPrevBlock);
-
-                        if (previousChainedHeader == null)
-                        {
-                            this.logger.LogTrace("(-)[PREVIOUS_HEADER_NOT_FOUND]");
-                            throw new ConnectHeaderException();
-                        }
-                    }
-
-                    ChainedHeader newChainedHeader = new ChainedHeader(currentBlockHeader, currentBlockHash, previousChainedHeader);
-
-                    this.chainedHeaderValidator.Validate(newChainedHeader);
-
-                    if (verifyMaxReorgViolation)
-                    {
-                        ChainedHeader forkDistanceFromConsensusTip = this.chainState.ConsensusTip.FindFork(newChainedHeader);
-
-                        if (this.IsMaxReorgRuleViolated(forkDistanceFromConsensusTip))
-                        {
-                            this.logger.LogTrace("(-)[MAX_REORG_VIOLATION]");
-                            throw new MaxReorgViolationException();
-                        }
-
-                        verifyMaxReorgViolation = false;
-                    }
-
-                    newChainedHeaders.Add(newChainedHeader);
-                    previousChainedHeader.Next.Add(newChainedHeader);
-                    this.chainedHeadersByHash.Add(newChainedHeader.HashBlock, newChainedHeader);
-
-                    previousChainedHeader = newChainedHeader;
-                    this.logger.LogTrace("New chained header was added to the tree '{0}'.", newChainedHeader);
-                }
+                previousChainedHeader = newChainedHeader;
             }
             
             this.logger.LogTrace("({0}:'{1}')", nameof(newChainedHeaders), newChainedHeaders.Count);
             return newChainedHeaders;
         }
 
-        /// <summary>
-        /// Checks if <paramref name="tip"/> violates the max reorg rule, if networks.Consensus.MaxReorgLength is zero this logic is disabled.
-        /// </summary>
-        /// <param name="tip">The tip.</param>
-        /// <returns><c>true</c> if maximum reorg rule violated, <c>false</c> otherwise.</returns>
-        private bool IsMaxReorgRuleViolated(ChainedHeader tip)
+        private ChainedHeader CreateAndValidateNewChainedHeader(List<ChainedHeader> newChainedHeaders, BlockHeader currentBlockHeader, ChainedHeader previousChainedHeader)
         {
-            this.logger.LogTrace("({0}:'{1}')", nameof(tip), tip);
+            var newChainedHeader = new ChainedHeader(currentBlockHeader, currentBlockHeader.GetHash(), previousChainedHeader);
+
+            this.chainedHeaderValidator.Validate(newChainedHeader);
+
+            newChainedHeaders.Add(newChainedHeader);
+            previousChainedHeader.Next.Add(newChainedHeader);
+            this.chainedHeadersByHash.Add(newChainedHeader.HashBlock, newChainedHeader);
+
+            return newChainedHeader;
+        }
+
+        private bool FindFirstNewHeader(List<BlockHeader> headers, out int newHeaderPosition)
+        {
+            this.logger.LogTrace("({0}.{1}:{2})", nameof(headers), nameof(headers.Count), headers.Count);
+
+            for (newHeaderPosition = 0; newHeaderPosition < headers.Count; newHeaderPosition++)
+            {
+                uint256 currentBlockHash = headers[newHeaderPosition].GetHash();
+                if (this.chainedHeadersByHash.ContainsKey(currentBlockHash))
+                {
+                    this.logger.LogTrace("A new header with hash '{0}' was found that is not connected to the tree.", currentBlockHash);
+                    this.logger.LogTrace("(-):true");
+                    return true;
+                }
+            }
+
+            this.logger.LogTrace("(-):false");
+            return false;
+        }
+
+        /// <summary>
+        /// Checks if <paramref name="chainedHeader"/> violates the max reorg rule, if networks.Consensus.MaxReorgLength is zero this logic is disabled.
+        /// </summary>
+        /// <param name="chainedHeader">The header that needs to be checked for reorg.</param>
+        /// <returns><c>true</c> if maximum reorg rule violated, <c>false</c> otherwise.</returns>
+        private void CheckMaxReorgRuleViolated(ChainedHeader chainedHeader)
+        {
+            this.logger.LogTrace("({0}:'{1}')", nameof(chainedHeader), chainedHeader);
+
+            ChainedHeader tip = this.chainState.ConsensusTip.FindFork(chainedHeader);
 
             uint maxReorgLength = this.chainState.MaxReorgLength;
             ChainedHeader consensusTip = this.chainState.ConsensusTip;
@@ -492,16 +505,15 @@ namespace Stratis.Bitcoin.Consensus
                     if (reorgLength > maxReorgLength)
                     {
                         this.logger.LogTrace("Reorganization of length {0} prevented, maximal reorganization length is {1}, consensus tip is '{2}'.", reorgLength, maxReorgLength, consensusTip);
-                        this.logger.LogTrace("(-):true");
-                        return true;
+                        this.logger.LogTrace("(-)[MAX_REORG_VIOLATION]");
+                        throw new MaxReorgViolationException();
                     }
 
                     this.logger.LogTrace("Reorganization of length {0} accepted, consensus tip is '{1}'.", reorgLength, consensusTip);
                 }
             }
 
-            this.logger.LogTrace("(-):false");
-            return false;
+            this.logger.LogTrace("(-)");
         }
     }
 
