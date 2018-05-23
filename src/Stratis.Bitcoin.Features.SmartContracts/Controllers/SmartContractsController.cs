@@ -28,10 +28,14 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Controllers
     [Route("api/[controller]")]
     public class SmartContractsController : Controller
     {
+        /// <summary>
+        /// For consistency in retrieval of balances, and to ensure that smart contract transaction
+        /// creation always works, as the retrieved transactions have always already been included in a block.
+        /// </summary>
+        private const int MinConfirmationsAllChecks = 1;
+
         private readonly IBroadcasterManager broadcasterManager;
         private readonly CoinType coinType;
-        private readonly IConsensusLoop consensus;
-        private readonly IDateTimeProvider dateTimeProvider;
         private readonly ILogger logger;
         private readonly Network network;
         private readonly ContractStateRepositoryRoot stateRoot;
@@ -49,9 +53,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Controllers
             IWalletTransactionHandler walletTransactionHandler)
         {
             this.stateRoot = stateRoot;
-            this.consensus = consensus;
             this.walletTransactionHandler = walletTransactionHandler;
-            this.dateTimeProvider = dateTimeProvider;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.network = network;
             this.coinType = (CoinType)network.Consensus.CoinType;
@@ -189,7 +191,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Controllers
         {
             this.logger.LogTrace("(){0}:{1}", nameof(walletName), walletName);
 
-            IEnumerable<IGrouping<HdAddress, UnspentOutputReference>> allSpendable = this.walletManager.GetSpendableTransactionsInWallet(walletName).GroupBy(x => x.Address);
+            IEnumerable<IGrouping<HdAddress, UnspentOutputReference>> allSpendable = this.walletManager.GetSpendableTransactionsInWallet(walletName, MinConfirmationsAllChecks).GroupBy(x => x.Address);
             var result = new List<object>();
             foreach (IGrouping<HdAddress, UnspentOutputReference> grouping in allSpendable)
             {
@@ -214,7 +216,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Controllers
                 return BuildCreateContractTransactionResponse.Failed($"The 'Sender' address you're trying to spend from doesn't have a confirmed balance. Current unconfirmed balance: {addressBalance.AmountUnconfirmed}. Please check the 'Sender' address.");
 
             var selectedInputs = new List<OutPoint>();
-            selectedInputs = this.walletManager.GetSpendableTransactionsInWallet(request.WalletName).Where(x => x.Address.Address == request.Sender).Select(x => x.ToOutPoint()).ToList();
+            selectedInputs = this.walletManager.GetSpendableTransactionsInWallet(request.WalletName, MinConfirmationsAllChecks).Where(x => x.Address.Address == request.Sender).Select(x => x.ToOutPoint()).ToList();
 
             ulong gasPrice = ulong.Parse(request.GasPrice);
             ulong gasLimit = ulong.Parse(request.GasLimit);
@@ -242,7 +244,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Controllers
                 TransactionFee = totalFee,
                 ChangeAddress = senderAddress,
                 SelectedInputs = selectedInputs,
-                MinConfirmations = 0
+                MinConfirmations = MinConfirmationsAllChecks
             };
 
             try
@@ -265,7 +267,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Controllers
                 return BuildCallContractTransactionResponse.Failed($"The 'Sender' address you're trying to spend from doesn't have a confirmed balance. Current unconfirmed balance: {addressBalance.AmountUnconfirmed}. Please check the 'Sender' address.");
 
             var selectedInputs = new List<OutPoint>();
-            selectedInputs = this.walletManager.GetSpendableTransactionsInWallet(request.WalletName).Where(x => x.Address.Address == request.Sender).Select(x => x.ToOutPoint()).ToList();
+            selectedInputs = this.walletManager.GetSpendableTransactionsInWallet(request.WalletName, MinConfirmationsAllChecks).Where(x => x.Address.Address == request.Sender).Select(x => x.ToOutPoint()).ToList();
 
             ulong gasPrice = ulong.Parse(request.GasPrice);
             ulong gasLimit = ulong.Parse(request.GasLimit);
@@ -294,7 +296,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Controllers
                 TransactionFee = totalFee,
                 ChangeAddress = senderAddress,
                 SelectedInputs = selectedInputs,
-                MinConfirmations = 0
+                MinConfirmations = MinConfirmationsAllChecks
             };
 
             try
