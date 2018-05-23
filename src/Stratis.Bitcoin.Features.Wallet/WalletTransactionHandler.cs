@@ -2,13 +2,11 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Security;
-using System.Security.Cryptography;
 using System.Text;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NBitcoin.Policy;
-using NBitcoin.Crypto;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Utilities.Extensions;
@@ -218,7 +216,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             Wallet wallet = this.walletManager.GetWalletByName(context.AccountReference.WalletName);
             Key privateKey; 
             // get extended private key
-            string cacheKey = Encoding.Default.GetString(Hashes.Hash256(Encoding.UTF8.GetBytes(wallet.EncryptedSeed)).ToBytes());
+            string cacheKey = wallet.EncryptedSeed;
 
             if (this.privateKeyCache.TryGetValue(cacheKey, out SecureString secretValue))
             {
