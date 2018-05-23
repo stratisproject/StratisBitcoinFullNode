@@ -193,7 +193,14 @@ namespace Stratis.Bitcoin.Features.Wallet.Models
         [JsonProperty(PropertyName = "reSync")]
         public bool ReSync { get; set; }
     }
-
+    public class ListAccountsModel : RequestModel
+    {
+        /// <summary>
+        /// The name of the wallet for which to list the accounts.
+        /// </summary>
+        [Required(ErrorMessage = "The name of the wallet is required.")]
+        public string WalletName { get; set; }
+    }
     public class GetUnusedAddressModel : RequestModel
     {
         /// <summary>
