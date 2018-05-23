@@ -68,15 +68,15 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.CounterChain
         private CounterChainSession RegisterSession(uint256 transactionId, Money amount, string destination)
         {
             var memberFolderManager = new MemberFolderManager(this.federationGatewaySettings.FederationFolder);
-            IFederation federation = memberFolderManager.LoadFederation(this.federationGatewaySettings.MultiSigM, this.federationGatewaySettings.MultiSigN);
+            var federation = memberFolderManager.LoadFederation(this.federationGatewaySettings.MultiSigM, this.federationGatewaySettings.MultiSigN);
 
             this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} RegisterSession transactionId:{transactionId}");
             this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} RegisterSession amount:{amount}");
             this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} RegisterSession destination:{destination}");
 
-            var partialTransactionSession = new CounterChainSession(this.logger, this.federationGatewaySettings.MultiSigN, transactionId, federation.GetPublicKeys(this.network.ToChain()), amount, destination);
-            this.sessions.AddOrReplace(transactionId, partialTransactionSession);
-            return partialTransactionSession;
+            var counterChainSession = new CounterChainSession(this.logger, this.federationGatewaySettings.MultiSigN, transactionId, federation.GetPublicKeys(this.network.ToChain()), amount, destination);
+            this.sessions.AddOrReplace(transactionId, counterChainSession);
+            return counterChainSession;
         }
 
         public void ReceivePartial(uint256 sessionId, Transaction partialTransaction, uint256 bossCard)
@@ -86,13 +86,13 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.CounterChain
             this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} Receive Partial: BossCard - {bossCard}");
 
             string bc = bossCard.ToString();
-            var partialTransactionSession = sessions[sessionId];
-            bool hasQuorum = partialTransactionSession.AddPartial(this.federationGatewaySettings.MemberName, partialTransaction, bc);
+            var counterChainSession = sessions[sessionId];
+            bool hasQuorum = counterChainSession.AddPartial(this.federationGatewaySettings.MemberName, partialTransaction, bc);
 
             if (hasQuorum)
             {
                 this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} Receive Partial: Reached Quorum.");
-                BroadcastTransaction(partialTransactionSession);
+                BroadcastTransaction(counterChainSession);
             }
             this.logger.LogInformation("(-)");
         }
@@ -169,10 +169,10 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.CounterChain
 
             //add my own partial
             this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} ProcessCounterChainSession: Signing own partial.");
-            var partialTransactionSession = this.VerifySession(sessionId, templateTransaction);
+            var counterChainSession = this.VerifySession(sessionId, templateTransaction);
 
-            if (partialTransactionSession == null) return uint256.One;
-            this.MarkSessionAsSigned(partialTransactionSession);
+            if (counterChainSession == null) return uint256.One;
+            this.MarkSessionAsSigned(counterChainSession);
             var partialTransaction = account.SignPartialTransaction(templateTransaction);
 
             uint256 bossCard = BossTable.MakeBossTableEntry(sessionId, this.federationGatewaySettings.PublicKey);
@@ -203,7 +203,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.CounterChain
 
         public CounterChainSession VerifySession(uint256 sessionId, Transaction partialTransactionTemplate)
         {
-            var exists = this.sessions.TryGetValue(sessionId, out var partialTransactionSession);
+            var exists = this.sessions.TryGetValue(sessionId, out var counterChainSession);
             this.logger.LogInformation("()");
             this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} CounterChainSession exists: {exists} sessionId: {sessionId}");
             this.logger.LogInformation("(-)");
@@ -212,8 +212,8 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.CounterChain
             if (!exists) return null;
 
             // What does the session expect to receive?
-            var scriptPubKeyFromSession = BitcoinAddress.Create(partialTransactionSession.Destination, this.network).ScriptPubKey;
-            var amountFromSession = partialTransactionSession.Amount;
+            var scriptPubKeyFromSession = BitcoinAddress.Create(counterChainSession.Destination, this.network).ScriptPubKey;
+            var amountFromSession = counterChainSession.Amount;
 
             foreach (var output in partialTransactionTemplate.Outputs)
             {
@@ -225,17 +225,20 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.CounterChain
                 }
             }
 
-            this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} HaveISigned:{partialTransactionSession.HaveISigned}");
+            this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} HaveISigned:{counterChainSession.HaveISigned}");
 
-            //if (counterChainSession.HaveISigned)
-            //    throw new ArgumentException($"Fatal: the session {sessionId} has already signed a partial transaction.");
+            if (counterChainSession.HaveISigned)
+            {
+                this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} Fatal: the session {sessionId} has already signed a partial transaction.");
+                return null;
+            }
 
             //if (amount != counterChainSession.Amount)
             //    throw new ArgumentException($"Fatal the session amount does not match chain.");
 
             //if (destination != counterChainSession.Destination)
             //    throw new ArgumentException($"Fatal the session destination does not match chain.");
-            return partialTransactionSession;
+            return counterChainSession;
         }
 
         public void MarkSessionAsSigned(CounterChainSession session)
