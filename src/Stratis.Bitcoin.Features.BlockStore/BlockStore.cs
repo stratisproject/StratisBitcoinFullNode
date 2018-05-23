@@ -22,7 +22,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
     /// are no longer a part of our best chain, they are removed from the database.
     /// </para>
     /// <para>
-    /// Block store is being initialized we delete blocks that are not on the best chain.
+    /// When block store is being initialized we delete blocks that are not on the best chain.
     /// </para>
     /// </remarks>
     public class BlockStore : IDisposable
