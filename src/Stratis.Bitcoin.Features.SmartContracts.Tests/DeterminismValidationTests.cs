@@ -557,6 +557,10 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                                                 {
                                                 }
 
+                                                public void Int64(long param)
+                                                {
+                                                }
+
                                                 public void Address1(Address param)
                                                 {
                                                 }
@@ -582,10 +586,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                                                 public Test(ISmartContractState state)
                                                     : base(state) {}         
 
-                                                public void Int64(long param)
-                                                {
-                                                }
-
                                                 public void DateTime1(DateTime param)
                                                 {
                                                 }
@@ -602,6 +602,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             SmartContractDecompilation decomp = SmartContractDecompiler.GetModuleDefinition(assemblyBytes);
             SmartContractValidationResult result = this.validator.Validate(decomp);
             Assert.False(result.IsValid);
+            Assert.Contains(result.Errors, e => e.Message.Contains("System.DateTime"));
+            Assert.Contains(result.Errors, e => e.Message.Contains("System.Single"));
         }
 
         #endregion
