@@ -43,8 +43,9 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             this.consensusTip = null;
             this.nodeLifetime = new NodeLifetime();
 
-            var reposMoq = new Mock<IBlockRepository>();
-            reposMoq.Setup(x => x.PutAsync(It.IsAny<uint256>(), It.IsAny<List<Block>>())).Returns((uint256 nextBlockHash, List<Block> blocks) =>
+            var blockRepositoryMock = new Mock<IBlockRepository>();
+            blockRepositoryMock.Setup(x => x.PutAsync(It.IsAny<uint256>(), It.IsAny<List<Block>>()))
+                .Returns((uint256 nextBlockHash, List<Block> blocks) =>
             {
                 this.repositoryBlockHash = nextBlockHash;
                 this.repositorySavesCount++;
@@ -52,13 +53,15 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
                 return Task.CompletedTask;
             });
 
-            reposMoq.Setup(x => x.DeleteAsync(It.IsAny<uint256>(), It.IsAny<List<uint256>>())).Returns((uint256 nextBlockHash, List<uint256> blocks) =>
+            blockRepositoryMock.Setup(x => x.DeleteAsync(It.IsAny<uint256>(), It.IsAny<List<uint256>>()))
+                .Returns((uint256 nextBlockHash, List<uint256> blocks) =>
             {
                 this.repositoryTotalBlocksDeleted += blocks.Count;
                 return Task.CompletedTask;
             });
 
-            reposMoq.Setup(x => x.GetAsync(It.IsAny<uint256>())).Returns((uint256 hash) =>
+            blockRepositoryMock.Setup(x => x.GetAsync(It.IsAny<uint256>()))
+                .Returns((uint256 hash) =>
             {
                 Block block = null;
 
@@ -68,12 +71,12 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
                 return Task.FromResult(block);
             });
 
-            reposMoq.Setup(x => x.BlockHash).Returns(() =>
+            blockRepositoryMock.Setup(x => x.BlockHash).Returns(() =>
             {
                 return this.repositoryBlockHash;
             });
 
-            this.repository = reposMoq.Object;
+            this.repository = blockRepositoryMock.Object;
 
             var chainStateMoq = new Mock<IChainState>();
             chainStateMoq.Setup(x => x.ConsensusTip).Returns(() => this.consensusTip);
@@ -343,7 +346,8 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
         }
     }
 
-    /// <summary>Extensions methos for using reflection to get / set member values.</summary>
+    /// <summary>Extension methods for using reflection to get / set member values.</summary>
+    /// TODO: move to a shared test utils project (as soon as there is one) that is referenced by all test projects. 
     public static class ReflectionExtensions
     {
         /// <summary>
@@ -354,18 +358,18 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
         /// <returns>the value of member</returns>
         public static object GetMemberValue(this object obj, string memberName)
         {
-            var memInf = GetMemberInfo(obj, memberName);
+            MemberInfo memberInfo = GetMemberInfo(obj, memberName);
 
-            if (memInf == null)
-                throw new System.Exception("memberName");
+            if (memberInfo == null)
+                throw new Exception("memberName");
 
-            if (memInf is PropertyInfo)
-                return memInf.As<PropertyInfo>().GetValue(obj, null);
+            if (memberInfo is PropertyInfo)
+                return memberInfo.As<PropertyInfo>().GetValue(obj, null);
 
-            if (memInf is FieldInfo)
-                return memInf.As<FieldInfo>().GetValue(obj);
+            if (memberInfo is FieldInfo)
+                return memberInfo.As<FieldInfo>().GetValue(obj);
 
-            throw new System.Exception();
+            throw new Exception();
         }
 
         /// <summary>
@@ -376,22 +380,22 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
         /// <returns>Instanse of MemberInfo corresponsing to member.</returns>
         private static MemberInfo GetMemberInfo(object obj, string memberName)
         {
-            var prps = new List<PropertyInfo>();
+            var propertyInfos = new List<PropertyInfo>();
 
-            prps.Add(obj.GetType().GetProperty(memberName, BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance | BindingFlags.FlattenHierarchy));
-            prps = Enumerable.ToList(Enumerable.Where(prps, i => !ReferenceEquals(i, null)));
-            if (prps.Count != 0)
-                return prps[0];
+            propertyInfos.Add(obj.GetType().GetProperty(memberName, BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance | BindingFlags.FlattenHierarchy));
+            propertyInfos = Enumerable.ToList(Enumerable.Where(propertyInfos, i => !ReferenceEquals(i, null)));
+            if (propertyInfos.Count != 0)
+                return propertyInfos[0];
 
-            var flds = new List<FieldInfo>();
+            var fieldInfos = new List<FieldInfo>();
 
-            flds.Add(obj.GetType().GetField(memberName, BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.FlattenHierarchy));
+            fieldInfos.Add(obj.GetType().GetField(memberName, BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.FlattenHierarchy));
 
             // To add more types of properties.
-            flds = Enumerable.ToList(Enumerable.Where(flds, i => !ReferenceEquals(i, null)));
+            fieldInfos = Enumerable.ToList(Enumerable.Where(fieldInfos, i => !ReferenceEquals(i, null)));
 
-            if (flds.Count != 0)
-                return flds[0];
+            if (fieldInfos.Count != 0)
+                return fieldInfos[0];
 
             return null;
         }
