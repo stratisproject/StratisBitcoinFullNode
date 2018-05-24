@@ -37,12 +37,12 @@ namespace Stratis.Bitcoin.Features.Notifications
             IAsyncLoopFactory asyncLoopFactory,
             INodeLifetime nodeLifetime)
         {
-            Guard.NotNull(loggerFactory, nameof(loggerFactory));
-            Guard.NotNull(chain, nameof(chain));
-            Guard.NotNull(puller, nameof(puller));
-            Guard.NotNull(signals, nameof(signals));
-            Guard.NotNull(asyncLoopFactory, nameof(asyncLoopFactory));
-            Guard.NotNull(nodeLifetime, nameof(nodeLifetime));
+            Guard.NotNull(loggerFactory);
+            Guard.NotNull(chain);
+            Guard.NotNull(puller);
+            Guard.NotNull(signals);
+            Guard.NotNull(asyncLoopFactory);
+            Guard.NotNull(nodeLifetime);
 
             this.Chain = chain;
             this.Puller = puller;

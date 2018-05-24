@@ -31,9 +31,9 @@ namespace Stratis.Bitcoin.Features.RPC
         /// <inheritdoc/>
         public IRPCClient Create(string authenticationString, Uri address, Network network)
         {
-            Guard.NotNull(authenticationString, nameof(authenticationString));
-            Guard.NotNull(address, nameof(address));
-            Guard.NotNull(network, nameof(network));
+            Guard.NotNull(authenticationString);
+            Guard.NotNull(address);
+            Guard.NotNull(network);
 
             return new RPCClient(authenticationString, address, network);
         }

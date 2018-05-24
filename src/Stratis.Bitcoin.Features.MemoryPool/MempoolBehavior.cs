@@ -263,7 +263,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <param name="message">The message payload.</param>
         private async Task SendMempoolPayloadAsync(INetworkPeer peer, MempoolPayload message)
         {
-            Guard.NotNull(peer, nameof(peer));
+            Guard.NotNull(peer);
             this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(peer), peer.RemoteSocketEndpoint, nameof(message), message.Command);
             if (peer != this.AttachedPeer)
             {
@@ -328,7 +328,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <param name="invPayload">The inventory payload in the message.</param>
         private async Task ProcessInvAsync(INetworkPeer peer, InvPayload invPayload)
         {
-            Guard.NotNull(peer, nameof(peer));
+            Guard.NotNull(peer);
             this.logger.LogTrace("({0}:'{1}',{2}.{3}.{4}:{5})", nameof(peer), peer.RemoteSocketEndpoint, nameof(invPayload), nameof(invPayload.Inventory), nameof(invPayload.Inventory.Count), invPayload.Inventory.Count);
             if (peer != this.AttachedPeer)
             {
@@ -398,7 +398,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <param name="getDataPayload">The payload for the message.</param>
         private async Task ProcessGetDataAsync(INetworkPeer peer, GetDataPayload getDataPayload)
         {
-            Guard.NotNull(peer, nameof(peer));
+            Guard.NotNull(peer);
             this.logger.LogTrace("({0}:'{1}',{2}.{3}.{4}:{5})", nameof(peer), peer.RemoteSocketEndpoint, nameof(getDataPayload), nameof(getDataPayload.Inventory), nameof(getDataPayload.Inventory.Count), getDataPayload.Inventory.Count);
             if (peer != this.AttachedPeer)
             {

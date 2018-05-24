@@ -49,7 +49,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <param name="nodeSettings">Application configuration.</param>
         public void Load(NodeSettings nodeSettings)
         {
-            Guard.NotNull(nodeSettings, nameof(nodeSettings));
+            Guard.NotNull(nodeSettings);
 
             TextFileConfiguration config = nodeSettings.ConfigReader;
             this.SaveTransactionHex = config.GetOrDefault<bool>("savetrxhex", false);

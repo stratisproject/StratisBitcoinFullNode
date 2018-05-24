@@ -51,8 +51,8 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <param name="message">A user friendly message to describe this error.</param>
         public ConsensusError(string code, string message)
         {
-            Guard.NotEmpty(code, nameof(code));
-            Guard.NotEmpty(message, nameof(message));
+            Guard.NotEmpty(code);
+            Guard.NotEmpty(message);
             
             this.Code = code;
             this.Message = message;

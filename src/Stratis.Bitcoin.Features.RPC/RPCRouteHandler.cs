@@ -22,8 +22,8 @@ namespace Stratis.Bitcoin.Features.RPC
 
         public RPCRouteHandler(IRouter inner, IActionDescriptorCollectionProvider actionDescriptor)
         {
-            Guard.NotNull(inner, nameof(inner));
-            Guard.NotNull(actionDescriptor, nameof(actionDescriptor));
+            Guard.NotNull(inner);
+            Guard.NotNull(actionDescriptor);
 
             this.inner = inner;
             this.actionDescriptor = actionDescriptor;
@@ -31,14 +31,14 @@ namespace Stratis.Bitcoin.Features.RPC
 
         public VirtualPathData GetVirtualPath(VirtualPathContext context)
         {
-            Guard.NotNull(context, nameof(context));
+            Guard.NotNull(context);
 
             return this.inner.GetVirtualPath(context);
         }
 
         public async Task RouteAsync(RouteContext context)
         {
-            Guard.NotNull(context, nameof(context));
+            Guard.NotNull(context);
 
             MemoryStream ms = new MemoryStream();
             await context.HttpContext.Request.Body.CopyToAsync(ms);

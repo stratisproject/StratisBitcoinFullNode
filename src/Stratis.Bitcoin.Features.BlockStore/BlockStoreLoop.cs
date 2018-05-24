@@ -155,7 +155,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
                     }
 
                     resetBlock = await this.BlockRepository.GetAsync(resetBlock.Header.HashPrevBlock).ConfigureAwait(false);
-                    Guard.NotNull(resetBlock, nameof(resetBlock));
+                    Guard.NotNull(resetBlock);
                     resetBlockHash = resetBlock.GetHash();
                 }
 
@@ -290,7 +290,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         internal void SetStoreTip(ChainedHeader chainedHeader)
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(chainedHeader), chainedHeader?.HashBlock);
-            Guard.NotNull(chainedHeader, nameof(chainedHeader));
+            Guard.NotNull(chainedHeader);
 
             this.StoreTip = chainedHeader;
             this.SetHighestPersistedBlock(chainedHeader);

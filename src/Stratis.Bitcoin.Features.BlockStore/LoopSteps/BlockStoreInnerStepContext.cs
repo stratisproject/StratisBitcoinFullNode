@@ -38,8 +38,8 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
 
         public BlockStoreInnerStepContext(CancellationToken cancellationToken, BlockStoreLoop blockStoreLoop, ChainedHeader nextChainedHeader, ILoggerFactory loggerFactory, IDateTimeProvider dateTimeProvider)
         {
-            Guard.NotNull(blockStoreLoop, nameof(blockStoreLoop));
-            Guard.NotNull(nextChainedHeader, nameof(nextChainedHeader));
+            Guard.NotNull(blockStoreLoop);
+            Guard.NotNull(nextChainedHeader);
 
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
 

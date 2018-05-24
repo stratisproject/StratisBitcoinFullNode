@@ -66,8 +66,8 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         /// <param name="loggerFactory">Factory to be used to create logger for the puller.</param>
         public DBreezeCoinView(Network network, string folder, IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory)
         {
-            Guard.NotNull(network, nameof(network));
-            Guard.NotEmpty(folder, nameof(folder));
+            Guard.NotNull(network);
+            Guard.NotEmpty(folder);
 
             // Create the coinview folder if it does not exist.
             Directory.CreateDirectory(folder);
@@ -391,6 +391,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
             Task task = Task.Run(() =>
             {
                 this.logger.LogTrace("({0}.Count():{1})", nameof(blocklist), blocklist.Count());
+                this.logger.LogTrace("({0}.Count():{1})");
 
                 using (DBreeze.Transactions.Transaction transaction = this.dbreeze.GetTransaction())
                 {

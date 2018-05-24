@@ -14,7 +14,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Broadcasting
 
         public FullNodeBroadcasterManager(IConnectionManager connectionManager, IMempoolValidator mempoolValidator) : base(connectionManager)
         {
-            Guard.NotNull(mempoolValidator, nameof(mempoolValidator));
+            Guard.NotNull(mempoolValidator);
 
             this.mempoolValidator = mempoolValidator;
         }
@@ -22,7 +22,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Broadcasting
         /// <inheritdoc />
         public override async Task BroadcastTransactionAsync(Transaction transaction)
         {
-            Guard.NotNull(transaction, nameof(transaction));
+            Guard.NotNull(transaction);
 
             if (this.IsPropagated(transaction))
                 return;

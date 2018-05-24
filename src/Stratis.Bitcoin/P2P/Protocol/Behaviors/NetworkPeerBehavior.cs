@@ -32,7 +32,7 @@ namespace Stratis.Bitcoin.P2P.Protocol.Behaviors
 
         public void Attach(INetworkPeer peer)
         {
-            Guard.NotNull(peer, nameof(peer));
+            Guard.NotNull(peer);
 
             if (this.AttachedPeer != null)
                 throw new InvalidOperationException("Behavior already attached to a peer");

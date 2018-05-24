@@ -35,7 +35,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         /// <inheritdoc />
         public override Task<FetchCoinsResponse> FetchCoinsAsync(uint256[] txIds)
         {
-            Guard.NotNull(txIds, nameof(txIds));
+            Guard.NotNull(txIds);
 
             using (this.lockobj.LockRead())
             {
@@ -53,9 +53,9 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         /// <inheritdoc />
         public override Task SaveChangesAsync(IEnumerable<UnspentOutputs> unspentOutputs, IEnumerable<TxOut[]> originalOutputs, uint256 oldBlockHash, uint256 nextBlockHash)
         {
-            Guard.NotNull(oldBlockHash, nameof(oldBlockHash));
-            Guard.NotNull(nextBlockHash, nameof(nextBlockHash));
-            Guard.NotNull(unspentOutputs, nameof(unspentOutputs));
+            Guard.NotNull(oldBlockHash);
+            Guard.NotNull(nextBlockHash);
+            Guard.NotNull(unspentOutputs);
 
             using (this.lockobj.LockWrite())
             {

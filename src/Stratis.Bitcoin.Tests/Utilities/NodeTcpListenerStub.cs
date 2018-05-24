@@ -11,7 +11,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
 
         public NodeTcpListenerStub(IPEndPoint endpoint)
         {
-            Guard.NotNull(endpoint, nameof(endpoint));
+            Guard.NotNull(endpoint);
 
             this.listener = new TcpListener(endpoint);
             this.listener.Start();

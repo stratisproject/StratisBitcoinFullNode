@@ -22,8 +22,8 @@ namespace Stratis.Bitcoin.Features.RPC
 
         public RPCMiddleware(RequestDelegate next, IRPCAuthorization authorization, ILoggerFactory loggerFactory)
         {
-            Guard.NotNull(next, nameof(next));
-            Guard.NotNull(authorization, nameof(authorization));
+            Guard.NotNull(next);
+            Guard.NotNull(authorization);
 
             this.next = next;
             this.authorization = authorization;
@@ -32,7 +32,7 @@ namespace Stratis.Bitcoin.Features.RPC
 
         public async Task InvokeAsync(HttpContext httpContext)
         {
-            Guard.NotNull(httpContext, nameof(httpContext));
+            Guard.NotNull(httpContext);
 
             if (!this.Authorized(httpContext))
             {

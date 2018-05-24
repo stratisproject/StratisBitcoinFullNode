@@ -90,13 +90,13 @@ namespace Stratis.Bitcoin.Features.Dns
         /// <param name="asyncLoopFactory">The asynchronous loop factory.</param>
         public DnsFeature(IDnsServer dnsServer, IWhitelistManager whitelistManager, ILoggerFactory loggerFactory, INodeLifetime nodeLifetime, DnsSettings dnsSettings, NodeSettings nodeSettings, DataFolder dataFolders, IAsyncLoopFactory asyncLoopFactory)
         {
-            Guard.NotNull(dnsServer, nameof(dnsServer));
-            Guard.NotNull(whitelistManager, nameof(whitelistManager));
-            Guard.NotNull(loggerFactory, nameof(loggerFactory));
-            Guard.NotNull(nodeLifetime, nameof(nodeLifetime));
-            Guard.NotNull(nodeSettings, nameof(nodeSettings));
-            Guard.NotNull(dataFolders, nameof(dataFolders));
-            Guard.NotNull(asyncLoopFactory, nameof(asyncLoopFactory));
+            Guard.NotNull(dnsServer);
+            Guard.NotNull(whitelistManager);
+            Guard.NotNull(loggerFactory);
+            Guard.NotNull(nodeLifetime);
+            Guard.NotNull(nodeSettings);
+            Guard.NotNull(dataFolders);
+            Guard.NotNull(asyncLoopFactory);
 
             this.dnsServer = dnsServer;
             this.whitelistManager = whitelistManager;

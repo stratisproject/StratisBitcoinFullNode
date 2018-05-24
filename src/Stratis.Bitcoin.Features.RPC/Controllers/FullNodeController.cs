@@ -181,7 +181,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
         [ActionDescription("Gets the block header of the block identified by the hash.")]
         public BlockHeaderModel GetBlockHeader(string hash, bool isJsonFormat = true)
         {
-            Guard.NotNull(hash, nameof(hash));
+            Guard.NotNull(hash);
 
             this.logger.LogDebug("RPC GetBlockHeader {0}", hash);
 

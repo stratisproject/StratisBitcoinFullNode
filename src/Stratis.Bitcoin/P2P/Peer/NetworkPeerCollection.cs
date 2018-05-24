@@ -68,7 +68,7 @@ namespace Stratis.Bitcoin.P2P.Peer
 
         public void Add(INetworkPeer peer)
         {
-            Guard.NotNull(peer, nameof(peer));
+            Guard.NotNull(peer);
 
             this.networkPeers.Add(peer);
         }

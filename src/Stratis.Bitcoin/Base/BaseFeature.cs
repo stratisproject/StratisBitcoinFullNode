@@ -139,17 +139,17 @@ namespace Stratis.Bitcoin.Base
             IPeerAddressManager peerAddressManager,
             BestChainSelector bestChainSelector)
         {
-            this.chainState = Guard.NotNull(chainState, nameof(chainState));
-            this.chainRepository = Guard.NotNull(chainRepository, nameof(chainRepository));
-            this.nodeSettings = Guard.NotNull(nodeSettings, nameof(nodeSettings));
-            this.dataFolder = Guard.NotNull(dataFolder, nameof(dataFolder));
-            this.nodeLifetime = Guard.NotNull(nodeLifetime, nameof(nodeLifetime));
-            this.chain = Guard.NotNull(chain, nameof(chain));
-            this.connectionManager = Guard.NotNull(connectionManager, nameof(connectionManager));
+            this.chainState = Guard.NotNull(chainState);
+            this.chainRepository = Guard.NotNull(chainRepository);
+            this.nodeSettings = Guard.NotNull(nodeSettings);
+            this.dataFolder = Guard.NotNull(dataFolder);
+            this.nodeLifetime = Guard.NotNull(nodeLifetime);
+            this.chain = Guard.NotNull(chain);
+            this.connectionManager = Guard.NotNull(connectionManager);
             this.bestChainSelector = bestChainSelector;
-            this.peerBanning = Guard.NotNull(peerBanning, nameof(peerBanning));
+            this.peerBanning = Guard.NotNull(peerBanning);
 
-            this.peerAddressManager = Guard.NotNull(peerAddressManager, nameof(peerAddressManager));
+            this.peerAddressManager = Guard.NotNull(peerAddressManager);
             this.peerAddressManager.PeerFilePath = this.dataFolder;
 
             this.initialBlockDownloadState = initialBlockDownloadState;

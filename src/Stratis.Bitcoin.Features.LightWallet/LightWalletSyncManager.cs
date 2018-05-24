@@ -51,14 +51,14 @@ namespace Stratis.Bitcoin.Features.LightWallet
             INodeLifetime nodeLifetime,
             IAsyncLoopFactory asyncLoopFactory)
         {
-            Guard.NotNull(loggerFactory, nameof(loggerFactory));
-            Guard.NotNull(walletManager, nameof(walletManager));
-            Guard.NotNull(chain, nameof(chain));
-            Guard.NotNull(network, nameof(network));
-            Guard.NotNull(blockNotification, nameof(blockNotification));
-            Guard.NotNull(signals, nameof(signals));
-            Guard.NotNull(nodeLifetime, nameof(nodeLifetime));
-            Guard.NotNull(asyncLoopFactory, nameof(asyncLoopFactory));
+            Guard.NotNull(loggerFactory);
+            Guard.NotNull(walletManager);
+            Guard.NotNull(chain);
+            Guard.NotNull(network);
+            Guard.NotNull(blockNotification);
+            Guard.NotNull(signals);
+            Guard.NotNull(nodeLifetime);
+            Guard.NotNull(asyncLoopFactory);
 
             this.walletManager = walletManager;
             this.chain = chain;
@@ -159,7 +159,7 @@ namespace Stratis.Bitcoin.Features.LightWallet
         /// <inheritdoc />
         public void ProcessBlock(Block block)
         {
-            Guard.NotNull(block, nameof(block));
+            Guard.NotNull(block);
             this.logger.LogTrace("({0}:'{1}')", nameof(block), block.GetHash());
 
             ChainedHeader newTip = this.chain.GetBlock(block.GetHash());

@@ -18,7 +18,7 @@ namespace Stratis.Bitcoin.Signals
         /// <inheritdoc />
         protected override void OnErrorCore(Exception error)
         {
-            Guard.NotNull(error, nameof(error));
+            Guard.NotNull(error);
         }
 
         /// <inheritdoc />

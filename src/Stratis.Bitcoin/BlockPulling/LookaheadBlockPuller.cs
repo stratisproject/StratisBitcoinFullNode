@@ -242,7 +242,7 @@ namespace Stratis.Bitcoin.BlockPulling
         /// <inheritdoc />
         public void SetLocation(ChainedHeader tip)
         {
-            Guard.NotNull(tip, nameof(tip));
+            Guard.NotNull(tip);
             lock (this.locationLock)
             {
                 this.location = tip;

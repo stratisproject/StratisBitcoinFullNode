@@ -102,9 +102,9 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <param name="selfEndpointTracker">Tracker for endpoints known to be self.</param>
         public NetworkPeerFactory(Network network, IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory, PayloadProvider payloadProvider, ISelfEndpointTracker selfEndpointTracker)
         {
-            Guard.NotNull(network, nameof(network));
-            Guard.NotNull(dateTimeProvider, nameof(dateTimeProvider));
-            Guard.NotNull(loggerFactory, nameof(loggerFactory));
+            Guard.NotNull(network);
+            Guard.NotNull(dateTimeProvider);
+            Guard.NotNull(loggerFactory);
 
             this.network = network;
             this.dateTimeProvider = dateTimeProvider;
@@ -118,7 +118,7 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <inheritdoc/>
         public INetworkPeer CreateNetworkPeer(TcpClient client, NetworkPeerConnectionParameters parameters = null, NetworkPeerDisposer networkPeerDisposer = null)
         {
-            Guard.NotNull(client, nameof(client));
+            Guard.NotNull(client);
 
             Action<INetworkPeer> onDisconnected = null;
 
@@ -140,7 +140,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             CancellationToken cancellation = default(CancellationToken), 
             NetworkPeerDisposer networkPeerDisposer = null)
         {
-            Guard.NotNull(endPoint, nameof(endPoint));
+            Guard.NotNull(endPoint);
 
             IPEndPoint ipEndPoint = Utils.ParseIpEndpoint(endPoint, this.network.DefaultPort);
             var parameters = new NetworkPeerConnectionParameters()
@@ -160,7 +160,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             NetworkPeerConnectionParameters parameters = null,
             NetworkPeerDisposer networkPeerDisposer = null)
         {
-            Guard.NotNull(peerEndPoint, nameof(peerEndPoint));
+            Guard.NotNull(peerEndPoint);
 
             Action<INetworkPeer> onDisconnected = null;
 
@@ -187,8 +187,8 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <inheritdoc/>
         public NetworkPeerServer CreateNetworkPeerServer(IPEndPoint localEndPoint, IPEndPoint externalEndPoint, ProtocolVersion version = ProtocolVersion.PROTOCOL_VERSION)
         {
-            Guard.NotNull(localEndPoint, nameof(localEndPoint));
-            Guard.NotNull(externalEndPoint, nameof(externalEndPoint));
+            Guard.NotNull(localEndPoint);
+            Guard.NotNull(externalEndPoint);
 
             return new NetworkPeerServer(this.network, localEndPoint, externalEndPoint, version, this.loggerFactory, this);
         }
@@ -196,9 +196,9 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <inheritdoc/>
         public NetworkPeerConnection CreateNetworkPeerConnection(INetworkPeer peer, TcpClient client, ProcessMessageAsync<IncomingMessage> processMessageAsync)
         {
-            Guard.NotNull(peer, nameof(peer));
-            Guard.NotNull(client, nameof(client));
-            Guard.NotNull(processMessageAsync, nameof(processMessageAsync));
+            Guard.NotNull(peer);
+            Guard.NotNull(client);
+            Guard.NotNull(processMessageAsync);
 
             int id = Interlocked.Increment(ref this.lastClientId);
             return new NetworkPeerConnection(this.network, peer, client, id, processMessageAsync, this.dateTimeProvider, this.loggerFactory, this.payloadProvider);

@@ -26,7 +26,7 @@ namespace Stratis.Bitcoin.Base
 
         public ChainRepository(string folder)
         {
-            Guard.NotEmpty(folder, nameof(folder));
+            Guard.NotEmpty(folder);
 
             this.dbreeze = new DBreezeEngine(folder);
         }
@@ -79,7 +79,7 @@ namespace Stratis.Bitcoin.Base
 
         public Task SaveAsync(ConcurrentChain chain)
         {
-            Guard.NotNull(chain, nameof(chain));
+            Guard.NotNull(chain);
 
             Task task = Task.Run(() =>
             {

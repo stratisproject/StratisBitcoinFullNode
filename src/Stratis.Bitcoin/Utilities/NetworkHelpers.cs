@@ -15,7 +15,7 @@ namespace Stratis.Bitcoin.Utilities
         /// <returns>A <see cref="Network"/> object.</returns>
         public static Network GetNetwork(string network)
         {
-            Guard.NotEmpty(network, nameof(network));
+            Guard.NotEmpty(network);
 
             Network selectNetwork = Network.GetNetwork(network.ToLowerInvariant());
 

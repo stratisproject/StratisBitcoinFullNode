@@ -44,7 +44,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             ILoggerFactory loggerFactory,
             NodeSettings nodeSettings)
         {
-            Guard.NotNull(blockRepository, nameof(blockRepository));
+            Guard.NotNull(blockRepository);
 
             // Initialize 'MaxCacheBlocksCount' with default value of maximum 300 blocks or with user defined value.
             // Value of 300 is chosen because it covers most of the cases when not synced node is connected and trying to sync from us.
@@ -66,7 +66,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         public async Task<Block> GetBlockAsync(uint256 blockid)
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(blockid), blockid);
-            Guard.NotNull(blockid, nameof(blockid));
+            Guard.NotNull(blockid);
 
             Block block;
             if (this.cache.TryGetValue(blockid, out block))

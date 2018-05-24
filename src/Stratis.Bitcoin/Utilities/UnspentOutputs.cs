@@ -12,7 +12,7 @@ namespace Stratis.Bitcoin.Utilities
 
         public UnspentOutputs(uint height, Transaction tx)
         {
-            Guard.NotNull(tx, nameof(tx));
+            Guard.NotNull(tx);
 
             this.Outputs = tx.Outputs.ToArray();
             this.transactionId = tx.GetHash();

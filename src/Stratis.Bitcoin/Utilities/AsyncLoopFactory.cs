@@ -90,9 +90,9 @@ namespace Stratis.Bitcoin.Utilities
         /// <inheritdoc />
         public IAsyncLoop Run(string name, Func<CancellationToken, Task> loop, CancellationToken cancellation, TimeSpan? repeatEvery = null, TimeSpan? startAfter = null)
         {
-            Guard.NotNull(cancellation, nameof(cancellation));
-            Guard.NotEmpty(name, nameof(name));
-            Guard.NotNull(loop, nameof(loop));
+            Guard.NotNull(cancellation);
+            Guard.NotEmpty(name);
+            Guard.NotNull(loop);
 
             return new AsyncLoop(name, this.logger, loop).Run(cancellation, repeatEvery ?? TimeSpan.FromMilliseconds(1000), startAfter);
         }

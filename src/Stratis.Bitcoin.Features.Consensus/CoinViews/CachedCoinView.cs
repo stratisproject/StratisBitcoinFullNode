@@ -120,7 +120,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         public CachedCoinView(DBreezeCoinView inner, IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory, StakeChainStore stakeChainStore = null) :
             this(dateTimeProvider, loggerFactory, stakeChainStore)
         {
-            Guard.NotNull(inner, nameof(inner));
+            Guard.NotNull(inner);
             this.inner = inner;
         }
 
@@ -138,7 +138,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         public CachedCoinView(InMemoryCoinView inner, IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory, StakeChainStore stakeChainStore = null) :
             this(dateTimeProvider, loggerFactory, stakeChainStore)
         {
-            Guard.NotNull(inner, nameof(inner));
+            Guard.NotNull(inner);
             this.inner = inner;
         }
 
@@ -163,7 +163,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         /// <inheritdoc />
         public override async Task<FetchCoinsResponse> FetchCoinsAsync(uint256[] txIds)
         {
-            Guard.NotNull(txIds, nameof(txIds));
+            Guard.NotNull(txIds);
             this.logger.LogTrace("({0}.{1}:{2})", nameof(txIds), nameof(txIds.Length), txIds.Length);
 
             FetchCoinsResponse result = null;
@@ -325,9 +325,9 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         /// <inheritdoc />
         public override async Task SaveChangesAsync(IEnumerable<UnspentOutputs> unspentOutputs, IEnumerable<TxOut[]> originalOutputs, uint256 oldBlockHash, uint256 nextBlockHash)
         {
-            Guard.NotNull(oldBlockHash, nameof(oldBlockHash));
-            Guard.NotNull(nextBlockHash, nameof(nextBlockHash));
-            Guard.NotNull(unspentOutputs, nameof(unspentOutputs));
+            Guard.NotNull(oldBlockHash);
+            Guard.NotNull(nextBlockHash);
+            Guard.NotNull(unspentOutputs);
             this.logger.LogTrace("({0}.Count():{1},{2}.Count():{3},{4}:'{5}',{6}:'{7}')", nameof(unspentOutputs), unspentOutputs.Count(), nameof(originalOutputs), originalOutputs?.Count(), nameof(oldBlockHash), oldBlockHash, nameof(nextBlockHash), nextBlockHash);
 
             using (await this.lockobj.LockAsync().ConfigureAwait(false))

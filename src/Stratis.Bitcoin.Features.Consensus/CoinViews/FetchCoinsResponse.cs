@@ -22,8 +22,8 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         /// <param name="blockHash">Block hash of the coinview's current tip.</param>
         public FetchCoinsResponse(UnspentOutputs[] unspent, uint256 blockHash)
         {
-            Guard.NotNull(unspent, nameof(unspent));
-            Guard.NotNull(blockHash, nameof(blockHash));
+            Guard.NotNull(unspent);
+            Guard.NotNull(blockHash);
 
             this.BlockHash = blockHash;
             this.UnspentOutputs = unspent;

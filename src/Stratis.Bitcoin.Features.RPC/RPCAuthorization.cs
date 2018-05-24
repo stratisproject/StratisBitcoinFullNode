@@ -31,14 +31,14 @@ namespace Stratis.Bitcoin.Features.RPC
 
         public bool IsAuthorized(string user)
         {
-            Guard.NotEmpty(user, nameof(user));
+            Guard.NotEmpty(user);
 
             return this.Authorized.Any(a => a.Equals(user, StringComparison.OrdinalIgnoreCase));
         }
 
         public bool IsAuthorized(IPAddress ip)
         {
-            Guard.NotNull(ip, nameof(ip));
+            Guard.NotNull(ip);
 
             if (this.AllowIp.Count == 0)
                 return true;

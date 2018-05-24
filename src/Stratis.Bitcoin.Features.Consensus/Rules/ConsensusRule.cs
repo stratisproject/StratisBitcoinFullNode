@@ -49,7 +49,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules
         /// </summary>
         public ConsensusRuleDescriptor(ConsensusRule rule)
         {
-            Guard.NotNull(rule, nameof(rule));
+            Guard.NotNull(rule);
 
             this.Rule = rule;
             this.RuleAttributes = Attribute.GetCustomAttributes(rule.GetType()).OfType<RuleAttribute>().ToList();
@@ -118,7 +118,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules
         {
             this.PowParent = this.Parent as PowConsensusRules;
 
-            Guard.NotNull(this.PowParent, nameof(this.PowParent));
+            Guard.NotNull(this.PowParent);
         }
     }
 
@@ -135,7 +135,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules
         {
             this.PosParent = this.Parent as PosConsensusRules;
 
-            Guard.NotNull(this.PosParent, nameof(this.PosParent));
+            Guard.NotNull(this.PosParent);
         }
     }
 }

@@ -12,7 +12,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 
         public ChainBuilder(Network network)
         {
-            Guard.NotNull(network, nameof(network));
+            Guard.NotNull(network);
 
             this.network = network;
             this.Chain = new ConcurrentChain(this.network);

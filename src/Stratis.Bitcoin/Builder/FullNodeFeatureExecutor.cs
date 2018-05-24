@@ -42,7 +42,7 @@ namespace Stratis.Bitcoin.Builder
         /// <param name="loggerFactory">Factory to be used to create logger for the object.</param>
         public FullNodeFeatureExecutor(IFullNode fullNode, ILoggerFactory loggerFactory)
         {
-            Guard.NotNull(fullNode, nameof(fullNode));
+            Guard.NotNull(fullNode);
 
             this.node = fullNode;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);

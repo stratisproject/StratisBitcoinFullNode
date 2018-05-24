@@ -21,7 +21,7 @@ namespace Stratis.Bitcoin.Utilities
         /// <param name="folderPath">The path of the folder in which the files are to be stored.</param>
         public FileStorage(string folderPath)
         {
-            Guard.NotEmpty(folderPath, nameof(folderPath));
+            Guard.NotEmpty(folderPath);
 
             this.FolderPath = folderPath;
 
@@ -37,8 +37,8 @@ namespace Stratis.Bitcoin.Utilities
         /// <param name="saveBackupFile">A value indicating whether to save a backup of the file.</param>
         public void SaveToFile(T toSave, string fileName, bool saveBackupFile = false)
         {
-            Guard.NotEmpty(fileName, nameof(fileName));
-            Guard.NotNull(toSave, nameof(toSave));
+            Guard.NotEmpty(fileName);
+            Guard.NotNull(toSave);
 
             string filePath = Path.Combine(this.FolderPath, fileName);
             long uniqueId = DateTime.UtcNow.Ticks;
@@ -87,7 +87,7 @@ namespace Stratis.Bitcoin.Utilities
         /// <returns>A value indicating whether the file exists in the file system.</returns>
         public bool Exists(string fileName)
         {
-            Guard.NotEmpty(fileName, nameof(fileName));
+            Guard.NotEmpty(fileName);
 
             string filePath = Path.Combine(this.FolderPath, fileName);
             return File.Exists(filePath);
@@ -100,7 +100,7 @@ namespace Stratis.Bitcoin.Utilities
         /// <returns>A list of paths for files with the specified extension.</returns>
         public IEnumerable<string> GetFilesPaths(string fileExtension)
         {
-            Guard.NotEmpty(fileExtension, nameof(fileExtension));
+            Guard.NotEmpty(fileExtension);
             return Directory.EnumerateFiles(this.FolderPath, $"*.{fileExtension}", SearchOption.TopDirectoryOnly);
         }
 
@@ -111,7 +111,7 @@ namespace Stratis.Bitcoin.Utilities
         /// <returns>A list of filenames with the specified extension.</returns>
         public IEnumerable<string> GetFilesNames(string fileExtension)
         {
-            Guard.NotEmpty(fileExtension, nameof(fileExtension));
+            Guard.NotEmpty(fileExtension);
 
             var filesPaths = this.GetFilesPaths(fileExtension);
             return filesPaths.Select(p => Path.GetFileName(p));
@@ -125,7 +125,7 @@ namespace Stratis.Bitcoin.Utilities
         /// <exception cref="FileNotFoundException">Indicates that no file with this name was found.</exception>
         public T LoadByFileName(string fileName)
         {
-            Guard.NotEmpty(fileName, nameof(fileName));
+            Guard.NotEmpty(fileName);
 
             string filePath = Path.Combine(this.FolderPath, fileName);
 
@@ -142,7 +142,7 @@ namespace Stratis.Bitcoin.Utilities
         /// <returns>A list of objects of type <see cref="T"/> whose persisted files have the specified extension. </returns>
         public IEnumerable<T> LoadByFileExtension(string fileExtension)
         {
-            Guard.NotEmpty(fileExtension, nameof(fileExtension));
+            Guard.NotEmpty(fileExtension);
 
             // Get the paths of files with the extension
             IEnumerable<string> filesPaths = this.GetFilesPaths(fileExtension);

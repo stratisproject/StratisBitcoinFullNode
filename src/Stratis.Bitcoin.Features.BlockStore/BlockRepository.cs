@@ -124,8 +124,8 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
         public BlockRepository(Network network, string folder, IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory)
         {
-            Guard.NotNull(network, nameof(network));
-            Guard.NotEmpty(folder, nameof(folder));
+            Guard.NotNull(network);
+            Guard.NotEmpty(folder);
 
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.DBreeze = new DBreezeEngine(folder);
@@ -185,7 +185,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         public Task<Transaction> GetTrxAsync(uint256 trxid)
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(trxid), trxid);
-            Guard.NotNull(trxid, nameof(trxid));
+            Guard.NotNull(trxid);
 
             if (!this.TxIndex)
                 return Task.FromResult(default(Transaction));
@@ -230,7 +230,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// <param name="trxid">transaction hash</param>
         public Task<uint256> GetTrxBlockIdAsync(uint256 trxid)
         {
-            Guard.NotNull(trxid, nameof(trxid));
+            Guard.NotNull(trxid);
             this.logger.LogTrace("({0}:'{1}')", nameof(trxid), trxid);
 
             if (!this.TxIndex)
@@ -342,8 +342,8 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// <param name="blocks">blocks to be inserted</param>
         public Task PutAsync(uint256 nextBlockHash, List<Block> blocks)
         {
-            Guard.NotNull(nextBlockHash, nameof(nextBlockHash));
-            Guard.NotNull(blocks, nameof(blocks));
+            Guard.NotNull(nextBlockHash);
+            Guard.NotNull(blocks);
             this.logger.LogTrace("({0}:'{1}',{2}.{3}:{4})", nameof(nextBlockHash), nextBlockHash, nameof(blocks), nameof(blocks.Count), blocks?.Count);
 
             Task task = Task.Run(() =>
@@ -448,7 +448,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         public Task SetBlockHashAsync(uint256 nextBlockHash)
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(nextBlockHash), nextBlockHash);
-            Guard.NotNull(nextBlockHash, nameof(nextBlockHash));
+            Guard.NotNull(nextBlockHash);
 
             Task task = Task.Run(() =>
             {
@@ -485,7 +485,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         public Task<Block> GetAsync(uint256 hash)
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(hash), hash);
-            Guard.NotNull(hash, nameof(hash));
+            Guard.NotNull(hash);
 
             Task<Block> task = Task.Run(() =>
             {
@@ -520,7 +520,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// <inheritdoc />
         public Task<List<Block>> GetBlocksAsync(List<uint256> hashes)
         {
-            Guard.NotNull(hashes, nameof(hashes));
+            Guard.NotNull(hashes);
             this.logger.LogTrace("({0}:{1})", nameof(hashes.Count), hashes.Count);
 
             Task<List<Block>> task = Task.Run(() =>
@@ -553,7 +553,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         public Task<bool> ExistAsync(uint256 hash)
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(hash), hash);
-            Guard.NotNull(hash, nameof(hash));
+            Guard.NotNull(hash);
 
             Task<bool> task = Task.Run(() =>
             {
@@ -666,8 +666,8 @@ namespace Stratis.Bitcoin.Features.BlockStore
         public Task DeleteAsync(uint256 newBlockHash, List<uint256> hashes)
         {
             this.logger.LogTrace("({0}:'{1}',{2}.{3}:{4})", nameof(newBlockHash), newBlockHash, nameof(hashes), nameof(hashes.Count), hashes?.Count);
-            Guard.NotNull(newBlockHash, nameof(newBlockHash));
-            Guard.NotNull(hashes, nameof(hashes));
+            Guard.NotNull(newBlockHash);
+            Guard.NotNull(hashes);
 
             Task task = Task.Run(() =>
             {

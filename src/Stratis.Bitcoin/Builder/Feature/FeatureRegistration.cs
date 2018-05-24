@@ -85,7 +85,7 @@ namespace Stratis.Bitcoin.Builder.Feature
         /// <inheritdoc />
         public void BuildFeature(IServiceCollection serviceCollection)
         {
-            Guard.NotNull(serviceCollection, nameof(serviceCollection));
+            Guard.NotNull(serviceCollection);
 
             // features can only be singletons
             serviceCollection
@@ -102,7 +102,7 @@ namespace Stratis.Bitcoin.Builder.Feature
         /// <inheritdoc />
         public IFeatureRegistration FeatureServices(Action<IServiceCollection> configureServices)
         {
-            Guard.NotNull(configureServices, nameof(configureServices));
+            Guard.NotNull(configureServices);
 
             this.ConfigureServicesDelegates.Add(configureServices);
 

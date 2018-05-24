@@ -11,8 +11,8 @@ namespace Stratis.Bitcoin.Features.Wallet
 
         public WalletAccountReference(string walletName, string accountName)
         {
-            Guard.NotEmpty(walletName, nameof(walletName));
-            Guard.NotEmpty(accountName, nameof(accountName));
+            Guard.NotEmpty(walletName);
+            Guard.NotEmpty(accountName);
 
             this.WalletName = walletName;
             this.AccountName = accountName;

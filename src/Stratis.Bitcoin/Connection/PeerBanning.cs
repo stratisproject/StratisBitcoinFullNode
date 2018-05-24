@@ -59,7 +59,7 @@ namespace Stratis.Bitcoin.Connection
         /// <inheritdoc />
         public void BanPeer(IPEndPoint endpoint, int banTimeSeconds, string reason = null)
         {
-            Guard.NotNull(endpoint, nameof(endpoint));
+            Guard.NotNull(endpoint);
             this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(endpoint), endpoint, nameof(reason), reason);
 
             reason = reason ?? "unknown";
@@ -100,7 +100,7 @@ namespace Stratis.Bitcoin.Connection
         /// <inheritdoc />
         public bool IsBanned(IPEndPoint endpoint)
         {
-            Guard.NotNull(endpoint, nameof(endpoint));
+            Guard.NotNull(endpoint);
 
             this.logger.LogTrace("({0}:'{1}')", nameof(endpoint), endpoint);
 

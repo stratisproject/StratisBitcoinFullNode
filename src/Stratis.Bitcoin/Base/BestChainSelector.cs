@@ -107,7 +107,7 @@ namespace Stratis.Bitcoin.Base
         /// </returns>
         public bool TrySetAvailableTip(int peerConnectionId, ChainedHeader tip)
         {
-            Guard.NotNull(tip, nameof(tip));
+            Guard.NotNull(tip);
             this.logger.LogTrace("({0}:{1},{2}:'{3}')", nameof(peerConnectionId), peerConnectionId, nameof(tip), tip);
             
             if (this.IsMaxReorgRuleViolated(tip))
