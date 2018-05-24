@@ -45,6 +45,21 @@ namespace Stratis.Bitcoin.Configuration
         /// <param name="agent">The nodes user agent that will be shared with peers.</param>
         /// <param name="args">The command-line arguments.</param>
         /// <exception cref="ConfigurationException">Thrown in case of any problems with the configuration file or command line arguments.</exception>
+        /// <remarks>
+        /// Processing depends on whether a configuration file is passed via the command line. 
+        /// Note that despite multple SetCombinedConfiguration calls the configuration file will only 
+        /// ever be loaded ONCE in the constructor OR in the CreateDefaultConfiguration method.
+        /// 
+        /// There are two main scenarios here:
+        /// - The configuration file is passed via the command line. In this case only the first call to 
+        ///   SetCombinedConfiguration would actually be reading the file. The second call to 
+        ///   SetCombinedConfiguration would not be invoked at all.
+        /// - Alternatively, if the file name is not supplied then the first call to SetCombinedConfiguration 
+        ///   would not be reading the file and instead only reading the command line arguments that would 
+        ///   help determine the network and the derived configuration file name. The second call to 
+        ///   SetCombinedConfiguration, made on the condition that ConfigurationFile = null, would then be 
+        ///   able to load the file because the network-specific file name would then have been determined.
+        /// </remarks>
         public NodeSettings(Network innerNetwork = null, ProtocolVersion protocolVersion = SupportedProtocolVersion, 
             string agent = "StratisBitcoin", string[] args = null)
         {
