@@ -189,6 +189,7 @@ namespace NBitcoin
 
         public BigInteger ProofOfStakeLimitV2 { get; set; }
 
+        /// <summary>PoW blocks are not accepted after block with height <see cref="Consensus.LastPOWBlock"/>.</summary>
         public int LastPOWBlock { get; set; }
 
         /// <summary>
