@@ -87,6 +87,12 @@ namespace Stratis.Bitcoin.Utilities
         /// <param name="value">The string to check.</param>
         public static void NotEmpty(string value)
         {
+            if (ReferenceEquals(value, null))
+            {
+                string name = GetOriginalVariableName(value);
+                throw new ArgumentNullException(name);
+            }
+
             if (value.Trim().Length == 0)
             {
                 string name = GetOriginalVariableName(value);
