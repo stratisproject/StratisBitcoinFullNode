@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Diagnostics;
+using System.IO;
 
 namespace Stratis.Bitcoin.Utilities
 {
@@ -47,6 +49,21 @@ namespace Stratis.Bitcoin.Utilities
         }
 
         /// <summary>
+        /// Checks an object is not null.
+        /// </summary>
+        /// <param name="value">The object.</param>
+        /// <exception cref="ArgumentNullException">An exception if the object passed is null.</exception>
+        public static void NotNull(object value)
+        {
+            // throw if the value is null
+            if (ReferenceEquals(value, null))
+            {
+                string name = GetOriginalVariableName(value);
+                throw new ArgumentNullException(name);
+            }
+        }
+
+        /// <summary>
         /// Checks a <see cref="string"/> is not null or empty.
         /// </summary>
         /// <param name="value">The string to check.</param>
@@ -62,6 +79,33 @@ namespace Stratis.Bitcoin.Utilities
             }
 
             return value;
+        }
+
+        /// <summary>
+        /// Checks a <see cref="string"/> is not null or empty.
+        /// </summary>
+        /// <param name="value">The string to check.</param>
+        public static void NotEmpty(string value)
+        {
+            if (value.Trim().Length == 0)
+            {
+                string name = GetOriginalVariableName(value);
+                throw new ArgumentException($"The string parameter {name} cannot be empty.");
+            }
+        }
+
+        /// <summary>
+        /// Gets the name of the original variable.
+        /// </summary>
+        /// <param name="obj">The variable to get the name of.</param>
+        private static string GetOriginalVariableName(object obj)
+        {
+            StackFrame stackFrame = new StackTrace(true).GetFrame(2);
+            var file = new StreamReader(stackFrame.GetFileName());
+            for (int i = 0; i < stackFrame.GetFileLineNumber() - 1; i++)
+                file.ReadLine();
+            string varName = file.ReadLine().Split(new char[] { '(', ')' })[1];
+            return varName;
         }
     }
 }
