@@ -109,11 +109,14 @@ namespace Stratis.Bitcoin.Utilities
         private static string GetOriginalVariableName(object obj)
         {
             StackFrame stackFrame = new StackTrace(true).GetFrame(2);
-            var file = new StreamReader(stackFrame.GetFileName());
-            for (int i = 0; i < stackFrame.GetFileLineNumber() - 1; i++)
-                file.ReadLine();
-            string varName = file.ReadLine().Split(new char[] { '(', ')' })[1];
-            return varName;
+
+            using (var file = new StreamReader(stackFrame.GetFileName()))
+            {
+                for (int i = 0; i < stackFrame.GetFileLineNumber() - 1; i++)
+                    file.ReadLine();
+                string name = file.ReadLine().Split(new char[] { '(', ')' })[1];
+                return name;
+            }
         }
     }
 }
