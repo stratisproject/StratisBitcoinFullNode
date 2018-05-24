@@ -53,7 +53,7 @@ namespace Stratis.Bitcoin.Utilities
         /// </summary>
         /// <param name="value">The object.</param>
         /// <exception cref="ArgumentNullException">An exception if the object passed is null.</exception>
-        public static void NotNull(object value)
+        public static T NotNull<T>(T value)
         {
             // throw if the value is null
             if (ReferenceEquals(value, null))
@@ -61,6 +61,8 @@ namespace Stratis.Bitcoin.Utilities
                 string name = GetOriginalVariableName(value);
                 throw new ArgumentNullException(name);
             }
+
+            return value;
         }
 
         /// <summary>
