@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Net;
 using System.Reflection;
 using System.Runtime.InteropServices;
@@ -45,6 +44,7 @@ namespace Stratis.Bitcoin.Configuration
         /// <param name="protocolVersion">Supported protocol version for which to create the configuration.</param>
         /// <param name="agent">The nodes user agent that will be shared with peers.</param>
         /// <param name="args">The command-line arguments.</param>
+        /// <exception cref="ConfigurationException">Thrown in case of any problems with the configuration file or command line arguments.</exception>
         public NodeSettings(Network innerNetwork = null, ProtocolVersion protocolVersion = SupportedProtocolVersion, 
             string agent = "StratisBitcoin", string[] args = null)
         {
@@ -52,13 +52,14 @@ namespace Stratis.Bitcoin.Configuration
             this.ProtocolVersion = protocolVersion;
             this.Agent = agent;
             this.LoadArgs = args ?? new string[] { };
-
             this.Log = new LogSettings();
+            
+            // Create the default logger.
             this.LoggerFactory = new ExtendedLoggerFactory();
             this.LoggerFactory.AddConsoleWithFilters();
             this.LoggerFactory.AddNLog();
             this.Logger = this.LoggerFactory.CreateLogger(typeof(NodeSettings).FullName);
-            
+
             // By default, we look for a file named '<network>.conf' in the network's data directory,
             // but both the data directory and the configuration file path may be changed using the -datadir and -conf command-line arguments.
             this.ConfigurationFile = this.LoadArgs.GetValueOf("-conf")?.NormalizeDirectorySeparator();
@@ -119,12 +120,18 @@ namespace Stratis.Bitcoin.Configuration
                 this.SetCombinedConfiguration();
             }
 
+            // Create the custom logger.
+            this.Log.Load(this.ConfigReader);
+            this.LoggerFactory.AddFilters(this.Log, this.DataFolder);
+            this.LoggerFactory.ConfigureConsoleFilters(this.LoggerFactory.GetConsoleSettings(), this.Log);
+            this.Logger = this.LoggerFactory.CreateLogger(typeof(NodeSettings).FullName);
+
             // Load the configuration.
             this.LoadConfiguration();
         }
 
         /// <summary>Factory to create instance logger.</summary>
-        public ILoggerFactory LoggerFactory { get; }
+        public ILoggerFactory LoggerFactory { get; private set; }
 
         /// <summary>Arguments to load.</summary>
         public string[] LoadArgs { get; private set;  }
@@ -230,8 +237,6 @@ namespace Stratis.Bitcoin.Configuration
                 this.Logger.LogDebug("Reading configuration file '{0}'.", this.ConfigurationFile);
                 configText = File.ReadAllText(this.ConfigurationFile);
             }
-            else
-                this.Logger.LogDebug("No configuration file. Proceeding with defaults.");
 
             // Get the arguments set previously.
             var args = this.LoadArgs;
@@ -241,33 +246,34 @@ namespace Stratis.Bitcoin.Configuration
             var config = new TextFileConfiguration(args);
             fileConfig.MergeInto(config);
 
-            // Set logging settings for this configuration.
-            this.Log.Load(config);
-
+            // Set the ConfigReader.
             this.ConfigReader = config;
         }
 
         /// <summary>
-        /// Loads the configuration file.
+        /// Loads the node settings from the application configuration.
         /// </summary>
-        /// <returns>Initialized node configuration.</returns>
-        /// <exception cref="ConfigurationException">Thrown in case of any problems with the configuration file or command line arguments.</exception>
-        private NodeSettings LoadConfiguration()
+        private void LoadConfiguration()
         {
-            // Set the configuration filter and file path.
             var config = this.ConfigReader;
 
-            this.LoggerFactory.AddFilters(this.Log, this.DataFolder);
-            this.LoggerFactory.ConfigureConsoleFilters(this.LoggerFactory.GetConsoleSettings(), this.Log);
-            this.RequireStandard = config.GetOrDefault("acceptnonstdtxn", !(this.Network.IsTest()));
-            this.MaxTipAge = config.GetOrDefault("maxtipage", this.Network.MaxTipAge);
             this.Logger.LogDebug("Network: IsTest='{0}', IsBitcoin='{1}'.", this.Network.IsTest(), this.Network.IsBitcoin());
+
+            this.RequireStandard = config.GetOrDefault("acceptnonstdtxn", !(this.Network.IsTest()));
+            this.Logger.LogDebug("RequireStandard set to {0}.", this.RequireStandard);
+
+            this.MaxTipAge = config.GetOrDefault("maxtipage", this.Network.MaxTipAge);
+            this.Logger.LogDebug("MaxTipAge set to {0}.", this.MaxTipAge);
+
             this.MinTxFeeRate = new FeeRate(config.GetOrDefault("mintxfee", this.Network.MinTxFee));
             this.Logger.LogDebug("MinTxFeeRate set to {0}.", this.MinTxFeeRate);
+
             this.FallbackTxFeeRate = new FeeRate(config.GetOrDefault("fallbackfee", this.Network.FallbackFee));
             this.Logger.LogDebug("FallbackTxFeeRate set to {0}.", this.FallbackTxFeeRate);
+
             this.MinRelayTxFeeRate = new FeeRate(config.GetOrDefault("minrelaytxfee", this.Network.MinRelayTxFee));
             this.Logger.LogDebug("MinRelayTxFeeRate set to {0}.", this.MinRelayTxFeeRate);
+
             this.SyncTimeEnabled = config.GetOrDefault<bool>("synctime", true);
             this.Logger.LogDebug("Time synchronization with peers is {0}.", this.SyncTimeEnabled ? "enabled" : "disabled");
 
@@ -275,9 +281,8 @@ namespace Stratis.Bitcoin.Configuration
             // identify themselves if they wish. The prefix is limited to 10 characters.
             string agentPrefix = config.GetOrDefault("agentprefix", string.Empty);
             agentPrefix = agentPrefix.Substring(0, Math.Min(10, agentPrefix.Length));
-            this.Agent = string.IsNullOrEmpty(agentPrefix) ? this.Agent : $"{agentPrefix}-{this.Agent}"; 
-
-            return this;
+            this.Agent = string.IsNullOrEmpty(agentPrefix) ? this.Agent : $"{agentPrefix}-{this.Agent}";
+            this.Logger.LogDebug("Agent set to {0}.", this.Agent);
         }
 
         /// <summary>
@@ -291,6 +296,7 @@ namespace Stratis.Bitcoin.Configuration
         /// IPv4 and IPv6 addresses are supported.
         /// In the case where the default port is passed and the IP address has a port specified in it, the IP address's port will take precedence.
         /// Examples of addresses that are supported are: 15.61.23.23, 15.61.23.23:1500, [1233:3432:2434:2343:3234:2345:6546:4534], [1233:3432:2434:2343:3234:2345:6546:4534]:8333.</remarks>
+        /// <exception cref="ConfigurationException">Thrown in case of the port number is out of range.</exception>    
         public static IPEndPoint ConvertIpAddressToEndpoint(string ipAddress, int port)
         {
             // Checks the validity of the parameters passed.
