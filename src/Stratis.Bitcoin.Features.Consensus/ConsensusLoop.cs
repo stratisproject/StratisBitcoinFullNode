@@ -222,11 +222,12 @@ namespace Stratis.Bitcoin.Features.Consensus
             this.logger.LogTrace("()");
 
             uint256 utxoHash = await this.UTXOSet.GetBlockHashAsync().ConfigureAwait(false);
+            bool blockStoreDisabled = this.chainState.BlockStoreTip == null;
+
             while (true)
             {
                 this.Tip = this.Chain.GetBlock(utxoHash);
-
-                bool blockStoreDisabled = this.chainState.BlockStoreTip == null;
+               
                 if ((this.Tip != null) && (blockStoreDisabled || (this.chainState.BlockStoreTip.Height >= this.Tip.Height)))
                     break;
 
