@@ -241,28 +241,21 @@ namespace Stratis.Bitcoin.Configuration
 
         /// <summary>
         /// Sets the ConfigReader based on the arguments and the configuration file if it exists.
-        /// Also sets the logging settings for the configuration.
         /// </summary>
         private void SetCombinedConfiguration()
         {
+            // Get the arguments set previously.
+            this.ConfigReader = new TextFileConfiguration(this.LoadArgs);
+
             // Read the configuration file if it exists.
-            string configText = "";
             if (this.ConfigurationFile != null && File.Exists(this.ConfigurationFile))
             {
                 this.Logger.LogDebug("Reading configuration file '{0}'.", this.ConfigurationFile);
-                configText = File.ReadAllText(this.ConfigurationFile);
+
+                // Add the file configuration to the command-line configuration.
+                var fileConfig = new TextFileConfiguration(File.ReadAllText(this.ConfigurationFile));
+                fileConfig.MergeInto(this.ConfigReader);
             }
-
-            // Get the arguments set previously.
-            var args = this.LoadArgs;
-
-            // Add the file configuration to the command-line configuration.
-            var fileConfig = new TextFileConfiguration(configText);
-            var config = new TextFileConfiguration(args);
-            fileConfig.MergeInto(config);
-
-            // Set the ConfigReader.
-            this.ConfigReader = config;
         }
 
         /// <summary>
