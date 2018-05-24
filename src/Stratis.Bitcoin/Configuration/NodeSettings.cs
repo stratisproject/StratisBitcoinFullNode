@@ -220,9 +220,8 @@ namespace Stratis.Bitcoin.Configuration
         /// <summary>
         /// Creates the configuration file if it does not exist.
         /// </summary>
-        /// <param name="features">The features to include in the configuration file if a default file has to be created.</param>
-        /// <returns>Returns <c>true</c> if the file was created and <c>false</c> otherwise.</returns>
-        public bool CreateDefaultConfigurationFile(List<IFeatureRegistration> features)
+        /// <param name="features">The features for which to include settings in the configuration file.</param>
+        public void CreateDefaultConfigurationFile(List<IFeatureRegistration> features)
         {
             // If the config file does not exist yet then create it now.
             if (this.ConfigurationFile != null && !File.Exists(this.ConfigurationFile))
@@ -232,11 +231,7 @@ namespace Stratis.Bitcoin.Configuration
                 File.WriteAllText(this.ConfigurationFile, this.GetFeaturesConfiguration(features));
                 this.SetCombinedConfiguration();
                 this.LoadConfiguration();
-
-                return true;
             }
-
-            return false;
         }
 
         /// <summary>
