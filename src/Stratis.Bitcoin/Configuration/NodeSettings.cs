@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Net;
 using System.Reflection;
 using System.Runtime.InteropServices;
@@ -47,7 +48,7 @@ namespace Stratis.Bitcoin.Configuration
         /// <exception cref="ConfigurationException">Thrown in case of any problems with the configuration file or command line arguments.</exception>
         /// <remarks>
         /// Processing depends on whether a configuration file is passed via the command line. 
-        /// Note that despite multple SetCombinedConfiguration calls the configuration file will only 
+        /// Note that despite multiple SetCombinedConfiguration calls the configuration file will only 
         /// ever be loaded ONCE in the constructor OR in the CreateDefaultConfiguration method.
         /// 
         /// There are two main scenarios here:
@@ -56,8 +57,8 @@ namespace Stratis.Bitcoin.Configuration
         ///   SetCombinedConfiguration would not be invoked at all.
         /// - Alternatively, if the file name is not supplied then the first call to SetCombinedConfiguration 
         ///   would not be reading the file and instead only reading the command line arguments that would 
-        ///   help determine the network and the derived configuration file name. The second call to 
-        ///   SetCombinedConfiguration, made on the condition that ConfigurationFile = null, would then be 
+        ///   help determine the network and correspondingly derived configuration file name. The second call 
+        ///   to SetCombinedConfiguration, made on the condition that ConfigurationFile = null, would then be 
         ///   able to load the file because the network-specific file name would then have been determined.
         /// </remarks>
         public NodeSettings(Network innerNetwork = null, ProtocolVersion protocolVersion = SupportedProtocolVersion, 
@@ -174,9 +175,8 @@ namespace Stratis.Bitcoin.Configuration
         {
             get
             {
-                var args = this.LoadArgs;
-
-                return args != null && args.Length == 1 && (args[0].StartsWith("-help") || args[0].StartsWith("--help"));
+                return this.LoadArgs.Contains("-help", StringComparer.CurrentCultureIgnoreCase) ||
+                    this.LoadArgs.Contains("--help", StringComparer.CurrentCultureIgnoreCase);
             }
         }
 
@@ -418,12 +418,12 @@ namespace Stratis.Bitcoin.Configuration
         {
             Guard.NotNull(network, nameof(network));
 
-            var defaults = Default();
+            var defaults = Default(network:network);
+            var daemonName = Path.GetFileName(Assembly.GetEntryAssembly().Location);
 
             var builder = new StringBuilder();
             builder.AppendLine("Usage:");
-            // TODO: Shouldn't this be dotnet run instead of dotnet exec?
-            builder.AppendLine(" dotnet exec <Stratis.StratisD/BitcoinD.dll> [arguments]");
+            builder.AppendLine($" dotnet run {daemonName} [arguments]");
             builder.AppendLine();
             builder.AppendLine("Command line arguments:");
             builder.AppendLine();
@@ -432,7 +432,7 @@ namespace Stratis.Bitcoin.Configuration
             builder.AppendLine($"-datadir=<Path>           Path to the data directory. Default {defaults.DataDir}.");
             builder.AppendLine($"-testnet                  Use the testnet chain.");
             builder.AppendLine($"-regtest                  Use the regtestnet chain.");
-            builder.AppendLine($"-acceptnonstdtxn=<0 or 1> Accept non-standard transactions. Default {defaults.RequireStandard}.");
+            builder.AppendLine($"-acceptnonstdtxn=<0 or 1> Accept non-standard transactions. Default {(defaults.RequireStandard?1:0)}.");
             builder.AppendLine($"-maxtipage=<number>       Max tip age. Default {network.MaxTipAge}.");
             builder.AppendLine($"-connect=<ip:port>        Specified node to connect to. Can be specified multiple times.");
             builder.AppendLine($"-addnode=<ip:port>        Add a node to connect to and attempt to keep the connection open. Can be specified multiple times.");
