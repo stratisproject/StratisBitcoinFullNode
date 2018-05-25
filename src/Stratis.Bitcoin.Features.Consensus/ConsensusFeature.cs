@@ -201,7 +201,6 @@ namespace Stratis.Bitcoin.Features.Consensus
 
                     services.AddSingleton<ICheckpoints, Checkpoints>();
                     services.AddSingleton<NBitcoin.Consensus.ConsensusOptions, PowConsensusOptions>();
-                    services.AddSingleton<IPowConsensusValidator, PowConsensusValidator>();
                     services.AddSingleton<DBreezeCoinView>();
                     services.AddSingleton<CoinView, CachedCoinView>();
                     services.AddSingleton<LookaheadBlockPuller>().AddSingleton<ILookaheadBlockPuller, LookaheadBlockPuller>(provider => provider.GetService<LookaheadBlockPuller>()); ;
@@ -240,8 +239,6 @@ namespace Stratis.Bitcoin.Features.Consensus
                         }
 
                         services.AddSingleton<ICheckpoints, Checkpoints>();
-                        services.AddSingleton<IPowConsensusValidator, PosConsensusValidator>();
-                        services.AddSingleton<IPosConsensusValidator, PosConsensusValidator>();
                         services.AddSingleton<DBreezeCoinView>();
                         services.AddSingleton<CoinView, CachedCoinView>();
                         services.AddSingleton<LookaheadBlockPuller>().AddSingleton<ILookaheadBlockPuller, LookaheadBlockPuller>(provider => provider.GetService<LookaheadBlockPuller>()); ;
@@ -291,7 +288,8 @@ namespace Stratis.Bitcoin.Features.Consensus
 
                     // rules that require the store to be loaded (coinview)
                     new LoadCoinviewRule(),
-                    new TransactionDuplicationActivationRule() // implements BIP30
+                    new TransactionDuplicationActivationRule(), // implements BIP30
+                    new PowCoinViewRule() // implements BIP68, MaxSigOps and BlockReward calculation
                 };
             }
         }
@@ -333,7 +331,8 @@ namespace Stratis.Bitcoin.Features.Consensus
 
                     // rules that require the store to be loaded (coinview)
                     new LoadCoinviewRule(),
-                    new TransactionDuplicationActivationRule() // implements BIP30
+                    new TransactionDuplicationActivationRule(), // implements BIP30
+                    new PosCoinViewRule() // implements BIP68, MaxSigOps and BlockReward calculation
                 };
             }
         }

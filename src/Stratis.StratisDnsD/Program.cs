@@ -41,8 +41,7 @@ namespace Stratis.StratisDnsD
         {
             try
             {
-                Network network = args.Contains("-testnet") ? Network.StratisTest : Network.StratisMain;
-                NodeSettings nodeSettings = new NodeSettings(network, ProtocolVersion.ALT_PROTOCOL_VERSION, args:args, loadConfiguration:false);
+                NodeSettings nodeSettings = new NodeSettings(protocolVersion:ProtocolVersion.ALT_PROTOCOL_VERSION, args:args, loadConfiguration:true);
 
                 Action<DnsSettings> serviceTest = (s) =>
                 {
@@ -52,7 +51,7 @@ namespace Stratis.StratisDnsD
 
                 // Run as a full node with DNS or just a DNS service?
                 IFullNode node;
-                if (args.Contains("-dnsfullnode"))
+                if (nodeSettings.ConfigReader.GetOrDefault<bool>("dnsfullnode", false))
                 {
                     // Build the Dns full node.
                     node = new FullNodeBuilder()

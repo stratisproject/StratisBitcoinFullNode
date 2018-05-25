@@ -4,11 +4,12 @@ using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.Interfaces;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.MemoryPool.Interfaces;
+using Stratis.Bitcoin.Mining;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.Miner
 {
-    public class PosBlockAssembler : BlockAssembler
+    public class PosBlockDefinition : BlockDefinition
     {
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
@@ -19,7 +20,7 @@ namespace Stratis.Bitcoin.Features.Miner
         /// <summary>Provides functionality for checking validity of PoS blocks.</summary>
         private readonly IStakeValidator stakeValidator;
 
-        public PosBlockAssembler(
+        public PosBlockDefinition(
             IConsensusLoop consensusLoop,
             IDateTimeProvider dateTimeProvider,
             ILoggerFactory loggerFactory,
@@ -28,7 +29,7 @@ namespace Stratis.Bitcoin.Features.Miner
             Network network,
             IStakeChain stakeChain,
             IStakeValidator stakeValidator)
-            : base(consensusLoop, dateTimeProvider, loggerFactory, mempool, mempoolLock, network, new AssemblerOptions() { IsProofOfStake = true })
+            : base(consensusLoop, dateTimeProvider, loggerFactory, mempool, mempoolLock, network, new BlockDefinitionOptions() { IsProofOfStake = true })
         {
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.stakeChain = stakeChain;
@@ -43,9 +44,6 @@ namespace Stratis.Bitcoin.Features.Miner
 
             this.coinbase.Outputs[0].ScriptPubKey = new Script();
             this.coinbase.Outputs[0].Value = Money.Zero;
-
-            IPosConsensusValidator posValidator = this.ConsensusLoop.Validator as IPosConsensusValidator;
-            Guard.NotNull(posValidator, nameof(posValidator));
 
             this.logger.LogTrace("(-)");
 

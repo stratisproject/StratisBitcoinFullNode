@@ -4,10 +4,9 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
-using Stratis.Bitcoin.Tests.Common;
 using Xunit.Abstractions;
 
-namespace Stratis.Bitcoin.IntegrationTests.TestFramework
+namespace Stratis.Bitcoin.Tests.Common.TestFramework
 {
     [DebuggerStepThrough()]
     public abstract class BddSpecification : IDisposable
