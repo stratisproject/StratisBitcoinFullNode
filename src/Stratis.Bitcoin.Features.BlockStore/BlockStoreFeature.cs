@@ -31,7 +31,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
         private readonly IBlockStoreCache blockStoreCache;
 
-        private readonly BlockStore blockStore;
+        private readonly BlockStoreQueue blockStoreQueue;
 
         private readonly BlockStoreManager blockStoreManager;
 
@@ -61,7 +61,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             Signals.Signals signals,
             IBlockRepository blockRepository,
             IBlockStoreCache blockStoreCache,
-            BlockStore blockStore,
+            BlockStoreQueue blockStoreQueue,
             BlockStoreManager blockStoreManager,
             BlockStoreSignaled blockStoreSignaled,
             INodeLifetime nodeLifetime,
@@ -76,7 +76,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.signals = signals;
             this.blockRepository = blockRepository;
             this.blockStoreCache = blockStoreCache;
-            this.blockStore = blockStore;
+            this.blockStoreQueue = blockStoreQueue;
             this.blockStoreManager = blockStoreManager;
             this.blockStoreSignaled = blockStoreSignaled;
             this.nodeLifetime = nodeLifetime;
@@ -132,7 +132,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.signals.SubscribeForBlocks(this.blockStoreSignaled);
 
             this.blockRepository.InitializeAsync().GetAwaiter().GetResult();
-            this.blockStore.InitializeAsync().GetAwaiter().GetResult();
+            this.blockStoreQueue.InitializeAsync().GetAwaiter().GetResult();
 
             this.logger.LogTrace("(-)");
         }
@@ -162,7 +162,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.logger.LogInformation("Stopping {0}...", this.name);
 
             this.blockStoreSignaled.Dispose();
-            this.blockStoreManager.BlockStore.Dispose();
+            this.blockStoreManager.BlockStoreQueue.Dispose();
             this.blockRepository.Dispose();
         }
     }
@@ -184,7 +184,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
                     {
                         services.AddSingleton<IBlockRepository, BlockRepository>();
                         services.AddSingleton<IBlockStoreCache, BlockStoreCache>();
-                        services.AddSingleton<BlockStore>();
+                        services.AddSingleton<BlockStoreQueue>();
                         services.AddSingleton<BlockStoreManager>();
                         services.AddSingleton<BlockStoreSignaled>();
                         services.AddSingleton<StoreSettings>(new StoreSettings(setup));

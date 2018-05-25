@@ -25,7 +25,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
     /// When block store is being initialized we delete blocks that are not on the best chain.
     /// </para>
     /// </remarks>
-    public class BlockStore : IDisposable
+    public class BlockStoreQueue : IDisposable
     {
         /// <summary>Maximum interval between saving batches.</summary>
         /// <remarks>Interval value is a prime number that wasn't used as an interval in any other component. That prevents having CPU consumption spikes.</remarks>
@@ -64,7 +64,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// <summary>Task that runs <see cref="DequeueBlocksContinuouslyAsync"/>.</summary>
         private Task dequeueLoopTask;
 
-        public BlockStore(
+        public BlockStoreQueue(
             IBlockRepository blockRepository,
             ConcurrentChain chain,
             IChainState chainState,
@@ -90,7 +90,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         }
 
         /// <summary>
-        /// Initializes the <see cref="BlockStore"/>.
+        /// Initializes the <see cref="BlockStoreQueue"/>.
         /// <para>
         /// If <see cref="storeTip"/> is <c>null</c>, the store is out of sync. This can happen when:</para>
         /// <list>
@@ -98,7 +98,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         ///     <item>The node was not closed down properly.</item>
         /// </list>
         /// <para>
-        /// To recover we walk back the chain until a common block header is found and set the <see cref="BlockStore"/>'s <see cref="storeTip"/> to that.
+        /// To recover we walk back the chain until a common block header is found and set the <see cref="BlockStoreQueue"/>'s <see cref="storeTip"/> to that.
         /// </para>
         /// </summary>
         public async Task InitializeAsync()
@@ -188,7 +188,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
             ChainedHeader newTip = this.chain.GetBlock(resetBlockHash);
 
-            if (blockStoreResetList.Count != 0)
+            if (blockStoreResetList.Any())
                 await this.blockRepository.DeleteAsync(newTip.HashBlock, blockStoreResetList).ConfigureAwait(false);
 
             this.SetStoreTip(newTip);

@@ -15,7 +15,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 {
     public class BlockStoreSignaled : SignalObserver<Block>
     {
-        private readonly BlockStore blockStore;
+        private readonly BlockStoreQueue blockStoreQueue;
 
         private readonly ConcurrentChain chain;
 
@@ -46,7 +46,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         private readonly Task dequeueLoopTask;
 
         public BlockStoreSignaled(
-            BlockStore blockStore,
+            BlockStoreQueue blockStoreQueue,
             ConcurrentChain chain,
             StoreSettings storeSettings,
             IChainState chainState,
@@ -56,7 +56,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             IBlockStoreCache blockStoreCache,
             IInitialBlockDownloadState initialBlockDownloadState)
         {
-            this.blockStore = blockStore;
+            this.blockStoreQueue = blockStoreQueue;
             this.chain = chain;
             this.chainState = chainState;
             this.connection = connection;
@@ -91,7 +91,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             var blockPair = new BlockPair(block, chainedHeader);
 
             // Ensure the block is written to disk before relaying.
-            this.blockStore.AddToPending(blockPair);
+            this.blockStoreQueue.AddToPending(blockPair);
 
             if (this.initialBlockDownloadState.IsInitialBlockDownload())
             {
