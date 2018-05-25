@@ -17,8 +17,8 @@ namespace Stratis.Bitcoin.Features.Miner
         /// <param name="definitions">A list of block definitions that the builder can utilize.</param>
         public BlockProvider(IEnumerable<BlockDefinition> definitions)
         {
-            this.powBlockDefinition = definitions.FirstOrDefault(a => a.GetType() == typeof(PowBlockDefinition)) as PowBlockDefinition;
-            this.posBlockDefinition = definitions.FirstOrDefault(a => a.GetType() == typeof(PosBlockDefinition)) as PosBlockDefinition;
+            this.powBlockDefinition = definitions.OfType<PowBlockDefinition>().FirstOrDefault();
+            this.posBlockDefinition = definitions.OfType<PosBlockDefinition>().FirstOrDefault();
         }
 
         /// <inheritdoc/>

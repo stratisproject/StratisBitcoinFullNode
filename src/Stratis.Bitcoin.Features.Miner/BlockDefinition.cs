@@ -6,7 +6,6 @@ using NBitcoin;
 using Stratis.Bitcoin.Base.Deployments;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.Interfaces;
-using Stratis.Bitcoin.Features.Consensus.Rules;
 using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.MemoryPool.Interfaces;
@@ -16,6 +15,9 @@ using static Stratis.Bitcoin.Features.Miner.PowBlockDefinition;
 
 namespace Stratis.Bitcoin.Features.Miner
 {
+    /// <summary>
+    /// A high level class that will allow the ability to override or inject functionality based on what type of block creation logic is used.
+    /// </summary>
     public abstract class BlockDefinition
     {
         /// <summary>
@@ -277,7 +279,7 @@ namespace Stratis.Bitcoin.Features.Miner
         /// </summary>
         private void AddToBlock(TxMempoolEntry mempoolEntry)
         {
-            this.logger.LogTrace("({0}.{1}:'{2}')", nameof(mempoolEntry), nameof(mempoolEntry.TransactionHash), mempoolEntry.TransactionHash);
+            this.logger.LogTrace("({0}.{1}:'{2}', {3}:{4}, txSize:{5})", nameof(mempoolEntry), nameof(mempoolEntry.TransactionHash), mempoolEntry.TransactionHash, nameof(mempoolEntry.ModifiedFee), mempoolEntry.ModifiedFee, mempoolEntry.GetTxSize());
 
             this.block.AddTransaction(mempoolEntry.Transaction);
 

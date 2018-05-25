@@ -459,16 +459,16 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
 
     public sealed class MockPosBlockProvider : IBlockProvider
     {
-        private readonly PosBlockDefinition blockProvider;
+        private readonly PosBlockDefinition blockDefinition;
 
-        public MockPosBlockProvider(PosBlockDefinition blockProvider)
+        public MockPosBlockProvider(PosBlockDefinition blockDefinition)
         {
-            this.blockProvider = blockProvider;
+            this.blockDefinition = blockDefinition;
         }
 
         public BlockTemplate BuildPosBlock(ChainedHeader chainTip, Script script)
         {
-            return this.blockProvider.Build(chainTip, script);
+            return this.blockDefinition.Build(chainTip, script);
         }
 
         public BlockTemplate BuildPowBlock(ChainedHeader chainTip, Script script)
