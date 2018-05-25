@@ -3,6 +3,7 @@ using NBitcoin;
 using Stratis.Bitcoin.Base.Deployments;
 using Stratis.Bitcoin.BlockPulling;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
+using Stratis.Bitcoin.Features.Consensus.Rules;
 
 namespace Stratis.Bitcoin.Features.Consensus.Interfaces
 {
@@ -30,8 +31,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Interfaces
         /// <summary>The consensus db, containing all unspent UTXO in the chain.</summary>
         CoinView UTXOSet { get; }
 
-        /// <summary>The validation logic for the consensus rules.</summary>
-        IPowConsensusValidator Validator { get; }
+        /// <summary>The rules engine for validation logic for the consensus rules.</summary>
+        IConsensusRules ConsensusRules { get; }
 
         /// <summary>
         /// A method that will accept a new block to the node.

@@ -1,6 +1,7 @@
 ﻿using System.Linq;
 using NBitcoin;
-using Stratis.Bitcoin.Features.Consensus.Interfaces;
+using Stratis.Bitcoin.Features.Consensus.Rules;
+using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers;
 
@@ -10,13 +11,12 @@ namespace Stratis.Bitcoin.IntegrationTests
     {
         public static Money GetProofOfWorkRewardForMinedBlocks(this CoreNode node, int numberOfBlocks)
         {
-            var powValidator = node.FullNode.NodeService<IPowConsensusValidator>();
+            var coinviewRule = node.FullNode.NodeService<IConsensusRules>().GetRule<PowCoinViewRule>();
 
-            var startBlock = node.FullNode.Chain.Height - numberOfBlocks + 1;
+            int startBlock = node.FullNode.Chain.Height - numberOfBlocks + 1;
 
-            var totalReward = Enumerable.Range(startBlock, numberOfBlocks).Sum(p => powValidator.GetProofOfWorkReward(p));
-
-            return totalReward;
+            return Enumerable.Range(startBlock, numberOfBlocks)
+                .Sum(p => coinviewRule.GetProofOfWorkReward(p));
         }
 
 
