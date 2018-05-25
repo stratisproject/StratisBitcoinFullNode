@@ -39,15 +39,8 @@ namespace Stratis.Bitcoin.Utilities.Extensions
         {
             int colon = ipAddress.LastIndexOf(':');
             if (colon >= 0)
-            {
-                int bracket = ipAddress.IndexOf(']');
-
-                if (colon > bracket && int.TryParse(ipAddress.Substring(colon + 1), out var n))
-                {
+                if (colon > ipAddress.IndexOf(']') && int.TryParse(ipAddress.Substring(colon + 1), out port))
                     ipAddress = ipAddress.Substring(0, colon);
-                    port = n;
-                }
-            }
 
             // Checks the validity of the parameters passed or parsed.
             if (port < IPEndPoint.MinPort || port > IPEndPoint.MaxPort)
