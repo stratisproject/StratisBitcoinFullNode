@@ -2,6 +2,7 @@
 using System.Linq;
 using Mono.Cecil;
 using Mono.Cecil.Rocks;
+using Stratis.Validators.Net;
 
 namespace Stratis.SmartContracts.Core.ContractValidation
 {

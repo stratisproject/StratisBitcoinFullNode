@@ -20,6 +20,7 @@
     <ProjectReference Include="..\Stratis.Bitcoin.Features.Consensus\Stratis.Bitcoin.Features.Consensus.csproj" />
     <ProjectReference Include="..\Stratis.Bitcoin\Stratis.Bitcoin.csproj" />
     <ProjectReference Include="..\Stratis.SmartContracts\Stratis.SmartContracts.csproj" />
+    <ProjectReference Include="..\Stratis.Validators.Net\Stratis.Validators.Net.csproj" />
   </ItemGroup>
 
 </Project>

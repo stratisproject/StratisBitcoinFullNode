@@ -5,6 +5,7 @@ using System.Linq;
 using CsvHelper;
 using Mono.Cecil;
 using Stratis.SmartContracts.Core.ContractValidation;
+using Stratis.Validators.Net;
 
 namespace Stratis.System.Inspector
 {
