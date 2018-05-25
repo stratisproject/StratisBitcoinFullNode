@@ -88,36 +88,63 @@ namespace $safeprojectname$
         private Dictionary<string, object> objects = new Dictionary<string, object>();
         private Dictionary<string, TestMapping> mappings = new Dictionary<string, TestMapping>();
         private Dictionary<string, TestList> lists = new Dictionary<string, TestList>();
-        
+
         public ISmartContractList<T> GetList<T>(string name)
         {
             if (lists.ContainsKey(name))
-                return (ISmartContractList<T>)lists[name];
+            {
+                var list = (TestList<T>)lists[name];
+                Debug.WriteLine("GetList:\t'" + name + "' = " + JsonConvert.SerializeObject(list));
+                var list1 = (ISmartContractList<T>)lists[name];
+                return list1;
+            }
 
             lists[name] = new TestList<T>();
-            return (ISmartContractList<T>)lists[name];
+            var list2 = (ISmartContractList<T>)lists[name];
+            Debug.WriteLine("GetList:\t'" + name + "' = " + JsonConvert.SerializeObject(list2));
+            return list2;
         }
 
         public ISmartContractMapping<T> GetMapping<T>(string name)
         {
             if (mappings.ContainsKey(name))
-                return (ISmartContractMapping<T>)mappings[name];
+            {
+                var mapping = (TestMapping<T>)mappings[name];
+                Debug.WriteLine("GetMapping:\t'" + name + "' = " + JsonConvert.SerializeObject(mapping));
+                var mapping1 = (ISmartContractMapping<T>)mappings[name];
+                return mapping1;
+            }
 
             mappings[name] = new TestMapping<T>();
-            return (ISmartContractMapping<T>)mappings[name];
+            var mapping2 = (ISmartContractMapping<T>)mappings[name];
+            Debug.WriteLine("GetMapping:\t'" + name + "' = " + JsonConvert.SerializeObject(mapping2));
+            return mapping2;
         }
 
         public T GetObject<T>(string key)
         {
             if (objects.ContainsKey(key))
-                return (T)objects[key];
+            {
+                T obj = (T)objects[key];
+                string json = JsonConvert.SerializeObject(obj); // Simulate reading from storage
+                Debug.WriteLine("GetObject:\t'" + key + "' = " + json);
+                T newobj = JsonConvert.DeserializeObject<T>(json);
+                return newobj;
+            }
+            else
+            {
+                Debug.WriteLine("GetObject:\t'" + key + "' = " + "missing");
+            }
 
             return default(T);
         }
 
         public void SetObject<T>(string key, T obj)
         {
-            objects[key] = obj;
+            string json = JsonConvert.SerializeObject(obj); // Simulate writing to storage
+            Debug.WriteLine("SetObject:\t'" + key + "' = " + json);
+            T newobj = JsonConvert.DeserializeObject<T>(json);
+            objects[key] = newobj;
         }
     }
 
@@ -144,15 +171,32 @@ namespace $safeprojectname$
         public T Get(string key)
         {
             if (mapping.ContainsKey(key))
-                return mapping[key];
+            {
+                var value = mapping[key];
+                string json = JsonConvert.SerializeObject(value);  // Simulate reading from storage
+                Debug.WriteLine("Mapping.Get:\t['" + key + "'] = " + json);
+                T newvalue = JsonConvert.DeserializeObject<T>(json);
+                return newvalue;
+            }
 
             return default(T);
         }
 
         public void Put(string key, T value)
         {
-            mapping[key] = value;
+            if (mapping.ContainsKey(key)) Debug.WriteLine("Mapping.Put:\t['" + key + "'] = " + JsonConvert.SerializeObject(value) + " (previous value)");
+            string json = JsonConvert.SerializeObject(value); // Simulate writing to storage
+            Debug.WriteLine("Mapping.Put:\t['" + key + "'] = " + json);
+            T newvalue = JsonConvert.DeserializeObject<T>(json);
+            mapping[key] = newvalue;
         }
+
+        public IEnumerator<T> GetEnumerator()
+        {
+            return this.mapping.Values.GetEnumerator();
+        }
+
+        public uint Count => (uint)this.mapping.Count;
     }
 
     public abstract class TestList
@@ -175,12 +219,19 @@ namespace $safeprojectname$
 
         public T GetValue(uint index)
         {
-            return this.list[(int)index];
+            var value = this.list[(int)index];
+            string json = JsonConvert.SerializeObject(value); // Simulate reading from storage
+            Debug.WriteLine("List.GetValue:\t(" + index.ToString() + ") = " + json);
+            T newvalue = JsonConvert.DeserializeObject<T>(json);
+            return newvalue;
         }
 
         public void SetValue(uint index, T value)
         {
-            list[(int)index] = value;
+            string json = JsonConvert.SerializeObject(value); // Simulate writing to storage
+            Debug.WriteLine("List.SetValue:\t(" + index.ToString() + ") = " + json);
+            T newvalue = JsonConvert.DeserializeObject<T>(json);
+            list[(int)index] = newvalue;
         }
 
         public IEnumerator<T> GetEnumerator()
