@@ -14,14 +14,14 @@ namespace Stratis.Bitcoin.Connection
     {
         public ConnectionManagerController(IConnectionManager connectionManager) : base(connectionManager: connectionManager)
         {
-            Guard.NotNull(this.ConnectionManager, nameof(this.ConnectionManager));
+            Guard.NotNull(this.ConnectionManager);
         }
 
         [ActionName("addnode")]
         [ActionDescription("Adds a node to the connection manager.")]
         public bool AddNode(string endpointStr, string command)
         {
-            Guard.NotNull(this.ConnectionManager, nameof(this.ConnectionManager));
+            Guard.NotNull(this.ConnectionManager);
             IPEndPoint endpoint = NodeSettings.ConvertIpAddressToEndpoint(endpointStr, this.ConnectionManager.Network.DefaultPort);
             switch (command)
             {

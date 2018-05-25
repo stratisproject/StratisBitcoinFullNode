@@ -98,7 +98,7 @@ namespace Stratis.Bitcoin.Base
         /// <param name="bestChainSelector">Selects the best available chain based on tips provided by the peers and switches to it.</param>
         public ChainHeadersBehavior(ConcurrentChain chain, IChainState chainState, IInitialBlockDownloadState initialBlockDownloadState, BestChainSelector bestChainSelector, ILoggerFactory loggerFactory)
         {
-            Guard.NotNull(chain, nameof(chain));
+            Guard.NotNull(chain);
 
             this.chainState = chainState;
             this.chain = chain;

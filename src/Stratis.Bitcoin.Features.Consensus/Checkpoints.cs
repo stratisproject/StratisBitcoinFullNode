@@ -65,8 +65,8 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <param name="consensusSettings">Consensus settings for node - used to see if checkpoints have been disabled or not.</param>
         public Checkpoints(Network network, ConsensusSettings consensusSettings)
         {
-            Guard.NotNull(network, nameof(network));
-            Guard.NotNull(consensusSettings, nameof(consensusSettings));
+            Guard.NotNull(network);
+            Guard.NotNull(consensusSettings);
 
             this.consensusSettings = consensusSettings;
             this.network = network;

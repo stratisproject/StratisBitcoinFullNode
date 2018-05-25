@@ -35,13 +35,13 @@ namespace Stratis.Bitcoin.Features.Wallet
         public WalletSyncManager(ILoggerFactory loggerFactory, IWalletManager walletManager, ConcurrentChain chain,
             Network network, IBlockStoreCache blockStoreCache, StoreSettings storeSettings, INodeLifetime nodeLifetime)
         {
-            Guard.NotNull(loggerFactory, nameof(loggerFactory));
-            Guard.NotNull(walletManager, nameof(walletManager));
-            Guard.NotNull(chain, nameof(chain));
-            Guard.NotNull(network, nameof(network));
-            Guard.NotNull(blockStoreCache, nameof(blockStoreCache));
-            Guard.NotNull(storeSettings, nameof(storeSettings));
-            Guard.NotNull(nodeLifetime, nameof(nodeLifetime));
+            Guard.NotNull(loggerFactory);
+            Guard.NotNull(walletManager);
+            Guard.NotNull(chain);
+            Guard.NotNull(network);
+            Guard.NotNull(blockStoreCache);
+            Guard.NotNull(storeSettings);
+            Guard.NotNull(nodeLifetime);
 
             this.walletManager = walletManager;
             this.chain = chain;
@@ -98,7 +98,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <inheritdoc />
         public virtual void ProcessBlock(Block block)
         {
-            Guard.NotNull(block, nameof(block));
+            Guard.NotNull(block);
             this.logger.LogTrace("({0}:'{1}')", nameof(block), block.GetHash());
 
             ChainedHeader newTip = this.chain.GetBlock(block.GetHash());
@@ -218,7 +218,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <inheritdoc />
         public virtual void ProcessTransaction(Transaction transaction)
         {
-            Guard.NotNull(transaction, nameof(transaction));
+            Guard.NotNull(transaction);
 
             this.logger.LogTrace("({0}:'{1}')", nameof(transaction), transaction.GetHash());
 

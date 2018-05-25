@@ -175,7 +175,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <returns>A new HD account.</returns>
         public HdAccount AddNewAccount(string password, CoinType coinType, DateTimeOffset accountCreationTime)
         {
-            Guard.NotEmpty(password, nameof(password));
+            Guard.NotEmpty(password);
 
             var accountRoot = this.AccountsRoot.Single(a => a.CoinType == coinType);
             return accountRoot.AddNewAccount(password, this.EncryptedSeed, this.ChainCode, this.Network, accountCreationTime);
@@ -228,8 +228,8 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <returns>The extended private key.</returns>
         public ISecret GetExtendedPrivateKeyForAddress(string password, HdAddress address)
         {
-            Guard.NotEmpty(password, nameof(password));
-            Guard.NotNull(address, nameof(address));
+            Guard.NotEmpty(password);
+            Guard.NotNull(address);
 
             // Check if the wallet contains the address.
             if (!this.ContainsAddress(address))
@@ -347,9 +347,9 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <returns>A new HD account.</returns>
         public HdAccount AddNewAccount(string password, string encryptedSeed, byte[] chainCode, Network network, DateTimeOffset accountCreationTime)
         {
-            Guard.NotEmpty(password, nameof(password));
-            Guard.NotEmpty(encryptedSeed, nameof(encryptedSeed));
-            Guard.NotNull(chainCode, nameof(chainCode));
+            Guard.NotEmpty(password);
+            Guard.NotEmpty(encryptedSeed);
+            Guard.NotNull(chainCode);
 
             // Get the current collection of accounts.
             var accounts = this.Accounts.ToList();
@@ -518,7 +518,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <returns></returns>
         public IEnumerable<TransactionData> GetTransactionsById(uint256 id)
         {
-            Guard.NotNull(id, nameof(id));
+            Guard.NotNull(id);
 
             var addresses = this.GetCombinedAddresses();
             return addresses.Where(r => r.Transactions != null).SelectMany(a => a.Transactions.Where(t => t.Id == id));
@@ -558,7 +558,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <returns></returns>
         public IEnumerable<HdAddress> FindAddressesForTransaction(Func<TransactionData, bool> predicate)
         {
-            Guard.NotNull(predicate, nameof(predicate));
+            Guard.NotNull(predicate);
 
             var addresses = this.GetCombinedAddresses();
             return addresses.Where(t => t.Transactions != null).Where(a => a.Transactions.Any(predicate));

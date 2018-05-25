@@ -657,7 +657,7 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <inheritdoc/>
         public async Task SendMessageAsync(Payload payload, CancellationToken cancellation = default(CancellationToken))
         {
-            Guard.NotNull(payload, nameof(payload));
+            Guard.NotNull(payload);
             this.logger.LogTrace("({0}:'{1}')", nameof(payload), payload);
 
             if (!this.IsConnected)

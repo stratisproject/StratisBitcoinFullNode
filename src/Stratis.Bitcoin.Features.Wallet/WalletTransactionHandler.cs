@@ -132,9 +132,9 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <inheritdoc />
         public (Money maximumSpendableAmount, Money Fee) GetMaximumSpendableAmount(WalletAccountReference accountReference, FeeType feeType, bool allowUnconfirmed)
         {
-            Guard.NotNull(accountReference, nameof(accountReference));
-            Guard.NotEmpty(accountReference.WalletName, nameof(accountReference.WalletName));
-            Guard.NotEmpty(accountReference.AccountName, nameof(accountReference.AccountName));
+            Guard.NotNull(accountReference);
+            Guard.NotEmpty(accountReference.WalletName);
+            Guard.NotEmpty(accountReference.AccountName);
 
             // Get the total value of spendable coins in the account.
             var maxSpendableAmount = this.walletManager.GetSpendableTransactionsInAccount(accountReference, allowUnconfirmed ? 0 : 1).Sum(x => x.Transaction.Amount);
@@ -190,9 +190,9 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <param name="context">Transaction build context.</param>
         private void InitializeTransactionBuilder(TransactionBuildContext context)
         {
-            Guard.NotNull(context, nameof(context));
-            Guard.NotNull(context.Recipients, nameof(context.Recipients));
-            Guard.NotNull(context.AccountReference, nameof(context.AccountReference));
+            Guard.NotNull(context);
+            Guard.NotNull(context.Recipients);
+            Guard.NotNull(context.AccountReference);
 
             context.TransactionBuilder = new TransactionBuilder(this.Network);
 
@@ -394,7 +394,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         public TransactionBuildContext(WalletAccountReference accountReference, List<Recipient> recipients,
             string walletPassword = "", string opReturnData = null)
         {
-            Guard.NotNull(recipients, nameof(recipients));
+            Guard.NotNull(recipients);
 
             this.AccountReference = accountReference;
             this.Recipients = recipients;

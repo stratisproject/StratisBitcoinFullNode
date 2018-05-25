@@ -13,7 +13,7 @@ namespace Stratis.Bitcoin.Features.Notifications
 
         public TransactionNotification(ISignals signals)
         {
-            Guard.NotNull(signals, nameof(signals));
+            Guard.NotNull(signals);
 
             this.signals = signals;
         }

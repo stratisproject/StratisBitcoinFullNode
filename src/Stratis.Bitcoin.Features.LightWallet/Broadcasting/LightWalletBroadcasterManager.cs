@@ -19,7 +19,7 @@ namespace Stratis.Bitcoin.Features.LightWallet.Broadcasting
         /// <inheritdoc />
         public override async Task BroadcastTransactionAsync(Transaction transaction)
         {
-            Guard.NotNull(transaction, nameof(transaction));
+            Guard.NotNull(transaction);
 
             if (this.IsPropagated(transaction))
                 return;

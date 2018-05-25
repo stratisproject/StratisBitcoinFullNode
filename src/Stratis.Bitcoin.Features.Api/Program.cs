@@ -15,7 +15,7 @@ namespace Stratis.Bitcoin.Features.Api
 
         public static IWebHost Initialize(IEnumerable<ServiceDescriptor> services, FullNode fullNode, ApiSettings apiSettings)
         {
-            Guard.NotNull(fullNode, nameof(fullNode));
+            Guard.NotNull(fullNode);
 
             Uri apiUri = apiSettings.ApiUri;
 

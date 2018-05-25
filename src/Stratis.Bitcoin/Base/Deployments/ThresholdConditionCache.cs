@@ -33,7 +33,7 @@ namespace Stratis.Bitcoin.Base.Deployments
 
         public ThresholdConditionCache(Consensus consensus)
         {
-            Guard.NotNull(consensus, nameof(consensus));
+            Guard.NotNull(consensus);
 
             this.consensus = consensus;
         }

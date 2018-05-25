@@ -42,10 +42,10 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
         /// <param name="rpcSettings">The RPC Settings of the full node.</param>
         public RPCController(IFullNode fullNode, ILoggerFactory loggerFactory, RpcSettings rpcSettings, IRPCClientFactory rpcClientFactory)
         {
-            Guard.NotNull(fullNode, nameof(fullNode));
-            Guard.NotNull(loggerFactory, nameof(loggerFactory));
-            Guard.NotNull(rpcSettings, nameof(rpcSettings));
-            Guard.NotNull(rpcClientFactory, nameof(rpcClientFactory));
+            Guard.NotNull(fullNode);
+            Guard.NotNull(loggerFactory);
+            Guard.NotNull(rpcSettings);
+            Guard.NotNull(rpcClientFactory);
 
             this.fullNode = fullNode;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);

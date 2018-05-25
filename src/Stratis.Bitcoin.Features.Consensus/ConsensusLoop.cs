@@ -171,19 +171,19 @@ namespace Stratis.Bitcoin.Features.Consensus
             IConsensusRules consensusRules,
             IStakeChain stakeChain = null)
         {
-            Guard.NotNull(asyncLoopFactory, nameof(asyncLoopFactory));
-            Guard.NotNull(nodeLifetime, nameof(nodeLifetime));
-            Guard.NotNull(chain, nameof(chain));
-            Guard.NotNull(utxoSet, nameof(utxoSet));
-            Guard.NotNull(puller, nameof(puller));
-            Guard.NotNull(nodeDeployments, nameof(nodeDeployments));
-            Guard.NotNull(connectionManager, nameof(connectionManager));
-            Guard.NotNull(chainState, nameof(chainState));
-            Guard.NotNull(signals, nameof(signals));
-            Guard.NotNull(consensusSettings, nameof(consensusSettings));
-            Guard.NotNull(nodeSettings, nameof(nodeSettings));
-            Guard.NotNull(peerBanning, nameof(peerBanning));
-            Guard.NotNull(consensusRules, nameof(consensusRules));
+            Guard.NotNull(asyncLoopFactory);
+            Guard.NotNull(nodeLifetime);
+            Guard.NotNull(chain);
+            Guard.NotNull(utxoSet);
+            Guard.NotNull(puller);
+            Guard.NotNull(nodeDeployments);
+            Guard.NotNull(connectionManager);
+            Guard.NotNull(chainState);
+            Guard.NotNull(signals);
+            Guard.NotNull(consensusSettings);
+            Guard.NotNull(nodeSettings);
+            Guard.NotNull(peerBanning);
+            Guard.NotNull(consensusRules);
 
             this.consensusLock = new AsyncLock();
 

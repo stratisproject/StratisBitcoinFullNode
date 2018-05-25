@@ -77,10 +77,10 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
         public BlockStoreBehavior(ConcurrentChain chain, IBlockRepository blockRepository, IBlockStoreCache blockStoreCache, ILoggerFactory loggerFactory)
         {
-            Guard.NotNull(chain, nameof(chain));
-            Guard.NotNull(blockRepository, nameof(blockRepository));
-            Guard.NotNull(blockStoreCache, nameof(blockStoreCache));
-            Guard.NotNull(loggerFactory, nameof(loggerFactory));
+            Guard.NotNull(chain);
+            Guard.NotNull(blockRepository);
+            Guard.NotNull(blockStoreCache);
+            Guard.NotNull(loggerFactory);
 
             this.chain = chain;
             this.blockRepository = blockRepository;
@@ -362,7 +362,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// <inheritdoc />
         public async Task AnnounceBlocksAsync(List<ChainedHeader> blocksToAnnounce)
         {
-            Guard.NotNull(blocksToAnnounce, nameof(blocksToAnnounce));
+            Guard.NotNull(blocksToAnnounce);
             this.logger.LogTrace("({0}.{1}:{2})", nameof(blocksToAnnounce), nameof(blocksToAnnounce.Count), blocksToAnnounce.Count);
 
             if (!blocksToAnnounce.Any())

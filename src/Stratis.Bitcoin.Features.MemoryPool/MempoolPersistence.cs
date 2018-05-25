@@ -194,8 +194,8 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <returns>The save result.</returns>
         internal MemPoolSaveResult Save(Network network, IEnumerable<MempoolPersistenceEntry> toSave, string fileName)
         {
-            Guard.NotEmpty(this.dataDir, nameof(this.dataDir));
-            Guard.NotEmpty(fileName, nameof(fileName));
+            Guard.NotEmpty(this.dataDir);
+            Guard.NotEmpty(fileName);
 
             string filePath = Path.Combine(this.dataDir, fileName);
             string tempFilePath = $"{fileName}.new";
@@ -253,8 +253,8 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         public IEnumerable<MempoolPersistenceEntry> Load(Network network, string fileName = null)
         {
             fileName = fileName ?? DefaultFilename;
-            Guard.NotEmpty(this.dataDir, nameof(this.dataDir));
-            Guard.NotEmpty(fileName, nameof(fileName));
+            Guard.NotEmpty(this.dataDir);
+            Guard.NotEmpty(fileName);
 
             string filePath = Path.Combine(this.dataDir, fileName);
             if (!File.Exists(filePath))

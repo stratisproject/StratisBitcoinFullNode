@@ -58,7 +58,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
         protected BlockStoreLoopStep(BlockStoreLoop blockStoreLoop, ILoggerFactory loggerFactory)
         {
-            Guard.NotNull(blockStoreLoop, nameof(blockStoreLoop));
+            Guard.NotNull(blockStoreLoop);
 
             this.loggerFactory = loggerFactory;
             this.BlockStoreLoop = blockStoreLoop;

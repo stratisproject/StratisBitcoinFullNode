@@ -113,10 +113,10 @@ namespace Stratis.Bitcoin.Builder
         internal FullNodeBuilder(List<Action<IServiceCollection>> configureServicesDelegates, List<Action<IServiceProvider>> configureDelegates,
             List<Action<IFeatureCollection>> featuresRegistrationDelegates, IFeatureCollection features)
         {
-            Guard.NotNull(configureServicesDelegates, nameof(configureServicesDelegates));
-            Guard.NotNull(configureDelegates, nameof(configureDelegates));
-            Guard.NotNull(featuresRegistrationDelegates, nameof(featuresRegistrationDelegates));
-            Guard.NotNull(features, nameof(features));
+            Guard.NotNull(configureServicesDelegates);
+            Guard.NotNull(configureDelegates);
+            Guard.NotNull(featuresRegistrationDelegates);
+            Guard.NotNull(features);
 
             this.configureServicesDelegates = configureServicesDelegates;
             this.configureDelegates = configureDelegates;
@@ -127,7 +127,7 @@ namespace Stratis.Bitcoin.Builder
         /// <inheritdoc />
         public IFullNodeBuilder ConfigureFeature(Action<IFeatureCollection> configureFeatures)
         {
-            Guard.NotNull(configureFeatures, nameof(configureFeatures));
+            Guard.NotNull(configureFeatures);
 
             this.featuresRegistrationDelegates.Add(configureFeatures);
             return this;
@@ -136,7 +136,7 @@ namespace Stratis.Bitcoin.Builder
         /// <inheritdoc />
         public IFullNodeBuilder ConfigureServices(Action<IServiceCollection> configureServices)
         {
-            Guard.NotNull(configureServices, nameof(configureServices));
+            Guard.NotNull(configureServices);
 
             this.configureServicesDelegates.Add(configureServices);
             return this;
@@ -145,7 +145,7 @@ namespace Stratis.Bitcoin.Builder
         /// <inheritdoc />
         public IFullNodeBuilder ConfigureServiceProvider(Action<IServiceProvider> configure)
         {
-            Guard.NotNull(configure, nameof(configure));
+            Guard.NotNull(configure);
 
             this.configureDelegates.Add(configure);
             return this;

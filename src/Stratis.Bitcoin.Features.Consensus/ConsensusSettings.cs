@@ -35,7 +35,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <returns>These consensus config settings.</returns>
         public ConsensusSettings Load(NodeSettings nodeSettings)
         {
-            Guard.NotNull(nodeSettings, nameof(nodeSettings));
+            Guard.NotNull(nodeSettings);
             
             TextFileConfiguration config = nodeSettings.ConfigReader;
             this.UseCheckpoints = config.GetOrDefault<bool>("checkpoints", true);
@@ -60,7 +60,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <param name="network">The network to use.</param>
         public static void PrintHelp(Network network)
         {
-            Guard.NotNull(network, nameof(network));
+            Guard.NotNull(network);
 
             var builder = new StringBuilder();
 

@@ -14,7 +14,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Notifications
 
         public BlockObserver(IWalletSyncManager walletSyncManager)
         {
-            Guard.NotNull(walletSyncManager, nameof(walletSyncManager));
+            Guard.NotNull(walletSyncManager);
 
             this.walletSyncManager = walletSyncManager;
         }

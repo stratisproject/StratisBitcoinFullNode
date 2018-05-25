@@ -57,7 +57,7 @@ namespace Stratis.Bitcoin.Features.Miner
         /// <param name="nodeSettings">Application configuration.</param>
         public void Load(NodeSettings nodeSettings)
         {
-            Guard.NotNull(nodeSettings, nameof(nodeSettings));
+            Guard.NotNull(nodeSettings);
 
             TextFileConfiguration config = nodeSettings.ConfigReader;
 

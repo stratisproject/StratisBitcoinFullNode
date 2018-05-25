@@ -15,8 +15,8 @@ namespace Stratis.Bitcoin.Base.Deployments
 
         public NodeDeployments(Network network, ConcurrentChain chain)
         {
-            Guard.NotNull(network, nameof(network));
-            Guard.NotNull(chain, nameof(chain));
+            Guard.NotNull(network);
+            Guard.NotNull(chain);
 
             this.network = network;
             this.chain = chain;
@@ -25,7 +25,7 @@ namespace Stratis.Bitcoin.Base.Deployments
 
         public virtual DeploymentFlags GetFlags(ChainedHeader block)
         {
-            Guard.NotNull(block, nameof(block));
+            Guard.NotNull(block);
 
             lock (this.BIP9)
             {

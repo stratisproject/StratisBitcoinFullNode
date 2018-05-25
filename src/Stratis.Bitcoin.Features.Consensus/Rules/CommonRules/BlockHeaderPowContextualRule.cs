@@ -19,7 +19,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         /// <exception cref="ConsensusErrors.BadVersion">Thrown if block's version is outdated.</exception>
         public override Task RunAsync(RuleContext context)
         {
-            Guard.NotNull(context.BestBlock, nameof(context.BestBlock));
+            Guard.NotNull(context.BestBlock);
 
             BlockHeader header = context.BlockValidationContext.Block.Header;
 

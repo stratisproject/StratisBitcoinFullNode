@@ -17,7 +17,7 @@ namespace Stratis.Bitcoin.Features.RPC.Models
         /// <param name="blockHeader">The block header.</param>
         public BlockHeaderModel(BlockHeader blockHeader)
         {
-            Guard.NotNull(blockHeader, nameof(blockHeader));
+            Guard.NotNull(blockHeader);
 
             this.Version = (uint)blockHeader.Version;
             this.PreviousBlockHash = blockHeader.HashPrevBlock.ToString();

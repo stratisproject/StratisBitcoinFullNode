@@ -49,7 +49,7 @@ namespace Stratis.Bitcoin.Signals
         /// <param name="subject">Subject to be used to broadcast messages to subscribers.</param>
         public Signaler(ISubject<T> subject)
         {
-            Guard.NotNull(subject, nameof(subject));
+            Guard.NotNull(subject);
 
             this.subject = subject;
             this.subject = Subject.Synchronize(this.subject);
@@ -59,7 +59,7 @@ namespace Stratis.Bitcoin.Signals
         /// <inheritdoc />
         public IDisposable Subscribe(IObserver<T> observer)
         {
-            Guard.NotNull(observer, nameof(observer));
+            Guard.NotNull(observer);
 
             return this.observable.Subscribe(observer);
         }

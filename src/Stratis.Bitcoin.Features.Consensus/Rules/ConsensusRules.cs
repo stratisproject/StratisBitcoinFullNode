@@ -65,13 +65,13 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules
         /// </summary>
         protected ConsensusRules(Network network, ILoggerFactory loggerFactory, IDateTimeProvider dateTimeProvider, ConcurrentChain chain, NodeDeployments nodeDeployments, ConsensusSettings consensusSettings, ICheckpoints checkpoints)
         {
-            Guard.NotNull(network, nameof(network));
-            Guard.NotNull(loggerFactory, nameof(loggerFactory));
-            Guard.NotNull(dateTimeProvider, nameof(dateTimeProvider));
-            Guard.NotNull(chain, nameof(chain));
-            Guard.NotNull(nodeDeployments, nameof(nodeDeployments));
-            Guard.NotNull(consensusSettings, nameof(consensusSettings));
-            Guard.NotNull(checkpoints, nameof(checkpoints));
+            Guard.NotNull(network);
+            Guard.NotNull(loggerFactory);
+            Guard.NotNull(dateTimeProvider);
+            Guard.NotNull(chain);
+            Guard.NotNull(nodeDeployments);
+            Guard.NotNull(consensusSettings);
+            Guard.NotNull(checkpoints);
 
             this.Network = network;
             this.DateTimeProvider = dateTimeProvider;
@@ -92,7 +92,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules
         /// <inheritdoc />
         public ConsensusRules Register(IRuleRegistration ruleRegistration)
         {
-            Guard.NotNull(ruleRegistration, nameof(ruleRegistration));
+            Guard.NotNull(ruleRegistration);
 
             foreach (var consensusRule in ruleRegistration.GetRules())
             {
@@ -122,8 +122,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules
         /// <inheritdoc/>
         public async Task AcceptBlockAsync(BlockValidationContext blockValidationContext)
         {
-            Guard.NotNull(blockValidationContext, nameof(blockValidationContext));
-            Guard.NotNull(blockValidationContext.RuleContext, nameof(blockValidationContext.RuleContext));
+            Guard.NotNull(blockValidationContext);
+            Guard.NotNull(blockValidationContext.RuleContext);
 
             try
             {

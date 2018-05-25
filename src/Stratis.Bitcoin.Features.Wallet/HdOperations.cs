@@ -21,7 +21,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// </returns>
         public static PubKey GeneratePublicKey(string accountExtPubKey, int index, bool isChange)
         {
-            Guard.NotEmpty(accountExtPubKey, nameof(accountExtPubKey));
+            Guard.NotEmpty(accountExtPubKey);
 
             int change = isChange ? 1 : 0;
             KeyPath keyPath = new KeyPath($"{change}/{index}");
@@ -39,10 +39,10 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <returns></returns>
         public static ISecret GetExtendedPrivateKey(Key privateKey, byte[] chainCode, string hdPath, Network network)
         {
-            Guard.NotNull(privateKey, nameof(privateKey));
-            Guard.NotNull(chainCode, nameof(chainCode));
-            Guard.NotEmpty(hdPath, nameof(hdPath));
-            Guard.NotNull(network, nameof(network));
+            Guard.NotNull(privateKey);
+            Guard.NotNull(chainCode);
+            Guard.NotEmpty(hdPath);
+            Guard.NotNull(network);
 
             // Get the extended key.
             ExtKey seedExtKey = new ExtKey(privateKey, chainCode);
@@ -61,8 +61,8 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <returns>The extended public key for an account, used to derive child keys.</returns>
         public static ExtPubKey GetExtendedPublicKey(Key privateKey, byte[] chainCode, int coinType, int accountIndex)
         {
-            Guard.NotNull(privateKey, nameof(privateKey));
-            Guard.NotNull(chainCode, nameof(chainCode));
+            Guard.NotNull(privateKey);
+            Guard.NotNull(chainCode);
 
             var accountHdPath = GetAccountHdPath(coinType, accountIndex);
             return GetExtendedPublicKey(privateKey, chainCode, accountHdPath);
@@ -77,9 +77,9 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <returns>The extended public key, used to derive child keys.</returns>
         public static ExtPubKey GetExtendedPublicKey(Key privateKey, byte[] chainCode, string hdPath)
         {
-            Guard.NotNull(privateKey, nameof(privateKey));
-            Guard.NotNull(chainCode, nameof(chainCode));
-            Guard.NotEmpty(hdPath, nameof(hdPath));
+            Guard.NotNull(privateKey);
+            Guard.NotNull(chainCode);
+            Guard.NotEmpty(hdPath);
 
             // get extended private key
             ExtKey seedExtKey = new ExtKey(privateKey, chainCode);
@@ -108,8 +108,8 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <remarks>This key is sometimes referred to as the 'root seed' or the 'master key'.</remarks>
         public static ExtKey GetHdPrivateKey(string mnemonic, string passphrase)
         {
-            Guard.NotEmpty(mnemonic, nameof(mnemonic));
-            Guard.NotEmpty(passphrase, nameof(passphrase));
+            Guard.NotEmpty(mnemonic);
+            Guard.NotEmpty(passphrase);
 
             return GetHdPrivateKey(new Mnemonic(mnemonic), passphrase);
         }
@@ -123,8 +123,8 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <remarks>This key is sometimes referred to as the 'root seed' or the 'master key'.</remarks>
         public static ExtKey GetHdPrivateKey(Mnemonic mnemonic, string passphrase)
         {
-            Guard.NotNull(mnemonic, nameof(mnemonic));
-            Guard.NotEmpty(passphrase, nameof(passphrase));
+            Guard.NotNull(mnemonic);
+            Guard.NotEmpty(passphrase);
 
             return mnemonic.DeriveExtKey(passphrase);
         }
@@ -153,7 +153,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <remarks>Refer to <seealso cref="https://github.com/bitcoin/bips/blob/master/bip-0044.mediawiki#path-levels"/> for the format of the HD path.</remarks>
         public static int GetCoinType(string hdPath)
         {
-            Guard.NotEmpty(hdPath, nameof(hdPath));
+            Guard.NotEmpty(hdPath);
 
             string[] pathElements = hdPath.Split('/');
             if (pathElements.Length < 3)
@@ -177,7 +177,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <remarks>Refer to <seealso cref="https://github.com/bitcoin/bips/blob/master/bip-0044.mediawiki#path-levels"/> for the format of the HD path.</remarks>
         public static bool IsChangeAddress(string hdPath)
         {
-            Guard.NotEmpty(hdPath, nameof(hdPath));
+            Guard.NotEmpty(hdPath);
 
             var hdPathParts = hdPath.Split('/');
             if (hdPathParts.Length < 5)
@@ -201,9 +201,9 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <returns></returns>
         public static Key DecryptSeed(string encryptedSeed, string password, Network network)
         {
-            Guard.NotEmpty(encryptedSeed, nameof(encryptedSeed));
-            Guard.NotEmpty(password, nameof(password));
-            Guard.NotNull(network, nameof(network));
+            Guard.NotEmpty(encryptedSeed);
+            Guard.NotEmpty(password);
+            Guard.NotNull(network);
 
             return Key.Parse(encryptedSeed, password, network);
         }

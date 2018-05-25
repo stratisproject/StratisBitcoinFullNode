@@ -40,7 +40,7 @@ namespace Stratis.Bitcoin.Utilities
         /// <param name="action">Action to execute when the measurement is done.</param>
         public StopwatchDisposable(Action<long> action)
         {
-            Guard.NotNull(action, nameof(action));
+            Guard.NotNull(action);
 
             this.action = action;
             this.watch = Stopwatch.StartNew();

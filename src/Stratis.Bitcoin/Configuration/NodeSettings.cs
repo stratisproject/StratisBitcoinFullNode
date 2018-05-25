@@ -280,7 +280,7 @@ namespace Stratis.Bitcoin.Configuration
         public static IPEndPoint ConvertIpAddressToEndpoint(string ipAddress, int port)
         {
             // Checks the validity of the parameters passed.
-            Guard.NotEmpty(ipAddress, nameof(ipAddress));
+            Guard.NotEmpty(ipAddress);
             if (port < IPEndPoint.MinPort || port > IPEndPoint.MaxPort)
             {
                 throw new ConfigurationException($"Port {port} was outside of the values that can assigned for a port [{IPEndPoint.MinPort}-{IPEndPoint.MaxPort}].");
@@ -391,7 +391,7 @@ namespace Stratis.Bitcoin.Configuration
         /// <param name="network">The network to extract values from.</param>
         public static void PrintHelp(Network network)
         {
-            Guard.NotNull(network, nameof(network));
+            Guard.NotNull(network);
 
             var defaults = Default();
 

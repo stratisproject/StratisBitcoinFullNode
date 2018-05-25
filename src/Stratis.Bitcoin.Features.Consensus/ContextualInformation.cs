@@ -19,7 +19,7 @@ namespace Stratis.Bitcoin.Features.Consensus
 
         public ContextBlockInformation(ChainedHeader bestBlock, NBitcoin.Consensus consensus)
         {
-            Guard.NotNull(bestBlock, nameof(bestBlock));
+            Guard.NotNull(bestBlock);
 
             this.Header = bestBlock.Header;
             this.Height = bestBlock.Height;
@@ -80,8 +80,8 @@ namespace Stratis.Bitcoin.Features.Consensus
 
         public RuleContext(BlockValidationContext blockValidationContext, NBitcoin.Consensus consensus, ChainedHeader consensusTip)
         {
-            Guard.NotNull(blockValidationContext, nameof(blockValidationContext));
-            Guard.NotNull(consensus, nameof(consensus));
+            Guard.NotNull(blockValidationContext);
+            Guard.NotNull(consensus);
 
             this.BlockValidationContext = blockValidationContext;
             this.Consensus = consensus;

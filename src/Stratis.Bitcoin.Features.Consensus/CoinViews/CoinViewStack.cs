@@ -22,7 +22,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         /// <param name="top">Coinview at the top of the stack.</param>
         public CoinViewStack(CoinView top)
         {
-            Guard.NotNull(top, nameof(top));
+            Guard.NotNull(top);
 
             this.Top = top;
             CoinView current = top;

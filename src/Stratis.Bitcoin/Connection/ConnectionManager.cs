@@ -387,7 +387,7 @@ namespace Stratis.Bitcoin.Connection
         /// <param name="ipEndpoint">The endpoint of the peer to add.</param>
         public void AddNodeAddress(IPEndPoint ipEndpoint)
         {
-            Guard.NotNull(ipEndpoint, nameof(ipEndpoint));
+            Guard.NotNull(ipEndpoint);
 
             this.logger.LogTrace("({0}:'{1}')", nameof(ipEndpoint), ipEndpoint);
 

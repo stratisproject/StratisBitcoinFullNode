@@ -40,8 +40,8 @@ namespace Stratis.Bitcoin.Features.Miner.Controllers
         /// <param name="posMinting">PoS staker or null if PoS staking is not enabled.</param>
         public MinerController(IFullNode fullNode, ILoggerFactory loggerFactory, IWalletManager walletManager, IPosMinting posMinting = null)
         {
-            Guard.NotNull(fullNode, nameof(fullNode));
-            Guard.NotNull(loggerFactory, nameof(loggerFactory));
+            Guard.NotNull(fullNode);
+            Guard.NotNull(loggerFactory);
 
             this.fullNode = fullNode;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
@@ -79,7 +79,7 @@ namespace Stratis.Bitcoin.Features.Miner.Controllers
         [HttpPost]
         public IActionResult StartStaking([FromBody]StartStakingRequest request)
         {
-            Guard.NotNull(request, nameof(request));
+            Guard.NotNull(request);
 
             try
             {

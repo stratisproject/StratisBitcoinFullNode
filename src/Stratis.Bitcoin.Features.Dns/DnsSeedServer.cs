@@ -124,14 +124,14 @@ namespace Stratis.Bitcoin.Features.Dns
         /// <param name="dataFolders">The data folders of the system.</param>
         public DnsSeedServer(IUdpClient client, IMasterFile masterFile, IAsyncLoopFactory asyncLoopFactory, INodeLifetime nodeLifetime, ILoggerFactory loggerFactory, IDateTimeProvider dateTimeProvider, DnsSettings dnsSettings, DataFolder dataFolders)
         {
-            Guard.NotNull(client, nameof(client));
-            Guard.NotNull(masterFile, nameof(masterFile));
-            Guard.NotNull(asyncLoopFactory, nameof(asyncLoopFactory));
-            Guard.NotNull(nodeLifetime, nameof(nodeLifetime));
-            Guard.NotNull(loggerFactory, nameof(loggerFactory));
-            Guard.NotNull(dateTimeProvider, nameof(dateTimeProvider));
-            Guard.NotNull(dnsSettings, nameof(dnsSettings));
-            Guard.NotNull(dataFolders, nameof(dataFolders));
+            Guard.NotNull(client);
+            Guard.NotNull(masterFile);
+            Guard.NotNull(asyncLoopFactory);
+            Guard.NotNull(nodeLifetime);
+            Guard.NotNull(loggerFactory);
+            Guard.NotNull(dateTimeProvider);
+            Guard.NotNull(dnsSettings);
+            Guard.NotNull(dataFolders);
 
             this.udpClient = client;
             this.masterFile = masterFile;
@@ -272,7 +272,7 @@ namespace Stratis.Bitcoin.Features.Dns
         {
             this.logger.LogTrace("()");
 
-            Guard.NotNull(masterFile, nameof(masterFile));
+            Guard.NotNull(masterFile);
 
             lock (this.masterFileLock)
             {

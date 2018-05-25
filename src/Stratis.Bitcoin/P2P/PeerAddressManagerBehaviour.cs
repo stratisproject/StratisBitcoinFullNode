@@ -44,8 +44,8 @@ namespace Stratis.Bitcoin.P2P
 
         public PeerAddressManagerBehaviour(IDateTimeProvider dateTimeProvider, IPeerAddressManager peerAddressManager)
         {
-            Guard.NotNull(dateTimeProvider, nameof(dateTimeProvider));
-            Guard.NotNull(peerAddressManager, nameof(peerAddressManager));
+            Guard.NotNull(dateTimeProvider);
+            Guard.NotNull(peerAddressManager);
 
             this.dateTimeProvider = dateTimeProvider;
             this.Mode = PeerAddressManagerBehaviourMode.AdvertiseDiscover;

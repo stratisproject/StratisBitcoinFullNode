@@ -47,8 +47,8 @@ namespace Stratis.Bitcoin.Builder
         /// <param name="featureTypes">List of registered feature types.</param>
         public FullNodeServiceProvider(IServiceProvider serviceProvider, List<Type> featureTypes)
         {
-            Guard.NotNull(serviceProvider, nameof(serviceProvider));
-            Guard.NotNull(featureTypes, nameof(featureTypes));
+            Guard.NotNull(serviceProvider);
+            Guard.NotNull(featureTypes);
 
             this.ServiceProvider = serviceProvider;
             this.featureTypes = featureTypes;

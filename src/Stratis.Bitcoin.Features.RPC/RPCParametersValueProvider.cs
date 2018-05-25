@@ -20,22 +20,22 @@ namespace Stratis.Bitcoin.Features.RPC
 
         public RPCParametersValueProvider(ValueProviderFactoryContext context)
         {
-            Guard.NotNull(context, nameof(context));
+            Guard.NotNull(context);
 
             this.context = context;
         }
 
         public bool ContainsPrefix(string prefix)
         {
-            Guard.NotNull(prefix, nameof(prefix));
+            Guard.NotNull(prefix);
 
             return this.GetValueCore(prefix) != null;
         }
 
         public Task CreateValueProviderAsync(ValueProviderFactoryContext context)
         {
-            Guard.NotNull(context, nameof(context));
-            Guard.NotNull(context.ValueProviders, nameof(context.ValueProviders));
+            Guard.NotNull(context);
+            Guard.NotNull(context.ValueProviders);
 
             context.ValueProviders.Clear();
             context.ValueProviders.Add(new RPCParametersValueProvider(context));
@@ -44,7 +44,7 @@ namespace Stratis.Bitcoin.Features.RPC
 
         public ValueProviderResult GetValue(string key)
         {
-            Guard.NotNull(key, nameof(key));
+            Guard.NotNull(key);
 
             //context.ActionContext.ActionDescriptor.Parameters.First().BindingInfo.
             return new ValueProviderResult(new Microsoft.Extensions.Primitives.StringValues(this.GetValueCore(key)));

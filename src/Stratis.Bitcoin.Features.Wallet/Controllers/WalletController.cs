@@ -138,7 +138,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         [HttpPost]
         public IActionResult Create([FromBody]WalletCreationRequest request)
         {
-            Guard.NotNull(request, nameof(request));
+            Guard.NotNull(request);
 
             // checks the request is valid
             if (!this.ModelState.IsValid)
@@ -177,7 +177,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         [HttpPost]
         public IActionResult Load([FromBody]WalletLoadRequest request)
         {
-            Guard.NotNull(request, nameof(request));
+            Guard.NotNull(request);
 
             // checks the request is valid
             if (!this.ModelState.IsValid)
@@ -217,7 +217,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         [HttpPost]
         public IActionResult Recover([FromBody]WalletRecoveryRequest request)
         {
-            Guard.NotNull(request, nameof(request));
+            Guard.NotNull(request);
 
             // checks the request is valid
             if (!this.ModelState.IsValid)
@@ -262,7 +262,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         [HttpGet]
         public IActionResult GetGeneralInfo([FromQuery] WalletName request)
         {
-            Guard.NotNull(request, nameof(request));
+            Guard.NotNull(request);
 
             // checks the request is valid
             if (!this.ModelState.IsValid)
@@ -310,7 +310,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         [HttpGet]
         public IActionResult GetHistory([FromQuery] WalletHistoryRequest request)
         {
-            Guard.NotNull(request, nameof(request));
+            Guard.NotNull(request);
 
             // Checks the request is valid.
             if (!this.ModelState.IsValid)
@@ -478,7 +478,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         [HttpGet]
         public IActionResult GetBalance([FromQuery] WalletBalanceRequest request)
         {
-            Guard.NotNull(request, nameof(request));
+            Guard.NotNull(request);
 
             // checks the request is valid
             if (!this.ModelState.IsValid)
@@ -523,7 +523,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         [HttpGet]
         public IActionResult GetReceivedByAddress([FromQuery] ReceivedByAddressRequest request)
         {
-            Guard.NotNull(request, nameof(request));
+            Guard.NotNull(request);
 
             // Checks the request is valid
             if (!this.ModelState.IsValid)
@@ -558,7 +558,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         [HttpGet]
         public IActionResult GetMaximumSpendableBalance([FromQuery] WalletMaximumBalanceRequest request)
         {
-            Guard.NotNull(request, nameof(request));
+            Guard.NotNull(request);
 
             // Checks the request is valid.
             if (!this.ModelState.IsValid)
@@ -593,7 +593,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         [HttpGet]
         public IActionResult GetTransactionFeeEstimate([FromQuery]TxFeeEstimateRequest request)
         {
-            Guard.NotNull(request, nameof(request));
+            Guard.NotNull(request);
 
             // checks the request is valid
             if (!this.ModelState.IsValid)
@@ -630,7 +630,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         [HttpPost]
         public IActionResult BuildTransaction([FromBody] BuildTransactionRequest request)
         {
-            Guard.NotNull(request, nameof(request));
+            Guard.NotNull(request);
 
             // checks the request is valid
             if (!this.ModelState.IsValid)
@@ -683,7 +683,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         [HttpPost]
         public IActionResult SendTransaction([FromBody] SendTransactionRequest request)
         {
-            Guard.NotNull(request, nameof(request));
+            Guard.NotNull(request);
 
             // checks the request is valid
             if (!this.ModelState.IsValid)
@@ -768,7 +768,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         [HttpPost]
         public IActionResult CreateNewAccount([FromBody]GetUnusedAccountModel request)
         {
-            Guard.NotNull(request, nameof(request));
+            Guard.NotNull(request);
 
             // checks the request is valid
             if (!this.ModelState.IsValid)
@@ -796,7 +796,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         [HttpGet]
         public IActionResult ListAccounts([FromQuery]ListAccountsModel request)
         {
-            Guard.NotNull(request, nameof(request));
+            Guard.NotNull(request);
 
             // checks the request is valid
             if (!this.ModelState.IsValid)
@@ -824,7 +824,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         [HttpGet]
         public IActionResult GetUnusedAddress([FromQuery]GetUnusedAddressModel request)
         {
-            Guard.NotNull(request, nameof(request));
+            Guard.NotNull(request);
 
             // checks the request is valid
             if (!this.ModelState.IsValid)
@@ -851,7 +851,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         [HttpGet]
         public IActionResult GetUnusedAddresses([FromQuery]GetUnusedAddressesModel request)
         {
-            Guard.NotNull(request, nameof(request));
+            Guard.NotNull(request);
             var count = int.Parse(request.Count);
 
             // checks the request is valid
@@ -879,7 +879,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         [HttpGet]
         public IActionResult GetAllAddresses([FromQuery]GetAllAddressesModel request)
         {
-            Guard.NotNull(request, nameof(request));
+            Guard.NotNull(request);
 
             // Checks the request is valid.
             if (!this.ModelState.IsValid)
@@ -918,7 +918,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         [HttpDelete]
         public IActionResult RemoveTransactions([FromQuery]RemoveTransactionsModel request)
         {
-            Guard.NotNull(request, nameof(request));
+            Guard.NotNull(request);
 
             // Checks the request is valid.
             if (!this.ModelState.IsValid)
@@ -978,7 +978,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         [HttpGet]
         public IActionResult GetExtPubKey([FromQuery]GetExtPubKeyModel request)
         {
-            Guard.NotNull(request, nameof(request));
+            Guard.NotNull(request);
 
             // checks the request is valid
             if (!this.ModelState.IsValid)

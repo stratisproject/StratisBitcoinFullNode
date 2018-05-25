@@ -58,7 +58,7 @@ namespace Stratis.Bitcoin.P2P.Protocol
         /// <returns>Disposable binding between the producer and the consumer.</returns>
         public MessageProducerRegistration<T> AddMessageListener(IMessageListener<T> listener)
         {
-            Guard.NotNull(listener, nameof(listener));
+            Guard.NotNull(listener);
 
             this.listeners.Add(listener);
 
@@ -72,7 +72,7 @@ namespace Stratis.Bitcoin.P2P.Protocol
         /// <param name="listener">Registered consumer to stop distributing messages to.</param>
         public void RemoveMessageListener(IMessageListener<T> listener)
         {
-            Guard.NotNull(listener, nameof(listener));
+            Guard.NotNull(listener);
 
             this.listeners.TryRemove(listener);
         }
@@ -83,7 +83,7 @@ namespace Stratis.Bitcoin.P2P.Protocol
         /// <param name="message">Message to distribute.</param>
         public void PushMessage(T message)
         {
-            Guard.NotNull(message, nameof(message));
+            Guard.NotNull(message);
 
             foreach (IMessageListener<T> listener in this.listeners)
             {

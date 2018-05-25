@@ -92,5 +92,59 @@ namespace Stratis.Bitcoin.Tests.Utilities
             var exception = Record.Exception(() => Guard.Assert(true));
             Assert.Null(exception);
         }
+
+        [Fact]
+        public void ParameterlessNotNullCapturesVariableName()
+        {
+            string variableThatIsNull = null;
+
+            ArgumentNullException exception = null;
+
+            try
+            {
+                Guard.NotNull(variableThatIsNull);
+            }
+            catch (ArgumentNullException e)
+            {
+                exception = e;
+            }
+            
+            Assert.NotNull(exception);
+            Assert.True(exception.Message.Contains("Parameter name: " + nameof(variableThatIsNull)));
+        }
+
+        [Fact]
+        public void ParameterlessNotNullDontThrowWhenNotNull()
+        {
+            string value = "Something";
+            Guard.NotNull(value);
+        }
+
+        [Fact]
+        public void ParameterlessNotEmptyCapturesVariableName()
+        {
+            string variableThatIsEmpty = "    ";
+
+            ArgumentException exception = null;
+
+            try
+            {
+                Guard.NotEmpty(variableThatIsEmpty);
+            }
+            catch (ArgumentException e)
+            {
+                exception = e;
+            }
+
+            Assert.NotNull(exception);
+            Assert.True(exception.Message.Contains(nameof(variableThatIsEmpty)));
+        }
+
+        [Fact]
+        public void ParameterlessNotEmptyDontThrowWhenNotEmpty()
+        {
+            string value = "Something";
+            Guard.NotEmpty(value);
+        }
     }
 }

@@ -72,12 +72,12 @@ namespace Stratis.Bitcoin.Features.Dns
         /// <param name="connectionSettings">The connection settings.</param>
         public WhitelistManager(IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory, IPeerAddressManager peerAddressManager, IDnsServer dnsServer, ConnectionManagerSettings connectionSettings, DnsSettings dnsSettings)
         {
-            Guard.NotNull(dateTimeProvider, nameof(dateTimeProvider));
-            Guard.NotNull(loggerFactory, nameof(loggerFactory));
-            Guard.NotNull(peerAddressManager, nameof(peerAddressManager));
-            Guard.NotNull(dnsServer, nameof(dnsServer));
-            Guard.NotNull(dnsSettings, nameof(dnsSettings));
-            Guard.NotNull(connectionSettings, nameof(connectionSettings));
+            Guard.NotNull(dateTimeProvider);
+            Guard.NotNull(loggerFactory);
+            Guard.NotNull(peerAddressManager);
+            Guard.NotNull(dnsServer);
+            Guard.NotNull(dnsSettings);
+            Guard.NotNull(connectionSettings);
 
             this.dateTimeProvider = dateTimeProvider;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);

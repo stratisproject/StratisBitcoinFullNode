@@ -21,8 +21,8 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// <param name="chainedHeader">Chained header of the <paramref name="block"/>.</param>
         public BlockPair(Block block, ChainedHeader chainedHeader)
         {
-            Guard.NotNull(block, nameof(block));
-            Guard.NotNull(chainedHeader, nameof(chainedHeader));
+            Guard.NotNull(block);
+            Guard.NotNull(chainedHeader);
             Guard.Assert(block.GetHash() == chainedHeader.HashBlock);
 
             this.Block = block;

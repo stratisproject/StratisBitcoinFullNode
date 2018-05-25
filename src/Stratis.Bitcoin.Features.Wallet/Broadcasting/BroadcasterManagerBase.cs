@@ -21,7 +21,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Broadcasting
 
         public BroadcasterManagerBase(IConnectionManager connectionManager)
         {
-            Guard.NotNull(connectionManager, nameof(connectionManager));
+            Guard.NotNull(connectionManager);
 
             this.connectionManager = connectionManager;
             this.Broadcasts = new ConcurrentHashSet<TransactionBroadcastEntry>();

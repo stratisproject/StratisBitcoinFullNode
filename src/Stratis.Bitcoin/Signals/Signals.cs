@@ -53,8 +53,8 @@ namespace Stratis.Bitcoin.Signals
         /// <param name="transactionSignaler">Signaler providing notifications about newly available transactions to its subscribers.</param>
         public Signals(ISignaler<Block> blockSignaler, ISignaler<Transaction> transactionSignaler)
         {
-            Guard.NotNull(blockSignaler, nameof(blockSignaler));
-            Guard.NotNull(transactionSignaler, nameof(transactionSignaler));
+            Guard.NotNull(blockSignaler);
+            Guard.NotNull(transactionSignaler);
 
             this.blocks = blockSignaler;
             this.transactions = transactionSignaler;
@@ -69,7 +69,7 @@ namespace Stratis.Bitcoin.Signals
         /// <inheritdoc />
         public void SignalBlock(Block block)
         {
-            Guard.NotNull(block, nameof(block));
+            Guard.NotNull(block);
 
             this.blocks.Broadcast(block);
         }
@@ -77,7 +77,7 @@ namespace Stratis.Bitcoin.Signals
         /// <inheritdoc />
         public void SignalTransaction(Transaction trx)
         {
-            Guard.NotNull(trx, nameof(trx));
+            Guard.NotNull(trx);
 
             this.transactions.Broadcast(trx);
         }
@@ -85,7 +85,7 @@ namespace Stratis.Bitcoin.Signals
         /// <inheritdoc />
         public IDisposable SubscribeForBlocks(IObserver<Block> observer)
         {
-            Guard.NotNull(observer, nameof(observer));
+            Guard.NotNull(observer);
 
             return this.blocks.Subscribe(observer);
         }
@@ -93,7 +93,7 @@ namespace Stratis.Bitcoin.Signals
         /// <inheritdoc />
         public IDisposable SubscribeForTransactions(IObserver<Transaction> observer)
         {
-            Guard.NotNull(observer, nameof(observer));
+            Guard.NotNull(observer);
 
             return this.transactions.Subscribe(observer);
         }

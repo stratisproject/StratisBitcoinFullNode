@@ -157,7 +157,7 @@ namespace Stratis.Bitcoin
         {
             this.State = FullNodeState.Initializing;
 
-            Guard.NotNull(serviceProvider, nameof(serviceProvider));
+            Guard.NotNull(serviceProvider);
 
             this.Services = serviceProvider;
 

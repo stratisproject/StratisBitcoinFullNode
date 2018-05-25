@@ -119,7 +119,7 @@ namespace Stratis.Bitcoin.Features.Dns
         /// <param name="stream">The stream containing the masterfile.</param>
         public void Load(Stream stream)
         {
-            Guard.NotNull(stream, nameof(stream));
+            Guard.NotNull(stream);
 
             using (JsonTextReader textReader = new JsonTextReader(new StreamReader(stream)))
             {
@@ -134,7 +134,7 @@ namespace Stratis.Bitcoin.Features.Dns
         /// <param name="stream">The stream to write the masterfile to.</param>
         public void Save(Stream stream)
         {
-            Guard.NotNull(stream, nameof(stream));
+            Guard.NotNull(stream);
 
             JsonTextWriter textWriter = new JsonTextWriter(new StreamWriter(stream));
             JsonSerializer serializer = this.CreateSerializer();
