@@ -2,7 +2,7 @@
 
 namespace Stratis.SmartContracts.Core.ContractValidation
 {
-    public class SmartContractValidationError
+    public class FormatValidationError
     {
         public string MethodName { get; set; }
 
@@ -12,12 +12,12 @@ namespace Stratis.SmartContracts.Core.ContractValidation
 
         public string ErrorType { get; set; }
 
-        public SmartContractValidationError(string message)
+        public FormatValidationError(string message)
         {
             this.Message = message;
         }
 
-        public SmartContractValidationError(MethodDefinition methodDefinition, string errorType, string message)
+        public FormatValidationError(MethodDefinition methodDefinition, string errorType, string message)
             : this(message)
         {
             this.MethodFullName = methodDefinition.FullName;
@@ -25,7 +25,7 @@ namespace Stratis.SmartContracts.Core.ContractValidation
             this.ErrorType = errorType;
         }
 
-        public SmartContractValidationError(string methodName, string methodFullName, string errorType, string message)
+        public FormatValidationError(string methodName, string methodFullName, string errorType, string message)
             : this(message)
         {
             this.MethodName = methodName;

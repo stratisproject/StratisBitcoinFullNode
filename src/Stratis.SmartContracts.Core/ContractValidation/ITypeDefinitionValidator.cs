@@ -5,6 +5,6 @@ namespace Stratis.SmartContracts.Core.ContractValidation
 {
     public interface ITypeDefinitionValidator
     {
-        IEnumerable<SmartContractValidationError> Validate(TypeDefinition type);
+        IEnumerable<FormatValidationError> Validate(TypeDefinition type);
     }
 }

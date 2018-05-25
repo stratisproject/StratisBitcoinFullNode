@@ -15,19 +15,19 @@ namespace Stratis.SmartContracts.Core.ContractValidation
             "<PrivateImplementationDetails>" // Added when constructing an array
         };
 
-        public IEnumerable<SmartContractValidationError> Validate(ModuleDefinition module)
+        public IEnumerable<FormatValidationError> Validate(ModuleDefinition module)
         {
             List<TypeDefinition> typeDefinitions = module.Types.Where(x => !IgnoredInCount.Contains(x.FullName)).ToList();
 
             if (typeDefinitions.Count != 1)
             {
-                return new List<SmartContractValidationError>
+                return new List<FormatValidationError>
                 {
-                    new SmartContractValidationError("Only the compilation of a single class is allowed.")
+                    new FormatValidationError("Only the compilation of a single class is allowed.")
                 };
             }
 
-            return Enumerable.Empty<SmartContractValidationError>();
+            return Enumerable.Empty<FormatValidationError>();
         }
     }
 }

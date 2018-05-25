@@ -77,9 +77,9 @@ namespace Stratis.System.Inspector
             Console.ReadKey();
         }
 
-        private static IEnumerable<SmartContractValidationError> Inspect(MethodDefinition method)
+        private static IEnumerable<FormatValidationError> Inspect(MethodDefinition method)
         {
-            var validationResults = new List<SmartContractValidationError>();
+            var validationResults = new List<FormatValidationError>();
 
             foreach (var validator in _validators)
             {

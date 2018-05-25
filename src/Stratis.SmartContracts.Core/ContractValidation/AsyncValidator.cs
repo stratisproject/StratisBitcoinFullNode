@@ -12,7 +12,7 @@ namespace Stratis.SmartContracts.Core.ContractValidation
     {
         public static string AsyncStateMachine = typeof(System.Runtime.CompilerServices.IAsyncStateMachine).FullName;
 
-        public IEnumerable<SmartContractValidationError> Validate(TypeDefinition module)
+        public IEnumerable<FormatValidationError> Validate(TypeDefinition module)
         {
             // Async methods each have a compiler-generated nested type implementation of System.Runtime.CompilerServices.IAsyncStateMachine
             if (module.HasNestedTypes)
@@ -21,14 +21,14 @@ namespace Stratis.SmartContracts.Core.ContractValidation
 
                 if (nestedTypes.Any(IsAsyncStateMachine))
                 {
-                    return new List<SmartContractValidationError>
+                    return new List<FormatValidationError>
                     {
-                        new SmartContractValidationError("Async methods are not allowed")
+                        new FormatValidationError("Async methods are not allowed")
                     };
                 }
             }
 
-            return Enumerable.Empty<SmartContractValidationError>();
+            return Enumerable.Empty<FormatValidationError>();
         }
 
         private static bool IsAsyncStateMachine(TypeDefinition type)

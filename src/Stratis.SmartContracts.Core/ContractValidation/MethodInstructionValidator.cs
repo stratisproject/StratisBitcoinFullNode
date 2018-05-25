@@ -38,29 +38,29 @@ namespace Stratis.SmartContracts.Core.ContractValidation
             OpCodes.Stind_R8
         };
 
-        public IEnumerable<SmartContractValidationError> Validate(MethodDefinition method)
+        public IEnumerable<FormatValidationError> Validate(MethodDefinition method)
         {
             if (method.Body?.Instructions == null)
-                return Enumerable.Empty<SmartContractValidationError>();
+                return Enumerable.Empty<FormatValidationError>();
 
-            var errors = new List<SmartContractValidationError>();
+            var errors = new List<FormatValidationError>();
 
             foreach (Instruction instruction in method.Body.Instructions)
             {
-                IEnumerable<SmartContractValidationError> instructionValidationResult = ValidateInstruction(method, instruction);
+                IEnumerable<FormatValidationError> instructionValidationResult = ValidateInstruction(method, instruction);
                 errors.AddRange(instructionValidationResult);
             }
 
             return errors;
         }
 
-        private static IEnumerable<SmartContractValidationError> ValidateInstruction(MethodDefinition method, Instruction instruction)
+        private static IEnumerable<FormatValidationError> ValidateInstruction(MethodDefinition method, Instruction instruction)
         {
-            var errors = new List<SmartContractValidationError>();
+            var errors = new List<FormatValidationError>();
 
             if (RedLightOpCodes.Contains(instruction.OpCode))
             {
-                errors.Add(new SmartContractValidationError(
+                errors.Add(new FormatValidationError(
                     method.Name,
                     method.FullName,
                     "Float usage",
@@ -72,7 +72,7 @@ namespace Stratis.SmartContracts.Core.ContractValidation
             {
                 if (RedLightFields.Contains(fieldReference.FullName))
                 {
-                    errors.Add(new SmartContractValidationError(
+                    errors.Add(new FormatValidationError(
                         method.Name,
                         method.FullName,
                         $"Use of {fieldReference.FullName}",

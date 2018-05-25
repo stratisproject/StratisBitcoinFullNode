@@ -5,6 +5,6 @@ namespace Stratis.SmartContracts.Core.ContractValidation
 {
     public interface IMethodDefinitionValidator
     {
-        IEnumerable<SmartContractValidationError> Validate(MethodDefinition method);
+        IEnumerable<FormatValidationError> Validate(MethodDefinition method);
     }
 }

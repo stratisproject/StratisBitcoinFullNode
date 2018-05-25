@@ -11,7 +11,7 @@ namespace Stratis.SmartContracts.Core.ContractValidation
     {
         public static readonly string ErrorType = "Use Of Anonymous Type";
 
-        public IEnumerable<SmartContractValidationError> Validate(MethodDefinition method)
+        public IEnumerable<FormatValidationError> Validate(MethodDefinition method)
         {
             foreach (Mono.Cecil.Cil.Instruction instruction in method.Body.Instructions)
             {
@@ -19,9 +19,9 @@ namespace Stratis.SmartContracts.Core.ContractValidation
                 {
                     if (fieldReference.FullName.Contains("AnonymousType"))
                     {
-                        return new List<SmartContractValidationError>
+                        return new List<FormatValidationError>
                         {
-                            new SmartContractValidationError(
+                            new FormatValidationError(
                                 method.Name,
                                 method.FullName,
                                 ErrorType,
@@ -31,7 +31,7 @@ namespace Stratis.SmartContracts.Core.ContractValidation
                 }
             }
 
-            return Enumerable.Empty<SmartContractValidationError>();
+            return Enumerable.Empty<FormatValidationError>();
         }
     }
 }

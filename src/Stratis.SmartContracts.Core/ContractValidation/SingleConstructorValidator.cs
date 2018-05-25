@@ -14,7 +14,7 @@ namespace Stratis.SmartContracts.Core.ContractValidation
 
         public const string SingleConstructorError = "Only a single constructor is allowed";
 
-        public IEnumerable<SmartContractValidationError> Validate(TypeDefinition typeDef)
+        public IEnumerable<FormatValidationError> Validate(TypeDefinition typeDef)
         {
             List<MethodDefinition> constructors = typeDef.GetConstructors()?.ToList();
 
@@ -22,7 +22,7 @@ namespace Stratis.SmartContracts.Core.ContractValidation
             {
                 return new[]
                 {
-                    new SmartContractValidationError(MissingConstructorError)
+                    new FormatValidationError(MissingConstructorError)
                 };
             }
 
@@ -30,11 +30,11 @@ namespace Stratis.SmartContracts.Core.ContractValidation
             {
                 return new[]
                 {
-                    new SmartContractValidationError(SingleConstructorError)
+                    new FormatValidationError(SingleConstructorError)
                 };
             }
 
-            return Enumerable.Empty<SmartContractValidationError>();
+            return Enumerable.Empty<FormatValidationError>();
         }
     }
 }

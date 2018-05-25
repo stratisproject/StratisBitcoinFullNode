@@ -16,7 +16,7 @@ namespace Stratis.SmartContracts.Core.ContractValidation
 
         public SmartContractValidationResult Validate(SmartContractDecompilation decompilation)
         {
-            var warnings = new List<SmartContractValidationError>();
+            var warnings = new List<FormatValidationError>();
 
             foreach (ITypeDefinitionValidator typeDefinitionValidator in TypeDefinitionValidators)
             {

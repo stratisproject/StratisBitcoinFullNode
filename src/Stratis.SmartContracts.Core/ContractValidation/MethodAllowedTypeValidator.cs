@@ -18,13 +18,13 @@ namespace Stratis.SmartContracts.Core.ContractValidation
             "System.Environment"
         };
 
-        public IEnumerable<SmartContractValidationError> Validate(MethodDefinition method)
+        public IEnumerable<FormatValidationError> Validate(MethodDefinition method)
         {
             if (RedLightTypes.Contains(method.DeclaringType.FullName))
             {
-                return new List<SmartContractValidationError>
+                return new List<FormatValidationError>
                 {
-                    new SmartContractValidationError(
+                    new FormatValidationError(
                         method.Name,
                         method.FullName,
                         ErrorType,
@@ -32,7 +32,7 @@ namespace Stratis.SmartContracts.Core.ContractValidation
                 };
             }
 
-            return Enumerable.Empty<SmartContractValidationError>();
+            return Enumerable.Empty<FormatValidationError>();
         }
     }
 }

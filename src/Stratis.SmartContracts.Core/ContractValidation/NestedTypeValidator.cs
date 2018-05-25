@@ -9,21 +9,21 @@ namespace Stratis.SmartContracts.Core.ContractValidation
     /// </summary>
     public class NestedTypeValidator : ITypeDefinitionValidator
     {
-        public IEnumerable<SmartContractValidationError> Validate(TypeDefinition type)
+        public IEnumerable<FormatValidationError> Validate(TypeDefinition type)
         {
             if (type.HasNestedTypes)
             {
                 if (HasForbiddenNestedTypes(type.NestedTypes))
                 {
-                    return new List<SmartContractValidationError>
+                    return new List<FormatValidationError>
                     {
-                        new SmartContractValidationError(
+                        new FormatValidationError(
                             "Only the compilation of a single class is allowed. Includes nested reference types.")
                     };
                 }
             }
 
-            return Enumerable.Empty<SmartContractValidationError>();
+            return Enumerable.Empty<FormatValidationError>();
         }
 
         private static bool HasForbiddenNestedTypes(IEnumerable<TypeDefinition> nestedTypes)

@@ -9,9 +9,9 @@ namespace Stratis.SmartContracts.Core.Exceptions
     /// <remarks>TODO: We can possibly merge this with <see cref="SmartContractValidationResult"/>.</remarks>
     public sealed class SmartContractValidationException : SmartContractException
     {
-        public List<SmartContractValidationError> Errors;
+        public List<FormatValidationError> Errors;
 
-        public SmartContractValidationException(List<SmartContractValidationError> errors)
+        public SmartContractValidationException(List<FormatValidationError> errors)
         {
             this.Errors = errors;
         }

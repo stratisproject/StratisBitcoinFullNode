@@ -28,19 +28,19 @@ namespace Stratis.SmartContracts.Core.ContractValidation
             typeof(Address).FullName
         };
 
-        public IEnumerable<SmartContractValidationError> Validate(MethodDefinition methodDef)
+        public IEnumerable<FormatValidationError> Validate(MethodDefinition methodDef)
         {
             if (!methodDef.HasParameters)
-                return Enumerable.Empty<SmartContractValidationError>();
+                return Enumerable.Empty<FormatValidationError>();
 
             // Constructor is allowed to have other params
             if (methodDef.IsConstructor)
-                return Enumerable.Empty<SmartContractValidationError>();
+                return Enumerable.Empty<FormatValidationError>();
 
             return methodDef.Parameters
                 .Where(param => !AllowedTypes.Contains(param.ParameterType.FullName))
                 .Select(paramDef =>
-                    new SmartContractValidationError(
+                    new FormatValidationError(
                         paramDef.Name,
                         methodDef.FullName,
                         ErrorType,

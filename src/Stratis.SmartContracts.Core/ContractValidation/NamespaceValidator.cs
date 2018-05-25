@@ -9,17 +9,17 @@ namespace Stratis.SmartContracts.Core.ContractValidation
     /// </summary>
     public class NamespaceValidator : ITypeDefinitionValidator
     {
-        public IEnumerable<SmartContractValidationError> Validate(TypeDefinition type)
+        public IEnumerable<FormatValidationError> Validate(TypeDefinition type)
         {            
             if (type != null && type.Namespace != "")
             {
-                return new List<SmartContractValidationError>
+                return new List<FormatValidationError>
                 {
-                    new SmartContractValidationError("Class must not have a namespace.")
+                    new FormatValidationError("Class must not have a namespace.")
                 };
             }
 
-            return Enumerable.Empty<SmartContractValidationError>();
+            return Enumerable.Empty<FormatValidationError>();
         }
     }
 }

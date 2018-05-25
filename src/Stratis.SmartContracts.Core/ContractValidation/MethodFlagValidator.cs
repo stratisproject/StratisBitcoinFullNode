@@ -11,16 +11,16 @@ namespace Stratis.SmartContracts.Core.ContractValidation
     {
         public static string ErrorType = "Native Flag Set";
 
-        public IEnumerable<SmartContractValidationError> Validate(MethodDefinition method)
+        public IEnumerable<FormatValidationError> Validate(MethodDefinition method)
         {
             // Instruction accesses external info.
             var invalid = method.IsNative;
 
             if (invalid)
             {
-                return new List<SmartContractValidationError>
+                return new List<FormatValidationError>
                 {
-                    new SmartContractValidationError(
+                    new FormatValidationError(
                         method.Name,
                         method.FullName,
                         ErrorType,
@@ -28,7 +28,7 @@ namespace Stratis.SmartContracts.Core.ContractValidation
                 };
             }
 
-            return Enumerable.Empty<SmartContractValidationError>();
+            return Enumerable.Empty<FormatValidationError>();
         }
     }
 
@@ -39,16 +39,16 @@ namespace Stratis.SmartContracts.Core.ContractValidation
     {
         public static string ErrorType = "PInvokeImpl Flag Set";
 
-        public IEnumerable<SmartContractValidationError> Validate(MethodDefinition method)
+        public IEnumerable<FormatValidationError> Validate(MethodDefinition method)
         {
             // Instruction accesses external info.
             var invalid = method.IsPInvokeImpl;
 
             if (invalid)
             {
-                return new List<SmartContractValidationError>
+                return new List<FormatValidationError>
                 {
-                    new SmartContractValidationError(
+                    new FormatValidationError(
                         method.Name,
                         method.FullName,
                         ErrorType,
@@ -56,7 +56,7 @@ namespace Stratis.SmartContracts.Core.ContractValidation
                 };
             }
 
-            return Enumerable.Empty<SmartContractValidationError>();
+            return Enumerable.Empty<FormatValidationError>();
         }
     }
 
@@ -67,16 +67,16 @@ namespace Stratis.SmartContracts.Core.ContractValidation
     {
         public static string ErrorType = "Unmanaged Flag Set";
 
-        public IEnumerable<SmartContractValidationError> Validate(MethodDefinition method)
+        public IEnumerable<FormatValidationError> Validate(MethodDefinition method)
         {
             // Instruction accesses external info.
             var invalid = method.IsUnmanaged;
 
             if (invalid)
             {
-                return new List<SmartContractValidationError>
+                return new List<FormatValidationError>
                 {
-                    new SmartContractValidationError(
+                    new FormatValidationError(
                         method.Name,
                         method.FullName,
                         ErrorType,
@@ -84,7 +84,7 @@ namespace Stratis.SmartContracts.Core.ContractValidation
                 };
             }
 
-            return Enumerable.Empty<SmartContractValidationError>();
+            return Enumerable.Empty<FormatValidationError>();
         }
     }
 
@@ -95,16 +95,16 @@ namespace Stratis.SmartContracts.Core.ContractValidation
     {
         public static string ErrorType = "Internal Flag Set";
 
-        public IEnumerable<SmartContractValidationError> Validate(MethodDefinition method)
+        public IEnumerable<FormatValidationError> Validate(MethodDefinition method)
         {
             // Instruction accesses external info.
             var invalid = method.IsInternalCall;
 
             if (invalid)
             {
-                return new List<SmartContractValidationError>
+                return new List<FormatValidationError>
                 {
-                    new SmartContractValidationError(
+                    new FormatValidationError(
                         method.Name,
                         method.FullName,
                         ErrorType,
@@ -112,7 +112,7 @@ namespace Stratis.SmartContracts.Core.ContractValidation
                 };
             }
 
-            return Enumerable.Empty<SmartContractValidationError>();
+            return Enumerable.Empty<FormatValidationError>();
         }
     }
 
@@ -120,16 +120,16 @@ namespace Stratis.SmartContracts.Core.ContractValidation
     {
         public static string ErrorType = "Invalid Method Flags";
 
-        public IEnumerable<SmartContractValidationError> Validate(MethodDefinition method)
+        public IEnumerable<FormatValidationError> Validate(MethodDefinition method)
         {
             // Instruction accesses external info.
             var invalid = method.IsNative || method.IsPInvokeImpl || method.IsUnmanaged || method.IsInternalCall;
 
             if (invalid)
             {
-                return new List<SmartContractValidationError>
+                return new List<FormatValidationError>
                 {
-                    new SmartContractValidationError(
+                    new FormatValidationError(
                         method.Name,
                         method.FullName,
                         ErrorType,
@@ -137,7 +137,7 @@ namespace Stratis.SmartContracts.Core.ContractValidation
                 };
             }
 
-            return Enumerable.Empty<SmartContractValidationError>();
+            return Enumerable.Empty<FormatValidationError>();
         }
     }
 }
