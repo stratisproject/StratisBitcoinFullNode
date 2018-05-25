@@ -5,14 +5,15 @@ using Stratis.Bitcoin.Mining;
 
 namespace Stratis.Bitcoin.Features.Miner
 {
+    /// <inheritdoc/>
     public sealed class BlockProvider : IBlockProvider
     {
+        /// <summary>Defines how proof of work blocks are built.</summary>
         private readonly PowBlockDefinition powBlockDefinition;
+
+        /// <summary>Defines how proof of stake blocks are built.</summary>
         private readonly PosBlockDefinition posBlockDefinition;
 
-        /// <summary>
-        /// This is constructor is called by dependency injection.
-        /// </summary>
         /// <param name="definitions">A list of block definitions that the builder can utilize.</param>
         public BlockProvider(IEnumerable<BlockDefinition> definitions)
         {
@@ -20,11 +21,13 @@ namespace Stratis.Bitcoin.Features.Miner
             this.posBlockDefinition = definitions.FirstOrDefault(a => a.GetType() == typeof(PosBlockDefinition)) as PosBlockDefinition;
         }
 
+        /// <inheritdoc/>
         public BlockTemplate BuildPosBlock(ChainedHeader chainTip, Script script)
         {
             return this.posBlockDefinition.Build(chainTip, script);
         }
 
+        /// <inheritdoc/>
         public BlockTemplate BuildPowBlock(ChainedHeader chainTip, Script script)
         {
             return this.powBlockDefinition.Build(chainTip, script);

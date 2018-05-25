@@ -292,7 +292,7 @@ namespace Stratis.Bitcoin.Features.Miner
         }
 
         /// <summary>
-        /// Methods for how to add transactions to a block.
+        /// Method for how to add transactions to a block.
         /// Add transactions based on feerate including unconfirmed ancestors
         /// Increments nPackagesSelected / nDescendantsUpdated with corresponding
         /// statistics from the package selection (for logging statistics).
