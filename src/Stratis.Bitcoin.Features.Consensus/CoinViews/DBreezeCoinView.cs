@@ -391,7 +391,6 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
             Task task = Task.Run(() =>
             {
                 this.logger.LogTrace("({0}.Count():{1})", nameof(blocklist), blocklist.Count());
-                this.logger.LogTrace("({0}.Count():{1})");
 
                 using (DBreeze.Transactions.Transaction transaction = this.dbreeze.GetTransaction())
                 {
