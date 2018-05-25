@@ -1,21 +1,20 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using Mono.Cecil;
-using Stratis.Validators.Net;
 
-namespace Stratis.SmartContracts.Core.ContractValidation
+namespace Stratis.Validators.Net.Determinism
 {
     /// <summary>
-    /// Validates that a <see cref="Mono.Cecil.MethodDefinition"/> is not native
+    /// Validates that a <see cref="Mono.Cecil.MethodDefinition"/> is not unmanaged
     /// </summary>
-    public class NativeMethodFlagValidator : IMethodDefinitionValidator
+    public class UnmanagedFlagValidator : IMethodDefinitionValidator
     {
-        public static string ErrorType = "Native Flag Set";
+        public static string ErrorType = "Unmanaged Flag Set";
 
         public IEnumerable<FormatValidationError> Validate(MethodDefinition method)
         {
             // Instruction accesses external info.
-            var invalid = method.IsNative;
+            var invalid = method.IsUnmanaged;
 
             if (invalid)
             {

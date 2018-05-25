@@ -6,6 +6,7 @@ using CsvHelper;
 using Mono.Cecil;
 using Stratis.SmartContracts.Core.ContractValidation;
 using Stratis.Validators.Net;
+using Stratis.Validators.Net.Determinism;
 
 namespace Stratis.System.Inspector
 {

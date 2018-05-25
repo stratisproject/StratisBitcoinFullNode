@@ -1,21 +1,20 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using Mono.Cecil;
-using Stratis.Validators.Net;
 
-namespace Stratis.SmartContracts.Core.ContractValidation
+namespace Stratis.Validators.Net.Determinism
 {
     /// <summary>
-    /// Validates that a <see cref="Mono.Cecil.MethodDefinition"/> is not an internal call
+    /// Validates that a <see cref="Mono.Cecil.MethodDefinition"/> is not native
     /// </summary>
-    public class InternalFlagValidator : IMethodDefinitionValidator
+    public class NativeMethodFlagValidator : IMethodDefinitionValidator
     {
-        public static string ErrorType = "Internal Flag Set";
+        public static string ErrorType = "Native Flag Set";
 
         public IEnumerable<FormatValidationError> Validate(MethodDefinition method)
         {
             // Instruction accesses external info.
-            var invalid = method.IsInternalCall;
+            var invalid = method.IsNative;
 
             if (invalid)
             {

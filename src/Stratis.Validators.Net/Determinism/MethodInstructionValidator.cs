@@ -2,9 +2,8 @@
 using System.Linq;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
-using Stratis.Validators.Net;
 
-namespace Stratis.SmartContracts.Core.ContractValidation
+namespace Stratis.Validators.Net.Determinism
 {
     /// <summary>
     /// Validates that a <see cref="Mono.Cecil.MethodDefinition"/> does not contain any invalid opcodes or field references

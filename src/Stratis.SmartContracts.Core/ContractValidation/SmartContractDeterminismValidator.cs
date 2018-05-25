@@ -3,6 +3,7 @@ using System.Linq;
 using Mono.Cecil;
 using Stratis.SmartContracts.Core.Compilation;
 using Stratis.Validators.Net;
+using Stratis.Validators.Net.Determinism;
 
 namespace Stratis.SmartContracts.Core.ContractValidation
 {
