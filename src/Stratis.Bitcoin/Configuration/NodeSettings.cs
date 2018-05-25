@@ -332,20 +332,17 @@ namespace Stratis.Bitcoin.Configuration
         /// </summary>
         /// <param name="features">The features to include in the configuration file if a default file has to be created.</param>
         /// <returns>The default configuration.</returns>
-        private string GetFeaturesConfiguration(List<IFeatureRegistration> features = null)
+        private string GetFeaturesConfiguration(List<IFeatureRegistration> features)
         {
             StringBuilder builder = new StringBuilder();
 
-            if (features != null)
+            foreach (var featureRegistration in features)
             {
-                foreach (var featureRegistration in features)
+                MethodInfo getDefaultConfiguration = featureRegistration.FeatureType.GetMethod("BuildDefaultConfigurationFile", BindingFlags.Public | BindingFlags.Static);
+                if (getDefaultConfiguration != null)
                 {
-                    MethodInfo getDefaultConfiguration = featureRegistration.FeatureType.GetMethod("BuildDefaultConfigurationFile", BindingFlags.Public | BindingFlags.Static);
-                    if (getDefaultConfiguration != null)
-                    {
-                        getDefaultConfiguration.Invoke(null, new object[] { builder, this.Network });
-                        builder.AppendLine();
-                    }
+                    getDefaultConfiguration.Invoke(null, new object[] { builder, this.Network });
+                    builder.AppendLine();
                 }
             }
 
