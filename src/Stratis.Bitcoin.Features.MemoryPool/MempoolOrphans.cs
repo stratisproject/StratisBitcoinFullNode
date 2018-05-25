@@ -36,9 +36,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <summary>Node notifications available to subscribe to.</summary>
         private readonly Signals.Signals signals;
 
-        /// <summary>Proof of work consensus validator used for validating orphan transactions.</summary>
-        private readonly IPowConsensusValidator consensusValidator;
-
         /// <summary>Coin view of the memory pool.</summary>
         private readonly CoinView coinView;
 
@@ -77,7 +74,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <param name="chain">Thread safe access to the best chain of block headers (that the node is aware of) from genesis.</param>
         /// <param name="signals">Node notifications available to subscribe to.</param>
         /// <param name="validator">Memory pool validator for validating transactions.</param>
-        /// <param name="consensusValidator">Proof of work consensus validator used for validating orphan transactions.</param>
         /// <param name="coinView">Coin view of the memory pool.</param>
         /// <param name="dateTimeProvider">Date and time information provider.</param>
         /// <param name="mempoolSettings">Settings from the memory pool.</param>
@@ -88,7 +84,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             ConcurrentChain chain,
             Signals.Signals signals,
             IMempoolValidator validator,
-            IPowConsensusValidator consensusValidator,
             CoinView coinView,
             IDateTimeProvider dateTimeProvider,
             MempoolSettings mempoolSettings,
@@ -98,7 +93,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             this.memPool = memPool;
             this.chain = chain;
             this.signals = signals;
-            this.consensusValidator = consensusValidator;
             this.coinView = coinView;
             this.dateTimeProvider = dateTimeProvider;
             this.mempoolSettings = mempoolSettings;
@@ -132,8 +126,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             /// <summary>The time when this orphan transaction will expire.</summary>
             public long TimeExpire;
         }
-
-;
 
         /// <summary>
         /// Gets a list of all the orphan transactions.
@@ -361,7 +353,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                 // 100 orphans, each of which is at most 99,999 bytes big is
                 // at most 10 megabytes of orphans and somewhat more byprev index (in the worst case):
                 int sz = MempoolValidator.GetTransactionWeight(tx, this.Validator.ConsensusOptions);
-                if (sz >= this.consensusValidator.ConsensusOptions.MaxStandardTxWeight)
+                if (sz >= this.chain.Network.Consensus.Option<PowConsensusOptions>().MaxStandardTxWeight)
                 {
                     this.mempoolLogger.LogInformation($"ignoring large orphan tx (size: {sz}, hash: {hash})");
                     return false;
@@ -436,7 +428,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                 if (erased > 0)
                     this.mempoolLogger.LogInformation($"Erased {erased} orphan tx from peer {peer}");
 
-                //return true;
             }).Unwrap();
         }
     }

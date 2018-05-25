@@ -12,9 +12,36 @@ using Stratis.Bitcoin.Utilities;
 namespace Stratis.Bitcoin.Features.Consensus
 {
     /// <summary>
-    /// Provides functionality for checking validity of PoS blocks.
-    /// See <see cref="Stratis.Bitcoin.Features.Miner.PosMinting"/> for more information about PoS solutions.
+    /// Provides functionality for verifying validity of PoS block.
     /// </summary>
+    /// See <see cref="Stratis.Bitcoin.Features.Miner.PosMinting"/> for more information about PoS solutions.
+    /// <remarks>
+    /// These are the criteria for a new block to be accepted as a valid POS block at version 3 of the protocol,
+    /// which has been active since 6 August 2016 07:03:21 (Unix epoch time > 1470467000). All timestamps
+    /// are Unix epoch timestamps with seconds precision.
+    /// <list type="bullet">
+    /// <item>New block's timestamp ('BlockTime') MUST be strictly greater than previous block's timestamp.</item>
+    /// <item>Coinbase transaction's (first transaction in the block with no inputs) timestamp MUST be inside interval ['BlockTime' - 15; 'BlockTime'].</item>
+    /// <item>Coinstake transaction's (second transaction in the block with at least one input and at least 2 outputs and first output being empty) timestamp
+    /// MUST be equal to 'BlockTime' and it MUST have lower 4 bits set to 0 (i.e. be divisible by 16) - see <see cref="StakeTimestampMask"/>.</item>
+    /// <item>Block's header 'nBits' field MUST be set to the correct POS target value.</item>
+    /// <item>All transactions in the block must be final, which means their 'nLockTime' is either zero, or it is lower than current block's height
+    /// or node's 'AdjustedTime'. 'AdjustedTime' is the synchronized time among the node and its peers.</item>
+    /// <item>Coinstake transaction MUST be signed correctly.</item>
+    /// <item>Coinstake transaction's kernel (first) input MUST not be created within last <see cref="PosConsensusOptions.StakeMinConfirmations"/> blocks,
+    /// i.e. it MUST have that many confirmation at least.</item>
+    /// <item>Coinstake transaction's kernel must meet the staking target using this formula:
+    /// <code>hash(stakeModifierV2 + stakingCoins.Time + prevout.Hash + prevout.N + transactionTime) &lt; target * weight</code>
+    /// <para>
+    /// where 'stakingCoins' is the coinstake's kernel UTXO, 'prevout' is the kernel's output in that transaction,
+    /// 'prevout.Hash' is the hash of that transaction; 'transactionTime' is coinstake's transaction time; 'target' is the target as
+    /// in 'Bits' block header; 'weight' is the value of the kernel's input.
+    /// </para>
+    /// </item>
+    /// <item>Block's height MUST NOT be more than 500 blocks back - i.e. reorganizations longer than 500 are not allowed.</item>
+    /// <item>Coinbase 'scriptSig' starts with serialized block height value. This means that coinbase transaction commits to the height of the block it appears in.</item>
+    /// </list>
+    /// </remarks>
     public class StakeValidator : IStakeValidator
     {
         /// <summary>Expected (or target) block time in seconds.</summary>

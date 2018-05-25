@@ -1,12 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security;
 using System.Text;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NBitcoin.Policy;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Utilities;
+using Stratis.Bitcoin.Utilities.Extensions;
 
 namespace Stratis.Bitcoin.Features.Wallet
 {
@@ -38,6 +41,8 @@ namespace Stratis.Bitcoin.Features.Wallet
 
         private readonly ILogger logger;
 
+        private readonly MemoryCache privateKeyCache;
+
         public WalletTransactionHandler(
             ILoggerFactory loggerFactory,
             IWalletManager walletManager,
@@ -49,6 +54,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             this.walletFeePolicy = walletFeePolicy;
             this.coinType = (CoinType)network.Consensus.CoinType;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
+            this.privateKeyCache = new MemoryCache(new MemoryCacheOptions() { ExpirationScanFrequency = new TimeSpan(0, 1, 0) });
         }
 
         /// <inheritdoc />
@@ -208,9 +214,21 @@ namespace Stratis.Bitcoin.Features.Wallet
                 return;
 
             Wallet wallet = this.walletManager.GetWalletByName(context.AccountReference.WalletName);
-
+            Key privateKey; 
             // get extended private key
-            var privateKey = Key.Parse(wallet.EncryptedSeed, context.WalletPassword, wallet.Network);
+            string cacheKey = wallet.EncryptedSeed;
+
+            if (this.privateKeyCache.TryGetValue(cacheKey, out SecureString secretValue))
+            {
+                privateKey = wallet.Network.CreateBitcoinSecret(secretValue.FromSecureString()).PrivateKey;
+                this.privateKeyCache.Set(cacheKey, secretValue, new TimeSpan(0, 5, 0));
+            }
+            else
+            {
+                privateKey = Key.Parse(wallet.EncryptedSeed, context.WalletPassword, wallet.Network);
+                this.privateKeyCache.Set(cacheKey, privateKey.ToString(wallet.Network).ToSecureString(), new TimeSpan(0, 5, 0));
+            }
+
             var seedExtKey = new ExtKey(privateKey, wallet.ChainCode);
 
             var signingKeys = new HashSet<ISecret>();
