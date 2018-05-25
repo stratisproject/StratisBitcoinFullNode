@@ -16,6 +16,7 @@ using Stratis.Bitcoin.Features.Consensus.Interfaces;
 using Stratis.Bitcoin.Features.Consensus.Rules;
 using Stratis.Bitcoin.Features.MemoryPool.Fee;
 using Stratis.Bitcoin.Features.Miner;
+using Stratis.Bitcoin.Mining;
 using Stratis.Bitcoin.P2P;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
@@ -94,10 +95,10 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             MempoolSchedulerLock mempoolLock = new MempoolSchedulerLock();
 
             // Simple block creation, nothing special yet:
-            PowBlockAssembler blockAssembler = CreatePowBlockAssembler(consensusLoop, dateTimeProvider, loggerFactory as LoggerFactory, mempool, mempoolLock, network);
-            BlockTemplate newBlock = blockAssembler.Build(chain.Tip, scriptPubKey);
+            PowBlockDefinition blockDefinition = CreatePowBlockAssembler(consensusLoop, dateTimeProvider, loggerFactory as LoggerFactory, mempool, mempoolLock, network);
+            BlockTemplate newBlock = blockDefinition.Build(chain.Tip, scriptPubKey);
             chain.SetTip(newBlock.Block.Header);
-            
+
             var ruleContext = new RuleContext(new BlockValidationContext { Block = newBlock.Block }, network.Consensus, consensusLoop.Tip)
             {
                 CheckPow = false,
@@ -145,8 +146,8 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             }
 
             // Just to make sure we can still make simple blocks
-            blockAssembler = CreatePowBlockAssembler(consensusLoop, dateTimeProvider, loggerFactory as LoggerFactory, mempool, mempoolLock, network);
-            newBlock = blockAssembler.Build(chain.Tip, scriptPubKey);
+            blockDefinition = CreatePowBlockAssembler(consensusLoop, dateTimeProvider, loggerFactory as LoggerFactory, mempool, mempoolLock, network);
+            newBlock = blockDefinition.Build(chain.Tip, scriptPubKey);
 
             MempoolValidator mempoolValidator = new MempoolValidator(mempool, mempoolLock, dateTimeProvider, new MempoolSettings(nodeSettings), chain, cachedCoinView, loggerFactory, nodeSettings, consensusRules);
 
@@ -227,9 +228,9 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
         /// <param name="mempoolLock">Async lock for memory pool.</param>
         /// <param name="network">Network running on.</param>
         /// <returns>Proof of work block assembler.</returns>
-        private static PowBlockAssembler CreatePowBlockAssembler(IConsensusLoop consensusLoop, IDateTimeProvider dateTimeProvider, LoggerFactory loggerFactory, TxMempool mempool, MempoolSchedulerLock mempoolLock, Network network)
+        private static PowBlockDefinition CreatePowBlockAssembler(IConsensusLoop consensusLoop, IDateTimeProvider dateTimeProvider, LoggerFactory loggerFactory, TxMempool mempool, MempoolSchedulerLock mempoolLock, Network network)
         {
-            var options = new AssemblerOptions
+            var options = new BlockDefinitionOptions
             {
                 BlockMaxWeight = network.Consensus.Option<PowConsensusOptions>().MaxBlockWeight,
                 BlockMaxSize = network.Consensus.Option<PowConsensusOptions>().MaxBlockSerializedSize
@@ -238,7 +239,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             var blockMinFeeRate = new FeeRate(PowMining.DefaultBlockMinTxFee);
             options.BlockMinFeeRate = blockMinFeeRate;
 
-            return new PowBlockAssembler(consensusLoop, dateTimeProvider, loggerFactory, mempool, mempoolLock, network, options);
+            return new PowBlockDefinition(consensusLoop, dateTimeProvider, loggerFactory, mempool, mempoolLock, network, options);
         }
     }
 }

@@ -2,7 +2,7 @@
 
 namespace Stratis.Bitcoin.Features.Miner
 {
-    public sealed class AssemblerOptions
+    public sealed class BlockDefinitionOptions
     {
         public long BlockMaxWeight = PowMining.DefaultBlockMaxWeight;
 
