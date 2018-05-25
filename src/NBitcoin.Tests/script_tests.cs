@@ -330,6 +330,11 @@ namespace NBitcoin.Tests
         [Trait("Core", "Core")]
         public void script_json_tests()
         {
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                return;
+            }
+
             EnsureHasLibConsensus();
             var tests = TestCase.read_json(TestDataLocations.GetFileFromDataFolder("script_tests.json"));
             foreach(var test in tests)

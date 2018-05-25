@@ -19,9 +19,9 @@ using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Tests.Common;
 
-namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
+namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
 {
-    internal static class FullNodeExt
+    public static class FullNodeExt
     {
         public static WalletManager WalletManager(this FullNode fullNode)
         {

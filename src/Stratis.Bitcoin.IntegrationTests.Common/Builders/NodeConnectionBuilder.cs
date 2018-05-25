@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers;
+using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
 
-namespace Stratis.Bitcoin.IntegrationTests.Builders
+namespace Stratis.Bitcoin.IntegrationTests.Common.Builders
 {
     public class NodeConnectionBuilder
     {

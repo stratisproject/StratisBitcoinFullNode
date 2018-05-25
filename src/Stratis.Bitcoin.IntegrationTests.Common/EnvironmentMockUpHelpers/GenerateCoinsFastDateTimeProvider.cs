@@ -4,7 +4,7 @@ using Stratis.Bitcoin.Signals;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Utilities.Extensions;
 
-namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
+namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
 {
     /// <summary>
     /// This date time provider substitutes the node's usual DTP when running certain

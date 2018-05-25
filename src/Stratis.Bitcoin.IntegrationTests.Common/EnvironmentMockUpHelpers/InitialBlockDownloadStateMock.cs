@@ -6,7 +6,7 @@ using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Utilities;
 
-namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
+namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
 {
     public class InitialBlockDownloadStateMock : IInitialBlockDownloadState
     {

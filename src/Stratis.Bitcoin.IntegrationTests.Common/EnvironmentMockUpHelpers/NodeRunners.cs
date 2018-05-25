@@ -13,7 +13,7 @@ using Stratis.Bitcoin.Features.Miner;
 using Stratis.Bitcoin.Features.RPC;
 using Stratis.Bitcoin.Features.Wallet;
 
-namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
+namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
 {
     public class BitcoinCoreRunner : NodeRunner
     {

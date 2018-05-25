@@ -22,7 +22,7 @@ using Stratis.Bitcoin.P2P.Protocol.Payloads;
 using Stratis.Bitcoin.Utilities;
 using static Stratis.Bitcoin.BlockPulling.BlockPuller;
 
-namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
+namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
 {
     public class CoreNode
     {
@@ -49,7 +49,7 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
 
         public NodeConfigParameters ConfigParameters { get; } = new NodeConfigParameters();
 
-        public bool CookieAuth { get; internal set; }
+        public bool CookieAuth { get; set; }
 
         public CoreNode(NodeRunner runner, NodeBuilder builder, Network network, string configfile)
         {

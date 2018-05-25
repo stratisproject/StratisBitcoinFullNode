@@ -3,9 +3,9 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using Stratis.Bitcoin.Base;
-using Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers;
+using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
 
-namespace Stratis.Bitcoin.IntegrationTests
+namespace Stratis.Bitcoin.IntegrationTests.Common
 {
     public class TestHelper
     {
