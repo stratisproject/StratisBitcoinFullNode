@@ -41,7 +41,7 @@ namespace Stratis.Bitcoin.Configuration
         /// <summary>
         /// Initializes a new instance of the object.
         /// </summary>
-        /// <param name="innerNetwork">Specification of the network the node runs on - regtest/testnet/mainnet.</param>
+        /// <param name="network">The network the node runs on - regtest/testnet/mainnet.</param>
         /// <param name="protocolVersion">Supported protocol version for which to create the configuration.</param>
         /// <param name="agent">The nodes user agent that will be shared with peers.</param>
         /// <param name="args">The command-line arguments.</param>
@@ -61,10 +61,10 @@ namespace Stratis.Bitcoin.Configuration
         ///   to SetCombinedConfiguration, made on the condition that ConfigurationFile = null, would then be 
         ///   able to load the file because the network-specific file name would then have been determined.
         /// </remarks>
-        public NodeSettings(Network innerNetwork = null, ProtocolVersion protocolVersion = SupportedProtocolVersion, 
+        public NodeSettings(Network network = null, ProtocolVersion protocolVersion = SupportedProtocolVersion, 
             string agent = "StratisBitcoin", string[] args = null)
         {
-            this.Network = innerNetwork;
+            this.Network = network;
             this.ProtocolVersion = protocolVersion;
             this.Agent = agent;
             this.LoadArgs = args ?? new string[] { };
