@@ -188,7 +188,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
             ChainedHeader newTip = this.chain.GetBlock(resetBlockHash);
 
-            if (blockStoreResetList.Any())
+            if (blockStoreResetList.Count != 0)
                 await this.blockRepository.DeleteAsync(newTip.HashBlock, blockStoreResetList).ConfigureAwait(false);
 
             this.SetStoreTip(newTip);
@@ -289,8 +289,11 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
             this.logger.LogTrace("(-)");
         }
-
-        /// <summary>Checks if repository contains reorged blocks and deletes them; saves batch on top.</summary>
+        
+        /// <summary>
+        /// Checks if repository contains reorged blocks and deletes them; saves batch on top.
+        /// The last block in the list is considered to be on the current main chain and will be used to determine if a database reorg is required.
+        /// </summary>
         /// <param name="batch">List of batched blocks. Cannot be empty.</param>
         private async Task SaveBatchAsync(List<BlockPair> batch)
         {
