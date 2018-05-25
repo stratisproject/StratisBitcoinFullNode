@@ -40,8 +40,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
             this.asyncLoopFactory = new Mock<IAsyncLoopFactory>();
 
             this.consensusLoop = new Mock<IConsensusLoop>();
-            this.consensusLoop.SetupGet(c => c.Tip).Returns(() => { return this.chain.Tip; });
-            this.consensusLoop.SetupGet(c => c.Validator).Returns(new PowConsensusValidator(this.network, new Checkpoints(), DateTimeProvider.Default, this.LoggerFactory.Object));
+            this.consensusLoop.SetupGet(c => c.Tip).Returns(() => this.chain.Tip);
 
             this.mempool = new Mock<ITxMempool>();
             this.mempool.SetupGet(mp => mp.MapTx).Returns(new TxMempool.IndexedTransactionSet());

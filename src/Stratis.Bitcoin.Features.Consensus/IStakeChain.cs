@@ -1,4 +1,5 @@
-﻿using NBitcoin;
+﻿using System.Threading.Tasks;
+using NBitcoin;
 
 namespace Stratis.Bitcoin.Features.Consensus
 {
@@ -15,6 +16,6 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <summary>
         /// Set the stake for the given block header.
         /// </summary>
-        void Set(ChainedHeader chainedHeader, BlockStake blockStake);
+        Task SetAsync(ChainedHeader chainedHeader, BlockStake blockStake);
     }
 }

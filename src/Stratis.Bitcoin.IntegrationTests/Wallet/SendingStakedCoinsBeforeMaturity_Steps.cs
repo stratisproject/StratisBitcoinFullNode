@@ -6,11 +6,11 @@ using Stratis.Bitcoin.Features.Wallet.Controllers;
 using Stratis.Bitcoin.Features.Wallet.Models;
 using Stratis.Bitcoin.IntegrationTests.Builders;
 using Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers;
-using Stratis.Bitcoin.IntegrationTests.TestFramework;
 using Xunit.Abstractions;
 using Microsoft.AspNetCore.Mvc;
 using Stratis.Bitcoin.Utilities.JsonErrors;
 using Stratis.Bitcoin.Features.Consensus;
+using Stratis.Bitcoin.Tests.Common.TestFramework;
 
 namespace Stratis.Bitcoin.IntegrationTests.Wallet
 {

@@ -44,7 +44,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules
         /// <summary>Provider of block header hash checkpoints.</summary>
         public ICheckpoints Checkpoints { get; }
 
-        /// <summary>Keeps track of how much time different actions took to execute and how many times they were executed.</summary>
+        /// <inheritdoc />
         public ConsensusPerformanceCounter PerformanceCounter { get; }
 
         /// <summary>
@@ -56,6 +56,9 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules
         /// Grouping of rules that are marked with a <see cref="ExecutionRuleAttribute"/>.
         /// </summary>
         private readonly List<ConsensusRuleDescriptor> executionRules;
+
+        /// <inheritdoc />
+        public IEnumerable<ConsensusRuleDescriptor> Rules => this.consensusRules.Values;
 
         /// <summary>
         /// Initializes an instance of the object.
@@ -85,9 +88,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules
             this.validationRules = new List<ConsensusRuleDescriptor>();
             this.executionRules = new List<ConsensusRuleDescriptor>();
         }
-        
-        /// <inheritdoc />
-        public IEnumerable<ConsensusRuleDescriptor> Rules => this.consensusRules.Values;
 
         /// <inheritdoc />
         public ConsensusRules Register(IRuleRegistration ruleRegistration)
@@ -171,6 +171,12 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules
                     }
                 }
             }
+        }
+
+        /// <inheritdoc />
+        public T GetRule<T>() where T : ConsensusRule
+        {
+            return (T)this.Rules.Single(r => r.Rule is T).Rule;
         }
     }
 

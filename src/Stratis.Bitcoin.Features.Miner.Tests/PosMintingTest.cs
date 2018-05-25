@@ -24,7 +24,6 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
     public class PosMintingTest : LogsTestBase
     {
         private PosMinting posMinting;
-        private readonly Mock<IPosConsensusValidator> consensusValidator;
         private readonly Mock<IConsensusLoop> consensusLoop;
         private ConcurrentChain chain;
         private readonly Network network;
@@ -45,7 +44,6 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
 
         public PosMintingTest()
         {
-            this.consensusValidator = new Mock<IPosConsensusValidator>();
             this.consensusLoop = new Mock<IConsensusLoop>();
             this.network = Network.StratisTest;
             this.network.Consensus.Options = new PowConsensusOptions();
@@ -64,8 +62,6 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
             this.walletManager = new Mock<IWalletManager>();
             this.asyncLoopFactory = new Mock<IAsyncLoopFactory>();
             this.timeSyncBehaviorState = new Mock<ITimeSyncBehaviorState>();
-
-            this.consensusLoop.Setup(c => c.Validator).Returns(this.consensusValidator.Object);
 
             this.cancellationTokenSource = new CancellationTokenSource();
             this.nodeLifetime.Setup(n => n.ApplicationStopping).Returns(this.cancellationTokenSource.Token);
