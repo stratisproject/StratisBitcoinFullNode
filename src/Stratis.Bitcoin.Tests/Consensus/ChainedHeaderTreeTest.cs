@@ -136,16 +136,17 @@ namespace Stratis.Bitcoin.Tests.Consensus
             chainTip.BlockDataAvailability = BlockDataAvailabilityState.BlockAvailable;
             ChainedHeader newChainTip = testContext.ExtendAChain(10, chainTip); // create 10 more headers
 
-            var listOfExistingHeaders = testContext.ChainedHeaderToList(newChainTip, 10);
+            var listOfNewHeaders = testContext.ChainedHeaderToList(newChainTip, 10);
 
             testContext.ChainStateMock.Setup(s => s.ConsensusTip).Returns(chainTip);
             chainTip.BlockValidationState = ValidationState.FullyValidated;
 
-            var connectedHeaders = chainedHeaderTree.ConnectNewHeaders(1, listOfExistingHeaders);
+            var connectedHeaders = chainedHeaderTree.ConnectNewHeaders(1, listOfNewHeaders);
 
             Assert.Equal(20, chainedHeaderTree.GetChainedHeadersByHash.Count);
-            Assert.Equal(listOfExistingHeaders.Last(), connectedHeaders.DownloadTo.Header);
-            Assert.Equal(listOfExistingHeaders.First(), connectedHeaders.DownloadFrom.Header);
+            Assert.Equal(10, listOfNewHeaders.Count);
+            Assert.Equal(listOfNewHeaders.Last(), connectedHeaders.DownloadTo.Header);
+            Assert.Equal(listOfNewHeaders.First(), connectedHeaders.DownloadFrom.Header);
         }
     }
 }

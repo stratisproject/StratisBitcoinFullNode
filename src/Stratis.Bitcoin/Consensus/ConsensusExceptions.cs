@@ -4,7 +4,7 @@ namespace Stratis.Bitcoin.Consensus
 {
     public class ConsensusException : Exception
     {
-        public ConsensusException() : base()
+        protected ConsensusException() : base()
         {
         }
 

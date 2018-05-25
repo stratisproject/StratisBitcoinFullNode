@@ -88,7 +88,7 @@ namespace Stratis.Bitcoin.Consensus
             if (current.HashBlock != this.network.GenesisHash)
             {
                 this.logger.LogTrace("(-)[INVALID_NETWORK]");
-                throw new ConsensusException();
+                throw new ConsensusException("INVALID_NETWORK");
             }
 
             this.SetPeerTip(LocalPeerId, consensusTip.HashBlock);
@@ -350,7 +350,7 @@ namespace Stratis.Bitcoin.Consensus
             if (listOfPeersClaimingThisHeader == null)
             {
                 this.logger.LogTrace("(-)[PEER_TIP_NOT_FOUND]");
-                throw new ConsensusException();
+                throw new ConsensusException("PEER_TIP_NOT_FOUND");
             }
 
             this.logger.LogTrace("Peer id {0 } removed.", networkPeerId);
@@ -466,7 +466,7 @@ namespace Stratis.Bitcoin.Consensus
             for (newHeaderPosition = 0; newHeaderPosition < headers.Count; newHeaderPosition++)
             {
                 uint256 currentBlockHash = headers[newHeaderPosition].GetHash();
-                if (this.chainedHeadersByHash.ContainsKey(currentBlockHash))
+                if (!this.chainedHeadersByHash.ContainsKey(currentBlockHash))
                 {
                     this.logger.LogTrace("A new header with hash '{0}' was found that is not connected to the tree.", currentBlockHash);
                     this.logger.LogTrace("(-):true");
