@@ -37,10 +37,6 @@ namespace Stratis.Bitcoin.Utilities.Extensions
         /// <exception cref="FormatException">Thrown in case of the ip address is invalid.</exception>    
         public static IPEndPoint ToIPEndPoint(this string ipAddress, int port)
         {
-            // Checks the validity of the parameters passed.
-            if (port < IPEndPoint.MinPort || port > IPEndPoint.MaxPort)
-                throw new ArgumentException($"Port {port} was outside of the values that can assigned for a port [{IPEndPoint.MinPort}-{IPEndPoint.MaxPort}].");
-
             int colon = ipAddress.LastIndexOf(':');
             if (colon >= 0)
             {
@@ -52,6 +48,10 @@ namespace Stratis.Bitcoin.Utilities.Extensions
                     port = n;
                 }
             }
+
+            // Checks the validity of the parameters passed or parsed.
+            if (port < IPEndPoint.MinPort || port > IPEndPoint.MaxPort)
+                throw new ArgumentException($"Port {port} was outside of the values that can assigned for a port [{IPEndPoint.MinPort}-{IPEndPoint.MaxPort}].");
 
             return new IPEndPoint(IPAddress.Parse(ipAddress), port);
         }
