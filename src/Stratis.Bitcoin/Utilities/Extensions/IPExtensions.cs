@@ -40,7 +40,7 @@ namespace Stratis.Bitcoin.Utilities.Extensions
             int colon = ipAddress.LastIndexOf(':');
             if (colon >= 0)
             {
-                if (colon > ipAddress.IndexOf(']'))
+                if (colon > ipAddress.IndexOf(']') && !(colon < ipAddress.IndexOf('.')))
                 {
                     port = int.Parse(ipAddress.Substring(colon + 1));
                     ipAddress = ipAddress.Substring(0, colon);
