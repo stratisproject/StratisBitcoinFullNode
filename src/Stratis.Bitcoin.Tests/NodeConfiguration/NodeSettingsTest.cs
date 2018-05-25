@@ -83,5 +83,27 @@ namespace Stratis.Bitcoin.Tests.NodeConfiguration
             Assert.Equal(5443, endpoint.Port);
             Assert.Equal("1233:3432:2434:2343:3234:2345:6546:4534", endpoint.Address.ToString());
         }
+
+        [Fact]
+        public void CheckConvertingIPEndPointStringToEndpoint()
+        {
+            // Act
+            IPEndPoint endpoint = "::ffff:192.168.4.1".ToIPEndPoint(1234);
+
+            // Assert
+            Assert.Equal(1234, endpoint.Port);
+            Assert.Equal("::ffff:192.168.4.1", endpoint.Address.ToString());
+        }
+
+        [Fact]
+        public void CheckConvertingIPEndPointStringWithPortToEndpoint()
+        {
+            // Act
+            IPEndPoint endpoint = "::ffff:192.168.4.1:80".ToIPEndPoint(1234);
+
+            // Assert
+            Assert.Equal(80, endpoint.Port);
+            Assert.Equal("::ffff:192.168.4.1", endpoint.Address.ToString());
+        }
     }
 }

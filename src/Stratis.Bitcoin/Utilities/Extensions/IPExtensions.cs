@@ -44,14 +44,14 @@ namespace Stratis.Bitcoin.Utilities.Extensions
         /// <exception cref="FormatException">Thrown in case of ipAddress is invalid.</exception>    
         public static IPEndPoint ToIPEndPoint(this string ipAddress, int port)
         {
+            // Get the position of the last ':'.
             int colon = ipAddress.LastIndexOf(':');
-            if (colon >= 0)
+
+            // If the last ':' is not followed by ']' or '.' then is must be an ip address / port number separator.
+            if (colon >= 0 && ipAddress.IndexOf(']', colon) < 0 && ipAddress.IndexOf('.', colon) < 0)
             {
-                if (colon > ipAddress.IndexOf(']') && colon > ipAddress.LastIndexOf('.'))
-                {
-                    port = int.Parse(ipAddress.Substring(colon + 1));
-                    ipAddress = ipAddress.Substring(0, colon);
-                }
+                port = int.Parse(ipAddress.Substring(colon + 1));
+                ipAddress = ipAddress.Substring(0, colon);
             }
 
             return new IPEndPoint(IPAddress.Parse(ipAddress), port);
