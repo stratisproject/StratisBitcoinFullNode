@@ -4,6 +4,7 @@ using Mono.Cecil;
 using Stratis.SmartContracts.Core.Compilation;
 using Stratis.Validators.Net;
 using Stratis.Validators.Net.Determinism;
+using Stratis.Validators.Net.Format;
 
 namespace Stratis.SmartContracts.Core.ContractValidation
 {

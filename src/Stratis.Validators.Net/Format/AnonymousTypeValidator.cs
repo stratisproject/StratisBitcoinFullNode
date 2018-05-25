@@ -1,9 +1,8 @@
 using System.Collections.Generic;
 using System.Linq;
 using Mono.Cecil;
-using Stratis.Validators.Net;
 
-namespace Stratis.SmartContracts.Core.ContractValidation
+namespace Stratis.Validators.Net.Format
 {
     /// <summary>
     /// Validates that a <see cref="Mono.Cecil.MethodDefinition"/> does not contain any FieldReferences to anonymous types

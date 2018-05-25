@@ -4,6 +4,7 @@ using Mono.Cecil;
 using Stratis.SmartContracts.Core.Compilation;
 using Stratis.SmartContracts.Core.ContractValidation;
 using Stratis.Validators.Net;
+using Stratis.Validators.Net.Format;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Tests
