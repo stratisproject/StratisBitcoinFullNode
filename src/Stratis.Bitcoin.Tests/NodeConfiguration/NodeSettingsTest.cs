@@ -30,6 +30,17 @@ namespace Stratis.Bitcoin.Tests.NodeConfiguration
         }
 
         [Fact]
+        public void CheckConvertingIPAddressWithInvalidParsedPortNumberToEndpoint()
+        {
+            // Assert
+            Assert.Throws<FormatException>(() =>
+            {
+                // Act
+                IPEndPoint endpoint = "0.0.0.0:454z".ToIPEndPoint(1234);
+            });
+        }
+
+        [Fact]
         public void CheckConvertingIPv4AddressToEndpoint()
         {
             // Act
