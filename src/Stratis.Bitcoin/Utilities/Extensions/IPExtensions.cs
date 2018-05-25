@@ -34,6 +34,7 @@ namespace Stratis.Bitcoin.Utilities.Extensions
         /// In the case where the default port is passed and the IP address has a port specified in it, the IP address's port will take precedence.
         /// Examples of addresses that are supported are: 15.61.23.23, 15.61.23.23:1500, [1233:3432:2434:2343:3234:2345:6546:4534], [1233:3432:2434:2343:3234:2345:6546:4534]:8333.</remarks>
         /// <exception cref="ArgumentException">Thrown in case of the port number is out of range.</exception>    
+        /// <exception cref="FormatException">Thrown in case of the ip address is invalid.</exception>    
         public static IPEndPoint ToIPEndPoint(this string ipAddress, int port)
         {
             // Checks the validity of the parameters passed.

@@ -1,5 +1,5 @@
-﻿using System.Net;
-using Stratis.Bitcoin.Configuration;
+﻿using System;
+using System.Net;
 using Stratis.Bitcoin.Utilities.Extensions;
 using Xunit;
 
@@ -7,6 +7,28 @@ namespace Stratis.Bitcoin.Tests.NodeConfiguration
 {
     public class NodeSettingsTest
     {
+        [Fact]
+        public void CheckConvertingEmptyIPAddressToEndpoint()
+        {
+            // Assert
+            Assert.Throws<FormatException>(() =>
+            {
+                // Act
+                IPEndPoint endpoint = "".ToIPEndPoint(1234);
+            });
+        }
+
+        [Fact]
+        public void CheckConvertingIPAddressWithInvalidPortNumberToEndpoint()
+        {
+            // Assert
+            Assert.Throws<ArgumentException>(() =>
+            {
+                // Act
+                IPEndPoint endpoint = "0.0.0.0".ToIPEndPoint(IPEndPoint.MaxPort + 1);
+            });
+        }
+
         [Fact]
         public void CheckConvertingIPv4AddressToEndpoint()
         {
