@@ -84,14 +84,15 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
         /// </summary>
         [Route("stop")]
         [HttpGet]
-        public IActionResult Stop()
+        public async Task<IActionResult> Stop()
         {
             if (this.FullNode != null)
             {
                 this.FullNode.Dispose();
                 this.FullNode = null;
             }
-            return this.Json(true);
+            await Task.CompletedTask;
+            return NoContent();
         }
 
         /// <summary>
