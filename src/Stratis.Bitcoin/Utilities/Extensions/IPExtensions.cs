@@ -37,21 +37,15 @@ namespace Stratis.Bitcoin.Utilities.Extensions
         public static IPEndPoint ToIPEndPoint(this string ipAddress, int port)
         {
             // Checks the validity of the parameters passed.
-            Guard.NotEmpty(ipAddress, nameof(ipAddress));
             if (port < IPEndPoint.MinPort || port > IPEndPoint.MaxPort)
-            {
                 throw new ArgumentException($"Port {port} was outside of the values that can assigned for a port [{IPEndPoint.MinPort}-{IPEndPoint.MaxPort}].");
-            }
 
             int colon = ipAddress.LastIndexOf(':');
-
-            // if a : is found, and it either follows a [...], or no other : is in the string, treat it as port separator
-            bool fHaveColon = colon != -1;
-            bool fBracketed = fHaveColon && (ipAddress[0] == '[' && ipAddress[colon - 1] == ']'); // if there is a colon, and in[0]=='[', colon is not 0, so in[colon-1] is safe
-            bool fMultiColon = fHaveColon && (ipAddress.LastIndexOf(':', colon - 1) != -1);
-            if (fHaveColon && (colon == 0 || fBracketed || !fMultiColon))
+            if (colon >= 0)
             {
-                if (int.TryParse(ipAddress.Substring(colon + 1), out var n) && n > IPEndPoint.MinPort && n < IPEndPoint.MaxPort)
+                int bracket = ipAddress.IndexOf(']');
+
+                if (colon > bracket && int.TryParse(ipAddress.Substring(colon + 1), out var n))
                 {
                     ipAddress = ipAddress.Substring(0, colon);
                     port = n;
