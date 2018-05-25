@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Net;
 using System.Reflection;
 using System.Runtime.InteropServices;
@@ -14,7 +13,6 @@ using Stratis.Bitcoin.Builder.Feature;
 using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Utilities;
-using Stratis.Bitcoin.Utilities.Extensions;
 
 namespace Stratis.Bitcoin.Configuration
 {
@@ -67,7 +65,7 @@ namespace Stratis.Bitcoin.Configuration
             this.Network = network;
             this.ProtocolVersion = protocolVersion;
             this.Agent = agent;
-            this.LoadArgs = args ?? new string[] { };
+            this.ConfigReader = new TextFileConfiguration(args ?? new string[] { });
             this.Log = new LogSettings();
             
             // Create the default logger.
@@ -78,8 +76,8 @@ namespace Stratis.Bitcoin.Configuration
 
             // By default, we look for a file named '<network>.conf' in the network's data directory,
             // but both the data directory and the configuration file path may be changed using the -datadir and -conf command-line arguments.
-            this.ConfigurationFile = this.LoadArgs.GetValueOf("-conf")?.NormalizeDirectorySeparator();
-            this.DataDir = this.LoadArgs.GetValueOf("-datadir")?.NormalizeDirectorySeparator();        
+            this.ConfigurationFile = this.ConfigReader.GetOrDefault<string>("conf", null)?.NormalizeDirectorySeparator();
+            this.DataDir = this.ConfigReader.GetOrDefault<string>("datadir",  null)?.NormalizeDirectorySeparator();        
 
             // If the configuration file is relative then assume it is relative to the data folder and combine the paths
             if (this.DataDir != null && this.ConfigurationFile != null)
@@ -94,7 +92,8 @@ namespace Stratis.Bitcoin.Configuration
                 throw new ConfigurationException($"Configuration file does not exist at {this.ConfigurationFile}.");
 
             // Sets the ConfigReader based on the arguments and the configuration file if it exists.
-            this.SetCombinedConfiguration();
+            if (this.ConfigurationFile != null)
+                this.SetCombinedConfiguration();
 
             // If the network is not known then derive it from the command line arguments
             if (this.Network == null)
@@ -149,9 +148,6 @@ namespace Stratis.Bitcoin.Configuration
         /// <summary>Factory to create instance logger.</summary>
         public ILoggerFactory LoggerFactory { get; private set; }
 
-        /// <summary>Arguments to load.</summary>
-        public string[] LoadArgs { get; private set;  }
-
         /// <summary>Instance logger.</summary>
         public ILogger Logger { get; private set; }
 
@@ -175,8 +171,8 @@ namespace Stratis.Bitcoin.Configuration
         {
             get
             {
-                return this.LoadArgs.Contains("-help", StringComparer.CurrentCultureIgnoreCase) ||
-                    this.LoadArgs.Contains("--help", StringComparer.CurrentCultureIgnoreCase);
+                return this.ConfigReader.GetOrDefault<bool>("help", false) ||
+                    this.ConfigReader.GetOrDefault<bool>("-help", false);
             }
         }
 
@@ -235,13 +231,10 @@ namespace Stratis.Bitcoin.Configuration
         }
 
         /// <summary>
-        /// Sets the ConfigReader based on the arguments and the configuration file if it exists.
+        /// Adds the configuration file settings to the command line arguments if it exists.
         /// </summary>
         private void SetCombinedConfiguration()
         {
-            // Get the arguments set previously.
-            this.ConfigReader = new TextFileConfiguration(this.LoadArgs);
-
             // Read the configuration file if it exists.
             if (this.ConfigurationFile != null && File.Exists(this.ConfigurationFile))
             {
