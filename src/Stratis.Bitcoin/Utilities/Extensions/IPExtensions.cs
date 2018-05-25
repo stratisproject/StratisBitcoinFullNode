@@ -33,7 +33,7 @@ namespace Stratis.Bitcoin.Utilities.Extensions
         /// IPv4 and IPv6 addresses are supported.
         /// In the case where the default port is passed and the IP address has a port specified in it, the IP address's port will take precedence.
         /// Examples of addresses that are supported are: 15.61.23.23, 15.61.23.23:1500, [1233:3432:2434:2343:3234:2345:6546:4534], [1233:3432:2434:2343:3234:2345:6546:4534]:8333.</remarks>
-        /// <exception cref="ArgumentException">Thrown in case of the port number is out of range.</exception>    
+        /// <exception cref="ArgumentOutOfRangeException">Thrown in case of the port number is out of range.</exception>    
         /// <exception cref="FormatException">Thrown in case of ipAddress is invalid.</exception>    
         public static IPEndPoint ToIPEndPoint(this string ipAddress, int port)
         {
@@ -46,10 +46,6 @@ namespace Stratis.Bitcoin.Utilities.Extensions
                     ipAddress = ipAddress.Substring(0, colon);
                 }
             }
-
-            // Checks the validity of the parameters passed or parsed.
-            if (port < IPEndPoint.MinPort || port > IPEndPoint.MaxPort)
-                throw new ArgumentException($"Port {port} was outside of the values that can assigned for a port [{IPEndPoint.MinPort}-{IPEndPoint.MaxPort}].");
 
             return new IPEndPoint(IPAddress.Parse(ipAddress), port);
         }

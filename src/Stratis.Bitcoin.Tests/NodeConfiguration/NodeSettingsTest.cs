@@ -22,7 +22,7 @@ namespace Stratis.Bitcoin.Tests.NodeConfiguration
         public void CheckConvertingIPAddressWithInvalidPortNumberToEndpoint()
         {
             // Assert
-            Assert.Throws<ArgumentException>(() =>
+            Assert.Throws<ArgumentOutOfRangeException>(() =>
             {
                 // Act
                 IPEndPoint endpoint = "0.0.0.0".ToIPEndPoint(IPEndPoint.MaxPort + 1);
