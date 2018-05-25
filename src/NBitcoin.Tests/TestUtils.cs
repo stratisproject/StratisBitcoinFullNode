@@ -2,7 +2,6 @@
 using System.IO;
 using System.Threading;
 using NBitcoin.DataEncoders;
-using Xunit;
 
 namespace NBitcoin.Tests
 {
