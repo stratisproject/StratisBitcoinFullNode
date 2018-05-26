@@ -69,12 +69,12 @@ namespace Stratis.Bitcoin.IntegrationTests.Transactions
             this.key = this.sendingWallet.GetExtendedPrivateKeyForAddress(this.password, this.senderAddress).PrivateKey;
             this.senderNode.SetDummyMinerSecret(new BitcoinSecret(this.key, this.senderNode.FullNode.Network));
             var maturity = (int)this.senderNode.FullNode.Network.Consensus.Option<PowConsensusOptions>().CoinbaseMaturity;
-            this.senderNode.GenerateStratisWithMiner(maturity + 5);
+            this.senderNode.GenerateStratisWithMiner(maturity + 5);            
             TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(this.senderNode));
 
             this.senderNode.FullNode.WalletManager().GetSpendableTransactionsInWallet("sender")
                 .Sum(utxo => utxo.Transaction.Amount)
-                .Should().Be(Money.COIN * 105 * 50);
+                .Should().Be(Money.COIN * (maturity + 5) * 50);
         }
 
         private void no_fund_in_the_receiving_wallet()
@@ -92,11 +92,12 @@ namespace Stratis.Bitcoin.IntegrationTests.Transactions
 
         private void a_nulldata_transaction()
         {
+            var maturity = (int)this.senderNode.FullNode.Network.Consensus.Option<PowConsensusOptions>().CoinbaseMaturity;
             var transactionBuildContext = new TransactionBuildContext(
                 this.sendingWalletAccountReference,
                 new List<Recipient>() { new Recipient() { Amount = this.transferAmount, ScriptPubKey = this.receiverAddress.ScriptPubKey } },
-                this.password, this.opReturnContent)
-            { MinConfirmations = 2 };
+                this.password, this.opReturnContent)           
+            { MinConfirmations = maturity };
             this.transaction = this.senderNode.FullNode.WalletTransactionHandler().BuildTransaction(transactionBuildContext);
 
             this.transaction.Outputs.Single(t => t.ScriptPubKey.IsUnspendable).Value.Should().Be(Money.Zero);
