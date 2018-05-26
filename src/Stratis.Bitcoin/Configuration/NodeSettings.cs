@@ -46,18 +46,11 @@ namespace Stratis.Bitcoin.Configuration
         /// <exception cref="ConfigurationException">Thrown in case of any problems with the configuration file or command line arguments.</exception>
         /// <remarks>
         /// Processing depends on whether a configuration file is passed via the command line. 
-        /// Note that despite multiple SetCombinedConfiguration calls the configuration file will only 
-        /// ever be loaded ONCE in the constructor OR in the CreateDefaultConfiguration method.
-        /// 
         /// There are two main scenarios here:
-        /// - The configuration file is passed via the command line. In this case only the first call to 
-        ///   SetCombinedConfiguration would actually be reading the file. The second call to 
-        ///   SetCombinedConfiguration would not be invoked at all.
-        /// - Alternatively, if the file name is not supplied then the first call to SetCombinedConfiguration 
-        ///   would not be reading the file and instead only reading the command line arguments that would 
-        ///   help determine the network and correspondingly derived configuration file name. The second call 
-        ///   to SetCombinedConfiguration, made on the condition that ConfigurationFile = null, would then be 
-        ///   able to load the file because the network-specific file name would then have been determined.
+        /// - The configuration file is passed via the command line. In this case we need
+        ///   to read it earlier so that it can provide defaults for "testnet" and "regtest".
+        /// - Alternatively, if the file name is not supplied then a network-specific file 
+        ///   name would be determined. In this case we first need to determine the network.
         /// </remarks>
         public NodeSettings(Network network = null, ProtocolVersion protocolVersion = SupportedProtocolVersion, 
             string agent = "StratisBitcoin", string[] args = null)
@@ -68,7 +61,7 @@ namespace Stratis.Bitcoin.Configuration
             this.ConfigReader = new TextFileConfiguration(args ?? new string[] { });
             this.Log = new LogSettings();
             
-            // Create the default logger.
+            // Create the default logger factory and logger.
             this.LoggerFactory = new ExtendedLoggerFactory();
             this.LoggerFactory.AddConsoleWithFilters();
             this.LoggerFactory.AddNLog();
@@ -79,7 +72,7 @@ namespace Stratis.Bitcoin.Configuration
             this.ConfigurationFile = this.ConfigReader.GetOrDefault<string>("conf", null)?.NormalizeDirectorySeparator();
             this.DataDir = this.ConfigReader.GetOrDefault<string>("datadir",  null)?.NormalizeDirectorySeparator();        
 
-            // If the configuration file is relative then assume it is relative to the data folder and combine the paths
+            // If the configuration file is relative then assume it is relative to the data folder and combine the paths.
             if (this.DataDir != null && this.ConfigurationFile != null)
             {
                 bool isRelativePath = Path.GetFullPath(this.ConfigurationFile).Length > this.ConfigurationFile.Length;
@@ -87,15 +80,19 @@ namespace Stratis.Bitcoin.Configuration
                     this.ConfigurationFile = Path.Combine(this.DataDir, this.ConfigurationFile);
             }
 
-            // If the configuration file was specified on the command line then it must exist.
-            if (this.ConfigurationFile != null && !File.Exists(this.ConfigurationFile))
-                throw new ConfigurationException($"Configuration file does not exist at {this.ConfigurationFile}.");
-
-            // Sets the ConfigReader based on the arguments and the configuration file if it exists.
+            // If the configuration file has been specified on the command line then read it now
+            // so that it can provide the defaults for testnet and regtest.
             if (this.ConfigurationFile != null)
-                this.SetCombinedConfiguration();
+            {
+                // If the configuration file was specified on the command line then it must exist.
+                if (!File.Exists(this.ConfigurationFile))
+                    throw new ConfigurationException($"Configuration file does not exist at {this.ConfigurationFile}.");
 
-            // If the network is not known then derive it from the command line arguments
+                // Sets the ConfigReader based on the arguments and the configuration file if it exists.
+                this.ReadConfigurationFile();
+            }
+
+            // If the network is not known then derive it from the command line arguments.
             if (this.Network == null)
             {
                 // Find out if we need to run on testnet or regtest from the config file.
@@ -111,7 +108,7 @@ namespace Stratis.Bitcoin.Configuration
                     this.Network = testNet ? Network.TestNet : regTest ? Network.RegTest : Network.Main;
             }
 
-            // Setting the data directory.
+            // Set the full data directory path.
             if (this.DataDir == null)
             {
                 this.DataDir = this.CreateDefaultDataDirectories(Path.Combine("StratisNode", this.Network.RootFolderName), this.Network);
@@ -124,22 +121,23 @@ namespace Stratis.Bitcoin.Configuration
                 this.Logger.LogDebug("Data directory initialized with path {0}.", this.DataDir);
             }
             
+            // Set the data folder.
             this.DataFolder = new DataFolder(this.DataDir);
 
-            // Can determine the configuration file name now if it was not specified on the command line.
+            // Get the configuration file name for the network if it was not specified on the command line.
             if (this.ConfigurationFile == null)
             {
                 this.ConfigurationFile = Path.Combine(this.DataDir, this.Network.DefaultConfigFilename);
                 this.Logger.LogDebug("Configuration file set to '{0}'.", this.ConfigurationFile);
 
-                this.SetCombinedConfiguration();
+                if (File.Exists(this.ConfigurationFile))
+                    this.ReadConfigurationFile();
             }
 
-            // Create the custom logger.
+            // Create the custom logger factory.
             this.Log.Load(this.ConfigReader);
             this.LoggerFactory.AddFilters(this.Log, this.DataFolder);
             this.LoggerFactory.ConfigureConsoleFilters(this.LoggerFactory.GetConsoleSettings(), this.Log);
-            this.Logger = this.LoggerFactory.CreateLogger(typeof(NodeSettings).FullName);
 
             // Load the configuration.
             this.LoadConfiguration();
@@ -220,30 +218,38 @@ namespace Stratis.Bitcoin.Configuration
         public void CreateDefaultConfigurationFile(List<IFeatureRegistration> features)
         {
             // If the config file does not exist yet then create it now.
-            if (this.ConfigurationFile != null && !File.Exists(this.ConfigurationFile))
+            if (!File.Exists(this.ConfigurationFile))
             {
                 this.Logger.LogDebug("Creating configuration file '{0}'.", this.ConfigurationFile);
 
-                File.WriteAllText(this.ConfigurationFile, this.GetFeaturesConfiguration(features));
-                this.SetCombinedConfiguration();
+                StringBuilder builder = new StringBuilder();
+
+                foreach (var featureRegistration in features)
+                {
+                    MethodInfo getDefaultConfiguration = featureRegistration.FeatureType.GetMethod("BuildDefaultConfigurationFile", BindingFlags.Public | BindingFlags.Static);
+                    if (getDefaultConfiguration != null)
+                    {
+                        getDefaultConfiguration.Invoke(null, new object[] { builder, this.Network });
+                        builder.AppendLine();
+                    }
+                }
+
+                File.WriteAllText(this.ConfigurationFile, builder.ToString());
+                this.ReadConfigurationFile();
                 this.LoadConfiguration();
             }
         }
 
         /// <summary>
-        /// Adds the configuration file settings to the command line arguments if it exists.
+        /// Reads the configuration file and merges it with the command line arguments.
         /// </summary>
-        private void SetCombinedConfiguration()
+        private void ReadConfigurationFile()
         {
-            // Read the configuration file if it exists.
-            if (this.ConfigurationFile != null && File.Exists(this.ConfigurationFile))
-            {
-                this.Logger.LogDebug("Reading configuration file '{0}'.", this.ConfigurationFile);
+            this.Logger.LogDebug("Reading configuration file '{0}'.", this.ConfigurationFile);
 
-                // Add the file configuration to the command-line configuration.
-                var fileConfig = new TextFileConfiguration(File.ReadAllText(this.ConfigurationFile));
-                fileConfig.MergeInto(this.ConfigReader);
-            }
+            // Add the file configuration to the command-line configuration.
+            var fileConfig = new TextFileConfiguration(File.ReadAllText(this.ConfigurationFile));
+            fileConfig.MergeInto(this.ConfigReader);
         }
 
         /// <summary>
@@ -318,28 +324,6 @@ namespace Stratis.Bitcoin.Configuration
             }
 
             return new IPEndPoint(IPAddress.Parse(ipAddress), port);
-        }
-
-        /// <summary>
-        /// Gets the default configuration.
-        /// </summary>
-        /// <param name="features">The features to include in the configuration file if a default file has to be created.</param>
-        /// <returns>The default configuration.</returns>
-        private string GetFeaturesConfiguration(List<IFeatureRegistration> features)
-        {
-            StringBuilder builder = new StringBuilder();
-
-            foreach (var featureRegistration in features)
-            {
-                MethodInfo getDefaultConfiguration = featureRegistration.FeatureType.GetMethod("BuildDefaultConfigurationFile", BindingFlags.Public | BindingFlags.Static);
-                if (getDefaultConfiguration != null)
-                {
-                    getDefaultConfiguration.Invoke(null, new object[] { builder, this.Network });
-                    builder.AppendLine();
-                }
-            }
-
-            return builder.ToString();
         }
 
         /// <summary>
