@@ -19,6 +19,7 @@ using Stratis.Bitcoin.Features.Miner.Interfaces;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Interfaces;
+using Stratis.Bitcoin.Mining;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.Miner
@@ -181,7 +182,7 @@ namespace Stratis.Bitcoin.Features.Miner
         public const int MaxBlockSizeGen = MaxBlockSize / 2;
 
         /// <summary>Builder that creates a proof-of-stake block template.</summary>
-        private readonly PosBlockAssembler blockBuilder;
+        private readonly IBlockProvider blockProvider;
 
         /// <summary><c>true</c> if coinstake transaction splits the coin and generates extra UTXO
         /// to prevent halting chain; <c>false</c> to disable coinstake splitting.</summary>
@@ -327,7 +328,7 @@ namespace Stratis.Bitcoin.Features.Miner
         /// <param name="timeSyncBehaviorState">State of time synchronization feature that stores collected data samples.</param>
         /// <param name="loggerFactory">Factory for creating loggers.</param>
         public PosMinting(
-            PosBlockAssembler blockBuilder,
+            IBlockProvider blockProvider,
             IConsensusLoop consensusLoop,
             ConcurrentChain chain,
             Network network,
@@ -345,7 +346,7 @@ namespace Stratis.Bitcoin.Features.Miner
             ITimeSyncBehaviorState timeSyncBehaviorState,
             ILoggerFactory loggerFactory)
         {
-            this.blockBuilder = blockBuilder;
+            this.blockProvider = blockProvider;
             this.consensusLoop = consensusLoop;
             this.chain = chain;
             this.network = network;
@@ -442,7 +443,7 @@ namespace Stratis.Bitcoin.Features.Miner
                 return;
             }
 
-            this.stakeCancellationTokenSource?.Cancel();  
+            this.stakeCancellationTokenSource?.Cancel();
             this.logger.LogTrace("Disposing staking loop.");
             this.stakingLoop?.Dispose();
             this.stakingLoop = null;
@@ -538,7 +539,7 @@ namespace Stratis.Bitcoin.Features.Miner
                 this.logger.LogTrace("Wallet contains {0} coins.", new Money(totalBalance));
 
                 if (blockTemplate == null)
-                    blockTemplate = this.blockBuilder.Build(chainTip, new Script());
+                    blockTemplate = this.blockProvider.BuildPosBlock(chainTip, new Script());
 
                 if (!(blockTemplate.Block is PosBlock block))
                 {
