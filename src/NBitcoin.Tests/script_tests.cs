@@ -310,13 +310,13 @@ namespace NBitcoin.Tests
         public void sig_validinvalid()
         {
             Assert.False(TransactionSignature.IsValid(Network.Main, new byte[0]));
-            var sigs = JArray.Parse(File.ReadAllText("data/sig_canonical.json"));
+            var sigs = JArray.Parse(File.ReadAllText(TestDataLocations.GetFileFromDataFolder("sig_canonical.json")));
             foreach(var sig in sigs)
             {
                 Assert.True(TransactionSignature.IsValid(Network.Main, Encoders.Hex.DecodeData(sig.ToString())));
             }
 
-            sigs = JArray.Parse(File.ReadAllText("data/sig_noncanonical.json"));
+            sigs = JArray.Parse(File.ReadAllText(TestDataLocations.GetFileFromDataFolder("sig_noncanonical.json")));
             foreach(var sig in sigs)
             {
                 if(((HexEncoder)Encoders.Hex).IsValid(sig.ToString()))
@@ -330,8 +330,13 @@ namespace NBitcoin.Tests
         [Trait("Core", "Core")]
         public void script_json_tests()
         {
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                return;
+            }
+
             EnsureHasLibConsensus();
-            var tests = TestCase.read_json("data/script_tests.json");
+            var tests = TestCase.read_json(TestDataLocations.GetFileFromDataFolder("script_tests.json"));
             foreach(var test in tests)
             {
                 if(test.Count == 1)

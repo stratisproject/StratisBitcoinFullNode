@@ -1907,7 +1907,7 @@ namespace NBitcoin.Tests
         //http://brainwallet.org/#tx
         public void CanParseTransaction()
         {
-            var tests = TestCase.read_json(TestDataLocations.DataFolder(@"can_parse_transaction.json"));
+            var tests = TestCase.read_json(TestDataLocations.GetFileFromDataPosFolder("can_parse_transaction.json"));
 
             foreach (var test in tests.Select(t => t.GetDynamic(0)))
             {
@@ -2417,7 +2417,7 @@ namespace NBitcoin.Tests
             // Inner arrays are either [ "comment" ]
             // or [[[prevout hash, prevout index, prevout scriptPubKey], [input 2], ...],"], serializedTransaction, enforceP2SH
             // ... where all scripts are stringified scripts.
-            var tests = TestCase.read_json(TestDataLocations.DataFolder(@"tx_valid.json"));
+            var tests = TestCase.read_json(TestDataLocations.GetFileFromDataPosFolder("tx_valid.json"));
             foreach (var test in tests)
             {
                 string strTest = test.ToString();
@@ -2538,7 +2538,7 @@ namespace NBitcoin.Tests
             // Inner arrays are either [ "comment" ]
             // or [[[prevout hash, prevout index, prevout scriptPubKey], [input 2], ...],"], serializedTransaction, enforceP2SH
             // ... where all scripts are stringified scripts.
-            var tests = TestCase.read_json(TestDataLocations.DataFolder(@"tx_invalid.json"));
+            var tests = TestCase.read_json(TestDataLocations.GetFileFromDataPosFolder("tx_invalid.json"));
             string comment = null;
             foreach (var test in tests)
             {
@@ -3074,6 +3074,26 @@ namespace NBitcoin.Tests
             t.Outputs[1].ScriptPubKey = new Script() + OpcodeType.OP_RETURN;
             Assert.True(!StandardScripts.IsStandardTransaction(t));
         }
+
+        //[Fact]
+        //public void CanDecodeAndEncodeRawTransaction()
+        //{
+        //    //var a = new Protocol.AddressManager().Select();
+        //    var tests = TestCase.read_json(TestDataLocations.GetFileFromDataFolder("tx_raw.json"));
+        //    foreach (var test in tests)
+        //    {
+        //        var format = (RawFormat)Enum.Parse(typeof(RawFormat), (string)test[0], true);
+        //        var network = ((string)test[1]) == "Main" ? Network.StratisMain : Network.StratisMain;
+        //        var testData = ((JObject)test[2]).ToString();
+
+        //        Transaction raw = Transaction.Parse(testData, format, network);
+
+        //        TestUtils.AssertJsonEquals(raw.ToString(format, network), testData);
+
+        //        var raw3 = Transaction.Parse(raw.ToString(format, network), format);
+        //        Assert.Equal(raw.ToString(format, network), raw3.ToString(format, network));
+        //    }
+        //}
 
         private byte[] ParseHex(string data)
         {

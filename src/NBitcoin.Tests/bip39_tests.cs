@@ -36,7 +36,7 @@ namespace NBitcoin.Tests
         [Trait("UnitTest", "UnitTest")]
         public void EngTest()
         {
-            var test = JObject.Parse(File.ReadAllText("data/bip39_vectors.json"));
+            var test = JObject.Parse(File.ReadAllText(TestDataLocations.GetFileFromDataFolder("bip39_vectors.json")));
 
             foreach(var language in test.Properties())
             {
@@ -72,7 +72,7 @@ namespace NBitcoin.Tests
         [Trait("UnitTest", "UnitTest")]
         public void JapTest()
         {
-            var test = JArray.Parse(File.ReadAllText("data/bip39_JP.json", Encoding.UTF32));
+            var test = JArray.Parse(File.ReadAllText(TestDataLocations.GetFileFromDataFolder("bip39_JP.json"), Encoding.UTF32));
 
             foreach(var unitTest in test.OfType<JObject>())
             {

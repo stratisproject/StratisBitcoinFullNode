@@ -47,7 +47,7 @@ namespace NBitcoin.Tests
         [Trait("Core", "Core")]
         public void sighash_from_data()
         {
-            var tests = TestCase.read_json("Data/sighash.json");
+            var tests = TestCase.read_json(TestDataLocations.GetFileFromDataFolder("sighash.json"));
 
             foreach(var test in tests)
             {
