@@ -6,6 +6,7 @@ using System.Text;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Configuration;
+using Stratis.Bitcoin.Utilities.Extensions;
 
 namespace Stratis.Bitcoin.Features.RPC
 {
@@ -87,7 +88,7 @@ namespace Stratis.Bitcoin.Features.RPC
                 {
                     this.DefaultBindings = config
                         .GetAll("rpcbind")
-                        .Select(p => NodeSettings.ConvertIpAddressToEndpoint(p, this.RPCPort))
+                        .Select(p => p.ToIPEndPoint(this.RPCPort))
                         .ToList();
                 }
                 catch (FormatException)
