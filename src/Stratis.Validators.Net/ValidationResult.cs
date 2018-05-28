@@ -1,8 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
-using Stratis.Validators.Net;
 
-namespace Stratis.SmartContracts.Core.ContractValidation
+namespace Stratis.Validators.Net
 {
     public sealed class ValidationResult
     {

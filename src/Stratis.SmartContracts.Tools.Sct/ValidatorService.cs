@@ -7,6 +7,7 @@ using Stratis.SmartContracts.Core.Compilation;
 using Stratis.SmartContracts.Core.ContractValidation;
 using Stratis.SmartContracts.Core.Lifecycle;
 using Stratis.SmartContracts.Core.Serialization;
+using Stratis.Validators.Net;
 
 namespace Stratis.SmartContracts.Tools.Sct
 {
