@@ -78,7 +78,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         [Fact]
         public void SmartContract_ValidateFormat_FormatValidatorChecksConstructor()
         {
-            var validator = new SmartContractFormatValidator();
+            var validator = new SmartContractFormatValidator(ReferencedAssemblyResolver.AllowedAssemblies);
             var validationResult = validator.Validate(MultipleConstructorDecompilation);
 
             Assert.Single(validationResult.Errors);

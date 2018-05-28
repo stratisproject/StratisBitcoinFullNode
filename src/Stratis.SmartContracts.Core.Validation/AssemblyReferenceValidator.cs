@@ -14,7 +14,7 @@ namespace Stratis.SmartContracts.Core.Validation
         /// <summary>
         /// The referenced assemblies allowed in the smart contract
         /// </summary>
-        private IEnumerable<Assembly> allowedAssemblies;
+        private readonly IEnumerable<Assembly> allowedAssemblies;
 
         public AssemblyReferenceValidator(IEnumerable<Assembly> allowedAssemblies)
         {

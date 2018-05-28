@@ -36,7 +36,7 @@ namespace Stratis.SmartContracts.Tools.Sct.Validation
             Console.WriteLine();
 
             var determinismValidator = new SmartContractDeterminismValidator();
-            var formatValidator = new SmartContractFormatValidator();
+            var formatValidator = new SmartContractFormatValidator(ReferencedAssemblyResolver.AllowedAssemblies);
             var warningValidator = new SmartContractWarningValidator();
 
             var reportData = new List<ValidationReportData>();

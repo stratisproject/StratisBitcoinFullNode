@@ -188,7 +188,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 this.stateRoot = new ContractStateRepositoryRoot(stateDB);
                 this.validator = new SmartContractValidator(new List<ISmartContractValidator>
                 {
-                    new SmartContractFormatValidator(),
+                    new SmartContractFormatValidator(ReferencedAssemblyResolver.AllowedAssemblies),
                     new SmartContractDeterminismValidator()
                 });
 
