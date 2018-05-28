@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using Microsoft.Extensions.DependencyInjection;
 using Stratis.Bitcoin.Builder;
+using Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor;
 using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.ReflectionExecutor;
 using Stratis.SmartContracts.ReflectionExecutor.ContractValidation;
@@ -35,6 +36,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                         services.AddSingleton<ISmartContractExecutorFactory, ReflectionSmartContractExecutorFactory>();
                         services.AddSingleton<IMethodParameterSerializer, MethodParameterSerializer>();
                         services.AddSingleton<ISmartContractCarrierSerializer, SmartContractCarrierSerializer>();
+                        // Add rules
+                        ConsensusRuleUtils.AddExtraRules(services, new ReflectionRuleRegistration());
                     });
             });
             return this.builder;

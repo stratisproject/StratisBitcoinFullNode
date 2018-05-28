@@ -1,25 +1,27 @@
 ﻿using System.Collections.Generic;
 using Stratis.Bitcoin.Features.Consensus.Rules;
 using Stratis.Bitcoin.Features.SmartContracts.Consensus.Rules;
+using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.SmartContracts
 {
-    public sealed class SmartContractRuleRegistration : IRuleRegistration
+    public sealed class SmartContractRuleRegistration : IAdditionalRuleRegistration
     {
-        private readonly IRuleRegistration baseRuleRegistration;
+        private IRuleRegistration baseRegistration;
 
-        public SmartContractRuleRegistration(IRuleRegistration baseRuleRegistration)
+        public void SetPreviousRegistration(IRuleRegistration previousRegistration)
         {
-            this.baseRuleRegistration = baseRuleRegistration;
+            this.baseRegistration = previousRegistration;
         }
 
         public IEnumerable<ConsensusRule> GetRules()
         {
+            Guard.Assert(this.baseRegistration != null);
+
             var rules = new List<ConsensusRule>();
-            rules.AddRange(this.baseRuleRegistration.GetRules());
+            rules.AddRange(this.baseRegistration.GetRules());
             rules.Add(new TxOutSmartContractExecRule());
             rules.Add(new OpSpendRule());
-            //rules.Add(new GasBudgetRule());
             rules.Add(new OpCreateZeroValueRule());
             return rules;
         }

@@ -81,13 +81,16 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                         services.AddSingleton<IMempoolValidator, SmartContractMempoolValidator>();
 
                         services.AddSingleton<SmartContractsController>();
-                        // Add rules -> These could be VM specific in future though!
-                        AddSmartContractRulesToExistingRules(services);
+                        // Add rules
+                        ConsensusRuleUtils.AddExtraRules(services, new SmartContractRuleRegistration());
                     });
             });
             return new SmartContractVmBuilder(fullNodeBuilder);
         }
+    }
 
+    public static class ConsensusRuleUtils
+    {
         /// <summary>
         /// This is a hack to enable us to to compose objects that depend on implementations defined earlier
         /// in the feature setup process.
@@ -98,8 +101,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         /// Here we get an existing IRuleRegistration ServiceDescriptor, re-register it as its ConcreteType
         /// then replace the dependency on IRuleRegistration with our own implementation that depends on ConcreteType.
         /// </summary>
-        /// <param name="services"></param>
-        private static void AddSmartContractRulesToExistingRules(IServiceCollection services)
+        public static void AddExtraRules(IServiceCollection services, IAdditionalRuleRegistration rulesToAdd)
         {
             ServiceDescriptor existingService = services.FirstOrDefault(s => s.ServiceType == typeof(IRuleRegistration));
 
@@ -121,7 +123,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             var newService = new ServiceDescriptor(typeof(IRuleRegistration), serviceProvider =>
             {
                 var existingRuleRegistration = serviceProvider.GetService(concreteType);
-                return new SmartContractRuleRegistration((IRuleRegistration)existingRuleRegistration);
+                rulesToAdd.SetPreviousRegistration((IRuleRegistration)existingRuleRegistration);
+                return rulesToAdd;
             }, ServiceLifetime.Singleton);
 
             services.Replace(newService);

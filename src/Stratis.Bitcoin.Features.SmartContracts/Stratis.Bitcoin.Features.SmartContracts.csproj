@@ -18,8 +18,4 @@
     <ProjectReference Include="..\Stratis.SmartContracts\Stratis.SmartContracts.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="ReflectionExecutor\Consensus\Rules\" />
-  </ItemGroup>
-
 </Project>
