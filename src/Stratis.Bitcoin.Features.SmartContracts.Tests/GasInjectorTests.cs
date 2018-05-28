@@ -8,8 +8,9 @@ using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Patricia;
 using Stratis.SmartContracts;
 using Stratis.SmartContracts.Core;
-using Stratis.SmartContracts.Core.Compilation;
 using Stratis.SmartContracts.Core.State;
+using Stratis.SmartContracts.ReflectionExecutor;
+using Stratis.SmartContracts.ReflectionExecutor.Compilation;
 using Xunit;
 using Block = Stratis.SmartContracts.Core.Block;
 

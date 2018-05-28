@@ -1,5 +1,6 @@
 ﻿using Stratis.SmartContracts;
-using Stratis.SmartContracts.Core.Exceptions;
+using Stratis.SmartContracts.ReflectionExecutor;
+using Stratis.SmartContracts.ReflectionExecutor.Exceptions;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Tests

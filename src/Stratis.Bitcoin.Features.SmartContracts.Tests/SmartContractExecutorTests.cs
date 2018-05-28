@@ -5,11 +5,12 @@ using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Patricia;
 using Stratis.SmartContracts;
 using Stratis.SmartContracts.Core;
-using Stratis.SmartContracts.Core.Compilation;
-using Stratis.SmartContracts.Core.ContractValidation;
-using Stratis.SmartContracts.Core.Exceptions;
-using Stratis.SmartContracts.Core.Serialization;
 using Stratis.SmartContracts.Core.State;
+using Stratis.SmartContracts.ReflectionExecutor;
+using Stratis.SmartContracts.ReflectionExecutor.Compilation;
+using Stratis.SmartContracts.ReflectionExecutor.ContractValidation;
+using Stratis.SmartContracts.ReflectionExecutor.Exceptions;
+using Stratis.SmartContracts.ReflectionExecutor.Serialization;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Tests
@@ -21,11 +22,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         private readonly Network network;
         private readonly IContractStateRepository state;
         private readonly SmartContractValidator validator;
-<<<<<<< HEAD
-        private readonly IKeyEncodingStrategy keyEncodingStrategy;
         private readonly SmartContractCarrierSerializer carrierSerializer;
-=======
->>>>>>> master
 
         public SmartContractExecutorTests()
         {
@@ -35,11 +32,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             this.network = Network.SmartContractsRegTest;
             this.state = new ContractStateRepositoryRoot(new NoDeleteSource<byte[], byte[]>(new MemoryDictionarySource()));
             this.validator = new SmartContractValidator(new ISmartContractValidator[] { });
-<<<<<<< HEAD
-            this.keyEncodingStrategy = BasicKeyEncodingStrategy.Default;
             this.carrierSerializer = new SmartContractCarrierSerializer(new MethodParameterSerializer());
-=======
->>>>>>> master
         }
 
         [Fact]

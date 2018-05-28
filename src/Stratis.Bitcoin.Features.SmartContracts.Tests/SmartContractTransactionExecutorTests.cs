@@ -7,11 +7,12 @@ using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Patricia;
 using Stratis.SmartContracts;
 using Stratis.SmartContracts.Core;
-using Stratis.SmartContracts.Core.Compilation;
-using Stratis.SmartContracts.Core.ContractValidation;
-using Stratis.SmartContracts.Core.Exceptions;
-using Stratis.SmartContracts.Core.Serialization;
 using Stratis.SmartContracts.Core.State;
+using Stratis.SmartContracts.ReflectionExecutor;
+using Stratis.SmartContracts.ReflectionExecutor.Compilation;
+using Stratis.SmartContracts.ReflectionExecutor.ContractValidation;
+using Stratis.SmartContracts.ReflectionExecutor.Exceptions;
+using Stratis.SmartContracts.ReflectionExecutor.Serialization;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Tests
@@ -19,26 +20,19 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
     public sealed class SmartContractTransactionExecutorTests
     {
         private readonly IKeyEncodingStrategy keyEncodingStrategy;
-<<<<<<< HEAD
         private readonly SmartContractCarrierSerializer carrierSerializer;
-=======
         private readonly ILoggerFactory loggerFactory;
->>>>>>> master
         private readonly Network network;
         private readonly ContractStateRepositoryRoot stateRepository;
 
         public SmartContractTransactionExecutorTests()
         {
             this.keyEncodingStrategy = BasicKeyEncodingStrategy.Default;
-<<<<<<< HEAD
             this.carrierSerializer = new SmartContractCarrierSerializer(new MethodParameterSerializer());
-=======
             this.loggerFactory = new ExtendedLoggerFactory();
             this.loggerFactory.AddConsoleWithFilters();
-
             this.network = Network.SmartContractsRegTest;
             this.stateRepository = new ContractStateRepositoryRoot(new NoDeleteSource<byte[], byte[]>(new MemoryDictionarySource()));
->>>>>>> master
         }
 
         [Fact]

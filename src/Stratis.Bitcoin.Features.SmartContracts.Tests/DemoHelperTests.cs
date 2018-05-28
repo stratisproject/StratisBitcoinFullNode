@@ -1,5 +1,5 @@
 ﻿using Stratis.SmartContracts.Core;
-using Stratis.SmartContracts.Core.Compilation;
+using Stratis.SmartContracts.ReflectionExecutor.Compilation;
 using Xunit;
 
 public class DemoHelperTests
