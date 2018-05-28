@@ -72,7 +72,7 @@ namespace Stratis.SmartContracts.Tools.Sct
             }
 
             validationServiceResult.DeterminismValidationResult = new SmartContractDeterminismValidator().Validate(decompilation);
-            validationServiceResult.FormatValidationResult = new SmartContractFormatValidator().Validate(decompilation);
+            validationServiceResult.FormatValidationResult = new SmartContractFormatValidator(ReferencedAssemblyResolver.AllowedAssemblies).Validate(decompilation);
             if (!validationServiceResult.DeterminismValidationResult.IsValid || !validationServiceResult.FormatValidationResult.IsValid)
                 console.WriteLine("Smart Contract failed validation. Run validate [FILE] for more info.");
 
