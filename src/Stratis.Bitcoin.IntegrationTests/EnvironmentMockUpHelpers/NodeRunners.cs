@@ -217,41 +217,6 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
         {
             this.FullNode.Start();
         }
-<<<<<<< HEAD
-
-        public static FullNode BuildFullNode(NodeSettings args, Action<IFullNodeBuilder> callback = null)
-        {
-            FullNode node;
-
-            if (callback != null)
-            {
-                var builder = new FullNodeBuilder().UseNodeSettings(args);
-
-                callback(builder);
-
-                node = (FullNode)builder.Build();
-            }
-            else
-            {
-                node = (FullNode)new FullNodeBuilder()
-                    .UseNodeSettings(args)
-                    .UsePowConsensus()
-                    .UseBlockStore()
-                    .UseMempool()
-                    .AddMining()
-                    .UseWallet()
-                    .AddRPC()
-                    .MockIBD()
-                    .AddSmartContracts()
-                    .UseReflectionVirtualMachine()
-                    .Build();
-            }
-
-            return node;
-        }
-
-=======
->>>>>>> master
     }
 
     public sealed class StratisSmartContractNode : NodeRunner
@@ -275,6 +240,7 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
                 .AddRPC()
                 .MockIBD()
                 .AddSmartContracts()
+                .UseReflectionVirtualMachine()
                 .Build();
         }
 

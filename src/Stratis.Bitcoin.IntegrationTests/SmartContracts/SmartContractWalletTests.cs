@@ -15,8 +15,9 @@ using Stratis.Bitcoin.Features.Wallet.Models;
 using Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers;
 using Stratis.SmartContracts;
 using Stratis.SmartContracts.Core;
-using Stratis.SmartContracts.Core.Compilation;
 using Stratis.SmartContracts.Core.State;
+using Stratis.SmartContracts.ReflectionExecutor;
+using Stratis.SmartContracts.ReflectionExecutor.Compilation;
 using Xunit;
 
 namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
