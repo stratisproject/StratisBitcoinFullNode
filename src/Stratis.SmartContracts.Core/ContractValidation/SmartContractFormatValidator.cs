@@ -6,17 +6,34 @@ using Stratis.Validators.Net.Format;
 
 namespace Stratis.SmartContracts.Core.ContractValidation
 {
-    /// <summary>
-    /// Validates the format of a Smart Contract <see cref="SmartContractDecompilation"/>
-    /// </summary>
-    public class SmartContractFormatValidator : IValidator
+    public class ModuleDefinitionValidator : IModuleDefinitionValidator
     {
-        private static readonly IEnumerable<IModuleDefinitionValidator> ModuleDefinitionValidators = new List<IModuleDefinitionValidator>
+        public ModuleDefinitionValidator(IEnumerable<IModuleDefinitionValidator> moduleDefinitionValidators)
         {
-            new AssemblyReferenceValidator(),
-            new SingleTypeValidator()
-        };
+            // Use a config param here to prevent telescoping constructors
+            this.ModuleDefinitionValidators = moduleDefinitionValidators;
+        }
 
+        private IEnumerable<IModuleDefinitionValidator> ModuleDefinitionValidators { get; }
+
+        public IEnumerable<FormatValidationError> Validate(ModuleDefinition moduleDefinition)
+        {
+            var errors = new List<FormatValidationError>();
+
+            foreach (IModuleDefinitionValidator moduleDefValidator in this.ModuleDefinitionValidators)
+            {
+                errors.AddRange(moduleDefValidator.Validate(moduleDefinition));
+            }
+
+            return errors;
+        }
+    }
+
+    /// <summary>
+    /// Validates the Type definitions contained within a module definition
+    /// </summary>
+    public class SmartContractTypeDefinitionValidator : IModuleDefinitionValidator
+    {
         private static readonly IEnumerable<ITypeDefinitionValidator> TypeDefinitionValidators = new List<ITypeDefinitionValidator>
         {
             new NestedTypeValidator(),
@@ -27,6 +44,33 @@ namespace Stratis.SmartContracts.Core.ContractValidation
             new AsyncValidator()
         };
 
+        public IEnumerable<FormatValidationError> Validate(ModuleDefinition moduleDefinition)
+        {
+            var errors = new List<FormatValidationError>();
+
+            TypeDefinition contractType = moduleDefinition.Types.FirstOrDefault(x => x.FullName != "<Module>");
+
+            foreach (ITypeDefinitionValidator typeDefValidator in TypeDefinitionValidators)
+            {
+                errors.AddRange(typeDefValidator.Validate(contractType));
+            }
+
+            return errors;
+        }
+    }
+
+    /// <summary>
+    /// Validates the format of a Smart Contract <see cref="SmartContractDecompilation"/>
+    /// </summary>
+    public class SmartContractFormatValidator : IValidator
+    {
+        private static readonly IEnumerable<IModuleDefinitionValidator> ModuleDefinitionValidators = new List<IModuleDefinitionValidator>
+        {
+            new AssemblyReferenceValidator(),
+            new SingleTypeValidator(),
+            new SmartContractTypeDefinitionValidator()
+        };
+
         public ValidationResult Validate(ModuleDefinition moduleDefinition)
         {
             var errors = new List<FormatValidationError>();
@@ -34,13 +78,6 @@ namespace Stratis.SmartContracts.Core.ContractValidation
             foreach (IModuleDefinitionValidator moduleDefValidator in ModuleDefinitionValidators)
             {
                 errors.AddRange(moduleDefValidator.Validate(moduleDefinition));
-            }
-
-            var contractType = moduleDefinition.Types.FirstOrDefault(x => x.FullName != "<Module>");
-
-            foreach (ITypeDefinitionValidator typeDefValidator in TypeDefinitionValidators)
-            {
-                errors.AddRange(typeDefValidator.Validate(contractType));
             }
 
             return new ValidationResult(errors);
