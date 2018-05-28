@@ -1,5 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.Text;
+using Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Consensus.Rules;
 using Stratis.Bitcoin.Utilities.ValidationAttributes;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Models
@@ -33,10 +34,10 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Models
         [Required(ErrorMessage = "A password is required.")]
         public string Password { get; set; }
 
-        //[Range(GasBudgetRule.GasPriceMinimum, GasBudgetRule.GasPriceMaximum)]
+        [Range(SmartContractFormatRule.GasPriceMinimum, SmartContractFormatRule.GasPriceMaximum)]
         public string GasPrice { get; set; }
 
-        //[Range(GasBudgetRule.GasLimitMinimum, GasBudgetRule.GasLimitMaximum)]
+        [Range(SmartContractFormatRule.GasLimitMinimum, SmartContractFormatRule.GasLimitMaximum)]
         public string GasLimit { get; set; }
 
         [Required(ErrorMessage = "Sender is required.")]
