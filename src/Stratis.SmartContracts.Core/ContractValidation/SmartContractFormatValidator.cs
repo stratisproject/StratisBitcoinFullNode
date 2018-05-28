@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
-using Stratis.SmartContracts.Core.Compilation;
+using System.Linq;
+using Mono.Cecil;
 using Stratis.Validators.Net;
 using Stratis.Validators.Net.Format;
 
@@ -26,18 +27,20 @@ namespace Stratis.SmartContracts.Core.ContractValidation
             new AsyncValidator()
         };
 
-        public ValidationResult Validate(SmartContractDecompilation decompilation)
+        public ValidationResult Validate(ModuleDefinition moduleDefinition)
         {
             var errors = new List<FormatValidationError>();
 
             foreach (IModuleDefinitionValidator moduleDefValidator in ModuleDefinitionValidators)
             {
-                errors.AddRange(moduleDefValidator.Validate(decompilation.ModuleDefinition));
+                errors.AddRange(moduleDefValidator.Validate(moduleDefinition));
             }
+
+            var contractType = moduleDefinition.Types.FirstOrDefault(x => x.FullName != "<Module>");
 
             foreach (ITypeDefinitionValidator typeDefValidator in TypeDefinitionValidators)
             {
-                errors.AddRange(typeDefValidator.Validate(decompilation.ContractType));
+                errors.AddRange(typeDefValidator.Validate(contractType));
             }
 
             return new ValidationResult(errors);

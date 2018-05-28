@@ -47,7 +47,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             byte[] assemblyBytes = compilationResult.Compilation;
             SmartContractDecompilation decomp = SmartContractDecompiler.GetModuleDefinition(assemblyBytes);
-            ValidationResult result = this.validator.Validate(decomp);
+            ValidationResult result = this.validator.Validate(decomp.ModuleDefinition);
 
             Assert.True(result.IsValid);
         }
@@ -66,7 +66,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             byte[] assemblyBytes = compilationResult.Compilation;
             SmartContractDecompilation decomp = SmartContractDecompiler.GetModuleDefinition(assemblyBytes);
-            ValidationResult result = this.validator.Validate(decomp);
+            ValidationResult result = this.validator.Validate(decomp.ModuleDefinition);
             Assert.False(result.IsValid);
         }
 
@@ -84,7 +84,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             byte[] assemblyBytes = compilationResult.Compilation;
             SmartContractDecompilation decomp = SmartContractDecompiler.GetModuleDefinition(assemblyBytes);
-            ValidationResult result = this.validator.Validate(decomp);
+            ValidationResult result = this.validator.Validate(decomp.ModuleDefinition);
 
             Assert.False(result.IsValid);
         }
@@ -103,7 +103,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             byte[] assemblyBytes = SmartContractCompiler.Compile(adjustedSource).Compilation;
             SmartContractDecompilation decomp = SmartContractDecompiler.GetModuleDefinition(assemblyBytes);
-            ValidationResult result = this.validator.Validate(decomp);
+            ValidationResult result = this.validator.Validate(decomp.ModuleDefinition);
             Assert.False(result.IsValid);
         }
 
@@ -117,7 +117,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             byte[] assemblyBytes = SmartContractCompiler.Compile(adjustedSource).Compilation;
             SmartContractDecompilation decomp = SmartContractDecompiler.GetModuleDefinition(assemblyBytes);
-            ValidationResult result = this.validator.Validate(decomp);
+            ValidationResult result = this.validator.Validate(decomp.ModuleDefinition);
             Assert.False(result.IsValid);
         }
 
@@ -168,7 +168,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             byte[] assemblyBytes = compilationResult.Compilation;
             SmartContractDecompilation decomp = SmartContractDecompiler.GetModuleDefinition(assemblyBytes);
-            ValidationResult result = this.validator.Validate(decomp);
+            ValidationResult result = this.validator.Validate(decomp.ModuleDefinition);
 
             Assert.False(result.IsValid);
         }
@@ -193,7 +193,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             byte[] assemblyBytes = SmartContractCompiler.Compile(adjustedSource).Compilation;
             SmartContractDecompilation decomp = SmartContractDecompiler.GetModuleDefinition(assemblyBytes);
-            ValidationResult result = this.validator.Validate(decomp);
+            ValidationResult result = this.validator.Validate(decomp.ModuleDefinition);
             Assert.True(result.IsValid);
         }
 
@@ -204,7 +204,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             byte[] assemblyBytes = SmartContractCompiler.Compile(adjustedSource).Compilation;
             SmartContractDecompilation decomp = SmartContractDecompiler.GetModuleDefinition(assemblyBytes);
-            ValidationResult result = this.validator.Validate(decomp);
+            ValidationResult result = this.validator.Validate(decomp.ModuleDefinition);
             Assert.True(result.IsValid);
         }
 
@@ -222,7 +222,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             byte[] assemblyBytes = compilationResult.Compilation;
             SmartContractDecompilation decomp = SmartContractDecompiler.GetModuleDefinition(assemblyBytes);
-            ValidationResult result = this.validator.Validate(decomp);
+            ValidationResult result = this.validator.Validate(decomp.ModuleDefinition);
             Assert.False(result.IsValid);
         }
 
@@ -240,7 +240,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             byte[] assemblyBytes = compilationResult.Compilation;
             SmartContractDecompilation decomp = SmartContractDecompiler.GetModuleDefinition(assemblyBytes);
-            ValidationResult result = this.validator.Validate(decomp);
+            ValidationResult result = this.validator.Validate(decomp.ModuleDefinition);
             Assert.False(result.IsValid);
         }
 
@@ -254,7 +254,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             byte[] assemblyBytes = compilationResult.Compilation;
             SmartContractDecompilation decomp = SmartContractDecompiler.GetModuleDefinition(assemblyBytes);
-            ValidationResult result = this.validator.Validate(decomp);
+            ValidationResult result = this.validator.Validate(decomp.ModuleDefinition);
             Assert.False(result.IsValid);
         }
 
@@ -272,7 +272,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             byte[] assemblyBytes = compilationResult.Compilation;
             SmartContractDecompilation decomp = SmartContractDecompiler.GetModuleDefinition(assemblyBytes);
-            ValidationResult result = this.validator.Validate(decomp);
+            ValidationResult result = this.validator.Validate(decomp.ModuleDefinition);
             Assert.False(result.IsValid);
         }
 
@@ -286,7 +286,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             byte[] assemblyBytes = compilationResult.Compilation;
             SmartContractDecompilation decomp = SmartContractDecompiler.GetModuleDefinition(assemblyBytes);
-            ValidationResult result = this.validator.Validate(decomp);
+            ValidationResult result = this.validator.Validate(decomp.ModuleDefinition);
             Assert.False(result.IsValid);
         }
 
@@ -300,7 +300,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             byte[] assemblyBytes = compilationResult.Compilation;
             SmartContractDecompilation decomp = SmartContractDecompiler.GetModuleDefinition(assemblyBytes);
-            ValidationResult result = this.validator.Validate(decomp);
+            ValidationResult result = this.validator.Validate(decomp.ModuleDefinition);
             Assert.False(result.IsValid);
         }
 
@@ -316,7 +316,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             byte[] assemblyBytes = compilationResult.Compilation;
             SmartContractDecompilation decomp = SmartContractDecompiler.GetModuleDefinition(assemblyBytes);
-            ValidationResult result = this.validator.Validate(decomp);
+            ValidationResult result = this.validator.Validate(decomp.ModuleDefinition);
             Assert.False(result.IsValid);
         }
 
@@ -333,7 +333,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             byte[] assemblyBytes = compilationResult.Compilation;
             SmartContractDecompilation decomp = SmartContractDecompiler.GetModuleDefinition(assemblyBytes);
-            ValidationResult result = this.validator.Validate(decomp);
+            ValidationResult result = this.validator.Validate(decomp.ModuleDefinition);
             Assert.True(result.IsValid);
         }
 
@@ -414,7 +414,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             byte[] assemblyBytes = compilationResult.Compilation;
             SmartContractDecompilation decomp = SmartContractDecompiler.GetModuleDefinition(assemblyBytes);
-            ValidationResult result = this.validator.Validate(decomp);
+            ValidationResult result = this.validator.Validate(decomp.ModuleDefinition);
             Assert.True(result.IsValid);
         }
 
@@ -430,7 +430,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             byte[] assemblyBytes = compilationResult.Compilation;
             SmartContractDecompilation decomp = SmartContractDecompiler.GetModuleDefinition(assemblyBytes);
-            ValidationResult result = this.validator.Validate(decomp);
+            ValidationResult result = this.validator.Validate(decomp.ModuleDefinition);
             Assert.True(result.IsValid);
         }
 
@@ -446,7 +446,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             byte[] assemblyBytes = compilationResult.Compilation;
             SmartContractDecompilation decomp = SmartContractDecompiler.GetModuleDefinition(assemblyBytes);
-            ValidationResult result = this.validator.Validate(decomp);
+            ValidationResult result = this.validator.Validate(decomp.ModuleDefinition);
             Assert.False(result.IsValid);
         }
 
@@ -465,7 +465,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             byte[] assemblyBytes = compilationResult.Compilation;
             SmartContractDecompilation decomp = SmartContractDecompiler.GetModuleDefinition(assemblyBytes);
-            ValidationResult result = this.validator.Validate(decomp);
+            ValidationResult result = this.validator.Validate(decomp.ModuleDefinition);
             Assert.False(result.IsValid);
         }    
 
@@ -485,7 +485,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             byte[] assemblyBytes = compilationResult.Compilation;
             SmartContractDecompilation decomp = SmartContractDecompiler.GetModuleDefinition(assemblyBytes);
-            ValidationResult result = this.validator.Validate(decomp);
+            ValidationResult result = this.validator.Validate(decomp.ModuleDefinition);
             Assert.False(result.IsValid);
         }
 
@@ -503,7 +503,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             byte[] assemblyBytes = compilationResult.Compilation;
             SmartContractDecompilation decomp = SmartContractDecompiler.GetModuleDefinition(assemblyBytes);
-            ValidationResult result = this.validator.Validate(decomp);
+            ValidationResult result = this.validator.Validate(decomp.ModuleDefinition);
             Assert.False(result.IsValid);
         }
 
@@ -572,7 +572,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             byte[] assemblyBytes = compilationResult.Compilation;
             SmartContractDecompilation decomp = SmartContractDecompiler.GetModuleDefinition(assemblyBytes);
-            ValidationResult result = this.validator.Validate(decomp);
+            ValidationResult result = this.validator.Validate(decomp.ModuleDefinition);
             Assert.True(result.IsValid);
         }
 
@@ -601,7 +601,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             byte[] assemblyBytes = compilationResult.Compilation;
             SmartContractDecompilation decomp = SmartContractDecompiler.GetModuleDefinition(assemblyBytes);
-            ValidationResult result = this.validator.Validate(decomp);
+            ValidationResult result = this.validator.Validate(decomp.ModuleDefinition);
             Assert.False(result.IsValid);
             Assert.Contains(result.Errors, e => e.Message.Contains("System.DateTime"));
             Assert.Contains(result.Errors, e => e.Message.Contains("System.Single"));
@@ -640,7 +640,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             Assert.True(compilationResult.Success);
 
             SmartContractDecompilation decompilation = SmartContractDecompiler.GetModuleDefinition(compilationResult.Compilation);
-            ValidationResult result = this.validator.Validate(decompilation);
+            ValidationResult result = this.validator.Validate(decompilation.ModuleDefinition);
             Assert.True(result.IsValid);
         }
 
@@ -714,7 +714,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             byte[] assemblyBytes = compilationResult.Compilation;
             SmartContractDecompilation decomp = SmartContractDecompiler.GetModuleDefinition(assemblyBytes);
-            ValidationResult result = this.validator.Validate(decomp);
+            ValidationResult result = this.validator.Validate(decomp.ModuleDefinition);
 
             Assert.True(result.IsValid);
         }
@@ -735,7 +735,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             byte[] assemblyBytes = compilationResult.Compilation;
             SmartContractDecompilation decomp = SmartContractDecompiler.GetModuleDefinition(assemblyBytes);
-            ValidationResult result = this.validator.Validate(decomp);
+            ValidationResult result = this.validator.Validate(decomp.ModuleDefinition);
             Assert.False(result.IsValid);
         }
 
@@ -759,7 +759,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             byte[] assemblyBytes = compilationResult.Compilation;
             SmartContractDecompilation decomp = SmartContractDecompiler.GetModuleDefinition(assemblyBytes);
-            ValidationResult result = this.validator.Validate(decomp);
+            ValidationResult result = this.validator.Validate(decomp.ModuleDefinition);
             Assert.False(result.IsValid);
         }
 
@@ -778,7 +778,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             byte[] assemblyBytes = compilationResult.Compilation;
             SmartContractDecompilation decomp = SmartContractDecompiler.GetModuleDefinition(assemblyBytes);
-            ValidationResult result = this.validator.Validate(decomp);
+            ValidationResult result = this.validator.Validate(decomp.ModuleDefinition);
             Assert.True(result.IsValid);
         }
     }

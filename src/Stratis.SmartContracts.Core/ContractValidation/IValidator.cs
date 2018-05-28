@@ -1,4 +1,4 @@
-﻿using Stratis.SmartContracts.Core.Compilation;
+﻿using Mono.Cecil;
 using Stratis.Validators.Net;
 
 namespace Stratis.SmartContracts.Core.ContractValidation
@@ -11,6 +11,6 @@ namespace Stratis.SmartContracts.Core.ContractValidation
         /// All methods with an empty body will be ignored.
         /// </para>
         /// </summary>
-        ValidationResult Validate(SmartContractDecompilation decompilation);
+        ValidationResult Validate(ModuleDefinition moduleDefinition);
     }
 }
