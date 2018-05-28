@@ -115,6 +115,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Stratis.SmartContracts.Temp
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.ModuleValidation.Net", "Stratis.ModuleValidation.Net\Stratis.ModuleValidation.Net.csproj", "{A69EB01E-E8A1-4296-8611-AE498EDE8A59}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Stratis.SmartContracts.Core.Validation", "Stratis.SmartContracts.Core.Validation\Stratis.SmartContracts.Core.Validation.csproj", "{A3F01D4B-3DF7-4798-8876-0B71E512DE66}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -301,6 +303,10 @@ Global
 		{A69EB01E-E8A1-4296-8611-AE498EDE8A59}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A69EB01E-E8A1-4296-8611-AE498EDE8A59}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A69EB01E-E8A1-4296-8611-AE498EDE8A59}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A3F01D4B-3DF7-4798-8876-0B71E512DE66}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A3F01D4B-3DF7-4798-8876-0B71E512DE66}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A3F01D4B-3DF7-4798-8876-0B71E512DE66}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A3F01D4B-3DF7-4798-8876-0B71E512DE66}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -345,6 +351,7 @@ Global
 		{7DBD1589-98C9-4454-97B7-601518A1D142} = {1B9A916F-DDAC-4675-B424-EDEDC1A58231}
 		{23A4582D-D384-4529-929B-DD2C347DF283} = {BBE2AB92-3C85-408A-BEB4-40B9D4C7BE56}
 		{A69EB01E-E8A1-4296-8611-AE498EDE8A59} = {1B9A916F-DDAC-4675-B424-EDEDC1A58231}
+		{A3F01D4B-3DF7-4798-8876-0B71E512DE66} = {1B9A916F-DDAC-4675-B424-EDEDC1A58231}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {6C780ABA-5872-4B83-AD3F-A5BD423AD907}
