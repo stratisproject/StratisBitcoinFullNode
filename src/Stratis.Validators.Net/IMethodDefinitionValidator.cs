@@ -5,6 +5,6 @@ namespace Stratis.Validators.Net
 {
     public interface IMethodDefinitionValidator
     {
-        IEnumerable<FormatValidationError> Validate(MethodDefinition method);
+        IEnumerable<ValidationResult> Validate(MethodDefinition method);
     }
 }

@@ -18,12 +18,12 @@ namespace Stratis.SmartContracts.Core.ContractValidation
             typeof(System.Runtime.CompilerServices.TaskAwaiter).FullName
         };
 
-        public IEnumerable<FormatValidationError> Validate(MethodDefinition method)
+        public IEnumerable<ValidationResult> Validate(MethodDefinition method)
         {
             if (method.Body?.Instructions == null)
-                return Enumerable.Empty<FormatValidationError>();
+                return Enumerable.Empty<ValidationResult>();
 
-            var errors = new List<FormatValidationError>();
+            var errors = new List<ValidationResult>();
 
             IEnumerable<TypeReference> typeReferences = method.Body.Instructions
                 .Where(i => i.OpCode == OpCodes.Initobj)
@@ -34,7 +34,7 @@ namespace Stratis.SmartContracts.Core.ContractValidation
             {
                 if (BlacklistedTypes.Any(t => typeReference.FullName.Contains(t)))
                 {
-                    errors.Add(new FormatValidationError(
+                    errors.Add(new ValidationResult(
                         method,
                         ErrorType,
                         $"{method.FullName} is invalid [{ErrorType} {typeReference.FullName}]"

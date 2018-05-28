@@ -9,17 +9,17 @@ namespace Stratis.Validators.Net.Format
     /// </summary>
     public class NamespaceValidator : ITypeDefinitionValidator
     {
-        public IEnumerable<FormatValidationError> Validate(TypeDefinition type)
+        public IEnumerable<ValidationResult> Validate(TypeDefinition type)
         {            
             if (type != null && type.Namespace != "")
             {
-                return new List<FormatValidationError>
+                return new List<ValidationResult>
                 {
-                    new FormatValidationError("Class must not have a namespace.")
+                    new ValidationResult("Class must not have a namespace.")
                 };
             }
 
-            return Enumerable.Empty<FormatValidationError>();
+            return Enumerable.Empty<ValidationResult>();
         }
     }
 }

@@ -23,7 +23,7 @@ namespace Stratis.SmartContracts.Tools.Sct.Report
 
         public bool DeterminismValid { get; set; }
 
-        public List<FormatValidationError> DeterminismValidationErrors { get; set; }
+        public List<ValidationResult> DeterminismValidationErrors { get; set; }
         
         public List<Warning> Warnings { get; set; }
     }

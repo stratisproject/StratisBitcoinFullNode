@@ -6,16 +6,16 @@ namespace Stratis.SmartContracts.Core.ContractValidation
 {
     public sealed class SmartContractValidationResult
     {
-        public List<FormatValidationError> Errors { get; private set; }
+        public List<ValidationResult> Errors { get; private set; }
 
         public bool IsValid { get { return !this.Errors.Any(); } }
 
         public SmartContractValidationResult()
         {
-            this.Errors = new List<FormatValidationError>();
+            this.Errors = new List<ValidationResult>();
         }
 
-        public SmartContractValidationResult(List<FormatValidationError> errors)
+        public SmartContractValidationResult(List<ValidationResult> errors)
         {
             this.Errors = errors;
         }

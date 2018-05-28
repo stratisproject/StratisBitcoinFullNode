@@ -358,7 +358,7 @@ namespace Stratis.SmartContracts.Core.ContractValidation
             "System.Runtime.InteropServices.WindowsRuntime.IRestrictedErrorInfo System.Runtime.InteropServices.WindowsRuntime.UnsafeNativeMethods::GetRestrictedErrorInfo()"
         };
 
-        public IEnumerable<FormatValidationError> Validate(MethodDefinition method)
+        public IEnumerable<ValidationResult> Validate(MethodDefinition method)
         {
             foreach (Mono.Cecil.Cil.Instruction instruction in method.Body.Instructions)
             {
@@ -366,9 +366,9 @@ namespace Stratis.SmartContracts.Core.ContractValidation
                 {
                     if (RedLightMethods.Contains(methodReference.FullName))
                     {
-                        return new List<FormatValidationError>
+                        return new List<ValidationResult>
                         {
-                            new FormatValidationError(
+                            new ValidationResult(
                                 method.Name,
                                 method.FullName,
                                 ErrorType,
@@ -378,7 +378,7 @@ namespace Stratis.SmartContracts.Core.ContractValidation
                 }
             }
 
-            return Enumerable.Empty<FormatValidationError>();
+            return Enumerable.Empty<ValidationResult>();
         }
     }
 }

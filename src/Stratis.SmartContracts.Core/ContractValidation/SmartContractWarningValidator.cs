@@ -17,7 +17,7 @@ namespace Stratis.SmartContracts.Core.ContractValidation
 
         public SmartContractValidationResult Validate(SmartContractDecompilation decompilation)
         {
-            var warnings = new List<FormatValidationError>();
+            var warnings = new List<ValidationResult>();
             var contractType = decompilation.ModuleDefinition.Types.FirstOrDefault(x => x.FullName != "<Module>");
 
             foreach (ITypeDefinitionValidator typeDefinitionValidator in TypeDefinitionValidators)

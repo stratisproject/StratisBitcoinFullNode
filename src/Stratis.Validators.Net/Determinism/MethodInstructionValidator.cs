@@ -38,29 +38,29 @@ namespace Stratis.Validators.Net.Determinism
             OpCodes.Stind_R8
         };
 
-        public IEnumerable<FormatValidationError> Validate(MethodDefinition method)
+        public IEnumerable<ValidationResult> Validate(MethodDefinition method)
         {
             if (method.Body?.Instructions == null)
-                return Enumerable.Empty<FormatValidationError>();
+                return Enumerable.Empty<ValidationResult>();
 
-            var errors = new List<FormatValidationError>();
+            var errors = new List<ValidationResult>();
 
             foreach (Instruction instruction in method.Body.Instructions)
             {
-                IEnumerable<FormatValidationError> instructionValidationResult = ValidateInstruction(method, instruction);
+                IEnumerable<ValidationResult> instructionValidationResult = ValidateInstruction(method, instruction);
                 errors.AddRange(instructionValidationResult);
             }
 
             return errors;
         }
 
-        private static IEnumerable<FormatValidationError> ValidateInstruction(MethodDefinition method, Instruction instruction)
+        private static IEnumerable<ValidationResult> ValidateInstruction(MethodDefinition method, Instruction instruction)
         {
-            var errors = new List<FormatValidationError>();
+            var errors = new List<ValidationResult>();
 
             if (RedLightOpCodes.Contains(instruction.OpCode))
             {
-                errors.Add(new FormatValidationError(
+                errors.Add(new ValidationResult(
                     method.Name,
                     method.FullName,
                     "Float usage",
@@ -72,7 +72,7 @@ namespace Stratis.Validators.Net.Determinism
             {
                 if (RedLightFields.Contains(fieldReference.FullName))
                 {
-                    errors.Add(new FormatValidationError(
+                    errors.Add(new ValidationResult(
                         method.Name,
                         method.FullName,
                         $"Use of {fieldReference.FullName}",

@@ -11,15 +11,15 @@ namespace Stratis.SmartContracts.Core.ContractValidation
     /// </summary>
     public class FieldDefinitionValidator : ITypeDefinitionValidator
     {
-         public IEnumerable<FormatValidationError> Validate(TypeDefinition type)
+         public IEnumerable<ValidationResult> Validate(TypeDefinition type)
          {
-            var errors = new List<FormatValidationError>();
+            var errors = new List<ValidationResult>();
 
              foreach (FieldDefinition field in type.Fields)
              {
                  if (field.HasConstant) continue;
                   
-                 errors.Add(new FormatValidationError(
+                 errors.Add(new ValidationResult(
                      "",
                      "",
                      "Field usage",
@@ -36,29 +36,29 @@ namespace Stratis.SmartContracts.Core.ContractValidation
     /// </summary>
     public class FieldReferenceValidator : IMethodDefinitionValidator
     {
-        public IEnumerable<FormatValidationError> Validate(MethodDefinition method)
+        public IEnumerable<ValidationResult> Validate(MethodDefinition method)
         {
             if (method.Body?.Instructions == null)
-                return Enumerable.Empty<FormatValidationError>();
+                return Enumerable.Empty<ValidationResult>();
 
-            var errors = new List<FormatValidationError>();
+            var errors = new List<ValidationResult>();
 
             foreach (Instruction instruction in method.Body.Instructions)
             {
-                IEnumerable<FormatValidationError> instructionValidationResult = ValidateInstruction(method, instruction);
+                IEnumerable<ValidationResult> instructionValidationResult = ValidateInstruction(method, instruction);
                 errors.AddRange(instructionValidationResult);
             }
 
             return errors;
         }
 
-        private static IEnumerable<FormatValidationError> ValidateInstruction(MethodDefinition method, Instruction instruction)
+        private static IEnumerable<ValidationResult> ValidateInstruction(MethodDefinition method, Instruction instruction)
         {
-            var errors = new List<FormatValidationError>();
+            var errors = new List<ValidationResult>();
 
             if (instruction.Operand is FieldDefinition fieldDefinition)
             {
-                errors.Add(new FormatValidationError(
+                errors.Add(new ValidationResult(
                     method.Name,
                     method.FullName,
                     "Field usage",

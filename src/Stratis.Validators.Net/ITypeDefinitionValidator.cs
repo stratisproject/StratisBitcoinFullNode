@@ -5,6 +5,6 @@ namespace Stratis.Validators.Net
 {
     public interface ITypeDefinitionValidator
     {
-        IEnumerable<FormatValidationError> Validate(TypeDefinition type);
+        IEnumerable<ValidationResult> Validate(TypeDefinition type);
     }
 }

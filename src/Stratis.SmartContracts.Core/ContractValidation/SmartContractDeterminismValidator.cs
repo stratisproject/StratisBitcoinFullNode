@@ -81,8 +81,8 @@ namespace Stratis.SmartContracts.Core.ContractValidation
         /// <inheritdoc/>
         public SmartContractValidationResult Validate(SmartContractDecompilation decompilation)
         {
-            var errors = new List<FormatValidationError>();
-            var visited = new Dictionary<string, List<FormatValidationError>>();
+            var errors = new List<ValidationResult>();
+            var visited = new Dictionary<string, List<ValidationResult>>();
             var contractType = decompilation.ModuleDefinition.Types.FirstOrDefault(x => x.FullName != "<Module>");
 
             List<MethodDefinition> userMethods = contractType.Methods.Where(method => method.Body != null).ToList();
@@ -98,13 +98,13 @@ namespace Stratis.SmartContracts.Core.ContractValidation
         /// <summary>
         /// Validates a user defined method in the smart contract.
         /// </summary>
-        private static void ValidateUserMethod(List<FormatValidationError> errors, Dictionary<string, List<FormatValidationError>> visited, MethodDefinition userMethod)
+        private static void ValidateUserMethod(List<ValidationResult> errors, Dictionary<string, List<ValidationResult>> visited, MethodDefinition userMethod)
         {
             if (!TryAddToVisited(visited, userMethod)) return;
 
             foreach (IMethodDefinitionValidator validator in UserDefinedMethodValidators)
             {
-                IEnumerable<FormatValidationError> validatorResult = validator.Validate(userMethod);
+                IEnumerable<ValidationResult> validatorResult = validator.Validate(userMethod);
                 if (validatorResult.Any())
                 {
                     errors.Add(validatorResult.First());
@@ -116,7 +116,7 @@ namespace Stratis.SmartContracts.Core.ContractValidation
         /// <summary>
         /// Validates all methods referenced inside of a user method.
         /// </summary>
-        private void ValidatedReferencedMethods(List<FormatValidationError> errors, Dictionary<string, List<FormatValidationError>> visited, List<MethodDefinition> userMethods, MethodDefinition userMethod)
+        private void ValidatedReferencedMethods(List<ValidationResult> errors, Dictionary<string, List<ValidationResult>> visited, List<MethodDefinition> userMethods, MethodDefinition userMethod)
         {
             foreach (MethodDefinition referencedMethod in GetReferencedMethods(userMethod))
             {
@@ -132,7 +132,7 @@ namespace Stratis.SmartContracts.Core.ContractValidation
         /// <summary>
         /// Recursively validates all methods referenced inside of a referenced method.
         /// </summary>
-        private static bool ValidateReferencedMethod(Dictionary<string, List<FormatValidationError>> visited, MethodDefinition userMethod, MethodDefinition referencedMethod)
+        private static bool ValidateReferencedMethod(Dictionary<string, List<ValidationResult>> visited, MethodDefinition userMethod, MethodDefinition referencedMethod)
         {
             if (TryAddToVisited(visited, referencedMethod))
             {
@@ -145,7 +145,7 @@ namespace Stratis.SmartContracts.Core.ContractValidation
 
                 foreach (IMethodDefinitionValidator validator in NonUserMethodValidators)
                 {
-                    List<FormatValidationError> result = validator.Validate(referencedMethod).ToList();
+                    List<ValidationResult> result = validator.Validate(referencedMethod).ToList();
                     if (result.Any())
                     {
                         visited[referencedMethod.FullName] = result;
@@ -185,13 +185,13 @@ namespace Stratis.SmartContracts.Core.ContractValidation
         /// </summary>
         /// <param name="visited"></param>
         /// <param name="method"></param>
-        private static bool TryAddToVisited(Dictionary<string, List<FormatValidationError>> visited, MethodDefinition method)
+        private static bool TryAddToVisited(Dictionary<string, List<ValidationResult>> visited, MethodDefinition method)
         {
             if (visited.ContainsKey(method.FullName))
                 return false;
             else
             {
-                visited.Add(method.FullName, new List<FormatValidationError>());
+                visited.Add(method.FullName, new List<ValidationResult>());
                 return true;
             }
         }
@@ -202,9 +202,9 @@ namespace Stratis.SmartContracts.Core.ContractValidation
         /// </summary>
         /// <param name="userMethod">The containing method.</param>
         /// <param name="referencedMethod">The method that is non-deterministic in the containing method.</param>
-        public static FormatValidationError NonDeterministicError(MethodDefinition userMethod, MethodDefinition referencedMethod)
+        public static ValidationResult NonDeterministicError(MethodDefinition userMethod, MethodDefinition referencedMethod)
         {
-            return new FormatValidationError(userMethod, NonDeterministicMethodReference, $"{referencedMethod.FullName} is non-deterministic.");
+            return new ValidationResult(userMethod, NonDeterministicMethodReference, $"{referencedMethod.FullName} is non-deterministic.");
         }
     }
 }

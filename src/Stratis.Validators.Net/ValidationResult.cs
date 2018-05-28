@@ -2,7 +2,7 @@
 
 namespace Stratis.Validators.Net
 {
-    public class FormatValidationError
+    public class ValidationResult
     {
         public string MethodName { get; set; }
 
@@ -12,12 +12,12 @@ namespace Stratis.Validators.Net
 
         public string ErrorType { get; set; }
 
-        public FormatValidationError(string message)
+        public ValidationResult(string message)
         {
             this.Message = message;
         }
 
-        public FormatValidationError(MethodDefinition methodDefinition, string errorType, string message)
+        public ValidationResult(MethodDefinition methodDefinition, string errorType, string message)
             : this(message)
         {
             this.MethodFullName = methodDefinition.FullName;
@@ -25,7 +25,7 @@ namespace Stratis.Validators.Net
             this.ErrorType = errorType;
         }
 
-        public FormatValidationError(string methodName, string methodFullName, string errorType, string message)
+        public ValidationResult(string methodName, string methodFullName, string errorType, string message)
             : this(message)
         {
             this.MethodName = methodName;

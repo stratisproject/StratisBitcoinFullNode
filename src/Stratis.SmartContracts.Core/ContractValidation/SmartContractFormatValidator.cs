@@ -17,9 +17,9 @@ namespace Stratis.SmartContracts.Core.ContractValidation
 
         private IEnumerable<IModuleDefinitionValidator> ModuleDefinitionValidators { get; }
 
-        public IEnumerable<FormatValidationError> Validate(ModuleDefinition moduleDefinition)
+        public IEnumerable<ValidationResult> Validate(ModuleDefinition moduleDefinition)
         {
-            var errors = new List<FormatValidationError>();
+            var errors = new List<ValidationResult>();
 
             foreach (IModuleDefinitionValidator moduleDefValidator in this.ModuleDefinitionValidators)
             {
@@ -45,9 +45,9 @@ namespace Stratis.SmartContracts.Core.ContractValidation
             new AsyncValidator()
         };
 
-        public IEnumerable<FormatValidationError> Validate(ModuleDefinition moduleDefinition)
+        public IEnumerable<ValidationResult> Validate(ModuleDefinition moduleDefinition)
         {
-            var errors = new List<FormatValidationError>();
+            var errors = new List<ValidationResult>();
 
             TypeDefinition contractType = moduleDefinition.Types.FirstOrDefault(x => x.FullName != "<Module>");
 
@@ -74,7 +74,7 @@ namespace Stratis.SmartContracts.Core.ContractValidation
 
         public SmartContractValidationResult Validate(SmartContractDecompilation decompilation)
         {
-            var errors = new List<FormatValidationError>();
+            var errors = new List<ValidationResult>();
 
             foreach (IModuleDefinitionValidator moduleDefValidator in ModuleDefinitionValidators)
             {

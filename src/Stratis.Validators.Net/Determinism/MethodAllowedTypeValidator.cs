@@ -18,13 +18,13 @@ namespace Stratis.Validators.Net.Determinism
             "System.Environment"
         };
 
-        public IEnumerable<FormatValidationError> Validate(MethodDefinition method)
+        public IEnumerable<ValidationResult> Validate(MethodDefinition method)
         {
             if (RedLightTypes.Contains(method.DeclaringType.FullName))
             {
-                return new List<FormatValidationError>
+                return new List<ValidationResult>
                 {
-                    new FormatValidationError(
+                    new ValidationResult(
                         method.Name,
                         method.FullName,
                         ErrorType,
@@ -32,7 +32,7 @@ namespace Stratis.Validators.Net.Determinism
                 };
             }
 
-            return Enumerable.Empty<FormatValidationError>();
+            return Enumerable.Empty<ValidationResult>();
         }
     }
 }

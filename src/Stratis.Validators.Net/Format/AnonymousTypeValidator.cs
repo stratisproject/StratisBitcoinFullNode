@@ -11,7 +11,7 @@ namespace Stratis.Validators.Net.Format
     {
         public static readonly string ErrorType = "Use Of Anonymous Type";
 
-        public IEnumerable<FormatValidationError> Validate(MethodDefinition method)
+        public IEnumerable<ValidationResult> Validate(MethodDefinition method)
         {
             foreach (Mono.Cecil.Cil.Instruction instruction in method.Body.Instructions)
             {
@@ -19,9 +19,9 @@ namespace Stratis.Validators.Net.Format
                 {
                     if (fieldReference.FullName.Contains("AnonymousType"))
                     {
-                        return new List<FormatValidationError>
+                        return new List<ValidationResult>
                         {
-                            new FormatValidationError(
+                            new ValidationResult(
                                 method.Name,
                                 method.FullName,
                                 ErrorType,
@@ -31,7 +31,7 @@ namespace Stratis.Validators.Net.Format
                 }
             }
 
-            return Enumerable.Empty<FormatValidationError>();
+            return Enumerable.Empty<ValidationResult>();
         }
     }
 }

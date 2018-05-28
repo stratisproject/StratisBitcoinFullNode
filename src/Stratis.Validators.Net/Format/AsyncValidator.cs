@@ -12,7 +12,7 @@ namespace Stratis.Validators.Net.Format
     {
         public static string AsyncStateMachine = typeof(System.Runtime.CompilerServices.IAsyncStateMachine).FullName;
 
-        public IEnumerable<FormatValidationError> Validate(TypeDefinition module)
+        public IEnumerable<ValidationResult> Validate(TypeDefinition module)
         {
             // Async methods each have a compiler-generated nested type implementation of System.Runtime.CompilerServices.IAsyncStateMachine
             if (module.HasNestedTypes)
@@ -21,14 +21,14 @@ namespace Stratis.Validators.Net.Format
 
                 if (nestedTypes.Any(IsAsyncStateMachine))
                 {
-                    return new List<FormatValidationError>
+                    return new List<ValidationResult>
                     {
-                        new FormatValidationError("Async methods are not allowed")
+                        new ValidationResult("Async methods are not allowed")
                     };
                 }
             }
 
-            return Enumerable.Empty<FormatValidationError>();
+            return Enumerable.Empty<ValidationResult>();
         }
 
         private static bool IsAsyncStateMachine(TypeDefinition type)

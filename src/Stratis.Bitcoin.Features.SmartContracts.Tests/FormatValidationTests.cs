@@ -52,7 +52,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         [Fact]
         public void SmartContract_ValidateFormat_HasSingleConstructorSuccess()
         {            
-            IEnumerable<FormatValidationError> validationResult = SingleConstructorValidator.Validate(SingleConstructorDecompilation.ContractType);
+            IEnumerable<ValidationResult> validationResult = SingleConstructorValidator.Validate(SingleConstructorDecompilation.ContractType);
             
             Assert.Empty(validationResult);
         }
@@ -60,7 +60,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         [Fact]
         public void SmartContract_ValidateFormat_HasMultipleConstructorsFails()
         {
-            IEnumerable<FormatValidationError> validationResult = SingleConstructorValidator.Validate(MultipleConstructorDecompilation.ContractType);
+            IEnumerable<ValidationResult> validationResult = SingleConstructorValidator.Validate(MultipleConstructorDecompilation.ContractType);
 
             Assert.Single(validationResult);
             Assert.Equal(SingleConstructorValidator.SingleConstructorError, validationResult.Single().Message);
@@ -69,7 +69,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         [Fact]
         public void SmartContract_ValidateFormat_HasInvalidFirstParamFails()
         {
-            IEnumerable<FormatValidationError> validationResult = ConstructorParamValidator.Validate(InvalidParamDecompilation.ContractType);
+            IEnumerable<ValidationResult> validationResult = ConstructorParamValidator.Validate(InvalidParamDecompilation.ContractType);
             
             Assert.Single(validationResult);
             Assert.Equal(ConstructorParamValidator.InvalidParamError, validationResult.Single().Message);
@@ -91,7 +91,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             var validator = new AsyncValidator();
             TypeDefinition type = AsyncVoidDecompilation.ContractType;
 
-            IEnumerable<FormatValidationError> validationResult = validator.Validate(type);
+            IEnumerable<ValidationResult> validationResult = validator.Validate(type);
 
             Assert.Single(validationResult);
         }
@@ -102,7 +102,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             var validator = new AsyncValidator();
             TypeDefinition type = AsyncTaskDecompilation.ContractType;
 
-            IEnumerable<FormatValidationError> validationResult = validator.Validate(type);
+            IEnumerable<ValidationResult> validationResult = validator.Validate(type);
 
             Assert.Single(validationResult);
         }
@@ -113,7 +113,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             var validator = new AsyncValidator();
             TypeDefinition type = AsyncGenericTaskDecompilation.ContractType;
 
-            IEnumerable<FormatValidationError> validationResult = validator.Validate(type);
+            IEnumerable<ValidationResult> validationResult = validator.Validate(type);
 
             Assert.Single(validationResult);
         }
@@ -124,7 +124,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             var validator = new AsyncValidator();
             TypeDefinition type = ArrayInitializationDecompilation.ContractType;
 
-            IEnumerable<FormatValidationError> validationResult = validator.Validate(type);
+            IEnumerable<ValidationResult> validationResult = validator.Validate(type);
 
             Assert.Empty(validationResult);
         }
@@ -157,7 +157,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             byte[] assemblyBytes = compilationResult.Compilation;
             SmartContractDecompilation decomp = SmartContractDecompiler.GetModuleDefinition(assemblyBytes);
-            IEnumerable<FormatValidationError> result = validator.Validate(decomp.ContractType);
+            IEnumerable<ValidationResult> result = validator.Validate(decomp.ContractType);
 
             Assert.Empty(result);
         }
@@ -196,7 +196,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             byte[] assemblyBytes = compilationResult.Compilation;
             SmartContractDecompilation decomp = SmartContractDecompiler.GetModuleDefinition(assemblyBytes);
-            IEnumerable<FormatValidationError> result = validator.Validate(decomp.ContractType);
+            IEnumerable<ValidationResult> result = validator.Validate(decomp.ContractType);
 
             Assert.Empty(result);
         }
@@ -226,7 +226,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             byte[] assemblyBytes = compilationResult.Compilation;
             SmartContractDecompilation decomp = SmartContractDecompiler.GetModuleDefinition(assemblyBytes);
 
-            IEnumerable<FormatValidationError> result = validator.Validate(decomp.ContractType);
+            IEnumerable<ValidationResult> result = validator.Validate(decomp.ContractType);
 
             Assert.Empty(result);
         }
@@ -256,7 +256,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             byte[] assemblyBytes = compilationResult.Compilation;
             SmartContractDecompilation decomp = SmartContractDecompiler.GetModuleDefinition(assemblyBytes);
 
-            IEnumerable<FormatValidationError> result = validator.Validate(decomp.ContractType);
+            IEnumerable<ValidationResult> result = validator.Validate(decomp.ContractType);
 
             Assert.NotEmpty(result);
         }
@@ -286,7 +286,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             byte[] assemblyBytes = compilationResult.Compilation;
             SmartContractDecompilation decomp = SmartContractDecompiler.GetModuleDefinition(assemblyBytes);
 
-            IEnumerable<FormatValidationError> result = validator.Validate(decomp.ContractType);
+            IEnumerable<ValidationResult> result = validator.Validate(decomp.ContractType);
 
             Assert.NotEmpty(result);
         }

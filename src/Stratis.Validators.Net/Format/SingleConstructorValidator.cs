@@ -14,7 +14,7 @@ namespace Stratis.Validators.Net.Format
 
         public const string SingleConstructorError = "Only a single constructor is allowed";
 
-        public IEnumerable<FormatValidationError> Validate(TypeDefinition typeDef)
+        public IEnumerable<ValidationResult> Validate(TypeDefinition typeDef)
         {
             List<MethodDefinition> constructors = typeDef.GetConstructors()?.ToList();
 
@@ -22,7 +22,7 @@ namespace Stratis.Validators.Net.Format
             {
                 return new[]
                 {
-                    new FormatValidationError(MissingConstructorError)
+                    new ValidationResult(MissingConstructorError)
                 };
             }
 
@@ -30,11 +30,11 @@ namespace Stratis.Validators.Net.Format
             {
                 return new[]
                 {
-                    new FormatValidationError(SingleConstructorError)
+                    new ValidationResult(SingleConstructorError)
                 };
             }
 
-            return Enumerable.Empty<FormatValidationError>();
+            return Enumerable.Empty<ValidationResult>();
         }
     }
 }

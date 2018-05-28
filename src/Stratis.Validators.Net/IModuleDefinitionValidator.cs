@@ -5,6 +5,6 @@ namespace Stratis.Validators.Net
 {
     public interface IModuleDefinitionValidator
     {
-        IEnumerable<FormatValidationError> Validate(ModuleDefinition module);
+        IEnumerable<ValidationResult> Validate(ModuleDefinition module);
     }
 }

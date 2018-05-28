@@ -13,7 +13,7 @@ namespace Stratis.SmartContracts.Core.ContractValidation
     {
         public const string InvalidParamError = "The first constructor argument must be an ISmartContractState object";
 
-        public IEnumerable<FormatValidationError> Validate(TypeDefinition typeDef)
+        public IEnumerable<ValidationResult> Validate(TypeDefinition typeDef)
         {
             MethodDefinition constructor = typeDef
                 .GetConstructors()?
@@ -22,7 +22,7 @@ namespace Stratis.SmartContracts.Core.ContractValidation
             if (constructor == null)
             {
                 // Not up to us to validate this here
-                return Enumerable.Empty<FormatValidationError>();
+                return Enumerable.Empty<ValidationResult>();
             }
 
             ParameterDefinition firstArg = constructor.Parameters.FirstOrDefault();
@@ -31,11 +31,11 @@ namespace Stratis.SmartContracts.Core.ContractValidation
             {
                 return new[]
                 {
-                    new FormatValidationError(InvalidParamError)
+                    new ValidationResult(InvalidParamError)
                 };
             }
 
-            return Enumerable.Empty<FormatValidationError>();
+            return Enumerable.Empty<ValidationResult>();
         }
 
         private static bool IsSmartContractState(ParameterDefinition firstArg)

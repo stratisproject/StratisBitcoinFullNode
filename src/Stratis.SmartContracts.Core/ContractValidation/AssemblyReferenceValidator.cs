@@ -17,14 +17,14 @@ namespace Stratis.SmartContracts.Core.ContractValidation
         /// </summary>
         private static readonly IEnumerable<Assembly> AllowedAssemblies = ReferencedAssemblyResolver.AllowedAssemblies;
 
-        public IEnumerable<FormatValidationError> Validate(ModuleDefinition module)
+        public IEnumerable<ValidationResult> Validate(ModuleDefinition module)
         {
-            var errors = new List<FormatValidationError>();
+            var errors = new List<ValidationResult>();
 
             foreach (AssemblyNameReference assemblyReference in module.AssemblyReferences)
             {
                 if (!AllowedAssemblies.Any(assemblyName => assemblyName.FullName == assemblyReference.FullName))
-                    errors.Add(new FormatValidationError("Assembly " + assemblyReference.FullName + " is not allowed."));
+                    errors.Add(new ValidationResult("Assembly " + assemblyReference.FullName + " is not allowed."));
             }
 
             return errors;

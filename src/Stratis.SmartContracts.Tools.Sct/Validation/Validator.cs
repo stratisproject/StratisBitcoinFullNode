@@ -72,7 +72,7 @@ namespace Stratis.SmartContracts.Tools.Sct.Validation
                 {
                     FileName = file,
                     CompilationErrors = new List<CompilationError>(),
-                    DeterminismValidationErrors = new List<FormatValidationError>(),
+                    DeterminismValidationErrors = new List<ValidationResult>(),
                     FormatValidationErrors = new List<ValidationError>(),
                     Warnings = new List<Warning>()
                 };
