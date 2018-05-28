@@ -10,11 +10,6 @@ namespace Stratis.SmartContracts.Core.ContractValidation
 
         public bool IsValid { get { return !this.Errors.Any(); } }
 
-        public SmartContractValidationResult()
-        {
-            this.Errors = new List<ValidationResult>();
-        }
-
         public SmartContractValidationResult(List<ValidationResult> errors)
         {
             this.Errors = errors;
