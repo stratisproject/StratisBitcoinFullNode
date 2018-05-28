@@ -32,6 +32,8 @@ namespace Stratis.Bitcoin.Configuration
     /// </summary>
     public class NodeSettings
     {
+        const int MaximumAgentPrefixLength = 10;
+
         /// <summary>Version of the protocol the current implementation supports.</summary>
         public const ProtocolVersion SupportedProtocolVersion = ProtocolVersion.SENDHEADERS_VERSION;
 
@@ -76,7 +78,8 @@ namespace Stratis.Bitcoin.Configuration
         {
             get
             {
-                return this.AgentPrefix == null ? this.Agent : $"{this.AgentPrefix.Substring(0, Math.Min(this.AgentPrefix.Length, 10))}-{this.Agent}";
+                return this.AgentPrefix == null ? this.Agent : 
+                    $"{this.AgentPrefix.Substring(0, Math.Min(this.AgentPrefix.Length, MaximumAgentPrefixLength))}-{this.Agent}";
             }
         }
 
@@ -233,7 +236,7 @@ namespace Stratis.Bitcoin.Configuration
         /// <returns>Default node configuration.</returns>
         public static NodeSettings Default(Network network = null, ProtocolVersion protocolVersion = SupportedProtocolVersion)
         {
-            return new NodeSettings(network, protocolVersion, args:new string[0]);
+            return new NodeSettings(network, protocolVersion);
         }
 
         /// <summary>
@@ -374,16 +377,20 @@ namespace Stratis.Bitcoin.Configuration
             builder.AppendLine($"-datadir=<Path>           Path to the data directory. Default {defaults.DataDir}.");
             builder.AppendLine($"-testnet                  Use the testnet chain.");
             builder.AppendLine($"-regtest                  Use the regtestnet chain.");
+            builder.AppendLine($"-agentprefix=<string>     An optional prefix for the node's user agent that will be shared with peers in the version handshake.");
             builder.AppendLine($"-acceptnonstdtxn=<0 or 1> Accept non-standard transactions. Default {(defaults.RequireStandard?1:0)}.");
             builder.AppendLine($"-maxtipage=<number>       Max tip age. Default {network.MaxTipAge}.");
-            builder.AppendLine($"-connect=<ip:port>        Specified node to connect to. Can be specified multiple times.");
-            builder.AppendLine($"-addnode=<ip:port>        Add a node to connect to and attempt to keep the connection open. Can be specified multiple times.");
-            builder.AppendLine($"-whitebind=<ip:port>      Bind to given address and whitelist peers connecting to it. Use [host]:port notation for IPv6. Can be specified multiple times.");
-            builder.AppendLine($"-externalip=<ip>          Specify your own public address.");
             builder.AppendLine($"-synctime=<0 or 1>        Sync with peers. Default 1.");
             builder.AppendLine($"-mintxfee=<number>        Minimum fee rate. Defaults to network specific value.");
             builder.AppendLine($"-fallbackfee=<number>     Fallback fee rate. Defaults to network specific value.");
             builder.AppendLine($"-minrelaytxfee=<number>   Minimum relay fee rate. Defaults to network specific value.");
+
+            // Connection manager settings
+            builder.AppendLine($"-port=<port>              The default network port to connect to. Default { network.DefaultPort }.");
+            builder.AppendLine($"-connect=<ip:port>        Specified node to connect to. Can be specified multiple times.");
+            builder.AppendLine($"-addnode=<ip:port>        Add a node to connect to and attempt to keep the connection open. Can be specified multiple times.");
+            builder.AppendLine($"-whitebind=<ip:port>      Bind to given address and whitelist peers connecting to it. Use [host]:port notation for IPv6. Can be specified multiple times.");
+            builder.AppendLine($"-externalip=<ip>          Specify your own public address.");
             builder.AppendLine($"-bantime=<number>         Number of seconds to keep misbehaving peers from reconnecting. Default {ConnectionManagerSettings.DefaultMisbehavingBantimeSeconds}.");
             builder.AppendLine($"-maxoutboundconnections=<number> The maximum number of outbound connections. Default {ConnectionManagerSettings.DefaultMaxOutboundConnections}.");
 
@@ -400,18 +407,12 @@ namespace Stratis.Bitcoin.Configuration
             var defaults = Default(network:network);
 
             builder.AppendLine("####Node Settings####");
+            builder.AppendLine($"#An optional prefix for the node's user agent that will be shared with peers in the version handshake.");
+            builder.AppendLine($"#agentprefix=<string>");
             builder.AppendLine($"#Accept non-standard transactions. Default {(defaults.RequireStandard?1:0)}.");
             builder.AppendLine($"#acceptnonstdtxn={(defaults.RequireStandard?1:0)}");
             builder.AppendLine($"#Max tip age. Default {network.MaxTipAge}.");
             builder.AppendLine($"#maxtipage={network.MaxTipAge}");
-            builder.AppendLine($"#Specified node to connect to. Can be specified multiple times.");
-            builder.AppendLine($"#connect=<ip:port>");
-            builder.AppendLine($"#Add a node to connect to and attempt to keep the connection open. Can be specified multiple times.");
-            builder.AppendLine($"#addnode=<ip:port>");
-            builder.AppendLine($"#Bind to given address and whitelist peers connecting to it. Use [host]:port notation for IPv6. Can be specified multiple times.");
-            builder.AppendLine($"#whitebind=<ip:port>");
-            builder.AppendLine($"#Specify your own public address.");
-            builder.AppendLine($"#externalip=<ip>");
             builder.AppendLine($"#Sync with peers. Default 1.");
             builder.AppendLine($"#synctime=1");
             builder.AppendLine($"#Minimum fee rate. Defaults to {network.MinTxFee}.");
@@ -420,6 +421,18 @@ namespace Stratis.Bitcoin.Configuration
             builder.AppendLine($"#fallbackfee={network.FallbackFee}");
             builder.AppendLine($"#Minimum relay fee rate. Defaults to {network.MinRelayTxFee}.");
             builder.AppendLine($"#minrelaytxfee={network.MinRelayTxFee}");
+            builder.AppendLine();
+            builder.AppendLine("####ConnectionManager Settings####");
+            builder.AppendLine($"#The default network port to connect to. Default { network.DefaultPort }.");
+            builder.AppendLine($"#port={network.DefaultPort}");
+            builder.AppendLine($"#Specified node to connect to. Can be specified multiple times.");
+            builder.AppendLine($"#connect=<ip:port>");
+            builder.AppendLine($"#Add a node to connect to and attempt to keep the connection open. Can be specified multiple times.");
+            builder.AppendLine($"#addnode=<ip:port>");
+            builder.AppendLine($"#Bind to given address and whitelist peers connecting to it. Use [host]:port notation for IPv6. Can be specified multiple times.");
+            builder.AppendLine($"#whitebind=<ip:port>");
+            builder.AppendLine($"#Specify your own public address.");
+            builder.AppendLine($"#externalip=<ip>");
             builder.AppendLine($"#Number of seconds to keep misbehaving peers from reconnecting. Default {ConnectionManagerSettings.DefaultMisbehavingBantimeSeconds}.");
             builder.AppendLine($"#bantime=<number>");
             builder.AppendLine($"#The maximum number of outbound connections. Default {ConnectionManagerSettings.DefaultMaxOutboundConnections}.");
