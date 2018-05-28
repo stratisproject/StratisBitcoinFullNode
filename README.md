@@ -1,6 +1,6 @@
 # Stratis Smart Contracts in C# - Alpha Relase
 Stratis has engineered the first smart contracts platform built entirely from the ground up in native C# on the .NET framework, the most popular enterprise programming language on the most widely-used enterprise framework.
-# Documentation 
+# Documentation
 Documentation can be found in the below URL.
 https://smartcontractsdocs.stratisplatform.com
 You can also obtain TSTRAT for the Smart Contracts Testnet from our faucet in the below URL.
@@ -10,6 +10,15 @@ For any support and/or development enquires regarding the Stratis Smart Contract
 https://Discord
 
 # Release Notes
+
+v0.9.0
+- Long (UInt64) is now a supported type.
+- Receipts are now generated when smart contracts are executed. The Sct tool also returns the transaction hash that the contract should be deployed inside. With all of this developers can now receive feedback about the outcome of contract creations or calls via the API.
+- Fixed a bug where transactions weren't reaching the mempool when deployed via the Sct tool. This was due to the wallet trying to build transactions using transaction outputs that had previously failed to be included in a block.
+- The methods for storage of types are now more explicit, to clearly demonstrate to developers what is and is not serializable.
+- Gas prices have been adjusted so that storage operations are now relatively more expensive than other operations.
+- Try/catch blocks are no longer allowed inside smart contracts as certain properties of thrown exceptions are non-deterministic.
+- General usability fixes to the command-line tool.
 
 v0.8.2-alpha
 - Significant improvements to the underlying architecture to improve stability
