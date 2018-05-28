@@ -72,7 +72,7 @@ namespace Stratis.SmartContracts.Core.ContractValidation
             new SmartContractTypeDefinitionValidator()
         };
 
-        public ValidationResult Validate(SmartContractDecompilation decompilation)
+        public SmartContractValidationResult Validate(SmartContractDecompilation decompilation)
         {
             var errors = new List<FormatValidationError>();
 
@@ -81,7 +81,7 @@ namespace Stratis.SmartContracts.Core.ContractValidation
                 errors.AddRange(moduleDefValidator.Validate(decompilation.ModuleDefinition));
             }
 
-            return new ValidationResult(errors);
+            return new SmartContractValidationResult(errors);
         }  
     }
 }

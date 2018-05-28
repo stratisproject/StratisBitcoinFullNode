@@ -13,13 +13,13 @@ namespace Stratis.SmartContracts.Core.ContractValidation
             this.validators = validators;
         }
 
-        public ValidationResult Validate(SmartContractDecompilation decompilation)
+        public SmartContractValidationResult Validate(SmartContractDecompilation decompilation)
         {
-            var endResult = new ValidationResult();
+            var endResult = new SmartContractValidationResult();
 
             foreach (ISmartContractValidator validator in this.validators)
             {
-                ValidationResult result = validator.Validate(decompilation);
+                SmartContractValidationResult result = validator.Validate(decompilation);
                 endResult.Errors.AddRange(result.Errors);
             }
             return endResult;

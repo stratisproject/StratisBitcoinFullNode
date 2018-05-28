@@ -84,8 +84,8 @@ namespace Stratis.SmartContracts.Tools.Sct
     public sealed class ValidationServiceResult
     {
         public SmartContractCompilationResult CompilationResult { get; set; }
-        public ValidationResult DeterminismValidationResult { get; set; }
-        public ValidationResult FormatValidationResult { get; set; }
+        public SmartContractValidationResult DeterminismValidationResult { get; set; }
+        public SmartContractValidationResult FormatValidationResult { get; set; }
         public LifecycleResult LifeCycleResult { get; set; }
 
         public bool Success

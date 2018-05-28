@@ -79,7 +79,7 @@ namespace Stratis.SmartContracts.Core.ContractValidation
         public const string NonDeterministicMethodReference = "Non-deterministic method reference.";
 
         /// <inheritdoc/>
-        public ValidationResult Validate(SmartContractDecompilation decompilation)
+        public SmartContractValidationResult Validate(SmartContractDecompilation decompilation)
         {
             var errors = new List<FormatValidationError>();
             var visited = new Dictionary<string, List<FormatValidationError>>();
@@ -92,7 +92,7 @@ namespace Stratis.SmartContracts.Core.ContractValidation
                 ValidatedReferencedMethods(errors, visited, userMethods, userMethod);
             }
 
-            return new ValidationResult(errors);
+            return new SmartContractValidationResult(errors);
         }
 
         /// <summary>

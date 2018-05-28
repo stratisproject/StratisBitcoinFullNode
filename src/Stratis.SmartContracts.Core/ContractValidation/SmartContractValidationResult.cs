@@ -4,18 +4,18 @@ using Stratis.Validators.Net;
 
 namespace Stratis.SmartContracts.Core.ContractValidation
 {
-    public sealed class ValidationResult
+    public sealed class SmartContractValidationResult
     {
         public List<FormatValidationError> Errors { get; private set; }
 
         public bool IsValid { get { return !this.Errors.Any(); } }
 
-        public ValidationResult()
+        public SmartContractValidationResult()
         {
             this.Errors = new List<FormatValidationError>();
         }
 
-        public ValidationResult(List<FormatValidationError> errors)
+        public SmartContractValidationResult(List<FormatValidationError> errors)
         {
             this.Errors = errors;
         }
