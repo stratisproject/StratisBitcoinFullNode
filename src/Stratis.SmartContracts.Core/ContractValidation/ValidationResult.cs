@@ -7,7 +7,7 @@ namespace Stratis.SmartContracts.Core.ContractValidation
     public sealed class ValidationResult
     {
         public List<FormatValidationError> Errors { get; private set; }
-        public Gas GasUnitsUsed { get; set; }
+
         public bool IsValid { get { return !this.Errors.Any(); } }
 
         public ValidationResult()
