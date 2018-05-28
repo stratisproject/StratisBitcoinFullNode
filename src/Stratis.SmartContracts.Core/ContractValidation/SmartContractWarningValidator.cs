@@ -8,7 +8,7 @@ namespace Stratis.SmartContracts.Core.ContractValidation
     /// <summary>
     /// Validates any warn-level issues with a Smart Contract
     /// </summary>
-    public class SmartContractWarningValidator : ISmartContractValidator
+    public class SmartContractWarningValidator : IValidator
     {
         private static readonly IEnumerable<ITypeDefinitionValidator> TypeDefinitionValidators = new List<ITypeDefinitionValidator>
         {

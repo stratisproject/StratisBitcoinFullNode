@@ -2,7 +2,7 @@
 
 namespace Stratis.SmartContracts.Core.ContractValidation
 {
-    public interface ISmartContractValidator
+    public interface IValidator
     {
         /// <summary>
         /// Validate all user defined methods in the contract.

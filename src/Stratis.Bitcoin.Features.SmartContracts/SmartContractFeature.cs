@@ -56,7 +56,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                     .DependOn<MiningFeature>()
                     .FeatureServices(services =>
                     {
-                        SmartContractValidator validator = new SmartContractValidator(new List<ISmartContractValidator>
+                        SmartContractValidator validator = new SmartContractValidator(new List<IValidator>
                         {
                             new SmartContractFormatValidator(),
                             new SmartContractDeterminismValidator()
