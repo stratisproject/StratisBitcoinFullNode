@@ -7,29 +7,6 @@ using Stratis.Validators.Net.Format;
 
 namespace Stratis.SmartContracts.Core.ContractValidation
 {
-    public class ModuleDefinitionValidator : IModuleDefinitionValidator
-    {
-        public ModuleDefinitionValidator(IEnumerable<IModuleDefinitionValidator> moduleDefinitionValidators)
-        {
-            // Use a config param here to prevent telescoping constructors
-            this.ModuleDefinitionValidators = moduleDefinitionValidators;
-        }
-
-        private IEnumerable<IModuleDefinitionValidator> ModuleDefinitionValidators { get; }
-
-        public IEnumerable<ValidationResult> Validate(ModuleDefinition moduleDefinition)
-        {
-            var errors = new List<ValidationResult>();
-
-            foreach (IModuleDefinitionValidator moduleDefValidator in this.ModuleDefinitionValidators)
-            {
-                errors.AddRange(moduleDefValidator.Validate(moduleDefinition));
-            }
-
-            return errors;
-        }
-    }
-
     /// <summary>
     /// Validates the Type definitions contained within a module definition
     /// </summary>

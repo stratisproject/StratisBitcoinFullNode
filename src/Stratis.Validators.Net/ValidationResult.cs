@@ -46,16 +46,7 @@ namespace Stratis.Validators.Net
         }
     }
 
-    public interface IValidationResult
-    {
-        string SubjectName { get; }
-
-        string Message { get; }
-        
-        string ValidationType { get; }
-    }
-
-    public abstract class ValidationResult : IValidationResult
+    public abstract class ValidationResult
     {
         public string SubjectName { get; }
 
