@@ -35,7 +35,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
         protected override void BeforeTest()
         {
             this.sharedSteps = new SharedSteps();
-            this.nodeGroupBuilder = new NodeGroupBuilder();
+            this.nodeGroupBuilder = new NodeGroupBuilder(this.CurrentTest.DisplayName);
         }
 
         protected override void AfterTest()
@@ -86,7 +86,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
             var transactionBuildContext = SharedSteps.CreateTransactionBuildContext(
                 WalletZero,
                 AccountZero,
-                WalletPassword, 
+                WalletPassword,
                 new[] {
                     new Recipient {
                         Amount = Money.COIN * 1,

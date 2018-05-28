@@ -13,7 +13,7 @@ namespace Stratis.SmartContracts.Tools.Sct
     [VersionOption("-v|--version", "v0.0.2")]
     class Program
     {
-        public static int Main(string[] args) => CommandLineApplication.Execute<Program>(args);        
+        public static int Main(string[] args) => CommandLineApplication.Execute<Program>(args);
 
         private int OnExecute(CommandLineApplication app)
         {

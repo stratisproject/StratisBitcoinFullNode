@@ -5,8 +5,11 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using NBitcoin;
 using Stratis.Bitcoin.Base.Deployments;
+using Stratis.Bitcoin.BlockPulling;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Logging;
+using Stratis.Bitcoin.Features.Consensus.CoinViews;
+using Stratis.Bitcoin.Features.Consensus.Interfaces;
 using Stratis.Bitcoin.Features.Consensus.Rules;
 using Stratis.Bitcoin.Utilities;
 using Xunit.Sdk;
@@ -67,6 +70,30 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
     }
 
     /// <summary>
+    /// Test PoS consensus rules for unit tests.
+    /// </summary>
+    public class TestPosConsensusRules : PosConsensusRules
+    {
+        private Mock<IRuleRegistration> ruleRegistration;
+
+        public TestPosConsensusRules(Network network, ILoggerFactory loggerFactory, IDateTimeProvider dateTimeProvider, ConcurrentChain chain, NodeDeployments nodeDeployments, ConsensusSettings consensusSettings, ICheckpoints checkpoints, CoinView uxtoSet, ILookaheadBlockPuller lookaheadBlockPuller, IStakeChain stakeChain, IStakeValidator stakeValidator)
+            : base(network, loggerFactory, dateTimeProvider, chain, nodeDeployments, consensusSettings, checkpoints, uxtoSet, lookaheadBlockPuller, stakeChain, stakeValidator)
+        {
+            this.ruleRegistration = new Mock<IRuleRegistration>();
+        }
+
+        public T RegisterRule<T>() where T : ConsensusRule, new()
+        {
+            T rule = new T();
+            this.ruleRegistration.Setup(r => r.GetRules())
+                .Returns(new List<ConsensusRule>() { rule });
+
+            this.Register(this.ruleRegistration.Object);
+            return rule;
+        }
+    }
+
+    /// <summary>
     /// Factory for creating the test chain.
     /// Much of this logic was taken directly from the embedded TestContext class in MinerTest.cs in the integration tests.
     /// </summary>
@@ -93,7 +120,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
             testRulesContext.Chain = new ConcurrentChain(network);
 
             NodeDeployments deployments = new NodeDeployments(testRulesContext.Network, testRulesContext.Chain);
-            testRulesContext.Consensus = new PowConsensusRules(testRulesContext.Network, testRulesContext.LoggerFactory, testRulesContext.DateTimeProvider, testRulesContext.Chain, deployments, consensusSettings, testRulesContext.Checkpoints).Register(new FullNodeBuilderConsensusExtension.PowConsensusRulesRegistration());
+            testRulesContext.Consensus = new PowConsensusRules(testRulesContext.Network, testRulesContext.LoggerFactory, testRulesContext.DateTimeProvider, testRulesContext.Chain, deployments, consensusSettings, testRulesContext.Checkpoints, new InMemoryCoinView(new uint256()), new Mock<ILookaheadBlockPuller>().Object).Register(new FullNodeBuilderConsensusExtension.PowConsensusRulesRegistration());
 
             return testRulesContext;
         }

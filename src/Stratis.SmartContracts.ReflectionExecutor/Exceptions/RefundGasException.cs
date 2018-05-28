@@ -1,0 +1,9 @@
+﻿using Stratis.SmartContracts.Core.Exceptions;
+
+namespace Stratis.SmartContracts.ReflectionExecutor.Exceptions
+{
+    public sealed class RefundGasException : SmartContractException
+    {
+        public RefundGasException() { }
+    }
+}

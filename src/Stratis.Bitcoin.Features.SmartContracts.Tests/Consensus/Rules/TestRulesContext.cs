@@ -1,8 +1,10 @@
 ﻿using System.IO;
 using System.Runtime.CompilerServices;
 using Microsoft.Extensions.Logging;
+using Moq;
 using NBitcoin;
 using Stratis.Bitcoin.Base.Deployments;
+using Stratis.Bitcoin.BlockPulling;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Features.Consensus;
@@ -13,7 +15,6 @@ using Xunit.Sdk;
 namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
 {
     // Borrowed from Stratis.Bitcoin.Features.Consensus.Tests
-
 
     /// <summary>
     /// Concrete instance of the test chain.
@@ -70,15 +71,18 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
             testRulesContext.Checkpoints = new Checkpoints();
             testRulesContext.Chain = new ConcurrentChain(network);
 
+            var lookAheadBlockPuller = new Mock<ILookaheadBlockPuller>();
+
             NodeDeployments deployments = new NodeDeployments(testRulesContext.Network, testRulesContext.Chain);
-            testRulesContext.Consensus = new PowConsensusRules(testRulesContext.Network, testRulesContext.LoggerFactory, testRulesContext.DateTimeProvider, testRulesContext.Chain, deployments, consensusSettings, testRulesContext.Checkpoints).Register(new FullNodeBuilderConsensusExtension.PowConsensusRulesRegistration());
+            testRulesContext.Consensus = new PowConsensusRules(testRulesContext.Network, testRulesContext.LoggerFactory, testRulesContext.DateTimeProvider, testRulesContext.Chain, deployments, consensusSettings, testRulesContext.Checkpoints, null, lookAheadBlockPuller.Object).Register(new FullNodeBuilderConsensusExtension.PowConsensusRulesRegistration());
 
             return testRulesContext;
         }
 
         public static Block MineBlock(Network network, ConcurrentChain chain)
         {
-            var block = new Block();
+            Block block = network.Consensus.ConsensusFactory.CreateBlock();
+
             var coinbase = new Transaction();
             coinbase.AddInput(TxIn.CreateCoinbase(chain.Height + 1));
             coinbase.AddOutput(new TxOut(Money.Zero, new Key()));
@@ -104,6 +108,5 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
 
             return block;
         }
-
     }
 }

@@ -1,5 +1,4 @@
 ﻿using Stratis.SmartContracts;
-using Stratis.SmartContracts.Core.Backend;
 using Stratis.SmartContracts.Core.Exceptions;
 using Xunit;
 

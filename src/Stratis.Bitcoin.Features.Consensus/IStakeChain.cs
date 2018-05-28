@@ -15,6 +15,6 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <summary>
         /// Set the stake for the given block header.
         /// </summary>
-        void Set(ChainedBlock chainedBlock, BlockStake blockStake);
+        void Set(ChainedHeader chainedHeader, BlockStake blockStake);
     }
 }

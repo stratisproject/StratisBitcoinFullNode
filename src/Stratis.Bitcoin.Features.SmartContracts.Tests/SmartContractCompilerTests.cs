@@ -1,8 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using Microsoft.CodeAnalysis;
-using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.Compilation;
 using Xunit;
 
@@ -40,6 +38,13 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             Assert.Contains(allowedAssemblies, a => a.GetName().Name == "System.Private.CoreLib");
             Assert.Contains(allowedAssemblies, a => a.GetName().Name == "Stratis.SmartContracts");
             Assert.Contains(allowedAssemblies, a => a.GetName().Name == "System.Linq");
+        }
+
+        [Fact]
+        public void SmartContract_Compiler_FailsOnImplicitInvalidAssemblyReference()
+        {
+            SmartContractCompilationResult result = SmartContractCompiler.CompileFile("SmartContracts/InvalidImplicitAssembly.cs");
+            Assert.False(result.Success);
         }
     }
 }

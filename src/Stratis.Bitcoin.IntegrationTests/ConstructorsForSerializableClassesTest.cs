@@ -19,13 +19,14 @@ namespace Stratis.Bitcoin.IntegrationTests
                 typeof(NBitcoin.ExtKey),
                 typeof(NBitcoin.ExtPubKey),
                 typeof(NBitcoin.PubKey),
+                typeof(NBitcoin.PosBlock),
+                typeof(NBitcoin.PosBlockHeader),
+                typeof(NBitcoin.PosTransaction),
                 typeof(NBitcoin.Protocol.CompactVarInt),
-                typeof(NBitcoin.BitcoinCore.StoredBlock),
-                typeof(NBitcoin.BitcoinCore.StoredItem<>)
             };
 
             var types = AppDomain.CurrentDomain.GetAssemblies()
-                .Where(x =>x.FullName.Contains("Stratis") || x.FullName.Contains("NBitcoin"))
+                .Where(x => x.FullName.Contains("Stratis") || x.FullName.Contains("NBitcoin"))
                 .SelectMany(s => s.GetTypes())
                 .Where(p => typeof(IBitcoinSerializable).IsAssignableFrom(p) && !p.IsInterface && p.IsClass);
 

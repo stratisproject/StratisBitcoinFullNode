@@ -1,13 +1,9 @@
-﻿using System;
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using System.IO;
 using System.Net.Http;
-using System.Text;
 using System.Threading.Tasks;
 using McMaster.Extensions.CommandLineUtils;
-using Stratis.SmartContracts.Core;
-using Stratis.SmartContracts.Core.Compilation;
-using Stratis.SmartContracts.Core.ContractValidation;
+using Stratis.SmartContracts.Core.Deployment;
 
 namespace Stratis.SmartContracts.Tools.Sct.Deployment
 {
@@ -19,13 +15,18 @@ namespace Stratis.SmartContracts.Tools.Sct.Deployment
 
         private static readonly string DeploymentResource = "/api/SmartContracts/build-and-send-create";
 
-        [Argument(0, Description = "The source code of the smart contract to deploy",
-            Name = "<File>")]
+        public Deployer()
+        {
+            this.AccountName = "account 0";
+            this.GasPrice = "1";
+            this.GasLimit = "10000";
+        }
+
+        [Argument(0, Description = "The source code of the smart contract to deploy", Name = "<File>")]
         [Required]
         public string InputFile { get; }
 
-        [Argument(1, Description = "The initial node to deploy the smart contract to",
-            Name = "<Node>")]
+        [Argument(1, Description = "The initial node to deploy the smart contract to", Name = "<Node>")]
         [Required]
         [Url]
         public string Node { get; }
@@ -35,27 +36,20 @@ namespace Stratis.SmartContracts.Tools.Sct.Deployment
         public string WalletName { get; }
 
         [Option("-account|--account", CommandOptionType.SingleValue, Description = "Account name")]
-        [Required]
         public string AccountName { get; }
-
-        [Option("-amount|--amount", CommandOptionType.SingleValue, Description = "Amount")]
-        [Required]
-        public string Amount { get; }
 
         [Option("-fee|--feeamount", CommandOptionType.SingleValue, Description = "Fee amount")]
         [Required]
         public string FeeAmount { get; }
 
-        [Option("-p|--password", CommandOptionType.SingleValue, Description = "Password")]
+        [Option("-password|--password", CommandOptionType.SingleValue, Description = "Password")]
         [Required]
         public string Password { get; }
 
         [Option("-gasprice|--gasprice", CommandOptionType.SingleValue, Description = "Gas price")]
-        [Required]
         public string GasPrice { get; }
 
         [Option("-gaslimit|--gaslimit", CommandOptionType.SingleValue, Description = "Gas limit")]
-        [Required]
         public string GasLimit { get; }
 
         [Option("-sender|--sender", CommandOptionType.SingleValue, Description = "Sender address")]
@@ -67,7 +61,9 @@ namespace Stratis.SmartContracts.Tools.Sct.Deployment
 
         private async Task<int> OnExecuteAsync(CommandLineApplication app, IConsole console)
         {
+            console.WriteLine();
             console.WriteLine("Smart Contract Deployer");
+            console.WriteLine();
 
             if (!File.Exists(this.InputFile))
             {
@@ -85,6 +81,7 @@ namespace Stratis.SmartContracts.Tools.Sct.Deployment
             }
 
             console.WriteLine($"Read {this.InputFile} OK");
+            console.WriteLine();
 
             if (string.IsNullOrWhiteSpace(source))
             {
@@ -92,13 +89,14 @@ namespace Stratis.SmartContracts.Tools.Sct.Deployment
                 return 1;
             }
 
-            if (!ValidateFile(this.InputFile, source, console, out SmartContractCompilationResult compilationResult))
-            {
-                console.WriteLine("Smart Contract failed validation. Run validate [FILE] for more info.");
+            ValidationServiceResult validationResult = new ValidatorService().Validate(this.InputFile, source, console, this.Params);
+            if (!validationResult.Success)
                 return 1;
-            }
+            else
+                console.WriteLine("Validation passed!");
 
-            await this.DeployAsync(compilationResult.Compilation, console);
+            await DeployAsync(validationResult.CompilationResult.Compilation, console);
+            console.WriteLine();
 
             return 1;
         }
@@ -110,82 +108,32 @@ namespace Stratis.SmartContracts.Tools.Sct.Deployment
             var model = new BuildCreateContractTransactionRequest();
             model.ContractCode = compilation.ToHexString();
             model.AccountName = this.AccountName;
-            model.Amount = this.Amount;
             model.FeeAmount = this.FeeAmount;
             model.GasPrice = this.GasPrice;
             model.GasLimit = this.GasLimit;
             model.Password = this.Password;
             model.WalletName = this.WalletName;
             model.Sender = this.Sender;
-            model.Parameters = Params;
+            model.Parameters = this.Params;
 
-            var json = NetJSON.NetJSON.Serialize(model);
+            var deployer = new HttpContractDeployer(client, DeploymentResource);
 
-            HttpResponseMessage response = await client.PostAsync(this.GetDeploymentUri(), new StringContent(json, Encoding.UTF8, "application/json"));
+            DeploymentResult response = await deployer.DeployAsync(this.Node, model);
 
-            console.WriteLine("");
+            console.WriteLine(string.Empty);
 
-            if (response.IsSuccessStatusCode)
+            if (response.Success)
             {
-                console.WriteLine("Deployment Success");
-
-                string successJson = await response.Content.ReadAsStringAsync();
-                BuildCreateContractTransactionResponse successResponse =
-                    NetJSON.NetJSON.Deserialize<BuildCreateContractTransactionResponse>(successJson);
-
-                console.WriteLine($"Contract successfully deployed");
-                console.WriteLine($"Address: {successResponse.NewContractAddress}");
-
+                console.WriteLine("Contract creation transaction successful!");
+                console.WriteLine($"Contract Address: {response.ContractAddress}");
                 return;
             }
 
-            string errorJson = await response.Content.ReadAsStringAsync();
-            ErrorResponse resp = NetJSON.NetJSON.Deserialize<ErrorResponse>(errorJson);
-            console.WriteLine("Deployment Error!");
-
-            foreach (ErrorModel err in resp.Errors)
+            console.WriteLine(string.Format("Deployment Error: {0}", response.Message));
+            foreach (string error in response.Errors)
             {
-                console.WriteLine(err.Message);
-            }            
-        }
-
-        private Uri GetDeploymentUri()
-        {
-            return new Uri(new Uri(this.Node), DeploymentResource);
-        }
-
-        public static bool ValidateFile(string fileName, string source, IConsole console, out SmartContractCompilationResult compilationResult)
-        {
-            var determinismValidator = new SmartContractDeterminismValidator();
-            var formatValidator = new SmartContractFormatValidator();
-
-            console.WriteLine($"Compiling...");
-            compilationResult = SmartContractCompiler.Compile(source);
-
-            if (!compilationResult.Success)
-            {
-                console.WriteLine("Compilation failed!");
+                console.WriteLine(error);
             }
-
-            console.WriteLine($"Compilation OK");
-
-            byte[] compilation = compilationResult.Compilation;
-
-            console.WriteLine("Building ModuleDefinition");
-
-            SmartContractDecompilation decompilation = SmartContractDecompiler.GetModuleDefinition(compilation, new DotNetCoreAssemblyResolver());
-
-            console.WriteLine("ModuleDefinition built successfully");
-
-            console.WriteLine($"Validating file {fileName}...");
-
-            SmartContractValidationResult formatValidationResult = formatValidator.Validate(decompilation);
-
-            SmartContractValidationResult determinismValidationResult = determinismValidator.Validate(decompilation);
-
-            return compilationResult.Success 
-                   && formatValidationResult.IsValid 
-                   && determinismValidationResult.IsValid;
         }
     }
 }

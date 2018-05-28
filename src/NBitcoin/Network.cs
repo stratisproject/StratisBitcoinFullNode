@@ -66,7 +66,7 @@ namespace NBitcoin
         WITNESS_PUBKEY_ADDRESS,
         WITNESS_SCRIPT_ADDRESS
     }
-    
+
     public enum BuriedDeployments : int
     {
         /// <summary>
@@ -95,7 +95,6 @@ namespace NBitcoin
         }
 
         public ConsensusOptions Options { get; set; }
-        public NetworkOptions NetworkOptions { get; set; } = NetworkOptions.TemporaryOptions;
 
         public class BuriedDeploymentsArray
         {
@@ -128,8 +127,8 @@ namespace NBitcoin
 
             public BIP9DeploymentsParameters this[BIP9Deployments index]
             {
-                get { return this.parameters[(int) index]; }
-                set { this.parameters[(int) index] = value; }
+                get { return this.parameters[(int)index]; }
+                set { this.parameters[(int)index] = value; }
             }
         }
 
@@ -137,6 +136,11 @@ namespace NBitcoin
         {
             this.BuriedDeployments = new BuriedDeploymentsArray(this);
             this.BIP9Deployments = new BIP9DeploymentsArray(this);
+
+            this.ConsensusFactory = new ConsensusFactory()
+            {
+                Consensus = this
+            };
         }
 
         public BuriedDeploymentsArray BuriedDeployments { get; }
@@ -144,8 +148,6 @@ namespace NBitcoin
         public BIP9DeploymentsArray BIP9Deployments { get; }
 
         public int SubsidyHalvingInterval { get; set; }
-
-        public Func<NetworkOptions, BlockHeader, uint256> GetPoWHash { get; set; } = (n,h) => h.GetHash(n);
 
         public int MajorityEnforceBlockUpgrade { get; set; }
 
@@ -171,7 +173,7 @@ namespace NBitcoin
 
         public long DifficultyAdjustmentInterval
         {
-            get { return ((long) this.PowTargetTimespan.TotalSeconds / (long) this.PowTargetSpacing.TotalSeconds); }
+            get { return ((long)this.PowTargetTimespan.TotalSeconds / (long)this.PowTargetSpacing.TotalSeconds); }
         }
 
         public int MinerConfirmationWindow { get; set; }
@@ -183,19 +185,29 @@ namespace NBitcoin
         /// </summary>
         public int CoinType { get; set; }
 
-        /// <summary>
-        /// Specify using litecoin calculation for difficulty
-        /// </summary>
-        public bool LitecoinWorkCalculation { get; set; }
-
         public BigInteger ProofOfStakeLimit { get; set; }
 
         public BigInteger ProofOfStakeLimitV2 { get; set; }
 
         public int LastPOWBlock { get; set; }
 
+        /// <summary>
+        /// An indicator whether this is a Proof Of Stake network.
+        /// </summary>
+        public bool IsProofOfStake { get; set; }
+
+        /// <summary>
+        /// An indicator whether this is a Smart Contract network.
+        /// </summary>
+        public bool IsSmartContracts { get; set; }
+
         /// <summary>The default hash to use for assuming valid blocks.</summary>
         public uint256 DefaultAssumeValid { get; set; }
+
+        /// <summary>
+        /// A factory that enables overloading base types.
+        /// </summary>
+        public ConsensusFactory ConsensusFactory { get; set; }
 
         public virtual Consensus Clone()
         {
@@ -215,39 +227,34 @@ namespace NBitcoin
                 RuleChangeActivationThreshold = this.RuleChangeActivationThreshold,
                 SubsidyHalvingInterval = this.SubsidyHalvingInterval,
                 MinimumChainWork = this.MinimumChainWork,
-                GetPoWHash = this.GetPoWHash,
                 CoinType = this.CoinType,
-                LitecoinWorkCalculation = this.LitecoinWorkCalculation,
+                IsProofOfStake = this.IsProofOfStake,
+                IsSmartContracts = this.IsSmartContracts,
                 LastPOWBlock = this.LastPOWBlock,
                 ProofOfStakeLimit = this.ProofOfStakeLimit,
                 ProofOfStakeLimitV2 = this.ProofOfStakeLimitV2,
                 DefaultAssumeValid = this.DefaultAssumeValid,
-                NetworkOptions = this.NetworkOptions.Clone()
+                ConsensusFactory = this.ConsensusFactory,
             };
         }
     }
 
     public partial class Network
     {
-        private uint magic;
+        private static readonly ConcurrentDictionary<string, Network> NetworksContainer = new ConcurrentDictionary<string, Network>();
+
         private byte[] alertPubKeyArray;
         private PubKey alertPubKey;
-        private readonly List<DNSSeedData> seeds = new List<DNSSeedData>();
-        private readonly List<NetworkAddress> fixedSeeds = new List<NetworkAddress>();
         private Block genesis;
-        private Consensus consensus = new Consensus();
-
-        public NetworkOptions NetworkOptions
-        {
-            get
-            {
-                return consensus.NetworkOptions;
-            }
-        }
-
+        
         private Network()
         {
-            this.genesis = new Block();
+            this.DNSSeeds = new List<DNSSeedData>();
+            this.SeedNodes = new List<NetworkAddress>();
+            this.Checkpoints = new Dictionary<int, CheckpointInfo>();
+            this.Consensus = new Consensus();
+            this.Base58Prefixes = new byte[12][];
+            this.Bech32Encoders = new Bech32Encoder[2];
         }
 
         public PubKey AlertPubKey
@@ -278,7 +285,7 @@ namespace NBitcoin
 
         public int DefaultPort { get; private set; }
 
-        public Consensus Consensus => this.consensus;
+        public Consensus Consensus { get; private set; }
 
         public string Name { get; private set; }
 
@@ -288,9 +295,17 @@ namespace NBitcoin
         /// <summary> The default name used for the network configuration file. </summary>
         public string DefaultConfigFilename { get; private set; }
 
-        public IEnumerable<NetworkAddress> SeedNodes => this.fixedSeeds;
+        public List<NetworkAddress> SeedNodes { get; private set; }
 
-        public IEnumerable<DNSSeedData> DNSSeeds => this.seeds;
+        public List<DNSSeedData> DNSSeeds { get; private set; }
+
+        public Dictionary<int, CheckpointInfo> Checkpoints { get; private set; }
+
+        internal byte[][] Base58Prefixes { get; private set; }
+
+        internal Bech32Encoder[] Bech32Encoders { get; private set; }
+
+        public uint Magic { get; private set; }
 
         public byte[] MagicBytesArray;
 
@@ -314,66 +329,27 @@ namespace NBitcoin
             }
         }
 
-        public uint Magic => this.magic;
-
-        static readonly ConcurrentDictionary<string, Network> NetworksContainer =
-            new ConcurrentDictionary<string, Network>();
-
-        internal static Network Register(NetworkBuilder builder)
+        /// <summary>
+        /// Register an immutable <see cref="Network"/> instance so it is queryable through <see cref="GetNetwork(string)"/> and <see cref="GetNetworks()"/>.
+        /// </summary>
+        internal static Network Register(Network network, string nameOverride = null)
         {
-            if (builder.Name == null)
-                throw new InvalidOperationException("A network name need to be provided");
+            string networkName = !string.IsNullOrEmpty(nameOverride) ? nameOverride : network.Name;
 
-            if (GetNetwork(builder.Name) != null)
-                throw new InvalidOperationException("The network " + builder.Name + " is already registered");
+            // Performs a series of checks before registering the network to the list of available networks.
+            if (string.IsNullOrEmpty(networkName))
+                throw new InvalidOperationException("A network name needs to be provided.");
 
-            Network network = new Network();
-            network.Name = builder.Name;
-            network.RootFolderName = builder.RootFolderName;
-            network.DefaultConfigFilename = builder.DefaultConfigFilename;
-            network.consensus = builder.Consensus;
-            network.magic = builder.Magic;
-            network.DefaultPort = builder.Port;
-            network.RPCPort = builder.RPCPort;
-            network.genesis = builder.Genesis;
-            network.consensus.HashGenesisBlock = network.genesis.GetHash();
+            if (GetNetwork(networkName) != null)
+                throw new InvalidOperationException("The network " + networkName + " is already registered.");
 
-            foreach (DNSSeedData seed in builder.Seeds)
-            {
-                network.seeds.Add(seed);
-            }
+            if (network.GetGenesis() == null)
+                throw new InvalidOperationException("A genesis block needs to be provided.");
 
-            foreach (NetworkAddress seed in builder.FixedSeeds)
-            {
-                network.fixedSeeds.Add(seed);
-            }
+            if (network.Consensus == null)
+                throw new InvalidOperationException("A consensus needs to be provided.");
 
-            network.base58Prefixes = Network.Main.base58Prefixes.ToArray();
-
-            foreach (KeyValuePair<Base58Type, byte[]> kv in builder.Base58Prefixes)
-            {
-                network.base58Prefixes[(int) kv.Key] = kv.Value;
-            }
-
-            network.bech32Encoders = Network.Main.bech32Encoders.ToArray();
-
-            foreach (KeyValuePair<Bech32Type, Bech32Encoder> kv in builder.Bech32Prefixes)
-            {
-                network.bech32Encoders[(int) kv.Key] = kv.Value;
-            }
-
-            foreach (string alias in builder.Aliases)
-            {
-                NetworksContainer.TryAdd(alias.ToLowerInvariant(), network);
-            }
-
-            NetworksContainer.TryAdd(network.Name.ToLowerInvariant(), network);
-
-            network.MaxTimeOffsetSeconds = builder.MaxTimeOffsetSeconds;
-            network.MaxTipAge = builder.MaxTipAge;
-            network.MinTxFee = builder.MinTxFee;
-            network.FallbackFee = builder.FallbackFee;
-            network.MinRelayTxFee = builder.MinRelayTxFee;
+            NetworksContainer.TryAdd(networkName.ToLowerInvariant(), network);
 
             return network;
         }
@@ -400,7 +376,7 @@ namespace NBitcoin
         /// <returns>BitcoinScriptAddress, BitcoinAddress</returns>
         public BitcoinAddress CreateBitcoinAddress(string base58)
         {
-            var type = GetBase58Type(base58);
+            Base58Type? type = GetBase58Type(base58);
             if (!type.HasValue)
                 throw new FormatException("Invalid Base58 version");
             if (type == Base58Type.PUBKEY_ADDRESS)
@@ -418,24 +394,24 @@ namespace NBitcoin
         private Base58Type? GetBase58Type(string base58)
         {
             var bytes = Encoders.Base58Check.DecodeData(base58);
-            for (int i = 0; i < this.base58Prefixes.Length; i++)
+            for (int i = 0; i < this.Base58Prefixes.Length; i++)
             {
-                var prefix = this.base58Prefixes[i];
+                var prefix = this.Base58Prefixes[i];
                 if (prefix == null)
                     continue;
                 if (bytes.Length < prefix.Length)
                     continue;
                 if (Utils.ArrayEqual(bytes, 0, prefix, 0, prefix.Length))
-                    return (Base58Type) i;
+                    return (Base58Type)i;
             }
             return null;
         }
 
         internal static Network GetNetworkFromBase58Data(string base58, Base58Type? expectedType = null)
         {
-            foreach (var network in GetNetworks())
+            foreach (Network network in GetNetworks())
             {
-                var type = network.GetBase58Type(base58);
+                Base58Type? type = network.GetBase58Type(base58);
                 if (type.HasValue)
                 {
                     if (expectedType != null && expectedType.Value != type.Value)
@@ -476,7 +452,7 @@ namespace NBitcoin
             if (str == null)
                 throw new ArgumentNullException("str");
 
-            var networks = expectedNetwork == null ? GetNetworks() : new[] {expectedNetwork};
+            IEnumerable<Network> networks = expectedNetwork == null ? GetNetworks() : new[] { expectedNetwork };
             var maybeb58 = true;
             for (int i = 0; i < str.Length; i++)
             {
@@ -499,26 +475,26 @@ namespace NBitcoin
                 }
                 if (maybeb58)
                 {
-                    foreach (var candidate in GetCandidates(networks, str))
+                    foreach (IBase58Data candidate in GetCandidates(networks, str))
                     {
                         bool rightNetwork = expectedNetwork == null || (candidate.Network == expectedNetwork);
                         bool rightType = candidate is T;
                         if (rightNetwork && rightType)
-                            return (T) (object) candidate;
+                            return (T)(object)candidate;
                     }
                     throw new FormatException("Invalid base58 string");
                 }
             }
 
-            foreach (var network in networks)
+            foreach (Network network in networks)
             {
                 int i = -1;
-                foreach (var encoder in network.bech32Encoders)
+                foreach (Bech32Encoder encoder in network.Bech32Encoders)
                 {
                     i++;
                     if (encoder == null)
                         continue;
-                    var type = (Bech32Type) i;
+                    var type = (Bech32Type)i;
                     try
                     {
                         byte witVersion;
@@ -531,7 +507,7 @@ namespace NBitcoin
                             candidate = new BitcoinWitScriptAddress(str, network);
 
                         if (candidate is T)
-                            return (T) (object) candidate;
+                            return (T)(object)candidate;
                     }
                     catch (Bech32FormatException)
                     {
@@ -552,20 +528,20 @@ namespace NBitcoin
         {
             if (base58 == null)
                 throw new ArgumentNullException("base58");
-            foreach (var network in networks)
+            foreach (Network network in networks)
             {
-                var type = network.GetBase58Type(base58);
+                Base58Type? type = network.GetBase58Type(base58);
                 if (type.HasValue)
                 {
                     if (type.Value == Base58Type.COLORED_ADDRESS)
                     {
                         var wrapped = BitcoinColoredAddress.GetWrappedBase58(base58, network);
-                        var wrappedType = network.GetBase58Type(wrapped);
+                        Base58Type? wrappedType = network.GetBase58Type(wrapped);
                         if (wrappedType == null)
                             continue;
                         try
                         {
-                            var inner = network.CreateBase58Data(wrappedType.Value, wrapped);
+                            IBase58Data inner = network.CreateBase58Data(wrappedType.Value, wrapped);
                             if (inner.Network != network)
                                 continue;
                         }
@@ -678,10 +654,10 @@ namespace NBitcoin
 
         public Block GetGenesis()
         {
-            return this.genesis.Clone(options:this.NetworkOptions);
+            return this.genesis.Clone(network: this);
         }
 
-        public uint256 GenesisHash => this.consensus.HashGenesisBlock;
+        public uint256 GenesisHash => this.Consensus.HashGenesisBlock;
 
         public static IEnumerable<Network> GetNetworks()
         {
@@ -764,7 +740,7 @@ namespace NBitcoin
         public Money GetReward(int nHeight)
         {
             long nSubsidy = new Money(50 * Money.COIN);
-            int halvings = nHeight / this.consensus.SubsidyHalvingInterval;
+            int halvings = nHeight / this.Consensus.SubsidyHalvingInterval;
 
             // Force block reward to zero when right shift is undefined.
             if (halvings >= 64)
@@ -779,7 +755,7 @@ namespace NBitcoin
         public bool ReadMagic(Stream stream, CancellationToken cancellation, bool throwIfEOF = false)
         {
             byte[] bytes = new byte[1];
-            for (int i = 0; i < MagicBytes.Length; i++)
+            for (int i = 0; i < this.MagicBytes.Length; i++)
             {
                 i = Math.Max(0, i);
                 cancellation.ThrowIfCancellationRequested();
@@ -798,13 +774,9 @@ namespace NBitcoin
             return true;
         }
 
-        internal byte[][] base58Prefixes = new byte[12][];
-
-        internal Bech32Encoder[] bech32Encoders = new Bech32Encoder[2];
-
         public Bech32Encoder GetBech32Encoder(Bech32Type type, bool throws)
         {
-            var encoder = this.bech32Encoders[(int)type];
+            Bech32Encoder encoder = this.Bech32Encoders[(int)type];
             if (encoder == null && throws)
                 throw new NotImplementedException("The network " + this + " does not have any prefix for bech32 " +
                                                   Enum.GetName(typeof(Bech32Type), type));
@@ -813,7 +785,7 @@ namespace NBitcoin
 
         public byte[] GetVersionBytes(Base58Type type, bool throws)
         {
-            var prefix = this.base58Prefixes[(int)type];
+            var prefix = this.Base58Prefixes[(int)type];
             if (prefix == null && throws)
                 throw new NotImplementedException("The network " + this + " does not have any prefix for base58 " +
                                                   Enum.GetName(typeof(Base58Type), type));

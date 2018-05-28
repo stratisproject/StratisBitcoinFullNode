@@ -30,18 +30,19 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
         /// <summary>Factory for creating P2P network peers.</summary>
         private readonly INetworkPeerFactory networkPeerFactory;
 
-        protected int[] ports;
-        protected INodeRunner runner;
-        protected readonly NetworkCredential creds;
+        private int[] ports;
+        private NodeRunner runner;
+        private readonly NetworkCredential NetworkCredentials;
         private List<Transaction> transactions = new List<Transaction>();
         private HashSet<OutPoint> locked = new HashSet<OutPoint>();
         private Money fee = Money.Coins(0.0001m);
         protected object lockObject = new object();
 
-        public string Folder { get; }
-
         /// <summary>Location of the data directory for the node.</summary>
-        public string DataFolder { get; }
+        public string DataFolder
+        {
+            get { return this.runner.DataFolder; }
+        }
 
         public IPEndPoint Endpoint { get { return new IPEndPoint(IPAddress.Parse("127.0.0.1"), this.ports[0]); } }
 
@@ -49,20 +50,14 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
 
         public NodeConfigParameters ConfigParameters { get; } = new NodeConfigParameters();
 
-        public CoreNode(string folder, INodeRunner runner, NodeBuilder builder, Network network, bool cleanfolders = true, string configfile = "bitcoin.conf")
+        public CoreNode(NodeRunner runner, NodeBuilder builder, Network network, string configfile)
         {
             this.runner = runner;
-            this.Folder = folder;
-            this.State = CoreNodeState.Stopped;
-            if (cleanfolders)
-                this.CleanFolder();
 
-            Directory.CreateDirectory(folder);
-            this.DataFolder = Path.Combine(folder, "data");
-            Directory.CreateDirectory(this.DataFolder);
+            this.State = CoreNodeState.Stopped;
             var pass = Encoders.Hex.EncodeData(RandomUtils.GetBytes(20));
-            this.creds = new NetworkCredential(pass, pass);
-            this.Config = Path.Combine(this.DataFolder, configfile);
+            this.NetworkCredentials = new NetworkCredential(pass, pass);
+            this.Config = Path.Combine(this.runner.DataFolder, configfile);
             this.ConfigParameters.Import(builder.ConfigParameters);
             this.ports = new int[2];
             this.FindPorts(this.ports);
@@ -82,24 +77,6 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
             }
         }
 
-        private void CleanFolder()
-        {
-            NodeBuilder.CleanupTestFolder(this.Folder);
-        }
-
-        public void Sync(CoreNode node, bool keepConnection = false)
-        {
-            var rpc = this.CreateRPCClient();
-            var rpc1 = node.CreateRPCClient();
-            rpc.AddNode(node.Endpoint, true);
-            while (rpc.GetBestBlockHash() != rpc1.GetBestBlockHash())
-            {
-                Thread.Sleep(200);
-            }
-            if (!keepConnection)
-                rpc.RemoveNode(node.Endpoint);
-        }
-
         public CoreNodeState State { get; protected set; }
 
         public int ProtocolPort
@@ -112,14 +89,9 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
             (this.FullNode.NodeService<IInitialBlockDownloadState>() as InitialBlockDownloadStateMock).SetIsInitialBlockDownload(false, DateTime.UtcNow.AddMinutes(5));
         }
 
-        public void Start()
-        {
-            this.StartAsync().Wait();
-        }
-
         public RPCClient CreateRPCClient()
         {
-            return new RPCClient(this.creds, new Uri("http://127.0.0.1:" + this.ports[1].ToString() + "/"), Network.RegTest);
+            return new RPCClient(this.NetworkCredentials, new Uri("http://127.0.0.1:" + this.ports[1].ToString() + "/"), Network.RegTest);
         }
 
         public RestClient CreateRESTClient()
@@ -132,40 +104,75 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
             return this.networkPeerFactory.CreateConnectedNetworkPeerAsync("127.0.0.1:" + this.ports[0].ToString()).GetAwaiter().GetResult();
         }
 
-        public virtual async Task StartAsync()
+        public void Start()
         {
-            NodeConfigParameters config = new NodeConfigParameters();
-            config.Add("regtest", "1");
+            NodeBuilder.CreateDataFolder(this.runner.DataFolder);
+
+            var config = new NodeConfigParameters();
+
+            if (this.runner is StratisSmartContractNode)
+                config.Add("scregtest", "1");
+            else
+                config.Add("regtest", "1");
+
             config.Add("rest", "1");
             config.Add("server", "1");
             config.Add("txindex", "1");
-            config.Add("rpcuser", this.creds.UserName);
-            config.Add("rpcpassword", this.creds.Password);
+            config.Add("rpcuser", this.NetworkCredentials.UserName);
+            config.Add("rpcpassword", this.NetworkCredentials.Password);
             config.Add("port", this.ports[0].ToString());
             config.Add("rpcport", this.ports[1].ToString());
             config.Add("printtoconsole", "1");
             config.Add("keypool", "10");
             config.Add("agentprefix", "node" + this.ports[0].ToString());
             config.Import(this.ConfigParameters);
+
             File.WriteAllText(this.Config, config.ToString());
+
             lock (this.lockObject)
             {
-                this.runner.Start(this.DataFolder);
+                this.runner.Start();
                 this.State = CoreNodeState.Starting;
             }
+
+            if (this.runner is BitcoinCoreRunner)
+                StartBitcoinCoreRunner();
+            else
+                StartStratisRunner();
+
+            this.State = CoreNodeState.Running;
+        }
+
+        private void StartBitcoinCoreRunner()
+        {
             while (true)
             {
                 try
                 {
-                    await this.CreateRPCClient().GetBlockHashAsync(0);
+                    CreateRPCClient().GetBlockHashAsync(0).GetAwaiter().GetResult();
                     this.State = CoreNodeState.Running;
                     break;
                 }
-                catch
+                catch { }
+
+                Task.Delay(200);
+            }
+        }
+
+        private void StartStratisRunner()
+        {
+            while (true)
+            {
+                if (this.runner.FullNode == null)
                 {
+                    Thread.Sleep(100);
+                    continue;
                 }
-                if (this.runner.IsDisposed)
+
+                if (this.runner.FullNode.State == FullNodeState.Started)
                     break;
+                else
+                    Thread.Sleep(200);
             }
         }
 
@@ -189,36 +196,6 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
                 catch (SocketException)
                 {
                 }
-            }
-        }
-
-        public Transaction GiveMoney(Script destination, Money amount, bool broadcast = true)
-        {
-            var rpc = this.CreateRPCClient();
-            TransactionBuilder builder = new TransactionBuilder();
-            builder.AddKeys(rpc.ListSecrets().OfType<ISecret>().ToArray());
-            builder.AddCoins(rpc.ListUnspent().Where(c => !this.locked.Contains(c.OutPoint)).Select(c => c.AsCoin()));
-            builder.Send(destination, amount);
-            builder.SendFees(this.fee);
-            builder.SetChange(this.GetFirstSecret(rpc));
-            var tx = builder.BuildTransaction(true);
-            foreach (var outpoint in tx.Inputs.Select(i => i.PrevOut))
-            {
-                this.locked.Add(outpoint);
-            }
-            if (broadcast)
-                this.Broadcast(tx);
-            else
-                this.transactions.Add(tx);
-            return tx;
-        }
-
-        public void Rollback(Transaction tx)
-        {
-            this.transactions.Remove(tx);
-            foreach (var outpoint in tx.Inputs.Select(i => i.PrevOut))
-            {
-                this.locked.Remove(outpoint);
             }
         }
 
@@ -261,7 +238,6 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
             }
         }
 
-
         public void SelectMempoolTransactions()
         {
             var rpc = this.CreateRPCClient();
@@ -274,7 +250,7 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
         public void Split(Money amount, int parts)
         {
             var rpc = this.CreateRPCClient();
-            TransactionBuilder builder = new TransactionBuilder();
+            TransactionBuilder builder = new TransactionBuilder(this.FullNode.Network);
             builder.AddKeys(rpc.ListSecrets().OfType<ISecret>().ToArray());
             builder.AddCoins(rpc.ListUnspent().Select(c => c.AsCoin()));
             var secret = this.GetFirstSecret(rpc);
@@ -328,11 +304,11 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
                 for (int i = 0; i < blockCount; i++)
                 {
                     uint nonce = 0;
-                    Block block = new Block();
+                    Block block = peer.Network.Consensus.ConsensusFactory.CreateBlock();
                     block.Header.HashPrevBlock = chain.Tip.HashBlock;
                     block.Header.Bits = block.Header.GetWorkRequired(rpc.Network, chain.Tip);
                     block.Header.UpdateTime(now, rpc.Network, chain.Tip);
-                    var coinbase = new Transaction();
+                    var coinbase = peer.Network.Consensus.ConsensusFactory.CreateTransaction();
                     coinbase.AddInput(TxIn.CreateCoinbase(chain.Height + 1));
                     coinbase.AddOutput(new TxOut(rpc.Network.GetReward(chain.Height + 1), dest.GetAddress()));
                     block.AddTransaction(coinbase);
@@ -376,19 +352,19 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
         /// <param name="hashStop">The location until which it synchronize.</param>
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
-        private IEnumerable<ChainedBlock> SynchronizeChain(INetworkPeer peer, ChainBase chain, uint256 hashStop = null, CancellationToken cancellationToken = default(CancellationToken))
+        private IEnumerable<ChainedHeader> SynchronizeChain(INetworkPeer peer, ChainBase chain, uint256 hashStop = null, CancellationToken cancellationToken = default(CancellationToken))
         {
-            ChainedBlock oldTip = chain.Tip;
-            List<ChainedBlock> headers = this.GetHeadersFromFork(peer, oldTip, hashStop, cancellationToken).ToList();
+            ChainedHeader oldTip = chain.Tip;
+            List<ChainedHeader> headers = this.GetHeadersFromFork(peer, oldTip, hashStop, cancellationToken).ToList();
             if (headers.Count == 0)
-                return new ChainedBlock[0];
+                return new ChainedHeader[0];
 
-            ChainedBlock newTip = headers[headers.Count - 1];
+            ChainedHeader newTip = headers[headers.Count - 1];
 
             if (newTip.Height <= oldTip.Height)
                 throw new ProtocolException("No tip should have been recieved older than the local one");
 
-            foreach (ChainedBlock header in headers)
+            foreach (ChainedHeader header in headers)
             {
                 if (!header.Validate(peer.Network))
                 {
@@ -410,7 +386,7 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
                 throw new InvalidOperationException("Invalid Node state, needed=" + peerState + ", current= " + this.State);
         }
 
-        public IEnumerable<ChainedBlock> GetHeadersFromFork(INetworkPeer peer, ChainedBlock currentTip, uint256 hashStop = null, CancellationToken cancellationToken = default(CancellationToken))
+        public IEnumerable<ChainedHeader> GetHeadersFromFork(INetworkPeer peer, ChainedHeader currentTip, uint256 hashStop = null, CancellationToken cancellationToken = default(CancellationToken))
         {
             this.AssertStateAsync(peer, NetworkPeerState.HandShaked, cancellationToken).GetAwaiter().GetResult();
 
@@ -467,7 +443,7 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
                             if (header.HashPrevBlock != currentTip.HashBlock)
                             {
                                 int reorgDepth = 0;
-                                ChainedBlock tempCurrentTip = currentTip;
+                                ChainedHeader tempCurrentTip = currentTip;
                                 while (reorgDepth != acceptMaxReorgDepth && tempCurrentTip != null && header.HashPrevBlock != tempCurrentTip.HashBlock)
                                 {
                                     reorgDepth++;
@@ -481,7 +457,7 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
                             if (header.HashPrevBlock == currentTip.HashBlock)
                             {
                                 isOurs = true;
-                                currentTip = new ChainedBlock(header, hash, currentTip);
+                                currentTip = new ChainedHeader(header, hash, currentTip);
 
                                 yield return currentTip;
 
@@ -518,7 +494,7 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
 
         public Block[] GenerateSmartContractStratis(int blockCount, List<Transaction> passedTransactions = null, bool broadcast = true)
         {
-            var fullNode = (this.runner as SmartContractRunner).FullNode;
+            var fullNode = (this.runner as StratisSmartContractNode).FullNode;
             BitcoinSecret dest = this.MinerSecret;
             List<Block> blocks = new List<Block>();
             DateTimeOffset now = this.MockTime == null ? DateTimeOffset.UtcNow : this.MockTime.Value;
@@ -528,52 +504,37 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
             for (int i = 0; i < blockCount; i++)
             {
                 uint nonce = 0;
-                Block block = new Block();
+
+                Block block = fullNode.NodeService<Network>().Consensus.ConsensusFactory.CreateBlock();
                 block.Header.HashPrevBlock = fullNode.Chain.Tip.HashBlock;
                 block.Header.Bits = block.Header.GetWorkRequired(fullNode.Network, fullNode.Chain.Tip);
                 block.Header.UpdateTime(now, fullNode.Network, fullNode.Chain.Tip);
-                var coinbase = new Transaction();
+
+                var coinbase = fullNode.NodeService<Network>().Consensus.ConsensusFactory.CreateTransaction();
                 coinbase.AddInput(TxIn.CreateCoinbase(fullNode.Chain.Height + 1));
                 coinbase.AddOutput(new TxOut(fullNode.Network.GetReward(fullNode.Chain.Height + 1), dest.GetAddress()));
                 block.AddTransaction(coinbase);
+
                 if (passedTransactions?.Any() ?? false)
                 {
                     passedTransactions = this.Reorder(passedTransactions);
                     block.Transactions.AddRange(passedTransactions);
                 }
+
                 block.UpdateMerkleRoot();
-                block.Header.HashStateRoot = new uint256(state.Root);
+                ((SmartContractBlockHeader)block.Header).HashStateRoot = new uint256(state.Root);
+
                 while (!block.CheckProofOfWork(fullNode.Network.Consensus))
                     block.Header.Nonce = ++nonce;
+
                 blocks.Add(block);
+
                 if (broadcast)
                 {
                     uint256 blockHash = block.GetHash();
-                    var newChain = new ChainedBlock(block.Header, blockHash, fullNode.Chain.Tip);
+                    var newChain = new ChainedHeader(block.Header, blockHash, fullNode.Chain.Tip);
                     var oldTip = fullNode.Chain.SetTip(newChain);
                     fullNode.ConsensusLoop().Puller.InjectBlock(blockHash, new DownloadedBlock { Length = block.GetSerializedSize(), Block = block }, CancellationToken.None);
-
-                    //try
-                    //{
-                    //    var blockResult = new BlockResult { Block = block };
-                    //    fullNode.ConsensusLoop.AcceptBlock(blockResult);
-
-                    //    // similar logic to what's in the full node code
-                    //    if (blockResult.Error == null)
-                    //    {
-                    //        fullNode.ChainBehaviorState.ConsensusTip = fullNode.ConsensusLoop.Tip;
-                    //        //if (fullNode.Chain.Tip.HashBlock == blockResult.ChainedBlock.HashBlock)
-                    //        //{
-                    //        //    var unused = cache.FlushAsync();
-                    //        //}
-                    //        fullNode.Signals.Blocks.Broadcast(block);
-                    //    }
-                    //}
-                    //catch (ConsensusErrorException)
-                    //{
-                    //    // set back the old tip
-                    //    fullNode.Chain.SetTip(oldTip);
-                    //}
                 }
             }
 
@@ -592,27 +553,33 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
             for (int i = 0; i < blockCount; i++)
             {
                 uint nonce = 0;
-                Block block = new Block();
+                Block block = fullNode.NodeService<Network>().Consensus.ConsensusFactory.CreateBlock();
                 block.Header.HashPrevBlock = fullNode.Chain.Tip.HashBlock;
                 block.Header.Bits = block.Header.GetWorkRequired(fullNode.Network, fullNode.Chain.Tip);
                 block.Header.UpdateTime(now, fullNode.Network, fullNode.Chain.Tip);
-                var coinbase = new Transaction();
+
+                var coinbase = fullNode.NodeService<Network>().Consensus.ConsensusFactory.CreateTransaction();
                 coinbase.AddInput(TxIn.CreateCoinbase(fullNode.Chain.Height + 1));
                 coinbase.AddOutput(new TxOut(fullNode.Network.GetReward(fullNode.Chain.Height + 1), dest.GetAddress()));
                 block.AddTransaction(coinbase);
+
                 if (passedTransactions?.Any() ?? false)
                 {
                     passedTransactions = this.Reorder(passedTransactions);
                     block.Transactions.AddRange(passedTransactions);
                 }
+
                 block.UpdateMerkleRoot();
+
                 while (!block.CheckProofOfWork(fullNode.Network.Consensus))
                     block.Header.Nonce = ++nonce;
+
                 blocks.Add(block);
+
                 if (broadcast)
                 {
                     uint256 blockHash = block.GetHash();
-                    var newChain = new ChainedBlock(block.Header, blockHash, fullNode.Chain.Tip);
+                    var newChain = new ChainedHeader(block.Header, blockHash, fullNode.Chain.Tip);
                     var oldTip = fullNode.Chain.SetTip(newChain);
                     fullNode.ConsensusLoop().Puller.InjectBlock(blockHash, new DownloadedBlock { Length = block.GetSerializedSize(), Block = block }, CancellationToken.None);
 
@@ -625,7 +592,7 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
                     //    if (blockResult.Error == null)
                     //    {
                     //        fullNode.ChainBehaviorState.ConsensusTip = fullNode.ConsensusLoop.Tip;
-                    //        //if (fullNode.Chain.Tip.HashBlock == blockResult.ChainedBlock.HashBlock)
+                    //        //if (fullNode.Chain.Tip.HashBlock == blockResult.ChainedHeader.HashBlock)
                     //        //{
                     //        //    var unused = cache.FlushAsync();
                     //        //}

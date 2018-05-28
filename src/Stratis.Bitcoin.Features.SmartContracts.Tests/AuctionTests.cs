@@ -23,7 +23,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             var message = new TestMessage
             {
                 ContractAddress = TestAddress,
-                GasLimit = (Gas) GasLimit,
+                GasLimit = (Gas)GasLimit,
                 Sender = TestAddress,
                 Value = Value
             };
@@ -44,27 +44,27 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         public void TestCreation()
         {
             const ulong duration = 20;
-            var contract = new Auction(smartContractState, duration);
-            Assert.Equal(TestAddress, smartContractState.PersistentState.GetObject<Address>("Owner"));
-            Assert.False(smartContractState.PersistentState.GetObject<bool>("HasEnded"));
-            Assert.Equal(duration + smartContractState.Block.Number, smartContractState.PersistentState.GetObject<ulong>("EndBlock"));
+            var contract = new Auction(this.smartContractState, duration);
+            Assert.Equal(TestAddress, this.smartContractState.PersistentState.GetObject<Address>("Owner"));
+            Assert.False(this.smartContractState.PersistentState.GetObject<bool>("HasEnded"));
+            Assert.Equal(duration + this.smartContractState.Block.Number, this.smartContractState.PersistentState.GetObject<ulong>("EndBlock"));
         }
 
         [Fact]
         public void TestBidding()
         {
             const ulong duration = 20;
-            var contract = new Auction(smartContractState, duration);
+            var contract = new Auction(this.smartContractState, duration);
 
-            ((TestMessage)smartContractState.Message).Value = 100;
-            Assert.Null(smartContractState.PersistentState.GetObject<Address>("HighestBidder").Value);
-            Assert.Equal(0uL, smartContractState.PersistentState.GetObject<ulong>("HighestBid"));
+            ((TestMessage)this.smartContractState.Message).Value = 100;
+            Assert.Null(this.smartContractState.PersistentState.GetObject<Address>("HighestBidder").Value);
+            Assert.Equal(0uL, this.smartContractState.PersistentState.GetObject<ulong>("HighestBid"));
 
             contract.Bid();
-            Assert.NotNull(smartContractState.PersistentState.GetObject<Address>("HighestBidder").Value);
-            Assert.Equal(100uL, smartContractState.PersistentState.GetObject<ulong>("HighestBid"));
+            Assert.NotNull(this.smartContractState.PersistentState.GetObject<Address>("HighestBidder").Value);
+            Assert.Equal(100uL, this.smartContractState.PersistentState.GetObject<ulong>("HighestBid"));
 
-            ((TestMessage)smartContractState.Message).Value = 90;
+            ((TestMessage)this.smartContractState.Message).Value = 90;
             Assert.ThrowsAny<Exception>(() => contract.Bid());
         }
     }
@@ -132,15 +132,15 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
         public T GetObject<T>(string key)
         {
-            if (objects.ContainsKey(key))
-                return (T) objects[key];
+            if (this.objects.ContainsKey(key))
+                return (T)this.objects[key];
 
             return default(T);
         }
 
         public void SetObject<T>(string key, T obj)
         {
-            objects[key] = obj;
+            this.objects[key] = obj;
         }
     }
 }

@@ -19,7 +19,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             rules.AddRange(this.baseRuleRegistration.GetRules());
             rules.Add(new TxOutSmartContractExecRule());
             rules.Add(new OpSpendRule());
-            rules.Add(new GasBudgetRule());
+            //rules.Add(new GasBudgetRule());
             rules.Add(new OpCreateZeroValueRule());
             return rules;
         }

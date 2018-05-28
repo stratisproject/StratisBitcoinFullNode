@@ -29,9 +29,9 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
             if (this.Parent.ConsensusSettings.UseCheckpoints)
             {
                 int lastCheckpointHeight = this.Parent.Checkpoints.GetLastCheckpointHeight();
-                context.SkipValidation = context.BlockValidationContext.ChainedBlock.Height <= lastCheckpointHeight;
+                context.SkipValidation = context.BlockValidationContext.ChainedHeader.Height <= lastCheckpointHeight;
                 if (context.SkipValidation)
-                    this.Logger.LogTrace("Block validation will be partially skipped due to block height {0} is not greater than last checkpointed block height {1}.", context.BlockValidationContext.ChainedBlock.Height, lastCheckpointHeight);
+                    this.Logger.LogTrace("Block validation will be partially skipped due to block height {0} is not greater than last checkpointed block height {1}.", context.BlockValidationContext.ChainedHeader.Height, lastCheckpointHeight);
             }
 
             return Task.CompletedTask;

@@ -8,6 +8,7 @@ using DBreeze.Utils;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Configuration;
+using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.BlockStore
@@ -35,6 +36,13 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// </summary>
         /// <param name="hash">The block hash.</param>
         Task<Block> GetAsync(uint256 hash);
+
+        /// <summary>
+        /// Get the blocks from the database by using block hashes.
+        /// </summary>
+        /// <param name="hashes">A list of unique block hashes.</param>
+        /// <returns>The blocks (or null if not found) in the same order as the hashes on input.</returns>
+        Task<List<Block>> GetBlocksAsync(List<uint256> hashes);
 
         /// <summary>
         /// Retreive the transaction information asynchronously using transaction id.
@@ -80,7 +88,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         bool TxIndex { get; }
 
         /// <summary>Represents the last block stored to disk.</summary>
-        ChainedBlock HighestPersistedBlock { get; }
+        ChainedHeader HighestPersistedBlock { get; }
     }
 
     public class BlockRepository : IBlockRepository
@@ -107,7 +115,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         protected readonly IDateTimeProvider dateTimeProvider;
 
         /// <inheritdoc />
-        public ChainedBlock HighestPersistedBlock { get; internal set; }
+        public ChainedHeader HighestPersistedBlock { get; internal set; }
 
         public BlockRepository(Network network, DataFolder dataFolder, IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory)
             : this(network, dataFolder.BlockPath, dateTimeProvider, loggerFactory)
@@ -509,6 +517,34 @@ namespace Stratis.Bitcoin.Features.BlockStore
             return task;
         }
 
+        /// <inheritdoc />
+        public Task<List<Block>> GetBlocksAsync(List<uint256> hashes)
+        {
+            Guard.NotNull(hashes, nameof(hashes));
+            this.logger.LogTrace("({0}:{1})", nameof(hashes.Count), hashes.Count);
+
+            Task<List<Block>> task = Task.Run(() =>
+            {
+                this.logger.LogTrace("()");
+
+                List<Block> blocks;
+
+                using (DBreeze.Transactions.Transaction transaction = this.DBreeze.GetTransaction())
+                {
+                    transaction.ValuesLazyLoadingIsOn = false;
+
+                    blocks = this.GetBlocksFromHashes(transaction, hashes);
+                }
+
+                this.logger.LogTrace("(-)");
+
+                return blocks;
+            });
+
+            this.logger.LogTrace("(-)");
+            return task;
+        }
+
         /// <summary>
         /// Determine if a block already exists
         /// </summary>
@@ -588,27 +624,38 @@ namespace Stratis.Bitcoin.Features.BlockStore
         private List<Block> GetBlocksFromHashes(DBreeze.Transactions.Transaction dbreezeTransaction, List<uint256> hashes)
         {
             this.logger.LogTrace("({0}.{1}:{2})", nameof(hashes), nameof(hashes.Count), hashes?.Count);
+            
+            var results = new Dictionary<uint256, Block>();
 
-            var blocks = new List<Block>();
+            // Access hash keys in sorted order.
+            var byteListComparer = new ByteListComparer();
+            var keys = hashes.Select(hash => (hash, hash.ToBytes())).ToList();
 
-            foreach (uint256 hash in hashes)
+            keys.Sort((key1, key2) => byteListComparer.Compare(key1.Item2, key2.Item2));
+
+            foreach (var key in keys)
             {
-                byte[] key = hash.ToBytes();
-
-                Row<byte[], Block> blockRow = dbreezeTransaction.Select<byte[], Block>("Block", key);
+                Row<byte[], Block> blockRow = dbreezeTransaction.Select<byte[], Block>("Block", key.Item2);
                 if (blockRow.Exists)
                 {
+                    results[key.Item1] = blockRow.Value;
                     this.PerformanceCounter.AddRepositoryHitCount(1);
-                    blocks.Add(blockRow.Value);
+
+                    this.logger.LogTrace("Block hash '{0}' loaded from the store.", key.Item1);
                 }
                 else
                 {
+                    results[key.Item1] = null;
                     this.PerformanceCounter.AddRepositoryMissCount(1);
+
+                    this.logger.LogTrace("Block hash '{0}' not found in the store.", key.Item1);
                 }
             }
+        
+            this.logger.LogTrace("(-):{0}", results.Count);
 
-            this.logger.LogTrace("(-):*.{0}={1}", nameof(blocks.Count), blocks.Count);
-            return blocks;
+            // Return the result in the order that the hashes were presented.
+            return hashes.Select(hash => results[hash]).ToList();
         }
 
         /// <summary>
@@ -632,7 +679,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
                     transaction.ValuesLazyLoadingIsOn = false;
 
                     List<Block> blocks = this.GetBlocksFromHashes(transaction, hashes);
-                    this.OnDeleteBlocks(transaction, blocks);
+                    this.OnDeleteBlocks(transaction, blocks.Where(b => b != null).ToList());
                     this.SaveBlockHash(transaction, newBlockHash);
                     transaction.Commit();
                 }

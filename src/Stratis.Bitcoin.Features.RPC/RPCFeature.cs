@@ -54,7 +54,8 @@ namespace Stratis.Bitcoin.Features.RPC
         /// Get the default configuration.
         /// </summary>
         /// <param name="builder">The string builder to add the settings to.</param>
-        public static void BuildDefaultConfigurationFile(StringBuilder builder)
+        /// <param name="network">The network to base the defaults off.</param>
+        public static void BuildDefaultConfigurationFile(StringBuilder builder, Network network)
         {
             builder.AppendLine("####RPC Settings####");
             builder.AppendLine("#Activate RPC Server (default: 0)");

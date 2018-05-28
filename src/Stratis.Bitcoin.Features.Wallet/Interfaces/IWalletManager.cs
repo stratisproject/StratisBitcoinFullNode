@@ -173,14 +173,14 @@ namespace Stratis.Bitcoin.Features.Wallet.Interfaces
         /// <summary>
         /// Remove all the transactions in the wallet that are above this block height
         /// </summary>
-        void RemoveBlocks(ChainedBlock fork);
+        void RemoveBlocks(ChainedHeader fork);
 
         /// <summary>
         /// Processes a block received from the network.
         /// </summary>
         /// <param name="block">The block.</param>
-        /// <param name="chainedBlock">The blocks chain of headers.</param>
-        void ProcessBlock(Block block, ChainedBlock chainedBlock);
+        /// <param name="chainedHeader">The blocks chain of headers.</param>
+        void ProcessBlock(Block block, ChainedHeader chainedHeader);
 
         /// <summary>
         /// Processes a transaction received from the network.
@@ -219,14 +219,14 @@ namespace Stratis.Bitcoin.Features.Wallet.Interfaces
         /// Updates the wallet with the height of the last block synced.
         /// </summary>
         /// <param name="wallet">The wallet to update.</param>
-        /// <param name="chainedBlock">The height of the last block synced.</param>
-        void UpdateLastBlockSyncedHeight(Wallet wallet, ChainedBlock chainedBlock);
+        /// <param name="chainedHeader">The height of the last block synced.</param>
+        void UpdateLastBlockSyncedHeight(Wallet wallet, ChainedHeader chainedHeader);
 
         /// <summary>
         /// Updates all the loaded wallets with the height of the last block synced.
         /// </summary>
-        /// <param name="chainedBlock">The height of the last block synced.</param>
-        void UpdateLastBlockSyncedHeight(ChainedBlock chainedBlock);
+        /// <param name="chainedHeader">The height of the last block synced.</param>
+        void UpdateLastBlockSyncedHeight(ChainedHeader chainedHeader);
 
         /// <summary>
         /// Gets a wallet given its name.
@@ -257,7 +257,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Interfaces
         /// Gets the extended public key of an account.
         /// </summary>
         /// <param name="accountReference">The account.</param>
-        /// <returns>The extended plublic key.</returns>
+        /// <returns>The extended public key.</returns>
         string GetExtPubKey(WalletAccountReference accountReference);
 
         /// <summary>
@@ -276,7 +276,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Interfaces
         /// Removes the specified transactions from the wallet and persist it.
         /// </summary>
         /// <param name="walletName">The name of the wallet to remove transactions from.</param>
-        /// <param name="transactionsIds">The IDs of trandactions to remove.</param>
+        /// <param name="transactionsIds">The IDs of transactions to remove.</param>
         /// <returns>A list of objects made up of a transactions ID along with the time at which they were created.</returns>
         HashSet<(uint256, DateTimeOffset)> RemoveTransactionsByIds(string walletName, IEnumerable<uint256> transactionsIds);
 

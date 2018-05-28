@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using McMaster.Extensions.CommandLineUtils;
-using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.Compilation;
 using Stratis.SmartContracts.Core.ContractValidation;
 using Stratis.SmartContracts.Tools.Sct.Report;
@@ -15,7 +14,7 @@ namespace Stratis.SmartContracts.Tools.Sct.Validation
     [HelpOption]
     class Validator
     {
-        [Argument(0, Description = "The paths of the files to validate", 
+        [Argument(0, Description = "The paths of the files to validate",
             Name = "[FILES]")]
         public List<string> InputFiles { get; }
 
@@ -31,10 +30,13 @@ namespace Stratis.SmartContracts.Tools.Sct.Validation
                 return 1;
             }
 
+            Console.WriteLine();
             Console.WriteLine("Smart Contract Validator");
+            Console.WriteLine();
 
             var determinismValidator = new SmartContractDeterminismValidator();
             var formatValidator = new SmartContractFormatValidator();
+            var warningValidator = new SmartContractWarningValidator();
 
             var reportData = new List<ValidationReportData>();
 
@@ -56,10 +58,12 @@ namespace Stratis.SmartContracts.Tools.Sct.Validation
                 }
 
                 Console.WriteLine($"Read {file} OK");
+                Console.WriteLine();
 
                 if (string.IsNullOrWhiteSpace(source))
                 {
                     Console.WriteLine($"Empty file at {file}");
+                    Console.WriteLine();
                     continue;
                 }
 
@@ -68,7 +72,8 @@ namespace Stratis.SmartContracts.Tools.Sct.Validation
                     FileName = file,
                     CompilationErrors = new List<CompilationError>(),
                     DeterminismValidationErrors = new List<SmartContractValidationError>(),
-                    FormatValidationErrors = new List<ValidationError>()
+                    FormatValidationErrors = new List<ValidationError>(),
+                    Warnings = new List<Warning>()
                 };
 
                 reportData.Add(validationData);
@@ -81,6 +86,7 @@ namespace Stratis.SmartContracts.Tools.Sct.Validation
                 if (!compilationResult.Success)
                 {
                     Console.WriteLine("Compilation failed!");
+                    Console.WriteLine();
 
                     validationData.CompilationErrors
                         .AddRange(compilationResult
@@ -93,6 +99,7 @@ namespace Stratis.SmartContracts.Tools.Sct.Validation
                 validationData.CompilationBytes = compilationResult.Compilation;
 
                 Console.WriteLine($"Compilation OK");
+                Console.WriteLine();
 
                 byte[] compilation = compilationResult.Compilation;
 
@@ -101,8 +108,10 @@ namespace Stratis.SmartContracts.Tools.Sct.Validation
                 SmartContractDecompilation decompilation = SmartContractDecompiler.GetModuleDefinition(compilation, new DotNetCoreAssemblyResolver());
 
                 Console.WriteLine("ModuleDefinition built successfully");
+                Console.WriteLine();
 
                 Console.WriteLine($"Validating file {file}...");
+                Console.WriteLine();
 
                 SmartContractValidationResult formatValidationResult = formatValidator.Validate(decompilation);
 
@@ -121,6 +130,14 @@ namespace Stratis.SmartContracts.Tools.Sct.Validation
                 validationData
                     .DeterminismValidationErrors
                     .AddRange(determinismValidationResult.Errors);
+
+                SmartContractValidationResult warningResult = warningValidator.Validate(decompilation);
+
+                validationData
+                    .Warnings
+                    .AddRange(warningResult
+                        .Errors
+                        .Select(e => new Warning { Message = e.Message }));
             }
 
             List<IReportSection> reportStructure = new List<IReportSection>();
@@ -129,6 +146,8 @@ namespace Stratis.SmartContracts.Tools.Sct.Validation
 
             reportStructure.Add(new FormatSection());
             reportStructure.Add(new DeterminismSection());
+
+            reportStructure.Add(new WarningsSection());
 
             if (this.ShowBytes)
                 reportStructure.Add(new ByteCodeSection());

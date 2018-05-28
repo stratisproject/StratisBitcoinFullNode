@@ -11,6 +11,7 @@ using Stratis.Bitcoin.Builder.Feature;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Connection;
+using Stratis.Bitcoin.Features.BlockStore.Controllers;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
 using Stratis.Bitcoin.Utilities;
@@ -118,6 +119,12 @@ namespace Stratis.Bitcoin.Features.BlockStore
             return this.blockRepository.GetTrxBlockIdAsync(trxid);
         }
 
+        /// <inheritdoc/>
+        public ChainedHeader GetHighestPersistedBlock()
+        {
+            return this.blockRepository.HighestPersistedBlock;
+        }
+
         public override void Initialize()
         {
             this.logger.LogTrace("()");
@@ -143,6 +150,16 @@ namespace Stratis.Bitcoin.Features.BlockStore
         public static void PrintHelp(Network network)
         {
             StoreSettings.PrintHelp(network);
+        }
+
+        /// <summary>
+        /// Get the default configuration.
+        /// </summary>
+        /// <param name="builder">The string builder to add the settings to.</param>
+        /// <param name="network">The network to base the defaults off.</param>
+        public static void BuildDefaultConfigurationFile(StringBuilder builder, Network network)
+        {
+            StoreSettings.BuildDefaultConfigurationFile(builder, network);
         }
 
         /// <inheritdoc />
@@ -178,6 +195,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
                         services.AddSingleton<BlockStoreManager>();
                         services.AddSingleton<BlockStoreSignaled>();
                         services.AddSingleton<StoreSettings>(new StoreSettings(setup));
+                        services.AddSingleton<BlockStoreController>();
                     });
             });
 

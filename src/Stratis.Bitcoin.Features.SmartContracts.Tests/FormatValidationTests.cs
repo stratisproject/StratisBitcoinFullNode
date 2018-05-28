@@ -1,12 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using Mono.Cecil;
-using Stratis.Bitcoin.Features.SmartContracts.Tests.SmartContracts;
 using Stratis.SmartContracts.Core.Compilation;
 using Stratis.SmartContracts.Core.ContractValidation;
-using Stratis.SmartContracts.Core.Util;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Tests
@@ -46,6 +42,10 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             SmartContractCompiler.CompileFile("SmartContracts/InvalidParam.cs").Compilation;
 
         private static readonly SmartContractDecompilation InvalidParamDecompilation = SmartContractDecompiler.GetModuleDefinition(InvalidParamCompilation);
+
+        public static readonly byte[] ArrayInitializationCompilation = SmartContractCompiler.CompileFile("SmartContracts/ArrayInitialization.cs").Compilation;
+
+        public static readonly SmartContractDecompilation ArrayInitializationDecompilation = SmartContractDecompiler.GetModuleDefinition(ArrayInitializationCompilation);
 
         [Fact]
         public void SmartContract_ValidateFormat_HasSingleConstructorSuccess()
@@ -114,6 +114,179 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             IEnumerable<SmartContractValidationError> validationResult = validator.Validate(type);
 
             Assert.Single(validationResult);
+        }
+
+        [Fact]
+        public void SmartContract_ValidateFormat_ArrayInitialization()
+        {
+            var validator = new AsyncValidator();
+            TypeDefinition type = ArrayInitializationDecompilation.ContractType;
+
+            IEnumerable<SmartContractValidationError> validationResult = validator.Validate(type);
+
+            Assert.Empty(validationResult);
+        }
+
+        [Fact]
+        public void SmartContract_ValidateFormat_One_CustomStruct()
+        {
+            var adjustedSource = @"
+                using System;
+                using Stratis.SmartContracts;
+
+                public class StructTest : SmartContract
+                {
+                    public struct Item
+                    {
+                        public int Number;
+                        public string Name;
+                    }
+
+                    public StructTest(ISmartContractState state) : base(state)
+                    {
+                    }
+                }
+            ";
+
+            SmartContractCompilationResult compilationResult = SmartContractCompiler.Compile(adjustedSource);
+            Assert.True(compilationResult.Success);
+
+            var validator = new NestedTypeValidator();
+
+            byte[] assemblyBytes = compilationResult.Compilation;
+            SmartContractDecompilation decomp = SmartContractDecompiler.GetModuleDefinition(assemblyBytes);
+            IEnumerable<SmartContractValidationError> result = validator.Validate(decomp.ContractType);
+
+            Assert.Empty(result);
+        }
+
+        [Fact]
+        public void SmartContract_ValidateFormat_Two_CustomStructs()
+        {
+            var adjustedSource = @"
+                using System;
+                using Stratis.SmartContracts;
+
+                public class StructTest : SmartContract
+                {
+                    public struct Item
+                    {
+                        public int Number;
+                        public string Name;
+                    }
+
+                    public struct Nested
+                    {
+                        public Item AnItem;
+                        public int Id;
+                    }
+
+                    public StructTest(ISmartContractState state) : base(state)
+                    {
+                    }
+                }
+            ";
+
+            SmartContractCompilationResult compilationResult = SmartContractCompiler.Compile(adjustedSource);
+            Assert.True(compilationResult.Success);
+
+            var validator = new NestedTypeValidator();
+
+            byte[] assemblyBytes = compilationResult.Compilation;
+            SmartContractDecompilation decomp = SmartContractDecompiler.GetModuleDefinition(assemblyBytes);
+            IEnumerable<SmartContractValidationError> result = validator.Validate(decomp.ContractType);
+
+            Assert.Empty(result);
+        }
+
+        [Fact]
+        public void SmartContract_ValidateFormat_ConstantField_Success()
+        {
+            var adjustedSource = @"
+                using System;
+                using Stratis.SmartContracts;
+
+                public class FieldTest : SmartContract
+                {
+                    private const int field1 = 12345;
+
+                    public FieldTest(ISmartContractState state) : base(state)
+                    {
+                    }
+                }
+            ";
+
+            SmartContractCompilationResult compilationResult = SmartContractCompiler.Compile(adjustedSource);
+            Assert.True(compilationResult.Success);
+
+            var validator = new FieldDefinitionValidator();
+
+            byte[] assemblyBytes = compilationResult.Compilation;
+            SmartContractDecompilation decomp = SmartContractDecompiler.GetModuleDefinition(assemblyBytes);
+
+            IEnumerable<SmartContractValidationError> result = validator.Validate(decomp.ContractType);
+
+            Assert.Empty(result);
+        }
+
+        [Fact]
+        public void SmartContract_ValidateFormat_UnitializedReadonlyField_Fails()
+        {
+            var adjustedSource = @"
+                using System;
+                using Stratis.SmartContracts;
+
+                public class FieldTest : SmartContract
+                {
+                    private readonly int field1;
+
+                    public FieldTest(ISmartContractState state) : base(state)
+                    {
+                    }
+                }
+            ";
+
+            SmartContractCompilationResult compilationResult = SmartContractCompiler.Compile(adjustedSource);
+            Assert.True(compilationResult.Success);
+
+            var validator = new FieldDefinitionValidator();
+
+            byte[] assemblyBytes = compilationResult.Compilation;
+            SmartContractDecompilation decomp = SmartContractDecompiler.GetModuleDefinition(assemblyBytes);
+
+            IEnumerable<SmartContractValidationError> result = validator.Validate(decomp.ContractType);
+
+            Assert.NotEmpty(result);
+        }
+
+        [Fact]
+        public void SmartContract_ValidateFormat_InitializedReadonlyField_Fails()
+        {
+            var adjustedSource = @"
+                using System;
+                using Stratis.SmartContracts;
+
+                public class FieldTest : SmartContract
+                {
+                    private readonly int field1 = 1234567;
+
+                    public FieldTest(ISmartContractState state) : base(state)
+                    {
+                    }
+                }
+            ";
+
+            SmartContractCompilationResult compilationResult = SmartContractCompiler.Compile(adjustedSource);
+            Assert.True(compilationResult.Success);
+
+            var validator = new FieldDefinitionValidator();
+
+            byte[] assemblyBytes = compilationResult.Compilation;
+            SmartContractDecompilation decomp = SmartContractDecompiler.GetModuleDefinition(assemblyBytes);
+
+            IEnumerable<SmartContractValidationError> result = validator.Validate(decomp.ContractType);
+
+            Assert.NotEmpty(result);
         }
     }
 }

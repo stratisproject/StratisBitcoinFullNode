@@ -6,3 +6,6 @@
 
 [assembly: System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE0009:Member access should be qualified.", Justification = "<Pending>", Scope = "member", Target = "~M:Stratis.Bitcoin.Features.SmartContracts.Tests.DeterminismValidationTest.ValidateActionAllowed")]
 
+[assembly: System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE1006:Naming Styles", Justification = "<Pending>", Scope = "member", Target = "~M:AsyncTask.Test~System.Threading.Tasks.Task")]
+
+[assembly: System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE1006:Naming Styles", Justification = "<Pending>", Scope = "member", Target = "~M:AsyncVoid.Test")]

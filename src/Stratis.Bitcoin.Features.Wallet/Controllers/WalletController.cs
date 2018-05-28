@@ -10,10 +10,10 @@ using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Connection;
+using Stratis.Bitcoin.Features.Wallet.Broadcasting;
 using Stratis.Bitcoin.Features.Wallet.Helpers;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Features.Wallet.Models;
-using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Utilities.JsonErrors;
 
@@ -696,7 +696,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
 
             try
             {
-                var transaction = new Transaction(request.Hex);
+                var transaction = Transaction.Load(request.Hex, this.network);
 
                 WalletSendTransactionModel model = new WalletSendTransactionModel
                 {
@@ -715,9 +715,15 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                     });
                 }
 
-                this.walletManager.ProcessTransaction(transaction, null, null, false);
-
                 this.broadcasterManager.BroadcastTransactionAsync(transaction).GetAwaiter().GetResult();
+
+                TransactionBroadcastEntry transactionBroadCastEntry = this.broadcasterManager.GetTransaction(transaction.GetHash());
+
+                if (!string.IsNullOrEmpty(transactionBroadCastEntry?.ErrorMessage))
+                {                    
+                    this.logger.LogError("Exception occurred: {0}", transactionBroadCastEntry.ErrorMessage);
+                    return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, transactionBroadCastEntry.ErrorMessage, "Transaction Exception");
+                }
 
                 return this.Json(model);
             }
@@ -911,15 +917,15 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                 {
                     // From the list of removed transactions, check which one is the oldest and retrieve the block right before that time.
                     DateTimeOffset earliestDate = result.Min(r => r.creationTime);
-                    ChainedBlock chainedBlock = this.chain.GetBlock(this.chain.GetHeightAtTime(earliestDate.DateTime));
+                    ChainedHeader chainedHeader = this.chain.GetBlock(this.chain.GetHeightAtTime(earliestDate.DateTime));
 
                     // Update the wallet and save it to the file system.
                     Wallet wallet = this.walletManager.GetWallet(request.WalletName);
-                    wallet.SetLastBlockDetailsByCoinType(this.coinType, chainedBlock);
+                    wallet.SetLastBlockDetailsByCoinType(this.coinType, chainedHeader);
                     this.walletManager.SaveWallet(wallet);
 
                     // Start the syncing process from the block before the earliest transaction was seen.
-                    this.walletSyncManager.SyncFromHeight(chainedBlock.Height - 1);
+                    this.walletSyncManager.SyncFromHeight(chainedHeader.Height - 1);
                 }
 
                 IEnumerable<RemovedTransactionModel> model = result.Select(r => new RemovedTransactionModel
@@ -979,7 +985,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                 return BuildErrorResponse(this.ModelState);
             }
 
-            ChainedBlock block = this.chain.GetBlock(uint256.Parse(model.Hash));
+            ChainedHeader block = this.chain.GetBlock(uint256.Parse(model.Hash));
 
             if (block == null)
             {

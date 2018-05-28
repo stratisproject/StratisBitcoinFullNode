@@ -2,7 +2,7 @@
   "profiles": {
     "Stratis.StratisSmartContractsD": {
       "commandName": "Project",
-      "commandLineArgs": "-connect=20.190.57.145"
+      "commandLineArgs": "-addnode=13.64.119.220 -addnode=20.190.57.145"
     }
   }
 }

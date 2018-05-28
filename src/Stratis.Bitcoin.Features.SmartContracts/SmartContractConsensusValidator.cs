@@ -9,7 +9,6 @@ using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Utilities;
 using Stratis.SmartContracts.Core;
-using Stratis.SmartContracts.Core.Backend;
 using Stratis.SmartContracts.Core.State;
 using Stratis.SmartContracts.Core.Util;
 
@@ -21,8 +20,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         private readonly ILogger logger;
         private readonly ContractStateRepositoryRoot originalStateRoot;
         private readonly CoinView coinView;
-        private ISmartContractExecutorFactory executorFactory;
-        private ISmartContractCarrierSerializer carrierSerializer;
+        private readonly ISmartContractExecutorFactory executorFactory;
+        private readonly ISmartContractCarrierSerializer carrierSerializer;
         private List<Transaction> blockTxsProcessed;
         private Transaction generatedTransaction;
         private uint refundCounter;
@@ -53,7 +52,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             this.logger.LogTrace("()");
             this.blockTxsProcessed = new List<Transaction>();
             NBitcoin.Block block = context.BlockValidationContext.Block;
-            ChainedBlock index = context.BlockValidationContext.ChainedBlock;
+            ChainedHeader index = context.BlockValidationContext.ChainedHeader;
             DeploymentFlags flags = context.Flags;
             UnspentOutputSet view = context.Set;
 
@@ -61,7 +60,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             taskScheduler = taskScheduler ?? TaskScheduler.Default;
 
             // Start state from previous block's root
-            this.originalStateRoot.SyncToRoot(context.ConsensusTip.Header.HashStateRoot.ToBytes());
+            this.originalStateRoot.SyncToRoot(((SmartContractBlockHeader)context.ConsensusTip.Header).HashStateRoot.ToBytes());
             IContractStateRepository trackedState = this.originalStateRoot.StartTracking();
 
             this.refundCounter = 1;
@@ -146,7 +145,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                                 }
 
                                 var checker = new TransactionChecker(tx, inputIndexCopy, txout.Value, txData);
-                                var ctx = new ScriptEvaluationContext();
+                                var ctx = new ScriptEvaluationContext(this.network);
                                 ctx.ScriptVerify = flags.ScriptFlags;
                                 return ctx.VerifyScript(input.ScriptSig, txout.ScriptPubKey, checker);
                             });
@@ -173,7 +172,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             }
             else this.logger.LogTrace("BIP68, SigOp cost, and block reward validation skipped for block at height {0}.", index.Height);
 
-            if (new uint256(this.originalStateRoot.Root) != block.Header.HashStateRoot)
+            if (new uint256(this.originalStateRoot.Root) != ((SmartContractBlockHeader)block.Header).HashStateRoot)
                 SmartContractConsensusErrors.UnequalStateRoots.Throw();
 
             this.originalStateRoot.Commit();
@@ -182,35 +181,32 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         }
 
         /// <summary>
-        /// TODO: Could be incomplete. Should handle transactions just like blockassembler (e.g. exactly the same
-        /// in terms of what happens when contracts fail,  Rollback() etc.)
+        /// Executes contracts as necessary and updates the coinview / UTXOset after execution.
         /// </summary>
         /// <param name="context"></param>
         /// <param name="transaction"></param>
         protected void UpdateCoinViewAndExecuteContracts(RuleContext context, Transaction transaction, IContractStateRepository trackedState)
         {
-            Money mempoolFee = 0;
-            if (!transaction.IsCoinBase)
-            {
-                mempoolFee = transaction.GetFee(context.Set);
-            }
-
-            base.UpdateCoinView(context, transaction);
-
             if (this.generatedTransaction != null)
             {
                 ValidateGeneratedTransaction(transaction);
+                base.UpdateCoinView(context, transaction);
                 return;
             }
-            
+
             // If we are here, was definitely submitted by someone
             ValidateSubmittedTransaction(transaction);
-
             TxOut smartContractTxOut = transaction.Outputs.FirstOrDefault(txOut => txOut.ScriptPubKey.IsSmartContractExec);
             if (smartContractTxOut == null)
+            {
+                // Someone submitted a standard transaction - no smart contract opcodes.
+                base.UpdateCoinView(context, transaction);
                 return;
+            }
 
-            ExecuteContractTransaction(context, transaction, smartContractTxOut, mempoolFee);
+            // Someone submitted a smart contract transaction.
+            ExecuteContractTransaction(context, transaction, smartContractTxOut);
+            base.UpdateCoinView(context, transaction);
         }
 
         /// <summary>
@@ -224,7 +220,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             this.generatedTransaction = null;
             return;
         }
-        
+
         /// <summary>
         /// Validates that a submitted transacction doesn't contain illegal operations
         /// </summary>
@@ -234,25 +230,39 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             if (transaction.Inputs.Any(x => x.ScriptSig.IsSmartContractSpend))
                 SmartContractConsensusErrors.UserOpSpend.Throw();
             if (transaction.Outputs.Any(x => x.ScriptPubKey.IsSmartContractInternalCall))
-                SmartContractConsensusErrors.UserInternalCall.Throw(); 
+                SmartContractConsensusErrors.UserInternalCall.Throw();
         }
 
         /// <summary>
         /// Executes the smart contract part of a transaction
         /// </summary>
-        /// <param name="context"></param>
-        /// <param name="transaction"></param>
-        /// <param name="smartContractTxOut"></param>
-        private void ExecuteContractTransaction(RuleContext context, Transaction transaction, TxOut smartContractTxOut, Money mempoolFee)
+        private void ExecuteContractTransaction(RuleContext context, Transaction transaction, TxOut smartContractTxOut)
         {
-            ulong blockHeight = Convert.ToUInt64(context.BlockValidationContext.ChainedBlock.Height);
+            ulong blockHeight = Convert.ToUInt64(context.BlockValidationContext.ChainedHeader.Height);
 
             var smartContractCarrier = this.carrierSerializer.Deserialize(transaction);
 
-            smartContractCarrier.Sender = GetSenderUtil.GetSender(transaction, this.coinView, this.blockTxsProcessed);
+            GetSenderUtil.GetSenderResult getSenderResult = GetSenderUtil.GetSender(this.network, transaction, this.coinView, this.blockTxsProcessed);
+
+            if (!getSenderResult.Success)
+            {
+                throw new ConsensusErrorException(new ConsensusError("sc-consensusvalidator-executecontracttransaction-sender", getSenderResult.Error));
+            }
+
+            smartContractCarrier.Sender = getSenderResult.Sender;
 
             Script coinbaseScriptPubKey = context.BlockValidationContext.Block.Transactions[0].Outputs[0].ScriptPubKey;
-            uint160 coinbaseAddress = GetSenderUtil.GetAddressFromScript(coinbaseScriptPubKey);
+
+            GetSenderUtil.GetSenderResult getCoinbaseResult = GetSenderUtil.GetAddressFromScript(this.network, coinbaseScriptPubKey);
+
+            if (!getCoinbaseResult.Success)
+            {
+                throw new ConsensusErrorException(new ConsensusError("sc-consensusvalidator-executecontracttransaction-coinbase", getCoinbaseResult.Error));
+            }
+
+            uint160 coinbaseAddress = getCoinbaseResult.Sender;
+
+            Money mempoolFee = transaction.GetFee(context.Set);
 
             ISmartContractExecutor executor = this.executorFactory.CreateExecutor(smartContractCarrier, mempoolFee, this.originalStateRoot);
 
@@ -266,7 +276,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
 
         private void ValidateRefunds(List<TxOut> refunds, Transaction coinbaseTransaction)
         {
-            foreach(TxOut refund in refunds)
+            foreach (TxOut refund in refunds)
             {
                 TxOut refundToMatch = coinbaseTransaction.Outputs[this.refundCounter];
                 if (refund.Value != refundToMatch.Value || refund.ScriptPubKey != refundToMatch.ScriptPubKey)
@@ -274,6 +284,5 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                 this.refundCounter++;
             }
         }
-
     }
 }

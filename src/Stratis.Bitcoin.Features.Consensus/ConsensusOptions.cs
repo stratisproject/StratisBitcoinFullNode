@@ -110,6 +110,14 @@ namespace Stratis.Bitcoin.Features.Consensus
         }
     }
 
+    public class SmartContractConsensusOptions : PowConsensusOptions
+    {
+        public SmartContractConsensusOptions()
+        {
+            this.CoinbaseMaturity = 5;
+        }
+    }
+
     public static class ConsensusExtentions
     {
         public static T Option<T>(this NBitcoin.Consensus item)

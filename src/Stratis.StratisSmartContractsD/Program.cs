@@ -27,15 +27,12 @@ namespace Stratis.StratisSmartContractsD
         {
             try
             {
-                //Network network = args.Contains("-testnet") ? Network.StratisTest : Network.StratisMain;
-                Network network = Network.SmartContractsTest;
-                NodeSettings nodeSettings = new NodeSettings(network, ProtocolVersion.ALT_PROTOCOL_VERSION, args: args, loadConfiguration: false);
-
+                NodeSettings nodeSettings = new NodeSettings(Network.SmartContractsTest, ProtocolVersion.ALT_PROTOCOL_VERSION, "StratisSC", args: args, loadConfiguration: false);
 
                 // NOTES: running BTC and STRAT side by side is not possible yet as the flags for serialization are static
-                var node = new FullNodeBuilder()
+                Bitcoin.IFullNode node = new FullNodeBuilder()
                     .UseNodeSettings(nodeSettings)
-                    .UsePowConsensus()
+                    .UseSmartContractConsensus()
                     .UseBlockStore()
                     .UseMempool()
                     .UseWallet()

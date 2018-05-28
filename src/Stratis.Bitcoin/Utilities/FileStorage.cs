@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Newtonsoft.Json;
@@ -29,18 +30,54 @@ namespace Stratis.Bitcoin.Utilities
         }
 
         /// <summary>
-        /// Saves an object to a file.
+        /// Saves an object to a file, optionally keeping a backup of it.
         /// </summary>
         /// <param name="toSave">Object to save as a file.</param>
         /// <param name="fileName">Name of the file to be saved.</param>
-        public void SaveToFile(T toSave, string fileName)
+        /// <param name="saveBackupFile">A value indicating whether to save a backup of the file.</param>
+        public void SaveToFile(T toSave, string fileName, bool saveBackupFile = false)
         {
             Guard.NotEmpty(fileName, nameof(fileName));
             Guard.NotNull(toSave, nameof(toSave));
 
             string filePath = Path.Combine(this.FolderPath, fileName);
+            long uniqueId = DateTime.UtcNow.Ticks;
+            string newFilePath = $"{filePath}.{uniqueId}.new";
+            string tempFilePath = $"{filePath}.{uniqueId}.temp";
 
-            File.WriteAllText(filePath, JsonConvert.SerializeObject(toSave, Formatting.Indented));
+            File.WriteAllText(newFilePath, JsonConvert.SerializeObject(toSave, Formatting.Indented));
+
+            // If the file does not exist yet, create it.
+            if (!File.Exists(filePath))
+            {
+                File.Move(newFilePath, filePath);
+
+                if (saveBackupFile)
+                {
+                    File.Copy(filePath, $"{filePath}.bak", true);
+                }
+
+                return;
+            }
+
+            if (saveBackupFile)
+            {
+                File.Copy(filePath, $"{filePath}.bak", true);
+            }
+
+            // Delete the file and rename the temp file to that of the target file.
+            File.Move(filePath, tempFilePath);
+            File.Move(newFilePath, filePath);
+
+            try
+            {
+                File.Delete(tempFilePath);
+            }
+            catch (IOException)
+            {
+                // Marking the file for deletion in the future.
+                File.Move(tempFilePath, $"{ filePath}.{ uniqueId}.del");
+            }
         }
 
         /// <summary>

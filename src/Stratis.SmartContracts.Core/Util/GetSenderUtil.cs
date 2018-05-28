@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using NBitcoin;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
+using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.SmartContracts.Core.Util
 {
@@ -19,33 +20,40 @@ namespace Stratis.SmartContracts.Core.Util
         /// <param name="coinView"></param>
         /// <param name="blockTxs"></param>
         /// <returns></returns>
-        public static uint160 GetSender(Transaction tx, CoinView coinView, IList<Transaction> blockTxs)
+        public static GetSenderResult GetSender(Network network, Transaction tx, CoinView coinView, IList<Transaction> blockTxs)
         {
-            Script script = null;
-            bool scriptFilled = false;
+            OutPoint prevOut = tx.Inputs[0].PrevOut;
 
-                if (blockTxs != null & blockTxs.Count > 0)
+            // Check the txes in this block first
+            if (blockTxs != null && blockTxs.Count > 0)
             {
                 foreach (Transaction btx in blockTxs)
                 {
-                    if (btx.GetHash() == tx.Inputs[0].PrevOut.Hash)
+                    if (btx.GetHash() == prevOut.Hash)
                     {
-                        script = btx.Outputs[tx.Inputs[0].PrevOut.N].ScriptPubKey;
-                        scriptFilled = true;
-                        break;
+                        Script script = btx.Outputs[prevOut.N].ScriptPubKey;
+                        return GetAddressFromScript(network, script);
                     }
                 }
             }
 
-            if (!scriptFilled && coinView != null)
+            // Check the utxoset for the p2pk of the unspent output for this transaction
+            if (coinView != null)
             {
-                FetchCoinsResponse fetchCoinResult = coinView.FetchCoinsAsync(new uint256[] { tx.Inputs[0].PrevOut.Hash }).Result;
-                script = fetchCoinResult.UnspentOutputs.FirstOrDefault().Outputs[0].ScriptPubKey;
-                scriptFilled = true;
+                FetchCoinsResponse fetchCoinResult = coinView.FetchCoinsAsync(new uint256[] { prevOut.Hash }).Result;
+                UnspentOutputs unspentOutputs = fetchCoinResult.UnspentOutputs.FirstOrDefault();
+
+                if (unspentOutputs == null)
+                {
+                    throw new Exception("Unspent outputs to smart contract transaction are not present in coinview");
+                }
+
+                Script script = unspentOutputs.Outputs[prevOut.N].ScriptPubKey;
+
+                return GetAddressFromScript(network, script);
             }
 
-            return GetAddressFromScript(script);
-
+            return GetSenderResult.CreateFailure("Unable to get the sender of the transaction");
         }
 
         /// <summary>
@@ -53,15 +61,54 @@ namespace Stratis.SmartContracts.Core.Util
         /// </summary>
         /// <param name="script"></param>
         /// <returns></returns>
-        public static uint160 GetAddressFromScript(Script script)
+        public static GetSenderResult GetAddressFromScript(Network network, Script script)
         {
-            if (PayToPubkeyTemplate.Instance.CheckScriptPubKey(script))
-                return new uint160(script.GetDestinationPublicKeys().FirstOrDefault().Hash.ToBytes());
+            PubKey payToPubKey = PayToPubkeyTemplate.Instance.ExtractScriptPubKeyParameters(script);
 
-            if (PayToPubkeyHashTemplate.Instance.CheckScriptPubKey(script))
-                return new uint160(PayToPubkeyHashTemplate.Instance.ExtractScriptPubKeyParameters(script).ToBytes());
+            if (payToPubKey != null)
+            {
+                var address = new uint160(payToPubKey.Hash.ToBytes());
+                return GetSenderResult.CreateSuccess(address);
+            }
 
-            throw new Exception("Addresses can only be retrieved from Pay to Pub Key or Pay to Pub Key Hash");
+            if (PayToPubkeyHashTemplate.Instance.CheckScriptPubKey(network, script))
+            {
+                var address = new uint160(PayToPubkeyHashTemplate.Instance.ExtractScriptPubKeyParameters(script).ToBytes());
+                return GetSenderResult.CreateSuccess(address);
+            }
+            return GetSenderResult.CreateFailure("Addresses can only be retrieved from Pay to Pub Key or Pay to Pub Key Hash");
         }
+
+        public class GetSenderResult
+        {
+            private GetSenderResult(uint160 address)
+            {
+                this.Success = true;
+                this.Sender = address;
+            }
+
+            private GetSenderResult(string error)
+            {
+                this.Success = false;
+                this.Error = error;
+            }
+
+            public bool Success { get; }
+
+            public uint160 Sender { get; }
+
+            public string Error { get; }
+
+            public static GetSenderResult CreateSuccess(uint160 address)
+            {
+                return new GetSenderResult(address);
+            }
+
+            public static GetSenderResult CreateFailure(string error)
+            {
+                return new GetSenderResult(error);
+            }
+        }
+
     }
 }

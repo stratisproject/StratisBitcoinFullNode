@@ -24,7 +24,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             return tx.Inputs.All(txin => this.GetOutputFor(txin) != null);
         }
 
-        public UnspentOutputs AccessCoins(uint256 uint256)
+        public virtual UnspentOutputs AccessCoins(uint256 uint256)
         {
             return this.unspents.TryGet(uint256);
         }

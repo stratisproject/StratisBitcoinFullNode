@@ -1,8 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
 using DBreeze;
 using DBreeze.DataTypes;
 using Stratis.Bitcoin.Configuration;
+using Stratis.Patricia;
 
 namespace Stratis.SmartContracts.Core.State
 {
@@ -24,8 +24,6 @@ namespace Stratis.SmartContracts.Core.State
         {
             using (DBreeze.Transactions.Transaction t = this.engine.GetTransaction())
             {
-                Dictionary<byte[], byte[]> test = t.SelectDictionary<byte[], byte[]>(this.table);
-
                 Row<byte[], byte[]> row = t.Select<byte[], byte[]>(this.table, key);
 
                 if (row.Exists)

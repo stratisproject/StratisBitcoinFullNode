@@ -1,0 +1,74 @@
+﻿using NBitcoin;
+using Newtonsoft.Json;
+using Stratis.SmartContracts;
+
+namespace Stratis.Bitcoin.Features.SmartContracts.Models
+{
+    public abstract class BuildContractTransactionResponse
+    {
+        [JsonProperty(PropertyName = "fee")]
+        public Money Fee { get; set; }
+
+        [JsonProperty(PropertyName = "hex")]
+        public string Hex { get; set; }
+
+        [JsonProperty(PropertyName = "message")]
+        public string Message { get; set; }
+
+        [JsonProperty(PropertyName = "success")]
+        public bool Success { get; set; }
+
+        [JsonProperty(PropertyName = "transactionId")]
+        public uint256 TransactionId { get; set; }
+    }
+
+    public sealed class BuildCallContractTransactionResponse : BuildContractTransactionResponse
+    {
+        private BuildCallContractTransactionResponse() { }
+
+        public static BuildCallContractTransactionResponse Failed(string message)
+        {
+            return new BuildCallContractTransactionResponse() { Message = message, Success = false };
+        }
+
+        public static BuildCallContractTransactionResponse Succeeded(string methodName, Transaction transaction, Money transactionFee)
+        {
+            return new BuildCallContractTransactionResponse()
+            {
+                Message = string.Format("Contract was successfully called with method {0}.", methodName),
+                Success = true,
+
+                Hex = transaction.ToHex(),
+                Fee = transactionFee,
+                TransactionId = transaction.GetHash(),
+            };
+        }
+    }
+
+    public sealed class BuildCreateContractTransactionResponse : BuildContractTransactionResponse
+    {
+        [JsonProperty(PropertyName = "newContractAddress")]
+        public string NewContractAddress { get; set; }
+
+        private BuildCreateContractTransactionResponse() { }
+
+        public static BuildCreateContractTransactionResponse Failed(string message)
+        {
+            return new BuildCreateContractTransactionResponse() { Message = message };
+        }
+
+        public static BuildCreateContractTransactionResponse Succeeded(Transaction transaction, Money transactionFee, Address address)
+        {
+            return new BuildCreateContractTransactionResponse()
+            {
+                Message = "Your contract was successfully deployed.",
+                Success = true,
+
+                Hex = transaction.ToHex(),
+                Fee = transactionFee,
+                NewContractAddress = address,
+                TransactionId = transaction.GetHash(),
+            };
+        }
+    }
+}

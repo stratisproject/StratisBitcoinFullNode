@@ -2,14 +2,6 @@
 {
     public class alert_tests
     {
-        public alert_tests()
-        {
-            // These flags may get set due to static network initializers
-            // which include the initializers for Stratis.
-            Transaction.TimeStamp = false;
-            Block.BlockSignature = false;
-        }
-
         /*
          * TODO: Consider importing to FN.
         [Fact]

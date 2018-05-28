@@ -3,7 +3,6 @@ using System.Linq;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 using Stratis.SmartContracts;
-using Stratis.SmartContracts.Core.Backend;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Tests

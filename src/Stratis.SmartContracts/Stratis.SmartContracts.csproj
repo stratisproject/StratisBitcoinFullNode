@@ -5,7 +5,7 @@
     <Authors>Stratis Group Ltd.</Authors>
     <Company>Stratis Group Ltd.</Company>
     <Product>Stratis Smart Contracts</Product>
-    <Version>1.0.0-alpha-test</Version>
+    <Version>0.1.0-alpha</Version>
     <PackageId>Stratis.SmartContracts</PackageId>
   </PropertyGroup>
 

@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using NBitcoin;
+using Stratis.Patricia;
 using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.State;
 using Xunit;
@@ -60,7 +61,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             var testItem = "Test";
             list.Add(testItem);
-            var item1 = list.Get(0);
+            var item1 = list.GetValue(0);
             Assert.Equal(testItem, item1);
         }
 
@@ -95,9 +96,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             Assert.Equal((uint)3, list.Count);
 
-            var item1 = list.Get(0);
-            var item2 = list.Get(1);
-            var item3 = list.Get(2);
+            var item1 = list.GetValue(0);
+            var item2 = list.GetValue(1);
+            var item3 = list.GetValue(2);
 
             Assert.Equal(testItem, item1);
             Assert.Equal(testItem2, item2);
@@ -127,8 +128,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             list.Add("Test");
             list.Add("Test2");
 
-            var testItem = list.Get(0);
-            var testItem2 = list.Get(1);
+            var testItem = list.GetValue(0);
+            var testItem2 = list.GetValue(1);
 
             var firstItemHash = $"{listName}[0]";
             var secondItemHash = $"{listName}[1]";
@@ -176,7 +177,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             for (var i = 0; i < list.Count; i++)
             {
-                Assert.Equal(items[i], list.Get((uint)i));
+                Assert.Equal(items[i], list.GetValue((uint)i));
             }
         }
     }

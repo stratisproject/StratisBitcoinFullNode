@@ -2,13 +2,13 @@
 using System.Linq;
 using DBreeze;
 using NBitcoin;
-using Stratis.Bitcoin.Tests.Common;
+using Stratis.Bitcoin.Tests.Common.Logging;
 using Stratis.Bitcoin.Utilities;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.BlockStore.Tests
 {
-    public class BlockRepositoryTest : TestBase
+    public class BlockRepositoryTest : LogsTestBase
     {
         [Fact]
         public void InitializesGenBlockAndTxIndexOnFirstLoad()
@@ -110,12 +110,12 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
         public void GetTrxAsyncWithTransactionReturnsExistingTransaction()
         {
             string dir = CreateTestDir(this);
-            var trans = new Transaction();
+            var trans = Network.Main.Consensus.ConsensusFactory.CreateTransaction();
             trans.Version = 125;
 
             using (var engine = new DBreezeEngine(dir))
             {
-                var block = new Block();
+                var block = Network.Main.Consensus.ConsensusFactory.CreateBlock();
                 block.Header.GetHash();
                 block.Transactions.Add(trans);
 
@@ -210,20 +210,19 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
 
             var nextBlockHash = new uint256(1241256);
             var blocks = new List<Block>();
-            var blockHeader = new BlockHeader();
+            var block = Network.Main.Consensus.ConsensusFactory.CreateBlock();
+            var blockHeader = block.Header;
             blockHeader.Bits = new Target(12);
-            var block = new Block(blockHeader);
-            var transaction = new Transaction();
+            var transaction = Network.Main.Consensus.ConsensusFactory.CreateTransaction();
             transaction.Version = 32;
             block.Transactions.Add(transaction);
-            transaction = new Transaction();
+            transaction = Network.Main.Consensus.ConsensusFactory.CreateTransaction();
             transaction.Version = 48;
             block.Transactions.Add(transaction);
             blocks.Add(block);
-
-            var blockHeader2 = new BlockHeader();
-            var block2 = new Block(blockHeader2);
-            transaction = new Transaction();
+            
+            var block2 = Network.Main.Consensus.ConsensusFactory.CreateBlock();
+            transaction = Network.Main.Consensus.ConsensusFactory.CreateTransaction();
             transaction.Version = 15;
             block2.Transactions.Add(transaction);
             blocks.Add(block2);
@@ -257,7 +256,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
                 foreach (var item in blockDict)
                 {
                     var bl = blocks.Single(b => b.GetHash() == new uint256(item.Key));
-                    Assert.Equal(bl.Header.GetHash(), new Block(item.Value).Header.GetHash());
+                    Assert.Equal(bl.Header.GetHash(), Block.Load(item.Value, Network.Main).Header.GetHash());
                 }
 
                 foreach (var item in transDict)
@@ -324,7 +323,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
         public void GetAsyncWithExistingBlockReturnsBlock()
         {
             string dir = CreateTestDir(this);
-            var block = new Block();
+            var block = Network.Main.Consensus.ConsensusFactory.CreateBlock();
 
             using (var engine = new DBreezeEngine(dir))
             {
@@ -339,6 +338,38 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
                 task.Wait();
 
                 Assert.Equal(block.GetHash(), task.Result.GetHash());
+            }
+        }
+
+        [Fact]
+        public void GetAsyncWithExistingBlocksReturnsBlocks()
+        {
+            string dir = CreateTestDir(this);
+            var blocks = new Block[10];
+
+            blocks[0] = Network.Main.Consensus.ConsensusFactory.CreateBlock();
+            for (int i = 1; i < blocks.Length; i++)
+            {
+                blocks[i] = Network.Main.Consensus.ConsensusFactory.CreateBlock();
+                blocks[i].Header.HashPrevBlock = blocks[i - 1].Header.GetHash();
+            }
+
+            using (var engine = new DBreezeEngine(dir))
+            {
+                var transaction = engine.GetTransaction();
+                for (int i = 0; i < blocks.Length; i++)
+                    transaction.Insert<byte[], byte[]>("Block", blocks[i].GetHash().ToBytes(), blocks[i].ToBytes());
+                transaction.Commit();
+            }
+
+            using (var repository = this.SetupRepository(Network.Main, dir))
+            {
+                var task = repository.GetBlocksAsync(blocks.Select(b => b.GetHash()).ToList());
+                task.Wait();
+
+                Assert.Equal(blocks.Length, task.Result.Count);
+                for (int i = 0; i < 10; i++)
+                    Assert.Equal(blocks[i].GetHash(), task.Result[i].GetHash());
             }
         }
 
@@ -360,7 +391,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
         public void ExistAsyncWithExistingBlockReturnsTrue()
         {
             string dir = CreateTestDir(this);
-            var block = new Block();
+            var block = Network.Main.Consensus.ConsensusFactory.CreateBlock();
 
             using (var engine = new DBreezeEngine(dir))
             {
@@ -396,8 +427,8 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
         public void DeleteAsyncRemovesBlocksAndTransactions()
         {
             string dir = CreateTestDir(this);
-            var block = new Block();
-            block.Transactions.Add(new Transaction());
+            var block = Network.Main.Consensus.ConsensusFactory.CreateBlock();
+            block.Transactions.Add(Network.Main.Consensus.ConsensusFactory.CreateTransaction());
 
             using (var engine = new DBreezeEngine(dir))
             {
@@ -430,7 +461,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
 
         private IBlockRepository SetupRepository(Network main, string dir)
         {
-            var repository = new BlockRepository(main, dir, DateTimeProvider.Default, this.loggerFactory);
+            var repository = new BlockRepository(main, dir, DateTimeProvider.Default, this.LoggerFactory.Object);
             repository.InitializeAsync().GetAwaiter().GetResult();
 
             return repository;

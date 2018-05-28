@@ -1,6 +1,5 @@
 ﻿using System.Collections.Generic;
 using NBitcoin;
-using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.Miner.Interfaces
 {
@@ -22,13 +21,18 @@ namespace Stratis.Bitcoin.Features.Miner.Interfaces
         /// <param name="pindexPrev">The previous chained block.</param>
         /// <param name="nExtraNonce">The extra nonce counter.</param>
         /// <returns>The new extra nonce after incrementing.</returns>
-        int IncrementExtraNonce(Block pblock, ChainedBlock pindexPrev, int nExtraNonce);
+        int IncrementExtraNonce(Block pblock, ChainedHeader pindexPrev, int nExtraNonce);
 
         /// <summary>
         /// Starts a new async mining loop or returns the existing running mining loop.
         /// </summary>
         /// <param name="reserveScript">The reserve script to use in the mining loop.</param>
         /// <returns>The running async loop.</returns>
-        IAsyncLoop Mine(Script reserveScript);
+        void Mine(Script reserveScript);
+
+        /// <summary>
+        /// Stops the async mining loop.
+        /// </summary>
+        void StopMining();
     }
 }

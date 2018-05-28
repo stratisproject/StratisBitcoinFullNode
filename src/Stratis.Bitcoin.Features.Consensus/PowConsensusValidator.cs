@@ -1,13 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
-using NBitcoin.Crypto;
 using Stratis.Bitcoin.Base.Deployments;
 using Stratis.Bitcoin.Features.Consensus.Interfaces;
+using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.Consensus
@@ -36,6 +35,8 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <summary>Keeps track of how much time different actions took to execute and how many times they were executed.</summary>
         public ConsensusPerformanceCounter PerformanceCounter { get; }
 
+        protected readonly Network network;
+
         /// <summary>Provider of time functions.</summary>
         protected readonly IDateTimeProvider dateTimeProvider;
 
@@ -54,6 +55,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.ConsensusParams = network.Consensus;
             this.ConsensusOptions = network.Consensus.Option<PowConsensusOptions>();
+            this.network = network;
             this.dateTimeProvider = dateTimeProvider;
             this.PerformanceCounter = new ConsensusPerformanceCounter(this.dateTimeProvider);
             this.Checkpoints = checkpoints;
@@ -65,29 +67,12 @@ namespace Stratis.Bitcoin.Features.Consensus
             this.logger.LogTrace("()");
 
             Block block = context.BlockValidationContext.Block;
-            ChainedBlock index = context.BlockValidationContext.ChainedBlock;
+            ChainedHeader index = context.BlockValidationContext.ChainedHeader;
             DeploymentFlags flags = context.Flags;
             UnspentOutputSet view = context.Set;
 
             this.PerformanceCounter.AddProcessedBlocks(1);
             taskScheduler = taskScheduler ?? TaskScheduler.Default;
-
-            if (!context.SkipValidation)
-            {
-                if (flags.EnforceBIP30)
-                {
-                    foreach (Transaction tx in block.Transactions)
-                    {
-                        UnspentOutputs coins = view.AccessCoins(tx.GetHash());
-                        if ((coins != null) && !coins.IsPrunable)
-                        {
-                            this.logger.LogTrace("(-)[BAD_TX_BIP_30]");
-                            ConsensusErrors.BadTransactionBIP30.Throw();
-                        }
-                    }
-                }
-            }
-            else this.logger.LogTrace("BIP30 validation skipped for checkpointed block at height {0}.", index.Height);
 
             long sigOpsCost = 0;
             Money fees = Money.Zero;
@@ -98,6 +83,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                 Transaction tx = block.Transactions[txIndex];
                 if (!context.SkipValidation)
                 {
+
                     if (!tx.IsCoinBase && (!context.IsPoS || (context.IsPoS && !tx.IsCoinStake)))
                     {
                         int[] prevheights;
@@ -147,7 +133,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                             var checkInput = new Task<bool>(() =>
                             {
                                 var checker = new TransactionChecker(tx, inputIndexCopy, txout.Value, txData);
-                                var ctx = new ScriptEvaluationContext();
+                                var ctx = new ScriptEvaluationContext(this.network);
                                 ctx.ScriptVerify = flags.ScriptFlags;
                                 return ctx.VerifyScript(input.ScriptSig, txout.ScriptPubKey, checker);
                             });
@@ -185,7 +171,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         {
             this.logger.LogTrace("()");
 
-            ChainedBlock index = context.BlockValidationContext.ChainedBlock;
+            ChainedHeader index = context.BlockValidationContext.ChainedHeader;
             UnspentOutputSet view = context.Set;
 
             view.Update(transaction, index.Height);
@@ -339,7 +325,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             if (!flags.ScriptFlags.HasFlag(ScriptVerify.Witness))
                 return 0;
 
-            WitProgramParameters witParams = PayToWitTemplate.Instance.ExtractScriptPubKeyParameters2(scriptPubKey);
+            WitProgramParameters witParams = PayToWitTemplate.Instance.ExtractScriptPubKeyParameters2(this.network, scriptPubKey);
 
             if (witParams?.Version == 0)
             {
@@ -371,8 +357,8 @@ namespace Stratis.Bitcoin.Features.Consensus
             for (int i = 0; i < transaction.Inputs.Count; i++)
             {
                 TxOut prevout = inputs.GetOutputFor(transaction.Inputs[i]);
-                if (prevout.ScriptPubKey.IsPayToScriptHash)
-                    sigOps += prevout.ScriptPubKey.GetSigOpCount(transaction.Inputs[i].ScriptSig);
+                if (prevout.ScriptPubKey.IsPayToScriptHash(this.network))
+                    sigOps += prevout.ScriptPubKey.GetSigOpCount(this.network, transaction.Inputs[i].ScriptSig);
             }
 
             return sigOps;
@@ -408,9 +394,9 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <inheritdoc />
         public long GetBlockWeight(Block block)
         {
-            var options = NetworkOptions.TemporaryOptions;
-            return this.GetSize(block, options & ~NetworkOptions.Witness) * (this.ConsensusOptions.WitnessScaleFactor - 1) +
-                   this.GetSize(block, options | NetworkOptions.Witness);
+            return this.GetSize(block, TransactionOptions.None) 
+                   * (this.ConsensusOptions.WitnessScaleFactor - 1) 
+                   + this.GetSize(block, TransactionOptions.Witness);
         }
 
         /// <summary>
@@ -419,10 +405,11 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <param name="data">Data that we calculate serialized size of.</param>
         /// <param name="options">Serialization options.</param>
         /// <returns>Serialized size of <paramref name="data"/> in bytes.</returns>
-        private int GetSize(IBitcoinSerializable data, NetworkOptions options)
+        private int GetSize(IBitcoinSerializable data, TransactionOptions options)
         {
             var bms = new BitcoinStream(Stream.Null, true);
             bms.TransactionOptions = options;
+            bms.ConsensusFactory = this.network.Consensus.ConsensusFactory;
             data.ReadWrite(bms);
             return (int)bms.Counter.WrittenBytes;
         }
@@ -452,7 +439,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             foreach (Transaction tx in block.Transactions.Skip(1))
                 leaves.Add(tx.GetWitHash());
 
-            return this.ComputeMerkleRoot(leaves, out mutated);
+            return BlockMerkleRootRule.ComputeMerkleRoot(leaves, out mutated);
         }
 
         /// <inheritdoc />
@@ -462,130 +449,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             foreach (Transaction tx in block.Transactions)
                 leaves.Add(tx.GetHash());
 
-            return this.ComputeMerkleRoot(leaves, out mutated);
-        }
-
-        /// <inheritdoc />
-        public uint256 ComputeMerkleRoot(List<uint256> leaves, out bool mutated)
-        {
-            var branch = new List<uint256>();
-
-            mutated = false;
-            if (leaves.Count == 0)
-                return uint256.Zero;
-
-            // count is the number of leaves processed so far.
-            uint count = 0;
-
-            // inner is an array of eagerly computed subtree hashes, indexed by tree
-            // level (0 being the leaves).
-            // For example, when count is 25 (11001 in binary), inner[4] is the hash of
-            // the first 16 leaves, inner[3] of the next 8 leaves, and inner[0] equal to
-            // the last leaf. The other inner entries are undefined.
-            var inner = new uint256[32];
-
-            for (int i = 0; i < inner.Length; i++)
-                inner[i] = uint256.Zero;
-
-            // Which position in inner is a hash that depends on the matching leaf.
-            int matchLevel = -1;
-
-            // First process all leaves into 'inner' values.
-            while (count < leaves.Count)
-            {
-                uint256 h = leaves[(int)count];
-                bool match = false;
-                count++;
-                int level;
-
-                // For each of the lower bits in count that are 0, do 1 step. Each
-                // corresponds to an inner value that existed before processing the
-                // current leaf, and each needs a hash to combine it.
-                for (level = 0; (count & (((uint)1) << level)) == 0; level++)
-                {
-                    if (branch != null)
-                    {
-                        if (match)
-                        {
-                            branch.Add(inner[level]);
-                        }
-                        else if (matchLevel == level)
-                        {
-                            branch.Add(h);
-                            match = true;
-                        }
-                    }
-                    if (!mutated)
-                        mutated = inner[level] == h;
-                    var hash = new byte[64];
-                    Buffer.BlockCopy(inner[level].ToBytes(), 0, hash, 0, 32);
-                    Buffer.BlockCopy(h.ToBytes(), 0, hash, 32, 32);
-                    h = Hashes.Hash256(hash);
-                }
-
-                // Store the resulting hash at inner position level.
-                inner[level] = h;
-                if (match)
-                    matchLevel = level;
-            }
-
-            uint256 root;
-
-            {
-                // Do a final 'sweep' over the rightmost branch of the tree to process
-                // odd levels, and reduce everything to a single top value.
-                // Level is the level (counted from the bottom) up to which we've sweeped.
-                int level = 0;
-
-                // As long as bit number level in count is zero, skip it. It means there
-                // is nothing left at this level.
-                while ((count & (((uint)1) << level)) == 0)
-                    level++;
-
-                root = inner[level];
-                bool match = matchLevel == level;
-                while (count != (((uint)1) << level))
-                {
-                    // If we reach this point, h is an inner value that is not the top.
-                    // We combine it with itself (Bitcoin's special rule for odd levels in
-                    // the tree) to produce a higher level one.
-                    if (match)
-                        branch.Add(root);
-
-                    var hash = new byte[64];
-                    Buffer.BlockCopy(root.ToBytes(), 0, hash, 0, 32);
-                    Buffer.BlockCopy(root.ToBytes(), 0, hash, 32, 32);
-                    root = Hashes.Hash256(hash);
-
-                    // Increment count to the value it would have if two entries at this
-                    // level had existed.
-                    count += (((uint)1) << level);
-                    level++;
-
-                    // And propagate the result upwards accordingly.
-                    while ((count & (((uint)1) << level)) == 0)
-                    {
-                        if (match)
-                        {
-                            branch.Add(inner[level]);
-                        }
-                        else if (matchLevel == level)
-                        {
-                            branch.Add(root);
-                            match = true;
-                        }
-
-                        var hashh = new byte[64];
-                        Buffer.BlockCopy(inner[level].ToBytes(), 0, hashh, 0, 32);
-                        Buffer.BlockCopy(root.ToBytes(), 0, hashh, 32, 32);
-                        root = Hashes.Hash256(hashh);
-
-                        level++;
-                    }
-                }
-            }
-
-            return root;
+            return BlockMerkleRootRule.ComputeMerkleRoot(leaves, out mutated);
         }
 
         /// <summary>

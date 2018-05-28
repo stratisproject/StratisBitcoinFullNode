@@ -474,7 +474,7 @@ namespace NBitcoin.RPC
         }
 
         private async Task SendBatchAsyncCoreAsync(List<Tuple<RPCRequest, TaskCompletionSource<RPCResponse>>> requests)
-        {           
+        {
             var writer = new StringWriter();
             writer.Write("[");
 
@@ -528,7 +528,7 @@ namespace NBitcoin.RPC
                         RPCResponse rpcResponse = new RPCResponse(jobj);
                         requests[responseIndex].Item2.TrySetResult(rpcResponse);
                     }
-                    catch(Exception ex)
+                    catch (Exception ex)
                     {
                         requests[responseIndex].Item2.TrySetException(ex);
                     }
@@ -598,7 +598,7 @@ namespace NBitcoin.RPC
             {
                 return await SendCommandAsyncCoreAsync(request, throwIfRPCError).ConfigureAwait(false);
             }
-            catch(WebException ex)
+            catch (WebException ex)
             {
                 if (!IsUnauthorized(ex))
                     throw;
@@ -734,7 +734,7 @@ namespace NBitcoin.RPC
             return ms;
         }
 
-#region P2P Networking
+        #region P2P Networking
 #if !NOSOCKET
         public PeerInfo[] GetPeersInfo()
         {
@@ -784,7 +784,7 @@ namespace NBitcoin.RPC
                     Inflight = peer["inflight"].Select(x => uint.Parse((string)x)).ToArray()
                 };
             }
-        
+
             return result;
         }
 
@@ -920,16 +920,16 @@ namespace NBitcoin.RPC
             }
             catch (RPCException ex)
             {
-                if(ex.RPCCode == RPCErrorCode.RPC_CLIENT_NODE_NOT_ADDED)
+                if (ex.RPCCode == RPCErrorCode.RPC_CLIENT_NODE_NOT_ADDED)
                     return null;
                 throw;
             }
         }
 #endif
 
-#endregion
+        #endregion
 
-#region Block chain and UTXO
+        #region Block chain and UTXO
 
         public uint256 GetBestBlockHash()
         {
@@ -961,7 +961,7 @@ namespace NBitcoin.RPC
         public async Task<Block> GetBlockAsync(uint256 blockId)
         {
             RPCResponse resp = await SendCommandAsync(RPCOperations.getblock, blockId.ToString(), false).ConfigureAwait(false);
-            return new Block(Encoders.Hex.DecodeData(resp.Result.ToString()));
+            return Block.Load(Encoders.Hex.DecodeData(resp.Result.ToString()), this.network);
         }
 
         /// <summary>
@@ -988,18 +988,18 @@ namespace NBitcoin.RPC
         public BlockHeader GetBlockHeader(uint256 blockHash)
         {
             RPCResponse resp = SendCommand("getblockheader", blockHash.ToString());
-            return ParseBlockHeader(resp);
+            return ParseBlockHeader(resp, this.network);
         }
 
         public async Task<BlockHeader> GetBlockHeaderAsync(uint256 blockHash)
         {
             RPCResponse resp = await SendCommandAsync("getblockheader", blockHash.ToString()).ConfigureAwait(false);
-            return ParseBlockHeader(resp);
+            return ParseBlockHeader(resp, this.network);
         }
 
-        private static BlockHeader ParseBlockHeader(RPCResponse resp)
+        private static BlockHeader ParseBlockHeader(RPCResponse resp, Network network)
         {
-            var header = new BlockHeader();
+            var header = network.Consensus.ConsensusFactory.CreateBlockHeader();
             header.Version = (int)resp.Result["version"];
             header.Nonce = (uint)resp.Result["nonce"];
             header.Bits = new Target(Encoders.Hex.DecodeData((string)resp.Result["bits"]));
@@ -1101,13 +1101,13 @@ namespace NBitcoin.RPC
             return GetTransactions(GetBlockHash(height));
         }
 
-#endregion
+        #endregion
 
-#region Coin generation
+        #region Coin generation
 
-#endregion
+        #endregion
 
-#region Raw Transaction
+        #region Raw Transaction
 
         public Transaction DecodeRawTransaction(string rawHex)
         {
@@ -1178,9 +1178,9 @@ namespace NBitcoin.RPC
             return SendCommandAsync(RPCOperations.sendrawtransaction, Encoders.Hex.EncodeData(bytes));
         }
 
-#endregion
+        #endregion
 
-#region Utility functions
+        #region Utility functions
         /// <summary>
         /// Returns information about a base58 or bech32 Bitcoin address
         /// </summary>
@@ -1190,7 +1190,7 @@ namespace NBitcoin.RPC
         {
             RPCResponse res = SendCommand(RPCOperations.validateaddress, address.ToString());
             return JsonConvert.DeserializeObject<ValidatedAddress>(res.Result.ToString());
-       }
+        }
 
         /// <summary>
         /// Get the estimated fee per kb for being confirmed in nblock
@@ -1341,7 +1341,7 @@ namespace NBitcoin.RPC
             return SendCommand(RPCOperations.settxfee, new[] { feeRate.FeePerK.ToString() }).Result.ToString() == "true";
         }
 
-#endregion
+        #endregion
 
         public async Task<uint256[]> GenerateAsync(int nBlocks)
         {

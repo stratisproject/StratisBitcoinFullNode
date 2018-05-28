@@ -6,26 +6,26 @@ using Stratis.Bitcoin.Features.SmartContracts.Consensus.Rules;
 using Stratis.SmartContracts;
 using Stratis.SmartContracts.Core;
 using Xunit;
-using Block = NBitcoin.Block;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
 {
     public class OpCreateZeroValueTest
     {
+        private readonly Network network;
+
         public OpCreateZeroValueTest()
         {
-            Block.BlockSignature = false;
-            Transaction.TimeStamp = false;
+            this.network = Network.SmartContractsRegTest;
         }
 
         [Fact]
         public async Task OpCreateZeroValueRule_SuccessAsync()
         {
-            TestRulesContext testContext = TestRulesContextFactory.CreateAsync(Network.RegTest);
+            TestRulesContext testContext = TestRulesContextFactory.CreateAsync(this.network);
             OpCreateZeroValueRule rule = testContext.CreateRule<OpCreateZeroValueRule>();
 
-            RuleContext context = new RuleContext(new BlockValidationContext(), Network.RegTest.Consensus, testContext.Chain.Tip);
-            context.BlockValidationContext.Block = new Block();
+            RuleContext context = new RuleContext(new BlockValidationContext(), testContext.Network.Consensus, testContext.Chain.Tip);
+            context.BlockValidationContext.Block = testContext.Network.Consensus.ConsensusFactory.CreateBlock();
 
             var gasPriceSatoshis = 20;
             var gasLimit = 4000000;
@@ -52,11 +52,11 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
         [Fact]
         public async Task OpCreateZeroValueRule_MultipleOutputs_SuccessAsync()
         {
-            TestRulesContext testContext = TestRulesContextFactory.CreateAsync(Network.RegTest);
+            TestRulesContext testContext = TestRulesContextFactory.CreateAsync(this.network);
             OpCreateZeroValueRule rule = testContext.CreateRule<OpCreateZeroValueRule>();
 
-            RuleContext context = new RuleContext(new BlockValidationContext(), Network.RegTest.Consensus, testContext.Chain.Tip);
-            context.BlockValidationContext.Block = new Block();
+            RuleContext context = new RuleContext(new BlockValidationContext(), testContext.Network.Consensus, testContext.Chain.Tip);
+            context.BlockValidationContext.Block = testContext.Network.Consensus.ConsensusFactory.CreateBlock();
 
             var gasPriceSatoshis = 20;
             var gasLimit = 4000000;
@@ -75,10 +75,11 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
                 }
             };
 
-            var transactionBuilder = new TransactionBuilder();
-
-            // Need to disable dust prevention, other adding our smart contract TX with zero value will be ignored
-            transactionBuilder.DustPrevention = false;
+            var transactionBuilder = new TransactionBuilder(testContext.Network)
+            {
+                // Need to disable dust prevention, other adding our smart contract TX with zero value will be ignored
+                DustPrevention = false
+            };
 
             transactionBuilder.AddCoins(funding);
             transactionBuilder.SendFees(fees);
@@ -100,11 +101,11 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
         [Fact]
         public async Task OpCreateZeroValueRule_FailureAsync()
         {
-            TestRulesContext testContext = TestRulesContextFactory.CreateAsync(Network.RegTest);
+            TestRulesContext testContext = TestRulesContextFactory.CreateAsync(this.network);
             OpCreateZeroValueRule rule = testContext.CreateRule<OpCreateZeroValueRule>();
 
-            RuleContext context = new RuleContext(new BlockValidationContext(), Network.RegTest.Consensus, testContext.Chain.Tip);
-            context.BlockValidationContext.Block = new Block();
+            RuleContext context = new RuleContext(new BlockValidationContext(), testContext.Network.Consensus, testContext.Chain.Tip);
+            context.BlockValidationContext.Block = testContext.Network.Consensus.ConsensusFactory.CreateBlock();
 
             var gasPriceSatoshis = 20;
             var gasLimit = 4000000;

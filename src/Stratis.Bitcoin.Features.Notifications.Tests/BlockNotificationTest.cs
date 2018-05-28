@@ -47,7 +47,7 @@ namespace Stratis.Bitcoin.Features.Notifications.Tests
 
             var startBlockId = new uint256(156);
             var chain = new Mock<ConcurrentChain>();
-            chain.Setup(c => c.GetBlock(startBlockId)).Returns((ChainedBlock)null);
+            chain.Setup(c => c.GetBlock(startBlockId)).Returns((ChainedHeader)null);
 
             var notification = new BlockNotification(this.LoggerFactory.Object, chain.Object, new Mock<ILookaheadBlockPuller>().Object, signals.Object, new AsyncLoopFactory(new LoggerFactory()), lifetime);
             notification.SyncFrom(startBlockId);
@@ -71,7 +71,7 @@ namespace Stratis.Bitcoin.Features.Notifications.Tests
             var dataFolder = CreateDataFolder(this);
             var connectionManager = new Mock<IConnectionManager>();
             connectionManager.Setup(c => c.ConnectedPeers).Returns(new NetworkPeerCollection());
-            connectionManager.Setup(c => c.NodeSettings).Returns(new NodeSettings(args:new string[] { $"-datadir={dataFolder.WalletPath}" }));
+            connectionManager.Setup(c => c.NodeSettings).Returns(new NodeSettings(args:new string[] { $"-datadir={dataFolder.RootPath}" }));
             connectionManager.Setup(c => c.Parameters).Returns(new NetworkPeerConnectionParameters());
 
             var lookAheadBlockPuller = new LookaheadBlockPuller(chain, connectionManager.Object, new Mock<ILoggerFactory>().Object);
@@ -157,7 +157,7 @@ namespace Stratis.Bitcoin.Features.Notifications.Tests
             {
             }
 
-            puller.Verify(p => p.SetLocation(It.Is<ChainedBlock>(b => b.HashBlock == chain.GetBlock(0).HashBlock)));
+            puller.Verify(p => p.SetLocation(It.Is<ChainedHeader>(b => b.HashBlock == chain.GetBlock(0).HashBlock)));
             signals.Verify();
         }
 
@@ -221,7 +221,7 @@ namespace Stratis.Bitcoin.Features.Notifications.Tests
             notification.SyncFrom(blocks[2].GetHash());
 
             Assert.Equal(notification.StartHash, blocks[2].GetHash());
-            puller.Verify(p => p.SetLocation(It.Is<ChainedBlock>(b => b.GetHashCode() == chain.GetBlock(1).GetHashCode())));
+            puller.Verify(p => p.SetLocation(It.Is<ChainedHeader>(b => b.GetHashCode() == chain.GetBlock(1).GetHashCode())));
         }
 
         [Fact]

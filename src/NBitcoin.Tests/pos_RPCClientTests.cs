@@ -18,14 +18,6 @@ namespace NBitcoin.Tests
         public static bool noClient = !Process.GetProcesses().Any(p => p.ProcessName.Contains("stratis"));
         private const string TestAccount = "NBitcoin.RPCClientTests";
 
-        public pos_RPCClientTests()
-        {
-            // These tests should be using the Stratis network.
-            // Set these expected values accordingly.
-            Transaction.TimeStamp = true;
-            Block.BlockSignature = true;
-        }
-
         [Fact]
         public void InvalidCommandSendRPCException()
         {

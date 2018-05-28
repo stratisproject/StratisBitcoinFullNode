@@ -137,7 +137,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
         #endregion
 
-
         #region Async
 
         [Fact]
@@ -171,6 +170,41 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             SmartContractValidationResult result = this.validator.Validate(decomp);
 
             Assert.False(result.IsValid);
+        }
+
+        #endregion
+
+        #region Arrays
+
+        /*
+         * The compiler handles arrays differently when they're initialised with less
+         * than 2 or more than 2 elements.
+         * 
+         * In the case where it's more than 2 items it adds a <PrivateImplementationDetails> type to the module.
+         * 
+         * We test for both cases below.
+         */
+
+        [Fact]
+        public void Validate_Determinism_Passes_ArrayConstruction_MoreThan2()
+        {
+            string adjustedSource = TestString.Replace(ReplaceCodeString, @"var test = new int[]{2,2,3};").Replace(ReplaceReferencesString, "");
+
+            byte[] assemblyBytes = SmartContractCompiler.Compile(adjustedSource).Compilation;
+            SmartContractDecompilation decomp = SmartContractDecompiler.GetModuleDefinition(assemblyBytes);
+            SmartContractValidationResult result = this.validator.Validate(decomp);
+            Assert.True(result.IsValid);
+        }
+
+        [Fact]
+        public void Validate_Determinism_Passes_ArrayConstruction_LessThan2()
+        {
+            string adjustedSource = TestString.Replace(ReplaceCodeString, @"var test = new int[]{10167};").Replace(ReplaceReferencesString, "");
+
+            byte[] assemblyBytes = SmartContractCompiler.Compile(adjustedSource).Compilation;
+            SmartContractDecompilation decomp = SmartContractDecompiler.GetModuleDefinition(assemblyBytes);
+            SmartContractValidationResult result = this.validator.Validate(decomp);
+            Assert.True(result.IsValid);
         }
 
         #endregion
@@ -385,6 +419,20 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
         #endregion Exceptions
 
+        [Fact]
+        public void Validate_Determinism_GetType()
+        {
+            string adjustedSource = TestString.Replace(ReplaceCodeString, "var type = GetType();").Replace(ReplaceReferencesString, "");
+
+            SmartContractCompilationResult compilationResult = SmartContractCompiler.Compile(adjustedSource);
+            Assert.True(compilationResult.Success);
+
+            byte[] assemblyBytes = compilationResult.Compilation;
+            SmartContractDecompilation decomp = SmartContractDecompiler.GetModuleDefinition(assemblyBytes);
+            SmartContractValidationResult result = this.validator.Validate(decomp);
+            Assert.True(result.IsValid);
+        }
+
         #region GetHashCode
 
         [Fact]
@@ -401,8 +449,26 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             Assert.False(result.IsValid);
         }
 
-        #endregion
+        [Fact]
+        public void Validate_Determinism_GetHashCode_Overridden()
+        {
+            string adjustedSource = TestString.Replace(ReplaceCodeString, @"
+                }
+                    public override int GetHashCode()
+                {
+                return base.GetHashCode();
+            ").Replace(ReplaceReferencesString, "");
 
+            SmartContractCompilationResult compilationResult = SmartContractCompiler.Compile(adjustedSource);
+            Assert.True(compilationResult.Success);
+
+            byte[] assemblyBytes = compilationResult.Compilation;
+            SmartContractDecompilation decomp = SmartContractDecompiler.GetModuleDefinition(assemblyBytes);
+            SmartContractValidationResult result = this.validator.Validate(decomp);
+            Assert.False(result.IsValid);
+        }    
+
+        #endregion
 
         #region Globalisation
 
@@ -491,6 +557,10 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                                                 {
                                                 }
 
+                                                public void Int64(long param)
+                                                {
+                                                }
+
                                                 public void Address1(Address param)
                                                 {
                                                 }
@@ -516,10 +586,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                                                 public Test(ISmartContractState state)
                                                     : base(state) {}         
 
-                                                public void Int64(long param)
-                                                {
-                                                }
-
                                                 public void DateTime1(DateTime param)
                                                 {
                                                 }
@@ -536,6 +602,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             SmartContractDecompilation decomp = SmartContractDecompiler.GetModuleDefinition(assemblyBytes);
             SmartContractValidationResult result = this.validator.Validate(decomp);
             Assert.False(result.IsValid);
+            Assert.Contains(result.Errors, e => e.Message.Contains("System.DateTime"));
+            Assert.Contains(result.Errors, e => e.Message.Contains("System.Single"));
         }
 
         #endregion
@@ -652,6 +720,26 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
         #endregion
 
+        #region TaskAwaiter
+
+        [Fact]
+        public void Validate_Determinism_TaskAwaiter()
+        {
+            string adjustedSource = TestString.Replace(ReplaceCodeString,
+                    "var r = new System.Runtime.CompilerServices.TaskAwaiter();")
+                .Replace(ReplaceReferencesString, "");
+
+            SmartContractCompilationResult compilationResult = SmartContractCompiler.Compile(adjustedSource);
+            Assert.True(compilationResult.Success);
+
+            byte[] assemblyBytes = compilationResult.Compilation;
+            SmartContractDecompilation decomp = SmartContractDecompiler.GetModuleDefinition(assemblyBytes);
+            SmartContractValidationResult result = this.validator.Validate(decomp);
+            Assert.False(result.IsValid);
+        }
+
+        #endregion
+
         [Fact]
         public void Validate_Determinism_ExtensionMethods()
         {
@@ -672,6 +760,25 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             SmartContractDecompilation decomp = SmartContractDecompiler.GetModuleDefinition(assemblyBytes);
             SmartContractValidationResult result = this.validator.Validate(decomp);
             Assert.False(result.IsValid);
+        }
+
+        [Fact]
+        public void Validate_Determinism_StringIteration()
+        {
+            string adjustedSource = TestString.Replace(ReplaceCodeString,            
+                @"int randomNumber = 0;
+                  foreach (byte c in ""Abcdefgh"")
+                  {
+                    randomNumber += c;
+                  }").Replace(ReplaceReferencesString, "");
+
+            SmartContractCompilationResult compilationResult = SmartContractCompiler.Compile(adjustedSource);
+            Assert.True(compilationResult.Success);
+
+            byte[] assemblyBytes = compilationResult.Compilation;
+            SmartContractDecompilation decomp = SmartContractDecompiler.GetModuleDefinition(assemblyBytes);
+            SmartContractValidationResult result = this.validator.Validate(decomp);
+            Assert.True(result.IsValid);
         }
     }
 }
