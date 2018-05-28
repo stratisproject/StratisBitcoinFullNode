@@ -1,4 +1,5 @@
-﻿using Stratis.Bitcoin.Configuration;
+﻿using System.Net;
+using Stratis.Bitcoin.Configuration;
 using Xunit;
 
 namespace Stratis.Bitcoin.Tests.NodeConfiguration
@@ -109,6 +110,37 @@ namespace Stratis.Bitcoin.Tests.NodeConfiguration
             // Assert
             Assert.Single(result);
             Assert.Equal("Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==", result[0]);
+        }
+
+        /// <summary>
+        /// Assert that we can read an IPAddress from the command line.
+        /// </summary>
+        [Fact]
+        public void GetIPAddressWithStringArgs()
+        {
+            // Arrange
+            var textFileConfiguration = new TextFileConfiguration(new string[] { "-addnode=0.1.2.3" });
+            // Act
+            IPAddress[] result = textFileConfiguration.GetAll<IPAddress>("addnode");
+            // Assert
+            Assert.Single(result);
+            Assert.Equal("0.1.2.3", result[0].ToString());
+        }
+
+        /// <summary>
+        /// Assert that we can read an IPEndPoint from the command line.
+        /// </summary>
+        [Fact]
+        public void GetIPEndPointWithStringArgs()
+        {
+            // Arrange
+            var textFileConfiguration = new TextFileConfiguration(new string[] { "-addnode=0.1.2.3" });
+            // Act
+            IPEndPoint[] result = textFileConfiguration.GetAll<IPEndPoint>("addnode", new ConvertIPEndPointArguments(4));
+            // Assert
+            Assert.Single(result);
+            Assert.Equal("0.1.2.3", result[0].Address.ToString());
+            Assert.Equal(4, result[0].Port);
         }
     }
 }

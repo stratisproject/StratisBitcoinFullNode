@@ -20,6 +20,26 @@ namespace Stratis.Bitcoin.Configuration
     }
 
     /// <summary>
+    /// Abstract class for used with types requiring arguments when calling the ConvertValues method.
+    /// </summary>
+    public abstract class ConvertValueArguments
+    {
+    }
+
+    /// <summary>
+    /// Class used with the IPEndPoint type when calling the ConvertValues method.
+    /// </summary>
+    public class ConvertIPEndPointArguments:ConvertValueArguments
+    {
+        public int Port { get; private set; }
+
+        public ConvertIPEndPointArguments(int port)
+        {
+            this.Port = port;
+        }
+    }
+
+    /// <summary>
     /// Handling of application configuration.
     /// <para>
     /// This class provides the primary source of configuration for the application.
@@ -125,7 +145,7 @@ namespace Stratis.Bitcoin.Configuration
         /// <param name="key">Name of the argument (excluding the dash prefix).</param>
         /// <param name="args">Argument(s) required to construct some types (optional).</param>
         /// <returns>Values for the specified argument.</returns>
-        public T[] GetAll<T>(string key, params object[] args)
+        public T[] GetAll<T>(string key, ConvertValueArguments args = null)
         {
             // Get the values with the - prefix.
             if (!this.args.TryGetValue($"-{key}", out var values))
@@ -150,15 +170,16 @@ namespace Stratis.Bitcoin.Configuration
         /// <typeparam name="T">Type of the argument value.</typeparam>
         /// <param name="key">Name of the argument.</param>
         /// <param name="defaultValue">Default value to return if no argument value is defined.</param>
+        /// <param name="args">Argument(s) required to construct some types (optional).</param>
         /// <returns>Value of the argument or a default value if no value was set.</returns>
-        public T GetOrDefault<T>(string key, T defaultValue)
+        public T GetOrDefault<T>(string key, T defaultValue, ConvertValueArguments args = null)
         {
             if (!this.args.TryGetValue($"-{key}", out var values))
                 return defaultValue;
 
             try
             {
-                return this.ConvertValue<T>(values[0]);
+                return this.ConvertValue<T>(values[0], args);
             }
             catch (FormatException)
             {
@@ -176,7 +197,7 @@ namespace Stratis.Bitcoin.Configuration
         /// <exception cref="NotSupportedException">Thrown if <typeparamref name="T"/> is not supported type.</exception>
         /// <exception cref="FormatException">Thrown if the string does not represent a valid value of <typeparamref name="T"/>.</exception>
         /// <exception cref="ArgumentException">Thrown if required arguments have been omitted for constructing a valid value of <typeparamref name="T"/>.</exception>
-        private T ConvertValue<T>(string str, params object[] args)
+        private T ConvertValue<T>(string str, ConvertValueArguments args)
         {
             if (typeof(T) == typeof(bool))
             {
@@ -222,9 +243,9 @@ namespace Stratis.Bitcoin.Configuration
 
             if (typeof(T) == typeof(IPEndPoint))
             {
-                if (args.Length < 1)
-                    throw new ArgumentException("Required arguments have been omitted for type " + typeof(T).Name);
-                return (T)(object)str.ToIPEndPoint((int)args[0]);
+                if ((args as ConvertIPEndPointArguments) == null)
+                    throw new ArgumentException("A valid 'args' parameter in required for type " + typeof(T).Name);
+                return (T)(object)str.ToIPEndPoint((args as ConvertIPEndPointArguments).Port);
             }
 
             throw new NotSupportedException("Configuration value does not support type " + typeof(T).Name);
