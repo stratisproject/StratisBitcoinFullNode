@@ -10,27 +10,27 @@ namespace Stratis.Validators.Net
 
         public string Message { get; set; }
 
-        public string ErrorType { get; set; }
+        public string ValidationType { get; set; }
 
         public ValidationResult(string message)
         {
             this.Message = message;
         }
 
-        public ValidationResult(MethodDefinition methodDefinition, string errorType, string message)
+        public ValidationResult(MethodDefinition methodDefinition, string validationType, string message)
             : this(message)
         {
             this.MethodFullName = methodDefinition.FullName;
             this.MethodName = methodDefinition.Name;
-            this.ErrorType = errorType;
+            this.ValidationType = validationType;
         }
 
-        public ValidationResult(string methodName, string methodFullName, string errorType, string message)
+        public ValidationResult(string methodName, string methodFullName, string validationType, string message)
             : this(message)
         {
             this.MethodName = methodName;
             this.MethodFullName = methodFullName;
-            this.ErrorType = errorType;
+            this.ValidationType = validationType;
         }
 
         public override string ToString()
