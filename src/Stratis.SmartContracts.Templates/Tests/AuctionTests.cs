@@ -67,9 +67,9 @@ namespace $safeprojectname$
         {
             var auction = new Auction(SmartContractState, Duration);
 
-            Assert.AreEqual(ContractOwnerAddress, SmartContractState.PersistentState.GetObject<Address>("Owner"));
-            Assert.IsFalse(SmartContractState.PersistentState.GetObject<bool>("HasEnded"));
-            Assert.AreEqual(Duration + SmartContractState.Block.Number, SmartContractState.PersistentState.GetObject<ulong>("EndBlock"));
+            Assert.AreEqual(ContractOwnerAddress, SmartContractState.PersistentState.GetAddress("Owner"));
+            Assert.IsFalse(SmartContractState.PersistentState.GetBool("HasEnded"));
+            Assert.AreEqual(Duration + SmartContractState.Block.Number, SmartContractState.PersistentState.GetUInt64("EndBlock"));
         }
 
         [TestMethod]
@@ -77,15 +77,15 @@ namespace $safeprojectname$
         {
             var auction = new Auction(SmartContractState, Duration);
 
-            Assert.IsNull(SmartContractState.PersistentState.GetObject<Address>("HighestBidder").Value);
-            Assert.AreEqual(0uL, SmartContractState.PersistentState.GetObject<ulong>("HighestBid"));
+            Assert.IsNull(SmartContractState.PersistentState.GetAddress("HighestBidder").Value);
+            Assert.AreEqual(0uL, SmartContractState.PersistentState.GetUInt64("HighestBid"));
 
             ((TestMessage)SmartContractState.Message).Value = 100;
 
             auction.Bid();
 
-            Assert.IsNotNull(SmartContractState.PersistentState.GetObject<Address>("HighestBidder").Value);
-            Assert.AreEqual(100uL, SmartContractState.PersistentState.GetObject<ulong>("HighestBid"));
+            Assert.IsNotNull(SmartContractState.PersistentState.GetAddress("HighestBidder").Value);
+            Assert.AreEqual(100uL, SmartContractState.PersistentState.GetUInt64("HighestBid"));
 
             ((TestMessage)SmartContractState.Message).Value = 90;
 

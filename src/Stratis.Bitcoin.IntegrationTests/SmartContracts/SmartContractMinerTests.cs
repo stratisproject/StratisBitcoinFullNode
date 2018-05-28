@@ -30,6 +30,7 @@ using Stratis.Bitcoin.Utilities;
 using Stratis.Patricia;
 using Stratis.SmartContracts;
 using Stratis.SmartContracts.Core;
+using Stratis.SmartContracts.Core.Receipts;
 using Stratis.SmartContracts.Core.State;
 using Stratis.SmartContracts.ReflectionExecutor;
 using Stratis.SmartContracts.ReflectionExecutor.Compilation;
@@ -145,6 +146,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
             public IKeyEncodingStrategy keyEncodingStrategy;
             public SmartContractCarrierSerializer carrierSerializer;
             public ReflectionSmartContractExecutorFactory executorFactory;
+            public DBreezeContractReceiptStorage receiptStorage;
 
             private bool useCheckpoints = true;
             public Key privateKey;
@@ -196,8 +198,8 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                     new SmartContractDeterminismValidator()
                 });
 
-
-                this.executorFactory = new ReflectionSmartContractExecutorFactory(this.keyEncodingStrategy, loggerFactory, this.network, this.validator);
+                this.receiptStorage = new DBreezeContractReceiptStorage(new DataFolder(folder.FolderName));
+                this.executorFactory = new ReflectionSmartContractExecutorFactory(this.keyEncodingStrategy, loggerFactory, this.network, this.receiptStorage, this.validator);
                 this.carrierSerializer = new SmartContractCarrierSerializer(new MethodParameterSerializer());
                 SmartContractConsensusValidator consensusValidator = new SmartContractConsensusValidator(this.cachedCoinView, this.network, new Checkpoints(), dateTimeProvider, loggerFactory, this.stateRoot, this.executorFactory, this.carrierSerializer);
 

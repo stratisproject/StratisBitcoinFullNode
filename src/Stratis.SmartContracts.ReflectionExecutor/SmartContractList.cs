@@ -12,7 +12,7 @@ namespace Stratis.SmartContracts.ReflectionExecutor
     /// <typeparam name="T"></typeparam>
     public class SmartContractList<T> : IEnumerable<T>, ISmartContractList<T>
     {
-        private readonly IPersistentState persistentState;
+        private readonly PersistentState persistentState;
         private readonly string name;
         private string CountName => $"{this.name}.Count";
 
@@ -23,11 +23,11 @@ namespace Stratis.SmartContracts.ReflectionExecutor
         {
             get
             {
-                return this.persistentState.GetObject<uint>(this.CountName);
+                return this.persistentState.GetUInt32(this.CountName);
             }
             private set
             {
-                this.persistentState.SetObject(this.CountName, value);
+                this.persistentState.SetUInt32(this.CountName, value);
             }
         }
 
@@ -44,7 +44,7 @@ namespace Stratis.SmartContracts.ReflectionExecutor
 
         }
 
-        public SmartContractList(IPersistentState persistentState, string name)
+        public SmartContractList(PersistentState persistentState, string name)
         {
             if (string.IsNullOrWhiteSpace(name))
             {

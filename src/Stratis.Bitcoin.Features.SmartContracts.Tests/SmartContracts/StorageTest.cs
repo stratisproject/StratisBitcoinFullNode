@@ -9,7 +9,7 @@ public class StorageTest : SmartContract
 
     public void StoreData()
     {
-        this.PersistentState.SetObject("TestKey", "TestValue");
+        this.PersistentState.SetString("TestKey", "TestValue");
     }
 
     public void GasTest()

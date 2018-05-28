@@ -8,22 +8,22 @@ public class CountContract : SmartContract
     {
         get
         {
-            return PersistentState.GetObject<int>("Count");
+            return PersistentState.GetInt32("Count");
         }
         set
         {
-            PersistentState.SetObject<int>("Count", value);
+            PersistentState.SetInt32("Count", value);
         }
     }
 
     public bool SaveWorked {
         get
         {
-            return PersistentState.GetObject<bool>("SaveWorked");
+            return PersistentState.GetBool("SaveWorked");
         }
         set
         {
-            PersistentState.SetObject("SaveWorked", value);
+            PersistentState.SetBool("SaveWorked", value);
         }
     }
 

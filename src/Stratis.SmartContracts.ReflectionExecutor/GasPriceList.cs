@@ -12,14 +12,14 @@ namespace Stratis.SmartContracts.ReflectionExecutor
         public const ulong BaseCost = 1000;
 
         /// <summary>The cost per gas unit if contract does not exist.</summary>
-        private const ulong ContractDoesNotExistCost = 1000;
+        public const ulong ContractDoesNotExistCost = 1000;
 
         /// <summary>The cost per gas unit if contract validation fails.</summary>
-        private const ulong ContractValidationFailedCost = 1000;
+        public const ulong ContractValidationFailedCost = 1000;
 
-        private const int StorageGasCost = 1;
-        private const int MethodCallGasCost = 0;
-        private const int InstructionGasCost = 1;
+        public const int StorageGasCost = 10;
+        public const int MethodCallGasCost = 5;
+        public const int InstructionGasCost = 1;
 
         public static Gas ContractDoesNotExist()
         {
