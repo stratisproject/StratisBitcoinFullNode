@@ -2,7 +2,9 @@
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System.Net;
 using NBitcoin;
+using Stratis.Bitcoin.Utilities.Extensions;
 
 namespace Stratis.Bitcoin.Configuration
 {
@@ -121,14 +123,25 @@ namespace Stratis.Bitcoin.Configuration
         /// Retrieves all values of a specific argument name (where the name excludes the dash prefix).
         /// </summary>
         /// <param name="key">Name of the argument (excluding the dash prefix).</param>
+        /// <param name="args">Argument(s) required to construct some types (optional).</param>
         /// <returns>Values for the specified argument.</returns>
-        public string[] GetAll(string key)
+        public T[] GetAll<T>(string key, params object[] args)
         {
             // Get the values with the - prefix.
             if (!this.args.TryGetValue($"-{key}", out var values))
-                values = new List<string>();
+                return new T[0];
 
-            return values.ToArray();
+            return values.Select(v => this.ConvertValue<T>(v, args)).ToArray();
+        }
+
+        /// <summary>
+        /// Retrieves all values of a specific argument name (where the name excludes the dash prefix).
+        /// </summary>
+        /// <param name="key">Name of the argument (excluding the dash prefix).</param>
+        /// <returns>Values for the specified argument.</returns>
+        public string[] GetAll(string key)
+        {
+            return GetAll<string>(key);
         }
 
         /// <summary>
@@ -158,10 +171,12 @@ namespace Stratis.Bitcoin.Configuration
         /// </summary>
         /// <typeparam name="T">Type of the value to convert the string to.</typeparam>
         /// <param name="str">String representation of the value.</param>
+        /// <param name="args">Argument(s) required to construct some types (optional).</param>
         /// <returns>Typed value.</returns>
         /// <exception cref="NotSupportedException">Thrown if <typeparamref name="T"/> is not supported type.</exception>
         /// <exception cref="FormatException">Thrown if the string does not represent a valid value of <typeparamref name="T"/>.</exception>
-        private T ConvertValue<T>(string str)
+        /// <exception cref="ArgumentException">Thrown if required arguments have been omitted for constructing a valid value of <typeparamref name="T"/>.</exception>
+        private T ConvertValue<T>(string str, params object[] args)
         {
             if (typeof(T) == typeof(bool))
             {
@@ -198,6 +213,18 @@ namespace Stratis.Bitcoin.Configuration
                 if (!uint256.TryParse(str, out value))
                     throw new FormatException($"Cannot parse uint256 from {str}.");
                 return (T)(object)value;
+            }
+
+            if (typeof(T) == typeof(IPAddress))
+            {
+                return (T)(object)IPAddress.Parse(str);
+            }
+
+            if (typeof(T) == typeof(IPEndPoint))
+            {
+                if (args.Length < 1)
+                    throw new ArgumentException("Required arguments have been omitted for type " + typeof(T).Name);
+                return (T)(object)str.ToIPEndPoint((int)args[0]);
             }
 
             throw new NotSupportedException("Configuration value does not support type " + typeof(T).Name);
