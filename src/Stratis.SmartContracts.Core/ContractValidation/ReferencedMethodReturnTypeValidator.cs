@@ -370,7 +370,6 @@ namespace Stratis.SmartContracts.Core.ContractValidation
                         {
                             new ValidationResult(
                                 method.Name,
-                                method.FullName,
                                 ErrorType,
                                 $"Use of {method.FullName} is non-deterministic [{ErrorType} ({methodReference.FullName})]")
                         };

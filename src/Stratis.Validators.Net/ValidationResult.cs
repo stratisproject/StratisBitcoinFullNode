@@ -6,8 +6,6 @@ namespace Stratis.Validators.Net
     {
         public string MethodName { get; }
 
-        public string MethodFullName { get; }
-
         public string Message { get; }
 
         public string ValidationType { get; }
@@ -20,16 +18,14 @@ namespace Stratis.Validators.Net
         public ValidationResult(MethodDefinition methodDefinition, string validationType, string message)
             : this(message)
         {
-            this.MethodFullName = methodDefinition.FullName;
             this.MethodName = methodDefinition.Name;
             this.ValidationType = validationType;
         }
 
-        public ValidationResult(string methodName, string methodFullName, string validationType, string message)
+        public ValidationResult(string methodName, string validationType, string message)
             : this(message)
         {
             this.MethodName = methodName;
-            this.MethodFullName = methodFullName;
             this.ValidationType = validationType;
         }
 

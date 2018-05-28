@@ -21,7 +21,6 @@ namespace Stratis.SmartContracts.Core.ContractValidation
                   
                  errors.Add(new ValidationResult(
                      "",
-                     "",
                      "Field usage",
                      $"Non-constant field {field.Name} defined in Type \"{type.Name}\". Fields are not persisted and may change values between calls."
                  ));
@@ -60,7 +59,6 @@ namespace Stratis.SmartContracts.Core.ContractValidation
             {
                 errors.Add(new ValidationResult(
                     method.Name,
-                    method.FullName,
                     "Field usage",
                     $"Field {fieldDefinition.Name} defined or used locally. This can be dangerous."
                 ));

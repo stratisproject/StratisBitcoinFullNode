@@ -61,7 +61,7 @@ namespace Stratis.System.Inspector
                         new
                         {
                             r.MethodName,
-                            r.MethodFullName,
+                            MethodFullName = r.MethodName,
                             ReturnType = returnType.FullName,
                             ErrorType = r.ValidationType,
                             r.Message

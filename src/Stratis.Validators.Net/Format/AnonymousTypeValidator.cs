@@ -23,7 +23,6 @@ namespace Stratis.Validators.Net.Format
                         {
                             new ValidationResult(
                                 method.Name,
-                                method.FullName,
                                 ErrorType,
                                 $"{method.FullName} is invalid [{ErrorType}]")
                         };

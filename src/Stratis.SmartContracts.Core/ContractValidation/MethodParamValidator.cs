@@ -43,7 +43,6 @@ namespace Stratis.SmartContracts.Core.ContractValidation
                 .Select(paramDef =>
                     new ValidationResult(
                         paramDef.Name,
-                        methodDef.FullName,
                         ErrorType,
                         $"{methodDef.FullName} is invalid [{ErrorType} {paramDef.ParameterType.FullName}]"
                     ));

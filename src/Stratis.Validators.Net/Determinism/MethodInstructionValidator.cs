@@ -62,7 +62,6 @@ namespace Stratis.Validators.Net.Determinism
             {
                 errors.Add(new ValidationResult(
                     method.Name,
-                    method.FullName,
                     "Float usage",
                     $"Float or double used."
                 ));
@@ -74,7 +73,6 @@ namespace Stratis.Validators.Net.Determinism
                 {
                     errors.Add(new ValidationResult(
                         method.Name,
-                        method.FullName,
                         $"Use of {fieldReference.FullName}",
                         $"{fieldReference.FullName} is not deterministic."
                     ));

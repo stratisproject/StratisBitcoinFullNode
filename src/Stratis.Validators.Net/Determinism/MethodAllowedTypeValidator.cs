@@ -26,7 +26,6 @@ namespace Stratis.Validators.Net.Determinism
                 {
                     new ValidationResult(
                         method.Name,
-                        method.FullName,
                         ErrorType,
                         $"Use of {method.DeclaringType.FullName} is non-deterministic [{ErrorType}]")
                 };
