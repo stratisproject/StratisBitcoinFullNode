@@ -288,41 +288,6 @@ namespace Stratis.Bitcoin.Configuration
         }
 
         /// <summary>
-        /// Gets the default configuration.
-        /// </summary>
-        /// <param name="features">The features to include in the configuration file if a default file has to be created.</param>
-        /// <returns>Path to the configuration file.</returns>
-        private string CreateDefaultConfigurationFile(List<IFeatureRegistration> features = null)
-        {
-            string configFilePath = Path.Combine(this.DataDir, this.Network.DefaultConfigFilename);
-            this.Logger.LogDebug("Configuration file set to '{0}'.", configFilePath);
-
-            // Create a config file if none exist.
-            if (!File.Exists(configFilePath))
-            {
-                this.Logger.LogDebug("Creating configuration file...");
-
-                StringBuilder builder = new StringBuilder();
-
-                if (features != null)
-                {
-                    foreach (var featureRegistration in features)
-                    {
-                        MethodInfo getDefaultConfiguration = featureRegistration.FeatureType.GetMethod("BuildDefaultConfigurationFile", BindingFlags.Public | BindingFlags.Static);
-                        if (getDefaultConfiguration != null)
-                        {
-                            getDefaultConfiguration.Invoke(null, new object[] { builder, this.Network });
-                            builder.AppendLine();
-                        }
-                    }
-                }
-
-                File.WriteAllText(configFilePath, builder.ToString());
-            }
-            return configFilePath;
-        }
-
-        /// <summary>
         /// Creates default data directories respecting different operating system specifics.
         /// </summary>
         /// <param name="appName">Name of the node, which will be reflected in the name of the data directory.</param>
