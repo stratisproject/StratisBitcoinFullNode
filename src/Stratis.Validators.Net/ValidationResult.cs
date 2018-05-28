@@ -4,13 +4,13 @@ namespace Stratis.Validators.Net
 {
     public class ValidationResult
     {
-        public string MethodName { get; set; }
+        public string MethodName { get; }
 
-        public string MethodFullName { get; set; }
+        public string MethodFullName { get; }
 
-        public string Message { get; set; }
+        public string Message { get; }
 
-        public string ValidationType { get; set; }
+        public string ValidationType { get; }
 
         public ValidationResult(string message)
         {
