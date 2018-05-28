@@ -22,16 +22,16 @@ namespace Stratis.Validators.Net.Determinism
         {
             if (RedLightTypes.Contains(method.DeclaringType.FullName))
             {
-                return new List<ValidationResult>
+                return new List<MethodDefinitionValidationResult>
                 {
-                    new ValidationResult(
+                    new MethodDefinitionValidationResult(
                         method.Name,
                         ErrorType,
                         $"Use of {method.DeclaringType.FullName} is non-deterministic [{ErrorType}]")
                 };
             }
 
-            return Enumerable.Empty<ValidationResult>();
+            return Enumerable.Empty<MethodDefinitionValidationResult>();
         }
     }
 }

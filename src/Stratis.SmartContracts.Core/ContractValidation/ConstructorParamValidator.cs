@@ -22,20 +22,20 @@ namespace Stratis.SmartContracts.Core.ContractValidation
             if (constructor == null)
             {
                 // Not up to us to validate this here
-                return Enumerable.Empty<ValidationResult>();
+                return Enumerable.Empty<TypeDefinitionValidationResult>();
             }
 
             ParameterDefinition firstArg = constructor.Parameters.FirstOrDefault();
 
             if (firstArg == null || !IsSmartContractState(firstArg))
             {
-                return new[]
+                return new []
                 {
-                    new ValidationResult(InvalidParamError)
+                    new TypeDefinitionValidationResult(InvalidParamError)
                 };
             }
 
-            return Enumerable.Empty<ValidationResult>();
+            return Enumerable.Empty<TypeDefinitionValidationResult>();
         }
 
         private static bool IsSmartContractState(ParameterDefinition firstArg)

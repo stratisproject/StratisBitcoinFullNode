@@ -15,15 +15,15 @@ namespace Stratis.Validators.Net.Format
             {
                 if (HasForbiddenNestedTypes(type.NestedTypes))
                 {
-                    return new List<ValidationResult>
+                    return new []
                     {
-                        new ValidationResult(
+                        new TypeDefinitionValidationResult(
                             "Only the compilation of a single class is allowed. Includes nested reference types.")
                     };
                 }
             }
 
-            return Enumerable.Empty<ValidationResult>();
+            return Enumerable.Empty<TypeDefinitionValidationResult>();
         }
 
         private static bool HasForbiddenNestedTypes(IEnumerable<TypeDefinition> nestedTypes)

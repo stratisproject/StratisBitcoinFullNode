@@ -19,12 +19,12 @@ namespace Stratis.SmartContracts.Core.ContractValidation
 
         public IEnumerable<ValidationResult> Validate(ModuleDefinition module)
         {
-            var errors = new List<ValidationResult>();
+            var errors = new List<ModuleDefinitionValidationResult>();
 
             foreach (AssemblyNameReference assemblyReference in module.AssemblyReferences)
             {
                 if (!AllowedAssemblies.Any(assemblyName => assemblyName.FullName == assemblyReference.FullName))
-                    errors.Add(new ValidationResult("Assembly " + assemblyReference.FullName + " is not allowed."));
+                    errors.Add(new ModuleDefinitionValidationResult("Assembly " + assemblyReference.FullName + " is not allowed."));
             }
 
             return errors;

@@ -16,12 +16,12 @@ namespace Stratis.SmartContracts.Core.ContractValidation
         {
             if (SmartContractType != type.BaseType.FullName)
             {
-                return new List<ValidationResult>{
-                    new ValidationResult("Contract must implement the SmartContract class.")
+                return new [] {
+                    new TypeDefinitionValidationResult("Contract must implement the SmartContract class.")
                 };
             }
 
-            return Enumerable.Empty<ValidationResult>();
+            return Enumerable.Empty<TypeDefinitionValidationResult>();
         }
     }
 }

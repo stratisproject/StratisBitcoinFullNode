@@ -18,16 +18,16 @@ namespace Stratis.Validators.Net.Determinism
 
             if (invalid)
             {
-                return new List<ValidationResult>
+                return new []
                 {
-                    new ValidationResult(
+                    new MethodDefinitionValidationResult(
                         method.Name,
                         ErrorType,
                         $"Use of {method.FullName} is non-deterministic [{ErrorType}]")
                 };
             }
 
-            return Enumerable.Empty<ValidationResult>();
+            return Enumerable.Empty<MethodDefinitionValidationResult>();
         }
     }
 }

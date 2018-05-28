@@ -13,13 +13,13 @@ namespace Stratis.Validators.Net.Format
         {            
             if (type != null && type.Namespace != "")
             {
-                return new List<ValidationResult>
+                return new []
                 {
-                    new ValidationResult("Class must not have a namespace.")
+                    new TypeDefinitionValidationResult("Class must not have a namespace.")
                 };
             }
 
-            return Enumerable.Empty<ValidationResult>();
+            return Enumerable.Empty<TypeDefinitionValidationResult>();
         }
     }
 }

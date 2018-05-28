@@ -21,14 +21,14 @@ namespace Stratis.Validators.Net.Format
 
                 if (nestedTypes.Any(IsAsyncStateMachine))
                 {
-                    return new List<ValidationResult>
+                    return new []
                     {
-                        new ValidationResult("Async methods are not allowed")
+                        new TypeDefinitionValidationResult("Async methods are not allowed")
                     };
                 }
             }
 
-            return Enumerable.Empty<ValidationResult>();
+            return Enumerable.Empty<TypeDefinitionValidationResult>();
         }
 
         private static bool IsAsyncStateMachine(TypeDefinition type)

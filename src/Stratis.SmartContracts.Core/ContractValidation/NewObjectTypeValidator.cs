@@ -21,7 +21,7 @@ namespace Stratis.SmartContracts.Core.ContractValidation
         public IEnumerable<ValidationResult> Validate(MethodDefinition method)
         {
             if (method.Body?.Instructions == null)
-                return Enumerable.Empty<ValidationResult>();
+                return Enumerable.Empty<MethodDefinitionValidationResult>();
 
             var errors = new List<ValidationResult>();
 
@@ -34,7 +34,7 @@ namespace Stratis.SmartContracts.Core.ContractValidation
             {
                 if (BlacklistedTypes.Any(t => typeReference.FullName.Contains(t)))
                 {
-                    errors.Add(new ValidationResult(
+                    errors.Add(new MethodDefinitionValidationResult(
                         method,
                         ErrorType,
                         $"{method.FullName} is invalid [{ErrorType} {typeReference.FullName}]"

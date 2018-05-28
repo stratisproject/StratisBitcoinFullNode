@@ -60,8 +60,8 @@ namespace Stratis.System.Inspector
                         allResults.AddRange(inspectionResults.Select(r =>
                         new
                         {
-                            r.MethodName,
-                            MethodFullName = r.MethodName,
+                            MethodName = r.SubjectName,
+                            MethodFullName = r.SubjectName,
                             ReturnType = returnType.FullName,
                             ErrorType = r.ValidationType,
                             r.Message

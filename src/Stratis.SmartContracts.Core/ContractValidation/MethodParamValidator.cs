@@ -32,16 +32,16 @@ namespace Stratis.SmartContracts.Core.ContractValidation
         public IEnumerable<ValidationResult> Validate(MethodDefinition methodDef)
         {
             if (!methodDef.HasParameters)
-                return Enumerable.Empty<ValidationResult>();
+                return Enumerable.Empty<MethodDefinitionValidationResult>();
 
             // Constructor is allowed to have other params
             if (methodDef.IsConstructor)
-                return Enumerable.Empty<ValidationResult>();
+                return Enumerable.Empty<MethodDefinitionValidationResult>();
 
             return methodDef.Parameters
                 .Where(param => !AllowedTypes.Contains(param.ParameterType.FullName))
                 .Select(paramDef =>
-                    new ValidationResult(
+                    new MethodDefinitionValidationResult(
                         paramDef.Name,
                         ErrorType,
                         $"{methodDef.FullName} is invalid [{ErrorType} {paramDef.ParameterType.FullName}]"

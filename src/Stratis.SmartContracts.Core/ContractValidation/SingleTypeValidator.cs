@@ -22,13 +22,13 @@ namespace Stratis.SmartContracts.Core.ContractValidation
 
             if (typeDefinitions.Count != 1)
             {
-                return new List<ValidationResult>
+                return new []
                 {
-                    new ValidationResult("Only the compilation of a single class is allowed.")
+                    new ModuleDefinitionValidationResult("Only the compilation of a single class is allowed.")
                 };
             }
 
-            return Enumerable.Empty<ValidationResult>();
+            return Enumerable.Empty<ModuleDefinitionValidationResult>();
         }
     }
 }

@@ -366,9 +366,9 @@ namespace Stratis.SmartContracts.Core.ContractValidation
                 {
                     if (RedLightMethods.Contains(methodReference.FullName))
                     {
-                        return new List<ValidationResult>
+                        return new []
                         {
-                            new ValidationResult(
+                            new MethodDefinitionValidationResult(
                                 method.Name,
                                 ErrorType,
                                 $"Use of {method.FullName} is non-deterministic [{ErrorType} ({methodReference.FullName})]")
@@ -377,7 +377,7 @@ namespace Stratis.SmartContracts.Core.ContractValidation
                 }
             }
 
-            return Enumerable.Empty<ValidationResult>();
+            return Enumerable.Empty<MethodDefinitionValidationResult>();
         }
     }
 }

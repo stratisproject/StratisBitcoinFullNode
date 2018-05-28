@@ -13,13 +13,13 @@ namespace Stratis.SmartContracts.Core.ContractValidation
     {
          public IEnumerable<ValidationResult> Validate(TypeDefinition type)
          {
-            var errors = new List<ValidationResult>();
+            var errors = new List<TypeDefinitionValidationResult>();
 
              foreach (FieldDefinition field in type.Fields)
              {
                  if (field.HasConstant) continue;
                   
-                 errors.Add(new ValidationResult(
+                 errors.Add(new TypeDefinitionValidationResult(
                      "",
                      "Field usage",
                      $"Non-constant field {field.Name} defined in Type \"{type.Name}\". Fields are not persisted and may change values between calls."
@@ -38,26 +38,26 @@ namespace Stratis.SmartContracts.Core.ContractValidation
         public IEnumerable<ValidationResult> Validate(MethodDefinition method)
         {
             if (method.Body?.Instructions == null)
-                return Enumerable.Empty<ValidationResult>();
+                return Enumerable.Empty<MethodDefinitionValidationResult>();
 
-            var errors = new List<ValidationResult>();
+            var errors = new List<MethodDefinitionValidationResult>();
 
             foreach (Instruction instruction in method.Body.Instructions)
             {
-                IEnumerable<ValidationResult> instructionValidationResult = ValidateInstruction(method, instruction);
+                IEnumerable<MethodDefinitionValidationResult> instructionValidationResult = ValidateInstruction(method, instruction);
                 errors.AddRange(instructionValidationResult);
             }
 
             return errors;
         }
 
-        private static IEnumerable<ValidationResult> ValidateInstruction(MethodDefinition method, Instruction instruction)
+        private static IEnumerable<MethodDefinitionValidationResult> ValidateInstruction(MethodDefinition method, Instruction instruction)
         {
-            var errors = new List<ValidationResult>();
+            var errors = new List<MethodDefinitionValidationResult>();
 
             if (instruction.Operand is FieldDefinition fieldDefinition)
             {
-                errors.Add(new ValidationResult(
+                errors.Add(new MethodDefinitionValidationResult(
                     method.Name,
                     "Field usage",
                     $"Field {fieldDefinition.Name} defined or used locally. This can be dangerous."

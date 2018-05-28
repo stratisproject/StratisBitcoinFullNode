@@ -18,16 +18,16 @@ namespace Stratis.Validators.Net.Determinism
         {
             if (method.FullName.Equals(GetHashCodeString, StringComparison.Ordinal))
             {
-                return new List<ValidationResult>
+                return new List<MethodDefinitionValidationResult>
                 {
-                    new ValidationResult(
+                    new MethodDefinitionValidationResult(
                         method.Name,
                         ErrorType,
                         $"Use of {method.FullName} is not deterministic [{ErrorType}]")
                 };
             }
 
-            return Enumerable.Empty<ValidationResult>();
+            return Enumerable.Empty<MethodDefinitionValidationResult>();
         }
     }
 }

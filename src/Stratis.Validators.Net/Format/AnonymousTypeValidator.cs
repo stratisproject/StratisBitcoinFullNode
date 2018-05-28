@@ -19,9 +19,9 @@ namespace Stratis.Validators.Net.Format
                 {
                     if (fieldReference.FullName.Contains("AnonymousType"))
                     {
-                        return new List<ValidationResult>
+                        return new []
                         {
-                            new ValidationResult(
+                            new MethodDefinitionValidationResult(
                                 method.Name,
                                 ErrorType,
                                 $"{method.FullName} is invalid [{ErrorType}]")
@@ -30,7 +30,7 @@ namespace Stratis.Validators.Net.Format
                 }
             }
 
-            return Enumerable.Empty<ValidationResult>();
+            return Enumerable.Empty<MethodDefinitionValidationResult>();
         }
     }
 }

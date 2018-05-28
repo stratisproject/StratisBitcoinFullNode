@@ -20,21 +20,21 @@ namespace Stratis.Validators.Net.Format
 
             if (constructors == null || !constructors.Any())
             {
-                return new[]
+                return new []
                 {
-                    new ValidationResult(MissingConstructorError)
+                    new TypeDefinitionValidationResult(MissingConstructorError)
                 };
             }
 
             if (constructors.Count > 1)
             {
-                return new[]
+                return new []
                 {
-                    new ValidationResult(SingleConstructorError)
+                    new TypeDefinitionValidationResult(SingleConstructorError)
                 };
             }
 
-            return Enumerable.Empty<ValidationResult>();
+            return Enumerable.Empty<TypeDefinitionValidationResult>();
         }
     }
 }

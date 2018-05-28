@@ -41,26 +41,26 @@ namespace Stratis.Validators.Net.Determinism
         public IEnumerable<ValidationResult> Validate(MethodDefinition method)
         {
             if (method.Body?.Instructions == null)
-                return Enumerable.Empty<ValidationResult>();
+                return Enumerable.Empty<MethodDefinitionValidationResult>();
 
-            var errors = new List<ValidationResult>();
+            var errors = new List<MethodDefinitionValidationResult>();
 
             foreach (Instruction instruction in method.Body.Instructions)
             {
-                IEnumerable<ValidationResult> instructionValidationResult = ValidateInstruction(method, instruction);
+                IEnumerable<MethodDefinitionValidationResult> instructionValidationResult = ValidateInstruction(method, instruction);
                 errors.AddRange(instructionValidationResult);
             }
 
             return errors;
         }
 
-        private static IEnumerable<ValidationResult> ValidateInstruction(MethodDefinition method, Instruction instruction)
+        private static IEnumerable<MethodDefinitionValidationResult> ValidateInstruction(MethodDefinition method, Instruction instruction)
         {
-            var errors = new List<ValidationResult>();
+            var errors = new List<MethodDefinitionValidationResult>();
 
             if (RedLightOpCodes.Contains(instruction.OpCode))
             {
-                errors.Add(new ValidationResult(
+                errors.Add(new MethodDefinitionValidationResult(
                     method.Name,
                     "Float usage",
                     $"Float or double used."
@@ -71,7 +71,7 @@ namespace Stratis.Validators.Net.Determinism
             {
                 if (RedLightFields.Contains(fieldReference.FullName))
                 {
-                    errors.Add(new ValidationResult(
+                    errors.Add(new MethodDefinitionValidationResult(
                         method.Name,
                         $"Use of {fieldReference.FullName}",
                         $"{fieldReference.FullName} is not deterministic."
