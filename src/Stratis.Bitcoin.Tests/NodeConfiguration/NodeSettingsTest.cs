@@ -136,7 +136,7 @@ namespace Stratis.Bitcoin.Tests.NodeConfiguration
         /// If neither the commandline nor the configuration file supplies a multi-value setting then no values are returned.
         /// </summary>
         [Fact]
-        public void NodeSettings_CanReadSingleMultiFromNone()
+        public void NodeSettings_CanReadMultiValueFromNone()
         {
             // Arrange
             string dataDir = TestBase.CreateDataFolder(this).RootPath;
