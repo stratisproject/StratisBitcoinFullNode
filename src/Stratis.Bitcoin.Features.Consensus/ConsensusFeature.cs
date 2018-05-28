@@ -231,10 +231,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                         fullNodeBuilder.Network.Consensus.Options = new PosConsensusOptions();
 
                         if (fullNodeBuilder.Network.IsTest())
-                        {
                             fullNodeBuilder.Network.Consensus.Option<PosConsensusOptions>().CoinbaseMaturity = 10;
-                            fullNodeBuilder.Network.Consensus.Option<PosConsensusOptions>().StakeMinConfirmations = 10;
-                        }
 
                         services.AddSingleton<ICheckpoints, Checkpoints>();
                         services.AddSingleton<DBreezeCoinView>();

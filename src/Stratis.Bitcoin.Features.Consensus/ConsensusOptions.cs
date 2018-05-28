@@ -1,4 +1,5 @@
 ﻿using NBitcoin;
+using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.Consensus
 {
@@ -14,13 +15,19 @@ namespace Stratis.Bitcoin.Features.Consensus
         public Money PremineReward { get; set; }
 
         public long PremineHeight { get; set; }
-
-        public long StakeMinConfirmations { get; set; }
-
+        
         public long StakeMinAge { get; set; }
 
         /// <summary>Time to elapse before new modifier is computed.</summary>
         public long StakeModifierInterval { get; set; }
+
+        /// <summary>Coinstake minimal confirmations softfork activation height for the mainnet.</summary>
+        /// TODO: replace with actual value
+        private const int CoinstakeMinConfirmationActivationHeightMainnet = 1100000;
+
+        /// <summary>Coinstake minimal confirmations softfork activation height for the testnet.</summary>
+        /// TODO: replace with actual value
+        private const int CoinstakeMinConfirmationActivationHeightTestnet = 600000;
 
         /// <summary>
         /// Initializes the default values.
@@ -34,10 +41,22 @@ namespace Stratis.Bitcoin.Features.Consensus
             this.ProofOfStakeReward = Money.COIN;
             this.PremineReward = Money.Coins(98000000);
             this.PremineHeight = 2;
-            this.StakeMinConfirmations = 50;
             this.StakeMinAge = 60;
             this.StakeModifierInterval = 10 * 60;
             this.MaxReorgLength = 500;
+        }
+
+        /// <summary>
+        /// Gets the minimum confirmations amount required for a coin to be good enough to participate in staking.
+        /// </summary>
+        /// <param name="height">Block height.</param>
+        /// <param name="network">The network.</param>
+        public int GetStakeMinConfirmations(int height, Network network)
+        {
+            if (network.IsTest())
+                return height < CoinstakeMinConfirmationActivationHeightTestnet ? 10 : 20;
+
+            return height < CoinstakeMinConfirmationActivationHeightMainnet ? 50 : 500;
         }
     }
 
