@@ -3,10 +3,10 @@ using System.Linq;
 using System.Reflection;
 using McMaster.Extensions.CommandLineUtils;
 using Stratis.SmartContracts.Core;
-using Stratis.SmartContracts.Core.Compilation;
-using Stratis.SmartContracts.Core.ContractValidation;
-using Stratis.SmartContracts.Core.Lifecycle;
-using Stratis.SmartContracts.Core.Serialization;
+using Stratis.SmartContracts.ReflectionExecutor.Compilation;
+using Stratis.SmartContracts.ReflectionExecutor.ContractValidation;
+using Stratis.SmartContracts.ReflectionExecutor.Lifecycle;
+using Stratis.SmartContracts.ReflectionExecutor.Serialization;
 
 namespace Stratis.SmartContracts.Tools.Sct
 {
