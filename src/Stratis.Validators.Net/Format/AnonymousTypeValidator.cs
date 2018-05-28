@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Mono.Cecil;
 
-namespace Stratis.Validators.Net.Format
+namespace Stratis.ModuleValidation.Net.Format
 {
     /// <summary>
     /// Validates that a <see cref="Mono.Cecil.MethodDefinition"/> does not contain any FieldReferences to anonymous types

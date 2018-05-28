@@ -2,7 +2,7 @@
 using System.Linq;
 using Mono.Cecil;
 
-namespace Stratis.Validators.Net
+namespace Stratis.ModuleValidation.Net
 {
     /// <summary>
     /// A top-level validator for applying a group of validators to a module definition

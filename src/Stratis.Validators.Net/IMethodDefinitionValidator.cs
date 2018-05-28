@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using Mono.Cecil;
 
-namespace Stratis.Validators.Net
+namespace Stratis.ModuleValidation.Net
 {
     public interface IMethodDefinitionValidator
     {

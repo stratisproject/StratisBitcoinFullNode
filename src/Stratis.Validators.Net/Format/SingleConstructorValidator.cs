@@ -3,7 +3,7 @@ using System.Linq;
 using Mono.Cecil;
 using Mono.Cecil.Rocks;
 
-namespace Stratis.Validators.Net.Format
+namespace Stratis.ModuleValidation.Net.Format
 {
     /// <summary>
     /// Validates that a <see cref="Mono.Cecil.TypeDefinition"/> contains only a single constructor

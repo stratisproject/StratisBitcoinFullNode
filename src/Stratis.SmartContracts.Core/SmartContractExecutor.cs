@@ -10,7 +10,6 @@ using Stratis.SmartContracts.Core.Compilation;
 using Stratis.SmartContracts.Core.ContractValidation;
 using Stratis.SmartContracts.Core.State;
 using Stratis.SmartContracts.Core.State.AccountAbstractionLayer;
-using Stratis.Validators.Net;
 
 namespace Stratis.SmartContracts.Core
 {

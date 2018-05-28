@@ -2,7 +2,7 @@
 using System.Linq;
 using Mono.Cecil;
 
-namespace Stratis.Validators.Net.Format
+namespace Stratis.ModuleValidation.Net.Format
 {
     /// <summary>
     /// Validates that a <see cref="Mono.Cecil.TypeDefinition"/> does not have a namespace

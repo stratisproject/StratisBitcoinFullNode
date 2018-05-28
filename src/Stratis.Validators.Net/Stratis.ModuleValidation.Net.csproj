@@ -2,6 +2,8 @@
 
   <PropertyGroup>
     <TargetFramework>netcoreapp2.0</TargetFramework>
+    <AssemblyName>Stratis.ModuleValidation.Net</AssemblyName>
+    <RootNamespace>Stratis.ModuleValidation.Net</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>

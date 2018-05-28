@@ -4,7 +4,6 @@ using NBitcoin;
 using Stratis.SmartContracts.Core.ContractValidation;
 using Stratis.SmartContracts.Core.Exceptions;
 using Stratis.SmartContracts.Core.State.AccountAbstractionLayer;
-using Stratis.Validators.Net;
 
 namespace Stratis.SmartContracts.Core.Backend
 {

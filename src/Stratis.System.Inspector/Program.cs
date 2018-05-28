@@ -4,9 +4,9 @@ using System.IO;
 using System.Linq;
 using CsvHelper;
 using Mono.Cecil;
+using Stratis.ModuleValidation.Net;
+using Stratis.ModuleValidation.Net.Determinism;
 using Stratis.SmartContracts.Core.ContractValidation;
-using Stratis.Validators.Net;
-using Stratis.Validators.Net.Determinism;
 
 namespace Stratis.System.Inspector
 {

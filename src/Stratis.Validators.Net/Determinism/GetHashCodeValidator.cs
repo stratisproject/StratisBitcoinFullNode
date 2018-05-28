@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Mono.Cecil;
 
-namespace Stratis.Validators.Net.Determinism
+namespace Stratis.ModuleValidation.Net.Determinism
 {
     /// <summary>
     /// Validates that a <see cref="Mono.Cecil.MethodDefinition"/> is not <see cref="object.GetHashCode"/>

@@ -2,8 +2,8 @@
 using System.Linq;
 using System.Reflection;
 using Mono.Cecil;
+using Stratis.ModuleValidation.Net;
 using Stratis.SmartContracts.Core.Compilation;
-using Stratis.Validators.Net;
 
 namespace Stratis.SmartContracts.Core.ContractValidation
 {

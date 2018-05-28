@@ -113,7 +113,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.SmartContracts.Tool
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Stratis.SmartContracts.Templates", "Stratis.SmartContracts.Templates\Stratis.SmartContracts.Templates.csproj", "{23A4582D-D384-4529-929B-DD2C347DF283}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Stratis.Validators.Net", "Stratis.Validators.Net\Stratis.Validators.Net.csproj", "{A69EB01E-E8A1-4296-8611-AE498EDE8A59}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.ModuleValidation.Net", "Stratis.Validators.Net\Stratis.ModuleValidation.Net.csproj", "{A69EB01E-E8A1-4296-8611-AE498EDE8A59}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

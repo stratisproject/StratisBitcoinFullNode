@@ -12,7 +12,6 @@ using Stratis.SmartContracts.Core.Compilation;
 using Stratis.SmartContracts.Core.ContractValidation;
 using Stratis.SmartContracts.Core.Exceptions;
 using Stratis.SmartContracts.Core.State;
-using Stratis.Validators.Net;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Tests

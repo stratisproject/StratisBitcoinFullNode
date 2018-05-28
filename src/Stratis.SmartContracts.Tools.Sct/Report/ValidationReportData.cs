@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
+using Stratis.ModuleValidation.Net;
 using Stratis.SmartContracts.Core.ContractValidation;
-using Stratis.Validators.Net;
 
 namespace Stratis.SmartContracts.Tools.Sct.Report
 {

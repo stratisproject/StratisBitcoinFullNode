@@ -3,7 +3,7 @@ using System.Linq;
 using Mono.Cecil;
 using Mono.Collections.Generic;
 
-namespace Stratis.Validators.Net.Format
+namespace Stratis.ModuleValidation.Net.Format
 {
     /// <summary>
     /// Validates that a <see cref="Mono.Cecil.TypeDefinition"/> does not contain any async methods
