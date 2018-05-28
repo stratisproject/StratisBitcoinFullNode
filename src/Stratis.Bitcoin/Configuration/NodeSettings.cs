@@ -293,6 +293,8 @@ namespace Stratis.Bitcoin.Configuration
             this.Logger.LogDebug("Time synchronization with peers is {0}.", this.SyncTimeEnabled ? "enabled" : "disabled");
 
             var agentPrefix = config.GetOrDefault("agentprefix", string.Empty).Replace("-","");
+            if (agentPrefix.Length > MaximumAgentPrefixLength)
+                agentPrefix = agentPrefix.Substring(0, MaximumAgentPrefixLength);
             this.Logger.LogDebug("AgentPrefix set to {0}.", agentPrefix);
 
             // Since we are relying on the "this.Agent" value that may have been changed by an earlier call to 
@@ -400,7 +402,7 @@ namespace Stratis.Bitcoin.Configuration
             var defaults = Default(network:network);
 
             builder.AppendLine("####Node Settings####");
-            builder.AppendLine($"#An optional prefix for the node's user agent that will be shared with peers in the version handshake.");
+            builder.AppendLine($"#An optional prefix for the node's user agent shared with peers. Truncated if over { MaximumAgentPrefixLength } characters.");
             builder.AppendLine($"#agentprefix=<string>");
             builder.AppendLine($"#Accept non-standard transactions. Default {(defaults.RequireStandard?1:0)}.");
             builder.AppendLine($"#acceptnonstdtxn={(defaults.RequireStandard?1:0)}");
