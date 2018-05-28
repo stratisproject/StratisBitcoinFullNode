@@ -11,7 +11,7 @@ namespace Stratis.SmartContracts.Core.ContractValidation
     /// <summary>
     /// Checks for non-deterministic properties inside smart contracts by validating them at the bytecode level.
     /// </summary>
-    public class SmartContractDeterminismValidator : ISmartContractValidator
+    public class SmartContractDeterminismValidator : IValidator
     {
         /// <summary>
         /// System calls where we don't need to check any deeper - we just allow them.
@@ -79,7 +79,7 @@ namespace Stratis.SmartContracts.Core.ContractValidation
         public const string NonDeterministicMethodReference = "Non-deterministic method reference.";
 
         /// <inheritdoc/>
-        public SmartContractValidationResult Validate(SmartContractDecompilation decompilation)
+        public ValidationResult Validate(SmartContractDecompilation decompilation)
         {
             var errors = new List<FormatValidationError>();
             var visited = new Dictionary<string, List<FormatValidationError>>();
@@ -91,7 +91,7 @@ namespace Stratis.SmartContracts.Core.ContractValidation
                 ValidatedReferencedMethods(errors, visited, userMethods, userMethod);
             }
 
-            return new SmartContractValidationResult(errors);
+            return new ValidationResult(errors);
         }
 
         /// <summary>

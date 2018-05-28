@@ -5,19 +5,19 @@ namespace Stratis.SmartContracts.Core.ContractValidation
 {
     public sealed class SmartContractValidator
     {
-        private readonly IList<ISmartContractValidator> validators;
+        private readonly IList<IValidator> validators;
 
-        public SmartContractValidator(IList<ISmartContractValidator> validators)
+        public SmartContractValidator(IList<IValidator> validators)
         {
             this.validators = validators;
         }
 
-        public SmartContractValidationResult ValidateContract(SmartContractDecompilation decompilation)
+        public ValidationResult ValidateContract(SmartContractDecompilation decompilation)
         {
-            var endResult = new SmartContractValidationResult();
-            foreach (ISmartContractValidator validator in this.validators)
+            var endResult = new ValidationResult();
+            foreach (IValidator validator in this.validators)
             {
-                SmartContractValidationResult result = validator.Validate(decompilation);
+                ValidationResult result = validator.Validate(decompilation);
                 endResult.Errors.AddRange(result.Errors);
             }
             return endResult;

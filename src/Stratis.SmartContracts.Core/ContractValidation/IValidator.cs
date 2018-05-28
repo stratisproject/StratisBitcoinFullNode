@@ -10,6 +10,6 @@ namespace Stratis.SmartContracts.Core.ContractValidation
         /// All methods with an empty body will be ignored.
         /// </para>
         /// </summary>
-        SmartContractValidationResult Validate(SmartContractDecompilation decompilation);
+        ValidationResult Validate(SmartContractDecompilation decompilation);
     }
 }

@@ -8,7 +8,7 @@ namespace Stratis.SmartContracts.Core.ContractValidation
     /// <summary>
     /// Validates the format of a Smart Contract <see cref="SmartContractDecompilation"/>
     /// </summary>
-    public class SmartContractFormatValidator : ISmartContractValidator
+    public class SmartContractFormatValidator : IValidator
     {
         private static readonly IEnumerable<IModuleDefinitionValidator> ModuleDefinitionValidators = new List<IModuleDefinitionValidator>
         {
@@ -26,7 +26,7 @@ namespace Stratis.SmartContracts.Core.ContractValidation
             new AsyncValidator()
         };
 
-        public SmartContractValidationResult Validate(SmartContractDecompilation decompilation)
+        public ValidationResult Validate(SmartContractDecompilation decompilation)
         {
             var errors = new List<FormatValidationError>();
 
@@ -40,7 +40,7 @@ namespace Stratis.SmartContracts.Core.ContractValidation
                 errors.AddRange(typeDefValidator.Validate(decompilation.ContractType));
             }
 
-            return new SmartContractValidationResult(errors);
+            return new ValidationResult(errors);
         }  
     }
 }

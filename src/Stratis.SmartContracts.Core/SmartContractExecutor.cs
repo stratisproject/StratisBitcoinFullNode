@@ -159,7 +159,7 @@ namespace Stratis.SmartContracts.Core
 
             // Decompile the contract execution code and validate it.
             SmartContractDecompilation decompilation = SmartContractDecompiler.GetModuleDefinition(this.carrier.ContractExecutionCode);
-            SmartContractValidationResult validation = this.validator.ValidateContract(decompilation);
+            ValidationResult validation = this.validator.ValidateContract(decompilation);
 
             // If validation failed, refund the sender any remaining gas.
             if (!validation.IsValid)

@@ -15,7 +15,7 @@ namespace Stratis.SmartContracts.Core.ContractValidation
             new FieldDefinitionValidator()
         };
 
-        public SmartContractValidationResult Validate(SmartContractDecompilation decompilation)
+        public ValidationResult Validate(SmartContractDecompilation decompilation)
         {
             var warnings = new List<FormatValidationError>();
 
@@ -24,7 +24,7 @@ namespace Stratis.SmartContracts.Core.ContractValidation
                 warnings.AddRange(typeDefinitionValidator.Validate(decompilation.ContractType));
             }
 
-            return new SmartContractValidationResult(warnings);
+            return new ValidationResult(warnings);
         }
     }
 }

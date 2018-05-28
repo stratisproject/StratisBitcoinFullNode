@@ -186,7 +186,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 ISource<byte[], byte[]> stateDB = new NoDeleteSource<byte[], byte[]>(byteStore);
 
                 this.stateRoot = new ContractStateRepositoryRoot(stateDB);
-                this.validator = new SmartContractValidator(new List<ISmartContractValidator>
+                this.validator = new SmartContractValidator(new List<IValidator>
                 {
                     new SmartContractFormatValidator(),
                     new SmartContractDeterminismValidator()

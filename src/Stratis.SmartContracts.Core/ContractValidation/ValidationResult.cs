@@ -4,18 +4,18 @@ using Stratis.Validators.Net;
 
 namespace Stratis.SmartContracts.Core.ContractValidation
 {
-    public sealed class SmartContractValidationResult
+    public sealed class ValidationResult
     {
         public List<FormatValidationError> Errors { get; private set; }
         public Gas GasUnitsUsed { get; set; }
         public bool IsValid { get { return !this.Errors.Any(); } }
 
-        public SmartContractValidationResult()
+        public ValidationResult()
         {
             this.Errors = new List<FormatValidationError>();
         }
 
-        public SmartContractValidationResult(List<FormatValidationError> errors)
+        public ValidationResult(List<FormatValidationError> errors)
         {
             this.Errors = errors;
         }
