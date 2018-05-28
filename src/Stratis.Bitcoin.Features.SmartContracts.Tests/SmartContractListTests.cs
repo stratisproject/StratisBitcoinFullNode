@@ -134,8 +134,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             var firstItemHash = $"{listName}[0]";
             var secondItemHash = $"{listName}[1]";
 
-            var item = persistentState.GetObject<string>(firstItemHash);
-            var item2 = persistentState.GetObject<string>(secondItemHash);
+            var item = persistentState.GetString(firstItemHash);
+            var item2 = persistentState.GetString(secondItemHash);
 
             Assert.Equal(testItem, item);
             Assert.Equal(testItem2, item2);

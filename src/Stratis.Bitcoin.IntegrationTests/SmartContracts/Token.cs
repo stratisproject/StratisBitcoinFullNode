@@ -8,18 +8,18 @@ public class Token : SmartContract
     {
         this.Owner = this.Message.Sender;
 
-        this.Balances = this.PersistentState.GetMapping<ulong>("Balances");
+        this.Balances = this.PersistentState.GetUInt64Mapping("Balances");
     }
 
     public Address Owner
     {
         get
         {
-            return this.PersistentState.GetObject<Address>("Owner");
+            return this.PersistentState.GetAddress("Owner");
         }
         private set
         {
-            this.PersistentState.SetObject("Owner", value);
+            this.PersistentState.SetAddress("Owner", value);
         }
     }
 

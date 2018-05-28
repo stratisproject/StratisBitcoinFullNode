@@ -6,11 +6,11 @@ public class Auction : SmartContract
     {
         get
         {
-            return this.PersistentState.GetObject<Address>("Owner");
+            return this.PersistentState.GetAddress("Owner");
         }
         set
         {
-            this.PersistentState.SetObject<Address>("Owner", value);
+            this.PersistentState.SetAddress("Owner", value);
         }
     }
 
@@ -18,11 +18,11 @@ public class Auction : SmartContract
     {
         get
         {
-            return this.PersistentState.GetObject<ulong>("EndBlock");
+            return this.PersistentState.GetUInt64("EndBlock");
         }
         set
         {
-            this.PersistentState.SetObject<ulong>("EndBlock", value);
+            this.PersistentState.SetUInt64("EndBlock", value);
         }
     }
 
@@ -30,11 +30,11 @@ public class Auction : SmartContract
     {
         get
         {
-            return this.PersistentState.GetObject<Address>("HighestBidder");
+            return this.PersistentState.GetAddress("HighestBidder");
         }
         set
         {
-            this.PersistentState.SetObject<Address>("HighestBidder", value);
+            this.PersistentState.SetAddress("HighestBidder", value);
         }
     }
 
@@ -42,11 +42,11 @@ public class Auction : SmartContract
     {
         get
         {
-            return this.PersistentState.GetObject<ulong>("HighestBid");
+            return this.PersistentState.GetUInt64("HighestBid");
         }
         set
         {
-            this.PersistentState.SetObject<ulong>("HighestBid", value);
+            this.PersistentState.SetUInt64("HighestBid", value);
         }
     }
 
@@ -54,11 +54,11 @@ public class Auction : SmartContract
     {
         get
         {
-            return this.PersistentState.GetObject<bool>("HasEnded");
+            return this.PersistentState.GetBool("HasEnded");
         }
         set
         {
-            this.PersistentState.SetObject<bool>("HasEnded", value);
+            this.PersistentState.SetBool("HasEnded", value);
         }
     }
 
@@ -66,7 +66,7 @@ public class Auction : SmartContract
     {
         get
         {
-            return this.PersistentState.GetMapping<ulong>("ReturnBalances");
+            return this.PersistentState.GetUInt64Mapping("ReturnBalances");
         }
     }
 

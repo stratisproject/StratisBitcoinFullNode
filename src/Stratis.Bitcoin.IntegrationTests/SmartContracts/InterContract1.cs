@@ -7,7 +7,7 @@ public class InterContract1 : SmartContract
 
     public int ReturnInt()
     {
-        this.PersistentState.SetObject("test", "testString");
+        this.PersistentState.SetString("test", "testString");
         return Convert.ToInt32(this.Balance);
     }
 

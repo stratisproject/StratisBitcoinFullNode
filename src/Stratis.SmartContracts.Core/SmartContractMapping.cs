@@ -11,9 +11,9 @@ namespace Stratis.SmartContracts.Core
     public class SmartContractMapping<V> : ISmartContractMapping<V>
     {
         private readonly string name;
-        private readonly IPersistentState persistentState;
+        private readonly PersistentState persistentState;
 
-        public SmartContractMapping(IPersistentState persistentState, string name)
+        public SmartContractMapping(PersistentState persistentState, string name)
         {
             if (string.IsNullOrWhiteSpace(name))
             {
@@ -30,7 +30,7 @@ namespace Stratis.SmartContracts.Core
         }
 
         public V Get(string key)
-        {
+        {            
             return this.persistentState.GetObject<V>(this.GetKeyString(key));
         }
 

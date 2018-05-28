@@ -13,11 +13,11 @@ public class StorageDemo : SmartContract
     {
         get
         {
-            return PersistentState.GetObject<int>("Counter");
+            return PersistentState.GetInt32("Counter");
         }
         set
         {
-            PersistentState.SetObject<int>("Counter", value);
+            PersistentState.SetInt32("Counter", value);
         }
     }
 
@@ -25,11 +25,11 @@ public class StorageDemo : SmartContract
     {
         get
         {
-            return PersistentState.GetObject<string>("TestSave");
+            return PersistentState.GetString("TestSave");
         }
         set
         {
-            PersistentState.SetObject<string>("TestSave", value);
+            PersistentState.SetString("TestSave", value);
         }
     }
 
@@ -37,11 +37,11 @@ public class StorageDemo : SmartContract
     {
         get
         {
-            return PersistentState.GetObject<Address>("Owner");
+            return PersistentState.GetAddress("Owner");
         }
         set
         {
-            PersistentState.SetObject<Address>("Owner", value);
+            PersistentState.SetAddress("Owner", value);
         }
     }
 

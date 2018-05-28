@@ -659,18 +659,18 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                     public Token(ISmartContractState state): base(state) 
                     {
                         Owner = Message.Sender;
-                        Balances = PersistentState.GetMapping<ulong>(""Balances"");
+                        Balances = PersistentState.GetUInt64Mapping(""Balances"");
                     }
 
                     public Address Owner
                     {
                         get
                         {
-                            return PersistentState.GetObject<Address>(""Owner"");
+                            return PersistentState.GetAddress(""Owner"");
                         }
                         private set
                         {
-                            PersistentState.SetObject(""Owner"", value);
+                            PersistentState.SetAddress(""Owner"", value);
                         }
                     }
 

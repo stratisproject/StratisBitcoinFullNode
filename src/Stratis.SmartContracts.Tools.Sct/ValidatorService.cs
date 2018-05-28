@@ -125,22 +125,230 @@ namespace Stratis.SmartContracts.Tools.Sct
 
     public sealed class ValidatorPersistentState : IPersistentState
     {
-        public ISmartContractList<T> GetList<T>(string name)
+        public ISmartContractMapping<T> GetStructMapping<T>(string name) where T : struct
         {
             return null;
         }
 
-        public ISmartContractMapping<V> GetMapping<V>(string name)
+        public ISmartContractList<byte> GetByteList(string name)
         {
             return null;
         }
 
-        public T GetObject<T>(string key)
+        public ISmartContractList<byte[]> GetByteArrayList(string name)
+        {
+            return null;
+        }
+
+        public ISmartContractList<char> GetCharList(string name)
+        {
+            return null;
+        }
+
+        public ISmartContractList<Address> GetAddressList(string name)
+        {
+            return null;
+        }
+
+        public ISmartContractList<bool> GetBoolList(string name)
+        {
+            return null;
+        }
+
+        public ISmartContractList<int> GetInt32List(string name)
+        {
+            return null;
+        }
+
+        public ISmartContractList<uint> GetUInt32List(string name)
+        {
+            return null;
+        }
+
+        public ISmartContractList<long> GetInt64List(string name)
+        {
+            return null;
+        }
+
+        public ISmartContractList<ulong> GetUInt64List(string name)
+        {
+            return null;
+        }
+
+        public ISmartContractList<string> GetStringList(string name)
+        {
+            return null;
+        }
+
+        public ISmartContractList<sbyte> GetSByteList(string name)
+        {
+            return null;
+        }
+
+        public ISmartContractList<T> GetStructList<T>(string name) where T : struct
+        {
+            return null;
+        }
+
+        public void SetStruct<T>(string key, T value) where T : struct
+        {
+        }
+
+        public ISmartContractMapping<byte> GetByteMapping(string name)
+        {
+            return null;
+        }
+
+        public ISmartContractMapping<byte[]> GetByteArrayMapping(string name)
+        {
+            return null;
+        }
+
+        public ISmartContractMapping<char> GetCharMapping(string name)
+        {
+            return null;
+        }
+
+        public ISmartContractMapping<Address> GetAddressMapping(string name)
+        {
+            return null;
+        }
+
+        public ISmartContractMapping<bool> GetBoolMapping(string name)
+        {
+            return null;
+        }
+
+        public ISmartContractMapping<int> GetInt32Mapping(string name)
+        {
+            return null;
+        }
+
+        public ISmartContractMapping<uint> GetUInt32Mapping(string name)
+        {
+            return null;
+        }
+
+        public ISmartContractMapping<long> GetInt64Mapping(string name)
+        {
+            return null;
+        }
+
+        public ISmartContractMapping<ulong> GetUInt64Mapping(string name)
+        {
+            return null;
+        }
+
+        public ISmartContractMapping<string> GetStringMapping(string name)
+        {
+            return null;
+        }
+
+        public ISmartContractMapping<sbyte> GetSByteMapping(string name)
+        {
+            return null;
+        }
+
+        public byte GetByte(string key)
+        {
+            return 0;
+        }
+
+        public byte[] GetByteArray(string key)
+        {
+            return new byte[] { };
+        }
+
+        public char GetChar(string key)
+        {
+            return '\0';
+        }
+
+        public Address GetAddress(string key)
+        {
+            return new Address();
+        }
+
+        public bool GetBool(string key)
+        {
+            return false;
+        }
+
+        public int GetInt32(string key)
+        {
+            return 0;
+        }
+
+        public uint GetUInt32(string key)
+        {
+            return 0;
+        }
+
+        public long GetInt64(string key)
+        {
+            return 0;
+        }
+
+        public ulong GetUInt64(string key)
+        {
+            return 0;
+        }
+
+        public string GetString(string key)
+        {
+            return null;
+        }
+
+        public sbyte GetSbyte(string key)
+        {
+            return 0;
+        }
+
+        public T GetStruct<T>(string key) where T : struct
         {
             return default(T);
         }
+        public void SetByte(string key, byte value)
+        {
+        }
 
-        public void SetObject<T>(string key, T obj)
+        public void SetByteArray(string key, byte[] value)
+        {
+        }
+
+        public void SetChar(string key, char value)
+        {
+        }
+
+        public void SetAddress(string key, Address value)
+        {
+        }
+
+        public void SetBool(string key, bool value)
+        {
+        }
+
+        public void SetInt32(string key, int value)
+        {
+        }
+
+        public void SetUInt32(string key, uint value)
+        {
+        }
+
+        public void SetInt64(string key, long value)
+        {
+        }
+
+        public void SetUInt64(string key, ulong value)
+        {
+        }
+
+        public void SetString(string key, string value)
+        {
+        }
+
+        public void SetSByte(string key, sbyte value)
         {
         }
     }

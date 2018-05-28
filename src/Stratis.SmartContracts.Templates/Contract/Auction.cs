@@ -6,11 +6,11 @@ public class Auction : SmartContract
     {
         get
         {
-            return PersistentState.GetObject<Address>("Owner");
+            return PersistentState.GetAddress("Owner");
         }
         set
         {
-            PersistentState.SetObject<Address>("Owner", value);
+            PersistentState.SetAddress("Owner", value);
         }
     }
 
@@ -18,11 +18,11 @@ public class Auction : SmartContract
     {
         get
         {
-            return PersistentState.GetObject<ulong>("EndBlock");
+            return PersistentState.GetUInt64("EndBlock");
         }
         set
         {
-            PersistentState.SetObject<ulong>("EndBlock", value);
+            PersistentState.SetUInt64("EndBlock", value);
         }
     }
 
@@ -30,11 +30,11 @@ public class Auction : SmartContract
     {
         get
         {
-            return PersistentState.GetObject<Address>("HighestBidder");
+            return PersistentState.GetAddress("HighestBidder");
         }
         set
         {
-            PersistentState.SetObject<Address>("HighestBidder", value);
+            PersistentState.SetAddress("HighestBidder", value);
         }
     }
 
@@ -42,11 +42,11 @@ public class Auction : SmartContract
     {
         get
         {
-            return PersistentState.GetObject<ulong>("HighestBid");
+            return PersistentState.GetUInt64("HighestBid");
         }
         set
         {
-            PersistentState.SetObject<ulong>("HighestBid", value);
+            PersistentState.SetUInt64("HighestBid", value);
         }
     }
 
@@ -54,11 +54,11 @@ public class Auction : SmartContract
     {
         get
         {
-            return PersistentState.GetObject<bool>("HasEnded");
+            return PersistentState.GetBool("HasEnded");
         }
         set
         {
-            PersistentState.SetObject<bool>("HasEnded", value);
+            PersistentState.SetBool("HasEnded", value);
         }
     }
 
@@ -66,7 +66,7 @@ public class Auction : SmartContract
     {
         get
         {
-            return PersistentState.GetMapping<ulong>("ReturnBalances");
+            return PersistentState.GetUInt64Mapping("ReturnBalances");
         }
     }
 

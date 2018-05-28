@@ -51,8 +51,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                                                 }
 
                                                 public string Owner {
-                                                    get => this.PersistentState.GetObject<string>(""Owner"");
-                                                    set => this.PersistentState.SetObject<string>(""Owner"", value);
+                                                    get => this.PersistentState.GetString(""Owner"");
+                                                    set => this.PersistentState.SetString(""Owner"", value);
                                                 }
                                             }";
 
@@ -74,8 +74,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                                                 }
 
                                                 public string Owner {
-                                                    get => this.PersistentState.GetObject<string>(""Owner"");
-                                                    set => this.PersistentState.SetObject<string>(""Owner"", value);
+                                                    get => this.PersistentState.GetString(""Owner"");
+                                                    set => this.PersistentState.SetString(""Owner"", value);
                                                 }
                                             }";
 
