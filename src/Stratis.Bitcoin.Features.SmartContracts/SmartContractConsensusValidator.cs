@@ -205,7 +205,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             }
 
             // Someone submitted a smart contract transaction.
-            ExecuteContractTransaction(context, transaction, smartContractTxOut);
+            ExecuteContractTransaction(context, transaction);
             base.UpdateCoinView(context, transaction);
         }
 
@@ -236,7 +236,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         /// <summary>
         /// Executes the smart contract part of a transaction
         /// </summary>
-        private void ExecuteContractTransaction(RuleContext context, Transaction transaction, TxOut smartContractTxOut)
+        private void ExecuteContractTransaction(RuleContext context, Transaction transaction)
         {
             ulong blockHeight = Convert.ToUInt64(context.BlockValidationContext.ChainedHeader.Height);
 

@@ -103,14 +103,14 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             if (smartContractTxOut == null)
                 base.AddToBlock(mempoolEntry);
             else
-                this.AddContractToBlock(mempoolEntry, smartContractTxOut);
+                this.AddContractToBlock(mempoolEntry);
         }
 
         /// <summary>
         /// Execute the contract and add all relevant fees and refunds to the block.
         /// </summary>
         /// <remarks>TODO: At some point we need to change height to a ulong.</remarks> 
-        private void AddContractToBlock(TxMempoolEntry mempoolEntry, TxOut smartContractTxOut)
+        private void AddContractToBlock(TxMempoolEntry mempoolEntry)
         {
             var carrier = this.carrierSerializer.Deserialize(mempoolEntry.Transaction);
 
