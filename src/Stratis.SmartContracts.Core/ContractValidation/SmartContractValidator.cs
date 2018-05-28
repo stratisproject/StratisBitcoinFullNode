@@ -16,6 +16,7 @@ namespace Stratis.SmartContracts.Core.ContractValidation
         public ValidationResult Validate(SmartContractDecompilation decompilation)
         {
             var endResult = new ValidationResult();
+
             foreach (ISmartContractValidator validator in this.validators)
             {
                 ValidationResult result = validator.Validate(decompilation);
