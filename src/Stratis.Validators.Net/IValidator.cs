@@ -1,7 +1,6 @@
 ﻿using Mono.Cecil;
-using Stratis.Validators.Net;
 
-namespace Stratis.SmartContracts.Core.ContractValidation
+namespace Stratis.Validators.Net
 {
     public interface IValidator
     {

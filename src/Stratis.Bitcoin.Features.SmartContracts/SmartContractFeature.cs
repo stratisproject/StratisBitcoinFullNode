@@ -19,6 +19,7 @@ using Stratis.Bitcoin.Mining;
 using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.ContractValidation;
 using Stratis.SmartContracts.Core.State;
+using Stratis.Validators.Net;
 
 namespace Stratis.Bitcoin.Features.SmartContracts
 {
