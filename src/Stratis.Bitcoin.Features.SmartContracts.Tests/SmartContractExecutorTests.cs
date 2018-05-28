@@ -30,7 +30,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             this.loggerFactory.AddConsoleWithFilters();
             this.network = Network.SmartContractsRegTest;
             this.state = new ContractStateRepositoryRoot(new NoDeleteSource<byte[], byte[]>(new MemoryDictionarySource()));
-            this.validator = new SmartContractValidator(new IValidator[] { });
+            this.validator = new SmartContractValidator(new ISmartContractValidator[] { });
         }
 
         [Fact]
@@ -62,7 +62,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             this.state.SetCode(new uint160(1), contractExecutionCode);
 
-            SmartContractExecutor executor = SmartContractExecutor.Initialize(deserializedCall, this.network, this.state, new SmartContractValidator(new IValidator[] { }), this.keyEncodingStrategy, this.loggerFactory, new Money(10000));
+            SmartContractExecutor executor = SmartContractExecutor.Initialize(deserializedCall, this.network, this.state, new SmartContractValidator(new ISmartContractValidator[] { }), this.keyEncodingStrategy, this.loggerFactory, new Money(10000));
             ISmartContractExecutionResult result = executor.Execute(0, deserializedCall.ContractAddress);
 
             Assert.True(result.Revert);
@@ -103,7 +103,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             //-------------------------------------------------------
 
             this.state.SetCode(new uint160(1), contractExecutionCode);
-            var validator = new SmartContractValidator(new IValidator[] { new SmartContractDeterminismValidator() });
+            var validator = new SmartContractValidator(new ISmartContractValidator[] { new SmartContractDeterminismValidator() });
 
             SmartContractExecutor executor = SmartContractExecutor.Initialize(deserializedCreate, this.network, this.state, validator, this.keyEncodingStrategy, this.loggerFactory, new Money(10000));
             ISmartContractExecutionResult result = executor.Execute(0, deserializedCreate.GetNewContractAddress());
@@ -122,7 +122,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             var carrier = SmartContractCarrier.CallContract(1, toAddress, "TestMethod", 1, (Gas)10000);
             carrier.Sender = new uint160(2);
 
-            var executor = new CallSmartContract(carrier, this.keyEncodingStrategy, this.loggerFactory, new Money(10000), this.network, state, new SmartContractValidator(new IValidator[] { }));
+            var executor = new CallSmartContract(carrier, this.keyEncodingStrategy, this.loggerFactory, new Money(10000), this.network, state, new SmartContractValidator(new ISmartContractValidator[] { }));
 
             ISmartContractExecutionResult result = executor.Execute(0, toAddress);
             Assert.IsType<SmartContractDoesNotExistException>(result.Exception);

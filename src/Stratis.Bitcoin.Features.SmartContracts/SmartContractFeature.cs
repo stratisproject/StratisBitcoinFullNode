@@ -19,7 +19,6 @@ using Stratis.Bitcoin.Mining;
 using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.ContractValidation;
 using Stratis.SmartContracts.Core.State;
-using Stratis.Validators.Net;
 
 namespace Stratis.Bitcoin.Features.SmartContracts
 {
@@ -57,7 +56,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                     .DependOn<MiningFeature>()
                     .FeatureServices(services =>
                     {
-                        SmartContractValidator validator = new SmartContractValidator(new List<IValidator>
+                        SmartContractValidator validator = new SmartContractValidator(new List<ISmartContractValidator>
                         {
                             new SmartContractFormatValidator(),
                             new SmartContractDeterminismValidator()

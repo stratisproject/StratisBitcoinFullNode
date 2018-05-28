@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using Mono.Cecil;
+using Stratis.SmartContracts.Core.Compilation;
 using Stratis.Validators.Net;
 using Stratis.Validators.Net.Determinism;
 using Stratis.Validators.Net.Format;
@@ -10,7 +11,7 @@ namespace Stratis.SmartContracts.Core.ContractValidation
     /// <summary>
     /// Checks for non-deterministic properties inside smart contracts by validating them at the bytecode level.
     /// </summary>
-    public class SmartContractDeterminismValidator : IValidator
+    public class SmartContractDeterminismValidator : ISmartContractValidator
     {
         /// <summary>
         /// System calls where we don't need to check any deeper - we just allow them.
@@ -78,11 +79,11 @@ namespace Stratis.SmartContracts.Core.ContractValidation
         public const string NonDeterministicMethodReference = "Non-deterministic method reference.";
 
         /// <inheritdoc/>
-        public ValidationResult Validate(ModuleDefinition moduleDefinition)
+        public ValidationResult Validate(SmartContractDecompilation decompilation)
         {
             var errors = new List<FormatValidationError>();
             var visited = new Dictionary<string, List<FormatValidationError>>();
-            var contractType = moduleDefinition.Types.FirstOrDefault(x => x.FullName != "<Module>");
+            var contractType = decompilation.ModuleDefinition.Types.FirstOrDefault(x => x.FullName != "<Module>");
 
             List<MethodDefinition> userMethods = contractType.Methods.Where(method => method.Body != null).ToList();
             foreach (MethodDefinition userMethod in userMethods)
