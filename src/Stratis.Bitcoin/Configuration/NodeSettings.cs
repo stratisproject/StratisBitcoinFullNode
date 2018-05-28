@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Net;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -36,6 +35,66 @@ namespace Stratis.Bitcoin.Configuration
         /// <summary>Version of the protocol the current implementation supports.</summary>
         public const ProtocolVersion SupportedProtocolVersion = ProtocolVersion.SENDHEADERS_VERSION;
 
+        /// <summary>Factory to create instance logger.</summary>
+        public ILoggerFactory LoggerFactory { get; private set; }
+
+        /// <summary>Instance logger.</summary>
+        public ILogger Logger { get; private set; }
+
+        /// <summary>Configuration related to logging.</summary>
+        public LogSettings Log { get; private set; }
+
+        /// <summary>List of paths to important files and folders.</summary>
+        public DataFolder DataFolder { get; private set; }
+
+        /// <summary>Path to the data directory. This value is read-only and is set in the constructor's args.</summary>
+        public string DataDir { get; private set; }
+
+        /// <summary>Path to the configuration file. This value is read-only and is set in the constructor's args.</summary>
+        public string ConfigurationFile { get; private set; }
+
+        /// <summary>Combined command line arguments and configuration file settings.</summary>
+        public TextFileConfiguration ConfigReader { get; private set; }
+
+        /// <summary>Option to skip (most) non-standard transaction checks, for testnet/regtest only.</summary>
+        public bool RequireStandard { get; set; }
+
+        /// <summary>Supported protocol version.</summary>
+        public ProtocolVersion ProtocolVersion { get; private set; }
+
+        /// <summary>Specification of the network the node runs on - regtest/testnet/mainnet.</summary>
+        public Network Network { get; private set; }
+
+        /// <summary>The node's user agent.</summary>
+        public string Agent { get; private set; }
+
+        /// <summary>The node's user agent prefix.</summary>
+        public string AgentPrefix { get; private set; }
+
+        /// <summary>The node's user agent (with optional prefix) that will be shared with peers in the version handshake.</summary>
+        public string AgentWithPrefix
+        {
+            get
+            {
+                return this.AgentPrefix == null ? this.Agent : $"{this.AgentPrefix.Substring(0, Math.Min(this.AgentPrefix.Length, 10))}-{this.Agent}";
+            }
+        }
+
+        /// <summary>Maximum tip age in seconds to consider node in initial block download.</summary>
+        public int MaxTipAge { get; private set; }
+
+        /// <summary>Minimum transaction fee for network.</summary>
+        public FeeRate MinTxFeeRate { get; private set; }
+
+        /// <summary>Fall back transaction fee for network.</summary>
+        public FeeRate FallbackTxFeeRate { get; private set; }
+
+        /// <summary>Minimum relay transaction fee for network.</summary>
+        public FeeRate MinRelayTxFeeRate { get; private set; }
+
+        /// <summary><c>true</c> to sync time with other peers and calculate adjusted time, <c>false</c> to use our system clock only.</summary>
+        public bool SyncTimeEnabled { get; private set; }
+
         /// <summary>
         /// Initializes a new instance of the object.
         /// </summary>
@@ -55,17 +114,24 @@ namespace Stratis.Bitcoin.Configuration
         public NodeSettings(Network network = null, ProtocolVersion protocolVersion = SupportedProtocolVersion, 
             string agent = "StratisBitcoin", string[] args = null)
         {
-            this.Network = network;
-            this.ProtocolVersion = protocolVersion;
-            this.Agent = agent;
-            this.ConfigReader = new TextFileConfiguration(args ?? new string[] { });
-            this.Log = new LogSettings();
-            
             // Create the default logger factory and logger.
             this.LoggerFactory = new ExtendedLoggerFactory();
             this.LoggerFactory.AddConsoleWithFilters();
             this.LoggerFactory.AddNLog();
             this.Logger = this.LoggerFactory.CreateLogger(typeof(NodeSettings).FullName);
+
+            // Record arguments.
+            this.Network = network;
+            this.ProtocolVersion = protocolVersion;
+            this.Agent = agent;
+            this.ConfigReader = new TextFileConfiguration(args ?? new string[] { });
+
+            // Log arguments.
+            this.Logger.LogDebug("Arguments: network='{0}', protocolVersion='{1}', agent='{2}', args='{3}'.", 
+                this.Network == null ? "(None)":this.Network.Name,
+                this.ProtocolVersion,
+                this.Agent,
+                args == null?"(None)":string.Join(" ", args));
 
             // By default, we look for a file named '<network>.conf' in the network's data directory,
             // but both the data directory and the configuration file path may be changed using the -datadir and -conf command-line arguments.
@@ -99,23 +165,28 @@ namespace Stratis.Bitcoin.Configuration
                 var testNet = this.ConfigReader.GetOrDefault<bool>("testnet", false);
                 var regTest = this.ConfigReader.GetOrDefault<bool>("regtest", false);
 
+                this.Logger.LogDebug("Network type: testnet='{0}', regtest='{1}'.", testNet, regTest);
+
                 if (testNet && regTest)
-                    throw new ConfigurationException("Invalid combination of -regtest and -testnet.");
+                    throw new ConfigurationException("Invalid combination of regtest and testnet.");
 
                 if (protocolVersion == ProtocolVersion.ALT_PROTOCOL_VERSION)
                     this.Network = testNet ? Network.StratisTest : regTest ? Network.StratisRegTest : Network.StratisMain;
                 else
                     this.Network = testNet ? Network.TestNet : regTest ? Network.RegTest : Network.Main;
+
+                this.Logger.LogDebug("Network set to '{0}'.", this.Network.Name);
             }
 
             // Set the full data directory path.
             if (this.DataDir == null)
             {
+                // Create the data directories if they don't exist.
                 this.DataDir = this.CreateDefaultDataDirectories(Path.Combine("StratisNode", this.Network.RootFolderName), this.Network);
             }
             else
             {
-                // Create the data directories if they don't exist.
+                // Combine the data directory with the network's root folder and name.
                 string directoryPath = Path.Combine(this.DataDir, this.Network.RootFolderName, this.Network.Name);
                 this.DataDir = Directory.CreateDirectory(directoryPath).FullName;
                 this.Logger.LogDebug("Data directory initialized with path {0}.", this.DataDir);
@@ -135,6 +206,7 @@ namespace Stratis.Bitcoin.Configuration
             }
 
             // Create the custom logger factory.
+            this.Log = new LogSettings();
             this.Log.Load(this.ConfigReader);
             this.LoggerFactory.AddFilters(this.Log, this.DataFolder);
             this.LoggerFactory.ConfigureConsoleFilters(this.LoggerFactory.GetConsoleSettings(), this.Log);
@@ -142,27 +214,6 @@ namespace Stratis.Bitcoin.Configuration
             // Load the configuration.
             this.LoadConfiguration();
         }
-
-        /// <summary>Factory to create instance logger.</summary>
-        public ILoggerFactory LoggerFactory { get; private set; }
-
-        /// <summary>Instance logger.</summary>
-        public ILogger Logger { get; private set; }
-
-        /// <summary>Configuration related to logging.</summary>
-        public LogSettings Log { get; private set; }
-
-        /// <summary>List of paths to important files and folders.</summary>
-        public DataFolder DataFolder { get; private set; }
-
-        /// <summary>Path to the data directory. This value is read-only and is set in the constructor's args.</summary>
-        public string DataDir { get; private set; }
-
-        /// <summary>Path to the configuration file. This value is read-only and is set in the constructor's args.</summary>
-        public string ConfigurationFile { get; private set; }
-
-        /// <summary>Option to skip (most) non-standard transaction checks, for testnet/regtest only.</summary>
-        public bool RequireStandard { get; set; }
 
         /// <summary>Determines whether to print help and exit.</summary>
         public bool PrintHelpAndExit
@@ -173,32 +224,6 @@ namespace Stratis.Bitcoin.Configuration
                     this.ConfigReader.GetOrDefault<bool>("-help", false);
             }
         }
-
-        /// <summary>Maximum tip age in seconds to consider node in initial block download.</summary>
-        public int MaxTipAge { get; set; }
-
-        /// <summary>Supported protocol version.</summary>
-        public ProtocolVersion ProtocolVersion { get; set; }
-
-        /// <summary>Specification of the network the node runs on - regtest/testnet/mainnet.</summary>
-        public Network Network { get; private set; }
-
-        /// <summary>The node's user agent that will be shared with peers in the version handshake.</summary>
-        public string Agent { get; set; }
-
-        /// <summary>Minimum transaction fee for network.</summary>
-        public FeeRate MinTxFeeRate { get; set; }
-
-        /// <summary>Fall back transaction fee for network.</summary>
-        public FeeRate FallbackTxFeeRate { get; set; }
-
-        /// <summary>Minimum relay transaction fee for network.</summary>
-        public FeeRate MinRelayTxFeeRate { get; set; }
-
-        public TextFileConfiguration ConfigReader { get; private set; }
-
-        /// <summary><c>true</c> to sync time with other peers and calculate adjusted time, <c>false</c> to use our system clock only.</summary>
-        public bool SyncTimeEnabled { get; set; }
 
         /// <summary>
         /// Initializes default configuration.
@@ -259,8 +284,6 @@ namespace Stratis.Bitcoin.Configuration
         {
             var config = this.ConfigReader;
 
-            this.Logger.LogDebug("Network: IsTest='{0}', IsBitcoin='{1}'.", this.Network.IsTest(), this.Network.IsBitcoin());
-
             this.RequireStandard = config.GetOrDefault("acceptnonstdtxn", !(this.Network.IsTest()));
             this.Logger.LogDebug("RequireStandard set to {0}.", this.RequireStandard);
 
@@ -279,12 +302,8 @@ namespace Stratis.Bitcoin.Configuration
             this.SyncTimeEnabled = config.GetOrDefault<bool>("synctime", true);
             this.Logger.LogDebug("Time synchronization with peers is {0}.", this.SyncTimeEnabled ? "enabled" : "disabled");
 
-            // Add a prefix set by the user to the agent. This will allow people running nodes to
-            // identify themselves if they wish. The prefix is limited to 10 characters.
-            string agentPrefix = config.GetOrDefault("agentprefix", string.Empty);
-            agentPrefix = agentPrefix.Substring(0, Math.Min(10, agentPrefix.Length));
-            this.Agent = string.IsNullOrEmpty(agentPrefix) ? this.Agent : $"{agentPrefix}-{this.Agent}";
-            this.Logger.LogDebug("Agent set to {0}.", this.Agent);
+            this.AgentPrefix = config.GetOrDefault("agentprefix", string.Empty);
+            this.Logger.LogDebug("AgentPrefix set to {0}.", this.AgentPrefix);
         }
 
         /// <summary>

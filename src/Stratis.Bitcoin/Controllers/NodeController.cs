@@ -57,7 +57,7 @@ namespace Stratis.Bitcoin.Controllers
             StatusModel model = new StatusModel
             {
                 Version = this.fullNode.Version?.ToString() ?? "0",
-                Agent = this.nodeSettings.Agent,
+                Agent = this.nodeSettings.AgentWithPrefix,
                 ProcessId = Process.GetCurrentProcess().Id,
                 Network = this.fullNode.Network.Name,
                 ConsensusHeight = this.chainState.ConsensusTip.Height,

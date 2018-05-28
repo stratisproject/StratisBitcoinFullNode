@@ -167,7 +167,7 @@ namespace Stratis.Bitcoin.Connection
 
             this.Parameters = parameters;
             this.Parameters.ConnectCancellation = this.nodeLifetime.ApplicationStopping;
-            this.Parameters.UserAgent = $"{this.NodeSettings.Agent}:{this.GetVersion()}";
+            this.Parameters.UserAgent = $"{this.NodeSettings.AgentWithPrefix}:{this.GetVersion()}";
             this.Parameters.Version = this.NodeSettings.ProtocolVersion;
 
             this.downloads = new Dictionary<INetworkPeer, PerformanceSnapshot>();
