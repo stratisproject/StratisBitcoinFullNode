@@ -150,7 +150,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             Assert.NotNull(result.Exception);
             // Base cost + constructor cost
-            Assert.Equal(GasPriceList.BaseCost + 8, result.GasConsumed);
+            Assert.Equal(GasPriceList.BaseCost + 13, result.GasConsumed);
         }
 
         [Fact]

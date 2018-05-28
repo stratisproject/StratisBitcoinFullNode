@@ -196,10 +196,11 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 executionContext,
                 gasMeter);
 
-            // Constructor: 10
-            // Property setter: 7
-            // Storage: 15
-            Assert.Equal((Gas)32, result.GasConsumed);
+            // TODO: Un-hard-code this. 
+            // Constructor: 15
+            // Property setter: 12
+            // Storage: 150
+            Assert.Equal((Gas)177, result.GasConsumed);
         }
 
         [Fact]
@@ -224,10 +225,10 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 executionContext,
                 gasMeter);
 
-            // Constructor: 10
-            // Property setter: 7
-            // Storage: 15
-            Assert.Equal((Gas)32, result.GasConsumed);
+            // Constructor: 15
+            // Property setter: 12
+            // Storage: 150
+            Assert.Equal((Gas)177, result.GasConsumed);
         }
     }
 }
