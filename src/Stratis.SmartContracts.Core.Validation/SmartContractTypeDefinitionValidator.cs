@@ -3,9 +3,8 @@ using System.Linq;
 using Mono.Cecil;
 using Stratis.ModuleValidation.Net;
 using Stratis.ModuleValidation.Net.Format;
-using Stratis.SmartContracts.Core.Validation;
 
-namespace Stratis.SmartContracts.Core.ContractValidation
+namespace Stratis.SmartContracts.Core.Validation
 {
     /// <summary>
     /// Validates the Type definitions contained within a module definition

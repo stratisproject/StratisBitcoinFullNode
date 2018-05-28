@@ -4,9 +4,8 @@ using Mono.Cecil;
 using Stratis.ModuleValidation.Net;
 using Stratis.ModuleValidation.Net.Determinism;
 using Stratis.ModuleValidation.Net.Format;
-using Stratis.SmartContracts.Core.Compilation;
 
-namespace Stratis.SmartContracts.Core.ContractValidation
+namespace Stratis.SmartContracts.Core.Validation
 {
     /// <summary>
     /// Checks for non-deterministic properties inside smart contracts by validating them at the bytecode level.
@@ -46,7 +45,6 @@ namespace Stratis.SmartContracts.Core.ContractValidation
             "System.Linq.Enumerable",
             "Stratis.SmartContracts.SmartContractList`1",
             "Stratis.SmartContracts.SmartContractMapping`1",
-            typeof(PersistentState).FullName,
             typeof(SmartContract).FullName
         };
 
@@ -83,7 +81,7 @@ namespace Stratis.SmartContracts.Core.ContractValidation
         {
             var errors = new List<ValidationResult>();
             var visited = new Dictionary<string, List<ValidationResult>>();
-            var contractType = decompilation.ModuleDefinition.Types.FirstOrDefault(x => x.FullName != "<Module>");
+            var contractType = Enumerable.FirstOrDefault<TypeDefinition>(decompilation.ModuleDefinition.Types, x => x.FullName != "<Module>");
 
             List<MethodDefinition> userMethods = contractType.Methods.Where(method => method.Body != null).ToList();
             foreach (MethodDefinition userMethod in userMethods)

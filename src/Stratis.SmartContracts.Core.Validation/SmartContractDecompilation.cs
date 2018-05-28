@@ -1,6 +1,6 @@
 ﻿using Mono.Cecil;
 
-namespace Stratis.SmartContracts.Core.Compilation
+namespace Stratis.SmartContracts.Core.Validation
 {
     public sealed class SmartContractDecompilation
     {

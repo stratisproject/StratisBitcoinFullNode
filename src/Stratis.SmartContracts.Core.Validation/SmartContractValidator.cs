@@ -1,8 +1,7 @@
 ﻿using System.Collections.Generic;
 using Stratis.ModuleValidation.Net;
-using Stratis.SmartContracts.Core.Compilation;
 
-namespace Stratis.SmartContracts.Core.ContractValidation
+namespace Stratis.SmartContracts.Core.Validation
 {
     public sealed class SmartContractValidator : ISmartContractValidator
     {

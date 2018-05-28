@@ -4,7 +4,7 @@ using Mono.Cecil;
 using Mono.Cecil.Cil;
 using Stratis.ModuleValidation.Net;
 
-namespace Stratis.SmartContracts.Core.ContractValidation
+namespace Stratis.SmartContracts.Core.Validation
 {
     /// <summary>
     /// Validates that a <see cref="Mono.Cecil.MethodDefinition"/> only does not create objects whose Type is blacklisted

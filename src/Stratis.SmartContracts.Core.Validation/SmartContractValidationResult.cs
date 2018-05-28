@@ -2,7 +2,7 @@
 using System.Linq;
 using Stratis.ModuleValidation.Net;
 
-namespace Stratis.SmartContracts.Core.ContractValidation
+namespace Stratis.SmartContracts.Core.Validation
 {
     public sealed class SmartContractValidationResult
     {

@@ -1,9 +1,9 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using Mono.Cecil;
 using Stratis.ModuleValidation.Net;
-using Stratis.SmartContracts.Core.Compilation;
 
-namespace Stratis.SmartContracts.Core.ContractValidation
+namespace Stratis.SmartContracts.Core.Validation
 {
     /// <summary>
     /// Validates any warn-level issues with a Smart Contract
@@ -18,7 +18,7 @@ namespace Stratis.SmartContracts.Core.ContractValidation
         public SmartContractValidationResult Validate(SmartContractDecompilation decompilation)
         {
             var warnings = new List<ValidationResult>();
-            var contractType = decompilation.ModuleDefinition.Types.FirstOrDefault(x => x.FullName != "<Module>");
+            var contractType = Enumerable.FirstOrDefault<TypeDefinition>(decompilation.ModuleDefinition.Types, x => x.FullName != "<Module>");
 
             foreach (ITypeDefinitionValidator typeDefinitionValidator in TypeDefinitionValidators)
             {

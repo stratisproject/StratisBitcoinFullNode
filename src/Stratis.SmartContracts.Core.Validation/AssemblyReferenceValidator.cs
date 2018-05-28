@@ -3,9 +3,8 @@ using System.Linq;
 using System.Reflection;
 using Mono.Cecil;
 using Stratis.ModuleValidation.Net;
-using Stratis.SmartContracts.Core.Compilation;
 
-namespace Stratis.SmartContracts.Core.ContractValidation
+namespace Stratis.SmartContracts.Core.Validation
 {
     /// <summary>
     /// Validates that a <see cref="Mono.Cecil.ModuleDefinition"/> only references allowed assemblies
@@ -15,7 +14,12 @@ namespace Stratis.SmartContracts.Core.ContractValidation
         /// <summary>
         /// The referenced assemblies allowed in the smart contract
         /// </summary>
-        private static readonly IEnumerable<Assembly> AllowedAssemblies = ReferencedAssemblyResolver.AllowedAssemblies;
+        private IEnumerable<Assembly> allowedAssemblies;
+
+        public AssemblyReferenceValidator(IEnumerable<Assembly> allowedAssemblies)
+        {
+            this.allowedAssemblies = allowedAssemblies;
+        }
 
         public IEnumerable<ValidationResult> Validate(ModuleDefinition module)
         {
@@ -23,7 +27,7 @@ namespace Stratis.SmartContracts.Core.ContractValidation
 
             foreach (AssemblyNameReference assemblyReference in module.AssemblyReferences)
             {
-                if (!AllowedAssemblies.Any(assemblyName => assemblyName.FullName == assemblyReference.FullName))
+                if (!this.allowedAssemblies.Any(assemblyName => assemblyName.FullName == assemblyReference.FullName))
                     errors.Add(new ModuleDefinitionValidationResult("Assembly " + assemblyReference.FullName + " is not allowed."));
             }
 

@@ -3,7 +3,7 @@ using System.Linq;
 using Mono.Cecil;
 using Stratis.ModuleValidation.Net;
 
-namespace Stratis.SmartContracts.Core.ContractValidation
+namespace Stratis.SmartContracts.Core.Validation
 {
     /// <summary>
     /// Validates that a <see cref="Mono.Cecil.MethodDefinition"/> does not reference a method with a known forbidden return type

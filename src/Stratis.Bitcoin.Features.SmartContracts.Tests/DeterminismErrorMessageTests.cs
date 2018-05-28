@@ -1,6 +1,6 @@
 ﻿using System.Linq;
 using Stratis.SmartContracts.Core.Compilation;
-using Stratis.SmartContracts.Core.ContractValidation;
+using Stratis.SmartContracts.Core.Validation;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Tests

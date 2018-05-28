@@ -1,6 +1,4 @@
-﻿using Stratis.SmartContracts.Core.Compilation;
-
-namespace Stratis.SmartContracts.Core.ContractValidation
+﻿namespace Stratis.SmartContracts.Core.Validation
 {
     public interface ISmartContractValidator
     {

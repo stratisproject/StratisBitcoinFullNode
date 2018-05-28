@@ -4,9 +4,9 @@ using System.Reflection;
 using McMaster.Extensions.CommandLineUtils;
 using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.Compilation;
-using Stratis.SmartContracts.Core.ContractValidation;
 using Stratis.SmartContracts.Core.Lifecycle;
 using Stratis.SmartContracts.Core.Serialization;
+using Stratis.SmartContracts.Core.Validation;
 
 namespace Stratis.SmartContracts.Tools.Sct
 {

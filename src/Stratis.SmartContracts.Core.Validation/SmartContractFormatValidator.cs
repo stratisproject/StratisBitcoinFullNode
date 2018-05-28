@@ -1,17 +1,16 @@
 ﻿using System.Collections.Generic;
 using Stratis.ModuleValidation.Net;
-using Stratis.SmartContracts.Core.Compilation;
 
-namespace Stratis.SmartContracts.Core.ContractValidation
+namespace Stratis.SmartContracts.Core.Validation
 {
     /// <summary>
-    /// Validates the format of a Smart Contract <see cref="SmartContractDecompilation"/>
+    /// Validates the format of a Smart Contract <see cref="Stratis.SmartContracts.Core.Compilation.SmartContractDecompilation"/>
     /// </summary>
     public class SmartContractFormatValidator : ISmartContractValidator
     {
         private static readonly IEnumerable<IModuleDefinitionValidator> ModuleDefinitionValidators = new List<IModuleDefinitionValidator>
         {
-            new AssemblyReferenceValidator(),
+            new AssemblyReferenceValidator(null),
             new SingleTypeValidator(),
             new SmartContractTypeDefinitionValidator()
         };
