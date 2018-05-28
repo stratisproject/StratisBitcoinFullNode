@@ -70,19 +70,6 @@ namespace Stratis.Bitcoin.Configuration
         /// <summary>The node's user agent.</summary>
         public string Agent { get; private set; }
 
-        /// <summary>The node's user agent prefix.</summary>
-        public string AgentPrefix { get; private set; }
-
-        /// <summary>The node's user agent (with optional prefix) that will be shared with peers in the version handshake.</summary>
-        public string AgentWithPrefix
-        {
-            get
-            {
-                return this.AgentPrefix == null ? this.Agent : 
-                    $"{this.AgentPrefix.Substring(0, Math.Min(this.AgentPrefix.Length, MaximumAgentPrefixLength))}-{this.Agent}";
-            }
-        }
-
         /// <summary>Maximum tip age in seconds to consider node in initial block download.</summary>
         public int MaxTipAge { get; private set; }
 
@@ -131,7 +118,7 @@ namespace Stratis.Bitcoin.Configuration
 
             // Log arguments.
             this.Logger.LogDebug("Arguments: network='{0}', protocolVersion='{1}', agent='{2}', args='{3}'.", 
-                this.Network == null ? "(None)":this.Network.Name,
+                this.Network == null ? "(None)" : this.Network.Name,
                 this.ProtocolVersion,
                 this.Agent,
                 args == null?"(None)":string.Join(" ", args));
@@ -305,8 +292,14 @@ namespace Stratis.Bitcoin.Configuration
             this.SyncTimeEnabled = config.GetOrDefault<bool>("synctime", true);
             this.Logger.LogDebug("Time synchronization with peers is {0}.", this.SyncTimeEnabled ? "enabled" : "disabled");
 
-            this.AgentPrefix = config.GetOrDefault("agentprefix", string.Empty);
-            this.Logger.LogDebug("AgentPrefix set to {0}.", this.AgentPrefix);
+            var agentPrefix = config.GetOrDefault("agentprefix", string.Empty).Replace("-","");
+            this.Logger.LogDebug("AgentPrefix set to {0}.", agentPrefix);
+
+            // Since we are relying on the "this.Agent" value that may have been changed by an earlier call to 
+            // this method follow good coding practice and ensure that we always get the same result on subsequent calls.
+            var agent = this.Agent.Substring(this.Agent.IndexOf("-") + 1);
+            this.Agent = string.IsNullOrEmpty(agentPrefix) ? agent : $"{agentPrefix}-{agent}";
+            this.Logger.LogDebug("Agent set to {0}.", this.Agent);
         }
 
         /// <summary>
