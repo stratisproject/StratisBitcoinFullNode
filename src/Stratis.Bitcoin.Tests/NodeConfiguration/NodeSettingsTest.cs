@@ -21,7 +21,7 @@ namespace Stratis.Bitcoin.Tests.NodeConfiguration
             // Arrange
             var nodeSettings = new NodeSettings(args:new[] { "-agentprefix=abc" });
             // Act
-            string result = nodeSettings.AgentPrefix;
+            string result = nodeSettings.Agent;
             // Assert
             Assert.Equal("abc", result);
         }
@@ -38,7 +38,7 @@ namespace Stratis.Bitcoin.Tests.NodeConfiguration
             File.WriteAllText(configFile, "agentprefix=def");
             var nodeSettings = new NodeSettings(args: new[] { $"-datadir={dataDir}", $"-conf=config.txt" });
             // Act
-            string result = nodeSettings.AgentPrefix;
+            string result = nodeSettings.Agent;
             // Assert
             Assert.Equal("def", result);
         }
@@ -55,7 +55,7 @@ namespace Stratis.Bitcoin.Tests.NodeConfiguration
             File.WriteAllText(configFile, "agentprefix=def");
             var nodeSettings = new NodeSettings(args: new[] { $"-datadir={dataDir}", $"-conf=config.txt", "-agentprefix=abc" });
             // Act
-            string result = nodeSettings.AgentPrefix;
+            string result = nodeSettings.Agent;
             // Assert
             Assert.Equal("abc", result);
         }
@@ -72,7 +72,7 @@ namespace Stratis.Bitcoin.Tests.NodeConfiguration
             File.WriteAllText(configFile, "");
             var nodeSettings = new NodeSettings(args: new[] { $"-datadir={dataDir}", $"-conf=config.txt" });
             // Act
-            string result = nodeSettings.AgentPrefix;
+            string result = nodeSettings.Agent;
             // Assert
             Assert.Equal("", result);
         }
