@@ -3,7 +3,6 @@ using System.Threading;
 using NBitcoin;
 using Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers;
 using Stratis.SmartContracts;
-using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.ReflectionExecutor;
 using Xunit;
 
@@ -66,12 +65,13 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 stratisNodeSync.Broadcast(tx);
 
                 // Gas higher than allowed limit
-                tx = new Transaction();
-                tx.AddInput(new TxIn(new OutPoint(prevTrx.GetHash(), 0), PayToPubkeyHashTemplate.Instance.GenerateScriptPubKey(stratisNodeSync.MinerSecret.PubKey)));
-                smartContractCarrier = SmartContractCarrier.CallContract(1, new uint160(0), "Test", 1, new Gas(10_000_000));
-                tx.AddOutput(new TxOut(1, new Script(smartContractCarrier.Serialize())));
-                tx.Sign(stratisNodeSync.FullNode.Network, stratisNodeSync.MinerSecret, false);
-                stratisNodeSync.Broadcast(tx);
+                // TODO: Replace before completing PR
+                //tx = new Transaction();
+                //tx.AddInput(new TxIn(new OutPoint(prevTrx.GetHash(), 0), PayToPubkeyHashTemplate.Instance.GenerateScriptPubKey(stratisNodeSync.MinerSecret.PubKey)));
+                //smartContractCarrier = SmartContractCarrier.CallContract(1, new uint160(0), "Test", 1, new Gas(10_000_000));
+                //tx.AddOutput(new TxOut(1, new Script(smartContractCarrier.Serialize())));
+                //tx.Sign(stratisNodeSync.FullNode.Network, stratisNodeSync.MinerSecret, false);
+                //stratisNodeSync.Broadcast(tx);
 
                 // OP_SPEND in user's tx - we can't sign this because the TransactionBuilder recognises the ScriptPubKey is invalid.
                 tx = new Transaction();
