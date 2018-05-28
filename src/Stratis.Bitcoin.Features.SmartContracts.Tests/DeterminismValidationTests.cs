@@ -740,6 +740,23 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
         #endregion
 
+        #region TryCatch
+
+        [Fact]
+        public void Validate_Determinism_TryCatch()
+        {
+            SmartContractCompilationResult compilationResult = SmartContractCompiler.CompileFile("SmartContracts/TryCatch.cs");
+            Assert.True(compilationResult.Success);
+
+            byte[] assemblyBytes = compilationResult.Compilation;
+            SmartContractDecompilation decomp = SmartContractDecompiler.GetModuleDefinition(assemblyBytes);
+            SmartContractValidationResult result = this.validator.Validate(decomp);
+            Assert.False(result.IsValid);
+        }
+        
+
+        #endregion
+
         [Fact]
         public void Validate_Determinism_ExtensionMethods()
         {
