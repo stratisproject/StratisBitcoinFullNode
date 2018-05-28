@@ -32,6 +32,7 @@ using Stratis.SmartContracts;
 using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.Compilation;
 using Stratis.SmartContracts.Core.ContractValidation;
+using Stratis.SmartContracts.Core.Receipts;
 using Stratis.SmartContracts.Core.State;
 using Xunit;
 using Key = NBitcoin.Key;
@@ -141,6 +142,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
             public SmartContractValidator validator;
             public IKeyEncodingStrategy keyEncodingStrategy;
             public SmartContractExecutorFactory executorFactory;
+            public DBreezeContractReceiptStorage receiptStorage;
 
             private bool useCheckpoints = true;
             public Key privateKey;
@@ -192,7 +194,9 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                     new SmartContractDeterminismValidator()
                 });
 
-                this.executorFactory = new SmartContractExecutorFactory(this.keyEncodingStrategy, loggerFactory, this.network, this.validator);
+                this.receiptStorage = new DBreezeContractReceiptStorage(new DataFolder(folder.FolderName));
+
+                this.executorFactory = new SmartContractExecutorFactory(this.keyEncodingStrategy, loggerFactory, this.network, this.receiptStorage, this.validator);
                 SmartContractConsensusValidator consensusValidator = new SmartContractConsensusValidator(this.cachedCoinView, this.network, new Checkpoints(), dateTimeProvider, loggerFactory, this.stateRoot, this.executorFactory);
 
                 var networkPeerFactory = new NetworkPeerFactory(this.network, dateTimeProvider, loggerFactory, new PayloadProvider(), new SelfEndpointTracker());

@@ -18,6 +18,7 @@ using Stratis.Bitcoin.Features.SmartContracts.Controllers;
 using Stratis.Bitcoin.Mining;
 using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.ContractValidation;
+using Stratis.SmartContracts.Core.Receipts;
 using Stratis.SmartContracts.Core.State;
 
 namespace Stratis.Bitcoin.Features.SmartContracts
@@ -65,6 +66,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                         services.AddSingleton<SmartContractExecutorFactory>();
 
                         services.AddSingleton<DBreezeContractStateStore>();
+                        services.AddSingleton<ISmartContractReceiptStorage, DBreezeContractReceiptStorage>();
                         services.AddSingleton<NoDeleteContractStateSource>();
                         services.AddSingleton<ContractStateRepositoryRoot>();
                         services.AddSingleton<IKeyEncodingStrategy, BasicKeyEncodingStrategy>();
