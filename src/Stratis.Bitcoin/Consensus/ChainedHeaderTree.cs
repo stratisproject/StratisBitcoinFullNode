@@ -36,22 +36,11 @@ namespace Stratis.Bitcoin.Consensus
     /// </remarks>
     public sealed class ChainedHeaderTree
     {
-        /// <inheritdoc cref="Network"/>
         private readonly Network network;
-
-        /// <inheritdoc cref="IChainedHeaderValidator"/>
         private readonly IChainedHeaderValidator chainedHeaderValidator;
-
-        /// <inheritdoc cref="ILogger"/>
         private readonly ILogger logger;
-
-        /// <inheritdoc cref="ICheckpoints"/>
         private readonly ICheckpoints checkpoints;
-
-        /// <inheritdoc cref="IChainState"/>
         private readonly IChainState chainState;
-
-        /// <inheritdoc cref="ConsensusSettings"/>
         private readonly ConsensusSettings consensusSettings;
 
         /// <summary>A special peer identifier that represents our local node.</summary>
@@ -78,11 +67,6 @@ namespace Stratis.Bitcoin.Consensus
         /// Every chained header that is connected to the tree has to have its hash in this dictionary.
         /// </summary>
         private readonly Dictionary<uint256, ChainedHeader> chainedHeadersByHash;
-
-        //TODO remove these and replace with reflection because they are for testing purposes.
-        internal Dictionary<uint256, ChainedHeader> GetChainedHeadersByHash => this.chainedHeadersByHash;
-        internal Dictionary<uint256, HashSet<int>> GetPeerIdsByTipHash => this.peerIdsByTipHash;
-        internal Dictionary<int, uint256> GetPeerTipsByPeerId => this.peerTipsByPeerId;
 
         public ChainedHeaderTree(
             Network network, 
@@ -119,6 +103,9 @@ namespace Stratis.Bitcoin.Consensus
                 this.chainedHeadersByHash.Add(current.HashBlock, current);
                 current = current.Previous;
             }
+
+            // Add the genesis block.
+            this.chainedHeadersByHash.Add(current.HashBlock, current);
 
             if (current.HashBlock != this.network.GenesisHash)
             {
@@ -358,6 +345,9 @@ namespace Stratis.Bitcoin.Consensus
                   || (chainedHeader.BlockValidationState == ValidationState.FullyValidated);
         }
 
+        /// <summary>
+        /// Remove branches of the tree that are not claimed by any peer. 
+        /// </summary>
         private void RemoveUnclaimedBranch(ChainedHeader chainedHeader)
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(chainedHeader), chainedHeader);
@@ -366,7 +356,8 @@ namespace Stratis.Bitcoin.Consensus
             while (true)
             {
                 // If current header is an ancestor of some other tip claimed by a peer, do nothing.
-                if (currentHeader.Next.Count > 0)
+                bool headerHasDecendents = currentHeader.Next.Count > 0;
+                if (headerHasDecendents)
                 {
                     this.logger.LogTrace("Header '{0}' is part of another branch.", currentHeader);
                     break;
@@ -392,8 +383,8 @@ namespace Stratis.Bitcoin.Consensus
         /// <summary>
         /// Remove the peer's tip and all the headers claimed by this peer unless they are also claimed by other peers.
         /// </summary>
-        /// <param name="chainedHeader">The header where we start walking back the chain from.</param>
         /// <param name="networkPeerId">The peer id that is removed.</param>
+        /// <param name="chainedHeader">The header where we start walking back the chain from.</param>
         private void RemovePeerClaim(int networkPeerId, ChainedHeader chainedHeader)
         {
             this.logger.LogTrace("({0}:{1},{2}:'{3}')", nameof(networkPeerId), networkPeerId, nameof(chainedHeader), chainedHeader);

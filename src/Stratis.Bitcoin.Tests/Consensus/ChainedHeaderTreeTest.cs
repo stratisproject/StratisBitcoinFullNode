@@ -1,5 +1,7 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using Moq;
 using NBitcoin;
 using Stratis.Bitcoin.Base;
@@ -61,12 +63,11 @@ namespace Stratis.Bitcoin.Tests.Consensus
                 return list;
             }
 
-            public bool ConnectedHeadersIsEmpty(ConnectedHeaders connectedHeaders)
+            public bool NoDownloadRequested(ConnectedHeaders connectedHeaders)
             {
                 Assert.NotNull(connectedHeaders);
 
-                return (connectedHeaders.Consumed == null)
-                       && (connectedHeaders.DownloadTo == null)
+                return (connectedHeaders.DownloadTo == null)
                        && (connectedHeaders.DownloadFrom == null);
             }
         }
@@ -93,7 +94,8 @@ namespace Stratis.Bitcoin.Tests.Consensus
 
             ConnectedHeaders connectedHeaders = chainedHeaderTree.ConnectNewHeaders(1, listOfExistingHeaders);
 
-            Assert.True(testContext.ConnectedHeadersIsEmpty(connectedHeaders));
+            Assert.True(testContext.NoDownloadRequested(connectedHeaders));
+            Assert.Equal(11, chainedHeaderTree.GetChainedHeadersByHash().Count);
         }
 
         [Fact]
@@ -110,17 +112,17 @@ namespace Stratis.Bitcoin.Tests.Consensus
             ConnectedHeaders connectedHeaders1 = chainedHeaderTree.ConnectNewHeaders(1, listOfExistingHeaders);
             ConnectedHeaders connectedHeaders2 = chainedHeaderTree.ConnectNewHeaders(2, listOfExistingHeaders);
 
-            Assert.Single(chainedHeaderTree.GetPeerIdsByTipHash);
-            Assert.Equal(10, chainedHeaderTree.GetChainedHeadersByHash.Count);
+            Assert.Single(chainedHeaderTree.GetPeerIdsByTipHash());
+            Assert.Equal(11, chainedHeaderTree.GetChainedHeadersByHash().Count);
 
-            Assert.Equal(3, chainedHeaderTree.GetPeerIdsByTipHash.First().Value.Count);
+            Assert.Equal(3, chainedHeaderTree.GetPeerIdsByTipHash().First().Value.Count);
 
-            Assert.Equal(ChainedHeaderTree.LocalPeerId, chainedHeaderTree.GetPeerIdsByTipHash.First().Value.ElementAt(0));
-            Assert.Equal(1, chainedHeaderTree.GetPeerIdsByTipHash.First().Value.ElementAt(1));
-            Assert.Equal(2, chainedHeaderTree.GetPeerIdsByTipHash.First().Value.ElementAt(2));
+            Assert.Equal(ChainedHeaderTree.LocalPeerId, chainedHeaderTree.GetPeerIdsByTipHash().First().Value.ElementAt(0));
+            Assert.Equal(1, chainedHeaderTree.GetPeerIdsByTipHash().First().Value.ElementAt(1));
+            Assert.Equal(2, chainedHeaderTree.GetPeerIdsByTipHash().First().Value.ElementAt(2));
 
-            Assert.True(testContext.ConnectedHeadersIsEmpty(connectedHeaders1));
-            Assert.True(testContext.ConnectedHeadersIsEmpty(connectedHeaders2));
+            Assert.True(testContext.NoDownloadRequested(connectedHeaders1));
+            Assert.True(testContext.NoDownloadRequested(connectedHeaders2));
         }
 
         [Fact]
@@ -134,17 +136,83 @@ namespace Stratis.Bitcoin.Tests.Consensus
             chainTip.BlockDataAvailability = BlockDataAvailabilityState.BlockAvailable;
             ChainedHeader newChainTip = testContext.ExtendAChain(10, chainTip); // create 10 more headers
 
+            var listOfExistingHeaders = testContext.ChainedHeaderToList(chainTip, 10);
             var listOfNewHeaders = testContext.ChainedHeaderToList(newChainTip, 10);
 
             testContext.ChainStateMock.Setup(s => s.ConsensusTip).Returns(chainTip);
             chainTip.BlockValidationState = ValidationState.FullyValidated;
 
-            var connectedHeaders = chainedHeaderTree.ConnectNewHeaders(1, listOfNewHeaders);
+            var connectedHeadersOld = chainedHeaderTree.ConnectNewHeaders(2, listOfExistingHeaders);
+            var connectedHeadersNew = chainedHeaderTree.ConnectNewHeaders(1, listOfNewHeaders);
 
-            Assert.Equal(20, chainedHeaderTree.GetChainedHeadersByHash.Count);
+            Assert.Equal(21, chainedHeaderTree.GetChainedHeadersByHash().Count);
             Assert.Equal(10, listOfNewHeaders.Count);
-            Assert.Equal(listOfNewHeaders.Last(), connectedHeaders.DownloadTo.Header);
-            Assert.Equal(listOfNewHeaders.First(), connectedHeaders.DownloadFrom.Header);
+            Assert.True(testContext.NoDownloadRequested(connectedHeadersOld));
+            Assert.Equal(listOfNewHeaders.Last(), connectedHeadersNew.DownloadTo.Header);
+            Assert.Equal(listOfNewHeaders.First(), connectedHeadersNew.DownloadFrom.Header);
+        }
+    }
+
+    /// TODO: move reflection methods to a shared test utils project (as soon as there is one) that is referenced by all test projects. 
+    public static class ReflectionExtensions
+    {
+        public static Dictionary<uint256, HashSet<int>> GetPeerIdsByTipHash(this ChainedHeaderTree chainedHeaderTree)
+        {
+            return chainedHeaderTree.GetMemberValue("peerIdsByTipHash") as Dictionary<uint256, HashSet<int>>;
+        }
+
+        public static Dictionary<int, uint256> GetPeerTipsByPeerId(this ChainedHeaderTree chainedHeaderTree)
+        {
+            return chainedHeaderTree.GetMemberValue("peerTipsByPeerId") as Dictionary<int, uint256>;
+        }
+
+        public static Dictionary<uint256, ChainedHeader> GetChainedHeadersByHash(this ChainedHeaderTree chainedHeaderTree)
+        {
+            return chainedHeaderTree.GetMemberValue("chainedHeadersByHash") as Dictionary<uint256, ChainedHeader>;
+        }
+
+        public static object GetMemberValue(this object obj, string memberName)
+        {
+            MemberInfo memberInfo = GetMemberInfo(obj, memberName);
+
+            if (memberInfo == null)
+                throw new Exception("memberName");
+
+            if (memberInfo is PropertyInfo)
+                return memberInfo.As<PropertyInfo>().GetValue(obj, null);
+
+            if (memberInfo is FieldInfo)
+                return memberInfo.As<FieldInfo>().GetValue(obj);
+
+            throw new Exception();
+        }
+
+        private static MemberInfo GetMemberInfo(object obj, string memberName)
+        {
+            var propertyInfos = new List<PropertyInfo>();
+
+            propertyInfos.Add(obj.GetType().GetProperty(memberName, BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance | BindingFlags.FlattenHierarchy));
+            propertyInfos = Enumerable.ToList(Enumerable.Where(propertyInfos, i => !ReferenceEquals(i, null)));
+            if (propertyInfos.Count != 0)
+                return propertyInfos[0];
+
+            var fieldInfos = new List<FieldInfo>();
+
+            fieldInfos.Add(obj.GetType().GetField(memberName, BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.FlattenHierarchy));
+
+            // To add more types of properties.
+            fieldInfos = Enumerable.ToList(Enumerable.Where(fieldInfos, i => !ReferenceEquals(i, null)));
+
+            if (fieldInfos.Count != 0)
+                return fieldInfos[0];
+
+            return null;
+        }
+
+        [System.Diagnostics.DebuggerHidden]
+        private static T As<T>(this object obj)
+        {
+            return (T)obj;
         }
     }
 }
