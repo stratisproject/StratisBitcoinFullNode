@@ -41,6 +41,7 @@ namespace Stratis.Bitcoin.Utilities.Extensions
         /// - ::ffff:192.168.4.1:80
         /// - google.com (Resolves domain name to IP Address)
         /// - google.com:80 ('')
+        /// - 1233:3432:2434:2343:3234:2345:6546:4534
         /// </remarks>
         /// <exception cref="ArgumentOutOfRangeException">Thrown in case of the port number is out of range.</exception>    
         /// <exception cref="FormatException">Thrown in case of ipAddress or port number is invalid.</exception>    

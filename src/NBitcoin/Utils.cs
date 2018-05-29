@@ -744,15 +744,6 @@ namespace NBitcoin
             return address;
         }
 
-        /// - 15.61.23.23
-        /// - 15.61.23.23:1500
-        /// - [1233:3432:2434:2343:3234:2345:6546:4534]
-        /// - [1233:3432:2434:2343:3234:2345:6546:4534]:8333
-        /// - ::ffff:192.168.4.1
-        /// - ::ffff:192.168.4.1:80
-        /// - google.com (Resolves domain name to IP Address)
-        /// - google.com:80 ('')
-
         public static IPEndPoint ParseIpEndpoint(string endpoint, int port)
         {
             // Get the position of the last ':'.
