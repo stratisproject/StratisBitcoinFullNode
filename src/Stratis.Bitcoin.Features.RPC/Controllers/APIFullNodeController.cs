@@ -58,9 +58,6 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
             IConsensusLoop consensusLoop = null,
             IFullNode fullNode = null,
             NodeSettings nodeSettings = null)
-            : base(
-                  fullNode: fullNode,
-                  nodeSettings: nodeSettings)
         {
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.pooledTransaction = pooledTransaction;
@@ -77,29 +74,30 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
         /// <summary>
         /// Stops the full node.
         /// </summary>
-        /// <returns>No content</returns>
+        /// <returns>A <see cref="NoContentResult"/></returns>
         [Route("stop")]
         [HttpGet]
-        public async Task<IActionResult> Stop()
+        public async Task<IActionResult> StopAsync()
         {
-            await SharedRemoteMethods.Stop(this.FullNode);
-            return NoContent();
+            await SharedRemoteMethods.Stop(this.FullNode).ConfigureAwait(false);
+            return this.NoContent();
         }
 
         /// <summary>
         /// Gets a raw, possibly pooled, transaction from the full node. 
         /// API implementation of RPC call. 
         /// </summary>
-        /// <param name="transactionRequestModel">A <see cref="TransactionRequestModel"/> formated request containing a txid and verbose indicator.</param>
-        /// <returns>JSON formatted <see cref="TransactionBriefModel"/> or <see cref="TransactionVerboseModel"/>. Returns null for invalid TxID</returns>
+        /// <param name="request">A <see cref="GetRawTransactionRequestModel"/> formated request containing a txid and verbose indicator.</param>
+        /// <returns>Json formatted <see cref="TransactionBriefModel"/> or <see cref="TransactionVerboseModel"/>. Returns <see cref="IActionResult"/> formatted error if otherwise fails.</returns>
         [Route("getrawtransaction")]
         [HttpGet]
         public async Task<IActionResult> GetRawTransactionAsync(GetRawTransactionRequestModel request)
         {
             try
             {
-                return this.Json(await SharedRemoteMethods.GetRawTransactionAsync(request.txid, request.verbose, this.pooledTransaction,
-                this.FullNode, this.network, this.chainState, this.chain));
+                var result = await SharedRemoteMethods.GetRawTransactionAsync(request.txid, request.verbose, this.pooledTransaction,
+                    this.FullNode, this.network, this.chainState, this.chain).ConfigureAwait(false);
+                return this.Json(result);
             } 
             catch (Exception e)
             {
@@ -113,15 +111,16 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
         /// API implementation of RPC call.
         /// </summary>
         /// <param name="request">A <see cref="GetTxOutRequestModel"/> formatted request containing txid, vout, and if should check memPool.</param>
-        /// <returns>JSON formatted <see cref="GetTxOutModel"/>. Returns null if no unspentoutputs.</returns>
+        /// <returns>Json formatted <see cref="GetTxOutModel"/>. Returns <see cref="IActionResult"/> formatted error if fails.</returns>
         [Route("gettxout")]
         [HttpGet]
         public async Task<IActionResult> GetTxOutAsync(GetTxOutRequestModel request)
         {
             try
             {
-                return this.Json(await SharedRemoteMethods.GetTxOutAsync(request.txid, request.vout, request.includeMemPool,
-                    this.pooledGetUnspentTransaction, this.getUnspentTransaction, this.network, this.chain));
+                var result = await SharedRemoteMethods.GetTxOutAsync(request.txid, request.vout, request.includeMemPool,
+                    this.pooledGetUnspentTransaction, this.getUnspentTransaction, this.network, this.chain).ConfigureAwait(false);
+                return this.Json(result);
             } 
             catch (Exception e)
             {
@@ -133,14 +132,15 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
         /// Gets the current consensus tip height.
         /// API implementation of RPC call.
         /// </summary>
-        /// <returns>JSON formatted int with the consensus tip height</returns>
+        /// <returns>Json formatted int with the consensus tip height. Returns <see cref="IActionResult"/> formatted error if fails.</returns>
         [Route("getblockcount")]
         [HttpGet]
         public IActionResult GetBlockCount()
         {
             try
             {
-                return this.Json(SharedRemoteMethods.GetBlockCount(this.consensusLoop));
+                var result = SharedRemoteMethods.GetBlockCount(this.consensusLoop);
+                return this.Json(result);
             }
             catch (Exception e)
             {
@@ -153,16 +153,17 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
         /// Gets general information about the full node.
         /// API implementation of RPC call.
         /// </summary>
-        /// <returns>JSON formatted <see cref="GetInfoModel"/></returns>
+        /// <returns>Json formatted <see cref="GetInfoModel"/>. Returns <see cref="IActionResult"/> formatted error if fails.</returns>
         [Route("getinfo")]
         [HttpGet]
         public IActionResult GetInfo()
         {
             try
             {
-                return this.Json(SharedRemoteMethods.GetInfo(this.network, this.FullNode, 
+                var result = SharedRemoteMethods.GetInfo(this.network, this.FullNode,
                     this.Settings, this.chainState, this.connectionManager,
-                    this.networkDifficulty));
+                    this.networkDifficulty);
+                return this.Json(result);
             }
             catch (Exception e)
             {
@@ -175,15 +176,16 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
         /// Gets the block header of the block identified by the hash.
         /// API implementation of RPC call.
         /// </summary>
-        /// <param name="request">A <see cref="GetBlockHeaderRequestModel"/> formatted request containing a block hash</param>
-        /// <returns>JSON formatted <see cref="BlockHeaderModel"/></returns>
+        /// <param name="request">A <see cref="GetBlockHeaderRequestModel"/> formatted request containing a block hash.</param>
+        /// <returns>Json formatted <see cref="BlockHeaderModel"/>. Returns <see cref="IActionResult"/> formatted error if fails.</returns>
         [Route("getblockheader")]
         [HttpGet]
         public IActionResult GetBlockHeader(GetBlockHeaderRequestModel request)
         {
             try
             {
-                return this.Json(SharedRemoteMethods.GetBlockHeader(request.hash, request.isJsonFormat, this.logger, this.chain));
+                var result = SharedRemoteMethods.GetBlockHeader(request.hash, request.isJsonFormat, this.logger, this.chain);
+                return this.Json(result);
             }
             catch (Exception e)
             {
@@ -197,14 +199,15 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
         /// API implementation of RPC call.
         /// </summary>
         /// <param name="request">A <see cref="ValidateAddressRequestModel"/> containing a bech32 or base58 BitcoinAddress to validate.</param>
-        /// <returns>A <see cref="ValidatedAddress"/> containing a boolean indicating address validity</returns>
+        /// <returns>Json formatted <see cref="ValidatedAddress"/> containing a boolean indicating address validity. Returns <see cref="IActionResult"/> formatted error if fails.</returns>
         [Route("validateaddress")]
         [HttpGet]
         public IActionResult ValidateAddress(ValidateAddressRequestModel request)
         {
             try
             {
-                return this.Json(SharedRemoteMethods.ValidateAddress(request.address, this.network));
+                var result = SharedRemoteMethods.ValidateAddress(request.address, this.network);
+                return this.Json(result);
             }
             catch (Exception e)
             {
@@ -217,15 +220,16 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
         /// Adds a node to the connection manager.
         /// API implementation of RPC call.
         /// </summary>
-        /// <param name="request">A <see cref="AddNodeRequestModel"/> formatted request containing an endpoint and command. </param>
-        /// <returns>JSON formatted bool indication success/failure.</returns>
+        /// <param name="request">A <see cref="AddNodeRequestModel"/> formatted request containing an endpoint and command.</param>
+        /// <returns>Json formatted <c>True</c> indicating success. Returns <see cref="IActionResult"/> formatted error if fails.</returns>
         [Route("addnode")]
         [HttpGet]
         public IActionResult AddNode(AddNodeRequestModel request)
         {
             try
             {
-                return this.Json(SharedRemoteMethods.AddNode(request.str_endpoint, request.command, this.connectionManager));
+                var result = SharedRemoteMethods.AddNode(request.Endpoint, request.command, this.connectionManager);
+                return this.Json(result);
             }
             catch (Exception e)
             {
@@ -239,14 +243,15 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
         /// API implementation of RPC call.
         /// </summary>
         /// <see cref="https://github.com/bitcoin/bitcoin/blob/0.14/src/rpc/net.cpp"/>
-        /// <returns>JSON formatted <see cref="Models.PeerNodeModel"/> list of connected nodes.</returns>
+        /// <returns>Json formatted <see cref="List{T}<see cref="Models.PeerNodeModel"/>"/> of connected nodes. Returns <see cref="IActionResult"/> formatted error if fails.</returns>
         [Route("getpeerinfo")]
         [HttpGet]
         public IActionResult GetPeerInfo()
         {
             try
             {
-                return this.Json(SharedRemoteMethods.GetPeerInfo(this.connectionManager));
+                var result = SharedRemoteMethods.GetPeerInfo(this.connectionManager);
+                return this.Json(result);
             }
             catch (Exception e)
             {
@@ -259,14 +264,15 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
         /// Get the hash of the block at the consensus tip.
         /// API implementation of RPC call.
         /// </summary>
-        /// <returns>JSON formatted <see cref="uint256"/> of best block hash</returns>
+        /// <returns>Json formatted <see cref="uint256"/> of best block hash. Returns <see cref="IActionResult"/> formatted error if fails.</returns>
         [Route("getbestblockhash")]
         [HttpGet]
         public IActionResult GetBestBlockHash()
         {
             try
             {
-                return this.Json(SharedRemoteMethods.GetBestBlockHash(this.chainState));
+                var result = SharedRemoteMethods.GetBestBlockHash(this.chainState);
+                return this.Json(result);
             }
             catch (Exception e)
             {
@@ -279,15 +285,16 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
         /// Gets the hash of the block at the given height.
         /// API implementation of RPC call.
         /// </summary>
-        /// <param name="request">A <see cref="GetBlockHashRequestModel"/> request containing the height</param>
-        /// <returns>A JSON formatted hash of the block at the given height</returns>
+        /// <param name="request">A <see cref="GetBlockHashRequestModel"/> request containing the height.</param>
+        /// <returns>Json formatted <see cref="uint256"/> hash of the block at the given height. Returns <see cref="IActionResult"/> formatted error if fails.</returns>
         [Route("getblockhash")]
         [HttpGet]
         public IActionResult GetBlockHash(GetBlockHashRequestModel request)
         {
             try
             {
-                return this.Json(SharedRemoteMethods.GetBlockHash(request.height, this.consensusLoop, this.chain, this.logger));
+                var result = SharedRemoteMethods.GetBlockHash(request.height, this.consensusLoop, this.chain, this.logger);
+                return this.Json(result);
             }
             catch (Exception e)
             {
@@ -299,14 +306,15 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
         /// <summary>
         /// Lists the contents of the memory pool.
         /// </summary>
-        /// <returns>A JSON formatted list containing the memory pool contents.</returns>
+        /// <returns>Json formatted <see cref="List{T}<see cref="uint256"/>"/> containing the memory pool contents. Returns <see cref="IActionResult"/> formatted error if fails.</returns>
         [Route("getrawmempool")]
         [HttpGet]
         public async Task<IActionResult> GetRawMempoolAsync()
         {
             try
             {
-                return this.Json(await SharedRemoteMethods.GetRawMempoolAsync(this.FullNode));
+                var result = await SharedRemoteMethods.GetRawMempoolAsync(this.FullNode).ConfigureAwait(false);
+                return this.Json(result);
             }
             catch (Exception e)
             {
@@ -318,7 +326,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
         /// <summary>
         /// Builds an <see cref="IActionResult"/> containing errors contained in the <see cref="ControllerBase.ModelState"/>.
         /// </summary>
-        /// <returns>A result containing the errors.</returns>
+        /// <returns>An <see cref="IActionResult"/> containing the errors with messages.</returns>
         private static IActionResult BuildErrorResponse(ModelStateDictionary modelState)
         {
             List<ModelError> errors = modelState.Values.SelectMany(e => e.Errors).ToList();

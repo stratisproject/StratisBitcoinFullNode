@@ -18,59 +18,66 @@ using Stratis.Bitcoin.Utilities.Extensions;
 
 namespace Stratis.Bitcoin.Features.RPC.Controllers
 {
-    // This class provides a collection of shared methods for both 
-    // API and RPC to interact with the full node. 
-    public static class SharedRemoteMethods
+    /// <summary>
+    /// This class provides a collection of shared methods for both 
+    /// API and RPC to interact with the full node. 
+    /// </summary>
+    public class SharedRemoteMethods
     {
         /// <summary>
-        /// Stops the full node
+        /// Stops the full node.
         /// </summary>
+        /// <returns>A completed <see cref="Task"/>.</returns>
         internal static Task Stop(IFullNode fullNode)
         {
             if (fullNode != null)
             {
                 fullNode.Dispose();
-                fullNode = null;
             }
+
             return Task.CompletedTask;
         }
 
         /// <summary>
         /// Returns a raw transaction model given a transaction hash in simple or verbose format.
         /// </summary>
-        /// <param name="str_txid">A string representing a uint256 hash</param>
-        /// <param name="verbose">Boolea indicating if verbose model is wanted</param>
-        /// <param name="pooledTransaction">A pooled transaction interface. Used to return pooled transactions.</param>
+        /// <param name="strTxid">A string representing a uint256 hash</param>
+        /// <param name="verbose">Boolean indicating if verbose model is wanted</param>
+        /// <param name="pooledTransaction">A pooled transaction interface for the Mempool. Used to return pooled transactions.</param>
         /// <param name="fullNode">The full node. Required for IBlockstore.</param>
         /// <param name="network">The full node's network</param>
-        /// <param name="chainState">The chainstate. Used for verbose model.</param>
-        /// <param name="chain">The chain. Used for verbose model. </param>
-        /// <returns>A <see cref="TransactionBriefModel"/> or <see cref="TransactionVerboseModel"/> from the given hash</returns>
-        /// <exception cref="ArgumentException">Thrown if str_txid is an invalid uint256</exception>
+        /// <param name="chainState">The full node's chainstate. Used for verbose model.</param>
+        /// <param name="chain">The full node's chain. Used for verbose model.</param>
+        /// <returns>A <see cref="TransactionBriefModel"/> or <see cref="TransactionVerboseModel"/> from the given hash. Return <c>null</c> if transaction doesn't exist.</returns>
+        /// <exception cref="ArgumentException">Thrown if strTxid is an invalid uint256.</exception>
         internal static async Task<TransactionModel> GetRawTransactionAsync(
-            string str_txid, bool verbose, 
+            string strTxid, bool verbose, 
             IPooledTransaction pooledTransaction, IFullNode fullNode,
             Network network, IChainState chainState, ChainBase chain)
         {
             Guard.NotNull(fullNode, nameof(fullNode));
             Guard.NotNull(network, nameof(network));
             Guard.NotNull(chain, nameof(chain));
+
             uint256 txid;
-            if (!uint256.TryParse(str_txid, out txid))
+            if (!uint256.TryParse(strTxid, out txid))
             {
-                throw new ArgumentException(nameof(str_txid));
+                throw new ArgumentException(nameof(strTxid));
             }
+
             // First tries to find a pooledTransaction. If can't, will grab it from the blockstore if it exists. 
             Transaction trx = pooledTransaction != null ? await pooledTransaction.GetTransaction(txid) : null;
             if (trx == null)
             {
-                var blockStore = fullNode.NodeFeature<IBlockStore>();
+                IBlockStore blockStore = fullNode.NodeFeature<IBlockStore>();
                 trx = blockStore != null ? await blockStore.GetTrxAsync(txid) : null;
             }
+
             if (trx == null)
             {
                 return null;
             }
+
             if (verbose)
             {
                 ChainedHeader block = await GetTransactionBlockAsync(txid, fullNode, chain);
@@ -85,16 +92,16 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
         /// <summary>
         /// Gets the unspent outputs of a transaction id and vout number.
         /// </summary>
-        /// <param name="str_txid">The transaction id.</param>
-        /// <param name="str_vout">The vout number.</param>
-        /// <param name="includeMemPool"></param>
+        /// <param name="strTxid">The transaction id.</param>
+        /// <param name="strvOut">The vout number.</param>
+        /// <param name="includeMemPool">A Boolean indicating to search Mempool.</param>
         /// <param name="pooledGetUnspentTransaction">A pool of unspent transactions in Mempool.</param>
         /// <param name="getUnspentTransaction">Unspent transactions not in Mempool</param>
         /// <param name="network">The full node's network.</param>
-        /// <param name="chain">The chain. Used to get chaintip.</param>
-        /// <returns>A <see cref="GetTxOutModel"/>, returns null if fails.</returns>
-        /// <exception cref="ArgumentException">Throws if either str_txid is not a valid uint256 or if str_vout is not an unsigned int.</exception>
-        internal static async Task<GetTxOutModel> GetTxOutAsync(string str_txid, string str_vout, bool includeMemPool,
+        /// <param name="chain">The full node's chain. Used to get chaintip.</param>
+        /// <returns>A <see cref="GetTxOutModel"/>, returns <c>null</c> if fails.</returns>
+        /// <exception cref="ArgumentException">Throws if either strTxid is not a valid <see cref="uint256"/> or if strvOut is not an <see cref="uint"/>.</exception>
+        internal static async Task<GetTxOutModel> GetTxOutAsync(string strTxid, string strvOut, bool includeMemPool,
             IPooledGetUnspentTransaction pooledGetUnspentTransaction,
             IGetUnspentTransaction getUnspentTransaction,
             Network network, ChainBase chain)
@@ -102,15 +109,18 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
             Guard.NotNull(network, nameof(network));
             Guard.NotNull(chain, nameof(chain));
             uint256 trxid;
-            if (!uint256.TryParse(str_txid, out trxid))
+
+            if (!uint256.TryParse(strTxid, out trxid))
             {
-                throw new ArgumentException(nameof(str_txid));
+                throw new ArgumentException(nameof(strTxid));
             }
+
             uint vout;
-            if (!uint.TryParse(str_vout, out vout))
+            if (!uint.TryParse(strvOut, out vout))
             {
-                throw new ArgumentException(nameof(str_vout));
+                throw new ArgumentException(nameof(strvOut));
             }
+
             UnspentOutputs unspentOutputs = null;
             if (includeMemPool)
             {
@@ -120,18 +130,20 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
             {
                 unspentOutputs = getUnspentTransaction != null ? await getUnspentTransaction.GetUnspentTransactionAsync(trxid) : null;
             }
+
             if (unspentOutputs == null)
             {
                 return null;
             }
+
             return new GetTxOutModel(unspentOutputs, vout, network, chain.Tip);
         }
 
         /// <summary>
         /// Gets the current consensus tip height.
         /// </summary>
-        /// <param name="consensusLoop">The consensus loop. Used to get the tip height.</param>
-        /// <returns>The current tip height</returns>
+        /// <param name="consensusLoop">The full node's consensus loop. Used to get the tip height.</param>
+        /// <returns>The current tip height. Returns <c>null</c> if fails.</returns>
         internal static int GetBlockCount(IConsensusLoop consensusLoop)
         {
             return consensusLoop?.Tip.Height ?? -1;
@@ -141,19 +153,19 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
         /// Gets general information about the full node.
         /// </summary>
         /// <param name="fullNode">The full node. Used for version info.</param>
-        /// <param name="nodeSettings">Node settings. Used for protocol version and relay fee.</param>
-        /// <param name="chainState">The chain state. Used for Blocks</param>
-        /// <param name="connectionManager">The conneciton manager. Used for timeoffset and connections</param>
+        /// <param name="nodeSettings">The full node's settings. Used for protocol version and relay fee.</param>
+        /// <param name="chainState">The full node's chain state. Used for Blocks.</param>
+        /// <param name="connectionManager">The full node's connection manager. Used for timeoffset and connections.</param>
         /// <param name="network">The full node's network.</param>
-        /// <param name="networkDifficulty">The network difficulty</param>
-        /// <returns>A <see cref="GetInfoModel"/></returns>
+        /// <param name="networkDifficulty">The network difficulty.</param>
+        /// <returns>A <see cref="GetInfoModel"/>.</returns>
         internal static GetInfoModel GetInfo(Network network, 
             IFullNode fullNode = null, NodeSettings nodeSettings = null,
             IChainState chainState = null, IConnectionManager connectionManager = null,
             INetworkDifficulty networkDifficulty = null)
         {
             Guard.NotNull(network, nameof(network));
-            var model = new GetInfoModel
+            GetInfoModel model = new GetInfoModel
             {
                 Version = fullNode?.Version?.ToUint() ?? 0,
                 ProtocolVersion = (uint)(nodeSettings?.ProtocolVersion ?? NodeSettings.SupportedProtocolVersion),
@@ -174,17 +186,18 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
                 UnlockedUntil = null,
                 PayTxFee = null
             };
+
             return model;
         }
 
         /// <summary>
         /// Gets the block header of the block identified by the hash.
         /// </summary>
-        /// <param name="hash">A block's hash string.</param>
+        /// <param name="hash">The requested block's hash.</param>
         /// <param name="isJsonFormat">Boolean for Json formatted output</param>
         /// <param name="logger">The full node's logger</param>
-        /// <param name="chain">the chain</param>
-        /// <returns>A <see cref="BlockHeaderModel"/> corresponding to the given block hash.</returns>
+        /// <param name="chain">The full node's chain</param>
+        /// <returns>A <see cref="BlockHeaderModel"/> corresponding to the given block hash. Returns <c>null</c> if chain is null.</returns>
         /// <exception cref="ArgumentNullException">Throws if hash is null or empty</exception>
         /// <exception cref="NotImplementedException">Throws if JsonFormat is false.</exception>
         internal static BlockHeaderModel GetBlockHeader(string hash, bool isJsonFormat, 
@@ -195,21 +208,24 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
             {
                 throw new ArgumentNullException("hash");
             }
+
             logger.LogDebug("GetBlockHeader {0}", hash);
             if (!isJsonFormat)
             {
                 logger.LogError("Binary serialization is not supported'{0}'.", nameof(GetBlockHeader));
                 throw new NotImplementedException();
-            }            
+            }      
+            
             BlockHeaderModel model = null;
             if (chain != null)
             {
-                var blockHeader = chain.GetBlock(uint256.Parse(hash))?.Header;
+                BlockHeader blockHeader = chain.GetBlock(uint256.Parse(hash))?.Header;
                 if (blockHeader != null)
                 {
                     model = new BlockHeaderModel(blockHeader);
                 }
             }
+
             return model;
         }
 
@@ -218,7 +234,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
         /// </summary>
         /// <param name="address">An address string to check</param>
         /// <param name="network">The full node's network.</param>
-        /// <returns>A <see cref="ValidatedAddress"/> with a boolean indicating if the address is valid.</returns>
+        /// <returns>A <see cref="ValidatedAddress"/>, which contains a boolean property indicating if the address is valid.</returns>
         /// <exception cref="ArgumentNullException">Thrown if address provided is null or empty.</exception>
         internal static ValidatedAddress ValidateAddress(string address, Network network)
         {
@@ -227,7 +243,8 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
             {
                 throw new ArgumentNullException("address");
             }
-            var res = new ValidatedAddress();
+
+            ValidatedAddress res = new ValidatedAddress();
             res.IsValid = false;
             // P2WPKH
             if (BitcoinWitPubKeyAddress.IsValid(address, ref network, out Exception _))
@@ -249,30 +266,34 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
             {
                 res.IsValid = true;
             }
+
             return res;
         }
 
         /// <summary>
         /// Adds a node to the connection manager.
         /// </summary>
-        /// <param name="str_endpoint">A valid ip endpoint in string form.</param>
+        /// <param name="strEndpoint">A valid ip endpoint in string form.</param>
         /// <param name="command">A command. {Add, remove, onetry}</param>
         /// <param name="connectionManager">The full node's connection manager.</param>
-        /// <returns>True if command successfully completed. Otherwise throws exception. </returns>
-        /// <exception cref="ArgumentNullException">Thrown if either str_endpoint or command are null or empty.</exception>
+        /// <returns><c>True</c> if command successfully completed. Otherwise throws exception.</returns>
+        /// <exception cref="ArgumentNullException">Thrown if either strEndpoint or command are null or empty.</exception>
         /// <exception cref="ArgumentException">Thrown if command is invalid/not supported.</exception>
-        internal static bool AddNode(string str_endpoint, string command, 
+        internal static bool AddNode(string strEndpoint, string command, 
             IConnectionManager connectionManager) {
             Guard.NotNull(connectionManager, nameof(connectionManager));
-            if (string.IsNullOrEmpty(str_endpoint))
+
+            if (string.IsNullOrEmpty(strEndpoint))
             {
-                throw new ArgumentNullException("str_endpoint");
+                throw new ArgumentNullException("strEndpoint");
             }
+
             if (string.IsNullOrEmpty(command))
             {
                 throw new ArgumentNullException("command");
             }
-            IPEndPoint endpoint = IPExtensions.ToIPEndPoint(str_endpoint, connectionManager.Network.DefaultPort);
+
+            IPEndPoint endpoint = IPExtensions.ToIPEndPoint(strEndpoint, connectionManager.Network.DefaultPort);
             switch (command)
             {
                 case "add":
@@ -287,6 +308,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
                 default:
                     throw new ArgumentException("command");
             }
+
             return true;
         }
 
@@ -333,6 +355,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
                     peerList.Add(peerNode);
                 }
             }
+
             return peerList;
         }
 
@@ -340,7 +363,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
         /// Get the hash of the block at the consensus tip.
         /// </summary>
         /// <param name="chainState">The full node's chainstate.</param>
-        /// <returns>A hash of the block at the consensus tip. </returns>
+        /// <returns>A hash of the block at the consensus tip. Returns <c>null</c> if fails.</returns>
         internal static uint256 GetBestBlockHash(IChainState chainState = null)
         {
             return chainState?.ConsensusTip?.HashBlock;
@@ -349,23 +372,25 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
         /// <summary>
         /// Gets the hash of the block at the given height.
         /// </summary>
-        /// <param name="str_height">The height.</param>
+        /// <param name="strHeight">The height as a string.</param>
         /// <param name="consensusLoop">The full node's consensus loop.</param>
         /// <param name="chain">The full node's chain.</param>
         /// <param name="logger">The full node's logger.</param>
-        /// <returns>The hash of the block at the given height. Null if fails.</returns>
+        /// <returns>The hash of the block at the given height. Returns <c>null</c> if fails.</returns>
         /// <exception cref="ArgumentException">Thrown if height is not a valid integer.</exception>
-        internal static uint256 GetBlockHash(string str_height, IConsensusLoop consensusLoop, 
+        internal static uint256 GetBlockHash(string strHeight, IConsensusLoop consensusLoop, 
             ChainBase chain, ILogger logger)
         {
             Guard.NotNull(consensusLoop, nameof(consensusLoop));
             Guard.NotNull(chain, nameof(chain));
             Guard.NotNull(logger, nameof(logger));
+
             int height;
-            if(!int.TryParse(str_height, out height))
+            if(!int.TryParse(strHeight, out height))
             {
-                throw new ArgumentException(nameof(str_height));
+                throw new ArgumentException(nameof(strHeight));
             }
+
             logger.LogDebug("GetBlockHash {0}", height);
             uint256 bestBlockHash = consensusLoop.Tip?.HashBlock;
             ChainedHeader bestBlock = bestBlockHash == null ? null : chain.GetBlock(bestBlockHash);
@@ -373,6 +398,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
             {
                 return null;
             }
+
             ChainedHeader block = chain.GetBlock(height);
             return block == null || block.Height > bestBlock.Height ? null : block.HashBlock;
         }
@@ -386,7 +412,8 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
         {
             Guard.NotNull(fullNode, nameof(fullNode));
             MempoolManager mempoolManager = fullNode.NodeService<MempoolManager>();
-            return await mempoolManager.GetMempoolAsync();
+            List<uint256> result = await mempoolManager.GetMempoolAsync().ConfigureAwait(false);
+            return result;
         }
 
         /// <summary>
@@ -395,19 +422,21 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
         /// </summary>
         /// <param name="trxid">A valid uint256 hash</param>
         /// <param name="fullNode">The full node. Used to access blockstore.</param>
-        /// <param name="chain">The chain. Used to get block.</param>
-        /// <returns>A <see cref="ChainedHeader"/> for the given transaction hash. Null if fails.</returns>
+        /// <param name="chain">The full node's chain. Used to get block.</param>
+        /// <returns>A <see cref="ChainedHeader"/> for the given transaction hash. Returns <c>null</c> if fails.</returns>
         internal static async Task<ChainedHeader> GetTransactionBlockAsync(uint256 trxid, 
             IFullNode fullNode, ChainBase chain)
         {
             Guard.NotNull(fullNode, nameof(fullNode));
+
             ChainedHeader block = null;
-            var blockStore = fullNode.NodeFeature<IBlockStore>();
+            IBlockStore blockStore = fullNode.NodeFeature<IBlockStore>();
             uint256 blockid = blockStore != null ? await blockStore.GetTrxBlockIdAsync(trxid) : null;
             if (blockid != null)
             {
                 block = chain?.GetBlock(blockid);
             }
+            
             return block;
         }
 
@@ -415,7 +444,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
         /// Gets the current network difficulty. 
         /// </summary>
         /// <param name="networkDifficulty">The full node's network difficulty.</param>
-        /// <returns>A network difficulty <see cref="Target"/></returns>
+        /// <returns>A network difficulty <see cref="Target"/>. Returns <c>null</c> if fails.</returns>
         internal static Target GetNetworkDifficulty(INetworkDifficulty networkDifficulty = null)
         {
             return networkDifficulty?.GetNetworkDifficulty();

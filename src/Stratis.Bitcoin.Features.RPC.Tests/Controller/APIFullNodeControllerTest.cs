@@ -62,13 +62,13 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
             IFullNode fullNode = null;
             this.controller = new APIFullNodeController(this.LoggerFactory.Object, this.network, this.chain, this.chainState.Object, this.connectionManager.Object, null, this.pooledGetUnspentTransaction.Object, this.getUnspentTransaction.Object, this.networkDifficulty.Object,
                 this.consensusLoop.Object, fullNode, this.nodeSettings);
-            await this.controller.Stop().ConfigureAwait(false);
+            await this.controller.StopAsync().ConfigureAwait(false);
         }
 
         [Fact]
         public async Task Stop_WithFullNode_DisposesFullNodeAsync()
         {
-            await this.controller.Stop().ConfigureAwait(false);
+            await this.controller.StopAsync().ConfigureAwait(false);
             this.fullNode.Verify(f => f.Dispose());
         }
 
@@ -887,7 +887,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
         {
             AddNodeRequestModel request = new AddNodeRequestModel
             {
-                str_endpoint = "0.0.0.0",
+                Endpoint = "0.0.0.0",
                 command = "notarealcommand"
             };
 
@@ -906,7 +906,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
         {
             AddNodeRequestModel request = new AddNodeRequestModel
             {
-                str_endpoint = "a.b.c.d",
+                Endpoint = "a.b.c.d",
                 command = "onetry"
             };
 
@@ -925,7 +925,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
         {
             AddNodeRequestModel request = new AddNodeRequestModel
             {
-                str_endpoint = "0.0.0.0",
+                Endpoint = "0.0.0.0",
                 command = "remove"
             };
 
