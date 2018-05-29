@@ -156,7 +156,11 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             var carrier = SmartContractCarrier.CallContract(1, toAddress, "TestMethod", 1, (Gas)1000000);
             carrier.Sender = new uint160(2);
 
-            ISmartContractTransactionContext transactionContext = new SmartContractTransactionContext(BlockHeight, CoinbaseAddress, MempoolFee, carrier.Sender, new Transaction());
+            var transaction = new Transaction();
+            TxOut txOut = transaction.AddOutput(0, new Script(carrier.Serialize()));
+            txOut.Value = 100;
+
+            ISmartContractTransactionContext transactionContext = new SmartContractTransactionContext(BlockHeight, CoinbaseAddress, MempoolFee, carrier.Sender, transaction);
 
             var executor = new CallSmartContract(
                 this.carrierSerializer,
