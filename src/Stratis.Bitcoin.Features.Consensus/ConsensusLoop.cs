@@ -77,6 +77,9 @@ namespace Stratis.Bitcoin.Features.Consensus
     /// Blocks are coming from <see cref="ILookaheadBlockPuller"/> or Miner/Staker and get validated by get validated by the <see cref="IConsensusRules" /> engine.
     /// See either the <see cref="FullNodeBuilderConsensusExtension.PowConsensusRulesRegistration"/> for PoW or the <see cref="FullNodeBuilderConsensusExtension.PowConsensusRulesRegistration"/> for PoS.
     /// </para>
+    /// <para>
+    /// When consensus loop is being initialized we rewind it in case block store is behind or the <see cref="Tip"/> is not part of the best chain.
+    /// </para>
     /// </remarks>
     public class ConsensusLoop : IConsensusLoop
     {
@@ -213,15 +216,17 @@ namespace Stratis.Bitcoin.Features.Consensus
             this.logger.LogTrace("()");
 
             uint256 utxoHash = await this.UTXOSet.GetBlockHashAsync().ConfigureAwait(false);
+            bool blockStoreDisabled = this.chainState.BlockStoreTip == null;
+
             while (true)
             {
                 this.Tip = this.Chain.GetBlock(utxoHash);
-                if (this.Tip != null)
+               
+                if ((this.Tip != null) && (blockStoreDisabled || (this.chainState.BlockStoreTip.Height >= this.Tip.Height)))
                     break;
 
-                // TODO: this rewind code may never happen.
-                // The node will complete loading before connecting to peers so the
-                // chain will never know if a reorg happened.
+                // In case block store initialized behind, rewind until or before the block store tip.
+                // The node will complete loading before connecting to peers so the chain will never know if a reorg happened.
                 utxoHash = await this.UTXOSet.Rewind().ConfigureAwait(false);
             }
 

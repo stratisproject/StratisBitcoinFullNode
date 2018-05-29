@@ -26,8 +26,8 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
                 $"-datadir=Stratis.Bitcoin.Features.MemoryPool.Tests/TestData/FullNodeBuilderTest/CanHaveAllServicesTest" });
             var fullNodeBuilder = new FullNodeBuilder(nodeSettings);
             IFullNode fullNode = fullNodeBuilder
-                .UsePowConsensus()
                 .UseBlockStore()
+                .UsePowConsensus()
                 .UseMempool()
                 .Build();
 
