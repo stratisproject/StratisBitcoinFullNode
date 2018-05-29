@@ -8,14 +8,15 @@ namespace Stratis.Bitcoin.Tests.Utilities
     public class NetworkHelpersTest
     {
         [Fact]
-        public void GetMainNetworkRetuirnsNetworkMain()
+        public void GetMainNetworkReturnsNetworkMain()
         {
+            Network main = Network.Main;
             Network network = NetworkHelpers.GetNetwork("main");
             Assert.Equal(Network.Main, network);
         }
 
         [Fact]
-        public void GetMainNetNetworkRetuirnsNetworkMain()
+        public void GetMainNetNetworkReturnsNetworkMain()
         {
             Network main = Network.Main;
             Network network = NetworkHelpers.GetNetwork("mainnet");
@@ -23,7 +24,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
         }
 
         [Fact]
-        public void GetTestNetworkRetuirnsNetworkTest()
+        public void GetTestNetworkReturnsNetworkTest()
         {
             Network test = Network.TestNet;
             Network network = NetworkHelpers.GetNetwork("test");
@@ -31,7 +32,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
         }
 
         [Fact]
-        public void GetTestNetNetworkRetuirnsNetworkTest()
+        public void GetTestNetNetworkReturnsNetworkTest()
         {
             Network test = Network.TestNet;
             Network network = NetworkHelpers.GetNetwork("testnet");

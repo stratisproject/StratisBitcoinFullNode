@@ -8,6 +8,7 @@ using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.Interfaces;
+using Stratis.Bitcoin.Features.Consensus.Rules;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.MemoryPool.Tests
@@ -34,10 +35,11 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             var network = serviceProvider.GetService<Network>();
             var settings = serviceProvider.GetService<NodeSettings>();
             var consensusLoop = serviceProvider.GetService<IConsensusLoop>() as ConsensusLoop;
-            var consensus = serviceProvider.GetService<IPowConsensusValidator>() as PowConsensusValidator;
             var chain = serviceProvider.GetService<NBitcoin.ConcurrentChain>();
             var chainState = serviceProvider.GetService<IChainState>() as ChainState;
             var blockStoreManager = serviceProvider.GetService<BlockStoreManager>();
+            var consensusRules = serviceProvider.GetService<IConsensusRules>();
+            consensusRules.Register(serviceProvider.GetService<IRuleRegistration>());
             var mempoolManager = serviceProvider.GetService<MempoolManager>();
             var connectionManager = serviceProvider.GetService<IConnectionManager>() as ConnectionManager;
 
@@ -45,7 +47,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             Assert.NotNull(network);
             Assert.NotNull(settings);
             Assert.NotNull(consensusLoop);
-            Assert.NotNull(consensus);
             Assert.NotNull(chain);
             Assert.NotNull(chainState);
             Assert.NotNull(blockStoreManager);

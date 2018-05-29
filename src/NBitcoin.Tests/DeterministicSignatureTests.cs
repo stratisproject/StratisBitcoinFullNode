@@ -146,7 +146,7 @@ namespace NBitcoin.Tests
         [Trait("UnitTest", "UnitTest")]
         public void DeterministicSignatureTestVectors()
         {
-            foreach(var test in ParseTestsDump(File.ReadAllText("Data/determiniticECDSA.txt")))
+            foreach(var test in ParseTestsDump(File.ReadAllText(TestDataLocations.GetFileFromDataFolder("determiniticECDSA.txt"))))
             {
                 TestSig(test);
             }
@@ -206,7 +206,7 @@ namespace NBitcoin.Tests
         {
             Dictionary<string, string> values = new Dictionary<string, string>();
 
-            var lines = data.Split(new string[] { "\r\n" }, StringSplitOptions.RemoveEmptyEntries);
+            var lines = data.Split(new string[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries);
             string previous = null;
             foreach(var line in lines)
             {

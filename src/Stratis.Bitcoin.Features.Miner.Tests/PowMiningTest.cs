@@ -9,6 +9,7 @@ using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.Interfaces;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.MemoryPool.Interfaces;
+using Stratis.Bitcoin.Mining;
 using Stratis.Bitcoin.Tests.Common.Logging;
 using Stratis.Bitcoin.Utilities;
 using Xunit;
@@ -39,8 +40,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
             this.asyncLoopFactory = new Mock<IAsyncLoopFactory>();
 
             this.consensusLoop = new Mock<IConsensusLoop>();
-            this.consensusLoop.SetupGet(c => c.Tip).Returns(() => { return this.chain.Tip; });
-            this.consensusLoop.SetupGet(c => c.Validator).Returns(new PowConsensusValidator(this.network, new Checkpoints(), DateTimeProvider.Default, this.LoggerFactory.Object));
+            this.consensusLoop.SetupGet(c => c.Tip).Returns(() => this.chain.Tip);
 
             this.mempool = new Mock<ITxMempool>();
             this.mempool.SetupGet(mp => mp.MapTx).Returns(new TxMempool.IndexedTransactionSet());
@@ -500,20 +500,21 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
             });
         }
 
-        private Mock<PowBlockAssembler> CreateProofOfWorkBlockBuilder()
+        private Mock<PowBlockDefinition> CreateProofOfWorkBlockBuilder()
         {
-            return new Mock<PowBlockAssembler>(
-                this.consensusLoop.Object,
-                DateTimeProvider.Default,
-                this.LoggerFactory.Object,
-                this.mempool.Object,
-                this.mempoolLock,
-                this.network,
-                null);
+            return new Mock<PowBlockDefinition>(
+                    this.consensusLoop.Object,
+                    DateTimeProvider.Default,
+                    this.LoggerFactory.Object,
+                    this.mempool.Object,
+                    this.mempoolLock,
+                    this.network,
+                    null);
         }
 
-        private PowMining CreateProofOfWorkMiner(PowBlockAssembler blockBuilder)
+        private PowMining CreateProofOfWorkMiner(PowBlockDefinition blockDefinition)
         {
+            var blockBuilder = new MockPowBlockProvider(blockDefinition);
             return new PowMining(this.asyncLoopFactory.Object, blockBuilder, this.consensusLoop.Object, this.chain, DateTimeProvider.Default, this.mempool.Object, this.mempoolLock, this.network, this.nodeLifetime.Object, this.LoggerFactory.Object);
         }
 
@@ -525,7 +526,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
             for (var i = 0; i < blockAmount; i++)
             {
                 var block = network.Consensus.ConsensusFactory.CreateBlock();
-                block.AddTransaction(new Transaction());
+                block.AddTransaction(network.Consensus.ConsensusFactory.CreateTransaction());
                 block.UpdateMerkleRoot();
                 block.Header.BlockTime = new DateTimeOffset(new DateTime(2017, 1, 1, 0, 0, 0, DateTimeKind.Utc).AddDays(i));
                 block.Header.HashPrevBlock = prevBlockHash;
@@ -556,6 +557,26 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
         private void ExecuteUsingNonProofOfStakeSettings(Action action)
         {
             action();
+        }
+    }
+
+    public sealed class MockPowBlockProvider : IBlockProvider
+    {
+        private readonly PowBlockDefinition blockDefinition;
+
+        public MockPowBlockProvider(PowBlockDefinition blockDefinition)
+        {
+            this.blockDefinition = blockDefinition;
+        }
+
+        public BlockTemplate BuildPosBlock(ChainedHeader chainTip, Script script)
+        {
+            throw new NotImplementedException();
+        }
+
+        public BlockTemplate BuildPowBlock(ChainedHeader chainTip, Script script)
+        {
+            return this.blockDefinition.Build(chainTip, script);
         }
     }
 
