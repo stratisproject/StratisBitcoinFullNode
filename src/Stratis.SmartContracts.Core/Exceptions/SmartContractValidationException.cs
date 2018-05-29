@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
-using Stratis.SmartContracts.Core.ContractValidation;
+using Stratis.ModuleValidation.Net;
+using Stratis.SmartContracts.Core.Validation;
 
 namespace Stratis.SmartContracts.Core.Exceptions
 {
@@ -9,9 +10,9 @@ namespace Stratis.SmartContracts.Core.Exceptions
     /// <remarks>TODO: We can possibly merge this with <see cref="SmartContractValidationResult"/>.</remarks>
     public sealed class SmartContractValidationException : SmartContractException
     {
-        public List<SmartContractValidationError> Errors;
+        public IEnumerable<ValidationResult> Errors;
 
-        public SmartContractValidationException(List<SmartContractValidationError> errors)
+        public SmartContractValidationException(IEnumerable<ValidationResult> errors)
         {
             this.Errors = errors;
         }

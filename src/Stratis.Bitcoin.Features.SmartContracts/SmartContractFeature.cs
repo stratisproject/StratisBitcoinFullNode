@@ -17,9 +17,10 @@ using Stratis.Bitcoin.Features.Miner.Interfaces;
 using Stratis.Bitcoin.Features.SmartContracts.Controllers;
 using Stratis.Bitcoin.Mining;
 using Stratis.SmartContracts.Core;
-using Stratis.SmartContracts.Core.ContractValidation;
+using Stratis.SmartContracts.Core.Compilation;
 using Stratis.SmartContracts.Core.Receipts;
 using Stratis.SmartContracts.Core.State;
+using Stratis.SmartContracts.Core.Validation;
 
 namespace Stratis.Bitcoin.Features.SmartContracts
 {
@@ -59,7 +60,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                     {
                         SmartContractValidator validator = new SmartContractValidator(new List<ISmartContractValidator>
                         {
-                            new SmartContractFormatValidator(),
+                            new SmartContractFormatValidator(ReferencedAssemblyResolver.AllowedAssemblies),
                             new SmartContractDeterminismValidator()
                         });
                         services.AddSingleton<SmartContractValidator>(validator);

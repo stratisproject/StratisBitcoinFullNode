@@ -31,9 +31,9 @@ using Stratis.Patricia;
 using Stratis.SmartContracts;
 using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.Compilation;
-using Stratis.SmartContracts.Core.ContractValidation;
 using Stratis.SmartContracts.Core.Receipts;
 using Stratis.SmartContracts.Core.State;
+using Stratis.SmartContracts.Core.Validation;
 using Xunit;
 using Key = NBitcoin.Key;
 
@@ -190,7 +190,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 this.stateRoot = new ContractStateRepositoryRoot(stateDB);
                 this.validator = new SmartContractValidator(new List<ISmartContractValidator>
                 {
-                    new SmartContractFormatValidator(),
+                    new SmartContractFormatValidator(ReferencedAssemblyResolver.AllowedAssemblies),
                     new SmartContractDeterminismValidator()
                 });
 

@@ -25,7 +25,7 @@ namespace Stratis.SmartContracts.Tools.Sct.Report.Sections
 
             if (!data.DeterminismValid)
             {
-                var grouped = data.DeterminismValidationErrors.GroupBy(x => x.MethodName);
+                var grouped = data.DeterminismValidationErrors.GroupBy(x => x.SubjectName);
                 foreach(var method in grouped)
                 {
                     yield return new ReportElement($"{method.Key}:");

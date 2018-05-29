@@ -3,8 +3,9 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using McMaster.Extensions.CommandLineUtils;
+using Stratis.ModuleValidation.Net;
 using Stratis.SmartContracts.Core.Compilation;
-using Stratis.SmartContracts.Core.ContractValidation;
+using Stratis.SmartContracts.Core.Validation;
 using Stratis.SmartContracts.Tools.Sct.Report;
 using Stratis.SmartContracts.Tools.Sct.Report.Sections;
 
@@ -35,7 +36,7 @@ namespace Stratis.SmartContracts.Tools.Sct.Validation
             Console.WriteLine();
 
             var determinismValidator = new SmartContractDeterminismValidator();
-            var formatValidator = new SmartContractFormatValidator();
+            var formatValidator = new SmartContractFormatValidator(ReferencedAssemblyResolver.AllowedAssemblies);
             var warningValidator = new SmartContractWarningValidator();
 
             var reportData = new List<ValidationReportData>();
@@ -71,7 +72,7 @@ namespace Stratis.SmartContracts.Tools.Sct.Validation
                 {
                     FileName = file,
                     CompilationErrors = new List<CompilationError>(),
-                    DeterminismValidationErrors = new List<SmartContractValidationError>(),
+                    DeterminismValidationErrors = new List<ValidationResult>(),
                     FormatValidationErrors = new List<ValidationError>(),
                     Warnings = new List<Warning>()
                 };

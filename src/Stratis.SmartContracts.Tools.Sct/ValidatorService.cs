@@ -4,9 +4,9 @@ using System.Reflection;
 using McMaster.Extensions.CommandLineUtils;
 using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.Compilation;
-using Stratis.SmartContracts.Core.ContractValidation;
 using Stratis.SmartContracts.Core.Lifecycle;
 using Stratis.SmartContracts.Core.Serialization;
+using Stratis.SmartContracts.Core.Validation;
 
 namespace Stratis.SmartContracts.Tools.Sct
 {
@@ -72,7 +72,7 @@ namespace Stratis.SmartContracts.Tools.Sct
             }
 
             validationServiceResult.DeterminismValidationResult = new SmartContractDeterminismValidator().Validate(decompilation);
-            validationServiceResult.FormatValidationResult = new SmartContractFormatValidator().Validate(decompilation);
+            validationServiceResult.FormatValidationResult = new SmartContractFormatValidator(ReferencedAssemblyResolver.AllowedAssemblies).Validate(decompilation);
             if (!validationServiceResult.DeterminismValidationResult.IsValid || !validationServiceResult.FormatValidationResult.IsValid)
                 console.WriteLine("Smart Contract failed validation. Run validate [FILE] for more info.");
 

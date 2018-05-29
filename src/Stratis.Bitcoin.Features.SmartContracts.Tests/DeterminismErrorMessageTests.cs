@@ -1,6 +1,6 @@
 ﻿using System.Linq;
 using Stratis.SmartContracts.Core.Compilation;
-using Stratis.SmartContracts.Core.ContractValidation;
+using Stratis.SmartContracts.Core.Validation;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Tests
@@ -35,7 +35,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             SmartContractValidationResult result = this.validator.Validate(decompilation);
             Assert.False(result.IsValid);
             Assert.Single(result.Errors);
-            Assert.Equal("Float usage", result.Errors.First().ErrorType);
+            Assert.Equal("Float usage", result.Errors.First().ValidationType);
         }
 
         [Fact]
@@ -65,7 +65,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             SmartContractValidationResult result = this.validator.Validate(decompilation);
             Assert.False(result.IsValid);
             Assert.Single(result.Errors);
-            Assert.Equal(SmartContractDeterminismValidator.NonDeterministicMethodReference, result.Errors.First().ErrorType);
+            Assert.Equal(SmartContractDeterminismValidator.NonDeterministicMethodReference, result.Errors.First().ValidationType);
         }
 
         [Fact]
@@ -99,8 +99,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             SmartContractValidationResult result = this.validator.Validate(decompilation);
             Assert.False(result.IsValid);
             Assert.Equal(2, result.Errors.Count());
-            Assert.Equal("Float usage", result.Errors.First().ErrorType);
-            Assert.Equal("Float usage", result.Errors.Skip(1).Take(1).First().ErrorType);
+            Assert.Equal("Float usage", result.Errors.First().ValidationType);
+            Assert.Equal("Float usage", result.Errors.Skip(1).Take(1).First().ValidationType);
         }
 
         [Fact]
@@ -141,8 +141,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             SmartContractValidationResult result = this.validator.Validate(decompilation);
             Assert.False(result.IsValid);
             Assert.Equal(2, result.Errors.Count());
-            Assert.Equal("Float usage", result.Errors.First().ErrorType);
-            Assert.Equal("Float usage", result.Errors.Skip(1).Take(1).First().ErrorType);
+            Assert.Equal("Float usage", result.Errors.First().ValidationType);
+            Assert.Equal("Float usage", result.Errors.Skip(1).Take(1).First().ValidationType);
         }
 
         [Fact]
@@ -176,7 +176,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             SmartContractValidationResult result = this.validator.Validate(decompilation);
             Assert.False(result.IsValid);
             Assert.Single(result.Errors);
-            Assert.Equal("Float usage", result.Errors.First().ErrorType);
+            Assert.Equal("Float usage", result.Errors.First().ValidationType);
         }
 
         [Fact]
@@ -215,7 +215,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             SmartContractValidationResult result = this.validator.Validate(decompilation);
             Assert.False(result.IsValid);
             Assert.Single(result.Errors);
-            Assert.Equal("Float usage", result.Errors.First().ErrorType);
+            Assert.Equal("Float usage", result.Errors.First().ValidationType);
         }
 
         [Fact]
@@ -259,7 +259,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             SmartContractValidationResult result = this.validator.Validate(decompilation);
             Assert.False(result.IsValid);
             Assert.Single(result.Errors);
-            Assert.Equal("Float usage", result.Errors.First().ErrorType);
+            Assert.Equal("Float usage", result.Errors.First().ValidationType);
         }
 
         [Fact]
@@ -295,7 +295,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             SmartContractValidationResult result = this.validator.Validate(decompilation);
             Assert.False(result.IsValid);
             Assert.Single(result.Errors);
-            Assert.Equal("Float usage", result.Errors.First().ErrorType);
+            Assert.Equal("Float usage", result.Errors.First().ValidationType);
         }
     }
 }
