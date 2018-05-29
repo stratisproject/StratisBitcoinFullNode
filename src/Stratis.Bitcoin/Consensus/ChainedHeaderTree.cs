@@ -59,8 +59,14 @@ namespace Stratis.Bitcoin.Consensus
 
         /// <summary>Lists of peer identifiers mapped by hashes of the block headers that are considered to be their tips.</summary>
         /// <remarks>
-        /// During the processing of new data, an identifier of a single peer may temporarily appear
-        /// on two different lists representing different hashes.
+        /// During the consensus tip changing process, which includes both the reorganization and advancement on the same chain,
+        /// it happens that there are two entries for <see cref="LocalPeerId"/>. This means that two different blocks are being
+        /// claimed by our node as its tip. This is necessary in order to protect the new consensus tip candidate from being
+        /// removed in case peers that were claiming it disconnect during the consensus tip changing process.  
+        /// <para>
+        /// All the leafs of the tree have to be tips of chains presented by peers, which means that
+        /// hashes of the leaf block headers have to be keys with non-empty values in this dictionary.
+        /// </para>
         /// </remarks>
         private readonly Dictionary<uint256, HashSet<int>> peerIdsByTipHash;
 
