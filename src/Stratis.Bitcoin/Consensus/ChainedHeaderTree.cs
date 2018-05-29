@@ -155,8 +155,10 @@ namespace Stratis.Bitcoin.Consensus
 
             if (newChainedHeaders == null)
             {
-                this.logger.LogTrace("(-)[NO_NEW_HEADER]");
-                return new ConnectedHeaders();
+                uint256 lastHash = headers.Last().GetHash();
+
+                this.logger.LogTrace("(-)[NO_NEW_HEADERS]");
+                return new ConnectedHeaders() { Consumed = this.chainedHeadersByHash[lastHash] };
             }
 
             ChainedHeader earliestNewHeader = newChainedHeaders.First();
@@ -165,12 +167,17 @@ namespace Stratis.Bitcoin.Consensus
             ConnectedHeaders connectedHeaders = null;
 
             bool isAssumedValidEnabled = this.consensusSettings.BlockAssumedValid != null;
-            bool isWithinCheckpoints = this.consensusSettings.UseCheckpoints && (earliestNewHeader.Height <= this.checkpoints.GetLastCheckpointHeight()); ;
+            bool isWithinCheckpoints = this.consensusSettings.UseCheckpoints && (earliestNewHeader.Height <= this.checkpoints.GetLastCheckpointHeight());
 
             if (isWithinCheckpoints || isAssumedValidEnabled)
             {
                 ChainedHeader currentChainedHeader = latestNewHeader;
 
+                // When we look for a checkpoint header or an assume valid header, we go from the last presented
+                // header to the first one in the reverse order because if there were multiple checkpoints or a checkpoint
+                // and an assume valid header inside of the presented list of headers, we would only be interested in the last
+                // one as it would cover all previous headers. Reversing the order of processing guarantees that we only need
+                // to deal with one special header, which simplifies the implementation.
                 while (currentChainedHeader != earliestNewHeader)
                 {
                     if (currentChainedHeader.HashBlock == this.consensusSettings.BlockAssumedValid)
@@ -196,7 +203,7 @@ namespace Stratis.Bitcoin.Consensus
                 if ((connectedHeaders == null) && isWithinCheckpoints)
                 {
                     connectedHeaders = new ConnectedHeaders() {Consumed = latestNewHeader};
-                    this.logger.LogTrace("Chained header '{0}' bellow last checkpoint.", currentChainedHeader);
+                    this.logger.LogTrace("Chained header '{0}' below last checkpoint.", currentChainedHeader);
                 }
 
                 if (connectedHeaders != null)
@@ -276,7 +283,7 @@ namespace Stratis.Bitcoin.Consensus
             this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(assumedValidHeader), assumedValidHeader, nameof(latestNewHeader), latestNewHeader);
 
             ChainedHeader bestTip = this.chainState.ConsensusTip;
-            ConnectedHeaders connectedHeaders = new ConnectedHeaders() {Consumed = latestNewHeader};
+            var connectedHeaders = new ConnectedHeaders() {Consumed = latestNewHeader};
 
             if (latestNewHeader.ChainWork > bestTip.ChainWork)
             {
