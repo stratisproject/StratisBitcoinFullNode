@@ -108,7 +108,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.CounterChain
             this.logger.LogInformation("()");
             this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} Combining and Broadcasting transaction.");
 
-            var account = this.generalPurposeWalletManager.GetAccounts("multisig_wallet").First();
+            var account = this.generalPurposeWalletManager.GetAccounts(this.federationGatewaySettings.MultiSigWalletName).First();
             if (account == null)
             {
                 this.logger.LogInformation("InvalidAccount from GPWallet.");
@@ -141,7 +141,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.CounterChain
             //todo: then we just return the transctionId
 
             //create the partial transaction template
-            var wallet = this.generalPurposeWalletManager.GetWallet("multisig_wallet");
+            var wallet = this.generalPurposeWalletManager.GetWallet(this.federationGatewaySettings.MultiSigWalletName);
             var account = wallet.GetAccountsByCoinType((CoinType)this.network.Consensus.CoinType).First();
             var multiSigAddress = account.MultiSigAddresses.First();
 
@@ -152,7 +152,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.CounterChain
 
             // We are the Boss so first I build the multisig transaction template.
             var multiSigContext = new TransactionBuildContext(
-                new GeneralPurposeWalletAccountReference("multisig_wallet", "account 0"),
+                new GeneralPurposeWalletAccountReference(this.federationGatewaySettings.MultiSigWalletName, "account 0"),
                 new[] { new Recipient { Amount = amount, ScriptPubKey = destination } }.ToList(),
                 "password", sessionId.ToBytes())
             {
