@@ -3,14 +3,9 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using McMaster.Extensions.CommandLineUtils;
-<<<<<<< HEAD
 using Stratis.SmartContracts.ReflectionExecutor.Compilation;
-using Stratis.SmartContracts.ReflectionExecutor.ContractValidation;
-=======
 using Stratis.ModuleValidation.Net;
-using Stratis.SmartContracts.Core.Compilation;
 using Stratis.SmartContracts.Core.Validation;
->>>>>>> master
 using Stratis.SmartContracts.Tools.Sct.Report;
 using Stratis.SmartContracts.Tools.Sct.Report.Sections;
 

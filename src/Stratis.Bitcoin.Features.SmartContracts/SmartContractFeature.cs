@@ -80,7 +80,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                         services.AddSingleton<SmartContractBlockDefinition>();
                         services.AddSingleton<IMempoolValidator, SmartContractMempoolValidator>();
                         // Add rules
-                        ConsensusRuleUtils.AddExtraRules(services, new SmartContractRuleRegistration());
+                        services.AddConsensusRules(new SmartContractRuleRegistration());
                     });
             });
             return new SmartContractVmBuilder(fullNodeBuilder);
@@ -99,7 +99,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         /// Here we get an existing IRuleRegistration ServiceDescriptor, re-register it as its ConcreteType
         /// then replace the dependency on IRuleRegistration with our own implementation that depends on ConcreteType.
         /// </summary>
-        public static void AddExtraRules(IServiceCollection services, IAdditionalRuleRegistration rulesToAdd)
+        public static void AddConsensusRules(this IServiceCollection services, IAdditionalRuleRegistration rulesToAdd)
         {
             ServiceDescriptor existingService = services.FirstOrDefault(s => s.ServiceType == typeof(IRuleRegistration));
 
@@ -111,21 +111,41 @@ namespace Stratis.Bitcoin.Features.SmartContracts
 
             Type concreteType = existingService.ImplementationType;
 
-            // Register concrete type if it does not already exist
-            if ( concreteType != null && services.FirstOrDefault(s => s.ServiceType == concreteType) == null)
+            if (concreteType != null)
             {
-                services.Add(new ServiceDescriptor(concreteType, concreteType, ServiceLifetime.Singleton));
+                // Register concrete type if it does not already exist
+                if (services.FirstOrDefault(s => s.ServiceType == concreteType) == null)
+                {
+                    services.Add(new ServiceDescriptor(concreteType, concreteType, ServiceLifetime.Singleton));
+                }
+
+                // Replace the existing rule registration with our own factory
+                var newService = new ServiceDescriptor(typeof(IRuleRegistration), serviceProvider =>
+                {
+                    var existingRuleRegistration = serviceProvider.GetService(concreteType);
+                    rulesToAdd.SetPreviousRegistration((IRuleRegistration)existingRuleRegistration);
+                    return rulesToAdd;
+                }, ServiceLifetime.Singleton);
+
+                services.Replace(newService);
+
+                return;
             }
 
-            // Replace the existing rule registration with our own factory
-            var newService = new ServiceDescriptor(typeof(IRuleRegistration), serviceProvider =>
-            {
-                var existingRuleRegistration = serviceProvider.GetService(concreteType);
-                rulesToAdd.SetPreviousRegistration((IRuleRegistration)existingRuleRegistration);
-                return (IRuleRegistration) rulesToAdd;
-            }, ServiceLifetime.Singleton);
+            Func<IServiceProvider, object> implementationFactory = existingService.ImplementationFactory;
 
-            services.Replace(newService);
+            if (implementationFactory != null)
+            {
+                // Factory method has already been defined, just add the extra rules
+                var newService = new ServiceDescriptor(typeof(IRuleRegistration), serviceProvider =>
+                {
+                    var existingRuleRegistration = implementationFactory.Invoke(serviceProvider);
+                    rulesToAdd.SetPreviousRegistration((IRuleRegistration)existingRuleRegistration);
+                    return rulesToAdd;
+                }, ServiceLifetime.Singleton);
+
+                services.Replace(newService);
+            }
         }
     }
 }

@@ -1,9 +1,5 @@
 ﻿using System.Collections.Generic;
-<<<<<<< HEAD
-using Stratis.SmartContracts.ReflectionExecutor.ContractValidation;
-=======
 using Stratis.ModuleValidation.Net;
->>>>>>> master
 
 namespace Stratis.SmartContracts.Tools.Sct.Report
 {
