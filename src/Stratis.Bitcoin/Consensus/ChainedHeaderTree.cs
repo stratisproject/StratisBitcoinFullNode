@@ -233,13 +233,13 @@ namespace Stratis.Bitcoin.Consensus
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(latestNewHeader), latestNewHeader);
 
-            ConnectedHeaders connectedHeaders = new ConnectedHeaders();
+            var connectedHeaders = new ConnectedHeaders();
             connectedHeaders.DownloadTo = connectedHeaders.Consumed = latestNewHeader;
 
             ChainedHeader current = latestNewHeader;
             ChainedHeader next = current;
 
-            while (this.HeaderWasNotRequested(current))
+            while (!this.HeaderWasRequested(current))
             {
                 current.BlockDataAvailability = BlockDataAvailabilityState.BlockRequired;
 
@@ -254,16 +254,16 @@ namespace Stratis.Bitcoin.Consensus
         }
 
         /// <summary>
-        /// Mark all previous blocks to <see cref="chainedHeader"/> as <see cref="ValidationState.AssumedValid"/>.
+        /// Mark the chain ending with <paramref name="chainedHeader"/> as <see cref="ValidationState.AssumedValid"/>.
         /// </summary>
-        /// <param name="chainedHeader">The new header that represents a longer chain.</param>
+        /// <param name="chainedHeader">Last <see cref="ChainedHeader"/> to be marked <see cref="ValidationState.AssumedValid"/>.</param>
         private void MarkTrustedChainAsAssumedValid(ChainedHeader chainedHeader)
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(chainedHeader), chainedHeader);
 
             ChainedHeader current = chainedHeader;
 
-            while (this.HeaderWasNotMarkedAsValidated(current))
+            while (!this.HeaderWasMarkedAsValidated(current))
             {
                 current.BlockValidationState = ValidationState.AssumedValid;
                 current = current.Previous;
@@ -302,8 +302,12 @@ namespace Stratis.Bitcoin.Consensus
         }
 
         /// <summary>
-        /// When a header is before the last checkpoint it will be asked to be marked as AssumedValid and we'll ask to download it.
+        /// When a header is checkpointed and has a correct hash, chain that ends with such a header
+        /// will be marked as <see cref="ValidationState.AssumedValid" /> and requested for download.
         /// </summary>
+        /// <param name="chainedHeader">Checkpointed header.</param>
+        /// <param name="latestNewHeader">The latest new header that was presented by the peer.</param>
+        /// <param name="checkpoint">Information about the checkpoint at the height of the <paramref name="chainedHeader"/>.</param>
         private ConnectedHeaders HandleCheckpointsHeader(ChainedHeader chainedHeader, ChainedHeader latestNewHeader, CheckpointInfo checkpoint)
         {
             this.logger.LogTrace("({0}:'{1}',{2}:'{3}',{4}.{5}:'{6}')", nameof(chainedHeader), chainedHeader, nameof(latestNewHeader), latestNewHeader, nameof(checkpoint), nameof(checkpoint.Hash), checkpoint.Hash);
@@ -330,21 +334,21 @@ namespace Stratis.Bitcoin.Consensus
         /// Check whether a header is in one of the following states
         /// <see cref="BlockDataAvailabilityState.BlockAvailable"/>, <see cref="BlockDataAvailabilityState.BlockRequired"/>.
         /// </summary>
-        private bool HeaderWasNotRequested(ChainedHeader chainedHeader)
+        private bool HeaderWasRequested(ChainedHeader chainedHeader)
         {
-            return !((chainedHeader.BlockDataAvailability == BlockDataAvailabilityState.BlockAvailable)
-                  || (chainedHeader.BlockDataAvailability == BlockDataAvailabilityState.BlockRequired));
+            return (chainedHeader.BlockDataAvailability == BlockDataAvailabilityState.BlockAvailable)
+                  || (chainedHeader.BlockDataAvailability == BlockDataAvailabilityState.BlockRequired);
         }
 
         /// <summary>
         /// Check whether a header is in one of the following states
         /// <see cref="ValidationState.AssumedValid"/>, <see cref="ValidationState.PartiallyValidated"/>, <see cref="ValidationState.FullyValidated"/>.
         /// </summary>
-        private bool HeaderWasNotMarkedAsValidated(ChainedHeader chainedHeader)
+        private bool HeaderWasMarkedAsValidated(ChainedHeader chainedHeader)
         {
-            return !((chainedHeader.BlockValidationState == ValidationState.AssumedValid)
+            return (chainedHeader.BlockValidationState == ValidationState.AssumedValid)
                   || (chainedHeader.BlockValidationState == ValidationState.PartiallyValidated)
-                  || (chainedHeader.BlockValidationState == ValidationState.FullyValidated));
+                  || (chainedHeader.BlockValidationState == ValidationState.FullyValidated);
         }
 
         private void RemoveUnclaimedBranch(ChainedHeader chainedHeader)
