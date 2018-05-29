@@ -715,44 +715,20 @@ namespace NBitcoin
             }
         }
 
-
 #if !NOSOCKET
-        public static IPEndPoint ParseIpEndpoint(string endpoint, int defaultPort)
+        public static IPAddress ParseIPAddress(string ip)
         {
-            var splitted = endpoint.Trim().Split(new[] { ':' });
-            string ip = null;
-            int port = 0;
-            if(splitted.Length == 1)
-            {
-                ip = splitted[0];
-                port = defaultPort;
-            }
-            else if(splitted.Length == 2)
-            {
-                ip = splitted[0];
-                port = int.Parse(splitted[1]);
-            }
-            else
-            {
-                if((endpoint.IndexOf(']') != -1) &&
-                    int.TryParse(splitted.Last(), out port))
-                {
-                    ip = String.Join(":", splitted.Take(splitted.Length - 1).ToArray());
-                }
-                else
-                {
-                    ip = endpoint;
-                    port = defaultPort;
-                }
-            }
-
             IPAddress address = null;
+
             try
             {
                 address = IPAddress.Parse(ip);
             }
-            catch(FormatException)
+            catch (FormatException err)
             {
+                if (ip.Trim() == string.Empty || Uri.CheckHostName(ip) == UriHostNameType.Unknown)
+                    throw;
+
 #if !(WINDOWS_UWP || NETCORE)
                 address = Dns.GetHostEntry(ip).AddressList[0];
 #else
@@ -764,7 +740,29 @@ namespace NBitcoin
                     address = IPAddress.Parse(adr);
 #endif
             }
-            return new IPEndPoint(address, port);
+
+            return address;
+        }
+
+        public static IPEndPoint ParseIpEndpoint(string endpoint, int port)
+        {
+            // Get the position of the last ':'.
+            int colon = endpoint.LastIndexOf(':');
+
+            if (colon >= 0)
+            {
+                int bracket = endpoint.LastIndexOf(']');
+                int dot = endpoint.LastIndexOf('.');
+
+                // The ':' must be preceded by a ']' or a '.' with no ']' or '.' following the ':'.
+                if ((dot != -1 || bracket != -1) && dot < colon && bracket < colon)
+                {
+                    port = int.Parse(endpoint.Substring(colon + 1));
+                    endpoint = endpoint.Substring(0, colon);
+                }
+            }
+
+            return new IPEndPoint(ParseIPAddress(endpoint), port);
         }
 
 #if NETCORE

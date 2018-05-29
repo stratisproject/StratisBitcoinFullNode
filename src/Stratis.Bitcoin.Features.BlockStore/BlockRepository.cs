@@ -86,9 +86,6 @@ namespace Stratis.Bitcoin.Features.BlockStore
         BlockStoreRepositoryPerformanceCounter PerformanceCounter { get; }
 
         bool TxIndex { get; }
-
-        /// <summary>Represents the last block stored to disk.</summary>
-        ChainedHeader HighestPersistedBlock { get; }
     }
 
     public class BlockRepository : IBlockRepository
@@ -113,9 +110,6 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
         /// <summary>Provider of time functions.</summary>
         protected readonly IDateTimeProvider dateTimeProvider;
-
-        /// <inheritdoc />
-        public ChainedHeader HighestPersistedBlock { get; internal set; }
 
         public BlockRepository(Network network, DataFolder dataFolder, IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory)
             : this(network, dataFolder.BlockPath, dateTimeProvider, loggerFactory)
@@ -661,8 +655,8 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// <summary>
         /// Wipe our blocks and their transactions then replace with a new block.
         /// </summary>
-        /// <param name="newBlockHash">Hash of the new block</param>
-        /// <param name="hashes">List of all block hashes to be deleted</param>
+        /// <param name="newBlockHash">Hash of the new block.</param>
+        /// <param name="hashes">List of all block hashes to be deleted.</param>
         public Task DeleteAsync(uint256 newBlockHash, List<uint256> hashes)
         {
             this.logger.LogTrace("({0}:'{1}',{2}.{3}:{4})", nameof(newBlockHash), newBlockHash, nameof(hashes), nameof(hashes.Count), hashes?.Count);

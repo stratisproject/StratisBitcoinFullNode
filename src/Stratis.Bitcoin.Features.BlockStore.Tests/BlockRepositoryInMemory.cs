@@ -14,10 +14,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
         public uint256 BlockHash { get; private set; }
         public bool TxIndex { get; private set; }
         public BlockStoreRepositoryPerformanceCounter PerformanceCounter { get; private set; }
-
-        /// <inheritdoc />
-        public ChainedHeader HighestPersistedBlock { get { throw new NotImplementedException(); } }
-
+        
         public BlockRepositoryInMemory()
         {
             this.InitializeAsync();
