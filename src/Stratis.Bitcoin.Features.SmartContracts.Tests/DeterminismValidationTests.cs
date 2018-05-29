@@ -659,18 +659,18 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                     public Token(ISmartContractState state): base(state) 
                     {
                         Owner = Message.Sender;
-                        Balances = PersistentState.GetMapping<ulong>(""Balances"");
+                        Balances = PersistentState.GetUInt64Mapping(""Balances"");
                     }
 
                     public Address Owner
                     {
                         get
                         {
-                            return PersistentState.GetObject<Address>(""Owner"");
+                            return PersistentState.GetAddress(""Owner"");
                         }
                         private set
                         {
-                            PersistentState.SetObject(""Owner"", value);
+                            PersistentState.SetAddress(""Owner"", value);
                         }
                     }
 
@@ -737,6 +737,23 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             SmartContractValidationResult result = this.validator.Validate(decomp);
             Assert.False(result.IsValid);
         }
+
+        #endregion
+
+        #region TryCatch
+
+        [Fact]
+        public void Validate_Determinism_TryCatch()
+        {
+            SmartContractCompilationResult compilationResult = SmartContractCompiler.CompileFile("SmartContracts/TryCatch.cs");
+            Assert.True(compilationResult.Success);
+
+            byte[] assemblyBytes = compilationResult.Compilation;
+            SmartContractDecompilation decomp = SmartContractDecompiler.GetModuleDefinition(assemblyBytes);
+            SmartContractValidationResult result = this.validator.Validate(decomp);
+            Assert.False(result.IsValid);
+        }
+        
 
         #endregion
 

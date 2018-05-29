@@ -13,24 +13,24 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
             this.Owner = this.Message.Sender;
             this.TotalSupply = totalSupply;
         }
-        public ISmartContractMapping<ulong> Balances => this.PersistentState.GetMapping<ulong>(nameof(this.Balances));
+        public ISmartContractMapping<ulong> Balances => this.PersistentState.GetUInt64Mapping(nameof(this.Balances));
 
         public ulong TotalSupply
         {
-            get => this.PersistentState.GetObject<ulong>(nameof(this.TotalSupply));
-            private set => this.PersistentState.SetObject(nameof(this.TotalSupply), value);
+            get => this.PersistentState.GetUInt64(nameof(this.TotalSupply));
+            private set => this.PersistentState.SetUInt64(nameof(this.TotalSupply), value);
         }
 
         public bool HasMintingFinished
         {
-            get => this.PersistentState.GetObject<bool>(nameof(this.HasMintingFinished));
-            private set => this.PersistentState.SetObject(nameof(this.HasMintingFinished), value);
+            get => this.PersistentState.GetBool(nameof(this.HasMintingFinished));
+            private set => this.PersistentState.SetBool(nameof(this.HasMintingFinished), value);
         }
 
         public Address Owner
         {
-            get => this.PersistentState.GetObject<Address>(nameof(this.Owner));
-            private set => this.PersistentState.SetObject(nameof(this.Owner), value);
+            get => this.PersistentState.GetAddress(nameof(this.Owner));
+            private set => this.PersistentState.SetAddress(nameof(this.Owner), value);
         }
 
         public ulong GetBalance(Address address)

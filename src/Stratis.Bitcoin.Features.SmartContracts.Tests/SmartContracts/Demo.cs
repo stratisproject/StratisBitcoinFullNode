@@ -12,11 +12,11 @@ public class Demo : SmartContract
     {
         get
         {
-            return PersistentState.GetObject<int>("Counter");
+            return PersistentState.GetInt32("Counter");
         }
         set
         {
-            PersistentState.SetObject<int>("Counter", value);
+            PersistentState.SetInt32("Counter", value);
         }
     }
 
@@ -24,11 +24,11 @@ public class Demo : SmartContract
     {
         get
         {
-            return PersistentState.GetObject<string>("TestSave");
+            return PersistentState.GetString("TestSave");
         }
         set
         {
-            PersistentState.SetObject<string>("TestSave", value);
+            PersistentState.SetString("TestSave", value);
         }
     }
 

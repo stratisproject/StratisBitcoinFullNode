@@ -9,13 +9,13 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.SmartContracts
             : base(state)
         {
             this.Owner = Message.Sender;
-            this.Balances = PersistentState.GetMapping<ulong>("Balances");
+            this.Balances = PersistentState.GetUInt64Mapping("Balances");
         }
 
         public Address Owner
         {
-            get { return PersistentState.GetObject<Address>("Owner"); }
-            private set { PersistentState.SetObject("Owner", value); }
+            get { return PersistentState.GetAddress("Owner"); }
+            private set { PersistentState.SetAddress("Owner", value); }
         }
 
         public ISmartContractMapping<ulong> Balances { get; set; }

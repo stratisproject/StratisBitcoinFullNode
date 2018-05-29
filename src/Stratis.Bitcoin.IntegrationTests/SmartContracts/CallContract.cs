@@ -11,11 +11,11 @@ public class CallContract : SmartContract
     {
         get
         {
-            return PersistentState.GetObject<string>("Test");
+            return PersistentState.GetString("Test");
         }
         set
         {
-            PersistentState.SetObject<string>("Test", value);
+            PersistentState.SetString("Test", value);
         }
     }
 

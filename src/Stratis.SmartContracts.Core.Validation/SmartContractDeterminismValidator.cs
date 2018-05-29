@@ -57,6 +57,7 @@ namespace Stratis.SmartContracts.Core.Validation
             new NativeMethodFlagValidator(),
             new MethodAllowedTypeValidator(),
             new GetHashCodeValidator(),
+            new TryCatchValidator(),
             new MethodInstructionValidator(),
             new AnonymousTypeValidator(),
             new MethodParamValidator(),

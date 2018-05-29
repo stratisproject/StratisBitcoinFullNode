@@ -41,6 +41,7 @@ namespace Stratis.SmartContracts.Core.Compilation
                     OutputKind.DynamicallyLinkedLibrary, 
                     checkOverflow: true));
 
+
             using (var dllStream = new MemoryStream())
             {
                 EmitResult emitResult = compilation.Emit(dllStream);

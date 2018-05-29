@@ -7,6 +7,7 @@ using NBitcoin;
 using Stratis.Bitcoin.Utilities;
 using Stratis.SmartContracts.Core.Backend;
 using Stratis.SmartContracts.Core.Compilation;
+using Stratis.SmartContracts.Core.Receipts;
 using Stratis.SmartContracts.Core.State;
 using Stratis.SmartContracts.Core.State.AccountAbstractionLayer;
 using Stratis.SmartContracts.Core.Validation;
@@ -27,6 +28,8 @@ namespace Stratis.SmartContracts.Core
         private readonly ILogger logger;
         protected readonly ILoggerFactory loggerFactory;
 
+        protected readonly ISmartContractReceiptStorage receiptStorage;
+
         protected ulong blockHeight;
         protected uint160 coinbaseAddress;
         protected Money mempoolFee;
@@ -38,6 +41,7 @@ namespace Stratis.SmartContracts.Core
             ILoggerFactory loggerFactory,
             Money mempoolFee,
             Network network,
+            ISmartContractReceiptStorage receiptStorage,
             IContractStateRepository stateSnapshot,
             SmartContractValidator validator)
         {
@@ -49,6 +53,7 @@ namespace Stratis.SmartContracts.Core
             this.mempoolFee = mempoolFee;
             this.network = network;
             this.stateSnapshot = stateSnapshot.StartTracking();
+            this.receiptStorage = receiptStorage;
             this.validator = validator;
         }
 
@@ -57,6 +62,7 @@ namespace Stratis.SmartContracts.Core
         /// </summary>
         public static SmartContractExecutor Initialize(SmartContractCarrier carrier,
             Network network,
+            ISmartContractReceiptStorage receiptStorage,
             IContractStateRepository stateRepository,
             SmartContractValidator validator,
             IKeyEncodingStrategy keyEncodingStrategy,
@@ -64,9 +70,9 @@ namespace Stratis.SmartContracts.Core
             Money mempoolFee)
         {
             if (carrier.OpCodeType == OpcodeType.OP_CREATECONTRACT)
-                return new CreateSmartContract(carrier, keyEncodingStrategy, loggerFactory, mempoolFee, network, stateRepository, validator);
+                return new CreateSmartContract(carrier, keyEncodingStrategy, loggerFactory, mempoolFee, network, receiptStorage, stateRepository, validator);
             else
-                return new CallSmartContract(carrier, keyEncodingStrategy, loggerFactory, mempoolFee, network, stateRepository, validator);
+                return new CallSmartContract(carrier, keyEncodingStrategy, loggerFactory, mempoolFee, network, receiptStorage, stateRepository, validator);
         }
 
         public ISmartContractExecutionResult Execute(ulong blockHeight, uint160 coinbaseAddress)
@@ -111,6 +117,16 @@ namespace Stratis.SmartContracts.Core
         {
             if (this.mempoolFee != null)
                 new SmartContractExecutorResultProcessor(this.Result, this.loggerFactory).Process(this.carrier, this.mempoolFee);
+
+            try
+            {
+                this.logger.LogTrace("Save Receipt : {0}:{1},{2}:{3},{4}:{5}", nameof(this.carrier.TransactionHash), this.carrier.TransactionHash, nameof(this.blockHeight), this.blockHeight, nameof(this.carrier.ContractAddress), this.carrier.ContractAddress);
+                this.receiptStorage.SaveReceipt(this.carrier.TransactionHash, this.blockHeight, this.Result, this.carrier.ContractAddress);
+            }
+            catch (Exception e)
+            {
+                this.logger.LogError("Exception occurred saving contract receipt: {0}", e.Message);
+            }
         }
 
         internal void LogExecutionContext(ILogger logger, IBlock block, IMessage message, uint160 contractAddress, SmartContractCarrier carrier)
@@ -138,9 +154,10 @@ namespace Stratis.SmartContracts.Core
             ILoggerFactory loggerFactory,
             Money mempoolFee,
             Network network,
+            ISmartContractReceiptStorage receiptStorage,
             IContractStateRepository stateRepository,
             SmartContractValidator validator)
-            : base(carrier, keyEncodingStrategy, loggerFactory, mempoolFee, network, stateRepository, validator)
+            : base(carrier, keyEncodingStrategy, loggerFactory, mempoolFee, network, receiptStorage, stateRepository, validator)
         {
             Guard.Assert(carrier.OpCodeType == OpcodeType.OP_CREATECONTRACT);
 
@@ -220,9 +237,10 @@ namespace Stratis.SmartContracts.Core
             ILoggerFactory loggerFactory,
             Money mempoolFee,
             Network network,
+            ISmartContractReceiptStorage receiptStorage,
             IContractStateRepository stateRepository,
             SmartContractValidator validator)
-            : base(carrier, keyEncodingStrategy, loggerFactory, mempoolFee, network, stateRepository, validator)
+            : base(carrier, keyEncodingStrategy, loggerFactory, mempoolFee, network, receiptStorage, stateRepository, validator)
         {
             Guard.Assert(carrier.OpCodeType == OpcodeType.OP_CALLCONTRACT);
             this.logger = loggerFactory.CreateLogger(this.GetType());

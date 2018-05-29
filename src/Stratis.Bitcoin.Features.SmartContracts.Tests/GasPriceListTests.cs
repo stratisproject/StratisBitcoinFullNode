@@ -49,7 +49,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         {
             byte[] key = new byte[] { 1, 2, 3, 4, 5, 6, 7, 8, 9 };
             byte[] value = new byte[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
-            Gas cost = (Gas)(1 * key.Length + 1 * value.Length);
+            Gas cost = (Gas)(GasPriceList.StorageGasCost * key.Length +  GasPriceList.StorageGasCost * value.Length);
 
             Assert.Equal(cost, GasPriceList.StorageOperationCost(key, value));
         }
@@ -64,7 +64,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             TypeDefinition type = moduleDefinition.Types.First(t => t.FullName.Contains("DateTime"));
             MethodDefinition method = type.Methods.First(m => m.FullName.Contains("Parse"));
 
-            Assert.Equal((Gas)0, GasPriceList.MethodCallCost(method));
+            Assert.Equal((Gas) GasPriceList.MethodCallGasCost, GasPriceList.MethodCallCost(method));
         }
     }
 }

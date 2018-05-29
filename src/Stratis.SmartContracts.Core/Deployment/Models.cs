@@ -25,6 +25,9 @@ namespace Stratis.SmartContracts.Core.Deployment
 
         [NetJSON.NetJSONProperty("success")]
         public bool Success { get; set; }
+
+        [NetJSON.NetJSONProperty("transactionId")]
+        public string TransactionId { get; set; }
     }
 
     public class ErrorResponse

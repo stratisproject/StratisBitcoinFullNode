@@ -16,6 +16,7 @@ using Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers;
 using Stratis.SmartContracts;
 using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.Compilation;
+using Stratis.SmartContracts.Core.Receipts;
 using Stratis.SmartContracts.Core.State;
 using Xunit;
 
@@ -282,6 +283,9 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 scReceiver.GenerateSmartContractStratisWithMiner(2);
                 TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(scReceiver, scSender));
 
+                var receiptStorage = scReceiver.FullNode.NodeService<ISmartContractReceiptStorage>();
+                Assert.NotNull(receiptStorage.GetReceipt(response.TransactionId));
+
                 // Check wallet history is updating correctly
                 result = (JsonResult)senderWalletController.GetHistory(new WalletHistoryRequest
                 {
@@ -354,6 +358,11 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 });
                 walletHistoryModel = (WalletHistoryModel)result.Value;
                 Assert.Equal(2, walletHistoryModel.AccountsHistoryModel.First().TransactionsHistory.Where(x => x.Type == TransactionItemType.Send).Count());
+
+                // Check receipts
+                var receiptResponse = (JsonResult) senderSmartContractsController.GetReceipt(callResponse.TransactionId.ToString());
+                var receiptModel = (ReceiptModel) receiptResponse.Value;
+                Assert.True(receiptModel.Successful);
             }
         }
 
@@ -479,6 +488,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 };
                 var endAuctionResult = (JsonResult)senderSmartContractsController.BuildCallSmartContractTransaction(endAuctionRequest);
                 var endAuctionResponse = (BuildCallContractTransactionResponse)endAuctionResult.Value;
+
                 senderWalletController.SendTransaction(new SendTransactionRequest
                 {
                     Hex = endAuctionResponse.Hex

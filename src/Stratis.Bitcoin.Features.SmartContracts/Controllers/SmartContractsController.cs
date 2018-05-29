@@ -20,6 +20,7 @@ using Stratis.Bitcoin.Utilities.JsonErrors;
 using Stratis.SmartContracts;
 using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.Backend;
+using Stratis.SmartContracts.Core.Receipts;
 using Stratis.SmartContracts.Core.Serialization;
 using Stratis.SmartContracts.Core.State;
 
@@ -37,6 +38,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Controllers
         private readonly IBroadcasterManager broadcasterManager;
         private readonly CoinType coinType;
         private readonly ILogger logger;
+        private readonly ISmartContractReceiptStorage receiptStorage;
         private readonly Network network;
         private readonly ContractStateRepositoryRoot stateRoot;
         private readonly IWalletManager walletManager;
@@ -48,10 +50,12 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Controllers
             IDateTimeProvider dateTimeProvider,
             ILoggerFactory loggerFactory,
             Network network,
+            ISmartContractReceiptStorage receiptStorage,
             ContractStateRepositoryRoot stateRoot,
             IWalletManager walletManager,
             IWalletTransactionHandler walletTransactionHandler)
         {
+            this.receiptStorage = receiptStorage;
             this.stateRoot = stateRoot;
             this.walletTransactionHandler = walletTransactionHandler;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
@@ -126,6 +130,31 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Controllers
             this.logger.LogTrace("(-){0}:{1}", nameof(storageValue), storageValue);
 
             return Json(GetStorageValue(request.DataType, storageValue).ToString());
+        }
+
+        [Route("receipt")]
+        [HttpGet]
+        public IActionResult GetReceipt([FromQuery] string txHash)
+        {
+            this.logger.LogTrace("(){0}:{1}", nameof(txHash), txHash);
+            if (!this.ModelState.IsValid)
+            {
+                this.logger.LogTrace("(-)[MODELSTATE_INVALID]");
+                return BuildErrorResponse(this.ModelState);
+            }
+
+            uint256 txHashNum = new uint256(txHash);
+            SmartContractReceipt receipt = this.receiptStorage.GetReceipt(txHashNum);
+
+            if (receipt == null)
+            {
+                this.logger.LogTrace("(-)[RECEIPT_NOT_FOUND]");
+                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, 
+                    "Receipt not found.",
+                    "Could not find a stored transaction for this hash.");
+            }
+
+            return Json(ReceiptModel.FromSmartContractReceipt(receipt, this.network));
         }
 
         [Route("build-create")]

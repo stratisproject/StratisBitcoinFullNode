@@ -624,7 +624,7 @@ namespace NBitcoin
                 Name = "SmartContractsTestNet",
                 RootFolderName = StratisRootFolderName,
                 DefaultConfigFilename = StratisDefaultConfigFilename,
-                Magic = 0x0709110C, //Incremented 17/05
+                Magic = 0x0709110D, //Incremented 28/05
                 alertPubKeyArray = Encoders.Hex.DecodeData("04302390343f91cc401d56d68b123028bf52e5fca1939df127f63c6467cdf9c8e2c14b61104cf817d0b780da337893ecc4aaff1309e536162dabbdb45200ca2b0a"),
                 DefaultPort = 18333,
                 RPCPort = 18332,
@@ -664,7 +664,7 @@ namespace NBitcoin
 
             network.genesis = CreateGenesisBlock(network.Consensus.ConsensusFactory, 1296688602, 414098458, 0x1d00ffff, 1, Money.Coins(50m));
             ((SmartContractBlockHeader)network.genesis.Header).HashStateRoot = new uint256("21B463E3B52F6201C0AD6C991BE0485B6EF8C092E64583FFA655CC1B171FE856");
-            network.genesis.Header.Nonce = 1;
+            network.genesis.Header.Nonce = 2; // Incremented 28/05
             network.Consensus.HashGenesisBlock = network.genesis.Header.GetHash();
 
             network.SeedNodes.Clear();
