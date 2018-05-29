@@ -80,7 +80,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                         services.AddSingleton<SmartContractBlockDefinition>();
                         services.AddSingleton<IMempoolValidator, SmartContractMempoolValidator>();
                         // Add rules
-                        ConsensusRuleUtils.AddExtraRules(services, new SmartContractRuleRegistration());
+                        services.AddConsensusRules(new SmartContractRuleRegistration());
                     });
             });
             return new SmartContractVmBuilder(fullNodeBuilder);
@@ -99,7 +99,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         /// Here we get an existing IRuleRegistration ServiceDescriptor, re-register it as its ConcreteType
         /// then replace the dependency on IRuleRegistration with our own implementation that depends on ConcreteType.
         /// </summary>
-        public static void AddExtraRules(IServiceCollection services, IAdditionalRuleRegistration rulesToAdd)
+        public static void AddConsensusRules(this IServiceCollection services, IAdditionalRuleRegistration rulesToAdd)
         {
             ServiceDescriptor existingService = services.FirstOrDefault(s => s.ServiceType == typeof(IRuleRegistration));
 

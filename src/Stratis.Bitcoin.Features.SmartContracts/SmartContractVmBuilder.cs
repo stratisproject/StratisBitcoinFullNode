@@ -42,7 +42,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                         // Add controller
                         services.AddSingleton<SmartContractsController>();
                         // Add rules
-                        ConsensusRuleUtils.AddExtraRules(services, new ReflectionRuleRegistration());
+                        services.AddConsensusRules(new ReflectionRuleRegistration());
                     });
             });
             return this.builder;
