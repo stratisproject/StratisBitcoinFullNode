@@ -37,8 +37,6 @@ namespace NBitcoin
     {
         private static readonly ConcurrentDictionary<string, Network> NetworksContainer = new ConcurrentDictionary<string, Network>();
 
-        private byte[] alertPubKeyArray;
-        private PubKey alertPubKey;
         private Block genesis;
         
         private Network()
@@ -50,18 +48,8 @@ namespace NBitcoin
             this.Base58Prefixes = new byte[12][];
             this.Bech32Encoders = new Bech32Encoder[2];
         }
-
-        public PubKey AlertPubKey
-        {
-            get
-            {
-                if (this.alertPubKey == null)
-                {
-                    this.alertPubKey = new PubKey(this.alertPubKeyArray);
-                }
-                return this.alertPubKey;
-            }
-        }
+        
+        public PubKey AlertPubKey { get; private set; }
 
         /// <summary> Maximal value for the calculated time offset. If the value is over this limit, the time syncing feature will be switched off. </summary>
         public int MaxTimeOffsetSeconds { get; private set; }
