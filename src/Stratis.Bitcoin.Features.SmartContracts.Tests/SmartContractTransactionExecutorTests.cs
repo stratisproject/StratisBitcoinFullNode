@@ -285,7 +285,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             transactionContext = new SmartContractTransactionContext(BlockHeight, CoinbaseAddress, MempoolFee, deserializedCreate.Sender, transaction);
 
-            executor = new CreateSmartContract(
+            var callExecutor = new CallSmartContract(
                 this.carrierSerializer,
                 this.keyEncodingStrategy,
                 this.loggerFactory,
@@ -303,7 +303,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             // for the method body to have finished execution while minimising the amount of time we spend 
             // running tests
             // If you're running with the debugger on this will obviously be a source of failures
-            result = RunWithTimeout(3, () => executor.Execute());
+            result = RunWithTimeout(3, () => callExecutor.Execute());
 
             Assert.IsType<OutOfGasException>(result.Exception);
             Assert.Equal(gasLimit, result.GasConsumed);
