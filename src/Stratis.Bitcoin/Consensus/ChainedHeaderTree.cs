@@ -576,7 +576,7 @@ namespace Stratis.Bitcoin.Consensus
     }
 
     /// <summary>
-    /// Represents the response form the <see cref="ChainedHeaderTree.ConnectNewHeaders"/> method.
+    /// Represents the result of the <see cref="ChainedHeaderTree.ConnectNewHeaders"/> method.
     /// </summary>
     public class ConnectedHeaders
     {
@@ -586,9 +586,10 @@ namespace Stratis.Bitcoin.Consensus
         /// <summary>The latest header in the chain of the list of headers we are interested in downloading.</summary>
         public ChainedHeader DownloadTo { get; set; }
 
-        /// <summary>Represent the chain of headers that are where added to the tree.</summary>
+        /// <summary>Represents the last processed header from the headers presented by the peer.</summary>
         public ChainedHeader Consumed { get; set; }
-
+        
+        /// <inheritdoc />
         public override string ToString()
         {
             return $"{nameof(this.DownloadFrom)}='{this.DownloadFrom}',{nameof(this.DownloadTo)}='{this.DownloadTo}',{nameof(this.Consumed)}='{this.Consumed}'";

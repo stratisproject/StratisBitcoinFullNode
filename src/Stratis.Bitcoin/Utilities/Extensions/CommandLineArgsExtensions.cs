@@ -4,7 +4,7 @@ using System.Linq;
 namespace Stratis.Bitcoin.Utilities.Extensions
 {
     /// <summary>
-    /// Extension methods for command line arguments .
+    /// Extension methods for command line arguments.
     /// </summary>
     [DebuggerStepThrough()]
     public static class CommandLineArgsExtensions
