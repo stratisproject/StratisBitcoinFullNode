@@ -126,7 +126,7 @@ namespace Stratis.Bitcoin.Consensus
                 throw new ConsensusException("INVALID_NETWORK");
             }
 
-            this.SetPeerTip(LocalPeerId, consensusTip.HashBlock);
+            this.AddOrReplacePeerTip(LocalPeerId, consensusTip.HashBlock);
 
             this.logger.LogTrace("(-)");
         }
@@ -158,7 +158,7 @@ namespace Stratis.Bitcoin.Consensus
 
             List<ChainedHeader> newChainedHeaders = this.CreateNewHeaders(headers);
 
-            this.SetPeerTip(networkPeerId, headers.Last().GetHash());
+            this.AddOrReplacePeerTip(networkPeerId, headers.Last().GetHash());
 
             if (newChainedHeaders == null)
             {
@@ -425,7 +425,7 @@ namespace Stratis.Bitcoin.Consensus
         /// </summary>
         /// <param name="networkPeerId">The peer id that sets a new tip.</param>
         /// <param name="newTip">The new tip to set.</param>
-        private void SetPeerTip(int networkPeerId, uint256 newTip)
+        private void AddOrReplacePeerTip(int networkPeerId, uint256 newTip)
         {
             this.logger.LogTrace("({0}:{1},{2}:'{3}')", nameof(networkPeerId), networkPeerId, nameof(newTip), newTip);
 
@@ -467,24 +467,24 @@ namespace Stratis.Bitcoin.Consensus
         {
             this.logger.LogTrace("({0}.{1}:{2})", nameof(headers), nameof(headers.Count), headers.Count);
 
-            if (!this.FindFirstNewHeader(headers, out int newHeaderPosition))
+            if (!this.TryFindNewHeader(headers, out int newHeaderIndex))
             {
                 this.logger.LogTrace("(-)[NO_NEW_HEADERS_FOUND]:null");
                 return null;
             }
 
-            ChainedHeader previousChainedHeader = this.chainedHeadersByHash.TryGet(headers[newHeaderPosition].HashPrevBlock);
-            if (previousChainedHeader == null)
+            ChainedHeader previousChainedHeader;
+            if (!this.chainedHeadersByHash.TryGetValue(headers[newHeaderIndex].HashPrevBlock, out previousChainedHeader))
             {
-                this.logger.LogTrace("Previous hash `{0}` of block hash `{1}` was not found.", headers[newHeaderPosition].GetHash(), headers[newHeaderPosition].HashPrevBlock);
+                this.logger.LogTrace("Previous hash `{0}` of block hash `{1}` was not found.", headers[newHeaderIndex].GetHash(), headers[newHeaderIndex].HashPrevBlock);
                 this.logger.LogTrace("(-)[PREVIOUS_HEADER_NOT_FOUND]");
                 throw new ConnectHeaderException();
             }
 
             var newChainedHeaders = new List<ChainedHeader>();
 
-            ChainedHeader newChainedHeader = this.CreateAndValidateNewChainedHeader(newChainedHeaders, headers[newHeaderPosition], previousChainedHeader);
-            newHeaderPosition++;
+            ChainedHeader newChainedHeader = this.CreateAndValidateNewChainedHeader(newChainedHeaders, headers[newHeaderIndex], previousChainedHeader);
+            newHeaderIndex++;
             this.logger.LogTrace("New chained header was added to the tree '{0}'.", newChainedHeader);
 
             try
@@ -493,9 +493,9 @@ namespace Stratis.Bitcoin.Consensus
 
                 previousChainedHeader = newChainedHeader;
 
-                for (; newHeaderPosition < headers.Count; newHeaderPosition++)
+                for (; newHeaderIndex < headers.Count; newHeaderIndex++)
                 {
-                    newChainedHeader = this.CreateAndValidateNewChainedHeader(newChainedHeaders, headers[newHeaderPosition], previousChainedHeader);
+                    newChainedHeader = this.CreateAndValidateNewChainedHeader(newChainedHeaders, headers[newHeaderIndex], previousChainedHeader);
                     this.logger.LogTrace("New chained header was added to the tree '{0}'.", newChainedHeader);
 
                     previousChainedHeader = newChainedHeader;
@@ -528,17 +528,17 @@ namespace Stratis.Bitcoin.Consensus
             return newChainedHeader;
         }
 
-        private bool FindFirstNewHeader(List<BlockHeader> headers, out int newHeaderPosition)
+        private bool TryFindNewHeader(List<BlockHeader> headers, out int newHeaderIndex)
         {
             this.logger.LogTrace("({0}.{1}:{2})", nameof(headers), nameof(headers.Count), headers.Count);
 
-            for (newHeaderPosition = 0; newHeaderPosition < headers.Count; newHeaderPosition++)
+            for (newHeaderIndex = 0; newHeaderIndex < headers.Count; newHeaderIndex++)
             {
-                uint256 currentBlockHash = headers[newHeaderPosition].GetHash();
+                uint256 currentBlockHash = headers[newHeaderIndex].GetHash();
                 if (!this.chainedHeadersByHash.ContainsKey(currentBlockHash))
                 {
                     this.logger.LogTrace("A new header with hash '{0}' was found that is not connected to the tree.", currentBlockHash);
-                    this.logger.LogTrace("(-):true,{0}:{1}", nameof(newHeaderPosition), newHeaderPosition);
+                    this.logger.LogTrace("(-):true,{0}:{1}", nameof(newHeaderIndex), newHeaderIndex);
                     return true;
                 }
             }
