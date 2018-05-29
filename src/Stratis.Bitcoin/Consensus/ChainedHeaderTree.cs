@@ -1,36 +1,56 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Configuration.Settings;
-using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.Utilities;
-using Stratis.Bitcoin.Utilities.Extensions;
 
 namespace Stratis.Bitcoin.Consensus
 {
+    /// <summary>
+    /// TODO comment this interface
+    /// </summary>
     public interface IChainedHeaderValidator
     {
         void Validate(ChainedHeader chainedHeader);
     }
 
     /// <summary>
-    /// A tree structure of <see cref="ChainedHeader "/> elements.
+    /// Tree of chained block headers that are being claimed by the connected peers and the node itself.
+    /// It represents all chains we potentially can sync with.
     /// </summary>
     /// <remarks>
-    /// A blockchain can have multiple versions of the chain, with only one being the longest chain (or the chain with most proof).
-    /// While this is not ideal it can happen naturally or maliciously, to be able to find the best chain we have to keep track of all chains we discover.
-    /// Only one chain will represent the tip of the blockchain. 
+    /// <para>
+    /// View of the chains that are presented by connected peers might be incomplete because we always
+    /// receive only chunk of headers claimed by the peer in one message.
+    /// </para>
+    /// <para>
+    /// It is a role of the consensus manager to decide which of the presented chains is going to be treated as our best chain.
+    /// <see cref="ChainedHeaderTree"/> only advices which chains it might be interesting to download.
+    /// </para>
+    /// <para>
+    /// This class is not thread safe and it the role of the component that uses this class to prevent race conditions.
+    /// </para>
     /// </remarks>
     public sealed class ChainedHeaderTree
     {
+        /// <inheritdoc cref="Network"/>
         private readonly Network network;
+
+        /// <inheritdoc cref="IChainedHeaderValidator"/>
         private readonly IChainedHeaderValidator chainedHeaderValidator;
+
+        /// <inheritdoc cref="ILogger"/>
         private readonly ILogger logger;
+
+        /// <inheritdoc cref="ICheckpoints"/>
         private readonly ICheckpoints checkpoints;
+
+        /// <inheritdoc cref="IChainState"/>
         private readonly IChainState chainState;
+
+        /// <inheritdoc cref="ConsensusSettings"/>
         private readonly ConsensusSettings consensusSettings;
 
         /// <summary>A special peer identifier that represents our local node.</summary>
