@@ -56,15 +56,23 @@ namespace Stratis.Bitcoin.Consensus
         /// <summary>A special peer identifier that represents our local node.</summary>
         internal const int LocalPeerId = -1;
 
-        /// <summary>A list of headers that represent the tips of peers.</summary>
+        /// <summary>Lists of peer identifiers mapped by hashes of the block headers that are considered to be their tips.</summary>
+        /// <remarks>
+        /// During the processing of new data, an identifier of a single peer may temporarily appear
+        /// on two different lists representing different hashes.
+        /// </remarks>
         private readonly Dictionary<uint256, HashSet<int>> peerIdsByTipHash;
 
-        /// <summary>A list of peer identifiers that map to the peers tip has.</summary>
+        /// <summary>A list of peer identifiers that are mapped to their tips.</summary>
         private readonly Dictionary<int, uint256> peerTipsByPeerId;
 
-        /// <summary>An indexed collection of <see cref="ChainedHeader"/> that represents a tree of chains.</summary>
+        /// <summary>
+        /// Chained headers mapped by their hashes.
+        /// Every chained header that is connected to the tree has to have its hash in this dictionary.
+        /// </summary>
         private readonly Dictionary<uint256, ChainedHeader> chainedHeadersByHash;
 
+        //TODO remove these and replace with reflection because they are for testing purposes.
         internal Dictionary<uint256, ChainedHeader> GetChainedHeadersByHash => this.chainedHeadersByHash;
         internal Dictionary<uint256, HashSet<int>> GetPeerIdsByTipHash => this.peerIdsByTipHash;
         internal Dictionary<int, uint256> GetPeerTipsByPeerId => this.peerTipsByPeerId;
@@ -90,7 +98,7 @@ namespace Stratis.Bitcoin.Consensus
         }
 
         /// <summary>
-        /// Initialize the tree with a <see cref="ChainedHeader"/> that is the tip of our best known consensus chain.
+        /// Initialize the tree with consensus tip.
         /// </summary>
         /// <param name="consensusTip">The consensus tip.</param>
         public void Initialize(ChainedHeader consensusTip)
@@ -117,15 +125,19 @@ namespace Stratis.Bitcoin.Consensus
         }
 
         /// <summary>
-        /// A new list of headers are presented from a given peer, the headers will try to be connected to the chain.
-        /// Headers that are interesting (i.e may extend our consensus tip) will marked to download there full blocks.
+        /// A new list of headers are presented by a peer, the headers will try to be connected to the tree.
+        /// Blocks associated with headers that are interesting (i.e. represent a chain with greater chainwork than our consensus tip)
+        /// will be requested for download.
         /// </summary>
         /// <remarks>
-        /// The headers are assumed to be consecutive in order. 
+        /// The headers are assumed to be in consecutive order.
         /// </remarks>
-        /// <param name="networkPeerId">The network id that is presenting this headers.</param>
+        /// <param name="networkPeerId">Id of a peer that presented the headers.</param>
         /// <param name="headers">The list of headers to connect to the chain tree.</param>
-        /// <returns>Indicators of what blocks need to be downloaded.</returns>
+        /// <returns>
+        /// Information about which blocks need to be downloaded together with information about which input headers were processed.
+        /// Only headers that we can validate will be processed. The rest of the headers will be submitted later again for processing.
+        /// </returns>
         public ConnectedHeaders ConnectNewHeaders(int networkPeerId, List<BlockHeader> headers)
         {
             Guard.NotNull(headers, nameof(headers));
