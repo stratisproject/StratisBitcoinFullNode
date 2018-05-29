@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using System.Linq;
+using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.Receipts;
@@ -12,6 +13,7 @@ namespace Stratis.SmartContracts.ReflectionExecutor
     /// </summary>
     public class ReflectionSmartContractExecutorFactory : ISmartContractExecutorFactory
     {
+        private readonly ISmartContractCarrierSerializer carrierSerializer;
         private readonly IKeyEncodingStrategy keyEncodingStrategy;
         private readonly ILoggerFactory loggerFactory;
         private readonly Network network;
@@ -19,12 +21,14 @@ namespace Stratis.SmartContracts.ReflectionExecutor
         private readonly SmartContractValidator validator;
 
         public ReflectionSmartContractExecutorFactory(
+            ISmartContractCarrierSerializer carrierSerializer,
             IKeyEncodingStrategy keyEncodingStrategy,
             ILoggerFactory loggerFactory,
             Network network,
             ISmartContractReceiptStorage receiptStorage,
             SmartContractValidator validator)
         {
+            this.carrierSerializer = carrierSerializer;
             this.keyEncodingStrategy = keyEncodingStrategy;
             this.loggerFactory = loggerFactory;
             this.network = network;
@@ -39,11 +43,46 @@ namespace Stratis.SmartContracts.ReflectionExecutor
         /// </para>
         /// </summary>
         public ISmartContractExecutor CreateExecutor(
-            ISmartContractCarrier carrier,
+            ulong blockHeight,
+            uint160 coinbaseAddress,
             Money mempoolFee,
-            IContractStateRepository stateRepository)
+            uint160 sender,
+            IContractStateRepository stateRepository,
+            Transaction transaction)
         {
-            return SmartContractExecutor.Initialize(carrier, this.network, this.receiptStorage, stateRepository, this.validator, this.keyEncodingStrategy, this.loggerFactory, mempoolFee);
+            TxOut smartContractTxOut = transaction.Outputs.First(txOut => txOut.ScriptPubKey.IsSmartContractExec);
+            if (smartContractTxOut.ScriptPubKey.IsSmartContractCreate)
+            {
+                return new CreateSmartContract(
+                    blockHeight,
+                    this.carrierSerializer,
+                    coinbaseAddress,
+                    this.keyEncodingStrategy,
+                    this.loggerFactory,
+                    mempoolFee,
+                    this.network,
+                    this.receiptStorage,
+                    sender,
+                    stateRepository,
+                    transaction,
+                    this.validator
+                );
+            }
+            
+            return new CallSmartContract(
+                blockHeight,
+                this.carrierSerializer,
+                coinbaseAddress,
+                this.keyEncodingStrategy,
+                this.loggerFactory,
+                mempoolFee,
+                this.network,
+                this.receiptStorage,
+                sender,
+                stateRepository,
+                transaction,
+                this.validator
+                );
         }
     }
 }

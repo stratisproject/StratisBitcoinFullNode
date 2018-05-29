@@ -21,14 +21,12 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         private uint160 coinbaseAddress;
         private readonly CoinView coinView;
         private readonly ISmartContractExecutorFactory executorFactory;
-        private readonly ISmartContractCarrierSerializer carrierSerializer;
         private readonly ILogger logger;
         private readonly List<TxOut> refundOutputs = new List<TxOut>();
         private readonly ContractStateRepositoryRoot stateRoot;
         private ContractStateRepositoryRoot stateSnapshot;
 
         public SmartContractBlockDefinition(
-            ISmartContractCarrierSerializer carrierSerializer,
             CoinView coinView,
             IConsensusLoop consensusLoop,
             IDateTimeProvider dateTimeProvider,
@@ -40,7 +38,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             ContractStateRepositoryRoot stateRoot)
             : base(consensusLoop, dateTimeProvider, loggerFactory, mempool, mempoolLock, network)
         {
-            this.carrierSerializer = carrierSerializer;
             this.coinView = coinView;
             this.executorFactory = executorFactory;
             this.logger = loggerFactory.CreateLogger(this.GetType());
@@ -112,8 +109,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         /// <remarks>TODO: At some point we need to change height to a ulong.</remarks> 
         private void AddContractToBlock(TxMempoolEntry mempoolEntry)
         {
-            var carrier = this.carrierSerializer.Deserialize(mempoolEntry.Transaction);
-
             GetSenderUtil.GetSenderResult getSenderResult = GetSenderUtil.GetSender(this.Network, mempoolEntry.Transaction, this.coinView, this.inBlock.Select(x => x.Transaction).ToList());
 
             if (!getSenderResult.Success)
@@ -121,10 +116,15 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                 throw new ConsensusErrorException(new ConsensusError("sc-block-assembler-addcontracttoblock", getSenderResult.Error));
             }
 
-            carrier.Sender = getSenderResult.Sender;
+            ISmartContractExecutor executor = this.executorFactory.CreateExecutor(
+                (ulong) this.height,
+                this.coinbaseAddress,
+                mempoolEntry.Fee,
+                getSenderResult.Sender,
+                this.stateSnapshot,
+                mempoolEntry.Transaction);
 
-            ISmartContractExecutor executor = this.executorFactory.CreateExecutor(carrier, mempoolEntry.Fee, this.stateSnapshot);
-            ISmartContractExecutionResult result = executor.Execute((ulong)this.height, this.coinbaseAddress);
+            ISmartContractExecutionResult result = executor.Execute();
 
             // Add fee from the execution result to the block.
             this.BlockTemplate.VTxFees.Add(result.Fee);

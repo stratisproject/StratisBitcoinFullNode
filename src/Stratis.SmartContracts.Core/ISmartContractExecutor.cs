@@ -1,9 +1,7 @@
-﻿using NBitcoin;
-
-namespace Stratis.SmartContracts.Core
+﻿namespace Stratis.SmartContracts.Core
 {
     public interface ISmartContractExecutor
     {
-        ISmartContractExecutionResult Execute(ulong blockHeight, uint160 coinbaseAddress);
+        ISmartContractExecutionResult Execute();
     }
 }

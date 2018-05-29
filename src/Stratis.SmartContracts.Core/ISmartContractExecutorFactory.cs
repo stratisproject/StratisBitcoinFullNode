@@ -6,8 +6,11 @@ namespace Stratis.SmartContracts.Core
     public interface ISmartContractExecutorFactory
     {
         ISmartContractExecutor CreateExecutor(
-            ISmartContractCarrier carrier,
+            ulong blockHeight,
+            uint160 coinbaseAddress,
             Money mempoolFee,
-            IContractStateRepository stateRepository);
+            uint160 sender,
+            IContractStateRepository stateRepository,
+            Transaction transaction);
     }
 }

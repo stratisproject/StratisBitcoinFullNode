@@ -21,7 +21,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         private readonly ContractStateRepositoryRoot originalStateRoot;
         private readonly CoinView coinView;
         private readonly ISmartContractExecutorFactory executorFactory;
-        private readonly ISmartContractCarrierSerializer carrierSerializer;
         private List<Transaction> blockTxsProcessed;
         private Transaction generatedTransaction;
         private uint refundCounter;
@@ -33,8 +32,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             IDateTimeProvider dateTimeProvider,
             ILoggerFactory loggerFactory,
             ContractStateRepositoryRoot stateRoot,
-            ISmartContractExecutorFactory executorFactory,
-            ISmartContractCarrierSerializer carrierSerializer)
+            ISmartContractExecutorFactory executorFactory)
             : base(network, checkpoints, dateTimeProvider, loggerFactory)
         {
             this.coinView = coinView;
@@ -42,7 +40,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             this.originalStateRoot = stateRoot;
             this.generatedTransaction = null;
             this.executorFactory = executorFactory;
-            this.carrierSerializer = carrierSerializer;
             this.refundCounter = 1;
         }
 
@@ -240,16 +237,12 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         {
             ulong blockHeight = Convert.ToUInt64(context.BlockValidationContext.ChainedHeader.Height);
 
-            var smartContractCarrier = this.carrierSerializer.Deserialize(transaction);
-
             GetSenderUtil.GetSenderResult getSenderResult = GetSenderUtil.GetSender(this.network, transaction, this.coinView, this.blockTxsProcessed);
 
             if (!getSenderResult.Success)
             {
                 throw new ConsensusErrorException(new ConsensusError("sc-consensusvalidator-executecontracttransaction-sender", getSenderResult.Error));
             }
-
-            smartContractCarrier.Sender = getSenderResult.Sender;
 
             Script coinbaseScriptPubKey = context.BlockValidationContext.Block.Transactions[0].Outputs[0].ScriptPubKey;
 
@@ -260,13 +253,17 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                 throw new ConsensusErrorException(new ConsensusError("sc-consensusvalidator-executecontracttransaction-coinbase", getCoinbaseResult.Error));
             }
 
-            uint160 coinbaseAddress = getCoinbaseResult.Sender;
-
             Money mempoolFee = transaction.GetFee(context.Set);
 
-            ISmartContractExecutor executor = this.executorFactory.CreateExecutor(smartContractCarrier, mempoolFee, this.originalStateRoot);
+            ISmartContractExecutor executor = this.executorFactory.CreateExecutor(
+                blockHeight,
+                getCoinbaseResult.Sender,
+                mempoolFee,
+                getSenderResult.Sender,
+                this.originalStateRoot,
+                transaction);
 
-            ISmartContractExecutionResult result = executor.Execute(blockHeight, coinbaseAddress);
+            ISmartContractExecutionResult result = executor.Execute();
 
             ValidateRefunds(result.Refunds, context.BlockValidationContext.Block.Transactions[0]);
 

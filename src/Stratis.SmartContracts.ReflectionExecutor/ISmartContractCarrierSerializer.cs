@@ -1,6 +1,6 @@
 ﻿using NBitcoin;
 
-namespace Stratis.SmartContracts.Core
+namespace Stratis.SmartContracts.ReflectionExecutor
 {
     public interface ISmartContractCarrierSerializer
     {

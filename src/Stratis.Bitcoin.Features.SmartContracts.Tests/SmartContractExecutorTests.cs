@@ -26,7 +26,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         private readonly SmartContractValidator validator;
         private readonly SmartContractCarrierSerializer carrierSerializer;
         private readonly ISmartContractReceiptStorage receiptStorage;
-
         public SmartContractExecutorTests()
         {
             this.keyEncodingStrategy = BasicKeyEncodingStrategy.Default;
@@ -68,8 +67,19 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             this.state.SetCode(new uint160(1), contractExecutionCode);
 
-            SmartContractExecutor executor = SmartContractExecutor.Initialize(deserializedCall, this.network, this.receiptStorage, this.state, new SmartContractValidator(new ISmartContractValidator[] { }), this.keyEncodingStrategy, this.loggerFactory, new Money(10000));
-            ISmartContractExecutionResult result = executor.Execute(0, deserializedCall.ContractAddress);
+            SmartContractExecutor executor = new CallSmartContract(
+                0,
+                this.carrierSerializer,
+                deserializedCall.ContractAddress,
+                this.keyEncodingStrategy,
+                this.loggerFactory,
+                new Money(10000),
+                this.network,
+                this.receiptStorage,
+                deserializedCall.Sender,
+                this.state,
+                transactionCall, this.validator);
+            ISmartContractExecutionResult result = executor.Execute();
 
             Assert.True(result.Revert);
             Assert.NotNull(result.InternalTransaction);
@@ -128,7 +138,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             var carrier = SmartContractCarrier.CallContract(1, toAddress, "TestMethod", 1, (Gas)10000);
             carrier.Sender = new uint160(2);
 
-            var executor = new CallSmartContract(carrier, this.keyEncodingStrategy, this.loggerFactory, new Money(10000), this.network, this.receiptStorage, state, new SmartContractValidator(new ISmartContractValidator[] { }));
+            var executor = new CallSmartContract(
+                carrier, this.keyEncodingStrategy, this.loggerFactory, new Money(10000), this.network, this.receiptStorage, state, new SmartContractValidator(new ISmartContractValidator[] { }));
 
             ISmartContractExecutionResult result = executor.Execute(0, toAddress);
             Assert.IsType<SmartContractDoesNotExistException>(result.Exception);
