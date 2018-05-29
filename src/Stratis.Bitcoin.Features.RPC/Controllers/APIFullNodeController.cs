@@ -45,6 +45,10 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
 
         private readonly IConnectionManager connectionManager;
 
+        private readonly IFullNode fullNode;
+
+        private readonly NodeSettings nodeSettings;
+
         public APIFullNodeController(
             ILoggerFactory loggerFactory,
             Network network,
@@ -69,6 +73,8 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
             this.chain = chain;
             this.chainState = chainState;
             this.connectionManager = connectionManager;
+            this.fullNode = fullNode;
+            this.nodeSettings = nodeSettings;
         }
 
         /// <summary>
@@ -79,7 +85,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
         [HttpGet]
         public async Task<IActionResult> StopAsync()
         {
-            await SharedRemoteMethods.Stop(this.FullNode).ConfigureAwait(false);
+            await SharedRemoteMethods.Stop(this.fullNode).ConfigureAwait(false);
             return this.NoContent();
         }
 
@@ -96,7 +102,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
             try
             {
                 var result = await SharedRemoteMethods.GetRawTransactionAsync(request.txid, request.verbose, this.pooledTransaction,
-                    this.FullNode, this.network, this.chainState, this.chain).ConfigureAwait(false);
+                    this.fullNode, this.network, this.chainState, this.chain).ConfigureAwait(false);
                 return this.Json(result);
             } 
             catch (Exception e)
@@ -160,8 +166,8 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
         {
             try
             {
-                var result = SharedRemoteMethods.GetInfo(this.network, this.FullNode,
-                    this.Settings, this.chainState, this.connectionManager,
+                var result = SharedRemoteMethods.GetInfo(this.network, this.fullNode,
+                    this.nodeSettings, this.chainState, this.connectionManager,
                     this.networkDifficulty);
                 return this.Json(result);
             }

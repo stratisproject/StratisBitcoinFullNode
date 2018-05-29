@@ -62,13 +62,15 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
             IFullNode fullNode = null;
             this.controller = new APIFullNodeController(this.LoggerFactory.Object, this.network, this.chain, this.chainState.Object, this.connectionManager.Object, null, this.pooledGetUnspentTransaction.Object, this.getUnspentTransaction.Object, this.networkDifficulty.Object,
                 this.consensusLoop.Object, fullNode, this.nodeSettings);
+
             await this.controller.StopAsync().ConfigureAwait(false);
         }
 
         [Fact]
         public async Task Stop_WithFullNode_DisposesFullNodeAsync()
         {
-            await this.controller.StopAsync().ConfigureAwait(false);
+            var result = await this.controller.StopAsync().ConfigureAwait(false);
+
             this.fullNode.Verify(f => f.Dispose());
         }
 
@@ -160,7 +162,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
                 txid = txId.ToString()
             };
 
-            var json = (JsonResult)await this.controller.GetRawTransactionAsync(request).ConfigureAwait(false);
+            var json = (JsonResult) await this.controller.GetRawTransactionAsync(request).ConfigureAwait(false);
             TransactionBriefModel resultModel = (TransactionBriefModel)json.Value;
 
             Assert.NotNull(resultModel);
@@ -588,6 +590,8 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
                 .Returns(this.chain.Tip);
             this.connectionManager.Setup(c => c.ConnectedPeers)
                 .Returns(new TestReadOnlyNetworkPeerCollection());
+            this.controller = new APIFullNodeController(this.LoggerFactory.Object, this.network, this.chain, this.chainState.Object, this.connectionManager.Object, null, this.pooledGetUnspentTransaction.Object, this.getUnspentTransaction.Object, this.networkDifficulty.Object,
+                this.consensusLoop.Object, this.fullNode.Object, this.nodeSettings);
 
             var json = (JsonResult)this.controller.GetInfo();
             GetInfoModel resultModel = (GetInfoModel)json.Value;
