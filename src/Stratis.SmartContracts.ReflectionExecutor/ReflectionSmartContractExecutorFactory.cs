@@ -1,5 +1,4 @@
-﻿using System.Linq;
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.Receipts;
@@ -43,44 +42,31 @@ namespace Stratis.SmartContracts.ReflectionExecutor
         /// </para>
         /// </summary>
         public ISmartContractExecutor CreateExecutor(
-            ulong blockHeight,
-            uint160 coinbaseAddress,
-            Money mempoolFee,
-            uint160 sender,
             IContractStateRepository stateRepository,
-            Transaction transaction)
+            ISmartContractTransactionContext transactionContext)
         {
-            TxOut smartContractTxOut = transaction.Outputs.First(txOut => txOut.ScriptPubKey.IsSmartContractExec);
-            if (smartContractTxOut.ScriptPubKey.IsSmartContractCreate)
+            if (transactionContext.IsCreate)
             {
                 return new CreateSmartContract(
-                    blockHeight,
                     this.carrierSerializer,
-                    coinbaseAddress,
                     this.keyEncodingStrategy,
                     this.loggerFactory,
-                    mempoolFee,
                     this.network,
                     this.receiptStorage,
-                    sender,
                     stateRepository,
-                    transaction,
+                    transactionContext,
                     this.validator
-                );
+                    );
             }
-            
+
             return new CallSmartContract(
-                blockHeight,
                 this.carrierSerializer,
-                coinbaseAddress,
                 this.keyEncodingStrategy,
                 this.loggerFactory,
-                mempoolFee,
                 this.network,
                 this.receiptStorage,
-                sender,
                 stateRepository,
-                transaction,
+                transactionContext,
                 this.validator
                 );
         }

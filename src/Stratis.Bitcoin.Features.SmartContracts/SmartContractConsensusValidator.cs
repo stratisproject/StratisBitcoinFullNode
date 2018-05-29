@@ -235,6 +235,22 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         /// </summary>
         private void ExecuteContractTransaction(RuleContext context, Transaction transaction)
         {
+            ISmartContractTransactionContext txContext = GetSmartContractTransactionContext(context, transaction);
+            ISmartContractExecutor executor = this.executorFactory.CreateExecutor(this.originalStateRoot, txContext);
+
+            ISmartContractExecutionResult result = executor.Execute();
+
+            ValidateRefunds(result.Refunds, context.BlockValidationContext.Block.Transactions[0]);
+
+            if (result.InternalTransaction != null)
+                this.generatedTransaction = result.InternalTransaction;
+        }
+
+        /// <summary>
+        /// Retrieves the context object to be given to the contract executor.
+        /// </summary>
+        private ISmartContractTransactionContext GetSmartContractTransactionContext(RuleContext context, Transaction transaction)
+        {
             ulong blockHeight = Convert.ToUInt64(context.BlockValidationContext.ChainedHeader.Height);
 
             GetSenderUtil.GetSenderResult getSenderResult = GetSenderUtil.GetSender(this.network, transaction, this.coinView, this.blockTxsProcessed);
@@ -255,22 +271,12 @@ namespace Stratis.Bitcoin.Features.SmartContracts
 
             Money mempoolFee = transaction.GetFee(context.Set);
 
-            ISmartContractExecutor executor = this.executorFactory.CreateExecutor(
-                blockHeight,
-                getCoinbaseResult.Sender,
-                mempoolFee,
-                getSenderResult.Sender,
-                this.originalStateRoot,
-                transaction);
+            return new SmartContractTransactionContext(blockHeight, getCoinbaseResult.Sender, mempoolFee, getSenderResult.Sender, transaction);
+        } 
 
-            ISmartContractExecutionResult result = executor.Execute();
-
-            ValidateRefunds(result.Refunds, context.BlockValidationContext.Block.Transactions[0]);
-
-            if (result.InternalTransaction != null)
-                this.generatedTransaction = result.InternalTransaction;
-        }
-
+        /// <summary>
+        /// Throws a consensus exception if the gas refund inside the block is different to what this node calculated during execution.
+        /// </summary>
         private void ValidateRefunds(List<TxOut> refunds, Transaction coinbaseTransaction)
         {
             foreach (TxOut refund in refunds)

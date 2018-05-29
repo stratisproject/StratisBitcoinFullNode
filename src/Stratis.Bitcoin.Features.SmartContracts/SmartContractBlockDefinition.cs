@@ -116,13 +116,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                 throw new ConsensusErrorException(new ConsensusError("sc-block-assembler-addcontracttoblock", getSenderResult.Error));
             }
 
-            ISmartContractExecutor executor = this.executorFactory.CreateExecutor(
-                (ulong) this.height,
-                this.coinbaseAddress,
-                mempoolEntry.Fee,
-                getSenderResult.Sender,
-                this.stateSnapshot,
-                mempoolEntry.Transaction);
+            ISmartContractTransactionContext transactionContext = new SmartContractTransactionContext((ulong) this.height, this.coinbaseAddress, mempoolEntry.Fee, getSenderResult.Sender, mempoolEntry.Transaction);
+            ISmartContractExecutor executor = this.executorFactory.CreateExecutor(this.stateSnapshot, transactionContext);
 
             ISmartContractExecutionResult result = executor.Execute();
 

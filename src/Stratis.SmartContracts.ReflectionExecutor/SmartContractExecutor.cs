@@ -20,6 +20,7 @@ namespace Stratis.SmartContracts.ReflectionExecutor
     /// </summary>
     public abstract class SmartContractExecutor : ISmartContractExecutor
     {
+        protected readonly ISmartContractTransactionContext transactionContext;
         protected readonly SmartContractCarrier carrier;
         protected readonly IGasMeter gasMeter;
         protected readonly Network network;
@@ -31,38 +32,28 @@ namespace Stratis.SmartContracts.ReflectionExecutor
 
         protected readonly ISmartContractReceiptStorage receiptStorage;
 
-        protected ulong blockHeight;
-        protected uint160 coinbaseAddress;
-        protected Money mempoolFee;
-
         internal ISmartContractExecutionResult Result { get; set; }
 
 
         protected SmartContractExecutor(
-            ulong blockHeight,
             ISmartContractCarrierSerializer carrierSerializer,
-            uint160 coinbaseAddress,
             IKeyEncodingStrategy keyEncodingStrategy,
             ILoggerFactory loggerFactory,
-            Money mempoolFee,
             Network network,
             ISmartContractReceiptStorage receiptStorage,
-            uint160 sender,
             IContractStateRepository stateSnapshot,
-            Transaction transaction,
+            ISmartContractTransactionContext transactionContext,
             SmartContractValidator validator)
         {
-            this.blockHeight = blockHeight;
-            this.carrier = (SmartContractCarrier) carrierSerializer.Deserialize(transaction);
-            this.carrier.Sender = sender;
-            this.coinbaseAddress = coinbaseAddress;
+            this.carrier = (SmartContractCarrier) carrierSerializer.Deserialize(transactionContext.Transaction);
+            this.carrier.Sender = transactionContext.Sender;
             this.gasMeter = new GasMeter(this.carrier.GasLimit);
             this.keyEncodingStrategy = keyEncodingStrategy;
             this.loggerFactory = loggerFactory;
             this.logger = loggerFactory.CreateLogger(this.GetType());
-            this.mempoolFee = mempoolFee;
             this.network = network;
             this.stateSnapshot = stateSnapshot.StartTracking();
+            this.transactionContext = transactionContext;
             this.receiptStorage = receiptStorage;
             this.validator = validator;
         }
@@ -104,13 +95,12 @@ namespace Stratis.SmartContracts.ReflectionExecutor
         /// </summary>
         private void PostExecute()
         {
-            if (this.mempoolFee != null)
-                new SmartContractExecutorResultProcessor(this.Result, this.loggerFactory).Process(this.carrier, this.mempoolFee);
+            new SmartContractExecutorResultProcessor(this.Result, this.loggerFactory).Process(this.carrier, this.transactionContext.MempoolFee);
 
             try
             {
-                this.logger.LogTrace("Save Receipt : {0}:{1},{2}:{3},{4}:{5}", nameof(this.carrier.TransactionHash), this.carrier.TransactionHash, nameof(this.blockHeight), this.blockHeight, nameof(this.carrier.ContractAddress), this.carrier.ContractAddress);
-                this.receiptStorage.SaveReceipt(this.carrier.TransactionHash, this.blockHeight, this.Result, this.carrier.ContractAddress);
+                this.logger.LogTrace("Save Receipt : {0}:{1},{2}:{3},{4}:{5}", nameof(this.carrier.TransactionHash), this.carrier.TransactionHash, nameof(this.transactionContext.BlockHeight), this.transactionContext.BlockHeight, nameof(this.carrier.ContractAddress), this.carrier.ContractAddress);
+                this.receiptStorage.SaveReceipt(this.carrier.TransactionHash, this.transactionContext.BlockHeight, this.Result, this.carrier.ContractAddress);
             }
             catch (Exception e)
             {
@@ -139,19 +129,15 @@ namespace Stratis.SmartContracts.ReflectionExecutor
         private readonly ILogger logger;
 
         public CreateSmartContract(
-            ulong blockHeight,
             ISmartContractCarrierSerializer carrierSerializer,
-            uint160 coinbaseAddress,
             IKeyEncodingStrategy keyEncodingStrategy,
             ILoggerFactory loggerFactory,
-            Money mempoolFee,
             Network network,
             ISmartContractReceiptStorage receiptStorage,
-            uint160 sender,
             IContractStateRepository stateSnapshot,
-            Transaction transaction,
+            ISmartContractTransactionContext transactionContext,
             SmartContractValidator validator)
-            : base(blockHeight, carrierSerializer, coinbaseAddress, keyEncodingStrategy, loggerFactory, mempoolFee, network, receiptStorage, sender, stateSnapshot, transaction, validator)
+            : base(carrierSerializer, keyEncodingStrategy, loggerFactory, network, receiptStorage, stateSnapshot, transactionContext, validator)
         {
             this.logger = loggerFactory.CreateLogger(this.GetType());
         }
@@ -178,7 +164,7 @@ namespace Stratis.SmartContracts.ReflectionExecutor
                 return;
             }
 
-            var block = new Block(this.blockHeight, this.coinbaseAddress.ToAddress(this.network));
+            var block = new Block(this.transactionContext.BlockHeight, this.transactionContext.CoinbaseAddress.ToAddress(this.network));
             var executionContext = new SmartContractExecutionContext
             (
                 block,
@@ -225,19 +211,15 @@ namespace Stratis.SmartContracts.ReflectionExecutor
         private readonly ILogger logger;
 
         public CallSmartContract(
-            ulong blockHeight,
             ISmartContractCarrierSerializer carrierSerializer,
-            uint160 coinbaseAddress,
             IKeyEncodingStrategy keyEncodingStrategy,
             ILoggerFactory loggerFactory,
-            Money mempoolFee,
             Network network,
             ISmartContractReceiptStorage receiptStorage,
-            uint160 sender,
             IContractStateRepository stateSnapshot,
-            Transaction transaction,
+            ISmartContractTransactionContext transactionContext,
             SmartContractValidator validator)
-            : base(blockHeight, carrierSerializer, coinbaseAddress, keyEncodingStrategy, loggerFactory, mempoolFee, network, receiptStorage, sender, stateSnapshot, transaction, validator)
+            : base(carrierSerializer, keyEncodingStrategy, loggerFactory, network, receiptStorage, stateSnapshot, transactionContext, validator)
         {
             this.logger = loggerFactory.CreateLogger(this.GetType());
         }
@@ -273,7 +255,7 @@ namespace Stratis.SmartContracts.ReflectionExecutor
         {
             this.logger.LogTrace("()");
 
-            var block = new Block(this.blockHeight, this.coinbaseAddress.ToAddress(this.network));
+            var block = new Block(this.transactionContext.BlockHeight, this.transactionContext.CoinbaseAddress.ToAddress(this.network));
             var executionContext = new SmartContractExecutionContext
             (
                 block,
@@ -319,7 +301,7 @@ namespace Stratis.SmartContracts.ReflectionExecutor
             if (transfers != null && transfers.Any() || this.carrier.Value > 0)
             {
                 this.logger.LogTrace("[CREATE_CONDENSING_TX]:{0}={1},{2}={3}", nameof(transfers), transfers.Count, nameof(this.carrier.Value), this.carrier.Value);
-                var condensingTx = new CondensingTx(this.carrier.ContractAddress, this.loggerFactory, transfers, this.stateSnapshot, this.network, this.carrier.TransactionHash, this.carrier.Value, this.carrier.Nvout, this.carrier.Sender);
+                var condensingTx = new CondensingTx(this.carrier.ContractAddress, this.loggerFactory, transfers, this.stateSnapshot, this.network, this.transactionContext);
                 this.Result.InternalTransaction = condensingTx.CreateCondensingTransaction();
             }
 
@@ -339,7 +321,7 @@ namespace Stratis.SmartContracts.ReflectionExecutor
             if (this.carrier.Value > 0)
             {
                 this.logger.LogTrace("[CREATE_REFUND_TX]:{0}={1}", nameof(this.carrier.Value), this.carrier.Value);
-                Transaction tx = new CondensingTx(this.carrier.ContractAddress, this.loggerFactory, this.network, this.carrier.TransactionHash, this.carrier.Value, this.carrier.Nvout, this.carrier.Sender).CreateRefundTransaction();
+                Transaction tx = new CondensingTx(this.carrier.ContractAddress, this.loggerFactory, this.network, this.transactionContext).CreateRefundTransaction();
                 this.Result.InternalTransaction = tx;
             }
 
