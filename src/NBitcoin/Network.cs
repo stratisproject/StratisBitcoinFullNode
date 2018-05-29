@@ -3,47 +3,13 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Net;
 using System.Threading;
-using NBitcoin.BouncyCastle.Math;
 using NBitcoin.DataEncoders;
 using NBitcoin.Protocol;
 using NBitcoin.Stealth;
 
 namespace NBitcoin
 {
-    public class DNSSeedData
-    {
-        private IPAddress[] addresses;
-
-        public string Name { get; }
-
-        public string Host { get; }
-
-        public DNSSeedData(string name, string host)
-        {
-            this.Name = name;
-            this.Host = host;
-        }
-
-        public IPAddress[] GetAddressNodes()
-        {
-            if (this.addresses != null)
-            {
-                return this.addresses;
-            }
-
-            this.addresses = Dns.GetHostAddressesAsync(this.Host).GetAwaiter().GetResult();
-
-            return this.addresses;
-        }
-
-        public override string ToString()
-        {
-            return $"{this.Name}({this.Host})";
-        }
-    }
-
     public enum Base58Type
     {
         PUBKEY_ADDRESS,
@@ -65,173 +31,6 @@ namespace NBitcoin
     {
         WITNESS_PUBKEY_ADDRESS,
         WITNESS_SCRIPT_ADDRESS
-    }
-
-    public enum BuriedDeployments : int
-    {
-        /// <summary>
-        /// Height in coinbase
-        /// </summary>
-        BIP34,
-
-        /// <summary>
-        /// Height in OP_CLTV
-        /// </summary>
-        BIP65,
-
-        /// <summary>
-        /// Strict DER signature
-        /// </summary>
-        BIP66
-    }
-
-    public class Consensus
-    {
-        /// <summary>
-        /// An extension to <see cref="Consensus"/> to enable additional options to the consensus data.
-        /// </summary>
-        public class ConsensusOptions
-        {
-        }
-
-        public ConsensusOptions Options { get; set; }
-
-        public class BuriedDeploymentsArray
-        {
-            readonly Consensus parent;
-            readonly int[] heights;
-
-            public BuriedDeploymentsArray(Consensus parent)
-            {
-                this.parent = parent;
-                this.heights = new int[Enum.GetValues(typeof(BuriedDeployments)).Length];
-            }
-
-            public int this[BuriedDeployments index]
-            {
-                get { return this.heights[(int)index]; }
-                set { this.heights[(int)index] = value; }
-            }
-        }
-
-        public class BIP9DeploymentsArray
-        {
-            readonly Consensus parent;
-            readonly BIP9DeploymentsParameters[] parameters;
-
-            public BIP9DeploymentsArray(Consensus parent)
-            {
-                this.parent = parent;
-                this.parameters = new BIP9DeploymentsParameters[Enum.GetValues(typeof(BIP9Deployments)).Length];
-            }
-
-            public BIP9DeploymentsParameters this[BIP9Deployments index]
-            {
-                get { return this.parameters[(int) index]; }
-                set { this.parameters[(int) index] = value; }
-            }
-        }
-
-        public Consensus()
-        {
-            this.BuriedDeployments = new BuriedDeploymentsArray(this);
-            this.BIP9Deployments = new BIP9DeploymentsArray(this);
-
-            this.ConsensusFactory = new ConsensusFactory()
-            {
-                Consensus = this
-            };
-        }
-
-        public BuriedDeploymentsArray BuriedDeployments { get; }
-
-        public BIP9DeploymentsArray BIP9Deployments { get; }
-
-        public int SubsidyHalvingInterval { get; set; }
-
-        public int MajorityEnforceBlockUpgrade { get; set; }
-
-        public int MajorityRejectBlockOutdated { get; set; }
-
-        public int MajorityWindow { get; set; }
-
-        public uint256 BIP34Hash { get; set; }
-
-        public Target PowLimit { get; set; }
-
-        public TimeSpan PowTargetTimespan { get; set; }
-
-        public TimeSpan PowTargetSpacing { get; set; }
-
-        public bool PowAllowMinDifficultyBlocks { get; set; }
-
-        public bool PowNoRetargeting { get; set; }
-
-        public uint256 HashGenesisBlock { get; set; }
-
-        public uint256 MinimumChainWork { get; set; }
-
-        public long DifficultyAdjustmentInterval
-        {
-            get { return ((long) this.PowTargetTimespan.TotalSeconds / (long) this.PowTargetSpacing.TotalSeconds); }
-        }
-
-        public int MinerConfirmationWindow { get; set; }
-
-        public int RuleChangeActivationThreshold { get; set; }
-
-        /// <summary>
-        /// Specify the BIP44 coin type for this network
-        /// </summary>
-        public int CoinType { get; set; }
-
-        public BigInteger ProofOfStakeLimit { get; set; }
-
-        public BigInteger ProofOfStakeLimitV2 { get; set; }
-
-        /// <summary>PoW blocks are not accepted after block with height <see cref="Consensus.LastPOWBlock"/>.</summary>
-        public int LastPOWBlock { get; set; }
-
-        /// <summary>
-        /// An indicator whether this is a Proof Of Stake network.
-        /// </summary>
-        public bool IsProofOfStake { get; set; }
-
-        /// <summary>The default hash to use for assuming valid blocks.</summary>
-        public uint256 DefaultAssumeValid { get; set; }
-
-        /// <summary>
-        /// A factory that enables overloading base types.
-        /// </summary>
-        public ConsensusFactory ConsensusFactory { get; set; }
-
-        public virtual Consensus Clone()
-        {
-            return new Consensus
-            {
-                BIP34Hash = this.BIP34Hash,
-                HashGenesisBlock = this.HashGenesisBlock,
-                MajorityEnforceBlockUpgrade = this.MajorityEnforceBlockUpgrade,
-                MajorityRejectBlockOutdated = this.MajorityRejectBlockOutdated,
-                MajorityWindow = this.MajorityWindow,
-                MinerConfirmationWindow = this.MinerConfirmationWindow,
-                PowAllowMinDifficultyBlocks = this.PowAllowMinDifficultyBlocks,
-                PowLimit = this.PowLimit,
-                PowNoRetargeting = this.PowNoRetargeting,
-                PowTargetSpacing = this.PowTargetSpacing,
-                PowTargetTimespan = this.PowTargetTimespan,
-                RuleChangeActivationThreshold = this.RuleChangeActivationThreshold,
-                SubsidyHalvingInterval = this.SubsidyHalvingInterval,
-                MinimumChainWork = this.MinimumChainWork,
-                CoinType = this.CoinType,
-                IsProofOfStake = this.IsProofOfStake,
-                LastPOWBlock = this.LastPOWBlock,
-                ProofOfStakeLimit = this.ProofOfStakeLimit,
-                ProofOfStakeLimitV2 = this.ProofOfStakeLimitV2,
-                DefaultAssumeValid = this.DefaultAssumeValid,
-                ConsensusFactory = this.ConsensusFactory,
-            };
-        }
     }
 
     public partial class Network
@@ -375,15 +174,10 @@ namespace NBitcoin
             if (!type.HasValue)
                 throw new FormatException("Invalid Base58 version");
             if (type == Base58Type.PUBKEY_ADDRESS)
-                return new BitcoinPubKeyAddress(base58, this);
+                return this.CreateBitcoinPubKeyAddress(base58);
             if (type == Base58Type.SCRIPT_ADDRESS)
-                return new BitcoinScriptAddress(base58, this);
+                return this.CreateBitcoinScriptAddress(base58);
             throw new FormatException("Invalid Base58 version");
-        }
-
-        public BitcoinScriptAddress CreateBitcoinScriptAddress(string base58)
-        {
-            return new BitcoinScriptAddress(base58, this);
         }
 
         private Base58Type? GetBase58Type(string base58)
@@ -565,7 +359,7 @@ namespace NBitcoin
             if (type == Base58Type.EXT_SECRET_KEY)
                 return this.CreateBitcoinExtKey(base58);
             if (type == Base58Type.PUBKEY_ADDRESS)
-                return new BitcoinPubKeyAddress(base58, this);
+                return this.CreateBitcoinPubKeyAddress(base58);
             if (type == Base58Type.SCRIPT_ADDRESS)
                 return this.CreateBitcoinScriptAddress(base58);
             if (type == Base58Type.SECRET_KEY)
@@ -585,6 +379,11 @@ namespace NBitcoin
             if (type == Base58Type.COLORED_ADDRESS)
                 return this.CreateColoredAddress(base58);
             throw new NotSupportedException("Invalid Base58Data type : " + type.ToString());
+        }
+
+        public BitcoinScriptAddress CreateBitcoinScriptAddress(string base58)
+        {
+            return new BitcoinScriptAddress(base58, this);
         }
 
         private BitcoinColoredAddress CreateColoredAddress(string base58)
@@ -642,6 +441,21 @@ namespace NBitcoin
             return new BitcoinExtKey(base58, this);
         }
 
+        public BitcoinSecret CreateBitcoinSecret(Key key)
+        {
+            return new BitcoinSecret(key, this);
+        }
+
+        public BitcoinPubKeyAddress CreateBitcoinPubKeyAddress(KeyId dest)
+        {
+            return new BitcoinPubKeyAddress(dest, this);
+        }
+
+        public BitcoinPubKeyAddress CreateBitcoinPubKeyAddress(string base58)
+        {
+            return new BitcoinPubKeyAddress(base58, this);
+        }
+
         public override string ToString()
         {
             return this.Name;
@@ -670,16 +484,6 @@ namespace NBitcoin
         }
 
         /// <summary>
-        /// Get network from protocol magic number
-        /// </summary>
-        /// <param name="magic">Magic number</param>
-        /// <returns>The network, or null of the magic number does not match any network</returns>
-        public static Network GetNetwork(uint magic)
-        {
-            return GetNetworks().FirstOrDefault(r => r.Magic == magic);
-        }
-
-        /// <summary>
         /// Get network from name
         /// </summary>
         /// <param name="name">main,mainnet,testnet,test,testnet3,reg,regtest,seg,segnet</param>
@@ -697,40 +501,6 @@ namespace NBitcoin
 
             return null;
         }
-
-        public BitcoinSecret CreateBitcoinSecret(Key key)
-        {
-            return new BitcoinSecret(key, this);
-        }
-
-        public BitcoinPubKeyAddress CreateBitcoinAddress(KeyId dest)
-        {
-            if (dest == null)
-                throw new ArgumentNullException("dest");
-            return new BitcoinPubKeyAddress(dest, this);
-        }
-
-        private BitcoinAddress CreateBitcoinScriptAddress(ScriptId scriptId)
-        {
-            return new BitcoinScriptAddress(scriptId, this);
-        }
-        /*
-        public Message ParseMessage(byte[] bytes, ProtocolVersion version = ProtocolVersion.PROTOCOL_VERSION)
-        {
-            BitcoinStream bstream = new BitcoinStream(bytes);
-            Message message = new Message();
-
-            using (bstream.ProtocolVersionScope(version))
-            {
-                bstream.ReadWrite(ref message);
-            }
-
-            if (message.Magic != this.magic)
-                throw new FormatException("Unexpected magic field in the message");
-
-            return message;
-        }
-        */
 
         public Money GetReward(int nHeight)
         {
