@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
@@ -449,11 +450,13 @@ namespace Stratis.Bitcoin.Consensus
         /// </summary>
         /// <remarks>
         /// Header validation is performed on each header.
-        /// This will take in to account the MaxReorg protection rule, chains that are beyond the max reorg flag will be abandoned.
-        /// This will append to the ChainedHeader.Next of the previous header.
+        /// It will check if the first header violates maximum reorganization rule.
+        /// <para>When headers are connected the next pointers of their previous headers are updated.</para>  
         /// </remarks>
         /// <param name="headers">The new headers that should be connected to a chain.</param>
-        /// <returns>A list of newly created <see cref="ChainedHeader"/> or <c>null</c> if no new headers were found.</returns>
+        /// <returns>A list of newly created chained headers or <c>null</c> if no new headers were found.</returns>
+        /// <exception cref="MaxReorgViolationException">Thrown in case maximum reorganization rule is violated.</exception>
+        /// <exception cref="ConnectHeaderException">Thrown if it wasn't possible to connect the first new header.</exception>
         private List<ChainedHeader> CreateNewHeaders(List<BlockHeader> headers)
         {
             this.logger.LogTrace("({0}.{1}:{2})", nameof(headers), nameof(headers.Count), headers.Count);
@@ -467,7 +470,8 @@ namespace Stratis.Bitcoin.Consensus
             ChainedHeader previousChainedHeader = this.chainedHeadersByHash.TryGet(headers[newHeaderPosition].HashPrevBlock);
             if (previousChainedHeader == null)
             {
-                this.logger.LogTrace("(-)[PREVIOUS_HEADER_NOT_FOUND]: Previous hash `{0}` of block hash `{1}` was not found.", headers[newHeaderPosition].GetHash(), headers[newHeaderPosition].HashPrevBlock);
+                this.logger.LogTrace("Previous hash `{0}` of block hash `{1}` was not found.", headers[newHeaderPosition].GetHash(), headers[newHeaderPosition].HashPrevBlock);
+                this.logger.LogTrace("(-)[PREVIOUS_HEADER_NOT_FOUND]");
                 throw new ConnectHeaderException();
             }
 
@@ -477,16 +481,28 @@ namespace Stratis.Bitcoin.Consensus
             newHeaderPosition++;
             this.logger.LogTrace("New chained header was added to the tree '{0}'.", newChainedHeader);
 
-            this.CheckMaxReorgRuleViolated(newChainedHeader);
-
-            previousChainedHeader = newChainedHeader;
-
-            for (; newHeaderPosition < headers.Count; newHeaderPosition++)
+            try
             {
-                newChainedHeader = this.CreateAndValidateNewChainedHeader(newChainedHeaders, headers[newHeaderPosition], previousChainedHeader);
-                this.logger.LogTrace("New chained header was added to the tree '{0}'.", newChainedHeader);
+                this.CheckMaxReorgRuleViolated(newChainedHeader);
 
                 previousChainedHeader = newChainedHeader;
+
+                for (; newHeaderPosition < headers.Count; newHeaderPosition++)
+                {
+                    newChainedHeader = this.CreateAndValidateNewChainedHeader(newChainedHeaders, headers[newHeaderPosition], previousChainedHeader);
+                    this.logger.LogTrace("New chained header was added to the tree '{0}'.", newChainedHeader);
+
+                    previousChainedHeader = newChainedHeader;
+                }
+            }
+            catch
+            {
+                // Undo changes to the tree. This is necessary because the peer claim wasn't set to the last header yet.
+                // So in case of peer disconnection this branch wouldn't be removed.
+                this.RemoveUnclaimedBranch(newChainedHeader);
+
+                this.logger.LogTrace("(-)[VALIDATION_FAILED]");
+                throw;
             }
 
             this.logger.LogTrace("(-):*.{0}:{1}", nameof(newChainedHeaders.Count), newChainedHeaders.Count);
@@ -516,31 +532,29 @@ namespace Stratis.Bitcoin.Consensus
                 if (!this.chainedHeadersByHash.ContainsKey(currentBlockHash))
                 {
                     this.logger.LogTrace("A new header with hash '{0}' was found that is not connected to the tree.", currentBlockHash);
-                    this.logger.LogTrace("(-):true");
+                    this.logger.LogTrace("(-):true,{0}:{1}", nameof(newHeaderPosition), newHeaderPosition);
                     return true;
                 }
             }
 
-            this.logger.LogTrace("(-):false,{0}:{1}", nameof(newHeaderPosition), newHeaderPosition);
+            this.logger.LogTrace("(-):false");
             return false;
         }
 
         /// <summary>
-        /// Checks if <paramref name="chainedHeader"/> violates the max reorg rule, if networks.Consensus.MaxReorgLength is zero this logic is disabled.
+        /// Checks if <paramref name="chainedHeader"/> violates the max reorg rule, if <see cref="IChainState.MaxReorgLength"/> is zero this logic is disabled.
         /// </summary>
         /// <param name="chainedHeader">The header that needs to be checked for reorg.</param>
-        /// <returns><c>true</c> if maximum reorg rule violated, <c>false</c> otherwise.</returns>
+        /// <exception cref="MaxReorgViolationException">Thrown in case maximum reorganization rule is violated.</exception>
         private void CheckMaxReorgRuleViolated(ChainedHeader chainedHeader)
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(chainedHeader), chainedHeader);
-
-            ChainedHeader tip = this.chainState.ConsensusTip.FindFork(chainedHeader);
 
             uint maxReorgLength = this.chainState.MaxReorgLength;
             ChainedHeader consensusTip = this.chainState.ConsensusTip;
             if ((maxReorgLength != 0) && (consensusTip != null))
             {
-                ChainedHeader fork = tip.FindFork(consensusTip);
+                ChainedHeader fork = chainedHeader.FindFork(consensusTip);
 
                 if ((fork != null) && (fork != consensusTip))
                 {
