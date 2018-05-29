@@ -8,9 +8,9 @@ using Stratis.SmartContracts;
 using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.Receipts;
 using Stratis.SmartContracts.Core.State;
+using Stratis.SmartContracts.Core.Validation;
 using Stratis.SmartContracts.ReflectionExecutor;
 using Stratis.SmartContracts.ReflectionExecutor.Compilation;
-using Stratis.SmartContracts.ReflectionExecutor.ContractValidation;
 using Stratis.SmartContracts.ReflectionExecutor.Exceptions;
 using Stratis.SmartContracts.ReflectionExecutor.Serialization;
 using Xunit;
@@ -19,6 +19,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 {
     public sealed class SmartContractExecutorTests
     {
+        private const ulong BlockHeight = 0;
+        private static readonly uint160 CoinbaseAddress = 0;
+        private static readonly Money MempoolFee = new Money(10000); 
         private readonly IKeyEncodingStrategy keyEncodingStrategy;
         private readonly ILoggerFactory loggerFactory;
         private readonly Network network;
@@ -67,18 +70,17 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             this.state.SetCode(new uint160(1), contractExecutionCode);
 
+            ISmartContractTransactionContext transactionContext = new SmartContractTransactionContext(BlockHeight, CoinbaseAddress, MempoolFee, senderAddress, transactionCall);
+
             SmartContractExecutor executor = new CallSmartContract(
-                0,
                 this.carrierSerializer,
-                deserializedCall.ContractAddress,
                 this.keyEncodingStrategy,
                 this.loggerFactory,
-                new Money(10000),
                 this.network,
                 this.receiptStorage,
-                deserializedCall.Sender,
                 this.state,
-                transactionCall, this.validator);
+                transactionContext,
+                this.validator);
             ISmartContractExecutionResult result = executor.Execute();
 
             Assert.True(result.Revert);
@@ -121,8 +123,19 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             this.state.SetCode(new uint160(1), contractExecutionCode);
             var validator = new SmartContractValidator(new ISmartContractValidator[] { new SmartContractDeterminismValidator() });
 
-            SmartContractExecutor executor = SmartContractExecutor.Initialize(deserializedCreate, this.network, this.receiptStorage, this.state, validator, this.keyEncodingStrategy, this.loggerFactory, new Money(10000));
-            ISmartContractExecutionResult result = executor.Execute(0, deserializedCreate.GetNewContractAddress());
+            ISmartContractTransactionContext txContext = new SmartContractTransactionContext(BlockHeight, CoinbaseAddress, MempoolFee, deserializedCreate.Sender, transaction);
+
+            SmartContractExecutor executor = new CallSmartContract(
+                this.carrierSerializer,
+                this.keyEncodingStrategy,
+                this.loggerFactory,
+                this.network,
+                this.receiptStorage,
+                this.state,
+                txContext,
+                this.validator
+            );
+            ISmartContractExecutionResult result = executor.Execute();
 
             Assert.True(result.Revert);
             Assert.Equal((ulong)7500, result.Fee);
@@ -138,10 +151,19 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             var carrier = SmartContractCarrier.CallContract(1, toAddress, "TestMethod", 1, (Gas)10000);
             carrier.Sender = new uint160(2);
 
-            var executor = new CallSmartContract(
-                carrier, this.keyEncodingStrategy, this.loggerFactory, new Money(10000), this.network, this.receiptStorage, state, new SmartContractValidator(new ISmartContractValidator[] { }));
+            ISmartContractTransactionContext transactionContext = new SmartContractTransactionContext(BlockHeight, CoinbaseAddress, MempoolFee, carrier.Sender, new Transaction());
 
-            ISmartContractExecutionResult result = executor.Execute(0, toAddress);
+            var executor = new CallSmartContract(
+                this.carrierSerializer,
+                this.keyEncodingStrategy,
+                this.loggerFactory,
+                this.network,
+                this.receiptStorage,
+                this.state,
+                transactionContext,
+                this.validator
+                );
+            ISmartContractExecutionResult result = executor.Execute();
             Assert.IsType<SmartContractDoesNotExistException>(result.Exception);
         }
 
@@ -159,8 +181,20 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             var deserialized = (SmartContractCarrier) this.carrierSerializer.Deserialize(tx);
             deserialized.Sender = new uint160(2);
 
-            var executor = SmartContractExecutor.Initialize(deserialized, this.network, this.receiptStorage, this.state, this.validator, this.keyEncodingStrategy, this.loggerFactory, new Money(10000));
-            ISmartContractExecutionResult result = executor.Execute(0, new uint160(1));
+            ISmartContractTransactionContext transactionContext = new SmartContractTransactionContext(BlockHeight, CoinbaseAddress, MempoolFee, deserialized.Sender, tx);
+
+            var executor = new CreateSmartContract(
+                this.carrierSerializer,
+                this.keyEncodingStrategy,
+                this.loggerFactory,
+                this.network,
+                this.receiptStorage,
+                this.state,
+                transactionContext,
+                this.validator
+                );
+
+            ISmartContractExecutionResult result = executor.Execute();
 
             Assert.NotNull(result.Exception);
             // Base cost + constructor cost
@@ -186,8 +220,19 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             var deserialized = (SmartContractCarrier) this.carrierSerializer.Deserialize(tx);
             deserialized.Sender = new uint160(2);
 
-            var executor = SmartContractExecutor.Initialize(deserialized, this.network, this.receiptStorage, this.state, this.validator, this.keyEncodingStrategy, this.loggerFactory, new Money(10000));
-            ISmartContractExecutionResult result = executor.Execute(0, new uint160(1));
+            ISmartContractTransactionContext transactionContext = new SmartContractTransactionContext(BlockHeight, CoinbaseAddress, MempoolFee, deserialized.Sender, tx);
+
+            var executor = new CreateSmartContract(
+                this.carrierSerializer,
+                this.keyEncodingStrategy,
+                this.loggerFactory,
+                this.network,
+                this.receiptStorage,
+                this.state,
+                transactionContext,
+                this.validator
+            );
+            ISmartContractExecutionResult result = executor.Execute();
 
             Assert.NotNull(result.Exception);
             Assert.Equal(GasPriceList.BaseCost, result.GasConsumed);
@@ -212,8 +257,19 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             var deserialized = (SmartContractCarrier) this.carrierSerializer.Deserialize(tx);
             deserialized.Sender = new uint160(2);
 
-            var executor = SmartContractExecutor.Initialize(deserialized, this.network, this.receiptStorage, this.state, this.validator, this.keyEncodingStrategy, this.loggerFactory, new Money(10000));
-            ISmartContractExecutionResult result = executor.Execute(0, new uint160(1));
+            ISmartContractTransactionContext transactionContext = new SmartContractTransactionContext(BlockHeight, CoinbaseAddress, MempoolFee, deserialized.Sender, tx);
+
+            var executor = new CreateSmartContract(
+                this.carrierSerializer,
+                this.keyEncodingStrategy,
+                this.loggerFactory,
+                this.network,
+                this.receiptStorage,
+                this.state,
+                transactionContext,
+                this.validator
+                );
+            ISmartContractExecutionResult result = executor.Execute();
 
             Assert.NotNull(result.Exception);
             Assert.Equal(GasPriceList.BaseCost, result.GasConsumed);

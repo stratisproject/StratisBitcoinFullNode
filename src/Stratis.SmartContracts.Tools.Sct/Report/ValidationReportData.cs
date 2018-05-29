@@ -1,5 +1,9 @@
 ﻿using System.Collections.Generic;
+<<<<<<< HEAD
 using Stratis.SmartContracts.ReflectionExecutor.ContractValidation;
+=======
+using Stratis.ModuleValidation.Net;
+>>>>>>> master
 
 namespace Stratis.SmartContracts.Tools.Sct.Report
 {
@@ -22,7 +26,7 @@ namespace Stratis.SmartContracts.Tools.Sct.Report
 
         public bool DeterminismValid { get; set; }
 
-        public List<SmartContractValidationError> DeterminismValidationErrors { get; set; }
+        public List<ValidationResult> DeterminismValidationErrors { get; set; }
         
         public List<Warning> Warnings { get; set; }
     }

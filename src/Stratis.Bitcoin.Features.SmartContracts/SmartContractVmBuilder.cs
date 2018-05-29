@@ -2,9 +2,11 @@
 using Microsoft.Extensions.DependencyInjection;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor;
+using Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers;
 using Stratis.SmartContracts.Core;
+using Stratis.SmartContracts.Core.Validation;
 using Stratis.SmartContracts.ReflectionExecutor;
-using Stratis.SmartContracts.ReflectionExecutor.ContractValidation;
+using Stratis.SmartContracts.ReflectionExecutor.Compilation;
 using Stratis.SmartContracts.ReflectionExecutor.Serialization;
 
 namespace Stratis.Bitcoin.Features.SmartContracts
@@ -28,14 +30,17 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                     {
                         SmartContractValidator validator = new SmartContractValidator(new List<ISmartContractValidator>
                         {
-                            new SmartContractFormatValidator(),
+                            new SmartContractFormatValidator(ReferencedAssemblyResolver.AllowedAssemblies),
                             new SmartContractDeterminismValidator()
                         });
                         services.AddSingleton<SmartContractValidator>(validator);
+
                         services.AddSingleton<IKeyEncodingStrategy, BasicKeyEncodingStrategy>();
                         services.AddSingleton<ISmartContractExecutorFactory, ReflectionSmartContractExecutorFactory>();
                         services.AddSingleton<IMethodParameterSerializer, MethodParameterSerializer>();
                         services.AddSingleton<ISmartContractCarrierSerializer, SmartContractCarrierSerializer>();
+                        // Add controller
+                        services.AddSingleton<SmartContractsController>();
                         // Add rules
                         ConsensusRuleUtils.AddExtraRules(services, new ReflectionRuleRegistration());
                     });

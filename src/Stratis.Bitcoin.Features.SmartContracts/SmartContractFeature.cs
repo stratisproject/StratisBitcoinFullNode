@@ -13,7 +13,6 @@ using Stratis.Bitcoin.Features.Consensus.Rules;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.Miner;
 using Stratis.Bitcoin.Features.Miner.Interfaces;
-using Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers;
 using Stratis.Bitcoin.Mining;
 using Stratis.SmartContracts.Core.Receipts;
 using Stratis.SmartContracts.Core.State;
@@ -69,7 +68,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                     .DependOn<MiningFeature>()
                     .FeatureServices(services =>
                     {
-                        // Contract state
                         services.AddSingleton<DBreezeContractStateStore>();
                         services.AddSingleton<ISmartContractReceiptStorage, DBreezeContractReceiptStorage>();
                         services.AddSingleton<NoDeleteContractStateSource>();
@@ -81,8 +79,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                         services.AddSingleton<IBlockBuilder, SmartContractBlockBuilder>();
                         services.AddSingleton<SmartContractBlockDefinition>();
                         services.AddSingleton<IMempoolValidator, SmartContractMempoolValidator>();
-
-                        services.AddSingleton<SmartContractsController>();
                         // Add rules
                         ConsensusRuleUtils.AddExtraRules(services, new SmartContractRuleRegistration());
                     });

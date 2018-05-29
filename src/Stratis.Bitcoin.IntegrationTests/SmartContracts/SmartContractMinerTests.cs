@@ -32,9 +32,9 @@ using Stratis.SmartContracts;
 using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.Receipts;
 using Stratis.SmartContracts.Core.State;
+using Stratis.SmartContracts.Core.Validation;
 using Stratis.SmartContracts.ReflectionExecutor;
 using Stratis.SmartContracts.ReflectionExecutor.Compilation;
-using Stratis.SmartContracts.ReflectionExecutor.ContractValidation;
 using Stratis.SmartContracts.ReflectionExecutor.Serialization;
 using Xunit;
 using Key = NBitcoin.Key;
@@ -51,7 +51,6 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
         public static BlockDefinition AssemblerForTest(TestContext testContext)
         {
             return new SmartContractBlockDefinition(
-                testContext.carrierSerializer,
                 testContext.cachedCoinView,
                 testContext.consensus,
                 testContext.date,
@@ -194,14 +193,14 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 this.stateRoot = new ContractStateRepositoryRoot(stateDB);
                 this.validator = new SmartContractValidator(new List<ISmartContractValidator>
                 {
-                    new SmartContractFormatValidator(),
+                    new SmartContractFormatValidator(ReferencedAssemblyResolver.AllowedAssemblies),
                     new SmartContractDeterminismValidator()
                 });
 
                 this.receiptStorage = new DBreezeContractReceiptStorage(new DataFolder(folder.FolderName));
-                this.executorFactory = new ReflectionSmartContractExecutorFactory(this.keyEncodingStrategy, loggerFactory, this.network, this.receiptStorage, this.validator);
                 this.carrierSerializer = new SmartContractCarrierSerializer(new MethodParameterSerializer());
-                SmartContractConsensusValidator consensusValidator = new SmartContractConsensusValidator(this.cachedCoinView, this.network, new Checkpoints(), dateTimeProvider, loggerFactory, this.stateRoot, this.executorFactory, this.carrierSerializer);
+                this.executorFactory = new ReflectionSmartContractExecutorFactory(this.carrierSerializer,this.keyEncodingStrategy, loggerFactory, this.network, this.receiptStorage, this.validator);
+                SmartContractConsensusValidator consensusValidator = new SmartContractConsensusValidator(this.cachedCoinView, this.network, new Checkpoints(), dateTimeProvider, loggerFactory, this.stateRoot, this.executorFactory);
 
                 var networkPeerFactory = new NetworkPeerFactory(this.network, dateTimeProvider, loggerFactory, new PayloadProvider(), new SelfEndpointTracker());
 

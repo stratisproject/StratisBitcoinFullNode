@@ -3,7 +3,7 @@ using NBitcoin;
 using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.Receipts;
 using Stratis.SmartContracts.Core.State;
-using Stratis.SmartContracts.ReflectionExecutor.ContractValidation;
+using Stratis.SmartContracts.Core.Validation;
 
 namespace Stratis.SmartContracts.ReflectionExecutor
 {

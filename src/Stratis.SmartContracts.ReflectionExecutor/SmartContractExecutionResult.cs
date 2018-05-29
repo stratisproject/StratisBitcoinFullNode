@@ -2,9 +2,8 @@
 using System.Collections.Generic;
 using NBitcoin;
 using Stratis.SmartContracts.Core;
-using Stratis.SmartContracts.Core.Exceptions;
 using Stratis.SmartContracts.Core.State.AccountAbstractionLayer;
-using Stratis.SmartContracts.ReflectionExecutor.ContractValidation;
+using Stratis.SmartContracts.Core.Validation;
 using Stratis.SmartContracts.ReflectionExecutor.Exceptions;
 
 namespace Stratis.SmartContracts.ReflectionExecutor

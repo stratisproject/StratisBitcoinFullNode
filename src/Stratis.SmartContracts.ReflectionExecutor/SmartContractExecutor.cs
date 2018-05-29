@@ -9,8 +9,8 @@ using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.Receipts;
 using Stratis.SmartContracts.Core.State;
 using Stratis.SmartContracts.Core.State.AccountAbstractionLayer;
+using Stratis.SmartContracts.Core.Validation;
 using Stratis.SmartContracts.ReflectionExecutor.Compilation;
-using Stratis.SmartContracts.ReflectionExecutor.ContractValidation;
 using Block = Stratis.SmartContracts.Core.Block;
 
 namespace Stratis.SmartContracts.ReflectionExecutor
@@ -154,7 +154,7 @@ namespace Stratis.SmartContracts.ReflectionExecutor
 
             // Decompile the contract execution code and validate it.
             SmartContractDecompilation decompilation = SmartContractDecompiler.GetModuleDefinition(this.carrier.ContractExecutionCode);
-            SmartContractValidationResult validation = this.validator.ValidateContract(decompilation);
+            SmartContractValidationResult validation = this.validator.Validate(decompilation);
 
             // If validation failed, refund the sender any remaining gas.
             if (!validation.IsValid)

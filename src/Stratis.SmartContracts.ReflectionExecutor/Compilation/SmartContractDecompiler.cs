@@ -1,6 +1,7 @@
 ﻿using System.IO;
 using System.Linq;
 using Mono.Cecil;
+using Stratis.SmartContracts.Core.Validation;
 
 namespace Stratis.SmartContracts.ReflectionExecutor.Compilation
 {

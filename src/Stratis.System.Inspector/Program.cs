@@ -4,7 +4,8 @@ using System.IO;
 using System.Linq;
 using CsvHelper;
 using Mono.Cecil;
-using Stratis.SmartContracts.Core.ContractValidation;
+using Stratis.ModuleValidation.Net;
+using Stratis.ModuleValidation.Net.Determinism;
 
 namespace Stratis.System.Inspector
 {
@@ -58,10 +59,10 @@ namespace Stratis.System.Inspector
                         allResults.AddRange(inspectionResults.Select(r =>
                         new
                         {
-                            r.MethodName,
-                            r.MethodFullName,
+                            MethodName = r.SubjectName,
+                            MethodFullName = r.SubjectName,
                             ReturnType = returnType.FullName,
-                            r.ErrorType,
+                            ErrorType = r.ValidationType,
                             r.Message
                         }));
                     }
@@ -77,9 +78,9 @@ namespace Stratis.System.Inspector
             Console.ReadKey();
         }
 
-        private static IEnumerable<SmartContractValidationError> Inspect(MethodDefinition method)
+        private static IEnumerable<ValidationResult> Inspect(MethodDefinition method)
         {
-            var validationResults = new List<SmartContractValidationError>();
+            var validationResults = new List<ValidationResult>();
 
             foreach (var validator in _validators)
             {

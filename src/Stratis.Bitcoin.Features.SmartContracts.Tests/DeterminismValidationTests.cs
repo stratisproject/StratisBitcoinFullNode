@@ -1,5 +1,6 @@
-﻿using Stratis.SmartContracts.ReflectionExecutor.Compilation;
-using Stratis.SmartContracts.ReflectionExecutor.ContractValidation;
+
+using Stratis.SmartContracts.Core.Validation;
+using Stratis.SmartContracts.ReflectionExecutor.Compilation;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Tests
