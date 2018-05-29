@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using Moq;
 using NBitcoin;
@@ -7,7 +6,6 @@ using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Consensus;
-using Stratis.Bitcoin.Utilities;
 using Xunit;
 
 namespace Stratis.Bitcoin.Tests.Consensus
@@ -34,9 +32,9 @@ namespace Stratis.Bitcoin.Tests.Consensus
             {
                 ChainedHeader previousHeader = chainedHeader ?? new ChainedHeader(this.Network.GetGenesis().Header, this.Network.GenesisHash, 0);
 
-                foreach (int index in Enumerable.Range(1, count))
+                for (int i = 0; i < count; i++)
                 {
-                    BlockHeader header  = this.Network.Consensus.ConsensusFactory.CreateBlockHeader();
+                    BlockHeader header = this.Network.Consensus.ConsensusFactory.CreateBlockHeader();
                     header.HashPrevBlock = previousHeader.HashBlock;
                     header.Bits = previousHeader.Header.Bits - 1000; // just increase difficulty.
                     ChainedHeader newHeader = new ChainedHeader(header, header.GetHash(), previousHeader);
@@ -48,14 +46,14 @@ namespace Stratis.Bitcoin.Tests.Consensus
 
             public List<BlockHeader> ChainedHeaderToList(ChainedHeader chainedHeader, int count)
             {
-                List<BlockHeader> list = new List<BlockHeader>();
+                var list = new List<BlockHeader>();
 
                 ChainedHeader current = chainedHeader;
-                while (count > 0)
+
+                for (int i = 0; i < count; i++)
                 {
                     list.Add(current.Header);
                     current = current.Previous;
-                    count--;
                 }
 
                 list.Reverse();
@@ -67,9 +65,9 @@ namespace Stratis.Bitcoin.Tests.Consensus
             {
                 Assert.NotNull(connectedHeaders);
 
-                return connectedHeaders.Consumed == null 
-                       && connectedHeaders.DownloadTo == null 
-                       && connectedHeaders.DownloadFrom == null;
+                return (connectedHeaders.Consumed == null)
+                       && (connectedHeaders.DownloadTo == null)
+                       && (connectedHeaders.DownloadFrom == null);
             }
         }
 
@@ -85,15 +83,15 @@ namespace Stratis.Bitcoin.Tests.Consensus
         [Fact]
         public void ConnectHeaders_NoNewHeadersToConnect_ShouldReturnNothingToDownload()
         {
-            TestContext testContext = new TestContext();
+            var testContext = new TestContext();
             ChainedHeaderTree chainedHeaderTree = testContext.CreateChainedHeaderTree();
 
-            var chainTip = testContext.ExtendAChain(10);
+            ChainedHeader chainTip = testContext.ExtendAChain(10);
             chainedHeaderTree.Initialize(chainTip);
 
-            var listOfExistingHeaders = testContext.ChainedHeaderToList(chainTip, 4);
+            List<BlockHeader> listOfExistingHeaders = testContext.ChainedHeaderToList(chainTip, 4);
 
-            var connectedHeaders = chainedHeaderTree.ConnectNewHeaders(1, listOfExistingHeaders);
+            ConnectedHeaders connectedHeaders = chainedHeaderTree.ConnectNewHeaders(1, listOfExistingHeaders);
 
             Assert.True(testContext.ConnectedHeadersIsEmpty(connectedHeaders));
         }
@@ -101,16 +99,16 @@ namespace Stratis.Bitcoin.Tests.Consensus
         [Fact]
         public void ConnectHeaders_HeadersFromTwoPeers_ShouldCreateTwoPeerTips()
         {
-            TestContext testContext = new TestContext();
+            var testContext = new TestContext();
             ChainedHeaderTree chainedHeaderTree = testContext.CreateChainedHeaderTree();
 
-            var chainTip = testContext.ExtendAChain(10);
+            ChainedHeader chainTip = testContext.ExtendAChain(10);
             chainedHeaderTree.Initialize(chainTip);
 
-            var listOfExistingHeaders = testContext.ChainedHeaderToList(chainTip, 4);
+            List<BlockHeader> listOfExistingHeaders = testContext.ChainedHeaderToList(chainTip, 4);
 
-            var connectedHeaders1 = chainedHeaderTree.ConnectNewHeaders(1, listOfExistingHeaders);
-            var connectedHeaders2 = chainedHeaderTree.ConnectNewHeaders(2, listOfExistingHeaders);
+            ConnectedHeaders connectedHeaders1 = chainedHeaderTree.ConnectNewHeaders(1, listOfExistingHeaders);
+            ConnectedHeaders connectedHeaders2 = chainedHeaderTree.ConnectNewHeaders(2, listOfExistingHeaders);
 
             Assert.Single(chainedHeaderTree.GetPeerIdsByTipHash);
             Assert.Equal(10, chainedHeaderTree.GetChainedHeadersByHash.Count);
