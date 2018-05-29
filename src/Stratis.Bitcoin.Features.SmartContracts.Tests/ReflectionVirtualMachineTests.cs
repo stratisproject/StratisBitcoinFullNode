@@ -9,7 +9,6 @@ using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.State;
 using Stratis.SmartContracts.ReflectionExecutor;
 using Stratis.SmartContracts.ReflectionExecutor.Compilation;
-using Stratis.SmartContracts.ReflectionExecutor.Serialization;
 using Xunit;
 using Block = Stratis.SmartContracts.Core.Block;
 
@@ -24,7 +23,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         private readonly ILoggerFactory loggerFactory;
         private readonly PersistentState persistentState;
         private readonly ContractStateRepositoryRoot state;
-        private readonly ISmartContractCarrierSerializer carrierSerializer;
 
         private static readonly Address TestAddress = (Address)"mipcBbFg9gMiCh81Kj8tqqdgoZub1ZJRfn";
 
@@ -40,7 +38,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             this.state = new ContractStateRepositoryRoot(new NoDeleteSource<byte[], byte[]>(new MemoryDictionarySource()));
             var persistenceStrategy = new MeteredPersistenceStrategy(this.state, this.gasMeter, this.keyEncodingStrategy);
             this.persistentState = new PersistentState(persistenceStrategy, TestAddress.ToUint160(this.network), this.network);
-            this.carrierSerializer = new SmartContractCarrierSerializer(new MethodParameterSerializer());
         }
 
         [Fact]
@@ -61,7 +58,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             //-------------------------------------------------------
 
             //Deserialize the contract from the transaction----------
-            var deserializedCall = (SmartContractCarrier) this.carrierSerializer.Deserialize(transactionCall);
+            var deserializedCall = SmartContractCarrier.Deserialize(transactionCall);
             //-------------------------------------------------------
 
             var repository = new ContractStateRepositoryRoot(new NoDeleteSource<byte[], byte[]>(new MemoryDictionarySource()));
@@ -125,7 +122,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             //-------------------------------------------------------
 
             //Deserialize the contract from the transaction----------
-            var deserializedCall = (SmartContractCarrier) this.carrierSerializer.Deserialize(transactionCall);
+            var deserializedCall = SmartContractCarrier.Deserialize(transactionCall);
             //-------------------------------------------------------
 
             var repository = new ContractStateRepositoryRoot(new NoDeleteSource<byte[], byte[]>(new MemoryDictionarySource()));
@@ -191,7 +188,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             //-------------------------------------------------------
 
             //Deserialize the contract from the transaction----------
-            var deserializedCall = (SmartContractCarrier) this.carrierSerializer.Deserialize(transactionCall);
+            var deserializedCall = SmartContractCarrier.Deserialize(transactionCall);
             //-------------------------------------------------------
 
             var repository = new ContractStateRepositoryRoot(new NoDeleteSource<byte[], byte[]>(new MemoryDictionarySource()));

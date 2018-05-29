@@ -12,7 +12,6 @@ using Stratis.SmartContracts.Core.Validation;
 using Stratis.SmartContracts.ReflectionExecutor;
 using Stratis.SmartContracts.ReflectionExecutor.Compilation;
 using Stratis.SmartContracts.ReflectionExecutor.Exceptions;
-using Stratis.SmartContracts.ReflectionExecutor.Serialization;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Tests
@@ -27,7 +26,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         private readonly Network network;
         private readonly IContractStateRepository state;
         private readonly SmartContractValidator validator;
-        private readonly SmartContractCarrierSerializer carrierSerializer;
         private readonly ISmartContractReceiptStorage receiptStorage;
         public SmartContractExecutorTests()
         {
@@ -37,7 +35,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             this.network = Network.SmartContractsRegTest;
             this.state = new ContractStateRepositoryRoot(new NoDeleteSource<byte[], byte[]>(new MemoryDictionarySource()));
             this.validator = new SmartContractValidator(new ISmartContractValidator[] { });
-            this.carrierSerializer = new SmartContractCarrierSerializer(new MethodParameterSerializer());
             this.receiptStorage = Mock.Of<ISmartContractReceiptStorage>();
         }
 
@@ -64,8 +61,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             //Deserialize the contract from the transaction----------
             //and get the module definition
-            var deserializedCall = (SmartContractCarrier) this.carrierSerializer.Deserialize(transactionCall);
-            deserializedCall.Sender = senderAddress;
             //-------------------------------------------------------
 
             this.state.SetCode(new uint160(1), contractExecutionCode);
@@ -73,7 +68,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             ISmartContractTransactionContext transactionContext = new SmartContractTransactionContext(BlockHeight, CoinbaseAddress, MempoolFee, senderAddress, transactionCall);
 
             SmartContractExecutor executor = new CallSmartContract(
-                this.carrierSerializer,
                 this.keyEncodingStrategy,
                 this.loggerFactory,
                 this.network,
@@ -116,17 +110,14 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             //Deserialize the contract from the transaction----------
             //and get the module definition
-            var deserializedCreate = (SmartContractCarrier) this.carrierSerializer.Deserialize(transaction);
-            deserializedCreate.Sender = senderAddress;
             //-------------------------------------------------------
 
             this.state.SetCode(new uint160(1), contractExecutionCode);
             var validator = new SmartContractValidator(new ISmartContractValidator[] { new SmartContractDeterminismValidator() });
 
-            ISmartContractTransactionContext txContext = new SmartContractTransactionContext(BlockHeight, CoinbaseAddress, MempoolFee, deserializedCreate.Sender, transaction);
+            ISmartContractTransactionContext txContext = new SmartContractTransactionContext(BlockHeight, CoinbaseAddress, MempoolFee, senderAddress, transaction);
 
             SmartContractExecutor executor = new CallSmartContract(
-                this.carrierSerializer,
                 this.keyEncodingStrategy,
                 this.loggerFactory,
                 this.network,
@@ -148,17 +139,15 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         {
             var state = new ContractStateRepositoryRoot(new NoDeleteSource<byte[], byte[]>(new MemoryDictionarySource()));
             var toAddress = new uint160(1);
-            var carrier = SmartContractCarrier.CallContract(1, toAddress, "TestMethod", 1, (Gas)10000);
-            carrier.Sender = new uint160(2);
+            var carrier = SmartContractCarrier.CallContract(1, toAddress, "TestMethod", 1, (Gas) 10000);
 
             var transaction = new Transaction();
             TxOut txOut = transaction.AddOutput(0, new Script(carrier.Serialize()));
             txOut.Value = 100;
 
-            ISmartContractTransactionContext transactionContext = new SmartContractTransactionContext(BlockHeight, CoinbaseAddress, MempoolFee, carrier.Sender, transaction);
+            ISmartContractTransactionContext transactionContext = new SmartContractTransactionContext(BlockHeight, CoinbaseAddress, MempoolFee, new uint160(2), transaction);
 
             var executor = new CallSmartContract(
-                this.carrierSerializer,
                 this.keyEncodingStrategy,
                 this.loggerFactory,
                 this.network,
@@ -182,13 +171,10 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             var carrier = SmartContractCarrier.CreateContract(0, contractCode, 1, (Gas)10000);
             var tx = new Transaction();
             TxOut txOut = tx.AddOutput(0, new Script(carrier.Serialize()));
-            var deserialized = (SmartContractCarrier) this.carrierSerializer.Deserialize(tx);
-            deserialized.Sender = new uint160(2);
 
-            ISmartContractTransactionContext transactionContext = new SmartContractTransactionContext(BlockHeight, CoinbaseAddress, MempoolFee, deserialized.Sender, tx);
+            ISmartContractTransactionContext transactionContext = new SmartContractTransactionContext(BlockHeight, CoinbaseAddress, MempoolFee, new uint160(2), tx);
 
             var executor = new CreateSmartContract(
-                this.carrierSerializer,
                 this.keyEncodingStrategy,
                 this.loggerFactory,
                 this.network,
@@ -221,13 +207,10 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             SmartContractCarrier carrier = SmartContractCarrier.CreateContract(0, contractCode, 1, (Gas)10000, methodParameters);
             var tx = new Transaction();
             TxOut txOut = tx.AddOutput(0, new Script(carrier.Serialize()));
-            var deserialized = (SmartContractCarrier) this.carrierSerializer.Deserialize(tx);
-            deserialized.Sender = new uint160(2);
 
-            ISmartContractTransactionContext transactionContext = new SmartContractTransactionContext(BlockHeight, CoinbaseAddress, MempoolFee, deserialized.Sender, tx);
+            ISmartContractTransactionContext transactionContext = new SmartContractTransactionContext(BlockHeight, CoinbaseAddress, MempoolFee, new uint160(2), tx);
 
             var executor = new CreateSmartContract(
-                this.carrierSerializer,
                 this.keyEncodingStrategy,
                 this.loggerFactory,
                 this.network,
@@ -258,13 +241,10 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             var carrier = SmartContractCarrier.CreateContract(0, contractCode, 1, (Gas)10000, methodParameters);
             var tx = new Transaction();
             TxOut txOut = tx.AddOutput(0, new Script(carrier.Serialize()));
-            var deserialized = (SmartContractCarrier) this.carrierSerializer.Deserialize(tx);
-            deserialized.Sender = new uint160(2);
 
-            ISmartContractTransactionContext transactionContext = new SmartContractTransactionContext(BlockHeight, CoinbaseAddress, MempoolFee, deserialized.Sender, tx);
+            ISmartContractTransactionContext transactionContext = new SmartContractTransactionContext(BlockHeight, CoinbaseAddress, MempoolFee, new uint160(2), tx);
 
             var executor = new CreateSmartContract(
-                this.carrierSerializer,
                 this.keyEncodingStrategy,
                 this.loggerFactory,
                 this.network,

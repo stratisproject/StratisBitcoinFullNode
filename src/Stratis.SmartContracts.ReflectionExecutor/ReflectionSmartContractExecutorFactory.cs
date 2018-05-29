@@ -12,7 +12,6 @@ namespace Stratis.SmartContracts.ReflectionExecutor
     /// </summary>
     public class ReflectionSmartContractExecutorFactory : ISmartContractExecutorFactory
     {
-        private readonly ISmartContractCarrierSerializer carrierSerializer;
         private readonly IKeyEncodingStrategy keyEncodingStrategy;
         private readonly ILoggerFactory loggerFactory;
         private readonly Network network;
@@ -20,14 +19,12 @@ namespace Stratis.SmartContracts.ReflectionExecutor
         private readonly SmartContractValidator validator;
 
         public ReflectionSmartContractExecutorFactory(
-            ISmartContractCarrierSerializer carrierSerializer,
             IKeyEncodingStrategy keyEncodingStrategy,
             ILoggerFactory loggerFactory,
             Network network,
             ISmartContractReceiptStorage receiptStorage,
             SmartContractValidator validator)
         {
-            this.carrierSerializer = carrierSerializer;
             this.keyEncodingStrategy = keyEncodingStrategy;
             this.loggerFactory = loggerFactory;
             this.network = network;
@@ -48,7 +45,6 @@ namespace Stratis.SmartContracts.ReflectionExecutor
             if (transactionContext.IsCreate)
             {
                 return new CreateSmartContract(
-                    this.carrierSerializer,
                     this.keyEncodingStrategy,
                     this.loggerFactory,
                     this.network,
@@ -60,7 +56,6 @@ namespace Stratis.SmartContracts.ReflectionExecutor
             }
 
             return new CallSmartContract(
-                this.carrierSerializer,
                 this.keyEncodingStrategy,
                 this.loggerFactory,
                 this.network,

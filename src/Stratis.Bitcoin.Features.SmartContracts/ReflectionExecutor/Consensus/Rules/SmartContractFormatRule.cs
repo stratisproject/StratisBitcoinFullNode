@@ -6,7 +6,6 @@ using Stratis.Bitcoin.Features.Consensus.Rules;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.ReflectionExecutor;
-using Stratis.SmartContracts.ReflectionExecutor.Serialization;
 using Block = NBitcoin.Block;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Consensus.Rules
@@ -25,11 +24,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Consensus.R
 
         public const ulong GasPriceMaximum = 10_000;
 
-        private readonly SmartContractCarrierSerializer carrierSerializer;
-
         public SmartContractFormatRule()
         {
-            this.carrierSerializer = new SmartContractCarrierSerializer(new MethodParameterSerializer());
+
         }
 
         public override Task RunAsync(RuleContext context)
@@ -61,7 +58,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Consensus.R
 
             // TODO: What if deserialization throws an error? We should check this.
             // Also the deserializer should throw custom exceptions.
-            SmartContractCarrier carrier = this.carrierSerializer.Deserialize(transaction) as SmartContractCarrier;
+            SmartContractCarrier carrier = SmartContractCarrier.Deserialize(transaction);
 
             if (carrier.GasPrice < GasPriceMinimum)
             {

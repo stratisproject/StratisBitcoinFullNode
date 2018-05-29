@@ -112,7 +112,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             Type concreteType = existingService.ImplementationType;
 
             // Register concrete type if it does not already exist
-            if (services.FirstOrDefault(s => s.ServiceType == concreteType) == null)
+            if ( concreteType != null && services.FirstOrDefault(s => s.ServiceType == concreteType) == null)
             {
                 services.Add(new ServiceDescriptor(concreteType, concreteType, ServiceLifetime.Singleton));
             }
@@ -122,7 +122,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             {
                 var existingRuleRegistration = serviceProvider.GetService(concreteType);
                 rulesToAdd.SetPreviousRegistration((IRuleRegistration)existingRuleRegistration);
-                return rulesToAdd;
+                return (IRuleRegistration) rulesToAdd;
             }, ServiceLifetime.Singleton);
 
             services.Replace(newService);

@@ -36,7 +36,6 @@ namespace Stratis.SmartContracts.ReflectionExecutor
 
 
         protected SmartContractExecutor(
-            ISmartContractCarrierSerializer carrierSerializer,
             IKeyEncodingStrategy keyEncodingStrategy,
             ILoggerFactory loggerFactory,
             Network network,
@@ -45,8 +44,7 @@ namespace Stratis.SmartContracts.ReflectionExecutor
             ISmartContractTransactionContext transactionContext,
             SmartContractValidator validator)
         {
-            this.carrier = (SmartContractCarrier) carrierSerializer.Deserialize(transactionContext.Transaction);
-            this.carrier.Sender = transactionContext.Sender;
+            this.carrier = SmartContractCarrier.Deserialize(transactionContext);
             this.gasMeter = new GasMeter(this.carrier.GasLimit);
             this.keyEncodingStrategy = keyEncodingStrategy;
             this.loggerFactory = loggerFactory;
@@ -129,7 +127,6 @@ namespace Stratis.SmartContracts.ReflectionExecutor
         private readonly ILogger logger;
 
         public CreateSmartContract(
-            ISmartContractCarrierSerializer carrierSerializer,
             IKeyEncodingStrategy keyEncodingStrategy,
             ILoggerFactory loggerFactory,
             Network network,
@@ -137,7 +134,7 @@ namespace Stratis.SmartContracts.ReflectionExecutor
             IContractStateRepository stateSnapshot,
             ISmartContractTransactionContext transactionContext,
             SmartContractValidator validator)
-            : base(carrierSerializer, keyEncodingStrategy, loggerFactory, network, receiptStorage, stateSnapshot, transactionContext, validator)
+            : base(keyEncodingStrategy, loggerFactory, network, receiptStorage, stateSnapshot, transactionContext, validator)
         {
             this.logger = loggerFactory.CreateLogger(this.GetType());
         }
@@ -211,7 +208,6 @@ namespace Stratis.SmartContracts.ReflectionExecutor
         private readonly ILogger logger;
 
         public CallSmartContract(
-            ISmartContractCarrierSerializer carrierSerializer,
             IKeyEncodingStrategy keyEncodingStrategy,
             ILoggerFactory loggerFactory,
             Network network,
@@ -219,7 +215,7 @@ namespace Stratis.SmartContracts.ReflectionExecutor
             IContractStateRepository stateSnapshot,
             ISmartContractTransactionContext transactionContext,
             SmartContractValidator validator)
-            : base(carrierSerializer, keyEncodingStrategy, loggerFactory, network, receiptStorage, stateSnapshot, transactionContext, validator)
+            : base(keyEncodingStrategy, loggerFactory, network, receiptStorage, stateSnapshot, transactionContext, validator)
         {
             this.logger = loggerFactory.CreateLogger(this.GetType());
         }
