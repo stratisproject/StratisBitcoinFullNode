@@ -36,14 +36,19 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
         public int CounterChainApiPort { get; set; }
 
         /// <summary>
-        /// For the M of N multisig, this is the number of signers required to reach a quorum.</example>
+        /// For the M of N multisig, this is the number of signers required to reach a quorum.
         /// </summary>
         public int MultiSigM { get; set; }
 
         /// <summary>
-        /// For the M of N multisig, this is the number of members in the federation.</example>
+        /// For the M of N multisig, this is the number of members in the federation.
         /// </summary>
         public int MultiSigN { get; set; }
+
+        /// <summary>
+        /// The name of the multisig wallet used for the multisig transactions.
+        /// </summary>
+        public string MultiSigWalletName { get; set; }
 
         /// <summary>
         /// A callback allow changing the settings after they have been read from the nodeSettings.
@@ -71,6 +76,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
             this.MemberName = config.GetOrDefault("membername", "unspecified");
             this.MultiSigM = config.GetOrDefault("multisigM", 0);
             this.MultiSigN = config.GetOrDefault("multisigN", 0);
+            this.MultiSigWalletName = config.GetOrDefault("multisigwalletname", "multisig_wallet");
             this.PublicKey = config.GetOrDefault<string>("publickey", null);
             this.FederationFolder = config.GetOrDefault<string>("federationfolder", null);
             this.MemberPrivateFolder = config.GetOrDefault<string>("memberprivatefolder", null);
