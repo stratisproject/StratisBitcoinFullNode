@@ -540,20 +540,23 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
         [Fact]
         public void GetBlockHeader_NotUsingJsonFormat_ThrowsNotImplementedException()
         {
+            var block = this.chain.GetBlock(2);
+
             Assert.Throws<NotImplementedException>(() =>
             {
-                this.controller.GetBlockHeader("", false);
+                this.controller.GetBlockHeader(block.HashBlock.ToString(), false);
             });
         }
 
         [Fact]
         public void GetBlockHeader_ChainNull_ReturnsNull()
         {
+            var block = this.chain.GetBlock(2);
             this.chain = null;
 
             this.controller = new FullNodeController(this.LoggerFactory.Object, this.pooledTransaction.Object, this.pooledGetUnspentTransaction.Object, this.getUnspentTransaction.Object, this.networkDifficulty.Object,
                 this.consensusLoop.Object, this.fullNode.Object, this.nodeSettings, this.network, this.chain, this.chainState.Object, this.connectionManager.Object);
-            var result = this.controller.GetBlockHeader("", true);
+            var result = this.controller.GetBlockHeader(block.HashBlock.ToString(), true);
 
             Assert.Null(result);
         }

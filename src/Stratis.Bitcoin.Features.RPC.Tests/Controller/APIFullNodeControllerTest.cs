@@ -29,7 +29,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
         private readonly Mock<IFullNode> fullNode;
         private readonly Mock<IChainState> chainState;
         private readonly Mock<IConnectionManager> connectionManager;
-        private Network network;
+        private readonly Network network;
         private NodeSettings nodeSettings;
         private readonly Mock<IPooledTransaction> pooledTransaction;
         private readonly Mock<IPooledGetUnspentTransaction> pooledGetUnspentTransaction;
@@ -245,12 +245,10 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
             Assert.Equal(transaction.Version, model.Version);
             Assert.Equal((uint)transaction.LockTime, model.LockTime);
             Assert.Equal(transaction.ToHex(), model.Hex);
-
             Assert.Equal(block.HashBlock.ToString(), model.BlockHash);
             Assert.Equal(3, model.Confirmations);
             Assert.Equal(Utils.DateTimeToUnixTime(block.Header.BlockTime), model.Time);
             Assert.Equal(Utils.DateTimeToUnixTime(block.Header.BlockTime), model.BlockTime);
-
             Assert.NotEmpty(model.VIn);
             var input = model.VIn[0];
             var expectedInput = new Vin(transaction.Inputs[0].PrevOut, transaction.Inputs[0].Sequence, transaction.Inputs[0].ScriptSig);
@@ -259,7 +257,6 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
             Assert.Equal(expectedInput.Sequence, input.Sequence);
             Assert.Equal(expectedInput.TxId, input.TxId);
             Assert.Equal(expectedInput.VOut, input.VOut);
-
             Assert.NotEmpty(model.VOut);
             var output = model.VOut[0];
             var expectedOutput = new Vout(0, transaction.Outputs[0], this.network);
@@ -300,7 +297,6 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
         [Fact]
         public async Task GetTaskAsync_Verbose_BlockNotFoundOnChain_ReturnsTransactionVerboseModelWithoutBlockInformationAsync()
         {
-            var block = this.chain.GetBlock(1);
             Transaction transaction = this.CreateTransaction();
             uint256 txId = new uint256(12142124);
             this.pooledTransaction.Setup(p => p.GetTransaction(txId))
@@ -596,7 +592,6 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
             var json = (JsonResult)this.controller.GetInfo();
             GetInfoModel resultModel = (GetInfoModel)json.Value;
 
-
             Assert.Equal((uint)14999899, resultModel.Version);
             Assert.Equal((uint)ProtocolVersion.NO_BLOOM_VERSION, resultModel.ProtocolVersion);
             Assert.Equal(3, resultModel.Blocks);
@@ -607,7 +602,6 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
             Assert.True(resultModel.Testnet);
             Assert.Equal(0.00001m, resultModel.RelayFee);
             Assert.Empty(resultModel.Errors);
-
             Assert.Null(resultModel.WalletVersion);
             Assert.Null(resultModel.Balance);
             Assert.Null(resultModel.KeypoolOldest);
@@ -718,6 +712,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
                 hash = "1341323442",
                 isJsonFormat = false
             };
+
             IActionResult result = this.controller.GetBlockHeader(request);
 
             ErrorResult errorResult = Assert.IsType<ErrorResult>(result);

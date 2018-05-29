@@ -76,13 +76,13 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
 
         /// <summary>
         /// Stops the full node.
-        /// API implementation of RPC call.
         /// </summary>
+        /// <returns>No content</returns>
         [Route("stop")]
         [HttpGet]
         public async Task<IActionResult> Stop()
         {
-			await SharedRemoteMethods.Stop(this.FullNode);
+            await SharedRemoteMethods.Stop(this.FullNode);
             return NoContent();
         }
 
@@ -98,8 +98,8 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
         {
             try
             {
-				return this.Json(await SharedRemoteMethods.GetRawTransactionAsync(request.txid, request.verbose, this.pooledTransaction,
-				    this.FullNode, this.network, this.chainState, this.chain));
+                return this.Json(await SharedRemoteMethods.GetRawTransactionAsync(request.txid, request.verbose, this.pooledTransaction,
+                this.FullNode, this.network, this.chainState, this.chain));
             } 
             catch (Exception e)
             {
@@ -120,8 +120,8 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
         {
             try
             {
-				return this.Json(await SharedRemoteMethods.GetTxOutAsync(request.txid, request.vout, request.includeMemPool,
-				    this.pooledGetUnspentTransaction, this.getUnspentTransaction, this.network, this.chain));
+                return this.Json(await SharedRemoteMethods.GetTxOutAsync(request.txid, request.vout, request.includeMemPool,
+                    this.pooledGetUnspentTransaction, this.getUnspentTransaction, this.network, this.chain));
             } 
             catch (Exception e)
             {
@@ -140,7 +140,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
         {
             try
             {
-				return this.Json(SharedRemoteMethods.GetBlockCount(this.consensusLoop));
+                return this.Json(SharedRemoteMethods.GetBlockCount(this.consensusLoop));
             }
             catch (Exception e)
             {
@@ -160,8 +160,9 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
         {
             try
             {
-				return this.Json(SharedRemoteMethods.GetInfo(this.FullNode, this.Settings, this.chainState, this.connectionManager,
-				    this.network, this.networkDifficulty));
+                return this.Json(SharedRemoteMethods.GetInfo(this.network, this.FullNode, 
+                    this.Settings, this.chainState, this.connectionManager,
+                    this.networkDifficulty));
             }
             catch (Exception e)
             {
@@ -182,7 +183,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
         {
             try
             {
-				return this.Json(SharedRemoteMethods.GetBlockHeader(request.hash, request.isJsonFormat, this.logger, this.chain));
+                return this.Json(SharedRemoteMethods.GetBlockHeader(request.hash, request.isJsonFormat, this.logger, this.chain));
             }
             catch (Exception e)
             {
@@ -203,7 +204,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
         {
             try
             {
-				return this.Json(SharedRemoteMethods.ValidateAddress(request.address, this.network));
+                return this.Json(SharedRemoteMethods.ValidateAddress(request.address, this.network));
             }
             catch (Exception e)
             {
@@ -224,7 +225,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
         {
             try
             {
-				return this.Json(SharedRemoteMethods.AddNode(request.str_endpoint, request.command, this.connectionManager));
+                return this.Json(SharedRemoteMethods.AddNode(request.str_endpoint, request.command, this.connectionManager));
             }
             catch (Exception e)
             {
@@ -245,7 +246,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
         {
             try
             {
-				return this.Json(SharedRemoteMethods.GetPeerInfo(this.connectionManager));
+                return this.Json(SharedRemoteMethods.GetPeerInfo(this.connectionManager));
             }
             catch (Exception e)
             {
@@ -265,7 +266,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
         {
             try
             {
-				return this.Json(SharedRemoteMethods.GetBestBlockHash(this.chainState));
+                return this.Json(SharedRemoteMethods.GetBestBlockHash(this.chainState));
             }
             catch (Exception e)
             {
@@ -286,7 +287,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
         {
             try
             {
-				return this.Json(SharedRemoteMethods.GetBlockHash(request.height, this.consensusLoop, this.chain, this.logger));
+                return this.Json(SharedRemoteMethods.GetBlockHash(request.height, this.consensusLoop, this.chain, this.logger));
             }
             catch (Exception e)
             {
@@ -305,7 +306,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
         {
             try
             {
-				return this.Json(await SharedRemoteMethods.GetRawMempoolAsync(this.FullNode));
+                return this.Json(await SharedRemoteMethods.GetRawMempoolAsync(this.FullNode));
             }
             catch (Exception e)
             {
