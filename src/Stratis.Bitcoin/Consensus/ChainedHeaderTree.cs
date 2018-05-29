@@ -167,9 +167,9 @@ namespace Stratis.Bitcoin.Consensus
             ConnectedHeaders connectedHeaders = null;
 
             bool isAssumedValidEnabled = this.consensusSettings.BlockAssumedValid != null;
-            bool isWithinCheckpoints = this.consensusSettings.UseCheckpoints && (earliestNewHeader.Height <= this.checkpoints.GetLastCheckpointHeight());
+            bool isBelowLastCheckpoint = this.consensusSettings.UseCheckpoints && (earliestNewHeader.Height <= this.checkpoints.GetLastCheckpointHeight());
 
-            if (isWithinCheckpoints || isAssumedValidEnabled)
+            if (isBelowLastCheckpoint || isAssumedValidEnabled)
             {
                 ChainedHeader currentChainedHeader = latestNewHeader;
 
@@ -184,7 +184,7 @@ namespace Stratis.Bitcoin.Consensus
                     {
                         this.logger.LogDebug("Chained header '{0}' represents an assumed valid block.", currentChainedHeader);
 
-                        connectedHeaders = this.HandleAssumedValidHeader(currentChainedHeader, latestNewHeader);
+                        connectedHeaders = this.HandleAssumedValidHeader(currentChainedHeader, latestNewHeader, isBelowLastCheckpoint);
                         break;
                     }
 
@@ -200,7 +200,7 @@ namespace Stratis.Bitcoin.Consensus
                     currentChainedHeader = currentChainedHeader.Previous;
                 }
 
-                if ((connectedHeaders == null) && isWithinCheckpoints)
+                if ((connectedHeaders == null) && isBelowLastCheckpoint)
                 {
                     connectedHeaders = new ConnectedHeaders() {Consumed = latestNewHeader};
                     this.logger.LogTrace("Chained header '{0}' below last checkpoint.", currentChainedHeader);
@@ -273,14 +273,16 @@ namespace Stratis.Bitcoin.Consensus
         }
 
         /// <summary>
-        /// The header is assumed to be valid, the header and all of its previous headers will be marked as <see cref="ValidationState.AssumedValid"/>.
-        /// If the header's cumulative work is better then <see cref="IChainState.ConsensusTip"/> the header and all its predecessors will be marked with <see cref="BlockDataAvailabilityState.BlockRequired"/>.
+        /// The header is assumed to be valid, the header and all of its previous headers will be marked as <see cref="ValidationState.AssumedValid" />.
+        /// If the header's cumulative work is better then <see cref="IChainState.ConsensusTip" /> the header and all its predecessors will be marked with <see cref="BlockDataAvailabilityState.BlockRequired" />.
         /// </summary>
         /// <param name="assumedValidHeader">The header that is assumed to be valid.</param>
         /// <param name="latestNewHeader">The last header in the list of presented new headers.</param>
-        private ConnectedHeaders HandleAssumedValidHeader(ChainedHeader assumedValidHeader, ChainedHeader latestNewHeader)
+        /// <param name="isBelowLastCheckpoint">Set to <c>true</c> if <paramref name="assumedValidHeader"/> is below the last checkpoint,
+        /// <c>false</c> otherwise or if checkpoints are disabled.</param>
+        private ConnectedHeaders HandleAssumedValidHeader(ChainedHeader assumedValidHeader, ChainedHeader latestNewHeader, bool isBelowLastCheckpoint)
         {
-            this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(assumedValidHeader), assumedValidHeader, nameof(latestNewHeader), latestNewHeader);
+            this.logger.LogTrace("({0}:'{1}',{2}:'{3}',{4}:{5})", nameof(assumedValidHeader), assumedValidHeader, nameof(latestNewHeader), latestNewHeader, nameof(isBelowLastCheckpoint), isBelowLastCheckpoint);
 
             ChainedHeader bestTip = this.chainState.ConsensusTip;
             var connectedHeaders = new ConnectedHeaders() {Consumed = latestNewHeader};
@@ -289,7 +291,8 @@ namespace Stratis.Bitcoin.Consensus
             {
                 this.logger.LogDebug("Chained header '{0}' is the tip of a chain with more work than our current consensus tip.", latestNewHeader);
 
-                connectedHeaders = this.MarkBetterChainAsRequired(latestNewHeader);
+                ChainedHeader latestHeaderToMark = isBelowLastCheckpoint ? assumedValidHeader : latestNewHeader;
+                connectedHeaders = this.MarkBetterChainAsRequired(latestHeaderToMark);
             }
 
             this.MarkTrustedChainAsAssumedValid(assumedValidHeader);
