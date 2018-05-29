@@ -133,7 +133,7 @@ namespace Stratis.Bitcoin.Consensus
         /// The headers are assumed to be in consecutive order.
         /// </remarks>
         /// <param name="networkPeerId">Id of a peer that presented the headers.</param>
-        /// <param name="headers">The list of headers to connect to the chain tree.</param>
+        /// <param name="headers">The list of headers to connect to the tree.</param>
         /// <returns>
         /// Information about which blocks need to be downloaded together with information about which input headers were processed.
         /// Only headers that we can validate will be processed. The rest of the headers will be submitted later again for processing.
@@ -358,23 +358,23 @@ namespace Stratis.Bitcoin.Consensus
             ChainedHeader currentHeader = chainedHeader;
             while (true)
             {
-                bool headerHasNextHeader = currentHeader.Next.Count > 0;
-                if (headerHasNextHeader)
+                // If current header is an ancestor of some other tip claimed by a peer, do nothing.
+                if (currentHeader.Next.Count > 0)
                 {
                     this.logger.LogTrace("Header '{0}' is part of another branch.", currentHeader);
                     break;
                 }
 
-                bool headerHasPeerClaim = this.peerIdsByTipHash.ContainsKey(chainedHeader.HashBlock);
-                if (headerHasPeerClaim)
+                bool headerIsClaimedByPeer = this.peerIdsByTipHash.ContainsKey(chainedHeader.HashBlock);
+                if (headerIsClaimedByPeer)
                 {
-                    this.logger.LogTrace("Header '{0}' is claimed by a peer and wont be removed.", currentHeader);
+                    this.logger.LogTrace("Header '{0}' is claimed by a peer and won't be removed.", currentHeader);
                     break;
                 }
-
-                this.logger.LogTrace("Header '{0}' was removed from the chain tree.", currentHeader);
+                
                 this.chainedHeadersByHash.Remove(currentHeader.HashBlock);
                 currentHeader.Previous.Next.Remove(currentHeader);
+                this.logger.LogTrace("Header '{0}' was removed from the tree.", currentHeader);
 
                 currentHeader = currentHeader.Previous;
             }
@@ -391,18 +391,19 @@ namespace Stratis.Bitcoin.Consensus
         {
             this.logger.LogTrace("({0}:{1},{2}:'{3}')", nameof(networkPeerId), networkPeerId, nameof(chainedHeader), chainedHeader);
 
-            var listOfPeersClaimingThisHeader = this.peerIdsByTipHash.TryGet(chainedHeader.HashBlock);
+            // Collection of peer IDs that claim this chained header as their tip.
+            HashSet<int> peerIds = this.peerIdsByTipHash.TryGet(chainedHeader.HashBlock);
 
-            if (listOfPeersClaimingThisHeader == null)
+            if (peerIds == null)
             {
                 this.logger.LogTrace("(-)[PEER_TIP_NOT_FOUND]");
                 throw new ConsensusException("PEER_TIP_NOT_FOUND");
             }
 
-            this.logger.LogTrace("Peer id {0 } removed.", networkPeerId);
-            listOfPeersClaimingThisHeader.Remove(networkPeerId);
+            this.logger.LogTrace("Tip claim of peer ID {0} removed from chained header '{1}'.", networkPeerId, chainedHeader);
+            peerIds.Remove(networkPeerId);
 
-            if (listOfPeersClaimingThisHeader.Count == 0)
+            if (peerIds.Count == 0)
             {
                 this.logger.LogTrace("Header '{0}' is not the tip of any peer.", chainedHeader);
                 this.peerIdsByTipHash.Remove(chainedHeader.HashBlock);
@@ -423,7 +424,7 @@ namespace Stratis.Bitcoin.Consensus
 
             uint256 oldTipHash = this.peerTipsByPeerId.TryGet(networkPeerId);
 
-            var listOfPeersClaimingThisHeader = this.peerIdsByTipHash.TryGet(newTip);
+            HashSet<int> listOfPeersClaimingThisHeader = this.peerIdsByTipHash.TryGet(newTip);
             if (listOfPeersClaimingThisHeader == null)
             {
                 listOfPeersClaimingThisHeader = new HashSet<int>();
@@ -444,10 +445,10 @@ namespace Stratis.Bitcoin.Consensus
 
         /// <summary>
         /// Find the headers that are not part of the tree and try to connect them to an existing chain 
-        /// by creating a new <see cref="ChainedHeader"/> type and linking it to its previous header.
+        /// by creating new chained headers and linking them to their previous headers.
         /// </summary>
         /// <remarks>
-        /// A new header will perform partial validation.
+        /// Header validation is performed on each header.
         /// This will take in to account the MaxReorg protection rule, chains that are beyond the max reorg flag will be abandoned.
         /// This will append to the ChainedHeader.Next of the previous header.
         /// </remarks>
