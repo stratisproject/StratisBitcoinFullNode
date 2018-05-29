@@ -203,13 +203,12 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
             {
                 throw new ArgumentNullException("command");
             }
-            IPEndPoint endpoint = NodeSettings.ConvertIpAddressToEndpoint(str_endpoint, connectionManager.Network.DefaultPort);
+            IPEndPoint endpoint = IPExtensions.ToIPEndPoint(str_endpoint, connectionManager.Network.DefaultPort);
             switch (command)
             {
                 case "add":
                     connectionManager.AddNodeAddress(endpoint);
                     break;
-
                 case "remove":
                     connectionManager.RemoveNodeAddress(endpoint);
                     break;
@@ -217,7 +216,6 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
                 case "onetry":
                     connectionManager.ConnectAsync(endpoint).GetAwaiter().GetResult();
                     break;
-
                 default:
                     throw new ArgumentException("command");
             }
