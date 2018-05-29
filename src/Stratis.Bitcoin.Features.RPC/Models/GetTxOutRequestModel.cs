@@ -6,7 +6,7 @@ namespace Stratis.Bitcoin.Features.RPC.Models
     {
         [Required(AllowEmptyStrings = false)]
         public string txid { get; set; }
-        public uint vout { get; set; } = 0;
-        public bool includeMemPool { get; set; } = false;
+        public string vout { get; set; } = "0";
+        public bool includeMemPool { get; set; } = true;
     }
 }

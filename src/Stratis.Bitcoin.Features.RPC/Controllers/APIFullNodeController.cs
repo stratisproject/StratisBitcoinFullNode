@@ -12,12 +12,8 @@ using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Controllers;
 using Stratis.Bitcoin.Features.Consensus.Interfaces;
-using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.RPC.Models;
 using Stratis.Bitcoin.Interfaces;
-using Stratis.Bitcoin.P2P.Peer;
-using Stratis.Bitcoin.Utilities;
-using Stratis.Bitcoin.Utilities.Extensions;
 using Stratis.Bitcoin.Utilities.JsonErrors;
 
 namespace Stratis.Bitcoin.Features.RPC.Controllers
@@ -41,7 +37,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
         /// <summary>Manager of the longest fully validated chain of blocks.</summary>
         private readonly IConsensusLoop consensusLoop;
 
-        private Network network;
+        private readonly Network network;
 
         private readonly ConcurrentChain chain;
 
@@ -86,12 +82,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
         [HttpGet]
         public async Task<IActionResult> Stop()
         {
-            if (this.FullNode != null)
-            {
-                this.FullNode.Dispose();
-                this.FullNode = null;
-            }
-            await Task.CompletedTask;
+			await SharedRemoteMethods.Stop(this.FullNode);
             return NoContent();
         }
 
@@ -107,30 +98,8 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
         {
             try
             {
-                uint256 trxid;
-                if (!uint256.TryParse(request.txid, out trxid))
-                {
-                    throw new ArgumentException(nameof(request.txid));
-                }
-                Transaction trx = this.pooledTransaction != null ? await this.pooledTransaction.GetTransaction(trxid) : null;
-                if (trx == null)
-                {
-                    var blockStore = this.FullNode.NodeFeature<IBlockStore>();
-                    trx = blockStore != null ? await blockStore.GetTrxAsync(trxid) : null;
-                }
-                if (trx == null)
-                {
-                    return this.Json(null);
-                }
-                if (request.verbose)
-                {
-                    ChainedHeader block = await this.GetTransactionBlockAsync(trxid);
-                    return this.Json(new TransactionVerboseModel(trx, this.network, block, this.chainState?.ConsensusTip));
-                }
-                else
-                {
-                    return this.Json(new TransactionBriefModel(trx));
-                }
+				return this.Json(await SharedRemoteMethods.GetRawTransactionAsync(request.txid, request.verbose, this.pooledTransaction,
+				    this.FullNode, this.network, this.chainState, this.chain));
             } 
             catch (Exception e)
             {
@@ -151,25 +120,8 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
         {
             try
             {
-                uint256 trxid;
-                if (!uint256.TryParse(request.txid, out trxid))
-                {
-                    throw new ArgumentException(nameof(request.txid));
-                }
-                UnspentOutputs unspentOutputs = null;
-                if (request.includeMemPool)
-                {
-                    unspentOutputs = this.pooledGetUnspentTransaction != null ? await this.pooledGetUnspentTransaction.GetUnspentTransactionAsync(trxid) : null;
-                }
-                else
-                {
-                    unspentOutputs = this.getUnspentTransaction != null ? await this.getUnspentTransaction.GetUnspentTransactionAsync(trxid) : null;
-                }
-                if (unspentOutputs == null)
-                {
-					return this.Json(null);
-                }
-                return this.Json(new GetTxOutModel(unspentOutputs, request.vout, this.network, this.chain.Tip));
+				return this.Json(await SharedRemoteMethods.GetTxOutAsync(request.txid, request.vout, request.includeMemPool,
+				    this.pooledGetUnspentTransaction, this.getUnspentTransaction, this.network, this.chain));
             } 
             catch (Exception e)
             {
@@ -188,7 +140,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
         {
             try
             {
-                return this.Json(this.consensusLoop?.Tip.Height ?? -1);
+				return this.Json(SharedRemoteMethods.GetBlockCount(this.consensusLoop));
             }
             catch (Exception e)
             {
@@ -208,29 +160,8 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
         {
             try
             {
-                GetInfoModel model = new GetInfoModel
-                {
-                    Version = this.FullNode?.Version?.ToUint() ?? 0,
-                    ProtocolVersion = (uint)(this.Settings?.ProtocolVersion ?? NodeSettings.SupportedProtocolVersion),
-                    Blocks = this.chainState?.ConsensusTip?.Height ?? 0,
-                    TimeOffset = this.connectionManager?.ConnectedPeers?.GetMedianTimeOffset() ?? 0,
-                    Connections = this.connectionManager?.ConnectedPeers?.Count(),
-                    Proxy = string.Empty,
-                    Difficulty = this.GetNetworkDifficulty()?.Difficulty ?? 0,
-                    Testnet = this.network.IsTest(),
-                    RelayFee = this.Settings?.MinRelayTxFeeRate?.FeePerK?.ToUnit(MoneyUnit.BTC) ?? 0,
-                    Errors = string.Empty,
-
-                    //TODO: Wallet related infos: walletversion, balance, keypNetwoololdest, keypoolsize, unlocked_until, paytxfee
-                    WalletVersion = null,
-                    Balance = null,
-                    KeypoolOldest = null,
-                    KeypoolSize = null,
-                    UnlockedUntil = null,
-                    PayTxFee = null
-                };
-
-                return this.Json(model);
+				return this.Json(SharedRemoteMethods.GetInfo(this.FullNode, this.Settings, this.chainState, this.connectionManager,
+				    this.network, this.networkDifficulty));
             }
             catch (Exception e)
             {
@@ -251,26 +182,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
         {
             try
             {
-                Guard.NotNull(request.hash, nameof(request.hash));
-                this.logger.LogDebug("API GetBlockHeader {0}", request.hash);
-
-                if (!request.isJsonFormat)
-                {
-                    this.logger.LogError("Binary serialization is not supported for API '{0}'.", nameof(this.GetBlockHeader));
-                    throw new NotImplementedException();
-                }
-
-                BlockHeaderModel model = null;
-                if (this.chain != null)
-                {
-                    var blockHeader = this.chain.GetBlock(uint256.Parse(request.hash))?.Header;
-                    if (blockHeader != null)
-                    {
-                        model = new BlockHeaderModel(blockHeader);
-                    }
-                }
-
-                return this.Json(model);
+				return this.Json(SharedRemoteMethods.GetBlockHeader(request.hash, request.isJsonFormat, this.logger, this.chain));
             }
             catch (Exception e)
             {
@@ -291,34 +203,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
         {
             try
             {
-                if (string.IsNullOrEmpty(request.address))
-                {
-                    throw new ArgumentNullException("address");
-                }
-                ValidatedAddress res = new ValidatedAddress();
-                res.IsValid = false;
-                
-                // P2WPKH
-                if (BitcoinWitPubKeyAddress.IsValid(request.address, ref this.network, out Exception _))
-                {
-                    res.IsValid = true;
-                }
-                // P2WSH
-                else if (BitcoinWitScriptAddress.IsValid(request.address, ref this.network, out Exception _))
-                {
-                    res.IsValid = true;
-                }
-                // P2PKH
-                else if (BitcoinPubKeyAddress.IsValid(request.address, ref this.network))
-                {
-                    res.IsValid = true;
-                }
-                // P2SH
-                else if (BitcoinScriptAddress.IsValid(request.address, ref this.network))
-                {
-                    res.IsValid = true;
-                }
-                return this.Json(res);
+				return this.Json(SharedRemoteMethods.ValidateAddress(request.address, this.network));
             }
             catch (Exception e)
             {
@@ -339,26 +224,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
         {
             try
             {
-                Guard.NotNull(this.connectionManager, nameof(this.connectionManager));
-                IPEndPoint endpoint = NodeSettings.ConvertIpAddressToEndpoint(request.endpointStr, this.connectionManager.Network.DefaultPort);
-                switch (request.command)
-                {
-                    case "add":
-                        this.connectionManager.AddNodeAddress(endpoint);
-                        break;
-
-                    case "remove":
-                        this.connectionManager.RemoveNodeAddress(endpoint);
-                        break;
-
-                    case "onetry":
-                        this.connectionManager.ConnectAsync(endpoint).GetAwaiter().GetResult();
-                        break;
-
-                    default:
-                        throw new ArgumentException("command");
-                }
-                return this.Json(true);
+				return this.Json(SharedRemoteMethods.AddNode(request.str_endpoint, request.command, this.connectionManager));
             }
             catch (Exception e)
             {
@@ -379,44 +245,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
         {
             try
             {
-                // Connections.PeerNodeModel contained internal setters, so copied model into RPC.
-                List<Models.PeerNodeModel> peerList = new List<Models.PeerNodeModel>();
-
-                List<INetworkPeer> peers = this.connectionManager.ConnectedPeers.ToList();
-                foreach (INetworkPeer peer in peers)
-                {
-                    if ((peer != null) && (peer.RemoteSocketAddress != null))
-                    {
-                        Models.PeerNodeModel peerNode = new Models.PeerNodeModel
-                        {
-                            Id = peers.IndexOf(peer),
-                            Address = peer.RemoteSocketEndpoint.ToString()
-                        };
-
-                        if (peer.MyVersion != null)
-                        {
-                            peerNode.LocalAddress = peer.MyVersion.AddressReceiver?.ToString();
-                            peerNode.Services = ((ulong)peer.MyVersion.Services).ToString("X");
-                            peerNode.Version = (uint)peer.MyVersion.Version;
-                            peerNode.SubVersion = peer.MyVersion.UserAgent;
-                            peerNode.StartingHeight = peer.MyVersion.StartHeight;
-                        }
-
-                        ConnectionManagerBehavior connectionManagerBehavior = peer.Behavior<ConnectionManagerBehavior>();
-                        if (connectionManagerBehavior != null)
-                        {
-                            peerNode.Inbound = connectionManagerBehavior.Inbound;
-                            peerNode.IsWhiteListed = connectionManagerBehavior.Whitelisted;
-                        }
-
-                        if (peer.TimeOffset != null)
-                        {
-                            peerNode.TimeOffset = peer.TimeOffset.Value.Seconds;
-                        }
-                        peerList.Add(peerNode);
-                    }
-                }
-                return this.Json(peerList);
+				return this.Json(SharedRemoteMethods.GetPeerInfo(this.connectionManager));
             }
             catch (Exception e)
             {
@@ -436,8 +265,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
         {
             try
             {
-                Guard.NotNull(this.chainState, nameof(this.chainState));
-                return this.Json(this.chainState?.ConsensusTip?.HashBlock);
+				return this.Json(SharedRemoteMethods.GetBestBlockHash(this.chainState));
             }
             catch (Exception e)
             {
@@ -458,18 +286,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
         {
             try
             {
-                Guard.NotNull(this.consensusLoop, nameof(this.consensusLoop));
-                Guard.NotNull(this.chain, nameof(this.chain));
-                this.logger.LogDebug("API GetBlockHash {0}", request.height);
-
-                uint256 bestBlockHash = this.consensusLoop.Tip?.HashBlock;
-                ChainedHeader bestBlock = bestBlockHash == null ? null : this.chain.GetBlock(bestBlockHash);
-                if (bestBlock == null)
-                {
-                    return this.Json(null);
-                }
-                ChainedHeader block = this.chain.GetBlock(request.height);
-                return block == null || block.Height > bestBlock.Height ? this.Json(null) : this.Json(block.HashBlock);
+				return this.Json(SharedRemoteMethods.GetBlockHash(request.height, this.consensusLoop, this.chain, this.logger));
             }
             catch (Exception e)
             {
@@ -488,8 +305,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
         {
             try
             {
-                MempoolManager mempoolManager = this.FullNode.NodeService<MempoolManager>();
-                return this.Json(await mempoolManager.GetMempoolAsync());
+				return this.Json(await SharedRemoteMethods.GetRawMempoolAsync(this.FullNode));
             }
             catch (Exception e)
             {
@@ -509,23 +325,6 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
                 HttpStatusCode.BadRequest,
                 string.Join(Environment.NewLine, errors.Select(m => m.ErrorMessage)),
                 string.Join(Environment.NewLine, errors.Select(m => m.Exception?.Message)));
-        }
-
-        private async Task<ChainedHeader> GetTransactionBlockAsync(uint256 trxid)
-        {
-            ChainedHeader block = null;
-            IBlockStore blockStore = this.FullNode.NodeFeature<IBlockStore>();
-
-            uint256 blockid = blockStore != null ? await blockStore.GetTrxBlockIdAsync(trxid) : null;
-            if (blockid != null)
-                block = this.chain?.GetBlock(blockid);
-
-            return block;
-        }
-
-        private Target GetNetworkDifficulty()
-        {
-            return this.networkDifficulty?.GetNetworkDifficulty();
-        }
+        }        
     }
 }

@@ -69,7 +69,6 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
         public async Task Stop_WithFullNode_DisposesFullNodeAsync()
         {
             await this.controller.Stop().ConfigureAwait(false);
-
             this.fullNode.Verify(f => f.Dispose());
         }
 
@@ -81,7 +80,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
                 txid = "abcd1234",
                 verbose = false
             };
-
+            
             IActionResult result = await this.controller.GetRawTransactionAsync(request).ConfigureAwait(false);
 
             ErrorResult errorResult = Assert.IsType<ErrorResult>(result);
@@ -91,8 +90,6 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
             Assert.Equal(400, error.Status);
             Assert.StartsWith("System.ArgumentException", error.Description);
         }
-
-
 
         [Fact]
         public async Task GetRawTransactionAsync_TransactionCannotBeFound_ReturnsNullAsync()
@@ -339,7 +336,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
             GetTxOutRequestModel request = new GetTxOutRequestModel
             {
                 txid = "abcd1234",
-                vout = 0,
+                vout = "0",
                 includeMemPool = false
             };
 
@@ -354,20 +351,21 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
         }
 
         [Fact]
-        public async Task GetTxOutAsync_NullVoutandInMempool_UnspendTransactionFound_ReturnsModelVoutZeroAsync()
+        public async Task GetTxOutAsync_NullVoutandInMempool_PooledUnspentTransactionFound_ReturnsModelVoutZeroAsync()
         {
             var txId = new uint256(1243124);
             Transaction transaction = this.CreateTransaction();
             var unspentOutputs = new UnspentOutputs(1, transaction);
-            this.getUnspentTransaction.Setup(s => s.GetUnspentTransactionAsync(txId))
+            this.pooledGetUnspentTransaction.Setup(s => s.GetUnspentTransactionAsync(txId))
                 .ReturnsAsync(unspentOutputs)
                 .Verifiable();
+            
             GetTxOutRequestModel request = new GetTxOutRequestModel
             {
                 txid = txId.ToString()
             };
 
-            var json = (JsonResult)await this.controller.GetTxOutAsync(request).ConfigureAwait(false);
+            var json = (JsonResult) await this.controller.GetTxOutAsync(request).ConfigureAwait(false);
             GetTxOutModel resultModel = (GetTxOutModel)json.Value;
 
             this.getUnspentTransaction.Verify();
@@ -388,10 +386,10 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
             GetTxOutRequestModel request = new GetTxOutRequestModel
             {
                 txid = txId.ToString(),
-                vout = 0,
+                vout = "0",
                 includeMemPool = false
             };
-
+            
             var json = (JsonResult)await this.controller.GetTxOutAsync(request).ConfigureAwait(false);
 
             Assert.Null(json.Value);
@@ -407,7 +405,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
             GetTxOutRequestModel request = new GetTxOutRequestModel
             {
                 txid = txId.ToString(),
-                vout = 0,
+                vout = "0",
                 includeMemPool = false
             };
 
@@ -426,7 +424,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
             GetTxOutRequestModel request = new GetTxOutRequestModel
             {
                 txid = txId.ToString(),
-                vout = 0,
+                vout = "0",
                 includeMemPool = true
             };
 
@@ -445,7 +443,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
             GetTxOutRequestModel request = new GetTxOutRequestModel
             {
                 txid = txId.ToString(),
-                vout = 0,
+                vout = "0",
                 includeMemPool = true
             };
 
@@ -466,7 +464,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
             GetTxOutRequestModel request = new GetTxOutRequestModel
             {
                 txid = txId.ToString(),
-                vout = 0,
+                vout = "0",
                 includeMemPool = false
             };
 
@@ -495,7 +493,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
             GetTxOutRequestModel request = new GetTxOutRequestModel
             {
                 txid = txId.ToString(),
-                vout = 0,
+                vout = "0",
                 includeMemPool = true
             };
 
@@ -522,7 +520,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
             GetTxOutRequestModel request = new GetTxOutRequestModel
             {
                 txid = txId.ToString(),
-                vout = 13,
+                vout = "13",
                 includeMemPool = false
             };
 
@@ -549,7 +547,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
             GetTxOutRequestModel request = new GetTxOutRequestModel
             {
                 txid = txId.ToString(),
-                vout = 13,
+                vout = "13",
                 includeMemPool = true
             };
 
@@ -688,8 +686,10 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
         [Fact]
         public void GetInfo_NoNetworkDifficulty_ReturnsModel()
         {
-            this.controller = new APIFullNodeController(this.LoggerFactory.Object, this.network, this.chain, this.chainState.Object, this.connectionManager.Object, null, this.pooledGetUnspentTransaction.Object, this.getUnspentTransaction.Object, null,
+            INetworkDifficulty networkDifficulty = null;
+            this.controller = new APIFullNodeController(this.LoggerFactory.Object, this.network, this.chain, this.chainState.Object, this.connectionManager.Object, null, this.pooledGetUnspentTransaction.Object, this.getUnspentTransaction.Object, networkDifficulty,
                 this.consensusLoop.Object, this.fullNode.Object, this.nodeSettings);
+
             var json = (JsonResult)this.controller.GetInfo();
             GetInfoModel resultModel = (GetInfoModel)json.Value;
 
@@ -715,7 +715,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
         {
             GetBlockHeaderRequestModel request = new GetBlockHeaderRequestModel
             {
-                hash = "",
+                hash = "1341323442",
                 isJsonFormat = false
             };
             IActionResult result = this.controller.GetBlockHeader(request);
@@ -734,7 +734,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
             this.chain = null;
             GetBlockHeaderRequestModel request = new GetBlockHeaderRequestModel
             {
-                hash = "",
+                hash = "12341341545245",
                 isJsonFormat = true
             };
             this.controller = new APIFullNodeController(this.LoggerFactory.Object, this.network, this.chain, this.chainState.Object, this.connectionManager.Object, null, this.pooledGetUnspentTransaction.Object, this.getUnspentTransaction.Object, this.networkDifficulty.Object,
@@ -745,7 +745,6 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
             BlockHeaderModel resultModel = (BlockHeaderModel)json.Value;
             Assert.Null(resultModel);
         }
-
 
         [Fact]
         public void GetBlockHeader_BlockHeaderFound_ReturnsBlockHeaderModel()
@@ -893,7 +892,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
         {
             AddNodeRequestModel request = new AddNodeRequestModel
             {
-                endpointStr = "0.0.0.0",
+                str_endpoint = "0.0.0.0",
                 command = "notarealcommand"
             };
 
@@ -912,7 +911,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
         {
             AddNodeRequestModel request = new AddNodeRequestModel
             {
-                endpointStr = "a.b.c.d",
+                str_endpoint = "a.b.c.d",
                 command = "onetry"
             };
 
@@ -931,7 +930,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
         {
             AddNodeRequestModel request = new AddNodeRequestModel
             {
-                endpointStr = "0.0.0.0",
+                str_endpoint = "0.0.0.0",
                 command = "remove"
             };
 
