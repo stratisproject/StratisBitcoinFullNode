@@ -724,10 +724,10 @@ namespace NBitcoin
             {
                 address = IPAddress.Parse(ip);
             }
-            catch (FormatException)
+            catch (FormatException err)
             {
-                if (ip.Trim() == string.Empty)
-                    throw new FormatException("The IP Address is empty");
+                if (ip.Trim() == string.Empty || Uri.CheckHostName(ip) == UriHostNameType.Unknown)
+                    throw;
 
 #if !(WINDOWS_UWP || NETCORE)
                 address = Dns.GetHostEntry(ip).AddressList[0];
@@ -744,16 +744,31 @@ namespace NBitcoin
             return address;
         }
 
+        /// - 15.61.23.23
+        /// - 15.61.23.23:1500
+        /// - [1233:3432:2434:2343:3234:2345:6546:4534]
+        /// - [1233:3432:2434:2343:3234:2345:6546:4534]:8333
+        /// - ::ffff:192.168.4.1
+        /// - ::ffff:192.168.4.1:80
+        /// - google.com (Resolves domain name to IP Address)
+        /// - google.com:80 ('')
+
         public static IPEndPoint ParseIpEndpoint(string endpoint, int port)
         {
             // Get the position of the last ':'.
             int colon = endpoint.LastIndexOf(':');
 
-            // If the last ':' is not followed by ']' or '.' then is must be an ip address / port number separator.
-            if (colon >= 0 && endpoint.IndexOf(']', colon) < 0 && endpoint.IndexOf('.', colon) < 0)
+            if (colon >= 0)
             {
-                port = int.Parse(endpoint.Substring(colon + 1));
-                endpoint = endpoint.Substring(0, colon);
+                int bracket = endpoint.LastIndexOf(']');
+                int dot = endpoint.LastIndexOf('.');
+
+                // The ':' must be preceded by a ']' or a '.' with no ']' or '.' following the ':'.
+                if ((dot != -1 || bracket != -1) && dot < colon && bracket < colon)
+                {
+                    port = int.Parse(endpoint.Substring(colon + 1));
+                    endpoint = endpoint.Substring(0, colon);
+                }
             }
 
             return new IPEndPoint(ParseIPAddress(endpoint), port);
