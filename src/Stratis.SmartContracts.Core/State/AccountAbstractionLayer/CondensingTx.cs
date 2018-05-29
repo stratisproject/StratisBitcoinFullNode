@@ -26,8 +26,14 @@ namespace Stratis.SmartContracts.Core.State.AccountAbstractionLayer
         /// </summary>
         private readonly IContractStateRepository stateRepository;
 
+        /// <summary>
+        /// Address of the contract that was just called or created.
+        /// </summary>
         private readonly uint160 contractAddress;
 
+        /// <summary>
+        /// Context for the transaction that has just been executed.
+        /// </summary>
         private readonly ISmartContractTransactionContext transactionContext;
 
         /// <summary>
