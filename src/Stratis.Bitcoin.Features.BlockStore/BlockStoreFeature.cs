@@ -120,12 +120,6 @@ namespace Stratis.Bitcoin.Features.BlockStore
             return this.blockRepository.GetTrxBlockIdAsync(trxid);
         }
 
-        /// <inheritdoc/>
-        public ChainedHeader GetHighestPersistedBlock()
-        {
-            return this.blockRepository.HighestPersistedBlock;
-        }
-
         public override void Initialize()
         {
             this.logger.LogTrace("()");
