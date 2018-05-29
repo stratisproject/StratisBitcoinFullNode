@@ -23,7 +23,7 @@ namespace Stratis.Bitcoin.Tests.NodeConfiguration
             // Act
             string result = nodeSettings.Agent;
             // Assert
-            Assert.Equal("abc", result);
+            Assert.Equal("abc-StratisBitcoin", result);
         }
 
         /// <summary>
@@ -40,7 +40,7 @@ namespace Stratis.Bitcoin.Tests.NodeConfiguration
             // Act
             string result = nodeSettings.Agent;
             // Assert
-            Assert.Equal("def", result);
+            Assert.Equal("def-StratisBitcoin", result);
         }
 
         /// <summary>
@@ -57,7 +57,7 @@ namespace Stratis.Bitcoin.Tests.NodeConfiguration
             // Act
             string result = nodeSettings.Agent;
             // Assert
-            Assert.Equal("abc", result);
+            Assert.Equal("abc-StratisBitcoin", result);
         }
 
         /// <summary>
@@ -74,7 +74,7 @@ namespace Stratis.Bitcoin.Tests.NodeConfiguration
             // Act
             string result = nodeSettings.Agent;
             // Assert
-            Assert.Equal("", result);
+            Assert.Equal("StratisBitcoin", result);
         }
 
 
