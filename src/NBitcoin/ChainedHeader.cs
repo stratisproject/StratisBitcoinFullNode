@@ -148,6 +148,12 @@ namespace NBitcoin
         {
             this.Height = height;
             this.CalculateChainWork();
+
+            if (height == 0)
+            {
+                this.BlockDataAvailability = BlockDataAvailabilityState.BlockAvailable;
+                this.BlockValidationState = ValidationState.FullyValidated;
+            }
         }
 
         /// <summary>
