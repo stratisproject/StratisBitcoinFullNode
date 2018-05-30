@@ -474,8 +474,10 @@ namespace Stratis.Bitcoin.Consensus
 
             var newChainedHeaders = new List<ChainedHeader>();
 
-            ChainedHeader newChainedHeader = this.CreateAndValidateNewChainedHeader(newChainedHeaders, headers[newHeaderIndex], previousChainedHeader);
+            ChainedHeader newChainedHeader = this.CreateAndValidateNewChainedHeader(headers[newHeaderIndex], previousChainedHeader);
+            newChainedHeaders.Add(newChainedHeader);
             newHeaderIndex++;
+
             this.logger.LogTrace("New chained header was added to the tree '{0}'.", newChainedHeader);
 
             try
@@ -486,7 +488,8 @@ namespace Stratis.Bitcoin.Consensus
 
                 for (; newHeaderIndex < headers.Count; newHeaderIndex++)
                 {
-                    newChainedHeader = this.CreateAndValidateNewChainedHeader(newChainedHeaders, headers[newHeaderIndex], previousChainedHeader);
+                    newChainedHeader = this.CreateAndValidateNewChainedHeader(headers[newHeaderIndex], previousChainedHeader);
+                    newChainedHeaders.Add(newChainedHeader);
                     this.logger.LogTrace("New chained header was added to the tree '{0}'.", newChainedHeader);
 
                     previousChainedHeader = newChainedHeader;
@@ -506,13 +509,12 @@ namespace Stratis.Bitcoin.Consensus
             return newChainedHeaders;
         }
 
-        private ChainedHeader CreateAndValidateNewChainedHeader(List<ChainedHeader> newChainedHeaders, BlockHeader currentBlockHeader, ChainedHeader previousChainedHeader)
+        private ChainedHeader CreateAndValidateNewChainedHeader(BlockHeader currentBlockHeader, ChainedHeader previousChainedHeader)
         {
             var newChainedHeader = new ChainedHeader(currentBlockHeader, currentBlockHeader.GetHash(), previousChainedHeader);
 
             this.chainedHeaderValidator.Validate(newChainedHeader);
 
-            newChainedHeaders.Add(newChainedHeader);
             previousChainedHeader.Next.Add(newChainedHeader);
             this.chainedHeadersByHash.Add(newChainedHeader.HashBlock, newChainedHeader);
 
