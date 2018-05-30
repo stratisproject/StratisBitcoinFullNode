@@ -132,7 +132,6 @@ namespace Stratis.Bitcoin.Features.RPC
             fullNodeBuilder.ConfigureServices(service =>
             {
                 service.AddSingleton<FullNodeController>();
-                service.AddSingleton<APIFullNodeController>();
                 service.AddSingleton<ConnectionManagerController>();
                 service.AddSingleton<RpcSettings>(new RpcSettings(setup));
                 service.AddSingleton<IRPCClientFactory, RPCClientFactory>();

@@ -1,12 +1,12 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace Stratis.Bitcoin.Features.RPC.Models
+namespace Stratis.Bitcoin.Connection
 {
     public class AddNodeRequestModel
     {
         [Required(AllowEmptyStrings = false)]
         public string Endpoint { get; set; }
         [Required(AllowEmptyStrings = false)]
-        public string command { get; set; }
+        public string Command { get; set; }
     }
 }

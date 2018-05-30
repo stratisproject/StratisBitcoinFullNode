@@ -7,7 +7,9 @@ using Moq;
 using NBitcoin;
 using Stratis.Bitcoin.Features.BlockStore.Controllers;
 using Stratis.Bitcoin.Features.BlockStore.Models;
-using Stratis.Bitcoin.Tests.Common;
+using Stratis.Bitcoin.Features.Consensus;
+using Stratis.Bitcoin.Features.Consensus.Interfaces;
+using Stratis.Bitcoin.Tests.Wallet.Common;
 using Stratis.Bitcoin.Utilities.JsonErrors;
 using Xunit;
 
@@ -135,14 +137,36 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
                 ((Block)(result.Value)).ToHex(Network.StratisTest).Should().Be(BlockAsHex); 
         }
 
+        [Fact]
+        public void GetBlockCount_ReturnsHeightFromConsensusLoopTip()
+        {
+            var logger = new Mock<ILoggerFactory>();
+            var cache = new Mock<IBlockStoreCache>();
+            var consensusLoop = new Mock<IConsensusLoop>();
+            ConcurrentChain chain = WalletTestsHelpers.GenerateChainWithHeight(3, Network.StratisTest);
+
+            logger.Setup(l => l.CreateLogger(It.IsAny<string>())).Returns(Mock.Of<ILogger>);
+
+            consensusLoop.Setup(c => c.Tip)
+                .Returns(chain.GetBlock(2));
+
+            var controller = new BlockStoreController(logger.Object, cache.Object, consensusLoop.Object);
+
+            var json = (JsonResult)controller.GetBlockCount();
+            int result = int.Parse(json.Value.ToString());
+
+            Assert.Equal(2, result);
+        }
+               
         private static (Mock<IBlockStoreCache> cache, BlockStoreController controller) GetControllerAndCache()
         {
             var logger = new Mock<ILoggerFactory>();
             var cache = new Mock<IBlockStoreCache>();
+            var consensusLoop = new Mock<ConsensusLoop>();
 
             logger.Setup(l => l.CreateLogger(It.IsAny<string>())).Returns(Mock.Of<ILogger>);
 
-            var controller = new BlockStoreController(logger.Object, cache.Object);
+            var controller = new BlockStoreController(logger.Object, cache.Object, consensusLoop.Object);
 
             return (cache, controller);
         }

@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace Stratis.Bitcoin.Features.RPC.Models
+namespace Stratis.Bitcoin.Controllers.Models
 {
     public class GetRawTransactionRequestModel
     {

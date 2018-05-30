@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Features.BlockStore.Models;
+using Stratis.Bitcoin.Features.Consensus.Interfaces;
 using Stratis.Bitcoin.Utilities.JsonErrors;
 
 namespace Stratis.Bitcoin.Features.BlockStore.Controllers
@@ -20,10 +21,13 @@ namespace Stratis.Bitcoin.Features.BlockStore.Controllers
     {
         private readonly IBlockStoreCache blockStoreCache;
         private readonly ILogger logger;
+        private readonly IConsensusLoop consensusLoop;
 
-        public BlockStoreController(ILoggerFactory loggerFactory, IBlockStoreCache blockStoreCache)
+        public BlockStoreController(ILoggerFactory loggerFactory, 
+            IBlockStoreCache blockStoreCache, IConsensusLoop consensusLoop)
         {
-            this.blockStoreCache = blockStoreCache;         
+            this.blockStoreCache = blockStoreCache;
+            this.consensusLoop = consensusLoop;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
         }
 
@@ -46,6 +50,26 @@ namespace Stratis.Bitcoin.Features.BlockStore.Controllers
                     ? this.Json(new BlockModel(block))
                     : this.Json(block);
             } 
+            catch (Exception e)
+            {
+                this.logger.LogError("Exception occurred: {0}", e.ToString());
+                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
+            }
+        }
+
+        /// <summary>
+        /// Gets the current consensus tip height.
+        /// API implementation of RPC call.
+        /// </summary>
+        /// <returns>The current tip height. Returns <c>null</c> if fails.</returns>
+        [Route("getblockcount")]
+        [HttpGet]
+        public IActionResult GetBlockCount()
+        {
+            try
+            {
+                return this.Json(this.consensusLoop?.Tip.Height ?? -1);
+            }
             catch (Exception e)
             {
                 this.logger.LogError("Exception occurred: {0}", e.ToString());
