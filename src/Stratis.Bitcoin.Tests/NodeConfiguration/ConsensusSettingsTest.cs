@@ -1,9 +1,10 @@
 ﻿using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Configuration;
+using Stratis.Bitcoin.Configuration.Settings;
 using Xunit;
 
-namespace Stratis.Bitcoin.Features.Consensus.Tests
+namespace Stratis.Bitcoin.Tests.NodeConfiguration
 {
     public class ConsensusSettingsTest
     {

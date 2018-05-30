@@ -1,11 +1,13 @@
-﻿using System.Linq;
+﻿using System.Diagnostics;
+using System.Linq;
 
 namespace Stratis.Bitcoin.Utilities.Extensions
 {
     /// <summary>
-    /// Extension methods for arguments array.
+    /// Extension methods for command line arguments.
     /// </summary>
-    public static class ArgsExtensions
+    [DebuggerStepThrough()]
+    public static class CommandLineArgsExtensions
     {
         /// <summary>
         /// Obtains a value of command line argument.
