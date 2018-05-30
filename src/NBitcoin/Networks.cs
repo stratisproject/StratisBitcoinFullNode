@@ -363,11 +363,11 @@ namespace NBitcoin
 
             network.Checkpoints = new Dictionary<int, CheckpointInfo>
             {
-                { 0, new CheckpointInfo(new uint256("0x0000066e91e46e5a264d42c89e1204963b2ee6be230b443e9159020539d972af"), new uint256("0x0000000000000000000000000000000000000000000000000000000000000000")) },
-                { 2, new CheckpointInfo(new uint256("0xbca5936f638181e74a5f1e9999c95b0ce77da48c2688399e72bcc53a00c61eff"), new uint256("0x7d61c139a471821caa6b7635a4636e90afcfe5e195040aecbc1ad7d24924db1e")) }, // Premine
-                { 50, new CheckpointInfo(new uint256("0x0353b43f4ce80bf24578e7c0141d90d7962fb3a4b4b4e5a17925ca95e943b816"), new uint256("0x7c2af3b10d13f9d2bc6063baaf7f0860d90d870c994378144f9bf85d0d555061")) },
-                { 100, new CheckpointInfo(new uint256("0x688468a8aa48cd1c2197e42e7d8acd42760b7e2ac4bcab9d18ac149a673e16f6"), new uint256("0xcf2b1e9e76aaa3d96f255783eb2d907bf6ccb9c1deeb3617149278f0e4a1ab1b")) },
-                { 150, new CheckpointInfo(new uint256("0xe4ae9663519abec15e28f68bdb2cb89a739aee22f53d1573048d69141db6ee5d"), new uint256("0xa6c17173e958dc716cc0892ce33dad8bc327963d78a16c436264ceae43d584ce")) },
+                { 0,      new CheckpointInfo(new uint256("0x0000066e91e46e5a264d42c89e1204963b2ee6be230b443e9159020539d972af"), new uint256("0x0000000000000000000000000000000000000000000000000000000000000000")) },
+                { 2,      new CheckpointInfo(new uint256("0xbca5936f638181e74a5f1e9999c95b0ce77da48c2688399e72bcc53a00c61eff"), new uint256("0x7d61c139a471821caa6b7635a4636e90afcfe5e195040aecbc1ad7d24924db1e")) }, // Premine
+                { 50,     new CheckpointInfo(new uint256("0x0353b43f4ce80bf24578e7c0141d90d7962fb3a4b4b4e5a17925ca95e943b816"), new uint256("0x7c2af3b10d13f9d2bc6063baaf7f0860d90d870c994378144f9bf85d0d555061")) },
+                { 100,    new CheckpointInfo(new uint256("0x688468a8aa48cd1c2197e42e7d8acd42760b7e2ac4bcab9d18ac149a673e16f6"), new uint256("0xcf2b1e9e76aaa3d96f255783eb2d907bf6ccb9c1deeb3617149278f0e4a1ab1b")) },
+                { 150,    new CheckpointInfo(new uint256("0xe4ae9663519abec15e28f68bdb2cb89a739aee22f53d1573048d69141db6ee5d"), new uint256("0xa6c17173e958dc716cc0892ce33dad8bc327963d78a16c436264ceae43d584ce")) },
                 { 127500, new CheckpointInfo(new uint256("0x4773ca7512489df22de03aa03938412fab5b46154b05df004b97bcbeaa184078"), new uint256("0x619743c02ebaff06b90fcc5c60c52dba8aa3fdb6ba3800aae697cbb3c5483f17")) },
                 { 128943, new CheckpointInfo(new uint256("0x36bcaa27a53d3adf22b2064150a297adb02ac39c24263a5ceb73856832d49679"), new uint256("0xa3a6fd04e41fcaae411a3990aaabcf5e086d2d06c72c849182b27b4de8c2c42a")) },
                 { 136601, new CheckpointInfo(new uint256("0xf5c5210c55ff1ef9c04715420a82728e1647f3473e31dc478b3745a97b4a6d10"), new uint256("0x42058fabe21f7b118a9e358eaf9ef574dadefd024244899e71f2f6d618161e16")) }, // Hardfork to V2 - Drifting Bug Fix
@@ -378,8 +378,16 @@ namespace NBitcoin
                 { 350000, new CheckpointInfo(new uint256("0xe2b76d1a068c4342f91db7b89b66e0f2146d3a4706c21f3a262737bb7339253a"), new uint256("0xd1dd94985eaaa028c893687a7ddf89143dcf0176918f958c2d01f33d64910399")) },
                 { 390000, new CheckpointInfo(new uint256("0x4682737abc2a3257fdf4c3c119deb09cbac75981969e2ffa998b4f76b7c657bb"), new uint256("0xd84b204ee94499ff65262328a428851fb4f4d2741e928cdd088fdf1deb5413b8")) },
                 { 394000, new CheckpointInfo(new uint256("0x42857fa2bc15d45cdcaae83411f755b95985da1cb464ee23f6d40936df523e9f"), new uint256("0x2314b336906a2ed2a39cbdf6fc0622530709c62dbb3a3729de17154fc9d1a7c4")) },
-                { 528000, new CheckpointInfo(new uint256("0x7aff2c48b398446595d01e27b5cd898087cec63f94ff73f9ad695c6c9bcee33a"), new uint256("0x3bdc865661390c7681b078e52ed3ad3c53ec7cff97b8c45b74abed3ace289fcc")) },
-                { 576000, new CheckpointInfo(new uint256("0xe705476b940e332098d1d5b475d7977312ff8c08cbc8256ce46a3e2c6d5408b8"), new uint256("0x10e31bb5e245ea19650280cfd3ac1a76259fa0002d02e861d2ab5df290534b56")) },
+                { 400000, new CheckpointInfo(new uint256("0x4938d5cf450b4e2d9072558971223555055aa3987b634a8bb2e97f95d1a3c501"), new uint256("0x1756c127f0ac7029cf095a6c3ed9b7d206d0e36744d8b3cef306002f9f901a31")) },
+                { 450000, new CheckpointInfo(new uint256("0x7699e07ac18c25ac042deb6b985e2decfd6034cb6361de2152a2d704ef785bac"), new uint256("0xa140a86a03c4f852d8a651f6386a02a0262e7bbf841ede8b54541c011c51ba0e")) },
+                { 500000, new CheckpointInfo(new uint256("0x558700d99239e64017d10910466719fe1edc6f863bd3de254b89ba828818ea47"), new uint256("0x6a0b7dab4a7aa9ea2477cddffe5a976c9423454835054a39c19d37613002638f")) },
+                { 550000, new CheckpointInfo(new uint256("0x83d074957f509772b1fbbfaeb7bdc52932c540d54e205b92a7d4e92f68957eb4"), new uint256("0x012b63ad7d50606f2cafb1a7806ea90f4981c56b5407725aeeff34e3c584433c")) },
+                { 600000, new CheckpointInfo(new uint256("0xcd05c75c0c47060d78508095c0766452f80e2defb6a4641ac603742a2ccf2207"), new uint256("0x1f25507e09b199a71d5879811376856e5fb3da1da3d522204c017eec3b6c4dad")) },
+                { 650000, new CheckpointInfo(new uint256("0xa2814a439b33662f43bdbc8ab089d368524975bb53a08326395e57456cba8d39"), new uint256("0x192a2ef70e2280cf05aa5655f496a109b2445d0ddda62531e9bce9aaced1fe54")) },
+                { 700000, new CheckpointInfo(new uint256("0x782b2506bb67bb448ff56aa946f7aad6b63a6b27d8c5818725a56b568f25b9ce"), new uint256("0xf23dc64b130d80790a83a86913f619afaeef10e1fd24e4b42af9387ec935edd6")) },
+                { 750000, new CheckpointInfo(new uint256("0x4db98bd41a2f9ee845cc89ac03109686f615f4d0dcd81e0488005c1616fa692c"), new uint256("0x9f620af75bc27a0e4b503deaf7f052ba112a49bb74fb6446350642bc2ac9d93b")) },
+                { 800000, new CheckpointInfo(new uint256("0x161da1d97d35d6897dbdae110617bb839805f8b02d33ac23d227a87cacbfac78"), new uint256("0xe95049a313345f26bfa90094ceb6400f43359fc43fc5f1471918d98bc4ab3bac")) },
+                { 850000, new CheckpointInfo(new uint256("0xc3a249b01795b22858aa00fd0973471fcd769a14f4f9cf0abe6651ac3e6ade19"), new uint256("0x5de8766ed4cfcc3ce9d74f38196596c6f91b9ff62cbd20abbfa991dca54d2bd4")) },
             };
             
             network.Base58Prefixes[(int)Base58Type.PUBKEY_ADDRESS] = new byte[] { (63) };

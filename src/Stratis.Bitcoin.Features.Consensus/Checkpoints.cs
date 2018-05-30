@@ -21,8 +21,11 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// </summary>
         /// <param name="height">Height of the block.</param>
         /// <param name="hash">Block header hash to check.</param>
-        /// <returns><c>true</c> if either there is no checkpoint for the given height, or if the checkpointed block header hash equals to the checked <paramref name="hash"/>.
-        /// <c>false</c> if there is a checkpoint for the given <paramref name="height"/>, but the checkpointed block header hash is not the same as the checked <paramref name="hash"/>.</returns>
+        /// <returns>
+        /// <c>true</c> if either there is no checkpoint for the given height, or if the checkpointed block header hash equals
+        /// to the checked <paramref name="hash"/>. <c>false</c> if there is a checkpoint for the given <paramref name="height"/>,
+        /// but the checkpointed block header hash is not the same as the checked <paramref name="hash"/>.
+        /// </returns>
         bool CheckHardened(int height, uint256 hash);
 
         /// <summary>
@@ -40,13 +43,13 @@ namespace Stratis.Bitcoin.Features.Consensus
     /// <remarks>
     /// From https://github.com/bitcoin/bitcoin/blob/b1973d6181eacfaaf45effb67e0c449ea3a436b8/src/chainparams.cpp#L66 :
     /// What makes a good checkpoint block? It is surrounded by blocks with reasonable timestamps
-    //  (no blocks before with a timestamp after, none after with timestamp before). It also contains
-    //  no strange transactions.
+    /// (no blocks before with a timestamp after, none after with timestamp before). It also contains
+    /// no strange transactions.
     /// </remarks>
     public class Checkpoints : ICheckpoints
     {
         /// <summary>The current network. </summary>
-        private Network network;
+        private readonly Network network;
 
         /// <summary>Consensus settings for the full node.</summary>
         private ConsensusSettings consensusSettings { get; }
@@ -75,7 +78,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <inheritdoc />
         public int GetLastCheckpointHeight()
         {
-            var checkpoints = this.GetCheckpoints();
+            Dictionary<int, CheckpointInfo> checkpoints = this.GetCheckpoints();
             return checkpoints.Count > 0 ? checkpoints.Keys.Last() : 0;
         }
 
