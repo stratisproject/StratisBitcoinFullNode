@@ -458,7 +458,7 @@ namespace Stratis.Bitcoin.Consensus
         {
             this.logger.LogTrace("({0}.{1}:{2})", nameof(headers), nameof(headers.Count), headers.Count);
 
-            if (!this.TryFindNewHeader(headers, out int newHeaderIndex))
+            if (!this.TryFindNewHeaderIndex(headers, out int newHeaderIndex))
             {
                 this.logger.LogTrace("(-)[NO_NEW_HEADERS_FOUND]:null");
                 return null;
@@ -519,7 +519,10 @@ namespace Stratis.Bitcoin.Consensus
             return newChainedHeader;
         }
 
-        private bool TryFindNewHeader(List<BlockHeader> headers, out int newHeaderIndex)
+        /// <summary>
+        /// Find the first header in the given list of <see cref="headers"/> that does not exist in <see cref="chainedHeadersByHash"/>.
+        /// </summary>
+        private bool TryFindNewHeaderIndex(List<BlockHeader> headers, out int newHeaderIndex)
         {
             this.logger.LogTrace("({0}.{1}:{2})", nameof(headers), nameof(headers.Count), headers.Count);
 
