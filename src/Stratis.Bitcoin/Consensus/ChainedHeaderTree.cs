@@ -119,6 +119,68 @@ namespace Stratis.Bitcoin.Consensus
         }
 
         /// <summary>
+        /// Remove a peer and the branch on the tree that it claims.
+        /// </summary>
+        /// <param name="networkPeerId">The peer id that is removed.</param>
+        public void DisconnectPeer(int networkPeerId)
+        {
+            this.logger.LogTrace("({0}:{1})", nameof(networkPeerId), networkPeerId);
+
+            uint256 peerTipHash = this.peerTipsByPeerId.TryGet(networkPeerId);
+
+            if (peerTipHash != null)
+            {
+                ChainedHeader peerTip = this.chainedHeadersByHash.TryGet(peerTipHash);
+                this.RemovePeerClaim(networkPeerId, peerTip);
+            }
+
+            this.logger.LogTrace("(-)");
+        }
+
+        /// <summary>
+        /// Mark a <see cref="ChainedHeader"/> as <see cref="ValidationState.FullyValidated"/>.
+        /// </summary>
+        /// <param name="chainedHeader">The fully validated header.</param>
+        public void OnFullValidationSucceeded(ChainedHeader chainedHeader)
+        {
+            this.logger.LogTrace("({0}:{1})", nameof(chainedHeader), chainedHeader);
+
+            chainedHeader.BlockValidationState = ValidationState.FullyValidated;
+
+            this.logger.LogTrace("(-)");
+        }
+
+        public HashSet<int> OnPartialOrFullValidationFailed(ChainedHeader chainedHeader)
+        {
+            this.logger.LogTrace("({0}:{1})", nameof(chainedHeader), chainedHeader);
+
+            HashSet<int> peersToBan = new HashSet<int>();
+
+            this.RemoveUnclaimedBranch(chainedHeader);
+
+            this.logger.LogTrace("(-){0}", peersToBan);
+            return peersToBan;
+        }
+
+        public void OnBlockDataDownloaded(Block block, out ChainedHeader chainedHeader)
+        {
+            this.logger.LogTrace("({0}:{1})", nameof(block), block);
+
+            chainedHeader = null;
+
+            this.logger.LogTrace("(-)");
+        }
+
+        public void OnPartialValidationSucceeded(ChainedHeader chainedHeader, out bool wannaReorg)
+        {
+            this.logger.LogTrace("({0}:{1})", nameof(chainedHeader), chainedHeader);
+
+            wannaReorg = false;
+
+            this.logger.LogTrace("(-)");
+        }
+
+        /// <summary>
         /// A new list of headers are presented by a peer, the headers will try to be connected to the tree.
         /// Blocks associated with headers that are interesting (i.e. represent a chain with greater chainwork than our consensus tip)
         /// will be requested for download.
