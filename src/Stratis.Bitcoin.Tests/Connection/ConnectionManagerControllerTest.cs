@@ -55,7 +55,7 @@ namespace Stratis.Bitcoin.Tests.Controllers
         }
 
         [Fact]
-        public void AddNode_InvalidEndpoint_ThrowsFormatException()
+        public void AddNode_InvalidEndpoint_ThrowsException()
         {
             AddNodeRequestModel request = new AddNodeRequestModel
             {
@@ -70,7 +70,6 @@ namespace Stratis.Bitcoin.Tests.Controllers
             Assert.Single(errorResponse.Errors);
             ErrorModel error = errorResponse.Errors[0];
             Assert.Equal(400, error.Status);
-            Assert.StartsWith("System.FormatException", error.Description);
         }
 
         [Fact]

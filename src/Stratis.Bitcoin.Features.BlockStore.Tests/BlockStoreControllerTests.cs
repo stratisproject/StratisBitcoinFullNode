@@ -140,17 +140,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
         [Fact]
         public void GetBlockCount_ReturnsHeightFromConsensusLoopTip()
         {
-            var logger = new Mock<ILoggerFactory>();
-            var cache = new Mock<IBlockStoreCache>();
-            var consensusLoop = new Mock<IConsensusLoop>();
-            ConcurrentChain chain = WalletTestsHelpers.GenerateChainWithHeight(3, Network.StratisTest);
-
-            logger.Setup(l => l.CreateLogger(It.IsAny<string>())).Returns(Mock.Of<ILogger>);
-
-            consensusLoop.Setup(c => c.Tip)
-                .Returns(chain.GetBlock(2));
-
-            var controller = new BlockStoreController(logger.Object, cache.Object, consensusLoop.Object);
+            var (cache, controller) = GetControllerAndCache();
 
             var json = (JsonResult)controller.GetBlockCount();
             int result = int.Parse(json.Value.ToString());
@@ -162,7 +152,10 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
         {
             var logger = new Mock<ILoggerFactory>();
             var cache = new Mock<IBlockStoreCache>();
-            var consensusLoop = new Mock<ConsensusLoop>();
+            var consensusLoop = new Mock<IConsensusLoop>();
+            ConcurrentChain chain = WalletTestsHelpers.GenerateChainWithHeight(3, Network.StratisTest);
+            consensusLoop.Setup(c => c.Tip)
+                .Returns(chain.GetBlock(2));
 
             logger.Setup(l => l.CreateLogger(It.IsAny<string>())).Returns(Mock.Of<ILogger>);
 
