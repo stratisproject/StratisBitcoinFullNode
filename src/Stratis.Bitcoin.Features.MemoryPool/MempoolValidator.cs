@@ -546,7 +546,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         {
             // TODO: fix this to use dedicated mempool rules.
             new CheckPowTransactionRule { Logger = this.logger }.CheckTransaction(this.network, this.ConsensusOptions, context.Transaction);
-            if(this.chain.Network.Consensus.IsProofOfStake)
+            if (this.chain.Network.Consensus.IsProofOfStake)
                 new CheckPosTransactionRule { Logger = this.logger }.CheckTransaction(context.Transaction);
 
             // Coinbase is only valid in a block, not as a loose transaction
@@ -748,8 +748,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             if (context.Transaction.HasWitness && this.mempoolSettings.NodeSettings.RequireStandard && !this.IsWitnessStandard(context.Transaction, context.View))
                 context.State.Invalid(MempoolErrors.NonstandardWitness).Throw();
 
-            context.SigOpsCost = consensusRules.GetRule<PowCoinViewRule>().GetTransactionSignatureOperationCost(context.Transaction, context.View.Set,
-                new DeploymentFlags { ScriptFlags = ScriptVerify.Standard });
+            context.SigOpsCost = this.consensusRules.GetRule<CoinviewRule>().GetTransactionSignatureOperationCost(context.Transaction, context.View.Set, new DeploymentFlags { ScriptFlags = ScriptVerify.Standard });
 
             Money nValueIn = context.View.GetValueIn(context.Transaction);
 
@@ -1040,13 +1039,12 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <param name="scriptVerify">Script verify flag.</param>
         /// <param name="txData">Transaction data.</param>
         /// <returns>Whether inputs are valid.</returns>
-        private bool CheckInputs(MempoolValidationContext context, ScriptVerify scriptVerify,
-            PrecomputedTransactionData txData)
+        private bool CheckInputs(MempoolValidationContext context, ScriptVerify scriptVerify, PrecomputedTransactionData txData)
         {
             Transaction tx = context.Transaction;
             if (!context.Transaction.IsCoinBase)
             {
-                this.consensusRules.GetRule<PowCoinViewRule>().CheckInputs(context.Transaction, context.View.Set, this.chain.Height + 1);
+                this.consensusRules.GetRule<CoinviewRule>().CheckInputs(context.Transaction, context.View.Set, this.chain.Height + 1);
 
                 for (int iInput = 0; iInput < tx.Inputs.Count; iInput++)
                 {

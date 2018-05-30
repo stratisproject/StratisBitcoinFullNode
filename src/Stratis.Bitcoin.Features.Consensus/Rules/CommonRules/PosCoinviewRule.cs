@@ -10,28 +10,23 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
     /// Proof of stake override for the coinview rules - BIP68, MaxSigOps and BlockReward checks.
     /// </summary>
     [ExecutionRule]
-    public class PosCoinViewRule : PowCoinViewRule
+    public class PosCoinViewRule : CoinviewRule
     {
+        private PosConsensusOptions posConsensusOptions;
+
         /// <summary>Provides functionality for checking validity of PoS blocks.</summary>
         private IStakeValidator stakeValidator;
 
         /// <summary>Database of stake related data for the current blockchain.</summary>
         private IStakeChain stakeChain;
 
-        private PosConsensusOptions posConsensusOptions;
-
-        /// <inheritdoc />
-        public override void Initialize()
+        public override void OnInitialize()
         {
             this.Logger.LogTrace("()");
 
-            base.Initialize();
-
-            var consensusRules = (PosConsensusRules)this.Parent;
-
-            this.stakeValidator = consensusRules.StakeValidator;
-            this.stakeChain = consensusRules.StakeChain;
             this.posConsensusOptions = this.Parent.ConsensusParams.Option<PosConsensusOptions>();
+            this.stakeValidator = ((PosConsensusRules)this.Parent).StakeValidator;
+            this.stakeChain = ((PosConsensusRules)this.Parent).StakeChain;
 
             this.Logger.LogTrace("(-)");
         }
@@ -41,10 +36,9 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         {
             this.Logger.LogTrace("()");
 
-            // Compute and store the stake proofs.
             this.CheckAndComputeStake(context);
 
-            await base.RunAsync(context).ConfigureAwait(false);
+            await base.OnRunAsync(context).ConfigureAwait(false);
 
             await this.stakeChain.SetAsync(context.BlockValidationContext.ChainedHeader, context.Stake.BlockStake).ConfigureAwait(false);
 
@@ -52,7 +46,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         }
 
         /// <inheritdoc />
-        protected override void CheckBlockReward(RuleContext context, Money fees, int height, Block block)
+        public override void CheckBlockReward(RuleContext context, Money fees, int height, Block block)
         {
             this.Logger.LogTrace("({0}:{1},{2}:'{3}')", nameof(fees), fees, nameof(height), height);
 
@@ -83,7 +77,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         }
 
         /// <inheritdoc />
-        protected override void UpdateCoinView(RuleContext context, Transaction transaction)
+        public override void OnUpdateCoinView(RuleContext context, Transaction transaction)
         {
             this.Logger.LogTrace("()");
 
@@ -97,8 +91,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
             this.Logger.LogTrace("(-)");
         }
 
-        /// <inheritdoc />
-        protected override void CheckMaturity(UnspentOutputs coins, int spendHeight)
+        /// <inheritdoc/>
+        public override void OnCheckMaturity(UnspentOutputs coins, int spendHeight)
         {
             this.Logger.LogTrace("({0}:'{1}/{2}',{3}:{4})", nameof(coins), coins.TransactionId, coins.Height, nameof(spendHeight), spendHeight);
 
@@ -118,7 +112,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         }
 
         /// <summary>
-        /// Checks and computes stake.
+        /// Compute and store the stake proofs.
         /// </summary>
         /// <param name="context">Context that contains variety of information regarding blocks validation and execution.</param>
         /// <exception cref="ConsensusErrors.PrevStakeNull">Thrown if previous stake is not found.</exception>
