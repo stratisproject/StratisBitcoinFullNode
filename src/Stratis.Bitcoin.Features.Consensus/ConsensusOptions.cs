@@ -23,11 +23,11 @@ namespace Stratis.Bitcoin.Features.Consensus
 
         /// <summary>Coinstake minimal confirmations softfork activation height for the mainnet.</summary>
         /// TODO: replace with actual value
-        private const int CoinstakeMinConfirmationActivationHeightMainnet = 1100000;
+        private const int CoinstakeMinConfirmationActivationHeightMainnet = 940000;
 
         /// <summary>Coinstake minimal confirmations softfork activation height for the testnet.</summary>
         /// TODO: replace with actual value
-        private const int CoinstakeMinConfirmationActivationHeightTestnet = 600000;
+        private const int CoinstakeMinConfirmationActivationHeightTestnet = 436000;
 
         /// <summary>
         /// Initializes the default values.
