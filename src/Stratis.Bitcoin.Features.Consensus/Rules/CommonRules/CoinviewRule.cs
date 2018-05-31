@@ -33,7 +33,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         }
 
         /// <inheritdoc />
-        public override async Task RunAsync(RuleContext context)
+        protected async Task OnRunAsync(RuleContext context)
         {
             this.Logger.LogTrace("()");
 
@@ -114,7 +114,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
                     }
                 }
 
-                this.UpdateCoinView(context, tx);
+                this.OnUpdateCoinView(context, tx);
             }
 
             if (!context.SkipValidation)

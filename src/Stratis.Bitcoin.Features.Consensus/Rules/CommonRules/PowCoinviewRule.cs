@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Utilities;
 
@@ -50,6 +51,12 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         public override void OnUpdateCoinView(RuleContext context, Transaction transaction)
         {
             base.UpdateCoinView(context, transaction);
+        }
+
+        /// <inheritdoc />
+        public override Task RunAsync(RuleContext context)
+        {
+            return base.OnRunAsync(context);
         }
     }
 }
