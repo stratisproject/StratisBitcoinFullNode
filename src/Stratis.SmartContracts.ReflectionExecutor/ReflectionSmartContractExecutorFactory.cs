@@ -1,7 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.SmartContracts.Core;
-using Stratis.SmartContracts.Core.Receipts;
 using Stratis.SmartContracts.Core.State;
 using Stratis.SmartContracts.Core.Validation;
 
@@ -15,20 +14,17 @@ namespace Stratis.SmartContracts.ReflectionExecutor
         private readonly IKeyEncodingStrategy keyEncodingStrategy;
         private readonly ILoggerFactory loggerFactory;
         private readonly Network network;
-        private readonly ISmartContractReceiptStorage receiptStorage;
         private readonly SmartContractValidator validator;
 
         public ReflectionSmartContractExecutorFactory(
             IKeyEncodingStrategy keyEncodingStrategy,
             ILoggerFactory loggerFactory,
             Network network,
-            ISmartContractReceiptStorage receiptStorage,
             SmartContractValidator validator)
         {
             this.keyEncodingStrategy = keyEncodingStrategy;
             this.loggerFactory = loggerFactory;
             this.network = network;
-            this.receiptStorage = receiptStorage;
             this.validator = validator;
         }
 
@@ -48,7 +44,6 @@ namespace Stratis.SmartContracts.ReflectionExecutor
                     this.keyEncodingStrategy,
                     this.loggerFactory,
                     this.network,
-                    this.receiptStorage,
                     stateRepository,
                     transactionContext,
                     this.validator
@@ -59,7 +54,6 @@ namespace Stratis.SmartContracts.ReflectionExecutor
                 this.keyEncodingStrategy,
                 this.loggerFactory,
                 this.network,
-                this.receiptStorage,
                 stateRepository,
                 transactionContext,
                 this.validator

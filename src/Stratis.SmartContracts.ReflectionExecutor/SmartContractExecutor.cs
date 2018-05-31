@@ -6,7 +6,6 @@ using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Utilities;
 using Stratis.SmartContracts.Core;
-using Stratis.SmartContracts.Core.Receipts;
 using Stratis.SmartContracts.Core.State;
 using Stratis.SmartContracts.Core.State.AccountAbstractionLayer;
 using Stratis.SmartContracts.Core.Validation;
@@ -30,8 +29,6 @@ namespace Stratis.SmartContracts.ReflectionExecutor
         private readonly ILogger logger;
         protected readonly ILoggerFactory loggerFactory;
 
-        protected readonly ISmartContractReceiptStorage receiptStorage;
-
         internal ISmartContractExecutionResult Result { get; set; }
 
 
@@ -39,7 +36,6 @@ namespace Stratis.SmartContracts.ReflectionExecutor
             IKeyEncodingStrategy keyEncodingStrategy,
             ILoggerFactory loggerFactory,
             Network network,
-            ISmartContractReceiptStorage receiptStorage,
             IContractStateRepository stateSnapshot,
             ISmartContractTransactionContext transactionContext,
             SmartContractValidator validator)
@@ -52,7 +48,6 @@ namespace Stratis.SmartContracts.ReflectionExecutor
             this.network = network;
             this.stateSnapshot = stateSnapshot.StartTracking();
             this.transactionContext = transactionContext;
-            this.receiptStorage = receiptStorage;
             this.validator = validator;
         }
 
@@ -94,16 +89,6 @@ namespace Stratis.SmartContracts.ReflectionExecutor
         private void PostExecute()
         {
             new SmartContractExecutorResultProcessor(this.Result, this.loggerFactory).Process(this.carrier, this.transactionContext.MempoolFee);
-
-            try
-            {
-                this.logger.LogTrace("Save Receipt : {0}:{1},{2}:{3},{4}:{5}", nameof(this.carrier.TransactionHash), this.carrier.TransactionHash, nameof(this.transactionContext.BlockHeight), this.transactionContext.BlockHeight, nameof(this.carrier.ContractAddress), this.carrier.ContractAddress);
-                this.receiptStorage.SaveReceipt(this.carrier.TransactionHash, this.transactionContext.BlockHeight, this.Result, this.carrier.ContractAddress);
-            }
-            catch (Exception e)
-            {
-                this.logger.LogError("Exception occurred saving contract receipt: {0}", e.Message);
-            }
         }
 
         internal void LogExecutionContext(ILogger logger, IBlock block, IMessage message, uint160 contractAddress, SmartContractCarrier carrier)
@@ -130,11 +115,10 @@ namespace Stratis.SmartContracts.ReflectionExecutor
             IKeyEncodingStrategy keyEncodingStrategy,
             ILoggerFactory loggerFactory,
             Network network,
-            ISmartContractReceiptStorage receiptStorage,
             IContractStateRepository stateSnapshot,
             ISmartContractTransactionContext transactionContext,
             SmartContractValidator validator)
-            : base(keyEncodingStrategy, loggerFactory, network, receiptStorage, stateSnapshot, transactionContext, validator)
+            : base(keyEncodingStrategy, loggerFactory, network, stateSnapshot, transactionContext, validator)
         {
             this.logger = loggerFactory.CreateLogger(this.GetType());
         }
@@ -211,11 +195,10 @@ namespace Stratis.SmartContracts.ReflectionExecutor
             IKeyEncodingStrategy keyEncodingStrategy,
             ILoggerFactory loggerFactory,
             Network network,
-            ISmartContractReceiptStorage receiptStorage,
             IContractStateRepository stateSnapshot,
             ISmartContractTransactionContext transactionContext,
             SmartContractValidator validator)
-            : base(keyEncodingStrategy, loggerFactory, network, receiptStorage, stateSnapshot, transactionContext, validator)
+            : base(keyEncodingStrategy, loggerFactory, network, stateSnapshot, transactionContext, validator)
         {
             this.logger = loggerFactory.CreateLogger(this.GetType());
         }

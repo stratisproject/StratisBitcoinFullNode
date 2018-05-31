@@ -196,8 +196,8 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 });
 
                 this.receiptStorage = new DBreezeContractReceiptStorage(new DataFolder(folder.FolderName));
-                this.executorFactory = new ReflectionSmartContractExecutorFactory(this.keyEncodingStrategy, loggerFactory, this.network, this.receiptStorage, this.validator);
-                SmartContractConsensusValidator consensusValidator = new SmartContractConsensusValidator(this.cachedCoinView, this.network, new Checkpoints(), dateTimeProvider, loggerFactory, this.stateRoot, this.executorFactory);
+                this.executorFactory = new ReflectionSmartContractExecutorFactory(this.keyEncodingStrategy, loggerFactory, this.network, this.validator);
+                SmartContractConsensusValidator consensusValidator = new SmartContractConsensusValidator(this.cachedCoinView, new Checkpoints(), dateTimeProvider, this.executorFactory, loggerFactory, this.network, this.stateRoot, this.receiptStorage);
 
                 var networkPeerFactory = new NetworkPeerFactory(this.network, dateTimeProvider, loggerFactory, new PayloadProvider(), new SelfEndpointTracker());
 

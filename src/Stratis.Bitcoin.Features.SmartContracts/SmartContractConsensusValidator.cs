@@ -9,6 +9,7 @@ using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Utilities;
 using Stratis.SmartContracts.Core;
+using Stratis.SmartContracts.Core.Receipts;
 using Stratis.SmartContracts.Core.State;
 using Stratis.SmartContracts.Core.Util;
 
@@ -21,18 +22,20 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         private readonly ContractStateRepositoryRoot originalStateRoot;
         private readonly CoinView coinView;
         private readonly ISmartContractExecutorFactory executorFactory;
+        private readonly ISmartContractReceiptStorage receiptStorage;
         private List<Transaction> blockTxsProcessed;
         private Transaction generatedTransaction;
         private uint refundCounter;
 
         public SmartContractConsensusValidator(
             CoinView coinView,
-            Network network,
             ICheckpoints checkpoints,
             IDateTimeProvider dateTimeProvider,
+            ISmartContractExecutorFactory executorFactory,
             ILoggerFactory loggerFactory,
+            Network network,
             ContractStateRepositoryRoot stateRoot,
-            ISmartContractExecutorFactory executorFactory)
+            ISmartContractReceiptStorage receiptStorage)
             : base(network, checkpoints, dateTimeProvider, loggerFactory)
         {
             this.coinView = coinView;
@@ -40,6 +43,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             this.originalStateRoot = stateRoot;
             this.generatedTransaction = null;
             this.executorFactory = executorFactory;
+            this.receiptStorage = receiptStorage;
             this.refundCounter = 1;
         }
 
@@ -244,6 +248,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts
 
             if (result.InternalTransaction != null)
                 this.generatedTransaction = result.InternalTransaction;
+
+            SaveReceipt(txContext, result);
         }
 
         /// <summary>
@@ -285,6 +291,25 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                 if (refund.Value != refundToMatch.Value || refund.ScriptPubKey != refundToMatch.ScriptPubKey)
                     SmartContractConsensusErrors.UnequalRefundAmounts.Throw();
                 this.refundCounter++;
+            }
+        }
+
+        /// <summary>
+        /// Saves receipt in a database following execution.
+        /// TODO: When we have a receipt root, ensure that this is deterministic, and validated. i.e. block receipt roots match!
+        /// TODO: Also put it inside the block assembly then.
+        /// </summary>
+        private void SaveReceipt(ISmartContractTransactionContext txContext, ISmartContractExecutionResult result)
+        {
+            // For now we don't want it to interrupt execution so put it in a silly large try catch.
+            try
+            {
+                this.logger.LogTrace("Save Receipt : {0}:{1}", nameof(txContext.TransactionHash), txContext.TransactionHash);
+                this.receiptStorage.SaveReceipt(txContext, result);
+            }
+            catch (Exception e)
+            {
+                this.logger.LogError("Exception occurred saving contract receipt: {0}", e.Message);
             }
         }
     }
