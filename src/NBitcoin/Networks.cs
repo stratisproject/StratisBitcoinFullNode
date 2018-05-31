@@ -29,63 +29,30 @@ namespace NBitcoin
         /// <summary> The default name used for the Stratis configuration file. </summary>
         public const string StratisDefaultConfigFilename = "stratis.conf";
 
-        public static Network Main => Network.GetNetwork("Main") ?? InitMain();
+        public static Network Main => Network.GetNetwork("Main") ?? InitNetwork(new BitcoinMain());
 
-        public static Network TestNet => Network.GetNetwork("TestNet") ?? InitTest();
+        public static Network TestNet => Network.GetNetwork("TestNet") ?? InitNetwork(new BitcoinTest());
 
-        public static Network RegTest => Network.GetNetwork("RegTest") ?? InitReg();
+        public static Network RegTest => Network.GetNetwork("RegTest") ?? InitNetwork(new BitcoinRegTest());
 
-        public static Network StratisMain => Network.GetNetwork("StratisMain") ?? InitStratisMain();
+        public static Network StratisMain => Network.GetNetwork("StratisMain") ?? InitNetwork(new StratisMain());
 
-        public static Network StratisTest => Network.GetNetwork("StratisTest") ?? InitStratisTest();
+        public static Network StratisTest => Network.GetNetwork("StratisTest") ?? InitNetwork(new StratisTest());
 
-        public static Network StratisRegTest => Network.GetNetwork("StratisRegTest") ?? InitStratisRegTest();
+        public static Network StratisRegTest => Network.GetNetwork("StratisRegTest") ?? InitNetwork(new StratisRegTest());
 
-        private static Network InitMain()
+        private static Network InitNetwork(Network network)
         {
-            Network network = new BitcoinMain();
             Network.Register(network);
-            Network.Register(network, "mainnet");
 
-            return network;
-        }
-
-        private static Network InitTest()
-        {
-            Network network = new BitcoinTest();
-            Network.Register(network);
-            Network.Register(network, "test");
-
-            return network;
-        }
-
-        private static Network InitReg()
-        {
-            Network network = new BitcoinRegTest();
-            Network.Register(network);
-            Network.Register(network, "reg");
-
-            return network;
-        }
-
-        private static Network InitStratisMain()
-        {
-            Network network = new StratisMain();
-            Network.Register(network);
-            return network;
-        }
-
-        private static Network InitStratisTest()
-        {
-            Network network = new StratisTest();
-            Network.Register(network);
-            return network;
-        }
-
-        private static Network InitStratisRegTest()
-        {
-            Network network = new StratisRegTest();
-            Network.Register(network);
+            if (network.AdditionalNames != null)
+            {
+                foreach (var additionalName in network.AdditionalNames)
+                {
+                    Network.Register(network, additionalName);
+                }
+            }
+            
             return network;
         }
 
