@@ -295,8 +295,8 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
             }
             catch (Exception e)
             {
-                this.logger.LogError("Exception occurred: {0}", e.ToString());
-                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
+                this.logger.LogError(e, "Exception occurred: {0}", e.StackTrace);
+                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message(), e.StackTrace);
             }
         }
 
