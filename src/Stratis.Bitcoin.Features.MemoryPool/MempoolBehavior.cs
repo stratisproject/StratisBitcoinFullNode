@@ -68,7 +68,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <summary>
         /// Locking object for memory pool behaviour.
         /// </summary>
-        private readonly AsyncLock asyncLock = new AsyncLock();
+        private readonly object lockObject;
 
         /// <summary>
         /// Constructs an instance of memory pool behavior.
@@ -88,7 +88,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             IInitialBlockDownloadState initialBlockDownloadState,
             Signals.Signals signals,
             ILogger logger)
-        {
+        {            
             this.validator = validator;
             this.manager = manager;
             this.orphans = orphans;
@@ -97,6 +97,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             this.signals = signals;
             this.logger = logger;
 
+            this.lockObject = new object();
             this.inventoryTxToSend = new Dictionary<uint256, uint256>();
             this.filterInventoryKnown = new Dictionary<uint256, uint256>();
         }
@@ -296,8 +297,8 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             //  filterrate = pto->minFeeFilter;
             //}
 
-            List<TxMempoolInfo> sends = new List<TxMempoolInfo>();
-            using (this.asyncLock.Lock())
+            var sends = new List<TxMempoolInfo>();
+            lock (this.lockObject)
             {
                 foreach (TxMempoolInfo txinfo in vtxinfo)
                 {
@@ -310,7 +311,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                             continue;
                         }
                     this.filterInventoryKnown.TryAdd(hash, hash);
-                    this.logger.LogTrace("Added transaction ID '{0}' to known inventory filter.", hash);
                     sends.Add(txinfo);
                     this.logger.LogTrace("Added transaction ID '{0}' to inventory list.", hash);
                 }
@@ -378,7 +378,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             }
 
             // add to known inventory
-            using (this.asyncLock.Lock())
+            lock (this.lockObject)
             {
                 foreach (InventoryVector inventoryVector in send.Inventory)
                 {
@@ -444,7 +444,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             uint256 trxHash = trx.GetHash();
 
             // add to local filter
-            using (this.asyncLock.Lock())
+            lock (this.lockObject)
             {
                 this.filterInventoryKnown.TryAdd(trxHash, trxHash);
                 this.logger.LogTrace("Added transaction ID '{0}' to known inventory filter.", trxHash);
@@ -532,16 +532,16 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                     this.logger.LogTrace("Attempting to relaying transaction ID '{0}' to peer '{1}'.", hash, mempoolBehavior?.AttachedPeer.RemoteSocketEndpoint);
                     if (mempoolBehavior?.AttachedPeer.PeerVersion.Relay ?? false)
                     {
-                        using (mempoolBehavior.asyncLock.Lock())
+                        lock (mempoolBehavior.lockObject)
                         {
                             if (!mempoolBehavior.filterInventoryKnown.ContainsKey(hash))
                             {
                                 mempoolBehavior.inventoryTxToSend.TryAdd(hash, hash);
-                                this.logger.LogTrace("Added transaction ID '{0}' to inventory to send for peer '{1}'.", hash, mempoolBehavior?.AttachedPeer.RemoteSocketEndpoint);
+                                this.logger.LogTrace("Added transaction ID '{0}' to inventory to send to peer '{1}'.", hash, mempoolBehavior?.AttachedPeer.RemoteSocketEndpoint);
                             }
                             else
                             {
-                                this.logger.LogTrace("Transaction ID '{0}' already exists in inventory known filter for peer '{1}'.", hash, mempoolBehavior?.AttachedPeer.RemoteSocketEndpoint);
+                                this.logger.LogTrace("Transaction ID '{0}' already exists in inventory known filter of peer '{1}'.", hash, mempoolBehavior?.AttachedPeer.RemoteSocketEndpoint);
                             }
                         }
                     }
@@ -574,20 +574,15 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                 return;
             }
 
-            // before locking an exclusive task
-            // check if there is anything to processes
-            using (this.asyncLock.Lock())
+            var sends = new List<uint256>();
+            lock (this.lockObject)
             { 
                 if (!this.inventoryTxToSend.Keys.Any())
                 {
                     this.logger.LogTrace("(-)[NO_TXS]");
                     return;
                 }
-            }
-
-            List<uint256> sends = new List<uint256>();
-            using (this.asyncLock.Lock())
-            { 
+                            
                 this.logger.LogTrace("Creating list of transaction inventory to send.");
 
                 // Determine transactions to relay
