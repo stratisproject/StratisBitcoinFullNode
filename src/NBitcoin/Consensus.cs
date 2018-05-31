@@ -34,12 +34,10 @@ namespace NBitcoin
 
         public class BuriedDeploymentsArray
         {
-            readonly Consensus parent;
             readonly int[] heights;
 
-            public BuriedDeploymentsArray(Consensus parent)
+            public BuriedDeploymentsArray()
             {
-                this.parent = parent;
                 this.heights = new int[Enum.GetValues(typeof(BuriedDeployments)).Length];
             }
 
@@ -52,12 +50,10 @@ namespace NBitcoin
 
         public class BIP9DeploymentsArray
         {
-            readonly Consensus parent;
             readonly BIP9DeploymentsParameters[] parameters;
 
-            public BIP9DeploymentsArray(Consensus parent)
+            public BIP9DeploymentsArray()
             {
-                this.parent = parent;
                 this.parameters = new BIP9DeploymentsParameters[Enum.GetValues(typeof(BIP9Deployments)).Length];
             }
 
@@ -70,8 +66,8 @@ namespace NBitcoin
 
         public Consensus()
         {
-            this.BuriedDeployments = new BuriedDeploymentsArray(this);
-            this.BIP9Deployments = new BIP9DeploymentsArray(this);
+            this.BuriedDeployments = new BuriedDeploymentsArray();
+            this.BIP9Deployments = new BIP9DeploymentsArray();
 
             this.ConsensusFactory = new ConsensusFactory()
             {
@@ -79,9 +75,9 @@ namespace NBitcoin
             };
         }
 
-        public BuriedDeploymentsArray BuriedDeployments { get; }
+        public BuriedDeploymentsArray BuriedDeployments { get; set; }
 
-        public BIP9DeploymentsArray BIP9Deployments { get; }
+        public BIP9DeploymentsArray BIP9Deployments { get; set; }
 
         public int SubsidyHalvingInterval { get; set; }
 
