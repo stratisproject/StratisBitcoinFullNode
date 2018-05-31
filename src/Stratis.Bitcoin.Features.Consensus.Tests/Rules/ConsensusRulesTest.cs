@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Moq;
+using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Features.Consensus.Rules;
 using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
 using Xunit;
@@ -189,7 +190,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
 
             var blockValidationContext = new BlockValidationContext()
             {
-                ChainedBlock = this.concurrentChain.Tip,
+                ChainedHeader = this.concurrentChain.Tip,
                 RuleContext = new RuleContext()
                 {
                     SkipValidation = true

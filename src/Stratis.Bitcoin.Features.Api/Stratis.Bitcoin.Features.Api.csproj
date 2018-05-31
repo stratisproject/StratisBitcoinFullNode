@@ -8,7 +8,7 @@
     <PackageId>Stratis.Bitcoin.Api</PackageId>
     <RuntimeFrameworkVersion>2.0.0</RuntimeFrameworkVersion>
 
-    <Version>1.1.0-beta</Version>
+    <Version>1.1.2-beta</Version>
     <GeneratePackageOnBuild>False</GeneratePackageOnBuild>
     
     <ApplicationIcon />

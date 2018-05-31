@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Text;
 using NBitcoin.BouncyCastle.Math;
 using NBitcoin.Crypto;
@@ -14,14 +15,6 @@ namespace NBitcoin.Tests
 {
     public class util_tests
     {
-        public util_tests()
-        {
-            // These flags may get set due to static network initializers
-            // which include the initializers for Stratis.
-            Transaction.TimeStamp = false;
-            Block.BlockSignature = false;
-        }
-
         static byte[] ParseHex_expected = new byte[]{
     0x04, 0x67, 0x8a, 0xfd, 0xb0, 0xfe, 0x55, 0x48, 0x27, 0x19, 0x67, 0xf1, 0xa6, 0x71, 0x30, 0xb7,
     0x10, 0x5c, 0xd6, 0xa8, 0x28, 0xe0, 0x39, 0x09, 0xa6, 0x79, 0x62, 0xe0, 0xea, 0x1f, 0x61, 0xde,
@@ -826,10 +819,10 @@ namespace NBitcoin.Tests
         [Trait("UnitTest", "UnitTest")]
         public void CanParseBlockJSON()
         {
-            var jobj = JObject.Parse(File.ReadAllText("Data/blocks/Block1.json"));
+            var jobj = JObject.Parse(File.ReadAllText(TestDataLocations.GetFileFromDataBlockFolder("Block1.json")));
             var array = (JArray)jobj["mrkl_tree"];
             var expected = array.OfType<JValue>().Select(v => uint256.Parse(v.ToString())).ToList();
-            var block = Block.ParseJson(File.ReadAllText("Data/blocks/Block1.json"));
+            var block = Block.ParseJson(Network.Main, File.ReadAllText(TestDataLocations.GetFileFromDataBlockFolder("Block1.json")));
             Assert.Equal("000000000000000040cd080615718eb68f00a0138706e7afd4068f3e08d4ca20", block.GetHash().ToString());
             Assert.True(block.CheckMerkleRoot());
         }
@@ -899,6 +892,34 @@ namespace NBitcoin.Tests
             var b1_2 = b1 - (b2) + (new Money(10000));
             Assert.True(
                 b1_2.SequenceEqual(new IMoney[] { new AssetMoney(msft, 9), new AssetMoney(goog, 8), new Money(10000) }));
+        }
+
+        [Fact]
+        [Trait("UnitTest", "UnitTest")]
+        public void CanParseIpEndpoint()
+        {
+            IPEndPoint endpoint = Utils.ParseIpEndpoint("google.com:94", 90);
+            Assert.Equal(94, endpoint.Port);
+
+            endpoint = Utils.ParseIpEndpoint("google.com", 90);
+            Assert.Equal(90, endpoint.Port);
+
+            endpoint = Utils.ParseIpEndpoint("10.10.1.3", 90);
+            Assert.Equal("10.10.1.3", endpoint.Address.ToString());
+            Assert.Equal(90, endpoint.Port);
+
+            endpoint = Utils.ParseIpEndpoint("10.10.1.3:94", 90);
+            Assert.Equal("10.10.1.3", endpoint.Address.ToString());
+            Assert.Equal(94, endpoint.Port);
+            Assert.Throws<FormatException>(() => Utils.ParseIpEndpoint("2001:db8:1f70::999:de8:7648:6e8:100", 90));
+
+            endpoint = Utils.ParseIpEndpoint("2001:db8:1f70::999:de8:7648:6e8", 90);
+            Assert.Equal("2001:db8:1f70:0:999:de8:7648:6e8", endpoint.Address.ToString());
+            Assert.Equal(90, endpoint.Port);
+
+            endpoint = Utils.ParseIpEndpoint("[2001:db8:1f70::999:de8:7648:6e8]:94", 90);
+            Assert.Equal("2001:db8:1f70:0:999:de8:7648:6e8", endpoint.Address.ToString());
+            Assert.Equal(94, endpoint.Port);
         }
     }
 }

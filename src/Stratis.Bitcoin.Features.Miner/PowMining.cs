@@ -9,6 +9,7 @@ using Stratis.Bitcoin.Features.Consensus.Interfaces;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.MemoryPool.Interfaces;
 using Stratis.Bitcoin.Features.Miner.Interfaces;
+using Stratis.Bitcoin.Mining;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.Miner
@@ -31,6 +32,9 @@ namespace Stratis.Bitcoin.Features.Miner
     {
         /// <summary>Factory for creating background async loop tasks.</summary>
         private readonly IAsyncLoopFactory asyncLoopFactory;
+
+        /// <summary>Builder that creates a proof-of-work block template.</summary>
+        private readonly IBlockProvider blockProvider;
 
         /// <summary>Thread safe chain of block headers from genesis.</summary>
         private readonly ConcurrentChain chain;
@@ -87,6 +91,7 @@ namespace Stratis.Bitcoin.Features.Miner
 
         public PowMining(
             IAsyncLoopFactory asyncLoopFactory,
+            IBlockProvider blockProvider,
             IConsensusLoop consensusLoop,
             ConcurrentChain chain,
             IDateTimeProvider dateTimeProvider,
@@ -97,17 +102,17 @@ namespace Stratis.Bitcoin.Features.Miner
             ILoggerFactory loggerFactory)
         {
             this.asyncLoopFactory = asyncLoopFactory;
+            this.blockProvider = blockProvider;
             this.chain = chain;
             this.consensusLoop = consensusLoop;
             this.dateTimeProvider = dateTimeProvider;
             this.loggerFactory = loggerFactory;
+            this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.mempool = mempool;
             this.mempoolLock = mempoolLock;
             this.network = network;
             this.nodeLifetime = nodeLifetime;
-
             this.miningCancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(new[] { this.nodeLifetime.ApplicationStopping });
-            this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
         }
 
         ///<inheritdoc/>
@@ -178,16 +183,16 @@ namespace Stratis.Bitcoin.Features.Miner
             {
                 this.miningCancellationTokenSource.Token.ThrowIfCancellationRequested();
 
-                ChainedBlock chainTip = this.consensusLoop.Tip;
+                ChainedHeader chainTip = this.consensusLoop.Tip;
                 if (this.chain.Tip != chainTip)
                 {
                     Task.Delay(TimeSpan.FromMinutes(1), this.nodeLifetime.ApplicationStopping).GetAwaiter().GetResult();
                     continue;
                 }
 
-                BlockTemplate blockTemplate = new PowBlockAssembler(chainTip, this.consensusLoop, this.dateTimeProvider, this.loggerFactory, this.mempool, this.mempoolLock, this.network).CreateNewBlock(reserveScript.ReserveFullNodeScript);
+                BlockTemplate blockTemplate = this.blockProvider.BuildPowBlock(chainTip, reserveScript.ReserveFullNodeScript);
 
-                if (this.network.NetworkOptions.IsProofOfStake)
+                if (this.network.Consensus.IsProofOfStake)
                 {
                     // Make sure the POS consensus rules are valid. This is required for generation of blocks inside tests,
                     // where it is possible to generate multiple blocks within one second.
@@ -196,32 +201,32 @@ namespace Stratis.Bitcoin.Features.Miner
                 }
 
                 nExtraNonce = this.IncrementExtraNonce(blockTemplate.Block, chainTip, nExtraNonce);
-                Block pblock = blockTemplate.Block;
+                Block block = blockTemplate.Block;
 
-                while ((maxTries > 0) && (pblock.Header.Nonce < InnerLoopCount) && !pblock.CheckProofOfWork(this.network.Consensus))
+                while ((maxTries > 0) && (block.Header.Nonce < InnerLoopCount) && !block.CheckProofOfWork(this.network.Consensus))
                 {
                     this.miningCancellationTokenSource.Token.ThrowIfCancellationRequested();
 
-                    ++pblock.Header.Nonce;
+                    ++block.Header.Nonce;
                     --maxTries;
                 }
 
                 if (maxTries == 0)
                     break;
 
-                if (pblock.Header.Nonce == InnerLoopCount)
+                if (block.Header.Nonce == InnerLoopCount)
                     continue;
 
-                var newChain = new ChainedBlock(pblock.Header, pblock.GetHash(), chainTip);
+                var newChain = new ChainedHeader(block.Header, block.GetHash(), chainTip);
 
                 if (newChain.ChainWork <= chainTip.ChainWork)
                     continue;
 
-                var blockValidationContext = new BlockValidationContext { Block = pblock };
+                var blockValidationContext = new BlockValidationContext { Block = block };
 
                 this.consensusLoop.AcceptBlockAsync(blockValidationContext).GetAwaiter().GetResult();
 
-                if (blockValidationContext.ChainedBlock == null)
+                if (blockValidationContext.ChainedHeader == null)
                 {
                     this.logger.LogTrace("(-)[REORG-2]");
                     return blocks;
@@ -236,10 +241,10 @@ namespace Stratis.Bitcoin.Features.Miner
                     return blocks;
                 }
 
-                this.logger.LogInformation("Mined new {0} block: '{1}'.", BlockStake.IsProofOfStake(blockValidationContext.Block) ? "POS" : "POW", blockValidationContext.ChainedBlock);
+                this.logger.LogInformation("Mined new {0} block: '{1}'.", BlockStake.IsProofOfStake(blockValidationContext.Block) ? "POS" : "POW", blockValidationContext.ChainedHeader);
 
                 nHeight++;
-                blocks.Add(pblock.GetHash());
+                blocks.Add(block.GetHash());
 
                 blockTemplate = null;
             }
@@ -248,7 +253,7 @@ namespace Stratis.Bitcoin.Features.Miner
         }
 
         ///<inheritdoc/>
-        public int IncrementExtraNonce(Block pblock, ChainedBlock pindexPrev, int nExtraNonce)
+        public int IncrementExtraNonce(Block pblock, ChainedHeader pindexPrev, int nExtraNonce)
         {
             // Update nExtraNonce
             if (this.hashPrevBlock != pblock.Header.HashPrevBlock)

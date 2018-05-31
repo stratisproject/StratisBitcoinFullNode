@@ -94,7 +94,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// </summary>
         /// <param name="coinType">The type of the coin this account is for.</param>
         /// <param name="block">The block whose details are used to update the wallet.</param>
-        public void SetLastBlockDetailsByCoinType(CoinType coinType, ChainedBlock block)
+        public void SetLastBlockDetailsByCoinType(CoinType coinType, ChainedHeader block)
         {
             AccountRoot accountRoot = this.AccountsRoot.SingleOrDefault(a => a.CoinType == coinType);
 

@@ -1,8 +1,5 @@
 using System;
-using System.Linq;
 using System.Threading.Tasks;
-using Microsoft.CodeAnalysis.CSharp;
-using NBitcoin;
 using NBitcoin.Protocol;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Configuration;
@@ -28,15 +25,13 @@ namespace Stratis.StratisD
         {
             try
             {
-                Network network = args.Contains("-testnet") ? Network.StratisTest : Network.StratisMain;
-                NodeSettings nodeSettings = new NodeSettings(network, ProtocolVersion.ALT_PROTOCOL_VERSION, args:args, loadConfiguration:false);
-
+                NodeSettings nodeSettings = new NodeSettings(protocolVersion:ProtocolVersion.ALT_PROTOCOL_VERSION, args:args, loadConfiguration:false);
 
                 // NOTES: running BTC and STRAT side by side is not possible yet as the flags for serialization are static
                 var node = new FullNodeBuilder()
                     .UseNodeSettings(nodeSettings)
-                    .UsePosConsensus()
                     .UseBlockStore()
+                    .UsePosConsensus()
                     .UseMempool()
                     .UseWallet()
                     .AddPowPosMining()

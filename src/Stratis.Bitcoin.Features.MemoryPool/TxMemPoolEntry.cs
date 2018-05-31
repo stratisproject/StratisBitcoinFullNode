@@ -29,7 +29,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// containing one of the inputs used in the calculation, then the cached
         /// values are still valid even after a reorg.
         /// </remarks>
-        public ChainedBlock MaxInputBlock;
+        public ChainedHeader MaxInputBlock;
     }
 
     /// <summary>

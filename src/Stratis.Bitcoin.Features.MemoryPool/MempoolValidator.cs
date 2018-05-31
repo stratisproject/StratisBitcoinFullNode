@@ -9,7 +9,7 @@ using Stratis.Bitcoin.Base.Deployments;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
-using Stratis.Bitcoin.Features.Consensus.Interfaces;
+using Stratis.Bitcoin.Features.Consensus.Rules;
 using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
 using Stratis.Bitcoin.Features.MemoryPool.Interfaces;
 using Stratis.Bitcoin.Utilities;
@@ -128,17 +128,20 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <summary>Coin view of the memory pool.</summary>
         private readonly CoinView coinView;
 
+        /// <inheritdoc cref="IConsensusRules" />
+        private readonly IConsensusRules consensusRules;
+
         /// <summary>Transaction memory pool for managing transactions in the memory pool.</summary>
         private readonly ITxMempool memPool;
-
-        /// <summary>Proof of work consensus validator.</summary>
-        private readonly IPowConsensusValidator consensusValidator;
 
         /// <summary>Instance logger for memory pool validator.</summary>
         private readonly ILogger logger;
 
         /// <summary>Minimum fee rate for a relay transaction.</summary>
         private readonly FeeRate minRelayTxFee;
+
+        /// <summary>Flags that determine how transaction should be validated in non-consensus code.</summary>
+        public static Transaction.LockTimeFlags StandardLocktimeVerifyFlags = Transaction.LockTimeFlags.VerifySequence | Transaction.LockTimeFlags.MedianTimePast;
 
         // TODO: Implement Later with CheckRateLimit()
         //private readonly FreeLimiterSection freeLimiter;
@@ -149,48 +152,51 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         //  public long LastTime;
         //}
 
+        private Network network;
+
         /// <summary>
         /// Constructs a memory pool validator object.
         /// </summary>
         /// <param name="memPool">Transaction memory pool for managing transactions in the memory pool.</param>
         /// <param name="mempoolLock">A lock for managing asynchronous access to memory pool.</param>
-        /// <param name="consensusValidator">Proof of work consensus validator.</param>
         /// <param name="dateTimeProvider">Date and time information provider.</param>
         /// <param name="mempoolSettings">Settings from the memory pool.</param>
         /// <param name="chain">Thread safe access to the best chain of block headers (that the node is aware of) from genesis.</param>
         /// <param name="coinView">Coin view of the memory pool.</param>
         /// <param name="loggerFactory">Logger factory for creating instance logger.</param>
         /// <param name="nodeSettings">Full node settings.</param>
+        /// <param name="consensusRules">Consensus rules engine.</param>
         public MempoolValidator(
             ITxMempool memPool,
             MempoolSchedulerLock mempoolLock,
-            IPowConsensusValidator consensusValidator,
             IDateTimeProvider dateTimeProvider,
             MempoolSettings mempoolSettings,
             ConcurrentChain chain,
             CoinView coinView,
             ILoggerFactory loggerFactory,
-            NodeSettings nodeSettings)
+            NodeSettings nodeSettings,
+            IConsensusRules consensusRules)
         {
             this.memPool = memPool;
             this.mempoolLock = mempoolLock;
-            this.consensusValidator = consensusValidator;
             this.dateTimeProvider = dateTimeProvider;
             this.mempoolSettings = mempoolSettings;
             this.chain = chain;
+            this.network = chain.Network;
             this.coinView = coinView;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             // TODO: Implement later with CheckRateLimit()
             // this.freeLimiter = new FreeLimiterSection();
             this.PerformanceCounter = new MempoolPerformanceCounter(this.dateTimeProvider);
             this.minRelayTxFee = nodeSettings.MinRelayTxFeeRate;
+            this.consensusRules = consensusRules;
         }
 
         /// <summary>Gets a counter for tracking memory pool performance.</summary>
         public MempoolPerformanceCounter PerformanceCounter { get; }
 
-        /// <summary>Gets the consensus options from the <see cref="PowConsensusValidator"/></summary>
-        public PowConsensusOptions ConsensusOptions => this.consensusValidator.ConsensusOptions;
+        /// <summary>Gets the consensus options from the <see cref="PowCoinViewRule"/></summary>
+        public PowConsensusOptions ConsensusOptions => this.network.Consensus.Option<PowConsensusOptions>();
 
         /// <inheritdoc />
         public async Task<bool> AcceptToMemoryPoolWithTime(MempoolValidationState state, Transaction tx)
@@ -236,7 +242,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <summary>
         /// Validates that the transaction is the final transaction."/>
         /// Validated by comparing the transaction vs chain tip.
-        /// If <see cref="PowConsensusValidator.StandardLocktimeVerifyFlags"/> flag is set then
+        /// If <see cref="PowCoinViewRule.StandardLocktimeVerifyFlags"/> flag is set then
         /// use the block time at the end of the block chain for validation.
         /// Otherwise use the current time for the block time.
         /// </summary>
@@ -269,7 +275,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             // When the next block is created its previous block will be the current
             // chain tip, so we use that to calculate the median time passed to
             // IsFinalTx() if LOCKTIME_MEDIAN_TIME_PAST is set.
-            DateTimeOffset blockTime = flags.HasFlag(PowConsensusValidator.StandardLocktimeVerifyFlags)
+            DateTimeOffset blockTime = flags.HasFlag(StandardLocktimeVerifyFlags)
                 ? chain.Tip.Header.BlockTime
                 : DateTimeOffset.FromUnixTimeMilliseconds(dateTimeProvider.GetTime());
 
@@ -285,18 +291,19 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// The LockPoints should not be considered valid if CheckSequenceLocks returns false.
         /// See consensus/consensus.h for flag definitions.
         /// </summary>
+        /// <param name="network">The blockchain network.</param>
         /// <param name="tip">Tip of the blockchain.</param>
         /// <param name="context">Validation context for the memory pool.</param>
         /// <param name="flags">Transaction lock time flags.</param>
         /// <param name="lp">Optional- existing lock points to use, and update during evaluation.</param>
         /// <param name="useExistingLockPoints">Whether to use the existing lock points during evaluation.</param>
         /// <returns>Whether sequence lock validated.</returns>
-        /// <seealso cref="SequenceLock.Evaluate(ChainedBlock)"/>
-        public static bool CheckSequenceLocks(ChainedBlock tip, MempoolValidationContext context, Transaction.LockTimeFlags flags, LockPoints lp = null,
-            bool useExistingLockPoints = false)
+        /// <seealso cref="SequenceLock.Evaluate(ChainedHeader)"/>
+        public static bool CheckSequenceLocks(Network network, ChainedHeader tip, MempoolValidationContext context, Transaction.LockTimeFlags flags, LockPoints lp = null, bool useExistingLockPoints = false)
         {
-            var dummyBlock = new Block { Header = { HashPrevBlock = tip.HashBlock } };
-            ChainedBlock index = new ChainedBlock(dummyBlock.Header, dummyBlock.GetHash(), tip);
+            var dummyBlock = network.Consensus.ConsensusFactory.CreateBlock();
+            dummyBlock.Header.HashPrevBlock = tip.HashBlock;
+            ChainedHeader index = new ChainedHeader(dummyBlock.Header, dummyBlock.GetHash(), tip);
 
             // CheckSequenceLocks() uses chainActive.Height()+1 to evaluate
             // height based locks because when SequenceLocks() is called within
@@ -542,8 +549,8 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         private void PreMempoolChecks(MempoolValidationContext context)
         {
             // TODO: fix this to use dedicated mempool rules.
-            new CheckPowTransactionRule { Logger = this.logger }.CheckTransaction(this.ConsensusOptions, context.Transaction);
-            if(this.chain.Network.NetworkOptions.IsProofOfStake)
+            new CheckPowTransactionRule { Logger = this.logger }.CheckTransaction(this.network, this.ConsensusOptions, context.Transaction);
+            if(this.chain.Network.Consensus.IsProofOfStake)
                 new CheckPosTransactionRule { Logger = this.logger }.CheckTransaction(context.Transaction);
 
             // Coinbase is only valid in a block, not as a loose transaction
@@ -572,7 +579,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             // Only accept nLockTime-using transactions that can be mined in the next
             // block; we don't want our mempool filled up with transactions that can't
             // be mined yet.
-            if (!CheckFinalTransaction(this.chain, this.dateTimeProvider, context.Transaction, PowConsensusValidator.StandardLocktimeVerifyFlags))
+            if (!CheckFinalTransaction(this.chain, this.dateTimeProvider, context.Transaction, MempoolValidator.StandardLocktimeVerifyFlags))
                 context.State.Fail(MempoolErrors.NonFinal).Throw();
         }
 
@@ -589,15 +596,15 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             // TODO: Implement Witness Code
 
             Transaction tx = context.Transaction;
-            if (tx.Version > this.consensusValidator.ConsensusOptions.MaxStandardVersion || tx.Version < 1)
+            if (tx.Version > this.ConsensusOptions.MaxStandardVersion || tx.Version < 1)
                 context.State.Fail(MempoolErrors.Version).Throw();
 
             // Extremely large transactions with lots of inputs can cost the network
             // almost as much to process as they cost the sender in fees, because
             // computing signature hashes is O(ninputs*txsize). Limiting transactions
             // to MAX_STANDARD_TX_WEIGHT mitigates CPU exhaustion attacks.
-            int sz = GetTransactionWeight(tx, this.consensusValidator.ConsensusOptions);
-            if (sz >= this.consensusValidator.ConsensusOptions.MaxStandardTxWeight)
+            int sz = GetTransactionWeight(tx, this.ConsensusOptions);
+            if (sz >= this.ConsensusOptions.MaxStandardTxWeight)
                 context.State.Fail(MempoolErrors.TxSize).Throw();
 
             foreach (TxIn txin in tx.Inputs)
@@ -623,7 +630,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             int dataOut = 0;
             foreach (TxOut txout in tx.Outputs)
             {
-                ScriptTemplate script = StandardScripts.GetTemplateFromScriptPubKey(txout.ScriptPubKey);
+                ScriptTemplate script = StandardScripts.GetTemplateFromScriptPubKey(this.network, txout.ScriptPubKey);
                 if (script == null) //!::IsStandard(txout.scriptPubKey, whichType, witnessEnabled))  https://github.com/bitcoin/bitcoin/blob/aa624b61c928295c27ffbb4d27be582f5aa31b56/src/policy/policy.cpp#L57-L80
                 {
                     context.State.Fail(MempoolErrors.Scriptpubkey).Throw();
@@ -716,7 +723,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             // itself can contain sigops MAX_STANDARD_TX_SIGOPS is less than
             // MAX_BLOCK_SIGOPS; we still consider this an invalid rather than
             // merely non-standard transaction.
-            if (context.SigOpsCost > this.consensusValidator.ConsensusOptions.MaxBlockSigopsCost)
+            if (context.SigOpsCost > this.ConsensusOptions.MaxBlockSigopsCost)
                 context.State.Fail(MempoolErrors.TooManySigops).Throw();
         }
 
@@ -734,7 +741,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             // be mined yet.
             // Must keep pool.cs for this unless we change CheckSequenceLocks to take a
             // CoinsViewCache instead of create its own
-            if (!CheckSequenceLocks(this.chain.Tip, context, PowConsensusValidator.StandardLocktimeVerifyFlags, context.LockPoints))
+            if (!CheckSequenceLocks(this.network, this.chain.Tip, context, StandardLocktimeVerifyFlags, context.LockPoints))
                 context.State.Fail(MempoolErrors.NonBIP68Final).Throw();
 
             // Check for non-standard pay-to-script-hash in inputs
@@ -745,7 +752,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             if (context.Transaction.HasWitness && this.mempoolSettings.NodeSettings.RequireStandard && !this.IsWitnessStandard(context.Transaction, context.View))
                 context.State.Invalid(MempoolErrors.NonstandardWitness).Throw();
 
-            context.SigOpsCost = this.consensusValidator.GetTransactionSignatureOperationCost(context.Transaction, context.View.Set,
+            context.SigOpsCost = consensusRules.GetRule<PowCoinViewRule>().GetTransactionSignatureOperationCost(context.Transaction, context.View.Set,
                 new DeploymentFlags { ScriptFlags = ScriptVerify.Standard });
 
             Money nValueIn = context.View.GetValueIn(context.Transaction);
@@ -1043,7 +1050,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             Transaction tx = context.Transaction;
             if (!context.Transaction.IsCoinBase)
             {
-                this.consensusValidator.CheckInputs(context.Transaction, context.View.Set, this.chain.Height + 1);
+                this.consensusRules.GetRule<PowCoinViewRule>().CheckInputs(context.Transaction, context.View.Set, this.chain.Height + 1);
 
                 for (int iInput = 0; iInput < tx.Inputs.Count; iInput++)
                 {
@@ -1052,7 +1059,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                     TxOut txout = context.View.GetOutputFor(input);
 
                     TransactionChecker checker = new TransactionChecker(tx, iiIntput, txout.Value, txData);
-                    ScriptEvaluationContext ctx = new ScriptEvaluationContext();
+                    ScriptEvaluationContext ctx = new ScriptEvaluationContext(this.network);
                     ctx.ScriptVerify = scriptVerify;
                     if (ctx.VerifyScript(input.ScriptSig, txout.ScriptPubKey, checker))
                     {
@@ -1106,7 +1113,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             foreach (TxIn txin in tx.Inputs)
             {
                 TxOut prev = mapInputs.GetOutputFor(txin);
-                ScriptTemplate template = StandardScripts.GetTemplateFromScriptPubKey(prev.ScriptPubKey);
+                ScriptTemplate template = StandardScripts.GetTemplateFromScriptPubKey(this.network, prev.ScriptPubKey);
                 if (template == null)
                     return false;
 
@@ -1143,12 +1150,12 @@ namespace Stratis.Bitcoin.Features.MemoryPool
 
                 // Get the scriptPubKey corresponding to this input.
                 Script prevScript = prev.ScriptPubKey;
-                if (prevScript.IsPayToScriptHash)
+                if (prevScript.IsPayToScriptHash(this.network))
                 {
                     // If the scriptPubKey is P2SH, we try to extract the redeemScript casually by converting the scriptSig
                     // into a stack. We do not check IsPushOnly nor compare the hash as these will be done later anyway.
                     // If the check fails at this stage, we know that this txid must be a bad one.
-                    PayToScriptHashSigParameters sigParams = PayToScriptHashTemplate.Instance.ExtractScriptSigParameters(input.ScriptSig);
+                    PayToScriptHashSigParameters sigParams = PayToScriptHashTemplate.Instance.ExtractScriptSigParameters(this.network, input.ScriptSig);
                     if (sigParams == null || sigParams.RedeemScript == null)
                         return false;
 
@@ -1156,11 +1163,11 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                 }
 
                 // Non-witness program must not be associated with any witness.
-                if (!prevScript.IsWitness)
+                if (!prevScript.IsWitness(this.network))
                     return false;
 
                 // Check P2WSH standard limits.
-                WitProgramParameters wit = PayToWitTemplate.Instance.ExtractScriptPubKeyParameters2(prevScript);
+                WitProgramParameters wit = PayToWitTemplate.Instance.ExtractScriptPubKeyParameters2(this.chain.Network, prevScript);
                 if (wit == null)
                     return false;
 

@@ -1,7 +1,7 @@
 ﻿using System;
 using System.IO;
 using NBitcoin.RPC;
-using Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers;
+using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
 using Stratis.Bitcoin.P2P.Peer;
 
 namespace Stratis.Bitcoin.IntegrationTests.RPC
@@ -52,6 +52,8 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
         /// <param name="path">The path of the folder to move the wallet to.</param>
         protected void InitializeTestWallet(string path)
         {
+            Directory.CreateDirectory(path);
+
             string testWalletPath = Path.Combine(path, "test.wallet.json");
             if (!File.Exists(testWalletPath))
                 File.Copy("Data/test.wallet.json", testWalletPath);

@@ -12,9 +12,36 @@ using Stratis.Bitcoin.Utilities;
 namespace Stratis.Bitcoin.Features.Consensus
 {
     /// <summary>
-    /// Provides functionality for checking validity of PoS blocks.
-    /// See <see cref="Stratis.Bitcoin.Features.Miner.PosMinting"/> for more information about PoS solutions.
+    /// Provides functionality for verifying validity of PoS block.
     /// </summary>
+    /// See <see cref="Stratis.Bitcoin.Features.Miner.PosMinting"/> for more information about PoS solutions.
+    /// <remarks>
+    /// These are the criteria for a new block to be accepted as a valid POS block at version 3 of the protocol,
+    /// which has been active since 6 August 2016 07:03:21 (Unix epoch time > 1470467000). All timestamps
+    /// are Unix epoch timestamps with seconds precision.
+    /// <list type="bullet">
+    /// <item>New block's timestamp ('BlockTime') MUST be strictly greater than previous block's timestamp.</item>
+    /// <item>Coinbase transaction's (first transaction in the block with no inputs) timestamp MUST be inside interval ['BlockTime' - 15; 'BlockTime'].</item>
+    /// <item>Coinstake transaction's (second transaction in the block with at least one input and at least 2 outputs and first output being empty) timestamp
+    /// MUST be equal to 'BlockTime' and it MUST have lower 4 bits set to 0 (i.e. be divisible by 16) - see <see cref="StakeTimestampMask"/>.</item>
+    /// <item>Block's header 'nBits' field MUST be set to the correct POS target value.</item>
+    /// <item>All transactions in the block must be final, which means their 'nLockTime' is either zero, or it is lower than current block's height
+    /// or node's 'AdjustedTime'. 'AdjustedTime' is the synchronized time among the node and its peers.</item>
+    /// <item>Coinstake transaction MUST be signed correctly.</item>
+    /// <item>Coinstake transaction's kernel (first) input MUST not be created within last <see cref="PosConsensusOptions.StakeMinConfirmations"/> blocks,
+    /// i.e. it MUST have that many confirmation at least.</item>
+    /// <item>Coinstake transaction's kernel must meet the staking target using this formula:
+    /// <code>hash(stakeModifierV2 + stakingCoins.Time + prevout.Hash + prevout.N + transactionTime) &lt; target * weight</code>
+    /// <para>
+    /// where 'stakingCoins' is the coinstake's kernel UTXO, 'prevout' is the kernel's output in that transaction,
+    /// 'prevout.Hash' is the hash of that transaction; 'transactionTime' is coinstake's transaction time; 'target' is the target as
+    /// in 'Bits' block header; 'weight' is the value of the kernel's input.
+    /// </para>
+    /// </item>
+    /// <item>Block's height MUST NOT be more than 500 blocks back - i.e. reorganizations longer than 500 are not allowed.</item>
+    /// <item>Coinbase 'scriptSig' starts with serialized block height value. This means that coinbase transaction commits to the height of the block it appears in.</item>
+    /// </list>
+    /// </remarks>
     public class StakeValidator : IStakeValidator
     {
         /// <summary>Expected (or target) block time in seconds.</summary>
@@ -54,31 +81,31 @@ namespace Stratis.Bitcoin.Features.Consensus
         }
 
         /// <inheritdoc/>
-        public ChainedBlock GetLastPowPosChainedBlock(IStakeChain stakeChain, ChainedBlock startChainedBlock, bool proofOfStake)
+        public ChainedHeader GetLastPowPosChainedBlock(IStakeChain stakeChain, ChainedHeader startChainedHeader, bool proofOfStake)
         {
-            Guard.Assert(startChainedBlock != null);
+            Guard.Assert(startChainedHeader != null);
 
-            this.logger.LogTrace("({0}:'{1}',{2}:{3})", nameof(startChainedBlock), startChainedBlock, nameof(proofOfStake), proofOfStake);
+            this.logger.LogTrace("({0}:'{1}',{2}:{3})", nameof(startChainedHeader), startChainedHeader, nameof(proofOfStake), proofOfStake);
 
-            BlockStake blockStake = stakeChain.Get(startChainedBlock.HashBlock);
+            BlockStake blockStake = stakeChain.Get(startChainedHeader.HashBlock);
 
-            while ((startChainedBlock.Previous != null) && (blockStake.IsProofOfStake() != proofOfStake))
+            while ((startChainedHeader.Previous != null) && (blockStake.IsProofOfStake() != proofOfStake))
             {
-                startChainedBlock = startChainedBlock.Previous;
-                blockStake = stakeChain.Get(startChainedBlock.HashBlock);
+                startChainedHeader = startChainedHeader.Previous;
+                blockStake = stakeChain.Get(startChainedHeader.HashBlock);
             }
 
-            this.logger.LogTrace("(-)':{0}'", startChainedBlock);
-            return startChainedBlock;
+            this.logger.LogTrace("(-)':{0}'", startChainedHeader);
+            return startChainedHeader;
         }
 
         /// <inheritdoc/>
-        public Target GetNextTargetRequired(IStakeChain stakeChain, ChainedBlock chainedBlock, NBitcoin.Consensus consensus, bool proofOfStake)
+        public Target GetNextTargetRequired(IStakeChain stakeChain, ChainedHeader chainedHeader, NBitcoin.Consensus consensus, bool proofOfStake)
         {
-            this.logger.LogTrace("({0}:'{1}',{2}:{3})", nameof(chainedBlock), chainedBlock, nameof(proofOfStake), proofOfStake);
+            this.logger.LogTrace("({0}:'{1}',{2}:{3})", nameof(chainedHeader), chainedHeader, nameof(proofOfStake), proofOfStake);
 
             // Genesis block.
-            if (chainedBlock == null)
+            if (chainedHeader == null)
             {
                 this.logger.LogTrace("(-)[GENESIS]:'{0}'", consensus.PowLimit);
                 return consensus.PowLimit;
@@ -91,7 +118,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                 : consensus.PowLimit.ToBigInteger();
 
             // First block.
-            ChainedBlock lastPowPosBlock = GetLastPowPosChainedBlock(stakeChain, chainedBlock, proofOfStake);
+            ChainedHeader lastPowPosBlock = GetLastPowPosChainedBlock(stakeChain, chainedHeader, proofOfStake);
             if (lastPowPosBlock.Previous == null)
             {
                 var res = new Target(targetLimit);
@@ -100,7 +127,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             }
 
             // Second block.
-            ChainedBlock prevLastPowPosBlock = GetLastPowPosChainedBlock(stakeChain, lastPowPosBlock.Previous, proofOfStake);
+            ChainedHeader prevLastPowPosBlock = GetLastPowPosChainedBlock(stakeChain, lastPowPosBlock.Previous, proofOfStake);
             if (prevLastPowPosBlock.Previous == null)
             {
                 var res = new Target(targetLimit);
@@ -145,9 +172,9 @@ namespace Stratis.Bitcoin.Features.Consensus
         }
 
         /// <inheritdoc/>
-        public void CheckProofOfStake(ContextStakeInformation context, ChainedBlock prevChainedBlock, BlockStake prevBlockStake, Transaction transaction, uint headerBits)
+        public void CheckProofOfStake(ContextStakeInformation context, ChainedHeader prevChainedHeader, BlockStake prevBlockStake, Transaction transaction, uint headerBits)
         {
-            this.logger.LogTrace("({0}:'{1}',{2}.{3}:'{4}',{5}:0x{6:X})", nameof(prevChainedBlock), prevChainedBlock.HashBlock, nameof(prevBlockStake), nameof(prevBlockStake.HashProof), prevBlockStake.HashProof, nameof(headerBits), headerBits);
+            this.logger.LogTrace("({0}:'{1}',{2}.{3}:'{4}',{5}:0x{6:X})", nameof(prevChainedHeader), prevChainedHeader.HashBlock, nameof(prevBlockStake), nameof(prevBlockStake.HashProof), prevBlockStake.HashProof, nameof(headerBits), headerBits);
 
             if (!transaction.IsCoinStake)
             {
@@ -177,7 +204,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             }
 
             // Min age requirement.
-            if (this.IsConfirmedInNPrevBlocks(prevUtxo, prevChainedBlock, this.consensusOptions.StakeMinConfirmations - 1))
+            if (this.IsConfirmedInNPrevBlocks(prevUtxo, prevChainedHeader, this.consensusOptions.StakeMinConfirmations - 1))
             {
                 this.logger.LogTrace("(-)[BAD_STAKE_DEPTH]");
                 ConsensusErrors.InvalidStakeDepth.Throw();
@@ -189,9 +216,9 @@ namespace Stratis.Bitcoin.Features.Consensus
         }
 
         /// <inheritdoc/>
-        public uint256 ComputeStakeModifierV2(ChainedBlock prevChainedBlock, BlockStake blockStakePrev, uint256 kernel)
+        public uint256 ComputeStakeModifierV2(ChainedHeader prevChainedHeader, BlockStake blockStakePrev, uint256 kernel)
         {
-            if (prevChainedBlock == null)
+            if (prevChainedHeader == null)
                 return 0; // Genesis block's modifier is 0.
 
             uint256 stakeModifier;
@@ -207,9 +234,9 @@ namespace Stratis.Bitcoin.Features.Consensus
         }
 
         /// <inheritdoc/>
-        public void CheckKernel(ContextStakeInformation context, ChainedBlock prevChainedBlock, uint headerBits, long transactionTime, OutPoint prevout)
+        public void CheckKernel(ContextStakeInformation context, ChainedHeader prevChainedHeader, uint headerBits, long transactionTime, OutPoint prevout)
         {
-            this.logger.LogTrace("({0}:'{1}',{2}:0x{3:X},{4}:{5},{6}:'{7}.{8}')", nameof(prevChainedBlock), prevChainedBlock,
+            this.logger.LogTrace("({0}:'{1}',{2}:0x{3:X},{4}:{5},{6}:'{7}.{8}')", nameof(prevChainedHeader), prevChainedHeader,
                 nameof(headerBits), headerBits, nameof(transactionTime), transactionTime, nameof(prevout), prevout.Hash, prevout.N);
 
             FetchCoinsResponse coins = this.coinView.FetchCoinsAsync(new[] { prevout.Hash }).GetAwaiter().GetResult();
@@ -219,7 +246,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                 ConsensusErrors.ReadTxPrevFailed.Throw();
             }
 
-            ChainedBlock prevBlock = this.chain.GetBlock(coins.BlockHash);
+            ChainedHeader prevBlock = this.chain.GetBlock(coins.BlockHash);
             if (prevBlock == null)
             {
                 this.logger.LogTrace("(-)[REORG]");
@@ -227,13 +254,13 @@ namespace Stratis.Bitcoin.Features.Consensus
             }
 
             UnspentOutputs prevUtxo = coins.UnspentOutputs[0];
-            if (this.IsConfirmedInNPrevBlocks(prevUtxo, prevChainedBlock, this.consensusOptions.StakeMinConfirmations - 1))
+            if (this.IsConfirmedInNPrevBlocks(prevUtxo, prevChainedHeader, this.consensusOptions.StakeMinConfirmations - 1))
             {
                 this.logger.LogTrace("(-)[LOW_COIN_AGE]");
                 ConsensusErrors.InvalidStakeDepth.Throw();
             }
 
-            BlockStake prevBlockStake = this.stakeChain.Get(prevChainedBlock.HashBlock);
+            BlockStake prevBlockStake = this.stakeChain.Get(prevChainedHeader.HashBlock);
             if (prevBlockStake == null)
             {
                 this.logger.LogTrace("(-)[BAD_STAKE_BLOCK]");
@@ -279,14 +306,14 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// Returns <c>true</c> if provided coins were confirmed in less than <paramref name="targetDepth"/> number of blocks.
         /// </summary>
         /// <param name="coins">Coins to check confirmation depth for.</param>
-        /// <param name="referenceChainedBlock">Chained block from which we are counting the depth.</param>
+        /// <param name="referenceChainedHeader">Chained block from which we are counting the depth.</param>
         /// <param name="targetDepth">The target depth.</param>
-        /// <returns><c>true</c> if the coins were spent within N blocks from <see cref="referenceChainedBlock"/>, <c>false</c> otherwise.</returns>
-        private bool IsConfirmedInNPrevBlocks(UnspentOutputs coins, ChainedBlock referenceChainedBlock, long targetDepth)
+        /// <returns><c>true</c> if the coins were spent within N blocks from <see cref="referenceChainedHeader"/>, <c>false</c> otherwise.</returns>
+        private bool IsConfirmedInNPrevBlocks(UnspentOutputs coins, ChainedHeader referenceChainedHeader, long targetDepth)
         {
-            this.logger.LogTrace("({0}:'{1}/{2}',{3}:'{4}',{5}:{6})", nameof(coins), coins.TransactionId, coins.Height, nameof(referenceChainedBlock), referenceChainedBlock, nameof(targetDepth), targetDepth);
+            this.logger.LogTrace("({0}:'{1}/{2}',{3}:'{4}',{5}:{6})", nameof(coins), coins.TransactionId, coins.Height, nameof(referenceChainedHeader), referenceChainedHeader, nameof(targetDepth), targetDepth);
 
-            int actualDepth = referenceChainedBlock.Height - (int)coins.Height;
+            int actualDepth = referenceChainedHeader.Height - (int)coins.Height;
             bool res = actualDepth < targetDepth;
 
             this.logger.LogTrace("(-):{0}", res);
@@ -317,7 +344,7 @@ namespace Stratis.Bitcoin.Features.Consensus
 
             var txData = new PrecomputedTransactionData(txTo);
             var checker = new TransactionChecker(txTo, txToInN, output.Value, txData);
-            var ctx = new ScriptEvaluationContext { ScriptVerify = flagScriptVerify };
+            var ctx = new ScriptEvaluationContext(this.chain.Network) { ScriptVerify = flagScriptVerify };
 
             bool res = ctx.VerifyScript(input.ScriptSig, output.ScriptPubKey, checker);
             this.logger.LogTrace("(-):{0}", res);

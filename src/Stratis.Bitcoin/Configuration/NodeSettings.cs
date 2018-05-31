@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Net;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -44,6 +43,8 @@ namespace Stratis.Bitcoin.Configuration
         /// <param name="innerNetwork">Specification of the network the node runs on - regtest/testnet/mainnet.</param>
         /// <param name="protocolVersion">Supported protocol version for which to create the configuration.</param>
         /// <param name="agent">The nodes user agent that will be shared with peers.</param>
+        /// <param name="args">The command-line arguments.</param>
+        /// <param name="loadConfiguration">Determines whether to load the configuration file.</param>
         public NodeSettings(Network innerNetwork = null, ProtocolVersion protocolVersion = SupportedProtocolVersion, 
             string agent = "StratisBitcoin", string[] args = null, bool loadConfiguration = true)
         {
@@ -99,7 +100,10 @@ namespace Stratis.Bitcoin.Configuration
                 if (testNet && regTest)
                     throw new ConfigurationException("Invalid combination of -regtest and -testnet.");
 
-                this.Network = testNet ? Network.TestNet : regTest ? Network.RegTest : Network.Main;
+                if (protocolVersion == ProtocolVersion.ALT_PROTOCOL_VERSION)
+                    this.Network = testNet ? Network.StratisTest : regTest ? Network.StratisRegTest : Network.StratisMain;
+                else
+                    this.Network = testNet ? Network.TestNet : regTest ? Network.RegTest : Network.Main;
             }
 
             // Setting the data directory.
@@ -197,6 +201,7 @@ namespace Stratis.Bitcoin.Configuration
         /// <summary>
         /// Loads the configuration file.
         /// </summary>
+        /// <param name="features">The features to include in the configuration file if a default file has to be created.</param>
         /// <returns>Initialized node configuration.</returns>
         /// <exception cref="ConfigurationException">Thrown in case of any problems with the configuration file or command line arguments.</exception>
         public NodeSettings LoadConfiguration(List<IFeatureRegistration> features = null)
@@ -214,13 +219,11 @@ namespace Stratis.Bitcoin.Configuration
                 this.ConfigurationFile = this.CreateDefaultConfigurationFile(features);
             }
 
+            // Add the file configuration to the command-line configuration.
             var fileConfig = new TextFileConfiguration(File.ReadAllText(this.ConfigurationFile));
             var config = new TextFileConfiguration(args);
             this.ConfigReader = config;
             fileConfig.MergeInto(config);
-
-            if (!Directory.Exists(this.DataFolder.CoinViewPath))
-                Directory.CreateDirectory(this.DataFolder.CoinViewPath);
 
             // Set the configuration filter and file path.
             this.Log.Load(config);
@@ -263,46 +266,9 @@ namespace Stratis.Bitcoin.Configuration
         }
 
         /// <summary>
-        /// Converts a string to an IP endpoint.
+        /// Gets the default configuration.
         /// </summary>
-        /// <param name="ipAddress">String to convert.</param>
-        /// <param name="port">Port to use if <paramref name="ipAddress"/> does not specify it.</param>
-        /// <returns>IP end point representation of the string.</returns>
-        /// <remarks>
-        /// IP addresses can have a port specified such that the format of <paramref name="ipAddress"/> is as such: address:port.
-        /// IPv4 and IPv6 addresses are supported.
-        /// In the case where the default port is passed and the IP address has a port specified in it, the IP address's port will take precedence.
-        /// Examples of addresses that are supported are: 15.61.23.23, 15.61.23.23:1500, [1233:3432:2434:2343:3234:2345:6546:4534], [1233:3432:2434:2343:3234:2345:6546:4534]:8333.</remarks>
-        public static IPEndPoint ConvertIpAddressToEndpoint(string ipAddress, int port)
-        {
-            // Checks the validity of the parameters passed.
-            Guard.NotEmpty(ipAddress, nameof(ipAddress));
-            if (port < IPEndPoint.MinPort || port > IPEndPoint.MaxPort)
-            {
-                throw new ConfigurationException($"Port {port} was outside of the values that can assigned for a port [{IPEndPoint.MinPort}-{IPEndPoint.MaxPort}].");
-            }
-
-            int colon = ipAddress.LastIndexOf(':');
-
-            // if a : is found, and it either follows a [...], or no other : is in the string, treat it as port separator
-            bool fHaveColon = colon != -1;
-            bool fBracketed = fHaveColon && (ipAddress[0] == '[' && ipAddress[colon - 1] == ']'); // if there is a colon, and in[0]=='[', colon is not 0, so in[colon-1] is safe
-            bool fMultiColon = fHaveColon && (ipAddress.LastIndexOf(':', colon - 1) != -1);
-            if (fHaveColon && (colon == 0 || fBracketed || !fMultiColon))
-            {
-                if (int.TryParse(ipAddress.Substring(colon + 1), out var n) && n > IPEndPoint.MinPort && n < IPEndPoint.MaxPort)
-                {
-                    ipAddress = ipAddress.Substring(0, colon);
-                    port = n;
-                }
-            }
-
-            return new IPEndPoint(IPAddress.Parse(ipAddress), port);
-        }
-
-        /// <summary>
-        /// Creates a default configuration file if no configuration file is found.
-        /// </summary>
+        /// <param name="features">The features to include in the configuration file if a default file has to be created.</param>
         /// <returns>Path to the configuration file.</returns>
         private string CreateDefaultConfigurationFile(List<IFeatureRegistration> features = null)
         {
@@ -321,8 +287,11 @@ namespace Stratis.Bitcoin.Configuration
                     foreach (var featureRegistration in features)
                     {
                         MethodInfo getDefaultConfiguration = featureRegistration.FeatureType.GetMethod("BuildDefaultConfigurationFile", BindingFlags.Public | BindingFlags.Static);
-
-                        getDefaultConfiguration?.Invoke(null, new object[] { builder });
+                        if (getDefaultConfiguration != null)
+                        {
+                            getDefaultConfiguration.Invoke(null, new object[] { builder, this.Network });
+                            builder.AppendLine();
+                        }
                     }
                 }
 
@@ -409,9 +378,46 @@ namespace Stratis.Bitcoin.Configuration
             builder.AppendLine($"-mintxfee=<number>        Minimum fee rate. Defaults to network specific value.");
             builder.AppendLine($"-fallbackfee=<number>     Fallback fee rate. Defaults to network specific value.");
             builder.AppendLine($"-minrelaytxfee=<number>   Minimum relay fee rate. Defaults to network specific value.");
-            builder.AppendLine($"-bantime=<number>         Number of seconds to keep misbehaving peers from reconnecting (Default 24-hour ban).");
+            builder.AppendLine($"-bantime=<number>         Number of seconds to keep misbehaving peers from reconnecting. Default {ConnectionManagerSettings.DefaultMisbehavingBantimeSeconds}.");
+            builder.AppendLine($"-maxoutboundconnections=<number> The maximum number of outbound connections. Default {ConnectionManagerSettings.DefaultMaxOutboundConnections}.");
 
             defaults.Logger.LogInformation(builder.ToString());
+        }
+        
+        /// <summary>
+        /// Get the default configuration.
+        /// </summary>
+        /// <param name="builder">The string builder to add the settings to.</param>
+        /// <param name="network">The network to base the defaults off.</param>
+        public static void BuildDefaultConfigurationFile(StringBuilder builder, Network network)
+        {
+            var defaults = Default();
+
+            builder.AppendLine("####Node Settings####");
+            builder.AppendLine($"#Accept non-standard transactions. Default {(defaults.RequireStandard?1:0)}.");
+            builder.AppendLine($"#acceptnonstdtxn={(defaults.RequireStandard?1:0)}");
+            builder.AppendLine($"#Max tip age. Default {network.MaxTipAge}.");
+            builder.AppendLine($"#maxtipage={network.MaxTipAge}");
+            builder.AppendLine($"#Specified node to connect to. Can be specified multiple times.");
+            builder.AppendLine($"#connect=<ip:port>");
+            builder.AppendLine($"#Add a node to connect to and attempt to keep the connection open. Can be specified multiple times.");
+            builder.AppendLine($"#addnode=<ip:port>");
+            builder.AppendLine($"#Bind to given address and whitelist peers connecting to it. Use [host]:port notation for IPv6. Can be specified multiple times.");
+            builder.AppendLine($"#whitebind=<ip:port>");
+            builder.AppendLine($"#Specify your own public address.");
+            builder.AppendLine($"#externalip=<ip>");
+            builder.AppendLine($"#Sync with peers. Default 1.");
+            builder.AppendLine($"#synctime=1");
+            builder.AppendLine($"#Minimum fee rate. Defaults to {network.MinTxFee}.");
+            builder.AppendLine($"#mintxfee={network.MinTxFee}");
+            builder.AppendLine($"#Fallback fee rate. Defaults to {network.FallbackFee}.");
+            builder.AppendLine($"#fallbackfee={network.FallbackFee}");
+            builder.AppendLine($"#Minimum relay fee rate. Defaults to {network.MinRelayTxFee}.");
+            builder.AppendLine($"#minrelaytxfee={network.MinRelayTxFee}");
+            builder.AppendLine($"#Number of seconds to keep misbehaving peers from reconnecting. Default {ConnectionManagerSettings.DefaultMisbehavingBantimeSeconds}.");
+            builder.AppendLine($"#bantime=<number>");
+            builder.AppendLine($"#The maximum number of outbound connections. Default {ConnectionManagerSettings.DefaultMaxOutboundConnections}.");
+            builder.AppendLine($"#maxoutboundconnections=<number>");
         }
     }
 }

@@ -4,9 +4,8 @@ using System.Linq;
 using System.Threading.Tasks;
 using ConcurrentCollections;
 using NBitcoin;
-using Stratis.Bitcoin.Broadcasting;
 using Stratis.Bitcoin.Connection;
-using Stratis.Bitcoin.Interfaces;
+using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
 using Stratis.Bitcoin.Utilities;
@@ -38,19 +37,16 @@ namespace Stratis.Bitcoin.Features.Wallet.Broadcasting
         public TransactionBroadcastEntry GetTransaction(uint256 transactionHash)
         {
             TransactionBroadcastEntry txEntry = this.Broadcasts.FirstOrDefault(x => x.Transaction.GetHash() == transactionHash);
-            if (txEntry == default(TransactionBroadcastEntry))
-                return null;
-
-            return txEntry;
+            return txEntry ?? null;
         }
 
-        public void AddOrUpdate(Transaction transaction, State state)
+        public void AddOrUpdate(Transaction transaction, State state, string errorMessage = "")
         {
             TransactionBroadcastEntry broadcastEntry = this.Broadcasts.FirstOrDefault(x => x.Transaction.GetHash() == transaction.GetHash());
 
             if (broadcastEntry == null)
             {
-                broadcastEntry = new TransactionBroadcastEntry(transaction, state);
+                broadcastEntry = new TransactionBroadcastEntry(transaction, state, errorMessage);
                 this.Broadcasts.Add(broadcastEntry);
                 this.OnTransactionStateChanged(broadcastEntry);
             }

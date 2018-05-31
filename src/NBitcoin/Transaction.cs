@@ -230,9 +230,9 @@ namespace NBitcoin
         /// Try to get the expected scriptPubKey of this TxIn based on its scriptSig and witScript.
         /// </summary>
         /// <returns>Null if could not infer the scriptPubKey, else, the expected scriptPubKey</returns>
-        public IDestination GetSigner()
+        public IDestination GetSigner(Network network)
         {
-            return scriptSig.GetSigner() ?? witScript.GetSigner();
+            return scriptSig.GetSigner(network) ?? witScript.GetSigner(network);
         }
 
         WitScript witScript = WitScript.Empty;
@@ -263,9 +263,9 @@ namespace NBitcoin
 
         #endregion
 
-        public bool IsFrom(PubKey pubKey)
+        public bool IsFrom(Network network, PubKey pubKey)
         {
-            var result = PayToPubkeyHashTemplate.Instance.ExtractScriptSigParameters(ScriptSig);
+            var result = PayToPubkeyHashTemplate.Instance.ExtractScriptSigParameters(network, ScriptSig);
             return result != null && result.PublicKey == pubKey;
         }
 
@@ -694,49 +694,49 @@ namespace NBitcoin
             set;
         }
 
-        public bool VerifyScript(Script scriptPubKey, ScriptVerify scriptVerify = ScriptVerify.Standard)
+        public bool VerifyScript(Network network, Script scriptPubKey, ScriptVerify scriptVerify = ScriptVerify.Standard)
         {
-            return VerifyScript(scriptPubKey, scriptVerify, out ScriptError unused);
+            return VerifyScript(network, scriptPubKey, scriptVerify, out ScriptError unused);
         }
-        public bool VerifyScript(Script scriptPubKey, out ScriptError error)
+        public bool VerifyScript(Network network, Script scriptPubKey, out ScriptError error)
         {
-            return Script.VerifyScript(scriptPubKey, Transaction, (int)Index, null, out error);
+            return Script.VerifyScript(network, scriptPubKey, Transaction, (int)Index, null, out error);
         }
-        public bool VerifyScript(Script scriptPubKey, ScriptVerify scriptVerify, out ScriptError error)
+        public bool VerifyScript(Network network, Script scriptPubKey, ScriptVerify scriptVerify, out ScriptError error)
         {
-            return Script.VerifyScript(scriptPubKey, Transaction, (int)Index, null, scriptVerify, SigHash.Undefined, out error);
+            return Script.VerifyScript(network, scriptPubKey, Transaction, (int)Index, null, scriptVerify, SigHash.Undefined, out error);
         }
-        public bool VerifyScript(Script scriptPubKey, Money value, ScriptVerify scriptVerify, out ScriptError error)
+        public bool VerifyScript(Network network, Script scriptPubKey, Money value, ScriptVerify scriptVerify, out ScriptError error)
         {
-            return Script.VerifyScript(scriptPubKey, Transaction, (int)Index, value, scriptVerify, SigHash.Undefined, out error);
-        }
-
-        public bool VerifyScript(ICoin coin, ScriptVerify scriptVerify = ScriptVerify.Standard)
-        {
-            return VerifyScript(coin, scriptVerify, out ScriptError unused);
+            return Script.VerifyScript(network, scriptPubKey, Transaction, (int)Index, value, scriptVerify, SigHash.Undefined, out error);
         }
 
-        public bool VerifyScript(ICoin coin, ScriptVerify scriptVerify, out ScriptError error)
+        public bool VerifyScript(Network network, ICoin coin, ScriptVerify scriptVerify = ScriptVerify.Standard)
         {
-            return Script.VerifyScript(coin.TxOut.ScriptPubKey, Transaction, (int)Index, coin.TxOut.Value, scriptVerify, SigHash.Undefined, out error);
-        }
-        public bool VerifyScript(ICoin coin, out ScriptError error)
-        {
-            return VerifyScript(coin, ScriptVerify.Standard, out error);
+            return VerifyScript(network, coin, scriptVerify, out ScriptError unused);
         }
 
-        public TransactionSignature Sign(Key key, ICoin coin, SigHash sigHash)
+        public bool VerifyScript(Network network, ICoin coin, ScriptVerify scriptVerify, out ScriptError error)
         {
-            var hash = GetSignatureHash(coin, sigHash);
+            return Script.VerifyScript(network, coin.TxOut.ScriptPubKey, Transaction, (int)Index, coin.TxOut.Value, scriptVerify, SigHash.Undefined, out error);
+        }
+        public bool VerifyScript(Network network, ICoin coin, out ScriptError error)
+        {
+            return VerifyScript(network, coin, ScriptVerify.Standard, out error);
+        }
+
+        public TransactionSignature Sign(Network network, Key key, ICoin coin, SigHash sigHash)
+        {
+            var hash = GetSignatureHash(network, coin, sigHash);
             return key.Sign(hash, sigHash);
         }
 
-        public uint256 GetSignatureHash(ICoin coin, SigHash sigHash = SigHash.All)
+        public uint256 GetSignatureHash(Network network, ICoin coin, SigHash sigHash = SigHash.All)
         {
-            return Script.SignatureHash(coin.GetScriptCode(), Transaction, (int)Index, sigHash, coin.TxOut.Value, coin.GetHashVersion());
+            return Script.SignatureHash(network, coin.GetScriptCode(network), Transaction, (int)Index, sigHash, coin.TxOut.Value, coin.GetHashVersion(network));
         }
-
     }
+
     public class TxInList : UnsignedList<TxIn>
     {
         public TxInList()
@@ -1064,9 +1064,9 @@ namespace NBitcoin
             return new WitScript(ToBytes());
         }
 
-        public TxDestination GetSigner()
+        public TxDestination GetSigner(Network network)
         {
-            var pubKey = PayToWitPubKeyHashTemplate.Instance.ExtractWitScriptParameters(this);
+            var pubKey = PayToWitPubKeyHashTemplate.Instance.ExtractWitScriptParameters(network, this);
             if(pubKey != null)
             {
                 return pubKey.PublicKey.WitHash;
@@ -1074,6 +1074,14 @@ namespace NBitcoin
             var p2sh = PayToWitScriptHashTemplate.Instance.ExtractWitScriptParameters(this);
             return p2sh != null ? p2sh.WitHash : null;
         }
+    }
+
+    [Flags]
+    public enum TransactionOptions : uint
+    {
+        None = 0x00000000,
+        Witness = 0x40000000,
+        All = Witness
     }
 
     class Witness
@@ -1113,8 +1121,6 @@ namespace NBitcoin
     //https://en.bitcoin.it/wiki/Protocol_specification
     public class Transaction : IBitcoinSerializable
     {
-        public static bool TimeStamp = false;
-
         public bool RBF
         {
             get
@@ -1161,16 +1167,42 @@ namespace NBitcoin
             vout = new TxOutList(this);
         }
 
-        public Transaction(string hex, ProtocolVersion version = ProtocolVersion.PROTOCOL_VERSION)
+        internal Transaction(string hex, ProtocolVersion version = ProtocolVersion.PROTOCOL_VERSION)
             : this()
         {
             this.FromBytes(Encoders.Hex.DecodeData(hex), version);
         }
 
-        public Transaction(byte[] bytes)
+        internal Transaction(byte[] bytes)
             : this()
         {
             this.FromBytes(bytes);
+        }
+
+        public static Transaction Load(string hex, Network network, ProtocolVersion version = ProtocolVersion.PROTOCOL_VERSION)
+        {
+            if (hex == null)
+                throw new ArgumentNullException(nameof(hex));
+
+            if (network == null)
+                throw new ArgumentNullException(nameof(network));
+
+            var transaction = network.Consensus.ConsensusFactory.CreateTransaction();
+            transaction.FromBytes(Encoders.Hex.DecodeData(hex), version, network);
+            return transaction;
+        }
+
+        public static Transaction Load(byte[] bytes, Network network)
+        {
+            if (bytes == null)
+                throw new ArgumentNullException(nameof(bytes));
+
+            if (network == null)
+                throw new ArgumentNullException(nameof(network));
+
+            var transaction = network.Consensus.ConsensusFactory.CreateTransaction();
+            transaction.FromBytes(bytes, network: network);
+            return transaction;
         }
 
         public Money TotalOut
@@ -1215,7 +1247,7 @@ namespace NBitcoin
 
         public virtual void ReadWrite(BitcoinStream stream)
         {
-            var witSupported = (((uint)stream.TransactionOptions & (uint)NetworkOptions.Witness) != 0) &&
+            var witSupported = (((uint)stream.TransactionOptions & (uint)TransactionOptions.Witness) != 0) &&
                                 stream.ProtocolVersion >= ProtocolVersion.WITNESS_VERSION;
 
             byte flags = 0;
@@ -1224,7 +1256,7 @@ namespace NBitcoin
                 stream.ReadWrite(ref nVersion);
 
                 // the POS time stamp
-                if (Transaction.TimeStamp)
+                if (this is PosTransaction)
                     stream.ReadWrite(ref this.nTime);
 
                 /* Try to read the vin. In case the dummy is there, this will be read as an empty vector. */
@@ -1278,7 +1310,7 @@ namespace NBitcoin
                 stream.ReadWrite(ref version);
 
                 // the POS time stamp
-                if (Transaction.TimeStamp)
+                if (this is PosTransaction)
                     stream.ReadWrite(ref this.nTime);
 
                 if (witSupported)
@@ -1327,7 +1359,7 @@ namespace NBitcoin
             {
                 this.ReadWrite(new BitcoinStream(hs, true)
                 {
-                    TransactionOptions = NetworkOptions.None
+                    TransactionOptions = TransactionOptions.None
                 });
                 h = hs.GetHash();
             }
@@ -1348,9 +1380,9 @@ namespace NBitcoin
             _Hashes = new uint256[2];
         }
 
-        public Transaction Clone(bool cloneCache)
+        public Transaction Clone(bool cloneCache, Network network = null)
         {
-            var clone = BitcoinSerializableExtensions.Clone(this);
+            var clone = BitcoinSerializableExtensions.Clone(this, network: network);
             if(cloneCache)
                 clone._Hashes = _Hashes.ToArray();
             return clone;
@@ -1376,7 +1408,7 @@ namespace NBitcoin
             {
                 this.ReadWrite(new BitcoinStream(hs, true)
                 {
-                    TransactionOptions = NetworkOptions.Witness
+                    TransactionOptions = TransactionOptions.Witness
                 });
                 h = hs.GetHash();
             }
@@ -1388,17 +1420,17 @@ namespace NBitcoin
             }
             return h;
         }
-        public uint256 GetSignatureHash(ICoin coin, SigHash sigHash = SigHash.All)
+        public uint256 GetSignatureHash(Network network, ICoin coin, SigHash sigHash = SigHash.All)
         {
-            return Inputs.AsIndexedInputs().ToArray()[GetIndex(coin)].GetSignatureHash(coin, sigHash);
+            return Inputs.AsIndexedInputs().ToArray()[GetIndex(coin)].GetSignatureHash(network, coin, sigHash);
         }
-        public TransactionSignature SignInput(ISecret secret, ICoin coin, SigHash sigHash = SigHash.All)
+        public TransactionSignature SignInput(Network network, ISecret secret, ICoin coin, SigHash sigHash = SigHash.All)
         {
-            return SignInput(secret.PrivateKey, coin, sigHash);
+            return SignInput(network, secret.PrivateKey, coin, sigHash);
         }
-        public TransactionSignature SignInput(Key key, ICoin coin, SigHash sigHash = SigHash.All)
+        public TransactionSignature SignInput(Network network, Key key, ICoin coin, SigHash sigHash = SigHash.All)
         {
-            return Inputs.AsIndexedInputs().ToArray()[GetIndex(coin)].Sign(key, coin, sigHash);
+            return Inputs.AsIndexedInputs().ToArray()[GetIndex(coin)].Sign(network, key, coin, sigHash);
         }
 
         private int GetIndex(ICoin coin)
@@ -1462,8 +1494,8 @@ namespace NBitcoin
         /// <returns>Transaction size</returns>
         public int GetVirtualSize()
         {
-            var totalSize = this.GetSerializedSize(new NetworkOptions(NetworkOptions.Witness));
-            var strippedSize = this.GetSerializedSize(new NetworkOptions(NetworkOptions.None));
+            var totalSize = this.GetSerializedSize(TransactionOptions.Witness);
+            var strippedSize = this.GetSerializedSize(TransactionOptions.None);
             // This implements the weight = (stripped_size * 4) + witness_size formula,
             // using only serialization with and without witness data. As witness_size
             // is equal to total_size - stripped_size, this formula is identical to:
@@ -1489,9 +1521,9 @@ namespace NBitcoin
         /// </summary>
         /// <param name="secrets">Secrets</param>
         /// <param name="coins">Coins to sign</param>
-        public void Sign(ISecret[] secrets, ICoin[] coins)
+        public void Sign(Network network, ISecret[] secrets, ICoin[] coins)
         {
-            Sign(secrets.Select(s => s.PrivateKey).ToArray(), coins);
+            Sign(network, secrets.Select(s => s.PrivateKey).ToArray(), coins);
         }
 
         /// <summary>
@@ -1499,9 +1531,9 @@ namespace NBitcoin
         /// </summary>
         /// <param name="keys">Private keys</param>
         /// <param name="coins">Coins to sign</param>
-        public void Sign(Key[] keys, ICoin[] coins)
+        public void Sign(Network network, Key[] keys, ICoin[] coins)
         {
-            TransactionBuilder builder = new TransactionBuilder();
+            TransactionBuilder builder = new TransactionBuilder(network);
             builder.AddKeys(keys);
             builder.AddCoins(coins);
             builder.SignTransactionInPlace(this);
@@ -1512,9 +1544,9 @@ namespace NBitcoin
         /// </summary>
         /// <param name="secret">Secret</param>
         /// <param name="coins">Coins to sign</param>
-        public void Sign(ISecret secret, ICoin[] coins)
+        public void Sign(Network network, ISecret secret, ICoin[] coins)
         {
-            Sign(new[] { secret }, coins);
+            Sign(network, new[] { secret }, coins);
         }
 
         /// <summary>
@@ -1522,9 +1554,9 @@ namespace NBitcoin
         /// </summary>
         /// <param name="secrets">Secrets</param>
         /// <param name="coins">Coins to sign</param>
-        public void Sign(ISecret[] secrets, ICoin coin)
+        public void Sign(Network network, ISecret[] secrets, ICoin coin)
         {
-            Sign(secrets, new[] { coin });
+            Sign(network, secrets, new[] { coin });
         }
 
         /// <summary>
@@ -1532,9 +1564,9 @@ namespace NBitcoin
         /// </summary>
         /// <param name="secret">Secret</param>
         /// <param name="coin">Coins to sign</param>
-        public void Sign(ISecret secret, ICoin coin)
+        public void Sign(Network network, ISecret secret, ICoin coin)
         {
-            Sign(new[] { secret }, new[] { coin });
+            Sign(network, new[] { secret }, new[] { coin });
         }
 
         /// <summary>
@@ -1542,9 +1574,9 @@ namespace NBitcoin
         /// </summary>
         /// <param name="key">Private key</param>
         /// <param name="coins">Coins to sign</param>
-        public void Sign(Key key, ICoin[] coins)
+        public void Sign(Network network, Key key, ICoin[] coins)
         {
-            Sign(new[] { key }, coins);
+            Sign(network, new[] { key }, coins);
         }
 
         /// <summary>
@@ -1552,9 +1584,9 @@ namespace NBitcoin
         /// </summary>
         /// <param name="key">Private key</param>
         /// <param name="coin">Coin to sign</param>
-        public void Sign(Key key, ICoin coin)
+        public void Sign(Network network, Key key, ICoin coin)
         {
-            Sign(new[] { key }, new[] { coin });
+            Sign(network, new[] { key }, new[] { coin });
         }
 
         /// <summary>
@@ -1562,9 +1594,9 @@ namespace NBitcoin
         /// </summary>
         /// <param name="keys">Private keys</param>
         /// <param name="coin">Coin to sign</param>
-        public void Sign(Key[] keys, ICoin coin)
+        public void Sign(Network network, Key[] keys, ICoin coin)
         {
-            Sign(keys, new[] { coin });
+            Sign(network, keys, new[] { coin });
         }
 
         /// <summary>
@@ -1574,9 +1606,9 @@ namespace NBitcoin
         /// </summary>
         /// <param name="secret"></param>
         [Obsolete("Use Sign(ISecret,ICoin[]) instead)")]
-        public void Sign(ISecret secret, bool assumeP2SH)
+        public void Sign(Network network, ISecret secret, bool assumeP2SH)
         {
-            Sign(secret.PrivateKey, assumeP2SH);
+            Sign(network, secret.PrivateKey, assumeP2SH);
         }
 
         /// <summary>
@@ -1584,9 +1616,9 @@ namespace NBitcoin
         /// <para>ScriptSigs should be filled with either previous scriptPubKeys or redeem script (for P2SH)</para>
         /// <para>For more complex scenario, use TransactionBuilder</para>
         /// </summary>
-        /// <param name="secret"></param>
+        /// <param name="key"></param>
         [Obsolete("Use Sign(Key,ICoin[]) instead)")]
-        public void Sign(Key key, bool assumeP2SH)
+        public void Sign(Network network, Key key, bool assumeP2SH)
         {
             List<Coin> coins = new List<Coin>();
             for(int i = 0; i < Inputs.Count; i++)
@@ -1596,7 +1628,7 @@ namespace NBitcoin
                     throw new InvalidOperationException("ScriptSigs should be filled with either previous scriptPubKeys or redeem script (for P2SH)");
                 if(assumeP2SH)
                 {
-                    var p2shSig = PayToScriptHashTemplate.Instance.ExtractScriptSigParameters(txin.ScriptSig);
+                    var p2shSig = PayToScriptHashTemplate.Instance.ExtractScriptSigParameters(network, txin.ScriptSig);
                     if(p2shSig == null)
                     {
                         coins.Add(new ScriptCoin(txin.PrevOut, new TxOut()
@@ -1621,7 +1653,7 @@ namespace NBitcoin
                 }
 
             }
-            Sign(key, coins.ToArray());
+            Sign(network, key, coins.ToArray());
         }
         /*
         public TxPayload CreatePayload()
@@ -1663,7 +1695,7 @@ namespace NBitcoin
             switch(rawFormat)
             {
                 case RawFormat.Satoshi:
-                    formatter = new SatoshiFormatter();
+                    formatter = new SatoshiFormatter(network);
                     break;
                 case RawFormat.BlockExplorer:
                     formatter = new BlockExplorerFormatter();
@@ -1717,7 +1749,7 @@ namespace NBitcoin
             return new FeeRate(fee, this.GetVirtualSize());
         }
 
-        public bool IsFinal(ChainedBlock block)
+        public bool IsFinal(ChainedHeader block)
         {
             if(block == null)
                 return IsFinal(Utils.UnixTimeToDateTime(0), 0);
@@ -1762,7 +1794,7 @@ namespace NBitcoin
         /// <param name="block">The block being evaluated</param>
         /// <param name="flags">If VerifySequence is not set, returns always true SequenceLock</param>
         /// <returns>Sequence lock of minimum SequenceLock to satisfy</returns>
-        public bool CheckSequenceLocks(int[] prevHeights, ChainedBlock block, LockTimeFlags flags = LockTimeFlags.VerifySequence)
+        public bool CheckSequenceLocks(int[] prevHeights, ChainedHeader block, LockTimeFlags flags = LockTimeFlags.VerifySequence)
         {
             return CalculateSequenceLocks(prevHeights, block, flags).Evaluate(block);
         }
@@ -1774,10 +1806,10 @@ namespace NBitcoin
         /// locked inputs as they do not affect the calculation.
         /// </summary>        
         /// <param name="prevHeights">Previous Height</param>
-        /// <param name="block">The block being evaluated</param>
+        /// <param name="chainedHeader">The Chained block header being evaluated</param>
         /// <param name="flags">If VerifySequence is not set, returns always true SequenceLock</param>
         /// <returns>Sequence lock of minimum SequenceLock to satisfy</returns>
-        public SequenceLock CalculateSequenceLocks(int[] prevHeights, ChainedBlock block, LockTimeFlags flags = LockTimeFlags.VerifySequence)
+        public SequenceLock CalculateSequenceLocks(int[] prevHeights, ChainedHeader chainedHeader, LockTimeFlags flags = LockTimeFlags.VerifySequence)
         {
             if(prevHeights.Length != Inputs.Count)
                 throw new ArgumentException("The number of element in prevHeights should be equal to the number of inputs", "prevHeights");
@@ -1821,7 +1853,7 @@ namespace NBitcoin
 
                 if((txin.Sequence & Sequence.SEQUENCE_LOCKTIME_TYPE_FLAG) != 0)
                 {
-                    long nCoinTime = (long)Utils.DateTimeToUnixTimeLong(block.GetAncestor(Math.Max(nCoinHeight - 1, 0)).GetMedianTimePast());
+                    long nCoinTime = (long)Utils.DateTimeToUnixTimeLong(chainedHeader.GetAncestor(Math.Max(nCoinHeight - 1, 0)).GetMedianTimePast());
 
                     // Time-based relative lock-times are measured from the
                     // smallest allowed timestamp of the block containing the
@@ -1852,20 +1884,23 @@ namespace NBitcoin
         /// Create a transaction with the specified option only. (useful for stripping data from a transaction)
         /// </summary>
         /// <param name="options">Options to keep</param>
+        /// <param name="consensusFactory">The network consensus factory.</param>
         /// <returns>A new transaction with only the options wanted</returns>
-        public Transaction WithOptions(NetworkOptions options)
+        public Transaction WithOptions(TransactionOptions options, ConsensusFactory consensusFactory)
         {
-            if(options == NetworkOptions.Witness && HasWitness)
+            if(options == TransactionOptions.Witness && HasWitness)
                 return this;
-            if(options == NetworkOptions.None && !HasWitness)
+            if(options == TransactionOptions.None && !HasWitness)
                 return this;
-            var instance = new Transaction();
+            var instance = consensusFactory.CreateTransaction();
             var ms = new MemoryStream();
             var bms = new BitcoinStream(ms, true);
+            bms.ConsensusFactory = consensusFactory;
             bms.TransactionOptions = options;
             this.ReadWrite(bms);
             ms.Position = 0;
             bms = new BitcoinStream(ms, false);
+            bms.ConsensusFactory = consensusFactory;
             bms.TransactionOptions = options;
             instance.ReadWrite(bms);
             return instance;

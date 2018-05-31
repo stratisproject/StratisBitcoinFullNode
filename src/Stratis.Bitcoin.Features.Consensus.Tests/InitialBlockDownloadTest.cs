@@ -2,6 +2,8 @@
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Logging;
+using Stratis.Bitcoin.Configuration.Settings;
+using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Utilities;
 using Xunit;
 
@@ -42,7 +44,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
         [Fact]
         public void InIBDIfBehindCheckpoint()
         {
-            this.chainState.ConsensusTip = new ChainedBlock(new BlockHeader(), uint256.Zero, 1000);
+            this.chainState.ConsensusTip = new ChainedHeader(new BlockHeader(), uint256.Zero, 1000);
             var blockDownloadState = new InitialBlockDownloadState(this.chainState, this.network, this.nodeSettings, this.checkpoints);
             Assert.True(blockDownloadState.IsInitialBlockDownload());
         }
@@ -50,7 +52,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
         [Fact]
         public void InIBDIfChainWorkIsLessThanMinimum()
         {
-            this.chainState.ConsensusTip = new ChainedBlock(new BlockHeader(), uint256.Zero, this.checkpoints.GetLastCheckpointHeight() + 1);
+            this.chainState.ConsensusTip = new ChainedHeader(new BlockHeader(), uint256.Zero, this.checkpoints.GetLastCheckpointHeight() + 1);
             var blockDownloadState = new InitialBlockDownloadState(this.chainState, this.network, this.nodeSettings, this.checkpoints);
             Assert.True(blockDownloadState.IsInitialBlockDownload());
         }

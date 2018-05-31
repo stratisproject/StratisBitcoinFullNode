@@ -7,10 +7,9 @@ using System.Security;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
-using Stratis.Bitcoin.Broadcasting;
 using Stratis.Bitcoin.Configuration;
+using Stratis.Bitcoin.Features.Wallet.Broadcasting;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
-using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Utilities;
 
 [assembly: InternalsVisibleTo("Stratis.Bitcoin.Features.Wallet.Tests")]
@@ -99,7 +98,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             IAsyncLoopFactory asyncLoopFactory,
             INodeLifetime nodeLifetime,
             IDateTimeProvider dateTimeProvider,
-            IBroadcasterManager broadcasterManager = null) // no need to know about transactions the node broadcasted
+            IBroadcasterManager broadcasterManager = null) // no need to know about transactions the node will broadcast to.
         {
             Guard.NotNull(loggerFactory, nameof(loggerFactory));
             Guard.NotNull(network, nameof(network));
@@ -138,7 +137,19 @@ namespace Stratis.Bitcoin.Features.Wallet
 
         private void BroadcasterManager_TransactionStateChanged(object sender, TransactionBroadcastEntry transactionEntry)
         {
-            this.ProcessTransaction(transactionEntry.Transaction, null, null, transactionEntry.State == State.Propagated);
+            this.logger.LogTrace("()");
+
+            if (string.IsNullOrEmpty(transactionEntry.ErrorMessage))
+            {
+                this.ProcessTransaction(transactionEntry.Transaction, null, null, transactionEntry.State == State.Propagated);
+            }
+            else
+            {
+                this.logger.LogTrace("Exception occurred: {0}", transactionEntry.ErrorMessage);
+                this.logger.LogTrace("(-)[EXCEPTION]");
+            }
+
+            this.logger.LogTrace("(-)");
         }
 
         public void Start()
@@ -718,7 +729,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         }
 
         /// <inheritdoc />
-        public void RemoveBlocks(ChainedBlock fork)
+        public void RemoveBlocks(ChainedHeader fork)
         {
             Guard.NotNull(fork, nameof(fork));
             this.logger.LogTrace("({0}:'{1}'", nameof(fork), fork);
@@ -746,27 +757,27 @@ namespace Stratis.Bitcoin.Features.Wallet
         }
 
         /// <inheritdoc />
-        public void ProcessBlock(Block block, ChainedBlock chainedBlock)
+        public void ProcessBlock(Block block, ChainedHeader chainedHeader)
         {
             Guard.NotNull(block, nameof(block));
-            Guard.NotNull(chainedBlock, nameof(chainedBlock));
-            this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(block), block.GetHash(), nameof(chainedBlock), chainedBlock);
+            Guard.NotNull(chainedHeader, nameof(chainedHeader));
+            this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(block), block.GetHash(), nameof(chainedHeader), chainedHeader);
 
             // If there is no wallet yet, update the wallet tip hash and do nothing else.
             if (!this.Wallets.Any())
             {
-                this.WalletTipHash = chainedBlock.HashBlock;
+                this.WalletTipHash = chainedHeader.HashBlock;
                 this.logger.LogTrace("(-)[NO_WALLET]");
                 return;
             }
 
             // Is this the next block.
-            if (chainedBlock.Header.HashPrevBlock != this.WalletTipHash)
+            if (chainedHeader.Header.HashPrevBlock != this.WalletTipHash)
             {
-                this.logger.LogTrace("New block's previous hash '{0}' does not match current wallet's tip hash '{1}'.", chainedBlock.Header.HashPrevBlock, this.WalletTipHash);
+                this.logger.LogTrace("New block's previous hash '{0}' does not match current wallet's tip hash '{1}'.", chainedHeader.Header.HashPrevBlock, this.WalletTipHash);
 
                 // Are we still on the main chain.
-                ChainedBlock current = this.chain.GetBlock(this.WalletTipHash);
+                ChainedHeader current = this.chain.GetBlock(this.WalletTipHash);
                 if (current == null)
                 {
                     this.logger.LogTrace("(-)[REORG]");
@@ -775,7 +786,7 @@ namespace Stratis.Bitcoin.Features.Wallet
 
                 // The block coming in to the wallet should never be ahead of the wallet. 
                 // If the block is behind, let it pass.
-                if (chainedBlock.Height > current.Height)
+                if (chainedHeader.Height > current.Height)
                 {
                     this.logger.LogTrace("(-)[BLOCK_TOO_FAR]");
                     throw new WalletException("block too far in the future has arrived to the wallet");
@@ -787,7 +798,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                 bool walletUpdated = false;
                 foreach (Transaction transaction in block.Transactions)
                 {
-                    bool trxFound = this.ProcessTransaction(transaction, chainedBlock.Height, block, true);
+                    bool trxFound = this.ProcessTransaction(transaction, chainedHeader.Height, block, true);
                     if (trxFound)
                     {
                         walletUpdated = true;
@@ -797,7 +808,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                 // Update the wallets with the last processed block height.
                 // It's important that updating the height happens after the block processing is complete,
                 // as if the node is stopped, on re-opening it will start updating from the previous height.
-                this.UpdateLastBlockSyncedHeight(chainedBlock);
+                this.UpdateLastBlockSyncedHeight(chainedHeader);
 
                 if (walletUpdated)
                 {
@@ -882,7 +893,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// This method is can be called many times for the same transaction (idempotent).
         /// </summary>
         /// <param name="transaction">The transaction from which details are added.</param>
-        /// <param name="utxo">The unspend output to add to the wallet.</param>
+        /// <param name="utxo">The unspent output to add to the wallet.</param>
         /// <param name="blockHeight">Height of the block.</param>
         /// <param name="block">The block containing the transaction to add.</param>
         /// <param name="isPropagated">Propagation state of the transaction.</param>
@@ -1001,7 +1012,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                 {
                     // Figure out how to retrieve the destination address.
                     string destinationAddress = string.Empty;
-                    ScriptTemplate scriptTemplate = paidToOutput.ScriptPubKey.FindTemplate();
+                    ScriptTemplate scriptTemplate = paidToOutput.ScriptPubKey.FindTemplate(this.network);
                     switch (scriptTemplate.Type)
                     {
                         // Pay to PubKey can be found in outputs of staking transactions.
@@ -1134,39 +1145,39 @@ namespace Stratis.Bitcoin.Features.Wallet
         }
 
         /// <inheritdoc />
-        public void UpdateLastBlockSyncedHeight(ChainedBlock chainedBlock)
+        public void UpdateLastBlockSyncedHeight(ChainedHeader chainedHeader)
         {
-            Guard.NotNull(chainedBlock, nameof(chainedBlock));
-            this.logger.LogTrace("({0}:'{1}')", nameof(chainedBlock), chainedBlock);
+            Guard.NotNull(chainedHeader, nameof(chainedHeader));
+            this.logger.LogTrace("({0}:'{1}')", nameof(chainedHeader), chainedHeader);
 
             // Update the wallets with the last processed block height.
             foreach (Wallet wallet in this.Wallets)
             {
-                this.UpdateLastBlockSyncedHeight(wallet, chainedBlock);
+                this.UpdateLastBlockSyncedHeight(wallet, chainedHeader);
             }
 
-            this.WalletTipHash = chainedBlock.HashBlock;
+            this.WalletTipHash = chainedHeader.HashBlock;
             this.logger.LogTrace("(-)");
         }
 
         /// <inheritdoc />
-        public void UpdateLastBlockSyncedHeight(Wallet wallet, ChainedBlock chainedBlock)
+        public void UpdateLastBlockSyncedHeight(Wallet wallet, ChainedHeader chainedHeader)
         {
             Guard.NotNull(wallet, nameof(wallet));
-            Guard.NotNull(chainedBlock, nameof(chainedBlock));
-            this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(wallet), wallet.Name, nameof(chainedBlock), chainedBlock);
+            Guard.NotNull(chainedHeader, nameof(chainedHeader));
+            this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(wallet), wallet.Name, nameof(chainedHeader), chainedHeader);
 
             // The block locator will help when the wallet
             // needs to rewind this will be used to find the fork.
-            wallet.BlockLocator = chainedBlock.GetLocator().Blocks;
+            wallet.BlockLocator = chainedHeader.GetLocator().Blocks;
 
             lock (this.lockObject)
             {
                 // Update the wallets with the last processed block height.
                 foreach (AccountRoot accountRoot in wallet.AccountsRoot.Where(a => a.CoinType == this.coinType))
                 {
-                    accountRoot.LastBlockSyncedHeight = chainedBlock.Height;
-                    accountRoot.LastBlockSyncedHash = chainedBlock.HashBlock;
+                    accountRoot.LastBlockSyncedHeight = chainedHeader.Height;
+                    accountRoot.LastBlockSyncedHash = chainedHeader.HashBlock;
                 }
             }
 

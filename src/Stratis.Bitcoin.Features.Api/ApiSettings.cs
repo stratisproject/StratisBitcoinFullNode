@@ -111,10 +111,26 @@ namespace Stratis.Bitcoin.Features.Api
             var builder = new StringBuilder();
 
             builder.AppendLine($"-apiuri=<string>          URI to node's API interface. Defaults to '{ DefaultApiHost }'.");
-            builder.AppendLine($"-apiport=<0-65535>        Port of node's API interface. Default: {GetDefaultPort(network)}.");
+            builder.AppendLine($"-apiport=<0-65535>        Port of node's API interface. Defaults to { GetDefaultPort(network) }.");
             builder.AppendLine($"-keepalive=<seconds>      Keep Alive interval (set in seconds). Default: 0 (no keep alive).");
 
             NodeSettings.Default().Logger.LogInformation(builder.ToString());
+        }
+
+        /// <summary>
+        /// Get the default configuration.
+        /// </summary>
+        /// <param name="builder">The string builder to add the settings to.</param>
+        /// <param name="network">The network to base the defaults off.</param>
+        public static void BuildDefaultConfigurationFile(StringBuilder builder, Network network)
+        {
+            builder.AppendLine("####API Settings####");
+            builder.AppendLine($"#URI to node's API interface. Defaults to '{ DefaultApiHost }'");
+            builder.AppendLine($"#apiuri={ DefaultApiHost }");
+            builder.AppendLine($"#Port of node's API interface. Defaults to { GetDefaultPort(network) }");
+            builder.AppendLine($"#apiport={ GetDefaultPort(network) }");
+            builder.AppendLine($"#Keep Alive interval (set in seconds). Default: 0 (no keep alive)");
+            builder.AppendLine($"#keepalive=0");
         }
     }
 }

@@ -1,7 +1,7 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers;
 using Microsoft.Extensions.DependencyInjection;
 using NBitcoin;
 using Stratis.Bitcoin.Features.Consensus;
@@ -9,29 +9,18 @@ using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Controllers;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Features.Wallet.Models;
+using Stratis.Bitcoin.IntegrationTests.Common;
+using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
 using Xunit;
-using System;
 
 namespace Stratis.Bitcoin.IntegrationTests.Wallet
 {
-    public class WalletTests : IDisposable
+    public class WalletTests
     {
-        private bool initialBlockSignature;
-        public WalletTests()
-        {
-            this.initialBlockSignature = Block.BlockSignature;
-            Block.BlockSignature = false;
-        }
-
-        public void Dispose()
-        {
-            Block.BlockSignature = this.initialBlockSignature;
-        }
-
         [Fact]
         public void WalletCanReceiveAndSendCorrectly()
         {
-            using (NodeBuilder builder = NodeBuilder.Create())
+            using (NodeBuilder builder = NodeBuilder.Create(this))
             {
                 var stratisSender = builder.CreateStratisPowNode();
                 var stratisReceiver = builder.CreateStratisPowNode();
@@ -90,12 +79,12 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
 
                 TestHelper.WaitLoop(() => maturity + 6 == stratisReceiver.FullNode.WalletManager().GetSpendableTransactionsInWallet("mywallet").First().Transaction.BlockHeight);
             }
-        }        
+        }
 
         [Fact]
         public void CanMineAndSendToAddress()
         {
-            using (NodeBuilder builder = NodeBuilder.Create())
+            using (NodeBuilder builder = NodeBuilder.Create(this))
             {
                 CoreNode stratisNodeSync = builder.CreateStratisPowNode();
                 builder.StartAll();
@@ -124,7 +113,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             // connected to a longer chain that couse a reorg back so the second trasnaction is undone
             // mine the second transaction back in to the main chain
 
-            using (NodeBuilder builder = NodeBuilder.Create())
+            using (NodeBuilder builder = NodeBuilder.Create(this))
             {
                 var stratisSender = builder.CreateStratisPowNode();
                 var stratisReceiver = builder.CreateStratisPowNode();
@@ -275,9 +264,9 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         }
 
         [Fact]
-        public void Given__TheNodeHadAReorg_And_WalletTipIsBehindConsensusTip__When__ANewBlockArrives__Then__WalletCanRecover()
+        public void Given_TheNodeHadAReorg_And_WalletTipIsBehindConsensusTip_When_ANewBlockArrives_Then_WalletCanRecover()
         {
-            using (NodeBuilder builder = NodeBuilder.Create())
+            using (NodeBuilder builder = NodeBuilder.Create(this))
             {
                 var stratisSender = builder.CreateStratisPowNode();
                 var stratisReceiver = builder.CreateStratisPowNode();
@@ -337,9 +326,9 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         }
 
         [Fact]
-        public void Given__TheNodeHadAReorg_And_ConensusTipIsdifferentFromWalletTip__When__ANewBlockArrives__Then__WalletCanRecover()
+        public void Given_TheNodeHadAReorg_And_ConensusTipIsdifferentFromWalletTip_When_ANewBlockArrives_Then_WalletCanRecover()
         {
-            using (NodeBuilder builder = NodeBuilder.Create())
+            using (NodeBuilder builder = NodeBuilder.Create(this))
             {
                 var stratisSender = builder.CreateStratisPowNode();
                 var stratisReceiver = builder.CreateStratisPowNode();
@@ -399,7 +388,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         [Fact]
         public void WalletCanCatchupWithBestChain()
         {
-            using (NodeBuilder builder = NodeBuilder.Create())
+            using (NodeBuilder builder = NodeBuilder.Create(this))
             {
                 var stratisminer = builder.CreateStratisPowNode();
 
@@ -430,7 +419,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         [Fact]
         public void WalletCanRecoverOnStartup()
         {
-            using (NodeBuilder builder = NodeBuilder.Create())
+            using (NodeBuilder builder = NodeBuilder.Create(this))
             {
                 var stratisNodeSync = builder.CreateStratisPowNode();
                 builder.StartAll();

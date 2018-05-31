@@ -1,10 +1,12 @@
-﻿using System.Linq;
+﻿using System.IO;
+using System.Linq;
 using FluentAssertions;
 using FluentAssertions.Common;
 using NBitcoin;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Features.Consensus;
-using Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers;
+using Stratis.Bitcoin.IntegrationTests.Common;
+using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
 using Xunit.Abstractions;
 
 namespace Stratis.Bitcoin.IntegrationTests.Mempool
@@ -25,7 +27,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Mempool
 
         protected override void BeforeTest()
         {
-            this.nodeBuilder = NodeBuilder.Create(caller: this.CurrentTest.DisplayName);
+            this.nodeBuilder = NodeBuilder.Create(Path.Combine(this.GetType().Name, this.CurrentTest.DisplayName));
         }
 
         protected override void AfterTest()
@@ -80,11 +82,11 @@ namespace Stratis.Bitcoin.IntegrationTests.Mempool
             var prevTrx = block.Transactions.First();
             var dest = new BitcoinSecret(new Key(), this.nodeA.FullNode.Network);
 
-            this.transaction = new Transaction();
+            this.transaction = this.nodeA.FullNode.Network.Consensus.ConsensusFactory.CreateTransaction();
             this.transaction.AddInput(new TxIn(new OutPoint(prevTrx.GetHash(), 0), PayToPubkeyHashTemplate.Instance.GenerateScriptPubKey(this.nodeA.MinerSecret.PubKey)));
             this.transaction.AddOutput(new TxOut("25", dest.PubKey.Hash));
             this.transaction.AddOutput(new TxOut("24", new Key().PubKey.Hash)); // 1 btc fee
-            this.transaction.Sign(this.nodeA.MinerSecret, new Coin(this.transaction.Inputs.First().PrevOut, prevTrx.Outputs.First()));
+            this.transaction.Sign(this.nodeA.FullNode.Network, this.nodeA.MinerSecret, new Coin(this.transaction.Inputs.First().PrevOut, prevTrx.Outputs.First()));
 
             this.nodeA.Broadcast(this.transaction);
         }

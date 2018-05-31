@@ -195,7 +195,10 @@ namespace NBitcoin
         {
             var obj = data;
             if (obj == null)
-                obj = Activator.CreateInstance<T>();
+            {
+                if (!this.ConsensusFactory.TryCreateNew<T>(out obj))
+                    obj = Activator.CreateInstance<T>();
+            }
             obj.ReadWrite(this);
             if (!this.Serializing)
                 data = obj;
@@ -238,7 +241,7 @@ namespace NBitcoin
 
         public void ReadWrite(ref byte[] arr)
         {
-            ReadWriteBytes(ref arr);
+            this.ReadWriteBytes(ref arr);
         }
 
         public void ReadWrite(ref byte[] arr, int offset, int count)
@@ -365,8 +368,8 @@ namespace NBitcoin
             }
         }
 
-        NetworkOptions transactionSupportedOptions = NetworkOptions.TemporaryOptions;
-        public NetworkOptions TransactionOptions
+        TransactionOptions transactionSupportedOptions = TransactionOptions.All;
+        public TransactionOptions TransactionOptions
         {
             get
             {
@@ -377,6 +380,11 @@ namespace NBitcoin
                 this.transactionSupportedOptions = value;
             }
         }
+
+        /// <summary>
+        /// Set the format to use when serializing and deserializing consensus related types.
+        /// </summary>
+        public ConsensusFactory ConsensusFactory { get; set; }
 
         public IDisposable ProtocolVersionScope(ProtocolVersion version)
         {
@@ -396,7 +404,7 @@ namespace NBitcoin
             if (stream == null)
                 throw new ArgumentNullException("stream");
             this.ProtocolVersion = stream.ProtocolVersion;
-            this.TransactionOptions = stream.TransactionOptions.Clone();
+            this.TransactionOptions = stream.TransactionOptions;
             this.IsBigEndian = stream.IsBigEndian;
             this.MaxArraySize = stream.MaxArraySize;
             this.Type = stream.Type;

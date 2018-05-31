@@ -95,7 +95,6 @@ namespace NBitcoin
         }
 
         public ConsensusOptions Options { get; set; }
-        public NetworkOptions NetworkOptions { get; set; } = NetworkOptions.TemporaryOptions;
 
         public class BuriedDeploymentsArray
         {
@@ -137,6 +136,11 @@ namespace NBitcoin
         {
             this.BuriedDeployments = new BuriedDeploymentsArray(this);
             this.BIP9Deployments = new BIP9DeploymentsArray(this);
+
+            this.ConsensusFactory = new ConsensusFactory()
+            {
+                Consensus = this
+            };
         }
 
         public BuriedDeploymentsArray BuriedDeployments { get; }
@@ -144,8 +148,6 @@ namespace NBitcoin
         public BIP9DeploymentsArray BIP9Deployments { get; }
 
         public int SubsidyHalvingInterval { get; set; }
-
-        public Func<NetworkOptions, BlockHeader, uint256> GetPoWHash { get; set; } = (n,h) => h.GetHash(n);
 
         public int MajorityEnforceBlockUpgrade { get; set; }
 
@@ -183,19 +185,25 @@ namespace NBitcoin
         /// </summary>
         public int CoinType { get; set; }
 
-        /// <summary>
-        /// Specify using litecoin calculation for difficulty
-        /// </summary>
-        public bool LitecoinWorkCalculation { get; set; }
-
         public BigInteger ProofOfStakeLimit { get; set; }
 
         public BigInteger ProofOfStakeLimitV2 { get; set; }
 
+        /// <summary>PoW blocks are not accepted after block with height <see cref="Consensus.LastPOWBlock"/>.</summary>
         public int LastPOWBlock { get; set; }
+
+        /// <summary>
+        /// An indicator whether this is a Proof Of Stake network.
+        /// </summary>
+        public bool IsProofOfStake { get; set; }
 
         /// <summary>The default hash to use for assuming valid blocks.</summary>
         public uint256 DefaultAssumeValid { get; set; }
+
+        /// <summary>
+        /// A factory that enables overloading base types.
+        /// </summary>
+        public ConsensusFactory ConsensusFactory { get; set; }
 
         public virtual Consensus Clone()
         {
@@ -215,40 +223,33 @@ namespace NBitcoin
                 RuleChangeActivationThreshold = this.RuleChangeActivationThreshold,
                 SubsidyHalvingInterval = this.SubsidyHalvingInterval,
                 MinimumChainWork = this.MinimumChainWork,
-                GetPoWHash = this.GetPoWHash,
                 CoinType = this.CoinType,
-                LitecoinWorkCalculation = this.LitecoinWorkCalculation,
+                IsProofOfStake = this.IsProofOfStake,
                 LastPOWBlock = this.LastPOWBlock,
                 ProofOfStakeLimit = this.ProofOfStakeLimit,
                 ProofOfStakeLimitV2 = this.ProofOfStakeLimitV2,
                 DefaultAssumeValid = this.DefaultAssumeValid,
-                NetworkOptions = this.NetworkOptions.Clone()
+                ConsensusFactory = this.ConsensusFactory,
             };
         }
     }
 
     public partial class Network
     {
-        private uint magic;
+        private static readonly ConcurrentDictionary<string, Network> NetworksContainer = new ConcurrentDictionary<string, Network>();
+
         private byte[] alertPubKeyArray;
         private PubKey alertPubKey;
-        private readonly List<DNSSeedData> seeds = new List<DNSSeedData>();
-        private readonly List<NetworkAddress> fixedSeeds = new List<NetworkAddress>();
-        private readonly Dictionary<int, CheckpointInfo> checkpoints = new Dictionary<int, CheckpointInfo>();
         private Block genesis;
-        private Consensus consensus = new Consensus();
-
-        public NetworkOptions NetworkOptions
-        {
-            get
-            {
-                return this.consensus.NetworkOptions;
-            }
-        }
-
+        
         private Network()
         {
-            this.genesis = new Block();
+            this.DNSSeeds = new List<DNSSeedData>();
+            this.SeedNodes = new List<NetworkAddress>();
+            this.Checkpoints = new Dictionary<int, CheckpointInfo>();
+            this.Consensus = new Consensus();
+            this.Base58Prefixes = new byte[12][];
+            this.Bech32Encoders = new Bech32Encoder[2];
         }
 
         public PubKey AlertPubKey
@@ -279,7 +280,7 @@ namespace NBitcoin
 
         public int DefaultPort { get; private set; }
 
-        public Consensus Consensus => this.consensus;
+        public Consensus Consensus { get; private set; }
 
         public string Name { get; private set; }
 
@@ -289,11 +290,17 @@ namespace NBitcoin
         /// <summary> The default name used for the network configuration file. </summary>
         public string DefaultConfigFilename { get; private set; }
 
-        public IEnumerable<NetworkAddress> SeedNodes => this.fixedSeeds;
+        public List<NetworkAddress> SeedNodes { get; private set; }
 
-        public IEnumerable<DNSSeedData> DNSSeeds => this.seeds;
+        public List<DNSSeedData> DNSSeeds { get; private set; }
 
-        public Dictionary<int, CheckpointInfo> Checkpoints => this.checkpoints;
+        public Dictionary<int, CheckpointInfo> Checkpoints { get; private set; }
+
+        internal byte[][] Base58Prefixes { get; private set; }
+
+        internal Bech32Encoder[] Bech32Encoders { get; private set; }
+
+        public uint Magic { get; private set; }
 
         public byte[] MagicBytesArray;
 
@@ -317,77 +324,27 @@ namespace NBitcoin
             }
         }
 
-        public uint Magic => this.magic;
-
-        static readonly ConcurrentDictionary<string, Network> NetworksContainer =
-            new ConcurrentDictionary<string, Network>();
-
-        internal static Network Register(NetworkBuilder builder)
+        /// <summary>
+        /// Register an immutable <see cref="Network"/> instance so it is queryable through <see cref="GetNetwork(string)"/> and <see cref="GetNetworks()"/>.
+        /// </summary>
+        internal static Network Register(Network network, string nameOverride = null)
         {
-            if (builder.Name == null)
+            string networkName = !string.IsNullOrEmpty(nameOverride) ? nameOverride : network.Name;
+
+            // Performs a series of checks before registering the network to the list of available networks.
+            if (string.IsNullOrEmpty(networkName))
                 throw new InvalidOperationException("A network name needs to be provided.");
 
-            if (GetNetwork(builder.Name) != null)
-                throw new InvalidOperationException("The network " + builder.Name + " is already registered.");
+            if (GetNetwork(networkName) != null)
+                throw new InvalidOperationException("The network " + networkName + " is already registered.");
 
-            if (builder.Genesis == null)
+            if (network.GetGenesis() == null)
                 throw new InvalidOperationException("A genesis block needs to be provided.");
 
-            if (builder.Consensus == null)
+            if (network.Consensus == null)
                 throw new InvalidOperationException("A consensus needs to be provided.");
 
-            Network network = new Network();
-            network.Name = builder.Name;
-            network.RootFolderName = builder.RootFolderName;
-            network.DefaultConfigFilename = builder.DefaultConfigFilename;
-            network.consensus = builder.Consensus;
-            network.magic = builder.Magic;
-            network.DefaultPort = builder.Port;
-            network.RPCPort = builder.RPCPort;
-            network.genesis = builder.Genesis;
-            network.consensus.HashGenesisBlock = network.genesis.GetHash();
-
-            foreach (DNSSeedData seed in builder.Seeds)
-            {
-                network.seeds.Add(seed);
-            }
-
-            foreach (NetworkAddress seed in builder.FixedSeeds)
-            {
-                network.fixedSeeds.Add(seed);
-            }
-
-            network.base58Prefixes = Network.Main.base58Prefixes.ToArray();
-
-            foreach (KeyValuePair<Base58Type, byte[]> kv in builder.Base58Prefixes)
-            {
-                network.base58Prefixes[(int) kv.Key] = kv.Value;
-            }
-
-            network.bech32Encoders = Network.Main.bech32Encoders.ToArray();
-
-            foreach (KeyValuePair<Bech32Type, Bech32Encoder> kv in builder.Bech32Prefixes)
-            {
-                network.bech32Encoders[(int) kv.Key] = kv.Value;
-            }
-
-            foreach (string alias in builder.Aliases)
-            {
-                NetworksContainer.TryAdd(alias.ToLowerInvariant(), network);
-            }
-
-            NetworksContainer.TryAdd(network.Name.ToLowerInvariant(), network);
-
-            network.MaxTimeOffsetSeconds = builder.MaxTimeOffsetSeconds;
-            network.MaxTipAge = builder.MaxTipAge;
-            network.MinTxFee = builder.MinTxFee;
-            network.FallbackFee = builder.FallbackFee;
-            network.MinRelayTxFee = builder.MinRelayTxFee;
-
-            foreach (KeyValuePair<int, CheckpointInfo> checkpoint in builder.Checkpoints)
-            {
-                network.checkpoints.Add(checkpoint.Key, checkpoint.Value);
-            }
+            NetworksContainer.TryAdd(networkName.ToLowerInvariant(), network);
 
             return network;
         }
@@ -432,9 +389,9 @@ namespace NBitcoin
         private Base58Type? GetBase58Type(string base58)
         {
             var bytes = Encoders.Base58Check.DecodeData(base58);
-            for (int i = 0; i < this.base58Prefixes.Length; i++)
+            for (int i = 0; i < this.Base58Prefixes.Length; i++)
             {
-                var prefix = this.base58Prefixes[i];
+                var prefix = this.Base58Prefixes[i];
                 if (prefix == null)
                     continue;
                 if (bytes.Length < prefix.Length)
@@ -527,7 +484,7 @@ namespace NBitcoin
             foreach (Network network in networks)
             {
                 int i = -1;
-                foreach (Bech32Encoder encoder in network.bech32Encoders)
+                foreach (Bech32Encoder encoder in network.Bech32Encoders)
                 {
                     i++;
                     if (encoder == null)
@@ -692,10 +649,10 @@ namespace NBitcoin
 
         public Block GetGenesis()
         {
-            return this.genesis.Clone(options:this.NetworkOptions);
+            return this.genesis.Clone(network: this);
         }
 
-        public uint256 GenesisHash => this.consensus.HashGenesisBlock;
+        public uint256 GenesisHash => this.Consensus.HashGenesisBlock;
 
         public static IEnumerable<Network> GetNetworks()
         {
@@ -778,7 +735,7 @@ namespace NBitcoin
         public Money GetReward(int nHeight)
         {
             long nSubsidy = new Money(50 * Money.COIN);
-            int halvings = nHeight / this.consensus.SubsidyHalvingInterval;
+            int halvings = nHeight / this.Consensus.SubsidyHalvingInterval;
 
             // Force block reward to zero when right shift is undefined.
             if (halvings >= 64)
@@ -812,13 +769,9 @@ namespace NBitcoin
             return true;
         }
 
-        internal byte[][] base58Prefixes = new byte[12][];
-
-        internal Bech32Encoder[] bech32Encoders = new Bech32Encoder[2];
-
         public Bech32Encoder GetBech32Encoder(Bech32Type type, bool throws)
         {
-            Bech32Encoder encoder = this.bech32Encoders[(int)type];
+            Bech32Encoder encoder = this.Bech32Encoders[(int)type];
             if (encoder == null && throws)
                 throw new NotImplementedException("The network " + this + " does not have any prefix for bech32 " +
                                                   Enum.GetName(typeof(Bech32Type), type));
@@ -827,7 +780,7 @@ namespace NBitcoin
 
         public byte[] GetVersionBytes(Base58Type type, bool throws)
         {
-            var prefix = this.base58Prefixes[(int)type];
+            var prefix = this.Base58Prefixes[(int)type];
             if (prefix == null && throws)
                 throw new NotImplementedException("The network " + this + " does not have any prefix for base58 " +
                                                   Enum.GetName(typeof(Base58Type), type));

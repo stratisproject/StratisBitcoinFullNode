@@ -9,14 +9,6 @@ namespace NBitcoin.Tests
     [Trait("Core", "Core")]
     public class base58_tests
     {
-        public base58_tests()
-        {
-            // These flags may get set due to static network initializers
-            // which include the initializers for Stratis.
-            Transaction.TimeStamp = false;
-            Block.BlockSignature = false;
-        }
-
         public static IEnumerable<object[]> DataSet
         {
             get
@@ -80,7 +72,7 @@ namespace NBitcoin.Tests
         [Trait("Core", "Core")]
         public void base58_keys_valid_parse()
         {
-            var tests = TestCase.read_json("Data\\base58_keys_valid.json");
+            var tests = TestCase.read_json(TestDataLocations.GetFileFromDataFolder("base58_keys_valid.json"));
             Network network;
             foreach(var test in tests)
             {
@@ -140,8 +132,8 @@ namespace NBitcoin.Tests
         [Trait("Core", "Core")]
         public void base58_keys_valid_gen()
         {
-            var tests = TestCase.read_json("data/base58_keys_valid.json");
-            tests = tests.Concat(TestCase.read_json("data/base58_keys_valid2.json")).ToArray();
+            var tests = TestCase.read_json(TestDataLocations.GetFileFromDataFolder("base58_keys_valid.json"));
+            tests = tests.Concat(TestCase.read_json(TestDataLocations.GetFileFromDataFolder("base58_keys_valid2.json"))).ToArray();
             Network network = null;
 
             foreach(var test in tests)
@@ -203,7 +195,7 @@ namespace NBitcoin.Tests
                         BitcoinAddress addrOut = dest.GetAddress(network);
                         Assert.True(addrOut.ToString() == exp_base58string, "mismatch: " + strTest);
                         Assert.True(addrOut.ScriptPubKey == dest.ScriptPubKey);
-                        Assert.True(dest.ScriptPubKey.GetDestination() == dest);
+                        Assert.True(dest.ScriptPubKey.GetDestination(Network.Main) == dest);
                     }
                     catch(ArgumentException)
                     {
@@ -217,7 +209,7 @@ namespace NBitcoin.Tests
         {
             get
             {
-                var dataset = TestCase.read_json("data/base58_keys_invalid.json");
+                var dataset = TestCase.read_json(TestDataLocations.GetFileFromDataFolder("base58_keys_invalid.json"));
                 return dataset.Select(x => x.ToArray());
             }
         }
