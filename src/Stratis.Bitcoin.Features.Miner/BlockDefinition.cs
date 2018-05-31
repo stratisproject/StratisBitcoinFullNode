@@ -257,7 +257,7 @@ namespace Stratis.Bitcoin.Features.Miner
 
             var powCoinviewRule = this.ConsensusLoop.ConsensusRules.GetRule<CoinViewRule>();
 
-            this.coinbase.Outputs[0].Value = this.fees + powCoinviewRule.GetProofOfWorkReward(this.height);
+            this.coinbase.Outputs[0].Value = this.fees + powCoinviewRule.GetBlockReward(this.height);
             this.BlockTemplate.TotalFee = this.fees;
 
             int nSerializeSize = this.block.GetSerializedSize();

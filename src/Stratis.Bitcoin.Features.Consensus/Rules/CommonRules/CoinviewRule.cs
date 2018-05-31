@@ -16,7 +16,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
     /// <exception cref="ConsensusErrors.BadTransactionNonFinal">Thrown if transaction's height or time is lower then provided by SequenceLock for this block.</exception>
     /// <exception cref="ConsensusErrors.BadBlockSigOps">Thrown if signature operation cost is greater then maximum block signature operation cost.</exception>
     /// <exception cref="ConsensusErrors.BadTransactionScriptError">Thrown if not all inputs are valid (no double spends, scripts & sigs, amounts).</exception>
-    [ExecutionRule]
     public abstract class CoinViewRule : ConsensusRule
     {
         /// <summary>Consensus options.</summary>
@@ -263,11 +262,11 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         }
 
         /// <summary>
-        /// Gets the proof of work reward amount for the block at provided height.
+        /// Gets the block reward at the provided height.
         /// </summary>
         /// <param name="height">Height of the block that we're calculating the reward for.</param>
         /// <returns>Reward amount.</returns>
-        public abstract Money GetProofOfWorkReward(int height);
+        public abstract Money GetBlockReward(int height);
 
         /// <summary>
         /// Calculates total signature operation cost of a transaction.

@@ -5,6 +5,8 @@ using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
 {
+    /// <inheritdoc />
+    [ExecutionRule]
     public sealed class PowCoinviewRule : CoinViewRule
     {
         /// <summary>Consensus parameters.</summary>
@@ -27,7 +29,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         {
             this.Logger.LogTrace("()");
 
-            Money blockReward = fees + this.GetProofOfWorkReward(height);
+            Money blockReward = fees + this.GetBlockReward(height);
             if (block.Transactions[0].TotalOut > blockReward)
             {
                 this.Logger.LogTrace("(-)[BAD_COINBASE_AMOUNT]");
@@ -38,7 +40,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         }
 
         /// <inheritdoc/>
-        public override Money GetProofOfWorkReward(int height)
+        public override Money GetBlockReward(int height)
         {
             int halvings = height / this.consensusParams.SubsidyHalvingInterval;
 

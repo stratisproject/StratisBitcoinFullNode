@@ -16,7 +16,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
             int startBlock = node.FullNode.Chain.Height - numberOfBlocks + 1;
 
             return Enumerable.Range(startBlock, numberOfBlocks)
-                .Sum(p => coinviewRule.GetProofOfWorkReward(p));
+                .Sum(p => coinviewRule.GetBlockReward(p));
         }
 
 

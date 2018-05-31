@@ -70,7 +70,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
             }
             else
             {
-                Money blockReward = fees + this.GetProofOfWorkReward(height);
+                Money blockReward = fees + this.GetBlockReward(height);
                 this.Logger.LogTrace("Block reward is {0}, calculated reward is {1}.", block.Transactions[0].TotalOut, blockReward);
                 if (block.Transactions[0].TotalOut > blockReward)
                 {
@@ -183,7 +183,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         }
 
         /// <inheritdoc />
-        public override Money GetProofOfWorkReward(int height)
+        public override Money GetBlockReward(int height)
         {
             if (this.IsPremine(height))
                 return this.posConsensusOptions.PremineReward;
