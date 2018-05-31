@@ -3,7 +3,8 @@ using NBitcoin;
 using NBitcoin.RPC;
 using Stratis.Bitcoin.Base.Deployments;
 using Stratis.Bitcoin.Features.Consensus.Interfaces;
-using Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers;
+using Stratis.Bitcoin.IntegrationTests.Common;
+using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
 using Stratis.Bitcoin.Utilities.Extensions;
 using Xunit;
 
@@ -14,9 +15,9 @@ namespace Stratis.Bitcoin.IntegrationTests
         [Fact]
         public void TestSegwit_MinedOnCore_ActivatedOn_StratisNode()
         {
-            using (NodeBuilder builder = NodeBuilder.Create(version: "0.15.1"))
+            using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                CoreNode coreNode = builder.CreateBitcoinCoreNode();
+                CoreNode coreNode = builder.CreateBitcoinCoreNode(version: "0.15.1");
 
                 coreNode.ConfigParameters.AddOrReplace("debug", "1");
                 coreNode.ConfigParameters.AddOrReplace("printtoconsole", "0");

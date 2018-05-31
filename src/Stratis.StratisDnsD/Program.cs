@@ -56,8 +56,8 @@ namespace Stratis.StratisDnsD
                     // Build the Dns full node.
                     node = new FullNodeBuilder()
                         .UseNodeSettings(nodeSettings)
-                        .UsePosConsensus()
                         .UseBlockStore()
+                        .UsePosConsensus()
                         .UseMempool()
                         .UseWallet()
                         .AddPowPosMining()

@@ -27,8 +27,8 @@ namespace Stratis.BitcoinD
 
                 var node = new FullNodeBuilder()
                     .UseNodeSettings(nodeSettings)
-                    .UsePowConsensus()
                     .UseBlockStore()
+                    .UsePowConsensus()
                     .UseMempool()
                     .AddMining()
                     .AddRPC()

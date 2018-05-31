@@ -69,11 +69,11 @@ namespace Stratis.Bitcoin.Controllers
             foreach (IFullNodeFeature feature in this.fullNode.Services.Features)
             {
                 model.EnabledFeatures.Add(feature.GetType().ToString());
-
-                // Include BlockStore Height if enabled
-                if (feature is IBlockStore)
-                    model.BlockStoreHeight = ((IBlockStore)feature).GetHighestPersistedBlock().Height;
             }
+
+            // Include BlockStore Height if enabled
+            if (this.chainState.BlockStoreTip != null)
+                model.BlockStoreHeight = this.chainState.BlockStoreTip.Height;
 
             // Add the details of connected nodes.
             foreach (INetworkPeer peer in this.connectionManager.ConnectedPeers)
