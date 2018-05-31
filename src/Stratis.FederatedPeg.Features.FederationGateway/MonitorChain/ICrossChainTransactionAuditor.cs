@@ -10,19 +10,31 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
     /// </summary>
     public interface ICrossChainTransactionAuditor : IDisposable
     {
-        // Sets up the auditor.
+        /// <summary>
+        /// Sets up the auditor.
+        /// </summary>
         void Initialize();
 
-        // Adds the initiating transaction info for a cross chain transaction.
+        /// <summary>
+        /// Adds the initiating transaction info for a cross chain transaction.
+        /// </summary>
         void AddCrossChainTransactionInfo(CrossChainTransactionInfo crossChainTransactionInfo);
 
-        // Loads the auditor data if required.
+        /// <summary>
+        /// Loads the auditor data if required.
+        /// </summary>
         void Load();
 
-        // Commits the audit to persistent storage.
+        /// <summary>
+        /// Commits the audit to persistent storage.
+        /// </summary>
         void Commit();
 
-        // Adds the identifier for the transaction on the counter chain.
+        /// <summary>
+        /// Adds the identifier for the transaction on the counter chain.
+        /// </summary>
+        /// <param name="monitorTransactionHash">The source transaction hash used as the sessionId.</param>
+        /// <param name="counterChainTransactionHash">The hash of the counter chain transaction.</param>
         void AddCounterChainTransactionId(uint256 monitorTransactionHash, uint256 counterChainTransactionHash);
     }
 }
