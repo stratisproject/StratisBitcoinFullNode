@@ -10,7 +10,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
     /// Proof of stake override for the coinview rules - BIP68, MaxSigOps and BlockReward checks.
     /// </summary>
     [ExecutionRule]
-    public class PosCoinViewRule : CoinViewRule
+    public sealed class PosCoinViewRule : CoinViewRule
     {
         /// <summary>Provides functionality for checking validity of PoS blocks.</summary>
         private IStakeValidator stakeValidator;
@@ -21,11 +21,9 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         private PosConsensusOptions posConsensusOptions;
 
         /// <inheritdoc />
-        public override void Initialize()
+        public override void OnInitialize()
         {
             this.Logger.LogTrace("()");
-
-            base.Initialize();
 
             var consensusRules = (PosConsensusRules)this.Parent;
 
@@ -37,14 +35,14 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         }
 
         /// <inheritdoc />
+        /// <summary>Compute and store the stake proofs.</summary>
         public override async Task RunAsync(RuleContext context)
         {
             this.Logger.LogTrace("()");
 
-            // Compute and store the stake proofs.
             this.CheckAndComputeStake(context);
 
-            await base.RunAsync(context).ConfigureAwait(false);
+            await base.OnRunAsync(context).ConfigureAwait(false);
 
             await this.stakeChain.SetAsync(context.BlockValidationContext.ChainedHeader, context.Stake.BlockStake).ConfigureAwait(false);
 
@@ -52,7 +50,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         }
 
         /// <inheritdoc />
-        protected override void CheckBlockReward(RuleContext context, Money fees, int height, Block block)
+        public override void CheckBlockReward(RuleContext context, Money fees, int height, Block block)
         {
             this.Logger.LogTrace("({0}:{1},{2}:'{3}')", nameof(fees), fees, nameof(height), height);
 
@@ -83,7 +81,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         }
 
         /// <inheritdoc />
-        protected override void UpdateCoinView(RuleContext context, Transaction transaction)
+        public override void OnUpdateCoinView(RuleContext context, Transaction transaction)
         {
             this.Logger.LogTrace("()");
 
@@ -98,7 +96,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         }
 
         /// <inheritdoc />
-        protected override void CheckMaturity(UnspentOutputs coins, int spendHeight)
+        public override void OnCheckMaturity(UnspentOutputs coins, int spendHeight)
         {
             this.Logger.LogTrace("({0}:'{1}/{2}',{3}:{4})", nameof(coins), coins.TransactionId, coins.Height, nameof(spendHeight), spendHeight);
 
