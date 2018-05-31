@@ -21,9 +21,11 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         private PosConsensusOptions posConsensusOptions;
 
         /// <inheritdoc />
-        public override void OnInitialize()
+        public override void Initialize()
         {
             this.Logger.LogTrace("()");
+
+            base.Initialize();
 
             var consensusRules = (PosConsensusRules)this.Parent;
 
@@ -42,7 +44,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
 
             this.CheckAndComputeStake(context);
 
-            await base.OnRunAsync(context).ConfigureAwait(false);
+            await base.RunAsync(context).ConfigureAwait(false);
 
             await this.stakeChain.SetAsync(context.BlockValidationContext.ChainedHeader, context.Stake.BlockStake).ConfigureAwait(false);
 
@@ -81,7 +83,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         }
 
         /// <inheritdoc />
-        public override void OnUpdateCoinView(RuleContext context, Transaction transaction)
+        public override void UpdateCoinView(RuleContext context, Transaction transaction)
         {
             this.Logger.LogTrace("()");
 
@@ -90,17 +92,17 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
             if (transaction.IsCoinStake)
                 context.Stake.TotalCoinStakeValueIn = view.GetValueIn(transaction);
 
-            base.UpdateCoinView(context, transaction);
+            base.UpdateUTXOSet(context, transaction);
 
             this.Logger.LogTrace("(-)");
         }
 
         /// <inheritdoc />
-        public override void OnCheckMaturity(UnspentOutputs coins, int spendHeight)
+        public override void CheckMaturity(UnspentOutputs coins, int spendHeight)
         {
             this.Logger.LogTrace("({0}:'{1}/{2}',{3}:{4})", nameof(coins), coins.TransactionId, coins.Height, nameof(spendHeight), spendHeight);
 
-            base.CheckMaturity(coins, spendHeight);
+            base.CheckCoinbaseMaturity(coins, spendHeight);
 
             if (coins.IsCoinstake)
             {

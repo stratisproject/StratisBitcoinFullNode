@@ -29,18 +29,11 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
 
             this.PowConsensusOptions = this.Parent.Network.Consensus.Option<PowConsensusOptions>();
 
-            this.OnInitialize();
-
             this.Logger.LogTrace("(-)");
         }
 
-        /// <summary>
-        /// Network specific initialization logic.
-        /// </summary>
-        public abstract void OnInitialize();
-
         /// <inheritdoc />
-        protected async Task OnRunAsync(RuleContext context)
+        public override async Task RunAsync(RuleContext context)
         {
             this.Logger.LogTrace("()");
 
@@ -121,7 +114,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
                     }
                 }
 
-                this.OnUpdateCoinView(context, tx);
+                this.UpdateCoinView(context, tx);
             }
 
             if (!context.SkipValidation)
@@ -147,7 +140,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         /// </summary>
         /// <param name="context">Context that contains variety of information regarding blocks validation and execution.</param>
         /// <param name="transaction">Transaction which outputs will be added to the context's <see cref="UnspentOutputSet"/> and which inputs will be removed from it.</param>
-        protected void UpdateCoinView(RuleContext context, Transaction transaction)
+        protected void UpdateUTXOSet(RuleContext context, Transaction transaction)
         {
             this.Logger.LogTrace("()");
 
@@ -162,10 +155,10 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         /// <summary>
         /// Network specific updates to the context's UTXO set.
         /// <para>
-        /// Refer to <see cref="UpdateCoinView(RuleContext, Transaction)"/>.
+        /// Refer to <see cref="UpdateUTXOSet(RuleContext, Transaction)"/>.
         /// </para>
         /// </summary>
-        public abstract void OnUpdateCoinView(RuleContext context, Transaction transaction);
+        public abstract void UpdateCoinView(RuleContext context, Transaction transaction);
 
         /// <summary>
         /// Verifies that block has correct coinbase transaction with appropriate reward and fees summ.
@@ -183,7 +176,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         /// <param name="coins">UTXOs to check the maturity of.</param>
         /// <param name="spendHeight">Height at which coins are attempted to be spent.</param>
         /// <exception cref="ConsensusErrors.BadTransactionPrematureCoinbaseSpending">Thrown if transaction tries to spend coins that are not mature.</exception>
-        protected void CheckMaturity(UnspentOutputs coins, int spendHeight)
+        internal void CheckCoinbaseMaturity(UnspentOutputs coins, int spendHeight)
         {
             this.Logger.LogTrace("({0}:'{1}/{2}',{3}:{4})", nameof(coins), coins.TransactionId, coins.Height, nameof(spendHeight), spendHeight);
 
@@ -207,7 +200,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         /// Refer to <see cref="CheckMaturity(UnspentOutputs, int)"/>.
         /// </para>
         /// </summary>
-        public abstract void OnCheckMaturity(UnspentOutputs coins, int spendHeight);
+        public abstract void CheckMaturity(UnspentOutputs coins, int spendHeight);
 
         /// <summary>
         /// Checks that transaction's inputs are valid.

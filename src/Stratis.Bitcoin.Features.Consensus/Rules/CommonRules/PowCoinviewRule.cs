@@ -10,6 +10,18 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         /// <summary>Consensus parameters.</summary>
         private NBitcoin.Consensus consensusParams;
 
+        /// <inheritdoc />
+        public override void Initialize()
+        {
+            this.Logger.LogTrace("()");
+
+            base.Initialize();
+
+            this.consensusParams = this.Parent.Network.Consensus;
+
+            this.Logger.LogTrace("(-)");
+        }
+
         /// <inheritdoc/>
         public override void CheckBlockReward(RuleContext context, Money fees, int height, Block block)
         {
@@ -42,31 +54,21 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         }
 
         /// <inheritdoc/>
-        public override void OnCheckMaturity(UnspentOutputs coins, int spendHeight)
+        public override void CheckMaturity(UnspentOutputs coins, int spendHeight)
         {
-            base.CheckMaturity(coins, spendHeight);
-        }
-
-        /// <inheritdoc />
-        public override void OnInitialize()
-        {
-            this.Logger.LogTrace("()");
-
-            this.consensusParams = this.Parent.Network.Consensus;
-
-            this.Logger.LogTrace("(-)");
+            base.CheckCoinbaseMaturity(coins, spendHeight);
         }
 
         /// <inheritdoc/>
-        public override void OnUpdateCoinView(RuleContext context, Transaction transaction)
+        public override void UpdateCoinView(RuleContext context, Transaction transaction)
         {
-            base.UpdateCoinView(context, transaction);
+            base.UpdateUTXOSet(context, transaction);
         }
 
         /// <inheritdoc />
         public override Task RunAsync(RuleContext context)
         {
-            return base.OnRunAsync(context);
+            return base.RunAsync(context);
         }
     }
 }
