@@ -59,13 +59,13 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// Inventory transaction to send.
         /// State that is local to the behavior.
         /// </summary>
-        private readonly Dictionary<uint256, uint256> inventoryTxToSend;
+        private readonly HashSet<uint256> inventoryTxToSend;
 
         /// <summary>
         /// Filter for inventory known.
         /// State that is local to the behavior.
         /// </summary>
-        private readonly Dictionary<uint256, uint256> filterInventoryKnown;
+        private readonly HashSet<uint256> filterInventoryKnown;
 
         /// <summary>
         /// Locking object for memory pool behaviour.
@@ -103,8 +103,8 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             this.network = network;
 
             this.lockObject = new object();
-            this.inventoryTxToSend = new Dictionary<uint256, uint256>();
-            this.filterInventoryKnown = new Dictionary<uint256, uint256>();
+            this.inventoryTxToSend = new HashSet<uint256>();
+            this.filterInventoryKnown = new HashSet<uint256>();
         }
 
         /// <summary>
@@ -317,7 +317,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                             this.logger.LogTrace("Fee too low, transaction ID '{0}' not added to inventory list.", hash);
                             continue;
                         }
-                    this.filterInventoryKnown.TryAdd(hash, hash);
+                    this.filterInventoryKnown.Add(hash);
                     sends.Add(txinfo);
                     this.logger.LogTrace("Added transaction ID '{0}' to inventory list.", hash);
                 }
@@ -389,7 +389,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             {
                 foreach (InventoryVector inventoryVector in send.Inventory)
                 {
-                    this.filterInventoryKnown.TryAdd(inventoryVector.Hash, inventoryVector.Hash);
+                    this.filterInventoryKnown.Add(inventoryVector.Hash);
                     this.logger.LogTrace("Added inventory transaction ID '{0}' to known inventory filter.", inventoryVector.Hash);
                 }
             }
@@ -453,7 +453,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             // add to local filter
             lock (this.lockObject)
             {
-                this.filterInventoryKnown.TryAdd(trxHash, trxHash);
+                this.filterInventoryKnown.Add(trxHash);
                 this.logger.LogTrace("Added transaction ID '{0}' to known inventory filter.", trxHash);
             }
 
@@ -541,9 +541,9 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                     {
                         lock (mempoolBehavior.lockObject)
                         {
-                            if (!mempoolBehavior.filterInventoryKnown.ContainsKey(hash))
+                            if (!mempoolBehavior.filterInventoryKnown.Contains(hash))
                             {
-                                mempoolBehavior.inventoryTxToSend.TryAdd(hash, hash);
+                                mempoolBehavior.inventoryTxToSend.Add(hash);
                                 this.logger.LogTrace("Added transaction ID '{0}' to inventory to send to peer '{1}'.", hash, mempoolBehavior?.AttachedPeer.RemoteSocketEndpoint);
                             }
                             else
@@ -584,7 +584,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             var sends = new List<uint256>();
             lock (this.lockObject)
             { 
-                if (!this.inventoryTxToSend.Keys.Any())
+                if (!this.inventoryTxToSend.Any())
                 {
                     this.logger.LogTrace("(-)[NO_TXS]");
                     return;
@@ -594,7 +594,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
 
                 // Determine transactions to relay
                 // Produce a vector with all candidates for sending
-                List<uint256> invs = this.inventoryTxToSend.Keys.Take(InventoryBroadcastMax).ToList();
+                List<uint256> invs = this.inventoryTxToSend.Take(InventoryBroadcastMax).ToList();
 
                 foreach (uint256 hash in invs)
                 {
@@ -603,7 +603,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                     this.logger.LogTrace("Transaction ID '{0}' removed from pending sends list.", hash);
 
                     // Check if not in the filter already
-                    if (this.filterInventoryKnown.ContainsKey(hash))
+                    if (this.filterInventoryKnown.Contains(hash))
                     {
                         this.logger.LogTrace("Transaction ID '{0}' not added to inventory list, exists in known inventory filter.", hash);
                         continue;
