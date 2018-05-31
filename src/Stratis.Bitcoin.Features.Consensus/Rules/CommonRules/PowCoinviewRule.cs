@@ -5,6 +5,9 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
 {
     public sealed class PowCoinviewRule : CoinViewRule
     {
+        /// <summary>Consensus parameters.</summary>
+        private NBitcoin.Consensus consensusParams;
+
         /// <inheritdoc/>
         public override void CheckBlockReward(RuleContext context, Money fees, int height, Block block)
         {
@@ -23,7 +26,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         /// <inheritdoc/>
         public override Money GetProofOfWorkReward(int height)
         {
-            int halvings = height / this.ConsensusParams.SubsidyHalvingInterval;
+            int halvings = height / this.consensusParams.SubsidyHalvingInterval;
             // Force block reward to zero when right shift is undefined.
             if (halvings >= 64)
                 return 0;

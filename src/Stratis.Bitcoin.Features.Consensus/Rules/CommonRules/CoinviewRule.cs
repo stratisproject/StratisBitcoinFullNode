@@ -19,9 +19,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
     [ExecutionRule]
     public abstract class CoinViewRule : ConsensusRule
     {
-        /// <summary>Consensus parameters.</summary>
-        public NBitcoin.Consensus ConsensusParams { get; private set; }
-
         /// <summary>Consensus options.</summary>
         public PowConsensusOptions PowConsensusOptions { get; private set; }
 
@@ -30,8 +27,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         {
             this.Logger.LogTrace("()");
 
-            this.ConsensusParams = this.Parent.Network.Consensus;
-            this.PowConsensusOptions = this.ConsensusParams.Option<PowConsensusOptions>();
+            this.PowConsensusOptions = this.Parent.Network.Consensus.Option<PowConsensusOptions>();
 
             this.Logger.LogTrace("(-)");
         }
