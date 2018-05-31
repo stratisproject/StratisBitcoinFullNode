@@ -48,7 +48,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         private readonly MempoolSettings mempoolSettings;
 
         /// <summary>Instance logger for the memory pool.</summary>
-        private readonly ILogger mempoolLogger;
+        private readonly ILogger logger;
 
         /// <summary>Dictionary of orphan transactions keyed by transaction hash.</summary>
         private readonly Dictionary<uint256, OrphanTx> mapOrphanTransactions;
@@ -107,7 +107,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             this.mapOrphanTransactionsByPrev = new Dictionary<OutPoint, List<OrphanTx>>(); // OutPoint already correctly implements equality compare
             this.recentRejects = new Dictionary<uint256, uint256>();
             this.hashRecentRejectsChainTip = uint256.Zero;
-            this.mempoolLogger = loggerFactory.CreateLogger(this.GetType().FullName);
+            this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
         }
 
         /// <summary>A lock for managing asynchronous access to memory pool.</summary>
@@ -150,7 +150,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <returns>Whether the transaction id is present.</returns>
         public async Task<bool> AlreadyHaveAsync(uint256 trxid)
         {
-            this.mempoolLogger.LogTrace("{0}:'{1}'", nameof(trxid), trxid);
+            this.logger.LogTrace("({0}:'{1}')", nameof(trxid), trxid);
             if (this.chain.Tip.HashBlock != this.hashRecentRejectsChainTip)
             {
                 await this.MempoolLock.WriteAsync(() =>
@@ -159,20 +159,21 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                     // might be now valid, e.g. due to a nLockTime'd tx becoming valid,
                     // or a double-spend. Reset the rejects filter and give those
                     // txs a second chance.
-                    this.mempoolLogger.LogTrace("Executing task to clear rejected transactions.");
+                    this.logger.LogTrace("Executing task to clear rejected transactions.");
                     this.hashRecentRejectsChainTip = this.chain.Tip.HashBlock;
                     this.recentRejects.Clear();
                 });
-            }
-
-            this.mempoolLogger.LogTrace("(-)");
+            }            
 
             // Use pcoinsTip->HaveCoinsInCache as a quick approximation to exclude
             // requesting or processing some txs which have already been included in a block
-            return await this.MempoolLock.ReadAsync(() =>
+            bool isTxPresent = await this.MempoolLock.ReadAsync(() =>
                                 this.recentRejects.ContainsKey(trxid) ||
                                 this.memPool.Exists(trxid) ||
                                 this.mapOrphanTransactions.ContainsKey(trxid));
+
+            this.logger.LogTrace("(-):{0}", isTxPresent);
+            return isTxPresent;
         }
 
         /// <summary>
@@ -183,7 +184,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <param name="tx">The new transaction received.</param>
         public async Task ProcessesOrphansAsync(MempoolBehavior behavior, Transaction tx)
         {
-            this.mempoolLogger.LogTrace("{0}:'{1}', {2}:'{3}'", nameof(behavior), behavior?.AttachedPeer?.RemoteSocketEndpoint, nameof(tx), tx?.GetHash());
+            this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(behavior), behavior?.AttachedPeer?.RemoteSocketEndpoint, nameof(tx), tx?.GetHash());
             Queue<OutPoint> vWorkQueue = new Queue<OutPoint>();
             List<uint256> vEraseQueue = new List<uint256>();
 
@@ -216,7 +217,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                     MempoolValidationState stateDummy = new MempoolValidationState(true);
                     if (await this.Validator.AcceptToMemoryPool(stateDummy, orphanTx))
                     {
-                        this.mempoolLogger.LogInformation($"accepted orphan tx {orphanHash}");
+                        this.logger.LogInformation($"accepted orphan tx {orphanHash}");
                         await behavior.RelayTransaction(orphanTx.GetHash());
                         this.signals.SignalTransaction(orphanTx);
                         for (int index = 0; index < orphanTx.Outputs.Count; index++)
@@ -231,11 +232,11 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                             // Punish peer that gave us an invalid orphan tx
                             //Misbehaving(fromPeer, nDos);
                             setMisbehaving.Add(fromPeer);
-                            this.mempoolLogger.LogInformation($"invalid orphan tx {orphanHash}");
+                            this.logger.LogInformation($"invalid orphan tx {orphanHash}");
                         }
                         // Has inputs but not accepted to mempool
                         // Probably non-standard or insufficient fee/priority
-                        this.mempoolLogger.LogInformation($"removed orphan tx {orphanHash}");
+                        this.logger.LogInformation($"removed orphan tx {orphanHash}");
                         vEraseQueue.Add(orphanHash);
                         if (!orphanTx.HasWitness && !stateDummy.CorruptionPossible)
                         {
@@ -252,7 +253,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             foreach (uint256 hash in vEraseQueue)
                 await this.EraseOrphanTx(hash).ConfigureAwait(false);
 
-            this.mempoolLogger.LogTrace("(-)");
+            this.logger.LogTrace("(-)");
         }
 
         /// <summary>
@@ -265,18 +266,17 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <returns>Whether the transaction was added to orphans.</returns>
         public async Task<bool> ProcessesOrphansMissingInputsAsync(INetworkPeer from, Transaction tx)
         {
-            this.mempoolLogger.LogTrace("{0}:'{1}', {2}:'{3}'", nameof(from), from?.RemoteSocketEndpoint, nameof(tx), tx?.GetHash());
+            this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(from), from?.RemoteSocketEndpoint, nameof(tx), tx.GetHash());
             // It may be the case that the orphans parents have all been rejected
             var rejectedParents = await this.MempoolLock.ReadAsync(() =>
             {
-                this.mempoolLogger.LogTrace("Executing task to query if orphans parents have all been rejected.");
                 return tx.Inputs.Any(txin => this.recentRejects.ContainsKey(txin.PrevOut.Hash));
             });
 
             if (rejectedParents)
             {
-                this.mempoolLogger.LogInformation($"not keeping orphan with rejected parents {tx.GetHash()}");
-                this.mempoolLogger.LogTrace("(-):false[REJECT_PARENTS_ORPH]");
+                this.logger.LogInformation($"not keeping orphan with rejected parents {tx.GetHash()}");
+                this.logger.LogTrace("(-)[REJECT_PARENTS_ORPH]:false");
                 return false;
             }
 
@@ -294,9 +294,9 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             int nMaxOrphanTx = this.mempoolSettings.MaxOrphanTx;
             int nEvicted = await this.LimitOrphanTxSizeAsync(nMaxOrphanTx);
             if (nEvicted > 0)
-                this.mempoolLogger.LogInformation($"mapOrphan overflow, removed {nEvicted} tx");
+                this.logger.LogInformation($"mapOrphan overflow, removed {nEvicted} tx");
 
-            this.mempoolLogger.LogTrace("(-):{0}", ret);
+            this.logger.LogTrace("(-):{0}", ret);
             return ret;
         }
 
@@ -309,7 +309,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <returns>The number of transactions evicted.</returns>
         public async Task<int> LimitOrphanTxSizeAsync(int maxOrphanTx)
         {
-            this.mempoolLogger.LogTrace("{0}:{1}", nameof(maxOrphanTx), maxOrphanTx);
+            this.logger.LogTrace("({0}:{1})", nameof(maxOrphanTx), maxOrphanTx);
             int nEvicted = 0;
             long nNow = this.dateTimeProvider.GetTime();
             if (this.nNextSweep <= nNow)
@@ -333,11 +333,11 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                 // Sweep again 5 minutes after the next entry that expires in order to batch the linear scan.
                 this.nNextSweep = nMinExpTime + OrphanTxExpireInterval;
                 if (nErased > 0)
-                    this.mempoolLogger.LogInformation($"Erased {nErased} orphan tx due to expiration");
+                    this.logger.LogInformation($"Erased {nErased} orphan tx due to expiration");
             }
             await await this.MempoolLock.ReadAsync(async () =>
             {
-                this.mempoolLogger.LogTrace("Executing task to prune orphan txs to max limit.");
+                this.logger.LogTrace("Executing task to prune orphan txs to max limit.");
                 while (this.mapOrphanTransactions.Count > maxOrphanTx)
                 {
                     // Evict a random orphan:
@@ -348,7 +348,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                 }
             });
 
-            this.mempoolLogger.LogTrace("(-):{0}", nEvicted);
+            this.logger.LogTrace("(-):{0}", nEvicted);
             return nEvicted;
         }
 
@@ -360,13 +360,13 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <returns>Whether the orphan transaction was added.</returns>
         public Task<bool> AddOrphanTx(ulong nodeId, Transaction tx)
         {
-            this.mempoolLogger.LogTrace("{0}:{1}, {2}:'{3}'", nameof(nodeId), nodeId, nameof(tx), tx?.GetHash());
+            this.logger.LogTrace("({0}:{1},{2}:'{3}')", nameof(nodeId), nodeId, nameof(tx), tx.GetHash());
             return this.MempoolLock.WriteAsync(() =>
             {
                 uint256 hash = tx.GetHash();
                 if (this.mapOrphanTransactions.ContainsKey(hash))
                 {
-                    this.mempoolLogger.LogTrace("(-):false[DUP_ORPH]");
+                    this.logger.LogTrace("(-)[DUP_ORPH]:false");
                     return false;
                 }
 
@@ -380,8 +380,8 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                 int sz = MempoolValidator.GetTransactionWeight(tx, this.Validator.ConsensusOptions);
                 if (sz >= this.consensusValidator.ConsensusOptions.MaxStandardTxWeight)
                 {
-                    this.mempoolLogger.LogInformation($"ignoring large orphan tx (size: {sz}, hash: {hash})");
-                    this.mempoolLogger.LogTrace("(-):false[LARGE_ORPH]");
+                    this.logger.LogInformation($"ignoring large orphan tx (size: {sz}, hash: {hash})");
+                    this.logger.LogTrace("(-)[LARGE_ORPH]:false");
                     return false;
                 }
 
@@ -406,10 +406,10 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                 }
 
                 int orphanSize = this.mapOrphanTransactions.Count;
-                this.mempoolLogger.LogInformation($"stored orphan tx {hash} (mapsz {orphanSize} outsz {this.mapOrphanTransactionsByPrev.Count})");
+                this.logger.LogInformation($"stored orphan tx {hash} (mapsz {orphanSize} outsz {this.mapOrphanTransactionsByPrev.Count})");
                 this.Validator.PerformanceCounter.SetMempoolOrphanSize(orphanSize);
 
-                this.mempoolLogger.LogTrace("(-):true");
+                this.logger.LogTrace("(-):true");
                 return true;
             });
         }
@@ -421,27 +421,27 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <returns>Whether erased.</returns>
         private Task<bool> EraseOrphanTx(uint256 hash)
         {
-            this.mempoolLogger.LogTrace("{0}:'{1}'", nameof(hash), hash);
+            this.logger.LogTrace("({0}:'{1}')", nameof(hash), hash);
             return this.MempoolLock.WriteAsync(() =>
             {
-                OrphanTx it = this.mapOrphanTransactions.TryGet(hash);
-                if (it == null)
+                OrphanTx orphTx = this.mapOrphanTransactions.TryGet(hash);
+                if (orphTx == null)
                 {
-                    this.mempoolLogger.LogTrace("(-):false[NOTFOUND_ORPH]");
+                    this.logger.LogTrace("(-)[NOTFOUND_ORPH]:false");
                     return false;
                 }
-                foreach (TxIn txin in it.Tx.Inputs)
+                foreach (TxIn txin in orphTx.Tx.Inputs)
                 {
-                    List<OrphanTx> itPrev = this.mapOrphanTransactionsByPrev.TryGet(txin.PrevOut);
-                    if (itPrev == null)
+                    List<OrphanTx> prevOrphTxList = this.mapOrphanTransactionsByPrev.TryGet(txin.PrevOut);
+                    if (prevOrphTxList == null)
                         continue;
-                    itPrev.Remove(it);
-                    if (!itPrev.Any())
+                    prevOrphTxList.Remove(orphTx);
+                    if (!prevOrphTxList.Any())
                         this.mapOrphanTransactionsByPrev.Remove(txin.PrevOut);
                 }
                 this.mapOrphanTransactions.Remove(hash);
 
-                this.mempoolLogger.LogTrace("(-):true");
+                this.logger.LogTrace("(-):true");
                 return true;
             });
         }
@@ -452,17 +452,16 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <param name="peer">Peer node id</param>
         public Task EraseOrphansFor(ulong peer)
         {
-            this.mempoolLogger.LogTrace("{0}:{1}", nameof(peer), peer);
-            this.mempoolLogger.LogTrace("(-)");
+            this.logger.LogTrace("({0}:{1})", nameof(peer), peer);            
             return this.MempoolLock.ReadAsync(async () =>
             {
-                this.mempoolLogger.LogTrace("Executing task to erase orphan transactions.");
+                this.logger.LogTrace("Executing task to erase orphan transactions.");
                 int erased = 0;
                 foreach (OrphanTx erase in this.mapOrphanTransactions.Values.Where(w => w.NodeId == peer).ToList())
                     erased += await this.EraseOrphanTx(erase.Tx.GetHash()) ? 1 : 0;
 
                 if (erased > 0)
-                    this.mempoolLogger.LogInformation($"Erased {erased} orphan tx from peer {peer}");
+                    this.logger.LogInformation($"Erased {erased} orphan tx from peer {peer}");
 
                 //return true;
             }).Unwrap();

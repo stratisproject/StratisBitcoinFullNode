@@ -195,7 +195,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <inheritdoc />
         public async Task<bool> AcceptToMemoryPoolWithTime(MempoolValidationState state, Transaction tx)
         {
-            this.logger.LogTrace("{0}:'{1}', {2}:'{3}'", nameof(state), state?.ToString(), nameof(tx), tx?.GetHash());
+            this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(state), state?.ToString(), nameof(tx), tx?.GetHash());
             try
             {
                 List<uint256> vHashTxToUncache = new List<uint256>();
@@ -209,13 +209,13 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             }
             catch (MempoolErrorException)
             {
-                this.logger.LogTrace("(-):false[MEMPOOL_EXCEPTION]");
+                this.logger.LogTrace("(-)[MEMPOOL_EXCEPTION]:false");
                 return false;
             }
             catch (ConsensusErrorException consensusError)
             {
                 state.Error = new MempoolError(consensusError.ConsensusError);
-                this.logger.LogTrace("(-):false[CONSENSUS_EXCEPTION]");
+                this.logger.LogTrace("(-)[CONSENSUS_EXCEPTION]:false");
                 return false;
             }
         }
