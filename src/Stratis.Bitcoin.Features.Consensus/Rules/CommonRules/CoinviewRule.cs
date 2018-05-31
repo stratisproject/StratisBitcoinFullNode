@@ -168,7 +168,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         /// <param name="coins">UTXOs to check the maturity of.</param>
         /// <param name="spendHeight">Height at which coins are attempted to be spent.</param>
         /// <exception cref="ConsensusErrors.BadTransactionPrematureCoinbaseSpending">Thrown if transaction tries to spend coins that are not mature.</exception>
-        protected virtual void CheckMaturity(UnspentOutputs coins, int spendHeight)
+        protected void CheckMaturity(UnspentOutputs coins, int spendHeight)
         {
             this.Logger.LogTrace("({0}:'{1}/{2}',{3}:{4})", nameof(coins), coins.TransactionId, coins.Height, nameof(spendHeight), spendHeight);
 
@@ -185,6 +185,14 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
 
             this.Logger.LogTrace("(-)");
         }
+
+        /// <summary>
+        /// Network specific logic that checks the maturity of UTXO sets.
+        /// <para>
+        /// Refer to <see cref="CheckMaturity(UnspentOutputs, int)"/>.
+        /// </para>
+        /// </summary>
+        public abstract void OnCheckMaturity(UnspentOutputs coins, int spendHeight);
 
         /// <summary>
         /// Checks that transaction's inputs are valid.

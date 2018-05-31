@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
 using NBitcoin;
+using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
 {
@@ -35,6 +36,12 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
             // Subsidy is cut in half every 210,000 blocks which will occur approximately every 4 years.
             subsidy >>= halvings;
             return subsidy;
+        }
+
+        /// <inheritdoc/>
+        public override void OnCheckMaturity(UnspentOutputs coins, int spendHeight)
+        {
+            base.CheckMaturity(coins, spendHeight);
         }
     }
 }
