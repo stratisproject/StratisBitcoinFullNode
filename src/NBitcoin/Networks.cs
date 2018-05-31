@@ -90,7 +90,7 @@ namespace NBitcoin
             network.Consensus.DefaultAssumeValid = new uint256("0x000000000000000000174f783cc20c1415f90c4d17c9a5bcd06ba67207c9bc80"); // 518180
 
             network.genesis = CreateGenesisBlock(network.Consensus.ConsensusFactory, 1231006505, 2083236893, 0x1d00ffff, 1, Money.Coins(50m));
-            network.Consensus.HashGenesisBlock = network.genesis.GetHash();
+            network.Consensus.HashGenesisBlock = network.genesis.GetHash(network.Consensus.ConsensusFactory);
             Assert(network.Consensus.HashGenesisBlock == uint256.Parse("0x000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f"));
             Assert(network.genesis.Header.HashMerkleRoot == uint256.Parse("0x4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b"));
             
@@ -204,7 +204,7 @@ namespace NBitcoin
 
             // Modify the testnet genesis block so the timestamp is valid for a later start.
             network.genesis = CreateGenesisBlock(network.Consensus.ConsensusFactory, 1296688602, 414098458, 0x1d00ffff, 1, Money.Coins(50m));
-            network.Consensus.HashGenesisBlock = network.genesis.GetHash();
+            network.Consensus.HashGenesisBlock = network.genesis.GetHash(network.Consensus.ConsensusFactory);
             Assert(network.Consensus.HashGenesisBlock == uint256.Parse("0x000000000933ea01ad0ee984209779baaec3ced90fa3f408719526f8d77f4943"));
 
             network.Base58Prefixes[(int)Base58Type.PUBKEY_ADDRESS] = new byte[] { (111) };
@@ -280,7 +280,7 @@ namespace NBitcoin
             network.Consensus.DefaultAssumeValid = null; // turn off assumevalid for regtest.
 
             network.genesis = CreateGenesisBlock(network.Consensus.ConsensusFactory, 1296688602, 2, 0x207fffff, 1, Money.Coins(50m));
-            network.Consensus.HashGenesisBlock = network.genesis.GetHash();
+            network.Consensus.HashGenesisBlock = network.genesis.GetHash(network.Consensus.ConsensusFactory);
             Assert(network.Consensus.HashGenesisBlock == uint256.Parse("0x0f9188f13cb7b2c71f2a335e3a4fc328bf5beb436012afca590b1a11466e2206"));
 
             network.Base58Prefixes[(int)Base58Type.PUBKEY_ADDRESS] = new byte[] { (111) };
@@ -357,7 +357,7 @@ namespace NBitcoin
             network.Consensus.DefaultAssumeValid = new uint256("0x55a8205ae4bbf18f4d238c43f43005bd66e0b1f679b39e2c5c62cf6903693a5e"); // 795970
 
             network.genesis = CreateStratisGenesisBlock(network.Consensus.ConsensusFactory, 1470467000, 1831645, 0x1e0fffff, 1, Money.Zero);
-            network.Consensus.HashGenesisBlock = network.genesis.GetHash();
+            network.Consensus.HashGenesisBlock = network.genesis.GetHash(network.Consensus.ConsensusFactory);
             Assert(network.Consensus.HashGenesisBlock == uint256.Parse("0x0000066e91e46e5a264d42c89e1204963b2ee6be230b443e9159020539d972af"));
             Assert(network.genesis.Header.HashMerkleRoot == uint256.Parse("0x65a26bc20b0351aebf05829daefa8f7db2f800623439f3c114257c91447f1518"));
 
@@ -484,7 +484,7 @@ namespace NBitcoin
             genesis.Header.Nonce = 2433759;
             genesis.Header.Bits = network.Consensus.PowLimit;
             network.genesis = genesis;
-            network.Consensus.HashGenesisBlock = genesis.GetHash();
+            network.Consensus.HashGenesisBlock = genesis.GetHash(network.Consensus.ConsensusFactory);
             Assert(network.Consensus.HashGenesisBlock == uint256.Parse("0x00000e246d7b73b88c9ab55f2e5e94d9e22d471def3df5ea448f5576b1d156b9"));
 
             network.Checkpoints = new Dictionary<int, CheckpointInfo>
@@ -583,7 +583,7 @@ namespace NBitcoin
             genesis.Header.Nonce = 2433759;
             genesis.Header.Bits = network.Consensus.PowLimit;
             network.genesis = genesis;
-            network.Consensus.HashGenesisBlock = genesis.GetHash();
+            network.Consensus.HashGenesisBlock = genesis.GetHash(network.Consensus.ConsensusFactory);
             Assert(network.Consensus.HashGenesisBlock == uint256.Parse("0x93925104d664314f581bc7ecb7b4bad07bcfabd1cfce4256dbd2faddcf53bd1f"));
 
             network.Base58Prefixes[(int)Base58Type.PUBKEY_ADDRESS] = new byte[] { (65) };
