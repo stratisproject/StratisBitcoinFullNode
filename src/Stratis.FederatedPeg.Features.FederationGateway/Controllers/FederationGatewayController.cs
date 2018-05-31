@@ -62,7 +62,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Controllers
         /// the 'movement'.  This API call asks the counter chain to action it's transaction.
         /// </summary>
         /// <param name="createCounterChainSessionRequest">Used to pass the SessionId, Amount and Destination address to the counter chain.</param>
-        /// <returns></returns>
+        /// <returns>An ActionResult.</returns>
         [Route("request-counter-completion")]
         [HttpPost]
         public async Task<IActionResult> CreatePartialTransactionSession([FromBody] CreateCounterChainSessionRequest createCounterChainSessionRequest)

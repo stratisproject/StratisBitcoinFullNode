@@ -7,6 +7,9 @@ using Newtonsoft.Json;
 
 namespace Stratis.FederatedPeg.Features.FederationGateway.Models
 {
+    /// <summary>
+    /// Helper class to interpret a string as json.
+    /// </summary>
     public class JsonContent : StringContent
     {
         public JsonContent(object obj) :
@@ -16,6 +19,9 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Models
         }
     }
 
+    /// <summary>
+    /// Base of the RequestModel overrides the Request to convert to json.
+    /// </summary>
     public class RequestModel
     {
         public override string ToString()

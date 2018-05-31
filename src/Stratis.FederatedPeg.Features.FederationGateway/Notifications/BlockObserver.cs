@@ -9,8 +9,13 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Notifications
     /// </summary>
     internal sealed class BlockObserver : SignalObserver<Block>
     {
+        // The monitor we pass the new blocks onto.
         private readonly ICrossChainTransactionMonitor crossChainTransactionMonitor;
 
+        /// <summary>
+        /// Initialize the block observer with the monitor.
+        /// </summary>
+        /// <param name="crossChainTransactionMonitor"></param>
         public BlockObserver(ICrossChainTransactionMonitor crossChainTransactionMonitor)
         {
             this.crossChainTransactionMonitor = crossChainTransactionMonitor;

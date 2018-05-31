@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Linq;
 using System.Text;
-using DBreeze.Utils;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 
@@ -12,17 +11,39 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
     /// </summary>
     internal enum OpReturnDataType
     {
+        /// <summary>
+        /// Address type.
+        /// </summary>
         Address,
+
+        /// <summary>
+        /// Transaction hash type.
+        /// </summary>
         Hash,
+
+        /// <summary>
+        /// Unknown and we can ignore it.
+        /// </summary>
         Unknown
     }
 
     /// <summary>
     /// OP_RETURN data can be a hash, an address or unknown.
     /// This class interprets the data.
+    /// Addresses are contained in the source transactions on the monitor chain whereas
+    /// hashes are contained in the destination transaction on the counter chain and
+    /// are used to pair transactions together. 
     /// </summary>
     internal static class OpReturnDataReader
     {
+        /// <summary>
+        /// Interprets the inbound OP_RETURN data and tells us what type it is.
+        /// </summary>
+        /// <param name="logger">The logger to use for diagnostic purposes.</param>
+        /// <param name="network">The network we are monitoring.</param>
+        /// <param name="transaction">The transaction we are examining.</param>
+        /// <param name="opReturnDataType">Returns information about how the data was interpreted.</param>
+        /// <returns>The relevant string or null of the type is Unknown.</returns>
         public static string GetStringFromOpReturn(ILogger logger, Network network, Transaction transaction, out OpReturnDataType opReturnDataType)
         {
             string address = GetDestinationFromOpReturn(logger, network, transaction);
@@ -44,7 +65,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
         }
 
         // Examines the outputs of the transaction to see if an OP_RETURN is present.
-        // Validates the base58 result against the counter chain network checksum.
+        // Validates the uint256 format.
         private static string GetHashFromOpReturn(ILogger logger, Transaction transaction)
         {
             string hash = null;
@@ -92,6 +113,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
             }
         }
 
+        // Interpret the data as a hash and validate it by passing the data to the uint256 constructor.
         private static string ConvertValidOpReturnDataToHash(ILogger logger, byte[] data)
         {
             // Remove the RETURN operator.
