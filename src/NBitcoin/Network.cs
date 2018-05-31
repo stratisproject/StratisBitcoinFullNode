@@ -121,24 +121,27 @@ namespace NBitcoin
         /// <summary>
         /// Register an immutable <see cref="Network"/> instance so it is queryable through <see cref="GetNetwork(string)"/> and <see cref="GetNetworks()"/>.
         /// </summary>
-        internal static Network Register(Network network, string nameOverride = null)
+        internal static Network Register(Network network)
         {
-            string networkName = !string.IsNullOrEmpty(nameOverride) ? nameOverride : network.Name;
+            IEnumerable<string> networkNames = network.AdditionalNames != null ? new[] { network.Name }.Concat(network.AdditionalNames) : new[] { network.Name };
 
-            // Performs a series of checks before registering the network to the list of available networks.
-            if (string.IsNullOrEmpty(networkName))
-                throw new InvalidOperationException("A network name needs to be provided.");
+            foreach (string networkName in networkNames)
+            {
+                // Performs a series of checks before registering the network to the list of available networks.
+                if (string.IsNullOrEmpty(networkName))
+                    throw new InvalidOperationException("A network name needs to be provided.");
 
-            if (GetNetwork(networkName) != null)
-                throw new InvalidOperationException("The network " + networkName + " is already registered.");
+                if (GetNetwork(networkName) != null)
+                    throw new InvalidOperationException("The network " + networkName + " is already registered.");
 
-            if (network.GetGenesis() == null)
-                throw new InvalidOperationException("A genesis block needs to be provided.");
+                if (network.GetGenesis() == null)
+                    throw new InvalidOperationException("A genesis block needs to be provided.");
 
-            if (network.Consensus == null)
-                throw new InvalidOperationException("A consensus needs to be provided.");
+                if (network.Consensus == null)
+                    throw new InvalidOperationException("A consensus needs to be provided.");
 
-            NetworksContainer.TryAdd(networkName.ToLowerInvariant(), network);
+                NetworksContainer.TryAdd(networkName.ToLowerInvariant(), network);
+            }
 
             return network;
         }

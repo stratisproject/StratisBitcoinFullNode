@@ -29,32 +29,17 @@ namespace NBitcoin
         /// <summary> The default name used for the Stratis configuration file. </summary>
         public const string StratisDefaultConfigFilename = "stratis.conf";
 
-        public static Network Main => Network.GetNetwork("Main") ?? InitNetwork(new BitcoinMain());
+        public static Network Main => Network.GetNetwork("Main") ?? Register(new BitcoinMain());
 
-        public static Network TestNet => Network.GetNetwork("TestNet") ?? InitNetwork(new BitcoinTest());
+        public static Network TestNet => Network.GetNetwork("TestNet") ?? Register(new BitcoinTest());
 
-        public static Network RegTest => Network.GetNetwork("RegTest") ?? InitNetwork(new BitcoinRegTest());
+        public static Network RegTest => Network.GetNetwork("RegTest") ?? Register(new BitcoinRegTest());
 
-        public static Network StratisMain => Network.GetNetwork("StratisMain") ?? InitNetwork(new StratisMain());
+        public static Network StratisMain => Network.GetNetwork("StratisMain") ?? Register(new StratisMain());
 
-        public static Network StratisTest => Network.GetNetwork("StratisTest") ?? InitNetwork(new StratisTest());
+        public static Network StratisTest => Network.GetNetwork("StratisTest") ?? Register(new StratisTest());
 
-        public static Network StratisRegTest => Network.GetNetwork("StratisRegTest") ?? InitNetwork(new StratisRegTest());
-
-        private static Network InitNetwork(Network network)
-        {
-            Network.Register(network);
-
-            if (network.AdditionalNames != null)
-            {
-                foreach (var additionalName in network.AdditionalNames)
-                {
-                    Network.Register(network, additionalName);
-                }
-            }
-            
-            return network;
-        }
+        public static Network StratisRegTest => Network.GetNetwork("StratisRegTest") ?? Register(new StratisRegTest());
 
         protected static Block CreateGenesisBlock(ConsensusFactory consensusFactory, uint nTime, uint nNonce, uint nBits, int nVersion, Money genesisReward)
         {

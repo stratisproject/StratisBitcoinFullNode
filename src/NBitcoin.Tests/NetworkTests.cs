@@ -48,16 +48,6 @@ namespace NBitcoin.Tests
 
         [Fact]
         [Trait("UnitTest", "UnitTest")]
-        public void RegisterNetworkTwiceWithDifferentNamesSucceeds()
-        {
-            Network main = Network.Main;
-            Network main2 = Network.Register(main, "main2");
-
-            Assert.Equal(Network.GetNetwork("main"), Network.GetNetwork("main2"));
-        }
-        
-        [Fact]
-        [Trait("UnitTest", "UnitTest")]
         public void ReadMagicByteWithFirstByteDuplicated()
         {
             var bytes = Network.Main.MagicBytes.ToList();
