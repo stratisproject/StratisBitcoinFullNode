@@ -13,30 +13,43 @@ using Stratis.Bitcoin.P2P.Peer;
 
 namespace Stratis.FederatedPeg.Features.FederationGateway.CounterChain
 {
+    ///<inheritdoc/>
     internal class CounterChainSessionManager : ICounterChainSessionManager
     {
+        // The wallet that contains the multisig capabilities.
         private IGeneralPurposeWalletManager generalPurposeWalletManager;
 
+        // Transaction handler used to build the final transaction.
         private IGeneralPurposeWalletTransactionHandler generalPurposeWalletTransactionHandler;
 
+        // Peer connector for broadcasting the payloads.
         private IConnectionManager connectionManager;
 
+        // The network we are running.
         private Network network;
 
-        private ConcurrentDictionary<uint256, CounterChainSession> sessions = new ConcurrentDictionary<uint256, CounterChainSession>();
-
+        // Gateway settings picked up from the node config.
         private FederationGatewaySettings federationGatewaySettings;
 
+        // Broadcaster we use to pass our payload to peers.
         private IBroadcasterManager broadcastManager;
 
+        // The IBD status.
         private IInitialBlockDownloadState initialBlockDownloadState;
 
+        // This is used only in the log file to tell us the block height.
         private ConcurrentChain concurrentChain;
 
+        // The logger. It's the logger.
         private readonly ILogger logger;
 
+        // The shoulders we stand on.
         private IFullNode fullnode;
 
+        // The sessions are stored here.
+        private ConcurrentDictionary<uint256, CounterChainSession> sessions = new ConcurrentDictionary<uint256, CounterChainSession>();
+
+        // Get everything together before we get going.
         public CounterChainSessionManager(ILoggerFactory loggerFactory, IGeneralPurposeWalletManager generalPurposeWalletManager,
             IGeneralPurposeWalletTransactionHandler generalPurposeWalletTransactionHandler, IConnectionManager connectionManager, Network network,
             FederationGatewaySettings federationGatewaySettings, IInitialBlockDownloadState initialBlockDownloadState, IFullNode fullnode,
@@ -54,8 +67,10 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.CounterChain
             this.federationGatewaySettings = federationGatewaySettings;
         }
 
+        ///<inheritdoc/>
         public void CreateSessionOnCounterChain(uint256 sessionId, Money amount, string destinationAddress)
         {
+            // TODO: This is inadequate.
             // We don't process sessions if our chain is not past IBD.
             if (this.initialBlockDownloadState.IsInitialBlockDownload())
             {
@@ -65,6 +80,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.CounterChain
             this.RegisterSession(sessionId, amount, destinationAddress);
         }
 
+        // Add the session to its collection.
         private CounterChainSession RegisterSession(uint256 transactionId, Money amount, string destination)
         {
             var memberFolderManager = new MemberFolderManager(this.federationGatewaySettings.FederationFolder);
@@ -79,6 +95,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.CounterChain
             return counterChainSession;
         }
 
+        ///<inheritdoc/>
         public void ReceivePartial(uint256 sessionId, Transaction partialTransaction, uint256 bossCard)
         {
             this.logger.LogInformation("()");
@@ -97,8 +114,10 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.CounterChain
             this.logger.LogInformation("(-)");
         }
 
+        // If we have reached the quorum we can combine and broadcast the transaction. 
         private void BroadcastTransaction(CounterChainSession counterChainSession)
         {
+            //TODO: we can remove this.
             if (this.fullnode.State == FullNodeState.Disposed || this.fullnode.State == FullNodeState.Disposing)
             {
                 this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} Full node disposing during broadcast. Do nothing.");
@@ -128,8 +147,10 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.CounterChain
             this.logger.LogInformation("(-)");
         }
 
+        ///<inheritdoc/>
         public async Task<uint256> ProcessCounterChainSession(uint256 sessionId, Money amount, string destinationAddress)
         {
+            //todo this method is doing too much. factor some of this into private methods after we added the counterchainid.
             this.logger.LogInformation("()");
             this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} ProcessCounterChainSession: Amount        - {amount}");
             this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} ProcessCounterChainSession: TransactionId - {sessionId}");
@@ -260,8 +281,10 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.CounterChain
             return counterChainSession;
         }
 
+        ///<inheritdoc/>
         public void MarkSessionAsSigned(CounterChainSession session)
         {
+            //TODO: this should be locked. the sessions are 30 seconds apart but network conditions could cause a collision.
             this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} has signed session {session.SessionId}.");
             session.HaveISigned = true;
         }
