@@ -47,6 +47,16 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
             base.CheckMaturity(coins, spendHeight);
         }
 
+        /// <inheritdoc />
+        public override void OnInitialize()
+        {
+            this.Logger.LogTrace("()");
+
+            this.consensusParams = this.Parent.Network.Consensus;
+
+            this.Logger.LogTrace("(-)");
+        }
+
         /// <inheritdoc/>
         public override void OnUpdateCoinView(RuleContext context, Transaction transaction)
         {

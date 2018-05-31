@@ -29,8 +29,15 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
 
             this.PowConsensusOptions = this.Parent.Network.Consensus.Option<PowConsensusOptions>();
 
+            this.OnInitialize();
+
             this.Logger.LogTrace("(-)");
         }
+
+        /// <summary>
+        /// Network specific initialization logic.
+        /// </summary>
+        public abstract void OnInitialize();
 
         /// <inheritdoc />
         protected async Task OnRunAsync(RuleContext context)
