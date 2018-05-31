@@ -213,7 +213,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         /// <exception cref="ConsensusErrors.BadTransactionInBelowOut">Thrown if transaction inputs are less then outputs.</exception>
         /// <exception cref="ConsensusErrors.BadTransactionNegativeFee">Thrown if fees sum is negative.</exception>
         /// <exception cref="ConsensusErrors.BadTransactionFeeOutOfRange">Thrown if fees value is out of range.</exception>
-        public virtual void CheckInputs(Transaction transaction, UnspentOutputSet inputs, int spendHeight)
+        public void CheckInputs(Transaction transaction, UnspentOutputSet inputs, int spendHeight)
         {
             this.Logger.LogTrace("({0}:{1})", nameof(spendHeight), spendHeight);
 
