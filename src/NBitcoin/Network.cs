@@ -33,61 +33,58 @@ namespace NBitcoin
         WITNESS_SCRIPT_ADDRESS
     }
 
-    public partial class Network
+    public abstract partial class Network
     {
         private static readonly ConcurrentDictionary<string, Network> NetworksContainer = new ConcurrentDictionary<string, Network>();
 
-        private Block genesis;
+        protected Block Genesis;
         
-        private Network()
+        protected Network()
         {
-            this.DNSSeeds = new List<DNSSeedData>();
-            this.SeedNodes = new List<NetworkAddress>();
-            this.Checkpoints = new Dictionary<int, CheckpointInfo>();
             this.Consensus = new Consensus();
-            this.Base58Prefixes = new byte[12][];
-            this.Bech32Encoders = new Bech32Encoder[2];
         }
         
-        public PubKey AlertPubKey { get; private set; }
+        public PubKey AlertPubKey { get; protected set; }
 
         /// <summary> Maximal value for the calculated time offset. If the value is over this limit, the time syncing feature will be switched off. </summary>
-        public int MaxTimeOffsetSeconds { get; private set; }
+        public int MaxTimeOffsetSeconds { get; protected set; }
 
         /// <summary>Maximum tip age in seconds to consider node in initial block download.</summary>
-        public int MaxTipAge { get; private set; }
+        public int MaxTipAge { get; protected set; }
 
-        public long MinTxFee { get; private set; }
+        public long MinTxFee { get; protected set; }
 
-        public long FallbackFee { get; private set; }
+        public long FallbackFee { get; protected set; }
 
-        public long MinRelayTxFee { get; private set; }
+        public long MinRelayTxFee { get; protected set; }
 
-        public int RPCPort { get; private set; }
+        public int RPCPort { get; protected set; }
 
-        public int DefaultPort { get; private set; }
+        public int DefaultPort { get; protected set; }
 
-        public Consensus Consensus { get; private set; }
+        public Consensus Consensus { get; protected set; }
 
-        public string Name { get; private set; }
+        public string Name { get; protected set; }
+
+        public List<string> AdditionalNames { get; protected set; }
 
         /// <summary> The name of the root folder containing blockchains operating with the same consensus rules (for now, this will be bitcoin or stratis). </summary>
-        public string RootFolderName { get; private set; }
+        public string RootFolderName { get; protected set; }
 
         /// <summary> The default name used for the network configuration file. </summary>
-        public string DefaultConfigFilename { get; private set; }
+        public string DefaultConfigFilename { get; protected set; }
 
-        public List<NetworkAddress> SeedNodes { get; private set; }
+        public List<NetworkAddress> SeedNodes { get; protected set; }
 
-        public List<DNSSeedData> DNSSeeds { get; private set; }
+        public List<DNSSeedData> DNSSeeds { get; protected set; }
 
-        public Dictionary<int, CheckpointInfo> Checkpoints { get; private set; }
+        public Dictionary<int, CheckpointInfo> Checkpoints { get; protected set; }
 
-        internal byte[][] Base58Prefixes { get; private set; }
+        public byte[][] Base58Prefixes { get; protected set; }
 
-        internal Bech32Encoder[] Bech32Encoders { get; private set; }
+        public Bech32Encoder[] Bech32Encoders { get; protected set; }
 
-        public uint Magic { get; private set; }
+        public uint Magic { get; protected set; }
 
         public byte[] MagicBytesArray;
 
@@ -110,6 +107,16 @@ namespace NBitcoin
                 return this.MagicBytesArray;
             }
         }
+
+        public uint GenesisTime { get; protected set; }
+
+        public uint GenesisNonce { get; protected set; }
+
+        public uint GenesisBits { get; protected set; }
+
+        public int GenesisVersion { get; protected set; }
+
+        public Money GenesisReward { get; protected set; }
 
         /// <summary>
         /// Register an immutable <see cref="Network"/> instance so it is queryable through <see cref="GetNetwork(string)"/> and <see cref="GetNetworks()"/>.
@@ -136,7 +143,7 @@ namespace NBitcoin
             return network;
         }
 
-        private static void Assert(bool condition)
+        protected static void Assert(bool condition)
         {
             // TODO: use Guard when this moves to the FN.
             if (!condition)
@@ -451,7 +458,7 @@ namespace NBitcoin
 
         public Block GetGenesis()
         {
-            return this.genesis.Clone(network: this);
+            return this.Genesis.Clone(network: this);
         }
 
         public uint256 GenesisHash => this.Consensus.HashGenesisBlock;
@@ -563,6 +570,24 @@ namespace NBitcoin
                 throw new ArgumentNullException("bytes");
             Bech32Encoder encoder = network.GetBech32Encoder(type, true);
             return encoder.Encode(witnessVersion, bytes);
+        }
+
+        protected IEnumerable<NetworkAddress> ConvertToNetworkAddresses(string[] seeds, int defaultPort)
+        {
+            Random rand = new Random();
+            TimeSpan oneWeek = TimeSpan.FromDays(7);
+
+            foreach (string seed in seeds)
+            {
+                // It'll only connect to one or two seed nodes because once it connects,
+                // it'll get a pile of addresses with newer timestamps.
+                // Seed nodes are given a random 'last seen time' of between one and two weeks ago.
+                yield return new NetworkAddress
+                {
+                    Time = DateTime.UtcNow - (TimeSpan.FromSeconds(rand.NextDouble() * oneWeek.TotalSeconds)) - oneWeek,
+                    Endpoint = Utils.ParseIpEndpoint(seed, defaultPort)
+                };
+            }
         }
     }
 }
