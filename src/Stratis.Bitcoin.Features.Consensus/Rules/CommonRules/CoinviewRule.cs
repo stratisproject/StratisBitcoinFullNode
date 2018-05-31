@@ -136,11 +136,11 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         }
 
         /// <summary>
-        /// Updates context's UTXO set.
+        /// Update the context's UTXO set.
         /// </summary>
         /// <param name="context">Context that contains variety of information regarding blocks validation and execution.</param>
         /// <param name="transaction">Transaction which outputs will be added to the context's <see cref="UnspentOutputSet"/> and which inputs will be removed from it.</param>
-        protected virtual void UpdateCoinView(RuleContext context, Transaction transaction)
+        protected void UpdateCoinView(RuleContext context, Transaction transaction)
         {
             this.Logger.LogTrace("()");
 
@@ -151,6 +151,14 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
 
             this.Logger.LogTrace("(-)");
         }
+
+        /// <summary>
+        /// Network specific updates to the context's UTXO set.
+        /// <para>
+        /// Refer to <see cref="UpdateCoinView(RuleContext, Transaction)"/>.
+        /// </para>
+        /// </summary>
+        public abstract void OnUpdateCoinView(RuleContext context, Transaction transaction);
 
         /// <summary>
         /// Verifies that block has correct coinbase transaction with appropriate reward and fees summ.
