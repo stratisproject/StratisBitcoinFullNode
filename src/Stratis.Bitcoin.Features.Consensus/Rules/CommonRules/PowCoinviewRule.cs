@@ -1,9 +1,25 @@
-﻿using NBitcoin;
+﻿using Microsoft.Extensions.Logging;
+using NBitcoin;
 
 namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
 {
     public sealed class PowCoinviewRule : CoinViewRule
     {
+        /// <inheritdoc/>
+        public override void CheckBlockReward(RuleContext context, Money fees, int height, Block block)
+        {
+            this.Logger.LogTrace("()");
+
+            Money blockReward = fees + this.GetProofOfWorkReward(height);
+            if (block.Transactions[0].TotalOut > blockReward)
+            {
+                this.Logger.LogTrace("(-)[BAD_COINBASE_AMOUNT]");
+                ConsensusErrors.BadCoinbaseAmount.Throw();
+            }
+
+            this.Logger.LogTrace("(-)");
+        }
+
         /// <inheritdoc/>
         public override Money GetProofOfWorkReward(int height)
         {
