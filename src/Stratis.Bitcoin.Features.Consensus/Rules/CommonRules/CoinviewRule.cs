@@ -17,21 +17,21 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
     /// <exception cref="ConsensusErrors.BadBlockSigOps">Thrown if signature operation cost is greater then maximum block signature operation cost.</exception>
     /// <exception cref="ConsensusErrors.BadTransactionScriptError">Thrown if not all inputs are valid (no double spends, scripts & sigs, amounts).</exception>
     [ExecutionRule]
-    public class CoinViewRule : ConsensusRule
+    public abstract class CoinViewRule : ConsensusRule
     {
         /// <summary>Consensus parameters.</summary>
-        private NBitcoin.Consensus consensusParams;
-            
+        public NBitcoin.Consensus ConsensusParams { get; private set; }
+
         /// <summary>Consensus options.</summary>
-        private PowConsensusOptions consensusOptions;
+        public PowConsensusOptions PowConsensusOptions { get; private set; }
 
         /// <inheritdoc />
         public override void Initialize()
         {
             this.Logger.LogTrace("()");
 
-            this.consensusParams = this.Parent.Network.Consensus;
-            this.consensusOptions = this.consensusParams.Option<PowConsensusOptions>();
+            this.ConsensusParams = this.Parent.Network.Consensus;
+            this.PowConsensusOptions = this.ConsensusParams.Option<PowConsensusOptions>();
 
             this.Logger.LogTrace("(-)");
         }
@@ -87,7 +87,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
                     // * p2sh (when P2SH enabled in flags and excludes coinbase),
                     // * witness (when witness enabled in flags and excludes coinbase).
                     sigOpsCost += this.GetTransactionSignatureOperationCost(tx, view, flags);
-                    if (sigOpsCost > this.consensusOptions.MaxBlockSigopsCost)
+                    if (sigOpsCost > this.PowConsensusOptions.MaxBlockSigopsCost)
                     {
                         this.Logger.LogTrace("(-)[BAD_BLOCK_SIG_OPS]");
                         ConsensusErrors.BadBlockSigOps.Throw();
@@ -191,9 +191,9 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
             // If prev is coinbase, check that it's matured
             if (coins.IsCoinbase)
             {
-                if ((spendHeight - coins.Height) < this.consensusOptions.CoinbaseMaturity)
+                if ((spendHeight - coins.Height) < this.PowConsensusOptions.CoinbaseMaturity)
                 {
-                    this.Logger.LogTrace("Coinbase transaction height {0} spent at height {1}, but maturity is set to {2}.", coins.Height, spendHeight, this.consensusOptions.CoinbaseMaturity);
+                    this.Logger.LogTrace("Coinbase transaction height {0} spent at height {1}, but maturity is set to {2}.", coins.Height, spendHeight, this.PowConsensusOptions.CoinbaseMaturity);
                     this.Logger.LogTrace("(-)[COINBASE_PREMATURE_SPENDING]");
                     ConsensusErrors.BadTransactionPrematureCoinbaseSpending.Throw();
                 }
@@ -267,18 +267,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         /// </summary>
         /// <param name="height">Height of the block that we're calculating the reward for.</param>
         /// <returns>Reward amount.</returns>
-        public virtual Money GetProofOfWorkReward(int height)
-        {
-            int halvings = height / this.consensusParams.SubsidyHalvingInterval;
-            // Force block reward to zero when right shift is undefined.
-            if (halvings >= 64)
-                return 0;
-
-            Money subsidy = this.consensusOptions.ProofOfWorkReward;
-            // Subsidy is cut in half every 210,000 blocks which will occur approximately every 4 years.
-            subsidy >>= halvings;
-            return subsidy;
-        }
+        public abstract Money GetProofOfWorkReward(int height);
 
         /// <summary>
         /// Calculates total signature operation cost of a transaction.
@@ -289,14 +278,14 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         /// <returns>Signature operation cost for all transaction's inputs.</returns>
         public long GetTransactionSignatureOperationCost(Transaction transaction, UnspentOutputSet inputs, DeploymentFlags flags)
         {
-            long signatureOperationCost = this.GetLegacySignatureOperationsCount(transaction) * this.consensusOptions.WitnessScaleFactor;
+            long signatureOperationCost = this.GetLegacySignatureOperationsCount(transaction) * this.PowConsensusOptions.WitnessScaleFactor;
 
             if (transaction.IsCoinBase)
                 return signatureOperationCost;
 
             if (flags.ScriptFlags.HasFlag(ScriptVerify.P2SH))
             {
-                signatureOperationCost += this.GetP2SHSignatureOperationsCount(transaction, inputs) * this.consensusOptions.WitnessScaleFactor;
+                signatureOperationCost += this.GetP2SHSignatureOperationsCount(transaction, inputs) * this.PowConsensusOptions.WitnessScaleFactor;
             }
 
             for (int i = 0; i < transaction.Inputs.Count; i++)
@@ -384,7 +373,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         /// <returns><c>true</c> if the value is in range. Otherwise <c>false</c>.</returns>
         private bool MoneyRange(long value)
         {
-            return ((value >= 0) && (value <= this.consensusOptions.MaxMoney));
+            return ((value >= 0) && (value <= this.PowConsensusOptions.MaxMoney));
         }
 
         /// <summary>
@@ -397,10 +386,10 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         /// <param name="block">Block that we get weight of.</param>
         /// <returns>Block weight.</returns>
         /// TODO: this is a duplicate of the same method in BlockSizeRule <see cref="BlockSizeRule.GetBlockWeight"/>
-        public long GetBlockWeight(Block block)  
+        public long GetBlockWeight(Block block)
         {
-            return this.GetSize(block, TransactionOptions.None) 
-                   * (this.consensusOptions.WitnessScaleFactor - 1) 
+            return this.GetSize(block, TransactionOptions.None)
+                   * (this.PowConsensusOptions.WitnessScaleFactor - 1)
                    + this.GetSize(block, TransactionOptions.Witness);
         }
 
