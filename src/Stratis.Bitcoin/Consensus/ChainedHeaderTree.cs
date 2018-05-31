@@ -119,7 +119,7 @@ namespace Stratis.Bitcoin.Consensus
         }
 
         /// <summary>
-        /// Remove a peer and the branch on the tree that it claims.
+        /// Remove a peer and the entire branch on the tree that it claims unless the headers are before our consensus tip or are claimed by other peers.
         /// </summary>
         /// <param name="networkPeerId">The peer id that is removed.</param>
         public void DisconnectPeer(int networkPeerId)
@@ -141,7 +141,7 @@ namespace Stratis.Bitcoin.Consensus
         /// Mark a <see cref="ChainedHeader"/> as <see cref="ValidationState.FullyValidated"/>.
         /// </summary>
         /// <param name="chainedHeader">The fully validated header.</param>
-        public void OnFullValidationSucceeded(ChainedHeader chainedHeader)
+        public void FullValidationSucceeded(ChainedHeader chainedHeader)
         {
             this.logger.LogTrace("({0}:{1})", nameof(chainedHeader), chainedHeader);
 
@@ -150,7 +150,7 @@ namespace Stratis.Bitcoin.Consensus
             this.logger.LogTrace("(-)");
         }
 
-        public HashSet<int> OnPartialOrFullValidationFailed(ChainedHeader chainedHeader)
+        public HashSet<int> PartialOrFullValidationFailed(ChainedHeader chainedHeader)
         {
             this.logger.LogTrace("({0}:{1})", nameof(chainedHeader), chainedHeader);
 
@@ -162,7 +162,7 @@ namespace Stratis.Bitcoin.Consensus
             return peersToBan;
         }
 
-        public void OnBlockDataDownloaded(Block block, out ChainedHeader chainedHeader)
+        public void BlockDataDownloaded(Block block, out ChainedHeader chainedHeader)
         {
             this.logger.LogTrace("({0}:{1})", nameof(block), block);
 
@@ -171,7 +171,7 @@ namespace Stratis.Bitcoin.Consensus
             this.logger.LogTrace("(-)");
         }
 
-        public void OnPartialValidationSucceeded(ChainedHeader chainedHeader, out bool wannaReorg)
+        public void PartialValidationSucceeded(ChainedHeader chainedHeader, out bool wannaReorg)
         {
             this.logger.LogTrace("({0}:{1})", nameof(chainedHeader), chainedHeader);
 
