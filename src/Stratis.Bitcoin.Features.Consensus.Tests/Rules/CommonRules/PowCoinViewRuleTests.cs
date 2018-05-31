@@ -24,11 +24,11 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         private RuleContext ruleContext;
         private UnspentOutputSet coinView;
         private Transaction transactionWithCoinbaseFromPreviousBlock;
-        private readonly PowCoinViewRule rule;
+        private readonly CoinViewRule rule;
 
         public PowCoinViewRuleTests()
         {
-            this.rule = new PowCoinViewRule();
+            this.rule = new CoinViewRule();
         }
 
         [Fact]

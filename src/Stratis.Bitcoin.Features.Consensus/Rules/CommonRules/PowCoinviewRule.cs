@@ -17,7 +17,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
     /// <exception cref="ConsensusErrors.BadBlockSigOps">Thrown if signature operation cost is greater then maximum block signature operation cost.</exception>
     /// <exception cref="ConsensusErrors.BadTransactionScriptError">Thrown if not all inputs are valid (no double spends, scripts & sigs, amounts).</exception>
     [ExecutionRule]
-    public class PowCoinViewRule : ConsensusRule
+    public class CoinViewRule : ConsensusRule
     {
         /// <summary>Consensus parameters.</summary>
         private NBitcoin.Consensus consensusParams;
