@@ -7,6 +7,7 @@ using Stratis.Bitcoin.Features.Consensus.Interfaces;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.MemoryPool.Interfaces;
 using Stratis.Bitcoin.Features.SmartContracts.Consensus.Rules;
+using Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Consensus.Rules;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.SmartContracts
@@ -26,15 +27,24 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             new TxOutSmartContractExecRule()
         };
 
-        /// <summary>
+        /// <summary>mar
         /// These rules rely on the fee part of the context to be loaded in parent class. See 'AcceptToMemoryPoolWorkerAsync'.
         /// </summary>
         private static readonly List<ISmartContractMempoolRule> feeTxRules = new List<ISmartContractMempoolRule>
         {
-            //new GasBudgetRule()
+            new SmartContractFormatRule()
         };
 
-        public SmartContractMempoolValidator(ITxMempool memPool, MempoolSchedulerLock mempoolLock, IPowConsensusValidator consensusValidator, IDateTimeProvider dateTimeProvider, MempoolSettings mempoolSettings, ConcurrentChain chain, CoinView coinView, ILoggerFactory loggerFactory, NodeSettings nodeSettings) 
+        public SmartContractMempoolValidator(
+            ITxMempool memPool,
+            MempoolSchedulerLock mempoolLock,
+            IPowConsensusValidator consensusValidator,
+            IDateTimeProvider dateTimeProvider,
+            MempoolSettings mempoolSettings,
+            ConcurrentChain chain,
+            CoinView coinView,
+            ILoggerFactory loggerFactory,
+            NodeSettings nodeSettings) 
             : base(memPool, mempoolLock, consensusValidator, dateTimeProvider, mempoolSettings, chain, coinView, loggerFactory, nodeSettings)
         {
         }
