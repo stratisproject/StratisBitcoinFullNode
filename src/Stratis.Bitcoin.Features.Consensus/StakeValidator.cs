@@ -65,6 +65,9 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <summary>Defines a set of options that are used by the consensus rules of Proof Of Stake (POS).</summary>
         private readonly PosConsensusOptions consensusOptions;
 
+        /// <inheritdoc cref="Network"/>
+        private readonly Network network;
+
         /// <inheritdoc />
         /// <param name="network">Specification of the network the node runs on - regtest/testnet/mainnet.</param>
         /// <param name="stakeChain">Database of stake related data for the current blockchain.</param>
@@ -77,6 +80,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             this.stakeChain = stakeChain;
             this.chain = chain;
             this.coinView = coinView;
+            this.network = network;
             this.consensusOptions = network.Consensus.Option<PosConsensusOptions>();
         }
 
@@ -204,7 +208,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             }
 
             // Min age requirement.
-            if (this.IsConfirmedInNPrevBlocks(prevUtxo, prevChainedHeader, this.consensusOptions.StakeMinConfirmations - 1))
+            if (this.IsConfirmedInNPrevBlocks(prevUtxo, prevChainedHeader, this.consensusOptions.GetStakeMinConfirmations(prevChainedHeader.Height + 1, this.network) - 1))
             {
                 this.logger.LogTrace("(-)[BAD_STAKE_DEPTH]");
                 ConsensusErrors.InvalidStakeDepth.Throw();
@@ -254,7 +258,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             }
 
             UnspentOutputs prevUtxo = coins.UnspentOutputs[0];
-            if (this.IsConfirmedInNPrevBlocks(prevUtxo, prevChainedHeader, this.consensusOptions.StakeMinConfirmations - 1))
+            if (this.IsConfirmedInNPrevBlocks(prevUtxo, prevChainedHeader, this.consensusOptions.GetStakeMinConfirmations(prevChainedHeader.Height + 1, this.network) - 1))
             {
                 this.logger.LogTrace("(-)[LOW_COIN_AGE]");
                 ConsensusErrors.InvalidStakeDepth.Throw();
