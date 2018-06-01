@@ -143,7 +143,7 @@ namespace Stratis.Bitcoin.Consensus
             if (!this.peerTipsByPeerId.TryGetValue(networkPeerId, out uint256 peerTipHash)) 
             {
                 this.logger.LogTrace("(-)[PEER_TIP_NOT_FOUND]");
-                throw new ConnectHeaderException();
+                return;
             }
 
             ChainedHeader peerTip = this.chainedHeadersByHash.TryGet(peerTipHash);
@@ -205,9 +205,7 @@ namespace Stratis.Bitcoin.Consensus
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(chainedHeader), chainedHeader);
 
-            var peersToBan = new List<int>();
-
-            this.RemoveNextClaimsRecursive(peersToBan, chainedHeader);
+            List<int> peersToBan = this.RemoveNextClaims(chainedHeader);
 
             this.RemoveUnclaimedBranch(chainedHeader);
 
@@ -216,35 +214,55 @@ namespace Stratis.Bitcoin.Consensus
         }
 
         /// <summary>
-        /// Recursively remove all the branches in the tree that are after the given <see cref="chainedHeader"/> (including) and return all the peers that where discovered.
+        /// Remove all the branches in the tree that are after the given <see cref="startHeader" /> (including)
+        /// and return all the peers that where claiming next headers.
         /// </summary>
-        /// <remarks>
-        /// The <see cref="discoveredPeers"/> will be modified in the processes.
-        /// </remarks>
-        /// <param name="discoveredPeers">List of peers that where discovered.</param>
-        /// <param name="chainedHeader">The chained header to start from.</param>
-        private void RemoveNextClaimsRecursive(List<int> discoveredPeers, ChainedHeader chainedHeader)
+        /// <param name="startHeader">The chained header to start from.</param>
+        /// <returns>List of peer Ids for banning.</returns>
+        private List<int> RemoveNextClaims(ChainedHeader startHeader)
         {
-            this.logger.LogTrace("({0}:'{1}',{2}.{3}:{4})", nameof(chainedHeader), chainedHeader, nameof(discoveredPeers), nameof(discoveredPeers.Count), discoveredPeers.Count);
+            this.logger.LogTrace("({0}:'{1}')", nameof(startHeader), startHeader);
 
-            foreach (ChainedHeader nextChainedHeader in chainedHeader.Next)
-            {
-                this.RemoveNextClaimsRecursive(discoveredPeers, nextChainedHeader);
-            }
-            
-            this.chainedHeadersByHash.Remove(chainedHeader.HashBlock);
-            chainedHeader.Previous.Next.Remove(chainedHeader);
+            var peersToBan = new List<int>();
 
-            if (this.peerIdsByTipHash.TryGetValue(chainedHeader.HashBlock, out HashSet<int> peers))
+            var headersToProcess = new Stack<ChainedHeader>();
+            headersToProcess.Push(startHeader);
+
+            while (headersToProcess.Count != 0)
             {
-                foreach (int peer in peers)
+                ChainedHeader header = headersToProcess.Pop();
+
+                foreach (ChainedHeader nextHeader in header.Next)
+                    headersToProcess.Push(nextHeader);
+                
+                if (this.peerIdsByTipHash.TryGetValue(header.HashBlock, out HashSet<int> peers))
                 {
-                    this.peerTipsByPeerId.Remove(peer);
+                    foreach (int peerId in peers)
+                    {
+                        if (peerId != LocalPeerId)
+                        {
+                            this.peerTipsByPeerId.Remove(peerId);
+                            peersToBan.Add(peerId);
+                        }
+                    }
+                    
+                    this.peerIdsByTipHash.Remove(header.HashBlock);
                 }
 
-                discoveredPeers.AddRange(peers);
-                this.peerIdsByTipHash.Remove(chainedHeader.HashBlock);
+                this.DisconnectChainHeader(header);
             }
+            
+            this.logger.LogTrace("(-)");
+            return peersToBan;
+        }
+
+        private void DisconnectChainHeader(ChainedHeader header)
+        {
+            this.logger.LogTrace("({0}:'{1}')", nameof(header), header);
+
+            header.Previous.Next.Remove(header);
+
+            this.chainedHeadersByHash.Remove(header.HashBlock);
 
             this.logger.LogTrace("(-)");
         }
@@ -256,7 +274,7 @@ namespace Stratis.Bitcoin.Consensus
             if (!this.chainedHeadersByHash.TryGetValue(block.GetHash(), out chainedHeader))
             {
                 this.logger.LogTrace("(-)[HEADER_NOT_FOUND]");
-                throw new ConnectHeaderException();
+                throw new ConnectHeaderException(); //TODO do a proper exception
             }
 
             this.chainedHeaderValidator.VerifyBlockIntegrity(block, chainedHeader);
@@ -530,8 +548,8 @@ namespace Stratis.Bitcoin.Consensus
                     break;
                 }
 
-                this.chainedHeadersByHash.Remove(currentHeader.HashBlock);
-                currentHeader.Previous.Next.Remove(currentHeader);
+                this.DisconnectChainHeader(chainedHeader);
+
                 this.logger.LogTrace("Header '{0}' was removed from the tree.", currentHeader);
 
                 currentHeader = currentHeader.Previous;
