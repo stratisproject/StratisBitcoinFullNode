@@ -1,6 +1,5 @@
 ﻿using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
@@ -406,37 +405,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
             bms.ConsensusFactory = this.Parent.Network.Consensus.ConsensusFactory;
             data.ReadWrite(bms);
             return (int)bms.Counter.WrittenBytes;
-        }
-
-        /// <summary>
-        /// Calculates merkle root for witness data.
-        /// </summary>
-        /// <param name="block">Block which transactions witness data is used for calculation.</param>
-        /// <param name="mutated"><c>true</c> if at least one leaf of the merkle tree has the same hash as any subtree. Otherwise: <c>false</c>.</param>
-        /// <returns>Merkle root.</returns>
-        public uint256 BlockWitnessMerkleRoot(Block block, out bool mutated)
-        {
-            var leaves = new List<uint256>();
-            leaves.Add(uint256.Zero); // The witness hash of the coinbase is 0.
-            foreach (Transaction tx in block.Transactions.Skip(1))
-                leaves.Add(tx.GetWitHash());
-
-            return BlockMerkleRootRule.ComputeMerkleRoot(leaves, out mutated);
-        }
-
-        /// <summary>
-        /// Calculates merkle root for block's trasnactions.
-        /// </summary>
-        /// <param name="block">Block which transactions are used for calculation.</param>
-        /// <param name="mutated"><c>true</c> if block contains repeating sequences of transactions without affecting the merkle root of a block. Otherwise: <c>false</c>.</param>
-        /// <returns>Merkle root.</returns>
-        public uint256 BlockMerkleRoot(Block block, out bool mutated)
-        {
-            var leaves = new List<uint256>(block.Transactions.Count);
-            foreach (Transaction tx in block.Transactions)
-                leaves.Add(tx.GetHash());
-
-            return BlockMerkleRootRule.ComputeMerkleRoot(leaves, out mutated);
         }
     }
 }
