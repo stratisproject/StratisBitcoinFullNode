@@ -17,7 +17,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
         public class TestContext
         {
             public Network Network = Network.RegTest;
-            public Mock<IChainedHeaderTreeValidator> ChainedHeaderValidatorMock = new Mock<IChainedHeaderTreeValidator>();
+            public Mock<IChainedHeaderValidator> ChainedHeaderValidatorMock = new Mock<IChainedHeaderValidator>();
             public Mock<ICheckpoints> CheckpointsMock = new Mock<ICheckpoints>();
             public Mock<IChainState> ChainStateMock = new Mock<IChainState>();
             public ConsensusSettings ConsensusSettings = new ConsensusSettings();

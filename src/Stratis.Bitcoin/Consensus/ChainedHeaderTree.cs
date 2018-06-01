@@ -12,13 +12,13 @@ namespace Stratis.Bitcoin.Consensus
     /// <summary>
     /// TODO comment this interface
     /// </summary>
-    public interface IChainedHeaderTreeValidator
+    public interface IChainedHeaderValidator
     {
         /// <summary>
         /// Validation of a header that was seen for the first time.
         /// </summary>
         /// <param name="chainedHeader">The chained header to be validated.</param>
-        void HeaderValidation(ChainedHeader chainedHeader);
+        void ValidateHeader(ChainedHeader chainedHeader);
 
         /// <summary>
         /// Validate the block signature (for POS) & merkle tree, throws if validation fails. 
@@ -51,7 +51,7 @@ namespace Stratis.Bitcoin.Consensus
     public sealed class ChainedHeaderTree
     {
         private readonly Network network;
-        private readonly IChainedHeaderTreeValidator chainedHeaderTreeValidator;
+        private readonly IChainedHeaderValidator chainedHeaderValidator;
         private readonly ILogger logger;
         private readonly ICheckpoints checkpoints;
         private readonly IChainState chainState;
@@ -85,13 +85,13 @@ namespace Stratis.Bitcoin.Consensus
         public ChainedHeaderTree(
             Network network, 
             ILoggerFactory loggerFactory, 
-            IChainedHeaderTreeValidator chainedHeaderTreeValidator, 
+            IChainedHeaderValidator chainedHeaderValidator, 
             ICheckpoints checkpoints, 
             IChainState chainState, 
             ConsensusSettings consensusSettings)
         {
             this.network = network;
-            this.chainedHeaderTreeValidator = chainedHeaderTreeValidator;
+            this.chainedHeaderValidator = chainedHeaderValidator;
             this.checkpoints = checkpoints;
             this.chainState = chainState;
             this.consensusSettings = consensusSettings;
@@ -205,26 +205,35 @@ namespace Stratis.Bitcoin.Consensus
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(chainedHeader), chainedHeader);
 
-            ChainedHeader claimedHeader = this.RemoveUnclaimedBranch(chainedHeader, true);
+            var peersToBan = new List<int>();
 
-            List<int> peersToBan = new List<int>();
+            this.RemoveNextClaimsRecursive(peersToBan, chainedHeader);
 
-            this.RemoveNextClaimsRecursive(peersToBan, claimedHeader);
+            this.RemoveUnclaimedBranch(chainedHeader);
 
             this.logger.LogTrace("(-){0}", peersToBan.Count);
             return peersToBan;
         }
 
-        private void RemoveNextClaimsRecursive(List<int> peersToBan, ChainedHeader chainedHeader)
+        /// <summary>
+        /// Recursively remove all the branches in the tree that are after the given <see cref="chainedHeader"/> (including) and return all the peers that where discovered.
+        /// </summary>
+        /// <remarks>
+        /// The <see cref="discoveredPeers"/> will be modified in the processes.
+        /// </remarks>
+        /// <param name="discoveredPeers">List of peers that where discovered.</param>
+        /// <param name="chainedHeader">The chained header to start from.</param>
+        private void RemoveNextClaimsRecursive(List<int> discoveredPeers, ChainedHeader chainedHeader)
         {
-            this.logger.LogTrace("({0}:'{1}',{2}.{3}:{4})", nameof(chainedHeader), chainedHeader, nameof(peersToBan), nameof(peersToBan.Count), peersToBan.Count);
+            this.logger.LogTrace("({0}:'{1}',{2}.{3}:{4})", nameof(chainedHeader), chainedHeader, nameof(discoveredPeers), nameof(discoveredPeers.Count), discoveredPeers.Count);
 
             foreach (ChainedHeader nextChainedHeader in chainedHeader.Next)
             {
-                this.RemoveNextClaimsRecursive(peersToBan, nextChainedHeader);
+                this.RemoveNextClaimsRecursive(discoveredPeers, nextChainedHeader);
             }
             
             this.chainedHeadersByHash.Remove(chainedHeader.HashBlock);
+            chainedHeader.Previous.Next.Remove(chainedHeader);
 
             if (this.peerIdsByTipHash.TryGetValue(chainedHeader.HashBlock, out HashSet<int> peers))
             {
@@ -233,7 +242,7 @@ namespace Stratis.Bitcoin.Consensus
                     this.peerTipsByPeerId.Remove(peer);
                 }
 
-                peersToBan.AddRange(peers);
+                discoveredPeers.AddRange(peers);
                 this.peerIdsByTipHash.Remove(chainedHeader.HashBlock);
             }
 
@@ -250,7 +259,7 @@ namespace Stratis.Bitcoin.Consensus
                 throw new ConnectHeaderException();
             }
 
-            this.chainedHeaderTreeValidator.VerifyBlockIntegrity(block, chainedHeader);
+            this.chainedHeaderValidator.VerifyBlockIntegrity(block, chainedHeader);
 
             if (chainedHeader.BlockValidationState == ValidationState.FullyValidated)
             {
@@ -496,17 +505,14 @@ namespace Stratis.Bitcoin.Consensus
         }
 
         /// <summary>
-        /// Remove branches of the tree that are not claimed by any peer . 
+        /// Remove the branch of the given <see cref="chainedHeader"/> from the tree that is not claimed by any peer . 
         /// </summary>
-        /// <param name="chainedHeader">The chained header that is the start of the branch.</param>
-        /// <param name="scanOnly">If true will only scan the tree and note remove any chained headers.</param>
-        /// <returns>The last chained header that is not claimed by any peer, or null if all headers are claimed.</returns>
-        private ChainedHeader RemoveUnclaimedBranch(ChainedHeader chainedHeader, bool scanOnly = false)
+        /// <param name="chainedHeader">The chained header that is the top of the branch.</param>
+        private void RemoveUnclaimedBranch(ChainedHeader chainedHeader)
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(chainedHeader), chainedHeader);
 
             ChainedHeader currentHeader = chainedHeader;
-            ChainedHeader unclaimedChainedHeader = null; // TODO: should we throw if this is null
             while (true)
             {
                 // If current header is an ancestor of some other tip claimed by a peer, do nothing.
@@ -524,19 +530,14 @@ namespace Stratis.Bitcoin.Consensus
                     break;
                 }
 
-                if (!scanOnly)
-                {
-                    this.chainedHeadersByHash.Remove(currentHeader.HashBlock);
-                    currentHeader.Previous.Next.Remove(currentHeader);
-                    this.logger.LogTrace("Header '{0}' was removed from the tree.", currentHeader);
-                }
+                this.chainedHeadersByHash.Remove(currentHeader.HashBlock);
+                currentHeader.Previous.Next.Remove(currentHeader);
+                this.logger.LogTrace("Header '{0}' was removed from the tree.", currentHeader);
 
-                unclaimedChainedHeader = chainedHeader;
                 currentHeader = currentHeader.Previous;
             }
 
-            this.logger.LogTrace("(-):{0}", unclaimedChainedHeader);
-            return unclaimedChainedHeader;
+            this.logger.LogTrace("(-)");
         }
 
         /// <summary>
@@ -672,7 +673,7 @@ namespace Stratis.Bitcoin.Consensus
         {
             var newChainedHeader = new ChainedHeader(currentBlockHeader, currentBlockHeader.GetHash(), previousChainedHeader);
 
-            this.chainedHeaderTreeValidator.HeaderValidation(newChainedHeader);
+            this.chainedHeaderValidator.ValidateHeader(newChainedHeader);
 
             previousChainedHeader.Next.Add(newChainedHeader);
             this.chainedHeadersByHash.Add(newChainedHeader.HashBlock, newChainedHeader);
