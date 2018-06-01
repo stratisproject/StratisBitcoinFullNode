@@ -21,10 +21,11 @@ namespace Stratis.Bitcoin.Consensus
         void ValidateHeader(ChainedHeader chainedHeader);
 
         /// <summary>
-        /// Validate the block signature (for POS) & merkle tree, throws if validation fails. 
+        /// Validate the block signature (for POS) and merkle tree, throws if validation fails. 
         /// </summary>
         /// <remarks>
         /// Throws different exceptions in case any of them failed.
+        /// TODO specify what exceptions are thrown (add throws xmldoc)
         /// </remarks>
         /// <param name="block">The block that is going to be validated.</param>
         /// <param name="chainedHeader">The chained header of the block that will be validated.</param>
@@ -133,9 +134,10 @@ namespace Stratis.Bitcoin.Consensus
         }
 
         /// <summary>
-        /// Remove a peer and the entire branch on the tree that it claims unless the headers are before our consensus tip or are claimed by other peers.
+        /// Remove a peer and the entire branch of the tree that it claims unless the
+        /// headers are part of our consensus chain or are claimed by other peers.
         /// </summary>
-        /// <param name="networkPeerId">The peer id that is removed.</param>
+        /// <param name="networkPeerId">Id of a peer that was disconnected.</param>
         public void DisconnectPeer(int networkPeerId)
         {
             this.logger.LogTrace("({0}:{1})", nameof(networkPeerId), networkPeerId);
@@ -147,11 +149,11 @@ namespace Stratis.Bitcoin.Consensus
             }
 
             ChainedHeader peerTip;
-
             if (!this.chainedHeadersByHash.TryGetValue(peerTipHash, out peerTip))
             {
-                this.logger.LogTrace("Peer Id wasn't found!");
-                throw new Exception("Peer Id wasn't found!");
+                this.logger.LogTrace("Header '{0}' not found!", peerTipHash);
+                this.logger.LogTrace("(-)[HEADER_NOT_FOUND]");
+                throw new Exception("Header not found!");
             }
 
             this.RemovePeerClaim(networkPeerId, peerTip);
@@ -172,6 +174,12 @@ namespace Stratis.Bitcoin.Consensus
             this.logger.LogTrace("(-)");
         }
 
+        /// <summary>
+        /// Partial validation succeeded.
+        /// </summary>
+        /// <param name="chainedHeader">The chained header.</param>
+        /// <param name="reorgRequired"><c>true</c> in case header has greater chainwork than our consensus tip and switching to its chain is required.</param>
+        /// <returns>List of chained headers which block data should be partially validated next. Or <c>null</c> if none should be validated.</returns>
         public List<ChainedHeader> PartialValidationSucceeded(ChainedHeader chainedHeader, out bool reorgRequired)
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(chainedHeader), chainedHeader);
@@ -190,8 +198,8 @@ namespace Stratis.Bitcoin.Consensus
             {
                 this.logger.LogDebug("Partially validated chained header '{0}' has more work than the current consensus tip.", chainedHeader);
 
-                HashSet<int> headerTipClaimedPeers = this.peerIdsByTipHash.TryGet(chainedHeader.HashBlock);
-                headerTipClaimedPeers.Add(LocalPeerId);
+                this.ClaimPeerTip(LocalPeerId, chainedHeader.HashBlock);
+
                 reorgRequired = true;
             }
 
@@ -206,6 +214,22 @@ namespace Stratis.Bitcoin.Consensus
 
             this.logger.LogTrace("(-):{0}", availableBlocks.Count);
             return availableBlocks;
+        }
+
+        private void ClaimPeerTip(int networkPeerId, uint256 tipHash)
+        {
+            this.logger.LogTrace("({0}:{1},{2}:'{3}')", nameof(networkPeerId), networkPeerId, nameof(tipHash), tipHash);
+            
+            HashSet<int> peersClaimingThisHeader;
+            if (!this.peerIdsByTipHash.TryGetValue(tipHash, out peersClaimingThisHeader))
+            {
+                peersClaimingThisHeader = new HashSet<int>();
+                this.peerIdsByTipHash.Add(tipHash, peersClaimingThisHeader);
+            }
+
+            peersClaimingThisHeader.Add(networkPeerId);
+           
+            this.logger.LogTrace("(-)");
         }
 
         public List<int> PartialOrFullValidationFailed(ChainedHeader chainedHeader)
@@ -328,13 +352,12 @@ namespace Stratis.Bitcoin.Consensus
             }
 
             List<ChainedHeader> newChainedHeaders = this.CreateNewHeaders(headers);
+            uint256 lastHash = headers.Last().GetHash();
 
-            this.AddOrReplacePeerTip(networkPeerId, headers.Last().GetHash());
+            this.AddOrReplacePeerTip(networkPeerId, lastHash);
 
             if (newChainedHeaders == null)
             {
-                uint256 lastHash = headers.Last().GetHash();
-
                 this.logger.LogTrace("(-)[NO_NEW_HEADERS]");
                 return new ConnectedHeaders() { Consumed = this.chainedHeadersByHash[lastHash] };
             }
@@ -606,15 +629,8 @@ namespace Stratis.Bitcoin.Consensus
 
             uint256 oldTipHash = this.peerTipsByPeerId.TryGet(networkPeerId);
 
-            HashSet<int> peersClaimingThisHeader;
-           
-            if (!this.peerIdsByTipHash.TryGetValue(newTip, out peersClaimingThisHeader))
-            {
-                peersClaimingThisHeader = new HashSet<int>();
-                this.peerIdsByTipHash.Add(newTip, peersClaimingThisHeader);
-            }
-
-            peersClaimingThisHeader.Add(networkPeerId);
+            this.ClaimPeerTip(networkPeerId, newTip);
+            
             this.peerTipsByPeerId.AddOrReplace(networkPeerId, newTip);
 
             if (oldTipHash != null)
