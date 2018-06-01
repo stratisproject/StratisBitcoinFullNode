@@ -48,8 +48,8 @@ namespace NBitcoin.Networks
             this.Genesis.Header.Time = 1494909211;
             this.Genesis.Header.Nonce = 2433759;
             this.Genesis.Header.Bits = this.Consensus.PowLimit;
-            this.Consensus.HashGenesisBlock = this.Genesis.GetHash(this.Consensus.ConsensusFactory);
-            Network.Assert(this.Genesis.GetHash(this.Consensus.ConsensusFactory) == uint256.Parse("0x93925104d664314f581bc7ecb7b4bad07bcfabd1cfce4256dbd2faddcf53bd1f"));
+            this.Consensus.HashGenesisBlock = this.Genesis.GetHash();
+            Network.Assert(this.Consensus.HashGenesisBlock == uint256.Parse("0x93925104d664314f581bc7ecb7b4bad07bcfabd1cfce4256dbd2faddcf53bd1f"));
         }
     }
 }

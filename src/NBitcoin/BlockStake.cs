@@ -196,12 +196,6 @@ namespace NBitcoin
         /// <inheritdoc />
         public override uint256 GetHash()
         {
-            return this.GetHash(null);
-        }
-
-        /// <inheritdoc />
-        public override uint256 GetHash(ConsensusFactory consensusFactory)
-        {
             uint256 hash = null;
             uint256[] innerHashes = this.hashes;
 
@@ -212,9 +206,9 @@ namespace NBitcoin
                 return hash;
 
             if (this.version > 6)
-                hash = Hashes.Hash256(this.ToBytes(consensusFactory));
+                hash = Hashes.Hash256(this.ToBytes());
             else
-                hash = this.GetPoWHash(consensusFactory);
+                hash = this.GetPoWHash();
 
             innerHashes = this.hashes;
             if (innerHashes != null)
@@ -224,11 +218,11 @@ namespace NBitcoin
 
             return hash;
         }
-
+        
         /// /// <inheritdoc />
-        public override uint256 GetPoWHash(ConsensusFactory consensusFactory = null)
+        public override uint256 GetPoWHash()
         {
-            return HashX13.Instance.Hash(this.ToBytes(consensusFactory));
+            return HashX13.Instance.Hash(this.ToBytes());
         }
     }
 

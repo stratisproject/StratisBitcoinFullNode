@@ -122,8 +122,8 @@ namespace NBitcoin.Networks
             this.GenesisReward = Money.Zero;
 
             this.Genesis = Network.CreateStratisGenesisBlock(this.Consensus.ConsensusFactory, this.GenesisTime, this.GenesisNonce, this.GenesisBits, this.GenesisVersion, this.GenesisReward);
-            this.Consensus.HashGenesisBlock = this.Genesis.GetHash(this.Consensus.ConsensusFactory);
-            Network.Assert(this.Genesis.GetHash(this.Consensus.ConsensusFactory) == uint256.Parse("0x0000066e91e46e5a264d42c89e1204963b2ee6be230b443e9159020539d972af"));
+            this.Consensus.HashGenesisBlock = this.Genesis.GetHash();
+            Network.Assert(this.Consensus.HashGenesisBlock == uint256.Parse("0x0000066e91e46e5a264d42c89e1204963b2ee6be230b443e9159020539d972af"));
             Network.Assert(this.Genesis.Header.HashMerkleRoot == uint256.Parse("0x65a26bc20b0351aebf05829daefa8f7db2f800623439f3c114257c91447f1518"));
         }
     }

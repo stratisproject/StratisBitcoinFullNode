@@ -111,15 +111,6 @@ namespace NBitcoin
         /// <returns>A hash.</returns>
         public virtual uint256 GetHash()
         {
-            return this.GetHash(null);
-        }
-
-        /// <summary>
-        /// Generates the hash of a <see cref="BlockHeader"/>.
-        /// </summary>
-        /// <returns>A hash.</returns>
-        public virtual uint256 GetHash(ConsensusFactory consensusFactory)
-        {
             uint256 hash = null;
             uint256[] hashes = this.hashes;
 
@@ -148,9 +139,9 @@ namespace NBitcoin
         /// Generates a hash for a proof-of-work block header.
         /// </summary>
         /// <returns>A hash.</returns>
-        public virtual uint256 GetPoWHash(ConsensusFactory consensusFactory = null)
+        public virtual uint256 GetPoWHash()
         {
-            return this.GetHash(consensusFactory);
+            return this.GetHash();
         }
 
         /// <summary>
@@ -295,12 +286,6 @@ namespace NBitcoin
         {
             // A Block's hash is it's header's hash.
             return this.header.GetHash();
-        }
-
-        public uint256 GetHash(ConsensusFactory consensusFactory)
-        {
-            // A Block's hash is its header's hash.
-            return this.header.GetHash(consensusFactory);
         }
 
         public Transaction AddTransaction(Transaction tx)

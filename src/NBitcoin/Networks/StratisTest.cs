@@ -70,11 +70,11 @@ namespace NBitcoin.Networks
             this.GenesisReward = Money.Zero;
 
             this.Genesis = Network.CreateStratisGenesisBlock(this.Consensus.ConsensusFactory, this.GenesisTime, this.GenesisNonce, this.GenesisBits, this.GenesisVersion, this.GenesisReward);
-            this.Consensus.HashGenesisBlock = this.Genesis.GetHash(this.Consensus.ConsensusFactory);
             this.Genesis.Header.Time = 1493909211;
             this.Genesis.Header.Nonce = 2433759;
             this.Genesis.Header.Bits = this.Consensus.PowLimit;
-            Network.Assert(this.Genesis.GetHash(this.Consensus.ConsensusFactory) == uint256.Parse("0x00000e246d7b73b88c9ab55f2e5e94d9e22d471def3df5ea448f5576b1d156b9"));
+            this.Consensus.HashGenesisBlock = this.Genesis.GetHash();
+            Network.Assert(this.Consensus.HashGenesisBlock == uint256.Parse("0x00000e246d7b73b88c9ab55f2e5e94d9e22d471def3df5ea448f5576b1d156b9"));
         }
     }
 }
