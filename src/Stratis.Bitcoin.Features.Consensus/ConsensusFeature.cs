@@ -330,7 +330,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                     // rules that require the store to be loaded (coinview)
                     new LoadCoinviewRule(),
                     new TransactionDuplicationActivationRule(), // implements BIP30
-                    new PosCoinViewRule() // implements BIP68, MaxSigOps and BlockReward calculation
+                    new PosCoinviewRule() // implements BIP68, MaxSigOps and BlockReward calculation
                 };
             }
         }

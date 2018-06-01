@@ -266,7 +266,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         /// </summary>
         /// <param name="height">Height of the block that we're calculating the reward for.</param>
         /// <returns>Reward amount.</returns>
-        public abstract Money GetBlockReward(int height);
+        public abstract Money GetProofOfWorkReward(int height);
 
         /// <summary>
         /// Calculates total signature operation cost of a transaction.
