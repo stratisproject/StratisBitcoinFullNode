@@ -146,7 +146,14 @@ namespace Stratis.Bitcoin.Consensus
                 return;
             }
 
-            ChainedHeader peerTip = this.chainedHeadersByHash.TryGet(peerTipHash);
+            ChainedHeader peerTip;
+
+            if (!this.chainedHeadersByHash.TryGetValue(peerTipHash, out peerTip))
+            {
+                this.logger.LogTrace("Peer Id wasn't found!");
+                throw new Exception("Peer Id wasn't found!");
+            }
+
             this.RemovePeerClaim(networkPeerId, peerTip);
 
             this.logger.LogTrace("(-)");
@@ -183,7 +190,7 @@ namespace Stratis.Bitcoin.Consensus
             {
                 this.logger.LogDebug("Partially validated chained header '{0}' has more work than the current consensus tip.", chainedHeader);
 
-                HashSet<int> headerTipClaimedPeers =  this.peerIdsByTipHash.TryGet(chainedHeader.HashBlock);
+                HashSet<int> headerTipClaimedPeers = this.peerIdsByTipHash.TryGet(chainedHeader.HashBlock);
                 headerTipClaimedPeers.Add(LocalPeerId);
                 reorgRequired = true;
             }
@@ -568,9 +575,8 @@ namespace Stratis.Bitcoin.Consensus
             this.logger.LogTrace("({0}:{1},{2}:'{3}')", nameof(networkPeerId), networkPeerId, nameof(chainedHeader), chainedHeader);
 
             // Collection of peer IDs that claim this chained header as their tip.
-            HashSet<int> peerIds = this.peerIdsByTipHash.TryGet(chainedHeader.HashBlock);
-
-            if (peerIds == null)
+            HashSet<int> peerIds;
+            if (!this.peerIdsByTipHash.TryGetValue(chainedHeader.HashBlock, out peerIds))
             {
                 this.logger.LogTrace("(-)[PEER_TIP_NOT_FOUND]");
                 throw new ConsensusException("PEER_TIP_NOT_FOUND");
@@ -600,14 +606,15 @@ namespace Stratis.Bitcoin.Consensus
 
             uint256 oldTipHash = this.peerTipsByPeerId.TryGet(networkPeerId);
 
-            HashSet<int> listOfPeersClaimingThisHeader = this.peerIdsByTipHash.TryGet(newTip);
-            if (listOfPeersClaimingThisHeader == null)
+            HashSet<int> peersClaimingThisHeader;
+           
+            if (!this.peerIdsByTipHash.TryGetValue(newTip, out peersClaimingThisHeader))
             {
-                listOfPeersClaimingThisHeader = new HashSet<int>();
-                this.peerIdsByTipHash.Add(newTip, listOfPeersClaimingThisHeader);
+                peersClaimingThisHeader = new HashSet<int>();
+                this.peerIdsByTipHash.Add(newTip, peersClaimingThisHeader);
             }
 
-            listOfPeersClaimingThisHeader.Add(networkPeerId);
+            peersClaimingThisHeader.Add(networkPeerId);
             this.peerTipsByPeerId.AddOrReplace(networkPeerId, newTip);
 
             if (oldTipHash != null)
