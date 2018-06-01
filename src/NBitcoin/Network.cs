@@ -43,51 +43,120 @@ namespace NBitcoin
         {
             this.Consensus = new Consensus();
         }
-        
+
+        /// <summary>
+        /// The public key used in the alert messaging system.
+        /// TODO: remove as per https://github.com/bitcoin/bitcoin/pull/7692.
+        /// </summary>
         public PubKey AlertPubKey { get; protected set; }
 
-        /// <summary> Maximal value for the calculated time offset. If the value is over this limit, the time syncing feature will be switched off. </summary>
+        /// <summary>
+        /// Maximal value for the calculated time offset.
+        /// If the value is over this limit, the time syncing feature will be switched off.
+        /// </summary>
         public int MaxTimeOffsetSeconds { get; protected set; }
 
-        /// <summary>Maximum tip age in seconds to consider node in initial block download.</summary>
+        /// <summary>
+        /// Maximum tip age in seconds to consider node in initial block download.
+        /// </summary>
         public int MaxTipAge { get; protected set; }
 
+        /// <summary>
+        /// Mininum fee rate for all transactions.
+        /// Fees smaller than this are considered zero fee for transaction creation.
+        /// </summary>
         public long MinTxFee { get; protected set; }
 
+        /// <summary>
+        /// A fee rate that will be used when fee estimation has insufficient data.
+        /// </summary>
         public long FallbackFee { get; protected set; }
 
+        /// <summary>
+        /// The minimum fee under which transactions may be rejected from being relayed.
+        /// </summary>
         public long MinRelayTxFee { get; protected set; }
 
+        /// <summary>
+        /// Port on which to listen for incoming RPC connections.
+        /// </summary>
         public int RPCPort { get; protected set; }
 
+        /// <summary>
+        /// The default port on which nodes of this network communicate with external clients. 
+        /// </summary>
         public int DefaultPort { get; protected set; }
 
+        /// <summary>
+        /// The consensus for this network.
+        /// </summary>
         public Consensus Consensus { get; protected set; }
 
+        /// <summary>
+        /// The name of the network.
+        /// </summary>
         public string Name { get; protected set; }
 
+        /// <summary>
+        /// A list of additional names the network can be referred as.
+        /// For example, Bitcoin Main can have "Mainnet" as an additional name.
+        /// </summary>
         public List<string> AdditionalNames { get; protected set; }
 
-        /// <summary> The name of the root folder containing blockchains operating with the same consensus rules (for now, this will be bitcoin or stratis). </summary>
+        /// <summary>
+        /// The name of the root folder containing blockchains operating with the same consensus rules (for now, this will be bitcoin or stratis).
+        /// </summary>
         public string RootFolderName { get; protected set; }
 
-        /// <summary> The default name used for the network configuration file. </summary>
+        /// <summary>
+        /// The default name used for the network configuration file.
+        /// </summary>
         public string DefaultConfigFilename { get; protected set; }
 
+        /// <summary>
+        /// The list of nodes on the network that our current node tries to connect to.
+        /// </summary>
         public List<NetworkAddress> SeedNodes { get; protected set; }
 
+        /// <summary>
+        /// The list of DNS seeds from which to get IP addresses when bootstrapping a node.
+        /// </summary>
         public List<DNSSeedData> DNSSeeds { get; protected set; }
 
+        /// <summary>
+        /// A list of well-known block hashes.
+        /// The node considers all transactions and blocks up to these checkpoints as valid and irreversible.
+        /// </summary>
         public Dictionary<int, CheckpointInfo> Checkpoints { get; protected set; }
 
+        /// <summary>
+        /// List of prefixes used in Base58 addresses.
+        /// </summary>
         public byte[][] Base58Prefixes { get; protected set; }
 
+        /// <summary>
+        /// A list of Bech32 encoders.
+        /// </summary>
         public Bech32Encoder[] Bech32Encoders { get; protected set; }
 
+        /// <summary>
+        /// A number used to identify the network.
+        /// The message start string is designed to be unlikely to occur in normal data.
+        /// The characters are rarely used upper ascii, not valid as UTF-8, and produce
+        /// a large 4-byte int at any alignment.
+        /// </summary>
         public uint Magic { get; protected set; }
 
+        /// <summary>
+        /// Byte array representation of a magic number.
+        /// </summary>
         public byte[] MagicBytesArray;
 
+        /// <summary>
+        /// Byte representation of a magic number.
+        /// Uses <see cref="Magic"/> if <see cref="MagicBytesArray"/> is null.
+        /// TODO: Merge these 3 magic properties into fewer.
+        /// </summary>
         public byte[] MagicBytes
         {
             get
@@ -108,14 +177,29 @@ namespace NBitcoin
             }
         }
 
+        /// <summary>
+        /// The UNIX time at inception of the genesis block for this network.
+        /// </summary>
         public uint GenesisTime { get; protected set; }
 
+        /// <summary>
+        /// A hash which proves that a sufficient amount of computation has been carried out to create the genesis block.
+        /// </summary>
         public uint GenesisNonce { get; protected set; }
 
+        /// <summary>
+        /// Represents the encoded form of the target threshold as it appears in the block header.
+        /// </summary>
         public uint GenesisBits { get; protected set; }
 
+        /// <summary>
+        /// The version of the genesis block.
+        /// </summary>
         public int GenesisVersion { get; protected set; }
 
+        /// <summary>
+        /// The reward for the genesis block, which is unspendable.
+        /// </summary>
         public Money GenesisReward { get; protected set; }
 
         /// <summary>

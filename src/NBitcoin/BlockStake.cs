@@ -190,7 +190,7 @@ namespace NBitcoin
     /// </summary>
     public class PosBlockHeader : BlockHeader
     {
-        /// <summary>Current header version.</summary>
+        /// <inheritdoc />
         public override int CurrentVersion => 7;
 
         /// <inheritdoc />
@@ -225,10 +225,7 @@ namespace NBitcoin
             return hash;
         }
 
-        /// <summary>
-        /// Generate a hash based on the X13 algorithms.
-        /// </summary>
-        /// <returns>A hash</returns>
+        /// /// <inheritdoc />
         public override uint256 GetPoWHash(ConsensusFactory consensusFactory = null)
         {
             return HashX13.Instance.Hash(this.ToBytes(consensusFactory));

@@ -3,20 +3,20 @@ using NBitcoin.BouncyCastle.Math;
 
 namespace NBitcoin
 {
-    public enum BuriedDeployments : int
+    public enum BuriedDeployments
     {
         /// <summary>
-        /// Height in coinbase
+        /// Height in coinbase.
         /// </summary>
         BIP34,
 
         /// <summary>
-        /// Height in OP_CLTV
+        /// Height in OP_CLTV.
         /// </summary>
         BIP65,
 
         /// <summary>
-        /// Strict DER signature
+        /// Strict DER signature.
         /// </summary>
         BIP66
     }
@@ -34,7 +34,7 @@ namespace NBitcoin
 
         public class BuriedDeploymentsArray
         {
-            readonly int[] heights;
+            private readonly int[] heights;
 
             public BuriedDeploymentsArray()
             {
@@ -43,14 +43,14 @@ namespace NBitcoin
 
             public int this[BuriedDeployments index]
             {
-                get { return this.heights[(int)index]; }
-                set { this.heights[(int)index] = value; }
+                get => this.heights[(int)index];
+                set => this.heights[(int)index] = value;
             }
         }
 
         public class BIP9DeploymentsArray
         {
-            readonly BIP9DeploymentsParameters[] parameters;
+            private readonly BIP9DeploymentsParameters[] parameters;
 
             public BIP9DeploymentsArray()
             {
@@ -59,8 +59,8 @@ namespace NBitcoin
 
             public BIP9DeploymentsParameters this[BIP9Deployments index]
             {
-                get { return this.parameters[(int)index]; }
-                set { this.parameters[(int)index] = value; }
+                get => this.parameters[(int)index];
+                set => this.parameters[(int)index] = value;
             }
         }
 
@@ -101,6 +101,7 @@ namespace NBitcoin
 
         public uint256 HashGenesisBlock { get; set; }
 
+        /// <summary> The minimum amount of work the best chain should have. </summary>
         public uint256 MinimumChainWork { get; set; }
 
         public long DifficultyAdjustmentInterval
