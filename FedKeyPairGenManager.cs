@@ -1,8 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Reflection;
-using System.Text;
 using Stratis.FederatedPeg;
 
 namespace FedKeyPairGen
@@ -21,10 +18,10 @@ namespace FedKeyPairGen
         // A standard usage message with examples.  This is output on -h command and also in some cases if validation fails.
         public static void OutputUsage()
         {
-            Console.WriteLine("usage: fedkeypairgen [-name=<name>] [-folder=<output_folder>] [-pass=<passPhrase>] [-h]");
+            Console.WriteLine("usage: fedkeypairgen [-name=<name>] [-folder=<output_folder>] [-pass=<password>] [-h]");
             Console.WriteLine(" -name     Your full name as recognised by your Federation Administrator.");
             Console.WriteLine(" -folder   The output folder where files will be written (default is current folder).");
-            Console.WriteLine(" -pass     The pass word or phrase used to encrypt your private key file.");
+            Console.WriteLine(" -pass     The password used to encrypt your private key file.");
             Console.WriteLine(" -h        This help message.");
             Console.WriteLine();
             Console.WriteLine("Example:  fedkeypairgen -name=\"John Smith\" -folder=\"C:\\KeyPairs\" -pass=\"secret\"");
@@ -49,20 +46,20 @@ namespace FedKeyPairGen
             Console.ForegroundColor = colorSaved;
         }
 
-        // Ask and confirm a password/phrase for interactive mode.
-        public static bool AskForPassPhrase(out string passPhrase)
+        // Ask and confirm a password for interactive mode.
+        public static bool AskForPassword(out string password)
         {
-            Console.WriteLine("Please enter a pass phrase.  We will use this pass phrase to encrypt your private key.");
-            Console.WriteLine("Keep this pass phrase safe.");
+            Console.WriteLine("Please enter a password.  We will use this password to encrypt your private key.");
+            Console.WriteLine("Keep this password safe.");
             Console.WriteLine();
 
-            passPhrase = Console.ReadLine();
-            Console.WriteLine("Please reenter your pass phrase.");
+            password = Console.ReadLine();
+            Console.WriteLine("Please reenter your password.");
 
             string passwordReenter = Console.ReadLine();
-            if (passPhrase != passwordReenter)
+            if (password != passwordReenter)
             {
-                OutputErrorLine("The pass phrases must match.");
+                OutputErrorLine("The passwords must match.");
                 return false;
             }
             return true;

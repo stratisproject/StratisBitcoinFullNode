@@ -1,7 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using Stratis.FederatedPeg;
 
 namespace FedKeyPairGen
@@ -17,9 +15,9 @@ namespace FedKeyPairGen
         /// <param name="help">Switch to show the help message and exit.</param>
         /// <param name="name">The Federation Member name.</param>
         /// <param name="folder">The folder where the key files are output.</param>
-        /// <param name="passPhrase">The passphrase used to encrypt the private keys.</param>
+        /// <param name="password">The passphrase used to encrypt the private keys.</param>
         /// <returns></returns>
-        public static bool ProcessArgs(string[] args, out bool help, out string name, out string folder, out string passPhrase)
+        public static bool ProcessArgs(string[] args, out bool help, out string name, out string folder, out string password)
         {
             // Read the args into strings and switches.
             Func<string, string> lookup =
@@ -29,7 +27,7 @@ namespace FedKeyPairGen
             help = args.Contains("-h");
             name = lookup("-name=");
             folder = lookup("-folder=");
-            passPhrase = lookup("-pass=");
+            password = lookup("-pass=");
 
             // Help command output the usage and examples text.
             if (help)
@@ -53,10 +51,10 @@ namespace FedKeyPairGen
             // Folder.
             if (folder == null) folder = string.Empty;      //means use CurrentDirectory
 
-            // PassPhrase.
-            if (passPhrase == null)
+            // Password.
+            if (password == null)
             {
-                bool passwordSuccess = FedKeyPairGenManager.AskForPassPhrase(out passPhrase);
+                bool passwordSuccess = FedKeyPairGenManager.AskForPassword(out password);
                 if (passwordSuccess == false) return false;
             }
 
