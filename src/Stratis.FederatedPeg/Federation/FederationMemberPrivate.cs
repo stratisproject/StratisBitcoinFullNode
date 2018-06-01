@@ -4,7 +4,7 @@ using NBitcoin;
 namespace Stratis.FederatedPeg
 {
     /// <summary>
-    /// The private version of the FederationMember. Inlcludes the private key and the passPhrase used to 
+    /// The private version of the FederationMember. Includes the private key and the password used to 
     /// encrypt it on disk.
     /// </summary>
     public class FederationMemberPrivate
@@ -15,8 +15,8 @@ namespace Stratis.FederatedPeg
         /// </summary>
         public string Name { get; }
         
-        // The pass word/phrase used.
-        private string PassPhrase { get; }
+        // The password used.
+        private string Password { get; }
 
         // Mainchain private key.
         private Key PrivateKeyMainchain { set; get; }
@@ -28,10 +28,10 @@ namespace Stratis.FederatedPeg
         private readonly FederationMember federationMember;
 
         // Private constructor called from the CreateNew method. 
-        internal FederationMemberPrivate(string name, string passPhrase, Key privateKeyMainchain, Key privateKeySidechain)
+        internal FederationMemberPrivate(string name, string password, Key privateKeyMainchain, Key privateKeySidechain)
         {
             this.Name = name;
-            this.PassPhrase = passPhrase;
+            this.Password = password;
 
             this.PrivateKeyMainchain = privateKeyMainchain;
             this.PrivateKeySidechain = privateKeySidechain;
@@ -39,22 +39,22 @@ namespace Stratis.FederatedPeg
             this.federationMember = new FederationMember(this.Name, privateKeyMainchain.PubKey, privateKeySidechain.PubKey);
         }
 
-        //Uses the encryption provider to encypt the private key with the passPhrase.
+        //Uses the encryption provider to encypt the private key with the password.
         internal string GetEncryptedKey(Chain chain)
         {
             string key = chain == Chain.Mainchain ? this.PrivateKeyMainchain.ToHex() : this.PrivateKeySidechain.ToHex();
-            return EncryptionProvider.EncryptString(key, this.PassPhrase);
+            return EncryptionProvider.EncryptString(key, this.Password);
         }
 
         /// <summary>
         /// Creates a new FederationMember and generates new private keys.
         /// </summary>
         /// <param name="name">Name of the federation member.</param>
-        /// <param name="passPhrase">Password to encrypt the file on disk.</param>
+        /// <param name="password">Password to encrypt the file on disk.</param>
         /// <returns>The newly created private FederationMember.</returns>
-        public static FederationMemberPrivate CreateNew(string name, string passPhrase)
+        public static FederationMemberPrivate CreateNew(string name, string password)
         {
-            return new FederationMemberPrivate(name, passPhrase, new Key(), new Key());
+            return new FederationMemberPrivate(name, password, new Key(), new Key());
         }
 
         /// <summary>

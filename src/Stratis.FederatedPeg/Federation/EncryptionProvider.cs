@@ -19,13 +19,13 @@ namespace Stratis.FederatedPeg
         /// Encrypts a string using a password.
         /// </summary>
         /// <param name="plainText">The string to encrypt.</param>
-        /// <param name="passPhrase">The secret.</param>
+        /// <param name="passwordString">The secret.</param>
         /// <returns>The cipher.</returns>
-        public static string EncryptString(string plainText, string passPhrase)
+        public static string EncryptString(string plainText, string passwordString)
         {
             byte[] initVectorBytes = Encoding.UTF8.GetBytes(initVector);
             byte[] plainTextBytes = Encoding.UTF8.GetBytes(plainText);
-            PasswordDeriveBytes password = new PasswordDeriveBytes(passPhrase, null);
+            PasswordDeriveBytes password = new PasswordDeriveBytes(passwordString, null);
             byte[] keyBytes = password.GetBytes(keysize / 8);
             RijndaelManaged symmetricKey = new RijndaelManaged();
             symmetricKey.Mode = CipherMode.CBC;
@@ -44,13 +44,13 @@ namespace Stratis.FederatedPeg
         /// Decrypts a cipher string given the password used to encrypt the original plaintext.
         /// </summary>
         /// <param name="cipherText">The encrypted text to be decrypted.</param>
-        /// <param name="passPhrase">The password used to encrypt the message.</param>
+        /// <param name="passwordString">The password used to encrypt the message.</param>
         /// <returns>The original plaintext.</returns>
-        public static string DecryptString(string cipherText, string passPhrase)
+        public static string DecryptString(string cipherText, string passwordString)
         {
             byte[] initVectorBytes = Encoding.UTF8.GetBytes(initVector);
             byte[] cipherTextBytes = Convert.FromBase64String(cipherText);
-            PasswordDeriveBytes password = new PasswordDeriveBytes(passPhrase, null);
+            PasswordDeriveBytes password = new PasswordDeriveBytes(passwordString, null);
             byte[] keyBytes = password.GetBytes(keysize / 8);
             RijndaelManaged symmetricKey = new RijndaelManaged();
             symmetricKey.Mode = CipherMode.CBC;
