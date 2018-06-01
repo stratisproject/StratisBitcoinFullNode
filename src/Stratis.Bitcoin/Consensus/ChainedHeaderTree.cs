@@ -203,17 +203,18 @@ namespace Stratis.Bitcoin.Consensus
                 reorgRequired = true;
             }
 
-            List<ChainedHeader> availableBlocks = chainedHeader.Next.Where(nextChainedHeader => 
-                nextChainedHeader.BlockDataAvailability == BlockDataAvailabilityState.BlockAvailable).ToList();
-
-            if (this.logger.IsEnabled(LogLevel.Trace))
+            var headersToValidate = new List<ChainedHeader>();
+            foreach (ChainedHeader header in chainedHeader.Next)
             {
-                foreach (ChainedHeader availableBlock in availableBlocks)
-                    this.logger.LogTrace("Chained header '{0}' is available.", availableBlock);
+                if (header.BlockDataAvailability == BlockDataAvailabilityState.BlockAvailable)
+                {
+                    headersToValidate.Add(header);
+                    this.logger.LogTrace("Chained header '{0}' is selected for partial validation.", header);
+                }
             }
-
-            this.logger.LogTrace("(-):{0}", availableBlocks.Count);
-            return availableBlocks;
+            
+            this.logger.LogTrace("(-):*.{0}:{1},{2}:{3}", nameof(headersToValidate.Count), headersToValidate.Count, nameof(reorgRequired), reorgRequired);
+            return headersToValidate;
         }
 
         private void ClaimPeerTip(int networkPeerId, uint256 tipHash)
