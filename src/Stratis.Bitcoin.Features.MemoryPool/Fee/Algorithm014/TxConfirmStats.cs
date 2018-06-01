@@ -3,9 +3,8 @@ using System.IO;
 using System.Linq;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
-using Stratis.Bitcoin.Utilities;
 
-namespace Stratis.Bitcoin.Features.MemoryPool.Fee
+namespace Stratis.Bitcoin.Features.MemoryPool.Fee.Algorithm014
 {
     /// <summary>
     /// Transation confirmation statistics.
@@ -16,15 +15,44 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Fee
         private readonly ILogger logger;
 
         /// <summary>
-        /// The upper-bound of the range for the bucket (inclusive).
+        /// Moving average of total fee rate of all transactions in each bucket.
         /// </summary>
         /// <remarks>
-        /// Define the buckets we will group transactions into.
+        /// Track the historical moving average of this total over blocks.
         /// </remarks>
-        private List<double> buckets;
+        private List<double> avg;
 
         /// <summary>Map of bucket upper-bound to index into all vectors by bucket.</summary>
-        private SortedDictionary<double, int> bucketMap;
+        private Dictionary<double, int> bucketMap;
+
+        //Define the buckets we will group transactions into.
+
+        /// <summary>The upper-bound of the range for the bucket (inclusive).</summary>
+        private List<double> buckets;
+
+        // Count the total # of txs confirmed within Y blocks in each bucket.
+        // Track the historical moving average of theses totals over blocks.
+
+        /// <summary>Confirmation average. confAvg[Y][X].</summary>
+        private List<List<double>> confAvg;
+
+        /// <summary>Current block confirmations. curBlockConf[Y][X].</summary>
+        private List<List<int>> curBlockConf;
+
+        /// <summary>Current block transaction count.</summary>
+        private List<int> curBlockTxCt;
+
+        /// <summary>Current block fee rate.</summary>
+        private List<double> curBlockVal;
+
+        // Combine the conf counts with tx counts to calculate the confirmation % for each Y,X
+        // Combine the total value with the tx counts to calculate the avg feerate per bucket
+
+        /// <summary>Decay value to use.</summary>
+        private double decay;
+
+        /// <summary>Transactions still unconfirmed after MAX_CONFIRMS for each bucket</summary>
+        private List<int> oldUnconfTxs;
 
         /// <summary>
         /// Historical moving average of transaction counts.
@@ -37,43 +65,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Fee
         private List<double> txCtAvg;
 
         /// <summary>
-        /// Confirmation average. confAvg[Y][X]
-        /// </summary>
-        /// <remarks>
-        /// Count the total # of txs confirmed within Y blocks in each bucket.
-        /// Track the historical moving average of theses totals over blocks.
-        /// </remarks>
-        private List<List<double>> confAvg;
-
-        /// <summary>
-        /// Failed average. failAvg[Y][X]
-        /// </summary>
-        /// <remarks>
-        /// Track moving avg of txs which have been evicted from the mempool
-        /// after failing to be confirmed within Y blocks
-        /// </remarks>
-        private List<List<double>> failAvg;
-
-        /// <summary>
-        /// Moving average of total fee rate of all transactions in each bucket.
-        /// </summary>
-        /// <remarks>
-        /// Track the historical moving average of this total over blocks.
-        /// </remarks>
-        private List<double> avg;
-
-        // Combine the conf counts with tx counts to calculate the confirmation % for each Y,X
-        // Combine the total value with the tx counts to calculate the avg feerate per bucket
-
-        /// <summary>Decay value to use.</summary>
-        private double decay;
-
-        /// <summary>
-        /// Resolution (# of blocks) with which confirmations are tracked
-        /// </summary>
-        private int scale;
-
-        /// <summary>
         /// Mempool counts of outstanding transactions.
         /// </summary>
         /// <remarks>
@@ -82,10 +73,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Fee
         /// unconfTxs[Y][X]
         /// </remarks>
         private List<List<int>> unconfTxs;
-
-        /// <summary>Transactions still unconfirmed after MAX_CONFIRMS for each bucket</summary>
-        private List<int> oldUnconfTxs;
-
 
         /// <summary>
         /// Constructs an instance of the transaction confirmation stats object.
@@ -101,33 +88,35 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Fee
         /// constructor with default values.
         /// </summary>
         /// <param name="defaultBuckets">Contains the upper limits for the bucket boundaries.</param>
-        /// <param name="maxPeriods">Max number of periods to track.</param>
+        /// <param name="maxConfirms">Max number of confirms to track.</param>
         /// <param name="decay">How much to decay the historical moving average per block.</param>
-        public void Initialize(List<double> defaultBuckets, IDictionary<double, int> defaultBucketMap,  int maxPeriods, double decay, int scale)
+        public void Initialize(List<double> defaultBuckets, int maxConfirms, double decay)
         {
-            Guard.Assert(scale != 0);
+            this.buckets = new List<double>();
+            this.bucketMap = new Dictionary<double, int>();
+
             this.decay = decay;
-            this.scale = scale;
+            for (int i = 0; i < defaultBuckets.Count; i++)
+            {
+                this.buckets.Add(defaultBuckets[i]);
+                this.bucketMap[defaultBuckets[i]] = i;
+            }
             this.confAvg = new List<List<double>>();
-            this.failAvg = new List<List<double>>();
-            this.buckets = new List<double>(defaultBuckets);
-            this.bucketMap = new SortedDictionary<double, int>(defaultBucketMap);
+            this.curBlockConf = new List<List<int>>();
             this.unconfTxs = new List<List<int>>();
 
-            for (int i = 0; i < maxPeriods; i++)
+            for (int i = 0; i < maxConfirms; i++)
             {
                 this.confAvg.Insert(i, Enumerable.Repeat(default(double), this.buckets.Count).ToList());
-                this.failAvg.Insert(i, Enumerable.Repeat(default(double), this.buckets.Count).ToList());
-            }
-
-            for (int i = 0; i < GetMaxConfirms(); i++)
-            {
+                this.curBlockConf.Insert(i, Enumerable.Repeat(default(int), this.buckets.Count).ToList());
                 this.unconfTxs.Insert(i, Enumerable.Repeat(default(int), this.buckets.Count).ToList());
             }
 
-            this.txCtAvg = new List<double>(Enumerable.Repeat(default(double), this.buckets.Count));
-            this.avg = new List<double>(Enumerable.Repeat(default(double), this.buckets.Count));
             this.oldUnconfTxs = new List<int>(Enumerable.Repeat(default(int), this.buckets.Count));
+            this.curBlockTxCt = new List<int>(Enumerable.Repeat(default(int), this.buckets.Count));
+            this.txCtAvg = new List<double>(Enumerable.Repeat(default(double), this.buckets.Count));
+            this.curBlockVal = new List<double>(Enumerable.Repeat(default(double), this.buckets.Count));
+            this.avg = new List<double>(Enumerable.Repeat(default(double), this.buckets.Count));
         }
 
         /// <summary>
@@ -140,6 +129,10 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Fee
             {
                 this.oldUnconfTxs[j] += this.unconfTxs[nBlockHeight % this.unconfTxs.Count][j];
                 this.unconfTxs[nBlockHeight % this.unconfTxs.Count][j] = 0;
+                for (int i = 0; i < this.curBlockConf.Count; i++)
+                    this.curBlockConf[i][j] = 0;
+                this.curBlockTxCt[j] = 0;
+                this.curBlockVal[j] = 0;
             }
         }
 
@@ -153,14 +146,11 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Fee
             // blocksToConfirm is 1-based
             if (blocksToConfirm < 1)
                 return;
-            int periodsToConfirm = (blocksToConfirm + this.scale - 1) / this.scale;
-            int bucketindex = this.bucketMap.FirstOrDefault(k => k.Key >= val).Value;
-            for (int i = periodsToConfirm; i <= this.confAvg.Count; i++)
-            {
-                this.confAvg[i - 1][bucketindex]++;
-            }
-            this.txCtAvg[bucketindex]++;
-            this.avg[bucketindex] += val;
+            int bucketindex = this.bucketMap.FirstOrDefault(k => k.Key > val).Value;
+            for (int i = blocksToConfirm; i <= this.curBlockConf.Count; i++)
+                this.curBlockConf[i - 1][bucketindex]++;
+            this.curBlockTxCt[bucketindex]++;
+            this.curBlockVal[bucketindex] += val;
         }
 
         /// <summary>
@@ -171,7 +161,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Fee
         /// <returns>The feerate of the transaction.</returns>
         public int NewTx(int nBlockHeight, double val)
         {
-            int bucketindex = this.bucketMap.FirstOrDefault(k => k.Key >= val).Value;
+            int bucketindex = this.bucketMap.FirstOrDefault(k => k.Key > val).Value;
             int blockIndex = nBlockHeight % this.unconfTxs.Count;
             this.unconfTxs[blockIndex][bucketindex]++;
             return bucketindex;
@@ -345,7 +335,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Fee
         /// <returns>The max number of confirms.</returns>
         public int GetMaxConfirms()
         {
-            return this.scale * this.confAvg.Count;
+            return this.confAvg.Count;
         }
 
         /// <summary>
