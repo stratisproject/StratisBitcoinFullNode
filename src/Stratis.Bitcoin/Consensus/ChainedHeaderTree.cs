@@ -21,10 +21,9 @@ namespace Stratis.Bitcoin.Consensus
         void ValidateHeader(ChainedHeader chainedHeader);
 
         /// <summary>
-        /// Validate the block signature (for POS) and merkle tree, throws if validation fails. 
+        /// Verifies that the block data corresponds to the chain header.
         /// </summary>
         /// <remarks>
-        /// Throws different exceptions in case any of them failed.
         /// TODO specify what exceptions are thrown (add throws xmldoc)
         /// </remarks>
         /// <param name="block">The block that is going to be validated.</param>
@@ -139,7 +138,7 @@ namespace Stratis.Bitcoin.Consensus
         /// headers are part of our consensus chain or are claimed by other peers.
         /// </summary>
         /// <param name="networkPeerId">Id of a peer that was disconnected.</param>
-        public void DisconnectPeer(int networkPeerId)
+        public void PeerDisconnected(int networkPeerId)
         {
             this.logger.LogTrace("({0}:{1})", nameof(networkPeerId), networkPeerId);
 
@@ -152,7 +151,7 @@ namespace Stratis.Bitcoin.Consensus
             ChainedHeader peerTip;
             if (!this.chainedHeadersByHash.TryGetValue(peerTipHash, out peerTip))
             {
-                this.logger.LogTrace("Header '{0}' not found!", peerTipHash);
+                this.logger.LogError("Header '{0}' not found but it is claimed by {1} as its tip.", peerTipHash, networkPeerId);
                 this.logger.LogTrace("(-)[HEADER_NOT_FOUND]");
                 throw new Exception("Header not found!");
             }
@@ -168,7 +167,7 @@ namespace Stratis.Bitcoin.Consensus
         /// <param name="chainedHeader">The fully validated header.</param>
         public void FullValidationSucceeded(ChainedHeader chainedHeader)
         {
-            this.logger.LogTrace("({0}:{1})", nameof(chainedHeader), chainedHeader);
+            this.logger.LogTrace("({0}:'{1}')", nameof(chainedHeader), chainedHeader);
 
             chainedHeader.BlockValidationState = ValidationState.FullyValidated;
 
@@ -176,10 +175,16 @@ namespace Stratis.Bitcoin.Consensus
         }
 
         /// <summary>
-        /// Partial validation succeeded.
+        /// Handles situation when partial validation for block data for a given <see cref="ChainedHeader"/> was successful.
         /// </summary>
+        /// <remarks>
+        /// In case partial validation was successful we want to partially validate all the next blocks for which we have block data for.
+        /// <para>
+        /// If block that was just partially validated has more cumulative chainwork than our consensus tip we want to switch our consensus tip to this block.
+        /// </para>
+        /// </remarks>
         /// <param name="chainedHeader">The chained header.</param>
-        /// <param name="reorgRequired"><c>true</c> in case header has greater chainwork than our consensus tip and switching to its chain is required.</param>
+        /// <param name="reorgRequired"><c>true</c> in case we want to switch our consensus tip to <paramref name="chainedHeader"/>.</param>
         /// <returns>List of chained headers which block data should be partially validated next. Or <c>null</c> if none should be validated.</returns>
         public List<ChainedHeader> PartialValidationSucceeded(ChainedHeader chainedHeader, out bool reorgRequired)
         {
@@ -260,7 +265,7 @@ namespace Stratis.Bitcoin.Consensus
         /// and return all the peers that where claiming next headers.
         /// </summary>
         /// <param name="startHeader">The chained header to start from.</param>
-        /// <returns>List of peer Ids that were claiming headers on removed chains.</returns>
+        /// <returns>List of peer Ids that were claiming headers on removed chains. Such peers should be banned.</returns>
         private List<int> RemoveNextClaims(ChainedHeader startHeader)
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(startHeader), startHeader);
