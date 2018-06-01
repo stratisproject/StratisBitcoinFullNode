@@ -40,7 +40,7 @@ namespace Stratis.StratisSmartContractsD
                     .UseApi()
                     .AddRPC()
                     .AddSmartContracts()
-                    .UseReflectionVirtualMachine()
+                    .UseReflectionExecutor()
                     .Build();
 
                 await node.RunAsync();

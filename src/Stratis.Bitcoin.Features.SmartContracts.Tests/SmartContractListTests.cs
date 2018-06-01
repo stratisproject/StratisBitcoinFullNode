@@ -2,7 +2,7 @@
 using NBitcoin;
 using Stratis.Patricia;
 using Stratis.SmartContracts.Core.State;
-using Stratis.SmartContracts.ReflectionExecutor;
+using Stratis.SmartContracts.Executor.Reflection;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Tests

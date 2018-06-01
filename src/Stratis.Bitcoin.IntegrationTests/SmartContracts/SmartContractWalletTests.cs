@@ -17,8 +17,8 @@ using Stratis.SmartContracts;
 using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.Receipts;
 using Stratis.SmartContracts.Core.State;
-using Stratis.SmartContracts.ReflectionExecutor;
-using Stratis.SmartContracts.ReflectionExecutor.Compilation;
+using Stratis.SmartContracts.Executor.Reflection;
+using Stratis.SmartContracts.Executor.Reflection.Compilation;
 using Xunit;
 
 namespace Stratis.Bitcoin.IntegrationTests.SmartContracts

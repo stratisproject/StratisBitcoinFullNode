@@ -5,9 +5,9 @@ using Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor;
 using Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers;
 using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.Validation;
-using Stratis.SmartContracts.ReflectionExecutor;
-using Stratis.SmartContracts.ReflectionExecutor.Compilation;
-using Stratis.SmartContracts.ReflectionExecutor.Serialization;
+using Stratis.SmartContracts.Executor.Reflection;
+using Stratis.SmartContracts.Executor.Reflection.Compilation;
+using Stratis.SmartContracts.Executor.Reflection.Serialization;
 
 namespace Stratis.Bitcoin.Features.SmartContracts
 {
@@ -20,7 +20,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             this.builder = builder;
         }
 
-        public IFullNodeBuilder UseReflectionVirtualMachine()
+        public IFullNodeBuilder UseReflectionExecutor()
         {
             this.builder.ConfigureFeature(features =>
             {
@@ -47,7 +47,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             return this.builder;
         }
 
-        public IFullNodeBuilder UseAnotherVirtualMachine()
+        public IFullNodeBuilder UseAnotherExecutor()
         {
             throw new System.NotImplementedException();
         }

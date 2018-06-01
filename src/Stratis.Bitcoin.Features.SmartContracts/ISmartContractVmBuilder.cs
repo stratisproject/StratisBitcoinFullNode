@@ -4,7 +4,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
 {
     public interface ISmartContractVmBuilder
     {
-        IFullNodeBuilder UseReflectionVirtualMachine();
-        IFullNodeBuilder UseAnotherVirtualMachine();
+        IFullNodeBuilder UseReflectionExecutor();
+        IFullNodeBuilder UseAnotherExecutor();
     }
 }

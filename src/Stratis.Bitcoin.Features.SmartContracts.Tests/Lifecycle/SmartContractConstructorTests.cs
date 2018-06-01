@@ -4,8 +4,8 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using Stratis.SmartContracts;
 using Stratis.SmartContracts.Core;
-using Stratis.SmartContracts.ReflectionExecutor;
-using Stratis.SmartContracts.ReflectionExecutor.Lifecycle;
+using Stratis.SmartContracts.Executor.Reflection;
+using Stratis.SmartContracts.Executor.Reflection.Lifecycle;
 using Xunit;
 using InternalHashHelper = Stratis.SmartContracts.Core.Hashing.InternalHashHelper;
 
