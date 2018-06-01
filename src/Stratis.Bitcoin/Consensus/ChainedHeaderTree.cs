@@ -51,11 +51,22 @@ namespace Stratis.Bitcoin.Consensus
     /// </remarks>
     public sealed class ChainedHeaderTree
     {
+        /// <inheritdoc cref="Network"/>
         private readonly Network network;
+
+        /// <inheritdoc cref="IChainedHeaderValidator"/>
         private readonly IChainedHeaderValidator chainedHeaderValidator;
+
+        /// <inheritdoc cref="ILogger"/>
         private readonly ILogger logger;
+
+        /// <inheritdoc cref="ICheckpoints"/>
         private readonly ICheckpoints checkpoints;
+
+        /// <inheritdoc cref="IChainState"/>
         private readonly IChainState chainState;
+
+        /// <inheritdoc cref="ConsensusSettings"/>
         private readonly ConsensusSettings consensusSettings;
 
         /// <summary>A special peer identifier that represents our local node.</summary>
@@ -128,6 +139,7 @@ namespace Stratis.Bitcoin.Consensus
                 throw new ConsensusException("INVALID_NETWORK");
             }
 
+            // Initialize local tip claim with consensus tip.
             this.AddOrReplacePeerTip(LocalPeerId, consensusTip.HashBlock);
 
             this.logger.LogTrace("(-)");
@@ -217,6 +229,9 @@ namespace Stratis.Bitcoin.Consensus
             return headersToValidate;
         }
 
+        /// <summary>Sets the tip claim for specified peer Id.</summary>
+        /// <param name="networkPeerId">Peer Id.</param>
+        /// <param name="tipHash">Tip's hash.</param>
         private void ClaimPeerTip(int networkPeerId, uint256 tipHash)
         {
             this.logger.LogTrace("({0}:{1},{2}:'{3}')", nameof(networkPeerId), networkPeerId, nameof(tipHash), tipHash);
@@ -233,6 +248,12 @@ namespace Stratis.Bitcoin.Consensus
             this.logger.LogTrace("(-)");
         }
 
+        /// <summary>
+        /// Handles situation when block data was considered to be invalid
+        /// for a given header during the partial or full validation.
+        /// </summary>
+        /// <param name="chainedHeader">Chained header which block data failed the validation.</param>
+        /// <returns>List of peer Ids that were claiming chain that contains an invalid block.</returns>
         public List<int> PartialOrFullValidationFailed(ChainedHeader chainedHeader)
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(chainedHeader), chainedHeader);
@@ -250,7 +271,7 @@ namespace Stratis.Bitcoin.Consensus
         /// and return all the peers that where claiming next headers.
         /// </summary>
         /// <param name="startHeader">The chained header to start from.</param>
-        /// <returns>List of peer Ids for banning.</returns>
+        /// <returns>List of peer Ids that were claiming headers on removed chains.</returns>
         private List<int> RemoveNextClaims(ChainedHeader startHeader)
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(startHeader), startHeader);
@@ -287,7 +308,7 @@ namespace Stratis.Bitcoin.Consensus
             this.logger.LogTrace("(-)");
             return peersToBan;
         }
-
+        
         private void DisconnectChainHeader(ChainedHeader header)
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(header), header);
@@ -299,6 +320,13 @@ namespace Stratis.Bitcoin.Consensus
             this.logger.LogTrace("(-)");
         }
 
+        /// <summary>
+        /// Handles situation when blocks the data is downloaded for a given chained header.
+        /// </summary>
+        /// <param name="block">Block data.</param>
+        /// <param name="chainedHeader">The chained header which block data was downloaded.</param>
+        /// <returns><c>true</c> in case partial validation is required for the downloaded block, <c>false</c> otherwise.</returns>
+        /// <exception cref="*"></exception>
         public bool BlockDataDownloaded(Block block, out ChainedHeader chainedHeader)
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(block), block.GetHash());
@@ -306,7 +334,7 @@ namespace Stratis.Bitcoin.Consensus
             if (!this.chainedHeadersByHash.TryGetValue(block.GetHash(), out chainedHeader))
             {
                 this.logger.LogTrace("(-)[HEADER_NOT_FOUND]");
-                throw new ConnectHeaderException(); //TODO do a proper exception
+                throw new BlockDownloadedForMissingChainedHeaderException();
             }
 
             this.chainedHeaderValidator.VerifyBlockIntegrity(block, chainedHeader);
