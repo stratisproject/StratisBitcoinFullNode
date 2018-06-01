@@ -51,22 +51,11 @@ namespace Stratis.Bitcoin.Consensus
     /// </remarks>
     public sealed class ChainedHeaderTree
     {
-        /// <inheritdoc cref="Network"/>
         private readonly Network network;
-
-        /// <inheritdoc cref="IChainedHeaderValidator"/>
         private readonly IChainedHeaderValidator chainedHeaderValidator;
-
-        /// <inheritdoc cref="ILogger"/>
         private readonly ILogger logger;
-
-        /// <inheritdoc cref="ICheckpoints"/>
         private readonly ICheckpoints checkpoints;
-
-        /// <inheritdoc cref="IChainState"/>
         private readonly IChainState chainState;
-
-        /// <inheritdoc cref="ConsensusSettings"/>
         private readonly ConsensusSettings consensusSettings;
 
         /// <summary>A special peer identifier that represents our local node.</summary>
@@ -326,7 +315,7 @@ namespace Stratis.Bitcoin.Consensus
         /// <param name="block">Block data.</param>
         /// <param name="chainedHeader">The chained header which block data was downloaded.</param>
         /// <returns><c>true</c> in case partial validation is required for the downloaded block, <c>false</c> otherwise.</returns>
-        /// <exception cref="*"></exception>
+        /// <exception cref="BlockDownloadedForMissingChainedHeaderException">Thrown when block data is presented for a chained block that doesn't exist.</exception>
         public bool BlockDataDownloaded(Block block, out ChainedHeader chainedHeader)
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(block), block.GetHash());
@@ -369,7 +358,7 @@ namespace Stratis.Bitcoin.Consensus
         /// Information about which blocks need to be downloaded together with information about which input headers were processed.
         /// Only headers that we can validate will be processed. The rest of the headers will be submitted later again for processing.
         /// </returns>
-        public ConnectedHeaders ConnectNewHeaders(int networkPeerId, List<BlockHeader> headers)
+        public ConnectNewHeadersResult ConnectNewHeaders(int networkPeerId, List<BlockHeader> headers)
         {
             Guard.NotNull(headers, nameof(headers));
             this.logger.LogTrace("({0}:{1},{2}.{3}:{4})", nameof(networkPeerId), networkPeerId, nameof(headers), nameof(headers.Count), headers.Count);
@@ -388,13 +377,13 @@ namespace Stratis.Bitcoin.Consensus
             if (newChainedHeaders == null)
             {
                 this.logger.LogTrace("(-)[NO_NEW_HEADERS]");
-                return new ConnectedHeaders() { Consumed = this.chainedHeadersByHash[lastHash] };
+                return new ConnectNewHeadersResult() { Consumed = this.chainedHeadersByHash[lastHash] };
             }
 
             ChainedHeader earliestNewHeader = newChainedHeaders.First();
             ChainedHeader latestNewHeader = newChainedHeaders.Last();
 
-            ConnectedHeaders connectedHeaders = null;
+            ConnectNewHeadersResult connectNewHeadersResult = null;
 
             bool isAssumedValidEnabled = this.consensusSettings.BlockAssumedValid != null;
             bool isBelowLastCheckpoint = this.consensusSettings.UseCheckpoints && (earliestNewHeader.Height <= this.checkpoints.GetLastCheckpointHeight());
@@ -414,7 +403,7 @@ namespace Stratis.Bitcoin.Consensus
                     {
                         this.logger.LogDebug("Chained header '{0}' represents an assumed valid block.", currentChainedHeader);
 
-                        connectedHeaders = this.HandleAssumedValidHeader(currentChainedHeader, latestNewHeader, isBelowLastCheckpoint);
+                        connectNewHeadersResult = this.HandleAssumedValidHeader(currentChainedHeader, latestNewHeader, isBelowLastCheckpoint);
                         break;
                     }
 
@@ -423,23 +412,23 @@ namespace Stratis.Bitcoin.Consensus
                     {
                         this.logger.LogDebug("Chained header '{0}' is a checkpoint.", currentChainedHeader);
 
-                        connectedHeaders = this.HandleCheckpointsHeader(currentChainedHeader, latestNewHeader, checkpoint);
+                        connectNewHeadersResult = this.HandleCheckpointsHeader(currentChainedHeader, latestNewHeader, checkpoint);
                         break;
                     }
 
                     currentChainedHeader = currentChainedHeader.Previous;
                 }
 
-                if ((connectedHeaders == null) && isBelowLastCheckpoint)
+                if ((connectNewHeadersResult == null) && isBelowLastCheckpoint)
                 {
-                    connectedHeaders = new ConnectedHeaders() {Consumed = latestNewHeader};
+                    connectNewHeadersResult = new ConnectNewHeadersResult() {Consumed = latestNewHeader};
                     this.logger.LogTrace("Chained header '{0}' below last checkpoint.", currentChainedHeader);
                 }
 
-                if (connectedHeaders != null)
+                if (connectNewHeadersResult != null)
                 {
-                    this.logger.LogTrace("(-)[CHECKPOINT_OR_ASSUMED_VALID]:{0}", connectedHeaders);
-                    return connectedHeaders;
+                    this.logger.LogTrace("(-)[CHECKPOINT_OR_ASSUMED_VALID]:{0}", connectNewHeadersResult);
+                    return connectNewHeadersResult;
                 }
             }
 
@@ -447,11 +436,11 @@ namespace Stratis.Bitcoin.Consensus
             {
                 this.logger.LogDebug("Chained header '{0}' is the tip of a chain with more work than our current consensus tip.", latestNewHeader);
 
-                connectedHeaders = this.MarkBetterChainAsRequired(latestNewHeader);
+                connectNewHeadersResult = this.MarkBetterChainAsRequired(latestNewHeader);
             }
 
-            this.logger.LogTrace("(-):{0}", connectedHeaders);
-            return connectedHeaders;
+            this.logger.LogTrace("(-):{0}", connectNewHeadersResult);
+            return connectNewHeadersResult;
         }
 
         /// <summary>
@@ -459,11 +448,11 @@ namespace Stratis.Bitcoin.Consensus
         /// </summary>
         /// <param name="latestNewHeader">The new header that represents a longer chain.</param>
         /// <returns>The new headers that need to be downloaded.</returns>
-        private ConnectedHeaders MarkBetterChainAsRequired(ChainedHeader latestNewHeader)
+        private ConnectNewHeadersResult MarkBetterChainAsRequired(ChainedHeader latestNewHeader)
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(latestNewHeader), latestNewHeader);
 
-            var connectedHeaders = new ConnectedHeaders();
+            var connectedHeaders = new ConnectNewHeadersResult();
             connectedHeaders.DownloadTo = connectedHeaders.Consumed = latestNewHeader;
 
             ChainedHeader current = latestNewHeader;
@@ -510,12 +499,12 @@ namespace Stratis.Bitcoin.Consensus
         /// <param name="latestNewHeader">The last header in the list of presented new headers.</param>
         /// <param name="isBelowLastCheckpoint">Set to <c>true</c> if <paramref name="assumedValidHeader"/> is below the last checkpoint,
         /// <c>false</c> otherwise or if checkpoints are disabled.</param>
-        private ConnectedHeaders HandleAssumedValidHeader(ChainedHeader assumedValidHeader, ChainedHeader latestNewHeader, bool isBelowLastCheckpoint)
+        private ConnectNewHeadersResult HandleAssumedValidHeader(ChainedHeader assumedValidHeader, ChainedHeader latestNewHeader, bool isBelowLastCheckpoint)
         {
             this.logger.LogTrace("({0}:'{1}',{2}:'{3}',{4}:{5})", nameof(assumedValidHeader), assumedValidHeader, nameof(latestNewHeader), latestNewHeader, nameof(isBelowLastCheckpoint), isBelowLastCheckpoint);
 
             ChainedHeader bestTip = this.chainState.ConsensusTip;
-            var connectedHeaders = new ConnectedHeaders() {Consumed = latestNewHeader};
+            var connectedHeaders = new ConnectNewHeadersResult() {Consumed = latestNewHeader};
 
             if (latestNewHeader.ChainWork > bestTip.ChainWork)
             {
@@ -538,7 +527,7 @@ namespace Stratis.Bitcoin.Consensus
         /// <param name="chainedHeader">Checkpointed header.</param>
         /// <param name="latestNewHeader">The latest new header that was presented by the peer.</param>
         /// <param name="checkpoint">Information about the checkpoint at the height of the <paramref name="chainedHeader"/>.</param>
-        private ConnectedHeaders HandleCheckpointsHeader(ChainedHeader chainedHeader, ChainedHeader latestNewHeader, CheckpointInfo checkpoint)
+        private ConnectNewHeadersResult HandleCheckpointsHeader(ChainedHeader chainedHeader, ChainedHeader latestNewHeader, CheckpointInfo checkpoint)
         {
             this.logger.LogTrace("({0}:'{1}',{2}:'{3}',{4}.{5}:'{6}')", nameof(chainedHeader), chainedHeader, nameof(latestNewHeader), latestNewHeader, nameof(checkpoint), nameof(checkpoint.Hash), checkpoint.Hash);
 
@@ -553,11 +542,11 @@ namespace Stratis.Bitcoin.Consensus
             if (chainedHeader.Height == this.checkpoints.GetLastCheckpointHeight())
                 subchainTip = latestNewHeader;
 
-            ConnectedHeaders connectedHeaders = this.MarkBetterChainAsRequired(subchainTip);
+            ConnectNewHeadersResult connectNewHeadersResult = this.MarkBetterChainAsRequired(subchainTip);
             this.MarkTrustedChainAsAssumedValid(chainedHeader);
 
-            this.logger.LogTrace("(-):{0}", connectedHeaders);
-            return connectedHeaders;
+            this.logger.LogTrace("(-):{0}", connectNewHeadersResult);
+            return connectNewHeadersResult;
         }
 
         /// <summary>
@@ -810,7 +799,7 @@ namespace Stratis.Bitcoin.Consensus
     /// <summary>
     /// Represents the result of the <see cref="ChainedHeaderTree.ConnectNewHeaders"/> method.
     /// </summary>
-    public class ConnectedHeaders
+    public class ConnectNewHeadersResult
     {
         /// <summary>The earliest header in the chain of the list of headers we are interested in downloading.</summary>
         public ChainedHeader DownloadFrom { get; set; }
