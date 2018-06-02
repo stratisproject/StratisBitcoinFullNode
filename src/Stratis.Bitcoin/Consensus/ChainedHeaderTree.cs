@@ -12,6 +12,7 @@ namespace Stratis.Bitcoin.Consensus
     /// <summary>
     /// TODO comment this interface
     /// </summary>
+    /// TODO use local CT instead of chain state?
     public interface IChainedHeaderValidator
     {
         /// <summary>
@@ -251,24 +252,17 @@ namespace Stratis.Bitcoin.Consensus
         /// for a given header during the partial or full validation.
         /// </summary>
         /// <param name="chainedHeader">Chained header which block data failed the validation.</param>
-        /// <returns>List of peer Ids that were claiming chain that contains an invalid block.</returns>
+        /// <returns>List of peer Ids that were claiming chain that contains an invalid block. Such peers should be banned.</returns>
         public List<int> PartialOrFullValidationFailed(ChainedHeader chainedHeader)
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(chainedHeader), chainedHeader);
 
-            List<int> peersToBan = this.RemoveNextClaims(chainedHeader);
+            List<int> peersToBan = this.RemoveSubtree(chainedHeader);
 
-            this.RemoveUnclaimedBranch(chainedHeader);
+            this.RemoveUnclaimedBranch(chainedHeader.Previous);
 
             this.logger.LogTrace("(-):*.{0}={1}", nameof(peersToBan.Count), peersToBan.Count);
             return peersToBan;
-        }
-
-        /// <summary>Handles situation when full validation was failed.</summary>
-        /// <param name="failedTip">Tip of a new chain that node tried to switch to and failed because some block didn't pass full validation.</param>
-        public void OnReorganizationFailed(ChainedHeader failedTip)
-        {
-            this.RemovePeerClaim(LocalPeerId, failedTip);
         }
 
         /// <summary>
@@ -277,11 +271,6 @@ namespace Stratis.Bitcoin.Consensus
         /// <param name="newConsensusTip">The new consensus tip.</param>
         /// <param name="previousConsensusTip">Previous consensus tip.</param>
         /// <returns>List of peer Ids that violate max reorg rule.</returns>
-        /// 
-        /// TODO caller should do CHB.PendingTip=null & CHB.TrySync on peers from the returned list, but don't disconnect or ban the peer.
-        /// TODO (be careful in situation when we check peer.tip and at the same time new headers are presented)
-        /// 
-        /// TODO use local CT instead of chain state?
         public List<int> ConsensusTipChanged(ChainedHeader newConsensusTip, ChainedHeader previousConsensusTip)
         {
             this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(newConsensusTip), newConsensusTip, nameof(previousConsensusTip), previousConsensusTip);
@@ -393,19 +382,19 @@ namespace Stratis.Bitcoin.Consensus
         }
 
         /// <summary>
-        /// Remove all the branches in the tree that are after the given <see cref="startHeader" /> (including)
-        /// and return all the peers that where claiming next headers.
+        /// Remove all the branches in the tree that are after the given <paramref name="subtreeRoot"/>
+        /// including it and return all the peers that where claiming next headers.
         /// </summary>
-        /// <param name="startHeader">The chained header to start from.</param>
+        /// <param name="subtreeRoot">The chained header to start from.</param>
         /// <returns>List of peer Ids that were claiming headers on removed chains. Such peers should be banned.</returns>
-        private List<int> RemoveNextClaims(ChainedHeader startHeader)
+        private List<int> RemoveSubtree(ChainedHeader subtreeRoot)
         {
-            this.logger.LogTrace("({0}:'{1}')", nameof(startHeader), startHeader);
+            this.logger.LogTrace("({0}:'{1}')", nameof(subtreeRoot), subtreeRoot);
 
             var peersToBan = new List<int>();
 
             var headersToProcess = new Stack<ChainedHeader>();
-            headersToProcess.Push(startHeader);
+            headersToProcess.Push(subtreeRoot);
 
             while (headersToProcess.Count != 0)
             {
@@ -418,6 +407,10 @@ namespace Stratis.Bitcoin.Consensus
                 {
                     foreach (int peerId in peers)
                     {
+                        // There was a partially validated chain that was better than our consensus tip, we've started full validation
+                        // and found out that a block on this chain is invalid. At this point we have a marker with LocalPeerId on the new chain
+                        // but our consensus tip inside peerTipsByPeerId has not been changed yet, therefore we want to prevent removing 
+                        // the consensus tip from the structure. 
                         if (peerId != LocalPeerId)
                         {
                             this.peerTipsByPeerId.Remove(peerId);
