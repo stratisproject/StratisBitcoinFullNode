@@ -209,7 +209,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                     if (await this.Validator.AcceptToMemoryPool(stateDummy, orphanTx))
                     {
                         this.logger.LogInformation($"accepted orphan tx {orphanHash}");
-                        await behavior.RelayTransaction(orphanTx.GetHash());
+                        behavior.RelayTransaction(orphanTx.GetHash());
                         this.signals.SignalTransaction(orphanTx);
                         for (int index = 0; index < orphanTx.Outputs.Count; index++)
                             vWorkQueue.Enqueue(new OutPoint(orphanHash, index));

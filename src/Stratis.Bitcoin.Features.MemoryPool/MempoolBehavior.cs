@@ -461,7 +461,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             if (!await this.orphans.AlreadyHaveAsync(trxHash) && await this.validator.AcceptToMemoryPool(state, trx))
             {
                 await this.validator.SanityCheck();
-                await this.RelayTransaction(trxHash).ConfigureAwait(false);
+                this.RelayTransaction(trxHash);
 
                 this.signals.SignalTransaction(trx);
 
@@ -516,48 +516,52 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         }
 
         /// <summary>
+        /// Adds the transaction to the send inventory for this behavior if it doesn't already exist.
+        /// </summary>
+        /// <param name="hash">Hash of transaction to add.</param>
+        private void AddTransactionToSend(uint256 hash)
+        {
+            this.logger.LogTrace("({0}:'{1}')", nameof(hash), hash);
+            lock (this.lockObject)
+            {
+                if (!this.filterInventoryKnown.Contains(hash))
+                {
+                    this.inventoryTxToSend.Add(hash);   
+                }
+            }
+            this.logger.LogTrace("(-)");
+        }
+
+        /// <summary>
         /// Relays a transaction to the connected peers.
         /// </summary>
         /// <param name="hash">Hash of the transaction.</param>
-        public Task RelayTransaction(uint256 hash)
+        public void RelayTransaction(uint256 hash)
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(hash), hash);
             IReadOnlyNetworkPeerCollection peers = this.connectionManager.ConnectedPeers;
             if (!peers.Any())
             {
                 this.logger.LogTrace("(-)[NO_PEERS]");
-                return Task.CompletedTask;
+                return;
             }
 
-            // find all behaviours then start an exclusive task
             // to add the hash to each local collection
             IEnumerable<MempoolBehavior> behaviours = peers.Select(s => s.Behavior<MempoolBehavior>());
-            return this.manager.MempoolLock.WriteAsync(() => 
+            foreach (MempoolBehavior mempoolBehavior in behaviours)
             {
-                foreach (MempoolBehavior mempoolBehavior in behaviours)
+                this.logger.LogTrace("Attempting to relaying transaction ID '{0}' to peer '{1}'.", hash, mempoolBehavior?.AttachedPeer.RemoteSocketEndpoint);
+                if (mempoolBehavior?.AttachedPeer.PeerVersion.Relay ?? false)
                 {
-                    this.logger.LogTrace("Attempting to relaying transaction ID '{0}' to peer '{1}'.", hash, mempoolBehavior?.AttachedPeer.RemoteSocketEndpoint);
-                    if (mempoolBehavior?.AttachedPeer.PeerVersion.Relay ?? false)
-                    {
-                        lock (mempoolBehavior.lockObject)
-                        {
-                            if (!mempoolBehavior.filterInventoryKnown.Contains(hash))
-                            {
-                                mempoolBehavior.inventoryTxToSend.Add(hash);
-                                this.logger.LogTrace("Added transaction ID '{0}' to inventory to send to peer '{1}'.", hash, mempoolBehavior?.AttachedPeer.RemoteSocketEndpoint);
-                            }
-                            else
-                            {
-                                this.logger.LogTrace("Transaction ID '{0}' already exists in inventory known filter of peer '{1}'.", hash, mempoolBehavior?.AttachedPeer.RemoteSocketEndpoint);
-                            }
-                        }
-                    }
-                    else
-                    {
-                        this.logger.LogTrace("Peer '{0}' does not support 'Relay', skipped.", mempoolBehavior?.AttachedPeer.RemoteSocketEndpoint);
-                    }
+                    mempoolBehavior.AddTransactionToSend(hash);
+                    this.logger.LogTrace("Added transaction ID '{0}' to send inventory of peer '{1}'.", hash, mempoolBehavior?.AttachedPeer.RemoteSocketEndpoint);
                 }
-            });
+                else
+                {
+                    this.logger.LogTrace("Peer '{0}' does not support 'Relay', skipped.", mempoolBehavior?.AttachedPeer.RemoteSocketEndpoint);
+                }
+            }
+            this.logger.LogTrace("(-)");
         }
 
         /// <summary>
