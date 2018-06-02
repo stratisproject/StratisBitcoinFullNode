@@ -1,21 +1,18 @@
-﻿using System.Net;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
-using NBitcoin;
+﻿using Microsoft.AspNetCore.Mvc;
 
 namespace Stratis.Bitcoin.Features.Dashboard.Controllers
 {
     /// <summary>
     /// Controller providing HTML Dashboard
     /// </summary>
-    [Route("dashboards")] //declares the endpoint
+    [Route("[controller]")]
     public class DashboardController : Controller
     {
-        /// <summary>
-        /// Initializes a new instance of the <see cref="DashboardController"/> class.
-        /// </summary>
-        public DashboardController()
+        private readonly IFullNode fullNode;
+
+        public DashboardController(IFullNode fullNode)
         {
+            this.fullNode = fullNode;
         }
 
         /// <summary>
@@ -23,12 +20,12 @@ namespace Stratis.Bitcoin.Features.Dashboard.Controllers
         /// </summary>
         /// <returns>text/html content</returns>
         [HttpGet]
-        [Route("nodedashboard")] // the endpoint name
-		public IActionResult NodeDashboard()
+        [Route("")] // the endpoint name
+        [Route("Stats")]
+        public IActionResult Stats()
         {
-            return Content("Hello World", "text/html");
+            var content = (this.fullNode as FullNode).LastLogOutput;
+            return this.Content(content);
         }
-
-
     }
 }
