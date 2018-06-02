@@ -60,7 +60,13 @@ namespace Stratis.Bitcoin.Consensus
 
         /// <summary>A special peer identifier that represents our local node.</summary>
         internal const int LocalPeerId = -1;
-        
+
+        /// <summary>Specifies for how many blocks from the consensus tip the block data should be kept in the memory.</summary>
+        /// <remarks>
+        /// TODO: calculate the actual value based on the max block size. Set threshold in mb.
+        /// </remarks>
+        internal const int KeepBlockDataForLastBlocks = 100;
+
         /// <summary>Lists of peer identifiers mapped by hashes of the block headers that are considered to be their tips.</summary>
         /// <remarks>
         /// During the consensus tip changing process, which includes both the reorganization and advancement on the same chain,
@@ -130,7 +136,7 @@ namespace Stratis.Bitcoin.Consensus
 
             // Initialize local tip claim with consensus tip.
             this.AddOrReplacePeerTip(LocalPeerId, consensusTip.HashBlock);
-
+            
             this.logger.LogTrace("(-)");
         }
 
@@ -277,7 +283,23 @@ namespace Stratis.Bitcoin.Consensus
             // Switch consensus tip to the new block header.
             this.AddOrReplacePeerTip(LocalPeerId, newConsensusTip.HashBlock);
 
-            var peerIds = new List<int>();
+            List<int> peerIdsToResync = this.FindPeersToResync(newConsensusTip);
+
+            // Remove block data for the headers that are too far from the consensus tip.
+            this.CleanOldBlockDataFromMemory(newConsensusTip);
+
+            this.logger.LogTrace("(-)");
+            return peerIdsToResync;
+        }
+
+        /// <summary>Checks each peer's tip if it violates max reorg rule.</summary>
+        /// <param name="consensusTip">Consensus tip.</param>
+        /// <returns>List of peers which tips violate max reorg rule.</returns>
+        private List<int> FindPeersToResync(ChainedHeader consensusTip)
+        {
+            this.logger.LogTrace("({0}:'{1}')", nameof(consensusTip), consensusTip);
+
+            var peerIdsToResync = new List<int>();
             uint maxReorgLength = this.chainState.MaxReorgLength;
 
             // Find peers with chains that now violate max reorg.
@@ -288,99 +310,54 @@ namespace Stratis.Bitcoin.Consensus
                     ChainedHeader peerTip = this.chainedHeadersByHash[peerIdToTipHash.Value];
                     int peerId = peerIdToTipHash.Key;
 
-                    if (newConsensusTip.FindAncestorOrSelf(peerTip) != null)
-                    {
-                        // Peer is on our best chain.
-                        continue;
-                    }
-                    
-                    ChainedHeader fork = peerTip.FindFork(newConsensusTip);
+                    ChainedHeader fork = peerTip.FindFork(consensusTip);
 
-                    if (fork != null)
+                    // Do nothing in case peer's tip is on our consensus chain.
+                    if ((fork != consensusTip) && (fork != peerTip))
                     {
-                        int reorgLength = newConsensusTip.Height - fork.Height;
-
-                        this.logger.LogTrace("Peer with Id {0} claims a chain with {1} reorg lenght.", peerId, reorgLength);
+                        int reorgLength = consensusTip.Height - fork.Height;
 
                         if (reorgLength > maxReorgLength)
                         {
-                            peerIds.Add(peerId);
-                            this.logger.LogTrace("Peer with Id {0} claims a chain that violates max reorg, it's tip is '{1}'", peerId, peerTip);
+                            peerIdsToResync.Add(peerId);
+                            this.logger.LogTrace("Peer with Id {0} claims a chain that violates max reorg, its tip is '{1}'.", peerId, peerTip);
                         }
                     }
                 }
             }
 
-            // Remove block data for the headers that are too far from the consensus tip.
-            this.CleanBlockDataFromMemory(newConsensusTip);
-
-            this.logger.LogTrace("(-)");
-            return peerIds;
+            this.logger.LogTrace("(-):*.{0}={1}", nameof(peerIdsToResync.Count), peerIdsToResync.Count);
+            return peerIdsToResync;
         }
 
         /// <summary>Cleans the block data for chained headers that are old. This data will still exist in the block store if it is enabled.</summary>
         /// <param name="consensusTip">Consensus tip.</param>
-        private void CleanBlockDataFromMemory(ChainedHeader consensusTip)
+        private void CleanOldBlockDataFromMemory(ChainedHeader consensusTip)
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(consensusTip), consensusTip);
+
+            int lastBlockHeightToKeep = consensusTip.Height - KeepBlockDataForLastBlocks;
+
+            if (lastBlockHeightToKeep <= 0)
+            {
+                this.logger.LogTrace("(-)[GENESIS_REACHED]");
+                return;
+            }
             
-            long earliestTimestampToKeepBlockData;
+            ChainedHeader currentBlockToDeleteData = consensusTip.GetAncestor(lastBlockHeightToKeep).Previous;
 
-            if (this.chainState.MaxReorgLength == 0)
+            // Process blocks that were not process before or until the genesis block exclusive.
+            while ((currentBlockToDeleteData.Block == null) || (currentBlockToDeleteData.Previous == null))
             {
-                // If there is no max reorg property- remove blocks that are older than 2 weeks.
-                int twoWeeksSeconds = (int)TimeSpan.FromDays(14).TotalSeconds;
-                earliestTimestampToKeepBlockData = consensusTip.Header.Time - twoWeeksSeconds;
-            }
-            else
-            {
-                ChainedHeader earliest = consensusTip;
+                currentBlockToDeleteData.Block = null;
+                this.logger.LogTrace("Block data for '{0}' was removed from memory.", currentBlockToDeleteData);
 
-                for (int i = 0; i < this.chainState.MaxReorgLength; i++)
-                {
-                    if (earliest.HashBlock == this.network.GenesisHash)
-                    {
-                        // There is nothing to delete.
-                        this.logger.LogTrace("(-)[NO_OUTDATED_DATA]");
-                        return;
-                    }
-
-                    earliest = earliest.Previous;
-                }
-
-                earliestTimestampToKeepBlockData = earliest.Header.Time;
+                currentBlockToDeleteData = currentBlockToDeleteData.Previous;
             }
 
-            // Clean up block data.
-            ChainedHeader current = consensusTip;
-            while (true)
-            {
-                if (current.Header.Time < earliestTimestampToKeepBlockData)
-                {
-                    if (current.Block == null)
-                    {
-                        // Block data was deleted already.
-                        this.logger.LogTrace("(-)[BLOCK_WITHOUT_DATA_REACHED]");
-                        return;
-                    }
-
-                    current.Block = null;
-
-                    bool blockStoreExists = this.chainState.BlockStoreTip != null;
-                    if (!blockStoreExists)
-                        current.BlockDataAvailability = BlockDataAvailabilityState.HeaderOnly;
-                }
-
-                if (current.HashBlock == this.network.GenesisHash)
-                {
-                    this.logger.LogTrace("(-)[GENESIS_REACHED]");
-                    return;
-                }
-
-                current = current.Previous;
-            }
+            this.logger.LogTrace("(-)");
         }
-
+        
         /// <summary>
         /// Remove all the branches in the tree that are after the given <paramref name="subtreeRoot"/>
         /// including it and return all the peers that where claiming next headers.
