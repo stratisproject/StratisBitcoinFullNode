@@ -59,7 +59,7 @@ namespace Stratis.Bitcoin.Consensus
 
         /// <summary>A special peer identifier that represents our local node.</summary>
         internal const int LocalPeerId = -1;
-
+        
         /// <summary>Lists of peer identifiers mapped by hashes of the block headers that are considered to be their tips.</summary>
         /// <remarks>
         /// During the consensus tip changing process, which includes both the reorganization and advancement on the same chain,
@@ -284,6 +284,8 @@ namespace Stratis.Bitcoin.Consensus
         /// TODO use local CT instead of chain state?
         public List<int> ConsensusTipChanged(ChainedHeader newConsensusTip, ChainedHeader previousConsensusTip)
         {
+            this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(newConsensusTip), newConsensusTip, nameof(previousConsensusTip), previousConsensusTip);
+
             this.RemovePeerClaim(LocalPeerId, previousConsensusTip);
 
             var peerIds = new List<int>();
@@ -305,14 +307,16 @@ namespace Stratis.Bitcoin.Consensus
                     
                     ChainedHeader fork = peerTip.FindFork(consensusTip);
 
-                    if ((fork != null) && (fork != consensusTip))
+                    if (fork != null)
                     {
                         int reorgLength = consensusTip.Height - fork.Height;
+
+                        this.logger.LogTrace("Peer with Id {0} claims a chain with {1} reorg lenght.", peerIdToTipHash.Key, reorgLength);
 
                         if (reorgLength > maxReorgLength)
                         {
                             peerIds.Add(peerIdToTipHash.Key);
-                            this.logger.LogTrace("Peer with Id {0} claims a chain that violates max reorg, it's tip is '{1}'", peerTip);
+                            this.logger.LogTrace("Peer with Id {0} claims a chain that violates max reorg, it's tip is '{1}'", peerIdToTipHash.Key, peerTip);
                         }
                     }
                 }
@@ -321,23 +325,71 @@ namespace Stratis.Bitcoin.Consensus
             // Remove block data for the headers that are too far from the consensus tip.
             this.CleanBlockDataFromMemory(newConsensusTip);
 
+            this.logger.LogTrace("(-)");
             return peerIds;
         }
 
-        /// <summary>Cleans the block data for chained headers that are old. This data will still exist in the database.</summary>
+        /// <summary>Cleans the block data for chained headers that are old. This data will still exist in the block store if it is enabled.</summary>
         /// <param name="consensusTip">Consensus tip.</param>
         private void CleanBlockDataFromMemory(ChainedHeader consensusTip)
         {
-            throw new NotImplementedException();
+            this.logger.LogTrace("({0}:'{1}')", nameof(consensusTip), consensusTip);
+            
+            long earliestTimestampToKeepBlockData;
 
+            if (this.chainState.MaxReorgLength == 0)
+            {
+                // If there is no max reorg property- remove blocks that are older than 2 weeks.
+                int twoWeeksSeconds = (int)TimeSpan.FromDays(14).TotalSeconds;
+                earliestTimestampToKeepBlockData = consensusTip.Header.Time - twoWeeksSeconds;
+            }
+            else
+            {
+                ChainedHeader earliest = consensusTip;
 
+                for (int i = 0; i < this.chainState.MaxReorgLength; i++)
+                {
+                    if (earliest.HashBlock == this.network.GenesisHash)
+                    {
+                        // There is nothing to delete.
+                        this.logger.LogTrace("(-)[NO_OUTDATED_DATA]");
+                        return;
+                    }
 
+                    earliest = earliest.Previous;
+                }
 
-            /*
-             var lastChainedHeaderToKeepBlockDataFor = ConsensusTip - KEEP_BLOCK_DATA_IN_MEMORY_FOR_N_BLOCK // for startis it's max reorg, for bitcoin- 2 days worth of blocks
-             start from lastChainedHeaderToKeepBlockDataFor and go .Prev and remove the block data until we hit first chained header without block data. stop there
-                 in case we don't have the block store- not only set data to null but also change the DataAvailability = header only.
-          */
+                earliestTimestampToKeepBlockData = earliest.Header.Time;
+            }
+
+            // Clean up block data.
+            ChainedHeader current = consensusTip;
+            while (true)
+            {
+                if (current.Header.Time < earliestTimestampToKeepBlockData)
+                {
+                    if (current.Block == null)
+                    {
+                        // Block data was deleted already.
+                        this.logger.LogTrace("(-)[BLOCK_WITHOUT_DATA_REACHED]");
+                        return;
+                    }
+
+                    current.Block = null;
+
+                    bool blockStoreExists = this.chainState.BlockStoreTip != null;
+                    if (!blockStoreExists)
+                        current.BlockDataAvailability = BlockDataAvailabilityState.HeaderOnly;
+                }
+
+                if (current.HashBlock == this.network.GenesisHash)
+                {
+                    this.logger.LogTrace("(-)[GENESIS_REACHED]");
+                    return;
+                }
+
+                current = current.Previous;
+            }
         }
 
         /// <summary>
