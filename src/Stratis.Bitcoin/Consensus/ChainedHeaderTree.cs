@@ -264,6 +264,82 @@ namespace Stratis.Bitcoin.Consensus
             return peersToBan;
         }
 
+        /// <summary>Handles situation when full validation was failed.</summary>
+        /// <param name="failedTip">Tip of a new chain that node tried to switch to and failed because some block didn't pass full validation.</param>
+        public void OnReorganizationFailed(ChainedHeader failedTip)
+        {
+            this.RemovePeerClaim(LocalPeerId, failedTip);
+        }
+
+        /// <summary>
+        /// Handles situation when consensuses tip was changed.
+        /// </summary>
+        /// <param name="newConsensusTip">The new consensus tip.</param>
+        /// <param name="previousConsensusTip">Previous consensus tip.</param>
+        /// <returns>List of peer Ids that violate max reorg rule.</returns>
+        /// 
+        /// TODO caller should do CHB.PendingTip=null & CHB.TrySync on peers from the returned list, but don't disconnect or ban the peer.
+        /// TODO (be careful in situation when we check peer.tip and at the same time new headers are presented)
+        /// 
+        /// TODO use local CT instead of chain state?
+        public List<int> ConsensusTipChanged(ChainedHeader newConsensusTip, ChainedHeader previousConsensusTip)
+        {
+            this.RemovePeerClaim(LocalPeerId, previousConsensusTip);
+
+            var peerIds = new List<int>();
+            uint maxReorgLength = this.chainState.MaxReorgLength;
+            ChainedHeader consensusTip = this.chainState.ConsensusTip;
+
+            // Find peers with chains that now violate max reorg.
+            if ((maxReorgLength != 0) && (consensusTip != null))
+            {
+                foreach (KeyValuePair<int, uint256> peerIdToTipHash in this.peerTipsByPeerId)
+                {
+                    ChainedHeader peerTip = this.chainedHeadersByHash[peerIdToTipHash.Value];
+
+                    if (consensusTip.FindAncestorOrSelf(peerTip) != null)
+                    {
+                        // Peer is on our best chain.
+                        continue;
+                    }
+                    
+                    ChainedHeader fork = peerTip.FindFork(consensusTip);
+
+                    if ((fork != null) && (fork != consensusTip))
+                    {
+                        int reorgLength = consensusTip.Height - fork.Height;
+
+                        if (reorgLength > maxReorgLength)
+                        {
+                            peerIds.Add(peerIdToTipHash.Key);
+                            this.logger.LogTrace("Peer with Id {0} claims a chain that violates max reorg, it's tip is '{1}'", peerTip);
+                        }
+                    }
+                }
+            }
+
+            // Remove block data for the headers that are too far from the consensus tip.
+            this.CleanBlockDataFromMemory(newConsensusTip);
+
+            return peerIds;
+        }
+
+        /// <summary>Cleans the block data for chained headers that are old. This data will still exist in the database.</summary>
+        /// <param name="consensusTip">Consensus tip.</param>
+        private void CleanBlockDataFromMemory(ChainedHeader consensusTip)
+        {
+            throw new NotImplementedException();
+
+
+
+
+            /*
+             var lastChainedHeaderToKeepBlockDataFor = ConsensusTip - KEEP_BLOCK_DATA_IN_MEMORY_FOR_N_BLOCK // for startis it's max reorg, for bitcoin- 2 days worth of blocks
+             start from lastChainedHeaderToKeepBlockDataFor and go .Prev and remove the block data until we hit first chained header without block data. stop there
+                 in case we don't have the block store- not only set data to null but also change the DataAvailability = header only.
+          */
+        }
+
         /// <summary>
         /// Remove all the branches in the tree that are after the given <see cref="startHeader" /> (including)
         /// and return all the peers that where claiming next headers.
