@@ -48,16 +48,6 @@ namespace NBitcoin.Tests
 
         [Fact]
         [Trait("UnitTest", "UnitTest")]
-        public void RegisterNetworkTwiceWithDifferentNamesSucceeds()
-        {
-            Network main = Network.Main;
-            Network main2 = Network.Register(main, "main2");
-
-            Assert.Equal(Network.GetNetwork("main"), Network.GetNetwork("main2"));
-        }
-        
-        [Fact]
-        [Trait("UnitTest", "UnitTest")]
         public void ReadMagicByteWithFirstByteDuplicated()
         {
             var bytes = Network.Main.MagicBytes.ToList();
@@ -75,6 +65,10 @@ namespace NBitcoin.Tests
         public void BitcoinMainnetIsInitializedCorrectly()
         {
             Network network = Network.Main;
+
+            Assert.Equal(15, network.Checkpoints.Count);
+            Assert.Equal(6, network.DNSSeeds.Count);
+            Assert.Equal(512, network.SeedNodes.Count);
 
             Assert.Equal(Network.GetNetwork("main"), network);
             Assert.Equal(Network.GetNetwork("mainnet"), network);
@@ -150,6 +144,7 @@ namespace NBitcoin.Tests
         {
             Network network = Network.TestNet;
 
+            Assert.Equal(2, network.Checkpoints.Count);
             Assert.Equal(3, network.DNSSeeds.Count);
             Assert.Empty(network.SeedNodes);
 
@@ -224,6 +219,7 @@ namespace NBitcoin.Tests
         {
             Network network = Network.RegTest;
 
+            Assert.Empty(network.Checkpoints);
             Assert.Empty(network.DNSSeeds);
             Assert.Empty(network.SeedNodes);
 
@@ -297,6 +293,7 @@ namespace NBitcoin.Tests
         {
             Network network = Network.StratisMain;
 
+            Assert.Equal(25, network.Checkpoints.Count);
             Assert.Equal(4, network.DNSSeeds.Count);
             Assert.Equal(3, network.SeedNodes.Count);
 
@@ -367,6 +364,7 @@ namespace NBitcoin.Tests
         {
             Network network = Network.StratisTest;
 
+            Assert.Equal(10, network.Checkpoints.Count);
             Assert.Equal(4, network.DNSSeeds.Count);
             Assert.Equal(4, network.SeedNodes.Count);
             
@@ -437,6 +435,7 @@ namespace NBitcoin.Tests
         {
             Network network = Network.StratisRegTest;
 
+            Assert.Empty(network.Checkpoints);
             Assert.Empty(network.DNSSeeds);
             Assert.Empty(network.SeedNodes);
 

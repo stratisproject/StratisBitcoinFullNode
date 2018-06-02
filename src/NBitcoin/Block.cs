@@ -105,6 +105,10 @@ namespace NBitcoin
 
         #endregion
 
+        /// <summary>
+        /// Generates the hash of a <see cref="BlockHeader"/>.
+        /// </summary>
+        /// <returns>A hash.</returns>
         public virtual uint256 GetHash()
         {
             uint256 hash = null;
@@ -131,6 +135,10 @@ namespace NBitcoin
             return hash;
         }
 
+        /// <summary>
+        /// Generates a hash for a proof-of-work block header.
+        /// </summary>
+        /// <returns>A hash.</returns>
         public virtual uint256 GetPoWHash()
         {
             return this.GetHash();
@@ -276,7 +284,7 @@ namespace NBitcoin
 
         public uint256 GetHash()
         {
-            // Block's hash is his header's hash.
+            // A Block's hash is it's header's hash.
             return this.header.GetHash();
         }
 

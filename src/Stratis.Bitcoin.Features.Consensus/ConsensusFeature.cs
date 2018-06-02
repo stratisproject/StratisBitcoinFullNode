@@ -175,7 +175,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                 cache.FlushAsync().GetAwaiter().GetResult();
                 cache.Dispose();
             }
-           
+
             this.dBreezeCoinView.Dispose();
         }
     }
@@ -233,10 +233,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                         fullNodeBuilder.Network.Consensus.Options = new PosConsensusOptions();
 
                         if (fullNodeBuilder.Network.IsTest())
-                        {
                             fullNodeBuilder.Network.Consensus.Option<PosConsensusOptions>().CoinbaseMaturity = 10;
-                            fullNodeBuilder.Network.Consensus.Option<PosConsensusOptions>().StakeMinConfirmations = 10;
-                        }
 
                         services.AddSingleton<ICheckpoints, Checkpoints>();
                         services.AddSingleton<DBreezeCoinView>();
@@ -289,7 +286,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                     // rules that require the store to be loaded (coinview)
                     new LoadCoinviewRule(),
                     new TransactionDuplicationActivationRule(), // implements BIP30
-                    new PowCoinViewRule() // implements BIP68, MaxSigOps and BlockReward calculation
+                    new PowCoinviewRule() // implements BIP68, MaxSigOps and BlockReward calculation
                 };
             }
         }
@@ -332,7 +329,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                     // rules that require the store to be loaded (coinview)
                     new LoadCoinviewRule(),
                     new TransactionDuplicationActivationRule(), // implements BIP30
-                    new PosCoinViewRule() // implements BIP68, MaxSigOps and BlockReward calculation
+                    new PosCoinviewRule() // implements BIP68, MaxSigOps and BlockReward calculation
                 };
             }
         }
