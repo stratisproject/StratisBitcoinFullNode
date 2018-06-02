@@ -11,6 +11,7 @@ using System.Text;
 using System.Threading;
 using NBitcoin;
 using Stratis.Bitcoin.Base;
+using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
@@ -152,9 +153,9 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
             return CreateNode(new BitcoinCoreRunner(this.GetNextDataFolderName(), bitcoinDPath), Network.RegTest, start);
         }
 
-        public CoreNode CreateStratisPowNode(bool start = false)
+        public CoreNode CreateStratisPowNode(bool start = false, Action<IFullNodeBuilder> callback = null)
         {
-            return CreateNode(new StratisBitcoinPowRunner(this.GetNextDataFolderName()), Network.RegTest, start);
+            return CreateNode(new StratisBitcoinPowRunner(this.GetNextDataFolderName(), callback), Network.RegTest, start);
         }
 
         public CoreNode CreateStratisPowMiningNode(bool start = false)
@@ -162,9 +163,9 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
             return CreateNode(new StratisProofOfWorkMiningNode(this.GetNextDataFolderName()), Network.RegTest, start, "stratis.conf");
         }
 
-        public CoreNode CreateStratisPosNode(bool start = false)
+        public CoreNode CreateStratisPosNode(bool start = false, Action<IFullNodeBuilder> callback = null)
         {
-            return CreateNode(new StratisBitcoinPosRunner(this.GetNextDataFolderName()), Network.RegTest, start, "stratis.conf");
+            return CreateNode(new StratisBitcoinPosRunner(this.GetNextDataFolderName(), callback), Network.RegTest, start, "stratis.conf");
         }
 
         public CoreNode CreateStratisPosApiNode(bool start = false)

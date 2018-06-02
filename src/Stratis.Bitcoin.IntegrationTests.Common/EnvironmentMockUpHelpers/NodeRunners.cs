@@ -1,4 +1,5 @@
-﻿using System.Diagnostics;
+﻿using System;
+using System.Diagnostics;
 using System.IO;
 using NBitcoin;
 using NBitcoin.Protocol;
@@ -78,26 +79,40 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
 
     public sealed class StratisBitcoinPosRunner : NodeRunner
     {
-        public StratisBitcoinPosRunner(string dataDir)
+        private Action<IFullNodeBuilder> callback;
+
+        public StratisBitcoinPosRunner(string dataDir, Action<IFullNodeBuilder> callback = null)
             : base(dataDir)
         {
+            this.callback = callback;
         }
 
         public override void BuildNode()
         {
             var settings = new NodeSettings(Network.StratisRegTest, ProtocolVersion.ALT_PROTOCOL_VERSION, args: new string[] { "-conf=stratis.conf", "-datadir=" + this.DataFolder }, loadConfiguration: false);
 
-            this.FullNode = (FullNode)new FullNodeBuilder()
-                            .UseNodeSettings(settings)
-                            .UseBlockStore()
-                            .UsePosConsensus()
-                            .UseMempool()
-                            .UseWallet()
-                            .AddPowPosMining()
-                            .AddRPC()
-                            .MockIBD()
-                            .SubstituteDateTimeProviderFor<MiningFeature>()
-                            .Build();
+            if (this.callback != null)
+            {
+                var builder = new FullNodeBuilder().UseNodeSettings(settings);
+
+                this.callback(builder);
+
+                this.FullNode = (FullNode)builder.Build();
+            }
+            else
+            {
+                this.FullNode = (FullNode)new FullNodeBuilder()
+                    .UseNodeSettings(settings)
+                    .UseBlockStore()
+                    .UsePosConsensus()
+                    .UseMempool()
+                    .UseWallet()
+                    .AddPowPosMining()
+                    .AddRPC()
+                    .MockIBD()
+                    .SubstituteDateTimeProviderFor<MiningFeature>()
+                    .Build();
+            }
         }
 
         public override void OnStart()
@@ -161,25 +176,39 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
 
     public sealed class StratisBitcoinPowRunner : NodeRunner
     {
-        public StratisBitcoinPowRunner(string dataDir)
+        private Action<IFullNodeBuilder> callback;
+
+        public StratisBitcoinPowRunner(string dataDir, Action<IFullNodeBuilder> callback = null)
             : base(dataDir)
         {
+            this.callback = callback;
         }
 
         public override void BuildNode()
         {
             var settings = new NodeSettings(args: new string[] { "-conf=bitcoin.conf", "-datadir=" + this.DataFolder }, loadConfiguration: false);
 
-            this.FullNode = (FullNode)new FullNodeBuilder()
-                            .UseNodeSettings(settings)
-                            .UseBlockStore()
-                            .UsePowConsensus()
-                            .UseMempool()
-                            .AddMining()
-                            .UseWallet()
-                            .AddRPC()
-                            .MockIBD()
-                            .Build();
+            if (this.callback != null)
+            {
+                var builder = new FullNodeBuilder().UseNodeSettings(settings);
+
+                this.callback(builder);
+
+                this.FullNode = (FullNode)builder.Build();
+            }
+            else
+            {
+                this.FullNode = (FullNode)new FullNodeBuilder()
+                    .UseNodeSettings(settings)
+                    .UseBlockStore()
+                    .UsePowConsensus()
+                    .UseMempool()
+                    .AddMining()
+                    .UseWallet()
+                    .AddRPC()
+                    .MockIBD()
+                    .Build();
+            }
         }
 
         public override void OnStart()
