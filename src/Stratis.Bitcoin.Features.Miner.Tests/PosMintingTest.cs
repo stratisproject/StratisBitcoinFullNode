@@ -13,6 +13,7 @@ using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.MemoryPool.Interfaces;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Interfaces;
+using Stratis.Bitcoin.Mining;
 using Stratis.Bitcoin.Tests.Common.Logging;
 using Stratis.Bitcoin.Tests.Wallet.Common;
 using Stratis.Bitcoin.Utilities;
@@ -23,7 +24,6 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
     public class PosMintingTest : LogsTestBase
     {
         private PosMinting posMinting;
-        private readonly Mock<IPosConsensusValidator> consensusValidator;
         private readonly Mock<IConsensusLoop> consensusLoop;
         private ConcurrentChain chain;
         private readonly Network network;
@@ -44,7 +44,6 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
 
         public PosMintingTest()
         {
-            this.consensusValidator = new Mock<IPosConsensusValidator>();
             this.consensusLoop = new Mock<IConsensusLoop>();
             this.network = Network.StratisTest;
             this.network.Consensus.Options = new PowConsensusOptions();
@@ -63,8 +62,6 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
             this.walletManager = new Mock<IWalletManager>();
             this.asyncLoopFactory = new Mock<IAsyncLoopFactory>();
             this.timeSyncBehaviorState = new Mock<ITimeSyncBehaviorState>();
-
-            this.consensusLoop.Setup(c => c.Validator).Returns(this.consensusValidator.Object);
 
             this.cancellationTokenSource = new CancellationTokenSource();
             this.nodeLifetime.Setup(n => n.ApplicationStopping).Returns(this.cancellationTokenSource.Token);
@@ -418,7 +415,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
 
         private PosMinting InitializePosMinting()
         {
-            var posBlockBuilder = new Mock<PosBlockAssembler>(
+            var posBlockAssembler = new Mock<PosBlockDefinition>(
                 this.consensusLoop.Object,
                 this.dateTimeProvider.Object,
                 this.LoggerFactory.Object,
@@ -428,8 +425,10 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
                 this.stakeChain.Object,
                 this.stakeValidator.Object);
 
+            var blockBuilder = new MockPosBlockProvider(posBlockAssembler.Object);
+
             return new PosMinting(
-                posBlockBuilder.Object,
+                blockBuilder,
                 this.consensusLoop.Object,
                 this.chain,
                 this.network,
@@ -455,6 +454,26 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
             blockHeader.Bits = new Target(bits);
             var chainedHeader = new ChainedHeader(blockHeader, blockHeader.GetHash(), 46367);
             return chainedHeader;
+        }
+    }
+
+    public sealed class MockPosBlockProvider : IBlockProvider
+    {
+        private readonly PosBlockDefinition blockDefinition;
+
+        public MockPosBlockProvider(PosBlockDefinition blockDefinition)
+        {
+            this.blockDefinition = blockDefinition;
+        }
+
+        public BlockTemplate BuildPosBlock(ChainedHeader chainTip, Script script)
+        {
+            return this.blockDefinition.Build(chainTip, script);
+        }
+
+        public BlockTemplate BuildPowBlock(ChainedHeader chainTip, Script script)
+        {
+            throw new NotImplementedException();
         }
     }
 }

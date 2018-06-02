@@ -72,7 +72,7 @@ namespace NBitcoin.Tests
         [Trait("Core", "Core")]
         public void base58_keys_valid_parse()
         {
-            var tests = TestCase.read_json("Data\\base58_keys_valid.json");
+            var tests = TestCase.read_json(TestDataLocations.GetFileFromDataFolder("base58_keys_valid.json"));
             Network network;
             foreach(var test in tests)
             {
@@ -132,8 +132,8 @@ namespace NBitcoin.Tests
         [Trait("Core", "Core")]
         public void base58_keys_valid_gen()
         {
-            var tests = TestCase.read_json("data/base58_keys_valid.json");
-            tests = tests.Concat(TestCase.read_json("data/base58_keys_valid2.json")).ToArray();
+            var tests = TestCase.read_json(TestDataLocations.GetFileFromDataFolder("base58_keys_valid.json"));
+            tests = tests.Concat(TestCase.read_json(TestDataLocations.GetFileFromDataFolder("base58_keys_valid2.json"))).ToArray();
             Network network = null;
 
             foreach(var test in tests)
@@ -209,7 +209,7 @@ namespace NBitcoin.Tests
         {
             get
             {
-                var dataset = TestCase.read_json("data/base58_keys_invalid.json");
+                var dataset = TestCase.read_json(TestDataLocations.GetFileFromDataFolder("base58_keys_invalid.json"));
                 return dataset.Select(x => x.ToArray());
             }
         }

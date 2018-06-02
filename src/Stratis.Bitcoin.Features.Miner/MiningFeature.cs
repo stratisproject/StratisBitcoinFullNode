@@ -14,6 +14,7 @@ using Stratis.Bitcoin.Features.Miner.Controllers;
 using Stratis.Bitcoin.Features.Miner.Interfaces;
 using Stratis.Bitcoin.Features.RPC;
 using Stratis.Bitcoin.Features.Wallet;
+using Stratis.Bitcoin.Mining;
 
 namespace Stratis.Bitcoin.Features.Miner
 {
@@ -85,7 +86,7 @@ namespace Stratis.Bitcoin.Features.Miner
         {
             MinerSettings.PrintHelp(network);
         }
-        
+
         /// <summary>
         /// Get the default configuration.
         /// </summary>
@@ -221,7 +222,8 @@ namespace Stratis.Bitcoin.Features.Miner
                     .FeatureServices(services =>
                     {
                         services.AddSingleton<IPowMining, PowMining>();
-                        services.AddSingleton<PowBlockAssembler>();
+                        services.AddSingleton<IBlockProvider, BlockProvider>();
+                        services.AddSingleton<BlockDefinition, PowBlockDefinition>();
                         services.AddSingleton<MinerController>();
                         services.AddSingleton<MiningRPCController>();
                         services.AddSingleton<MinerSettings>(new MinerSettings(setup));
@@ -251,9 +253,10 @@ namespace Stratis.Bitcoin.Features.Miner
                     .FeatureServices(services =>
                     {
                         services.AddSingleton<IPowMining, PowMining>();
-                        services.AddSingleton<PowBlockAssembler>();
                         services.AddSingleton<IPosMinting, PosMinting>();
-                        services.AddSingleton<PosBlockAssembler>();
+                        services.AddSingleton<IBlockProvider, BlockProvider>();
+                        services.AddSingleton<BlockDefinition, PowBlockDefinition>();
+                        services.AddSingleton<BlockDefinition, PosBlockDefinition>();
                         services.AddSingleton<MinerController>();
                         services.AddSingleton<MiningRPCController>();
                         services.AddSingleton<MinerSettings>(new MinerSettings(setup));

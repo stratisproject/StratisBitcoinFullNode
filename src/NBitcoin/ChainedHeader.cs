@@ -5,6 +5,64 @@ using NBitcoin.BouncyCastle.Math;
 namespace NBitcoin
 {
     /// <summary>
+    /// Represents the availability state of a block.
+    /// </summary>
+    public enum BlockDataAvailabilityState
+    {
+        /// <summary>
+        /// A <see cref="BlockHeader"/> is present, the block data is not available.
+        /// </summary>
+        HeaderOnly,
+
+        /// <summary>
+        /// We are interested in downloading the <see cref="Block"/> that is being represented by the current <see cref="BlockHeader"/>. 
+        /// This happens when we don't have block which is represented by this header and the header is a part of a chain that
+        /// can potentially replace our consensus tip because its chain work is greater than our consensus tip's chain work.
+        /// </summary>
+        BlockRequired,
+
+        /// <summary>
+        /// The <see cref="Block"/> was downloaded and is available, but it may not be reachable directly but via a store.
+        /// </summary>
+        BlockAvailable
+    }
+
+    /// <summary>
+    /// Represents the validation state of a block.
+    /// </summary>
+    public enum ValidationState
+    {
+        /// <summary>
+        /// No validation was performed.
+        /// </summary>
+        Unknown,
+
+        /// <summary>
+        /// We have a valid block header.
+        /// </summary>
+        HeaderValidated,
+
+        /// <summary>
+        /// Blocks represented by headers with this state are assumed to be valid and only minimal validation is required for them when they are downloaded.
+        /// This state is used for blocks before the last checkpoint or for blocks that are on the chain of assume valid block.
+        /// Once a block is fully validated this state will change to <see cref="PartiallyValidated"/>.
+        /// </summary>
+        AssumedValid,
+
+        /// <summary>
+        /// Validated using all rules that don't require change of state.
+        /// Some rules validation may be skipped for blocks previously marked as <see cref="AssumedValid"/>.
+        /// </summary>
+        PartiallyValidated,
+
+        /// <summary>
+        /// Validated using all the rules.
+        /// Some rules validation may be skipped for blocks previously marked as <see cref="AssumedValid"/>. 
+        /// </summary>
+        FullyValidated
+    }
+
+    /// <summary>
     /// A BlockHeader chained with all its ancestors.
     /// </summary>
     public class ChainedHeader
@@ -36,17 +94,28 @@ namespace NBitcoin
         /// <summary>Total amount of work in the chain up to and including this block.</summary>
         public uint256 ChainWork { get { return Target.ToUInt256(this.chainWork); } }
 
+        /// <inheritdoc cref="BlockDataAvailabilityState" />
+        public BlockDataAvailabilityState BlockDataAvailability { get; set; }
+
+        /// <inheritdoc cref="ValidationState" />
+        public ValidationState BlockValidationState { get; set; }
+
+        /// <summary>A pointer to the block data if available (this can be <c>null</c>), its availability will be represented by <see cref="BlockDataAvailability"/>.</summary>
+        public Block Block { get; set; }
+
+        /// <summary>
+        /// Points to the next <see cref="ChainedHeader"/>, if a new branch of the chain is presented there can be more then one <see cref="Next"/> header.
+        /// </summary>
+        public List<ChainedHeader> Next { get; private set; }
+
         /// <summary>
         /// Constructs a chained block.
         /// </summary>
         /// <param name="header">Header for the block.</param>
         /// <param name="headerHash">Hash of the header of the block.</param>
         /// <param name="previous">Link to the previous block in the chain.</param>
-        public ChainedHeader(BlockHeader header, uint256 headerHash, ChainedHeader previous)
+        public ChainedHeader(BlockHeader header, uint256 headerHash, ChainedHeader previous) : this(header, headerHash)
         {
-            this.Header = header ?? throw new ArgumentNullException("header");
-            this.HashBlock = headerHash ?? throw new ArgumentNullException("headerHash");
-
             if (previous != null)
                 this.Height = previous.Height + 1;
 
@@ -75,12 +144,28 @@ namespace NBitcoin
         /// <param name="header">The header for the block.</param>
         /// <param name="headerHash">The hash computed according to NetworkOptions.</param>
         /// <param name="height">The height of the block.</param>
-        public ChainedHeader(BlockHeader header, uint256 headerHash, int height)
+        public ChainedHeader(BlockHeader header, uint256 headerHash, int height) : this(header, headerHash)
         {
-            this.Header = header ?? throw new ArgumentNullException("header");
             this.Height = height;
-            this.HashBlock = headerHash;
             this.CalculateChainWork();
+
+            if (height == 0)
+            {
+                this.BlockDataAvailability = BlockDataAvailabilityState.BlockAvailable;
+                this.BlockValidationState = ValidationState.FullyValidated;
+            }
+        }
+
+        /// <summary>
+        /// Constructs a chained header at the start of a chain.
+        /// </summary>
+        /// <param name="header">The header for the block.</param>
+        /// <param name="headerHash">The hash of the block's header.</param>
+        private ChainedHeader(BlockHeader header, uint256 headerHash)
+        {
+            this.Header = header ?? throw new ArgumentNullException(nameof(header));
+            this.HashBlock = headerHash ?? throw new ArgumentNullException(nameof(headerHash));
+            this.Next = new List<ChainedHeader>(1);
         }
 
         /// <summary>
@@ -413,7 +498,7 @@ namespace NBitcoin
         /// <returns>Whether proof of work is valid.</returns>
         public bool CheckProofOfWorkAndTarget(Consensus consensus)
         {
-            return (this.Height == 0) || (this.Header.CheckProofOfWork(consensus) && this.Header.Bits == GetWorkRequired(consensus));
+            return (this.Height == 0) || (this.Header.CheckProofOfWork(consensus) && (this.Header.Bits == this.GetWorkRequired(consensus)));
         }
 
         /// <summary>

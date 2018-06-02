@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NBitcoin.DataEncoders;
@@ -12,12 +13,16 @@ using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Connection;
+using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.Consensus.Rules;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.MemoryPool.Fee;
 using Stratis.Bitcoin.Features.Miner;
+using Stratis.Bitcoin.IntegrationTests.Common;
+using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
+using Stratis.Bitcoin.Mining;
 using Stratis.Bitcoin.P2P;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
@@ -30,16 +35,16 @@ namespace Stratis.Bitcoin.IntegrationTests
     {
         private static FeeRate blockMinFeeRate = new FeeRate(PowMining.DefaultBlockMinTxFee);
 
-        public static PowBlockAssembler AssemblerForTest(TestContext testContext)
+        public static PowBlockDefinition AssemblerForTest(TestContext testContext)
         {
-            var options = new AssemblerOptions
+            var options = new BlockDefinitionOptions
             {
                 BlockMaxWeight = testContext.network.Consensus.Option<PowConsensusOptions>().MaxBlockWeight,
                 BlockMaxSize = testContext.network.Consensus.Option<PowConsensusOptions>().MaxBlockSerializedSize,
                 BlockMinFeeRate = blockMinFeeRate
             };
 
-            return new PowBlockAssembler(testContext.consensus, testContext.DateTimeProvider, new LoggerFactory(), testContext.mempool, testContext.mempoolLock, testContext.network, options);
+            return new PowBlockDefinition(testContext.consensus, testContext.DateTimeProvider, new LoggerFactory(), testContext.mempool, testContext.mempoolLock, testContext.network, options);
         }
 
         public class Blockinfo
@@ -147,7 +152,6 @@ namespace Stratis.Bitcoin.IntegrationTests
                 NodeSettings nodeSettings = new NodeSettings(args: new string[] { "-checkpoints" });
                 var consensusSettings = new ConsensusSettings().Load(nodeSettings);
 
-                PowConsensusValidator consensusValidator = new PowConsensusValidator(this.network, new Checkpoints(), dateTimeProvider, loggerFactory);
                 NetworkPeerFactory networkPeerFactory = new NetworkPeerFactory(this.network, dateTimeProvider, loggerFactory, new PayloadProvider().DiscoverPayloads(), new SelfEndpointTracker());
 
                 var peerAddressManager = new PeerAddressManager(DateTimeProvider.Default, nodeSettings.DataFolder, loggerFactory, new SelfEndpointTracker());
@@ -160,7 +164,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 PeerBanning peerBanning = new PeerBanning(connectionManager, loggerFactory, dateTimeProvider, peerAddressManager);
                 NodeDeployments deployments = new NodeDeployments(this.network, this.chain);
                 ConsensusRules consensusRules = new PowConsensusRules(this.network, loggerFactory, dateTimeProvider, this.chain, deployments, consensusSettings, new Checkpoints(), this.cachedCoinView, blockPuller).Register(new FullNodeBuilderConsensusExtension.PowConsensusRulesRegistration());
-                this.consensus = new ConsensusLoop(new AsyncLoopFactory(loggerFactory), consensusValidator, new NodeLifetime(), this.chain, this.cachedCoinView, blockPuller, new NodeDeployments(this.network, this.chain), loggerFactory, new ChainState(new InvalidBlockHashStore(dateTimeProvider)), connectionManager, dateTimeProvider, new Signals.Signals(), consensusSettings, nodeSettings, peerBanning, consensusRules);
+                this.consensus = new ConsensusLoop(new AsyncLoopFactory(loggerFactory), new NodeLifetime(), this.chain, this.cachedCoinView, blockPuller, new NodeDeployments(this.network, this.chain), loggerFactory, new ChainState(new InvalidBlockHashStore(dateTimeProvider)), connectionManager, dateTimeProvider, new Signals.Signals(), consensusSettings, nodeSettings, peerBanning, consensusRules);
                 await this.consensus.StartAsync();
 
                 this.entry.Fee(11);
@@ -608,6 +612,31 @@ namespace Stratis.Bitcoin.IntegrationTests
             context.chain.SetTip(new BlockHeader { HashPrevBlock = context.chain.Tip.HashBlock, Time = Utils.DateTimeToUnixTime(context.chain.Tip.GetMedianTimePast()) + 512 });
             context.chain.SetTip(new BlockHeader { HashPrevBlock = context.chain.Tip.HashBlock, Time = Utils.DateTimeToUnixTime(context.chain.Tip.GetMedianTimePast()) + 512 });
             Assert.True(tx.IsFinal(context.chain.Tip.GetMedianTimePast().AddMinutes(2), context.chain.Tip.Height + 2)); // Locktime passes 2 min later
+        }
+
+        [Fact]
+        public void GetProofOfWorkRewardForMinedBlocksTest()
+        {
+            using (NodeBuilder builder = NodeBuilder.Create(this))
+            {
+                var node = builder.CreateStratisPowNode();
+                builder.StartAll();
+                node.NotInIBD();
+
+                node.SetDummyMinerSecret(new BitcoinSecret(new Key(), node.FullNode.Network));
+
+                node.GenerateStratisWithMiner(10);
+                node.GetProofOfWorkRewardForMinedBlocks(10).Should().Be(Money.Coins(500));
+
+                node.GenerateStratisWithMiner(90);
+                node.GetProofOfWorkRewardForMinedBlocks(100).Should().Be(Money.Coins(5000));
+
+                node.GenerateStratisWithMiner(100);
+                node.GetProofOfWorkRewardForMinedBlocks(200).Should().Be(Money.Coins(8725));
+
+                node.GenerateStratisWithMiner(200);
+                node.GetProofOfWorkRewardForMinedBlocks(400).Should().Be(Money.Coins((decimal)12462.50));
+            }
         }
 
         //NOTE: These tests rely on CreateNewBlock doing its own self-validation!

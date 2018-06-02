@@ -63,7 +63,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             this.consensusLoop = consensusLoop;
             this.lookaheadPuller = this.consensusLoop.Puller as LookaheadBlockPuller;
 
-            this.lastSnapshot = consensusLoop.Validator.PerformanceCounter.Snapshot();
+            this.lastSnapshot = consensusLoop.ConsensusRules.PerformanceCounter.Snapshot();
             this.lastSnapshot2 = this.dbreeze?.PerformanceCounter.Snapshot();
             this.lastSnapshot3 = this.cache?.PerformanceCounter.Snapshot();
             this.initialBlockDownloadState = initialBlockDownloadState;
@@ -91,7 +91,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                 benchLogs.AppendLine("Cache entries".PadRight(LoggingConfiguration.ColumnLength) + this.cache.CacheEntryCount);
             }
 
-            var snapshot = this.consensusLoop.Validator.PerformanceCounter.Snapshot();
+            var snapshot = this.consensusLoop.ConsensusRules.PerformanceCounter.Snapshot();
             benchLogs.AppendLine((snapshot - this.lastSnapshot).ToString());
             this.lastSnapshot = snapshot;
 

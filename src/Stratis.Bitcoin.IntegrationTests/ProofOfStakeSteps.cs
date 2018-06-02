@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using FluentAssertions;
 using NBitcoin;
@@ -8,8 +9,9 @@ using Stratis.Bitcoin.Features.Miner.Interfaces;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Controllers;
 using Stratis.Bitcoin.Features.Wallet.Models;
-using Stratis.Bitcoin.IntegrationTests.Builders;
-using Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers;
+using Stratis.Bitcoin.IntegrationTests.Common;
+using Stratis.Bitcoin.IntegrationTests.Common.Builders;
+using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
 using static Stratis.Bitcoin.Features.Miner.PosMinting;
 
 namespace Stratis.Bitcoin.IntegrationTests
@@ -40,7 +42,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         public ProofOfStakeSteps(string displayName) 
         {
             this.sharedSteps = new SharedSteps();
-            this.nodeGroupBuilder = new NodeGroupBuilder(displayName);
+            this.nodeGroupBuilder = new NodeGroupBuilder(Path.Combine(this.GetType().Name, displayName));
         }
 
         public void GenerateCoins()

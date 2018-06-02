@@ -56,7 +56,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             this.ruleContext.BlockValidationContext = new BlockValidationContext();
             this.ruleContext.BlockValidationContext.Block = this.network.Consensus.ConsensusFactory.CreateBlock();
             this.ruleContext.BlockValidationContext.Block.Transactions.Add(this.network.Consensus.ConsensusFactory.CreateTransaction());
-            this.ruleContext.BlockValidationContext.Block.Transactions[0].Time = (uint) (PosConsensusValidator.DriftingBugFixTimestamp - 100);
+            this.ruleContext.BlockValidationContext.Block.Transactions[0].Time = (uint) (PosFutureDriftRule.DriftingBugFixTimestamp - 100);
             this.ruleContext.BlockValidationContext.ChainedHeader = this.concurrentChain.GetBlock(3);
 
             this.network.Consensus.LastPOWBlock = 12500;
@@ -77,7 +77,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             this.ruleContext.BlockValidationContext = new BlockValidationContext();
             this.ruleContext.BlockValidationContext.Block = this.network.Consensus.ConsensusFactory.CreateBlock();
             this.ruleContext.BlockValidationContext.Block.Transactions.Add(this.network.Consensus.ConsensusFactory.CreateTransaction());
-            this.ruleContext.BlockValidationContext.Block.Transactions[0].Time = (uint)(PosConsensusValidator.DriftingBugFixTimestamp + 100);
+            this.ruleContext.BlockValidationContext.Block.Transactions[0].Time = (uint)(PosFutureDriftRule.DriftingBugFixTimestamp + 100);
             this.ruleContext.BlockValidationContext.ChainedHeader = this.concurrentChain.GetBlock(3);
 
             this.network.Consensus.LastPOWBlock = 12500;
@@ -102,7 +102,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             this.ruleContext.BlockValidationContext.Block = this.network.Consensus.ConsensusFactory.CreateBlock();
             this.ruleContext.BlockValidationContext.Block.Transactions.Add(this.network.Consensus.ConsensusFactory.CreateTransaction());
             this.ruleContext.BlockValidationContext.Block.Transactions.Add(this.network.Consensus.ConsensusFactory.CreateTransaction());
-            this.ruleContext.BlockValidationContext.Block.Transactions[0].Time = (uint)(PosConsensusValidator.DriftingBugFixTimestamp);
+            this.ruleContext.BlockValidationContext.Block.Transactions[0].Time = (uint)(PosFutureDriftRule.DriftingBugFixTimestamp);
 
             this.ruleContext.BlockValidationContext.ChainedHeader = this.concurrentChain.GetBlock(3);
             
@@ -129,7 +129,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             this.ruleContext.BlockValidationContext.Block = this.network.Consensus.ConsensusFactory.CreateBlock();
             this.ruleContext.BlockValidationContext.Block.Transactions.Add(this.network.Consensus.ConsensusFactory.CreateTransaction());
             this.ruleContext.BlockValidationContext.Block.Transactions.Add(this.network.Consensus.ConsensusFactory.CreateTransaction());
-            this.ruleContext.BlockValidationContext.Block.Transactions[0].Time = (uint)(PosConsensusValidator.DriftingBugFixTimestamp);
+            this.ruleContext.BlockValidationContext.Block.Transactions[0].Time = (uint)(PosFutureDriftRule.DriftingBugFixTimestamp);
 
             this.ruleContext.BlockValidationContext.ChainedHeader = this.concurrentChain.GetBlock(3);
             this.network.Consensus.LastPOWBlock = 12500;
