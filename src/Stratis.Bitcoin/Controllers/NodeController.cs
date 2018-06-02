@@ -17,6 +17,9 @@ using System.Threading.Tasks;
 
 namespace Stratis.Bitcoin.Controllers
 {
+    /// <summary>
+    /// Provides methods that interact with the full node.
+    /// </summary>
     [Route("api/[controller]")]
     public class NodeController : Controller
     {
@@ -38,10 +41,13 @@ namespace Stratis.Bitcoin.Controllers
         /// <summary>The connection manager.</summary>
         private readonly IConnectionManager connectionManager;
 
+        /// <summary>Thread safe access to the best chain of block headers from genesis.</summary>
         private readonly ConcurrentChain chain;
 
+        /// <summary>An interface implementation used to retrieve the network's difficulty target.</summary>
         private readonly INetworkDifficulty networkDifficulty;
 
+        /// <summary>An interface implementaiton used to retrieve a pooled transaction.</summary>
         private readonly IPooledTransaction pooledTransaction;
 
         /// <summary>An interface implementation used to retrieve unspent transactions from a pooled source.</summary>
@@ -50,8 +56,9 @@ namespace Stratis.Bitcoin.Controllers
         /// <summary>An interface implementation used to retrieve unspent transactions.</summary>
         private readonly IGetUnspentTransaction getUnspentTransaction;
 
-        // Not readonly because of ValidateAddress
-        private Network network;
+        /// <summary>Specification of the network the node runs on.</summary>
+        private Network network; // Not readonly because of ValidateAddress
+
 
         public NodeController(IFullNode fullNode, ILoggerFactory loggerFactory, 
             IDateTimeProvider dateTimeProvider, IChainState chainState, 
@@ -78,11 +85,12 @@ namespace Stratis.Bitcoin.Controllers
         /// <summary>
         /// Returns some general information about the status of the underlying node.
         /// </summary>
-        /// <returns></returns>
+        /// <returns>A <see cref="StatusModel"/> with information about the node.</returns>
         [HttpGet]
         [Route("status")]
         public IActionResult Status()
         {
+            // Output has been merged with RPC's GetInfo() since they provided similar functionality. 
             StatusModel model = new StatusModel
             {
                 Version = this.fullNode.Version?.ToString() ?? "0",
@@ -139,22 +147,24 @@ namespace Stratis.Bitcoin.Controllers
         /// Gets the block header of the block identified by the hash.
         /// API implementation of RPC call.
         /// </summary>
-        /// <param name="request">A <see cref="GetBlockHeaderRequestModel"/> formatted request containing a block hash.</param>
-        /// <returns>Json formatted <see cref="BlockHeaderModel"/>. Returns <see cref="IActionResult"/> formatted error if fails.</returns>
+        /// <param name="hash">The block hash.</param>
+        /// <param name="isJsonFormat"><c>True to return Json formatted block header.</c></param>
+        /// <returns>Json formatted <see cref="BlockHeaderModel"/>. <c>null</c> if block not found. Returns <see cref="IActionResult"/> formatted error if fails.</returns>
+        /// <exception cref="NotImplementedException">Thrown if isJsonFormat = false</exception>"
+        /// <exception cref="ArgumentException">Thrown if hash is empty.</exception>
+        /// <exception cref="ArgumentNullException">Thrown if logger is not provided.</exception>
+        /// <remarks>Binary serialization is not supported with this method.</remarks>
         [Route("getblockheader")]
         [HttpGet]
-        public IActionResult GetBlockHeader(GetBlockHeaderRequestModel request)
+        public IActionResult GetBlockHeader([FromQuery] string hash, bool isJsonFormat = true)
         {
             try
             {
                 Guard.NotNull(this.logger, nameof(this.logger));
-                if (string.IsNullOrEmpty(request.hash))
-                {
-                    throw new ArgumentNullException("hash");
-                }
+                Guard.NotEmpty(hash, nameof(hash));
 
-                this.logger.LogDebug("GetBlockHeader {0}", request.hash);
-                if (!request.isJsonFormat)
+                this.logger.LogDebug("GetBlockHeader {0}", hash);
+                if (!isJsonFormat)
                 {
                     this.logger.LogError("Binary serialization is not supported'{0}'.", nameof(GetBlockHeader));
                     throw new NotImplementedException();
@@ -163,7 +173,7 @@ namespace Stratis.Bitcoin.Controllers
                 BlockHeaderModel model = null;
                 if (this.chain != null)
                 {
-                    BlockHeader blockHeader = this.chain.GetBlock(uint256.Parse(request.hash))?.Header;
+                    BlockHeader blockHeader = this.chain.GetBlock(uint256.Parse(hash))?.Header;
                     if (blockHeader != null)
                     {
                         model = new BlockHeaderModel(blockHeader);
@@ -183,30 +193,34 @@ namespace Stratis.Bitcoin.Controllers
         /// Gets a raw, possibly pooled, transaction from the full node. 
         /// API implementation of RPC call. 
         /// </summary>
-        /// <param name="request">A <see cref="GetRawTransactionRequestModel"/> formated request containing a txid and verbose indicator.</param>
-        /// <returns>Json formatted <see cref="TransactionBriefModel"/> or <see cref="TransactionVerboseModel"/>. Returns <see cref="IActionResult"/> formatted error if otherwise fails.</returns>
+        /// <param name="txid">The transaction hash.</param>
+        /// <param name="verbose"><c>True if <see cref="TransactionVerboseModel"/> is wanted.</c></param>
+        /// <returns>Json formatted <see cref="TransactionBriefModel"/> or <see cref="TransactionVerboseModel"/>. <c>null</c> if transaction not found. Returns <see cref="IActionResult"/> formatted error if otherwise fails.</returns>
+        /// <exception cref="ArgumentNullException">Thrown if fullNode, network, or chain are not available.</exception>
+        /// <exception cref="ArgumentException">Thrown if trxid is empty or not a valid<see cref="uint256"/>.</exception>
         [Route("getrawtransaction")]
         [HttpGet]
-        public async Task<IActionResult> GetRawTransactionAsync(GetRawTransactionRequestModel request)
+        public async Task<IActionResult> GetRawTransactionAsync([FromQuery] string trxid, bool verbose = false)
         {
             try
             {
                 Guard.NotNull(this.fullNode, nameof(this.fullNode));
                 Guard.NotNull(this.network, nameof(this.network));
                 Guard.NotNull(this.chain, nameof(this.chain));
+                Guard.NotEmpty(trxid, nameof(trxid));
 
                 uint256 txid;
-                if (!uint256.TryParse(request.txid, out txid))
+                if (!uint256.TryParse(trxid, out txid))
                 {
-                    throw new ArgumentException(nameof(request.txid));
+                    throw new ArgumentException(nameof(trxid));
                 }
 
-                // First tries to find a pooledTransaction. If can't, will grab it from the blockstore if it exists. 
-                Transaction trx = this.pooledTransaction != null ? await this.pooledTransaction.GetTransaction(txid) : null;
+                // First tries to find a pooledTransaction. If can't, will retrieve it from the blockstore if it exists. 
+                Transaction trx = this.pooledTransaction != null ? await this.pooledTransaction.GetTransaction(txid).ConfigureAwait(false) : null;
                 if (trx == null)
                 {
                     IBlockStore blockStore = this.fullNode.NodeFeature<IBlockStore>();
-                    trx = blockStore != null ? await blockStore.GetTrxAsync(txid) : null;
+                    trx = blockStore != null ? await blockStore.GetTrxAsync(txid).ConfigureAwait(false) : null;
                 }
 
                 if (trx == null)
@@ -214,9 +228,9 @@ namespace Stratis.Bitcoin.Controllers
                     return this.Json(null);
                 }
 
-                if (request.verbose)
+                if (verbose)
                 {
-                    ChainedHeader block = await GetTransactionBlockAsync(txid, this.fullNode, this.chain);
+                    ChainedHeader block = await GetTransactionBlockAsync(txid, this.fullNode, this.chain).ConfigureAwait(false);
                     return this.Json(new TransactionVerboseModel(trx, this.network, block, this.chainState?.ConsensusTip));
                 }
                 else
@@ -235,40 +249,38 @@ namespace Stratis.Bitcoin.Controllers
         /// Returns information about a bech32 or base58 bitcoin address.
         /// API implementation of RPC call.
         /// </summary>
-        /// <param name="request">A <see cref="ValidateAddressRequestModel"/> containing a bech32 or base58 BitcoinAddress to validate.</param>
+        /// <param name="address">A valid address in string format.</param>
         /// <returns>Json formatted <see cref="ValidatedAddress"/> containing a boolean indicating address validity. Returns <see cref="IActionResult"/> formatted error if fails.</returns>
-        /// <exception cref="ArgumentNullException">Thrown if address provided is null or empty.</exception>
+        /// <exception cref="ArgumentException">Thrown if address provided is empty.</exception>
+        /// <exception cref="ArgumentNullException">Thrown if network is not provided.</exception>
         [Route("validateaddress")]
         [HttpGet]
-        public IActionResult ValidateAddress(ValidateAddressRequestModel request)
+        public IActionResult ValidateAddress([FromQuery] string address)
         {
             try
             {
                 Guard.NotNull(this.network, nameof(this.network));
-                if (string.IsNullOrEmpty(request.address))
-                {
-                    throw new ArgumentNullException("address");
-                }
+                Guard.NotEmpty(address, nameof(address));
 
                 ValidatedAddress res = new ValidatedAddress();
                 res.IsValid = false;
                 // P2WPKH
-                if (BitcoinWitPubKeyAddress.IsValid(request.address, ref this.network, out Exception _))
+                if (BitcoinWitPubKeyAddress.IsValid(address, ref this.network, out Exception _))
                 {
                     res.IsValid = true;
                 }
                 // P2WSH
-                else if (BitcoinWitScriptAddress.IsValid(request.address, ref this.network, out Exception _))
+                else if (BitcoinWitScriptAddress.IsValid(address, ref this.network, out Exception _))
                 {
                     res.IsValid = true;
                 }
                 // P2PKH
-                else if (BitcoinPubKeyAddress.IsValid(request.address, ref this.network))
+                else if (BitcoinPubKeyAddress.IsValid(address, ref this.network))
                 {
                     res.IsValid = true;
                 }
                 // P2SH
-                else if (BitcoinScriptAddress.IsValid(request.address, ref this.network))
+                else if (BitcoinScriptAddress.IsValid(address, ref this.network))
                 {
                     res.IsValid = true;
                 }
@@ -283,40 +295,39 @@ namespace Stratis.Bitcoin.Controllers
         }
 
         /// <summary>
-        /// Gets the unspent outputs of a transaction id and vout number.
+        /// Gets the unspent outputs given a transaction id and vout number.
         /// API implementation of RPC call.
         /// </summary>
-        /// <param name="request">A <see cref="GetTxOutRequestModel"/> formatted request containing txid, vout, and if should check memPool.</param>
-        /// <returns>Json formatted <see cref="GetTxOutModel"/>. Returns <see cref="IActionResult"/> formatted error if fails.</returns>
+        /// <param name="trxid">The transaction ID as hash string.</param>
+        /// <param name="vout">The vout to get unspent outputs.</param>
+        /// <param name="includeMempool">Boolean to look in Mempool.</param>
+        /// <returns>Json formatted <see cref="GetTxOutModel"/>. <c>null</c> if no unspent outputs given parameters. Returns <see cref="IActionResult"/> formatted error if fails.</returns>
+        /// <exception cref="ArgumentNullException">Thrown if network or chain not provided.</exception>
+        /// <exception cref="ArgumentException">Thrown if trxid is empty or not a valid <see cref="uint256"/></exception>
         [Route("gettxout")]
         [HttpGet]
-        public async Task<IActionResult> GetTxOutAsync(GetTxOutRequestModel request)
+        public async Task<IActionResult> GetTxOutAsync([FromQuery] string trxid, uint vout = 0, bool includeMemPool = true)
         {
             try
             {
                 Guard.NotNull(this.network, nameof(this.network));
                 Guard.NotNull(this.chain, nameof(this.chain));
-                uint256 trxid;
+                Guard.NotEmpty(trxid, nameof(trxid));
 
-                if (!uint256.TryParse(request.txid, out trxid))
+                uint256 txid;
+                if (!uint256.TryParse(trxid, out txid))
                 {
-                    throw new ArgumentException(nameof(request.txid));
-                }
-
-                uint vout;
-                if (!uint.TryParse(request.vout, out vout))
-                {
-                    throw new ArgumentException(nameof(request.vout));
+                    throw new ArgumentException(nameof(trxid));
                 }
 
                 UnspentOutputs unspentOutputs = null;
-                if (request.includeMemPool)
+                if (includeMemPool)
                 {
-                    unspentOutputs = this.pooledGetUnspentTransaction != null ? await this.pooledGetUnspentTransaction.GetUnspentTransactionAsync(trxid) : null;
+                    unspentOutputs = this.pooledGetUnspentTransaction != null ? await this.pooledGetUnspentTransaction.GetUnspentTransactionAsync(txid).ConfigureAwait(false) : null;
                 }
                 else
                 {
-                    unspentOutputs = this.getUnspentTransaction != null ? await this.getUnspentTransaction.GetUnspentTransactionAsync(trxid) : null;
+                    unspentOutputs = this.getUnspentTransaction != null ? await this.getUnspentTransaction.GetUnspentTransactionAsync(txid).ConfigureAwait(false) : null;
                 }
 
                 if (unspentOutputs == null)
@@ -334,9 +345,9 @@ namespace Stratis.Bitcoin.Controllers
         }
 
         /// <summary>
-        /// Trigger a shoutdown of the current running node.
+        /// Triggers a shutdown of the currently running node.
         /// </summary>
-        /// <returns></returns>
+        /// <returns><see cref="OkResult"/></returns>
         [HttpPost]
         [Route("shutdown")]
         [Route("stop")]
@@ -344,9 +355,10 @@ namespace Stratis.Bitcoin.Controllers
         {
             if (this.fullNode != null)
             {
-                // start the node shutdown process
+                // Start the node shutdown process.
                 this.fullNode.Dispose();
             }
+
             return this.Ok();
         }
 
@@ -355,16 +367,18 @@ namespace Stratis.Bitcoin.Controllers
         /// This function is used by other methods in this class and not explicitly by RPC/API.
         /// </summary>
         /// <param name="trxid">A valid uint256 hash</param>
-        /// <param name="fullNode">The full node. Used to access blockstore.</param>
-        /// <param name="chain">The full node's chain. Used to get block.</param>
+        /// <param name="fullNode">The full node. Used to access <see cref="IBlockStore"/>.</param>
+        /// <param name="chain">The full node's chain. Used to get <see cref="ChainedHeader"/> block.</param>
         /// <returns>A <see cref="ChainedHeader"/> for the given transaction hash. Returns <c>null</c> if fails.</returns>
+        /// <exception cref="ArgumentNullException">Thrown if fullnode is not provided.</exception>
         internal static async Task<ChainedHeader> GetTransactionBlockAsync(uint256 trxid,
             IFullNode fullNode, ChainBase chain)
         {
             Guard.NotNull(fullNode, nameof(fullNode));
+
             ChainedHeader block = null;
             IBlockStore blockStore = fullNode.NodeFeature<IBlockStore>();
-            uint256 blockid = blockStore != null ? await blockStore.GetTrxBlockIdAsync(trxid) : null;
+            uint256 blockid = blockStore != null ? await blockStore.GetTrxBlockIdAsync(trxid).ConfigureAwait(false) : null;
             if (blockid != null)
             {
                 block = chain?.GetBlock(blockid);
@@ -374,9 +388,9 @@ namespace Stratis.Bitcoin.Controllers
         }
 
         /// <summary>
-        /// Gets the current network difficulty. 
+        /// Retrieves the difficulty target of the full node's network. 
         /// </summary>
-        /// <param name="networkDifficulty">The full node's network difficulty.</param>
+        /// <param name="networkDifficulty">The network difficulty interface.<param>
         /// <returns>A network difficulty <see cref="Target"/>. Returns <c>null</c> if fails.</returns>
         internal static Target GetNetworkDifficulty(INetworkDifficulty networkDifficulty = null)
         {

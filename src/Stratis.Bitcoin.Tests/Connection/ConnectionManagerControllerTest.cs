@@ -38,13 +38,10 @@ namespace Stratis.Bitcoin.Tests.Controllers
         [Fact]
         public void AddNode_InvalidCommand_ThrowsArgumentException()
         {
-            AddNodeRequestModel request = new AddNodeRequestModel
-            {
-                Endpoint = "0.0.0.0",
-                Command = "notarealcommand"
-            };
+            string endpoint = "0.0.0.0";
+            string command = "notarealcommand";
 
-            IActionResult result = this.controller.AddNode(request);
+            IActionResult result = this.controller.AddNodeAPI(endpoint, command);
 
             ErrorResult errorResult = Assert.IsType<ErrorResult>(result);
             ErrorResponse errorResponse = Assert.IsType<ErrorResponse>(errorResult.Value);
@@ -57,13 +54,10 @@ namespace Stratis.Bitcoin.Tests.Controllers
         [Fact]
         public void AddNode_InvalidEndpoint_ThrowsFormatException()
         {
-            AddNodeRequestModel request = new AddNodeRequestModel
-            {
-                Endpoint = "a.b.c.d",
-                Command = "onetry"
-            };
+            string endpoint = "a.b.c.d";
+            string command = "onetry";
 
-            IActionResult result = this.controller.AddNode(request);
+            IActionResult result = this.controller.AddNodeAPI(endpoint, command);
 
             ErrorResult errorResult = Assert.IsType<ErrorResult>(result);
             ErrorResponse errorResponse = Assert.IsType<ErrorResponse>(errorResult.Value);
@@ -76,13 +70,10 @@ namespace Stratis.Bitcoin.Tests.Controllers
         [Fact]
         public void AddNode_ValidCommand_ReturnsTrue()
         {
-            AddNodeRequestModel request = new AddNodeRequestModel
-            {
-                Endpoint = "0.0.0.0",
-                Command = "remove"
-            };
+            string endpoint = "0.0.0.0";
+            string command = "remove";
 
-            var json = (JsonResult)this.controller.AddNode(request);
+            var json = (JsonResult)this.controller.AddNodeAPI(endpoint, command);
 
             Assert.True((bool)json.Value);
         }

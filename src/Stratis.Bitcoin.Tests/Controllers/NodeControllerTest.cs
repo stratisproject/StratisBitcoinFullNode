@@ -90,13 +90,10 @@ namespace Stratis.Bitcoin.Tests.Controllers
         [Fact]
         public async Task GetRawTransactionAsync_BadTransactionID_ThrowsArgumentExceptionAsync()
         {
-            GetRawTransactionRequestModel request = new GetRawTransactionRequestModel
-            {
-                txid = "abcd1234",
-                verbose = false
-            };
+            string txid = "abcd1234";
+            bool verbose = false;
             
-            IActionResult result = await this.controller.GetRawTransactionAsync(request).ConfigureAwait(false);
+            IActionResult result = await this.controller.GetRawTransactionAsync(txid,verbose).ConfigureAwait(false);
 
             ErrorResult errorResult = Assert.IsType<ErrorResult>(result);
             ErrorResponse errorResponse = Assert.IsType<ErrorResponse>(errorResult.Value);
@@ -123,13 +120,10 @@ namespace Stratis.Bitcoin.Tests.Controllers
                 this.dateTimeProvider.Object, this.chainState.Object, this.nodeSettings,
                 this.connectionManager.Object, this.chain, this.network, this.pooledTransaction.Object,
                 this.pooledGetUnspentTransaction.Object, this.getUnspentTransaction.Object, this.networkDifficulty.Object);
-            GetRawTransactionRequestModel request = new GetRawTransactionRequestModel
-            {
-                txid = txId.ToString(),
-                verbose = false
-            };
-
-            var json = (JsonResult)await this.controller.GetRawTransactionAsync(request).ConfigureAwait(false);
+            string txid = txId.ToString();
+            bool verbose = false;
+            
+            var json = (JsonResult)await this.controller.GetRawTransactionAsync(txid, verbose).ConfigureAwait(false);
 
             Assert.Null(json.Value);
             this.pooledTransaction.Verify();
@@ -152,13 +146,10 @@ namespace Stratis.Bitcoin.Tests.Controllers
                 this.dateTimeProvider.Object, this.chainState.Object, this.nodeSettings,
                 this.connectionManager.Object, this.chain, this.network, this.pooledTransaction.Object,
                 this.pooledGetUnspentTransaction.Object, this.getUnspentTransaction.Object, this.networkDifficulty.Object);
-            GetRawTransactionRequestModel request = new GetRawTransactionRequestModel
-            {
-                txid = txId.ToString(),
-                verbose = false
-            };
+            string txid = txId.ToString();
+            bool verbose = false;
 
-            var json = (JsonResult)await this.controller.GetRawTransactionAsync(request).ConfigureAwait(false);
+            var json = (JsonResult)await this.controller.GetRawTransactionAsync(txid, verbose).ConfigureAwait(false);
             TransactionBriefModel resultModel = (TransactionBriefModel)json.Value;
 
             Assert.NotNull(json);
@@ -180,12 +171,9 @@ namespace Stratis.Bitcoin.Tests.Controllers
                 this.dateTimeProvider.Object, this.chainState.Object, this.nodeSettings,
                 this.connectionManager.Object, this.chain, this.network, this.pooledTransaction.Object,
                 this.pooledGetUnspentTransaction.Object, this.getUnspentTransaction.Object, this.networkDifficulty.Object);
-            GetRawTransactionRequestModel request = new GetRawTransactionRequestModel
-            {
-                txid = txId.ToString()
-            };
+            string txid = txId.ToString();
 
-            var json = (JsonResult) await this.controller.GetRawTransactionAsync(request).ConfigureAwait(false);
+            var json = (JsonResult) await this.controller.GetRawTransactionAsync(txid).ConfigureAwait(false);
             TransactionBriefModel resultModel = (TransactionBriefModel)json.Value;
 
             Assert.NotNull(resultModel);
@@ -207,13 +195,10 @@ namespace Stratis.Bitcoin.Tests.Controllers
                 this.dateTimeProvider.Object, this.chainState.Object, this.nodeSettings,
                 this.connectionManager.Object, this.chain, this.network, null,
                 this.pooledGetUnspentTransaction.Object, this.getUnspentTransaction.Object, this.networkDifficulty.Object);
-            GetRawTransactionRequestModel request = new GetRawTransactionRequestModel
-            {
-                txid = txId.ToString(),
-                verbose = false
-            };
+            string txid = txId.ToString();
+            bool verbose = false;
 
-            var json = (JsonResult)await this.controller.GetRawTransactionAsync(request).ConfigureAwait(false);
+            var json = (JsonResult)await this.controller.GetRawTransactionAsync(txid, verbose).ConfigureAwait(false);
             TransactionBriefModel resultModel = (TransactionBriefModel)json.Value;
 
             Assert.NotNull(resultModel);
@@ -231,13 +216,10 @@ namespace Stratis.Bitcoin.Tests.Controllers
                 this.dateTimeProvider.Object, this.chainState.Object, this.nodeSettings,
                 this.connectionManager.Object, this.chain, this.network, null,
                 this.pooledGetUnspentTransaction.Object, this.getUnspentTransaction.Object, this.networkDifficulty.Object);
-            GetRawTransactionRequestModel request = new GetRawTransactionRequestModel
-            {
-                txid = txId.ToString(),
-                verbose = false
-            };
+            string txid = txId.ToString();
+            bool verbose = false;
 
-            var json = (JsonResult)await this.controller.GetRawTransactionAsync(request).ConfigureAwait(false);
+            var json = (JsonResult)await this.controller.GetRawTransactionAsync(txid, verbose).ConfigureAwait(false);
 
             Assert.Null(json.Value);
             this.fullNode.Verify();
@@ -262,13 +244,10 @@ namespace Stratis.Bitcoin.Tests.Controllers
                 this.dateTimeProvider.Object, this.chainState.Object, this.nodeSettings,
                 this.connectionManager.Object, this.chain, this.network, this.pooledTransaction.Object,
                 this.pooledGetUnspentTransaction.Object, this.getUnspentTransaction.Object, this.networkDifficulty.Object);
-            GetRawTransactionRequestModel request = new GetRawTransactionRequestModel
-            {
-                txid = txId.ToString(),
-                verbose = true
-            };
+            string txid = txId.ToString();
+            bool verbose = true;
 
-            var json = (JsonResult)await this.controller.GetRawTransactionAsync(request).ConfigureAwait(false);
+            var json = (JsonResult)await this.controller.GetRawTransactionAsync(txid, verbose).ConfigureAwait(false);
             TransactionVerboseModel resultModel = (TransactionVerboseModel)json.Value;
 
             Assert.NotNull(resultModel);
@@ -315,13 +294,10 @@ namespace Stratis.Bitcoin.Tests.Controllers
                 this.dateTimeProvider.Object, this.chainState.Object, this.nodeSettings,
                 this.connectionManager.Object, this.chain, this.network, this.pooledTransaction.Object,
                 this.pooledGetUnspentTransaction.Object, this.getUnspentTransaction.Object, this.networkDifficulty.Object);
-            GetRawTransactionRequestModel request = new GetRawTransactionRequestModel
-            {
-                txid = txId.ToString(),
-                verbose = true
-            };
+            string txid = txId.ToString();
+            bool verbose = true;
 
-            var json = (JsonResult)await this.controller.GetRawTransactionAsync(request).ConfigureAwait(false);
+            var json = (JsonResult)await this.controller.GetRawTransactionAsync(txid, verbose).ConfigureAwait(false);
             TransactionVerboseModel resultModel = (TransactionVerboseModel)json.Value;
 
             Assert.NotNull(resultModel);
@@ -345,13 +321,10 @@ namespace Stratis.Bitcoin.Tests.Controllers
                 this.dateTimeProvider.Object, this.chainState.Object, this.nodeSettings,
                 this.connectionManager.Object, this.chain, this.network, this.pooledTransaction.Object,
                 this.pooledGetUnspentTransaction.Object, this.getUnspentTransaction.Object, this.networkDifficulty.Object);
-            GetRawTransactionRequestModel request = new GetRawTransactionRequestModel
-            {
-                txid = txId.ToString(),
-                verbose = true
-            };
+            string txid = txId.ToString();
+            bool verbose = true;
 
-            var json = (JsonResult)await this.controller.GetRawTransactionAsync(request).ConfigureAwait(false);
+            var json = (JsonResult)await this.controller.GetRawTransactionAsync(txid, verbose).ConfigureAwait(false);
             TransactionVerboseModel resultModel = (TransactionVerboseModel)json.Value;
 
             Assert.NotNull(resultModel);
@@ -365,15 +338,11 @@ namespace Stratis.Bitcoin.Tests.Controllers
         [Fact]
         public async Task GetTxOutAsync_InvalidTxID_ThrowsArgumentExceptionAsync()
         {
+            string txid = "abcd1234";
+            uint vout = 0;
+            bool includeMemPool = false;            
 
-            GetTxOutRequestModel request = new GetTxOutRequestModel
-            {
-                txid = "abcd1234",
-                vout = "0",
-                includeMemPool = false
-            };
-
-            IActionResult result = await this.controller.GetTxOutAsync(request).ConfigureAwait(false);
+            IActionResult result = await this.controller.GetTxOutAsync(txid, vout, includeMemPool).ConfigureAwait(false);
 
             ErrorResult errorResult = Assert.IsType<ErrorResult>(result);
             ErrorResponse errorResponse = Assert.IsType<ErrorResponse>(errorResult.Value);
@@ -392,13 +361,9 @@ namespace Stratis.Bitcoin.Tests.Controllers
             this.pooledGetUnspentTransaction.Setup(s => s.GetUnspentTransactionAsync(txId))
                 .ReturnsAsync(unspentOutputs)
                 .Verifiable();
-            
-            GetTxOutRequestModel request = new GetTxOutRequestModel
-            {
-                txid = txId.ToString()
-            };
+            string txid = txId.ToString();            
 
-            var json = (JsonResult) await this.controller.GetTxOutAsync(request).ConfigureAwait(false);
+            var json = (JsonResult) await this.controller.GetTxOutAsync(txid).ConfigureAwait(false);
             GetTxOutModel resultModel = (GetTxOutModel)json.Value;
 
             this.getUnspentTransaction.Verify();
@@ -416,14 +381,11 @@ namespace Stratis.Bitcoin.Tests.Controllers
             this.getUnspentTransaction.Setup(s => s.GetUnspentTransactionAsync(txId))
                 .ReturnsAsync((UnspentOutputs)null)
                 .Verifiable();
-            GetTxOutRequestModel request = new GetTxOutRequestModel
-            {
-                txid = txId.ToString(),
-                vout = "0",
-                includeMemPool = false
-            };
+            string txid = txId.ToString();
+            uint vout = 0;
+            bool includeMemPool = false;
             
-            var json = (JsonResult)await this.controller.GetTxOutAsync(request).ConfigureAwait(false);
+            var json = (JsonResult)await this.controller.GetTxOutAsync(txid, vout, includeMemPool).ConfigureAwait(false);
 
             Assert.Null(json.Value);
             this.getUnspentTransaction.Verify();
@@ -437,14 +399,11 @@ namespace Stratis.Bitcoin.Tests.Controllers
                 this.dateTimeProvider.Object, this.chainState.Object, this.nodeSettings,
                 this.connectionManager.Object, this.chain, this.network, this.pooledTransaction.Object,
                 this.pooledGetUnspentTransaction.Object, null, this.networkDifficulty.Object);
-            GetTxOutRequestModel request = new GetTxOutRequestModel
-            {
-                txid = txId.ToString(),
-                vout = "0",
-                includeMemPool = false
-            };
+            string txid = txId.ToString();
+            uint vout = 0;
+            bool includeMemPool = false;
 
-            var json = (JsonResult)await this.controller.GetTxOutAsync(request).ConfigureAwait(false);
+            var json = (JsonResult)await this.controller.GetTxOutAsync(txid, vout, includeMemPool).ConfigureAwait(false);
 
             Assert.Null(json.Value);
         }
@@ -460,14 +419,11 @@ namespace Stratis.Bitcoin.Tests.Controllers
                 this.dateTimeProvider.Object, this.chainState.Object, this.nodeSettings,
                 this.connectionManager.Object, this.chain, this.network, this.pooledTransaction.Object,
                 this.pooledGetUnspentTransaction.Object, this.getUnspentTransaction.Object, this.networkDifficulty.Object);
-            GetTxOutRequestModel request = new GetTxOutRequestModel
-            {
-                txid = txId.ToString(),
-                vout = "0",
-                includeMemPool = true
-            };
+            string txid = txId.ToString();
+            uint vout = 0;
+            bool includeMemPool = true;
 
-            var json = (JsonResult)await this.controller.GetTxOutAsync(request).ConfigureAwait(true);
+            var json = (JsonResult)await this.controller.GetTxOutAsync(txid, vout, includeMemPool).ConfigureAwait(true);
 
             Assert.Null(json.Value);
             this.pooledGetUnspentTransaction.Verify();
@@ -481,14 +437,11 @@ namespace Stratis.Bitcoin.Tests.Controllers
                 this.dateTimeProvider.Object, this.chainState.Object, this.nodeSettings,
                 this.connectionManager.Object, this.chain, this.network, this.pooledTransaction.Object,
                 null, this.getUnspentTransaction.Object, this.networkDifficulty.Object);
-            GetTxOutRequestModel request = new GetTxOutRequestModel
-            {
-                txid = txId.ToString(),
-                vout = "0",
-                includeMemPool = true
-            };
+            string txid = txId.ToString();
+            uint vout = 0;
+            bool includeMemPool = true;
 
-            var json = (JsonResult)await this.controller.GetTxOutAsync(request).ConfigureAwait(false);
+            var json = (JsonResult)await this.controller.GetTxOutAsync(txid, vout, includeMemPool).ConfigureAwait(false);
 
             Assert.Null(json.Value);
         }
@@ -506,14 +459,11 @@ namespace Stratis.Bitcoin.Tests.Controllers
                 this.dateTimeProvider.Object, this.chainState.Object, this.nodeSettings,
                 this.connectionManager.Object, this.chain, this.network, this.pooledTransaction.Object,
                 this.pooledGetUnspentTransaction.Object, this.getUnspentTransaction.Object, this.networkDifficulty.Object);
-            GetTxOutRequestModel request = new GetTxOutRequestModel
-            {
-                txid = txId.ToString(),
-                vout = "0",
-                includeMemPool = false
-            };
+            string txid = txId.ToString();
+            uint vout = 0;
+            bool includeMemPool = false;
 
-            var json = (JsonResult)await this.controller.GetTxOutAsync(request).ConfigureAwait(false);
+            var json = (JsonResult)await this.controller.GetTxOutAsync(txid, vout, includeMemPool).ConfigureAwait(false);
             GetTxOutModel resultModel = (GetTxOutModel)json.Value;
 
             this.getUnspentTransaction.Verify();
@@ -537,14 +487,11 @@ namespace Stratis.Bitcoin.Tests.Controllers
                 this.dateTimeProvider.Object, this.chainState.Object, this.nodeSettings,
                 this.connectionManager.Object, this.chain, this.network, this.pooledTransaction.Object,
                 this.pooledGetUnspentTransaction.Object, this.getUnspentTransaction.Object, this.networkDifficulty.Object);
-            GetTxOutRequestModel request = new GetTxOutRequestModel
-            {
-                txid = txId.ToString(),
-                vout = "0",
-                includeMemPool = true
-            };
+            string txid = txId.ToString();
+            uint vout = 0;
+            bool includeMemPool = true;
 
-            var json = (JsonResult)await this.controller.GetTxOutAsync(request).ConfigureAwait(false);
+            var json = (JsonResult)await this.controller.GetTxOutAsync(txid, vout, includeMemPool).ConfigureAwait(false);
             GetTxOutModel resultModel = (GetTxOutModel)json.Value;
 
             this.pooledGetUnspentTransaction.Verify();
@@ -564,14 +511,11 @@ namespace Stratis.Bitcoin.Tests.Controllers
             this.getUnspentTransaction.Setup(s => s.GetUnspentTransactionAsync(txId))
                 .ReturnsAsync(unspentOutputs)
                 .Verifiable();
-            GetTxOutRequestModel request = new GetTxOutRequestModel
-            {
-                txid = txId.ToString(),
-                vout = "13",
-                includeMemPool = false
-            };
+            string txid = txId.ToString();
+            uint vout = 13;
+            bool includeMemPool = false;
 
-            var json = (JsonResult)await this.controller.GetTxOutAsync(request).ConfigureAwait(false);
+            var json = (JsonResult)await this.controller.GetTxOutAsync(txid, vout, includeMemPool).ConfigureAwait(false);
             GetTxOutModel resultModel = (GetTxOutModel)json.Value;
 
             this.getUnspentTransaction.Verify();
@@ -591,14 +535,11 @@ namespace Stratis.Bitcoin.Tests.Controllers
             this.pooledGetUnspentTransaction.Setup(s => s.GetUnspentTransactionAsync(txId))
                 .ReturnsAsync(unspentOutputs)
                 .Verifiable();
-            GetTxOutRequestModel request = new GetTxOutRequestModel
-            {
-                txid = txId.ToString(),
-                vout = "13",
-                includeMemPool = true
-            };
+            string txid = txId.ToString();
+            uint vout = 13;
+            bool includeMemPool = true;
 
-            var json = (JsonResult)await this.controller.GetTxOutAsync(request).ConfigureAwait(false);
+            var json = (JsonResult)await this.controller.GetTxOutAsync(txid, vout, includeMemPool).ConfigureAwait(false);
             GetTxOutModel resultModel = (GetTxOutModel)json.Value;
 
             this.pooledGetUnspentTransaction.Verify();
@@ -612,13 +553,10 @@ namespace Stratis.Bitcoin.Tests.Controllers
         [Fact]
         public void GetBlockHeader_NotUsingJsonFormat_ThrowsNotImplementedException()
         {
-            GetBlockHeaderRequestModel request = new GetBlockHeaderRequestModel
-            {
-                hash = "1341323442",
-                isJsonFormat = false
-            };
+            string hash = "1341323442";
+            bool isJsonFormat = false;
 
-            IActionResult result = this.controller.GetBlockHeader(request);
+            IActionResult result = this.controller.GetBlockHeader(hash, isJsonFormat);
 
             ErrorResult errorResult = Assert.IsType<ErrorResult>(result);
             ErrorResponse errorResponse = Assert.IsType<ErrorResponse>(errorResult.Value);
@@ -632,17 +570,14 @@ namespace Stratis.Bitcoin.Tests.Controllers
         public void GetBlockHeader_ChainNull_ReturnsNull()
         {
             this.chain = null;
-            GetBlockHeaderRequestModel request = new GetBlockHeaderRequestModel
-            {
-                hash = "12341341545245",
-                isJsonFormat = true
-            };
+            string hash = "12341341545245";
+            bool isJsonFormat = true;
             this.controller = new NodeController(this.fullNode.Object, this.LoggerFactory.Object, 
                 this.dateTimeProvider.Object, this.chainState.Object, this.nodeSettings, 
                 this.connectionManager.Object, this.chain, this.network, this.pooledTransaction.Object, 
                 this.pooledGetUnspentTransaction.Object, this.getUnspentTransaction.Object, this.networkDifficulty.Object);
 
-            var json = (JsonResult)this.controller.GetBlockHeader(request);
+            var json = (JsonResult)this.controller.GetBlockHeader(hash, isJsonFormat);
 
             BlockHeaderModel resultModel = (BlockHeaderModel)json.Value;
             Assert.Null(resultModel);
@@ -653,13 +588,10 @@ namespace Stratis.Bitcoin.Tests.Controllers
         {
             var block = this.chain.GetBlock(2);
             var bits = GetBlockHeaderBits(block.Header);
-            GetBlockHeaderRequestModel request = new GetBlockHeaderRequestModel
-            {
-                hash = block.HashBlock.ToString(),
-                isJsonFormat = true
-            };
+            string hash = block.HashBlock.ToString();
+            bool isJsonFormat = true;
 
-            var json = (JsonResult)this.controller.GetBlockHeader(request);
+            var json = (JsonResult)this.controller.GetBlockHeader(hash, isJsonFormat);
             BlockHeaderModel resultModel = (BlockHeaderModel)json.Value;
 
             Assert.NotNull(resultModel);
@@ -674,13 +606,10 @@ namespace Stratis.Bitcoin.Tests.Controllers
         [Fact]
         public void GetBlockHeader_BlockHeaderNotFound_ReturnsNull()
         {
-            GetBlockHeaderRequestModel request = new GetBlockHeaderRequestModel
-            {
-                hash = new uint256(2562).ToString(),
-                isJsonFormat = true
-            };
+            string hash = new uint256(2562).ToString();
+            bool isJsonFormat = true;
 
-            var json = (JsonResult)this.controller.GetBlockHeader(request);
+            var json = (JsonResult)this.controller.GetBlockHeader(hash, isJsonFormat);
             BlockHeaderModel resultModel = (BlockHeaderModel)json.Value;
 
             Assert.Null(resultModel);
@@ -689,12 +618,9 @@ namespace Stratis.Bitcoin.Tests.Controllers
         [Fact]
         public void ValidateAddress_IsNotAValidBase58Address_ThrowsFormatException()
         {
-            ValidateAddressRequestModel request = new ValidateAddressRequestModel
-            {
-                address = "invalidaddress"
-            };
+            string address = "invalidaddress";
 
-            IActionResult result = this.controller.ValidateAddress(request);
+            IActionResult result = this.controller.ValidateAddress(address);
 
             ErrorResult errorResult = Assert.IsType<ErrorResult>(result);
             ErrorResponse errorResponse = Assert.IsType<ErrorResponse>(errorResult.Value);
@@ -708,13 +634,10 @@ namespace Stratis.Bitcoin.Tests.Controllers
         public void ValidateAddress_ValidAddressOfDifferentNetwork_ReturnsFalse()
         {
             // P2PKH
-            var address = new Key().PubKey.GetAddress(Network.Main);
-            ValidateAddressRequestModel request = new ValidateAddressRequestModel
-            {
-                address = address.ToString()
-            };
+            var pubkeyaddress = new Key().PubKey.GetAddress(Network.Main);
+            string address = pubkeyaddress.ToString();
 
-            var json = (JsonResult)this.controller.ValidateAddress(request);
+            var json = (JsonResult)this.controller.ValidateAddress(address);
             ValidatedAddress resultModel = (ValidatedAddress)json.Value;
 
             var isValid = resultModel.IsValid;
@@ -725,13 +648,10 @@ namespace Stratis.Bitcoin.Tests.Controllers
         public void ValidateAddress_ValidP2PKHAddress_ReturnsTrue()
         {
             // P2PKH
-            var address = new Key().PubKey.GetAddress(this.network);
-            ValidateAddressRequestModel request = new ValidateAddressRequestModel
-            {
-                address = address.ToString()
-            };
+            var pubkeyaddress = new Key().PubKey.GetAddress(this.network);
+            string address = pubkeyaddress.ToString();
 
-            var json = (JsonResult)this.controller.ValidateAddress(request);
+            var json = (JsonResult)this.controller.ValidateAddress(address);
             ValidatedAddress resultModel = (ValidatedAddress)json.Value;
 
             var isValid = resultModel.IsValid;
@@ -742,13 +662,10 @@ namespace Stratis.Bitcoin.Tests.Controllers
         public void ValidateAddress_ValidP2SHAddress_ReturnsTrue()
         {
             // P2SH
-            var address = new Key().ScriptPubKey.GetScriptAddress(this.network);
-            ValidateAddressRequestModel request = new ValidateAddressRequestModel
-            {
-                address = address.ToString()
-            };
+            var scriptaddress = new Key().ScriptPubKey.GetScriptAddress(this.network);
+            string address = scriptaddress.ToString();
 
-            var json = (JsonResult)this.controller.ValidateAddress(request);
+            var json = (JsonResult)this.controller.ValidateAddress(address);
             ValidatedAddress resultModel = (ValidatedAddress)json.Value;
 
             var isValid = resultModel.IsValid;
@@ -759,13 +676,10 @@ namespace Stratis.Bitcoin.Tests.Controllers
         public void ValidateAddress_ValidP2WPKHAddress_ReturnsTrue()
         {
             // P2WPKH
-            var address = new Key().PubKey.WitHash.GetAddress(this.network);
-            ValidateAddressRequestModel request = new ValidateAddressRequestModel
-            {
-                address = address.ToString()
-            };
+            var btcaddress = new Key().PubKey.WitHash.GetAddress(this.network);
+            string address = btcaddress.ToString();
 
-            var json = (JsonResult)this.controller.ValidateAddress(request);
+            var json = (JsonResult)this.controller.ValidateAddress(address);
             ValidatedAddress resultModel = (ValidatedAddress)json.Value;
 
             var isValid = resultModel.IsValid;
@@ -776,13 +690,10 @@ namespace Stratis.Bitcoin.Tests.Controllers
         public void ValidateAddress_ValidP2WSHAddress_ReturnsTrue()
         {
             // P2WSH
-            var address = new Key().PubKey.ScriptPubKey.WitHash.ScriptPubKey.GetWitScriptAddress(this.network);
-            ValidateAddressRequestModel request = new ValidateAddressRequestModel
-            {
-                address = address.ToString()
-            };
+            var scriptaddress = new Key().PubKey.ScriptPubKey.WitHash.ScriptPubKey.GetWitScriptAddress(this.network);
+            string address = scriptaddress.ToString();
 
-            var json = (JsonResult)this.controller.ValidateAddress(request);
+            var json = (JsonResult)this.controller.ValidateAddress(address);
             ValidatedAddress resultModel = (ValidatedAddress)json.Value;
 
             var isValid = resultModel.IsValid;

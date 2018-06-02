@@ -16,15 +16,16 @@ namespace Stratis.Bitcoin.Features.Api
         /// <returns>The Mvc builder</returns>
         public static IMvcBuilder AddControllers(this IMvcBuilder builder, IServiceCollection services)
         {
-            var controllerTypes = services.Where(s => s.ServiceType.GetTypeInfo().BaseType == typeof(Controller));
-            foreach (var controllerType in controllerTypes)
+            // Adds Controllers with API endpoints
+            System.Collections.Generic.IEnumerable<ServiceDescriptor> controllerTypes = services.Where(s => s.ServiceType.GetTypeInfo().BaseType == typeof(Controller));
+            foreach (ServiceDescriptor controllerType in controllerTypes)
             {
                 builder.AddApplicationPart(controllerType.ServiceType.GetTypeInfo().Assembly);
             }
 
-            //Also adding in feature controllers to discover these API
-            var featureControllerTypes = services.Where(s => s.ServiceType.GetTypeInfo().BaseType == typeof(FeatureController));
-            foreach (var featureControllerType in featureControllerTypes)
+            // Adds FeatureControllers with API endpoints.
+            System.Collections.Generic.IEnumerable<ServiceDescriptor> featureControllerTypes = services.Where(s => s.ServiceType.GetTypeInfo().BaseType == typeof(FeatureController));
+            foreach (ServiceDescriptor featureControllerType in featureControllerTypes)
             {
                 builder.AddApplicationPart(featureControllerType.ServiceType.GetTypeInfo().Assembly);
             }

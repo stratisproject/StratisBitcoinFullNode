@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Moq;
 using NBitcoin;
+using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Features.BlockStore.Controllers;
 using Stratis.Bitcoin.Features.BlockStore.Models;
 using Stratis.Bitcoin.Features.Consensus;
@@ -138,19 +139,19 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
         }
 
         [Fact]
-        public void GetBlockCount_ReturnsHeightFromConsensusLoopTip()
+        public void GetBlockCount_ReturnsHeightFromChainState()
         {
             var logger = new Mock<ILoggerFactory>();
             var cache = new Mock<IBlockStoreCache>();
-            var consensusLoop = new Mock<IConsensusLoop>();
+            var chainState = new Mock<IChainState>();
             ConcurrentChain chain = WalletTestsHelpers.GenerateChainWithHeight(3, Network.StratisTest);
 
             logger.Setup(l => l.CreateLogger(It.IsAny<string>())).Returns(Mock.Of<ILogger>);
 
-            consensusLoop.Setup(c => c.Tip)
+            chainState.Setup(c => c.ConsensusTip)
                 .Returns(chain.GetBlock(2));
 
-            var controller = new BlockStoreController(logger.Object, cache.Object, consensusLoop.Object);
+            var controller = new BlockStoreController(logger.Object, cache.Object, chainState.Object);
 
             var json = (JsonResult)controller.GetBlockCount();
             int result = int.Parse(json.Value.ToString());
@@ -162,11 +163,11 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
         {
             var logger = new Mock<ILoggerFactory>();
             var cache = new Mock<IBlockStoreCache>();
-            var consensusLoop = new Mock<ConsensusLoop>();
+            var chainState = new Mock<IChainState>();
 
             logger.Setup(l => l.CreateLogger(It.IsAny<string>())).Returns(Mock.Of<ILogger>);
 
-            var controller = new BlockStoreController(logger.Object, cache.Object, consensusLoop.Object);
+            var controller = new BlockStoreController(logger.Object, cache.Object, chainState.Object);
 
             return (cache, controller);
         }

@@ -46,7 +46,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         {
             try
             {
-                return this.Json(await this.GetRawMempool());
+                return this.Json(await this.GetRawMempool().ConfigureAwait(false));
             }
             catch (Exception e)
             {

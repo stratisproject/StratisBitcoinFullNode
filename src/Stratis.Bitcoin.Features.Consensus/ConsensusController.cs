@@ -6,17 +6,21 @@ using NBitcoin;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Controllers;
 using Stratis.Bitcoin.Features.Consensus.Interfaces;
-using Stratis.Bitcoin.Features.Consensus.Models;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Utilities.JsonErrors;
 
 namespace Stratis.Bitcoin.Features.Consensus
 {
+    /// <summary>
+    /// A <see cref="FeatureController"/> that provides API and RPC methods from the consensus loop.
+    /// </summary>
     [Route("api/[controller]")]
     public class ConsensusController : FeatureController
     {
+        /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
 
+        /// <summary>Manager of the longest fully validated chain of blocks.</summary>
         public IConsensusLoop ConsensusLoop { get; private set; }
 
         public ConsensusController(ILoggerFactory loggerFactory, IChainState chainState = null,
@@ -27,10 +31,14 @@ namespace Stratis.Bitcoin.Features.Consensus
             this.ConsensusLoop = consensusLoop;
         }
 
+        /// <summary>
+        /// Implements the getbestblockhash RPC call.
+        /// </summary>
+        /// <returns>A <see cref="uint256"/> hash of the block at the consensus tip.</returns>
         [ActionName("getbestblockhash")]
         [ApiExplorerSettings(IgnoreApi = true)]
         [ActionDescription("Get the hash of the block at the consensus tip.")]
-        public uint256 GetBestBlockHash()
+        public uint256 GetBestBlockHashRPC()
         {
             Guard.NotNull(this.ChainState, nameof(this.ChainState));
             return this.ChainState?.ConsensusTip?.HashBlock;
@@ -38,16 +46,16 @@ namespace Stratis.Bitcoin.Features.Consensus
 
         /// <summary>
         /// Get the hash of the block at the consensus tip.
-        /// API implementation of RPC call.
+        /// API wrapper of RPC call.
         /// </summary>
-        /// <returns>Json formatted <see cref="uint256"/> of best block hash. Returns <see cref="IActionResult"/> formatted error if fails.</returns>
+        /// <returns>Json formatted <see cref="uint256"/> hash of the block at the consensus tip. Returns <see cref="IActionResult"/> formatted error if fails.</returns>
         [Route("getbestblockhash")]
         [HttpGet]
         public IActionResult GetBestBlockHashAPI()
         {
             try
             {
-                return this.Json(this.GetBestBlockHash());
+                return this.Json(this.GetBestBlockHashRPC());
             }
             catch (Exception e)
             {
@@ -56,15 +64,20 @@ namespace Stratis.Bitcoin.Features.Consensus
             }
         }
 
+        /// <summary>
+        /// Implements the getblockhash RPC call.
+        /// </summary>
+        /// <param name="height">The requested block height.</param>
+        /// <returns>A <see cref="uint256"/> hash of the block at the given height. <c>Null</c> if block not found.</returns>
         [ActionName("getblockhash")]
         [ApiExplorerSettings(IgnoreApi = true)]
         [ActionDescription("Gets the hash of the block at the given height.")]
-        public uint256 GetBlockHash(int height)
+        public uint256 GetBlockHashRPC(int height)
         {
             Guard.NotNull(this.ConsensusLoop, nameof(this.ConsensusLoop));
             Guard.NotNull(this.Chain, nameof(this.Chain));
 
-            this.logger.LogDebug("RPC GetBlockHash {0}", height);
+            this.logger.LogDebug("GetBlockHash {0}", height);
 
             uint256 bestBlockHash = this.ConsensusLoop.Tip?.HashBlock;
             ChainedHeader bestBlock = bestBlockHash == null ? null : this.Chain.GetBlock(bestBlockHash);
@@ -76,22 +89,18 @@ namespace Stratis.Bitcoin.Features.Consensus
 
         /// <summary>
         /// Gets the hash of the block at the given height.
-        /// API implementation of RPC call.
+        /// API wrapper of RPC call.
         /// </summary>
         /// <param name="request">A <see cref="GetBlockHashRequestModel"/> request containing the height.</param>
-        /// <returns>Json formatted <see cref="uint256"/> hash of the block at the given height. Returns <see cref="IActionResult"/> formatted error if fails.</returns>
+        /// <returns>Json formatted <see cref="uint256"/> hash of the block at the given height. <c>Null</c> if block not found. Returns <see cref="IActionResult"/> formatted error if fails.</returns>
         [Route("getblockhash")]
         [HttpGet]
-        public IActionResult GetBlockHash(GetBlockHashRequestModel request)
+        public IActionResult GetBlockHashAPI([FromQuery] int height)
         {
             try
             {
-                int height;
-                if (!int.TryParse(request.height, out height))
-                {
-                    throw new ArgumentException(nameof(request.height));
-                }
-                return this.Json(this.GetBlockHash(height));
+                Guard.NotNull(height, nameof(height));
+                return this.Json(this.GetBlockHashRPC(height));
             }
             catch (Exception e)
             {
