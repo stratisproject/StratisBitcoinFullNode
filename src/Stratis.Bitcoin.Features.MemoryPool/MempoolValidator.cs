@@ -213,14 +213,16 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                 this.logger.LogTrace("(-):true");
                 return true;
             }
-            catch (MempoolErrorException)
+            catch (MempoolErrorException ex)
             {
+                this.logger.LogTrace("Mempool error thrown {0}:'{1}'.", nameof(MempoolErrorException), ex.Message);
                 this.logger.LogTrace("(-)[MEMPOOL_EXCEPTION]:false");
                 return false;
             }
             catch (ConsensusErrorException consensusError)
             {
-                state.Error = new MempoolError(consensusError.ConsensusError);
+                this.logger.LogTrace("Conensus error thrown {0}:'{1}'.", nameof(ConsensusErrorException), consensusError.Message);
+                state.Error = new MempoolError(consensusError.ConsensusError);                
                 this.logger.LogTrace("(-)[CONSENSUS_EXCEPTION]:false");
                 return false;
             }
