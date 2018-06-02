@@ -9,9 +9,7 @@ using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Consensus
 {
-    /// <summary>
-    /// TODO comment this interface
-    /// </summary>
+    /// <summary>Validates <see cref="ChainedHeader"/> instances.</summary>
     /// TODO use local CT instead of chain state?
     public interface IChainedHeaderValidator
     {
@@ -90,11 +88,11 @@ namespace Stratis.Bitcoin.Consensus
         private readonly Dictionary<uint256, ChainedHeader> chainedHeadersByHash;
 
         public ChainedHeaderTree(
-            Network network, 
-            ILoggerFactory loggerFactory, 
-            IChainedHeaderValidator chainedHeaderValidator, 
-            ICheckpoints checkpoints, 
-            IChainState chainState, 
+            Network network,
+            ILoggerFactory loggerFactory,
+            IChainedHeaderValidator chainedHeaderValidator,
+            ICheckpoints checkpoints,
+            IChainState chainState,
             ConsensusSettings consensusSettings)
         {
             this.network = network;
@@ -138,6 +136,13 @@ namespace Stratis.Bitcoin.Consensus
             this.AddOrReplacePeerTip(LocalPeerId, consensusTip.HashBlock);
             
             this.logger.LogTrace("(-)");
+        }
+
+        /// <summary>Gets the consensus tip.</summary>
+        private ChainedHeader GetConsensusTip()
+        {
+            uint256 consensusTipHash = this.peerTipsByPeerId[LocalPeerId];
+            return this.chainedHeadersByHash[consensusTipHash];
         }
 
         /// <summary>
@@ -207,7 +212,7 @@ namespace Stratis.Bitcoin.Consensus
 
             chainedHeader.BlockValidationState = ValidationState.PartiallyValidated;
 
-            if (chainedHeader.ChainWork > this.chainState.ConsensusTip.ChainWork)
+            if (chainedHeader.ChainWork > this.GetConsensusTip().ChainWork)
             {
                 // A better tip that was partially validated is found. Set our node's claim on the tip to avoid that chain removal in
                 // case all the peers that were claiming a better chain are disconnected before we switch consensus tip of our node.
@@ -539,7 +544,7 @@ namespace Stratis.Bitcoin.Consensus
                 }
             }
 
-            if (latestNewHeader.ChainWork > this.chainState.ConsensusTip.ChainWork)
+            if (latestNewHeader.ChainWork > this.GetConsensusTip().ChainWork)
             {
                 this.logger.LogDebug("Chained header '{0}' is the tip of a chain with more work than our current consensus tip.", latestNewHeader);
 
@@ -610,7 +615,7 @@ namespace Stratis.Bitcoin.Consensus
         {
             this.logger.LogTrace("({0}:'{1}',{2}:'{3}',{4}:{5})", nameof(assumedValidHeader), assumedValidHeader, nameof(latestNewHeader), latestNewHeader, nameof(isBelowLastCheckpoint), isBelowLastCheckpoint);
 
-            ChainedHeader bestTip = this.chainState.ConsensusTip;
+            ChainedHeader bestTip = this.GetConsensusTip();
             var connectNewHeadersResult = new ConnectNewHeadersResult() {Consumed = latestNewHeader};
 
             if (latestNewHeader.ChainWork > bestTip.ChainWork)
@@ -879,7 +884,7 @@ namespace Stratis.Bitcoin.Consensus
             this.logger.LogTrace("({0}:'{1}')", nameof(chainedHeader), chainedHeader);
 
             uint maxReorgLength = this.chainState.MaxReorgLength;
-            ChainedHeader consensusTip = this.chainState.ConsensusTip;
+            ChainedHeader consensusTip = this.GetConsensusTip();
             if ((maxReorgLength != 0) && (consensusTip != null))
             {
                 ChainedHeader fork = chainedHeader.FindFork(consensusTip);
