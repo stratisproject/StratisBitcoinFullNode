@@ -269,43 +269,43 @@ namespace Stratis.Bitcoin.Consensus
         /// Handles situation when consensuses tip was changed.
         /// </summary>
         /// <param name="newConsensusTip">The new consensus tip.</param>
-        /// <param name="previousConsensusTip">Previous consensus tip.</param>
         /// <returns>List of peer Ids that violate max reorg rule.</returns>
-        public List<int> ConsensusTipChanged(ChainedHeader newConsensusTip, ChainedHeader previousConsensusTip)
+        public List<int> ConsensusTipChanged(ChainedHeader newConsensusTip)
         {
-            this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(newConsensusTip), newConsensusTip, nameof(previousConsensusTip), previousConsensusTip);
+            this.logger.LogTrace("({0}:'{1}')", nameof(newConsensusTip), newConsensusTip);
 
-            this.RemovePeerClaim(LocalPeerId, previousConsensusTip);
+            // Switch consensus tip to the new block header.
+            this.AddOrReplacePeerTip(LocalPeerId, newConsensusTip.HashBlock);
 
             var peerIds = new List<int>();
             uint maxReorgLength = this.chainState.MaxReorgLength;
-            ChainedHeader consensusTip = this.chainState.ConsensusTip;
 
             // Find peers with chains that now violate max reorg.
-            if ((maxReorgLength != 0) && (consensusTip != null))
+            if (maxReorgLength != 0)
             {
                 foreach (KeyValuePair<int, uint256> peerIdToTipHash in this.peerTipsByPeerId)
                 {
                     ChainedHeader peerTip = this.chainedHeadersByHash[peerIdToTipHash.Value];
+                    int peerId = peerIdToTipHash.Key;
 
-                    if (consensusTip.FindAncestorOrSelf(peerTip) != null)
+                    if (newConsensusTip.FindAncestorOrSelf(peerTip) != null)
                     {
                         // Peer is on our best chain.
                         continue;
                     }
                     
-                    ChainedHeader fork = peerTip.FindFork(consensusTip);
+                    ChainedHeader fork = peerTip.FindFork(newConsensusTip);
 
                     if (fork != null)
                     {
-                        int reorgLength = consensusTip.Height - fork.Height;
+                        int reorgLength = newConsensusTip.Height - fork.Height;
 
-                        this.logger.LogTrace("Peer with Id {0} claims a chain with {1} reorg lenght.", peerIdToTipHash.Key, reorgLength);
+                        this.logger.LogTrace("Peer with Id {0} claims a chain with {1} reorg lenght.", peerId, reorgLength);
 
                         if (reorgLength > maxReorgLength)
                         {
-                            peerIds.Add(peerIdToTipHash.Key);
-                            this.logger.LogTrace("Peer with Id {0} claims a chain that violates max reorg, it's tip is '{1}'", peerIdToTipHash.Key, peerTip);
+                            peerIds.Add(peerId);
+                            this.logger.LogTrace("Peer with Id {0} claims a chain that violates max reorg, it's tip is '{1}'", peerId, peerTip);
                         }
                     }
                 }
