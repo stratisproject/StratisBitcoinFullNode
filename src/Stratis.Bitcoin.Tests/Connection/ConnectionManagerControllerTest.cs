@@ -1,19 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Net;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Moq;
 using NBitcoin;
-using NBitcoin.DataEncoders;
 using Stratis.Bitcoin.Connection;
-using Stratis.Bitcoin.Controllers;
-using Stratis.Bitcoin.Controllers.Models;
-using Stratis.Bitcoin.Interfaces;
-using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.Tests.Common.Logging;
-using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Utilities.JsonErrors;
 using Xunit;
 
@@ -52,7 +42,7 @@ namespace Stratis.Bitcoin.Tests.Controllers
         }
 
         [Fact]
-        public void AddNode_InvalidEndpoint_ThrowsFormatException()
+        public void AddNode_InvalidEndpoint_ThrowsException()
         {
             string endpoint = "a.b.c.d";
             string command = "onetry";
@@ -64,7 +54,6 @@ namespace Stratis.Bitcoin.Tests.Controllers
             Assert.Single(errorResponse.Errors);
             ErrorModel error = errorResponse.Errors[0];
             Assert.Equal(400, error.Status);
-            Assert.StartsWith("System.FormatException", error.Description);
         }
 
         [Fact]
