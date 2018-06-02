@@ -22,7 +22,9 @@ namespace Stratis.Bitcoin.Consensus
         /// <summary>
         /// Verifies that the block data corresponds to the chain header.
         /// </summary>
-        /// <remarks>
+        /// <remarks>  
+        /// This validation represents minimal required validation for every block that we download.
+        /// It should be performed even if the block is behind last checkpoint or part of assume valid chain.
         /// TODO specify what exceptions are thrown (add throws xmldoc)
         /// </remarks>
         /// <param name="block">The block that is going to be validated.</param>
@@ -425,14 +427,15 @@ namespace Stratis.Bitcoin.Consensus
         /// Handles situation when blocks the data is downloaded for a given chained header.
         /// </summary>
         /// <param name="block">Block data.</param>
-        /// <param name="chainedHeader">The chained header which block data was downloaded.</param>
+        /// <param name="chainedHeader">If the function succeeds this is set to chained header which block data was downloaded.</param>
         /// <returns><c>true</c> in case partial validation is required for the downloaded block, <c>false</c> otherwise.</returns>
         /// <exception cref="BlockDownloadedForMissingChainedHeaderException">Thrown when block data is presented for a chained block that doesn't exist.</exception>
         public bool BlockDataDownloaded(Block block, out ChainedHeader chainedHeader)
         {
-            this.logger.LogTrace("({0}:'{1}')", nameof(block), block.GetHash());
+            uint256 blockHash = block.GetHash();
+            this.logger.LogTrace("({0}:'{1}')", nameof(block), blockHash);
 
-            if (!this.chainedHeadersByHash.TryGetValue(block.GetHash(), out chainedHeader))
+            if (!this.chainedHeadersByHash.TryGetValue(blockHash, out chainedHeader))
             {
                 this.logger.LogTrace("(-)[HEADER_NOT_FOUND]");
                 throw new BlockDownloadedForMissingChainedHeaderException();
@@ -442,7 +445,7 @@ namespace Stratis.Bitcoin.Consensus
 
             if (chainedHeader.BlockValidationState == ValidationState.FullyValidated)
             {
-                this.logger.LogTrace("(-)[HEADER_FULLY_VALIDATED]:false:{0}", chainedHeader);
+                this.logger.LogTrace("(-)[HEADER_FULLY_VALIDATED]:false");
                 return false;
             }
 
@@ -452,7 +455,7 @@ namespace Stratis.Bitcoin.Consensus
             bool partialValidationRequired = chainedHeader.Previous.BlockValidationState == ValidationState.PartiallyValidated
                                           || chainedHeader.Previous.BlockValidationState == ValidationState.FullyValidated;
 
-            this.logger.LogTrace("(-):{0}='{1}'", partialValidationRequired, chainedHeader);
+            this.logger.LogTrace("(-):{0},{1}='{2}'", partialValidationRequired, nameof(chainedHeader), chainedHeader);
             return partialValidationRequired;
         }
 
