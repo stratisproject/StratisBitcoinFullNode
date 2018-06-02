@@ -304,12 +304,12 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             //  filterrate = pto->minFeeFilter;
             //}
 
-            var sends = new List<TxMempoolInfo>();
-            lock (this.lockObject)
+            var sends = new List<TxMempoolInfo>(); 
+            foreach (TxMempoolInfo txinfo in vtxinfo)
             {
-                foreach (TxMempoolInfo txinfo in vtxinfo)
+                uint256 hash = txinfo.Trx.GetHash();
+                lock (this.lockObject)
                 {
-                    uint256 hash = txinfo.Trx.GetHash();
                     this.inventoryTxToSend.Remove(hash);
                     if (filterrate != Money.Zero)
                         if (txinfo.FeeRate.FeePerK < filterrate)
@@ -317,12 +317,12 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                             this.logger.LogTrace("Fee too low, transaction ID '{0}' not added to inventory list.", hash);
                             continue;
                         }
-                    this.filterInventoryKnown.Add(hash);
-                    sends.Add(txinfo);
-                    this.logger.LogTrace("Added transaction ID '{0}' to inventory list.", hash);
+                    this.filterInventoryKnown.Add(hash);                                           
                 }
+                sends.Add(txinfo);
+                this.logger.LogTrace("Added transaction ID '{0}' to inventory list.", hash);
             }
-
+            
             this.logger.LogTrace("Sending transaction inventory to peer '{0}'.", peer.RemoteSocketEndpoint);
             await this.SendAsTxInventoryAsync(peer, sends.Select(s => s.Trx.GetHash()));
             this.LastMempoolReq = this.manager.DateTimeProvider.GetTime();

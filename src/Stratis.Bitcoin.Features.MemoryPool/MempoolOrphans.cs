@@ -6,7 +6,6 @@ using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
-using Stratis.Bitcoin.Features.Consensus.Interfaces;
 using Stratis.Bitcoin.Features.MemoryPool.Interfaces;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.Utilities;
@@ -156,14 +155,13 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                     this.hashRecentRejectsChainTip = this.chain.Tip.HashBlock;
                     this.recentRejects.Clear();
                 });
-            }            
+            }
 
             // Use pcoinsTip->HaveCoinsInCache as a quick approximation to exclude
             // requesting or processing some txs which have already been included in a block
-            bool isTxPresent = await this.MempoolLock.ReadAsync(() =>
-                                this.recentRejects.ContainsKey(trxid) ||
-                                this.memPool.Exists(trxid) ||
-                                this.mapOrphanTransactions.ContainsKey(trxid));
+            bool isTxPresent =  this.recentRejects.ContainsKey(trxid) ||
+                                await this.MempoolLock.ReadAsync(() => this.memPool.Exists(trxid)) ||
+                                this.mapOrphanTransactions.ContainsKey(trxid);
 
             this.logger.LogTrace("(-):{0}", isTxPresent);
             return isTxPresent;
@@ -177,7 +175,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <param name="tx">The new transaction received.</param>
         public async Task ProcessesOrphansAsync(MempoolBehavior behavior, Transaction tx)
         {
-            this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(behavior), behavior?.AttachedPeer?.RemoteSocketEndpoint, nameof(tx), tx?.GetHash());
+            this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(behavior), behavior.AttachedPeer.RemoteSocketEndpoint, nameof(tx), tx?.GetHash());
             Queue<OutPoint> vWorkQueue = new Queue<OutPoint>();
             List<uint256> vEraseQueue = new List<uint256>();
 
@@ -354,7 +352,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         public Task<bool> AddOrphanTx(ulong nodeId, Transaction tx)
         {
             this.logger.LogTrace("({0}:{1},{2}:'{3}')", nameof(nodeId), nodeId, nameof(tx), tx.GetHash());
-            return this.MempoolLock.WriteAsync(() =>
+            Task<bool> task = this.MempoolLock.WriteAsync(() =>
             {
                 uint256 hash = tx.GetHash();
                 if (this.mapOrphanTransactions.ContainsKey(hash))
@@ -405,6 +403,8 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                 this.logger.LogTrace("(-):true");
                 return true;
             });
+            this.logger.LogTrace("(-)");
+            return task;
         }
 
         /// <summary>
@@ -415,7 +415,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         private Task<bool> EraseOrphanTx(uint256 hash)
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(hash), hash);
-            return this.MempoolLock.WriteAsync(() =>
+            Task<bool> task = this.MempoolLock.WriteAsync(() =>
             {
                 OrphanTx orphTx = this.mapOrphanTransactions.TryGet(hash);
                 if (orphTx == null)
@@ -437,6 +437,8 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                 this.logger.LogTrace("(-):true");
                 return true;
             });
+            this.logger.LogTrace("(-)");
+            return task;
         }
 
         /// <summary>
@@ -446,7 +448,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         public Task EraseOrphansFor(ulong peer)
         {
             this.logger.LogTrace("({0}:{1})", nameof(peer), peer);            
-            return this.MempoolLock.ReadAsync(async () =>
+            Task task = this.MempoolLock.ReadAsync(async () =>
             {
                 this.logger.LogTrace("Executing task to erase orphan transactions.");
                 int erased = 0;
@@ -457,6 +459,8 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                     this.logger.LogInformation($"Erased {erased} orphan tx from peer {peer}");
 
             }).Unwrap();
+            this.logger.LogTrace("(-)");
+            return task;
         }
     }
 }
