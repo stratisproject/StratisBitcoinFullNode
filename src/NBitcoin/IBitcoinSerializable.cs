@@ -99,6 +99,20 @@ namespace NBitcoin
             }
         }
 
+        public static byte[] ToBytes(this IBitcoinSerializable serializable, ConsensusFactory consensusFactory, ProtocolVersion version = ProtocolVersion.PROTOCOL_VERSION)
+        {
+            using (MemoryStream ms = new MemoryStream())
+            {
+                var bms = new BitcoinStream(ms, true)
+                {
+                    ProtocolVersion = version,
+                    ConsensusFactory = consensusFactory ?? Network.Main.Consensus.ConsensusFactory
+                };
+                serializable.ReadWrite(bms);
+                return ToArrayEfficient(ms);
+            }
+        }
+
         public static byte[] ToArrayEfficient(this MemoryStream ms)
         {
 #if !(PORTABLE || NETCORE)

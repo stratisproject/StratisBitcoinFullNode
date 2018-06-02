@@ -3,47 +3,13 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Net;
 using System.Threading;
-using NBitcoin.BouncyCastle.Math;
 using NBitcoin.DataEncoders;
 using NBitcoin.Protocol;
 using NBitcoin.Stealth;
 
 namespace NBitcoin
 {
-    public class DNSSeedData
-    {
-        private IPAddress[] addresses;
-
-        public string Name { get; }
-
-        public string Host { get; }
-
-        public DNSSeedData(string name, string host)
-        {
-            this.Name = name;
-            this.Host = host;
-        }
-
-        public IPAddress[] GetAddressNodes()
-        {
-            if (this.addresses != null)
-            {
-                return this.addresses;
-            }
-
-            this.addresses = Dns.GetHostAddressesAsync(this.Host).GetAwaiter().GetResult();
-
-            return this.addresses;
-        }
-
-        public override string ToString()
-        {
-            return $"{this.Name}({this.Host})";
-        }
-    }
-
     public enum Base58Type
     {
         PUBKEY_ADDRESS,
@@ -67,243 +33,130 @@ namespace NBitcoin
         WITNESS_SCRIPT_ADDRESS
     }
 
-    public enum BuriedDeployments : int
-    {
-        /// <summary>
-        /// Height in coinbase
-        /// </summary>
-        BIP34,
-
-        /// <summary>
-        /// Height in OP_CLTV
-        /// </summary>
-        BIP65,
-
-        /// <summary>
-        /// Strict DER signature
-        /// </summary>
-        BIP66
-    }
-
-    public class Consensus
-    {
-        /// <summary>
-        /// An extension to <see cref="Consensus"/> to enable additional options to the consensus data.
-        /// </summary>
-        public class ConsensusOptions
-        {
-        }
-
-        public ConsensusOptions Options { get; set; }
-
-        public class BuriedDeploymentsArray
-        {
-            readonly Consensus parent;
-            readonly int[] heights;
-
-            public BuriedDeploymentsArray(Consensus parent)
-            {
-                this.parent = parent;
-                this.heights = new int[Enum.GetValues(typeof(BuriedDeployments)).Length];
-            }
-
-            public int this[BuriedDeployments index]
-            {
-                get { return this.heights[(int)index]; }
-                set { this.heights[(int)index] = value; }
-            }
-        }
-
-        public class BIP9DeploymentsArray
-        {
-            readonly Consensus parent;
-            readonly BIP9DeploymentsParameters[] parameters;
-
-            public BIP9DeploymentsArray(Consensus parent)
-            {
-                this.parent = parent;
-                this.parameters = new BIP9DeploymentsParameters[Enum.GetValues(typeof(BIP9Deployments)).Length];
-            }
-
-            public BIP9DeploymentsParameters this[BIP9Deployments index]
-            {
-                get { return this.parameters[(int) index]; }
-                set { this.parameters[(int) index] = value; }
-            }
-        }
-
-        public Consensus()
-        {
-            this.BuriedDeployments = new BuriedDeploymentsArray(this);
-            this.BIP9Deployments = new BIP9DeploymentsArray(this);
-
-            this.ConsensusFactory = new ConsensusFactory()
-            {
-                Consensus = this
-            };
-        }
-
-        public BuriedDeploymentsArray BuriedDeployments { get; }
-
-        public BIP9DeploymentsArray BIP9Deployments { get; }
-
-        public int SubsidyHalvingInterval { get; set; }
-
-        public int MajorityEnforceBlockUpgrade { get; set; }
-
-        public int MajorityRejectBlockOutdated { get; set; }
-
-        public int MajorityWindow { get; set; }
-
-        public uint256 BIP34Hash { get; set; }
-
-        public Target PowLimit { get; set; }
-
-        public TimeSpan PowTargetTimespan { get; set; }
-
-        public TimeSpan PowTargetSpacing { get; set; }
-
-        public bool PowAllowMinDifficultyBlocks { get; set; }
-
-        public bool PowNoRetargeting { get; set; }
-
-        public uint256 HashGenesisBlock { get; set; }
-
-        public uint256 MinimumChainWork { get; set; }
-
-        public long DifficultyAdjustmentInterval
-        {
-            get { return ((long) this.PowTargetTimespan.TotalSeconds / (long) this.PowTargetSpacing.TotalSeconds); }
-        }
-
-        public int MinerConfirmationWindow { get; set; }
-
-        public int RuleChangeActivationThreshold { get; set; }
-
-        /// <summary>
-        /// Specify the BIP44 coin type for this network
-        /// </summary>
-        public int CoinType { get; set; }
-
-        public BigInteger ProofOfStakeLimit { get; set; }
-
-        public BigInteger ProofOfStakeLimitV2 { get; set; }
-
-        /// <summary>PoW blocks are not accepted after block with height <see cref="Consensus.LastPOWBlock"/>.</summary>
-        public int LastPOWBlock { get; set; }
-
-        /// <summary>
-        /// An indicator whether this is a Proof Of Stake network.
-        /// </summary>
-        public bool IsProofOfStake { get; set; }
-
-        /// <summary>The default hash to use for assuming valid blocks.</summary>
-        public uint256 DefaultAssumeValid { get; set; }
-
-        /// <summary>
-        /// A factory that enables overloading base types.
-        /// </summary>
-        public ConsensusFactory ConsensusFactory { get; set; }
-
-        public virtual Consensus Clone()
-        {
-            return new Consensus
-            {
-                BIP34Hash = this.BIP34Hash,
-                HashGenesisBlock = this.HashGenesisBlock,
-                MajorityEnforceBlockUpgrade = this.MajorityEnforceBlockUpgrade,
-                MajorityRejectBlockOutdated = this.MajorityRejectBlockOutdated,
-                MajorityWindow = this.MajorityWindow,
-                MinerConfirmationWindow = this.MinerConfirmationWindow,
-                PowAllowMinDifficultyBlocks = this.PowAllowMinDifficultyBlocks,
-                PowLimit = this.PowLimit,
-                PowNoRetargeting = this.PowNoRetargeting,
-                PowTargetSpacing = this.PowTargetSpacing,
-                PowTargetTimespan = this.PowTargetTimespan,
-                RuleChangeActivationThreshold = this.RuleChangeActivationThreshold,
-                SubsidyHalvingInterval = this.SubsidyHalvingInterval,
-                MinimumChainWork = this.MinimumChainWork,
-                CoinType = this.CoinType,
-                IsProofOfStake = this.IsProofOfStake,
-                LastPOWBlock = this.LastPOWBlock,
-                ProofOfStakeLimit = this.ProofOfStakeLimit,
-                ProofOfStakeLimitV2 = this.ProofOfStakeLimitV2,
-                DefaultAssumeValid = this.DefaultAssumeValid,
-                ConsensusFactory = this.ConsensusFactory,
-            };
-        }
-    }
-
-    public partial class Network
+    public abstract partial class Network
     {
         private static readonly ConcurrentDictionary<string, Network> NetworksContainer = new ConcurrentDictionary<string, Network>();
 
-        private byte[] alertPubKeyArray;
-        private PubKey alertPubKey;
-        private Block genesis;
+        protected Block Genesis;
         
-        private Network()
+        protected Network()
         {
-            this.DNSSeeds = new List<DNSSeedData>();
-            this.SeedNodes = new List<NetworkAddress>();
-            this.Checkpoints = new Dictionary<int, CheckpointInfo>();
             this.Consensus = new Consensus();
-            this.Base58Prefixes = new byte[12][];
-            this.Bech32Encoders = new Bech32Encoder[2];
         }
 
-        public PubKey AlertPubKey
-        {
-            get
-            {
-                if (this.alertPubKey == null)
-                {
-                    this.alertPubKey = new PubKey(this.alertPubKeyArray);
-                }
-                return this.alertPubKey;
-            }
-        }
+        /// <summary>
+        /// The public key used in the alert messaging system.
+        /// TODO: remove as per https://github.com/bitcoin/bitcoin/pull/7692.
+        /// </summary>
+        public PubKey AlertPubKey { get; protected set; }
 
-        /// <summary> Maximal value for the calculated time offset. If the value is over this limit, the time syncing feature will be switched off. </summary>
-        public int MaxTimeOffsetSeconds { get; private set; }
+        /// <summary>
+        /// Maximal value for the calculated time offset.
+        /// If the value is over this limit, the time syncing feature will be switched off.
+        /// </summary>
+        public int MaxTimeOffsetSeconds { get; protected set; }
 
-        /// <summary>Maximum tip age in seconds to consider node in initial block download.</summary>
-        public int MaxTipAge { get; private set; }
+        /// <summary>
+        /// Maximum tip age in seconds to consider node in initial block download.
+        /// </summary>
+        public int MaxTipAge { get; protected set; }
 
-        public long MinTxFee { get; private set; }
+        /// <summary>
+        /// Mininum fee rate for all transactions.
+        /// Fees smaller than this are considered zero fee for transaction creation.
+        /// </summary>
+        public long MinTxFee { get; protected set; }
 
-        public long FallbackFee { get; private set; }
+        /// <summary>
+        /// A fee rate that will be used when fee estimation has insufficient data.
+        /// </summary>
+        public long FallbackFee { get; protected set; }
 
-        public long MinRelayTxFee { get; private set; }
+        /// <summary>
+        /// The minimum fee under which transactions may be rejected from being relayed.
+        /// </summary>
+        public long MinRelayTxFee { get; protected set; }
 
-        public int RPCPort { get; private set; }
+        /// <summary>
+        /// Port on which to listen for incoming RPC connections.
+        /// </summary>
+        public int RPCPort { get; protected set; }
 
-        public int DefaultPort { get; private set; }
+        /// <summary>
+        /// The default port on which nodes of this network communicate with external clients. 
+        /// </summary>
+        public int DefaultPort { get; protected set; }
 
-        public Consensus Consensus { get; private set; }
+        /// <summary>
+        /// The consensus for this network.
+        /// </summary>
+        public Consensus Consensus { get; protected set; }
 
-        public string Name { get; private set; }
+        /// <summary>
+        /// The name of the network.
+        /// </summary>
+        public string Name { get; protected set; }
 
-        /// <summary> The name of the root folder containing blockchains operating with the same consensus rules (for now, this will be bitcoin or stratis). </summary>
-        public string RootFolderName { get; private set; }
+        /// <summary>
+        /// A list of additional names the network can be referred as.
+        /// For example, Bitcoin Main can have "Mainnet" as an additional name.
+        /// </summary>
+        public List<string> AdditionalNames { get; protected set; }
 
-        /// <summary> The default name used for the network configuration file. </summary>
-        public string DefaultConfigFilename { get; private set; }
+        /// <summary>
+        /// The name of the root folder containing blockchains operating with the same consensus rules (for now, this will be bitcoin or stratis).
+        /// </summary>
+        public string RootFolderName { get; protected set; }
 
-        public List<NetworkAddress> SeedNodes { get; private set; }
+        /// <summary>
+        /// The default name used for the network configuration file.
+        /// </summary>
+        public string DefaultConfigFilename { get; protected set; }
 
-        public List<DNSSeedData> DNSSeeds { get; private set; }
+        /// <summary>
+        /// The list of nodes on the network that our current node tries to connect to.
+        /// </summary>
+        public List<NetworkAddress> SeedNodes { get; protected set; }
 
-        public Dictionary<int, CheckpointInfo> Checkpoints { get; private set; }
+        /// <summary>
+        /// The list of DNS seeds from which to get IP addresses when bootstrapping a node.
+        /// </summary>
+        public List<DNSSeedData> DNSSeeds { get; protected set; }
 
-        internal byte[][] Base58Prefixes { get; private set; }
+        /// <summary>
+        /// A list of well-known block hashes.
+        /// The node considers all transactions and blocks up to these checkpoints as valid and irreversible.
+        /// </summary>
+        public Dictionary<int, CheckpointInfo> Checkpoints { get; protected set; }
 
-        internal Bech32Encoder[] Bech32Encoders { get; private set; }
+        /// <summary>
+        /// List of prefixes used in Base58 addresses.
+        /// </summary>
+        public byte[][] Base58Prefixes { get; protected set; }
 
-        public uint Magic { get; private set; }
+        /// <summary>
+        /// A list of Bech32 encoders.
+        /// </summary>
+        public Bech32Encoder[] Bech32Encoders { get; protected set; }
 
+        /// <summary>
+        /// A number used to identify the network.
+        /// The message start string is designed to be unlikely to occur in normal data.
+        /// The characters are rarely used upper ascii, not valid as UTF-8, and produce
+        /// a large 4-byte int at any alignment.
+        /// </summary>
+        public uint Magic { get; protected set; }
+
+        /// <summary>
+        /// Byte array representation of a magic number.
+        /// </summary>
         public byte[] MagicBytesArray;
 
+        /// <summary>
+        /// Byte representation of a magic number.
+        /// Uses <see cref="Magic"/> if <see cref="MagicBytesArray"/> is null.
+        /// TODO: Merge these 3 magic properties into fewer.
+        /// </summary>
         public byte[] MagicBytes
         {
             get
@@ -325,31 +178,59 @@ namespace NBitcoin
         }
 
         /// <summary>
+        /// The UNIX time at inception of the genesis block for this network.
+        /// </summary>
+        public uint GenesisTime { get; protected set; }
+
+        /// <summary>
+        /// A hash which proves that a sufficient amount of computation has been carried out to create the genesis block.
+        /// </summary>
+        public uint GenesisNonce { get; protected set; }
+
+        /// <summary>
+        /// Represents the encoded form of the target threshold as it appears in the block header.
+        /// </summary>
+        public uint GenesisBits { get; protected set; }
+
+        /// <summary>
+        /// The version of the genesis block.
+        /// </summary>
+        public int GenesisVersion { get; protected set; }
+
+        /// <summary>
+        /// The reward for the genesis block, which is unspendable.
+        /// </summary>
+        public Money GenesisReward { get; protected set; }
+
+        /// <summary>
         /// Register an immutable <see cref="Network"/> instance so it is queryable through <see cref="GetNetwork(string)"/> and <see cref="GetNetworks()"/>.
         /// </summary>
-        internal static Network Register(Network network, string nameOverride = null)
+        internal static Network Register(Network network)
         {
-            string networkName = !string.IsNullOrEmpty(nameOverride) ? nameOverride : network.Name;
+            IEnumerable<string> networkNames = network.AdditionalNames != null ? new[] { network.Name }.Concat(network.AdditionalNames) : new[] { network.Name };
 
-            // Performs a series of checks before registering the network to the list of available networks.
-            if (string.IsNullOrEmpty(networkName))
-                throw new InvalidOperationException("A network name needs to be provided.");
+            foreach (string networkName in networkNames)
+            {
+                // Performs a series of checks before registering the network to the list of available networks.
+                if (string.IsNullOrEmpty(networkName))
+                    throw new InvalidOperationException("A network name needs to be provided.");
 
-            if (GetNetwork(networkName) != null)
-                throw new InvalidOperationException("The network " + networkName + " is already registered.");
+                if (GetNetwork(networkName) != null)
+                    throw new InvalidOperationException("The network " + networkName + " is already registered.");
 
-            if (network.GetGenesis() == null)
-                throw new InvalidOperationException("A genesis block needs to be provided.");
+                if (network.GetGenesis() == null)
+                    throw new InvalidOperationException("A genesis block needs to be provided.");
 
-            if (network.Consensus == null)
-                throw new InvalidOperationException("A consensus needs to be provided.");
+                if (network.Consensus == null)
+                    throw new InvalidOperationException("A consensus needs to be provided.");
 
-            NetworksContainer.TryAdd(networkName.ToLowerInvariant(), network);
+                NetworksContainer.TryAdd(networkName.ToLowerInvariant(), network);
+            }
 
             return network;
         }
 
-        private static void Assert(bool condition)
+        protected static void Assert(bool condition)
         {
             // TODO: use Guard when this moves to the FN.
             if (!condition)
@@ -375,15 +256,10 @@ namespace NBitcoin
             if (!type.HasValue)
                 throw new FormatException("Invalid Base58 version");
             if (type == Base58Type.PUBKEY_ADDRESS)
-                return new BitcoinPubKeyAddress(base58, this);
+                return this.CreateBitcoinPubKeyAddress(base58);
             if (type == Base58Type.SCRIPT_ADDRESS)
-                return new BitcoinScriptAddress(base58, this);
+                return this.CreateBitcoinScriptAddress(base58);
             throw new FormatException("Invalid Base58 version");
-        }
-
-        public BitcoinScriptAddress CreateBitcoinScriptAddress(string base58)
-        {
-            return new BitcoinScriptAddress(base58, this);
         }
 
         private Base58Type? GetBase58Type(string base58)
@@ -565,7 +441,7 @@ namespace NBitcoin
             if (type == Base58Type.EXT_SECRET_KEY)
                 return this.CreateBitcoinExtKey(base58);
             if (type == Base58Type.PUBKEY_ADDRESS)
-                return new BitcoinPubKeyAddress(base58, this);
+                return this.CreateBitcoinPubKeyAddress(base58);
             if (type == Base58Type.SCRIPT_ADDRESS)
                 return this.CreateBitcoinScriptAddress(base58);
             if (type == Base58Type.SECRET_KEY)
@@ -585,6 +461,11 @@ namespace NBitcoin
             if (type == Base58Type.COLORED_ADDRESS)
                 return this.CreateColoredAddress(base58);
             throw new NotSupportedException("Invalid Base58Data type : " + type.ToString());
+        }
+
+        public BitcoinScriptAddress CreateBitcoinScriptAddress(string base58)
+        {
+            return new BitcoinScriptAddress(base58, this);
         }
 
         private BitcoinColoredAddress CreateColoredAddress(string base58)
@@ -642,6 +523,21 @@ namespace NBitcoin
             return new BitcoinExtKey(base58, this);
         }
 
+        public BitcoinSecret CreateBitcoinSecret(Key key)
+        {
+            return new BitcoinSecret(key, this);
+        }
+
+        public BitcoinPubKeyAddress CreateBitcoinPubKeyAddress(KeyId dest)
+        {
+            return new BitcoinPubKeyAddress(dest, this);
+        }
+
+        public BitcoinPubKeyAddress CreateBitcoinPubKeyAddress(string base58)
+        {
+            return new BitcoinPubKeyAddress(base58, this);
+        }
+
         public override string ToString()
         {
             return this.Name;
@@ -649,7 +545,7 @@ namespace NBitcoin
 
         public Block GetGenesis()
         {
-            return this.genesis.Clone(network: this);
+            return this.Genesis.Clone(network: this);
         }
 
         public uint256 GenesisHash => this.Consensus.HashGenesisBlock;
@@ -670,16 +566,6 @@ namespace NBitcoin
         }
 
         /// <summary>
-        /// Get network from protocol magic number
-        /// </summary>
-        /// <param name="magic">Magic number</param>
-        /// <returns>The network, or null of the magic number does not match any network</returns>
-        public static Network GetNetwork(uint magic)
-        {
-            return GetNetworks().FirstOrDefault(r => r.Magic == magic);
-        }
-
-        /// <summary>
         /// Get network from name
         /// </summary>
         /// <param name="name">main,mainnet,testnet,test,testnet3,reg,regtest,seg,segnet</param>
@@ -697,40 +583,6 @@ namespace NBitcoin
 
             return null;
         }
-
-        public BitcoinSecret CreateBitcoinSecret(Key key)
-        {
-            return new BitcoinSecret(key, this);
-        }
-
-        public BitcoinPubKeyAddress CreateBitcoinAddress(KeyId dest)
-        {
-            if (dest == null)
-                throw new ArgumentNullException("dest");
-            return new BitcoinPubKeyAddress(dest, this);
-        }
-
-        private BitcoinAddress CreateBitcoinScriptAddress(ScriptId scriptId)
-        {
-            return new BitcoinScriptAddress(scriptId, this);
-        }
-        /*
-        public Message ParseMessage(byte[] bytes, ProtocolVersion version = ProtocolVersion.PROTOCOL_VERSION)
-        {
-            BitcoinStream bstream = new BitcoinStream(bytes);
-            Message message = new Message();
-
-            using (bstream.ProtocolVersionScope(version))
-            {
-                bstream.ReadWrite(ref message);
-            }
-
-            if (message.Magic != this.magic)
-                throw new FormatException("Unexpected magic field in the message");
-
-            return message;
-        }
-        */
 
         public Money GetReward(int nHeight)
         {
@@ -805,6 +657,24 @@ namespace NBitcoin
                 throw new ArgumentNullException("bytes");
             Bech32Encoder encoder = network.GetBech32Encoder(type, true);
             return encoder.Encode(witnessVersion, bytes);
+        }
+
+        protected IEnumerable<NetworkAddress> ConvertToNetworkAddresses(string[] seeds, int defaultPort)
+        {
+            Random rand = new Random();
+            TimeSpan oneWeek = TimeSpan.FromDays(7);
+
+            foreach (string seed in seeds)
+            {
+                // It'll only connect to one or two seed nodes because once it connects,
+                // it'll get a pile of addresses with newer timestamps.
+                // Seed nodes are given a random 'last seen time' of between one and two weeks ago.
+                yield return new NetworkAddress
+                {
+                    Time = DateTime.UtcNow - (TimeSpan.FromSeconds(rand.NextDouble() * oneWeek.TotalSeconds)) - oneWeek,
+                    Endpoint = Utils.ParseIpEndpoint(seed, defaultPort)
+                };
+            }
         }
     }
 }

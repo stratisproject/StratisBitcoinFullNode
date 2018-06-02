@@ -15,7 +15,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
         {
             this.rules = new FullNodeBuilderConsensusExtension.PowConsensusRulesRegistration().GetRules();
         }
-        
+
         [Fact]
         public void GetRules_ForPOW_ReturnsListOfRegisteredPowRules()
         {
@@ -36,7 +36,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
             this.rules.ElementAt(12).Should().BeOfType<CheckSigOpsRule>();
             this.rules.ElementAt(13).Should().BeOfType<LoadCoinviewRule>();
             this.rules.ElementAt(14).Should().BeOfType<TransactionDuplicationActivationRule>();
-            this.rules.ElementAt(15).Should().BeOfType<PowCoinViewRule>();
+            this.rules.ElementAt(15).Should().BeOfType<PowCoinviewRule>();
         }
     }
 }
