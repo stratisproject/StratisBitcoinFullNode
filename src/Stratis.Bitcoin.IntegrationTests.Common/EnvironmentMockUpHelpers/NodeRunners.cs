@@ -85,7 +85,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
 
         public override void BuildNode()
         {
-            var settings = new NodeSettings(Network.StratisRegTest, ProtocolVersion.ALT_PROTOCOL_VERSION, args: new string[] { "-conf=stratis.conf", "-datadir=" + this.DataFolder }, loadConfiguration: false);
+            var settings = new NodeSettings(Network.StratisRegTest, ProtocolVersion.ALT_PROTOCOL_VERSION, args: new string[] { "-conf=stratis.conf", "-datadir=" + this.DataFolder });
 
             this.FullNode = (FullNode)new FullNodeBuilder()
                             .UseNodeSettings(settings)
@@ -114,7 +114,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
         /// but all the features required for it are enabled.</remarks>
         public static IFullNode BuildStakingNode(string dataDir, bool staking = true)
         {
-            var nodeSettings = new NodeSettings(args: new string[] { $"-datadir={dataDir}", $"-stake={(staking ? 1 : 0)}", "-walletname=dummy", "-walletpassword=dummy" }, loadConfiguration: false);
+            var nodeSettings = new NodeSettings(args: new string[] { $"-datadir={dataDir}", $"-stake={(staking ? 1 : 0)}", "-walletname=dummy", "-walletpassword=dummy" });
             var fullNodeBuilder = new FullNodeBuilder(nodeSettings);
             IFullNode fullNode = fullNodeBuilder
                                 .UseBlockStore()
@@ -139,7 +139,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
 
         public override void BuildNode()
         {
-            var settings = new NodeSettings(Network.StratisRegTest, ProtocolVersion.ALT_PROTOCOL_VERSION, args: new string[] { "-conf=stratis.conf", "-datadir=" + this.DataFolder }, loadConfiguration: false);
+            var settings = new NodeSettings(Network.StratisRegTest, ProtocolVersion.ALT_PROTOCOL_VERSION, args: new string[] { "-conf=stratis.conf", "-datadir=" + this.DataFolder });
 
             this.FullNode = (FullNode)new FullNodeBuilder()
                             .UseNodeSettings(settings)
@@ -168,7 +168,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
 
         public override void BuildNode()
         {
-            var settings = new NodeSettings(args: new string[] { "-conf=bitcoin.conf", "-datadir=" + this.DataFolder }, loadConfiguration: false);
+            var settings = new NodeSettings(args: new string[] { "-conf=bitcoin.conf", "-datadir=" + this.DataFolder });
 
             this.FullNode = (FullNode)new FullNodeBuilder()
                             .UseNodeSettings(settings)
@@ -197,7 +197,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
 
         public override void BuildNode()
         {
-            var settings = new NodeSettings(Network.StratisRegTest, ProtocolVersion.ALT_PROTOCOL_VERSION, args: new string[] { "-conf=stratis.conf", "-datadir=" + this.DataFolder }, loadConfiguration: false);
+            var settings = new NodeSettings(Network.StratisRegTest, ProtocolVersion.ALT_PROTOCOL_VERSION, args: new string[] { "-conf=stratis.conf", "-datadir=" + this.DataFolder });
 
             this.FullNode = (FullNode)new FullNodeBuilder()
                             .UseNodeSettings(settings)

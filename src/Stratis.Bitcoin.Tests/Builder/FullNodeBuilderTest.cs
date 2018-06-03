@@ -105,7 +105,6 @@ namespace Stratis.Bitcoin.Tests.Builder
         {
             var dataDir = "TestData/FullNodeBuilder/BuildWithInitialServicesSetup";
             var nodeSettings = new NodeSettings(Network.StratisRegTest, args: new string[] { $"-datadir={dataDir}" });
-            nodeSettings.DataFolder = new DataFolder(nodeSettings.DataDir);
 
             this.fullNodeBuilder = new FullNodeBuilder(nodeSettings, this.serviceCollectionDelegates, this.serviceProviderDelegates, this.featureCollectionDelegates, this.featureCollection);
 
@@ -130,7 +129,6 @@ namespace Stratis.Bitcoin.Tests.Builder
         {
             var dataDir = "TestData/FullNodeBuilder/BuildConfiguresFullNodeUsingConfiguration";
             var nodeSettings = new NodeSettings(args: new string[] { $"-datadir={dataDir}" });
-            nodeSettings.DataFolder = new DataFolder(nodeSettings.DataDir);
 
             this.fullNodeBuilder.ConfigureServices(e =>
             {
@@ -172,7 +170,6 @@ namespace Stratis.Bitcoin.Tests.Builder
         {
             var dataDir = "TestData/FullNodeBuilder/BuildConfiguresFullNodeUsingConfiguration";
             var nodeSettings = new NodeSettings(args: new string[] { $"-datadir={dataDir}" });
-            nodeSettings.DataFolder = new DataFolder(nodeSettings.DataDir);
 
             Assert.Throws<InvalidOperationException>(() =>
             {
