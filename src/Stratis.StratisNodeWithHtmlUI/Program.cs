@@ -34,8 +34,8 @@ namespace Stratis.StratisNodeWithHtmlUI
                 // NOTES: running BTC and STRAT side by side is not possible yet as the flags for serialization are static
                 var node = new FullNodeBuilder()
                     .UseNodeSettings(nodeSettings)
-                    .UsePosConsensus()
                     .UseBlockStore()
+                    .UsePosConsensus()
                     .UseMempool()
                     .UseWallet()
                     .AddPowPosMining()
