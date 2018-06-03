@@ -153,9 +153,9 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
             return CreateNode(new BitcoinCoreRunner(this.GetNextDataFolderName(), bitcoinDPath), Network.RegTest, start);
         }
 
-        public CoreNode CreateStratisPowNode(bool start = false, Action<IFullNodeBuilder> callback = null)
+        public CoreNode CreateStratisPowNode(bool start = false)
         {
-            return CreateNode(new StratisBitcoinPowRunner(this.GetNextDataFolderName(), callback), Network.RegTest, start);
+            return CreateNode(new StratisBitcoinPowRunner(this.GetNextDataFolderName()), Network.RegTest, start);
         }
 
         public CoreNode CreateStratisPowMiningNode(bool start = false)
@@ -163,9 +163,9 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
             return CreateNode(new StratisProofOfWorkMiningNode(this.GetNextDataFolderName()), Network.RegTest, start, "stratis.conf");
         }
 
-        public CoreNode CreateStratisPosNode(bool start = false, Action<IFullNodeBuilder> callback = null)
+        public CoreNode CreateStratisPosNode(bool start = false)
         {
-            return CreateNode(new StratisBitcoinPosRunner(this.GetNextDataFolderName(), callback), Network.RegTest, start, "stratis.conf");
+            return CreateNode(new StratisBitcoinPosRunner(this.GetNextDataFolderName()), Network.RegTest, start, "stratis.conf");
         }
 
         public CoreNode CreateStratisPosApiNode(bool start = false)
@@ -179,6 +179,16 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
             this.Nodes.Add(node);
             this.Nodes.Remove(cloneNode);
             return node;
+        }
+
+        public CoreNode CreateCustomPowNode(bool start, Action<IFullNodeBuilder> callback, Network network)
+        {
+            return CreateNode(new CustomPowRunner(this.GetNextDataFolderName(), callback, network), network, start);
+        }
+
+        public CoreNode CreateCustomPosNode(bool start, Action<IFullNodeBuilder> callback, Network network)
+        {
+            return CreateNode(new CustomPosRunner(this.GetNextDataFolderName(), callback, network), network, start, "stratis.conf");
         }
 
         private string GetNextDataFolderName()

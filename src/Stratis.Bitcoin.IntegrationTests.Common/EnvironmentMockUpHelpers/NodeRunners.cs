@@ -79,40 +79,26 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
 
     public sealed class StratisBitcoinPosRunner : NodeRunner
     {
-        private Action<IFullNodeBuilder> callback;
-
-        public StratisBitcoinPosRunner(string dataDir, Action<IFullNodeBuilder> callback = null)
+        public StratisBitcoinPosRunner(string dataDir)
             : base(dataDir)
         {
-            this.callback = callback;
         }
 
         public override void BuildNode()
         {
             var settings = new NodeSettings(Network.StratisRegTest, ProtocolVersion.ALT_PROTOCOL_VERSION, args: new string[] { "-conf=stratis.conf", "-datadir=" + this.DataFolder }, loadConfiguration: false);
 
-            if (this.callback != null)
-            {
-                var builder = new FullNodeBuilder().UseNodeSettings(settings);
-
-                this.callback(builder);
-
-                this.FullNode = (FullNode)builder.Build();
-            }
-            else
-            {
-                this.FullNode = (FullNode)new FullNodeBuilder()
-                    .UseNodeSettings(settings)
-                    .UseBlockStore()
-                    .UsePosConsensus()
-                    .UseMempool()
-                    .UseWallet()
-                    .AddPowPosMining()
-                    .AddRPC()
-                    .MockIBD()
-                    .SubstituteDateTimeProviderFor<MiningFeature>()
-                    .Build();
-            }
+            this.FullNode = (FullNode)new FullNodeBuilder()
+                .UseNodeSettings(settings)
+                .UseBlockStore()
+                .UsePosConsensus()
+                .UseMempool()
+                .UseWallet()
+                .AddPowPosMining()
+                .AddRPC()
+                .MockIBD()
+                .SubstituteDateTimeProviderFor<MiningFeature>()
+                .Build();
         }
 
         public override void OnStart()
@@ -176,39 +162,25 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
 
     public sealed class StratisBitcoinPowRunner : NodeRunner
     {
-        private Action<IFullNodeBuilder> callback;
-
-        public StratisBitcoinPowRunner(string dataDir, Action<IFullNodeBuilder> callback = null)
+        public StratisBitcoinPowRunner(string dataDir)
             : base(dataDir)
         {
-            this.callback = callback;
         }
 
         public override void BuildNode()
         {
             var settings = new NodeSettings(args: new string[] { "-conf=bitcoin.conf", "-datadir=" + this.DataFolder }, loadConfiguration: false);
 
-            if (this.callback != null)
-            {
-                var builder = new FullNodeBuilder().UseNodeSettings(settings);
-
-                this.callback(builder);
-
-                this.FullNode = (FullNode)builder.Build();
-            }
-            else
-            {
-                this.FullNode = (FullNode)new FullNodeBuilder()
-                    .UseNodeSettings(settings)
-                    .UseBlockStore()
-                    .UsePowConsensus()
-                    .UseMempool()
-                    .AddMining()
-                    .UseWallet()
-                    .AddRPC()
-                    .MockIBD()
-                    .Build();
-            }
+            this.FullNode = (FullNode)new FullNodeBuilder()
+                .UseNodeSettings(settings)
+                .UseBlockStore()
+                .UsePowConsensus()
+                .UseMempool()
+                .AddMining()
+                .UseWallet()
+                .AddRPC()
+                .MockIBD()
+                .Build();
         }
 
         public override void OnStart()
@@ -239,6 +211,62 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
                             .MockIBD()
                             .SubstituteDateTimeProviderFor<MiningFeature>()
                             .Build();
+        }
+
+        public override void OnStart()
+        {
+            this.FullNode.Start();
+        }
+    }
+
+    public sealed class CustomPowRunner : NodeRunner
+    {
+        private Action<IFullNodeBuilder> callback;
+
+        private Network network;
+
+        public CustomPowRunner(string dataDir, Action<IFullNodeBuilder> callback, Network network)
+            : base(dataDir)
+        {
+            this.callback = callback;
+            this.network = network;
+        }
+
+        public override void BuildNode()
+        {
+            var settings = new NodeSettings(this.network, args: new string[] { "-conf=bitcoin.conf", "-datadir=" + this.DataFolder }, loadConfiguration: false);
+            var builder = new FullNodeBuilder().UseNodeSettings(settings);
+
+            this.callback(builder);
+            this.FullNode = (FullNode)builder.Build();
+        }
+
+        public override void OnStart()
+        {
+            this.FullNode.Start();
+        }
+    }
+
+    public sealed class CustomPosRunner : NodeRunner
+    {
+        private Action<IFullNodeBuilder> callback;
+
+        private Network network;
+
+        public CustomPosRunner(string dataDir, Action<IFullNodeBuilder> callback, Network network)
+            : base(dataDir)
+        {
+            this.callback = callback;
+            this.network = network;
+        }
+
+        public override void BuildNode()
+        {
+            var settings = new NodeSettings(this.network, ProtocolVersion.ALT_PROTOCOL_VERSION, args: new string[] { "-conf=stratis.conf", "-datadir=" + this.DataFolder }, loadConfiguration: false);
+            var builder = new FullNodeBuilder().UseNodeSettings(settings);
+
+            this.callback(builder);
+            this.FullNode = (FullNode)builder.Build();
         }
 
         public override void OnStart()
