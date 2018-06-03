@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using System;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Moq;
 using NBitcoin;
@@ -9,6 +10,7 @@ using Xunit;
 
 namespace Stratis.Bitcoin.Tests.Controllers
 {
+    // API methods call the RPC methods, so can indirectly test RPC through API.
     public class ConnectionManagerControllerTest : LogsTestBase
     {
         private readonly Mock<IConnectionManager> connectionManager;
@@ -26,7 +28,7 @@ namespace Stratis.Bitcoin.Tests.Controllers
         }
 
         [Fact]
-        public void AddNode_InvalidCommand_ThrowsArgumentException()
+        public void AddNodeAPI_InvalidCommand_ThrowsArgumentException()
         {
             string endpoint = "0.0.0.0";
             string command = "notarealcommand";
@@ -42,7 +44,7 @@ namespace Stratis.Bitcoin.Tests.Controllers
         }
 
         [Fact]
-        public void AddNode_InvalidEndpoint_ThrowsException()
+        public void AddNodeAPI_InvalidEndpoint_ThrowsException()
         {
             string endpoint = "a.b.c.d";
             string command = "onetry";
@@ -54,10 +56,11 @@ namespace Stratis.Bitcoin.Tests.Controllers
             Assert.Single(errorResponse.Errors);
             ErrorModel error = errorResponse.Errors[0];
             Assert.Equal(400, error.Status);
+            Assert.StartsWith("System.FormatException", error.Description);
         }
 
         [Fact]
-        public void AddNode_ValidCommand_ReturnsTrue()
+        public void AddNodeAPI_ValidCommand_ReturnsTrue()
         {
             string endpoint = "0.0.0.0";
             string command = "remove";

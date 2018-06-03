@@ -6,7 +6,7 @@ using Stratis.Bitcoin.Controllers.Converters;
 namespace Stratis.Bitcoin.Controllers.Models
 {
     /// <summary>
-    /// Clas representing the status of the currently running node.
+    /// Class representing the status of the currently running node.
     /// </summary>
     public class StatusModel
     {
