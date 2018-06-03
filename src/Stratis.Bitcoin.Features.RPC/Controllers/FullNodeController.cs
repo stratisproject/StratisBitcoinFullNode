@@ -90,7 +90,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
         /// <param name="verbose">Non-zero if verbose model wanted.</param>
         /// <returns>A <see cref="TransactionBriefModel"/> or <see cref="TransactionVerboseModel"/> as specified by verbose. <c>null</c> if no transaction matching the hash.</returns>
         /// <exception cref="ArgumentException">Thrown if txid is invalid uint256.</exception>"
-        /// <remarks>Requires txindex=1, otherwise will return <c>null</c>.</remarks>
+        /// <remarks>Requires txindex=1, otherwise only txes that spend or create UTXOs for a wallet can be returned.</remarks>
         [ActionName("getrawtransaction")]
         [ActionDescription("Gets a raw, possibly pooled, transaction from the full node.")]
         public async Task<TransactionModel> GetRawTransactionAsync(string txid, int verbose = 0)

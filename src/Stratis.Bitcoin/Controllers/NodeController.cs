@@ -94,7 +94,7 @@ namespace Stratis.Bitcoin.Controllers
             StatusModel model = new StatusModel
             {
                 Version = this.fullNode.Version?.ToString() ?? "0",
-                ProtocolVersion = (uint)(this.nodeSettings?.ProtocolVersion ?? NodeSettings.SupportedProtocolVersion),
+                ProtocolVersion = (uint)(this.nodeSettings.ProtocolVersion),
                 Difficulty = GetNetworkDifficulty(this.networkDifficulty)?.Difficulty ?? 0,
                 Agent = this.nodeSettings.Agent,
                 ProcessId = Process.GetCurrentProcess().Id,
@@ -166,18 +166,15 @@ namespace Stratis.Bitcoin.Controllers
                 this.logger.LogDebug("GetBlockHeader {0}", hash);
                 if (!isJsonFormat)
                 {
-                    this.logger.LogError("Binary serialization is not supported'{0}'.", nameof(GetBlockHeader));
+                    this.logger.LogError("Binary serialization is not supported.");
                     throw new NotImplementedException();
                 }
 
                 BlockHeaderModel model = null;
-                if (this.chain != null)
+                BlockHeader blockHeader = this.chain?.GetBlock(uint256.Parse(hash))?.Header;
+                if (blockHeader != null)
                 {
-                    BlockHeader blockHeader = this.chain.GetBlock(uint256.Parse(hash))?.Header;
-                    if (blockHeader != null)
-                    {
-                        model = new BlockHeaderModel(blockHeader);
-                    }
+                    model = new BlockHeaderModel(blockHeader);
                 }
 
                 return this.Json(model);
@@ -193,11 +190,12 @@ namespace Stratis.Bitcoin.Controllers
         /// Gets a raw, possibly pooled, transaction from the full node. 
         /// API implementation of RPC call. 
         /// </summary>
-        /// <param name="txid">The transaction hash.</param>
+        /// <param name="trxid">The transaction hash.</param>
         /// <param name="verbose"><c>True if <see cref="TransactionVerboseModel"/> is wanted.</c></param>
         /// <returns>Json formatted <see cref="TransactionBriefModel"/> or <see cref="TransactionVerboseModel"/>. <c>null</c> if transaction not found. Returns <see cref="IActionResult"/> formatted error if otherwise fails.</returns>
         /// <exception cref="ArgumentNullException">Thrown if fullNode, network, or chain are not available.</exception>
         /// <exception cref="ArgumentException">Thrown if trxid is empty or not a valid<see cref="uint256"/>.</exception>
+        /// <remarks>Requires txindex=1, otherwise only txes that spend or create UTXOs for a wallet can be returned.</remarks>
         [Route("getrawtransaction")]
         [HttpGet]
         public async Task<IActionResult> GetRawTransactionAsync([FromQuery] string trxid, bool verbose = false)
@@ -219,7 +217,7 @@ namespace Stratis.Bitcoin.Controllers
                 Transaction trx = this.pooledTransaction != null ? await this.pooledTransaction.GetTransaction(txid).ConfigureAwait(false) : null;
                 if (trx == null)
                 {
-                    IBlockStore blockStore = this.fullNode.NodeFeature<IBlockStore>();
+                    var blockStore = this.fullNode.NodeFeature<IBlockStore>();
                     trx = blockStore != null ? await blockStore.GetTrxAsync(txid).ConfigureAwait(false) : null;
                 }
 
@@ -300,7 +298,7 @@ namespace Stratis.Bitcoin.Controllers
         /// </summary>
         /// <param name="trxid">The transaction ID as hash string.</param>
         /// <param name="vout">The vout to get unspent outputs.</param>
-        /// <param name="includeMempool">Boolean to look in Mempool.</param>
+        /// <param name="includeMemPool">Boolean to look in Mempool.</param>
         /// <returns>Json formatted <see cref="GetTxOutModel"/>. <c>null</c> if no unspent outputs given parameters. Returns <see cref="IActionResult"/> formatted error if fails.</returns>
         /// <exception cref="ArgumentNullException">Thrown if network or chain not provided.</exception>
         /// <exception cref="ArgumentException">Thrown if trxid is empty or not a valid <see cref="uint256"/></exception>
@@ -390,7 +388,7 @@ namespace Stratis.Bitcoin.Controllers
         /// <summary>
         /// Retrieves the difficulty target of the full node's network. 
         /// </summary>
-        /// <param name="networkDifficulty">The network difficulty interface.<param>
+        /// <param name="networkDifficulty">The network difficulty interface.</param>
         /// <returns>A network difficulty <see cref="Target"/>. Returns <c>null</c> if fails.</returns>
         internal static Target GetNetworkDifficulty(INetworkDifficulty networkDifficulty = null)
         {
