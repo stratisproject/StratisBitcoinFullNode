@@ -4,6 +4,7 @@ using System.Linq;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Utilities;
+using System;
 
 namespace Stratis.Bitcoin.Features.MemoryPool.Fee
 {
@@ -120,14 +121,19 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Fee
                 this.failAvg.Insert(i, Enumerable.Repeat(default(double), this.buckets.Count).ToList());
             }
 
-            for (int i = 0; i < GetMaxConfirms(); i++)
-            {
-                this.unconfTxs.Insert(i, Enumerable.Repeat(default(int), this.buckets.Count).ToList());
-            }
 
             this.txCtAvg = new List<double>(Enumerable.Repeat(default(double), this.buckets.Count));
             this.avg = new List<double>(Enumerable.Repeat(default(double), this.buckets.Count));
-            this.oldUnconfTxs = new List<int>(Enumerable.Repeat(default(int), this.buckets.Count));
+            ClearInMemoryCounters(this.buckets.Count);
+        }
+
+        private void ClearInMemoryCounters(int bucketsCount)
+        {
+            for (int i = 0; i < GetMaxConfirms(); i++)
+            {
+                this.unconfTxs.Insert(i, Enumerable.Repeat(default(int), bucketsCount).ToList());
+            }
+            this.oldUnconfTxs = new List<int>(Enumerable.Repeat(default(int), bucketsCount));
         }
 
         /// <summary>
@@ -183,7 +189,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Fee
         /// <param name="entryHeight">The height of the mempool entry.</param>
         /// <param name="nBestSeenHeight">The best sceen height.</param>
         /// <param name="bucketIndex">The bucket index.</param>
-        public void RemoveTx(int entryHeight, int nBestSeenHeight, int bucketIndex)
+        public void RemoveTx(int entryHeight, int nBestSeenHeight, int bucketIndex, bool inBlock)
         {
             //nBestSeenHeight is not updated yet for the new block
             int blocksAgo = nBestSeenHeight - entryHeight;
@@ -212,6 +218,15 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Fee
                     this.logger.LogInformation(
                         $"Blockpolicy error, mempool tx removed from blockIndex={blockIndex},bucketIndex={bucketIndex} already");
             }
+            if(!inBlock && (blocksAgo >= this.scale)) // Only counts as a failure if not confirmed for entire period
+            {
+                Guard.Assert(this.scale != 0);
+                int periodsAgo = blocksAgo / this.scale;
+                for (int i = 0; i < periodsAgo && i < this.failAvg.Count; i++)
+                {
+                    this.failAvg[i][bucketIndex]++;
+                }
+            }
         }
 
         /// <summary>
@@ -223,9 +238,11 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Fee
             for (var j = 0; j < this.buckets.Count; j++)
             {
                 for (var i = 0; i < this.confAvg.Count; i++)
-                    this.confAvg[i][j] = this.confAvg[i][j] * this.decay + this.curBlockConf[i][j];
-                this.avg[j] = this.avg[j] * this.decay + this.curBlockVal[j];
-                this.txCtAvg[j] = this.txCtAvg[j] * this.decay + this.curBlockTxCt[j];
+                    this.confAvg[i][j] = this.confAvg[i][j] * this.decay;
+                for (var i = 0; i < this.failAvg.Count; i++)
+                    this.failAvg[i][j] = this.failAvg[i][j] * this.decay;
+                this.avg[j] = this.avg[j] * this.decay;
+                this.txCtAvg[j] = this.txCtAvg[j] * this.decay;
             }
         }
 
@@ -241,13 +258,14 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Fee
         /// <param name="nBlockHeight">The current block height.</param>
         /// <returns></returns>
         public double EstimateMedianVal(int confTarget, double sufficientTxVal, double successBreakPoint,
-            bool requireGreater,
-            int nBlockHeight)
+            bool requireGreater, int nBlockHeight, EstimationResult result)
         {
             // Counters for a bucket (or range of buckets)
             double nConf = 0; // Number of tx's confirmed within the confTarget
             double totalNum = 0; // Total number of tx's that were ever confirmed
             int extraNum = 0; // Number of tx's still in mempool for confTarget or longer
+            double failNum = 0; // Number of tx's that were never confirmed but removed from the mempool after confTarget
+            int periodTarget = (confTarget + this.scale - 1) / this.scale;
 
             int maxbucketindex = this.buckets.Count - 1;
 
@@ -270,13 +288,23 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Fee
 
             bool foundAnswer = false;
             int bins = this.unconfTxs.Count;
+            bool newBucketRange = true;
+            bool passing = true;
+            EstimatorBucket passBucket = new EstimatorBucket(); ;
+            EstimatorBucket failBucket = new EstimatorBucket();
 
             // Start counting from highest(default) or lowest feerate transactions
             for (int bucket = startbucket; bucket >= 0 && bucket <= maxbucketindex; bucket += step)
             {
+                if (newBucketRange)
+                {
+                    curNearBucket = bucket;
+                    newBucketRange = false;
+                }
                 curFarBucket = bucket;
-                nConf += this.confAvg[confTarget - 1][bucket];
+                nConf += this.confAvg[periodTarget - 1][bucket];
                 totalNum += this.txCtAvg[bucket];
+                failNum += this.failAvg[periodTarget - 1][bucket];
                 for (int confct = confTarget; confct < this.GetMaxConfirms(); confct++)
                     extraNum += this.unconfTxs[(nBlockHeight - confct) % bins][bucket];
                 extraNum += this.oldUnconfTxs[bucket];
@@ -286,23 +314,47 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Fee
                 // will be looking at the same amount of data and same bucket breaks)
                 if (totalNum >= sufficientTxVal / (1 - this.decay))
                 {
-                    double curPct = nConf / (totalNum + extraNum);
+                    double curPct = nConf / (totalNum + failNum + extraNum);
 
                     // Check to see if we are no longer getting confirmed at the success rate
-                    if (requireGreater && curPct < successBreakPoint)
-                        break;
-                    if (!requireGreater && curPct > successBreakPoint)
-                        break;
+                    if ((requireGreater && curPct < successBreakPoint)||
+                        (!requireGreater && curPct > successBreakPoint))
+                    {
+                        if (passing == true)
+                        {
+                            // First time we hit a failure record the failed bucket
+                            int failMinBucket =  Math.Min(curNearBucket, curFarBucket);
+                            int failMaxBucket = Math.Max(curNearBucket, curFarBucket);
+                            failBucket.Start = failMinBucket > 0 ? this.buckets[failMinBucket - 1] : 0;
+                            failBucket.End = this.buckets[failMaxBucket];
+                            failBucket.WithinTarget = nConf;
+                            failBucket.TotalConfirmed = totalNum;
+                            failBucket.InMempool = extraNum;
+                            failBucket.LeftMempool = failNum;
+                            passing = false;
+                        }
+                        continue;
+                    }
 
                     // Otherwise update the cumulative stats, and the bucket variables
                     // and reset the counters
-                    foundAnswer = true;
-                    nConf = 0;
-                    totalNum = 0;
-                    extraNum = 0;
-                    bestNearBucket = curNearBucket;
-                    bestFarBucket = curFarBucket;
-                    curNearBucket = bucket + step;
+                    else
+                    {
+                        failBucket = new EstimatorBucket(); // Reset any failed bucket, currently passing
+                        foundAnswer = true;
+                        passing = true;
+                        passBucket.WithinTarget = nConf;
+                        nConf = 0;
+                        passBucket.TotalConfirmed = totalNum;
+                        totalNum = 0;
+                        passBucket.InMempool = extraNum;
+                        passBucket.LeftMempool = failNum;
+                        failNum = 0;
+                        extraNum = 0;
+                        bestNearBucket = curNearBucket;
+                        bestFarBucket = curFarBucket;
+                        newBucketRange = true;
+                    }
                 }
             }
 
@@ -313,14 +365,17 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Fee
             // Find the bucket with the median transaction and then report the average feerate from that bucket
             // This is a compromise between finding the median which we can't since we don't save all tx's
             // and reporting the average which is less accurate
-            int minBucket = bestNearBucket < bestFarBucket ? bestNearBucket : bestFarBucket;
-            int maxBucket = bestNearBucket > bestFarBucket ? bestNearBucket : bestFarBucket;
+            int minBucket = Math.Min(bestNearBucket, bestFarBucket);
+            int maxBucket = Math.Max(bestNearBucket, bestFarBucket);
             for (int j = minBucket; j <= maxBucket; j++)
+            {
                 txSum += this.txCtAvg[j];
+            }
             if (foundAnswer && txSum != 0)
             {
                 txSum = txSum / 2;
                 for (int j = minBucket; j <= maxBucket; j++)
+                {
                     if (this.txCtAvg[j] < txSum)
                     {
                         txSum -= this.txCtAvg[j];
@@ -331,11 +386,44 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Fee
                         median = this.avg[j] / this.txCtAvg[j];
                         break;
                     }
+                }
+
+                passBucket.Start = minBucket > 0 ? this.buckets[minBucket - 1] : 0;
+                passBucket.End = this.buckets[maxBucket];
+            }
+            
+            // If we were passing until we reached last few buckets with insufficient data, then report those as failed
+            if (passing && !newBucketRange)
+            {
+                int failMinBucket = Math.Min(curNearBucket, curFarBucket);
+                int failMaxBucket = Math.Max(curNearBucket, curFarBucket);
+                failBucket.Start = failMinBucket > 0 ? this.buckets[failMinBucket - 1] : 0;
+                failBucket.End = this.buckets[failMaxBucket];
+                failBucket.WithinTarget = nConf;
+                failBucket.TotalConfirmed = totalNum;
+                failBucket.InMempool = extraNum;
+                failBucket.LeftMempool = failNum;
             }
 
             this.logger.LogInformation(
-                $"{confTarget}: For conf success {(requireGreater ? $">" : $"<")} {successBreakPoint} need feerate {(requireGreater ? $">" : $"<")}: {median} from buckets {this.buckets[minBucket]} -{this.buckets[maxBucket]}  Cur Bucket stats {100 * nConf / (totalNum + extraNum)}  {nConf}/({totalNum}+{extraNum} mempool)");
+                $"FeeEst: {confTarget} {(requireGreater ? $">" : $"<")} " +
+                $"{successBreakPoint} decay {this.decay} feerate: {median}" +
+                $" from ({passBucket.Start} - {passBucket.End}" +
+                $" {100 * passBucket.WithinTarget / (passBucket.TotalConfirmed + passBucket.InMempool + passBucket.LeftMempool)}" +
+                $" {passBucket.WithinTarget}/({passBucket.TotalConfirmed}" +
+                $" {passBucket.InMempool} mem {passBucket.LeftMempool} out) " +
+                $"Fail: ({failBucket.Start} - {failBucket.End} " +
+                $"{100 * failBucket.WithinTarget / (failBucket.TotalConfirmed + failBucket.InMempool + failBucket.LeftMempool)}" +
+                $" {failBucket.WithinTarget}/({failBucket.TotalConfirmed}" +
+                $" {failBucket.InMempool} mem {failBucket.LeftMempool} out)");
 
+            if (result != null)
+            {
+                result.Pass = passBucket;
+                result.Fail = failBucket;
+                result.Decay = this.decay;
+                result.Scale = this.scale;
+            }
             return median;
         }
 
