@@ -1,5 +1,4 @@
-﻿using System;
-using System.Text;
+﻿using System.Text;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Configuration;
@@ -63,16 +62,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <param name="nodeSettings">The node's configuration settings.</param>
         public MempoolSettings(NodeSettings nodeSettings)
         {
-            this.Load(nodeSettings);
-        }
-
-        /// <summary>
-        /// Loads the mempool settings from the application configuration.
-        /// </summary>
-        /// <param name="nodeSettings">Node configuration.</param>
-        private void Load(NodeSettings nodeSettings)
-        {
-            var config = nodeSettings.ConfigReader;
+            TextFileConfiguration config = nodeSettings.ConfigReader;
             this.MaxMempool = config.GetOrDefault("maxmempool", MempoolValidator.DefaultMaxMempoolSize);
             this.MempoolExpiry = config.GetOrDefault("mempoolexpiry", MempoolValidator.DefaultMempoolExpiry);
             this.RelayPriority = config.GetOrDefault("relaypriority", MempoolValidator.DefaultRelaypriority);

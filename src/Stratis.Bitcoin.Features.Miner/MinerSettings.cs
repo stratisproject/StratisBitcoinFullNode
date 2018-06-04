@@ -1,9 +1,7 @@
-﻿using System;
-using System.Text;
+﻿using System.Text;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Configuration;
-using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.Miner
 {
@@ -37,22 +35,8 @@ namespace Stratis.Bitcoin.Features.Miner
         /// </summary>
         public string WalletName { get; set; }
 
-        /// <summary>
-        /// Initializes an instance of the object.
-        /// </summary>
         public MinerSettings(NodeSettings nodeSettings)
-        {        
-            this.Load(nodeSettings);
-        }
-
-        /// <summary>
-        /// Loads the RPC settings from the application configuration.
-        /// </summary>
-        /// <param name="nodeSettings">Application configuration.</param>
-        private void Load(NodeSettings nodeSettings)
         {
-            Guard.NotNull(nodeSettings, nameof(nodeSettings));
-
             TextFileConfiguration config = nodeSettings.ConfigReader;
 
             this.Mine = config.GetOrDefault<bool>("mine", false);
@@ -66,7 +50,7 @@ namespace Stratis.Bitcoin.Features.Miner
                 this.WalletPassword = config.GetOrDefault<string>("walletpassword", null);
             }
         }
-
+        
         /// <summary>
         /// Displays mining help information on the console.
         /// </summary>

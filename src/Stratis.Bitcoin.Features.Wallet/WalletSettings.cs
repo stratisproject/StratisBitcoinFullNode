@@ -21,30 +21,12 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// A value indicating whether the wallet being run is the light wallet or the full wallet.
         /// </summary>
         public bool IsLightWallet { get; set; }
-
-        /// <summary>
-        /// Initializes an instance of the object.
-        /// </summary>
-        public WalletSettings()
-        {
-        }
-
+        
         /// <summary>
         /// Initializes an instance of the object.
         /// </summary>
         public WalletSettings(NodeSettings nodeSettings)
         {
-            this.Load(nodeSettings);
-        }
-
-        /// <summary>
-        /// Loads the wallet settings from the application configuration.
-        /// </summary>
-        /// <param name="nodeSettings">Application configuration.</param>
-        private void Load(NodeSettings nodeSettings)
-        {
-            Guard.NotNull(nodeSettings, nameof(nodeSettings));
-
             TextFileConfiguration config = nodeSettings.ConfigReader;
             this.SaveTransactionHex = config.GetOrDefault<bool>("savetrxhex", false);
         }
