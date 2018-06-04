@@ -38,7 +38,7 @@ namespace NBitcoin
         private static readonly ConcurrentDictionary<string, Network> NetworksContainer = new ConcurrentDictionary<string, Network>();
 
         protected Block Genesis;
-        
+
         protected Network()
         {
             this.Consensus = new Consensus();
@@ -230,6 +230,102 @@ namespace NBitcoin
             return network;
         }
 
+        /// <summary>
+        /// Mines a new genesis block, to use with a new network.
+        /// Typically, 3 such genesis blocks need to be created when bootstrapping a network: for Main, Test and Reg.
+        /// </summary>
+        /// <param name="consensusFactory">
+        /// The consensus factory used to create transactions and blocks. 
+        /// Use <see cref="PosConsensusFactory"/> for proof-of-stake based networks.
+        /// </param>
+        /// <param name="pszTimestamp">
+        /// Traditionally a news headline from the day of the launch, but could be any string or link.
+        /// This will be inserted in the input coinbase transaction script.
+        /// </param>
+        /// <param name="target">
+        /// The difficulty target under which the hash of the block need to be. 
+        /// Make the Test and Reg targets ones easier to find than the Main one so that you don't wait too long to mine the genesis block.
+        /// </param>
+        /// <param name="genesisReward">
+        /// Specify how many coins to put in the genesis transaction's output. These coins are unspendable.
+        /// </param>
+        /// <param name="version">
+        /// The version of the transaction and the block header set in the genesis block. 
+        /// </param>
+        /// <example>
+        /// The following example shows the creation of a genesis block.
+        /// </example>
+        /// <code>
+        /// Block genesis = MineGenesisBlock(new PosConsensusFactory(), "Some topical headline.", new Target(new uint256("000fffff00000000000000000000000000000000000000000000000000000000")), Money.Coins(50m));
+        /// BlockHeader header = genesis.Header;
+        /// Console.WriteLine("Make a note of the following values:");
+        /// Console.WriteLine("bits: " + header.Bits);
+        /// Console.WriteLine("nonce: " + header.Nonce);
+        /// Console.WriteLine("time: " + header.Time);
+        /// Console.WriteLine("version: " + header.Version);
+        /// Console.WriteLine("hash: " + header.GetHash());
+        /// Console.WriteLine("merkleroot: " + header.HashMerkleRoot);
+        /// </code>
+        /// <returns> A genesis block. </returns>
+        public static Block MineGenesisBlock(ConsensusFactory consensusFactory, string pszTimestamp, Target target, Money genesisReward, int version = 1)
+        {
+            if (target == null)
+                throw new ArgumentException("Parameter 'target' cannot be null. Example use: new Target(new uint256(\"0000ffff00000000000000000000000000000000000000000000000000000000\"))");
+
+            if (consensusFactory == null)
+                throw new ArgumentException("Parameter 'consensusFactory' cannot be null. Use 'new ConsensusFactory()' for Bitcoin-like proof-of-work blockchains" +
+                                            "and 'new PosConsensusFactory()' for Stratis-like proof-of-stake blockchains.");
+
+            if (string.IsNullOrEmpty(pszTimestamp))
+                throw new ArgumentException("Parameter 'pszTimestamp' cannot be null. Use a news headline or any other appropriate string.");
+
+            if (genesisReward == null)
+                throw new ArgumentException("Parameter 'genesisReward' cannot be null. Example use: 'Money.Coins(50m)'.");
+
+            DateTimeOffset time = DateTimeOffset.Now;
+            uint unixTime = Utils.DateTimeToUnixTime(time);
+
+            Transaction txNew = consensusFactory.CreateTransaction();
+            txNew.Version = (uint)version;
+            txNew.Time = unixTime;
+            txNew.AddInput(new TxIn()
+            {
+                ScriptSig = new Script(
+                    Op.GetPushOp(0),
+                    new Op()
+                    {
+                        Code = (OpcodeType)0x1,
+                        PushData = new[] { (byte)42 }
+                    },
+                    Op.GetPushOp(Encoders.ASCII.DecodeData(pszTimestamp)))
+            });
+
+            txNew.AddOutput(new TxOut()
+            {
+                Value = genesisReward,
+            });
+
+            Block genesis = consensusFactory.CreateBlock();
+            genesis.Header.BlockTime = time;
+            genesis.Header.Bits = target;
+            genesis.Header.Nonce = 0;
+            genesis.Header.Version = version;
+            genesis.Transactions.Add(txNew);
+            genesis.Header.HashPrevBlock = uint256.Zero;
+            genesis.UpdateMerkleRoot();
+
+            // Iterate over the nonce until the block header hash is under the target.
+            uint256 hashTarget = target.ToUInt256();
+            while (genesis.Header.GetHash() >= hashTarget)
+            {
+                genesis.Header.Nonce++;
+                if (genesis.Header.Nonce == 0)
+                    genesis.Header.Time++;
+            }
+
+            return genesis;
+        }
+
         protected static void Assert(bool condition)
         {
             // TODO: use Guard when this moves to the FN.
@@ -323,7 +419,7 @@ namespace NBitcoin
             if (str == null)
                 throw new ArgumentNullException("str");
 
-            IEnumerable<Network> networks = expectedNetwork == null ? GetNetworks() : new[] {expectedNetwork};
+            IEnumerable<Network> networks = expectedNetwork == null ? GetNetworks() : new[] { expectedNetwork };
             var maybeb58 = true;
             for (int i = 0; i < str.Length; i++)
             {
@@ -351,7 +447,7 @@ namespace NBitcoin
                         bool rightNetwork = expectedNetwork == null || (candidate.Network == expectedNetwork);
                         bool rightType = candidate is T;
                         if (rightNetwork && rightType)
-                            return (T) (object) candidate;
+                            return (T)(object)candidate;
                     }
                     throw new FormatException("Invalid base58 string");
                 }
@@ -365,7 +461,7 @@ namespace NBitcoin
                     i++;
                     if (encoder == null)
                         continue;
-                    var type = (Bech32Type) i;
+                    var type = (Bech32Type)i;
                     try
                     {
                         byte witVersion;
@@ -378,7 +474,7 @@ namespace NBitcoin
                             candidate = new BitcoinWitScriptAddress(str, network);
 
                         if (candidate is T)
-                            return (T) (object) candidate;
+                            return (T)(object)candidate;
                     }
                     catch (Bech32FormatException)
                     {
