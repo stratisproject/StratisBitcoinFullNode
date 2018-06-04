@@ -3,6 +3,7 @@ using System.Text;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Configuration;
+using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.BlockStore
 {
@@ -11,8 +12,14 @@ namespace Stratis.Bitcoin.Features.BlockStore
     /// </summary>
     public class StoreSettings
     {
+        public StoreSettings() : this(NodeSettings.Default())
+        {
+        }
+
         public StoreSettings(NodeSettings nodeSettings)
         {
+            Guard.NotNull(nodeSettings, nameof(nodeSettings));
+
             TextFileConfiguration config = nodeSettings.ConfigReader;
 
             this.Prune = config.GetOrDefault<bool>("prune", false);

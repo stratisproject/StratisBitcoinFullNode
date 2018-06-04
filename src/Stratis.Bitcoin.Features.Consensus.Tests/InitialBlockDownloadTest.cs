@@ -20,7 +20,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
         public InitialBlockDownloadTest()
         {
             this.network = Network.Main;
-            this.consensusSettings = new ConsensusSettings(NodeSettings.Default());
+            this.consensusSettings = new ConsensusSettings();
             this.checkpoints = new Checkpoints(this.network, this.consensusSettings);
             this.nodeSettings = new NodeSettings(this.network);
             this.chainState = new ChainState(new InvalidBlockHashStore(DateTimeProvider.Default));

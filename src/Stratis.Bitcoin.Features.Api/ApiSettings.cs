@@ -43,6 +43,8 @@ namespace Stratis.Bitcoin.Features.Api
         /// </summary>
         public ApiSettings(NodeSettings nodeSettings)
         {
+            Guard.NotNull(nodeSettings, nameof(nodeSettings));
+
             TextFileConfiguration config = nodeSettings.ConfigReader;
 
             string apiHost = config.GetOrDefault("apiuri", DefaultApiHost);

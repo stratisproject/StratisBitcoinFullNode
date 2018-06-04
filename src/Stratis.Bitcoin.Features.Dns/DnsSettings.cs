@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Configuration;
+using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.Dns
 {
@@ -35,11 +36,13 @@ namespace Stratis.Bitcoin.Features.Dns
         public string DnsMailBox { get; set; }
 
         public DnsSettings() : this(NodeSettings.Default())
-        {
+        {	
         }
 
         public DnsSettings(NodeSettings nodeSettings)
         {
+            Guard.NotNull(nodeSettings, nameof(nodeSettings));
+
             ILogger logger = nodeSettings.LoggerFactory.CreateLogger(typeof(DnsSettings).FullName);
             logger.LogTrace("()");
 

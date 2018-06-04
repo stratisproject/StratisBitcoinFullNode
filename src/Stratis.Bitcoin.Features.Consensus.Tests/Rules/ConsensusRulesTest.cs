@@ -21,12 +21,12 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
         [Fact]
         public void Constructor_InitializesClass()
         {
-            this.consensusSettings = new ConsensusSettings(new NodeSettings());
-
-            this.consensusSettings.BlockAssumedValid = null;
-            this.consensusSettings.UseCheckpoints = true;
-
-
+            this.consensusSettings = new ConsensusSettings()
+            {
+                BlockAssumedValid = null,
+                UseCheckpoints = true
+            };
+            
             this.checkpoints.Setup(c => c.GetLastCheckpointHeight())
                 .Returns(15);
             this.dateTimeProvider.Setup(d => d.GetTime())

@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Configuration;
+using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.Miner
 {
@@ -37,6 +38,8 @@ namespace Stratis.Bitcoin.Features.Miner
 
         public MinerSettings(NodeSettings nodeSettings)
         {
+            Guard.NotNull(nodeSettings, nameof(nodeSettings));
+
             TextFileConfiguration config = nodeSettings.ConfigReader;
 
             this.Mine = config.GetOrDefault<bool>("mine", false);

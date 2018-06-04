@@ -23,11 +23,13 @@ namespace Stratis.Bitcoin.Features.Wallet
         public bool IsLightWallet { get; set; }
 
         public WalletSettings() : this(NodeSettings.Default())
-        {
+        {	
         }
 
         public WalletSettings(NodeSettings nodeSettings)
         {
+            Guard.NotNull(nodeSettings, nameof(nodeSettings));
+
             TextFileConfiguration config = nodeSettings.ConfigReader;
             this.SaveTransactionHex = config.GetOrDefault<bool>("savetrxhex", false);
         }

@@ -20,11 +20,14 @@ namespace Stratis.Bitcoin.Configuration.Settings
         /// </summary>
         public uint256 BlockAssumedValid { get; set; }
 
-        /// <summary>
-        /// Constructs a new consensus settings object.
-        /// </summary>
+        public ConsensusSettings() : this(NodeSettings.Default())
+        {
+        }
+
         public ConsensusSettings(NodeSettings nodeSettings)
         {
+            Guard.NotNull(nodeSettings, nameof(nodeSettings));
+
             TextFileConfiguration config = nodeSettings.ConfigReader;
             this.UseCheckpoints = config.GetOrDefault<bool>("checkpoints", true);
 

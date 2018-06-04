@@ -19,7 +19,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             this.loggerFactory = new LoggerFactory();
             this.blockRepository = new Mock<IBlockRepository>();
 
-            this.storeSettings = new StoreSettings(new Configuration.NodeSettings());
+            this.storeSettings = new StoreSettings();
 
             this.blockStoreCache = new BlockStoreCache(this.blockRepository.Object, DateTimeProvider.Default, this.loggerFactory, this.storeSettings);
         }

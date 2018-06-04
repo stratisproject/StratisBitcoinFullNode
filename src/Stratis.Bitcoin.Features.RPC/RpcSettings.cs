@@ -6,6 +6,7 @@ using System.Text;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Configuration;
+using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Utilities.Extensions;
 
 namespace Stratis.Bitcoin.Features.RPC
@@ -41,11 +42,17 @@ namespace Stratis.Bitcoin.Features.RPC
         /// </summary>
         public RpcSettings(NodeSettings nodeSettings)
         {
+            Guard.NotNull(nodeSettings, nameof(nodeSettings));
+
             this.Bind = new List<IPEndPoint>();
             this.DefaultBindings = new List<IPEndPoint>();
             this.AllowIp = new List<IPAddress>();
+            
+            // Get values from config
+            this.LoadSettingsFromConfig(nodeSettings);
 
-            this.Load(nodeSettings);
+            // Check validity of settings
+            this.CheckConfigurationValidity(nodeSettings.Logger);
         }
 
         /// <summary>
@@ -129,20 +136,6 @@ namespace Stratis.Bitcoin.Features.RPC
                     this.Bind.Add(new IPEndPoint(IPAddress.Parse("0.0.0.0"), this.RPCPort));
                 }
             }
-        }
-
-        /// <summary>
-        /// Loads the rpc settings from the application configuration.
-        /// Allows the callback to override those settings.
-        /// </summary>
-        /// <param name="nodeSettings">Application configuration.</param>
-        private void Load(NodeSettings nodeSettings)
-        {
-            // Get values from config
-            this.LoadSettingsFromConfig(nodeSettings);
-
-            // Check validity of settings
-            this.CheckConfigurationValidity(nodeSettings.Logger);
         }
 
         /// <summary> Prints the help information on how to configure the rpc settings to the logger.</summary>
