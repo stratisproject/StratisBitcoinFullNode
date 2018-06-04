@@ -1,10 +1,11 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 
-namespace Stratis.Bitcoin.Features.Dashboard.Controllers
+namespace Stratis.Bitcoin.Controllers
 {
     /// <summary>
     /// Controller providing HTML Dashboard
     /// </summary>
+    [Route("")]
     [Route("[controller]")]
     public class DashboardController : Controller
     {
