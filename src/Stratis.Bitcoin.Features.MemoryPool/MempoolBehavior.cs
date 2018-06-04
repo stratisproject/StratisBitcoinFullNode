@@ -389,8 +389,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             {
                 foreach (InventoryVector inventoryVector in send.Inventory)
                 {
-                    this.filterInventoryKnown.Add(inventoryVector.Hash);
-                    this.logger.LogTrace("Added inventory transaction ID '{0}' to known inventory filter.", inventoryVector.Hash);
+                    this.filterInventoryKnown.Add(inventoryVector.Hash);                    
                 }
             }
 
@@ -453,9 +452,9 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             // add to local filter
             lock (this.lockObject)
             {
-                this.filterInventoryKnown.Add(trxHash);
-                this.logger.LogTrace("Added transaction ID '{0}' to known inventory filter.", trxHash);
+                this.filterInventoryKnown.Add(trxHash);                
             }
+            this.logger.LogTrace("Added transaction ID '{0}' to known inventory filter.", trxHash);
 
             MempoolValidationState state = new MempoolValidationState(true);
             if (!await this.orphans.AlreadyHaveAsync(trxHash) && await this.validator.AcceptToMemoryPool(state, trx))

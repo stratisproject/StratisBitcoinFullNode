@@ -65,6 +65,9 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <summary>Location on chain when rejects are validated.</summary>
         private uint256 hashRecentRejectsChainTip;
 
+        /// <summary>Lock object for locking access to local collections.</summary>
+        private readonly object lockObject;
+
         /// <summary>
         /// Constructs a memory pool orphan manager object.
         /// </summary>
@@ -102,6 +105,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             this.recentRejects = new Dictionary<uint256, uint256>();
             this.hashRecentRejectsChainTip = uint256.Zero;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
+            this.lockObject = new object();
         }
 
         /// <summary>A lock for managing asynchronous access to memory pool.</summary>
@@ -159,9 +163,15 @@ namespace Stratis.Bitcoin.Features.MemoryPool
 
             // Use pcoinsTip->HaveCoinsInCache as a quick approximation to exclude
             // requesting or processing some txs which have already been included in a block
-            bool isTxPresent =  this.recentRejects.ContainsKey(trxid) ||
-                                await this.MempoolLock.ReadAsync(() => this.memPool.Exists(trxid)) ||
-                                this.mapOrphanTransactions.ContainsKey(trxid);
+            bool isTxPresent = false;
+            lock(this.lockObject)
+            {
+                isTxPresent = this.recentRejects.ContainsKey(trxid) || this.mapOrphanTransactions.ContainsKey(trxid);
+            }
+            if (!isTxPresent)
+            {
+                isTxPresent = await this.MempoolLock.ReadAsync(() => this.memPool.Exists(trxid));
+            }                                
 
             this.logger.LogTrace("(-):{0}", isTxPresent);
             return isTxPresent;
