@@ -31,6 +31,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
         public StoreSettings()
         {
+            this.MaxCacheBlocksCount = DefaultMaxCacheBlocksCount;
         }
 
         public StoreSettings(Action<StoreSettings> callback)
