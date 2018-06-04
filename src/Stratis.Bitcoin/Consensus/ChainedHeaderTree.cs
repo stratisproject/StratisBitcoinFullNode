@@ -349,7 +349,7 @@ namespace Stratis.Bitcoin.Consensus
 
             if((fork != chainedHeader2) && (fork != chainedHeader1))
             {
-                this.logger.LogTrace("(-):{0}", fork);
+                this.logger.LogTrace("(-):'{0}'", fork);
                 return fork;
             }
 
