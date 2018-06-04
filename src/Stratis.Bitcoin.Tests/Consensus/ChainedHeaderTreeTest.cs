@@ -5,6 +5,7 @@ using System.Reflection;
 using Moq;
 using NBitcoin;
 using Stratis.Bitcoin.Base;
+using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Consensus;
@@ -20,7 +21,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
             public Mock<IChainedHeaderValidator> ChainedHeaderValidatorMock = new Mock<IChainedHeaderValidator>();
             public Mock<ICheckpoints> CheckpointsMock = new Mock<ICheckpoints>();
             public Mock<IChainState> ChainStateMock = new Mock<IChainState>();
-            public ConsensusSettings ConsensusSettings = new ConsensusSettings();
+            public ConsensusSettings ConsensusSettings = new ConsensusSettings(new NodeSettings(Network.RegTest));
 
             public ChainedHeaderTree ChainedHeaderTree;
 

@@ -107,13 +107,6 @@ namespace Stratis.Bitcoin.Features.LightWallet
             this.walletSettings = walletSettings;
         }
 
-        /// <inheritdoc />
-        public override void LoadConfiguration()
-        {
-            this.walletSettings.Load(this.nodeSettings);
-            this.walletSettings.IsLightWallet = true;
-        }
-
         /// <summary>
         /// Prints command-line help.
         /// </summary>
@@ -127,6 +120,7 @@ namespace Stratis.Bitcoin.Features.LightWallet
         public override void Initialize()
         {
             this.connectionManager.Parameters.TemplateBehaviors.Add(new DropNodesBehaviour(this.chain, this.connectionManager, this.loggerFactory));
+            this.walletSettings.IsLightWallet = true;
 
             this.walletManager.Start();
             this.walletSyncManager.Start();

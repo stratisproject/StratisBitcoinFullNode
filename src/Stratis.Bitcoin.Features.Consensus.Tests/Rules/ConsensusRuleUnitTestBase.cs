@@ -8,6 +8,7 @@ using Moq;
 using NBitcoin;
 using Stratis.Bitcoin.Base.Deployments;
 using Stratis.Bitcoin.BlockPulling;
+using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
@@ -45,7 +46,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
 
             this.concurrentChain = new ConcurrentChain(this.network);
             this.nodeDeployments = new NodeDeployments(this.network, this.concurrentChain);
-            this.consensusSettings = new ConsensusSettings();
+            this.consensusSettings = new ConsensusSettings(new NodeSettings(this.network));
             this.checkpoints = new Mock<ICheckpoints>();
 
             this.ruleRegistrations = new List<ConsensusRule>();
@@ -124,7 +125,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
 
             this.concurrentChain = new ConcurrentChain(this.network);
             this.nodeDeployments = new NodeDeployments(this.network, this.concurrentChain);
-            this.consensusSettings = new ConsensusSettings();
+            this.consensusSettings = new ConsensusSettings(new NodeSettings(this.network));
             this.checkpoints = new Mock<ICheckpoints>();
 
             this.ruleRegistrations = new List<ConsensusRule>();

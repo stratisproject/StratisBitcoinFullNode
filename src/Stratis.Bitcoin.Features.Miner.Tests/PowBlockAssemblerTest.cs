@@ -5,6 +5,7 @@ using Moq;
 using NBitcoin;
 using Stratis.Bitcoin.Base.Deployments;
 using Stratis.Bitcoin.BlockPulling;
+using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Features.Consensus;
@@ -427,7 +428,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
         {
             var powConsensusRules = new PowConsensusRules(this.network,
                     this.LoggerFactory.Object, this.dateTimeProvider.Object, chain,
-                    new NodeDeployments(this.network, chain), new ConsensusSettings(), new Checkpoints(),
+                    new NodeDeployments(this.network, chain), new ConsensusSettings(new NodeSettings(this.network)), new Checkpoints(),
                     new Mock<CoinView>().Object, new Mock<ILookaheadBlockPuller>().Object);
 
             powConsensusRules.Register(new FullNodeBuilderConsensusExtension.PowConsensusRulesRegistration());

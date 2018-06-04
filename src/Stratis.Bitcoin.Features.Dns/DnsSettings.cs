@@ -35,40 +35,13 @@ namespace Stratis.Bitcoin.Features.Dns
         /// <summary>Defines the e-mail address used as the administrative point of contact for the domain.</summary>
         public string DnsMailBox { get; set; }
 
-        /// <summary>The callback used to override/constrain/extend the settings provided by the Load method.</summary>
-        private Action<DnsSettings> callback = null;
-
-        /// <summary>
-        /// Constructs this object.
-        /// </summary>
-        public DnsSettings()
-        {
-        }
-
-        /// <summary>
-        /// Constructs this object whilst providing a callback to override/constrain/extend 
-        /// the settings provided by the Load method.
-        /// </summary>
-        /// <param name="callback">The callback used to override/constrain/extend the settings provided by the Load method.</param>
-        public DnsSettings(Action<DnsSettings> callback)
-            : this()
-        {
-            this.callback = callback;
-        }
-
-        /// <summary>
-        /// Loads the DNS related settings from the application configuration.
-        /// </summary>
-        /// <param name="nodeSettings">Application configuration.</param>
-        /// <param name="dnsSettings">Existing DnsSettings object to add loaded values to.</param>
-        public DnsSettings Load(NodeSettings nodeSettings)
+        public DnsSettings(NodeSettings nodeSettings)
         {
             ILogger logger = nodeSettings.LoggerFactory.CreateLogger(typeof(DnsSettings).FullName);
-
             logger.LogTrace("()");
 
             TextFileConfiguration config = nodeSettings.ConfigReader;
-            
+
             this.DnsListenPort = config.GetOrDefault<int>("dnslistenport", DefaultDnsListenPort);
             logger.LogDebug("DNS Seed Service listen port is {0}, if running as DNS Seed.", this.DnsListenPort);
 
@@ -88,11 +61,7 @@ namespace Stratis.Bitcoin.Features.Dns
             this.DnsMailBox = config.GetOrDefault<string>("dnsmailbox", null);
             logger.LogDebug("DNS Seed Service mailbox set to {0}.", this.DnsMailBox);
 
-            this.callback?.Invoke(this);
-
             logger.LogTrace("(-)");
-
-            return this;
         }
 
         /// <summary>Prints the help information on how to configure the DNS settings to the logger.</summary>

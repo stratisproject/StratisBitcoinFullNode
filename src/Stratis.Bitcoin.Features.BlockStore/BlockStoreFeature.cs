@@ -137,7 +137,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// <param name="network">The network to extract values from.</param>
         public static void PrintHelp(Network network)
         {
-            StoreSettings.PrintHelp(network);
+            StoreSettings.PrintHelp();
         }
 
         /// <summary>

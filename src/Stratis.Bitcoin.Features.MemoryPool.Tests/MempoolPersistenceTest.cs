@@ -272,7 +272,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             IDateTimeProvider dateTimeProvider = DateTimeProvider.Default;
             NodeSettings nodeSettings = NodeSettings.Default();
             var loggerFactory = nodeSettings.LoggerFactory;
-            ConsensusSettings consensusSettings = new ConsensusSettings().Load(nodeSettings);
+            ConsensusSettings consensusSettings = new ConsensusSettings(nodeSettings);
             txMemPool = new TxMempool(dateTimeProvider, new BlockPolicyEstimator(new MempoolSettings(nodeSettings), loggerFactory, nodeSettings), loggerFactory, nodeSettings);
             var mempoolLock = new MempoolSchedulerLock();
             var coins = new InMemoryCoinView(settings.Network.GenesisHash);

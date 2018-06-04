@@ -10,6 +10,7 @@ using Stratis.Bitcoin.Utilities;
 using Xunit;
 using Moq;
 using NBitcoin.DataEncoders;
+using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Tests.Common;
 
 namespace Stratis.Bitcoin.Features.BlockStore.Tests
@@ -85,7 +86,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
 
             this.chainState = chainStateMoq.Object;
 
-            this.blockStoreQueue = new BlockStoreQueue(this.repository, this.chain, this.chainState, new StoreSettings(), this.nodeLifetime, new LoggerFactory());
+            this.blockStoreQueue = new BlockStoreQueue(this.repository, this.chain, this.chainState, new StoreSettings(new NodeSettings()), this.nodeLifetime, new LoggerFactory());
         }
 
         private ConcurrentChain CreateChain(int blocksCount)
@@ -166,7 +167,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             ConcurrentChain longChain = this.CreateChain(count);
             this.repositoryBlockHash = longChain.Genesis.HashBlock;
 
-            this.blockStoreQueue = new BlockStoreQueue(this.repository, longChain, this.chainState, new StoreSettings(), new NodeLifetime(), new LoggerFactory());
+            this.blockStoreQueue = new BlockStoreQueue(this.repository, longChain, this.chainState, new StoreSettings(new NodeSettings()), new NodeLifetime(), new LoggerFactory());
 
             await this.blockStoreQueue.InitializeAsync().ConfigureAwait(false);
             this.consensusTip = longChain.Tip;
@@ -274,7 +275,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             this.chain = this.CreateChain(1000);
             this.repositoryBlockHash = this.chain.Genesis.HashBlock;
 
-            this.blockStoreQueue = new BlockStoreQueue(this.repository, this.chain, this.chainState, new StoreSettings(), this.nodeLifetime, new LoggerFactory());
+            this.blockStoreQueue = new BlockStoreQueue(this.repository, this.chain, this.chainState, new StoreSettings(new NodeSettings()), this.nodeLifetime, new LoggerFactory());
 
             await this.blockStoreQueue.InitializeAsync().ConfigureAwait(false);
             this.consensusTip = this.chain.Tip;

@@ -5,6 +5,7 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using NBitcoin;
 using Stratis.Bitcoin.Base.Deployments;
+using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
@@ -84,7 +85,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
                     new Mock<IDateTimeProvider>().Object,
                     new ConcurrentChain(),
                     new NodeDeployments(Network.RegTest, new ConcurrentChain()),
-                    new ConsensusSettings(), new Mock<ICheckpoints>().Object, new Mock<CoinView>().Object, null);
+                    new ConsensusSettings(new NodeSettings(Network.RegTest)), new Mock<ICheckpoints>().Object, new Mock<CoinView>().Object, null);
 
                 rule.Initialize();
 
