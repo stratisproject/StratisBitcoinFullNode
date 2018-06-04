@@ -41,7 +41,7 @@ namespace Stratis.StratisDnsD
         {
             try
             {
-                NodeSettings nodeSettings = new NodeSettings(protocolVersion:ProtocolVersion.ALT_PROTOCOL_VERSION, args:args, loadConfiguration:true);
+                NodeSettings nodeSettings = new NodeSettings(protocolVersion:ProtocolVersion.ALT_PROTOCOL_VERSION, args:args);
 
                 Action<DnsSettings> serviceTest = (s) =>
                 {
