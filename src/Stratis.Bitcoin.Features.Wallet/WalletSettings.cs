@@ -21,10 +21,11 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// A value indicating whether the wallet being run is the light wallet or the full wallet.
         /// </summary>
         public bool IsLightWallet { get; set; }
-        
-        /// <summary>
-        /// Initializes an instance of the object.
-        /// </summary>
+
+        public WalletSettings() : this(NodeSettings.Default())
+        {
+        }
+
         public WalletSettings(NodeSettings nodeSettings)
         {
             TextFileConfiguration config = nodeSettings.ConfigReader;

@@ -1,5 +1,4 @@
-﻿using System;
-using System.Text;
+﻿using System.Text;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Configuration;
@@ -34,6 +33,10 @@ namespace Stratis.Bitcoin.Features.Dns
 
         /// <summary>Defines the e-mail address used as the administrative point of contact for the domain.</summary>
         public string DnsMailBox { get; set; }
+
+        public DnsSettings() : this(NodeSettings.Default())
+        {
+        }
 
         public DnsSettings(NodeSettings nodeSettings)
         {
