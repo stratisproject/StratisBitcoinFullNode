@@ -320,7 +320,7 @@ namespace Stratis.Bitcoin.Consensus
                     ChainedHeader peerTip = this.chainedHeadersByHash[peerIdToTipHash.Value];
                     int peerId = peerIdToTipHash.Key;
 
-                    ChainedHeader fork = this.FindForkNotOnConensusChain(peerTip, consensusTip);
+                    ChainedHeader fork = this.FindForkIfChainedHeadersNotOnSameChain(peerTip, consensusTip);
 
                     // Do nothing in case peer's tip is on our consensus chain.
                     if (fork != null)
@@ -341,13 +341,13 @@ namespace Stratis.Bitcoin.Consensus
         }
 
         /// <summary>Find the fork between two headers and return the fork if the headers are not on the same chain.</summary>
-        private ChainedHeader FindForkNotOnConensusChain(ChainedHeader peerTip, ChainedHeader consensusTip)
+        private ChainedHeader FindForkIfChainedHeadersNotOnSameChain(ChainedHeader chainedHeader1, ChainedHeader chainedHeader2)
         {
-            this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(peerTip), peerTip, nameof(consensusTip), consensusTip);
+            this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(chainedHeader1), chainedHeader1, nameof(chainedHeader2), chainedHeader2);
 
-            ChainedHeader fork = peerTip.FindFork(consensusTip);
+            ChainedHeader fork = chainedHeader1.FindFork(chainedHeader2);
 
-            if((fork != consensusTip) && (fork != peerTip))
+            if((fork != chainedHeader2) && (fork != chainedHeader1))
             {
                 this.logger.LogTrace("(-):{0}", fork);
                 return fork;
