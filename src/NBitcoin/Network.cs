@@ -232,7 +232,7 @@ namespace NBitcoin
 
         /// <summary>
         /// Mines a new genesis block, to use with a new network.
-        /// Typically, 3 such genesis blocks need to be created when bootstrapping a network: for Main, Test and Reg.
+        /// Typically, 3 such genesis blocks need to be created when bootstrapping a new coin: for Main, Test and Reg networks.
         /// </summary>
         /// <param name="consensusFactory">
         /// The consensus factory used to create transactions and blocks. 
@@ -474,7 +474,7 @@ namespace NBitcoin
                             candidate = new BitcoinWitScriptAddress(str, network);
 
                         if (candidate is T)
-                            return (T)(object)candidate;
+                            return (T)candidate;
                     }
                     catch (Bech32FormatException)
                     {
