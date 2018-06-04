@@ -205,7 +205,7 @@ namespace NBitcoin
         /// <summary>
         /// Register an immutable <see cref="Network"/> instance so it is queryable through <see cref="GetNetwork(string)"/> and <see cref="GetNetworks()"/>.
         /// </summary>
-        internal static Network Register(Network network)
+        public static Network Register(Network network)
         {
             IEnumerable<string> networkNames = network.AdditionalNames != null ? new[] { network.Name }.Concat(network.AdditionalNames) : new[] { network.Name };
 
