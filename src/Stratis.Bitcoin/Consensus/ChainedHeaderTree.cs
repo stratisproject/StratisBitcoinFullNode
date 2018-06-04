@@ -776,6 +776,23 @@ namespace Stratis.Bitcoin.Consensus
         }
 
         /// <summary>
+        /// Creates the chained header for a new block.
+        /// </summary>
+        /// <param name="block">The block.</param>
+        /// <returns>Newly created and connected chained header for the specified block.</returns>
+        public ChainedHeader CreateChainedHeaderWithBlock(Block block)
+        {
+            this.logger.LogTrace("({0}:'{1}')", nameof(block), block.GetHash());
+
+            this.CreateNewHeaders(new List<BlockHeader>() {block.Header});
+
+            this.BlockDataDownloaded(block, out ChainedHeader chainedHeader);
+
+            this.logger.LogTrace("(-):'{0}'", chainedHeader);
+            return chainedHeader;
+        }
+
+        /// <summary>
         /// Find the headers that are not part of the tree and try to connect them to an existing chain 
         /// by creating new chained headers and linking them to their previous headers.
         /// </summary>
