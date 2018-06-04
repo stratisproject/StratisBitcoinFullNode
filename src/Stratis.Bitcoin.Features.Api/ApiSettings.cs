@@ -37,24 +37,20 @@ namespace Stratis.Bitcoin.Features.Api
         /// <summary>URI to node's API interface.</summary>
         public Timer KeepaliveTimer { get; private set; }
 
-        /// <summary>The callback used to override/constrain/extend the settings provided by the Load method.</summary>
-        private Action<ApiSettings> callback;
-
         /// <summary>
         /// Constructs this object whilst providing a callback to override/constrain/extend 
         /// the settings provided by the Load method.
         /// </summary>
-        /// <param name="callback">The callback used to override/constrain/extend the settings provided by the Load method.</param>
-        public ApiSettings(Action<ApiSettings> callback)
+        public ApiSettings(NodeSettings nodeSettings)
         {
-            this.callback = callback;
+            this.Load(nodeSettings);
         }
 
         /// <summary>
         /// Loads the API related settings from the application configuration.
         /// </summary>
         /// <param name="nodeSettings">Application configuration.</param>
-        public void Load(NodeSettings nodeSettings)
+        private void Load(NodeSettings nodeSettings)
         {
             TextFileConfiguration config = nodeSettings.ConfigReader;
 
@@ -87,8 +83,6 @@ namespace Stratis.Bitcoin.Features.Api
                     Interval = keepAlive * 1000
                 };
             }
-
-            this.callback?.Invoke(this);
         }
 
         /// <summary>

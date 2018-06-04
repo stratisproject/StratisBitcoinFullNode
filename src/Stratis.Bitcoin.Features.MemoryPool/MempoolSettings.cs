@@ -57,25 +57,11 @@ namespace Stratis.Bitcoin.Features.MemoryPool
 
         public NodeSettings NodeSettings { get; private set; }
 
-        /// <summary>Records a script used for overriding loaded settings</summary>
-        private readonly Action<MempoolSettings> callback;
-
-        /// <summary>
-        /// Constructor for the mempool settings
-        /// </summary>
-        /// <param name="callback">Script applied during load to override configured settings</param>
-        public MempoolSettings(Action<MempoolSettings> callback)
-        {
-            this.callback = callback;
-        }
-
         /// <summary>
         /// Constructor for the mempool settings.
         /// </summary>
         /// <param name="nodeSettings">The node's configuration settings.</param>
-        /// <param name="callback">Script applied during load to override configured settings</param>
-        public MempoolSettings(NodeSettings nodeSettings, Action<MempoolSettings> callback = null)
-            : this(callback)
+        public MempoolSettings(NodeSettings nodeSettings)
         {
             this.Load(nodeSettings);
         }
@@ -84,7 +70,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// Loads the mempool settings from the application configuration.
         /// </summary>
         /// <param name="nodeSettings">Node configuration.</param>
-        public void Load(NodeSettings nodeSettings)
+        private void Load(NodeSettings nodeSettings)
         {
             var config = nodeSettings.ConfigReader;
             this.MaxMempool = config.GetOrDefault("maxmempool", MempoolValidator.DefaultMaxMempoolSize);
@@ -101,8 +87,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             this.WhiteListRelay = config.GetOrDefault("whitelistrelay", DefaultWhiteListRelay);
 
             this.NodeSettings = nodeSettings;
-
-            this.callback?.Invoke(this);
         }
 
         /// <summary>Prints the help information on how to configure the mempool settings to the logger.</summary>

@@ -36,24 +36,16 @@ namespace Stratis.Bitcoin.Features.RPC
         /// <summary>List of IP addresses that are allowed to connect to RPC interfaces.</summary>
         public List<IPAddress> AllowIp { get; set; }
 
-        private Action<RpcSettings> callback = null;
-
         /// <summary>
         /// Initializes an instance of the object.
         /// </summary>
-        public RpcSettings()
+        public RpcSettings(NodeSettings nodeSettings)
         {
             this.Bind = new List<IPEndPoint>();
             this.DefaultBindings = new List<IPEndPoint>();
             this.AllowIp = new List<IPAddress>();
-        }
 
-        /// <summary> Initializes an instance of the object.</summary>
-        /// <param name="callback">The callback to call after the settings have been loaded.</param>
-        public RpcSettings(Action<RpcSettings> callback)
-            : this()
-        {
-            this.callback = callback;
+            this.Load(nodeSettings);
         }
 
         /// <summary>
@@ -144,13 +136,10 @@ namespace Stratis.Bitcoin.Features.RPC
         /// Allows the callback to override those settings.
         /// </summary>
         /// <param name="nodeSettings">Application configuration.</param>
-        public void Load(NodeSettings nodeSettings)
+        private void Load(NodeSettings nodeSettings)
         {
             // Get values from config
             this.LoadSettingsFromConfig(nodeSettings);
-
-            // Invoke callback
-            this.callback?.Invoke(this);
 
             // Check validity of settings
             this.CheckConfigurationValidity(nodeSettings.Logger);

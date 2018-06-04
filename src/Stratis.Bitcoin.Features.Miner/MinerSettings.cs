@@ -38,24 +38,18 @@ namespace Stratis.Bitcoin.Features.Miner
         public string WalletName { get; set; }
 
         /// <summary>
-        /// A callback allow changing the default settings.
-        /// </summary>
-        private readonly Action<MinerSettings> callback;
-
-        /// <summary>
         /// Initializes an instance of the object.
         /// </summary>
-        /// <param name="callback">Callback routine to be called once the miner settings are loaded.</param>
-        public MinerSettings(Action<MinerSettings> callback = null)
+        public MinerSettings(NodeSettings nodeSettings)
         {        
-            this.callback = callback;
+            this.Load(nodeSettings);
         }
 
         /// <summary>
         /// Loads the RPC settings from the application configuration.
         /// </summary>
         /// <param name="nodeSettings">Application configuration.</param>
-        public void Load(NodeSettings nodeSettings)
+        private void Load(NodeSettings nodeSettings)
         {
             Guard.NotNull(nodeSettings, nameof(nodeSettings));
 
@@ -71,8 +65,6 @@ namespace Stratis.Bitcoin.Features.Miner
                 this.WalletName = config.GetOrDefault<string>("walletname", null);
                 this.WalletPassword = config.GetOrDefault<string>("walletpassword", null);
             }
-
-            this.callback?.Invoke(this);
         }
 
         /// <summary>

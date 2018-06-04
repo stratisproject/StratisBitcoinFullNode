@@ -23,8 +23,9 @@ namespace Stratis.Bitcoin.Configuration.Settings
         /// <summary>
         /// Constructs a new consensus settings object.
         /// </summary>
-        public ConsensusSettings()
+        public ConsensusSettings(NodeSettings nodeSettings)
         {
+            this.Load(nodeSettings);
         }
 
         /// <summary>
@@ -32,7 +33,7 @@ namespace Stratis.Bitcoin.Configuration.Settings
         /// </summary>
         /// <param name="nodeSettings">The node's settings.</param>
         /// <returns>These consensus config settings.</returns>
-        public ConsensusSettings Load(NodeSettings nodeSettings)
+        private ConsensusSettings Load(NodeSettings nodeSettings)
         {
             Guard.NotNull(nodeSettings, nameof(nodeSettings));
             

@@ -11,6 +11,11 @@ namespace Stratis.Bitcoin.Features.BlockStore
     /// </summary>
     public class StoreSettings
     {
+        public StoreSettings(NodeSettings nodeSettings)
+        {
+            this.Load(nodeSettings);
+        }
+
         // Initialize 'MaxCacheBlocksCount' with default value of maximum 300 blocks or with user defined value.
         // Value of 300 is chosen because it covers most of the cases when not synced node is connected and trying to sync from us.
         const int DefaultMaxCacheBlocksCount = 300;
@@ -27,39 +32,19 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// <summary>The maximum amount of blocks the cache can contain.</summary>
         public int MaxCacheBlocksCount { get; set; }
 
-        private Action<StoreSettings> callback = null;
-
-        public StoreSettings()
-        {
-        }
-
-        public StoreSettings(Action<StoreSettings> callback)
-            : this()
-        {
-            this.callback = callback;
-        }
-
-        public StoreSettings(NodeSettings nodeSettings, Action<StoreSettings> callback = null)
-            : this(callback)
-        {
-            this.Load(nodeSettings);
-        }
-
         /// <summary>
         /// Loads the storage related settings from the application configuration.
         /// </summary>
         /// <param name="nodeSettings">Application configuration.</param>
-        public virtual void Load(NodeSettings nodeSettings)
+        private void Load(NodeSettings nodeSettings)
         {
-            var config = nodeSettings.ConfigReader;
+            TextFileConfiguration config = nodeSettings.ConfigReader;
 
             this.Prune = config.GetOrDefault<bool>("prune", false);
             this.TxIndex = config.GetOrDefault<bool>("txindex", false);
             this.ReIndex = config.GetOrDefault<bool>("reindex", false);
             this.MaxCacheBlocksCount = nodeSettings.ConfigReader.GetOrDefault("maxCacheBlocksCount", DefaultMaxCacheBlocksCount);
-
-            this.callback?.Invoke(this);
-
+            
             if (this.Prune && this.TxIndex)
                 throw new ConfigurationException("Prune mode is incompatible with -txindex");
         }
