@@ -299,7 +299,8 @@ namespace Stratis.Bitcoin.Consensus
             return peerIdsToResync;
         }
 
-        /// <summary>Checks each peer's tip if it violates max reorg rule.</summary>
+        /// <summary>Checks each peer's tip if it violates max reorg rule.
+        /// Peers that violate it must be resynced.</summary>
         /// <param name="consensusTip">Consensus tip.</param>
         /// <returns>List of peers which tips violate max reorg rule.</returns>
         private List<int> FindPeersToResync(ChainedHeader consensusTip)
