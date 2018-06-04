@@ -47,8 +47,19 @@ namespace Stratis.Bitcoin.Features.Miner
         /// </summary>
         /// <param name="callback">Callback routine to be called once the miner settings are loaded.</param>
         public MinerSettings(Action<MinerSettings> callback = null)
-        {        
+        {
             this.callback = callback;
+        }
+
+        /// <summary>
+        /// Initializes an instance of the object. Calls the Load method.
+        /// </summary>
+        /// <param name="nodeSettings">The node settings to load.</param>
+        /// <param name="callback">Callback routine to be called once the miner settings are loaded.</param>
+        public MinerSettings(NodeSettings nodeSettings, Action<MinerSettings> callback = null)
+            :this(callback)
+        {        
+            this.Load(nodeSettings);
         }
 
         /// <summary>
@@ -59,20 +70,34 @@ namespace Stratis.Bitcoin.Features.Miner
         {
             Guard.NotNull(nodeSettings, nameof(nodeSettings));
 
+            ILogger logger = nodeSettings.LoggerFactory.CreateLogger(typeof(MinerSettings).FullName);
+
+            logger.LogTrace("()");
+
             TextFileConfiguration config = nodeSettings.ConfigReader;
 
             this.Mine = config.GetOrDefault<bool>("mine", false);
+            logger.LogDebug("Mine set to {0}.", this.Mine);
+            
             if (this.Mine)
                 this.MineAddress = config.GetOrDefault<string>("mineaddress", null);
+            logger.LogDebug("MineAddress set to {0}.", this.MineAddress);
 
             this.Stake = config.GetOrDefault<bool>("stake", false);
+            logger.LogDebug("Stake set to {0}.", this.Stake);
+
             if (this.Stake)
             {
                 this.WalletName = config.GetOrDefault<string>("walletname", null);
                 this.WalletPassword = config.GetOrDefault<string>("walletpassword", null);
             }
 
+            logger.LogDebug("WalletName set to {0}.", this.WalletName);
+            logger.LogDebug("WalletPassword set to {0}.", (this.WalletPassword == null)?"":"******");
+
             this.callback?.Invoke(this);
+
+            logger.LogTrace("(-)");
         }
 
         /// <summary>

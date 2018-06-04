@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using System.Text;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
@@ -20,11 +21,35 @@ namespace Stratis.Bitcoin.Configuration.Settings
         /// </summary>
         public uint256 BlockAssumedValid { get; set; }
 
+        /// <summary>The callback used to override/constrain/extend the settings provided by the Load method.</summary>
+        private Action<ConsensusSettings> callback;
+
         /// <summary>
         /// Constructs a new consensus settings object.
         /// </summary>
         public ConsensusSettings()
         {
+        }
+
+        /// <summary>
+        /// Constructs a new consensus settings object.
+        /// </summary>
+        /// <param name="callback">The callback used to override/constrain/extend the settings provided by the Load method.</param>
+        public ConsensusSettings(Action<ConsensusSettings> callback)
+            :this()
+        {
+            this.callback = callback;
+        }
+
+        /// <summary>
+        /// Constructs a new consensus settings object. Also loads the settings.
+        /// </summary>
+        /// <param name="nodeSettings">The node settings to load.</param>
+        /// <param name="callback">The callback used to override/constrain/extend the settings provided by the Load method.</param>
+        public ConsensusSettings(NodeSettings nodeSettings, Action<ConsensusSettings> callback = null)
+            :this(callback)
+        {
+            this.Load(nodeSettings);
         }
 
         /// <summary>
@@ -51,6 +76,8 @@ namespace Stratis.Bitcoin.Configuration.Settings
             ILogger logger = nodeSettings.LoggerFactory.CreateLogger(typeof(ConsensusSettings).FullName);
             logger.LogDebug("Checkpoints are {0}.", this.UseCheckpoints ? "enabled" : "disabled");
             logger.LogDebug("Assume valid block is '{0}'.", this.BlockAssumedValid == null ? "disabled" : this.BlockAssumedValid.ToString());
+
+            this.callback?.Invoke(this);
 
             return this;
         }

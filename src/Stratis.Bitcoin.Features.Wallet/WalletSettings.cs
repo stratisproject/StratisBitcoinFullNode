@@ -39,8 +39,20 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// </summary>
         /// <param name="callback">Callback routine to be called once the wallet settings are loaded.</param>
         public WalletSettings(Action<WalletSettings> callback = null)
+            :this()
         {
             this.callback = callback;
+        }
+
+        /// <summary>
+        /// Initializes an instance of the object. Also loads the settings.
+        /// </summary>
+        /// <param name="nodeSettings">The node settings to load.</param>
+        /// <param name="callback">Callback routine to be called once the wallet settings are loaded.</param>
+        public WalletSettings(NodeSettings nodeSettings, Action<WalletSettings> callback = null)
+            :this(callback)
+        {
+            this.Load(nodeSettings);
         }
 
         /// <summary>
@@ -51,9 +63,18 @@ namespace Stratis.Bitcoin.Features.Wallet
         {
             Guard.NotNull(nodeSettings, nameof(nodeSettings));
 
+            ILogger logger = nodeSettings.LoggerFactory.CreateLogger(typeof(WalletSettings).FullName);
+
+            logger.LogTrace("()");
+
             TextFileConfiguration config = nodeSettings.ConfigReader;
+
             this.SaveTransactionHex = config.GetOrDefault<bool>("savetrxhex", false);
+            logger.LogDebug("SaveTransactionHex set to {0}.", this.SaveTransactionHex);
+
             this.callback?.Invoke(this);
+
+            logger.LogTrace("(-)");
         }
 
         /// <summary>

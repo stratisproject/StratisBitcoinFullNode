@@ -3,6 +3,7 @@ using System.Text;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Configuration;
+using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.MemoryPool
 {
@@ -55,7 +56,8 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <summary><c>true</c> to accept relayed transactions received from whitelisted peers even when not relaying transactions.</summary>
         public bool WhiteListRelay { get; set; }
 
-        public NodeSettings NodeSettings { get; private set; }
+        /// <summary>Option to skip (most) non-standard transaction checks, for testnet/regtest only.</summary>
+        public bool RequireStandard { get; set; }
 
         /// <summary>Records a script used for overriding loaded settings</summary>
         private readonly Action<MempoolSettings> callback;
@@ -86,23 +88,56 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <param name="nodeSettings">Node configuration.</param>
         public void Load(NodeSettings nodeSettings)
         {
-            var config = nodeSettings.ConfigReader;
-            this.MaxMempool = config.GetOrDefault("maxmempool", MempoolValidator.DefaultMaxMempoolSize);
-            this.MempoolExpiry = config.GetOrDefault("mempoolexpiry", MempoolValidator.DefaultMempoolExpiry);
-            this.RelayPriority = config.GetOrDefault("relaypriority", MempoolValidator.DefaultRelaypriority);
-            this.LimitFreeRelay = config.GetOrDefault("limitfreerelay", MempoolValidator.DefaultLimitfreerelay);
-            this.LimitAncestors = config.GetOrDefault("limitancestorcount", MempoolValidator.DefaultAncestorLimit);
-            this.LimitAncestorSize = config.GetOrDefault("limitancestorsize", MempoolValidator.DefaultAncestorSizeLimit);
-            this.LimitDescendants = config.GetOrDefault("limitdescendantcount", MempoolValidator.DefaultDescendantLimit);
-            this.LimitDescendantSize = config.GetOrDefault("limitdescendantsize", MempoolValidator.DefaultDescendantSizeLimit);
-            this.EnableReplacement = config.GetOrDefault("mempoolreplacement", MempoolValidator.DefaultEnableReplacement);
-            this.MaxOrphanTx = config.GetOrDefault("maxorphantx", MempoolOrphans.DefaultMaxOrphanTransactions);
-            this.RelayTxes = !config.GetOrDefault("blocksonly", DefaultBlocksOnly);
-            this.WhiteListRelay = config.GetOrDefault("whitelistrelay", DefaultWhiteListRelay);
+            Guard.NotNull(nodeSettings, nameof(nodeSettings));
 
-            this.NodeSettings = nodeSettings;
+            ILogger logger = nodeSettings.LoggerFactory.CreateLogger(typeof(MempoolSettings).FullName);
+
+            logger.LogTrace("()");
+
+            var config = nodeSettings.ConfigReader;
+
+            this.MaxMempool = config.GetOrDefault("maxmempool", MempoolValidator.DefaultMaxMempoolSize);
+            logger.LogDebug("MaxMempool set to {0}.", this.MaxMempool);
+
+            this.MempoolExpiry = config.GetOrDefault("mempoolexpiry", MempoolValidator.DefaultMempoolExpiry);
+            logger.LogDebug("MempoolExpiry set to {0}.", this.MempoolExpiry);
+
+            this.RelayPriority = config.GetOrDefault("relaypriority", MempoolValidator.DefaultRelaypriority);
+            logger.LogDebug("RelayPriority set to {0}.", this.RelayPriority);
+
+            this.LimitFreeRelay = config.GetOrDefault("limitfreerelay", MempoolValidator.DefaultLimitfreerelay);
+            logger.LogDebug("LimitFreeRelay set to {0}.", this.LimitFreeRelay);
+
+            this.LimitAncestors = config.GetOrDefault("limitancestorcount", MempoolValidator.DefaultAncestorLimit);
+            logger.LogDebug("LimitAncestors set to {0}.", this.LimitAncestors);
+
+            this.LimitAncestorSize = config.GetOrDefault("limitancestorsize", MempoolValidator.DefaultAncestorSizeLimit);
+            logger.LogDebug("LimitAncestorSize set to {0}.", this.LimitAncestorSize);
+
+            this.LimitDescendants = config.GetOrDefault("limitdescendantcount", MempoolValidator.DefaultDescendantLimit);
+            logger.LogDebug("LimitDescendants set to {0}.", this.LimitDescendants);
+
+            this.LimitDescendantSize = config.GetOrDefault("limitdescendantsize", MempoolValidator.DefaultDescendantSizeLimit);
+            logger.LogDebug("LimitDescendantSize set to {0}.", this.LimitDescendantSize);
+
+            this.EnableReplacement = config.GetOrDefault("mempoolreplacement", MempoolValidator.DefaultEnableReplacement);
+            logger.LogDebug("EnableReplacement set to {0}.", this.EnableReplacement);
+
+            this.MaxOrphanTx = config.GetOrDefault("maxorphantx", MempoolOrphans.DefaultMaxOrphanTransactions);
+            logger.LogDebug("MaxOrphanTx set to {0}.", this.MaxOrphanTx);
+            
+            this.RelayTxes = !config.GetOrDefault("blocksonly", DefaultBlocksOnly);
+            logger.LogDebug("RelayTxes set to {0}.", this.RelayTxes);
+
+            this.WhiteListRelay = config.GetOrDefault("whitelistrelay", DefaultWhiteListRelay);
+            logger.LogDebug("WhiteListRelay set to {0}.", this.WhiteListRelay);
+
+            this.RequireStandard = config.GetOrDefault("acceptnonstdtxn", !(nodeSettings.Network.IsTest()));
+            logger.LogDebug("RequireStandard set to {0}.", this.RequireStandard);
 
             this.callback?.Invoke(this);
+
+            logger.LogTrace("(-)");
         }
 
         /// <summary>Prints the help information on how to configure the mempool settings to the logger.</summary>
@@ -123,6 +158,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             builder.AppendLine($"-maxorphantx=<kB>         Maximum number of orphan transactions kept in memory. Defaults to { MempoolOrphans.DefaultMaxOrphanTransactions }.");
             builder.AppendLine($"-blocksonly=<0 or 1>      Enable bandwidth saving setting to send and received confirmed blocks only. Defaults to { DefaultBlocksOnly }.");
             builder.AppendLine($"-whitelistrelay=<0 or 1>  Enable to accept relayed transactions received from whitelisted peers even when not relaying transactions. Defaults to { DefaultWhiteListRelay }.");
+            builder.AppendLine($"-acceptnonstdtxn=<0 or 1> Accept non-standard transactions. Default {(!(network.IsTest()) ? 1 : 0)}.");
 
             NodeSettings.Default().Logger.LogInformation(builder.ToString());
         }
@@ -159,6 +195,8 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             builder.AppendLine($"#blocksonly={ (DefaultBlocksOnly?1:0) }");
             builder.AppendLine($"#Enable to accept relayed transactions received from whitelisted peers even when not relaying transactions. Defaults to { (DefaultWhiteListRelay?1:0) }.");
             builder.AppendLine($"#whitelistrelay={ (DefaultWhiteListRelay?1:0) }");
+            builder.AppendLine($"#Accept non-standard transactions. Default {(!(network.IsTest()) ? 1 : 0)}.");
+            builder.AppendLine($"#acceptnonstdtxn={(!(network.IsTest()) ? 1 : 0)}");
         }
     }
 }

@@ -3,6 +3,7 @@ using System.Text;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Configuration;
+using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.Dns
 {
@@ -57,12 +58,26 @@ namespace Stratis.Bitcoin.Features.Dns
         }
 
         /// <summary>
+        /// Constructs this object whilst providing a callback to override/constrain/extend 
+        /// the settings provided by the Load method. Calls the Load method.
+        /// </summary>
+        /// <param name="nodeSettings">The node settings to load.</param>
+        /// <param name="callback">The callback used to override/constrain/extend the settings provided by the Load method.</param>
+        public DnsSettings(NodeSettings nodeSettings, Action<DnsSettings> callback)
+            : this(callback)
+        {
+            this.Load(nodeSettings);
+        }
+
+        /// <summary>
         /// Loads the DNS related settings from the application configuration.
         /// </summary>
         /// <param name="nodeSettings">Application configuration.</param>
         /// <param name="dnsSettings">Existing DnsSettings object to add loaded values to.</param>
         public DnsSettings Load(NodeSettings nodeSettings)
         {
+            Guard.NotNull(nodeSettings, nameof(nodeSettings));
+
             ILogger logger = nodeSettings.LoggerFactory.CreateLogger(typeof(DnsSettings).FullName);
 
             logger.LogTrace("()");
