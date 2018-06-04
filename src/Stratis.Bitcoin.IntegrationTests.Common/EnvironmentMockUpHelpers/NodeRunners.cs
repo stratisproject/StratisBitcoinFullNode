@@ -234,7 +234,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
 
         public override void BuildNode()
         {
-            var settings = new NodeSettings(this.network, args: new string[] { "-conf=bitcoin.conf", "-datadir=" + this.DataFolder }, loadConfiguration: false);
+            var settings = new NodeSettings(this.network, args: new string[] { "-conf=bitcoin.conf", "-datadir=" + this.DataFolder });
             var builder = new FullNodeBuilder().UseNodeSettings(settings);
 
             this.callback(builder);
@@ -262,7 +262,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
 
         public override void BuildNode()
         {
-            var settings = new NodeSettings(this.network, ProtocolVersion.ALT_PROTOCOL_VERSION, args: new string[] { "-conf=stratis.conf", "-datadir=" + this.DataFolder }, loadConfiguration: false);
+            var settings = new NodeSettings(this.network, ProtocolVersion.ALT_PROTOCOL_VERSION, args: new string[] { "-conf=stratis.conf", "-datadir=" + this.DataFolder });
             var builder = new FullNodeBuilder().UseNodeSettings(settings);
 
             this.callback(builder);
