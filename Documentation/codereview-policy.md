@@ -30,7 +30,7 @@ The requirement for each PR policy
 
 *pr-review-low*
 - Code must be reviewed by at least one core dev
-- Unit-test must pass (automated CI tests)
+- All tests must pass (Unit-test and Integration-tests) 
 
 
 #### What to look for in code reviews
