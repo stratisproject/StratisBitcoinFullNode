@@ -1,4 +1,5 @@
-﻿using System.Diagnostics;
+﻿using System;
+using System.Diagnostics;
 using System.IO;
 using NBitcoin;
 using NBitcoin.Protocol;
@@ -88,16 +89,16 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
             var settings = new NodeSettings(Network.StratisRegTest, ProtocolVersion.ALT_PROTOCOL_VERSION, args: new string[] { "-conf=stratis.conf", "-datadir=" + this.DataFolder });
 
             this.FullNode = (FullNode)new FullNodeBuilder()
-                            .UseNodeSettings(settings)
-                            .UseBlockStore()
-                            .UsePosConsensus()
-                            .UseMempool()
-                            .UseWallet()
-                            .AddPowPosMining()
-                            .AddRPC()
-                            .MockIBD()
-                            .SubstituteDateTimeProviderFor<MiningFeature>()
-                            .Build();
+                .UseNodeSettings(settings)
+                .UseBlockStore()
+                .UsePosConsensus()
+                .UseMempool()
+                .UseWallet()
+                .AddPowPosMining()
+                .AddRPC()
+                .MockIBD()
+                .SubstituteDateTimeProviderFor<MiningFeature>()
+                .Build();
         }
 
         public override void OnStart()
@@ -171,15 +172,15 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
             var settings = new NodeSettings(args: new string[] { "-conf=bitcoin.conf", "-datadir=" + this.DataFolder });
 
             this.FullNode = (FullNode)new FullNodeBuilder()
-                            .UseNodeSettings(settings)
-                            .UseBlockStore()
-                            .UsePowConsensus()
-                            .UseMempool()
-                            .AddMining()
-                            .UseWallet()
-                            .AddRPC()
-                            .MockIBD()
-                            .Build();
+                .UseNodeSettings(settings)
+                .UseBlockStore()
+                .UsePowConsensus()
+                .UseMempool()
+                .AddMining()
+                .UseWallet()
+                .AddRPC()
+                .MockIBD()
+                .Build();
         }
 
         public override void OnStart()
@@ -210,6 +211,43 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
                             .MockIBD()
                             .SubstituteDateTimeProviderFor<MiningFeature>()
                             .Build();
+        }
+
+        public override void OnStart()
+        {
+            this.FullNode.Start();
+        }
+    }
+
+    public sealed class CustomNodeRunner : NodeRunner
+    {
+        private Action<IFullNodeBuilder> callback;
+
+        private Network network;
+
+        private ProtocolVersion protocolVersion;
+
+        private string configFileName;
+
+        private string agent;
+
+        public CustomNodeRunner(string dataDir, Action<IFullNodeBuilder> callback, Network network, ProtocolVersion protocolVersion = ProtocolVersion.PROTOCOL_VERSION, string configFileName = "custom.conf", string agent = "Custom")
+            : base(dataDir)
+        {
+            this.callback = callback;
+            this.network = network;
+            this.protocolVersion = protocolVersion;
+            this.configFileName = configFileName;
+            this.agent = agent;
+        }
+
+        public override void BuildNode()
+        {
+            var settings = new NodeSettings(this.network, this.protocolVersion, this.agent, new string[] { "-conf=" + this.configFileName, "-datadir=" + this.DataFolder });
+            var builder = new FullNodeBuilder().UseNodeSettings(settings);
+
+            this.callback(builder);
+            this.FullNode = (FullNode)builder.Build();
         }
 
         public override void OnStart()
