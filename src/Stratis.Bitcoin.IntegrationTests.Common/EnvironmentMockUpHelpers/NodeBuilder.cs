@@ -23,6 +23,8 @@ using Stratis.Bitcoin.Tests.Common;
 
 namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
 {
+    using NBitcoin.Protocol;
+
     public static class FullNodeExt
     {
         public static WalletManager WalletManager(this FullNode fullNode)
@@ -181,14 +183,16 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
             return node;
         }
 
-        public CoreNode CreateCustomPowNode(bool start, Action<IFullNodeBuilder> callback, Network network)
+        /// <summary>A helper method to create a node instance with a non-standard set of features enabled. The node can be PoW or PoS, as long as the appropriate features are provided.</summary>
+        /// <param name="dataDir">The node's data directory where downloaded chain data gets stored.</param>
+        /// <param name="callback">A callback accepting an instance of <see cref="IFullNodeBuilder"/> that constructs a node with a custom feature set.</param>
+        /// <param name="network">The network the node will be running on.</param>
+        /// <param name="protocolVersion">Use <see cref="ProtocolVersion.PROTOCOL_VERSION"/> for BTC PoW-like networks and <see cref="ProtocolVersion.ALT_PROTOCOL_VERSION"/> for Stratis PoS-like networks.</param>
+        /// <param name="configFileName">The name for the node's configuration file.</param>
+        /// <param name="agent">A user agent string to distinguish different node versions from each other.</param>
+        public CoreNode CreateCustomNode(bool start, Action<IFullNodeBuilder> callback, Network network, ProtocolVersion protocolVersion = ProtocolVersion.PROTOCOL_VERSION, string configFileName = "custom.conf", string agent = "Custom")
         {
-            return CreateNode(new CustomPowRunner(this.GetNextDataFolderName(), callback, network), network, start);
-        }
-
-        public CoreNode CreateCustomPosNode(bool start, Action<IFullNodeBuilder> callback, Network network)
-        {
-            return CreateNode(new CustomPosRunner(this.GetNextDataFolderName(), callback, network), network, start, "stratis.conf");
+            return CreateNode(new CustomNodeRunner(this.GetNextDataFolderName(), callback, network, protocolVersion, configFileName, agent), network, start, configFileName);
         }
 
         private string GetNextDataFolderName()

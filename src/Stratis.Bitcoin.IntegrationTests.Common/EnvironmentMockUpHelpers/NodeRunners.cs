@@ -219,50 +219,31 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
         }
     }
 
-    public sealed class CustomPowRunner : NodeRunner
+    public sealed class CustomNodeRunner : NodeRunner
     {
         private Action<IFullNodeBuilder> callback;
 
         private Network network;
 
-        public CustomPowRunner(string dataDir, Action<IFullNodeBuilder> callback, Network network)
+        private ProtocolVersion protocolVersion;
+
+        private string configFileName;
+
+        private string agent;
+
+        public CustomNodeRunner(string dataDir, Action<IFullNodeBuilder> callback, Network network, ProtocolVersion protocolVersion = ProtocolVersion.PROTOCOL_VERSION, string configFileName = "custom.conf", string agent = "Custom")
             : base(dataDir)
         {
             this.callback = callback;
             this.network = network;
+            this.protocolVersion = protocolVersion;
+            this.configFileName = configFileName;
+            this.agent = agent;
         }
 
         public override void BuildNode()
         {
-            var settings = new NodeSettings(this.network, args: new string[] { "-conf=bitcoin.conf", "-datadir=" + this.DataFolder });
-            var builder = new FullNodeBuilder().UseNodeSettings(settings);
-
-            this.callback(builder);
-            this.FullNode = (FullNode)builder.Build();
-        }
-
-        public override void OnStart()
-        {
-            this.FullNode.Start();
-        }
-    }
-
-    public sealed class CustomPosRunner : NodeRunner
-    {
-        private Action<IFullNodeBuilder> callback;
-
-        private Network network;
-
-        public CustomPosRunner(string dataDir, Action<IFullNodeBuilder> callback, Network network)
-            : base(dataDir)
-        {
-            this.callback = callback;
-            this.network = network;
-        }
-
-        public override void BuildNode()
-        {
-            var settings = new NodeSettings(this.network, ProtocolVersion.ALT_PROTOCOL_VERSION, args: new string[] { "-conf=stratis.conf", "-datadir=" + this.DataFolder });
+            var settings = new NodeSettings(this.network, this.protocolVersion, this.agent, new string[] { "-conf=" + this.configFileName, "-datadir=" + this.DataFolder });
             var builder = new FullNodeBuilder().UseNodeSettings(settings);
 
             this.callback(builder);
