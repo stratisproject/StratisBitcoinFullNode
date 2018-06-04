@@ -22,9 +22,9 @@ namespace Stratis.Bitcoin.Tests.Consensus
             public Mock<IChainState> ChainStateMock = new Mock<IChainState>();
             public ConsensusSettings ConsensusSettings = new ConsensusSettings();
 
-            public ChainedHeaderTree ChainedHeaderTree;
+            internal ChainedHeaderTree ChainedHeaderTree;
 
-            public ChainedHeaderTree CreateChainedHeaderTree()
+            internal ChainedHeaderTree CreateChainedHeaderTree()
             {
                 this.ChainedHeaderTree = new ChainedHeaderTree(this.Network, new ExtendedLoggerFactory(), this.ChainedHeaderValidatorMock.Object, this.CheckpointsMock.Object, this.ChainStateMock.Object, this.ConsensusSettings);
                 return this.ChainedHeaderTree;

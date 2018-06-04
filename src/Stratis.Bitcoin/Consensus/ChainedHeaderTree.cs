@@ -37,6 +37,8 @@ namespace Stratis.Bitcoin.Consensus
     /// It represents all chains we potentially can sync with.
     /// </summary>
     /// <remarks>
+    /// This component is an extension of <see cref="ConsensusManager"/> and is strongly linked to its functionality, it should never be called outside of CM.
+    /// TODO: When Consensus  Manager is created reference it here.
     /// <para>
     /// View of the chains that are presented by connected peers might be incomplete because we always
     /// receive only chunk of headers claimed by the peer in one message.
@@ -49,7 +51,7 @@ namespace Stratis.Bitcoin.Consensus
     /// This class is not thread safe and it the role of the component that uses this class to prevent race conditions.
     /// </para>
     /// </remarks>
-    public sealed class ChainedHeaderTree
+    internal sealed class ChainedHeaderTree
     {
         private readonly Network network;
         private readonly IChainedHeaderValidator chainedHeaderValidator;
@@ -318,10 +320,10 @@ namespace Stratis.Bitcoin.Consensus
                     ChainedHeader peerTip = this.chainedHeadersByHash[peerIdToTipHash.Value];
                     int peerId = peerIdToTipHash.Key;
 
-                    ChainedHeader fork = peerTip.FindFork(consensusTip);
+                    ChainedHeader fork = this.FindForkNotOnConensusChain(peerTip, consensusTip);
 
                     // Do nothing in case peer's tip is on our consensus chain.
-                    if ((fork != consensusTip) && (fork != peerTip))
+                    if (fork != null)
                     {
                         int reorgLength = consensusTip.Height - fork.Height;
 
@@ -336,6 +338,23 @@ namespace Stratis.Bitcoin.Consensus
 
             this.logger.LogTrace("(-):*.{0}={1}", nameof(peerIdsToResync.Count), peerIdsToResync.Count);
             return peerIdsToResync;
+        }
+
+        /// <summary>Find the fork between two headers and return the fork if the headers are not on the same chain.</summary>
+        private ChainedHeader FindForkNotOnConensusChain(ChainedHeader peerTip, ChainedHeader consensusTip)
+        {
+            this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(peerTip), peerTip, nameof(consensusTip), consensusTip);
+
+            ChainedHeader fork = peerTip.FindFork(consensusTip);
+
+            if((fork != consensusTip) && (fork != peerTip))
+            {
+                this.logger.LogTrace("(-):{0}", fork);
+                return fork;
+            }
+
+            this.logger.LogTrace("(-):null");
+            return null;
         }
 
         /// <summary>Cleans the block data for chained headers that are old. This data will still exist in the block store if it is enabled.</summary>
