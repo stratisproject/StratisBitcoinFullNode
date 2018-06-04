@@ -347,7 +347,7 @@ namespace Stratis.Bitcoin.Consensus
 
             ChainedHeader fork = chainedHeader1.FindFork(chainedHeader2);
 
-            if((fork != chainedHeader2) && (fork != chainedHeader1))
+            if ((fork != chainedHeader2) && (fork != chainedHeader1))
             {
                 this.logger.LogTrace("(-):'{0}'", fork);
                 return fork;
