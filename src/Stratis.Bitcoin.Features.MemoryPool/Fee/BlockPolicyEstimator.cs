@@ -163,12 +163,11 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Fee
         /// <param name="mempoolSettings">Mempool settings.</param>
         /// <param name="loggerFactory">Factory for creating loggers.</param>
         /// <param name="nodeSettings">Full node settings.</param>
-        public BlockPolicyEstimator(MempoolSettings mempoolSettings, ILoggerFactory loggerFactory, NodeSettings nodeSettings)
+        public BlockPolicyEstimator(ILoggerFactory loggerFactory)
         {
             Guard.Assert(MinBucketFeeRate > 0);
             this.lockObject = new object();
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
-            this.mempoolSettings = mempoolSettings;
             this.mapMemPoolTxs = new Dictionary<uint256, TxStatsInfo>();
             this.buckets = new List<double>();
             this.bucketMap = new SortedDictionary<double, int>();
