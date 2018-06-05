@@ -1,9 +1,6 @@
 ﻿using System;
 using NBitcoin;
-using Stratis.Bitcoin.Configuration;
-using Stratis.Bitcoin.Features.MemoryPool;
-using Stratis.Bitcoin.Features.MemoryPool.Fee;
-using Stratis.Bitcoin.Features.MemoryPool.Interfaces;
+using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
 
 namespace Stratis.Bitcoin.Features.Wallet
@@ -40,13 +37,13 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// Constructs a wallet fee policy.
         /// </summary>
         /// <param name="nodeSettings">Settings for the the node.</param>
-        public WalletFeePolicy(NodeSettings nodeSettings)
+        public WalletFeePolicy(BaseSettings baseSettings)
         {
-            this.minTxFee = nodeSettings.MinTxFeeRate;
-            this.fallbackFee = nodeSettings.FallbackTxFeeRate;
+            this.minTxFee = baseSettings.MinTxFeeRate;
+            this.fallbackFee = baseSettings.FallbackTxFeeRate;
             this.payTxFee = new FeeRate(0);
             this.maxTxFee = new Money(0.1M, MoneyUnit.BTC);
-            this.minRelayTxFee = nodeSettings.MinRelayTxFeeRate;
+            this.minRelayTxFee = baseSettings.MinRelayTxFeeRate;
         }
 
         /// <inheritdoc />

@@ -26,19 +26,19 @@ namespace Stratis.Bitcoin.Features.Consensus
         private readonly Network network;
 
         /// <summary>User defined node settings.</summary>
-        private readonly NodeSettings nodeSettings;
+        private readonly BaseSettings baseSettings;
 
         /// <summary>
         /// Creates a new instance of the <see cref="InitialBlockDownloadState" /> class.
         /// </summary>
         /// <param name="chainState">Information about node's chain.</param>
         /// <param name="network">Specification of the network the node runs on - regtest/testnet/mainnet.</param>
-        /// <param name="nodeSettings">User defined node settings.</param>
+        /// <param name="baseSettings">User defined base settings.</param>
         /// <param name="checkpoints">Provider of block header hash checkpoints.</param>
-        public InitialBlockDownloadState(IChainState chainState, Network network, NodeSettings nodeSettings, ICheckpoints checkpoints)
+        public InitialBlockDownloadState(IChainState chainState, Network network, BaseSettings baseSettings, ICheckpoints checkpoints)
         {
             this.network = network;
-            this.nodeSettings = nodeSettings;
+            this.baseSettings = baseSettings;
             this.chainState = chainState;
             this.checkpoints = checkpoints;
             this.dateTimeProvider = DateTimeProvider.Default;
@@ -59,7 +59,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             if (this.chainState.ConsensusTip.ChainWork < (this.network.Consensus.MinimumChainWork ?? uint256.Zero))
                 return true;
 
-            if (this.chainState.ConsensusTip.Header.BlockTime.ToUnixTimeSeconds() < (this.dateTimeProvider.GetTime() - this.nodeSettings.MaxTipAge))
+            if (this.chainState.ConsensusTip.Header.BlockTime.ToUnixTimeSeconds() < (this.dateTimeProvider.GetTime() - this.baseSettings.MaxTipAge))
                 return true;
 
             return false;

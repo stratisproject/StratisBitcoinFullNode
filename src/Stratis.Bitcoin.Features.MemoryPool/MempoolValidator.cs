@@ -5,8 +5,8 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NBitcoin.Protocol;
+using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Base.Deployments;
-using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.Consensus.Rules;
@@ -174,7 +174,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             ConcurrentChain chain,
             CoinView coinView,
             ILoggerFactory loggerFactory,
-            NodeSettings nodeSettings,
+            BaseSettings baseSettings,
             IConsensusRules consensusRules)
         {
             this.memPool = memPool;
@@ -188,7 +188,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             // TODO: Implement later with CheckRateLimit()
             // this.freeLimiter = new FreeLimiterSection();
             this.PerformanceCounter = new MempoolPerformanceCounter(this.dateTimeProvider);
-            this.minRelayTxFee = nodeSettings.MinRelayTxFeeRate;
+            this.minRelayTxFee = baseSettings.MinRelayTxFeeRate;
             this.consensusRules = consensusRules;
         }
 

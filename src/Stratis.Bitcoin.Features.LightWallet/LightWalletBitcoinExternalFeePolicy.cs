@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Newtonsoft.Json.Linq;
+using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Utilities;
@@ -27,7 +28,7 @@ namespace Stratis.Bitcoin.Features.LightWallet
 
         private readonly ILogger logger;
 
-        private readonly NodeSettings nodeSettings;
+        private readonly BaseSettings baseSettings;
 
         private bool initializedOnce;
 
@@ -37,12 +38,12 @@ namespace Stratis.Bitcoin.Features.LightWallet
 
         private FeeRate lowTxFeePerKb;
 
-        public LightWalletBitcoinExternalFeePolicy(IAsyncLoopFactory asyncLoopFactory, INodeLifetime nodeLifetime, ILoggerFactory loggerFactory, NodeSettings settings)
+        public LightWalletBitcoinExternalFeePolicy(IAsyncLoopFactory asyncLoopFactory, INodeLifetime nodeLifetime, ILoggerFactory loggerFactory, BaseSettings settings)
         {
             this.asyncLoopFactory = asyncLoopFactory;
             this.nodeLifetime = nodeLifetime;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
-            this.nodeSettings = settings;
+            this.baseSettings = settings;
             this.maxTxFee = new Money(0.1M, MoneyUnit.BTC);
             this.initializedOnce = false;
         }
@@ -115,7 +116,7 @@ namespace Stratis.Bitcoin.Features.LightWallet
         /// <inheritdoc />
         public Money GetRequiredFee(int txBytes)
         {
-            return Math.Max(this.lowTxFeePerKb.GetFee(txBytes), this.nodeSettings.MinRelayTxFeeRate.GetFee(txBytes));
+            return Math.Max(this.lowTxFeePerKb.GetFee(txBytes), this.baseSettings.MinRelayTxFeeRate.GetFee(txBytes));
         }
 
         /// <inheritdoc />
