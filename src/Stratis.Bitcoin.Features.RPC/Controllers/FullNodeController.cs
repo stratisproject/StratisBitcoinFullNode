@@ -43,14 +43,16 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
             IConsensusLoop consensusLoop = null,
             IFullNode fullNode = null,
             NodeSettings nodeSettings = null,
+            BaseSettings baseSettings = null,
             Network network = null,
             ConcurrentChain chain = null,
             IChainState chainState = null,
             Connection.IConnectionManager connectionManager = null)
             : base(
                   fullNode: fullNode,
-                  nodeSettings: nodeSettings,
                   network: network,
+                  baseSettings: baseSettings,
+                  nodeSettings: nodeSettings,
                   chain: chain,
                   chainState: chainState,
                   connectionManager: connectionManager)
@@ -149,14 +151,14 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
             var model = new GetInfoModel
             {
                 Version = this.FullNode?.Version?.ToUint() ?? 0,
-                ProtocolVersion = (uint)(this.Settings?.ProtocolVersion ?? NodeSettings.SupportedProtocolVersion),
+                ProtocolVersion = (uint)(this.NodeSettings?.ProtocolVersion ?? NodeSettings.SupportedProtocolVersion),
                 Blocks = this.ChainState?.ConsensusTip?.Height ?? 0,
                 TimeOffset = this.ConnectionManager?.ConnectedPeers?.GetMedianTimeOffset() ?? 0,
                 Connections = this.ConnectionManager?.ConnectedPeers?.Count(),
                 Proxy = string.Empty,
                 Difficulty = this.GetNetworkDifficulty()?.Difficulty ?? 0,
                 Testnet = this.Network.IsTest(),
-                RelayFee = this.Settings?.MinRelayTxFeeRate?.FeePerK?.ToUnit(MoneyUnit.BTC) ?? 0,
+                RelayFee = this.BaseSettings?.MinRelayTxFeeRate?.FeePerK?.ToUnit(MoneyUnit.BTC) ?? 0,
                 Errors = string.Empty,
 
                 //TODO: Wallet related infos: walletversion, balance, keypNetwoololdest, keypoolsize, unlocked_until, paytxfee

@@ -1,6 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
 using NBitcoin;
-using Stratis.Bitcoin.Configuration;
+using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
 
 namespace Stratis.Bitcoin.Features.LightWallet
@@ -37,7 +37,7 @@ namespace Stratis.Bitcoin.Features.LightWallet
         /// </summary>
         /// <param name="loggerFactory">The factory for building logger instances.</param>
         /// <param name="settings">The node settings.</param>
-        public LightWalletFixedFeePolicy(ILoggerFactory loggerFactory, NodeSettings settings)
+        public LightWalletFixedFeePolicy(ILoggerFactory loggerFactory, BaseSettings settings)
         {
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
 

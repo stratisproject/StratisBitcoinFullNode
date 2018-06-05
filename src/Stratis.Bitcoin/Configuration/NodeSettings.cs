@@ -11,7 +11,6 @@ using NLog.Extensions.Logging;
 using Stratis.Bitcoin.Builder.Feature;
 using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Configuration.Settings;
-using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Configuration
 {
@@ -32,8 +31,6 @@ namespace Stratis.Bitcoin.Configuration
     /// </summary>
     public class NodeSettings
     {
-        const int MaximumAgentPrefixLength = 10;
-
         /// <summary>Version of the protocol the current implementation supports.</summary>
         public const ProtocolVersion SupportedProtocolVersion = ProtocolVersion.SENDHEADERS_VERSION;
 
@@ -58,9 +55,6 @@ namespace Stratis.Bitcoin.Configuration
         /// <summary>Combined command line arguments and configuration file settings.</summary>
         public TextFileConfiguration ConfigReader { get; private set; }
 
-        /// <summary>Option to skip (most) non-standard transaction checks, for testnet/regtest only.</summary>
-        public bool RequireStandard { get; set; }
-
         /// <summary>Supported protocol version.</summary>
         public ProtocolVersion ProtocolVersion { get; private set; }
 
@@ -68,22 +62,7 @@ namespace Stratis.Bitcoin.Configuration
         public Network Network { get; private set; }
 
         /// <summary>The node's user agent.</summary>
-        public string Agent { get; private set; }
-
-        /// <summary>Maximum tip age in seconds to consider node in initial block download.</summary>
-        public int MaxTipAge { get; private set; }
-
-        /// <summary>Minimum transaction fee for network.</summary>
-        public FeeRate MinTxFeeRate { get; private set; }
-
-        /// <summary>Fall back transaction fee for network.</summary>
-        public FeeRate FallbackTxFeeRate { get; private set; }
-
-        /// <summary>Minimum relay transaction fee for network.</summary>
-        public FeeRate MinRelayTxFeeRate { get; private set; }
-
-        /// <summary><c>true</c> to sync time with other peers and calculate adjusted time, <c>false</c> to use our system clock only.</summary>
-        public bool SyncTimeEnabled { get; private set; }
+        public string Agent { get; set; }
 
         /// <summary>
         /// Initializes a new instance of the object.
@@ -200,9 +179,6 @@ namespace Stratis.Bitcoin.Configuration
             this.Log.Load(this.ConfigReader);
             this.LoggerFactory.AddFilters(this.Log, this.DataFolder);
             this.LoggerFactory.ConfigureConsoleFilters(this.LoggerFactory.GetConsoleSettings(), this.Log);
-
-            // Load the configuration.
-            this.LoadConfiguration();
         }
 
         /// <summary>Determines whether to print help and exit.</summary>
@@ -251,7 +227,6 @@ namespace Stratis.Bitcoin.Configuration
 
                 File.WriteAllText(this.ConfigurationFile, builder.ToString());
                 this.ReadConfigurationFile();
-                this.LoadConfiguration();
             }
         }
 
@@ -265,43 +240,6 @@ namespace Stratis.Bitcoin.Configuration
             // Add the file configuration to the command-line configuration.
             var fileConfig = new TextFileConfiguration(File.ReadAllText(this.ConfigurationFile));
             fileConfig.MergeInto(this.ConfigReader);
-        }
-
-        /// <summary>
-        /// Loads the node settings from the application configuration.
-        /// </summary>
-        private void LoadConfiguration()
-        {
-            var config = this.ConfigReader;
-
-            this.RequireStandard = config.GetOrDefault("acceptnonstdtxn", !(this.Network.IsTest()));
-            this.Logger.LogDebug("RequireStandard set to {0}.", this.RequireStandard);
-
-            this.MaxTipAge = config.GetOrDefault("maxtipage", this.Network.MaxTipAge);
-            this.Logger.LogDebug("MaxTipAge set to {0}.", this.MaxTipAge);
-
-            this.MinTxFeeRate = new FeeRate(config.GetOrDefault("mintxfee", this.Network.MinTxFee));
-            this.Logger.LogDebug("MinTxFeeRate set to {0}.", this.MinTxFeeRate);
-
-            this.FallbackTxFeeRate = new FeeRate(config.GetOrDefault("fallbackfee", this.Network.FallbackFee));
-            this.Logger.LogDebug("FallbackTxFeeRate set to {0}.", this.FallbackTxFeeRate);
-
-            this.MinRelayTxFeeRate = new FeeRate(config.GetOrDefault("minrelaytxfee", this.Network.MinRelayTxFee));
-            this.Logger.LogDebug("MinRelayTxFeeRate set to {0}.", this.MinRelayTxFeeRate);
-
-            this.SyncTimeEnabled = config.GetOrDefault<bool>("synctime", true);
-            this.Logger.LogDebug("Time synchronization with peers is {0}.", this.SyncTimeEnabled ? "enabled" : "disabled");
-
-            var agentPrefix = config.GetOrDefault("agentprefix", string.Empty).Replace("-","");
-            if (agentPrefix.Length > MaximumAgentPrefixLength)
-                agentPrefix = agentPrefix.Substring(0, MaximumAgentPrefixLength);
-            this.Logger.LogDebug("AgentPrefix set to {0}.", agentPrefix);
-
-            // Since we are relying on the "this.Agent" value that may have been changed by an earlier call to 
-            // this method follow good coding practice and ensure that we always get the same result on subsequent calls.
-            var agent = this.Agent.Substring(this.Agent.IndexOf("-") + 1);
-            this.Agent = string.IsNullOrEmpty(agentPrefix) ? agent : $"{agentPrefix}-{agent}";
-            this.Logger.LogDebug("Agent set to {0}.", this.Agent);
         }
 
         /// <summary>
@@ -348,90 +286,6 @@ namespace Stratis.Bitcoin.Configuration
 
             this.Logger.LogDebug("Data directory initialized with path {0}.", directoryPath);
             return directoryPath;
-        }
-
-        /// <summary>
-        /// Displays command-line help.
-        /// </summary>
-        /// <param name="network">The network to extract values from.</param>
-        public static void PrintHelp(Network network)
-        {
-            Guard.NotNull(network, nameof(network));
-
-            var defaults = Default(network:network);
-            var daemonName = Path.GetFileName(Assembly.GetEntryAssembly().Location);
-
-            var builder = new StringBuilder();
-            builder.AppendLine("Usage:");
-            builder.AppendLine($" dotnet run {daemonName} [arguments]");
-            builder.AppendLine();
-            builder.AppendLine("Command line arguments:");
-            builder.AppendLine();
-            builder.AppendLine($"-help/--help              Show this help.");
-            builder.AppendLine($"-conf=<Path>              Path to the configuration file. Default {defaults.ConfigurationFile}.");
-            builder.AppendLine($"-datadir=<Path>           Path to the data directory. Default {defaults.DataDir}.");
-            builder.AppendLine($"-testnet                  Use the testnet chain.");
-            builder.AppendLine($"-regtest                  Use the regtestnet chain.");
-            builder.AppendLine($"-agentprefix=<string>     An optional prefix for the node's user agent that will be shared with peers in the version handshake.");
-            builder.AppendLine($"-acceptnonstdtxn=<0 or 1> Accept non-standard transactions. Default {(defaults.RequireStandard?1:0)}.");
-            builder.AppendLine($"-maxtipage=<number>       Max tip age. Default {network.MaxTipAge}.");
-            builder.AppendLine($"-synctime=<0 or 1>        Sync with peers. Default 1.");
-            builder.AppendLine($"-mintxfee=<number>        Minimum fee rate. Defaults to network specific value.");
-            builder.AppendLine($"-fallbackfee=<number>     Fallback fee rate. Defaults to network specific value.");
-            builder.AppendLine($"-minrelaytxfee=<number>   Minimum relay fee rate. Defaults to network specific value.");
-
-            // Connection manager settings
-            builder.AppendLine($"-port=<port>              The default network port to connect to. Default { network.DefaultPort }.");
-            builder.AppendLine($"-connect=<ip:port>        Specified node to connect to. Can be specified multiple times.");
-            builder.AppendLine($"-addnode=<ip:port>        Add a node to connect to and attempt to keep the connection open. Can be specified multiple times.");
-            builder.AppendLine($"-whitebind=<ip:port>      Bind to given address and whitelist peers connecting to it. Use [host]:port notation for IPv6. Can be specified multiple times.");
-            builder.AppendLine($"-externalip=<ip>          Specify your own public address.");
-            builder.AppendLine($"-bantime=<number>         Number of seconds to keep misbehaving peers from reconnecting. Default {ConnectionManagerSettings.DefaultMisbehavingBantimeSeconds}.");
-            builder.AppendLine($"-maxoutboundconnections=<number> The maximum number of outbound connections. Default {ConnectionManagerSettings.DefaultMaxOutboundConnections}.");
-
-            defaults.Logger.LogInformation(builder.ToString());
-        }
-        
-        /// <summary>
-        /// Get the default configuration.
-        /// </summary>
-        /// <param name="builder">The string builder to add the settings to.</param>
-        /// <param name="network">The network to base the defaults off.</param>
-        public static void BuildDefaultConfigurationFile(StringBuilder builder, Network network)
-        {
-            var defaults = Default(network:network);
-
-            builder.AppendLine("####Node Settings####");
-            builder.AppendLine($"#An optional prefix for the node's user agent shared with peers. Truncated if over { MaximumAgentPrefixLength } characters.");
-            builder.AppendLine($"#agentprefix=<string>");
-            builder.AppendLine($"#Accept non-standard transactions. Default {(defaults.RequireStandard?1:0)}.");
-            builder.AppendLine($"#acceptnonstdtxn={(defaults.RequireStandard?1:0)}");
-            builder.AppendLine($"#Max tip age. Default {network.MaxTipAge}.");
-            builder.AppendLine($"#maxtipage={network.MaxTipAge}");
-            builder.AppendLine($"#Sync with peers. Default 1.");
-            builder.AppendLine($"#synctime=1");
-            builder.AppendLine($"#Minimum fee rate. Defaults to {network.MinTxFee}.");
-            builder.AppendLine($"#mintxfee={network.MinTxFee}");
-            builder.AppendLine($"#Fallback fee rate. Defaults to {network.FallbackFee}.");
-            builder.AppendLine($"#fallbackfee={network.FallbackFee}");
-            builder.AppendLine($"#Minimum relay fee rate. Defaults to {network.MinRelayTxFee}.");
-            builder.AppendLine($"#minrelaytxfee={network.MinRelayTxFee}");
-            builder.AppendLine();
-            builder.AppendLine("####ConnectionManager Settings####");
-            builder.AppendLine($"#The default network port to connect to. Default { network.DefaultPort }.");
-            builder.AppendLine($"#port={network.DefaultPort}");
-            builder.AppendLine($"#Specified node to connect to. Can be specified multiple times.");
-            builder.AppendLine($"#connect=<ip:port>");
-            builder.AppendLine($"#Add a node to connect to and attempt to keep the connection open. Can be specified multiple times.");
-            builder.AppendLine($"#addnode=<ip:port>");
-            builder.AppendLine($"#Bind to given address and whitelist peers connecting to it. Use [host]:port notation for IPv6. Can be specified multiple times.");
-            builder.AppendLine($"#whitebind=<ip:port>");
-            builder.AppendLine($"#Specify your own public address.");
-            builder.AppendLine($"#externalip=<ip>");
-            builder.AppendLine($"#Number of seconds to keep misbehaving peers from reconnecting. Default {ConnectionManagerSettings.DefaultMisbehavingBantimeSeconds}.");
-            builder.AppendLine($"#bantime=<number>");
-            builder.AppendLine($"#The maximum number of outbound connections. Default {ConnectionManagerSettings.DefaultMaxOutboundConnections}.");
-            builder.AppendLine($"#maxoutboundconnections=<number>");
         }
     }
 }

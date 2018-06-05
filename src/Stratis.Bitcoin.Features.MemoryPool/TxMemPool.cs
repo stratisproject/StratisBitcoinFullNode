@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
-using Stratis.Bitcoin.Configuration;
+using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.MemoryPool.Fee;
 using Stratis.Bitcoin.Features.MemoryPool.Interfaces;
@@ -182,7 +182,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <param name="blockPolicyEstimator">The block policy estimator object.</param>
         /// <param name="loggerFactory">Factory for creating instance logger.</param>
         /// <param name="nodeSettings">Full node settings.</param>
-        public TxMempool(IDateTimeProvider dateTimeProvider, BlockPolicyEstimator blockPolicyEstimator, ILoggerFactory loggerFactory, NodeSettings nodeSettings)
+        public TxMempool(IDateTimeProvider dateTimeProvider, BlockPolicyEstimator blockPolicyEstimator, ILoggerFactory loggerFactory, BaseSettings baseSettings)
         {
             this.MapTx = new IndexedTransactionSet();
             this.mapLinks = new TxlinksMap();
@@ -199,7 +199,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             this.checkFrequency = 0;
 
             this.MinerPolicyEstimator = blockPolicyEstimator;
-            this.minReasonableRelayFee = nodeSettings.MinRelayTxFeeRate;
+            this.minReasonableRelayFee = baseSettings.MinRelayTxFeeRate;
         }
 
         /// <summary>Gets the miner policy estimator.</summary>

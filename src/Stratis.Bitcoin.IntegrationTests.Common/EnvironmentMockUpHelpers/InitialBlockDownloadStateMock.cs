@@ -22,13 +22,13 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
 
         private readonly InitialBlockDownloadState innerBlockDownloadState;
 
-        public InitialBlockDownloadStateMock(IChainState chainState, Network network, NodeSettings nodeSettings,
+        public InitialBlockDownloadStateMock(IChainState chainState, Network network, BaseSettings baseSettings,
             ICheckpoints checkpoints)
         {
             this.lockIbdUntil = DateTime.MinValue;
             this.dateTimeProvider = DateTimeProvider.Default;
 
-            this.innerBlockDownloadState = new InitialBlockDownloadState(chainState, network, nodeSettings, checkpoints);
+            this.innerBlockDownloadState = new InitialBlockDownloadState(chainState, network, baseSettings, checkpoints);
         }
 
         public bool IsInitialBlockDownload()

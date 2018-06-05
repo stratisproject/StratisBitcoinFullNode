@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using NBitcoin;
+using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.IntegrationTests.Common;
@@ -148,7 +149,9 @@ namespace Stratis.Bitcoin.IntegrationTests
                 var stratisNodeSync = builder.CreateStratisPowNode();
                 builder.StartAll();
                 stratisNodeSync.NotInIBD();
-                stratisNodeSync.FullNode.Settings.RequireStandard = true; // make sure to test standard tx
+
+                MempoolSettings mempoolSettings = stratisNodeSync.FullNode.NodeService<MempoolSettings>();
+                mempoolSettings.RequireStandard = true; // make sure to test standard tx
 
                 stratisNodeSync.SetDummyMinerSecret(new BitcoinSecret(new Key(), stratisNodeSync.FullNode.Network));
                 stratisNodeSync.GenerateStratisWithMiner(100); // coinbase maturity = 100

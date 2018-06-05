@@ -1,5 +1,5 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
-using NBitcoin;
+using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.RPC.Controllers;
 using Stratis.Bitcoin.Features.RPC.Models;
@@ -22,8 +22,9 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
             GetInfoModel info = controller.GetInfo();
 
             NodeSettings nodeSettings = NodeSettings.Default();
+            BaseSettings baseSettings = new BaseSettings(nodeSettings);
             uint expectedProtocolVersion = (uint)nodeSettings.ProtocolVersion;
-            var expectedRelayFee = nodeSettings.MinRelayTxFeeRate.FeePerK.ToUnit(NBitcoin.MoneyUnit.BTC);
+            var expectedRelayFee = baseSettings.MinRelayTxFeeRate.FeePerK.ToUnit(NBitcoin.MoneyUnit.BTC);
             Assert.NotNull(info);
             Assert.Equal(0, info.Blocks);
             Assert.NotEqual<uint>(0, info.Version);

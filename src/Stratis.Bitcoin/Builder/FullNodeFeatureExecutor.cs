@@ -54,7 +54,6 @@ namespace Stratis.Bitcoin.Builder
             try
             {
                 this.Execute(service => service.ValidateDependencies(this.node.Services));
-                this.Execute(service => service.LoadConfiguration());
                 this.Execute(service => service.Initialize());
             }
             catch (Exception ex)

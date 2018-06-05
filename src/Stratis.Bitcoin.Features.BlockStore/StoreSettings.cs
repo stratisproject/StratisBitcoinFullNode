@@ -3,6 +3,7 @@ using System.Text;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Configuration;
+using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.BlockStore
 {
@@ -52,17 +53,32 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// <param name="nodeSettings">Application configuration.</param>
         public virtual void Load(NodeSettings nodeSettings)
         {
+            Guard.NotNull(nodeSettings, nameof(nodeSettings));
+
+            ILogger logger = nodeSettings.LoggerFactory.CreateLogger(typeof(StoreSettings).FullName);
+
+            logger.LogTrace("()");
+
             var config = nodeSettings.ConfigReader;
 
             this.Prune = config.GetOrDefault<bool>("prune", false);
+            logger.LogDebug("Prune set to {0}.", this.Prune);
+
             this.TxIndex = config.GetOrDefault<bool>("txindex", false);
+            logger.LogDebug("TxIndex set to {0}.", this.TxIndex);
+
             this.ReIndex = config.GetOrDefault<bool>("reindex", false);
+            logger.LogDebug("ReIndex set to {0}.", this.ReIndex);
+
             this.MaxCacheBlocksCount = nodeSettings.ConfigReader.GetOrDefault("maxCacheBlocksCount", DefaultMaxCacheBlocksCount);
+            logger.LogDebug("MaxCacheBlocksCount set to {0}.", this.MaxCacheBlocksCount);
 
             this.callback?.Invoke(this);
 
             if (this.Prune && this.TxIndex)
                 throw new ConfigurationException("Prune mode is incompatible with -txindex");
+
+            logger.LogTrace("(-)");
         }
 
         /// <summary>Prints the help information on how to configure the block store settings to the logger.</summary>

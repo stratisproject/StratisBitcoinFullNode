@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Moq;
 using NBitcoin;
+using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
@@ -39,10 +40,11 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
                 {
                     MempoolExpiry = MempoolExpiry
                 };
-                NodeSettings nodeSettings = NodeSettings.Default();
 
-                BlockPolicyEstimator blockPolicyEstimator = new BlockPolicyEstimator(settings, loggerFactory, nodeSettings);
-                TxMempool mempool = new TxMempool(dateTime, blockPolicyEstimator, loggerFactory, nodeSettings);
+                NodeSettings nodeSettings = NodeSettings.Default();
+                BaseSettings baseSettings = new BaseSettings(nodeSettings);
+                BlockPolicyEstimator blockPolicyEstimator = new BlockPolicyEstimator(settings, loggerFactory, baseSettings);
+                TxMempool mempool = new TxMempool(dateTime, blockPolicyEstimator, loggerFactory, baseSettings);
 
                 Mock<TxMempool> mockTxMempool = new Mock<TxMempool>();
                 Mock<IMempoolValidator> mockValidator = new Mock<IMempoolValidator>();

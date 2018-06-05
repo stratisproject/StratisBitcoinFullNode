@@ -51,11 +51,29 @@ namespace Stratis.Bitcoin.Features.Api
         }
 
         /// <summary>
+        /// Constructs this object whilst providing a callback to override/constrain/extend 
+        /// the settings provided by the Load method. Calls the Load method.
+        /// </summary>
+        /// <param name="nodeSettings">The node settings to load.</param>
+        /// <param name="callback">The callback used to override/constrain/extend the settings provided by the Load method.</param>
+        public ApiSettings(NodeSettings nodeSettings, Action<ApiSettings> callback = null)
+            : this(callback)
+        {
+            this.Load(nodeSettings);
+        }
+
+        /// <summary>
         /// Loads the API related settings from the application configuration.
         /// </summary>
         /// <param name="nodeSettings">Application configuration.</param>
-        public void Load(NodeSettings nodeSettings)
+        public ApiSettings Load(NodeSettings nodeSettings)
         {
+            Guard.NotNull(nodeSettings, nameof(nodeSettings));
+
+            ILogger logger = nodeSettings.LoggerFactory.CreateLogger(typeof(ApiSettings).FullName);
+
+            logger.LogTrace("()");
+
             TextFileConfiguration config = nodeSettings.ConfigReader;
 
             var apiHost = config.GetOrDefault("apiuri", DefaultApiHost);
@@ -77,6 +95,9 @@ namespace Stratis.Bitcoin.Features.Api
                 this.ApiPort = apiUri.Port;
             }
 
+            logger.LogDebug("ApiUri set to {0}.", apiUri);
+            logger.LogDebug("ApiPort set to {0}.", apiPort);
+
             // Set the keepalive interval (set in seconds).
             var keepAlive = config.GetOrDefault("keepalive", 0);
             if (keepAlive > 0)
@@ -88,7 +109,13 @@ namespace Stratis.Bitcoin.Features.Api
                 };
             }
 
+            logger.LogDebug("KeepAlive set to {0}.", keepAlive);
+
             this.callback?.Invoke(this);
+
+            logger.LogTrace("(-)");
+
+            return this;
         }
 
         /// <summary>

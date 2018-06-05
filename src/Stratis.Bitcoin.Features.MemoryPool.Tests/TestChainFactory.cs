@@ -91,8 +91,9 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             ConsensusLoop consensusLoop = new ConsensusLoop(new AsyncLoopFactory(loggerFactory), new NodeLifetime(), chain, cachedCoinView, blockPuller, deployments, loggerFactory, new ChainState(new InvalidBlockHashStore(dateTimeProvider)), connectionManager, dateTimeProvider, new Signals.Signals(), consensusSettings, nodeSettings, peerBanning, consensusRules);
             await consensusLoop.StartAsync();
 
-            BlockPolicyEstimator blockPolicyEstimator = new BlockPolicyEstimator(new MempoolSettings(nodeSettings), loggerFactory, nodeSettings);
-            TxMempool mempool = new TxMempool(dateTimeProvider, blockPolicyEstimator, loggerFactory, nodeSettings);
+            BaseSettings baseSettings = new BaseSettings().Load(nodeSettings);
+            BlockPolicyEstimator blockPolicyEstimator = new BlockPolicyEstimator(new MempoolSettings(nodeSettings), loggerFactory, baseSettings);
+            TxMempool mempool = new TxMempool(dateTimeProvider, blockPolicyEstimator, loggerFactory, baseSettings);
             MempoolSchedulerLock mempoolLock = new MempoolSchedulerLock();
 
             // Simple block creation, nothing special yet:
@@ -150,7 +151,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             blockDefinition = CreatePowBlockAssembler(consensusLoop, dateTimeProvider, loggerFactory as LoggerFactory, mempool, mempoolLock, network);
             newBlock = blockDefinition.Build(chain.Tip, scriptPubKey);
 
-            MempoolValidator mempoolValidator = new MempoolValidator(mempool, mempoolLock, dateTimeProvider, new MempoolSettings(nodeSettings), chain, cachedCoinView, loggerFactory, nodeSettings, consensusRules);
+            MempoolValidator mempoolValidator = new MempoolValidator(mempool, mempoolLock, dateTimeProvider, new MempoolSettings(nodeSettings), chain, cachedCoinView, loggerFactory, baseSettings, consensusRules);
 
             return new TestChainContext { MempoolValidator = mempoolValidator, SrcTxs = srcTxs };
         }

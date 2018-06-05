@@ -350,7 +350,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                 return;
             }
 
-            bool blocksOnly = !this.manager.mempoolSettings.RelayTxes;
+            bool blocksOnly = !this.connectionManager.ConnectionSettings.RelayTxes;
             // Allow whitelisted peers to send data other than blocks in blocks only mode if whitelistrelay is true
             if (peer.Behavior<ConnectionManagerBehavior>().Whitelisted && this.manager.mempoolSettings.WhiteListRelay)
                 blocksOnly = false;

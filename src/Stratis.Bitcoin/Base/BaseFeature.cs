@@ -59,6 +59,9 @@ namespace Stratis.Bitcoin.Base
         /// <summary>User defined node settings.</summary>
         private readonly NodeSettings nodeSettings;
 
+        /// <summary>User defined base feature settings.</summary>
+        private readonly BaseSettings baseSettings;
+
         /// <summary>Locations of important folders and files on disk.</summary>
         private readonly DataFolder dataFolder;
 
@@ -122,6 +125,7 @@ namespace Stratis.Bitcoin.Base
         /// <param name="initialBlockDownloadState">Provider of IBD state.</param>
         /// <param name="bestChainSelector">Selects the best available chain based on tips provided by the peers and switches to it.</param>
         public BaseFeature(
+            BaseSettings baseSettings,
             NodeSettings nodeSettings,
             DataFolder dataFolder,
             INodeLifetime nodeLifetime,
@@ -141,6 +145,7 @@ namespace Stratis.Bitcoin.Base
         {
             this.chainState = Guard.NotNull(chainState, nameof(chainState));
             this.chainRepository = Guard.NotNull(chainRepository, nameof(chainRepository));
+            this.baseSettings = Guard.NotNull(baseSettings, nameof(baseSettings));
             this.nodeSettings = Guard.NotNull(nodeSettings, nameof(nodeSettings));
             this.dataFolder = Guard.NotNull(dataFolder, nameof(dataFolder));
             this.nodeLifetime = Guard.NotNull(nodeLifetime, nameof(nodeLifetime));
@@ -171,6 +176,12 @@ namespace Stratis.Bitcoin.Base
         }
 
         /// <inheritdoc />
+        public override void LoadConfiguration()
+        {
+            this.baseSettings.Load(this.nodeSettings);
+        }
+
+        /// <inheritdoc />
         public override void Initialize()
         {
             this.logger.LogTrace("()");
@@ -180,13 +191,13 @@ namespace Stratis.Bitcoin.Base
             this.StartChainAsync().GetAwaiter().GetResult();
 
             var connectionParameters = this.connectionManager.Parameters;
-            connectionParameters.IsRelay = !this.nodeSettings.ConfigReader.GetOrDefault("blocksonly", false);
+            connectionParameters.IsRelay = this.connectionManager.ConnectionSettings.RelayTxes;
             connectionParameters.TemplateBehaviors.Add(new ChainHeadersBehavior(this.chain, this.chainState, this.initialBlockDownloadState, this.bestChainSelector, this.loggerFactory));
             connectionParameters.TemplateBehaviors.Add(new PeerBanningBehavior(this.loggerFactory, this.peerBanning, this.nodeSettings));
 
             this.StartAddressManager(connectionParameters);
 
-            if (this.nodeSettings.SyncTimeEnabled)
+            if (this.connectionManager.ConnectionSettings.SyncTimeEnabled)
             {
                 connectionParameters.TemplateBehaviors.Add(new TimeSyncBehavior(this.timeSyncBehaviorState, this.dateTimeProvider, this.loggerFactory));
             }
@@ -207,7 +218,8 @@ namespace Stratis.Bitcoin.Base
         /// <param name="network">The network to extract values from.</param>
         public static void PrintHelp(Network network)
         {
-            NodeSettings.PrintHelp(network);
+            BaseSettings.PrintHelp(network);
+            ConnectionManagerSettings.PrintHelp(network);
         }
         
         /// <summary>
@@ -217,7 +229,8 @@ namespace Stratis.Bitcoin.Base
         /// <param name="network">The network to base the defaults off.</param>
         public static void BuildDefaultConfigurationFile(StringBuilder builder, Network network)
         {
-            NodeSettings.BuildDefaultConfigurationFile(builder, network);
+            BaseSettings.BuildDefaultConfigurationFile(builder, network);
+            ConnectionManagerSettings.BuildDefaultConfigurationFile(builder, network);
         }
 
         /// <summary>
@@ -302,7 +315,7 @@ namespace Stratis.Bitcoin.Base
         /// </summary>
         /// <param name="fullNodeBuilder">Builder responsible for creating the node.</param>
         /// <returns>Full node builder's interface to allow fluent code.</returns>
-        public static IFullNodeBuilder UseBaseFeature(this IFullNodeBuilder fullNodeBuilder)
+        public static IFullNodeBuilder UseBaseFeature(this IFullNodeBuilder fullNodeBuilder, Action<BaseSettings> setup = null)
         {
             fullNodeBuilder.ConfigureFeature(features =>
             {
@@ -311,6 +324,7 @@ namespace Stratis.Bitcoin.Base
                 .FeatureServices(services =>
                 {
                     services.AddSingleton<DBreezeSerializer>();
+                    services.AddSingleton<BaseSettings>(new BaseSettings(fullNodeBuilder.NodeSettings, setup));
                     services.AddSingleton(fullNodeBuilder.NodeSettings.LoggerFactory);
                     services.AddSingleton(fullNodeBuilder.NodeSettings.DataFolder);
                     services.AddSingleton<INodeLifetime, NodeLifetime>();

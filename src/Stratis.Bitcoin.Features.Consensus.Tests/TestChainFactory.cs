@@ -46,6 +46,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
 
         public NodeSettings NodeSettings { get; set; }
 
+        public BaseSettings BaseSettings { get; set; }
+
         public ConnectionManagerSettings ConnectionSettings { get; set; }
 
         public ConcurrentChain Chain { get; set; }
@@ -79,6 +81,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
             testChainContext.NodeSettings = new NodeSettings(network, args: new string[] { $"-datadir={dataDir}" });
             testChainContext.ConnectionSettings = new ConnectionManagerSettings();
             testChainContext.ConnectionSettings.Load(testChainContext.NodeSettings);
+            testChainContext.BaseSettings = new BaseSettings(testChainContext.NodeSettings);
             testChainContext.LoggerFactory = testChainContext.NodeSettings.LoggerFactory;
             testChainContext.DateTimeProvider = DateTimeProvider.Default;
 
@@ -128,8 +131,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
         /// </summary>
         private static async Task<List<Block>> MineBlocksAsync(TestChainContext testChainContext, int count, Script receiver, bool mutateLastBlock)
         {
-            var blockPolicyEstimator = new BlockPolicyEstimator(new MempoolSettings(testChainContext.NodeSettings), testChainContext.LoggerFactory, testChainContext.NodeSettings);
-            var mempool = new TxMempool(testChainContext.DateTimeProvider, blockPolicyEstimator, testChainContext.LoggerFactory, testChainContext.NodeSettings);
+            var blockPolicyEstimator = new BlockPolicyEstimator(new MempoolSettings(testChainContext.NodeSettings), testChainContext.LoggerFactory, testChainContext.BaseSettings);
+            var mempool = new TxMempool(testChainContext.DateTimeProvider, blockPolicyEstimator, testChainContext.LoggerFactory, testChainContext.BaseSettings);
             var mempoolLock = new MempoolSchedulerLock();
 
             // Simple block creation, nothing special yet:

@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
 using NBitcoin;
+using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Configuration;
 using Xunit;
 
@@ -17,7 +18,8 @@ namespace Stratis.Bitcoin.Features.LightWallet.Tests
             {
                 ILoggerFactory loggerFactory = new LoggerFactory();
                 NodeSettings settings = NodeSettings.Default();
-                LightWalletFixedFeePolicy policy = new LightWalletFixedFeePolicy(loggerFactory, settings);
+                BaseSettings baseSettings = new BaseSettings(settings);
+                LightWalletFixedFeePolicy policy = new LightWalletFixedFeePolicy(loggerFactory, baseSettings);
                 return policy;
             }
         }
@@ -27,8 +29,9 @@ namespace Stratis.Bitcoin.Features.LightWallet.Tests
         {
             ILoggerFactory loggerFactory = new LoggerFactory();
             NodeSettings settings = NodeSettings.Default();
-            LightWalletFixedFeePolicy policy = new LightWalletFixedFeePolicy(loggerFactory, settings);
-            Assert.Equal(settings.FallbackTxFeeRate, policy.FallbackTxFeeRate);
+            BaseSettings baseSettings = new BaseSettings(settings);
+            LightWalletFixedFeePolicy policy = new LightWalletFixedFeePolicy(loggerFactory, baseSettings);
+            Assert.Equal(baseSettings.FallbackTxFeeRate, policy.FallbackTxFeeRate);
         }
 
         [Fact]
@@ -67,7 +70,8 @@ namespace Stratis.Bitcoin.Features.LightWallet.Tests
         {
             ILoggerFactory loggerFactory = new LoggerFactory();
             NodeSettings nodeSettings = new NodeSettings(Network.StratisTest);
-            LightWalletFixedFeePolicy policy = new LightWalletFixedFeePolicy(loggerFactory, nodeSettings);
+            BaseSettings baseSettings = new BaseSettings(nodeSettings);
+            LightWalletFixedFeePolicy policy = new LightWalletFixedFeePolicy(loggerFactory, baseSettings);
             Assert.Equal(new FeeRate(Network.StratisTest.FallbackFee), policy.FallbackTxFeeRate);
         }
 
@@ -76,7 +80,8 @@ namespace Stratis.Bitcoin.Features.LightWallet.Tests
         {
             ILoggerFactory loggerFactory = new LoggerFactory();
             NodeSettings nodeSettings = new NodeSettings(Network.TestNet);
-            LightWalletFixedFeePolicy policy = new LightWalletFixedFeePolicy(loggerFactory, nodeSettings);
+            BaseSettings baseSettings = new BaseSettings(nodeSettings);
+            LightWalletFixedFeePolicy policy = new LightWalletFixedFeePolicy(loggerFactory, baseSettings);
             Assert.Equal(new FeeRate(Network.TestNet.FallbackFee), policy.FallbackTxFeeRate);
         }
     }

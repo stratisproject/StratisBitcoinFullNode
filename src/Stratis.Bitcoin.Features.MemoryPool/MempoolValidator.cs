@@ -5,8 +5,8 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NBitcoin.Protocol;
+using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Base.Deployments;
-using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.Consensus.Rules;
@@ -174,7 +174,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             ConcurrentChain chain,
             CoinView coinView,
             ILoggerFactory loggerFactory,
-            NodeSettings nodeSettings,
+            BaseSettings baseSettings,
             IConsensusRules consensusRules)
         {
             this.memPool = memPool;
@@ -188,7 +188,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             // TODO: Implement later with CheckRateLimit()
             // this.freeLimiter = new FreeLimiterSection();
             this.PerformanceCounter = new MempoolPerformanceCounter(this.dateTimeProvider);
-            this.minRelayTxFee = nodeSettings.MinRelayTxFeeRate;
+            this.minRelayTxFee = baseSettings.MinRelayTxFeeRate;
             this.consensusRules = consensusRules;
         }
 
@@ -567,7 +567,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             //}
 
             // Rather not work on nonstandard transactions (unless -testnet/-regtest)
-            if (this.mempoolSettings.NodeSettings.RequireStandard)
+            if (this.mempoolSettings.RequireStandard)
             {
                 this.CheckStandardTransaction(context, witnessEnabled);
             }
@@ -741,11 +741,11 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                 context.State.Fail(MempoolErrors.NonBIP68Final).Throw();
 
             // Check for non-standard pay-to-script-hash in inputs
-            if (this.mempoolSettings.NodeSettings.RequireStandard && !this.AreInputsStandard(context.Transaction, context.View))
+            if (this.mempoolSettings.RequireStandard && !this.AreInputsStandard(context.Transaction, context.View))
                 context.State.Invalid(MempoolErrors.NonstandardInputs).Throw();
 
             // Check for non-standard witness in P2WSH
-            if (context.Transaction.HasWitness && this.mempoolSettings.NodeSettings.RequireStandard && !this.IsWitnessStandard(context.Transaction, context.View))
+            if (context.Transaction.HasWitness && this.mempoolSettings.RequireStandard && !this.IsWitnessStandard(context.Transaction, context.View))
                 context.State.Invalid(MempoolErrors.NonstandardWitness).Throw();
 
             context.SigOpsCost = consensusRules.GetRule<CoinViewRule>().GetTransactionSignatureOperationCost(context.Transaction, context.View.Set,
@@ -989,7 +989,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         private void CheckAllInputs(MempoolValidationContext context)
         {
             ScriptVerify scriptVerifyFlags = ScriptVerify.Standard;
-            if (!this.mempoolSettings.NodeSettings.RequireStandard)
+            if (!this.mempoolSettings.RequireStandard)
             {
                 // TODO: implement -promiscuousmempoolflags
                 // scriptVerifyFlags = GetArg("-promiscuousmempoolflags", scriptVerifyFlags);

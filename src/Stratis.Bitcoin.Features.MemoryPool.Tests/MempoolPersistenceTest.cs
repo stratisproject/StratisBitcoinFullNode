@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Moq;
 using NBitcoin;
+using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Base.Deployments;
 using Stratis.Bitcoin.BlockPulling;
 using Stratis.Bitcoin.Configuration;
@@ -266,23 +267,23 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
                             .Concat(Guid.NewGuid().ToByteArray()));
         }
 
-        private static MempoolManager CreateTestMempool(NodeSettings settings, out TxMempool txMemPool)
+        private static MempoolManager CreateTestMempool(NodeSettings nodeSettings, out TxMempool txMemPool)
         {
-            var mempoolSettings = new MempoolSettings(settings);
+            var mempoolSettings = new MempoolSettings(nodeSettings);
+            var baseSettings = new BaseSettings(nodeSettings);
             IDateTimeProvider dateTimeProvider = DateTimeProvider.Default;
-            NodeSettings nodeSettings = NodeSettings.Default();
             var loggerFactory = nodeSettings.LoggerFactory;
             ConsensusSettings consensusSettings = new ConsensusSettings().Load(nodeSettings);
-            txMemPool = new TxMempool(dateTimeProvider, new BlockPolicyEstimator(new MempoolSettings(nodeSettings), loggerFactory, nodeSettings), loggerFactory, nodeSettings);
+            txMemPool = new TxMempool(dateTimeProvider, new BlockPolicyEstimator(new MempoolSettings(nodeSettings), loggerFactory, baseSettings), loggerFactory, baseSettings);
             var mempoolLock = new MempoolSchedulerLock();
-            var coins = new InMemoryCoinView(settings.Network.GenesisHash);
+            var coins = new InMemoryCoinView(nodeSettings.Network.GenesisHash);
             var chain = new ConcurrentChain(Network.Main.GetGenesis().Header);
-            var mempoolPersistence = new MempoolPersistence(settings, loggerFactory);
+            var mempoolPersistence = new MempoolPersistence(nodeSettings, loggerFactory);
             Network.Main.Consensus.Options = new PosConsensusOptions();
             ConsensusRules consensusRules = new PowConsensusRules(Network.Main, loggerFactory, dateTimeProvider, chain, new NodeDeployments(Network.Main, chain), consensusSettings, new Checkpoints(), new InMemoryCoinView(new uint256()), new Mock<ILookaheadBlockPuller>().Object).Register(new FullNodeBuilderConsensusExtension.PowConsensusRulesRegistration());
-            var mempoolValidator = new MempoolValidator(txMemPool, mempoolLock, dateTimeProvider, mempoolSettings, chain, coins, loggerFactory, settings, consensusRules);
+            var mempoolValidator = new MempoolValidator(txMemPool, mempoolLock, dateTimeProvider, mempoolSettings, chain, coins, loggerFactory, baseSettings, consensusRules);
             var mempoolOrphans = new MempoolOrphans(mempoolLock, txMemPool, chain, new Signals.Signals(), mempoolValidator, coins, dateTimeProvider, mempoolSettings, loggerFactory);
-            return new MempoolManager(mempoolLock, txMemPool, mempoolValidator, mempoolOrphans, dateTimeProvider, mempoolSettings, mempoolPersistence, coins, loggerFactory, settings.Network);
+            return new MempoolManager(mempoolLock, txMemPool, mempoolValidator, mempoolOrphans, dateTimeProvider, mempoolSettings, mempoolPersistence, coins, loggerFactory, nodeSettings.Network);
         }
     }
 }

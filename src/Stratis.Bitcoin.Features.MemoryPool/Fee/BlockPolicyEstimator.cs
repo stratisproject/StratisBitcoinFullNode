@@ -2,7 +2,7 @@
 using System.IO;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
-using Stratis.Bitcoin.Configuration;
+using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Features.MemoryPool.Interfaces;
 
 namespace Stratis.Bitcoin.Features.MemoryPool.Fee
@@ -127,8 +127,8 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Fee
         /// </summary>
         /// <param name="mempoolSettings">Mempool settings.</param>
         /// <param name="loggerFactory">Factory for creating loggers.</param>
-        /// <param name="nodeSettings">Full node settings.</param>
-        public BlockPolicyEstimator(MempoolSettings mempoolSettings, ILoggerFactory loggerFactory, NodeSettings nodeSettings)
+        /// <param name="baseSettings">Base feature settings.</param>
+        public BlockPolicyEstimator(MempoolSettings mempoolSettings, ILoggerFactory loggerFactory, BaseSettings baseSettings)
         {
             this.mapMemPoolTxs = new Dictionary<uint256, TxStatsInfo>();
             this.mempoolSettings = mempoolSettings;
@@ -137,9 +137,9 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Fee
             this.untrackedTxs = 0;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
 
-            this.minTrackedFee = nodeSettings.MinRelayTxFeeRate < new FeeRate(new Money(MinFeeRate))
+            this.minTrackedFee = baseSettings.MinRelayTxFeeRate < new FeeRate(new Money(MinFeeRate))
                 ? new FeeRate(new Money(MinFeeRate))
-                : nodeSettings.MinRelayTxFeeRate;
+                : baseSettings.MinRelayTxFeeRate;
             var vfeelist = new List<double>();
             for (double bucketBoundary = this.minTrackedFee.FeePerK.Satoshi;
                 bucketBoundary <= MaxFeeRate;

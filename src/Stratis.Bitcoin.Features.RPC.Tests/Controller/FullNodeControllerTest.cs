@@ -31,6 +31,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
         private readonly Mock<IConnectionManager> connectionManager;
         private Network network;
         private NodeSettings nodeSettings;
+        private BaseSettings baseSettings;
         private readonly Mock<IPooledTransaction> pooledTransaction;
         private readonly Mock<IPooledGetUnspentTransaction> pooledGetUnspentTransaction;
         private readonly Mock<IGetUnspentTransaction> getUnspentTransaction;
@@ -47,13 +48,14 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
             this.network = Network.TestNet;
             this.chain = WalletTestsHelpers.GenerateChainWithHeight(3, this.network);
             this.nodeSettings = new NodeSettings();
+            this.baseSettings = new BaseSettings(this.nodeSettings);
             this.pooledTransaction = new Mock<IPooledTransaction>();
             this.pooledGetUnspentTransaction = new Mock<IPooledGetUnspentTransaction>();
             this.getUnspentTransaction = new Mock<IGetUnspentTransaction>();
             this.consensusLoop = new Mock<IConsensusLoop>();
             this.networkDifficulty = new Mock<INetworkDifficulty>();
             this.controller = new FullNodeController(this.LoggerFactory.Object, this.pooledTransaction.Object, this.pooledGetUnspentTransaction.Object, this.getUnspentTransaction.Object, this.networkDifficulty.Object,
-                this.consensusLoop.Object, this.fullNode.Object, this.nodeSettings, this.network, this.chain, this.chainState.Object, this.connectionManager.Object);
+                this.consensusLoop.Object, this.fullNode.Object, this.nodeSettings, this.baseSettings, this.network, this.chain, this.chainState.Object, this.connectionManager.Object);
         }
 
         [Fact]
@@ -62,7 +64,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
             IFullNode fullNode = null;
 
             this.controller = new FullNodeController(this.LoggerFactory.Object, this.pooledTransaction.Object, this.pooledGetUnspentTransaction.Object, this.getUnspentTransaction.Object, this.networkDifficulty.Object,
-                this.consensusLoop.Object, fullNode, this.nodeSettings, this.network, this.chain, this.chainState.Object, this.connectionManager.Object);
+                this.consensusLoop.Object, fullNode, this.nodeSettings, this.baseSettings, this.network, this.chain, this.chainState.Object, this.connectionManager.Object);
 
             await this.controller.Stop().ConfigureAwait(false);
         }
@@ -150,7 +152,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
                 .Verifiable();
 
             this.controller = new FullNodeController(this.LoggerFactory.Object, null, this.pooledGetUnspentTransaction.Object, this.getUnspentTransaction.Object, this.networkDifficulty.Object,
-                this.consensusLoop.Object, this.fullNode.Object, this.nodeSettings, this.network, this.chain, this.chainState.Object, this.connectionManager.Object);
+                this.consensusLoop.Object, this.fullNode.Object, this.nodeSettings, this.baseSettings, this.network, this.chain, this.chainState.Object, this.connectionManager.Object);
             var result = await this.controller.GetRawTransactionAsync(txId.ToString(), 0).ConfigureAwait(false);
 
             Assert.Null(result);
@@ -277,7 +279,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
             var txId = new uint256(1243124);
 
             this.controller = new FullNodeController(this.LoggerFactory.Object, this.pooledTransaction.Object, this.pooledGetUnspentTransaction.Object, null, this.networkDifficulty.Object,
-                this.consensusLoop.Object, this.fullNode.Object, this.nodeSettings, this.network, this.chain, this.chainState.Object, this.connectionManager.Object);
+                this.consensusLoop.Object, this.fullNode.Object, this.nodeSettings, this.baseSettings, this.network, this.chain, this.chainState.Object, this.connectionManager.Object);
             var result = await this.controller.GetTxOutAsync(txId.ToString(), 0, false).ConfigureAwait(false);
 
             Assert.Null(result);
@@ -303,7 +305,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
             var txId = new uint256(1243124);
 
             this.controller = new FullNodeController(this.LoggerFactory.Object, this.pooledTransaction.Object, null, this.getUnspentTransaction.Object, this.networkDifficulty.Object,
-                this.consensusLoop.Object, this.fullNode.Object, this.nodeSettings, this.network, this.chain, this.chainState.Object, this.connectionManager.Object);
+                this.consensusLoop.Object, this.fullNode.Object, this.nodeSettings, this.baseSettings, this.network, this.chain, this.chainState.Object, this.connectionManager.Object);
             var result = await this.controller.GetTxOutAsync(txId.ToString(), 0, true).ConfigureAwait(false);
 
             Assert.Null(result);
@@ -343,7 +345,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
                 .Verifiable();
 
             this.controller = new FullNodeController(this.LoggerFactory.Object, this.pooledTransaction.Object, this.pooledGetUnspentTransaction.Object, this.getUnspentTransaction.Object, this.networkDifficulty.Object,
-                this.consensusLoop.Object, this.fullNode.Object, this.nodeSettings, this.network, this.chain, this.chainState.Object, this.connectionManager.Object);
+                this.consensusLoop.Object, this.fullNode.Object, this.nodeSettings, this.baseSettings, this.network, this.chain, this.chainState.Object, this.connectionManager.Object);
             var model = await this.controller.GetTxOutAsync(txId.ToString(), 0, true).ConfigureAwait(false);
 
             this.pooledGetUnspentTransaction.Verify();
@@ -419,7 +421,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
         {
             this.nodeSettings = new NodeSettings(protocolVersion: ProtocolVersion.NO_BLOOM_VERSION, args: new[] { "-minrelaytxfeerate=1000" });
             this.controller = new FullNodeController(this.LoggerFactory.Object, this.pooledTransaction.Object, this.pooledGetUnspentTransaction.Object, this.getUnspentTransaction.Object, this.networkDifficulty.Object,
-    this.consensusLoop.Object, this.fullNode.Object, this.nodeSettings, this.network, this.chain, this.chainState.Object, this.connectionManager.Object);
+    this.consensusLoop.Object, this.fullNode.Object, this.nodeSettings, this.baseSettings, this.network, this.chain, this.chainState.Object, this.connectionManager.Object);
           
             this.fullNode.Setup(f => f.Version)
                 .Returns(new Version(15, 0));
@@ -459,7 +461,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
             this.network = Network.Main;
 
             this.controller = new FullNodeController(this.LoggerFactory.Object, this.pooledTransaction.Object, this.pooledGetUnspentTransaction.Object, this.getUnspentTransaction.Object, this.networkDifficulty.Object,
-                this.consensusLoop.Object, this.fullNode.Object, this.nodeSettings, this.network, this.chain, this.chainState.Object, this.connectionManager.Object);
+                this.consensusLoop.Object, this.fullNode.Object, this.nodeSettings, this.baseSettings, this.network, this.chain, this.chainState.Object, this.connectionManager.Object);
             var model = this.controller.GetInfo();
 
             Assert.False(model.Testnet);
@@ -471,7 +473,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
             IChainState chainState = null;
 
             this.controller = new FullNodeController(this.LoggerFactory.Object, this.pooledTransaction.Object, this.pooledGetUnspentTransaction.Object, this.getUnspentTransaction.Object, this.networkDifficulty.Object,
-                this.consensusLoop.Object, this.fullNode.Object, this.nodeSettings, this.network, this.chain, chainState, this.connectionManager.Object);
+                this.consensusLoop.Object, this.fullNode.Object, this.nodeSettings, this.baseSettings, this.network, this.chain, chainState, this.connectionManager.Object);
             var model = this.controller.GetInfo();
 
             Assert.Equal(0, model.Blocks);
@@ -484,7 +486,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
                 .Returns((ChainedHeader)null);
 
             this.controller = new FullNodeController(this.LoggerFactory.Object, this.pooledTransaction.Object, this.pooledGetUnspentTransaction.Object, this.getUnspentTransaction.Object, this.networkDifficulty.Object,
-                this.consensusLoop.Object, this.fullNode.Object, this.nodeSettings, this.network, this.chain, this.chainState.Object, this.connectionManager.Object);
+                this.consensusLoop.Object, this.fullNode.Object, this.nodeSettings, this.baseSettings, this.network, this.chain, this.chainState.Object, this.connectionManager.Object);
             var model = this.controller.GetInfo();
 
             Assert.Equal(0, model.Blocks);
@@ -494,8 +496,9 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
         public void GetInfo_NoSettings_ReturnsModel()
         {
             this.nodeSettings = null;
+            this.baseSettings = null;
             this.controller = new FullNodeController(this.LoggerFactory.Object, this.pooledTransaction.Object, this.pooledGetUnspentTransaction.Object, this.getUnspentTransaction.Object, this.networkDifficulty.Object,
-                this.consensusLoop.Object, this.fullNode.Object, this.nodeSettings, this.network, this.chain, this.chainState.Object, this.connectionManager.Object);
+                this.consensusLoop.Object, this.fullNode.Object, this.nodeSettings, this.baseSettings, this.network, this.chain, this.chainState.Object, this.connectionManager.Object);
             var model = this.controller.GetInfo();
 
             Assert.Equal((uint)NodeSettings.SupportedProtocolVersion, model.ProtocolVersion);
@@ -508,7 +511,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
             IConnectionManager connectionManager = null;
 
             this.controller = new FullNodeController(this.LoggerFactory.Object, this.pooledTransaction.Object, this.pooledGetUnspentTransaction.Object, this.getUnspentTransaction.Object, this.networkDifficulty.Object,
-                this.consensusLoop.Object, this.fullNode.Object, this.nodeSettings, this.network, this.chain, this.chainState.Object, connectionManager);
+                this.consensusLoop.Object, this.fullNode.Object, this.nodeSettings, this.baseSettings, this.network, this.chain, this.chainState.Object, connectionManager);
             var model = this.controller.GetInfo();
 
             Assert.Equal(0, model.TimeOffset);
@@ -519,7 +522,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
         public void GetInfo_NoNetworkDifficulty_ReturnsModel()
         {
             this.controller = new FullNodeController(this.LoggerFactory.Object, this.pooledTransaction.Object, this.pooledGetUnspentTransaction.Object, this.getUnspentTransaction.Object, null,
-                this.consensusLoop.Object, this.fullNode.Object, this.nodeSettings, this.network, this.chain, this.chainState.Object, this.connectionManager.Object);
+                this.consensusLoop.Object, this.fullNode.Object, this.nodeSettings, this.baseSettings, this.network, this.chain, this.chainState.Object, this.connectionManager.Object);
             var model = this.controller.GetInfo();
 
             Assert.Equal(0, model.Difficulty);
@@ -532,7 +535,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
               .Returns((Version)null);
 
             this.controller = new FullNodeController(this.LoggerFactory.Object, this.pooledTransaction.Object, this.pooledGetUnspentTransaction.Object, this.getUnspentTransaction.Object, this.networkDifficulty.Object,
-                this.consensusLoop.Object, this.fullNode.Object, this.nodeSettings, this.network, this.chain, this.chainState.Object, this.connectionManager.Object);
+                this.consensusLoop.Object, this.fullNode.Object, this.nodeSettings, this.baseSettings, this.network, this.chain, this.chainState.Object, this.connectionManager.Object);
             var model = this.controller.GetInfo();
 
             Assert.Equal((uint)0, model.Version);
@@ -553,7 +556,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
             this.chain = null;
 
             this.controller = new FullNodeController(this.LoggerFactory.Object, this.pooledTransaction.Object, this.pooledGetUnspentTransaction.Object, this.getUnspentTransaction.Object, this.networkDifficulty.Object,
-                this.consensusLoop.Object, this.fullNode.Object, this.nodeSettings, this.network, this.chain, this.chainState.Object, this.connectionManager.Object);
+                this.consensusLoop.Object, this.fullNode.Object, this.nodeSettings, this.baseSettings, this.network, this.chain, this.chainState.Object, this.connectionManager.Object);
             var result = this.controller.GetBlockHeader("", true);
 
             Assert.Null(result);

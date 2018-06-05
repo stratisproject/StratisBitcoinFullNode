@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
+using System;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Configuration;
 
@@ -15,7 +16,7 @@ namespace Stratis.Bitcoin.Builder
         /// <param name="builder">Full node builder to change node settings for.</param>
         /// <param name="nodeSettings">Node settings to be used.</param>
         /// <returns>Interface to allow fluent code.</returns>
-        public static IFullNodeBuilder UseNodeSettings(this IFullNodeBuilder builder, NodeSettings nodeSettings)
+        public static IFullNodeBuilder UseNodeSettings(this IFullNodeBuilder builder, NodeSettings nodeSettings, Action<BaseSettings> setup = null)
         {
             var nodeBuilder = builder as FullNodeBuilder;
             nodeBuilder.NodeSettings = nodeSettings;
@@ -27,7 +28,7 @@ namespace Stratis.Bitcoin.Builder
                 service.AddSingleton(nodeBuilder.Network);
             });
 
-            return builder.UseBaseFeature();
+            return builder.UseBaseFeature(setup);
         }
 
         /// <summary>
