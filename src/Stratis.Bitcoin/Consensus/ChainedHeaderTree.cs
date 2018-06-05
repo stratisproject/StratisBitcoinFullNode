@@ -115,15 +115,21 @@ namespace Stratis.Bitcoin.Consensus
         /// Initialize the tree with consensus tip.
         /// </summary>
         /// <param name="consensusTip">The consensus tip.</param>
-        public void Initialize(ChainedHeader consensusTip)
+        /// <param name="blockStoreEnabled">Specifies if block store is enabled.</param>
+        /// <exception cref="ConsensusException">Thrown in case given <paramref name="consensusTip"/> is on a wrong network.</exception>
+        public void Initialize(ChainedHeader consensusTip, bool blockStoreEnabled)
         {
-            this.logger.LogTrace("({0}:'{1}')", nameof(consensusTip), consensusTip);
+            this.logger.LogTrace("({0}:'{1}',{2}:{3})", nameof(consensusTip), consensusTip, nameof(blockStoreEnabled), blockStoreEnabled);
 
             ChainedHeader current = consensusTip;
             while (current.Previous != null)
             {
                 current.Previous.Next.Add(current);
                 this.chainedHeadersByHash.Add(current.HashBlock, current);
+
+                current.BlockDataAvailability = blockStoreEnabled ? BlockDataAvailabilityState.BlockAvailable : BlockDataAvailabilityState.HeaderOnly;
+                current.BlockValidationState = ValidationState.FullyValidated;
+
                 current = current.Previous;
             }
 
