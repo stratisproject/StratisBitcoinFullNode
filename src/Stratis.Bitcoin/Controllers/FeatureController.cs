@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using NBitcoin;
 using Stratis.Bitcoin.Base;
+using Stratis.Bitcoin.Configuration;
 
 namespace Stratis.Bitcoin.Controllers
 {
@@ -22,6 +23,10 @@ namespace Stratis.Bitcoin.Controllers
 
         protected Network Network;
 
+        protected BaseSettings BaseSettings;
+
+        protected NodeSettings NodeSettings;
+
         protected ChainBase Chain;
 
         protected IChainState ChainState;
@@ -31,12 +36,16 @@ namespace Stratis.Bitcoin.Controllers
         public FeatureController(
             IFullNode fullNode = null,
             Network network = null,
+            BaseSettings baseSettings = null,
+            NodeSettings nodeSettings = null,
             ConcurrentChain chain = null,
             IChainState chainState = null,
             Connection.IConnectionManager connectionManager = null)
         {
             this.FullNode = fullNode;
             this.Network = network;
+            this.BaseSettings = baseSettings;
+            this.NodeSettings = nodeSettings;
             this.Chain = chain;
             this.ChainState = chainState;
             this.ConnectionManager = connectionManager;

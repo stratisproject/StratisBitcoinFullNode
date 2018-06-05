@@ -43,6 +43,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
             IConsensusLoop consensusLoop = null,
             IFullNode fullNode = null,
             NodeSettings nodeSettings = null,
+            BaseSettings baseSettings = null,
             Network network = null,
             ConcurrentChain chain = null,
             IChainState chainState = null,
@@ -50,6 +51,8 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
             : base(
                   fullNode: fullNode,
                   network: network,
+                  baseSettings: baseSettings,
+                  nodeSettings: nodeSettings,
                   chain: chain,
                   chainState: chainState,
                   connectionManager: connectionManager)
@@ -145,20 +148,17 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
         [ActionDescription("Gets general information about the full node.")]
         public GetInfoModel GetInfo()
         {
-            var baseSettings = this.FullNode.NodeService<BaseSettings>(true);
-            var nodeSettings = this.FullNode.NodeService<NodeSettings>(true);
-
             var model = new GetInfoModel
             {
                 Version = this.FullNode?.Version?.ToUint() ?? 0,
-                ProtocolVersion = (uint)(nodeSettings?.ProtocolVersion ?? NodeSettings.SupportedProtocolVersion),
+                ProtocolVersion = (uint)(this.NodeSettings?.ProtocolVersion ?? NodeSettings.SupportedProtocolVersion),
                 Blocks = this.ChainState?.ConsensusTip?.Height ?? 0,
                 TimeOffset = this.ConnectionManager?.ConnectedPeers?.GetMedianTimeOffset() ?? 0,
                 Connections = this.ConnectionManager?.ConnectedPeers?.Count(),
                 Proxy = string.Empty,
                 Difficulty = this.GetNetworkDifficulty()?.Difficulty ?? 0,
                 Testnet = this.Network.IsTest(),
-                RelayFee = baseSettings?.MinRelayTxFeeRate?.FeePerK?.ToUnit(MoneyUnit.BTC) ?? 0,
+                RelayFee = this.BaseSettings?.MinRelayTxFeeRate?.FeePerK?.ToUnit(MoneyUnit.BTC) ?? 0,
                 Errors = string.Empty,
 
                 //TODO: Wallet related infos: walletversion, balance, keypNetwoololdest, keypoolsize, unlocked_until, paytxfee

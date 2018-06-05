@@ -81,7 +81,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
             testChainContext.NodeSettings = new NodeSettings(network, args: new string[] { $"-datadir={dataDir}" });
             testChainContext.ConnectionSettings = new ConnectionManagerSettings();
             testChainContext.ConnectionSettings.Load(testChainContext.NodeSettings);
-            testChainContext.BaseSettings.Load(testChainContext.NodeSettings);
+            testChainContext.BaseSettings = new BaseSettings(testChainContext.NodeSettings);
             testChainContext.LoggerFactory = testChainContext.NodeSettings.LoggerFactory;
             testChainContext.DateTimeProvider = DateTimeProvider.Default;
 
