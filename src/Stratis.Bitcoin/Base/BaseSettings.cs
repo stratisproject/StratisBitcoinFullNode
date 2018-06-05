@@ -5,7 +5,6 @@ using System.Text;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Configuration;
-using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Base
@@ -15,9 +14,6 @@ namespace Stratis.Bitcoin.Base
     /// </summary>
     public class BaseSettings
     {
-        /// <summary>Maximum tip age in seconds to consider node in initial block download.</summary>
-        public int MaxTipAge { get; set; }
-
         /// <summary>Minimum transaction fee for network.</summary>
         public FeeRate MinTxFeeRate { get; set; }
 
@@ -55,10 +51,6 @@ namespace Stratis.Bitcoin.Base
             logger.LogTrace("()");
 
             var config = nodeSettings.ConfigReader;
-
-            // TODO: Move to ConsensusSettings
-            this.MaxTipAge = config.GetOrDefault("maxtipage", nodeSettings.Network.MaxTipAge);
-            logger.LogDebug("MaxTipAge set to {0}.", this.MaxTipAge);
 
             // TODO: Move to WalletSettings
             this.MinTxFeeRate = new FeeRate(config.GetOrDefault("mintxfee", nodeSettings.Network.MinTxFee));
@@ -99,7 +91,6 @@ namespace Stratis.Bitcoin.Base
             builder.AppendLine($"-datadir=<Path>           Path to the data directory. Default {defaults.DataDir}.");
             builder.AppendLine($"-testnet                  Use the testnet chain.");
             builder.AppendLine($"-regtest                  Use the regtestnet chain.");
-            builder.AppendLine($"-maxtipage=<number>       Max tip age. Default {network.MaxTipAge}.");
             builder.AppendLine($"-mintxfee=<number>        Minimum fee rate. Defaults to network specific value.");
             builder.AppendLine($"-fallbackfee=<number>     Fallback fee rate. Defaults to network specific value.");
             builder.AppendLine($"-minrelaytxfee=<number>   Minimum relay fee rate. Defaults to network specific value.");
@@ -115,8 +106,6 @@ namespace Stratis.Bitcoin.Base
         public static void BuildDefaultConfigurationFile(StringBuilder builder, Network network)
         {
             builder.AppendLine("####Node Settings####");
-            builder.AppendLine($"#Max tip age. Default {network.MaxTipAge}.");
-            builder.AppendLine($"#maxtipage={network.MaxTipAge}");
             builder.AppendLine($"#Minimum fee rate. Defaults to {network.MinTxFee}.");
             builder.AppendLine($"#mintxfee={network.MinTxFee}");
             builder.AppendLine($"#Fallback fee rate. Defaults to {network.FallbackFee}.");

@@ -21,6 +21,9 @@ namespace Stratis.Bitcoin.Configuration.Settings
         /// </summary>
         public uint256 BlockAssumedValid { get; set; }
 
+        /// <summary>Maximum tip age in seconds to consider node in initial block download.</summary>
+        public int MaxTipAge { get; set; }
+
         /// <summary>The callback used to override/constrain/extend the settings provided by the Load method.</summary>
         private Action<ConsensusSettings> callback;
 
@@ -60,7 +63,7 @@ namespace Stratis.Bitcoin.Configuration.Settings
         public ConsensusSettings Load(NodeSettings nodeSettings)
         {
             Guard.NotNull(nodeSettings, nameof(nodeSettings));
-            
+
             TextFileConfiguration config = nodeSettings.ConfigReader;
             this.UseCheckpoints = config.GetOrDefault<bool>("checkpoints", true);
 
@@ -77,6 +80,9 @@ namespace Stratis.Bitcoin.Configuration.Settings
             logger.LogDebug("Checkpoints are {0}.", this.UseCheckpoints ? "enabled" : "disabled");
             logger.LogDebug("Assume valid block is '{0}'.", this.BlockAssumedValid == null ? "disabled" : this.BlockAssumedValid.ToString());
 
+            this.MaxTipAge = config.GetOrDefault("maxtipage", nodeSettings.Network.MaxTipAge);
+            logger.LogDebug("MaxTipAge set to {0}.", this.MaxTipAge);
+
             this.callback?.Invoke(this);
 
             return this;
@@ -92,6 +98,7 @@ namespace Stratis.Bitcoin.Configuration.Settings
 
             builder.AppendLine($"-checkpoints=<0 or 1>     Use checkpoints. Default 1.");
             builder.AppendLine($"-assumevalid=<hex>        If this block is in the chain assume that it and its ancestors are valid and potentially skip their script verification (0 to verify all). Defaults to { network.Consensus.DefaultAssumeValid }.");
+            builder.AppendLine($"-maxtipage=<number>       Max tip age. Default {network.MaxTipAge}.");
 
             NodeSettings.Default().Logger.LogInformation(builder.ToString());
         }
@@ -108,6 +115,8 @@ namespace Stratis.Bitcoin.Configuration.Settings
             builder.AppendLine($"#checkpoints=1");
             builder.AppendLine($"#If this block is in the chain assume that it and its ancestors are valid and potentially skip their script verification (0 to verify all). Defaults to { network.Consensus.DefaultAssumeValid }.");
             builder.AppendLine($"#assumevalid={network.Consensus.DefaultAssumeValid}");
+            builder.AppendLine($"#Max tip age. Default {network.MaxTipAge}.");
+            builder.AppendLine($"#maxtipage={network.MaxTipAge}");
         }
     }
 }

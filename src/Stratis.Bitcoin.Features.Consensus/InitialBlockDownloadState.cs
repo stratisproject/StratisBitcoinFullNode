@@ -1,6 +1,6 @@
 ﻿using NBitcoin;
 using Stratis.Bitcoin.Base;
-using Stratis.Bitcoin.Configuration;
+using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Utilities;
@@ -25,20 +25,20 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <summary>Specification of the network the node runs on - regtest/testnet/mainnet.</summary>
         private readonly Network network;
 
-        /// <summary>User defined node settings.</summary>
-        private readonly BaseSettings baseSettings;
+        /// <summary>User defined consensus settings.</summary>
+        private readonly ConsensusSettings consensusSettings;
 
         /// <summary>
         /// Creates a new instance of the <see cref="InitialBlockDownloadState" /> class.
         /// </summary>
         /// <param name="chainState">Information about node's chain.</param>
         /// <param name="network">Specification of the network the node runs on - regtest/testnet/mainnet.</param>
-        /// <param name="baseSettings">User defined base settings.</param>
+        /// <param name="consensusSettings">User defined consensus settings.</param>
         /// <param name="checkpoints">Provider of block header hash checkpoints.</param>
-        public InitialBlockDownloadState(IChainState chainState, Network network, BaseSettings baseSettings, ICheckpoints checkpoints)
+        public InitialBlockDownloadState(IChainState chainState, Network network, ConsensusSettings consensusSettings, ICheckpoints checkpoints)
         {
             this.network = network;
-            this.baseSettings = baseSettings;
+            this.consensusSettings = consensusSettings;
             this.chainState = chainState;
             this.checkpoints = checkpoints;
             this.dateTimeProvider = DateTimeProvider.Default;
@@ -59,7 +59,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             if (this.chainState.ConsensusTip.ChainWork < (this.network.Consensus.MinimumChainWork ?? uint256.Zero))
                 return true;
 
-            if (this.chainState.ConsensusTip.Header.BlockTime.ToUnixTimeSeconds() < (this.dateTimeProvider.GetTime() - this.baseSettings.MaxTipAge))
+            if (this.chainState.ConsensusTip.Header.BlockTime.ToUnixTimeSeconds() < (this.dateTimeProvider.GetTime() - this.consensusSettings.MaxTipAge))
                 return true;
 
             return false;

@@ -191,7 +191,7 @@ namespace Stratis.Bitcoin.Base
             this.StartChainAsync().GetAwaiter().GetResult();
 
             var connectionParameters = this.connectionManager.Parameters;
-            connectionParameters.IsRelay = !this.nodeSettings.ConfigReader.GetOrDefault("blocksonly", false);
+            connectionParameters.IsRelay = this.connectionManager.ConnectionSettings.RelayTxes;
             connectionParameters.TemplateBehaviors.Add(new ChainHeadersBehavior(this.chain, this.chainState, this.initialBlockDownloadState, this.bestChainSelector, this.loggerFactory));
             connectionParameters.TemplateBehaviors.Add(new PeerBanningBehavior(this.loggerFactory, this.peerBanning, this.nodeSettings));
 
