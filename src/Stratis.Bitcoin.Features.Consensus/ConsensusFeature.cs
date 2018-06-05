@@ -198,7 +198,9 @@ namespace Stratis.Bitcoin.Features.Consensus
                     services.AddSingleton<DBreezeCoinView>();
                     services.AddSingleton<CoinView, CachedCoinView>();
                     services.AddSingleton<LookaheadBlockPuller>().AddSingleton<ILookaheadBlockPuller, LookaheadBlockPuller>(provider => provider.GetService<LookaheadBlockPuller>()); ;
-                    services.AddSingleton<IConsensusLoop, ConsensusLoop>().AddSingleton<INetworkDifficulty>().AddSingleton<IGetUnspentTransaction>();
+                    services.AddSingleton<IConsensusLoop, ConsensusLoop>()
+                        .AddSingleton<INetworkDifficulty, ConsensusLoop>(provider => provider.GetService<IConsensusLoop>() as ConsensusLoop)
+                        .AddSingleton<IGetUnspentTransaction, ConsensusLoop>(provider => provider.GetService<IConsensusLoop>() as ConsensusLoop);
                     services.AddSingleton<IInitialBlockDownloadState, InitialBlockDownloadState>();
                     services.AddSingleton<ConsensusController>();
                     services.AddSingleton<ConsensusStats>();
@@ -231,7 +233,9 @@ namespace Stratis.Bitcoin.Features.Consensus
                         services.AddSingleton<DBreezeCoinView>();
                         services.AddSingleton<CoinView, CachedCoinView>();
                         services.AddSingleton<LookaheadBlockPuller>().AddSingleton<ILookaheadBlockPuller, LookaheadBlockPuller>(provider => provider.GetService<LookaheadBlockPuller>()); ;
-                        services.AddSingleton<IConsensusLoop, ConsensusLoop>().AddSingleton<INetworkDifficulty>().AddSingleton<IGetUnspentTransaction>();
+                        services.AddSingleton<IConsensusLoop, ConsensusLoop>()
+                            .AddSingleton<INetworkDifficulty, ConsensusLoop>(provider => provider.GetService<IConsensusLoop>() as ConsensusLoop)
+                            .AddSingleton<IGetUnspentTransaction, ConsensusLoop>(provider => provider.GetService<IConsensusLoop>() as ConsensusLoop);
                         services.AddSingleton<StakeChainStore>().AddSingleton<IStakeChain, StakeChainStore>(provider => provider.GetService<StakeChainStore>());
                         services.AddSingleton<IStakeValidator, StakeValidator>();
                         services.AddSingleton<IInitialBlockDownloadState, InitialBlockDownloadState>();
