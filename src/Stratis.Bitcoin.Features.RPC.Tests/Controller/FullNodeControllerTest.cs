@@ -496,6 +496,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
         public void GetInfo_NoSettings_ReturnsModel()
         {
             this.nodeSettings = null;
+            this.baseSettings = null;
             this.controller = new FullNodeController(this.LoggerFactory.Object, this.pooledTransaction.Object, this.pooledGetUnspentTransaction.Object, this.getUnspentTransaction.Object, this.networkDifficulty.Object,
                 this.consensusLoop.Object, this.fullNode.Object, this.nodeSettings, this.baseSettings, this.network, this.chain, this.chainState.Object, this.connectionManager.Object);
             var model = this.controller.GetInfo();
