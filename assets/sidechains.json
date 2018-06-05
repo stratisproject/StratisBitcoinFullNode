@@ -1,7 +1,7 @@
 {
   "enigma": {
     "ChainName": "enigma",
-    "CoinName": "Enigma",
+    "CoinName": "enigmaCoin",
     "CoinType": 12345,
     "MainNet": {
       "NetworkName": "SidechainMain",
@@ -12,7 +12,7 @@
       "Port": 36000,
       "RpcPort": 36100,
       "ApiPort": 36200,
-      "CoinSymbol": "Enigma",
+      "CoinSymbol": "EGA0",
       "GenesisHashHex": "03ca8b76093da3e9132a6f1002ce9e95468ae538f10ea5eb23c594265e3bcbea"
     },
     "TestNet": {
@@ -24,7 +24,7 @@
       "Port": 36001,
       "RpcPort": 36101,
       "ApiPort": 36201,
-      "CoinSymbol": "tEnigma",
+      "CoinSymbol": "EGA1",
       "GenesisHashHex": "6ea951942c42d3e92fc08a13567ff6974a0eb5f9cbdc331b58356990edab9d6f"
     },
     "RegTest": {
@@ -36,7 +36,7 @@
       "Port": 36002,
       "RpcPort": 36102,
       "ApiPort": 36202,
-      "CoinSymbol": "rEnigma",
+      "CoinSymbol": "EGA2",
       "GenesisHashHex": "d82276367430662e95e40f704ddde6b00fb07921c3bd51dd00e17d0d933a12ab"
     }
   },
