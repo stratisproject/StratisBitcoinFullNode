@@ -509,5 +509,13 @@ namespace NBitcoin.Tests
             Assert.Throws<ArgumentException>(() => Network.MineGenesisBlock(new ConsensusFactory(), "some string", null, Money.Zero));
             Assert.Throws<ArgumentException>(() => Network.MineGenesisBlock(new ConsensusFactory(), "some string", new Target(new uint256()), null));
         }
+
+        [Fact]
+        [Trait("UnitTest", "UnitTest")]
+        public void MineGenesisBlockWithLongCoinbaseTextThrowsException()
+        {
+            string coinbaseText100Long = "1111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111";
+            Assert.Throws<ArgumentException>(() => Network.MineGenesisBlock(new ConsensusFactory(), coinbaseText100Long, new Target(new uint256()), Money.Zero));
+        }
     }
 }

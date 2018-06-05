@@ -241,6 +241,7 @@ namespace NBitcoin
         /// <param name="coinbaseText">
         /// Traditionally a news headline from the day of the launch, but could be any string or link.
         /// This will be inserted in the input coinbase transaction script.
+        /// It should be shorter than 92 characters.
         /// </param>
         /// <param name="target">
         /// The difficulty target under which the hash of the block need to be. 
@@ -281,6 +282,9 @@ namespace NBitcoin
 
             if (string.IsNullOrEmpty(coinbaseText))
                 throw new ArgumentException($"Parameter '{nameof(coinbaseText)}' cannot be null. Use a news headline or any other appropriate string.");
+
+            if (coinbaseText.Length >= 92)
+                throw new ArgumentException($"Parameter '{nameof(coinbaseText)}' should be shorter than 92 characters.");
 
             if (genesisReward == null)
                 throw new ArgumentException($"Parameter '{nameof(genesisReward)}' cannot be null. Example use: 'Money.Coins(50m)'.");
