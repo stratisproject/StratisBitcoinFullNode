@@ -198,10 +198,8 @@ namespace Stratis.Bitcoin.Features.Consensus
                     services.AddSingleton<DBreezeCoinView>();
                     services.AddSingleton<CoinView, CachedCoinView>();
                     services.AddSingleton<LookaheadBlockPuller>().AddSingleton<ILookaheadBlockPuller, LookaheadBlockPuller>(provider => provider.GetService<LookaheadBlockPuller>()); ;
-                    services.AddSingleton<IConsensusLoop, ConsensusLoop>();
-                    services.AddSingleton<ConsensusManager>().AddSingleton<INetworkDifficulty, ConsensusManager>();
+                    services.AddSingleton<IConsensusLoop, ConsensusLoop>().AddSingleton<INetworkDifficulty>().AddSingleton<IGetUnspentTransaction>();
                     services.AddSingleton<IInitialBlockDownloadState, InitialBlockDownloadState>();
-                    services.AddSingleton<IGetUnspentTransaction, ConsensusManager>();
                     services.AddSingleton<ConsensusController>();
                     services.AddSingleton<ConsensusStats>();
                     services.AddSingleton<ConsensusSettings>();
@@ -233,10 +231,9 @@ namespace Stratis.Bitcoin.Features.Consensus
                         services.AddSingleton<DBreezeCoinView>();
                         services.AddSingleton<CoinView, CachedCoinView>();
                         services.AddSingleton<LookaheadBlockPuller>().AddSingleton<ILookaheadBlockPuller, LookaheadBlockPuller>(provider => provider.GetService<LookaheadBlockPuller>()); ;
-                        services.AddSingleton<IConsensusLoop, ConsensusLoop>();
+                        services.AddSingleton<IConsensusLoop, ConsensusLoop>().AddSingleton<INetworkDifficulty>().AddSingleton<IGetUnspentTransaction>();
                         services.AddSingleton<StakeChainStore>().AddSingleton<IStakeChain, StakeChainStore>(provider => provider.GetService<StakeChainStore>());
                         services.AddSingleton<IStakeValidator, StakeValidator>();
-                        services.AddSingleton<ConsensusManager>().AddSingleton<INetworkDifficulty, ConsensusManager>().AddSingleton<IGetUnspentTransaction, ConsensusManager>();
                         services.AddSingleton<IInitialBlockDownloadState, InitialBlockDownloadState>();
                         services.AddSingleton<ConsensusController>();
                         services.AddSingleton<ConsensusStats>();
