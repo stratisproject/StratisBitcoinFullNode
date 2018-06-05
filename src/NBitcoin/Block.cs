@@ -158,7 +158,7 @@ namespace NBitcoin
                 this.hashes[0] = this.GetHash();
         }
 
-        public bool CheckProofOfWork(Consensus consensus)
+        public bool CheckProofOfWork()
         {
             BigInteger bits = this.Bits.ToBigInteger();
             if ((bits.CompareTo(BigInteger.Zero) <= 0) || (bits.CompareTo(Pow256) >= 0))
@@ -336,9 +336,9 @@ namespace NBitcoin
             this.Header.HashMerkleRoot = GetMerkleRoot().Hash;
         }
 
-        public bool CheckProofOfWork(Consensus consensus)
+        public bool CheckProofOfWork()
         {
-            return this.Header.CheckProofOfWork(consensus);
+            return this.Header.CheckProofOfWork();
         }
 
         public bool CheckMerkleRoot()

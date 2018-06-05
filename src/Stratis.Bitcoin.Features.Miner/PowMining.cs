@@ -203,7 +203,7 @@ namespace Stratis.Bitcoin.Features.Miner
                 nExtraNonce = this.IncrementExtraNonce(blockTemplate.Block, chainTip, nExtraNonce);
                 Block block = blockTemplate.Block;
 
-                while ((maxTries > 0) && (block.Header.Nonce < InnerLoopCount) && !block.CheckProofOfWork(this.network.Consensus))
+                while ((maxTries > 0) && (block.Header.Nonce < InnerLoopCount) && !block.CheckProofOfWork())
                 {
                     this.miningCancellationTokenSource.Token.ThrowIfCancellationRequested();
 

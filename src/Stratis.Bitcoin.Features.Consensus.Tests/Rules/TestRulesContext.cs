@@ -144,7 +144,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
 
             var maxTries = int.MaxValue;
 
-            while (maxTries > 0 && !block.CheckProofOfWork(network.Consensus))
+            while (maxTries > 0 && !block.CheckProofOfWork())
             {
                 ++block.Header.Nonce;
                 --maxTries;
