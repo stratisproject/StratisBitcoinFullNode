@@ -14,6 +14,7 @@ using Stratis.Bitcoin.Features.MemoryPool.Interfaces;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Mining;
+using Stratis.Bitcoin.Tests.Common;
 using Stratis.Bitcoin.Tests.Common.Logging;
 using Stratis.Bitcoin.Tests.Wallet.Common;
 using Stratis.Bitcoin.Utilities;
@@ -26,7 +27,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
         private PosMinting posMinting;
         private readonly Mock<IConsensusLoop> consensusLoop;
         private ConcurrentChain chain;
-        private readonly Network network;
+        private Network network;
         private readonly Mock<IConnectionManager> connectionManager;
         private readonly Mock<IDateTimeProvider> dateTimeProvider;
         private readonly Mock<IInitialBlockDownloadState> initialBlockDownloadState;
@@ -351,6 +352,100 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
 
             Assert.Equal(4607763.9659653762, weight);
         }
+        
+        [Fact]
+        public void CoinstakeAge_BeforeActivation_Testnet()
+        {
+            bool suitable = this.WasUtxoSelectedForStaking(Network.StratisTest, 1000, 1000 - 8); // utxo depth is 9, mining block at 10
+            Assert.True(suitable);
+
+            bool suitable2 = this.WasUtxoSelectedForStaking(Network.StratisTest, 1000, 1000 - 7); // utxo depth is 8, mining block at 9
+            Assert.False(suitable2);
+        }
+
+        [Fact]
+        public void CoinstakeAge_AfterActivation_Testnet()
+        {
+            bool suitable = this.WasUtxoSelectedForStaking(Network.StratisTest, 450000, 450000 - 18);
+            Assert.True(suitable);
+
+            bool suitable2 = this.WasUtxoSelectedForStaking(Network.StratisTest, 450000, 450000 - 17);
+            Assert.False(suitable2);
+        }
+
+        [Fact]
+        public void CoinstakeAge_AtTheActivation_Testnet()
+        {
+            bool suitable1 = this.WasUtxoSelectedForStaking(Network.StratisTest, 436000 - 2, 436000 - 10); // mining block before activation
+            Assert.True(suitable1);
+
+            bool suitable2 = this.WasUtxoSelectedForStaking(Network.StratisTest, 436000 - 1, 436000 - 19); // mining activation block
+            Assert.True(suitable2);
+
+            bool suitable3 = this.WasUtxoSelectedForStaking(Network.StratisTest, 436000 - 1, 436000 - 18); // mining activation block
+            Assert.False(suitable3);
+        }
+        
+        [Fact]
+        public void CoinstakeAge_BeforeActivation_Mainnet()
+        {
+            bool suitable = this.WasUtxoSelectedForStaking(Network.StratisMain, 1000, 1000 - 48); // utxo depth is 49, mining block at 50
+            Assert.True(suitable);
+
+            bool suitable2 = this.WasUtxoSelectedForStaking(Network.StratisMain, 1000, 1000 - 47); // utxo depth is 48, mining block at 49
+            Assert.False(suitable2);
+        }
+
+        [Fact]
+        public void CoinstakeAge_AfterActivation_Mainnet()
+        {
+            bool suitable = this.WasUtxoSelectedForStaking(Network.StratisMain, 950000, 950000 - 498);
+            Assert.True(suitable);
+
+            bool suitable2 = this.WasUtxoSelectedForStaking(Network.StratisMain, 950000, 950000 - 497);
+            Assert.False(suitable2);
+        }
+
+        [Fact]
+        public void CoinstakeAge_AtTheActivation_Mainnet()
+        {
+            bool suitable1 = this.WasUtxoSelectedForStaking(Network.StratisMain, 940000 - 2, 940000 - 50); // mining block before activation
+            Assert.True(suitable1);
+
+            bool suitable2 = this.WasUtxoSelectedForStaking(Network.StratisMain, 940000 - 1, 940000 - 499); // mining activation block
+            Assert.True(suitable2);
+
+            bool suitable3 = this.WasUtxoSelectedForStaking(Network.StratisMain, 940000 - 1, 940000 - 498); // mining activation block
+            Assert.False(suitable3);
+        }
+
+        private bool WasUtxoSelectedForStaking(Network network, int chainTipHeight, int utxoHeight)
+        {
+            this.network = network;
+            this.network.Consensus.Options = new PosConsensusOptions();
+            this.chain = GenerateChainWithBlockTimeAndHeight(2, this.network, 60, 0x1df88f6f);
+
+            PosMinting miner = this.InitializePosMinting();
+
+            ChainedHeader chainTip = this.chain.Tip;
+            ReflectionExtensions.SetPrivatePropertyValue(chainTip, "Height", chainTipHeight);
+            ReflectionExtensions.SetPrivatePropertyValue(chainTip.Previous, "Height", utxoHeight);
+
+            var descriptions = new List<PosMinting.UtxoStakeDescription>();
+
+            var utxoDescription = new PosMinting.UtxoStakeDescription();
+            utxoDescription.TxOut = new TxOut(new Money(100), new Mock<IDestination>().Object);
+            utxoDescription.OutPoint = new OutPoint(uint256.One, 0);
+            utxoDescription.HashBlock = chainTip.Previous.HashBlock;
+
+            utxoDescription.UtxoSet = new UnspentOutputs();
+            ReflectionExtensions.SetPrivatePropertyValue(utxoDescription.UtxoSet, "Time", chainTip.Header.Time);
+
+            descriptions.Add(utxoDescription);
+
+            var suitableCoins = miner.GetUtxoStakeDescriptionsSuitableForStaking(descriptions, chainTip, chainTip.Header.Time + 64, long.MaxValue);
+            return suitableCoins.Count == 1;
+        }
 
         private static void AddBlockToChainWithBlockTimeAndDifficulty(ConcurrentChain chain, int blockAmount, int incrementSeconds, uint nbits, Network network)
         {
@@ -413,7 +508,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
                 });
         }
 
-        private PosMinting InitializePosMinting()
+        public PosMinting InitializePosMinting()
         {
             var posBlockAssembler = new Mock<PosBlockDefinition>(
                 this.consensusLoop.Object,
