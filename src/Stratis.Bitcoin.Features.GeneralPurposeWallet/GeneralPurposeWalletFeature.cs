@@ -4,7 +4,6 @@ using System.Linq;
 using System.Text;
 using Microsoft.Extensions.DependencyInjection;
 using NBitcoin;
-using Stratis.Bitcoin.Broadcasting;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Builder.Feature;
 using Stratis.Bitcoin.Configuration.Logging;
@@ -77,7 +76,7 @@ namespace Stratis.Bitcoin.Features.GeneralPurposeWallet
 			if (walletManager != null)
 			{
 				int height = walletManager.LastBlockHeight();
-				ChainedBlock block = this.chain.GetBlock(height);
+				ChainedHeader block = this.chain.GetBlock(height);
 				uint256 hashBlock = block == null ? 0 : block.HashBlock;
 
 				benchLogs.AppendLine("Wallet.Height: ".PadRight(LoggingConfiguration.ColumnLength + 1) +
@@ -172,8 +171,8 @@ namespace Stratis.Bitcoin.Features.GeneralPurposeWallet
 					services.AddSingleton<IGeneralPurposeWalletFeePolicy, GeneralPurposeWalletFeePolicy>();
 					services.AddSingleton<GeneralPurposeWalletController>();
 					//services.AddSingleton<WalletRPCController>();
-					//services.AddSingleton<IBroadcasterManager, GeneralPurposeFullNodeBroadcasterManager>();
-					//services.AddSingleton<BroadcasterBehavior>();
+					services.AddSingleton<IGeneralPurposeWalletBroadcasterManager, GeneralPurposeFullNodeBroadcasterManager>();
+					services.AddSingleton<BroadcasterBehavior>();
 				});
 			});
 

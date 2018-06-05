@@ -148,14 +148,14 @@ namespace Stratis.Bitcoin.Features.GeneralPurposeWallet.Interfaces
 		/// <summary>
 		/// Remove all the transactions in the wallet that are above this block height
 		/// </summary>
-		void RemoveBlocks(ChainedBlock fork);
+		void RemoveBlocks(ChainedHeader fork);
 
 		/// <summary>
 		/// Processes a block received from the network.
 		/// </summary>
 		/// <param name="block">The block.</param>
 		/// <param name="chainedBlock">The blocks chain of headers.</param>
-		void ProcessBlock(Block block, ChainedBlock chainedBlock);
+		void ProcessBlock(Block block, ChainedHeader chainedBlock);
 
 		/// <summary>
 		/// Processes a transaction received from the network.
@@ -194,13 +194,13 @@ namespace Stratis.Bitcoin.Features.GeneralPurposeWallet.Interfaces
 		/// </summary>
 		/// <param name="wallet">The wallet to update.</param>
 		/// <param name="chainedBlock">The height of the last block synced.</param>
-		void UpdateLastBlockSyncedHeight(GeneralPurposeWallet wallet, ChainedBlock chainedBlock);
+		void UpdateLastBlockSyncedHeight(GeneralPurposeWallet wallet, ChainedHeader chainedBlock);
 
 		/// <summary>
 		/// Updates all the loaded wallets with the height of the last block synced.
 		/// </summary>
 		/// <param name="chainedBlock">The height of the last block synced.</param>
-		void UpdateLastBlockSyncedHeight(ChainedBlock chainedBlock);
+		void UpdateLastBlockSyncedHeight(ChainedHeader chainedBlock);
 
 		/// <summary>
 		/// Gets a wallet given its name.
@@ -245,5 +245,9 @@ namespace Stratis.Bitcoin.Features.GeneralPurposeWallet.Interfaces
 		/// </summary>
 		/// <returns></returns>
 		DateTimeOffset GetOldestWalletCreationTime();
+
+	    Transaction SignPartialTransaction(Transaction partial, ICollection<MultiSigAddress> multiSigAddresses);
+        
+        Transaction CombinePartialTransactions(Transaction[] partials, ICollection<MultiSigAddress> multiSigAddresses);
 	}
 }

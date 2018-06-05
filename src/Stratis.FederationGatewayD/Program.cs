@@ -29,7 +29,7 @@ namespace Stratis.FederationGatewayD
             try
             {
                 Network network = Network.StratisRegTest;
-                NodeSettings nodeSettings = new NodeSettings(network, ProtocolVersion.ALT_PROTOCOL_VERSION, args: args, loadConfiguration: false);
+                NodeSettings nodeSettings = new NodeSettings(network, ProtocolVersion.ALT_PROTOCOL_VERSION, args: args);
 
 
                 // NOTES: running BTC and STRAT side by side is not possible yet as the flags for serialization are static

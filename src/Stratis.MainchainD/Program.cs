@@ -30,7 +30,7 @@ namespace Stratis.StratisD
             try
             {
                 Network network = Network.StratisRegTest;
-                NodeSettings nodeSettings = new NodeSettings(network, ProtocolVersion.ALT_PROTOCOL_VERSION, args: args, loadConfiguration: false);
+                NodeSettings nodeSettings = new NodeSettings(network, ProtocolVersion.ALT_PROTOCOL_VERSION, args: args);
 
                 var node = new FullNodeBuilder()
                     .UseNodeSettings(nodeSettings)

@@ -15,7 +15,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="NStratis" Version="1.0.908" />
+    <PackageReference Include="NStratis" Version="4.0.0.57" />
   </ItemGroup>
 
   <ItemGroup>

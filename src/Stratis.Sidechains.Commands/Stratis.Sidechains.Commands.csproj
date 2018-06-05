@@ -17,7 +17,7 @@
     <PackageReference Include="Microsoft.PowerShell.Commands.Diagnostics" Version="6.0.1.1" />
     <PackageReference Include="Microsoft.WSMan.Management" Version="6.0.1.1" />
     <PackageReference Include="System.Security.Principal" Version="4.3.0" />
-    <PackageReference Include="Stratis.Bitcoin" Version="1.0.908" />
+    <PackageReference Include="Stratis.Bitcoin" Version="1.1.7-beta" />
   </ItemGroup>
 
   <ItemGroup>

@@ -87,11 +87,6 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
             networkPeerConnectionParameters.TemplateBehaviors.Add(new PartialTransactionsBehavior(this.loggerFactory, this.crossChainTransactionMonitor, this.generalPurposeWalletManager, this.counterChainSessionManager, this.network, this.federationGatewaySettings ));
         }
 
-        public override void LoadConfiguration()
-        {
-            this.federationGatewaySettings.Load(this.nodeSettings);
-        }
-
         public override void Dispose()
         {
             this.blockSubscriberDisposable.Dispose();
@@ -105,7 +100,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
     /// </summary>
     public static class FullNodeBuilderSidechainRuntimeFeatureExtension
     {
-        public static IFullNodeBuilder AddFederationGateway(this IFullNodeBuilder fullNodeBuilder, Action<FederationGatewaySettings> setup = null)
+        public static IFullNodeBuilder AddFederationGateway(this IFullNodeBuilder fullNodeBuilder)
         {
             fullNodeBuilder.ConfigureFeature(features =>
             {
@@ -115,7 +110,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
                     .FeatureServices(services =>
                     {
                         services.AddSingleton<FederationGatewayController>();
-                        services.AddSingleton(new FederationGatewaySettings(setup));
+                        services.AddSingleton<FederationGatewaySettings>();
                         services.AddSingleton<ICrossChainTransactionMonitor, CrossChainTransactionMonitor>();
                         services.AddSingleton<ICrossChainTransactionAuditor, JsonCrossChainTransactionAuditor>();
                         services.AddSingleton<IMonitorChainSessionManager, MonitorChainSessionManager>();

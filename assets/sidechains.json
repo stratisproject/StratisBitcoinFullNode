@@ -5,39 +5,39 @@
     "CoinType": 12345,
     "MainNet": {
       "NetworkName": "SidechainMain",
-      "Time": 1510170000,
-      "Nonce": 2500000,
+      "Time": 1528217223,
+      "Nonce": 58285,
       "MessageStart": 7846846,
       "AddressPrefix": 45,
       "Port": 36000,
       "RpcPort": 36100,
       "ApiPort": 36200,
       "CoinSymbol": "EGA0",
-      "GenesisHashHex": "03ca8b76093da3e9132a6f1002ce9e95468ae538f10ea5eb23c594265e3bcbea"
+      "GenesisHashHex": "000009a6434326a4851f0e95285351839c287182bd2b62ca8765ce30007605e1"
     },
     "TestNet": {
       "NetworkName": "SidechainTest",
-      "Time": 1510170001,
-      "Nonce": 2500001,
+      "Time": 1528217189,
+      "Nonce": 9027,
       "MessageStart": 7846847,
       "AddressPrefix": 46,
       "Port": 36001,
       "RpcPort": 36101,
       "ApiPort": 36201,
       "CoinSymbol": "EGA1",
-      "GenesisHashHex": "6ea951942c42d3e92fc08a13567ff6974a0eb5f9cbdc331b58356990edab9d6f"
+      "GenesisHashHex": "0000e451752bac9f67cb5d63fd32442ba42d42b1b2ea28131d91e1e3f29f523b"
     },
     "RegTest": {
       "NetworkName": "SidechainRegTest",
-      "Time": 1510170002,
-      "Nonce": 2500002,
+      "Time": 1528217336,
+      "Nonce": 2,
       "MessageStart": 7846848,
       "AddressPrefix": 47,
       "Port": 36002,
       "RpcPort": 36102,
       "ApiPort": 36202,
       "CoinSymbol": "EGA2",
-      "GenesisHashHex": "d82276367430662e95e40f704ddde6b00fb07921c3bd51dd00e17d0d933a12ab"
+      "GenesisHashHex": "0688f8440feed473792edc56e365bb7ab20ae2d4e2010cfb8af4ccadaa53e611"
     }
   },
   "mystery": {

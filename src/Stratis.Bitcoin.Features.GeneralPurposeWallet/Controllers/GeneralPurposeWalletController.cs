@@ -44,7 +44,7 @@ namespace Stratis.Bitcoin.Features.GeneralPurposeWallet.Controllers
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
 
-        private readonly IBroadcasterManager broadcasterManager;
+        private readonly IGeneralPurposeWalletBroadcasterManager broadcasterManager;
 
         /// <summary>Provider of date time functionality.</summary>
         private readonly IDateTimeProvider dateTimeProvider;
@@ -57,7 +57,7 @@ namespace Stratis.Bitcoin.Features.GeneralPurposeWallet.Controllers
             IConnectionManager connectionManager,
             Network network,
             ConcurrentChain chain,
-            IBroadcasterManager broadcasterManager,
+            IGeneralPurposeWalletBroadcasterManager broadcasterManager,
             IDateTimeProvider dateTimeProvider)
         {
             this.walletManager = walletManager;
@@ -593,7 +593,7 @@ namespace Stratis.Bitcoin.Features.GeneralPurposeWallet.Controllers
 
             try
             {
-                var transaction = new Transaction(request.Hex);
+                var transaction = Transaction.Load(request.Hex, this.network);
 
                 WalletSendTransactionModel model = new WalletSendTransactionModel
                 {
@@ -789,7 +789,7 @@ namespace Stratis.Bitcoin.Features.GeneralPurposeWallet.Controllers
                 return BuildErrorResponse(this.ModelState);
             }
 
-            ChainedBlock block = this.chain.GetBlock(uint256.Parse(model.Hash));
+            ChainedHeader block = this.chain.GetBlock(uint256.Parse(model.Hash));
 
             if (block == null)
             {

@@ -15,18 +15,16 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.7.2" />
-    <PackageReference Include="NStratis" Version="1.0.908" />
-    <PackageReference Include="Stratis.Bitcoin" Version="1.0.908" />
-    <PackageReference Include="Stratis.Bitcoin.Api" Version="1.0.908" />
-    <PackageReference Include="Stratis.Bitcoin.Features.BlockStore" Version="1.0.908" />
-    <PackageReference Include="Stratis.Bitcoin.Features.Consensus" Version="1.0.908" />
-    <PackageReference Include="Stratis.Bitcoin.Features.MemoryPool" Version="1.0.908" />
-    <PackageReference Include="Stratis.Bitcoin.Features.Miner" Version="1.0.908" />
-    <PackageReference Include="Stratis.Bitcoin.Features.Notifications" Version="1.0.908" />
-    <PackageReference Include="Stratis.Bitcoin.Features.RPC" Version="1.0.908" />
-    <PackageReference Include="Stratis.Bitcoin.Features.Wallet" Version="1.0.908" />
-    <PackageReference Include="Stratis.Sidechains.Features.BlockchainGeneration" Version="1.0.1057" />
-    <PackageReference Include="Stratis.Sidechains.Features.BlockchainGeneration.Tests.Common" Version="1.0.1057" />
+    <PackageReference Include="NStratis" Version="4.0.0.57" />
+    <PackageReference Include="Stratis.Bitcoin" Version="1.1.7-beta" />
+    <PackageReference Include="Stratis.Bitcoin.Api" Version="1.1.7-beta" />
+    <PackageReference Include="Stratis.Bitcoin.Features.BlockStore" Version="1.1.7-beta" />
+    <PackageReference Include="Stratis.Bitcoin.Features.Consensus" Version="1.1.7-beta" />
+    <PackageReference Include="Stratis.Bitcoin.Features.MemoryPool" Version="1.1.7-beta" />
+    <PackageReference Include="Stratis.Bitcoin.Features.Miner" Version="1.1.7-beta" />
+    <PackageReference Include="Stratis.Bitcoin.Features.Notifications" Version="1.1.7-beta" />
+    <PackageReference Include="Stratis.Bitcoin.Features.RPC" Version="1.1.7-beta" />
+    <PackageReference Include="Stratis.Bitcoin.Features.Wallet" Version="1.1.7-beta" />
     <PackageReference Include="xunit" Version="2.3.1" />
     <PackageReference Include="xunit.runner.console" Version="2.3.1" />
     <PackageReference Include="xunit.runner.visualstudio" Version="2.3.1" />
@@ -37,6 +35,8 @@
     <ProjectReference Include="..\Stratis.FederatedPeg.Features.FederationGateway\Stratis.FederatedPeg.Features.FederationGateway.csproj" />
     <ProjectReference Include="..\Stratis.FederatedPeg.Features.MainchainGeneratorServices\Stratis.FederatedPeg.Features.MainchainGeneratorServices.csproj" />
     <ProjectReference Include="..\Stratis.FederatedPeg.Features.SidechainGeneratorServices\Stratis.FederatedPeg.Features.SidechainGeneratorServices.csproj" />
+    <ProjectReference Include="..\Stratis.Sidechains.Features.BlockchainGeneration.Tests.Common\Stratis.Sidechains.Features.BlockchainGeneration.Tests.Common.csproj" />
+    <ProjectReference Include="..\Stratis.Sidechains.Features.BlockchainGeneration\Stratis.Sidechains.Features.BlockchainGeneration.csproj" />
   </ItemGroup>
 
 </Project>

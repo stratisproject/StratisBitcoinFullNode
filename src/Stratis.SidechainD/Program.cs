@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Threading.Tasks;
 using NBitcoin;
 using NBitcoin.Protocol;
@@ -80,18 +81,24 @@ namespace Stratis.SidechainD
         {
             try
             {
+                //testnet
+                //qedcGY2KkpZiQ3JsMTBcPd8JwAXM4vz9Nb
+                //regtest
+                //SPgEYdqmrbkLBR3dAhUgsRDvyHZyhpvPFs
+                //mainnet
+                //RaYuu3wJJ2cJkPtfb6RCbsF4aQgYrfGNqR
+
+                args = args.Concat(new [] { "mineaddress=RaYuu3wJJ2cJkPtfb6RCbsF4aQgYrfGNqR", "mine=1" }).ToArray();
                 var sidechainIdentifier = SidechainIdentifier.CreateFromArgs(args);
                 NodeSettings nodeSettings = new NodeSettings(SidechainNetwork.SidechainTest, ProtocolVersion.ALT_PROTOCOL_VERSION, args: args);
-
-                Action<MinerSettings> act = settings => GetMinerSettings();
-
+                
                 var node = new FullNodeBuilder()
                       .UseNodeSettings(nodeSettings)
                       .UsePosConsensus()
                       .UseBlockStore()
                       .UseMempool()
                       .UseWallet()
-                      .AddPowPosMining(act)
+                      .AddPowPosMining()
                       .UseBlockGenerator()
                       .UseApi()
                       .AddRPC()
@@ -105,19 +112,6 @@ namespace Stratis.SidechainD
                 Console.WriteLine("There was a problem initializing the node. Details: '{0}'", ex.Message);
             }
             Console.ReadLine();
-        }
-
-        private static MinerSettings GetMinerSettings()
-        {
-            //testnet
-            //qedcGY2KkpZiQ3JsMTBcPd8JwAXM4vz9Nb
-            //regtest
-            //SPgEYdqmrbkLBR3dAhUgsRDvyHZyhpvPFs
-            //mainnet
-            //RaYuu3wJJ2cJkPtfb6RCbsF4aQgYrfGNqR
-            var minerSetting = new MinerSettings();
-            minerSetting.MineAddress = "RaYuu3wJJ2cJkPtfb6RCbsF4aQgYrfGNqR";
-            return minerSetting;
         }
     }
 }

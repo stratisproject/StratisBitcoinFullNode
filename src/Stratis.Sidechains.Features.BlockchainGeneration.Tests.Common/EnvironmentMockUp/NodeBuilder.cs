@@ -5,6 +5,7 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using NBitcoin;
 using Stratis.Bitcoin;
+using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.Features.Consensus;
@@ -48,9 +49,9 @@ namespace Stratis.Sidechains.Features.BlockchainGeneration.Tests.Common.Environm
             return fullNode.NodeService<BlockStoreManager>();
         }
 
-        public static ChainedBlock HighestPersistedBlock(this FullNode fullNode)
+        public static ChainedHeader GetBlockStoreTip(this FullNode fullNode)
         {
-            return fullNode.NodeService<IBlockRepository>().HighestPersistedBlock;
+            return fullNode.NodeService<IChainState>().BlockStoreTip;
         }
     }
 

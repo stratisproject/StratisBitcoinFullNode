@@ -10,6 +10,7 @@ using Stratis.Bitcoin.Features.GeneralPurposeWallet;
 using Stratis.Bitcoin.Features.GeneralPurposeWallet.Interfaces;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Sidechains.Features.BlockchainGeneration.Tests.Common.EnvironmentMockUp;
+//using CoreNode = Stratis.Bitcoin.
 
 namespace Stratis.FederatedPeg.IntegrationTests
 {
@@ -93,7 +94,7 @@ namespace Stratis.FederatedPeg.IntegrationTests
         {
             if (node1.FullNode.Chain.Tip.HashBlock != node2.FullNode.Chain.Tip.HashBlock) return false;
             if (node1.FullNode.ChainBehaviorState.ConsensusTip.HashBlock != node2.FullNode.ChainBehaviorState.ConsensusTip.HashBlock) return false;
-            if (node1.FullNode.HighestPersistedBlock().HashBlock != node2.FullNode.HighestPersistedBlock().HashBlock) return false;
+            if (node1.FullNode.GetBlockStoreTip().HashBlock != node2.FullNode.GetBlockStoreTip().HashBlock) return false;
             if (node1.FullNode.MempoolManager().InfoAll().Count != node2.FullNode.MempoolManager().InfoAll().Count) return false;
             if (node1.FullNode.WalletManager().WalletTipHash != node2.FullNode.WalletManager().WalletTipHash) return false;
             if (node1.CreateRPCClient().GetBestBlockHash() != node2.CreateRPCClient().GetBestBlockHash()) return false;

@@ -53,8 +53,8 @@ namespace Stratis.Sidechains.Features.BlockchainGeneration.Tests.Common.Environm
                 confArg = $"-conf={SidechainIdentifier.Instance.Name}.conf";
 
             NodeSettings nodeSettings = agent == null 
-                    ? new NodeSettings(network, ProtocolVersion.ALT_PROTOCOL_VERSION, args: new string[] { confArg, "-datadir=" + dataDir }, loadConfiguration: false)
-                    : new NodeSettings(network, ProtocolVersion.ALT_PROTOCOL_VERSION, args: new string[] { confArg, "-datadir=" + dataDir }, loadConfiguration: false, agent:this.agent);
+                    ? new NodeSettings(network, ProtocolVersion.ALT_PROTOCOL_VERSION, args: new string[] { confArg, "-datadir=" + dataDir })
+                    : new NodeSettings(network, ProtocolVersion.ALT_PROTOCOL_VERSION, args: new string[] { confArg, "-datadir=" + dataDir }, agent:this.agent);
             var node = BuildFullNode(nodeSettings, this.callback);
             this.FullNode = node;
             this.FullNode.Start();

@@ -42,25 +42,6 @@ namespace Stratis.Sidechains.Features.BlockchainGeneration
             return new NetworkInfo(networkName, request.Time, request.Nonce, request.MessageStart, request.AddressPrefix, request.Port, request.RpcPort, request.ApiPort, request.CoinSymbol, request.GenesisHashHex);
         }
 
-        internal void ComputeGenesisHash()
-        {
-            Block.BlockSignature = true;
-            Transaction.TimeStamp = true;
-
-            Block genesis = NetworkName == SidechainNetwork.SidechainMainName
-                ? SidechainNetwork.CreateSidechainGenesisBlock(Time, Nonce, 0x1e0fffff, 1, Money.Zero)
-                : NetworkName == SidechainNetwork.SidechainTestName
-                    ? SidechainNetwork.SidechainMain.GetGenesis().Clone() 
-                    : SidechainNetwork.SidechainTest.GetGenesis().Clone();
-            uint256 ui1 = genesis.GetHash();
-            genesis.Header.Time = Time;
-            genesis.Header.Nonce = Nonce;
-            genesis.Header.Bits = GetPowLimit();
-            var computedGenesisHashHex = genesis.GetHash().ToString();
-            
-            ValidateOrAssignGenesisHash(computedGenesisHashHex);
-        }
-
         private void ValidateOrAssignGenesisHash(string computedGenesisHashHex)
         {
             if (string.IsNullOrWhiteSpace(GenesisHashHex))

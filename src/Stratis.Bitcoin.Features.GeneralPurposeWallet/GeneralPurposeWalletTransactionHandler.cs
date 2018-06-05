@@ -37,12 +37,15 @@ namespace Stratis.Bitcoin.Features.GeneralPurposeWallet
 
         private readonly ILogger logger;
 
+        public Network Network { get; }
+
         public GeneralPurposeWalletTransactionHandler(
             ILoggerFactory loggerFactory,
             IGeneralPurposeWalletManager walletManager,
             IGeneralPurposeWalletFeePolicy walletFeePolicy,
             Network network)
         {
+            this.Network = network;
             this.walletManager = walletManager;
             this.walletFeePolicy = walletFeePolicy;
             this.coinType = (CoinType)network.Consensus.CoinType;
@@ -157,7 +160,7 @@ namespace Stratis.Bitcoin.Features.GeneralPurposeWallet
                 {
                     FeeType = feeType,
                     MinConfirmations = allowUnconfirmed ? 0 : 1,
-                    TransactionBuilder = new TransactionBuilder()
+                    TransactionBuilder = new TransactionBuilder(this.Network)
                 };
 
                 this.AddRecipients(context);
@@ -193,7 +196,7 @@ namespace Stratis.Bitcoin.Features.GeneralPurposeWallet
             Guard.NotNull(context.Recipients, nameof(context.Recipients));
             Guard.NotNull(context.AccountReference, nameof(context.AccountReference));
 
-            context.TransactionBuilder = new TransactionBuilder();
+            context.TransactionBuilder = new TransactionBuilder(this.Network);
 
             this.AddRecipients(context);
             this.AddOpReturnOutput(context);
@@ -380,7 +383,7 @@ namespace Stratis.Bitcoin.Features.GeneralPurposeWallet
 		        var coins = new List<Coin>();
 		        foreach (var item in context.UnspentMultiSigOutputs.OrderByDescending(a => a.Transaction.Amount))
 		        {
-					coins.Add(new ScriptCoin(item.Transaction.Id, (uint)item.Transaction.Index, item.Transaction.Amount, item.Transaction.ScriptPubKey, item.Address.RedeemScript));
+					coins.Add(ScriptCoin.Create(this.Network, item.Transaction.Id, (uint)item.Transaction.Index, item.Transaction.Amount, item.Transaction.ScriptPubKey, item.Address.RedeemScript));
 			        sum += item.Transaction.Amount;
 			        index++;
 

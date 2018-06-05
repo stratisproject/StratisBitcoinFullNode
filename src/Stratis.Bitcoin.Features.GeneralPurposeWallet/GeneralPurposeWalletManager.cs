@@ -7,8 +7,8 @@ using System.Security;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
-using Stratis.Bitcoin.Broadcasting;
 using Stratis.Bitcoin.Configuration;
+using Stratis.Bitcoin.Features.GeneralPurposeWallet.Broadcasting;
 using Stratis.Bitcoin.Features.GeneralPurposeWallet.Interfaces;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Interfaces;
@@ -88,7 +88,7 @@ namespace Stratis.Bitcoin.Features.GeneralPurposeWallet
 		private readonly FileStorage<GeneralPurposeWallet> fileStorage;
 
 		/// <summary>The broadcast manager.</summary>
-		private readonly IBroadcasterManager broadcasterManager;
+		private readonly IGeneralPurposeWalletBroadcasterManager broadcasterManager;
 
 		/// <summary>Provider of time functions.</summary>
 		private readonly IDateTimeProvider dateTimeProvider;
@@ -111,7 +111,7 @@ namespace Stratis.Bitcoin.Features.GeneralPurposeWallet
 			IAsyncLoopFactory asyncLoopFactory,
 			INodeLifetime nodeLifetime,
 			IDateTimeProvider dateTimeProvider,
-			IBroadcasterManager broadcasterManager = null) // no need to know about transactions the node broadcasted
+			IGeneralPurposeWalletBroadcasterManager broadcasterManager = null) // no need to know about transactions the node broadcasted
 		{
 			Guard.NotNull(loggerFactory, nameof(loggerFactory));
 			Guard.NotNull(network, nameof(network));
@@ -672,7 +672,7 @@ namespace Stratis.Bitcoin.Features.GeneralPurposeWallet
 		}
 
 		/// <inheritdoc />
-		public void RemoveBlocks(ChainedBlock fork)
+		public void RemoveBlocks(ChainedHeader fork)
 		{
 			Guard.NotNull(fork, nameof(fork));
 			this.logger.LogTrace("({0}:'{1}'", nameof(fork), fork);
@@ -703,7 +703,7 @@ namespace Stratis.Bitcoin.Features.GeneralPurposeWallet
 		}
 
 		/// <inheritdoc />
-		public void ProcessBlock(Block block, ChainedBlock chainedBlock)
+		public void ProcessBlock(Block block, ChainedHeader chainedBlock)
 		{
 			Guard.NotNull(block, nameof(block));
 			Guard.NotNull(chainedBlock, nameof(chainedBlock));
@@ -723,7 +723,7 @@ namespace Stratis.Bitcoin.Features.GeneralPurposeWallet
 				this.logger.LogTrace("New block's previous hash '{0}' does not match current wallet's tip hash '{1}'.", chainedBlock.Header.HashPrevBlock, this.WalletTipHash);
 
 				// Are we still on the main chain.
-				ChainedBlock current = this.chain.GetBlock(this.WalletTipHash);
+				ChainedHeader current = this.chain.GetBlock(this.WalletTipHash);
 				if (current == null)
 				{
 					this.logger.LogTrace("(-)[REORG]");
@@ -1055,7 +1055,7 @@ namespace Stratis.Bitcoin.Features.GeneralPurposeWallet
 					{
 						// Figure out how to retrieve the destination address.
 						string destinationAddress = string.Empty;
-						ScriptTemplate scriptTemplate = paidToOutput.ScriptPubKey.FindTemplate();
+						ScriptTemplate scriptTemplate = paidToOutput.ScriptPubKey.FindTemplate(this.network);
 						switch (scriptTemplate.Type)
 						{
 							// Pay to PubKey can be found in outputs of staking transactions.
@@ -1138,7 +1138,7 @@ namespace Stratis.Bitcoin.Features.GeneralPurposeWallet
 					{
 						// Figure out how to retrieve the destination address.
 						string destinationAddress = string.Empty;
-						ScriptTemplate scriptTemplate = paidToOutput.ScriptPubKey.FindTemplate();
+						ScriptTemplate scriptTemplate = paidToOutput.ScriptPubKey.FindTemplate(this.network);
 						switch (scriptTemplate.Type)
 						{
 							// Pay to PubKey can be found in outputs of staking transactions.
@@ -1277,7 +1277,7 @@ namespace Stratis.Bitcoin.Features.GeneralPurposeWallet
 		}
 
 		/// <inheritdoc />
-		public void UpdateLastBlockSyncedHeight(ChainedBlock chainedBlock)
+		public void UpdateLastBlockSyncedHeight(ChainedHeader chainedBlock)
 		{
 			Guard.NotNull(chainedBlock, nameof(chainedBlock));
 			this.logger.LogTrace("({0}:'{1}')", nameof(chainedBlock), chainedBlock);
@@ -1293,7 +1293,7 @@ namespace Stratis.Bitcoin.Features.GeneralPurposeWallet
 		}
 
 		/// <inheritdoc />
-		public void UpdateLastBlockSyncedHeight(GeneralPurposeWallet wallet, ChainedBlock chainedBlock)
+		public void UpdateLastBlockSyncedHeight(GeneralPurposeWallet wallet, ChainedHeader chainedBlock)
 		{
 			Guard.NotNull(wallet, nameof(wallet));
 			Guard.NotNull(chainedBlock, nameof(chainedBlock));
@@ -1497,5 +1497,158 @@ namespace Stratis.Bitcoin.Features.GeneralPurposeWallet
 				},
 				TimeSpans.FiveSeconds);
 		}
-	}
+
+        public Transaction SignPartialTransaction(Transaction partial, ICollection<MultiSigAddress> multiSigAddresses)
+        {
+            // Find which multisig address is being referred to by the inputs
+            // TODO: Require this to be passed in as a parameter to save the lookup?
+
+            MultiSigAddress multiSigAddress = null;
+
+            foreach (MultiSigAddress address in multiSigAddresses)
+            {
+                foreach (TransactionData tx in address.Transactions)
+                {
+                    foreach (var input in partial.Inputs)
+                    {
+                        if (input.PrevOut.Hash == tx.Id)
+                        {
+                            multiSigAddress = address;
+                        }
+                    }
+                }
+            }
+
+            if (multiSigAddress == null)
+                throw new GeneralPurposeWalletException(
+                    "Unable to determine which multisig address to combine partial transactions for");
+
+            // Need to get the same ScriptCoins used by the other signatories.
+            // It is assumed that the funds are present in the MultiSigAddress
+            // transactions.
+
+            // Find the transaction(s) in the MultiSigAddress that have the
+            // referenced inputs among their outputs.
+
+            List<Transaction> fundingTransactions = new List<Transaction>();
+
+            foreach (TransactionData tx in multiSigAddress.Transactions)
+            {
+                foreach (var output in tx.Transaction.Outputs.AsIndexedOutputs())
+                {
+                    foreach (var input in partial.Inputs)
+                    {
+                        if (input.PrevOut.Hash == tx.Id && input.PrevOut.N == output.N)
+                            fundingTransactions.Add(tx.Transaction);
+                    }
+                }
+            }
+
+            // Then convert the outputs to Coins & make ScriptCoins out of them.
+
+            List<ScriptCoin> scriptCoins = new List<ScriptCoin>();
+
+            foreach (var tx in fundingTransactions)
+            {
+                foreach (var coin in tx.Outputs.AsCoins())
+                {
+                    // Only care about outputs for our particular multisig
+                    if (coin.ScriptPubKey == multiSigAddress.ScriptPubKey)
+                    {
+                        scriptCoins.Add(coin.ToScriptCoin(multiSigAddress.RedeemScript));
+                    }
+                }
+            }
+
+            // Need to construct a transaction using a transaction builder with
+            // the appropriate state
+
+            TransactionBuilder builder = new TransactionBuilder(this.network);
+
+            Transaction signed =
+                builder
+                    .AddCoins(scriptCoins)
+                    .AddKeys(multiSigAddress.PrivateKey)
+                    .SignTransaction(partial);
+
+            return signed;
+        }
+
+        public Transaction CombinePartialTransactions(Transaction[] partials, ICollection<MultiSigAddress> multiSigAddresses)
+        {
+            Transaction firstPartial = partials[0];
+
+            // Find which multisig address is being referred to by the inputs
+            // TODO: Require this to be passed in as a parameter to save the lookup?
+
+            MultiSigAddress multiSigAddress = null;
+
+            foreach (MultiSigAddress address in multiSigAddresses)
+            {
+                foreach (TransactionData tx in address.Transactions)
+                {
+                    foreach (var input in firstPartial.Inputs)
+                    {
+                        if (input.PrevOut.Hash == tx.Id)
+                        {
+                            multiSigAddress = address;
+                        }
+                    }
+                }
+            }
+
+            if (multiSigAddress == null)
+                throw new GeneralPurposeWalletException(
+                    "Unable to determine which multisig address to combine partial transactions for");
+
+            // Need to get the same ScriptCoins used by the other signatories.
+            // It is assumed that the funds are present in the MultiSigAddress
+            // transactions.
+
+            // Find the transaction(s) in the MultiSigAddress that have the
+            // referenced inputs among their outputs.
+
+            List<Transaction> fundingTransactions = new List<Transaction>();
+
+            foreach (TransactionData tx in multiSigAddress.Transactions)
+            {
+                foreach (var output in tx.Transaction.Outputs.AsIndexedOutputs())
+                {
+                    foreach (var input in firstPartial.Inputs)
+                    {
+                        if (input.PrevOut.Hash == tx.Id && input.PrevOut.N == output.N)
+                            fundingTransactions.Add(tx.Transaction);
+                    }
+                }
+            }
+
+            // Then convert the outputs to Coins & make ScriptCoins out of them.
+
+            List<ScriptCoin> scriptCoins = new List<ScriptCoin>();
+
+            foreach (var tx in fundingTransactions)
+            {
+                foreach (var coin in tx.Outputs.AsCoins())
+                {
+                    // Only care about outputs for our particular multisig
+                    if (coin.ScriptPubKey == multiSigAddress.ScriptPubKey)
+                    {
+                        scriptCoins.Add(coin.ToScriptCoin(multiSigAddress.RedeemScript));
+                    }
+                }
+            }
+
+            // Need to construct a transaction using a transaction builder with
+            // the appropriate state
+
+            TransactionBuilder builder = new TransactionBuilder(this.network);
+
+            Transaction combined =
+                builder
+                    .AddCoins(scriptCoins)
+                    .CombineSignatures(partials);
+
+            return combined;
+        }
+    }
 }

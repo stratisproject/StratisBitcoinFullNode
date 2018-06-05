@@ -41,11 +41,11 @@ namespace Stratis.Sidechains.Features.BlockchainGeneration.Tests.Common
             {
                 var localSeed = seed + offset;
                 string genesisHasHex = networkName == SidechainNetwork.SidechainMainName
-                    ? "03ca8b76093da3e9132a6f1002ce9e95468ae538f10ea5eb23c594265e3bcbea"
+                    ? "000009a6434326a4851f0e95285351839c287182bd2b62ca8765ce30007605e1"
                     : networkName == SidechainNetwork.SidechainTestName
-                    ? "6ea951942c42d3e92fc08a13567ff6974a0eb5f9cbdc331b58356990edab9d6f"
+                    ? "0000e451752bac9f67cb5d63fd32442ba42d42b1b2ea28131d91e1e3f29f523b"
                     : networkName == SidechainNetwork.SidechainRegTestName
-                    ? "d82276367430662e95e40f704ddde6b00fb07921c3bd51dd00e17d0d933a12ab"
+                    ? "0688f8440feed473792edc56e365bb7ab20ae2d4e2010cfb8af4ccadaa53e611"
                     : "0";
 
                 var networkInfo = new NetworkInfo(networkName,
