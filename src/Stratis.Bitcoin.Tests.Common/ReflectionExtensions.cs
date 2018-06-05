@@ -66,7 +66,7 @@ namespace Stratis.Bitcoin.Tests.Common
         /// <param name="propertyName">Property name as string.</param>
         /// <param name="value">Value to set.</param>
         /// <returns>PropertyValue</returns>
-        public static void SetPrivatePropertyValue<T>(object obj, string propertyName, T value)
+        public static void SetPrivatePropertyValue<T>(this object obj, string propertyName, T value)
         {
             Type t = obj.GetType();
             if (t.GetProperty(propertyName, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance) == null)

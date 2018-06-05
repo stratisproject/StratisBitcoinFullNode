@@ -428,8 +428,8 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
             PosMinting miner = this.InitializePosMinting();
 
             ChainedHeader chainTip = this.chain.Tip;
-            ReflectionExtensions.SetPrivatePropertyValue(chainTip, "Height", chainTipHeight);
-            ReflectionExtensions.SetPrivatePropertyValue(chainTip.Previous, "Height", utxoHeight);
+            chainTip.SetPrivatePropertyValue("Height", chainTipHeight);
+            chainTip.Previous.SetPrivatePropertyValue("Height", utxoHeight);
 
             var descriptions = new List<PosMinting.UtxoStakeDescription>();
 
@@ -439,7 +439,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
             utxoDescription.HashBlock = chainTip.Previous.HashBlock;
 
             utxoDescription.UtxoSet = new UnspentOutputs();
-            ReflectionExtensions.SetPrivatePropertyValue(utxoDescription.UtxoSet, "Time", chainTip.Header.Time);
+            utxoDescription.UtxoSet.SetPrivatePropertyValue("Time", chainTip.Header.Time);
 
             descriptions.Add(utxoDescription);
 
