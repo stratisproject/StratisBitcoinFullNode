@@ -238,7 +238,7 @@ namespace NBitcoin
         /// The consensus factory used to create transactions and blocks. 
         /// Use <see cref="PosConsensusFactory"/> for proof-of-stake based networks.
         /// </param>
-        /// <param name="pszTimestamp">
+        /// <param name="coinbaseText">
         /// Traditionally a news headline from the day of the launch, but could be any string or link.
         /// This will be inserted in the input coinbase transaction script.
         /// </param>
@@ -254,7 +254,6 @@ namespace NBitcoin
         /// </param>
         /// <example>
         /// The following example shows the creation of a genesis block.
-        /// </example>
         /// <code>
         /// Block genesis = MineGenesisBlock(new PosConsensusFactory(), "Some topical headline.", new Target(new uint256("000fffff00000000000000000000000000000000000000000000000000000000")), Money.Coins(50m));
         /// BlockHeader header = genesis.Header;
@@ -266,21 +265,22 @@ namespace NBitcoin
         /// Console.WriteLine("hash: " + header.GetHash());
         /// Console.WriteLine("merkleroot: " + header.HashMerkleRoot);
         /// </code>
-        /// <returns> A genesis block. </returns>
-        public static Block MineGenesisBlock(ConsensusFactory consensusFactory, string pszTimestamp, Target target, Money genesisReward, int version = 1)
+        /// </example>
+        /// <returns>A genesis block.</returns>
+        public static Block MineGenesisBlock(ConsensusFactory consensusFactory, string coinbaseText, Target target, Money genesisReward, int version = 1)
         {
             if (target == null)
-                throw new ArgumentException("Parameter 'target' cannot be null. Example use: new Target(new uint256(\"0000ffff00000000000000000000000000000000000000000000000000000000\"))");
+                throw new ArgumentException($"Parameter '{nameof(target)}' cannot be null. Example use: new Target(new uint256(\"0000ffff00000000000000000000000000000000000000000000000000000000\"))");
 
             if (consensusFactory == null)
-                throw new ArgumentException("Parameter 'consensusFactory' cannot be null. Use 'new ConsensusFactory()' for Bitcoin-like proof-of-work blockchains" +
+                throw new ArgumentException($"Parameter '{nameof(consensusFactory)}' cannot be null. Use 'new ConsensusFactory()' for Bitcoin-like proof-of-work blockchains" +
                                             "and 'new PosConsensusFactory()' for Stratis-like proof-of-stake blockchains.");
 
-            if (string.IsNullOrEmpty(pszTimestamp))
-                throw new ArgumentException("Parameter 'pszTimestamp' cannot be null. Use a news headline or any other appropriate string.");
+            if (string.IsNullOrEmpty(coinbaseText))
+                throw new ArgumentException($"Parameter '{nameof(coinbaseText)}' cannot be null. Use a news headline or any other appropriate string.");
 
             if (genesisReward == null)
-                throw new ArgumentException("Parameter 'genesisReward' cannot be null. Example use: 'Money.Coins(50m)'.");
+                throw new ArgumentException($"Parameter '{nameof(genesisReward)}' cannot be null. Example use: 'Money.Coins(50m)'.");
 
             DateTimeOffset time = DateTimeOffset.Now;
             uint unixTime = Utils.DateTimeToUnixTime(time);
@@ -297,7 +297,7 @@ namespace NBitcoin
                         Code = (OpcodeType)0x1,
                         PushData = new[] { (byte)42 }
                     },
-                    Op.GetPushOp(Encoders.ASCII.DecodeData(pszTimestamp)))
+                    Op.GetPushOp(Encoders.ASCII.DecodeData(coinbaseText)))
             });
 
             txNew.AddOutput(new TxOut()
