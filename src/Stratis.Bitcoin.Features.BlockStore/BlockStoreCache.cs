@@ -102,15 +102,13 @@ namespace Stratis.Bitcoin.Features.BlockStore
         {
             Guard.NotNull(blockids, nameof(blockids));
 
-            var blocks = await this.blockRepository.GetBlocksAsync(blockids);
+            List<Block> blocks = await this.blockRepository.GetBlocksAsync(blockids);
 
-            List<Block> returnBlocks = new List<Block>();
+            var returnBlocks = new List<Block>();
 
-            Block cachedBlock;
-
-            foreach (var block in blocks)
+            foreach (Block block in blocks)
             {
-                if (this.cache.TryGetValue(block.GetHash(), out cachedBlock))
+                if (this.cache.TryGetValue(block.GetHash(), out Block cachedBlock))
                 {
                     this.PerformanceCounter.AddCacheHitCount(1);
                     this.logger.LogTrace("(-)[CACHE_HIT]:'{0}'", block);

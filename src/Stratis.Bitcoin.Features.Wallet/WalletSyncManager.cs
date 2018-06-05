@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
+using ConcurrentCollections;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Features.BlockStore;
@@ -15,11 +16,9 @@ namespace Stratis.Bitcoin.Features.Wallet
 {
     public class WalletSyncManager : IWalletSyncManager, IWalletBlockProducerConsumer
     {
-        protected readonly IWalletManager walletManager;
+        private readonly IWalletManager walletManager;
 
-        protected readonly ConcurrentChain chain;
-
-        protected readonly CoinType coinType;
+        private readonly ConcurrentChain chain;
 
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
@@ -38,9 +37,13 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <inheritdoc />
         public BufferBlock<Block> BlockBuffer { get; }
 
-        private readonly IList<uint256> hashBlocks = new List<uint256>();
+        private readonly ConcurrentQueue<uint256> hashBlocks;
 
         private readonly ConcurrentQueue<Block> blocksQueue = new ConcurrentQueue<Block>();
+
+        private readonly object queueLock = new object();
+
+        //private AsyncQueue<Block> asyncBlockQueue;
 
         public WalletSyncManager(ILoggerFactory loggerFactory, IWalletManager walletManager, ConcurrentChain chain,
             Network network, IBlockStoreCache blockStoreCache, StoreSettings storeSettings, INodeLifetime nodeLifetime)
@@ -56,12 +59,12 @@ namespace Stratis.Bitcoin.Features.Wallet
             this.walletManager = walletManager;
             this.chain = chain;
             this.blockStoreCache = blockStoreCache;
-            this.coinType = (CoinType)network.Consensus.CoinType;
             this.storeSettings = storeSettings;
             this.nodeLifetime = nodeLifetime;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
 
             this.BlockBuffer = new BufferBlock<Block>();
+            this.hashBlocks = new ConcurrentQueue<uint256>();
         }
 
         /// <inheritdoc />
@@ -119,9 +122,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             while (await source.OutputAvailableAsync())
             {
                 Block block = source.Receive();
-
-
-
+                
                 this.ProcessBlock(block);
             }
         }
@@ -129,8 +130,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <inheritdoc />
         public void ProducerConsumerProcessBlock(Block block)
         {
-            var x = this.ConsumeAsync(this.BlockBuffer);
-
+            Task.Run(() => this.ConsumeAsync(this.BlockBuffer));
             this.Produce(this.BlockBuffer, block);
         }
 
@@ -195,13 +195,26 @@ namespace Stratis.Bitcoin.Features.Wallet
                     this.logger.LogTrace("Wallet tip '{0}' is behind the new tip '{1}'.", this.walletTip, newTip);
 
                     ChainedHeader next = this.walletTip;
+
                     while (next != newTip)
                     {
                         token.ThrowIfCancellationRequested();
 
                         next = newTip.GetAncestor(next.Height + 1);
 
-                        this.ProcessBlockInBatches(next, token);
+                        this.hashBlocks.Enqueue(next.HashBlock);
+
+                        if (newTip.Height - next.Height  >= 100)
+                        {
+                            // build up the queue to 50 items before processing the blocks
+                            // in batches - this is quicker then processing each block one by one.
+                            if (this.hashBlocks.Count >= 50)
+                                this.ProcessBlockInBatches(token);
+                        }
+                        else
+                        {
+                            // figure out how to process one by one.
+                        }
                     }
                 }
                 else
@@ -265,26 +278,33 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// </summary>
         /// <param name="blockHeader"></param>
         /// <param name="token"></param>
-        private void ProcessBlockInBatches(ChainedHeader blockHeader, CancellationToken token)
+        private void ProcessBlockInBatches(CancellationToken token)
         {
-            this.hashBlocks.Add(blockHeader.HashBlock);
+            var blocks = new ConcurrentHashSet<uint256>();
 
-            //if (this.hashBlocks.Count < 50) return;
-
-            List<Block> blocks = this.blockStoreCache.GetBlockAsync(this.hashBlocks.ToList()).GetAwaiter().GetResult();
-
-            foreach (var block in blocks)
+            while (this.hashBlocks.TryDequeue(out uint256 block))
             {
-                token.ThrowIfCancellationRequested();
-
-                ChainedHeader blockChainedHeader = this.chain.GetBlock(block.GetHash());
-
-                this.walletTip = blockChainedHeader;
-
-                this.walletManager.ProcessBlock(block, blockChainedHeader);
+                blocks.Add(block);
             }
 
-            this.hashBlocks.Clear();
+            lock (this.queueLock)
+            {
+                List<Block> processedBlocks = this.blockStoreCache.GetBlockAsync(blocks.ToList()).GetAwaiter().GetResult();
+
+                foreach (Block processedBlock in processedBlocks)
+                {
+                    token.ThrowIfCancellationRequested();
+
+                    ChainedHeader blockChainedHeader = this.chain.GetBlock(processedBlock.GetHash());
+
+                    this.walletTip = blockChainedHeader;
+
+                    // TODO: In ProcessBlock the chainedHeader.Height > current.Height (line 789) - need to fix to allow batches of blocks to update
+                    // Also add relevant unit tests around batches and the consumer producer function
+
+                    this.walletManager.ProcessBlock(processedBlock, blockChainedHeader);
+                }
+            }
         }
     }
 }
