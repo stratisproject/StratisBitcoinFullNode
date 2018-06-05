@@ -41,14 +41,13 @@ namespace Stratis.StratisDnsD
         {
             try
             {
-                NodeSettings nodeSettings = new NodeSettings(protocolVersion:ProtocolVersion.ALT_PROTOCOL_VERSION, args:args, loadConfiguration:true);
+                var nodeSettings = new NodeSettings(protocolVersion:ProtocolVersion.ALT_PROTOCOL_VERSION, args:args);
 
-                Action<DnsSettings> serviceTest = (s) =>
-                {
-                    if (string.IsNullOrWhiteSpace(s.DnsHostName) || string.IsNullOrWhiteSpace(s.DnsNameServer) || string.IsNullOrWhiteSpace(s.DnsMailBox))
-                        throw new ConfigurationException("When running as a DNS Seed service, the -dnshostname, -dnsnameserver and -dnsmailbox arguments must be specified on the command line.");
-                };
-
+                var dnsSettings = new DnsSettings(nodeSettings);
+                
+                if (string.IsNullOrWhiteSpace(dnsSettings.DnsHostName) || string.IsNullOrWhiteSpace(dnsSettings.DnsNameServer) || string.IsNullOrWhiteSpace(dnsSettings.DnsMailBox))
+                    throw new ConfigurationException("When running as a DNS Seed service, the -dnshostname, -dnsnameserver and -dnsmailbox arguments must be specified on the command line.");
+               
                 // Run as a full node with DNS or just a DNS service?
                 IFullNode node;
                 if (nodeSettings.ConfigReader.GetOrDefault<bool>("dnsfullnode", false))
@@ -56,14 +55,14 @@ namespace Stratis.StratisDnsD
                     // Build the Dns full node.
                     node = new FullNodeBuilder()
                         .UseNodeSettings(nodeSettings)
-                        .UsePosConsensus()
                         .UseBlockStore()
+                        .UsePosConsensus()
                         .UseMempool()
                         .UseWallet()
                         .AddPowPosMining()
                         .UseApi()
                         .AddRPC()
-                        .UseDns(serviceTest)
+                        .UseDns()
                         .Build();
                 }
                 else
@@ -74,7 +73,7 @@ namespace Stratis.StratisDnsD
                         .UsePosConsensus()
                         .UseApi()
                         .AddRPC()
-                        .UseDns(serviceTest)
+                        .UseDns()
                         .Build();
                 }
 

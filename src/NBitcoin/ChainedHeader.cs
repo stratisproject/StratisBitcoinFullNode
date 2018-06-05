@@ -148,6 +148,12 @@ namespace NBitcoin
         {
             this.Height = height;
             this.CalculateChainWork();
+
+            if (height == 0)
+            {
+                this.BlockDataAvailability = BlockDataAvailabilityState.BlockAvailable;
+                this.BlockValidationState = ValidationState.FullyValidated;
+            }
         }
 
         /// <summary>
@@ -492,7 +498,7 @@ namespace NBitcoin
         /// <returns>Whether proof of work is valid.</returns>
         public bool CheckProofOfWorkAndTarget(Consensus consensus)
         {
-            return (this.Height == 0) || (this.Header.CheckProofOfWork(consensus) && (this.Header.Bits == this.GetWorkRequired(consensus)));
+            return (this.Height == 0) || (this.Header.CheckProofOfWork() && (this.Header.Bits == this.GetWorkRequired(consensus)));
         }
 
         /// <summary>

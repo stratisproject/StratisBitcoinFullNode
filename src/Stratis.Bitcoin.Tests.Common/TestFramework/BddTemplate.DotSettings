@@ -1,0 +1,113 @@
+﻿<wpf:ResourceDictionary xml:space="preserve" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:s="clr-namespace:System;assembly=mscorlib" xmlns:ss="urn:shemas-jetbrains-com:settings-storage-xaml" xmlns:wpf="http://schemas.microsoft.com/winfx/2006/xaml/presentation">
+	<s:Boolean x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=4D5CA268BE4FCC48BB555E5B82CFF411/@KeyIndexDefined">True</s:Boolean>
+	<s:String x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=4D5CA268BE4FCC48BB555E5B82CFF411/Description/@EntryValue">BddSpecificationTemplate</s:String>
+	<s:String x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=4D5CA268BE4FCC48BB555E5B82CFF411/Text/@EntryValue">$HEADER$using Stratis.Bitcoin.IntegrationTests.TestFramework;&#xD;
+using Xunit;&#xD;
+using Stratis.Bitcoin.Tests.Common.TestFramework;&#xD;
+// Disable warnings about "this" qualifier to make the Specification more readable&#xD;
+// ReSharper disable ArrangeThisQualifier&#xD;
+&#xD;
+namespace $NAMESPACE$&#xD;
+{&#xD;
+    public partial class $SpecificationName$Specification : BddSpecification&#xD;
+    {&#xD;
+        [Fact]&#xD;
+        public void $SpecificationName$Test()&#xD;
+        {&#xD;
+            Given($a_state$);&#xD;
+            And($a_condition$);&#xD;
+            &#xD;
+            When($something_happens$);&#xD;
+            And($something_async_happens$);&#xD;
+&#xD;
+            Then($a_result_should_be_observed$);&#xD;
+            And($it_should_satisfy_our_specification$);&#xD;
+        }&#xD;
+    }&#xD;
+}</s:String>
+	<s:Boolean x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=4D5CA268BE4FCC48BB555E5B82CFF411/Reformat/@EntryValue">True</s:Boolean>
+	<s:Boolean x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=4D5CA268BE4FCC48BB555E5B82CFF411/ShortenQualifiedReferences/@EntryValue">True</s:Boolean>
+	<s:String x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=4D5CA268BE4FCC48BB555E5B82CFF411/CustomProperties/=FileName/@EntryIndexedValue">$NAME$</s:String>
+	<s:String x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=4D5CA268BE4FCC48BB555E5B82CFF411/CustomProperties/=Extension/@EntryIndexedValue">cs</s:String>
+	<s:String x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=4D5CA268BE4FCC48BB555E5B82CFF411/CustomProperties/=ValidateFileName/@EntryIndexedValue">False</s:String>
+	<s:Boolean x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=4D5CA268BE4FCC48BB555E5B82CFF411/Applicability/=File/@EntryIndexedValue">True</s:Boolean>
+	<s:Boolean x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=4D5CA268BE4FCC48BB555E5B82CFF411/Scope/=E8F0594528C33E45BBFEC6CFE851095D/@KeyIndexDefined">True</s:Boolean>
+	<s:String x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=4D5CA268BE4FCC48BB555E5B82CFF411/Scope/=E8F0594528C33E45BBFEC6CFE851095D/Type/@EntryValue">InCSharpProjectFile</s:String>
+	<s:Boolean x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=4D5CA268BE4FCC48BB555E5B82CFF411/Field/=HEADER/@KeyIndexDefined">True</s:Boolean>
+	<s:String x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=4D5CA268BE4FCC48BB555E5B82CFF411/Field/=HEADER/Expression/@EntryValue">fileheader()</s:String>
+	<s:Int64 x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=4D5CA268BE4FCC48BB555E5B82CFF411/Field/=HEADER/InitialRange/@EntryValue">-1</s:Int64>
+	<s:Int64 x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=4D5CA268BE4FCC48BB555E5B82CFF411/Field/=HEADER/Order/@EntryValue">0</s:Int64>
+	<s:Boolean x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=4D5CA268BE4FCC48BB555E5B82CFF411/Field/=NAMESPACE/@KeyIndexDefined">True</s:Boolean>
+	<s:String x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=4D5CA268BE4FCC48BB555E5B82CFF411/Field/=NAMESPACE/Expression/@EntryValue">fileDefaultNamespace()</s:String>
+	<s:Int64 x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=4D5CA268BE4FCC48BB555E5B82CFF411/Field/=NAMESPACE/Order/@EntryValue">1</s:Int64>
+	<s:Boolean x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=4D5CA268BE4FCC48BB555E5B82CFF411/Field/=SpecificationName/@KeyIndexDefined">True</s:Boolean>
+	<s:String x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=4D5CA268BE4FCC48BB555E5B82CFF411/Field/=SpecificationName/Expression/@EntryValue">getAlphaNumericFileNameWithoutExtension()</s:String>
+	<s:Int64 x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=4D5CA268BE4FCC48BB555E5B82CFF411/Field/=SpecificationName/Order/@EntryValue">2</s:Int64>
+	<s:Boolean x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=4D5CA268BE4FCC48BB555E5B82CFF411/Field/=a_005Fstate/@KeyIndexDefined">True</s:Boolean>
+	<s:Int64 x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=4D5CA268BE4FCC48BB555E5B82CFF411/Field/=a_005Fstate/Order/@EntryValue">3</s:Int64>
+	<s:Boolean x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=4D5CA268BE4FCC48BB555E5B82CFF411/Field/=a_005Fcondition/@KeyIndexDefined">True</s:Boolean>
+	<s:Int64 x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=4D5CA268BE4FCC48BB555E5B82CFF411/Field/=a_005Fcondition/Order/@EntryValue">4</s:Int64>
+	<s:Boolean x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=4D5CA268BE4FCC48BB555E5B82CFF411/Field/=something_005Fhappens/@KeyIndexDefined">True</s:Boolean>
+	<s:Int64 x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=4D5CA268BE4FCC48BB555E5B82CFF411/Field/=something_005Fhappens/Order/@EntryValue">5</s:Int64>
+	<s:Boolean x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=4D5CA268BE4FCC48BB555E5B82CFF411/Field/=something_005Fasync_005Fhappens/@KeyIndexDefined">True</s:Boolean>
+	<s:Int64 x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=4D5CA268BE4FCC48BB555E5B82CFF411/Field/=something_005Fasync_005Fhappens/Order/@EntryValue">6</s:Int64>
+	<s:Boolean x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=4D5CA268BE4FCC48BB555E5B82CFF411/Field/=a_005Fresult_005Fshould_005Fbe_005Fobserved/@KeyIndexDefined">True</s:Boolean>
+	<s:Int64 x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=4D5CA268BE4FCC48BB555E5B82CFF411/Field/=a_005Fresult_005Fshould_005Fbe_005Fobserved/Order/@EntryValue">7</s:Int64>
+	<s:Boolean x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=4D5CA268BE4FCC48BB555E5B82CFF411/Field/=it_005Fshould_005Fsatisfy_005Four_005Fspecification/@KeyIndexDefined">True</s:Boolean>
+	<s:Int64 x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=4D5CA268BE4FCC48BB555E5B82CFF411/Field/=it_005Fshould_005Fsatisfy_005Four_005Fspecification/Order/@EntryValue">8</s:Int64>
+	<s:Boolean x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=4D5CA268BE4FCC48BB555E5B82CFF411/Section/=AA27F2FA714E4B428DCB24B2E7453910/@KeyIndexDefined">True</s:Boolean>
+	<s:String x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=4D5CA268BE4FCC48BB555E5B82CFF411/Section/=AA27F2FA714E4B428DCB24B2E7453910/LocationSelectorName/@EntryValue">manual</s:String>
+	<s:String x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=4D5CA268BE4FCC48BB555E5B82CFF411/Section/=AA27F2FA714E4B428DCB24B2E7453910/LocationSelectorConfig/@EntryValue">&lt;RelativeConfig File="$NAME$Steps.cs" /&gt;</s:String>
+	<s:Int64 x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=4D5CA268BE4FCC48BB555E5B82CFF411/Section/=AA27F2FA714E4B428DCB24B2E7453910/Order/@EntryValue">0</s:Int64>
+	<s:String x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=4D5CA268BE4FCC48BB555E5B82CFF411/Section/=AA27F2FA714E4B428DCB24B2E7453910/SectionPlain/Text/@EntryValue">using System.Threading.Tasks;
+using FluentAssertions;
+using Stratis.Bitcoin.Tests.Common.TestFramework;
+using Xunit.Abstractions;
+
+namespace $NAMESPACE$
+{
+    public partial class $SpecificationName$Specification : BddSpecification
+    {
+		public $SpecificationName$Specification(ITestOutputHelper output) : base(output) {}
+				
+        protected override void BeforeTest()
+        {
+          
+        }
+
+        protected override void AfterTest()
+        {
+
+		}
+
+		public void $a_state$()
+		{
+
+		}
+
+		public void $a_condition$()
+		{
+
+		}
+
+		public void $something_happens$()
+		{
+
+		}
+
+		public async Task $something_async_happens$()
+		{
+
+		}
+
+		public void $a_result_should_be_observed$()
+		{
+			
+		}
+
+		public void $it_should_satisfy_our_specification$()
+		{
+			"".Should().NotBeNullOrWhiteSpace();
+		}
+    }
+}</s:String></wpf:ResourceDictionary>

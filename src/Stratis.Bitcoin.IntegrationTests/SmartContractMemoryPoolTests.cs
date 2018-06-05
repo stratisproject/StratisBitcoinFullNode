@@ -1,7 +1,8 @@
 ﻿using System.Linq;
 using System.Threading;
 using NBitcoin;
-using Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers;
+using Stratis.Bitcoin.IntegrationTests.Common;
+using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
 using Stratis.SmartContracts;
 using Stratis.SmartContracts.Executor.Reflection;
 using Xunit;
@@ -13,7 +14,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
         [Fact]
         public void SmartContracts_AddToMempool_Success()
         {
-            using (NodeBuilder builder = NodeBuilder.Create())
+            using (NodeBuilder builder = NodeBuilder.Create(this))
             {
                 var stratisNodeSync = builder.CreateSmartContractNode();
                 builder.StartAll();
@@ -21,7 +22,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 stratisNodeSync.SetDummyMinerSecret(new BitcoinSecret(new Key(), stratisNodeSync.FullNode.Network));
                 stratisNodeSync.GenerateSmartContractStratis(105); // coinbase maturity = 100
                 TestHelper.WaitLoop(() => stratisNodeSync.FullNode.ConsensusLoop().Tip.HashBlock == stratisNodeSync.FullNode.Chain.Tip.HashBlock);
-                TestHelper.WaitLoop(() => stratisNodeSync.FullNode.HighestPersistedBlock().HashBlock == stratisNodeSync.FullNode.Chain.Tip.HashBlock);
+                TestHelper.WaitLoop(() => stratisNodeSync.FullNode.GetBlockStoreTip().HashBlock == stratisNodeSync.FullNode.Chain.Tip.HashBlock);
 
                 var block = stratisNodeSync.FullNode.BlockStoreManager().BlockRepository.GetAsync(stratisNodeSync.FullNode.Chain.GetBlock(4).HashBlock).Result;
                 var prevTrx = block.Transactions.First();
@@ -42,7 +43,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
         [Fact]
         public void SmartContracts_AddToMempool_OnlyValid()
         {
-            using (NodeBuilder builder = NodeBuilder.Create())
+            using (NodeBuilder builder = NodeBuilder.Create(this))
             {
                 var stratisNodeSync = builder.CreateSmartContractNode();
                 builder.StartAll();
@@ -50,7 +51,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 stratisNodeSync.SetDummyMinerSecret(new BitcoinSecret(new Key(), stratisNodeSync.FullNode.Network));
                 stratisNodeSync.GenerateSmartContractStratis(105); // coinbase maturity = 100
                 TestHelper.WaitLoop(() => stratisNodeSync.FullNode.ConsensusLoop().Tip.HashBlock == stratisNodeSync.FullNode.Chain.Tip.HashBlock);
-                TestHelper.WaitLoop(() => stratisNodeSync.FullNode.HighestPersistedBlock().HashBlock == stratisNodeSync.FullNode.Chain.Tip.HashBlock);
+                TestHelper.WaitLoop(() => stratisNodeSync.FullNode.GetBlockStoreTip().HashBlock == stratisNodeSync.FullNode.Chain.Tip.HashBlock);
 
                 var block = stratisNodeSync.FullNode.BlockStoreManager().BlockRepository.GetAsync(stratisNodeSync.FullNode.Chain.GetBlock(4).HashBlock).Result;
                 var prevTrx = block.Transactions.First();

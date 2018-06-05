@@ -7,6 +7,8 @@ using Stratis.Bitcoin.Base.Deployments;
 using Stratis.Bitcoin.BlockPulling;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Logging;
+using Stratis.Bitcoin.Configuration.Settings;
+using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.Rules;
 using Stratis.Bitcoin.Utilities;
@@ -67,7 +69,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
             testRulesContext.DateTimeProvider = DateTimeProvider.Default;
             network.Consensus.Options = new PowConsensusOptions();
 
-            ConsensusSettings consensusSettings = new ConsensusSettings().Load(testRulesContext.NodeSettings);
+            ConsensusSettings consensusSettings = new ConsensusSettings(testRulesContext.NodeSettings);
             testRulesContext.Checkpoints = new Checkpoints();
             testRulesContext.Chain = new ConcurrentChain(network);
 
@@ -97,7 +99,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
 
             var maxTries = int.MaxValue;
 
-            while (maxTries > 0 && !block.CheckProofOfWork(network.Consensus))
+            while (maxTries > 0 && !block.CheckProofOfWork())
             {
                 ++block.Header.Nonce;
                 --maxTries;

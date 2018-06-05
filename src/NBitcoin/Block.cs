@@ -105,6 +105,10 @@ namespace NBitcoin
 
         #endregion
 
+        /// <summary>
+        /// Generates the hash of a <see cref="BlockHeader"/>.
+        /// </summary>
+        /// <returns>A hash.</returns>
         public virtual uint256 GetHash()
         {
             uint256 hash = null;
@@ -131,6 +135,10 @@ namespace NBitcoin
             return hash;
         }
 
+        /// <summary>
+        /// Generates a hash for a proof-of-work block header.
+        /// </summary>
+        /// <returns>A hash.</returns>
         public virtual uint256 GetPoWHash()
         {
             return this.GetHash();
@@ -150,7 +158,7 @@ namespace NBitcoin
                 this.hashes[0] = this.GetHash();
         }
 
-        public bool CheckProofOfWork(Consensus consensus)
+        public bool CheckProofOfWork()
         {
             BigInteger bits = this.Bits.ToBigInteger();
             if ((bits.CompareTo(BigInteger.Zero) <= 0) || (bits.CompareTo(Pow256) >= 0))
@@ -276,7 +284,7 @@ namespace NBitcoin
 
         public uint256 GetHash()
         {
-            // Block's hash is his header's hash.
+            // A Block's hash is it's header's hash.
             return this.header.GetHash();
         }
 
@@ -328,9 +336,9 @@ namespace NBitcoin
             this.Header.HashMerkleRoot = GetMerkleRoot().Hash;
         }
 
-        public bool CheckProofOfWork(Consensus consensus)
+        public bool CheckProofOfWork()
         {
-            return this.Header.CheckProofOfWork(consensus);
+            return this.Header.CheckProofOfWork();
         }
 
         public bool CheckMerkleRoot()

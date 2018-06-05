@@ -53,6 +53,9 @@ namespace Stratis.Bitcoin.Builder
         /// <inheritdoc />
         public Network Network { get; set; }
 
+        /// <inheritdoc />
+        public IServiceProvider ServiceProvider { get; private set; }
+
         /// <summary>Collection of DI services.</summary>
         public IServiceCollection Services { get; private set; }
 
@@ -174,27 +177,27 @@ namespace Stratis.Bitcoin.Builder
                 return null;
             }
 
-            // Load configuration file
-            this.NodeSettings?.LoadConfiguration(this.Features.FeatureRegistrations);
+            // Create configuration file if required
+            this.NodeSettings?.CreateDefaultConfigurationFile(this.Features.FeatureRegistrations);
 
-            var fullNodeServiceProvider = this.Services.BuildServiceProvider();
-            this.ConfigureServices(fullNodeServiceProvider);
+            this.ServiceProvider = this.Services.BuildServiceProvider();
+            this.ConfigureServices(this.ServiceProvider);
 
             // Obtain the nodeSettings from the service (it's set used FullNodeBuilder.UseNodeSettings)
-            var nodeSettings = fullNodeServiceProvider.GetService<NodeSettings>();
+            var nodeSettings = this.ServiceProvider.GetService<NodeSettings>();
             if (nodeSettings == null)
                 throw new NodeBuilderException("NodeSettings not specified");
 
-            var network = fullNodeServiceProvider.GetService<Network>();
+            var network = this.ServiceProvider.GetService<Network>();
             if (network == null)
                 throw new NodeBuilderException("Network not specified");
 
-            var fullNode = fullNodeServiceProvider.GetService<FullNode>();
+            var fullNode = this.ServiceProvider.GetService<FullNode>();
             if (fullNode == null)
                 throw new InvalidOperationException("Fullnode not registered with provider");
 
             fullNode.Initialize(new FullNodeServiceProvider(
-                fullNodeServiceProvider,
+                this.ServiceProvider,
                 this.Features.FeatureRegistrations.Select(s => s.FeatureType).ToList()));
 
             return fullNode;

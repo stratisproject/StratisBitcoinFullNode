@@ -1,7 +1,7 @@
 ﻿using System.Linq;
 using NBitcoin;
 using NBitcoin.RPC;
-using Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers;
+using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
 using Xunit;
 
 namespace Stratis.Bitcoin.IntegrationTests.RPC
@@ -14,7 +14,7 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
         /// <inheritdoc />
         protected override void InitializeFixture()
         {
-            this.Builder = NodeBuilder.Create();
+            this.Builder = NodeBuilder.Create(this);
             this.Node = this.Builder.CreateBitcoinCoreNode();
             this.InitializeTestWallet(this.Node.DataFolder);
             this.Builder.StartAll();
@@ -147,6 +147,13 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
             Assert.True(result.Transaction.Outputs.Count > 1);
             Assert.True(result.ChangePos != -1);
             Assert.Equal(Money.Coins(50m) - result.Transaction.Outputs.Select(txout => txout.Value).Sum(), result.Fee);
+        }
+
+        [Fact]
+        public void InvalidCommandSendRPCException()
+        {
+            RPCException ex = Assert.Throws<RPCException>(() => this.rpcTestFixture.RpcClient.SendCommand("donotexist"));
+            Assert.True(ex.RPCCode == RPCErrorCode.RPC_METHOD_NOT_FOUND);
         }
     }
 }

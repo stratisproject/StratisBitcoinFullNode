@@ -11,7 +11,9 @@ using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Builder.Feature;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Logging;
+using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Connection;
+using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.Consensus.Interfaces;
 using Stratis.Bitcoin.Features.Consensus.Rules;
@@ -113,12 +115,6 @@ namespace Stratis.Bitcoin.Features.Consensus
         }
 
         /// <inheritdoc />
-        public override void LoadConfiguration()
-        {
-            this.consensusSettings.Load(this.nodeSettings);
-        }
-
-        /// <inheritdoc />
         public override void Initialize()
         {
             this.dBreezeCoinView.InitializeAsync().GetAwaiter().GetResult();
@@ -198,8 +194,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                     fullNodeBuilder.Network.Consensus.Options = new PowConsensusOptions();
 
                     services.AddSingleton<ICheckpoints, Checkpoints>();
-                    services.AddSingleton<NBitcoin.Consensus.ConsensusOptions, SmartContractConsensusOptions>();
-                    services.AddSingleton<IPowConsensusValidator, PowConsensusValidator>();
+                    services.AddSingleton<NBitcoin.Consensus.ConsensusOptions, PowConsensusOptions>();
                     services.AddSingleton<DBreezeCoinView>();
                     services.AddSingleton<CoinView, CachedCoinView>();
                     services.AddSingleton<LookaheadBlockPuller>().AddSingleton<ILookaheadBlockPuller, LookaheadBlockPuller>(provider => provider.GetService<LookaheadBlockPuller>()); ;
@@ -232,14 +227,9 @@ namespace Stratis.Bitcoin.Features.Consensus
                         fullNodeBuilder.Network.Consensus.Options = new PosConsensusOptions();
 
                         if (fullNodeBuilder.Network.IsTest())
-                        {
                             fullNodeBuilder.Network.Consensus.Option<PosConsensusOptions>().CoinbaseMaturity = 10;
-                            fullNodeBuilder.Network.Consensus.Option<PosConsensusOptions>().StakeMinConfirmations = 10;
-                        }
 
                         services.AddSingleton<ICheckpoints, Checkpoints>();
-                        services.AddSingleton<IPowConsensusValidator, PosConsensusValidator>();
-                        services.AddSingleton<IPosConsensusValidator, PosConsensusValidator>();
                         services.AddSingleton<DBreezeCoinView>();
                         services.AddSingleton<CoinView, CachedCoinView>();
                         services.AddSingleton<LookaheadBlockPuller>().AddSingleton<ILookaheadBlockPuller, LookaheadBlockPuller>(provider => provider.GetService<LookaheadBlockPuller>()); ;
@@ -275,7 +265,6 @@ namespace Stratis.Bitcoin.Features.Consensus
 
                     services.AddSingleton<ICheckpoints, Checkpoints>();
                     services.AddSingleton<NBitcoin.Consensus.ConsensusOptions, SmartContractConsensusOptions>();
-                    services.AddSingleton<IPowConsensusValidator, PowConsensusValidator>();
                     services.AddSingleton<DBreezeCoinView>();
                     services.AddSingleton<CoinView, CachedCoinView>();
                     services.AddSingleton<LookaheadBlockPuller>().AddSingleton<ILookaheadBlockPuller, LookaheadBlockPuller>(provider => provider.GetService<LookaheadBlockPuller>()); ;
@@ -324,7 +313,8 @@ namespace Stratis.Bitcoin.Features.Consensus
 
                     // rules that require the store to be loaded (coinview)
                     new LoadCoinviewRule(),
-                    new TransactionDuplicationActivationRule() // implements BIP30
+                    new TransactionDuplicationActivationRule(), // implements BIP30
+                    new PowCoinviewRule() // implements BIP68, MaxSigOps and BlockReward calculation
                 };
             }
         }
@@ -366,7 +356,8 @@ namespace Stratis.Bitcoin.Features.Consensus
 
                     // rules that require the store to be loaded (coinview)
                     new LoadCoinviewRule(),
-                    new TransactionDuplicationActivationRule() // implements BIP30
+                    new TransactionDuplicationActivationRule(), // implements BIP30
+                    new PosCoinviewRule() // implements BIP68, MaxSigOps and BlockReward calculation
                 };
             }
         }

@@ -22,4 +22,3 @@ public class TryCatch : SmartContract
         }
     }
 }
-

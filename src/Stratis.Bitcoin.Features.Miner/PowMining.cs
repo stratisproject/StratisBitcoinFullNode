@@ -34,7 +34,7 @@ namespace Stratis.Bitcoin.Features.Miner
         protected readonly IAsyncLoopFactory asyncLoopFactory;
 
         /// <summary>Builder that creates a proof-of-work block template.</summary>
-        private readonly IBlockBuilder blockBuilder;
+        private readonly IBlockProvider blockProvider;
 
         /// <summary>Thread safe chain of block headers from genesis.</summary>
         protected readonly ConcurrentChain chain;
@@ -91,7 +91,7 @@ namespace Stratis.Bitcoin.Features.Miner
 
         public PowMining(
             IAsyncLoopFactory asyncLoopFactory,
-            IBlockBuilder blockBuilder,
+            IBlockProvider blockProvider,
             IConsensusLoop consensusLoop,
             ConcurrentChain chain,
             IDateTimeProvider dateTimeProvider,
@@ -102,7 +102,7 @@ namespace Stratis.Bitcoin.Features.Miner
             ILoggerFactory loggerFactory)
         {
             this.asyncLoopFactory = asyncLoopFactory;
-            this.blockBuilder = blockBuilder;
+            this.blockProvider = blockProvider;
             this.chain = chain;
             this.consensusLoop = consensusLoop;
             this.dateTimeProvider = dateTimeProvider;
@@ -190,7 +190,7 @@ namespace Stratis.Bitcoin.Features.Miner
                     continue;
                 }
 
-                BlockTemplate blockTemplate = this.blockBuilder.Build(BlockBuilderMode.Mining, chainTip, reserveScript.ReserveFullNodeScript);
+                BlockTemplate blockTemplate = this.blockProvider.BuildPowBlock(chainTip, reserveScript.ReserveFullNodeScript);
 
                 if (this.network.Consensus.IsProofOfStake)
                 {
@@ -203,7 +203,7 @@ namespace Stratis.Bitcoin.Features.Miner
                 nExtraNonce = this.IncrementExtraNonce(blockTemplate.Block, chainTip, nExtraNonce);
                 Block block = blockTemplate.Block;
 
-                while ((maxTries > 0) && (block.Header.Nonce < InnerLoopCount) && !block.CheckProofOfWork(this.network.Consensus))
+                while ((maxTries > 0) && (block.Header.Nonce < InnerLoopCount) && !block.CheckProofOfWork())
                 {
                     this.miningCancellationTokenSource.Token.ThrowIfCancellationRequested();
 

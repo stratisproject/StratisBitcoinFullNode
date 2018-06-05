@@ -160,10 +160,5 @@ namespace Stratis.Bitcoin.Features.Consensus
 
             this.logger.LogTrace("(-)");
         }
-
-        public void Set(ChainedHeader chainedHeader, BlockStake blockStake)
-        {
-            this.SetAsync(chainedHeader, blockStake).GetAwaiter().GetResult();
-        }
     }
 }

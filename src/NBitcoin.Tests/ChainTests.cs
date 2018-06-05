@@ -207,7 +207,7 @@ namespace NBitcoin.Tests
         public void CanCalculateDifficulty()
         {
             var main = new ConcurrentChain(LoadMainChain());
-            var histories = File.ReadAllText("data/targethistory.csv").Split(new string[] { "\r\n" }, StringSplitOptions.RemoveEmptyEntries);
+            var histories = File.ReadAllText(TestDataLocations.GetFileFromDataFolder("targethistory.csv")).Split(new string[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries);
 
             foreach (var history in histories)
             {

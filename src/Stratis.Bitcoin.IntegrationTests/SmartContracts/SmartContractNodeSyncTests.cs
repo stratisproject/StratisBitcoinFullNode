@@ -2,7 +2,8 @@
 using System.Threading;
 using NBitcoin;
 using Stratis.Bitcoin.Connection;
-using Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers;
+using Stratis.Bitcoin.IntegrationTests.Common;
+using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
 using Xunit;
 
 namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
@@ -12,7 +13,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
         [Fact]
         public void NodesCanConnectToEachOthers()
         {
-            using (NodeBuilder builder = NodeBuilder.Create())
+            using (NodeBuilder builder = NodeBuilder.Create(this))
             {
                 var node1 = builder.CreateSmartContractNode();
                 var node2 = builder.CreateSmartContractNode();

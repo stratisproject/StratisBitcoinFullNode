@@ -12,7 +12,8 @@ using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Controllers;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Features.Wallet.Models;
-using Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers;
+using Stratis.Bitcoin.IntegrationTests.Common;
+using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
 using Stratis.SmartContracts;
 using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.Receipts;
@@ -35,7 +36,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
         [Fact]
         public void SendAndReceiveCorrectly()
         {
-            using (NodeBuilder builder = NodeBuilder.Create())
+            using (NodeBuilder builder = NodeBuilder.Create(this))
             {
                 CoreNode scSender = builder.CreateSmartContractNode();
                 CoreNode scReceiver = builder.CreateSmartContractNode();
@@ -102,7 +103,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
         [Fact]
         public void SendAndReceiveSmartContractTransactions()
         {
-            using (NodeBuilder builder = NodeBuilder.Create())
+            using (NodeBuilder builder = NodeBuilder.Create(this))
             {
                 CoreNode scSender = builder.CreateSmartContractNode();
                 CoreNode scReceiver = builder.CreateSmartContractNode();
@@ -231,7 +232,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
         [Fact]
         public void SendAndReceiveSmartContractTransactionsUsingController()
         {
-            using (NodeBuilder builder = NodeBuilder.Create())
+            using (NodeBuilder builder = NodeBuilder.Create(this))
             {
                 CoreNode scSender = builder.CreateSmartContractNode();
                 CoreNode scReceiver = builder.CreateSmartContractNode();
@@ -361,8 +362,8 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 Assert.Equal(2, walletHistoryModel.AccountsHistoryModel.First().TransactionsHistory.Where(x => x.Type == TransactionItemType.Send).Count());
 
                 // Check receipts
-                var receiptResponse = (JsonResult) senderSmartContractsController.GetReceipt(callResponse.TransactionId.ToString());
-                var receiptModel = (ReceiptModel) receiptResponse.Value;
+                var receiptResponse = (JsonResult)senderSmartContractsController.GetReceipt(callResponse.TransactionId.ToString());
+                var receiptModel = (ReceiptModel)receiptResponse.Value;
                 Assert.True(receiptModel.Successful);
             }
         }
@@ -378,7 +379,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
         [Fact]
         public void AuctionTest()
         {
-            using (NodeBuilder builder = NodeBuilder.Create())
+            using (NodeBuilder builder = NodeBuilder.Create(this))
             {
                 CoreNode scSender = builder.CreateSmartContractNode();
                 CoreNode scReceiver = builder.CreateSmartContractNode();

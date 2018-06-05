@@ -48,11 +48,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         public override BlockTemplate Build(ChainedHeader chainTip, Script scriptPubKeyIn)
         {
             GetSenderUtil.GetSenderResult getSenderResult = GetSenderUtil.GetAddressFromScript(this.Network, scriptPubKeyIn);
-
             if (!getSenderResult.Success)
-            {
                 throw new ConsensusErrorException(new ConsensusError("sc-block-assembler-createnewblock", getSenderResult.Error));
-            }
 
             this.coinbaseAddress = getSenderResult.Sender;
 
@@ -94,7 +91,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         /// the smart contract code from the TxOut's ScriptPubKey.
         /// </para>
         /// </summary>
-        protected override void AddToBlock(TxMempoolEntry mempoolEntry)
+        public override void AddToBlock(TxMempoolEntry mempoolEntry)
         {
             TxOut smartContractTxOut = mempoolEntry.TryGetSmartContractTxOut();
             if (smartContractTxOut == null)

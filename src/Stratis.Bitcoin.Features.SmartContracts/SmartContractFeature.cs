@@ -68,19 +68,20 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                     .DependOn<MiningFeature>()
                     .FeatureServices(services =>
                     {
+                        // STATE ----------------------------------------------------------------------------
                         services.AddSingleton<DBreezeContractStateStore>();
                         services.AddSingleton<ISmartContractReceiptStorage, DBreezeContractReceiptStorage>();
                         services.AddSingleton<NoDeleteContractStateSource>();
                         services.AddSingleton<ContractStateRepositoryRoot>();
-                        // Consensus and mining overrides
-                        services.AddSingleton<IPowConsensusValidator, SmartContractConsensusValidator>();
 
+                        // BLOCK BUILDING--------------------------------------------------------------------
                         services.AddSingleton<IPowMining, PowMining>();
-                        services.AddSingleton<IBlockBuilder, SmartContractBlockBuilder>();
+                        services.AddSingleton<IBlockProvider, SmartContractBlockProvider>();
                         services.AddSingleton<SmartContractBlockDefinition>();
+
+                        // CONSENSUS ------------------------------------------------------------------------
                         services.AddSingleton<IMempoolValidator, SmartContractMempoolValidator>();
-                        // Add rules
-                        services.AddConsensusRules(new SmartContractRuleRegistration());
+                        services.AddConsensusRules(new SmartContractRuleRegistration(fullNodeBuilder));
                     });
             });
             return new SmartContractVmBuilder(fullNodeBuilder);
@@ -102,22 +103,15 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         public static void AddConsensusRules(this IServiceCollection services, IAdditionalRuleRegistration rulesToAdd)
         {
             ServiceDescriptor existingService = services.FirstOrDefault(s => s.ServiceType == typeof(IRuleRegistration));
-
             if (existingService == null)
-            {
-                // This should never happen
                 throw new Exception("SmartContracts feature must be added after Consensus feature");
-            }
 
             Type concreteType = existingService.ImplementationType;
-
             if (concreteType != null)
             {
                 // Register concrete type if it does not already exist
                 if (services.FirstOrDefault(s => s.ServiceType == concreteType) == null)
-                {
                     services.Add(new ServiceDescriptor(concreteType, concreteType, ServiceLifetime.Singleton));
-                }
 
                 // Replace the existing rule registration with our own factory
                 var newService = new ServiceDescriptor(typeof(IRuleRegistration), serviceProvider =>
