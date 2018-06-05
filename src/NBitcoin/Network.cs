@@ -321,9 +321,9 @@ namespace NBitcoin
             genesis.Header.HashPrevBlock = uint256.Zero;
             genesis.UpdateMerkleRoot();
 
-            // Iterate over the nonce until the block header hash is under the target.
-            uint256 hashTarget = target.ToUInt256();
-            while (genesis.Header.GetHash() >= hashTarget)
+            // Iterate over the nonce until the proof-of-work is valid.
+            // This will mean the block header hash is under the target.
+            while (!genesis.CheckProofOfWork())
             {
                 genesis.Header.Nonce++;
                 if (genesis.Header.Nonce == 0)
