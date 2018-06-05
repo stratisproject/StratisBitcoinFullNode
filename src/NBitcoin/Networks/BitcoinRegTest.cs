@@ -57,7 +57,7 @@ namespace NBitcoin.Networks
             this.GenesisVersion = 1;
             this.GenesisReward = Money.Coins(50m);
 
-            this.Genesis = CreateGenesisBlock(this.Consensus.ConsensusFactory, this.GenesisTime, this.GenesisNonce, this.GenesisBits, this.GenesisVersion, this.GenesisReward);
+            this.Genesis = CreateBitcoinGenesisBlock(this.Consensus.ConsensusFactory, this.GenesisTime, this.GenesisNonce, this.GenesisBits, this.GenesisVersion, this.GenesisReward);
             this.Consensus.HashGenesisBlock = this.Genesis.GetHash();
             Assert(this.Consensus.HashGenesisBlock == uint256.Parse("0x0f9188f13cb7b2c71f2a335e3a4fc328bf5beb436012afca590b1a11466e2206"));
         }
