@@ -31,9 +31,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         private const string WalletAccountName = "account 0";
         private const string NodeOne = "one";
         private const string NodeTwo = "two";
-        private const int UnderPolicyByteLimitUnspentTransactionOutputs = 2700;
-        private const int OverPolicyByteLimitUnspentTransactionOutputs = 2900;
-
+        
         public SendingTransactionOverPolicyByteLimit(ITestOutputHelper outputHelper) : base(outputHelper) { }
 
         protected override void BeforeTest()
@@ -58,14 +56,25 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                 .Build();
         }
 
-        private void node1_builds_undersize_tx_to_send_to_node2()
+        private void node1_builds_undersize_transaction_to_send_to_node2()
         {
-            Node1BuildsTransactionToSendToNode2(UnderPolicyByteLimitUnspentTransactionOutputs);
+            Node1BuildsTransactionToSendToNode2(2700);
+        }
+
+        private void serialized_size_of_transaction_is_within_1KB_of_upper_limit()
+        {
+            this.transaction.GetSerializedSize().Should().BeInRange(99000, 100000);
         }
 
         private void node1_builds_oversize_tx_to_send_to_node2()
         {
-            Node1BuildsTransactionToSendToNode2(OverPolicyByteLimitUnspentTransactionOutputs);
+            Node1BuildsTransactionToSendToNode2(2900);
+            
+        }
+
+        private void sending_the_transaction()
+        {
+            this.nodes[NodeOne].FullNode.NodeService<WalletController>().SendTransaction(new SendTransactionRequest(this.transaction.ToHex()));
         }
 
         private void Node1BuildsTransactionToSendToNode2(int txoutputs)
@@ -88,7 +97,6 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             {
                 this.transaction = this.nodes[NodeOne].FullNode.WalletTransactionHandler().BuildTransaction(this.transactionBuildContext);
                 this.transactionFee = this.nodes[NodeOne].GetFee(this.transactionBuildContext);
-                this.nodes[NodeOne].FullNode.NodeService<WalletController>().SendTransaction(new SendTransactionRequest(this.transaction.ToHex()));
             }
             catch (Exception e)
             {
@@ -96,12 +104,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             }
         }
 
-        private void transaction_is_just_under_100KB_limit()
-        {
-            this.transaction.GetSerializedSize().Should().BeInRange(99000, 100000);
-        }
-
-        private void node1_fails_with_oversize_tx_wallet_error()
+        private void node1_fails_with_oversize_transaction_wallet_error()
         {
             this.caughtException.Should().BeOfType<WalletException>().Which.Message.Should().Contain("Transaction's size is too high");
         }

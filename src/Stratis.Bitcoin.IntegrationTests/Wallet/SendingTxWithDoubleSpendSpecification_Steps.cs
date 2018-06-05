@@ -12,16 +12,16 @@ using Xunit.Abstractions;
 
 namespace Stratis.Bitcoin.IntegrationTests.Wallet
 {
-    public partial class SendingTxWithDoubleSpend : BddSpecification
+    public partial class SendingTransactionWithDoubleSpend : BddSpecification
     {
         private NodeBuilder builder;
         private CoreNode stratisSender;
         private CoreNode stratisReceiver;
         private Transaction transaction;
         private ErrorResult errorResult;
-        private HdAddress sendto;
+        private HdAddress receivingAddress;
 
-        public SendingTxWithDoubleSpend(ITestOutputHelper outputHelper) : base(outputHelper) { }
+        public SendingTransactionWithDoubleSpend(ITestOutputHelper outputHelper) : base(outputHelper) { }
 
         protected override void BeforeTest()
         {
@@ -53,7 +53,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             this.stratisSender.SetDummyMinerSecret(new BitcoinSecret(key, this.stratisSender.FullNode.Network));
             var maturity = (int)this.stratisSender.FullNode.Network.Consensus.Option<PowConsensusOptions>().CoinbaseMaturity;
 
-            this.stratisSender.GenerateStratis(maturity + 5);
+            this.stratisSender.GenerateStratisWithMiner(maturity + 5);
 
             TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(this.stratisSender));
 
@@ -67,10 +67,10 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
 
         private void coins_first_sent_to_receiving_wallet()
         {
-            this.sendto = this.stratisReceiver.FullNode.WalletManager().GetUnusedAddress(new WalletAccountReference("mywallet", "account 0"));
+            this.receivingAddress = this.stratisReceiver.FullNode.WalletManager().GetUnusedAddress(new WalletAccountReference("mywallet", "account 0"));
 
             this.transaction = this.stratisSender.FullNode.WalletTransactionHandler().BuildTransaction(WalletTests.CreateContext(
-                new WalletAccountReference("mywallet", "account 0"), "123456", this.sendto.ScriptPubKey, Money.COIN * 100, FeeType.Medium, 101));
+                new WalletAccountReference("mywallet", "account 0"), "123456", this.receivingAddress.ScriptPubKey, Money.COIN * 100, FeeType.Medium, 101));
 
             this.stratisSender.FullNode.NodeService<WalletController>().SendTransaction(new SendTransactionRequest(this.transaction.ToHex()));
 
@@ -82,20 +82,19 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             this.stratisReceiver.FullNode.WalletManager().GetSpendableTransactionsInWallet("mywallet").First().Transaction.BlockHeight.Should().BeNull();
         }
 
-        private void attempt_made_to_spend_same_coins()
+        private void two_transactions_attempt_to_spend_same_unspent_outputs()
         {
             //create double spend transaction
-            var sendtoDoubleSpend = this.stratisReceiver.FullNode.WalletManager().GetUnusedAddress(new WalletAccountReference("mywallet", "account 0"));
-            sendtoDoubleSpend.Should().NotBeSameAs(this.sendto);
+            var unusedAddress = this.stratisReceiver.FullNode.WalletManager().GetUnusedAddress(new WalletAccountReference("mywallet", "account 0"));
 
-            var trxCloned = this.transaction.Clone();
-            trxCloned.Outputs[1].ScriptPubKey = sendtoDoubleSpend.ScriptPubKey;
+            var transactionCloned = this.transaction.Clone();
+            transactionCloned.Outputs[1].ScriptPubKey = unusedAddress.ScriptPubKey;
 
             // broadcast to the other node
-            this.errorResult = (ErrorResult)this.stratisSender.FullNode.NodeService<WalletController>().SendTransaction(new SendTransactionRequest(trxCloned.ToHex()));
+            this.errorResult = (ErrorResult)this.stratisSender.FullNode.NodeService<WalletController>().SendTransaction(new SendTransactionRequest(transactionCloned.ToHex()));
         }
 
-        private void mempool_rejects_doublespent_transaction()
+        private void mempool_rejects_doublespending_transaction()
         {
             ErrorResponse e = (ErrorResponse)this.errorResult.Value;
             e.Errors[0].Message.Should().BeEquivalentTo("txn-mempool-conflict");  

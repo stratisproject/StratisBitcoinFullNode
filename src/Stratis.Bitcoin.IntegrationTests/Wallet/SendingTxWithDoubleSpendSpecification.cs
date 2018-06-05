@@ -2,15 +2,15 @@
 
 namespace Stratis.Bitcoin.IntegrationTests.Wallet
 {
-    public partial class SendingTxWithDoubleSpend
+    public partial class SendingTransactionWithDoubleSpend
     {
         [Fact]
-        public void sending_tx_with_double_spend()
+        public void sending_transaction_with_double_spend()
         {
             Given(wallets_with_coins);
-            When(coins_first_sent_to_receiving_wallet);
-            Then(attempt_made_to_spend_same_coins);
-            Then(mempool_rejects_doublespent_transaction);
+            And(coins_first_sent_to_receiving_wallet);
+            When(two_transactions_attempt_to_spend_same_unspent_outputs);
+            Then(mempool_rejects_doublespending_transaction);
         }
     }
 }
