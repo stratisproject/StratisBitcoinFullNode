@@ -444,7 +444,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// </summary>
         /// <remarks>
         /// For blockchains with max reorg property flush is required when consensus tip is less than max reorg blocks behind the chain tip.
-        /// Otherwise flush is required if consensus tip timestamp is less than two weeks behind the adjusted time.
+        /// If there is no max reorg property - flush is required when consensus tip timestamp is less than two weeks behind the adjusted time.
         /// </remarks>
         private bool FlushRequired()
         {
