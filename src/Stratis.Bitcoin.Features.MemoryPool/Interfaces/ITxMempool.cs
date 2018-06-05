@@ -120,30 +120,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Interfaces
         /// <param name="nBlocks">The confirmation target blocks.</param>
         /// <returns>The fee rate estimate.</returns>
         FeeRate EstimateFee(int nBlocks);
-
-        /// <summary>
-        /// Estimates the priority using <see cref="MinerPolicyEstimator"/>.
-        /// </summary>
-        /// <param name="nBlocks">The confirmation target blocks.</param>
-        /// <returns>The estimated priority.</returns>
-        double EstimatePriority(int nBlocks);
-
-        /// <summary>
-        /// Estimates the smart fee using <see cref="MinerPolicyEstimator"/>.
-        /// </summary>
-        /// <param name="nBlocks">The confirmation target blocks.</param>
-        /// <param name="answerFoundAtBlocks">The block where the fee was found.</param>
-        /// <returns>The fee rate estimate.</returns>
-        FeeRate EstimateSmartFee(int nBlocks, out int answerFoundAtBlocks);
-
-        /// <summary>
-        /// Estimates the smart priority using <see cref="MinerPolicyEstimator"/>.
-        /// </summary>
-        /// <param name="nBlocks">The confirmation target blocks.</param>
-        /// <param name="answerFoundAtBlocks">The block where the priority was found.</param>
-        /// <returns>The estimated priority.</returns>
-        double EstimateSmartPriority(int nBlocks, out int answerFoundAtBlocks);
-
+        
         /// <summary>
         /// Whether the transaction hash exists in the memory pool.
         /// </summary>

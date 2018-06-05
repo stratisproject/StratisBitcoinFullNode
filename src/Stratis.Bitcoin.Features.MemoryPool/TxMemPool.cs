@@ -280,24 +280,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         {
             return this.MinerPolicyEstimator.EstimateFee(nBlocks);
         }
-
-        /// <inheritdoc />
-        public FeeRate EstimateSmartFee(int nBlocks, out int answerFoundAtBlocks)
-        {
-            return this.MinerPolicyEstimator.EstimateSmartFee(nBlocks, this, out answerFoundAtBlocks);
-        }
-
-        /// <inheritdoc />
-        public double EstimatePriority(int nBlocks)
-        {
-            return this.MinerPolicyEstimator.EstimatePriority(nBlocks);
-        }
-
-        /// <inheritdoc />
-        public double EstimateSmartPriority(int nBlocks, out int answerFoundAtBlocks)
-        {
-            return this.MinerPolicyEstimator.EstimateSmartPriority(nBlocks, this, out answerFoundAtBlocks);
-        }
+        
 
         /// <inheritdoc />
         public void SetSanityCheck(double dFrequency = 1.0)
@@ -683,7 +666,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             this.mapLinks.Remove(it);
             this.MapTx.Remove(it);
             this.nTransactionsUpdated++;
-            this.MinerPolicyEstimator.RemoveTx(hash);
+            this.MinerPolicyEstimator.RemoveTx(hash, false);
         }
 
         /// <inheritdoc />

@@ -41,7 +41,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
                 };
                 NodeSettings nodeSettings = NodeSettings.Default();
 
-                BlockPolicyEstimator blockPolicyEstimator = new BlockPolicyEstimator(settings, loggerFactory, nodeSettings);
+                BlockPolicyEstimator blockPolicyEstimator = new BlockPolicyEstimator(loggerFactory, nodeSettings);
                 TxMempool mempool = new TxMempool(dateTime, blockPolicyEstimator, loggerFactory, nodeSettings);
 
                 Mock<TxMempool> mockTxMempool = new Mock<TxMempool>();

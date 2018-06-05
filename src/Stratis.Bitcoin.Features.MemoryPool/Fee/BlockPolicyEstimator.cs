@@ -5,6 +5,7 @@ using System.Linq;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Configuration;
+using Stratis.Bitcoin.Features.MemoryPool.Fee.SerializationEntity;
 using Stratis.Bitcoin.Features.MemoryPool.Interfaces;
 using Stratis.Bitcoin.Utilities;
 
@@ -117,6 +118,8 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Fee
 
         private const double InfFeeRate = 1e99;
 
+        private const string FileName = "fee.json";
+
         /// <summary>Best seen block height.</summary>
         private int nBestSeenHeight;
 
@@ -134,10 +137,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Fee
 
         /// <summary>Map of txids to information about that transaction.</summary>
         private readonly Dictionary<uint256, TxStatsInfo> mapMemPoolTxs;
-
-        /// <summary>Setting for the node.</summary>
-        private readonly MempoolSettings mempoolSettings;
-
+        
         /// <summary>Count of tracked transactions.</summary>
         private int trackedTxs;
 
@@ -157,13 +157,15 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Fee
 
         private object lockObject;
 
+        private FileStorage<BlockPolicyData> fileStorage;
+
         /// <summary>
         /// Constructs an instance of the block policy estimator object.
         /// </summary>
         /// <param name="mempoolSettings">Mempool settings.</param>
         /// <param name="loggerFactory">Factory for creating loggers.</param>
         /// <param name="nodeSettings">Full node settings.</param>
-        public BlockPolicyEstimator(ILoggerFactory loggerFactory)
+        public BlockPolicyEstimator(ILoggerFactory loggerFactory, NodeSettings nodeSettings)
         {
             Guard.Assert(MinBucketFeeRate > 0);
             this.lockObject = new object();
@@ -193,6 +195,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Fee
             this.shortStats.Initialize(this.buckets, this.bucketMap, ShortBlockPeriods, ShortDecay, ShortScale);
             this.longStats = new TxConfirmStats(this.logger);
             this.longStats.Initialize(this.buckets, this.bucketMap, LongBlockPeriods, LongDecay, LongScale);
+            this.fileStorage = new FileStorage<BlockPolicyData>(nodeSettings.DataFolder.WalletPath);
         }
 
         /// <summary>
@@ -675,9 +678,11 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Fee
         /// Write estimation data to a file.
         /// </summary>
         /// <param name="fileout">Stream to write to.</param>
-        /// <remarks>TODO: Implement write estimation</remarks>
         public void Write(Stream fileout)
         {
+            var data = new BlockPolicyData();
+            data.BestSeenHeight = this.nBestSeenHeight;
+            this.fileStorage.SaveToFile(data, FileName);
         }
 
         /// <summary>
@@ -685,9 +690,16 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Fee
         /// </summary>
         /// <param name="filein">Stream to read data from.</param>
         /// <param name="nFileVersion">Version number of the file.</param>
-        /// <remarks>TODO: Implement read estimation</remarks>
-        public void Read(Stream filein, int nFileVersion)
+        public void Read()
         {
+            lock(this.lockObject)
+            {
+                var data = this.fileStorage.LoadByFileName(FileName);
+                if (data != null)
+                {
+                    this.nBestSeenHeight = data.BestSeenHeight;
+                }
+            }
         }
 
         public void FlushUncomfirmed()

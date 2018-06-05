@@ -91,7 +91,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             ConsensusLoop consensusLoop = new ConsensusLoop(new AsyncLoopFactory(loggerFactory), new NodeLifetime(), chain, cachedCoinView, blockPuller, deployments, loggerFactory, new ChainState(new InvalidBlockHashStore(dateTimeProvider)), connectionManager, dateTimeProvider, new Signals.Signals(), consensusSettings, nodeSettings, peerBanning, consensusRules);
             await consensusLoop.StartAsync();
 
-            BlockPolicyEstimator blockPolicyEstimator = new BlockPolicyEstimator(new MempoolSettings(nodeSettings), loggerFactory, nodeSettings);
+            BlockPolicyEstimator blockPolicyEstimator = new BlockPolicyEstimator(loggerFactory, nodeSettings);
             TxMempool mempool = new TxMempool(dateTimeProvider, blockPolicyEstimator, loggerFactory, nodeSettings);
             MempoolSchedulerLock mempoolLock = new MempoolSchedulerLock();
 

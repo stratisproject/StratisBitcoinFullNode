@@ -128,7 +128,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
         /// </summary>
         private static async Task<List<Block>> MineBlocksAsync(TestChainContext testChainContext, int count, Script receiver, bool mutateLastBlock)
         {
-            var blockPolicyEstimator = new BlockPolicyEstimator(new MempoolSettings(testChainContext.NodeSettings), testChainContext.LoggerFactory, testChainContext.NodeSettings);
+            var blockPolicyEstimator = new BlockPolicyEstimator(testChainContext.LoggerFactory, testChainContext.NodeSettings);
             var mempool = new TxMempool(testChainContext.DateTimeProvider, blockPolicyEstimator, testChainContext.LoggerFactory, testChainContext.NodeSettings);
             var mempoolLock = new MempoolSchedulerLock();
 

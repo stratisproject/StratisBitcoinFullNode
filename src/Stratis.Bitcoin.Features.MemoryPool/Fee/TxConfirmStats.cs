@@ -306,7 +306,9 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Fee
                 totalNum += this.txCtAvg[bucket];
                 failNum += this.failAvg[periodTarget - 1][bucket];
                 for (int confct = confTarget; confct < this.GetMaxConfirms(); confct++)
-                    extraNum += this.unconfTxs[(nBlockHeight - confct) % bins][bucket];
+                {
+                    extraNum += this.unconfTxs[Math.Abs(nBlockHeight - confct) % bins][bucket];
+                }
                 extraNum += this.oldUnconfTxs[bucket];
                 // If we have enough transaction data points in this range of buckets,
                 // we can test for success

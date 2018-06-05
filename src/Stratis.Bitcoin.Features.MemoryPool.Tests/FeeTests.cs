@@ -17,7 +17,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             var dateTimeSet = new DateTimeProviderSet();
             var settings = NodeSettings.Default();
             TxMempool mpool = new TxMempool(DateTimeProvider.Default,
-                new BlockPolicyEstimator(new MempoolSettings(settings), settings.LoggerFactory, settings), settings.LoggerFactory, settings);
+                new BlockPolicyEstimator(settings.LoggerFactory, settings), settings.LoggerFactory, settings);
             TestMemPoolEntryHelper entry = new TestMemPoolEntryHelper();
             Money basefee = new Money(2000);
             Money deltaFee = new Money(100);
@@ -50,8 +50,8 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             int answerFound;
 
             // Loop through 200 blocks
-            // At a decay .998 and 4 fee transactions per block
-            // This makes the tx count about 1.33 per bucket, above the 1 threshold
+            // At a decay .9952 and 4 fee transactions per block
+            // This makes the tx count about 2.5 per bucket, well above the 0.1 threshold
             while (blocknum < 200)
             {
                 for (int j = 0; j < 10; j++)
@@ -81,21 +81,15 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
                 }
                 mpool.RemoveForBlock(block, ++blocknum);
                 block.Clear();
-                if (blocknum == 30)
+                // Check after just a few txs that combining buckets works as expected
+                if (blocknum == 3)
                 {
-                    // At this point we should need to combine 5 buckets to get enough data points
-                    // So estimateFee(1,2,3) should fail and estimateFee(4) should return somewhere around
-                    // 8*baserate.  estimateFee(4) %'s are 100,100,100,100,90 = average 98%
+                    // At this point we should need to combine 3 buckets to get enough data points
+                    // So estimateFee(1) should fail and estimateFee(2) should return somewhere around
+                    // 9*baserate.  estimateFee(2) %'s are 100,100,90 = average 97%
                     Assert.True(mpool.EstimateFee(1) == new FeeRate(0));
-                    Assert.True(mpool.EstimateFee(2) == new FeeRate(0));
-                    Assert.True(mpool.EstimateFee(3) == new FeeRate(0));
-                    Assert.True(mpool.EstimateFee(4).FeePerK < 8 * baseRate.FeePerK + deltaFee);
-                    Assert.True(mpool.EstimateFee(4).FeePerK > 8 * baseRate.FeePerK - deltaFee);
-
-                    Assert.True(mpool.EstimateSmartFee(1, out answerFound) == mpool.EstimateFee(4) && answerFound == 4);
-                    Assert.True(mpool.EstimateSmartFee(3, out answerFound) == mpool.EstimateFee(4) && answerFound == 4);
-                    Assert.True(mpool.EstimateSmartFee(4, out answerFound) == mpool.EstimateFee(4) && answerFound == 4);
-                    Assert.True(mpool.EstimateSmartFee(8, out answerFound) == mpool.EstimateFee(8) && answerFound == 8);
+                    Assert.True(mpool.EstimateFee(2).FeePerK < 9 * baseRate.FeePerK + deltaFee);
+                    Assert.True(mpool.EstimateFee(2).FeePerK > 9 * baseRate.FeePerK - deltaFee);
                 }
             }
 
@@ -114,15 +108,16 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
                     Assert.True(origFeeEst[i - 1] <= origFeeEst[i - 2]);
                 }
                 int mult = 11 - i;
-                if (i > 1)
+                if (i % 2 == 0) //At scale 2, test logic is only correct for even targets
                 {
                     Assert.True(origFeeEst[i - 1] < mult * baseRate.FeePerK + deltaFee);
                     Assert.True(origFeeEst[i - 1] > mult * baseRate.FeePerK - deltaFee);
                 }
-                else
-                {
-                    Assert.True(origFeeEst[i - 1] == new FeeRate(0).FeePerK);
-                }
+            }
+            // Fill out rest of the original estimates
+            for (int i = 10; i <= 48; i++)
+            {
+                origFeeEst.Add(mpool.EstimateFee(i).FeePerK);
             }
 
             // Mine 50 more blocks with no transactions happening, estimates shouldn't change
@@ -131,7 +126,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
                 mpool.RemoveForBlock(block, ++blocknum);
 
             Assert.True(mpool.EstimateFee(1) == new FeeRate(0));
-            for (int i = 2; i < 10; i++)
+            for (int i = 2; i < 9; i++)
             {
                 Assert.True(mpool.EstimateFee(i).FeePerK < origFeeEst[i - 1] + deltaFee);
                 Assert.True(mpool.EstimateFee(i).FeePerK > origFeeEst[i - 1] - deltaFee);
@@ -155,10 +150,9 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
                 mpool.RemoveForBlock(block, ++blocknum);
             }
 
-            for (int i = 1; i < 10; i++)
+            for (int i = 1; i < 9; i++)
             {
                 Assert.True(mpool.EstimateFee(i) == new FeeRate(0) || mpool.EstimateFee(i).FeePerK > origFeeEst[i - 1] - deltaFee);
-                Assert.True(mpool.EstimateSmartFee(i, out answerFound).FeePerK > origFeeEst[answerFound - 1] - deltaFee);
             }
 
             // Mine all those transactions
@@ -176,14 +170,15 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             mpool.RemoveForBlock(block, 265);
             block.Clear();
             Assert.True(mpool.EstimateFee(1) == new FeeRate(0));
-            for (int i = 2; i < 10; i++)
+            for (int i = 2; i < 9; i++)
             {
-                Assert.True(mpool.EstimateFee(i).FeePerK > origFeeEst[i - 1] - deltaFee);
+                Assert.True(mpool.EstimateFee(i) == new FeeRate(0) || 
+                    mpool.EstimateFee(i).FeePerK > origFeeEst[i - 1] - deltaFee);
             }
 
-            // Mine 200 more blocks where everything is mined every block
+            // Mine 600 more blocks where everything is mined every block
             // Estimates should be below original estimates
-            while (blocknum < 465)
+            while (blocknum < 865)
             {
                 for (int j = 0; j < 10; j++)
                 { // For each fee multiple
@@ -202,23 +197,10 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
                 block.Clear();
             }
             Assert.True(mpool.EstimateFee(1) == new FeeRate(0));
-            for (int i = 2; i < 10; i++)
+            for (int i = 2; i < 9; i++)
             {
                 Assert.True(mpool.EstimateFee(i).FeePerK < origFeeEst[i - 1] - deltaFee);
-            }
-
-            // Test that if the mempool is limited, estimateSmartFee won't return a value below the mempool min fee
-            // and that estimateSmartPriority returns essentially an infinite value
-            mpool.AddUnchecked(txf.GetHash(), entry.Fee(feeV[5]).Time(dateTimeSet.GetTime()).Priority(0).Height(blocknum).FromTx(txf, mpool));
-            // evict that transaction which should set a mempool min fee of minRelayTxFee + feeV[5]
-            mpool.TrimToSize(1);
-            Assert.True(mpool.GetMinFee(1).FeePerK > feeV[5]);
-            for (int i = 1; i < 10; i++)
-            {
-                Assert.True(mpool.EstimateSmartFee(i, out answerFound).FeePerK >= mpool.EstimateFee(i).FeePerK);
-                Assert.True(mpool.EstimateSmartFee(i, out answerFound).FeePerK >= mpool.GetMinFee(1).FeePerK);
-                Assert.True(mpool.EstimateSmartPriority(i, out answerFound) == BlockPolicyEstimator.InfPriority);
-            }
+            }            
         }
 
         public class DateTimeProviderSet : DateTimeProvider
