@@ -244,6 +244,9 @@ namespace NBitcoin
         /// </param>
         /// <param name="target">
         /// The difficulty target under which the hash of the block need to be. 
+        /// Some more details: As an example, the target for the Stratis Main network is 00000fffffffffffffffffffffffffffffffffffffffffffffffffffffffffff.
+        /// To make it harder to mine the genesis block, have more zeros at the beginning (keeping the length the same). This will make the target smaller, so finding a number under it will be more difficult.
+        /// To make it easier to mine the genesis block ,do the opposite. Example of an easy one: 00ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff.
         /// Make the Test and Reg targets ones easier to find than the Main one so that you don't wait too long to mine the genesis block.
         /// </param>
         /// <param name="genesisReward">
