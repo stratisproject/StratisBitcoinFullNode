@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using NBitcoin;
+using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.MemoryPool.Fee;
 using Stratis.Bitcoin.Utilities;
@@ -16,8 +17,9 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
         {
             var dateTimeSet = new DateTimeProviderSet();
             var settings = NodeSettings.Default();
+            var baseSettings = new BaseSettings(settings);
             TxMempool mpool = new TxMempool(DateTimeProvider.Default,
-                new BlockPolicyEstimator(new MempoolSettings(settings), settings.LoggerFactory, settings), settings.LoggerFactory, settings);
+                new BlockPolicyEstimator(new MempoolSettings(settings), settings.LoggerFactory, baseSettings), settings.LoggerFactory, baseSettings);
             TestMemPoolEntryHelper entry = new TestMemPoolEntryHelper();
             Money basefee = new Money(2000);
             Money deltaFee = new Money(100);
