@@ -14,7 +14,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.7.0" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.7.2" />
     <PackageReference Include="NStratis" Version="1.0.908" />
     <PackageReference Include="Stratis.Bitcoin" Version="1.0.908" />
     <PackageReference Include="Stratis.Bitcoin.Api" Version="1.0.908" />
@@ -25,11 +25,11 @@
     <PackageReference Include="Stratis.Bitcoin.Features.Notifications" Version="1.0.908" />
     <PackageReference Include="Stratis.Bitcoin.Features.RPC" Version="1.0.908" />
     <PackageReference Include="Stratis.Bitcoin.Features.Wallet" Version="1.0.908" />
-    <PackageReference Include="Stratis.Sidechains.Features.BlockchainGeneration" Version="1.0.572" />
-    <PackageReference Include="Stratis.Sidechains.Features.BlockchainGeneration.Tests.Common" Version="1.0.453" />
-    <PackageReference Include="xunit" Version="2.2.0" />
-    <PackageReference Include="xunit.runner.console" Version="2.2.0" />
-    <PackageReference Include="xunit.runner.visualstudio" Version="2.2.0" />
+    <PackageReference Include="Stratis.Sidechains.Features.BlockchainGeneration" Version="1.0.1057" />
+    <PackageReference Include="Stratis.Sidechains.Features.BlockchainGeneration.Tests.Common" Version="1.0.1057" />
+    <PackageReference Include="xunit" Version="2.3.1" />
+    <PackageReference Include="xunit.runner.console" Version="2.3.1" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.3.1" />
   </ItemGroup>
 
   <ItemGroup>
