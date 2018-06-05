@@ -100,7 +100,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
 
                     var wallet = this.generalPurposeWalletManager.GetWallet(this.federationGatewaySettings.MultiSigWalletName);
                     var account = wallet.GetAccountsByCoinType((GpCoinType) this.network.Consensus.CoinType).First();
-                    var signedTransaction = account.SignPartialTransaction(template);
+                    var signedTransaction = this.generalPurposeWalletManager.SignPartialTransaction(template, account.MultiSigAddresses);
                     payload.AddPartial(signedTransaction, BossTable.MakeBossTableEntry(payload.SessionId, this.federationGatewaySettings.PublicKey));
 
                     this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} OnMessageReceivedAsync: PartialTransaction signed.");

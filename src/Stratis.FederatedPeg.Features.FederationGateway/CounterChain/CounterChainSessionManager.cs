@@ -32,7 +32,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.CounterChain
         private FederationGatewaySettings federationGatewaySettings;
 
         // Broadcaster we use to pass our payload to peers.
-        private IBroadcasterManager broadcastManager;
+        private IGeneralPurposeWalletBroadcasterManager broadcastManager;
 
         // The IBD status.
         private IInitialBlockDownloadState initialBlockDownloadState;
@@ -53,7 +53,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.CounterChain
         public CounterChainSessionManager(ILoggerFactory loggerFactory, IGeneralPurposeWalletManager generalPurposeWalletManager,
             IGeneralPurposeWalletTransactionHandler generalPurposeWalletTransactionHandler, IConnectionManager connectionManager, Network network,
             FederationGatewaySettings federationGatewaySettings, IInitialBlockDownloadState initialBlockDownloadState, IFullNode fullnode,
-            IBroadcasterManager broadcastManager, ConcurrentChain concurrentChain, ICrossChainTransactionAuditor crossChainTransactionAuditor = null)
+            IGeneralPurposeWalletBroadcasterManager broadcastManager, ConcurrentChain concurrentChain, ICrossChainTransactionAuditor crossChainTransactionAuditor = null)
         {
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.network = network;
@@ -142,7 +142,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.CounterChain
 
             var partials = from t in counterChainSession.PartialTransactions where t != null select t;
 
-            var combinedTransaction = account.CombinePartialTransactions(partials.ToArray());
+            var combinedTransaction = this.generalPurposeWalletManager.CombinePartialTransactions(partials.ToArray(), account.MultiSigAddresses);
             this.broadcastManager.BroadcastTransactionAsync(combinedTransaction).GetAwaiter().GetResult();
             this.logger.LogInformation("(-)");
         }
@@ -194,7 +194,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.CounterChain
 
             if (counterChainSession == null) return uint256.One;
             this.MarkSessionAsSigned(counterChainSession);
-            var partialTransaction = account.SignPartialTransaction(templateTransaction);
+            var partialTransaction = this.generalPurposeWalletManager.SignPartialTransaction(templateTransaction, account.MultiSigAddresses);
 
             uint256 bossCard = BossTable.MakeBossTableEntry(sessionId, this.federationGatewaySettings.PublicKey);
             this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} ProcessCounterChainSession: My bossCard: {bossCard}.");

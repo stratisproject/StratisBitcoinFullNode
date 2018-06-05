@@ -9,6 +9,21 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
     /// </summary>
     public sealed class FederationGatewaySettings
     {
+        public FederationGatewaySettings(NodeSettings nodeSettings)
+        {
+            Guard.NotNull(nodeSettings, nameof(nodeSettings));
+
+            TextFileConfiguration config = nodeSettings.ConfigReader;
+            this.MemberName = config.GetOrDefault("membername", "unspecified");
+            this.MultiSigM = config.GetOrDefault("multisigM", 0);
+            this.MultiSigN = config.GetOrDefault("multisigN", 0);
+            this.MultiSigWalletName = config.GetOrDefault("multisigwalletname", "multisig_wallet");
+            this.PublicKey = config.GetOrDefault<string>("publickey", null);
+            this.FederationFolder = config.GetOrDefault<string>("federationfolder", null);
+            this.MemberPrivateFolder = config.GetOrDefault<string>("memberprivatefolder", null);
+            this.CounterChainApiPort = config.GetOrDefault("counterchainapiport", 0);
+        }
+
         /// <summary>
         /// The MemberName is used to distiguish between federation gateways in the debug logs.
         /// </summary>
@@ -49,39 +64,5 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
         /// The name of the multisig wallet used for the multisig transactions.
         /// </summary>
         public string MultiSigWalletName { get; set; }
-
-        /// <summary>
-        /// A callback allow changing the settings after they have been read from the nodeSettings.
-        /// </summary>
-        private readonly Action<FederationGatewaySettings> callback;
-
-        /// <summary>
-        /// Initialize the settings with an optional callback which can be used to change the settings after they have been read from the config.
-        /// </summary>
-        /// <param name="callback">This optional callback is called after the settings are read from the config allowing the settings to be changed in code.</param>
-        public FederationGatewaySettings(Action<FederationGatewaySettings> callback = null)
-        {
-            this.callback = callback;
-        }
-
-        /// <summary>
-        /// Loads our feature specific settings from the nodeSettings' ConfigReader. 
-        /// </summary>
-        /// <param name="nodeSettings"></param>
-        public void Load(NodeSettings nodeSettings)
-        {
-            Guard.NotNull(nodeSettings, nameof(nodeSettings));
-
-            TextFileConfiguration config = nodeSettings.ConfigReader;
-            this.MemberName = config.GetOrDefault("membername", "unspecified");
-            this.MultiSigM = config.GetOrDefault("multisigM", 0);
-            this.MultiSigN = config.GetOrDefault("multisigN", 0);
-            this.MultiSigWalletName = config.GetOrDefault("multisigwalletname", "multisig_wallet");
-            this.PublicKey = config.GetOrDefault<string>("publickey", null);
-            this.FederationFolder = config.GetOrDefault<string>("federationfolder", null);
-            this.MemberPrivateFolder = config.GetOrDefault<string>("memberprivatefolder", null);
-            this.CounterChainApiPort = config.GetOrDefault("counterchainapiport", 0);
-            this.callback?.Invoke(this);
-        }
     }
 }
