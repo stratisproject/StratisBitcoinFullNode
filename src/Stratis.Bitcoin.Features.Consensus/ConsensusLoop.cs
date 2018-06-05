@@ -451,8 +451,8 @@ namespace Stratis.Bitcoin.Features.Consensus
             if (this.chainState.MaxReorgLength != 0)
                 return this.Chain.Height - this.Tip.Height < this.chainState.MaxReorgLength;
 
-            int twoWeeksSeconds = 2 * 24 * 60 * 60;
-            return this.Tip.Header.Time > this.dateTimeProvider.GetAdjustedTimeAsUnixTimestamp() - twoWeeksSeconds;
+            int twoWeeksAsSeconds = 2 * 24 * 60 * 60;
+            return this.Tip.Header.Time > this.dateTimeProvider.GetAdjustedTimeAsUnixTimestamp() - twoWeeksAsSeconds;
         }
 
         /// <inheritdoc/>
