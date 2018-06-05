@@ -581,6 +581,19 @@ namespace NBitcoin
             }
         }
 
+        public bool IsSmartContractCall
+        {
+            get
+            {
+                Op firstOp = ToOps().FirstOrDefault();
+
+                if (firstOp == null)
+                    return false;
+
+                return firstOp.Code == OpcodeType.OP_CALLCONTRACT;
+            }
+        }
+
         public bool IsSmartContractCreate
         {
             get

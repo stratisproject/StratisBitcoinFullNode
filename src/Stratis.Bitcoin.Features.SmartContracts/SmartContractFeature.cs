@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -14,13 +13,9 @@ using Stratis.Bitcoin.Features.Consensus.Rules;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.Miner;
 using Stratis.Bitcoin.Features.Miner.Interfaces;
-using Stratis.Bitcoin.Features.SmartContracts.Controllers;
 using Stratis.Bitcoin.Mining;
-using Stratis.SmartContracts.Core;
-using Stratis.SmartContracts.Core.Compilation;
 using Stratis.SmartContracts.Core.Receipts;
 using Stratis.SmartContracts.Core.State;
-using Stratis.SmartContracts.Core.Validation;
 
 namespace Stratis.Bitcoin.Features.SmartContracts
 {
@@ -44,9 +39,24 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         }
     }
 
+    public class ReflectionVirtualMachineFeature : FullNodeFeature
+    {
+        private readonly ILogger logger;
+
+        public ReflectionVirtualMachineFeature(ILoggerFactory loggerFactory)
+        {
+            this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
+        }
+
+        public override void Initialize()
+        {
+            this.logger.LogInformation("Reflection Virtual Machine Injected.");
+        }
+    }
+
     public static partial class IFullNodeBuilderExtensions
     {
-        public static IFullNodeBuilder AddSmartContracts(this IFullNodeBuilder fullNodeBuilder)
+        public static ISmartContractVmBuilder AddSmartContracts(this IFullNodeBuilder fullNodeBuilder)
         {
             LoggingConfiguration.RegisterFeatureNamespace<SmartContractFeature>("smartcontracts");
 
@@ -58,34 +68,27 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                     .DependOn<MiningFeature>()
                     .FeatureServices(services =>
                     {
-                        SmartContractValidator validator = new SmartContractValidator(new List<ISmartContractValidator>
-                        {
-                            new SmartContractFormatValidator(ReferencedAssemblyResolver.AllowedAssemblies),
-                            new SmartContractDeterminismValidator()
-                        });
-                        services.AddSingleton<SmartContractValidator>(validator);
-                        services.AddSingleton<SmartContractExecutorFactory>();
-
                         services.AddSingleton<DBreezeContractStateStore>();
                         services.AddSingleton<ISmartContractReceiptStorage, DBreezeContractReceiptStorage>();
                         services.AddSingleton<NoDeleteContractStateSource>();
                         services.AddSingleton<ContractStateRepositoryRoot>();
-                        services.AddSingleton<IKeyEncodingStrategy, BasicKeyEncodingStrategy>();
-
+                        // Consensus and mining overrides
                         services.AddSingleton<IPowConsensusValidator, SmartContractConsensusValidator>();
+
                         services.AddSingleton<IPowMining, PowMining>();
                         services.AddSingleton<IBlockBuilder, SmartContractBlockBuilder>();
                         services.AddSingleton<SmartContractBlockDefinition>();
                         services.AddSingleton<IMempoolValidator, SmartContractMempoolValidator>();
-
-                        services.AddSingleton<SmartContractsController>();
-
-                        AddSmartContractRulesToExistingRules(services);
+                        // Add rules
+                        services.AddConsensusRules(new SmartContractRuleRegistration());
                     });
             });
-            return fullNodeBuilder;
+            return new SmartContractVmBuilder(fullNodeBuilder);
         }
+    }
 
+    public static class ConsensusRuleUtils
+    {
         /// <summary>
         /// This is a hack to enable us to to compose objects that depend on implementations defined earlier
         /// in the feature setup process.
@@ -96,8 +99,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         /// Here we get an existing IRuleRegistration ServiceDescriptor, re-register it as its ConcreteType
         /// then replace the dependency on IRuleRegistration with our own implementation that depends on ConcreteType.
         /// </summary>
-        /// <param name="services"></param>
-        private static void AddSmartContractRulesToExistingRules(IServiceCollection services)
+        public static void AddConsensusRules(this IServiceCollection services, IAdditionalRuleRegistration rulesToAdd)
         {
             ServiceDescriptor existingService = services.FirstOrDefault(s => s.ServiceType == typeof(IRuleRegistration));
 
@@ -109,20 +111,41 @@ namespace Stratis.Bitcoin.Features.SmartContracts
 
             Type concreteType = existingService.ImplementationType;
 
-            // Register concrete type if it does not already exist
-            if (services.FirstOrDefault(s => s.ServiceType == concreteType) == null)
+            if (concreteType != null)
             {
-                services.Add(new ServiceDescriptor(concreteType, concreteType, ServiceLifetime.Singleton));
+                // Register concrete type if it does not already exist
+                if (services.FirstOrDefault(s => s.ServiceType == concreteType) == null)
+                {
+                    services.Add(new ServiceDescriptor(concreteType, concreteType, ServiceLifetime.Singleton));
+                }
+
+                // Replace the existing rule registration with our own factory
+                var newService = new ServiceDescriptor(typeof(IRuleRegistration), serviceProvider =>
+                {
+                    var existingRuleRegistration = serviceProvider.GetService(concreteType);
+                    rulesToAdd.SetPreviousRegistration((IRuleRegistration)existingRuleRegistration);
+                    return rulesToAdd;
+                }, ServiceLifetime.Singleton);
+
+                services.Replace(newService);
+
+                return;
             }
 
-            // Replace the existing rule registration with our own factory
-            var newService = new ServiceDescriptor(typeof(IRuleRegistration), serviceProvider =>
-            {
-                var existingRuleRegistration = serviceProvider.GetService(concreteType);
-                return new SmartContractRuleRegistration((IRuleRegistration)existingRuleRegistration);
-            }, ServiceLifetime.Singleton);
+            Func<IServiceProvider, object> implementationFactory = existingService.ImplementationFactory;
 
-            services.Replace(newService);
+            if (implementationFactory != null)
+            {
+                // Factory method has already been defined, just add the extra rules
+                var newService = new ServiceDescriptor(typeof(IRuleRegistration), serviceProvider =>
+                {
+                    var existingRuleRegistration = implementationFactory.Invoke(serviceProvider);
+                    rulesToAdd.SetPreviousRegistration((IRuleRegistration)existingRuleRegistration);
+                    return rulesToAdd;
+                }, ServiceLifetime.Singleton);
+
+                services.Replace(newService);
+            }
         }
     }
 }

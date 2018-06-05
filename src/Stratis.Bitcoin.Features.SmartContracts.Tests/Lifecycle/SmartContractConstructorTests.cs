@@ -4,10 +4,10 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using Stratis.SmartContracts;
 using Stratis.SmartContracts.Core;
-using Stratis.SmartContracts.Core.Backend;
-using Stratis.SmartContracts.Core.Hashing;
-using Stratis.SmartContracts.Core.Lifecycle;
+using Stratis.SmartContracts.Executor.Reflection;
+using Stratis.SmartContracts.Executor.Reflection.Lifecycle;
 using Xunit;
+using InternalHashHelper = Stratis.SmartContracts.Core.Hashing.InternalHashHelper;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Lifecycle
 {

@@ -9,7 +9,6 @@ using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Utilities;
 using Stratis.SmartContracts.Core;
-using Stratis.SmartContracts.Core.Backend;
 using Stratis.SmartContracts.Core.State;
 using Stratis.SmartContracts.Core.Util;
 
@@ -21,7 +20,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         private readonly ILogger logger;
         private readonly ContractStateRepositoryRoot originalStateRoot;
         private readonly CoinView coinView;
-        private SmartContractExecutorFactory executorFactory;
+        private readonly ISmartContractExecutorFactory executorFactory;
         private List<Transaction> blockTxsProcessed;
         private Transaction generatedTransaction;
         private uint refundCounter;
@@ -33,7 +32,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             IDateTimeProvider dateTimeProvider,
             ILoggerFactory loggerFactory,
             ContractStateRepositoryRoot stateRoot,
-            SmartContractExecutorFactory executorFactory)
+            ISmartContractExecutorFactory executorFactory)
             : base(network, checkpoints, dateTimeProvider, loggerFactory)
         {
             this.coinView = coinView;
@@ -203,7 +202,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             }
 
             // Someone submitted a smart contract transaction.
-            ExecuteContractTransaction(context, transaction, smartContractTxOut);
+            ExecuteContractTransaction(context, transaction);
             base.UpdateCoinView(context, transaction);
         }
 
@@ -234,11 +233,25 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         /// <summary>
         /// Executes the smart contract part of a transaction
         /// </summary>
-        private void ExecuteContractTransaction(RuleContext context, Transaction transaction, TxOut smartContractTxOut)
+        private void ExecuteContractTransaction(RuleContext context, Transaction transaction)
+        {
+            ISmartContractTransactionContext txContext = GetSmartContractTransactionContext(context, transaction);
+            ISmartContractExecutor executor = this.executorFactory.CreateExecutor(this.originalStateRoot, txContext);
+
+            ISmartContractExecutionResult result = executor.Execute();
+
+            ValidateRefunds(result.Refunds, context.BlockValidationContext.Block.Transactions[0]);
+
+            if (result.InternalTransaction != null)
+                this.generatedTransaction = result.InternalTransaction;
+        }
+
+        /// <summary>
+        /// Retrieves the context object to be given to the contract executor.
+        /// </summary>
+        private ISmartContractTransactionContext GetSmartContractTransactionContext(RuleContext context, Transaction transaction)
         {
             ulong blockHeight = Convert.ToUInt64(context.BlockValidationContext.ChainedHeader.Height);
-
-            var smartContractCarrier = SmartContractCarrier.Deserialize(transaction, smartContractTxOut);
 
             GetSenderUtil.GetSenderResult getSenderResult = GetSenderUtil.GetSender(this.network, transaction, this.coinView, this.blockTxsProcessed);
 
@@ -246,8 +259,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             {
                 throw new ConsensusErrorException(new ConsensusError("sc-consensusvalidator-executecontracttransaction-sender", getSenderResult.Error));
             }
-
-            smartContractCarrier.Sender = getSenderResult.Sender;
 
             Script coinbaseScriptPubKey = context.BlockValidationContext.Block.Transactions[0].Outputs[0].ScriptPubKey;
 
@@ -258,20 +269,14 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                 throw new ConsensusErrorException(new ConsensusError("sc-consensusvalidator-executecontracttransaction-coinbase", getCoinbaseResult.Error));
             }
 
-            uint160 coinbaseAddress = getCoinbaseResult.Sender;
-
             Money mempoolFee = transaction.GetFee(context.Set);
 
-            SmartContractExecutor executor = this.executorFactory.CreateExecutor(smartContractCarrier, mempoolFee, this.originalStateRoot);
+            return new SmartContractTransactionContext(blockHeight, getCoinbaseResult.Sender, mempoolFee, getSenderResult.Sender, transaction);
+        } 
 
-            ISmartContractExecutionResult result = executor.Execute(blockHeight, coinbaseAddress);
-
-            ValidateRefunds(result.Refunds, context.BlockValidationContext.Block.Transactions[0]);
-
-            if (result.InternalTransaction != null)
-                this.generatedTransaction = result.InternalTransaction;
-        }
-
+        /// <summary>
+        /// Throws a consensus exception if the gas refund inside the block is different to what this node calculated during execution.
+        /// </summary>
         private void ValidateRefunds(List<TxOut> refunds, Transaction coinbaseTransaction)
         {
             foreach (TxOut refund in refunds)

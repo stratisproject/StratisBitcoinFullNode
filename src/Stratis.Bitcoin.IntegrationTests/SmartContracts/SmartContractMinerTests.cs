@@ -30,10 +30,11 @@ using Stratis.Bitcoin.Utilities;
 using Stratis.Patricia;
 using Stratis.SmartContracts;
 using Stratis.SmartContracts.Core;
-using Stratis.SmartContracts.Core.Compilation;
 using Stratis.SmartContracts.Core.Receipts;
 using Stratis.SmartContracts.Core.State;
 using Stratis.SmartContracts.Core.Validation;
+using Stratis.SmartContracts.Executor.Reflection;
+using Stratis.SmartContracts.Executor.Reflection.Compilation;
 using Xunit;
 using Key = NBitcoin.Key;
 
@@ -141,7 +142,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
             public ContractStateRepositoryRoot stateRoot;
             public SmartContractValidator validator;
             public IKeyEncodingStrategy keyEncodingStrategy;
-            public SmartContractExecutorFactory executorFactory;
+            public ReflectionSmartContractExecutorFactory executorFactory;
             public DBreezeContractReceiptStorage receiptStorage;
 
             private bool useCheckpoints = true;
@@ -195,8 +196,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 });
 
                 this.receiptStorage = new DBreezeContractReceiptStorage(new DataFolder(folder.FolderName));
-
-                this.executorFactory = new SmartContractExecutorFactory(this.keyEncodingStrategy, loggerFactory, this.network, this.receiptStorage, this.validator);
+                this.executorFactory = new ReflectionSmartContractExecutorFactory(this.keyEncodingStrategy, loggerFactory, this.network, this.receiptStorage, this.validator);
                 SmartContractConsensusValidator consensusValidator = new SmartContractConsensusValidator(this.cachedCoinView, this.network, new Checkpoints(), dateTimeProvider, loggerFactory, this.stateRoot, this.executorFactory);
 
                 var networkPeerFactory = new NetworkPeerFactory(this.network, dateTimeProvider, loggerFactory, new PayloadProvider(), new SelfEndpointTracker());
@@ -665,9 +665,11 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
             Assert.True(compilationResult.Success);
 
             SmartContractCarrier contractTransaction = SmartContractCarrier.CreateContract(1, compilationResult.Compilation, gasPrice, gasLimit);
-            Transaction tx = this.AddTransactionToMempool(context, contractTransaction, context.txFirst[0].GetHash(), 0, gasBudget);
-            BlockTemplate pblocktemplate = await this.BuildBlockAsync(context);
-            uint160 newContractAddress = SmartContractCarrier.Deserialize(tx, tx.Outputs[0]).GetNewContractAddress();
+
+            Transaction tx = AddTransactionToMempool(context, contractTransaction, context.txFirst[0].GetHash(), 0, gasBudget);
+            BlockTemplate pblocktemplate = await BuildBlockAsync(context);
+            uint160 newContractAddress = SmartContractCarrier.Deserialize(tx).GetNewContractAddress();
+
             string newContractAddressString = newContractAddress.ToString();
             Assert.NotNull(context.stateRoot.GetCode(newContractAddress));
 
@@ -677,9 +679,11 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
             Assert.True(compilationResult.Success);
 
             SmartContractCarrier contractTransaction2 = SmartContractCarrier.CreateContract(1, compilationResult.Compilation, gasPrice, gasLimit);
-            tx = this.AddTransactionToMempool(context, contractTransaction2, context.txFirst[1].GetHash(), 0, gasBudget);
-            pblocktemplate = await this.BuildBlockAsync(context);
-            uint160 newContractAddress2 = SmartContractCarrier.Deserialize(tx, tx.Outputs[0]).GetNewContractAddress();
+
+            tx = AddTransactionToMempool(context, contractTransaction2, context.txFirst[1].GetHash(), 0, gasBudget);
+            pblocktemplate = await BuildBlockAsync(context);
+            uint160 newContractAddress2 = SmartContractCarrier.Deserialize(tx).GetNewContractAddress();
+
             Assert.NotNull(context.stateRoot.GetCode(newContractAddress2));
 
             context.mempool.Clear();
@@ -728,7 +732,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
             BlockTemplate pblocktemplate = await this.BuildBlockAsync(context);
 
             // Check all went well. i.e. contract is deployed.
-            uint160 newContractAddress = SmartContractCarrier.Deserialize(tx, tx.Outputs[0]).GetNewContractAddress();
+            uint160 newContractAddress = SmartContractCarrier.Deserialize(tx).GetNewContractAddress();
             string newContractAddressString = newContractAddress.ToString();
             Assert.NotNull(context.stateRoot.GetCode(newContractAddress));
         }

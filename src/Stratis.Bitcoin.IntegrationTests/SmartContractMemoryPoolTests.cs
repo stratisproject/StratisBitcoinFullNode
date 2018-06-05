@@ -3,7 +3,7 @@ using System.Threading;
 using NBitcoin;
 using Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers;
 using Stratis.SmartContracts;
-using Stratis.SmartContracts.Core;
+using Stratis.SmartContracts.Executor.Reflection;
 using Xunit;
 
 namespace Stratis.Bitcoin.IntegrationTests.SmartContracts

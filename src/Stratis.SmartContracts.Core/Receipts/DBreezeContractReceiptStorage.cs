@@ -1,7 +1,6 @@
 ﻿using DBreeze;
 using NBitcoin;
 using Stratis.Bitcoin.Configuration;
-using Stratis.SmartContracts.Core.Backend;
 
 namespace Stratis.SmartContracts.Core.Receipts
 {

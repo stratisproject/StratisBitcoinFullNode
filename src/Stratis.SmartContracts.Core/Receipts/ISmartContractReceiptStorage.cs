@@ -1,5 +1,4 @@
 ﻿using NBitcoin;
-using Stratis.SmartContracts.Core.Backend;
 
 namespace Stratis.SmartContracts.Core.Receipts
 {

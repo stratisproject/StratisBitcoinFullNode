@@ -4,7 +4,6 @@ using NBitcoin;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.Rules;
 using Stratis.Bitcoin.Features.MemoryPool;
-using Stratis.SmartContracts.Core;
 using Block = NBitcoin.Block;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Consensus.Rules
@@ -41,9 +40,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Consensus.Rules
             // So throw if null, because we really didn't expect that
             TxOut smartContractOutput = transaction.Outputs.First(txOut => txOut.ScriptPubKey.IsSmartContractExec);
 
-            var carrier = SmartContractCarrier.Deserialize(transaction, smartContractOutput);
-
-            if (carrier.TxOutValue != 0)
+            if (smartContractOutput.Value != 0)
             {
                 this.Throw();
             }

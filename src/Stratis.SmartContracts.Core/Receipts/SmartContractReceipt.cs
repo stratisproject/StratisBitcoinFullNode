@@ -1,7 +1,6 @@
 ﻿using System.Text;
 using NBitcoin;
 using Newtonsoft.Json;
-using Stratis.SmartContracts.Core.Backend;
 
 namespace Stratis.SmartContracts.Core.Receipts
 {

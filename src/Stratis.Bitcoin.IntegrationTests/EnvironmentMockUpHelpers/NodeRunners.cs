@@ -240,6 +240,7 @@ namespace Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers
                 .AddRPC()
                 .MockIBD()
                 .AddSmartContracts()
+                .UseReflectionExecutor()
                 .Build();
         }
 

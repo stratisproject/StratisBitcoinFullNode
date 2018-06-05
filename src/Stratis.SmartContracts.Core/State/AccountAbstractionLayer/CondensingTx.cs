@@ -20,15 +20,21 @@ namespace Stratis.SmartContracts.Core.State.AccountAbstractionLayer
         /// </summary>
         private readonly Dictionary<uint160, uint> nVouts;
 
-        /// <summary>
-        /// The smart contract transaction that initiated this whole execution.
-        /// </summary>
-        private readonly SmartContractCarrier smartContractCarrier;
 
         /// <summary>
         /// Reference to the current smart contract state.
         /// </summary>
         private readonly IContractStateRepository stateRepository;
+
+        /// <summary>
+        /// Address of the contract that was just called or created.
+        /// </summary>
+        private readonly uint160 contractAddress;
+
+        /// <summary>
+        /// Context for the transaction that has just been executed.
+        /// </summary>
+        private readonly ISmartContractTransactionContext transactionContext;
 
         /// <summary>
         /// All of the transfers that happened internally inside of the contract execution.
@@ -47,20 +53,21 @@ namespace Stratis.SmartContracts.Core.State.AccountAbstractionLayer
 
         private readonly Network network;
 
-        public CondensingTx(ILoggerFactory loggerFactory, SmartContractCarrier smartContractCarrier, Network network)
+        public CondensingTx(uint160 contractAddress, ILoggerFactory loggerFactory, Network network, ISmartContractTransactionContext transactionContext)
         {
+            this.contractAddress = contractAddress;
             this.logger = loggerFactory.CreateLogger(this.GetType());
 
-            this.smartContractCarrier = smartContractCarrier;
-
             this.network = network;
+            this.transactionContext = transactionContext;
+
             this.nVouts = new Dictionary<uint160, uint>();
             this.txBalances = new Dictionary<uint160, ulong>();
             this.unspents = new List<ContractUnspentOutput>();
         }
 
-        public CondensingTx(ILoggerFactory loggerFactory, SmartContractCarrier smartContractCarrier, IList<TransferInfo> transfers, IContractStateRepository stateRepository, Network network)
-            : this(loggerFactory, smartContractCarrier, network)
+        public CondensingTx(uint160 contractAddress, ILoggerFactory loggerFactory, IList<TransferInfo> transfers, IContractStateRepository stateRepository, Network network, ISmartContractTransactionContext transactionContext)
+            : this(contractAddress, loggerFactory, network, transactionContext)
         {
             this.stateRepository = stateRepository;
             this.transfers = transfers;
@@ -75,13 +82,13 @@ namespace Stratis.SmartContracts.Core.State.AccountAbstractionLayer
             var tx = new Transaction();
 
             //Spend the input on the contract----------------------------------
-            var outpoint = new OutPoint(this.smartContractCarrier.TransactionHash, this.smartContractCarrier.Nvout);
+            var outpoint = new OutPoint(this.transactionContext.TransactionHash, this.transactionContext.Nvout);
             tx.AddInput(new TxIn(outpoint, new Script(OpcodeType.OP_SPEND)));
             //-----------------------------------------------------------------
 
             //Create refund unspent TxOut--------------------------------------
-            Script script = this.CreateScript(this.smartContractCarrier.Sender);
-            var txOut = new TxOut(new Money(this.smartContractCarrier.TxOutValue), script);
+            Script script = this.CreateScript(this.transactionContext.Sender);
+            var txOut = new TxOut(new Money(this.transactionContext.TxOutValue), script);
             tx.Outputs.Add(txOut);
             //-----------------------------------------------------------------
 
@@ -209,24 +216,24 @@ namespace Stratis.SmartContracts.Core.State.AccountAbstractionLayer
             this.logger.LogTrace("()");
 
             // Add the value of the initial transaction.
-            if (this.smartContractCarrier.TxOutValue > 0)
+            if (this.transactionContext.TxOutValue > 0)
             {
-                this.logger.LogTrace("{0}:{1}", nameof(this.smartContractCarrier.TxOutValue), this.smartContractCarrier.TxOutValue);
+                this.logger.LogTrace("{0}:{1}", nameof(this.transactionContext.TxOutValue), this.transactionContext.TxOutValue);
 
                 this.unspents.Add(new ContractUnspentOutput
                 {
-                    Hash = this.smartContractCarrier.TransactionHash,
-                    Nvout = this.smartContractCarrier.Nvout,
-                    Value = this.smartContractCarrier.TxOutValue
+                    Hash = this.transactionContext.TransactionHash,
+                    Nvout = this.transactionContext.Nvout,
+                    Value = this.transactionContext.TxOutValue
                 });
 
-                this.txBalances[this.smartContractCarrier.ContractAddress] = this.smartContractCarrier.TxOutValue;
+                this.txBalances[this.contractAddress] = this.transactionContext.TxOutValue;
             }
 
             // For each unique address, if it is a contract, get the utxo it currently holds.
             var uniqueAddresses = new HashSet<uint160>
             {
-                this.smartContractCarrier.ContractAddress
+                this.contractAddress
             };
 
             foreach (TransferInfo transferInfo in this.transfers)

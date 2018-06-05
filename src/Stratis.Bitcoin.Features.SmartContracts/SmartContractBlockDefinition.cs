@@ -11,7 +11,6 @@ using Stratis.Bitcoin.Features.Miner;
 using Stratis.Bitcoin.Mining;
 using Stratis.Bitcoin.Utilities;
 using Stratis.SmartContracts.Core;
-using Stratis.SmartContracts.Core.Backend;
 using Stratis.SmartContracts.Core.State;
 using Stratis.SmartContracts.Core.Util;
 
@@ -21,7 +20,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
     {
         private uint160 coinbaseAddress;
         private readonly CoinView coinView;
-        private readonly SmartContractExecutorFactory executorFactory;
+        private readonly ISmartContractExecutorFactory executorFactory;
         private readonly ILogger logger;
         private readonly List<TxOut> refundOutputs = new List<TxOut>();
         private readonly ContractStateRepositoryRoot stateRoot;
@@ -31,7 +30,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             CoinView coinView,
             IConsensusLoop consensusLoop,
             IDateTimeProvider dateTimeProvider,
-            SmartContractExecutorFactory executorFactory,
+            ISmartContractExecutorFactory executorFactory,
             ILoggerFactory loggerFactory,
             ITxMempool mempool,
             MempoolSchedulerLock mempoolLock,
@@ -101,17 +100,15 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             if (smartContractTxOut == null)
                 base.AddToBlock(mempoolEntry);
             else
-                this.AddContractToBlock(mempoolEntry, smartContractTxOut);
+                this.AddContractToBlock(mempoolEntry);
         }
 
         /// <summary>
         /// Execute the contract and add all relevant fees and refunds to the block.
         /// </summary>
         /// <remarks>TODO: At some point we need to change height to a ulong.</remarks> 
-        private void AddContractToBlock(TxMempoolEntry mempoolEntry, TxOut smartContractTxOut)
+        private void AddContractToBlock(TxMempoolEntry mempoolEntry)
         {
-            var carrier = SmartContractCarrier.Deserialize(mempoolEntry.Transaction, smartContractTxOut);
-
             GetSenderUtil.GetSenderResult getSenderResult = GetSenderUtil.GetSender(this.Network, mempoolEntry.Transaction, this.coinView, this.inBlock.Select(x => x.Transaction).ToList());
 
             if (!getSenderResult.Success)
@@ -119,10 +116,10 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                 throw new ConsensusErrorException(new ConsensusError("sc-block-assembler-addcontracttoblock", getSenderResult.Error));
             }
 
-            carrier.Sender = getSenderResult.Sender;
+            ISmartContractTransactionContext transactionContext = new SmartContractTransactionContext((ulong) this.height, this.coinbaseAddress, mempoolEntry.Fee, getSenderResult.Sender, mempoolEntry.Transaction);
+            ISmartContractExecutor executor = this.executorFactory.CreateExecutor(this.stateSnapshot, transactionContext);
 
-            SmartContractExecutor executor = this.executorFactory.CreateExecutor(carrier, mempoolEntry.Fee, this.stateSnapshot);
-            ISmartContractExecutionResult result = executor.Execute((ulong)this.height, this.coinbaseAddress);
+            ISmartContractExecutionResult result = executor.Execute();
 
             // Add fee from the execution result to the block.
             this.BlockTemplate.VTxFees.Add(result.Fee);
