@@ -449,17 +449,19 @@ namespace Stratis.Bitcoin.Consensus
             this.logger.LogTrace("(-)");
         }
 
+
         /// <summary>
-        /// Handles situation when blocks the data is downloaded for a given chained header.
+        /// Finds the header and verifies block integrity.
         /// </summary>
-        /// <param name="block">Block data.</param>
-        /// <param name="chainedHeader">If the function succeeds this is set to chained header which block data was downloaded.</param>
-        /// <returns><c>true</c> in case partial validation is required for the downloaded block, <c>false</c> otherwise.</returns>
+        /// <param name="block">The block.</param>
+        /// <returns>Chained header for a given block.</returns>
         /// <exception cref="BlockDownloadedForMissingChainedHeaderException">Thrown when block data is presented for a chained block that doesn't exist.</exception>
-        public bool BlockDataDownloaded(Block block, out ChainedHeader chainedHeader)
+        public ChainedHeader FindHeaderAndVerifyBlockIntegrity(Block block)
         {
             uint256 blockHash = block.GetHash();
             this.logger.LogTrace("({0}:'{1}')", nameof(block), blockHash);
+
+            ChainedHeader chainedHeader;
 
             if (!this.chainedHeadersByHash.TryGetValue(blockHash, out chainedHeader))
             {
@@ -468,6 +470,20 @@ namespace Stratis.Bitcoin.Consensus
             }
 
             this.chainedHeaderValidator.VerifyBlockIntegrity(block, chainedHeader);
+
+            this.logger.LogTrace("(-):'{0}'", chainedHeader);
+            return chainedHeader;
+        }
+
+        /// <summary>
+        /// Handles situation when blocks the data is downloaded for a given chained header.
+        /// </summary>
+        /// <param name="chainedHeader">Chained header that represents <paramref name="block"/>.</param>
+        /// <param name="block">Block data.</param>
+        /// <returns><c>true</c> in case partial validation is required for the downloaded block, <c>false</c> otherwise.</returns>
+        public bool BlockDataDownloaded(ChainedHeader chainedHeader, Block block)
+        {
+            this.logger.LogTrace("({0}:'{1}')", nameof(chainedHeader), chainedHeader);
 
             if (chainedHeader.BlockValidationState == ValidationState.FullyValidated)
             {
@@ -812,7 +828,8 @@ namespace Stratis.Bitcoin.Consensus
 
             this.CreateNewHeaders(new List<BlockHeader>() {block.Header});
 
-            this.BlockDataDownloaded(block, out ChainedHeader chainedHeader);
+            ChainedHeader chainedHeader = this.FindHeaderAndVerifyBlockIntegrity(block);
+            this.BlockDataDownloaded(chainedHeader, block);
 
             this.logger.LogTrace("(-):'{0}'", chainedHeader);
             return chainedHeader;

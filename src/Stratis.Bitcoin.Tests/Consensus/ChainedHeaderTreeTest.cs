@@ -1,7 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
 using Moq;
 using NBitcoin;
 using Stratis.Bitcoin.Base;
@@ -88,7 +86,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
             ChainedHeaderTree chainedHeaderTree = testContext.CreateChainedHeaderTree();
 
             ChainedHeader chainTip = testContext.ExtendAChain(10);
-            chainedHeaderTree.Initialize(chainTip);
+            chainedHeaderTree.Initialize(chainTip, true);
 
             List<BlockHeader> listOfExistingHeaders = testContext.ChainedHeaderToList(chainTip, 4);
 
@@ -105,7 +103,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
             ChainedHeaderTree chainedHeaderTree = testContext.CreateChainedHeaderTree();
 
             ChainedHeader chainTip = testContext.ExtendAChain(10);
-            chainedHeaderTree.Initialize(chainTip);
+            chainedHeaderTree.Initialize(chainTip, true);
 
             List<BlockHeader> listOfExistingHeaders = testContext.ChainedHeaderToList(chainTip, 4);
 
@@ -132,7 +130,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
             ChainedHeaderTree chainedHeaderTree = testContext.CreateChainedHeaderTree();
 
             var chainTip = testContext.ExtendAChain(10);
-            chainedHeaderTree.Initialize(chainTip); // initialize the tree with 10 headers
+            chainedHeaderTree.Initialize(chainTip, true); // initialize the tree with 10 headers
             chainTip.BlockDataAvailability = BlockDataAvailabilityState.BlockAvailable;
             ChainedHeader newChainTip = testContext.ExtendAChain(10, chainTip); // create 10 more headers
 
