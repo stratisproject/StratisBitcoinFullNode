@@ -197,7 +197,7 @@ namespace Stratis.Bitcoin.Base
 
             this.StartAddressManager(connectionParameters);
 
-            if (this.baseSettings.SyncTimeEnabled)
+            if (this.connectionManager.ConnectionSettings.SyncTimeEnabled)
             {
                 connectionParameters.TemplateBehaviors.Add(new TimeSyncBehavior(this.timeSyncBehaviorState, this.dateTimeProvider, this.loggerFactory));
             }
@@ -219,6 +219,7 @@ namespace Stratis.Bitcoin.Base
         public static void PrintHelp(Network network)
         {
             BaseSettings.PrintHelp(network);
+            ConnectionManagerSettings.PrintHelp(network);
         }
         
         /// <summary>
@@ -229,6 +230,7 @@ namespace Stratis.Bitcoin.Base
         public static void BuildDefaultConfigurationFile(StringBuilder builder, Network network)
         {
             BaseSettings.BuildDefaultConfigurationFile(builder, network);
+            ConnectionManagerSettings.BuildDefaultConfigurationFile(builder, network);
         }
 
         /// <summary>
