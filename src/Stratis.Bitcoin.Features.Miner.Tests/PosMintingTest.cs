@@ -508,7 +508,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
                 });
         }
 
-        public PosMinting InitializePosMinting()
+        private PosMinting InitializePosMinting()
         {
             var posBlockAssembler = new Mock<PosBlockDefinition>(
                 this.consensusLoop.Object,
