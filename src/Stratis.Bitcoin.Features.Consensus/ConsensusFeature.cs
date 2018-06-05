@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Text;
 using Microsoft.Extensions.DependencyInjection;
@@ -185,7 +186,7 @@ namespace Stratis.Bitcoin.Features.Consensus
     /// </summary>
     public static class FullNodeBuilderConsensusExtension
     {
-        public static IFullNodeBuilder UsePowConsensus(this IFullNodeBuilder fullNodeBuilder)
+        public static IFullNodeBuilder UsePowConsensus(this IFullNodeBuilder fullNodeBuilder, Action<ConsensusSettings> setup = null)
         {
             LoggingConfiguration.RegisterFeatureNamespace<ConsensusFeature>("consensus");
             LoggingConfiguration.RegisterFeatureClass<ConsensusStats>("bench");
@@ -210,7 +211,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                     services.AddSingleton<IGetUnspentTransaction, ConsensusManager>();
                     services.AddSingleton<ConsensusController>();
                     services.AddSingleton<ConsensusStats>();
-                    services.AddSingleton<ConsensusSettings>();
+                    services.AddSingleton<ConsensusSettings>(new ConsensusSettings(fullNodeBuilder.NodeSettings, setup));
                     services.AddSingleton<IConsensusRules, PowConsensusRules>();
                     services.AddSingleton<IRuleRegistration, PowConsensusRulesRegistration>();
                 });
@@ -219,7 +220,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             return fullNodeBuilder;
         }
 
-        public static IFullNodeBuilder UsePosConsensus(this IFullNodeBuilder fullNodeBuilder)
+        public static IFullNodeBuilder UsePosConsensus(this IFullNodeBuilder fullNodeBuilder, Action<ConsensusSettings> setup = null)
         {
             LoggingConfiguration.RegisterFeatureNamespace<ConsensusFeature>("consensus");
             LoggingConfiguration.RegisterFeatureClass<ConsensusStats>("bench");
@@ -246,7 +247,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                         services.AddSingleton<IInitialBlockDownloadState, InitialBlockDownloadState>();
                         services.AddSingleton<ConsensusController>();
                         services.AddSingleton<ConsensusStats>();
-                        services.AddSingleton<ConsensusSettings>();
+                        services.AddSingleton<ConsensusSettings>(new ConsensusSettings(fullNodeBuilder.NodeSettings, setup));
                         services.AddSingleton<IConsensusRules, PosConsensusRules>();
                         services.AddSingleton<IRuleRegistration, PosConsensusRulesRegistration>();
                     });

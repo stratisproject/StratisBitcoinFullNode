@@ -187,7 +187,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
                         services.AddSingleton<BlockStoreQueue>();
                         services.AddSingleton<BlockStoreManager>();
                         services.AddSingleton<BlockStoreSignaled>();
-                        services.AddSingleton<StoreSettings>(new StoreSettings(setup));
+                        services.AddSingleton<StoreSettings>(new StoreSettings(fullNodeBuilder.NodeSettings, setup));
                         services.AddSingleton<BlockStoreController>();
                     });
             });
