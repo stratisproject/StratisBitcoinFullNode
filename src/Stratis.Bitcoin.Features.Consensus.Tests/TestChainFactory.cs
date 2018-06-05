@@ -84,7 +84,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
 
             network.Consensus.Options = new PowConsensusOptions();
 
-            ConsensusSettings consensusSettings = new ConsensusSettings().Load(testChainContext.NodeSettings);
+            ConsensusSettings consensusSettings = new ConsensusSettings(testChainContext.NodeSettings);
             testChainContext.Checkpoints = new Checkpoints();
 
             testChainContext.Chain = new ConcurrentChain(network);

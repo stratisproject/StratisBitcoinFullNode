@@ -114,10 +114,7 @@ namespace Stratis.Bitcoin.Cli
 
                         NodeSettings nodeSettings = new NodeSettings(network, args:options);
 
-                        var rpcSettings = new RpcSettings();
-
-                        // read the values from the configuration file
-                        rpcSettings.Load(nodeSettings);
+                        var rpcSettings = new RpcSettings(nodeSettings);
 
                         // Find the binding to 127.0.0.1 or the first available. The logic in RPC settings ensures there will be at least 1.
                         System.Net.IPEndPoint nodeEndPoint = rpcSettings.Bind.FirstOrDefault(b => b.Address.ToString() == "127.0.0.1") ?? rpcSettings.Bind[0];

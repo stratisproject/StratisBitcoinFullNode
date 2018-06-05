@@ -117,7 +117,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
             testRulesContext.DateTimeProvider = DateTimeProvider.Default;
             network.Consensus.Options = new PowConsensusOptions();
 
-            ConsensusSettings consensusSettings = new ConsensusSettings().Load(testRulesContext.NodeSettings);
+            ConsensusSettings consensusSettings = new ConsensusSettings(testRulesContext.NodeSettings);
             testRulesContext.Checkpoints = new Checkpoints();
             testRulesContext.Chain = new ConcurrentChain(network);
 

@@ -8,11 +8,6 @@ namespace Stratis.Bitcoin.Builder.Feature
     public interface IFullNodeFeature : IDisposable
     {
         /// <summary>
-        /// Called on all the features prior to calling Initialize on all the features.
-        /// </summary>
-        void LoadConfiguration();
-
-        /// <summary>
         /// Triggered when the FullNode host has fully started.
         /// </summary>
         void Initialize();
@@ -37,11 +32,6 @@ namespace Stratis.Bitcoin.Builder.Feature
     /// </summary>
     public abstract class FullNodeFeature : IFullNodeFeature
     {
-        /// <inheritdoc />
-        public virtual void LoadConfiguration()
-        {
-        }
-
         /// <inheritdoc />
         public abstract void Initialize();
 

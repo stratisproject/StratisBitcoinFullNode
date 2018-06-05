@@ -88,12 +88,6 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.chainState = chainState;
         }
 
-        /// <inheritdoc />
-        public override void LoadConfiguration()
-        {
-            this.storeSettings.Load(this.nodeSettings);
-        }
-
         public virtual BlockStoreBehavior BlockStoreBehaviorFactory()
         {
             return new BlockStoreBehavior(this.chain, this.blockRepository, this.blockStoreCache, this.loggerFactory);
@@ -143,7 +137,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// <param name="network">The network to extract values from.</param>
         public static void PrintHelp(Network network)
         {
-            StoreSettings.PrintHelp(network);
+            StoreSettings.PrintHelp();
         }
 
         /// <summary>
@@ -172,7 +166,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
     /// </summary>
     public static class FullNodeBuilderBlockStoreExtension
     {
-        public static IFullNodeBuilder UseBlockStore(this IFullNodeBuilder fullNodeBuilder, Action<StoreSettings> setup = null)
+        public static IFullNodeBuilder UseBlockStore(this IFullNodeBuilder fullNodeBuilder)
         {
             LoggingConfiguration.RegisterFeatureNamespace<BlockStoreFeature>("db");
 
@@ -187,7 +181,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
                         services.AddSingleton<BlockStoreQueue>();
                         services.AddSingleton<BlockStoreManager>();
                         services.AddSingleton<BlockStoreSignaled>();
-                        services.AddSingleton<StoreSettings>(new StoreSettings(setup));
+                        services.AddSingleton<StoreSettings>();
                         services.AddSingleton<BlockStoreController>();
                     });
             });
