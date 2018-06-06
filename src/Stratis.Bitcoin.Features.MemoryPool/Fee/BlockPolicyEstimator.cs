@@ -131,9 +131,9 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Fee
         private readonly ILogger logger;
 
         /// <summary>Classes to track historical data on transaction confirmations.</summary>
-        private readonly TxConfirmStats feeStats;
-        private readonly TxConfirmStats shortStats;
-        private readonly TxConfirmStats longStats;
+        private TxConfirmStats feeStats;
+        private TxConfirmStats shortStats;
+        private TxConfirmStats longStats;
 
         /// <summary>Map of txids to information about that transaction.</summary>
         private readonly Dictionary<uint256, TxStatsInfo> mapMemPoolTxs;
@@ -682,6 +682,20 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Fee
         {
             var data = new BlockPolicyData();
             data.BestSeenHeight = this.nBestSeenHeight;
+            if (BlockSpan() > HistoricalBlockSpan())
+            {
+                data.HistoricalFirst = this.firstRecordedHeight;
+                data.HistoricalBest = this.nBestSeenHeight;
+            }
+            else
+            {
+                data.HistoricalFirst = this.historicalFirst;
+                data.HistoricalBest = this.historicalBest;
+            }
+            data.Buckets = this.buckets;
+            data.ShortStats = this.shortStats.Write();
+            data.MedStats = this.feeStats.Write();
+            data.LongStats = this.longStats.Write();
             this.fileStorage.SaveToFile(data, FileName);
         }
 
@@ -690,16 +704,51 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Fee
         /// </summary>
         /// <param name="filein">Stream to read data from.</param>
         /// <param name="nFileVersion">Version number of the file.</param>
-        public void Read()
+        public bool Read()
         {
-            lock(this.lockObject)
+            try
             {
-                var data = this.fileStorage.LoadByFileName(FileName);
-                if (data != null)
+                lock (this.lockObject)
                 {
+                    var data = this.fileStorage.LoadByFileName(FileName);
+                    if (data != null)
+                    {
+                        throw new ApplicationException("Corrupt estimates file or file not found");
+                    }
+                    if (data.HistoricalFirst > data.HistoricalBest || data.HistoricalBest > data.BestSeenHeight)
+                    {
+                        throw new ApplicationException("Corrupt estimates file. Historical block range for estimates is invalid");
+                    }
+                    if (data.Buckets.Count <= 1 || data.Buckets.Count > 1000)
+                    {
+                        throw new ApplicationException("Corrupt estimates file. Must have between 2 and 1000 feerate buckets");
+                    }
                     this.nBestSeenHeight = data.BestSeenHeight;
+                    this.historicalFirst = data.HistoricalFirst;
+                    this.historicalBest = data.HistoricalBest;
+                    this.buckets = data.Buckets;
+                    this.bucketMap = new SortedDictionary<double, int>();
+                    for(int i = 0; i< this.buckets.Count; i++)
+                    {
+                        this.bucketMap.Add(this.buckets[i], i);
+                    }
+                    this.feeStats = new TxConfirmStats(this.logger);
+                    this.feeStats.Initialize(this.buckets, this.bucketMap, MedBlockPeriods, MedDecay, MedScale);
+                    this.feeStats.Read(data.MedStats);
+                    this.shortStats = new TxConfirmStats(this.logger);
+                    this.shortStats.Initialize(this.buckets, this.bucketMap, ShortBlockPeriods, ShortDecay, ShortScale);
+                    this.shortStats.Read(data.ShortStats);
+                    this.longStats = new TxConfirmStats(this.logger);
+                    this.longStats.Initialize(this.buckets, this.bucketMap, LongBlockPeriods, LongDecay, LongScale);
+                    this.longStats.Read(data.LongStats);
                 }
             }
+            catch (Exception e)
+            {
+                this.logger.LogError("Error while reading policy estimation data from file", e);
+                return false;
+            }
+            return true;
         }
 
         public void FlushUncomfirmed()

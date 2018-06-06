@@ -5,6 +5,7 @@ using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Utilities;
 using System;
+using Stratis.Bitcoin.Features.MemoryPool.Fee.SerializationEntity;
 
 namespace Stratis.Bitcoin.Features.MemoryPool.Fee
 {
@@ -442,8 +443,17 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Fee
         /// Write state of estimation data to a file.
         /// </summary>
         /// <param name="stream">Stream to write to.</param>
-        public void Write(BitcoinStream stream)
+        public TxConfirmData Write()
         {
+            return new TxConfirmData
+            {
+                Decay = this.decay,
+                Scale = this.scale,
+                Avg = this.avg,
+                TxCtAvg = this.txCtAvg,
+                ConfAvg = this.confAvg,
+                FailAvg = this.failAvg
+            };
         }
 
         /// <summary>
@@ -451,8 +461,66 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Fee
         /// variables with this state.
         /// </summary>
         /// <param name="filein">Stream to read from.</param>
-        public void Read(Stream filein)
+        public void Read(TxConfirmData data)
         {
+            try
+            {
+                if (data == null)
+                {
+                    throw new ArgumentNullException(nameof(data));
+                }
+                if(data.Decay <= 0 || data.Decay >= 1)
+                {
+                    throw new ApplicationException("Corrupt estimates file. Decay must be between 0 and 1 (non-inclusive)");
+                }
+                if(data.Scale == 0)
+                {
+                    throw new ApplicationException("Corrupt estimates file. Scale must be non-zero");
+                }
+                if(data.Avg.Count != this.buckets.Count)
+                {
+                    throw new ApplicationException("Corrupt estimates file. Mismatch in feerate average bucket count");
+                }
+                if (data.TxCtAvg.Count != this.buckets.Count)
+                {
+                    throw new ApplicationException("Corrupt estimates file. Mismatch in tx count bucket count");
+                }
+                int maxPeriods = data.ConfAvg.Count;
+                double maxConfirms = data.Scale * maxPeriods;
+
+                if (maxConfirms <= 0 || maxConfirms > 6 * 24 * 7)
+                {
+                    throw new ApplicationException("Corrupt estimates file.  Must maintain estimates for between 1 and 1008 (one week) confirms");
+                }
+                for (int i = 0; i < maxPeriods; i++)
+                {
+                    if (data.ConfAvg[i].Count != this.buckets.Count)
+                    {
+                        throw new ApplicationException("Corrupt estimates file. Mismatch in feerate conf average bucket count");
+                    }
+                }
+                if (maxPeriods != data.FailAvg.Count)
+                {
+                    throw new ApplicationException("Corrupt estimates file. Mismatch in confirms tracked for failures");
+                }
+                for (int i = 0; i < maxPeriods; i++)
+                {
+                    if (data.FailAvg[i].Count != this.buckets.Count)
+                    {
+                        throw new ApplicationException("Corrupt estimates file. Mismatch in one of failure average bucket counts");
+                    }
+                }
+                this.decay = data.Decay;
+                this.scale = data.Scale;
+                this.avg = data.Avg;
+                this.txCtAvg = data.TxCtAvg;
+                this.confAvg = data.ConfAvg;
+                this.failAvg = data.FailAvg;
+            }
+            catch (Exception e)
+            {
+                this.logger.LogError("Error while reading tx confirm data from file", e);
+            }
         }
     }
 }
