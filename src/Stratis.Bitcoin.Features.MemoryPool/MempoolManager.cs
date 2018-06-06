@@ -109,7 +109,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         }
 
         /// <summary>
-        /// Check weather a transaction exists in the mempool.
+        /// Check whether a transaction exists in the mempool.
         /// </summary>
         public Task<bool> ExistsAsync(uint256 trxid)
         {

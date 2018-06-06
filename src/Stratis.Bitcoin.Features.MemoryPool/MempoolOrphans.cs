@@ -6,7 +6,6 @@ using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
-using Stratis.Bitcoin.Features.MemoryPool.Interfaces;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.Utilities;
 
@@ -41,6 +40,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <summary>Settings from the memory pool.</summary>
         private readonly MempoolSettings mempoolSettings;
 
+        /// <summary>Manages the memory pool transactions.</summary>
         private readonly MempoolManager mempoolManager;
 
         /// <summary>Instance logger for the memory pool.</summary>
@@ -182,7 +182,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             while (workQueue.Any())
             {
                 // mapOrphanTransactionsByPrev.TryGet() does a .ToList() to take a new collection
-                // of orphans as this collection may be modifed later by anotehr thread
+                // of orphans as this collection may be modifed later by another thread
                 List<OrphanTx> itByPrev;
                 lock (this.lockObject)
                 {
@@ -207,7 +207,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                     MempoolValidationState stateDummy = new MempoolValidationState(true);
                     if (await this.Validator.AcceptToMemoryPool(stateDummy, orphanTx))
                     {
-                        this.logger.LogInformation($"accepted orphan tx {orphanHash}");
+                        this.logger.LogInformation("accepted orphan tx {0}", orphanHash);
 
                         behavior.RelayTransaction(orphanTx.GetHash());
 
@@ -227,12 +227,12 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                             // Punish peer that gave us an invalid orphan tx
                             //Misbehaving(fromPeer, nDos);
                             setMisbehaving.Add(fromPeer);
-                            this.logger.LogInformation($"invalid orphan tx {orphanHash}");
+                            this.logger.LogInformation("invalid orphan tx {0}", orphanHash);
                         }
                     
                         // Has inputs but not accepted to mempool
                         // Probably non-standard or insufficient fee/priority
-                        this.logger.LogInformation($"removed orphan tx {orphanHash}");
+                        this.logger.LogInformation("removed orphan tx {0}", orphanHash);
                         eraseQueue.Add(orphanHash);
                         if (!orphanTx.HasWitness && !stateDummy.CorruptionPossible)
                         {
@@ -287,7 +287,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
 
             if (rejectedParents)
             {
-                this.logger.LogInformation($"not keeping orphan with rejected parents {tx.GetHash()}");
+                this.logger.LogInformation("not keeping orphan with rejected parents {0}", tx.GetHash());
                 this.logger.LogTrace("(-)[REJECT_PARENTS_ORPH]:false");
                 return false;
             }
@@ -307,7 +307,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             int nMaxOrphanTx = this.mempoolSettings.MaxOrphanTx;
             int nEvicted = this.LimitOrphanTxSize(nMaxOrphanTx);
             if (nEvicted > 0)
-                this.logger.LogInformation($"mapOrphan overflow, removed {nEvicted} tx");
+                this.logger.LogInformation("mapOrphan overflow, removed {0} tx", nEvicted);
 
             this.logger.LogTrace("(-):{0}", ret);
             return ret;
