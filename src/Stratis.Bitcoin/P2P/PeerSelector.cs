@@ -204,9 +204,11 @@ namespace Stratis.Bitcoin.P2P
                 // Reset attempts for all the peers since we've ran out of options.
                 foreach (PeerAddress peer in this.peerAddresses.Values.Where(p => !this.IsBanned(p)))
                     peer.ResetAttempts();
+                
+                IEnumerable<PeerAddress> addresses = this.peerAddresses.Values.Where(p => !this.IsBanned(p));
 
                 this.logger.LogTrace("(-)[RESET_ATTEMPTS]");
-                return this.peerAddresses.Values.Where(p => !this.IsBanned(p));
+                return addresses;
             }
 
             // If all the selection criteria failed to return a set of peers, then let the caller try again.
