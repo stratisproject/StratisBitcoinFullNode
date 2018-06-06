@@ -458,7 +458,6 @@ namespace Stratis.Bitcoin.Features.Consensus
         {
             if (this.chainState.MaxReorgLength != 0)
                 return this.Chain.Height - this.Tip.Height < this.chainState.MaxReorgLength;
-
             
             return this.Tip.Header.Time > this.dateTimeProvider.GetAdjustedTimeAsUnixTimestamp() - FlushRequiredThresholdSeconds;
         }
