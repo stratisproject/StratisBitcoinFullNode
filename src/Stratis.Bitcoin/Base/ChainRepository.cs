@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using DBreeze;
 using DBreeze.DataTypes;
+using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Utilities;
@@ -15,25 +16,107 @@ namespace Stratis.Bitcoin.Base
         Task LoadAsync(ConcurrentChain chain);
 
         Task SaveAsync(ConcurrentChain chain);
+
+        /// <summary>Gets the finalized block height.</summary>
+        /// <returns>Height of a block that can't be reorged away from.</returns>
+        int GetFinalizedBlockHeight();
+
+        /// <summary>Saves the finalized block height.</summary>
+        /// <param name="height">Block height.</param>
+        Task SaveFinalizedBlockHeightAsync(int height);
     }
 
     public class ChainRepository : IChainRepository
     {
+        /// <summary>Instance logger.</summary>
+        private readonly ILogger logger;
+
         /// <summary>Access to DBreeze database.</summary>
         private readonly DBreezeEngine dbreeze;
 
         private BlockLocator locator;
 
-        public ChainRepository(string folder)
+        /// <summary>Database key under which the block hash of the coin view's current tip is stored.</summary>
+        private static readonly byte[] finalizedBlockKey = new byte[0];
+
+        /// <summary>Height of a block that can't be reorged away from.</summary>
+        private int finalizedHeight;
+
+        public ChainRepository(string folder, ILoggerFactory loggerFactory)
         {
             Guard.NotEmpty(folder, nameof(folder));
+            Guard.NotNull(loggerFactory, nameof(loggerFactory));
+
+            this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
 
             this.dbreeze = new DBreezeEngine(folder);
+
+            this.finalizedHeight = this.LoadFinalizedBlockHeightAsync().GetAwaiter().GetResult();
         }
 
-        public ChainRepository(DataFolder dataFolder)
-            : this(dataFolder.ChainPath)
+        public ChainRepository(DataFolder dataFolder, ILoggerFactory loggerFactory)
+            : this(dataFolder.ChainPath, loggerFactory)
         {
+        }
+
+        /// <inheritdoc />
+        public int GetFinalizedBlockHeight()
+        {
+            return this.finalizedHeight;
+        }
+
+        /// <summary>Loads the finalized block height.</summary>
+        /// <returns>Height of a block that can't be reorged away from.</returns>
+        private Task<int> LoadFinalizedBlockHeightAsync()
+        {
+            this.logger.LogTrace("()");
+
+            Task<int> task = Task.Run(() =>
+            {
+                this.logger.LogTrace("()");
+
+                using (DBreeze.Transactions.Transaction transaction = this.dbreeze.GetTransaction())
+                {
+                    transaction.ValuesLazyLoadingIsOn = false;
+                    
+                    Row<byte[], int> row = transaction.Select<byte[], int>("FinalizedBlock", finalizedBlockKey);
+                    if (!row.Exists)
+                    {
+                        this.logger.LogTrace("(-):0");
+                        return 0;
+                    }
+
+                    this.logger.LogTrace("(-):{0}", row.Value);
+                    return row.Value;
+                }
+            });
+
+            this.logger.LogTrace("(-)");
+            return task;
+        }
+
+        /// <inheritdoc />
+        public Task SaveFinalizedBlockHeightAsync(int height)
+        {
+            this.logger.LogTrace("({0}:{1})", nameof(height), height);
+
+            this.finalizedHeight = height;
+
+            Task task = Task.Run(() =>
+            {
+                this.logger.LogTrace("()");
+
+                using (DBreeze.Transactions.Transaction transaction = this.dbreeze.GetTransaction())
+                {
+                    transaction.Insert<byte[], int>("FinalizedBlock", finalizedBlockKey, height);
+                    transaction.Commit();
+                }
+
+                this.logger.LogTrace("(-)");
+            });
+
+            this.logger.LogTrace("(-)");
+            return task;
         }
 
         public Task LoadAsync(ConcurrentChain chain)
@@ -89,7 +172,7 @@ namespace Stratis.Bitcoin.Base
                     ChainedHeader tip = chain.Tip;
                     ChainedHeader toSave = tip;
 
-                    List<ChainedHeader> headers = new List<ChainedHeader>();
+                    var headers = new List<ChainedHeader>();
                     while (toSave != fork)
                     {
                         headers.Add(toSave);
