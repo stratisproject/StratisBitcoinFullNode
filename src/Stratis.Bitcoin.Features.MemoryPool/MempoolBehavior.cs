@@ -258,7 +258,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             //  return true;
             //}
 
-            List<TxMempoolInfo> transactionsInMempol = await this.mempoolManager.InfoAllAsync();
+            List<TxMempoolInfo> transactionsInMempol = await this.mempoolManager.InfoAllAsync().ConfigureAwait(false);
             Money filterrate = Money.Zero;
 
             // TODO: implement minFeeFilter
@@ -429,7 +429,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             }
             else if (state.MissingInputs)
             {
-                this.orphans.ProcessesOrphansMissingInputsAsync(peer, trx);
+                this.orphans.ProcessesOrphansMissingInputs(peer, trx);
             }
             else
             {

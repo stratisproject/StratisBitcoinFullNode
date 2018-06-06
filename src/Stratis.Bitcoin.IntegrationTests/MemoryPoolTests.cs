@@ -273,11 +273,11 @@ namespace Stratis.Bitcoin.IntegrationTests
                 }
 
                 // Test LimitOrphanTxSize() function:
-                stratisNode.FullNode.NodeService<MempoolOrphans>().LimitOrphanTxSizeAsync(40);
+                stratisNode.FullNode.NodeService<MempoolOrphans>().LimitOrphanTxSize(40);
                 Assert.True(stratisNode.FullNode.NodeService<MempoolOrphans>().OrphansList().Count <= 40);
-                stratisNode.FullNode.NodeService<MempoolOrphans>().LimitOrphanTxSizeAsync(10);
+                stratisNode.FullNode.NodeService<MempoolOrphans>().LimitOrphanTxSize(10);
                 Assert.True(stratisNode.FullNode.NodeService<MempoolOrphans>().OrphansList().Count <= 10);
-                stratisNode.FullNode.NodeService<MempoolOrphans>().LimitOrphanTxSizeAsync(0);
+                stratisNode.FullNode.NodeService<MempoolOrphans>().LimitOrphanTxSize(0);
                 Assert.True(!stratisNode.FullNode.NodeService<MempoolOrphans>().OrphansList().Any());
             }
         }

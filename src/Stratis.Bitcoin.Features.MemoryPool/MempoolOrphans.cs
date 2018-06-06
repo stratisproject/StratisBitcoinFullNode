@@ -154,7 +154,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
 
             if (!isTxPresent)
             {
-                isTxPresent = await this.mempoolManager.Exists(trxid);
+                isTxPresent = await this.mempoolManager.ExistsAsync(trxid).ConfigureAwait(false);
             }                                
 
             this.logger.LogTrace("(-):{0}", isTxPresent);
@@ -274,7 +274,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <param name="from">Source node for transaction.</param>
         /// <param name="tx">Transaction to add.</param>
         /// <returns>Whether the transaction was added to orphans.</returns>
-        public bool ProcessesOrphansMissingInputsAsync(INetworkPeer from, Transaction tx)
+        public bool ProcessesOrphansMissingInputs(INetworkPeer from, Transaction tx)
         {
             this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(from), from?.RemoteSocketEndpoint, nameof(tx), tx.GetHash());
             // It may be the case that the orphans parents have all been rejected
@@ -300,11 +300,12 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                 //if (!await this.AlreadyHave(txin.PrevOut.Hash))
                 //  from. pfrom->AskFor(_inv);
             }
+
             var ret = this.AddOrphanTx(from.PeerVersion.Nonce, tx);
 
             // DoS prevention: do not allow mapOrphanTransactions to grow unbounded
             int nMaxOrphanTx = this.mempoolSettings.MaxOrphanTx;
-            int nEvicted = this.LimitOrphanTxSizeAsync(nMaxOrphanTx);
+            int nEvicted = this.LimitOrphanTxSize(nMaxOrphanTx);
             if (nEvicted > 0)
                 this.logger.LogInformation($"mapOrphan overflow, removed {nEvicted} tx");
 
@@ -319,7 +320,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// </summary>
         /// <param name="maxOrphanTx">Size to limit the orphan transactions to.</param>
         /// <returns>The number of transactions evicted.</returns>
-        public int LimitOrphanTxSizeAsync(int maxOrphanTx)
+        public int LimitOrphanTxSize(int maxOrphanTx)
         {
             this.logger.LogTrace("({0}:{1})", nameof(maxOrphanTx), maxOrphanTx);
             int nEvicted = 0;
