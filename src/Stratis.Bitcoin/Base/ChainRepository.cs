@@ -86,12 +86,13 @@ namespace Stratis.Bitcoin.Base
                     Row<byte[], int> row = transaction.Select<byte[], int>("FinalizedBlock", finalizedBlockKey);
                     if (!row.Exists)
                     {
-                        this.logger.LogTrace("(-):0");
                         this.finalizedHeight = 0;
+                        this.logger.LogTrace("(-):0");
+                        return;
                     }
-
-                    this.logger.LogTrace("(-):{0}", row.Value);
+                    
                     this.finalizedHeight = row.Value;
+                    this.logger.LogTrace("(-):{0}", row.Value);
                 }
             });
 
