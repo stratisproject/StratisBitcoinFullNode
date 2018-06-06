@@ -45,8 +45,12 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <param name="connection">Connection manager injected dependency.</param>
         /// <param name="nodeLifetime">Node lifetime injected dependency.</param>
         /// <param name="asyncLoopFactory">Asynchronous loop factory injected dependency.</param>
-        public MempoolSignaled(MempoolManager manager, ConcurrentChain chain, IConnectionManager connection,
-            INodeLifetime nodeLifetime, IAsyncLoopFactory asyncLoopFactory)
+        public MempoolSignaled(
+            MempoolManager manager, 
+            ConcurrentChain chain, 
+            IConnectionManager connection,
+            INodeLifetime nodeLifetime, 
+            IAsyncLoopFactory asyncLoopFactory)
         {
             this.manager = manager;
             this.chain = chain;
@@ -90,8 +94,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
 
         public void Stop()
         {
-            if (this.asyncLoop != null)
-                this.asyncLoop.Dispose();
+            this.asyncLoop?.Dispose();
         }
     }
 }

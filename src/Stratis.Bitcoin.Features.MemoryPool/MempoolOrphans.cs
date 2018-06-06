@@ -182,7 +182,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             while (workQueue.Any())
             {
                 // mapOrphanTransactionsByPrev.TryGet() does a .ToList() to take a new collection
-                // of orphans as this collection may be modifed later by another thread
+                // of orphans as this collection may be modified later by another thread
                 List<OrphanTx> itByPrev;
                 lock (this.lockObject)
                 {
@@ -194,9 +194,9 @@ namespace Stratis.Bitcoin.Features.MemoryPool
 
                 foreach (OrphanTx mi in itByPrev)
                 {
-                    Transaction orphanTx = mi.Tx; //->second.tx;
+                    Transaction orphanTx = mi.Tx; 
                     uint256 orphanHash = orphanTx.GetHash();
-                    ulong fromPeer = mi.NodeId;// (*mi)->second.fromPeer;
+                    ulong fromPeer = mi.NodeId;
 
                     if (setMisbehaving.Contains(fromPeer))
                         continue;
@@ -471,6 +471,9 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             }
 
             this.mapOrphanTransactions.Remove(hash);
+
+            int orphanSize = this.mapOrphanTransactions.Count;
+            this.Validator.PerformanceCounter.SetMempoolOrphanSize(orphanSize);
 
             this.logger.LogTrace("(-):true");
             return true;
