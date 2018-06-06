@@ -363,9 +363,9 @@ namespace Stratis.Bitcoin.Configuration
 
             builder.AppendLine("####Node Settings####");
             builder.AppendLine($"#Test network. Defaults to 0.");
-            builder.AppendLine($"#testnet=0");
+            builder.AppendLine($"testnet={(network.IsTest()?1:0)}");
             builder.AppendLine($"#Regression test network. Defaults to 0.");
-            builder.AppendLine($"#regtest=0");
+            builder.AppendLine($"regtest={(network.IsRegTest()?1:0)}");
             builder.AppendLine($"#Minimum fee rate. Defaults to {network.MinTxFee}.");
             builder.AppendLine($"#mintxfee={network.MinTxFee}");
             builder.AppendLine($"#Fallback fee rate. Defaults to {network.FallbackFee}.");
