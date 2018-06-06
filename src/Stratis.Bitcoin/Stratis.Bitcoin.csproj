@@ -43,6 +43,10 @@
     <ProjectReference Include="..\NBitcoin\NBitcoin.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Consensus\Rules\" />
+  </ItemGroup>
+
   <PropertyGroup Label="Configuration" Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
     <OutputType>Library</OutputType>
   </PropertyGroup>
