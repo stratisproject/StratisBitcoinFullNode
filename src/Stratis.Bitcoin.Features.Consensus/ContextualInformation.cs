@@ -1,6 +1,8 @@
 ﻿using System;
+using System.Collections.Generic;
 using NBitcoin;
 using Stratis.Bitcoin.Base.Deployments;
+using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.Consensus
@@ -43,6 +45,8 @@ namespace Stratis.Bitcoin.Features.Consensus
     /// </summary>
     public class RuleContext
     {
+        private Dictionary<Type, object> objectsBag;
+
         public NBitcoin.Consensus Consensus { get; set; }
 
         public DateTimeOffset Time { get; set; }
@@ -76,6 +80,27 @@ namespace Stratis.Bitcoin.Features.Consensus
 
         public RuleContext()
         {
+            this.objectsBag = new Dictionary<Type, object>();
+        }
+
+        public T Item<T>() where T : class
+        {
+            if (this.objectsBag.TryGetValue(typeof(T), out object objecValue))
+            {
+                return objecValue as T;
+            }
+
+            throw new Exception($"Type {typeof(T)} was not found in object bag");
+        }
+
+        public void SetItem<T>(T item) where T : class
+        {
+            if (this.objectsBag.TryAdd(typeof(T), item))
+            {
+                return;
+            }
+
+            throw new Exception($"Type {typeof(T)} was already set in the object bag");
         }
 
         public RuleContext(BlockValidationContext blockValidationContext, NBitcoin.Consensus consensus, ChainedHeader consensusTip)
