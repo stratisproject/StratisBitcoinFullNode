@@ -55,7 +55,8 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <summary><c>true</c> to accept relayed transactions received from whitelisted peers even when not relaying transactions.</summary>
         public bool WhiteListRelay { get; set; }
 
-        public NodeSettings NodeSettings { get; private set; }
+        /// <summary>Option to skip (most) non-standard transaction checks, for testnet/regtest only.</summary>
+        public bool RequireStandard { get; set; }
 
         /// <summary>
         /// Constructor for the mempool settings.
@@ -107,7 +108,8 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             this.WhiteListRelay = config.GetOrDefault("whitelistrelay", DefaultWhiteListRelay);
             logger.LogDebug("WhiteListRelay set to {0}.", this.WhiteListRelay);
 
-            this.NodeSettings = nodeSettings;
+            this.RequireStandard = config.GetOrDefault("acceptnonstdtxn", !(nodeSettings.Network.IsTest()));
+            logger.LogDebug("RequireStandard set to {0}.", this.RequireStandard);
 
             logger.LogTrace("(-)");
         }
@@ -130,6 +132,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             builder.AppendLine($"-maxorphantx=<kB>         Maximum number of orphan transactions kept in memory. Defaults to { MempoolOrphans.DefaultMaxOrphanTransactions }.");
             builder.AppendLine($"-blocksonly=<0 or 1>      Enable bandwidth saving setting to send and received confirmed blocks only. Defaults to { DefaultBlocksOnly }.");
             builder.AppendLine($"-whitelistrelay=<0 or 1>  Enable to accept relayed transactions received from whitelisted peers even when not relaying transactions. Defaults to { DefaultWhiteListRelay }.");
+            builder.AppendLine($"-acceptnonstdtxn=<0 or 1> Accept non-standard transactions. Default {!(network.IsTest())}.");
 
             NodeSettings.Default().Logger.LogInformation(builder.ToString());
         }
@@ -166,6 +169,8 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             builder.AppendLine($"#blocksonly={ (DefaultBlocksOnly?1:0) }");
             builder.AppendLine($"#Enable to accept relayed transactions received from whitelisted peers even when not relaying transactions. Defaults to { (DefaultWhiteListRelay?1:0) }.");
             builder.AppendLine($"#whitelistrelay={ (DefaultWhiteListRelay?1:0) }");
+            builder.AppendLine($"#Accept non-standard transactions. Default {!(network.IsTest())}.");
+            builder.AppendLine($"#acceptnonstdtxn={!(network.IsTest())}");
         }
     }
 }

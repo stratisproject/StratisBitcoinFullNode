@@ -56,9 +56,6 @@ namespace Stratis.Bitcoin.Configuration
         /// <summary>Combined command line arguments and configuration file settings.</summary>
         public TextFileConfiguration ConfigReader { get; private set; }
 
-        /// <summary>Option to skip (most) non-standard transaction checks, for testnet/regtest only.</summary>
-        public bool RequireStandard { get; set; }
-
         /// <summary>Supported protocol version.</summary>
         public ProtocolVersion ProtocolVersion { get; private set; }
 
@@ -266,9 +263,6 @@ namespace Stratis.Bitcoin.Configuration
         {
             var config = this.ConfigReader;
 
-            this.RequireStandard = config.GetOrDefault("acceptnonstdtxn", !(this.Network.IsTest()));
-            this.Logger.LogDebug("RequireStandard set to {0}.", this.RequireStandard);
-
             this.MinTxFeeRate = new FeeRate(config.GetOrDefault("mintxfee", this.Network.MinTxFee));
             this.Logger.LogDebug("MinTxFeeRate set to {0}.", this.MinTxFeeRate);
 
@@ -347,7 +341,6 @@ namespace Stratis.Bitcoin.Configuration
             builder.AppendLine($"-datadir=<Path>           Path to the data directory. Default {defaults.DataDir}.");
             builder.AppendLine($"-testnet                  Use the testnet chain.");
             builder.AppendLine($"-regtest                  Use the regtestnet chain.");
-            builder.AppendLine($"-acceptnonstdtxn=<0 or 1> Accept non-standard transactions. Default {(defaults.RequireStandard?1:0)}.");
             builder.AppendLine($"-mintxfee=<number>        Minimum fee rate. Defaults to network specific value.");
             builder.AppendLine($"-fallbackfee=<number>     Fallback fee rate. Defaults to network specific value.");
             builder.AppendLine($"-minrelaytxfee=<number>   Minimum relay fee rate. Defaults to network specific value.");
@@ -367,8 +360,6 @@ namespace Stratis.Bitcoin.Configuration
             var defaults = Default(network:network);
 
             builder.AppendLine("####Node Settings####");
-            builder.AppendLine($"#Accept non-standard transactions. Default {(defaults.RequireStandard?1:0)}.");
-            builder.AppendLine($"#acceptnonstdtxn={(defaults.RequireStandard?1:0)}");
             builder.AppendLine($"#Minimum fee rate. Defaults to {network.MinTxFee}.");
             builder.AppendLine($"#mintxfee={network.MinTxFee}");
             builder.AppendLine($"#Fallback fee rate. Defaults to {network.FallbackFee}.");
