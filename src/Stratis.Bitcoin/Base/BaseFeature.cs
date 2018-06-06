@@ -105,6 +105,9 @@ namespace Stratis.Bitcoin.Base
         /// <summary>Selects the best available chain based on tips provided by the peers and switches to it.</summary>
         private readonly BestChainSelector bestChainSelector;
 
+        /// <inheritdoc cref="IFinalizedBlockHeight"/>
+        private readonly IFinalizedBlockHeight finalizedBlockHeight;
+
         /// <summary>
         /// Initializes a new instance of the object.
         /// </summary>
@@ -114,6 +117,7 @@ namespace Stratis.Bitcoin.Base
         /// <param name="chain">Thread safe access to the best chain of block headers (that the node is aware of) from genesis.</param>
         /// <param name="chainState">Information about node's chain.</param>
         /// <param name="connectionManager">Manager of node's network connections.</param>
+        /// <param name="finalizedBlockHeight"><inheritdoc cref="IFinalizedBlockHeight"/></param>
         /// <param name="chainRepository">Access to the database of blocks.</param>
         /// <param name="dateTimeProvider">Provider of time functions.</param>
         /// <param name="asyncLoopFactory">Factory for creating background async loop tasks.</param>
@@ -130,6 +134,7 @@ namespace Stratis.Bitcoin.Base
             IChainState chainState,
             IConnectionManager connectionManager,
             IChainRepository chainRepository,
+            IFinalizedBlockHeight finalizedBlockHeight,
             IDateTimeProvider dateTimeProvider,
             IAsyncLoopFactory asyncLoopFactory,
             ITimeSyncBehaviorState timeSyncBehaviorState,
@@ -142,6 +147,7 @@ namespace Stratis.Bitcoin.Base
         {
             this.chainState = Guard.NotNull(chainState, nameof(chainState));
             this.chainRepository = Guard.NotNull(chainRepository, nameof(chainRepository));
+            this.finalizedBlockHeight = Guard.NotNull(finalizedBlockHeight, nameof(finalizedBlockHeight));
             this.nodeSettings = Guard.NotNull(nodeSettings, nameof(nodeSettings));
             this.dataFolder = Guard.NotNull(dataFolder, nameof(dataFolder));
             this.nodeLifetime = Guard.NotNull(nodeLifetime, nameof(nodeLifetime));
@@ -232,6 +238,9 @@ namespace Stratis.Bitcoin.Base
                 this.logger.LogInformation("Creating " + this.dataFolder.ChainPath);
                 Directory.CreateDirectory(this.dataFolder.ChainPath);
             }
+
+            this.logger.LogInformation("Loading finalized block height");
+            await this.finalizedBlockHeight.LoadFinalizedBlockHeightAsync().ConfigureAwait(false);
 
             this.logger.LogInformation("Loading chain");
             await this.chainRepository.LoadAsync(this.chain).ConfigureAwait(false);

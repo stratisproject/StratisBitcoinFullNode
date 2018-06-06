@@ -24,6 +24,10 @@ namespace Stratis.Bitcoin.Base
         /// <returns>Height of a block that can't be reorged away from.</returns>
         int GetFinalizedBlockHeight();
 
+        /// <summary>Loads the finalized block height.</summary>
+        /// <returns>Height of a block that can't be reorged away from.</returns>
+        Task LoadFinalizedBlockHeightAsync();
+
         /// <summary>Saves the finalized block height.</summary>
         /// <param name="height">Block height.</param>
         Task SaveFinalizedBlockHeightAsync(int height);
@@ -53,8 +57,6 @@ namespace Stratis.Bitcoin.Base
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
 
             this.dbreeze = new DBreezeEngine(folder);
-
-            this.finalizedHeight = this.LoadFinalizedBlockHeightAsync().GetAwaiter().GetResult();
         }
 
         public ChainRepository(DataFolder dataFolder, ILoggerFactory loggerFactory)
@@ -68,13 +70,12 @@ namespace Stratis.Bitcoin.Base
             return this.finalizedHeight;
         }
 
-        /// <summary>Loads the finalized block height.</summary>
-        /// <returns>Height of a block that can't be reorged away from.</returns>
-        private Task<int> LoadFinalizedBlockHeightAsync()
+        /// <inheritdoc />
+        public Task LoadFinalizedBlockHeightAsync()
         {
             this.logger.LogTrace("()");
 
-            Task<int> task = Task.Run(() =>
+            Task task = Task.Run(() =>
             {
                 this.logger.LogTrace("()");
 
@@ -86,11 +87,11 @@ namespace Stratis.Bitcoin.Base
                     if (!row.Exists)
                     {
                         this.logger.LogTrace("(-):0");
-                        return 0;
+                        this.finalizedHeight = 0;
                     }
 
                     this.logger.LogTrace("(-):{0}", row.Value);
-                    return row.Value;
+                    this.finalizedHeight = row.Value;
                 }
             });
 
