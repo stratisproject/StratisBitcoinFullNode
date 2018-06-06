@@ -272,7 +272,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             var transactionsToSend = new List<uint256>();
             lock (this.lockObject)
             {
-                foreach (TxMempoolInfo mempoolTransaction in transactionsInMempool)
+                foreach (TxMempoolInfo mempoolTransaction in transactionsInMempol)
                 {
                     uint256 hash = mempoolTransaction.Trx.GetHash();
                     this.inventoryTxToSend.Remove(hash);
