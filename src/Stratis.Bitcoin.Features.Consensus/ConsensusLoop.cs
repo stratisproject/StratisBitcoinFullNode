@@ -14,7 +14,6 @@ using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.Consensus.Interfaces;
 using Stratis.Bitcoin.Features.Consensus.Rules;
-using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
 using Stratis.Bitcoin.Utilities;
 
@@ -136,6 +135,13 @@ namespace Stratis.Bitcoin.Features.Consensus
 
         /// <summary>Provider of time functions.</summary>
         private readonly IDateTimeProvider dateTimeProvider;
+
+        /// <summary>
+        /// Specifies time threshold which is used to determine if flush is required.
+        /// When consensus tip timestamp is greater than current time minus the threshold the flush is required. 
+        /// </summary>
+        /// <remarks>Used only on blockchains without max reorg property.</remarks>
+        private const int FlushRequiredThresholdSeconds = 2 * 24 * 60 * 60;
 
         /// <summary>
         /// Initialize a new instance of <see cref="ConsensusLoop"/>.
@@ -444,15 +450,15 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// </summary>
         /// <remarks>
         /// For blockchains with max reorg property flush is required when consensus tip is less than max reorg blocks behind the chain tip.
-        /// If there is no max reorg property - flush is required when consensus tip timestamp is less than two weeks behind the adjusted time.
+        /// If there is no max reorg property - flush is required when consensus tip timestamp is less than <see cref="FlushRequiredThresholdSeconds"/> behind the adjusted time.
         /// </remarks>
         private bool FlushRequired()
         {
             if (this.chainState.MaxReorgLength != 0)
                 return this.Chain.Height - this.Tip.Height < this.chainState.MaxReorgLength;
 
-            int twoWeeksAsSeconds = 2 * 24 * 60 * 60;
-            return this.Tip.Header.Time > this.dateTimeProvider.GetAdjustedTimeAsUnixTimestamp() - twoWeeksAsSeconds;
+            
+            return this.Tip.Header.Time > this.dateTimeProvider.GetAdjustedTimeAsUnixTimestamp() - FlushRequiredThresholdSeconds;
         }
 
         /// <inheritdoc/>
