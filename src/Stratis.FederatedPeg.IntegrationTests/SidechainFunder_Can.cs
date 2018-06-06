@@ -42,7 +42,7 @@ namespace Stratis.FederatedPeg.IntegrationTests
     // UCFund: Send Funds to Sidechain.
     public class SidechainFunder_Can
     {
-        [Fact(Skip = "Fails after nuget update")]
+        [Fact]
         public async Task deposit_funds_to_sidechain()
         {
             int addNodeDelay = 4000;

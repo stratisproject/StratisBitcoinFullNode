@@ -19,7 +19,7 @@ namespace EnigmaChain.IntegrationTests
     [Collection("SidechainIdentifierTests")]
     public class Generated_Node_Shall
     {
-        [Fact(Skip = "Fails after nuget update")]
+        [Fact]
         public async Task Mine_Premine()
         {
             using (var nodeBuilder = NodeBuilder.Create())

@@ -18,7 +18,7 @@ namespace Stratis.Sidechains.Features.BlockchainGeneration.Tests
             ConstructorHandling = ConstructorHandling.AllowNonPublicDefaultConstructor
         };
 
-        [Fact(Skip = "Fails after nuget update. The definition of testAssets needs reviewing.")]
+        [Fact]
         public void round_trip_json_serialize()
         {
             var sidechainInfoIn = this.testAssets.GetSidechainInfo("enigma", 0);
@@ -28,7 +28,7 @@ namespace Stratis.Sidechains.Features.BlockchainGeneration.Tests
             this.testAssets.VerifySidechainInfo(sidechainInfoOut, "enigma", 0);
         }
 
-        [Fact(Skip = "Fails after nuget update. The definition of testAssets needs reviewing.")]
+        [Fact]
         public void round_trip_json_serialize_as_dictionary()
         {
             var sidechainInfo0 = this.testAssets.GetSidechainInfo("enigma", 0);

@@ -18,7 +18,7 @@ namespace Stratis.Sidechains.Features.BlockchainGeneration.Tests
     {
         private TestAssets testAssets = new TestAssets();
 
-        [Fact(Skip = "Fails after nuget update. The definition of testAssets needs reviewing.")]
+        [Fact]
         //This test might not be entirely predictable because the code could get the wrong network setting
         //from NetworkContainer if the network has already been registered.
         public void use_provider_to_create_genesis_hash()
@@ -38,7 +38,7 @@ namespace Stratis.Sidechains.Features.BlockchainGeneration.Tests
             }
         }
 
-        [Fact(Skip = "Fails after nuget update. The definition of testAssets needs reviewing.")]
+        [Fact]
         public void cache_network()
         {
             var sidechainInfoProvider = new Mock<ISidechainInfoProvider>();
@@ -68,7 +68,7 @@ namespace Stratis.Sidechains.Features.BlockchainGeneration.Tests
             }
         }
 
-        [Fact(Skip = "Fails after nuget update. The definition of testAssets needs reviewing.")]
+        [Fact]
         public void correctly_generate_genesis_hash()
         {
             Block genesis =
