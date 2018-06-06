@@ -50,11 +50,13 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <summary>Peer notifications available to subscribe to.</summary>
         private readonly Signals.Signals signals;
 
-        /// <summary>Instance logger for the memory pool component.</summary>
+        /// <summary>Instance logger for the memory pool behavior component.</summary>
         private readonly ILogger logger;
 
+        /// <summary>Factory used to create the logger for this component.</summary>
         private readonly ILoggerFactory loggerFactory;
 
+        /// <summary>The network that this component is running on.</summary>
         private readonly Network network;
 
         /// <summary>
@@ -258,7 +260,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             //  return true;
             //}
 
-            List<TxMempoolInfo> transactionsInMempol = await this.mempoolManager.InfoAllAsync();
+            List<TxMempoolInfo> transactionsInMempool = await this.mempoolManager.InfoAllAsync();
             Money filterrate = Money.Zero;
 
             // TODO: implement minFeeFilter
@@ -270,7 +272,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             var transactionsToSend = new List<uint256>();
             lock (this.lockObject)
             {
-                foreach (TxMempoolInfo mempoolTransaction in transactionsInMempol)
+                foreach (TxMempoolInfo mempoolTransaction in transactionsInMempool)
                 {
                     uint256 hash = mempoolTransaction.Trx.GetHash();
                     this.inventoryTxToSend.Remove(hash);
