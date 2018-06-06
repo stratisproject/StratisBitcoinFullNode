@@ -65,21 +65,51 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         {
             Guard.NotNull(nodeSettings, nameof(nodeSettings));
 
+            ILogger logger = nodeSettings.LoggerFactory.CreateLogger(typeof(MempoolSettings).FullName);
+
+            logger.LogTrace("()");
+
             TextFileConfiguration config = nodeSettings.ConfigReader;
+
             this.MaxMempool = config.GetOrDefault("maxmempool", MempoolValidator.DefaultMaxMempoolSize);
+            logger.LogDebug("MaxMempool set to {0}.", this.MaxMempool);
+
             this.MempoolExpiry = config.GetOrDefault("mempoolexpiry", MempoolValidator.DefaultMempoolExpiry);
+            logger.LogDebug("MempoolExpiry set to {0}.", this.MempoolExpiry);
+
             this.RelayPriority = config.GetOrDefault("relaypriority", MempoolValidator.DefaultRelaypriority);
+            logger.LogDebug("RelayPriority set to {0}.", this.RelayPriority);
+
             this.LimitFreeRelay = config.GetOrDefault("limitfreerelay", MempoolValidator.DefaultLimitfreerelay);
+            logger.LogDebug("LimitFreeRelay set to {0}.", this.LimitFreeRelay);
+
             this.LimitAncestors = config.GetOrDefault("limitancestorcount", MempoolValidator.DefaultAncestorLimit);
+            logger.LogDebug("LimitAncestors set to {0}.", this.LimitAncestors);
+
             this.LimitAncestorSize = config.GetOrDefault("limitancestorsize", MempoolValidator.DefaultAncestorSizeLimit);
+            logger.LogDebug("LimitAncestorSize set to {0}.", this.LimitAncestorSize);
+
             this.LimitDescendants = config.GetOrDefault("limitdescendantcount", MempoolValidator.DefaultDescendantLimit);
+            logger.LogDebug("LimitDescendants set to {0}.", this.LimitDescendants);
+
             this.LimitDescendantSize = config.GetOrDefault("limitdescendantsize", MempoolValidator.DefaultDescendantSizeLimit);
+            logger.LogDebug("LimitDescendantSize set to {0}.", this.LimitDescendantSize);
+
             this.EnableReplacement = config.GetOrDefault("mempoolreplacement", MempoolValidator.DefaultEnableReplacement);
+            logger.LogDebug("EnableReplacement set to {0}.", this.EnableReplacement);
+
             this.MaxOrphanTx = config.GetOrDefault("maxorphantx", MempoolOrphans.DefaultMaxOrphanTransactions);
+            logger.LogDebug("MaxOrphanTx set to {0}.", this.MaxOrphanTx);
+
             this.RelayTxes = !config.GetOrDefault("blocksonly", DefaultBlocksOnly);
+            logger.LogDebug("RelayTxes set to {0}.", this.RelayTxes);
+
             this.WhiteListRelay = config.GetOrDefault("whitelistrelay", DefaultWhiteListRelay);
+            logger.LogDebug("WhiteListRelay set to {0}.", this.WhiteListRelay);
 
             this.NodeSettings = nodeSettings;
+
+            logger.LogTrace("(-)");
         }
 
         /// <summary>Prints the help information on how to configure the mempool settings to the logger.</summary>

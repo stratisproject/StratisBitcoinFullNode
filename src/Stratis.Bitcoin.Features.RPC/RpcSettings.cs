@@ -61,15 +61,27 @@ namespace Stratis.Bitcoin.Features.RPC
         /// <param name="nodeSettings">Application configuration.</param>
         private void LoadSettingsFromConfig(NodeSettings nodeSettings)
         {
+            Guard.NotNull(nodeSettings, nameof(nodeSettings));
+            
+            ILogger logger = nodeSettings.LoggerFactory.CreateLogger(typeof(RpcSettings).FullName);
+            
+            logger.LogTrace("()");
+
             var config = nodeSettings.ConfigReader;
 
             this.Server = config.GetOrDefault<bool>("server", false);
+            logger.LogDebug("Server set to {0}.", this.Server);
+
             this.RPCPort = config.GetOrDefault<int>("rpcport", nodeSettings.Network.RPCPort);
+            logger.LogDebug("Port set to {0}.", this.RPCPort);
 
             if (this.Server)
             {
                 this.RpcUser = config.GetOrDefault<string>("rpcuser", null);
+                logger.LogDebug("RpcUser set to {0}.", this.RpcUser);
+
                 this.RpcPassword = config.GetOrDefault<string>("rpcpassword", null);
+                logger.LogDebug("RpcPassword set to {0}.", (this.RpcPassword == null) ? "" : "******");
 
                 try
                 {
@@ -82,6 +94,7 @@ namespace Stratis.Bitcoin.Features.RPC
                 {
                     throw new ConfigurationException("Invalid rpcallowip value");
                 }
+                logger.LogDebug("AllowIp set to {0} entries.", this.AllowIp.Count);
 
                 try
                 {
@@ -94,6 +107,9 @@ namespace Stratis.Bitcoin.Features.RPC
                 {
                     throw new ConfigurationException("Invalid rpcbind value");
                 }
+                logger.LogDebug("DefaultBindings set to {0} entries.", this.DefaultBindings.Count);
+
+                logger.LogTrace("(-)");
             }
         }
 

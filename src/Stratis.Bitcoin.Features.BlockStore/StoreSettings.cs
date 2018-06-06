@@ -20,15 +20,30 @@ namespace Stratis.Bitcoin.Features.BlockStore
         {
             Guard.NotNull(nodeSettings, nameof(nodeSettings));
 
+            Guard.NotNull(nodeSettings, nameof(nodeSettings));
+            
+            ILogger logger = nodeSettings.LoggerFactory.CreateLogger(typeof(StoreSettings).FullName);
+            
+            logger.LogTrace("()");
+
             TextFileConfiguration config = nodeSettings.ConfigReader;
 
             this.Prune = config.GetOrDefault<bool>("prune", false);
+            logger.LogDebug("Prune set to {0}.", this.Prune);
+
             this.TxIndex = config.GetOrDefault<bool>("txindex", false);
+            logger.LogDebug("TxIndex set to {0}.", this.TxIndex);
+
             this.ReIndex = config.GetOrDefault<bool>("reindex", false);
+            logger.LogDebug("ReIndex set to {0}.", this.ReIndex);
+
             this.MaxCacheBlocksCount = nodeSettings.ConfigReader.GetOrDefault("maxCacheBlocksCount", DefaultMaxCacheBlocksCount);
+            logger.LogDebug("MaxCacheBlocksCount set to {0}.", this.MaxCacheBlocksCount);
 
             if (this.Prune && this.TxIndex)
                 throw new ConfigurationException("Prune mode is incompatible with -txindex");
+
+            logger.LogTrace("(-)");
         }
 
         // Initialize 'MaxCacheBlocksCount' with default value of maximum 300 blocks or with user defined value.

@@ -30,8 +30,15 @@ namespace Stratis.Bitcoin.Features.Wallet
         {
             Guard.NotNull(nodeSettings, nameof(nodeSettings));
 
+            ILogger logger = nodeSettings.LoggerFactory.CreateLogger(typeof(WalletSettings).FullName);            
+            logger.LogTrace("()");
+
             TextFileConfiguration config = nodeSettings.ConfigReader;
+
             this.SaveTransactionHex = config.GetOrDefault<bool>("savetrxhex", false);
+            logger.LogDebug("SaveTransactionHex set to {0}.", this.SaveTransactionHex);
+
+            logger.LogTrace("(-)");
         }
 
         /// <summary>

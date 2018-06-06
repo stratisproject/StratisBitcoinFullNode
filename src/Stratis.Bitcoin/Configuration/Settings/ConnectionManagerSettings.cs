@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using Microsoft.Extensions.Logging;
+using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Utilities.Extensions;
 
 namespace Stratis.Bitcoin.Configuration.Settings
@@ -31,6 +33,12 @@ namespace Stratis.Bitcoin.Configuration.Settings
         /// <param name="nodeSettings">Application configuration.</param>
         public void Load(NodeSettings nodeSettings)
         {
+            Guard.NotNull(nodeSettings, nameof(nodeSettings));
+
+            ILogger logger = nodeSettings.LoggerFactory.CreateLogger(typeof(ConnectionManagerSettings).FullName);
+            
+            logger.LogTrace("()");
+
             var config = nodeSettings.ConfigReader;
 
             try
@@ -98,8 +106,15 @@ namespace Stratis.Bitcoin.Configuration.Settings
             }
 
             this.BanTimeSeconds = config.GetOrDefault<int>("bantime", ConnectionManagerSettings.DefaultMisbehavingBantimeSeconds);
+            logger.LogDebug("BanTimeSeconds set to {0}.", this.BanTimeSeconds);
+
             this.MaxOutboundConnections = config.GetOrDefault<int>("maxoutboundconnections", ConnectionManagerSettings.DefaultMaxOutboundConnections);
+            logger.LogDebug("MaxOutboundConnections set to {0}.", this.MaxOutboundConnections);
+
             this.BurstModeTargetConnections = config.GetOrDefault("burstModeTargetConnections", 1);
+            logger.LogDebug("BurstModeTargetConnections set to {0}.", this.BurstModeTargetConnections);
+
+            logger.LogTrace("(-)");
         }
 
         /// <summary>List of exclusive end points that the node should be connected to.</summary>

@@ -45,6 +45,10 @@ namespace Stratis.Bitcoin.Features.Api
         {
             Guard.NotNull(nodeSettings, nameof(nodeSettings));
 
+            ILogger logger = nodeSettings.LoggerFactory.CreateLogger(typeof(ApiSettings).FullName);
+           
+            logger.LogTrace("()");
+
             TextFileConfiguration config = nodeSettings.ConfigReader;
 
             string apiHost = config.GetOrDefault("apiuri", DefaultApiHost);
@@ -66,6 +70,9 @@ namespace Stratis.Bitcoin.Features.Api
                 this.ApiPort = apiUri.Port;
             }
 
+            logger.LogDebug("ApiUri set to {0}.", apiUri);
+            logger.LogDebug("ApiPort set to {0}.", apiPort);
+
             // Set the keepalive interval (set in seconds).
             int keepAlive = config.GetOrDefault("keepalive", 0);
             if (keepAlive > 0)
@@ -76,6 +83,10 @@ namespace Stratis.Bitcoin.Features.Api
                     Interval = keepAlive * 1000
                 };
             }
+
+            logger.LogDebug("KeepAlive set to {0}.", keepAlive);
+
+            logger.LogTrace("(-)");
         }
 
         /// <summary>
