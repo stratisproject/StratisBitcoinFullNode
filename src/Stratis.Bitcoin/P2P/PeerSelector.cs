@@ -197,9 +197,17 @@ namespace Stratis.Bitcoin.P2P
 
             // If all the selection criteria failed to return a set of peers,
             // then let the caller try again.
-            else
-                this.logger.LogTrace("[RETURN_NO_PEERS]");
+            this.logger.LogTrace("[RETURN_NO_PEERS]");
 
+            int attemptedReachedThresholdCount = this.peerAddresses.Values.Count(p => p.Attempted && p.ConnectionAttempts == PeerAddress.AttemptThreshold && !this.IsBanned(p));
+            bool areAllPeersReachedThreshold = attemptedReachedThresholdCount == this.peerAddresses.Values.Count(p => !this.IsBanned(p));
+            if (areAllPeersReachedThreshold)
+            {
+                // Reset attempts for all the peers since we've ran out of options.
+                foreach (PeerAddress peer in this.peerAddresses.Values.Where(p => !this.IsBanned(p)))
+                    peer.ResetAttempts();
+            }
+            
             return new PeerAddress[] { };
         }
 
