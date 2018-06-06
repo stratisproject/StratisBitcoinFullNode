@@ -1,0 +1,40 @@
+{
+  "ChainName": "Enigma",
+  "CoinSymbol": "EGA",
+  "CoinType": 0,
+  "CoinbaseText": "https://www.coindesk.com/apple-co-founder-backs-dorsey-bitcoin-become-webs-currency/",
+  "BaseChain": "StratisMain",
+  "MainNet": {
+    "AddressPrefix": 45,
+    "Port": 36000,
+    "RpcPort": 36100,
+    "ApiPort": 36200,
+    "PowLimit": "00000fffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+    "Magic": 0,
+    "MinTxFee": 0,
+    "FallbackFee": 0,
+    "MinRelayTxFee": 0
+  },
+  "TestNet": {
+    "AddressPrefix": 46,
+    "Port": 36001,
+    "RpcPort": 36101,
+    "ApiPort": 36201,
+    "PowLimit": "0000ffff00000000000000000000000000000000000000000000000000000000",
+    "Magic": 0,
+    "MinTxFee": 0,
+    "FallbackFee": 0,
+    "MinRelayTxFee": 0
+  },
+  "RegTest": {
+    "AddressPrefix": 47,
+    "Port": 36002,
+    "RpcPort": 36102,
+    "ApiPort": 36202,
+    "PowLimit": "7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+    "Magic": 0,
+    "MinTxFee": 0,
+    "FallbackFee": 0,
+    "MinRelayTxFee": 0
+  }
+}

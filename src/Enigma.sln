@@ -46,6 +46,10 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.Sidechains.Features
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.Sidechains.Features.BlockGenerator", "Stratis.Sidechains.Features.BlockGenerator\Stratis.Sidechains.Features.BlockGenerator.csproj", "{D5FC8EBA-7DDE-47DD-B12A-80A46AC8C846}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.FederatedSidechains.Initialisation", "Stratis.FederatedSidechains.Initialisation\Stratis.FederatedSidechains.Initialisation.csproj", "{3526B5DB-8E08-445F-9DCE-65566491D94F}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Stratis.FederatedSidechains.Initialisation.Tests", "Stratis.FederatedSidechains.Initialisation.Tests\Stratis.FederatedSidechains.Initialisation.Tests.csproj", "{3D106928-3A8E-4EB1-9F9A-45856DBAA16B}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -128,74 +132,19 @@ Global
 		{D5FC8EBA-7DDE-47DD-B12A-80A46AC8C846}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D5FC8EBA-7DDE-47DD-B12A-80A46AC8C846}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D5FC8EBA-7DDE-47DD-B12A-80A46AC8C846}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3526B5DB-8E08-445F-9DCE-65566491D94F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3526B5DB-8E08-445F-9DCE-65566491D94F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3526B5DB-8E08-445F-9DCE-65566491D94F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3526B5DB-8E08-445F-9DCE-65566491D94F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3D106928-3A8E-4EB1-9F9A-45856DBAA16B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3D106928-3A8E-4EB1-9F9A-45856DBAA16B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3D106928-3A8E-4EB1-9F9A-45856DBAA16B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3D106928-3A8E-4EB1-9F9A-45856DBAA16B}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {034BDA2C-1CEE-4128-B444-CE1D425CB11C}
-	EndGlobalSection
-	GlobalSection(TeamFoundationVersionControl) = preSolution
-		SccNumberOfProjects = 20
-		SccEnterpriseProvider = {4CA58AB2-18FA-4F8D-95D4-32DDF27D184C}
-		SccTeamFoundationServer = https://stratisplatformuk.visualstudio.com/
-		SccLocalPath0 = .
-		SccProjectUniqueName1 = FedKeyPairGen\\FedKeyPairGen.csproj
-		SccProjectName1 = FedKeyPairGen
-		SccLocalPath1 = FedKeyPairGen
-		SccProjectUniqueName2 = Stratis.SidechainD\\Stratis.SidechainD.csproj
-		SccProjectName2 = Stratis.SidechainD
-		SccLocalPath2 = Stratis.SidechainD
-		SccProjectUniqueName3 = Stratis.MainchainD\\Stratis.MainchainD.csproj
-		SccProjectName3 = Stratis.MainchainD
-		SccLocalPath3 = Stratis.MainchainD
-		SccProjectUniqueName4 = Stratis.FederatedPeg.Features.SidechainGeneratorServices\\Stratis.FederatedPeg.Features.SidechainGeneratorServices.csproj
-		SccProjectName4 = Stratis.FederatedPeg.Features.SidechainGeneratorServices
-		SccLocalPath4 = Stratis.FederatedPeg.Features.SidechainGeneratorServices
-		SccProjectUniqueName5 = Stratis.FederatedPeg.IntegrationTests\\Stratis.FederatedPeg.IntegrationTests.csproj
-		SccProjectName5 = Stratis.FederatedPeg.IntegrationTests
-		SccLocalPath5 = Stratis.FederatedPeg.IntegrationTests
-		SccProjectUniqueName6 = Stratis.FederatedPeg.Features.MainchainGeneratorServices\\Stratis.FederatedPeg.Features.MainchainGeneratorServices.csproj
-		SccProjectName6 = Stratis.FederatedPeg.Features.MainchainGeneratorServices
-		SccLocalPath6 = Stratis.FederatedPeg.Features.MainchainGeneratorServices
-		SccProjectUniqueName7 = Stratis.FederatedPeg\\Stratis.FederatedPeg.csproj
-		SccProjectName7 = Stratis.FederatedPeg
-		SccLocalPath7 = Stratis.FederatedPeg
-		SccProjectUniqueName8 = Stratis.FederatedPeg.Tests\\Stratis.FederatedPeg.Tests.csproj
-		SccProjectName8 = Stratis.FederatedPeg.Tests
-		SccLocalPath8 = Stratis.FederatedPeg.Tests
-		SccProjectUniqueName9 = Stratis.FederatedPeg.Features.FederationGateway\\Stratis.FederatedPeg.Features.FederationGateway.csproj
-		SccProjectName9 = Stratis.FederatedPeg.Features.FederationGateway
-		SccLocalPath9 = Stratis.FederatedPeg.Features.FederationGateway
-		SccProjectUniqueName10 = Stratis.FederationGatewayD\\Stratis.FederationGatewayD.csproj
-		SccProjectName10 = Stratis.FederationGatewayD
-		SccLocalPath10 = Stratis.FederationGatewayD
-		SccProjectUniqueName11 = Stratis.FederatedPeg.Features.FederationGateway.Tests\\Stratis.FederatedPeg.Features.FederationGateway.Tests.csproj
-		SccProjectName11 = Stratis.FederatedPeg.Features.FederationGateway.Tests
-		SccLocalPath11 = Stratis.FederatedPeg.Features.FederationGateway.Tests
-		SccProjectUniqueName12 = Stratis.Bitcoin.Features.GeneralPurposeWallet\\Stratis.Bitcoin.Features.GeneralPurposeWallet.csproj
-		SccProjectName12 = Stratis.Bitcoin.Features.GeneralPurposeWallet
-		SccLocalPath12 = Stratis.Bitcoin.Features.GeneralPurposeWallet
-		SccProjectUniqueName13 = Stratis.Sidechains.Commands\\Stratis.Sidechains.Commands.csproj
-		SccProjectName13 = Stratis.Sidechains.Commands
-		SccLocalPath13 = Stratis.Sidechains.Commands
-		SccProjectUniqueName14 = Stratis.Sidechains.Commands.Tests\\Stratis.Sidechains.Commands.Tests.csproj
-		SccProjectName14 = Stratis.Sidechains.Commands.Tests
-		SccLocalPath14 = Stratis.Sidechains.Commands.Tests
-		SccProjectUniqueName15 = Stratis.Sidechains.Features.BlockchainGeneration\\Stratis.Sidechains.Features.BlockchainGeneration.csproj
-		SccProjectName15 = Stratis.Sidechains.Features.BlockchainGeneration
-		SccLocalPath15 = Stratis.Sidechains.Features.BlockchainGeneration
-		SccProjectUniqueName16 = Stratis.Sidechains.Features.BlockchainGeneration.IntegrationTests\\Stratis.Sidechains.Features.BlockchainGeneration.IntegrationTests.csproj
-		SccProjectName16 = Stratis.Sidechains.Features.BlockchainGeneration.IntegrationTests
-		SccLocalPath16 = Stratis.Sidechains.Features.BlockchainGeneration.IntegrationTests
-		SccProjectUniqueName17 = Stratis.Sidechains.Features.BlockchainGeneration.Tests\\Stratis.Sidechains.Features.BlockchainGeneration.Tests.csproj
-		SccProjectName17 = Stratis.Sidechains.Features.BlockchainGeneration.Tests
-		SccLocalPath17 = Stratis.Sidechains.Features.BlockchainGeneration.Tests
-		SccProjectUniqueName18 = Stratis.Sidechains.Features.BlockchainGeneration.Tests.Common\\Stratis.Sidechains.Features.BlockchainGeneration.Tests.Common.csproj
-		SccProjectName18 = Stratis.Sidechains.Features.BlockchainGeneration.Tests.Common
-		SccLocalPath18 = Stratis.Sidechains.Features.BlockchainGeneration.Tests.Common
-		SccProjectUniqueName19 = Stratis.Sidechains.Features.BlockGenerator\\Stratis.Sidechains.Features.BlockGenerator.csproj
-		SccProjectName19 = Stratis.Sidechains.Features.BlockGenerator
-		SccLocalPath19 = Stratis.Sidechains.Features.BlockGenerator
 	EndGlobalSection
 EndGlobal
