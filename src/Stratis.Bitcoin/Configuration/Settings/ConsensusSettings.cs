@@ -20,6 +20,9 @@ namespace Stratis.Bitcoin.Configuration.Settings
         /// </summary>
         public uint256 BlockAssumedValid { get; set; }
 
+        /// <summary>Maximum tip age in seconds to consider node in initial block download.</summary>
+        public int MaxTipAge { get; private set; }
+
         public ConsensusSettings() : this(NodeSettings.Default())
         {
         }
@@ -39,8 +42,11 @@ namespace Stratis.Bitcoin.Configuration.Settings
             else
                 this.BlockAssumedValid = config.GetOrDefault<uint256>("assumevalid", nodeSettings.Network.Consensus.DefaultAssumeValid);            
             logger.LogDebug("Assume valid block is '{0}'.", this.BlockAssumedValid == null ? "disabled" : this.BlockAssumedValid.ToString());
+
+            this.MaxTipAge = config.GetOrDefault("maxtipage", nodeSettings.Network.MaxTipAge);
+            logger.LogDebug("MaxTipAge set to {0}.", this.MaxTipAge);
         }
-        
+
         /// <summary>Prints the help information on how to configure the Consensus settings to the logger.</summary>
         /// <param name="network">The network to use.</param>
         public static void PrintHelp(Network network)
@@ -51,6 +57,7 @@ namespace Stratis.Bitcoin.Configuration.Settings
 
             builder.AppendLine($"-checkpoints=<0 or 1>     Use checkpoints. Default 1.");
             builder.AppendLine($"-assumevalid=<hex>        If this block is in the chain assume that it and its ancestors are valid and potentially skip their script verification (0 to verify all). Defaults to { network.Consensus.DefaultAssumeValid }.");
+            builder.AppendLine($"-maxtipage=<number>       Max tip age. Default {network.MaxTipAge}.");
 
             NodeSettings.Default().Logger.LogInformation(builder.ToString());
         }
@@ -67,6 +74,8 @@ namespace Stratis.Bitcoin.Configuration.Settings
             builder.AppendLine($"#checkpoints=1");
             builder.AppendLine($"#If this block is in the chain assume that it and its ancestors are valid and potentially skip their script verification (0 to verify all). Defaults to { network.Consensus.DefaultAssumeValid }.");
             builder.AppendLine($"#assumevalid={network.Consensus.DefaultAssumeValid}");
+            builder.AppendLine($"#Max tip age. Default {network.MaxTipAge}.");
+            builder.AppendLine($"#maxtipage={network.MaxTipAge}");
         }
     }
 }

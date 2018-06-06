@@ -68,9 +68,6 @@ namespace Stratis.Bitcoin.Configuration
         /// <summary>The node's user agent.</summary>
         public string Agent { get; private set; }
 
-        /// <summary>Maximum tip age in seconds to consider node in initial block download.</summary>
-        public int MaxTipAge { get; private set; }
-
         /// <summary>Minimum transaction fee for network.</summary>
         public FeeRate MinTxFeeRate { get; private set; }
 
@@ -272,9 +269,6 @@ namespace Stratis.Bitcoin.Configuration
             this.RequireStandard = config.GetOrDefault("acceptnonstdtxn", !(this.Network.IsTest()));
             this.Logger.LogDebug("RequireStandard set to {0}.", this.RequireStandard);
 
-            this.MaxTipAge = config.GetOrDefault("maxtipage", this.Network.MaxTipAge);
-            this.Logger.LogDebug("MaxTipAge set to {0}.", this.MaxTipAge);
-
             this.MinTxFeeRate = new FeeRate(config.GetOrDefault("mintxfee", this.Network.MinTxFee));
             this.Logger.LogDebug("MinTxFeeRate set to {0}.", this.MinTxFeeRate);
 
@@ -354,7 +348,6 @@ namespace Stratis.Bitcoin.Configuration
             builder.AppendLine($"-testnet                  Use the testnet chain.");
             builder.AppendLine($"-regtest                  Use the regtestnet chain.");
             builder.AppendLine($"-acceptnonstdtxn=<0 or 1> Accept non-standard transactions. Default {(defaults.RequireStandard?1:0)}.");
-            builder.AppendLine($"-maxtipage=<number>       Max tip age. Default {network.MaxTipAge}.");
             builder.AppendLine($"-mintxfee=<number>        Minimum fee rate. Defaults to network specific value.");
             builder.AppendLine($"-fallbackfee=<number>     Fallback fee rate. Defaults to network specific value.");
             builder.AppendLine($"-minrelaytxfee=<number>   Minimum relay fee rate. Defaults to network specific value.");
@@ -376,8 +369,6 @@ namespace Stratis.Bitcoin.Configuration
             builder.AppendLine("####Node Settings####");
             builder.AppendLine($"#Accept non-standard transactions. Default {(defaults.RequireStandard?1:0)}.");
             builder.AppendLine($"#acceptnonstdtxn={(defaults.RequireStandard?1:0)}");
-            builder.AppendLine($"#Max tip age. Default {network.MaxTipAge}.");
-            builder.AppendLine($"#maxtipage={network.MaxTipAge}");
             builder.AppendLine($"#Minimum fee rate. Defaults to {network.MinTxFee}.");
             builder.AppendLine($"#mintxfee={network.MinTxFee}");
             builder.AppendLine($"#Fallback fee rate. Defaults to {network.FallbackFee}.");
