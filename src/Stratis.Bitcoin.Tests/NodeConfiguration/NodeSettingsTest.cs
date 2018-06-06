@@ -1,6 +1,7 @@
 ﻿using System.IO;
 using NBitcoin;
 using Stratis.Bitcoin.Configuration;
+using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Tests.Common;
 using Xunit;
 
@@ -19,9 +20,9 @@ namespace Stratis.Bitcoin.Tests.NodeConfiguration
         public void NodeSettings_CanReadSingleValueFromCmdLine()
         {
             // Arrange
-            var nodeSettings = new NodeSettings(args:new[] { "-agentprefix=abc" });
+            var connectionSettings = new ConnectionManagerSettings().Load(new NodeSettings(args:new[] { "-agentprefix=abc" }));
             // Act
-            string result = nodeSettings.Agent;
+            string result = connectionSettings.Agent;
             // Assert
             Assert.Equal("abc-StratisBitcoin", result);
         }
@@ -36,9 +37,9 @@ namespace Stratis.Bitcoin.Tests.NodeConfiguration
             string dataDir = TestBase.CreateDataFolder(this).RootPath;
             var configFile = Path.Combine(dataDir, "config.txt");
             File.WriteAllText(configFile, "agentprefix=def");
-            var nodeSettings = new NodeSettings(args: new[] { $"-datadir={dataDir}", $"-conf=config.txt" });
+            var connectionSettings = new ConnectionManagerSettings().Load(new NodeSettings(args: new[] { $"-datadir={dataDir}", $"-conf=config.txt" }));
             // Act
-            string result = nodeSettings.Agent;
+            string result = connectionSettings.Agent;
             // Assert
             Assert.Equal("def-StratisBitcoin", result);
         }
@@ -53,9 +54,9 @@ namespace Stratis.Bitcoin.Tests.NodeConfiguration
             string dataDir = TestBase.CreateDataFolder(this).RootPath;
             var configFile = Path.Combine(dataDir, "config.txt");
             File.WriteAllText(configFile, "agentprefix=def");
-            var nodeSettings = new NodeSettings(args: new[] { $"-datadir={dataDir}", $"-conf=config.txt", "-agentprefix=abc" });
+            var connectionSettings = new ConnectionManagerSettings().Load(new NodeSettings(args: new[] { $"-datadir={dataDir}", $"-conf=config.txt", "-agentprefix=abc" }));
             // Act
-            string result = nodeSettings.Agent;
+            string result = connectionSettings.Agent;
             // Assert
             Assert.Equal("abc-StratisBitcoin", result);
         }
@@ -70,9 +71,9 @@ namespace Stratis.Bitcoin.Tests.NodeConfiguration
             string dataDir = TestBase.CreateDataFolder(this).RootPath;
             var configFile = Path.Combine(dataDir, "config.txt");
             File.WriteAllText(configFile, "");
-            var nodeSettings = new NodeSettings(args: new[] { $"-datadir={dataDir}", $"-conf=config.txt" });
+            var connectionSettings = new ConnectionManagerSettings().Load(new NodeSettings(args: new[] { $"-datadir={dataDir}", $"-conf=config.txt" }));
             // Act
-            string result = nodeSettings.Agent;
+            string result = connectionSettings.Agent;
             // Assert
             Assert.Equal("StratisBitcoin", result);
         }

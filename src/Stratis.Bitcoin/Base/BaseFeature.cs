@@ -187,7 +187,7 @@ namespace Stratis.Bitcoin.Base
 
             this.StartAddressManager(connectionParameters);
 
-            if (this.nodeSettings.SyncTimeEnabled)
+            if (this.connectionManager.ConnectionSettings.SyncTimeEnabled)
             {
                 connectionParameters.TemplateBehaviors.Add(new TimeSyncBehavior(this.timeSyncBehaviorState, this.dateTimeProvider, this.loggerFactory));
             }

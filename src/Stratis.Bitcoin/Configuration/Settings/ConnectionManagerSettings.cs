@@ -2,7 +2,9 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Text;
 using Microsoft.Extensions.Logging;
+using NBitcoin;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Utilities.Extensions;
 
@@ -16,6 +18,9 @@ namespace Stratis.Bitcoin.Configuration.Settings
         /// <summary>Number of seconds to keep misbehaving peers from reconnecting (Default 24-hour ban).</summary>
         public const int DefaultMisbehavingBantimeSeconds = 24 * 60 * 60;
         public const int DefaultMaxOutboundConnections = 8;
+
+        /// <summary>Maximum number of AgentPrefix characters to use in the Agent value.</summary>
+        private const int MaximumAgentPrefixLength = 10;
 
         /// <summary>
         /// Default constructor.
@@ -31,7 +36,7 @@ namespace Stratis.Bitcoin.Configuration.Settings
         /// Loads the ConnectionManager related settings from the application configuration.
         /// </summary>
         /// <param name="nodeSettings">Application configuration.</param>
-        public void Load(NodeSettings nodeSettings)
+        public ConnectionManagerSettings Load(NodeSettings nodeSettings)
         {
             Guard.NotNull(nodeSettings, nameof(nodeSettings));
 
@@ -114,7 +119,73 @@ namespace Stratis.Bitcoin.Configuration.Settings
             this.BurstModeTargetConnections = config.GetOrDefault("burstModeTargetConnections", 1);
             logger.LogDebug("BurstModeTargetConnections set to {0}.", this.BurstModeTargetConnections);
 
+            this.SyncTimeEnabled = config.GetOrDefault<bool>("synctime", true);
+            logger.LogDebug("Time synchronization with peers is {0}.", this.SyncTimeEnabled ? "enabled" : "disabled");
+
+            var agentPrefix = config.GetOrDefault("agentprefix", string.Empty).Replace("-", "");
+            if (agentPrefix.Length > MaximumAgentPrefixLength)
+                agentPrefix = agentPrefix.Substring(0, MaximumAgentPrefixLength);
+            logger.LogDebug("AgentPrefix set to {0}.", agentPrefix);
+
+            this.Agent = string.IsNullOrEmpty(agentPrefix) ? nodeSettings.Agent : $"{agentPrefix}-{nodeSettings.Agent}";
+            logger.LogDebug("Agent set to {0}.", this.Agent);
+
             logger.LogTrace("(-)");
+
+            return this;
+        }
+
+        /// <summary>
+        /// Get the default configuration.
+        /// </summary>
+        /// <param name="builder">The string builder to add the settings to.</param>
+        /// <param name="network">The network to base the defaults off.</param>
+        public static void BuildDefaultConfigurationFile(StringBuilder builder, Network network)
+        {
+            var defaults = NodeSettings.Default(network: network);
+            builder.AppendLine("####ConnectionManager Settings####");
+            builder.AppendLine($"#The default network port to connect to. Default { network.DefaultPort }.");
+            builder.AppendLine($"#port={network.DefaultPort}");
+            builder.AppendLine($"#Specified node to connect to. Can be specified multiple times.");
+            builder.AppendLine($"#connect=<ip:port>");
+            builder.AppendLine($"#Add a node to connect to and attempt to keep the connection open. Can be specified multiple times.");
+            builder.AppendLine($"#addnode=<ip:port>");
+            builder.AppendLine($"#Bind to given address and whitelist peers connecting to it. Use [host]:port notation for IPv6. Can be specified multiple times.");
+            builder.AppendLine($"#whitebind=<ip:port>");
+            builder.AppendLine($"#Specify your own public address.");
+            builder.AppendLine($"#externalip=<ip>");
+            builder.AppendLine($"#Number of seconds to keep misbehaving peers from reconnecting. Default {ConnectionManagerSettings.DefaultMisbehavingBantimeSeconds}.");
+            builder.AppendLine($"#bantime=<number>");
+            builder.AppendLine($"#The maximum number of outbound connections. Default {ConnectionManagerSettings.DefaultMaxOutboundConnections}.");
+            builder.AppendLine($"#maxoutboundconnections=<number>");
+            builder.AppendLine($"#Sync with peers. Default 1.");
+            builder.AppendLine($"#synctime=1");
+            builder.AppendLine($"#An optional prefix for the node's user agent shared with peers. Truncated if over { MaximumAgentPrefixLength } characters.");
+            builder.AppendLine($"#agentprefix=<string>");
+        }
+
+        /// <summary>
+        /// Displays command-line help.
+        /// </summary>
+        /// <param name="network">The network to extract values from.</param>
+        public static void PrintHelp(Network network)
+        {
+            Guard.NotNull(network, nameof(network));
+
+            var defaults = NodeSettings.Default(network: network);
+
+            var builder = new StringBuilder();
+            builder.AppendLine($"-port=<port>              The default network port to connect to. Default { network.DefaultPort }.");
+            builder.AppendLine($"-connect=<ip:port>        Specified node to connect to. Can be specified multiple times.");
+            builder.AppendLine($"-addnode=<ip:port>        Add a node to connect to and attempt to keep the connection open. Can be specified multiple times.");
+            builder.AppendLine($"-whitebind=<ip:port>      Bind to given address and whitelist peers connecting to it. Use [host]:port notation for IPv6. Can be specified multiple times.");
+            builder.AppendLine($"-externalip=<ip>          Specify your own public address.");
+            builder.AppendLine($"-bantime=<number>         Number of seconds to keep misbehaving peers from reconnecting. Default {ConnectionManagerSettings.DefaultMisbehavingBantimeSeconds}.");
+            builder.AppendLine($"-maxoutboundconnections=<number> The maximum number of outbound connections. Default {ConnectionManagerSettings.DefaultMaxOutboundConnections}.");
+            builder.AppendLine($"-synctime=<0 or 1>        Sync with peers. Default 1.");
+            builder.AppendLine($"-agentprefix=<string>     An optional prefix for the node's user agent that will be shared with peers in the version handshake.");
+
+            defaults.Logger.LogInformation(builder.ToString());
         }
 
         /// <summary>List of exclusive end points that the node should be connected to.</summary>
@@ -137,5 +208,11 @@ namespace Stratis.Bitcoin.Configuration.Settings
 
         /// <summary>Connections number after which burst connectivity mode (connection attempts with no delay in between) will be disabled.</summary>
         public int BurstModeTargetConnections { get; internal set; }
+
+        /// <summary><c>true</c> to sync time with other peers and calculate adjusted time, <c>false</c> to use our system clock only.</summary>
+        public bool SyncTimeEnabled { get; private set; }
+
+        /// <summary>The node's user agent.</summary>
+        public string Agent { get; private set; }
     }
 }
