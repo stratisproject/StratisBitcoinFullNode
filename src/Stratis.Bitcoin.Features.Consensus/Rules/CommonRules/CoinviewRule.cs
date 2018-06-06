@@ -104,7 +104,14 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
                                 var checker = new TransactionChecker(tx, inputIndexCopy, txout.Value, txData);
                                 var ctx = new ScriptEvaluationContext(this.Parent.Network);
                                 ctx.ScriptVerify = flags.ScriptFlags;
-                                return ctx.VerifyScript(input.ScriptSig, txout.ScriptPubKey, checker);
+                                bool verifyScriptResult = ctx.VerifyScript(input.ScriptSig, txout.ScriptPubKey, checker);
+
+                                if (verifyScriptResult == false)
+                                {
+                                    this.Logger.LogTrace("Verify script for transaction `{0}` failed, ScriptSig = `{1}`, ScriptPubKey = `{2}`, script evaluation error = '{3}'", tx.GetHash(), input.ScriptSig, txout.ScriptPubKey, ctx.Error);
+                                }
+
+                                return verifyScriptResult;
                             });
                             checkInput.Start();
                             checkInputs.Add(checkInput);
