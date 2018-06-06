@@ -33,4 +33,11 @@ namespace Stratis.Bitcoin.Consensus
         {
         }
     }
+
+    public class BlockDownloadedForMissingChainedHeaderException : ConsensusException
+    {
+        public BlockDownloadedForMissingChainedHeaderException() : base()
+        {
+        }
+    }
 }

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Net;
 using System.Runtime.CompilerServices;
 using System.Threading;
@@ -14,6 +15,7 @@ using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.Consensus.Interfaces;
 using Stratis.Bitcoin.Features.Consensus.Rules;
+using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
 using Stratis.Bitcoin.Utilities;
 
@@ -80,7 +82,7 @@ namespace Stratis.Bitcoin.Features.Consensus
     /// When consensus loop is being initialized we rewind it in case block store is behind or the <see cref="Tip"/> is not part of the best chain.
     /// </para>
     /// </remarks>
-    public class ConsensusLoop : IConsensusLoop
+    public class ConsensusLoop : IConsensusLoop, INetworkDifficulty, IGetUnspentTransaction
     {
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
@@ -500,6 +502,21 @@ namespace Stratis.Bitcoin.Features.Consensus
                 await cachedCoinView.FlushAsync(force).ConfigureAwait(false);
 
             this.logger.LogTrace("(-)");
+        }
+
+        /// <inheritdoc/>
+        public Target GetNetworkDifficulty()
+        {
+            return this.Tip?.GetWorkRequired(this.nodeSettings.Network.Consensus);
+        }
+
+        /// <inheritdoc />
+        public async Task<UnspentOutputs> GetUnspentTransactionAsync(uint256 trxid)
+        {
+            CoinViews.FetchCoinsResponse response = null;
+            if (this.UTXOSet != null)
+                response = await this.UTXOSet.FetchCoinsAsync(new[] { trxid }).ConfigureAwait(false);
+            return response?.UnspentOutputs?.SingleOrDefault();
         }
     }
 }
