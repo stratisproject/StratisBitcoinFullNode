@@ -121,7 +121,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             builder.AppendLine($"-mempoolreplacement=<0 or 1>  Enable transaction replacement in the memory pool.");
             builder.AppendLine($"-maxorphantx=<kB>         Maximum number of orphan transactions kept in memory. Defaults to { MempoolOrphans.DefaultMaxOrphanTransactions }.");
             builder.AppendLine($"-whitelistrelay=<0 or 1>  Enable to accept relayed transactions received from whitelisted peers even when not relaying transactions. Defaults to { DefaultWhiteListRelay }.");
-            builder.AppendLine($"-acceptnonstdtxn=<0 or 1> Accept non-standard transactions. Default {!(network.IsTest())}.");
+            builder.AppendLine($"-acceptnonstdtxn=<0 or 1> Accept non-standard transactions. Default {(!(network.IsTest())?1:0)}.");
 
             NodeSettings.Default().Logger.LogInformation(builder.ToString());
         }
@@ -156,8 +156,8 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             builder.AppendLine($"#maxorphantx={ MempoolOrphans.DefaultMaxOrphanTransactions }");
             builder.AppendLine($"#Enable to accept relayed transactions received from whitelisted peers even when not relaying transactions. Defaults to { (DefaultWhiteListRelay?1:0) }.");
             builder.AppendLine($"#whitelistrelay={ (DefaultWhiteListRelay?1:0) }");
-            builder.AppendLine($"#Accept non-standard transactions. Default {!(network.IsTest())}.");
-            builder.AppendLine($"#acceptnonstdtxn={!(network.IsTest())}");
+            builder.AppendLine($"#Accept non-standard transactions. Default {(!(network.IsTest())?1:0)}.");
+            builder.AppendLine($"#acceptnonstdtxn={(!(network.IsTest())?1:0)}");
         }
     }
 }
