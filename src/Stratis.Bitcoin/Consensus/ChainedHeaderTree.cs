@@ -59,6 +59,7 @@ namespace Stratis.Bitcoin.Consensus
         private readonly ICheckpoints checkpoints;
         private readonly IChainState chainState;
         private readonly ConsensusSettings consensusSettings;
+        private readonly IFinalizedBlockHeight finalizedBlockHeight;
 
         /// <summary>A special peer identifier that represents our local node.</summary>
         internal const int LocalPeerId = -1;
@@ -97,12 +98,14 @@ namespace Stratis.Bitcoin.Consensus
             IChainedHeaderValidator chainedHeaderValidator,
             ICheckpoints checkpoints,
             IChainState chainState,
+            IFinalizedBlockHeight finalizedBlockHeight,
             ConsensusSettings consensusSettings)
         {
             this.network = network;
             this.chainedHeaderValidator = chainedHeaderValidator;
             this.checkpoints = checkpoints;
             this.chainState = chainState;
+            this.finalizedBlockHeight = finalizedBlockHeight;
             this.consensusSettings = consensusSettings;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
 

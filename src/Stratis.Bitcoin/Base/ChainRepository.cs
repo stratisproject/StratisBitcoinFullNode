@@ -16,7 +16,10 @@ namespace Stratis.Bitcoin.Base
         Task LoadAsync(ConcurrentChain chain);
 
         Task SaveAsync(ConcurrentChain chain);
+    }
 
+    public interface IFinalizedBlockHeight : IDisposable
+    {
         /// <summary>Gets the finalized block height.</summary>
         /// <returns>Height of a block that can't be reorged away from.</returns>
         int GetFinalizedBlockHeight();
@@ -26,7 +29,7 @@ namespace Stratis.Bitcoin.Base
         Task SaveFinalizedBlockHeightAsync(int height);
     }
 
-    public class ChainRepository : IChainRepository
+    public class ChainRepository : IChainRepository, IFinalizedBlockHeight
     {
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;

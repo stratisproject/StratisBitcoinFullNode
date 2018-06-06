@@ -55,7 +55,7 @@ namespace Stratis.Bitcoin.Base
         private readonly IChainState chainState;
 
         /// <summary>Access to the database of blocks.</summary>
-        private readonly ChainRepository chainRepository;
+        private readonly IChainRepository chainRepository;
 
         /// <summary>User defined node settings.</summary>
         private readonly NodeSettings nodeSettings;
@@ -129,7 +129,7 @@ namespace Stratis.Bitcoin.Base
             ConcurrentChain chain,
             IChainState chainState,
             IConnectionManager connectionManager,
-            ChainRepository chainRepository,
+            IChainRepository chainRepository,
             IDateTimeProvider dateTimeProvider,
             IAsyncLoopFactory asyncLoopFactory,
             ITimeSyncBehaviorState timeSyncBehaviorState,
@@ -323,7 +323,7 @@ namespace Stratis.Bitcoin.Base
                     services.AddSingleton<IDateTimeProvider>(DateTimeProvider.Default);
                     services.AddSingleton<IInvalidBlockHashStore, InvalidBlockHashStore>();
                     services.AddSingleton<IChainState, ChainState>();
-                    services.AddSingleton<ChainRepository>();
+                    services.AddSingleton<IChainRepository, ChainRepository>().AddSingleton<IFinalizedBlockHeight, ChainRepository>(provider => provider.GetService<IChainRepository>() as ChainRepository);
                     services.AddSingleton<ITimeSyncBehaviorState, TimeSyncBehaviorState>();
                     services.AddSingleton<IAsyncLoopFactory, AsyncLoopFactory>();
                     services.AddSingleton<NodeDeployments>();
