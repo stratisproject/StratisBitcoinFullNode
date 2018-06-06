@@ -207,25 +207,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             return this.MempoolLock.ReadAsync(() => this.memPool.DynamicMemoryUsage());
         }
 
-        /// <summary>
-        /// Removes transaction from a block in memory pool.
-        /// </summary>
-        /// <param name="block">Block of transactions.</param>
-        /// <param name="blockHeight">Location of the block.</param>
-        public Task RemoveForBlock(Block block, int blockHeight)
-        {
-            //if (this.IsInitialBlockDownload)
-            //  return Task.CompletedTask;
-
-            return this.MempoolLock.WriteAsync(() =>
-            {
-                this.memPool.RemoveForBlock(block.Transactions, blockHeight);
-
-                this.Validator.PerformanceCounter.SetMempoolSize(this.memPool.Size);
-                this.Validator.PerformanceCounter.SetMempoolDynamicSize(this.memPool.DynamicMemoryUsage());
-            });
-        }
-
         /// <inheritdoc />
         public async Task<UnspentOutputs> GetUnspentTransactionAsync(uint256 trxid)
         {

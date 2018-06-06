@@ -125,6 +125,34 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         }
 
         /// <summary>
+        /// Orphan list count.
+        /// </summary>
+        public int OrphansCount() 
+        {
+            lock (this.lockObject)
+            {
+                return this.mapOrphanTransactions.Count;
+            }
+        }
+
+        /// <summary>
+        /// Remove transactions form the orphan list.
+        /// </summary>
+        public void RemoveForBlock(List<Transaction> transactionsToRemove)
+        {
+            lock (this.lockObject)
+            {
+                lock (this.lockObject)
+                {
+                    foreach (Transaction transaction in transactionsToRemove)
+                    {
+                        this.EraseOrphanTxLock(transaction.GetHash());
+                    }
+                }
+            }
+        }
+
+        /// <summary>
         /// Whether the transaction id is already present in the list of orphans.
         /// </summary>
         /// <param name="trxid">transaction id to search for.</param>
