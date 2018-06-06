@@ -337,13 +337,15 @@ namespace Stratis.Bitcoin.Configuration
             builder.AppendLine("Command line arguments:");
             builder.AppendLine();
             builder.AppendLine($"-help/--help              Show this help.");
-            builder.AppendLine($"-conf=<Path>              Path to the configuration file. Default {defaults.ConfigurationFile}.");
-            builder.AppendLine($"-datadir=<Path>           Path to the data directory. Default {defaults.DataDir}.");
+            builder.AppendLine($"-conf=<Path>              Path to the configuration file. Defaults to {defaults.ConfigurationFile}.");
+            builder.AppendLine($"-datadir=<Path>           Path to the data directory. Defaults to {defaults.DataDir}.");
+
+            // Can be overridden in configuration file.
             builder.AppendLine($"-testnet                  Use the testnet chain.");
             builder.AppendLine($"-regtest                  Use the regtestnet chain.");
-            builder.AppendLine($"-mintxfee=<number>        Minimum fee rate. Defaults to network specific value.");
-            builder.AppendLine($"-fallbackfee=<number>     Fallback fee rate. Defaults to network specific value.");
-            builder.AppendLine($"-minrelaytxfee=<number>   Minimum relay fee rate. Defaults to network specific value.");
+            builder.AppendLine($"-mintxfee=<number>        Minimum fee rate. Defaults to {network.MinTxFee}.");
+            builder.AppendLine($"-fallbackfee=<number>     Fallback fee rate. Defaults to {network.FallbackFee}.");
+            builder.AppendLine($"-minrelaytxfee=<number>   Minimum relay fee rate. Defaults to {network.MinRelayTxFee}.");
 
             defaults.Logger.LogInformation(builder.ToString());
 
@@ -360,6 +362,10 @@ namespace Stratis.Bitcoin.Configuration
             var defaults = Default(network:network);
 
             builder.AppendLine("####Node Settings####");
+            builder.AppendLine($"#Test network. Defaults to 0.");
+            builder.AppendLine($"#testnet=0");
+            builder.AppendLine($"#Regression test network. Defaults to 0.");
+            builder.AppendLine($"#regtest=0");
             builder.AppendLine($"#Minimum fee rate. Defaults to {network.MinTxFee}.");
             builder.AppendLine($"#mintxfee={network.MinTxFee}");
             builder.AppendLine($"#Fallback fee rate. Defaults to {network.FallbackFee}.");
