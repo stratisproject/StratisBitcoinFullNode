@@ -22,6 +22,7 @@ using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
 using Stratis.Bitcoin.Utilities;
 
+[assembly: InternalsVisibleTo("Stratis.Bitcoin.Features.Miner.Tests")]
 [assembly: InternalsVisibleTo("Stratis.Bitcoin.Features.Consensus.Tests")]
 
 namespace Stratis.Bitcoin.Features.Consensus

@@ -17,10 +17,10 @@ namespace Stratis.Bitcoin.Features.Consensus
         public long PremineHeight { get; set; }
         
         /// <summary>Coinstake minimal confirmations softfork activation height for the mainnet.</summary>
-        private const int CoinstakeMinConfirmationActivationHeightMainnet = 940000;
+        internal const int CoinstakeMinConfirmationActivationHeightMainnet = 940000;
 
         /// <summary>Coinstake minimal confirmations softfork activation height for the testnet.</summary>
-        private const int CoinstakeMinConfirmationActivationHeightTestnet = 436000;
+        internal const int CoinstakeMinConfirmationActivationHeightTestnet = 436000;
 
         /// <summary>
         /// Initializes the default values.
