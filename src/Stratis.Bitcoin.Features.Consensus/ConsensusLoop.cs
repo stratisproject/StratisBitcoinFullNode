@@ -139,6 +139,13 @@ namespace Stratis.Bitcoin.Features.Consensus
         private readonly IDateTimeProvider dateTimeProvider;
 
         /// <summary>
+        /// Specifies time threshold which is used to determine if flush is required.
+        /// When consensus tip timestamp is greater than current time minus the threshold the flush is required. 
+        /// </summary>
+        /// <remarks>Used only on blockchains without max reorg property.</remarks>
+        private const int FlushRequiredThresholdSeconds = 2 * 24 * 60 * 60;
+
+        /// <summary>
         /// Initialize a new instance of <see cref="ConsensusLoop"/>.
         /// </summary>
         /// <param name="asyncLoopFactory">The async loop we need to wait upon before we can shut down this feature.</param>
@@ -420,10 +427,8 @@ namespace Stratis.Bitcoin.Features.Consensus
                     this.logger.LogTrace("Block '{0}' accepted.", this.Tip);
 
                     this.chainState.ConsensusTip = this.Tip;
-
-                    // We really want to flush if we are at the top of the chain.
-                    // Otherwise, we just allow the flush to happen if it is needed.
-                    bool forceFlush = this.Chain.Tip.HashBlock == blockValidationContext.ChainedHeader?.HashBlock;
+                    
+                    bool forceFlush = this.FlushRequired();
                     await this.FlushAsync(forceFlush).ConfigureAwait(false);
 
                     if (this.Tip.ChainWork > this.Chain.Tip.ChainWork)
@@ -440,6 +445,21 @@ namespace Stratis.Bitcoin.Features.Consensus
             }
 
             this.logger.LogTrace("(-):*.{0}='{1}',*.{2}='{3}'", nameof(blockValidationContext.ChainedHeader), blockValidationContext.ChainedHeader, nameof(blockValidationContext.Error), blockValidationContext.Error?.Message);
+        }
+
+        /// <summary>
+        /// Calculates if coinview flush is required.
+        /// </summary>
+        /// <remarks>
+        /// For blockchains with max reorg property flush is required when consensus tip is less than max reorg blocks behind the chain tip.
+        /// If there is no max reorg property - flush is required when consensus tip timestamp is less than <see cref="FlushRequiredThresholdSeconds"/> behind the adjusted time.
+        /// </remarks>
+        private bool FlushRequired()
+        {
+            if (this.chainState.MaxReorgLength != 0)
+                return this.Chain.Height - this.Tip.Height < this.chainState.MaxReorgLength;
+            
+            return this.Tip.Header.Time > this.dateTimeProvider.GetAdjustedTimeAsUnixTimestamp() - FlushRequiredThresholdSeconds;
         }
 
         /// <inheritdoc/>
