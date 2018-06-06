@@ -22,6 +22,10 @@ namespace Stratis.Bitcoin.Configuration.Settings
         /// <summary>Maximum number of AgentPrefix characters to use in the Agent value.</summary>
         private const int MaximumAgentPrefixLength = 10;
 
+        /// <summary>Default value for "blocksonly" option.</summary>
+        /// <seealso cref="RelayTxes"/>
+        private const bool DefaultBlocksOnly = false;
+
         /// <summary>
         /// Default constructor.
         /// </summary>
@@ -130,6 +134,9 @@ namespace Stratis.Bitcoin.Configuration.Settings
             this.Agent = string.IsNullOrEmpty(agentPrefix) ? nodeSettings.Agent : $"{agentPrefix}-{nodeSettings.Agent}";
             logger.LogDebug("Agent set to {0}.", this.Agent);
 
+            this.RelayTxes = !config.GetOrDefault("blocksonly", DefaultBlocksOnly);
+            logger.LogDebug("RelayTxes set to {0}.", this.RelayTxes);
+
             logger.LogTrace("(-)");
 
             return this;
@@ -162,6 +169,8 @@ namespace Stratis.Bitcoin.Configuration.Settings
             builder.AppendLine($"#synctime=1");
             builder.AppendLine($"#An optional prefix for the node's user agent shared with peers. Truncated if over { MaximumAgentPrefixLength } characters.");
             builder.AppendLine($"#agentprefix=<string>");
+            builder.AppendLine($"#Enable bandwidth saving setting to send and received confirmed blocks only. Defaults to { (DefaultBlocksOnly ? 1 : 0) }.");
+            builder.AppendLine($"#blocksonly={ (DefaultBlocksOnly ? 1 : 0) }");
         }
 
         /// <summary>
@@ -184,6 +193,7 @@ namespace Stratis.Bitcoin.Configuration.Settings
             builder.AppendLine($"-maxoutboundconnections=<number> The maximum number of outbound connections. Default {ConnectionManagerSettings.DefaultMaxOutboundConnections}.");
             builder.AppendLine($"-synctime=<0 or 1>        Sync with peers. Default 1.");
             builder.AppendLine($"-agentprefix=<string>     An optional prefix for the node's user agent that will be shared with peers in the version handshake.");
+            builder.AppendLine($"-blocksonly=<0 or 1>      Enable bandwidth saving setting to send and received confirmed blocks only. Defaults to { DefaultBlocksOnly }.");
 
             defaults.Logger.LogInformation(builder.ToString());
         }
@@ -214,5 +224,8 @@ namespace Stratis.Bitcoin.Configuration.Settings
 
         /// <summary>The node's user agent.</summary>
         public string Agent { get; private set; }
+
+        /// <summary><c>true</c> to enable bandwidth saving setting to send and received confirmed blocks only.</summary>
+        public bool RelayTxes { get; set; }
     }
 }
