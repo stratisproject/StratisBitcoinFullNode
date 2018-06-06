@@ -199,7 +199,7 @@ namespace Stratis.Bitcoin.P2P
             // then let the caller try again.
             this.logger.LogTrace("[RETURN_NO_PEERS]");
 
-            int attemptedReachedThresholdCount = this.peerAddresses.Values.Count(p => p.Attempted && p.ConnectionAttempts == PeerAddress.AttemptThreshold && !this.IsBanned(p));
+            int attemptedReachedThresholdCount = this.peerAddresses.Values.Count(p => p.ConnectionAttempts == PeerAddress.AttemptThreshold && !this.IsBanned(p));
             bool areAllPeersReachedThreshold = attemptedReachedThresholdCount == this.peerAddresses.Values.Count(p => !this.IsBanned(p));
             if (areAllPeersReachedThreshold)
             {
