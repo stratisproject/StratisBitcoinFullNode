@@ -171,8 +171,6 @@ namespace Stratis.Bitcoin.Connection
             this.Parameters.Version = this.NodeSettings.ProtocolVersion;
 
             this.downloads = new Dictionary<INetworkPeer, PerformanceSnapshot>();
-
-            this.ConnectionSettings.Load(this.NodeSettings);
         }
 
         /// <inheritdoc />

@@ -29,24 +29,17 @@ namespace Stratis.Bitcoin.Configuration.Settings
         /// <summary>
         /// Default constructor.
         /// </summary>
-        public ConnectionManagerSettings()
-        {
-            this.Connect = new List<IPEndPoint>();
-            this.AddNode = new List<IPEndPoint>();
-            this.Listen = new List<NodeServerEndpoint>();
-        }
-
-        /// <summary>
-        /// Loads the ConnectionManager related settings from the application configuration.
-        /// </summary>
-        /// <param name="nodeSettings">Application configuration.</param>
-        public ConnectionManagerSettings Load(NodeSettings nodeSettings)
+        public ConnectionManagerSettings(NodeSettings nodeSettings)
         {
             Guard.NotNull(nodeSettings, nameof(nodeSettings));
 
             ILogger logger = nodeSettings.LoggerFactory.CreateLogger(typeof(ConnectionManagerSettings).FullName);
-            
+
             logger.LogTrace("()");
+
+            this.Connect = new List<IPEndPoint>();
+            this.AddNode = new List<IPEndPoint>();
+            this.Listen = new List<NodeServerEndpoint>();
 
             var config = nodeSettings.ConfigReader;
 
@@ -138,8 +131,6 @@ namespace Stratis.Bitcoin.Configuration.Settings
             logger.LogDebug("RelayTxes set to {0}.", this.RelayTxes);
 
             logger.LogTrace("(-)");
-
-            return this;
         }
 
         /// <summary>

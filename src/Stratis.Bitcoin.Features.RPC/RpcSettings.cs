@@ -61,8 +61,6 @@ namespace Stratis.Bitcoin.Features.RPC
         /// <param name="nodeSettings">Application configuration.</param>
         private void LoadSettingsFromConfig(NodeSettings nodeSettings)
         {
-            Guard.NotNull(nodeSettings, nameof(nodeSettings));
-            
             ILogger logger = nodeSettings.LoggerFactory.CreateLogger(typeof(RpcSettings).FullName);
             
             logger.LogTrace("()");
