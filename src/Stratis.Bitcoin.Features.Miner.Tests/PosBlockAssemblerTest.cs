@@ -80,7 +80,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
 
                 var posBlockAssembler = new PosTestBlockAssembler(this.consensusLoop.Object, this.network, new MempoolSchedulerLock(), this.mempool.Object, this.dateTimeProvider.Object, this.stakeChain.Object, this.stakeValidator.Object, this.LoggerFactory.Object);
 
-                var block = posBlockAssembler.OnUpdateHeaders(chain.Tip);
+                var block = posBlockAssembler.UpdateHeaders(chain.Tip);
 
                 Assert.Equal(chain.Tip.HashBlock, block.Header.HashPrevBlock);
                 Assert.Equal((uint)1483747200, block.Header.Time);
@@ -197,7 +197,6 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
             });
         }
 
-
         [Fact]
         public void ComputeBlockVersion_UsingChainTipAndConsensus_Bip9DeploymentActive_UpdatesHeightAndVersion()
         {
@@ -235,7 +234,6 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
                 this.network.Consensus.RuleChangeActivationThreshold = ruleChangeActivationThreshold;
             }
         }
-
 
         [Fact]
         public void CreateCoinbase_CreatesCoinbaseTemplateTransaction_AddsToBlockTemplate()
@@ -516,10 +514,10 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
                 base.OnTestBlockValidity();
             }
 
-            public Block OnUpdateHeaders(ChainedHeader chainTip)
+            public Block UpdateHeaders(ChainedHeader chainTip)
             {
                 this.ChainTip = chainTip;
-                base.OnUpdateHeaders();
+                base.UpdateHeaders();
                 return this.block;
             }
 

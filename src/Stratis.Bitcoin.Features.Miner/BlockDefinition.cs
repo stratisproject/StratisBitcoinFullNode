@@ -263,7 +263,7 @@ namespace Stratis.Bitcoin.Features.Miner
             int nSerializeSize = this.block.GetSerializedSize();
             this.logger.LogDebug("Serialized size is {0} bytes, block weight is {1}, number of txs is {2}, tx fees are {3}, number of sigops is {4}.", nSerializeSize, powCoinviewRule.GetBlockWeight(this.block), this.BlockTx, this.fees, this.BlockSigOpsCost);
 
-            this.OnUpdateHeaders();
+            this.UpdateHeaders();
 
             //pblocktemplate->TxSigOpsCost[0] = WITNESS_SCALE_FACTOR * GetLegacySigOpCount(*pblock->vtx[0]);
 
@@ -577,13 +577,21 @@ namespace Stratis.Bitcoin.Features.Miner
             return descendantsUpdated;
         }
 
-        /// <summary>Logic specific as to how the block will be built.</summary>
+        /// <summary>Network specific logic specific as to how the block will be built.</summary>
         public abstract BlockTemplate Build(ChainedHeader chainTip, Script scriptPubKey);
 
-        /// <summary>Logic specific to how the block's header will be set.</summary>
-        public abstract void OnUpdateHeaders();
+        /// <summary>Update the block's header information.</summary>
+        protected void UpdateBaseHeaders()
+        {
+            this.block.Header.HashPrevBlock = this.ChainTip.HashBlock;
+            this.block.Header.UpdateTime(this.DateTimeProvider.GetTimeOffset(), this.Network, this.ChainTip);
+            this.block.Header.Nonce = 0;
+        }
 
-        /// <summary>Logic specific to how the block will be validated.</summary>
+        /// <summary>Network specific logic specific as to how the block's header will be set.</summary>
+        public abstract void UpdateHeaders();
+
+        /// <summary>Network specific logic specific as to how the block's header will be validated.</summary>
         public abstract void OnTestBlockValidity();
     }
 }

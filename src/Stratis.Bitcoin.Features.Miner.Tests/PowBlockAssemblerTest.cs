@@ -232,7 +232,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
                 var chain = GenerateChainWithHeight(5, this.network, new Key(), new Target(235325239));
 
                 var powBlockAssembler = new PowTestBlockAssembler(this.consensusLoop.Object, this.dateTimeProvider.Object, this.LoggerFactory.Object, this.txMempool.Object, new MempoolSchedulerLock(), this.network);
-                var block = powBlockAssembler.OnUpdateHeaders(chain.Tip);
+                var block = powBlockAssembler.UpdateHeaders(chain.Tip);
 
                 Assert.Equal(chain.Tip.HashBlock, block.Header.HashPrevBlock);
                 Assert.Equal((uint)1483747200, block.Header.Time);
@@ -478,44 +478,41 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
 
             public override BlockTemplate Build(ChainedHeader chainTip, Script scriptPubKey)
             {
-                base.OnBuild(chainTip, scriptPubKey);
+                OnBuild(chainTip, scriptPubKey);
 
-                return base.BlockTemplate;
+                return this.BlockTemplate;
             }
 
             public void AddInBlockTxEntries(params TxMempoolEntry[] entries)
             {
                 foreach (var entry in entries)
                 {
-                    base.inBlock.Add(entry);
+                    this.inBlock.Add(entry);
                 }
             }
 
             public (int Height, int Version) ComputeBlockVersion(ChainedHeader chainTip)
             {
-                base.ChainTip = chainTip;
+                this.ChainTip = chainTip;
 
                 base.ComputeBlockVersion();
-
-                return (base.height, base.block.Header.Version);
+                return (this.height, this.block.Header.Version);
             }
 
             public BlockTemplate CreateCoinBase(ChainedHeader chainTip, Script scriptPubKeyIn)
             {
-                base.scriptPubKey = scriptPubKeyIn;
-                base.ChainTip = chainTip;
-
+                this.scriptPubKey = scriptPubKeyIn;
+                this.ChainTip = chainTip;
                 base.CreateCoinbase();
+                this.BlockTemplate.Block = this.block;
 
-                base.BlockTemplate.Block = base.block;
-
-                return base.BlockTemplate;
+                return this.BlockTemplate;
             }
 
-            public Block OnUpdateHeaders(ChainedHeader chainTip)
+            public Block UpdateHeaders(ChainedHeader chainTip)
             {
-                base.ChainTip = chainTip;
-                base.OnUpdateHeaders();
+                this.ChainTip = chainTip;
+                base.UpdateHeaders();
                 return this.BlockTemplate.Block;
             }
 
@@ -531,7 +528,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
                 int updated;
                 base.AddTransactions(out selected, out updated);
 
-                return (base.block, selected, updated);
+                return (this.block, selected, updated);
             }
         }
     }

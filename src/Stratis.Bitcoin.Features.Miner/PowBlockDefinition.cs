@@ -92,14 +92,13 @@ namespace Stratis.Bitcoin.Features.Miner
             return this.BlockTemplate;
         }
 
-        public override void OnUpdateHeaders()
+        public override void UpdateHeaders()
         {
             this.logger.LogTrace("()");
 
-            this.block.Header.HashPrevBlock = this.ChainTip.HashBlock;
-            this.block.Header.UpdateTime(this.DateTimeProvider.GetTimeOffset(), this.Network, this.ChainTip);
+            base.UpdateBaseHeaders();
+
             this.block.Header.Bits = this.block.Header.GetWorkRequired(this.Network, this.ChainTip);
-            this.block.Header.Nonce = 0;
 
             this.logger.LogTrace("(-)");
         }

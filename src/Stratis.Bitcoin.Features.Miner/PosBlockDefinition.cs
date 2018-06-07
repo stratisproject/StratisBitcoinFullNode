@@ -50,13 +50,12 @@ namespace Stratis.Bitcoin.Features.Miner
             return this.BlockTemplate;
         }
 
-        public override void OnUpdateHeaders()
+        public override void UpdateHeaders()
         {
             this.logger.LogTrace("()");
 
-            this.block.Header.HashPrevBlock = this.ChainTip.HashBlock;
-            this.block.Header.UpdateTime(this.DateTimeProvider.GetTimeOffset(), this.Network, this.ChainTip);
-            this.block.Header.Nonce = 0;
+            base.UpdateBaseHeaders();
+
             this.block.Header.Bits = this.stakeValidator.GetNextTargetRequired(this.stakeChain, this.ChainTip, this.Network.Consensus, this.Options.IsProofOfStake);
 
             this.logger.LogTrace("(-)");
