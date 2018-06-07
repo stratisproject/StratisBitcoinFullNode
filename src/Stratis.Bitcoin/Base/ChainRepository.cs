@@ -18,17 +18,18 @@ namespace Stratis.Bitcoin.Base
         Task SaveAsync(ConcurrentChain chain);
     }
 
+    /// <summary>Provider of the last finalized block height.</summary>
+    /// <seealso cref="System.IDisposable" />
     public interface IFinalizedBlockHeight : IDisposable
     {
         /// <summary>Gets the finalized block height.</summary>
         /// <returns>Height of a block that can't be reorged away from.</returns>
         int GetFinalizedBlockHeight();
 
-        /// <summary>Loads the finalized block height.</summary>
-        /// <returns>Height of a block that can't be reorged away from.</returns>
+        /// <summary>Loads the finalised block height from the database.</summary>
         Task LoadFinalizedBlockHeightAsync();
 
-        /// <summary>Saves the finalized block height if it is greater than the previous value.</summary>
+        /// <summary>Saves the finalized block height to the database if it is greater than the previous value.</summary>
         /// <param name="height">Block height.</param>
         /// <returns><c>true</c> if new value was set, <c>false</c> if <paramref name="height"/> is lower or equal than current value.</returns>
         Task<bool> SaveFinalizedBlockHeightAsync(int height);
@@ -44,7 +45,7 @@ namespace Stratis.Bitcoin.Base
 
         private BlockLocator locator;
 
-        /// <summary>Database key under which the block hash of the coin view's current tip is stored.</summary>
+        /// <summary>Database key under which the block height of the last finalized block height is stored.</summary>
         private static readonly byte[] finalizedBlockKey = new byte[0];
 
         /// <summary>Height of a block that can't be reorged away from.</summary>
@@ -88,12 +89,12 @@ namespace Stratis.Bitcoin.Base
                     if (!row.Exists)
                     {
                         this.finalizedHeight = 0;
-                        this.logger.LogTrace("(-):0");
-                        return;
+                        this.logger.LogTrace("Finalized block height doesn't exist in the database.");
                     }
+                    else
+                        this.finalizedHeight = row.Value;
                     
-                    this.finalizedHeight = row.Value;
-                    this.logger.LogTrace("(-):{0}", row.Value);
+                    this.logger.LogTrace("(-):{0}={1}", nameof(this.finalizedHeight), this.finalizedHeight);
                 }
             });
 
