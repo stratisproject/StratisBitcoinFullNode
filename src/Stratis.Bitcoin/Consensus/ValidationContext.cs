@@ -7,7 +7,7 @@ using Stratis.Bitcoin.Consensus.Rules;
 namespace Stratis.Bitcoin.Consensus
 {
     /// <summary>
-    /// A context that is used by consensus that is required for validation, in case validation failed the <see cref="Error"/> property will be set.
+    /// A context that is used by consensus that is required for validation, in case validation failed the <see cref="ValidationContext.Error"/> property will be set.
     /// It is used when a new block is downloaded or mined.
     /// </summary>
     public class ValidationContext
