@@ -948,7 +948,7 @@ namespace Stratis.Bitcoin.Consensus
 
             uint maxReorgLength = this.chainState.MaxReorgLength;
             ChainedHeader consensusTip = this.GetConsensusTip();
-            if ((maxReorgLength != 0) && (consensusTip != null))
+            if (maxReorgLength != 0)
             {
                 ChainedHeader fork = chainedHeader.FindFork(consensusTip);
 
