@@ -85,7 +85,9 @@ namespace Stratis.Bitcoin.Features.Miner
         {
             this.logger.LogTrace("({0}:'{1}',{2}.{3}:{4})", nameof(chainTip), chainTip, nameof(scriptPubKey), nameof(scriptPubKey.Length), scriptPubKey.Length);
 
-            this.OnBuild(chainTip, scriptPubKey);
+            base.OnBuild(chainTip, scriptPubKey);
+
+            this.TestBlockValidity();
 
             this.logger.LogTrace("(-)");
 
@@ -103,7 +105,11 @@ namespace Stratis.Bitcoin.Features.Miner
             this.logger.LogTrace("(-)");
         }
 
-        public override void OnTestBlockValidity()
+        /// <summary>
+        /// Before the block gets mined, we need to ensure that its structurally correct, otherwise a lot of work might be
+        /// done for no reason.
+        /// </summary>
+        public void TestBlockValidity()
         {
             this.logger.LogTrace("()");
 

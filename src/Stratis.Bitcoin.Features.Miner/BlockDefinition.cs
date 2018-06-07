@@ -267,8 +267,6 @@ namespace Stratis.Bitcoin.Features.Miner
 
             //pblocktemplate->TxSigOpsCost[0] = WITNESS_SCALE_FACTOR * GetLegacySigOpCount(*pblock->vtx[0]);
 
-            this.OnTestBlockValidity();
-
             //int64_t nTime2 = GetTimeMicros();
 
             //LogPrint(BCLog::BENCH, "CreateNewBlock() packages: %.2fms (%d packages, %d updated descendants), validity: %.2fms (total %.2fms)\n", 0.001 * (nTime1 - nTimeStart), nPackagesSelected, nDescendantsUpdated, 0.001 * (nTime2 - nTime1), 0.001 * (nTime2 - nTimeStart));
@@ -590,8 +588,5 @@ namespace Stratis.Bitcoin.Features.Miner
 
         /// <summary>Network specific logic specific as to how the block's header will be set.</summary>
         public abstract void UpdateHeaders();
-
-        /// <summary>Network specific logic specific as to how the block's header will be validated.</summary>
-        public abstract void OnTestBlockValidity();
     }
 }

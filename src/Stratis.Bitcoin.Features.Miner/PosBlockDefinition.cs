@@ -60,12 +60,5 @@ namespace Stratis.Bitcoin.Features.Miner
 
             this.logger.LogTrace("(-)");
         }
-
-        public override void OnTestBlockValidity()
-        {
-            this.logger.LogTrace("()");
-
-            this.logger.LogTrace("(-)");
-        }
     }
 }

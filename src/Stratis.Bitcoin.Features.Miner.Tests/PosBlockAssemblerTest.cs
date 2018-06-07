@@ -47,25 +47,6 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
         }
 
         [Fact]
-        public void TestBlockValidity_DoesNotValidateBlockUsingRuleContext()
-        {
-            var newOptions = new PosConsensusOptions() { MaxBlockWeight = 1500 };
-
-            this.ExecuteWithConsensusOptions(newOptions, () =>
-            {
-                var chain = GenerateChainWithHeight(5, this.network, new Key());
-                this.SetupRulesEngine(chain);
-
-                this.consensusLoop.Setup(c => c.Tip).Returns(chain.GetBlock(5));
-
-                var posBlockAssembler = new PosTestBlockAssembler(this.consensusLoop.Object, this.network, new MempoolSchedulerLock(), this.mempool.Object, this.dateTimeProvider.Object, this.stakeChain.Object, this.stakeValidator.Object, this.LoggerFactory.Object);
-                posBlockAssembler.OnTestBlockValidity();
-
-                this.consensusLoop.Verify(c => c.ValidateBlock(It.IsAny<RuleContext>()), Times.Exactly(0));
-            });
-        }
-
-        [Fact]
         public void UpdateHeaders_UsingChainAndNetwork_PreparesStakeBlockHeaders()
         {
             this.ExecuteWithConsensusOptions(new PosConsensusOptions(), () =>
@@ -507,11 +488,6 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
                 : base(consensusLoop, dateTimeProvider, loggerFactory, mempool, mempoolLock, network, stakeChain, stakeValidator)
             {
                 base.block = this.BlockTemplate.Block;
-            }
-
-            public new void OnTestBlockValidity()
-            {
-                base.OnTestBlockValidity();
             }
 
             public Block UpdateHeaders(ChainedHeader chainTip)

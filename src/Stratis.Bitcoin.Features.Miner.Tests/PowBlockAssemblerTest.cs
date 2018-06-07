@@ -252,7 +252,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
                 this.consensusLoop.Setup(c => c.Tip).Returns(chain.GetBlock(5));
 
                 var powBlockAssembler = new PowTestBlockAssembler(this.consensusLoop.Object, this.dateTimeProvider.Object, this.LoggerFactory.Object, this.txMempool.Object, new MempoolSchedulerLock(), this.network);
-                var block = powBlockAssembler.OnTestBlockValidity();
+                var block = powBlockAssembler.TestBlockValidity();
 
                 Assert.NotNull(this.callbackRuleContext);
 
@@ -516,9 +516,9 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
                 return this.BlockTemplate.Block;
             }
 
-            public new Block OnTestBlockValidity()
+            public new Block TestBlockValidity()
             {
-                base.OnTestBlockValidity();
+                base.TestBlockValidity();
                 return this.block;
             }
 
