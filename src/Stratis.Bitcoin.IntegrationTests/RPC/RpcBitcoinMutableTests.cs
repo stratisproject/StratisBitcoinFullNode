@@ -341,7 +341,7 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
         }
 
         [Fact]
-        public void CanGetPrivateKeysFromLockedAccount()
+        public async Task CanGetPrivateKeysFromLockedAccountAsync()
         {
             string accountName = "account";
             using (var builder = NodeBuilder.Create(this))
@@ -354,6 +354,10 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
                 Key key = new Key();
                 var passphrase = "password1234";
                 rpcClient.SendCommand(RPCOperations.encryptwallet, passphrase);
+
+                // Wait for recepient to process the command.
+                await Task.Delay(300);
+
                 builder.Nodes[0].Restart();
                 rpcClient = node.CreateRPCClient();
                 rpcClient.ImportAddress(key.PubKey.GetAddress(Network.RegTest), accountName, false);
