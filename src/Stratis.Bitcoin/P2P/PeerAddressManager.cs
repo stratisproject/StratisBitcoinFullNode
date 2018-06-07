@@ -101,7 +101,6 @@ namespace Stratis.Bitcoin.P2P
         /// <summary>Logger factory to create loggers.</summary>
         private readonly ILoggerFactory loggerFactory;
 
-        
         /// <summary>Key value store that indexes all discovered peers by their end point.</summary>
         private readonly ConcurrentDictionary<IPEndPoint, PeerAddress> peers;
 

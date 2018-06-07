@@ -67,6 +67,12 @@ namespace Stratis.Bitcoin.P2P
         /// </para>
         /// </summary>
         IEnumerable<PeerAddress> Handshaked();
+
+        /// <summary>Determines whether all not banned peers reached connection attempts threshold.</summary>
+        bool HasAllPeersReachedConnectionThreshold();
+
+        /// <summary>Resets connection attempts count for all not banned peers.</summary>
+        void ResetConnectionAttemptsOnNotBannedPeers();
     }
 
     public sealed class PeerSelector : IPeerSelector
@@ -197,26 +203,42 @@ namespace Stratis.Bitcoin.P2P
                 this.logger.LogTrace("[RETURN_ATTEMPTED_HC_FAILED]");
                 return attempted;
             }
-
-            List<PeerAddress> notBanned = this.NotBanned().ToList();
-
-            int attemptedReachedThresholdCount = notBanned.Count(p => p.ConnectionAttempts == PeerAddress.AttemptThreshold);
-            bool areAllPeersReachedThreshold = attemptedReachedThresholdCount == notBanned.Count;
-            if (areAllPeersReachedThreshold)
-            {
-                this.logger.LogTrace("Resetting attempts for {0} addresses.", attemptedReachedThresholdCount);
-
-                // Reset attempts for all the peers since we've ran out of options.
-                foreach (PeerAddress peer in notBanned)
-                    peer.ResetAttempts();
-                
-                this.logger.LogTrace("(-)[RESET_ATTEMPTS]");
-                return notBanned;
-            }
+            
+            if (this.HasAllPeersReachedConnectionThreshold())
+                this.ResetConnectionAttemptsOnNotBannedPeers();
 
             // If all the selection criteria failed to return a set of peers, then let the caller try again.
             this.logger.LogTrace("(-)[RETURN_NO_PEERS]");
             return new PeerAddress[] { };
+        }
+
+        /// <inheritdoc/>
+        public bool HasAllPeersReachedConnectionThreshold()
+        {
+            this.logger.LogTrace("()");
+
+            IEnumerable<PeerAddress> notBanned = this.NotBanned();
+
+            int attemptedReachedThresholdCount = notBanned.Count(p => p.ConnectionAttempts == PeerAddress.AttemptThreshold);
+            bool areAllPeersReachedThreshold = attemptedReachedThresholdCount == notBanned.Count();
+
+            this.logger.LogTrace("(-):{0}={1}", nameof(areAllPeersReachedThreshold), areAllPeersReachedThreshold);
+            return areAllPeersReachedThreshold;
+        }
+
+        /// <inheritdoc/>
+        public void ResetConnectionAttemptsOnNotBannedPeers()
+        {
+            this.logger.LogTrace("()");
+
+            List<PeerAddress> notBanned = this.NotBanned().ToList();
+            this.logger.LogTrace("Resetting attempts for {0} addresses.", notBanned.Count);
+
+            // Reset attempts for all the peers since we've ran out of options.
+            foreach (PeerAddress peer in notBanned)
+                peer.ResetAttempts();
+
+            this.logger.LogTrace("(-)");
         }
 
         /// <inheritdoc/>
