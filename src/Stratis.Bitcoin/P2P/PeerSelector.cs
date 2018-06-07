@@ -51,6 +51,9 @@ namespace Stratis.Bitcoin.P2P
         /// </summary>
         IEnumerable<PeerAddress> Connected();
 
+        /// <summary>Returns peers that are not banned.</summary>
+        IEnumerable<PeerAddress> NotBanned();
+
         /// <summary>
         /// Return peers which have never had connection attempts. 
         /// </summary>
@@ -194,21 +197,21 @@ namespace Stratis.Bitcoin.P2P
                 this.logger.LogTrace("[RETURN_ATTEMPTED_HC_FAILED]");
                 return attempted;
             }
-            
-            int attemptedReachedThresholdCount = this.peerAddresses.Values.Count(p => p.ConnectionAttempts == PeerAddress.AttemptThreshold && !this.IsBanned(p));
-            bool areAllPeersReachedThreshold = attemptedReachedThresholdCount == this.peerAddresses.Values.Count(p => !this.IsBanned(p));
+
+            List<PeerAddress> notBanned = this.NotBanned().ToList();
+
+            int attemptedReachedThresholdCount = notBanned.Count(p => p.ConnectionAttempts == PeerAddress.AttemptThreshold);
+            bool areAllPeersReachedThreshold = attemptedReachedThresholdCount == notBanned.Count;
             if (areAllPeersReachedThreshold)
             {
                 this.logger.LogTrace("Resetting attempts for {0} addresses.", attemptedReachedThresholdCount);
 
                 // Reset attempts for all the peers since we've ran out of options.
-                foreach (PeerAddress peer in this.peerAddresses.Values.Where(p => !this.IsBanned(p)))
+                foreach (PeerAddress peer in notBanned)
                     peer.ResetAttempts();
                 
-                IEnumerable<PeerAddress> addresses = this.peerAddresses.Values.Where(p => !this.IsBanned(p));
-
                 this.logger.LogTrace("(-)[RESET_ATTEMPTS]");
-                return addresses;
+                return notBanned;
             }
 
             // If all the selection criteria failed to return a set of peers, then let the caller try again.
@@ -292,6 +295,12 @@ namespace Stratis.Bitcoin.P2P
                 p.ConnectionAttempts < PeerAddress.AttemptThreshold &&
                 p.LastAttempt < this.dateTimeProvider.GetUtcNow().AddHours(-PeerAddress.AttempThresholdHours) &&
                 !this.IsBanned(p));
+        }
+
+        /// <inheritdoc/>
+        public IEnumerable<PeerAddress> NotBanned()
+        {
+            return this.peerAddresses.Values.Where(p => !this.IsBanned(p));
         }
 
         /// <inheritdoc/>
