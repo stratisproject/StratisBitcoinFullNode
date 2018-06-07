@@ -15,6 +15,7 @@ using Stratis.Bitcoin.BlockPulling;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Consensus;
+using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.Consensus.Rules;
@@ -323,11 +324,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 
             var context = new RuleContext
             {
-                BestBlock = new ContextBlockInformation
-                {
-                    MedianTimePast = DateTimeOffset.Parse("2016-03-31T09:02:19+00:00", CultureInfo.InvariantCulture),
-                    Height = 10111
-                },
+                PreviousHeight = 10111,
                 NextWorkRequired = block.Header.Bits,
                 Time = DateTimeOffset.UtcNow,
                 BlockValidationContext = new BlockValidationContext { Block = block },

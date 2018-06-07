@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
 using NBitcoin;
+using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
 using Xunit;
 
@@ -19,7 +20,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         [Fact]
         public async Task RunAsync_ProofOfStakeBlock_SetsStake_SetsNextWorkRequiredAsync()
         {
-            this.ruleContext.Stake = null;
             this.ruleContext.BlockValidationContext = new BlockValidationContext()
             {
                 Block = new Block()
@@ -44,19 +44,18 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             await this.consensusRules.RegisterRule<CalculateStakeRule>().RunAsync(this.ruleContext);
 
             this.stakeValidator.Verify();
-            Assert.NotNull(this.ruleContext.Stake);
-            Assert.Equal(BlockFlag.BLOCK_PROOF_OF_STAKE, this.ruleContext.Stake.BlockStake.Flags);
-            Assert.Equal(uint256.Zero, this.ruleContext.Stake.BlockStake.StakeModifierV2);
-            Assert.Equal(uint256.Zero, this.ruleContext.Stake.BlockStake.HashProof);
-            Assert.Equal((uint)18276127, this.ruleContext.Stake.BlockStake.StakeTime);
-            Assert.Equal(this.concurrentChain.GetBlock(5).HashBlock, this.ruleContext.Stake.BlockStake.PrevoutStake.Hash);
+            Assert.NotNull(this.ruleContext.Item<PosRuleContext>());
+            Assert.Equal(BlockFlag.BLOCK_PROOF_OF_STAKE, this.ruleContext.Item<PosRuleContext>().BlockStake.Flags);
+            Assert.Equal(uint256.Zero, this.ruleContext.Item<PosRuleContext>().BlockStake.StakeModifierV2);
+            Assert.Equal(uint256.Zero, this.ruleContext.Item<PosRuleContext>().BlockStake.HashProof);
+            Assert.Equal((uint)18276127, this.ruleContext.Item<PosRuleContext>().BlockStake.StakeTime);
+            Assert.Equal(this.concurrentChain.GetBlock(5).HashBlock, this.ruleContext.Item<PosRuleContext>().BlockStake.PrevoutStake.Hash);
             Assert.Equal(new Target(0x1f111115).Difficulty, this.ruleContext.NextWorkRequired.Difficulty);
         }
 
         [Fact]
         public async Task RunAsync_ProofOfWorkBlock_DoNotCheckPow_SetsStake_SetsNextWorkRequiredAsync()
         {
-            this.ruleContext.Stake = null;
             this.ruleContext.BlockValidationContext = new BlockValidationContext()
             {
                 Block = new Block()
@@ -81,12 +80,12 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             await this.consensusRules.RegisterRule<CalculateStakeRule>().RunAsync(this.ruleContext);
 
             this.stakeValidator.Verify();
-            Assert.NotNull(this.ruleContext.Stake);
-            Assert.Equal(0, (int)this.ruleContext.Stake.BlockStake.Flags);
-            Assert.Equal(uint256.Zero, this.ruleContext.Stake.BlockStake.StakeModifierV2);
-            Assert.Equal(uint256.Zero, this.ruleContext.Stake.BlockStake.HashProof);
-            Assert.Equal((uint)0, this.ruleContext.Stake.BlockStake.StakeTime);
-            Assert.Null(this.ruleContext.Stake.BlockStake.PrevoutStake);
+            Assert.NotNull(this.ruleContext.Item<PosRuleContext>());
+            Assert.Equal(0, (int)this.ruleContext.Item<PosRuleContext>().BlockStake.Flags);
+            Assert.Equal(uint256.Zero, this.ruleContext.Item<PosRuleContext>().BlockStake.StakeModifierV2);
+            Assert.Equal(uint256.Zero, this.ruleContext.Item<PosRuleContext>().BlockStake.HashProof);
+            Assert.Equal((uint)0, this.ruleContext.Item<PosRuleContext>().BlockStake.StakeTime);
+            Assert.Null(this.ruleContext.Item<PosRuleContext>().BlockStake.PrevoutStake);
             Assert.Equal(new Target(0x1f111115).Difficulty, this.ruleContext.NextWorkRequired.Difficulty);
         }
 
@@ -97,7 +96,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             this.concurrentChain = MineChainWithHeight(2, this.network);
             this.consensusRules = this.InitializeConsensusRules();
 
-            this.ruleContext.Stake = null;
             this.ruleContext.BlockValidationContext = new BlockValidationContext()
             {
                 Block = TestRulesContextFactory.MineBlock(this.network, this.concurrentChain),
@@ -117,19 +115,18 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             await this.consensusRules.RegisterRule<CalculateStakeRule>().RunAsync(this.ruleContext);
 
             this.stakeValidator.Verify();
-            Assert.NotNull(this.ruleContext.Stake);
-            Assert.Equal(0, (int)this.ruleContext.Stake.BlockStake.Flags);
-            Assert.Equal(uint256.Zero, this.ruleContext.Stake.BlockStake.StakeModifierV2);
-            Assert.Equal(uint256.Zero, this.ruleContext.Stake.BlockStake.HashProof);
-            Assert.Equal((uint)0, this.ruleContext.Stake.BlockStake.StakeTime);
-            Assert.Null(this.ruleContext.Stake.BlockStake.PrevoutStake);
+            Assert.NotNull(this.ruleContext.Item<PosRuleContext>());
+            Assert.Equal(0, (int)this.ruleContext.Item<PosRuleContext>().BlockStake.Flags);
+            Assert.Equal(uint256.Zero, this.ruleContext.Item<PosRuleContext>().BlockStake.StakeModifierV2);
+            Assert.Equal(uint256.Zero, this.ruleContext.Item<PosRuleContext>().BlockStake.HashProof);
+            Assert.Equal((uint)0, this.ruleContext.Item<PosRuleContext>().BlockStake.StakeTime);
+            Assert.Null(this.ruleContext.Item<PosRuleContext>().BlockStake.PrevoutStake);
             Assert.Equal(new Target(0x1f111115).Difficulty, this.ruleContext.NextWorkRequired.Difficulty);
         }
 
         [Fact]
         public async Task RunAsync_ProofOfWorkBlock_CheckPow_InValidPow_ThrowsHighHashConsensusErrorExceptionAsync()
         {
-            this.ruleContext.Stake = null;
             this.ruleContext.BlockValidationContext = new BlockValidationContext()
             {
                 Block = new Block()

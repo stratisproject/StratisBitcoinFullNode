@@ -1,5 +1,7 @@
 ﻿using System.Threading.Tasks;
 using NBitcoin;
+using Stratis.Bitcoin.Consensus;
+using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
 using Stratis.Bitcoin.Utilities;
 using Xunit;
@@ -16,8 +18,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
 
             RuleContext context = new RuleContext(new BlockValidationContext (), Network.RegTest.Consensus, testContext.Chain.Tip);
             context.BlockValidationContext.Block = TestRulesContextFactory.MineBlock(Network.RegTest, testContext.Chain);
-            context.BlockValidationContext.ChainedHeader = new ChainedHeader(context.BlockValidationContext.Block.Header, context.BlockValidationContext.Block.Header.GetHash(), context.ConsensusTip);
-            context.SetBestBlock(DateTimeProvider.Default.GetTimeOffset());
+            context.BlockValidationContext.ChainedHeader = new ChainedHeader(context.BlockValidationContext.Block.Header, context.BlockValidationContext.Block.Header.GetHash(), context.PreviousChainedHeader);
+            context.Time = DateTimeProvider.Default.GetTimeOffset();
 
             // increment the bits.
             context.NextWorkRequired = context.BlockValidationContext.ChainedHeader.GetNextWorkRequired(Network.RegTest.Consensus);
@@ -35,12 +37,12 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
 
             RuleContext context = new RuleContext(new BlockValidationContext(), Network.RegTest.Consensus, testContext.Chain.Tip);
             context.BlockValidationContext.Block = TestRulesContextFactory.MineBlock(Network.RegTest, testContext.Chain);
-            context.BlockValidationContext.ChainedHeader = new ChainedHeader(context.BlockValidationContext.Block.Header, context.BlockValidationContext.Block.Header.GetHash(), context.ConsensusTip);
-            context.SetBestBlock(DateTimeProvider.Default.GetTimeOffset());
+            context.BlockValidationContext.ChainedHeader = new ChainedHeader(context.BlockValidationContext.Block.Header, context.BlockValidationContext.Block.Header.GetHash(), context.PreviousChainedHeader);
+            context.Time = DateTimeProvider.Default.GetTimeOffset();
 
             // increment the bits.
             context.NextWorkRequired = context.BlockValidationContext.ChainedHeader.GetNextWorkRequired(Network.RegTest.Consensus);
-            context.BlockValidationContext.Block.Header.BlockTime = context.BestBlock.Header.BlockTime.AddSeconds(-1);
+            context.BlockValidationContext.Block.Header.BlockTime = context.PreviousChainedHeader.Header.BlockTime.AddSeconds(-1);
 
             var error = await Assert.ThrowsAsync<ConsensusErrorException>(async () => await rule.RunAsync(context));
             Assert.Equal(ConsensusErrors.TimeTooOld, error.ConsensusError);
@@ -54,8 +56,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
 
             RuleContext context = new RuleContext(new BlockValidationContext(), Network.RegTest.Consensus, testContext.Chain.Tip);
             context.BlockValidationContext.Block = TestRulesContextFactory.MineBlock(Network.RegTest, testContext.Chain);
-            context.BlockValidationContext.ChainedHeader = new ChainedHeader(context.BlockValidationContext.Block.Header, context.BlockValidationContext.Block.Header.GetHash(), context.ConsensusTip);
-            context.SetBestBlock(DateTimeProvider.Default.GetTimeOffset());
+            context.BlockValidationContext.ChainedHeader = new ChainedHeader(context.BlockValidationContext.Block.Header, context.BlockValidationContext.Block.Header.GetHash(), context.PreviousChainedHeader);
+            context.Time = DateTimeProvider.Default.GetTimeOffset();
 
             // increment the bits.
             context.NextWorkRequired = context.BlockValidationContext.ChainedHeader.GetNextWorkRequired(Network.RegTest.Consensus);

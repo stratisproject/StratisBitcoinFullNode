@@ -1,5 +1,7 @@
 ﻿using System.Threading.Tasks;
 using NBitcoin;
+using Stratis.Bitcoin.Consensus;
+using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
 using Xunit;
 
@@ -20,7 +22,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             await blockHeaderRule.RunAsync(context);
 
             Assert.NotNull(context.BlockValidationContext.ChainedHeader);
-            Assert.NotNull(context.BestBlock);
+            Assert.NotNull(context.PreviousChainedHeader);
             Assert.NotNull(context.Flags);
         }
 

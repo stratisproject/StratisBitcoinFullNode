@@ -43,26 +43,26 @@ namespace Stratis.Bitcoin.Consensus
         {
             this.logger.LogTrace("()");
 
-            uint256 utxoHash = await this.UTXOSet.GetBlockHashAsync().ConfigureAwait(false);
-            bool blockStoreDisabled = this.chainState.BlockStoreTip == null;
+            //uint256 utxoHash = await this.UTXOSet.GetBlockHashAsync().ConfigureAwait(false);
+            //bool blockStoreDisabled = this.chainState.BlockStoreTip == null;
 
-            while (true)
-            {
-                this.Tip = this.concurrentChain.GetBlock(utxoHash);
+            //while (true)
+            //{
+            //    this.Tip = this.concurrentChain.GetBlock(utxoHash);
 
-                if ((this.Tip != null) && (blockStoreDisabled || (this.chainState.BlockStoreTip.Height >= this.Tip.Height)))
-                    break;
+            //    if ((this.Tip != null) && (blockStoreDisabled || (this.chainState.BlockStoreTip.Height >= this.Tip.Height)))
+            //        break;
 
-                // In case block store initialized behind, rewind until or before the block store tip.
-                // The node will complete loading before connecting to peers so the chain will never know if a reorg happened.
-                utxoHash = await this.UTXOSet.Rewind().ConfigureAwait(false);
-            }
+            //    // In case block store initialized behind, rewind until or before the block store tip.
+            //    // The node will complete loading before connecting to peers so the chain will never know if a reorg happened.
+            //    utxoHash = await this.UTXOSet.Rewind().ConfigureAwait(false);
+            //}
 
-            this.concurrentChain.SetTip(this.Tip);
+            //this.concurrentChain.SetTip(this.Tip);
 
-            this.lookaheadBlockPuller.SetLocation(this.Tip);
+            //this.lookaheadBlockPuller.SetLocation(this.Tip);
 
-            this.chainedHeaderTree.Initialize(this.Tip, !blockStoreDisabled);
+            //this.chainedHeaderTree.Initialize(this.Tip, !blockStoreDisabled);
 
             this.logger.LogTrace("(-)");
         }

@@ -7,6 +7,7 @@ using Stratis.Bitcoin.Base.Deployments;
 using Stratis.Bitcoin.BlockPulling;
 using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Consensus;
+using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.Consensus.Interfaces;
 using Stratis.Bitcoin.Utilities;
@@ -165,7 +166,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules
                 {
                     if (ruleContext.SkipValidation && ruleDescriptor.CanSkipValidation)
                     {
-                        this.logger.LogTrace("Rule {0} skipped for block at height {1}.", nameof(ruleDescriptor), ruleContext.BestBlock?.Height);
+                        this.logger.LogTrace("Rule {0} skipped for block at height {1}.", nameof(ruleDescriptor), ruleContext.PreviousChainedHeader?.Height);
                     }
                     else
                     {

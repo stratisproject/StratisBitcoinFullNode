@@ -1,6 +1,4 @@
-﻿using System;
-using System.Linq;
-using System.Net;
+﻿using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
@@ -12,6 +10,8 @@ using Stratis.Bitcoin.BlockPulling;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Connection;
+using Stratis.Bitcoin.Consensus;
+using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.Consensus.Interfaces;
 using Stratis.Bitcoin.Features.Consensus.Rules;
@@ -24,52 +24,6 @@ using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.Consensus
 {
-    /// <summary>
-    /// Information about a block that is required for its validation.
-    /// It is used when a new block is downloaded or mined.
-    /// </summary>
-    public class BlockValidationContext
-    {
-        /// <summary>A value indicating the peer should not be banned.</summary>
-        public const int BanDurationNoBan = -1;
-
-        /// <summary>A value indicating the peer ban time should be <see cref="ConnectionManagerSettings.BanTimeSeconds"/>.</summary>
-        public const int BanDurationDefaultBan = 0;
-
-        /// <summary>The chain of headers associated with the block.</summary>
-        public ChainedHeader ChainedHeader { get; set; }
-
-        /// <summary>Downloaded or mined block to be validated.</summary>
-        public Block Block { get; set; }
-
-        /// <summary>
-        /// The peer this block came from, <c>null</c> if the block was mined.
-        /// </summary>
-        public IPEndPoint Peer { get; set; }
-
-        /// <summary>If the block validation failed this will be set with the reason of failure.</summary>
-        public ConsensusError Error { get; set; }
-
-        /// <summary>
-        /// If the block validation failed with <see cref="ConsensusErrors.BlockTimestampTooFar"/>
-        /// then this is set to a time until which the block should be marked as invalid. Otherwise it is <c>null</c>.
-        /// </summary>
-        public DateTime? RejectUntil { get; set; }
-
-        /// <summary>
-        /// If the block validation failed with a <see cref="ConsensusError"/> that is considered malicious the peer will get banned.
-        /// The ban, unless specified otherwise, will default to <see cref="ConnectionManagerSettings.BanTimeSeconds"/>.
-        /// </summary>
-        /// <remarks>
-        /// Setting this value to be <see cref="BanDurationNoBan"/> will prevent the peer from being banned.
-        /// Setting this value to be <see cref="BanDurationDefaultBan"/> will default to <see cref="ConnectionManagerSettings.BanTimeSeconds"/>.
-        /// </remarks>
-        public int BanDurationSeconds { get; set; }
-
-        /// <summary>The context of the validation processes.</summary>
-        public RuleContext RuleContext { get; set; }
-    }
-
     /// <summary>
     /// Consumes incoming blocks, validates and executes them.
     /// </summary>
@@ -465,7 +419,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             // Persist the changes to the coinview. This will likely only be stored in memory,
             // unless the coinview treashold is reached.
             this.logger.LogTrace("Saving coinview changes.");
-            await this.UTXOSet.SaveChangesAsync(context.Set.GetCoins(this.UTXOSet), null, this.Tip.HashBlock, context.BlockValidationContext.ChainedHeader.HashBlock).ConfigureAwait(false);
+            await this.UTXOSet.SaveChangesAsync(context.Item<UnspentOutputSet>().GetCoins(this.UTXOSet), null, this.Tip.HashBlock, context.BlockValidationContext.ChainedHeader.HashBlock).ConfigureAwait(false);
 
             // Set the new tip.
             this.Tip = context.BlockValidationContext.ChainedHeader;

@@ -1,6 +1,7 @@
 ﻿using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
+using Stratis.Bitcoin.Consensus.Rules;
 
 namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
 {
@@ -30,7 +31,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
                 ConsensusErrors.BadVersion.Throw();
             }
 
-            if (context.Stake.BlockStake.IsProofOfWork() && (chainedHeader.Height > this.Parent.ConsensusParams.LastPOWBlock))
+            if (context.Item<PosRuleContext>().BlockStake.IsProofOfWork() && (chainedHeader.Height > this.Parent.ConsensusParams.LastPOWBlock))
             {
                 this.Logger.LogTrace("(-)[POW_TOO_HIGH]");
                 ConsensusErrors.ProofOfWorkTooHigh.Throw();
@@ -45,7 +46,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
             }
 
             // Check coinstake timestamp.
-            if (context.Stake.BlockStake.IsProofOfStake()
+            if (context.Item<PosRuleContext>().BlockStake.IsProofOfStake()
                 && !this.CheckCoinStakeTimestamp(chainedHeader.Header.Time, context.BlockValidationContext.Block.Transactions[1].Time))
             {
                 this.Logger.LogTrace("(-)[BAD_TIME]");

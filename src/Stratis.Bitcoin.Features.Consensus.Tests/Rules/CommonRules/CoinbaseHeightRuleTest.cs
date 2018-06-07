@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
 using NBitcoin;
+using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
 using Xunit;
 
@@ -18,7 +19,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         public async Task RunAsync_BestBlockAvailable_BadCoinBaseHeight_ThrowsBadCoinbaseHeightConsensusErrorExceptionAsync()
         {
             this.ruleContext.BlockValidationContext.Block = new Block();
-            this.ruleContext.BestBlock = new ContextBlockInformation() { Height = 3 };
+            this.ruleContext.PreviousHeight = 3;
 
             var transaction = new Transaction();
             transaction.Inputs.Add(new TxIn(new Script(Op.GetPushOp(3))));
@@ -47,7 +48,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         public async Task RunAsync_CorrectCoinBaseHeight_DoesNotThrowExceptionAsync()
         {
             this.ruleContext.BlockValidationContext.Block = new Block();
-            this.ruleContext.BestBlock = new ContextBlockInformation() { Height = 3 };
+            this.ruleContext.PreviousHeight = 3;
 
             var transaction = new Transaction();
             transaction.Inputs.Add(new TxIn(new Script(Op.GetPushOp(4))));

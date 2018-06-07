@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Base.Deployments;
+using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
@@ -23,7 +24,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
             {
                 Block block = context.BlockValidationContext.Block;
                 DeploymentFlags flags = context.Flags;
-                UnspentOutputSet view = context.Set;
+                UnspentOutputSet view = context.Item<UnspentOutputSet>();
 
                 if (flags.EnforceBIP30)
                 {

@@ -1,6 +1,7 @@
 ﻿using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
+using Stratis.Bitcoin.Consensus.Rules;
 
 namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
 {
@@ -16,7 +17,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         {
             context.SetStake();
 
-            if (context.Stake.BlockStake.IsProofOfWork())
+            if (context.Item<PosRuleContext>().BlockStake.IsProofOfWork())
             {
                 if (context.CheckPow && !context.BlockValidationContext.Block.Header.CheckProofOfWork())
                 {
@@ -26,7 +27,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
             }
 
             context.NextWorkRequired = this.PosParent.StakeValidator.GetNextTargetRequired(this.PosParent.StakeChain, context.BlockValidationContext.ChainedHeader.Previous, context.Consensus, 
-                context.Stake.BlockStake.IsProofOfStake());
+                context.Item<PosRuleContext>().BlockStake.IsProofOfStake());
 
             return Task.CompletedTask;
         }

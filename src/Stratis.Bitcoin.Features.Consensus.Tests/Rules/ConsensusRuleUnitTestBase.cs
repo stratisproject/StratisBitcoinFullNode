@@ -11,6 +11,7 @@ using Stratis.Bitcoin.BlockPulling;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Consensus;
+using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.Consensus.Interfaces;
 using Stratis.Bitcoin.Features.Consensus.Rules;
@@ -65,8 +66,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
             var nonce = RandomUtils.GetUInt32();
             var prevBlockHash = chain.Tip.HashBlock;
 
-            this.ruleContext.Set = new UnspentOutputSet();
-            this.ruleContext.Set.SetCoins(new UnspentOutputs[0]);
+            this.ruleContext.SetItem(new UnspentOutputSet());
+            this.ruleContext.Item<UnspentOutputSet>().SetCoins(new UnspentOutputs[0]);
 
             for (var i = 0; i < blockAmount; i++)
             {
@@ -79,7 +80,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
                 block.Header.Nonce = nonce;
                 chain.SetTip(block.Header);
                 prevBlockHash = block.GetHash();
-                this.ruleContext.Set.Update(transaction, i);
+                this.ruleContext.Item<UnspentOutputSet>().Update(transaction, i);
                 this.lastAddedTransaction = transaction;
             }
         }

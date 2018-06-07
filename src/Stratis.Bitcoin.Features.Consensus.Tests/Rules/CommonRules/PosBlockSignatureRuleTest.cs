@@ -1,6 +1,7 @@
 ﻿using System.Threading.Tasks;
 using NBitcoin;
 using NBitcoin.Crypto;
+using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
 using Xunit;
 

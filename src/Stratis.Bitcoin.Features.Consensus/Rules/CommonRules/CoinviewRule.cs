@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Base.Deployments;
+using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
@@ -38,7 +39,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
             Block block = context.BlockValidationContext.Block;
             ChainedHeader index = context.BlockValidationContext.ChainedHeader;
             DeploymentFlags flags = context.Flags;
-            UnspentOutputSet view = context.Set;
+            UnspentOutputSet view = context.Item<UnspentOutputSet>();
 
             this.Parent.PerformanceCounter.AddProcessedBlocks(1);
 
@@ -52,7 +53,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
                 if (!context.SkipValidation)
                 {
                     // TODO: Simplify this condition.
-                    if (!tx.IsCoinBase && (!context.IsPoS || (context.IsPoS && !tx.IsCoinStake)))
+                    if (!tx.IsCoinBase && (!context.IsPoS() || (context.IsPoS() && !tx.IsCoinStake)))
                     {
                         if (!view.HaveInputs(tx))
                         {
@@ -88,7 +89,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
                     }
 
                     // TODO: Simplify this condition.
-                    if (!tx.IsCoinBase && (!context.IsPoS || (context.IsPoS && !tx.IsCoinStake)))
+                    if (!tx.IsCoinBase && (!context.IsPoS() || (context.IsPoS() && !tx.IsCoinStake)))
                     {
                         this.CheckInputs(tx, view, index.Height);
                         fees += view.GetValueIn(tx) - tx.TotalOut;
@@ -143,7 +144,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
             this.Logger.LogTrace("()");
 
             ChainedHeader index = context.BlockValidationContext.ChainedHeader;
-            UnspentOutputSet view = context.Set;
+            UnspentOutputSet view = context.Item<UnspentOutputSet>();
 
             view.Update(transaction, index.Height);
 
