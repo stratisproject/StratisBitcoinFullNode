@@ -59,6 +59,14 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules
         /// Gets the consensus rule that is assignable to the supplied generic type.
         /// </summary>
         T GetRule<T>() where T : ConsensusRule;
+
+        /// <summary>
+        /// Create an instance of the <see cref="RuleContext"/> to be used by consensus validation.
+        /// </summary>
+        /// <remarks>
+        /// Each network type can specify it's own <see cref="RuleContext"/>.
+        /// </remarks>
+        RuleContext CreateRuleContext(ValidationContext validationContext);
     }
 
     /// <summary>

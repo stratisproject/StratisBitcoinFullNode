@@ -11,8 +11,6 @@ namespace Stratis.Bitcoin.Consensus.Rules
     /// </summary>
     public class RuleContext
     {
-        private readonly Dictionary<Type, object> objectsBag;
-
         public NBitcoin.Consensus Consensus { get; set; }
 
         public DateTimeOffset Time { get; set; }
@@ -23,9 +21,8 @@ namespace Stratis.Bitcoin.Consensus.Rules
 
         public DeploymentFlags Flags { get; set; }
 
-        public bool CheckMerkleRoot { get; set; }
-
-        public bool CheckPow { get; set; }
+        /// <summary>Indicate the block was created by our node.</summary>
+        public bool MinedBlock { get; set; }
 
         /// <summary>Whether to skip block validation for this block due to either a checkpoint or assumevalid hash set.</summary>
         public bool SkipValidation { get; set; }
@@ -33,31 +30,11 @@ namespace Stratis.Bitcoin.Consensus.Rules
         /// <summary>The current tip of the chain that has been validated.</summary>
         public ChainedHeader ConsensusTip { get; set; }
 
+        /// <summary>The height of the previous block.</summary>
         public int PreviousHeight { get; set; }
 
         public RuleContext()
         {
-            this.objectsBag = new Dictionary<Type, object>();
-        }
-
-        public T Item<T>() where T : class
-        {
-            if (this.objectsBag.TryGetValue(typeof(T), out object objecValue))
-            {
-                return objecValue as T;
-            }
-
-            throw new KeyNotFoundException();
-        }
-
-        public void SetItem<T>(T item) where T : class
-        {
-            if (this.objectsBag.TryAdd(typeof(T), item))
-            {
-                return;
-            }
-
-            throw new KeyNotFoundException();
         }
 
         public RuleContext(ValidationContext validationContext, NBitcoin.Consensus consensus, ChainedHeader consensusTip) : base()
@@ -70,12 +47,7 @@ namespace Stratis.Bitcoin.Consensus.Rules
             this.ConsensusTip = consensusTip;
             this.PreviousHeight = consensusTip.Height;
 
-            // TODO: adding flags to determine the flow of logic is not ideal
-            // a re-factor is in debate on moving to a consensus rules engine
-            // this will remove the need for flags as validation will only use 
-            // the required rules (i.e if the check pow rule will be omitted form the flow)
-            this.CheckPow = true;
-            this.CheckMerkleRoot = true;
+            this.MinedBlock = false;
         }
     }
 }

@@ -125,8 +125,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
                 var blockTemplate = powBlockAssembler.Build(chain.Tip, this.key.ScriptPubKey);
                 Assert.NotNull(this.callbackRuleContext);
 
-                Assert.False(this.callbackRuleContext.CheckMerkleRoot);
-                Assert.False(this.callbackRuleContext.CheckPow);
+                Assert.True(this.callbackRuleContext.MinedBlock);
                 Assert.Equal(blockTemplate.Block.GetHash(), this.callbackRuleContext.ValidationContext.Block.GetHash());
                 Assert.Equal(chain.GetBlock(5).HashBlock, this.callbackRuleContext.ConsensusTip.HashBlock);
                 Assert.Equal(1500, this.callbackRuleContext.Consensus.Option<PowConsensusOptions>().MaxBlockWeight);
@@ -257,8 +256,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
 
                 Assert.NotNull(this.callbackRuleContext);
 
-                Assert.False(this.callbackRuleContext.CheckMerkleRoot);
-                Assert.False(this.callbackRuleContext.CheckPow);
+                Assert.False(this.callbackRuleContext.MinedBlock);
                 Assert.Equal(block.GetHash(), this.callbackRuleContext.ValidationContext.Block.GetHash());
                 Assert.Equal(chain.GetBlock(5).HashBlock, this.callbackRuleContext.ConsensusTip.HashBlock);
                 Assert.Equal(1500, this.callbackRuleContext.Consensus.Option<PowConsensusOptions>().MaxBlockWeight);

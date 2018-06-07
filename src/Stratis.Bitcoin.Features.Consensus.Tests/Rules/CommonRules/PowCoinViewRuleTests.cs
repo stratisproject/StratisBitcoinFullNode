@@ -62,7 +62,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         {
             this.coinView = new UnspentOutputSet();
             this.coinView.SetCoins(new UnspentOutputs[0]);
-            this.ruleContext.SetItem(this.coinView);
+            (this.ruleContext as UtxoRuleContext).UnspentOutputSet = this.coinView;
             this.coinView.Update(this.transactionWithCoinbaseFromPreviousBlock, 0);
         }
 

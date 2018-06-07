@@ -39,7 +39,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
             Block block = context.ValidationContext.Block;
             ChainedHeader index = context.ValidationContext.ChainedHeader;
             DeploymentFlags flags = context.Flags;
-            UnspentOutputSet view = context.Item<UnspentOutputSet>();
+            UnspentOutputSet view = (context as UtxoRuleContext).UnspentOutputSet;
 
             this.Parent.PerformanceCounter.AddProcessedBlocks(1);
 
@@ -142,7 +142,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
             this.Logger.LogTrace("()");
 
             ChainedHeader index = context.ValidationContext.ChainedHeader;
-            UnspentOutputSet view = context.Item<UnspentOutputSet>();
+            UnspentOutputSet view = (context as UtxoRuleContext).UnspentOutputSet;
 
             view.Update(transaction, index.Height);
 

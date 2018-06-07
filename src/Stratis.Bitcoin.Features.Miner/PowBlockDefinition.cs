@@ -112,8 +112,7 @@ namespace Stratis.Bitcoin.Features.Miner
 
             var context = new RuleContext(new ValidationContext { Block = this.block }, this.Network.Consensus, this.ConsensusLoop.Tip)
             {
-                CheckPow = false,
-                CheckMerkleRoot = false,
+                MinedBlock = true,
             };
 
             this.ConsensusLoop.ValidateBlock(context);

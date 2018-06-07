@@ -24,7 +24,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
             {
                 Block block = context.ValidationContext.Block;
                 DeploymentFlags flags = context.Flags;
-                UnspentOutputSet view = context.Item<UnspentOutputSet>();
+                UtxoRuleContext utxoRuleContext = context as UtxoRuleContext;
+                UnspentOutputSet view = utxoRuleContext.UnspentOutputSet;
 
                 if (flags.EnforceBIP30)
                 {

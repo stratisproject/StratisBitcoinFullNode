@@ -16,22 +16,20 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         /// <exception cref="ConsensusErrors.HighHash"> Thrown if block doesn't have a valid PoW header.</exception>
         public override Task RunAsync(RuleContext context)
         {
-            context.SetItem(new PosRuleContext
-            {
-                BlockStake = new BlockStake(context.ValidationContext.Block)
-            });
+            PosRuleContext posRuleContext = context as PosRuleContext;
 
-            if (context.Item<PosRuleContext>().BlockStake.IsProofOfWork())
+            posRuleContext.BlockStake = new BlockStake(context.ValidationContext.Block);
+
+            if (posRuleContext.BlockStake.IsProofOfWork())
             {
-                if (context.CheckPow && !context.ValidationContext.Block.Header.CheckProofOfWork())
+                if (!context.MinedBlock && !context.ValidationContext.Block.Header.CheckProofOfWork())
                 {
                     this.Logger.LogTrace("(-)[HIGH_HASH]");
                     ConsensusErrors.HighHash.Throw();
                 }
             }
 
-            context.NextWorkRequired = this.PosParent.StakeValidator.GetNextTargetRequired(this.PosParent.StakeChain, context.ValidationContext.ChainedHeader.Previous, context.Consensus, 
-                context.Item<PosRuleContext>().BlockStake.IsProofOfStake());
+            context.NextWorkRequired = this.PosParent.StakeValidator.GetNextTargetRequired(this.PosParent.StakeChain, context.ValidationContext.ChainedHeader.Previous, context.Consensus, posRuleContext.BlockStake.IsProofOfStake());
 
             return Task.CompletedTask;
         }

@@ -177,6 +177,9 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules
         }
 
         /// <inheritdoc />
+        public abstract RuleContext CreateRuleContext(ValidationContext validationContext);
+
+        /// <inheritdoc />
         public T GetRule<T>() where T : ConsensusRule
         {
             return (T)this.Rules.Single(r => r.Rule is T).Rule;
@@ -203,6 +206,12 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules
             this.UtxoSet = utxoSet;
             this.Puller = puller;
         }
+
+        /// <inheritdoc />
+        public override RuleContext CreateRuleContext(ValidationContext validationContext)
+        {
+            return new PosRuleContext(validationContext, this.Network.Consensus, this.Chain.Tip);
+        }
     }
 
     /// <summary>
@@ -227,6 +236,12 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules
         {
             this.StakeChain = stakeChain;
             this.StakeValidator = stakeValidator;
+        }
+
+        /// <inheritdoc />
+        public override RuleContext CreateRuleContext(ValidationContext validationContext)
+        {
+            return new PosRuleContext(validationContext, this.Network.Consensus, this.Chain.Tip);
         }
     }
 }

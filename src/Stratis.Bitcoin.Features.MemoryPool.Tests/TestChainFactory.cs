@@ -103,8 +103,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
 
             var ruleContext = new RuleContext(new ValidationContext { Block = newBlock.Block }, network.Consensus, consensusLoop.Tip)
             {
-                CheckPow = false,
-                CheckMerkleRoot = false,
+                MinedBlock = true,
             };
             await consensusLoop.ValidateAndExecuteBlockAsync(ruleContext);
 
@@ -140,8 +139,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
                 chain.SetTip(currentBlock.Header);
                 var ruleContextForBlock = new RuleContext(new ValidationContext { Block = currentBlock }, network.Consensus, consensusLoop.Tip)
                 {
-                    CheckPow = false,
-                    CheckMerkleRoot = false,
+                    MinedBlock = true,
                 };
                 await consensusLoop.ValidateAndExecuteBlockAsync(ruleContextForBlock);
                 blocks.Add(currentBlock);

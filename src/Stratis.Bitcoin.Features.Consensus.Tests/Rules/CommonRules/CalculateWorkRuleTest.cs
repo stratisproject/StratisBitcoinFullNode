@@ -22,7 +22,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
 
             this.ruleContext.ValidationContext.ChainedHeader = this.concurrentChain.Tip;
             this.ruleContext.ValidationContext.Block = TestRulesContextFactory.MineBlock(this.network, this.concurrentChain);
-            this.ruleContext.CheckPow = false;
+            this.ruleContext.MinedBlock = true;
             this.ruleContext.Consensus = this.network.Consensus;
 
             await this.consensusRules.RegisterRule<CalculateWorkRule>().RunAsync(this.ruleContext);
@@ -39,7 +39,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
 
             this.ruleContext.ValidationContext.ChainedHeader = this.concurrentChain.Tip;
             this.ruleContext.ValidationContext.Block = TestRulesContextFactory.MineBlock(this.network, this.concurrentChain);
-            this.ruleContext.CheckPow = true;
+            this.ruleContext.MinedBlock = false;
             this.ruleContext.Consensus = this.network.Consensus;
 
             await this.consensusRules.RegisterRule<CalculateWorkRule>().RunAsync(this.ruleContext);
@@ -61,7 +61,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
                 },
                 ChainedHeader = this.concurrentChain.GetBlock(4)
             };
-            this.ruleContext.CheckPow = true;
+            this.ruleContext.MinedBlock = false;
 
             var exception = await Assert.ThrowsAsync<ConsensusErrorException>(() => this.consensusRules.RegisterRule<CalculateWorkRule>().RunAsync(this.ruleContext));
 

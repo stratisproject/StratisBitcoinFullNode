@@ -55,10 +55,20 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
             this.ruleRegistration.Setup(r => r.GetRules())
                 .Returns(() => { return this.ruleRegistrations; });
 
-            this.ruleContext = new RuleContext()
+            if (network.Consensus.IsProofOfStake)
             {
-                ValidationContext = new ValidationContext()
-            };
+                this.ruleContext = new PosRuleContext()
+                {
+                    ValidationContext = new ValidationContext()
+                };
+            }
+            else
+            {
+                this.ruleContext = new PowRuleContext()
+                {
+                    ValidationContext = new ValidationContext()
+                };
+            }
         }
 
         protected void AddBlocksToChain(ConcurrentChain chain, int blockAmount)
@@ -66,8 +76,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
             var nonce = RandomUtils.GetUInt32();
             var prevBlockHash = chain.Tip.HashBlock;
 
-            this.ruleContext.SetItem(new UnspentOutputSet());
-            this.ruleContext.Item<UnspentOutputSet>().SetCoins(new UnspentOutputs[0]);
+            (this.ruleContext as UtxoRuleContext).UnspentOutputSet = new UnspentOutputSet();
+            (this.ruleContext as UtxoRuleContext).UnspentOutputSet.SetCoins(new UnspentOutputs[0]);
 
             for (var i = 0; i < blockAmount; i++)
             {
@@ -80,7 +90,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
                 block.Header.Nonce = nonce;
                 chain.SetTip(block.Header);
                 prevBlockHash = block.GetHash();
-                this.ruleContext.Item<UnspentOutputSet>().Update(transaction, i);
+                (this.ruleContext as UtxoRuleContext).UnspentOutputSet.Update(transaction, i);
                 this.lastAddedTransaction = transaction;
             }
         }
@@ -134,10 +144,20 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
             this.ruleRegistration.Setup(r => r.GetRules())
                 .Returns(() => { return this.ruleRegistrations; });
 
-            this.ruleContext = new RuleContext()
+            if (network.Consensus.IsProofOfStake)
             {
-                ValidationContext = new ValidationContext()
-            };
+                this.ruleContext = new PosRuleContext()
+                {
+                    ValidationContext = new ValidationContext()
+                };
+            }
+            else
+            {
+                this.ruleContext = new PowRuleContext()
+                {
+                    ValidationContext = new ValidationContext()
+                };
+            }
         }
 
         public virtual T InitializeConsensusRules()

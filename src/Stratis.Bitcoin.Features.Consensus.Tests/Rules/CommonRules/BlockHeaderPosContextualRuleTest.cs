@@ -2,6 +2,7 @@
 using System.Threading.Tasks;
 using NBitcoin;
 using Stratis.Bitcoin.Consensus;
+using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
 using Xunit;
 
@@ -35,10 +36,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         public async Task RunAsync_ProofOfWorkTooHigh_ThrowsProofOfWorkTooHighConsensusErrorAsync()
         {
             this.ruleContext.ValidationContext.ChainedHeader = this.concurrentChain.GetBlock(3);
-            this.ruleContext.SetItem(new PosRuleContext()
-            {
-                BlockStake = new BlockStake()
-            });
+            this.SetBlockStake(BlockFlag.BLOCK_PROOF_OF_STAKE);
             this.network.Consensus.LastPOWBlock = 2;
 
             var exception = await Assert.ThrowsAsync<ConsensusErrorException>(() => this.rule.RunAsync(this.ruleContext));
@@ -49,11 +47,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         [Fact]
         public async Task RunAsync_TimestampTooNew_WithoutReducedDrift_ThrowsTimeTooNewConsensusErrorAsync()
         {
-            this.ruleContext.SetItem(new PosRuleContext()
-            {
-                BlockStake = new BlockStake()
-            });
-
+            this.SetBlockStake(BlockFlag.BLOCK_PROOF_OF_STAKE);
             this.ruleContext.ValidationContext = new ValidationContext();
             this.ruleContext.ValidationContext.Block = this.network.Consensus.ConsensusFactory.CreateBlock();
             this.ruleContext.ValidationContext.Block.Transactions.Add(this.network.Consensus.ConsensusFactory.CreateTransaction());
@@ -71,10 +65,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         [Fact]
         public async Task RunAsync_TimestampTooNew_WithReducedDrift_ThrowsTimeTooNewConsensusErrorAsync()
         {
-            this.ruleContext.SetItem(new PosRuleContext()
-            {
-                BlockStake = new BlockStake()
-            });
+            this.SetBlockStake(BlockFlag.BLOCK_PROOF_OF_STAKE);
             this.ruleContext.ValidationContext = new ValidationContext();
             this.ruleContext.ValidationContext.Block = this.network.Consensus.ConsensusFactory.CreateBlock();
             this.ruleContext.ValidationContext.Block.Transactions.Add(this.network.Consensus.ConsensusFactory.CreateTransaction());
@@ -92,13 +83,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         [Fact]
         public async Task RunAsync_StakeTimestampInvalid_BlockTimeNotTransactionTime_ThrowsStakeTimeViolationConsensusErrorAsync()
         {
-            this.ruleContext.SetItem(new PosRuleContext()
-            {
-                BlockStake = new BlockStake()
-                {
-                    Flags = BlockFlag.BLOCK_PROOF_OF_STAKE
-                }
-            });
+            this.SetBlockStake(BlockFlag.BLOCK_PROOF_OF_STAKE);
             this.ruleContext.ValidationContext = new ValidationContext();
             this.ruleContext.ValidationContext.Block = this.network.Consensus.ConsensusFactory.CreateBlock();
             this.ruleContext.ValidationContext.Block.Transactions.Add(this.network.Consensus.ConsensusFactory.CreateTransaction());
@@ -119,13 +104,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         [Fact]
         public async Task RunAsync_StakeTimestampInvalid_TransactionTimeDoesNotIncludeStakeTimestampMask_ThrowsStakeTimeViolationConsensusErrorAsync()
         {
-            this.ruleContext.SetItem(new PosRuleContext()
-            {
-                BlockStake = new BlockStake()
-                {
-                    Flags = BlockFlag.BLOCK_PROOF_OF_STAKE
-                }
-            });
+            this.SetBlockStake(BlockFlag.BLOCK_PROOF_OF_STAKE);
             this.ruleContext.ValidationContext = new ValidationContext();
             this.ruleContext.ValidationContext.Block = this.network.Consensus.ConsensusFactory.CreateBlock();
             this.ruleContext.ValidationContext.Block.Transactions.Add(this.network.Consensus.ConsensusFactory.CreateTransaction());
@@ -145,13 +124,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         [Fact]
         public async Task RunAsync_BlockTimestampTooEarly_ThrowsBlockTimestampTooEarlyConsensusErrorAsync()
         {
-            this.ruleContext.SetItem(new PosRuleContext()
-            {
-                BlockStake = new BlockStake()
-                {
-                    Flags = BlockFlag.BLOCK_PROOF_OF_STAKE
-                }
-            });
+            this.SetBlockStake(BlockFlag.BLOCK_PROOF_OF_STAKE);
             this.ruleContext.ValidationContext = new ValidationContext();
             this.ruleContext.ValidationContext.Block = this.network.Consensus.ConsensusFactory.CreateBlock();
             this.ruleContext.ValidationContext.Block.Transactions.Add(this.network.Consensus.ConsensusFactory.CreateTransaction());
@@ -174,13 +147,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         [Fact]
         public async Task RunAsync_BlockTimestampSameAsPrevious_ThrowsBlockTimestampTooEarlyConsensusErrorAsync()
         {
-            this.ruleContext.SetItem(new PosRuleContext()
-            {
-                BlockStake = new BlockStake()
-                {
-                    Flags = BlockFlag.BLOCK_PROOF_OF_STAKE
-                }
-            });
+            this.SetBlockStake(BlockFlag.BLOCK_PROOF_OF_STAKE);
             this.ruleContext.ValidationContext = new ValidationContext();
             this.ruleContext.ValidationContext.Block = this.network.Consensus.ConsensusFactory.CreateBlock();
             this.ruleContext.ValidationContext.Block.Transactions.Add(this.network.Consensus.ConsensusFactory.CreateTransaction());
@@ -203,13 +170,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         [Fact]
         public async Task RunAsync_ValidRuleContext_DoesNotThrowExceptionAsync()
         {
-            this.ruleContext.SetItem(new PosRuleContext()
-            {
-                BlockStake = new BlockStake()
-                {
-                    Flags = BlockFlag.BLOCK_PROOF_OF_STAKE
-                }
-            });
+            this.SetBlockStake(BlockFlag.BLOCK_PROOF_OF_STAKE);
             this.ruleContext.ValidationContext = new ValidationContext();
             this.ruleContext.ValidationContext.Block = this.network.Consensus.ConsensusFactory.CreateBlock();
             this.ruleContext.ValidationContext.Block.Transactions.Add(this.network.Consensus.ConsensusFactory.CreateTransaction());
@@ -225,6 +186,14 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             this.ruleContext.ValidationContext.ChainedHeader.Header.Time = previousBlockHeaderTime + 64;
 
             await this.rule.RunAsync(this.ruleContext);
+        }
+
+        private void SetBlockStake(BlockFlag flg)
+        {
+            (this.ruleContext as PosRuleContext).BlockStake = new BlockStake()
+            {
+                Flags = flg
+            };
         }
 
         private BlockHeaderPosContextualRule CreateRule()
