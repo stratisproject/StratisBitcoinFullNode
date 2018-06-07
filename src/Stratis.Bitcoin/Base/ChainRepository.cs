@@ -28,9 +28,10 @@ namespace Stratis.Bitcoin.Base
         /// <returns>Height of a block that can't be reorged away from.</returns>
         Task LoadFinalizedBlockHeightAsync();
 
-        /// <summary>Saves the finalized block height.</summary>
+        /// <summary>Saves the finalized block height if it is greater than the previous value.</summary>
         /// <param name="height">Block height.</param>
-        Task SaveFinalizedBlockHeightAsync(int height);
+        /// <returns><c>true</c> if new value was set, <c>false</c> if <paramref name="height"/> is lower or equal than current value.</returns>
+        Task<bool> SaveFinalizedBlockHeightAsync(int height);
     }
 
     public class ChainRepository : IChainRepository, IFinalizedBlockHeight
@@ -101,13 +102,19 @@ namespace Stratis.Bitcoin.Base
         }
 
         /// <inheritdoc />
-        public Task SaveFinalizedBlockHeightAsync(int height)
+        public Task<bool> SaveFinalizedBlockHeightAsync(int height)
         {
             this.logger.LogTrace("({0}:{1})", nameof(height), height);
 
+            if (height <= this.finalizedHeight)
+            {
+                this.logger.LogTrace("(-)[CANT_GO_BACK]:false");
+                return Task.FromResult(false);
+            }
+            
             this.finalizedHeight = height;
 
-            Task task = Task.Run(() =>
+            Task<bool> task = Task.Run(() =>
             {
                 this.logger.LogTrace("()");
 
@@ -117,7 +124,8 @@ namespace Stratis.Bitcoin.Base
                     transaction.Commit();
                 }
 
-                this.logger.LogTrace("(-)");
+                this.logger.LogTrace("(-):true");
+                return true;
             });
 
             this.logger.LogTrace("(-)");
