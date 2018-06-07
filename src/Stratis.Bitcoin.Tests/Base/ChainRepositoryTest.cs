@@ -23,12 +23,12 @@ namespace Stratis.Bitcoin.Tests.Base
 
             using (var repo = new ChainRepository(dir, new LoggerFactory()))
             {
-                await repo.SaveFinalizedBlockHeightAsync(777).ConfigureAwait(false);
+                await repo.SaveFinalizedBlockHeightAsync(777);
             }
 
             using (var repo = new ChainRepository(dir, new LoggerFactory()))
             {
-                await repo.LoadFinalizedBlockHeightAsync().ConfigureAwait(false);
+                await repo.LoadFinalizedBlockHeightAsync();
                 Assert.Equal(777, repo.GetFinalizedBlockHeight());
             }
         }
@@ -40,15 +40,15 @@ namespace Stratis.Bitcoin.Tests.Base
 
             using (var repo = new ChainRepository(dir, new LoggerFactory()))
             {
-                await repo.SaveFinalizedBlockHeightAsync(777).ConfigureAwait(false);
-                await repo.SaveFinalizedBlockHeightAsync(555).ConfigureAwait(false);
+                await repo.SaveFinalizedBlockHeightAsync(777);
+                await repo.SaveFinalizedBlockHeightAsync(555);
                 
                 Assert.Equal(777, repo.GetFinalizedBlockHeight());
             }
 
             using (var repo = new ChainRepository(dir, new LoggerFactory()))
             {
-                await repo.LoadFinalizedBlockHeightAsync().ConfigureAwait(false);
+                await repo.LoadFinalizedBlockHeightAsync();
                 Assert.Equal(777, repo.GetFinalizedBlockHeight());
             }
         }
