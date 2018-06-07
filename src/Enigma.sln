@@ -48,7 +48,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.Sidechains.Features
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.FederatedSidechains.Initialisation", "Stratis.FederatedSidechains.Initialisation\Stratis.FederatedSidechains.Initialisation.csproj", "{3526B5DB-8E08-445F-9DCE-65566491D94F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Stratis.FederatedSidechains.Initialisation.Tests", "Stratis.FederatedSidechains.Initialisation.Tests\Stratis.FederatedSidechains.Initialisation.Tests.csproj", "{3D106928-3A8E-4EB1-9F9A-45856DBAA16B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.FederatedSidechains.Initialisation.Tests", "Stratis.FederatedSidechains.Initialisation.Tests\Stratis.FederatedSidechains.Initialisation.Tests.csproj", "{3D106928-3A8E-4EB1-9F9A-45856DBAA16B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Stratis.ApexD", "Stratis.ApexD\Stratis.ApexD.csproj", "{C3FF2EF8-50B6-43D8-AC78-BCFEBF7DE394}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -140,6 +142,10 @@ Global
 		{3D106928-3A8E-4EB1-9F9A-45856DBAA16B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{3D106928-3A8E-4EB1-9F9A-45856DBAA16B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{3D106928-3A8E-4EB1-9F9A-45856DBAA16B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C3FF2EF8-50B6-43D8-AC78-BCFEBF7DE394}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C3FF2EF8-50B6-43D8-AC78-BCFEBF7DE394}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C3FF2EF8-50B6-43D8-AC78-BCFEBF7DE394}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C3FF2EF8-50B6-43D8-AC78-BCFEBF7DE394}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
