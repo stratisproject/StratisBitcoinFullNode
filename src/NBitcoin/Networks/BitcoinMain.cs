@@ -50,6 +50,9 @@ namespace NBitcoin.Networks
             this.Consensus.BIP9Deployments[BIP9Deployments.Segwit] = new BIP9DeploymentsParameters(1, 1479168000, 1510704000);
             this.Consensus.CoinType = 0;
             this.Consensus.DefaultAssumeValid = new uint256("0x000000000000000000174f783cc20c1415f90c4d17c9a5bcd06ba67207c9bc80"); // 518180
+            this.Consensus.CoinbaseMaturity = 100;
+            this.Consensus.PremineReward = Money.Zero;
+            this.Consensus.ProofOfWorkReward = Money.Coins(50);
 
             this.Base58Prefixes = new byte[12][];
             this.Base58Prefixes[(int)Base58Type.PUBKEY_ADDRESS] = new byte[] { (0) };

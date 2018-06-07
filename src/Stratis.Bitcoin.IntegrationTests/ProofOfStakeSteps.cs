@@ -164,7 +164,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 
         public void PosNodeMinesTenBlocksMoreEnsuringTheyCanBeStaked()
         {
-            this.nodes[this.PosStaker].GenerateStratisWithMiner(Convert.ToInt32(this.nodes[this.PosStaker].FullNode.Network.Consensus.Option<PosConsensusOptions>().CoinbaseMaturity));
+            this.nodes[this.PosStaker].GenerateStratisWithMiner(Convert.ToInt32(this.nodes[this.PosStaker].FullNode.Network.Consensus.CoinbaseMaturity));
         }
 
         public void PosNodeStartsStaking()

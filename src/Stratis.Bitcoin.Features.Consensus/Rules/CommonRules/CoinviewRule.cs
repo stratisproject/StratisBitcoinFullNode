@@ -20,11 +20,15 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         /// <summary>Consensus options.</summary>
         public PowConsensusOptions PowConsensusOptions { get; private set; }
 
+        /// <summary>The consensus.</summary>
+        private NBitcoin.Consensus Consensus { get; set; }
+
         /// <inheritdoc />
         public override void Initialize()
         {
             this.Logger.LogTrace("()");
 
+            this.Consensus = this.Parent.Network.Consensus;
             this.PowConsensusOptions = this.Parent.Network.Consensus.Option<PowConsensusOptions>();
 
             this.Logger.LogTrace("(-)");
@@ -188,9 +192,9 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
             // If prev is coinbase, check that it's matured
             if (coins.IsCoinbase)
             {
-                if ((spendHeight - coins.Height) < this.PowConsensusOptions.CoinbaseMaturity)
+                if ((spendHeight - coins.Height) < this.Consensus.CoinbaseMaturity)
                 {
-                    this.Logger.LogTrace("Coinbase transaction height {0} spent at height {1}, but maturity is set to {2}.", coins.Height, spendHeight, this.PowConsensusOptions.CoinbaseMaturity);
+                    this.Logger.LogTrace("Coinbase transaction height {0} spent at height {1}, but maturity is set to {2}.", coins.Height, spendHeight, this.Consensus.CoinbaseMaturity);
                     this.Logger.LogTrace("(-)[COINBASE_PREMATURE_SPENDING]");
                     ConsensusErrors.BadTransactionPrematureCoinbaseSpending.Throw();
                 }

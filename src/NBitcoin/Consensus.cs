@@ -30,6 +30,26 @@ namespace NBitcoin
         {
         }
 
+        /// <summary>
+        /// How many blocks should be on top of the block with coinbase transaction until it's outputs are considered spendable.
+        /// </summary>
+        public long CoinbaseMaturity { get; set; }
+
+        /// <summary>
+        /// Amount of coins mined when a new network is bootstrapped.
+        /// </summary>
+        public Money PremineReward { get; set; }
+
+        /// <summary>
+        /// The height of the block in which the pre-mined coins should be,
+        /// </summary>
+        public long PremineHeight { get; set; }
+
+        /// <summary>
+        /// The reward that goes to the miner when a block is mined using proof-of-work.
+        /// </summary>
+        public Money ProofOfWorkReward { get; set; }
+
         public ConsensusOptions Options { get; set; }
 
         public class BuriedDeploymentsArray

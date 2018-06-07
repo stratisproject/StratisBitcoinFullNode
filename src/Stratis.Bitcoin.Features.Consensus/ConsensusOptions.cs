@@ -8,14 +8,8 @@ namespace Stratis.Bitcoin.Features.Consensus
     // network this are network specific values
     public class PosConsensusOptions : PowConsensusOptions
     {
-        public new Money ProofOfWorkReward { get; set; }
-
         public Money ProofOfStakeReward { get; set; }
 
-        public Money PremineReward { get; set; }
-
-        public long PremineHeight { get; set; }
-        
         /// <summary>Coinstake minimal confirmations softfork activation height for the mainnet.</summary>
         internal const int CoinstakeMinConfirmationActivationHeightMainnet = 940000;
 
@@ -27,13 +21,8 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// </summary>
         public PosConsensusOptions()
         {
-            this.MaxMoney = long.MaxValue;
-            this.CoinbaseMaturity = 50;
-
-            this.ProofOfWorkReward = Money.Coins(4);
+            this.MaxMoney = long.MaxValue;           
             this.ProofOfStakeReward = Money.COIN;
-            this.PremineReward = Money.Coins(98000000);
-            this.PremineHeight = 2;
             this.MaxReorgLength = 500;
         }
 
@@ -88,13 +77,6 @@ namespace Stratis.Bitcoin.Features.Consensus
 
         public long MaxMoney { get; set; }
 
-        /// <summary>
-        /// How many blocks should be on top of the block with coinbase transaction until it's outputs are considered spendable.
-        /// </summary>
-        public long CoinbaseMaturity { get; set; }
-
-        public Money ProofOfWorkReward { get; set; }
-
         /// <summary>Maximal length of reorganization that the node is willing to accept, or 0 to disable long reorganization protection.</summary>
         public uint MaxReorgLength { get; set; }
 
@@ -112,9 +94,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             this.MaxBlockBaseSize = 1000000;
             this.MaxBlockSigopsCost = 80000;
             this.MaxMoney = 21000000 * Money.COIN;
-            this.CoinbaseMaturity = 100;
-            this.ProofOfWorkReward = Money.Coins(50);
-
+            
             // No long reorg protection on PoW.
             this.MaxReorgLength = 0;
         }
