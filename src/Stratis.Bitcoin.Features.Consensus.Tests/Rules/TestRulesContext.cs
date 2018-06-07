@@ -71,7 +71,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
             return rule;
         }
 
-        public override RuleContext CreateRuleContext(ValidationContext validationContext)
+        public override RuleContext CreateRuleContext(ValidationContext validationContext, ChainedHeader tip)
         {
             throw new System.NotImplementedException();
         }

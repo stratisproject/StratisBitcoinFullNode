@@ -177,7 +177,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules
         }
 
         /// <inheritdoc />
-        public abstract RuleContext CreateRuleContext(ValidationContext validationContext);
+        public abstract RuleContext CreateRuleContext(ValidationContext validationContext, ChainedHeader consensusTip);
 
         /// <inheritdoc />
         public T GetRule<T>() where T : ConsensusRule
@@ -208,9 +208,9 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules
         }
 
         /// <inheritdoc />
-        public override RuleContext CreateRuleContext(ValidationContext validationContext)
+        public override RuleContext CreateRuleContext(ValidationContext validationContext, ChainedHeader consensusTip)
         {
-            return new PosRuleContext(validationContext, this.Network.Consensus, this.Chain.Tip);
+            return new PowRuleContext(validationContext, this.Network.Consensus, consensusTip);
         }
     }
 
@@ -239,9 +239,9 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules
         }
 
         /// <inheritdoc />
-        public override RuleContext CreateRuleContext(ValidationContext validationContext)
+        public override RuleContext CreateRuleContext(ValidationContext validationContext, ChainedHeader consensusTip)
         {
-            return new PosRuleContext(validationContext, this.Network.Consensus, this.Chain.Tip);
+            return new PosRuleContext(validationContext, this.Network.Consensus, consensusTip);
         }
     }
 }

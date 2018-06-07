@@ -101,10 +101,8 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             BlockTemplate newBlock = blockDefinition.Build(chain.Tip, scriptPubKey);
             chain.SetTip(newBlock.Block.Header);
 
-            var ruleContext = new RuleContext(new ValidationContext { Block = newBlock.Block }, network.Consensus, consensusLoop.Tip)
-            {
-                MinedBlock = true,
-            };
+            var ruleContext = consensusRules.CreateRuleContext(new ValidationContext {Block = newBlock.Block}, consensusLoop.Tip);
+            ruleContext.MinedBlock = true;
             await consensusLoop.ValidateAndExecuteBlockAsync(ruleContext);
 
             List<BlockInfo> blockinfo = CreateBlockInfoList();
@@ -137,10 +135,8 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
                 currentBlock.Header.Nonce = blockinfo[i].nonce;
 
                 chain.SetTip(currentBlock.Header);
-                var ruleContextForBlock = new RuleContext(new ValidationContext { Block = currentBlock }, network.Consensus, consensusLoop.Tip)
-                {
-                    MinedBlock = true,
-                };
+                var ruleContextForBlock = consensusRules.CreateRuleContext(new ValidationContext { Block = currentBlock }, consensusLoop.Tip);
+                ruleContextForBlock.MinedBlock = true;
                 await consensusLoop.ValidateAndExecuteBlockAsync(ruleContextForBlock);
                 blocks.Add(currentBlock);
             }

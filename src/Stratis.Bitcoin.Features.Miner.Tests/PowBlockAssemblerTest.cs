@@ -52,7 +52,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
             {
                 var chain = GenerateChainWithHeight(5, this.network, this.key);
                 this.SetupRulesEngine(chain);
-
+                this.consensusLoop.Setup(s => s.Tip).Returns(chain.Tip);
                 this.dateTimeProvider.Setup(d => d.GetAdjustedTimeAsUnixTimestamp())
                     .Returns(new DateTime(2017, 1, 7, 0, 0, 1, DateTimeKind.Utc).ToUnixTimestamp());
                 var transaction = CreateTransaction(this.network, this.key, 5, new Money(400 * 1000 * 1000), new Key(), new uint256(124124));
@@ -256,7 +256,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
 
                 Assert.NotNull(this.callbackRuleContext);
 
-                Assert.False(this.callbackRuleContext.MinedBlock);
+                Assert.True(this.callbackRuleContext.MinedBlock);
                 Assert.Equal(block.GetHash(), this.callbackRuleContext.ValidationContext.Block.GetHash());
                 Assert.Equal(chain.GetBlock(5).HashBlock, this.callbackRuleContext.ConsensusTip.HashBlock);
                 Assert.Equal(1500, this.callbackRuleContext.Consensus.Option<PowConsensusOptions>().MaxBlockWeight);

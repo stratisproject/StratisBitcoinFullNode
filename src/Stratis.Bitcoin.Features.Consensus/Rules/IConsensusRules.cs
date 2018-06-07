@@ -66,7 +66,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules
         /// <remarks>
         /// Each network type can specify it's own <see cref="RuleContext"/>.
         /// </remarks>
-        RuleContext CreateRuleContext(ValidationContext validationContext);
+        RuleContext CreateRuleContext(ValidationContext validationContext, ChainedHeader consensusTip);
     }
 
     /// <summary>

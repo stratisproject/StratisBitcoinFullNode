@@ -36,7 +36,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         public async Task RunAsync_ProofOfWorkTooHigh_ThrowsProofOfWorkTooHighConsensusErrorAsync()
         {
             this.ruleContext.ValidationContext.ChainedHeader = this.concurrentChain.GetBlock(3);
-            this.SetBlockStake(BlockFlag.BLOCK_PROOF_OF_STAKE);
+            this.SetBlockStake();
             this.network.Consensus.LastPOWBlock = 2;
 
             var exception = await Assert.ThrowsAsync<ConsensusErrorException>(() => this.rule.RunAsync(this.ruleContext));
@@ -194,6 +194,11 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             {
                 Flags = flg
             };
+        }
+
+        private void SetBlockStake()
+        {
+            (this.ruleContext as PosRuleContext).BlockStake = new BlockStake();
         }
 
         private BlockHeaderPosContextualRule CreateRule()
