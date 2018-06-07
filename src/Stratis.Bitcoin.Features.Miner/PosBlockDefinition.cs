@@ -36,6 +36,7 @@ namespace Stratis.Bitcoin.Features.Miner
             this.stakeValidator = stakeValidator;
         }
 
+        /// <inheritdoc/>
         public override BlockTemplate Build(ChainedHeader chainTip, Script scriptPubKey)
         {
             this.logger.LogTrace("({0}:'{1}',{2}.{3}:{4})", nameof(chainTip), chainTip, nameof(scriptPubKey), nameof(scriptPubKey.Length), scriptPubKey.Length);
@@ -50,6 +51,7 @@ namespace Stratis.Bitcoin.Features.Miner
             return this.BlockTemplate;
         }
 
+        /// <inheritdoc/>
         public override void UpdateHeaders()
         {
             this.logger.LogTrace("()");

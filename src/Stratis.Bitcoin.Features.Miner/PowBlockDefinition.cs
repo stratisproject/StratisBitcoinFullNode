@@ -41,6 +41,7 @@ namespace Stratis.Bitcoin.Features.Miner
             return this.BlockTemplate;
         }
 
+        /// <inheritdoc/>
         public override void UpdateHeaders()
         {
             this.logger.LogTrace("()");
@@ -53,7 +54,7 @@ namespace Stratis.Bitcoin.Features.Miner
         }
 
         /// <summary>
-        /// Before the block gets mined, we need to ensure that its structurally correct, otherwise a lot of work might be
+        /// Before the block gets mined, we need to ensure that it is structurally valid, otherwise a lot of work might be
         /// done for no reason.
         /// </summary>
         public void TestBlockValidity()
