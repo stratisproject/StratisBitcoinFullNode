@@ -11,7 +11,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
     {
         public static Money GetProofOfWorkRewardForMinedBlocks(this CoreNode node, int numberOfBlocks)
         {
-            var coinviewRule = node.FullNode.NodeService<IConsensusRules>().GetRule<PowCoinViewRule>();
+            var coinviewRule = node.FullNode.NodeService<IConsensusRules>().GetRule<CoinViewRule>();
 
             int startBlock = node.FullNode.Chain.Height - numberOfBlocks + 1;
 

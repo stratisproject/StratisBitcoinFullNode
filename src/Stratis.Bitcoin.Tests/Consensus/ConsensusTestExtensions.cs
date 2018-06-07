@@ -5,7 +5,7 @@ using Stratis.Bitcoin.Tests.Common;
 
 namespace Stratis.Bitcoin.Tests.Consensus
 {
-    public static class ConsensusTestExtensions
+    internal static class ConsensusTestExtensions
     {
         public static Dictionary<uint256, HashSet<int>> GetPeerIdsByTipHash(this ChainedHeaderTree chainedHeaderTree)
         {

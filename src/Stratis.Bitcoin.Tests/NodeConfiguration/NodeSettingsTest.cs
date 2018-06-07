@@ -1,109 +1,152 @@
-﻿using System;
-using System.Net;
-using Stratis.Bitcoin.Utilities.Extensions;
+﻿using System.IO;
+using NBitcoin;
+using Stratis.Bitcoin.Configuration;
+using Stratis.Bitcoin.Tests.Common;
 using Xunit;
 
 namespace Stratis.Bitcoin.Tests.NodeConfiguration
 {
-    public class NodeSettingsTest
+    public class NodeSettingsTest : TestBase
     {
-        [Fact]
-        public void CheckConvertingEmptyIPAddressToEndpoint()
+        public NodeSettingsTest():base(Network.Main)
         {
-            // Assert
-            Assert.Throws<FormatException>(() =>
-            {
-                // Act
-                IPEndPoint endpoint = "".ToIPEndPoint(1234);
-            });
         }
 
+        /// <summary>
+        /// Assert that a setting can be read from the command line.
+        /// </summary>
         [Fact]
-        public void CheckConvertingIPAddressWithInvalidPortNumberToEndpoint()
+        public void NodeSettings_CanReadSingleValueFromCmdLine()
         {
-            // Assert
-            Assert.Throws<ArgumentOutOfRangeException>(() =>
-            {
-                // Act
-                IPEndPoint endpoint = "0.0.0.0".ToIPEndPoint(IPEndPoint.MaxPort + 1);
-            });
-        }
-
-        [Fact]
-        public void CheckConvertingIPAddressWithInvalidParsedPortNumberToEndpoint()
-        {
-            // Assert
-            Assert.Throws<FormatException>(() =>
-            {
-                // Act
-                IPEndPoint endpoint = "0.0.0.0:454z".ToIPEndPoint(1234);
-            });
-        }
-
-        [Fact]
-        public void CheckConvertingIPv4AddressToEndpoint()
-        {
+            // Arrange
+            var nodeSettings = new NodeSettings(args:new[] { "-agentprefix=abc" });
             // Act
-            IPEndPoint endpoint = "15.61.23.23".ToIPEndPoint(1234);
-
+            string result = nodeSettings.Agent;
             // Assert
-            Assert.Equal(1234, endpoint.Port);
-            Assert.Equal("15.61.23.23", endpoint.Address.ToString());
+            Assert.Equal("abc-StratisBitcoin", result);
         }
 
+        /// <summary>
+        /// Assert that a setting can be read from the configuration file.
+        /// </summary>
         [Fact]
-        public void CheckConvertingIPv4AddressWithPortToEndpoint()
+        public void NodeSettings_CanReadSingleValueFromFile()
         {
+            // Arrange
+            string dataDir = TestBase.CreateDataFolder(this).RootPath;
+            var configFile = Path.Combine(dataDir, "config.txt");
+            File.WriteAllText(configFile, "agentprefix=def");
+            var nodeSettings = new NodeSettings(args: new[] { $"-datadir={dataDir}", $"-conf=config.txt" });
             // Act
-            IPEndPoint endpoint = "15.61.23.23:1500".ToIPEndPoint(1234);
-
+            string result = nodeSettings.Agent;
             // Assert
-            Assert.Equal(1500, endpoint.Port);
-            Assert.Equal("15.61.23.23", endpoint.Address.ToString());
+            Assert.Equal("def-StratisBitcoin", result);
         }
 
+        /// <summary>
+        /// If both the commandline and the configuration file supplies a setting then the command line value is taken.
+        /// </summary>
         [Fact]
-        public void CheckConvertingIPv6AddressToEndpoint()
+        public void NodeSettings_CanReadSingleValueFromCmdLineAndFile()
         {
+            // Arrange
+            string dataDir = TestBase.CreateDataFolder(this).RootPath;
+            var configFile = Path.Combine(dataDir, "config.txt");
+            File.WriteAllText(configFile, "agentprefix=def");
+            var nodeSettings = new NodeSettings(args: new[] { $"-datadir={dataDir}", $"-conf=config.txt", "-agentprefix=abc" });
             // Act
-            IPEndPoint endpoint = "[1233:3432:2434:2343:3234:2345:6546:4534]".ToIPEndPoint(1234);
-
+            string result = nodeSettings.Agent;
             // Assert
-            Assert.Equal(1234, endpoint.Port);
-            Assert.Equal("1233:3432:2434:2343:3234:2345:6546:4534", endpoint.Address.ToString());
+            Assert.Equal("abc-StratisBitcoin", result);
         }
 
+        /// <summary>
+        /// If neither the commandline nor the configuration file supplies a setting then the default value is used.
+        /// </summary>
         [Fact]
-        public void CheckConvertingIPv6AddressWithPortToEndpoint()
+        public void NodeSettings_CanReadSingleValueFromNone()
         {
+            // Arrange
+            string dataDir = TestBase.CreateDataFolder(this).RootPath;
+            var configFile = Path.Combine(dataDir, "config.txt");
+            File.WriteAllText(configFile, "");
+            var nodeSettings = new NodeSettings(args: new[] { $"-datadir={dataDir}", $"-conf=config.txt" });
             // Act
-            IPEndPoint endpoint = "[1233:3432:2434:2343:3234:2345:6546:4534]:5443".ToIPEndPoint(1234);
-
+            string result = nodeSettings.Agent;
             // Assert
-            Assert.Equal(5443, endpoint.Port);
-            Assert.Equal("1233:3432:2434:2343:3234:2345:6546:4534", endpoint.Address.ToString());
+            Assert.Equal("StratisBitcoin", result);
         }
 
-        [Fact]
-        public void CheckConvertingIPEndPointStringToEndpoint()
-        {
-            // Act
-            IPEndPoint endpoint = "::ffff:192.168.4.1".ToIPEndPoint(1234);
 
+        /// <summary>
+        /// Assert that a multi-value setting can be read from the command line.
+        /// </summary>
+        [Fact]
+        public void NodeSettings_CanReadMultiValueFromCmdLine()
+        {
+            // Arrange
+            var nodeSettings = new NodeSettings(args: new[] { "-addnode=0.0.0.0", "-addnode=0.0.0.1" });
+            // Act
+            var result = nodeSettings.ConfigReader.GetAll("addnode");
             // Assert
-            Assert.Equal(1234, endpoint.Port);
-            Assert.Equal("::ffff:192.168.4.1", endpoint.Address.ToString());
+            Assert.Equal(2, result.Length);
+            Assert.Equal("0.0.0.0", result[0]);
+            Assert.Equal("0.0.0.1", result[1]);
         }
 
+        /// <summary>
+        /// Assert that a multi-value setting can be read from the configuration file.
+        /// </summary>
         [Fact]
-        public void CheckConvertingIPEndPointStringWithPortToEndpoint()
+        public void NodeSettings_CanReadMultiValueFromFile()
         {
+            // Arrange
+            string dataDir = TestBase.CreateDataFolder(this).RootPath;
+            var configFile = Path.Combine(dataDir, "config.txt");
+            File.WriteAllText(configFile, "addnode=0.0.0.0\r\naddnode=0.0.0.1");
+            var nodeSettings = new NodeSettings(args: new[] { $"-datadir={dataDir}", $"-conf=config.txt" });
             // Act
-            IPEndPoint endpoint = "::ffff:192.168.4.1:80".ToIPEndPoint(1234);
-
+            var result = nodeSettings.ConfigReader.GetAll("addnode");
             // Assert
-            Assert.Equal(80, endpoint.Port);
-            Assert.Equal("::ffff:192.168.4.1", endpoint.Address.ToString());
+            Assert.Equal(2, result.Length);
+            Assert.Equal("0.0.0.0", result[0]);
+            Assert.Equal("0.0.0.1", result[1]);
+        }
+
+        /// <summary>
+        /// If both the commandline and the configuration file supplies a setting then both are combined.
+        /// </summary>
+        [Fact]
+        public void NodeSettings_CanReadMultiValueFromCmdLineAndFile()
+        {
+            // Arrange
+            string dataDir = TestBase.CreateDataFolder(this).RootPath;
+            var configFile = Path.Combine(dataDir, "config.txt");
+            File.WriteAllText(configFile, "addnode=0.0.0.0");
+            var nodeSettings = new NodeSettings(args: new[] { $"-datadir={dataDir}", $"-conf=config.txt", "-addnode=0.0.0.1" });
+            // Act
+            var result = nodeSettings.ConfigReader.GetAll("addnode");
+            // Assert
+            Assert.Equal(2, result.Length);
+            Assert.Equal("0.0.0.1", result[0]); // Command-line first
+            Assert.Equal("0.0.0.0", result[1]);
+        }
+
+        /// <summary>
+        /// If neither the commandline nor the configuration file supplies a multi-value setting then no values are returned.
+        /// </summary>
+        [Fact]
+        public void NodeSettings_CanReadMultiValueFromNone()
+        {
+            // Arrange
+            string dataDir = TestBase.CreateDataFolder(this).RootPath;
+            var configFile = Path.Combine(dataDir, "config.txt");
+            File.WriteAllText(configFile, "");
+            var nodeSettings = new NodeSettings(args: new[] { $"-datadir={dataDir}", $"-conf=config.txt" });
+            // Act
+            var result = nodeSettings.ConfigReader.GetAll("addnode");
+            // Assert
+            Assert.Empty(result);
         }
     }
 }

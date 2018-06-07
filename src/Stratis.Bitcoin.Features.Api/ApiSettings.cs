@@ -37,33 +37,22 @@ namespace Stratis.Bitcoin.Features.Api
         /// <summary>URI to node's API interface.</summary>
         public Timer KeepaliveTimer { get; private set; }
 
-        /// <summary>The callback used to override/constrain/extend the settings provided by the Load method.</summary>
-        private Action<ApiSettings> callback;
-
         /// <summary>
         /// Constructs this object whilst providing a callback to override/constrain/extend 
         /// the settings provided by the Load method.
         /// </summary>
-        /// <param name="callback">The callback used to override/constrain/extend the settings provided by the Load method.</param>
-        public ApiSettings(Action<ApiSettings> callback)
+        public ApiSettings(NodeSettings nodeSettings)
         {
-            this.callback = callback;
-        }
+            Guard.NotNull(nodeSettings, nameof(nodeSettings));
 
-        /// <summary>
-        /// Loads the API related settings from the application configuration.
-        /// </summary>
-        /// <param name="nodeSettings">Application configuration.</param>
-        public void Load(NodeSettings nodeSettings)
-        {
             TextFileConfiguration config = nodeSettings.ConfigReader;
 
-            var apiHost = config.GetOrDefault("apiuri", DefaultApiHost);
-            Uri apiUri = new Uri(apiHost);
+            string apiHost = config.GetOrDefault("apiuri", DefaultApiHost);
+            var apiUri = new Uri(apiHost);
 
             // Find out which port should be used for the API.
-            var apiPort = config.GetOrDefault("apiport", GetDefaultPort(nodeSettings.Network));
-            
+            int apiPort = config.GetOrDefault("apiport", GetDefaultPort(nodeSettings.Network));
+
             // If no port is set in the API URI.
             if (apiUri.IsDefaultPort)
             {
@@ -78,7 +67,7 @@ namespace Stratis.Bitcoin.Features.Api
             }
 
             // Set the keepalive interval (set in seconds).
-            var keepAlive = config.GetOrDefault("keepalive", 0);
+            int keepAlive = config.GetOrDefault("keepalive", 0);
             if (keepAlive > 0)
             {
                 this.KeepaliveTimer = new Timer
@@ -87,8 +76,6 @@ namespace Stratis.Bitcoin.Features.Api
                     Interval = keepAlive * 1000
                 };
             }
-
-            this.callback?.Invoke(this);
         }
 
         /// <summary>

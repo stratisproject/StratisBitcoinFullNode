@@ -150,7 +150,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 loggerFactory.AddConsoleWithFilters();
 
                 NodeSettings nodeSettings = new NodeSettings(args: new string[] { "-checkpoints" });
-                var consensusSettings = new ConsensusSettings().Load(nodeSettings);
+                var consensusSettings = new ConsensusSettings(nodeSettings);
 
                 NetworkPeerFactory networkPeerFactory = new NetworkPeerFactory(this.network, dateTimeProvider, loggerFactory, new PayloadProvider().DiscoverPayloads(), new SelfEndpointTracker());
 

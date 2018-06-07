@@ -10,7 +10,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
     /// Proof of stake override for the coinview rules - BIP68, MaxSigOps and BlockReward checks.
     /// </summary>
     [ExecutionRule]
-    public class PosCoinViewRule : PowCoinViewRule
+    public sealed class PosCoinviewRule : CoinViewRule
     {
         /// <summary>Provides functionality for checking validity of PoS blocks.</summary>
         private IStakeValidator stakeValidator;
@@ -37,11 +37,11 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         }
 
         /// <inheritdoc />
+        /// <summary>Compute and store the stake proofs.</summary>
         public override async Task RunAsync(RuleContext context)
         {
             this.Logger.LogTrace("()");
 
-            // Compute and store the stake proofs.
             this.CheckAndComputeStake(context);
 
             await base.RunAsync(context).ConfigureAwait(false);
@@ -52,7 +52,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         }
 
         /// <inheritdoc />
-        protected override void CheckBlockReward(RuleContext context, Money fees, int height, Block block)
+        public override void CheckBlockReward(RuleContext context, Money fees, int height, Block block)
         {
             this.Logger.LogTrace("({0}:{1},{2}:'{3}')", nameof(fees), fees, nameof(height), height);
 
@@ -83,7 +83,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         }
 
         /// <inheritdoc />
-        protected override void UpdateCoinView(RuleContext context, Transaction transaction)
+        public override void UpdateCoinView(RuleContext context, Transaction transaction)
         {
             this.Logger.LogTrace("()");
 
@@ -92,17 +92,17 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
             if (transaction.IsCoinStake)
                 context.Stake.TotalCoinStakeValueIn = view.GetValueIn(transaction);
 
-            base.UpdateCoinView(context, transaction);
+            base.UpdateUTXOSet(context, transaction);
 
             this.Logger.LogTrace("(-)");
         }
 
         /// <inheritdoc />
-        protected override void CheckMaturity(UnspentOutputs coins, int spendHeight)
+        public override void CheckMaturity(UnspentOutputs coins, int spendHeight)
         {
             this.Logger.LogTrace("({0}:'{1}/{2}',{3}:{4})", nameof(coins), coins.TransactionId, coins.Height, nameof(spendHeight), spendHeight);
 
-            base.CheckMaturity(coins, spendHeight);
+            base.CheckCoinbaseMaturity(coins, spendHeight);
 
             if (coins.IsCoinstake)
             {

@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Moq;
+using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Features.Consensus.Rules;
 using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
@@ -20,12 +21,12 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
         [Fact]
         public void Constructor_InitializesClass()
         {
-            this.consensusSettings = new ConsensusSettings
+            this.consensusSettings = new ConsensusSettings()
             {
                 BlockAssumedValid = null,
                 UseCheckpoints = true
             };
-
+            
             this.checkpoints.Setup(c => c.GetLastCheckpointHeight())
                 .Returns(15);
             this.dateTimeProvider.Setup(d => d.GetTime())

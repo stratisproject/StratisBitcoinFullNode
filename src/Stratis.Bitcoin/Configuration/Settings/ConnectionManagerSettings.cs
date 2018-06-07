@@ -99,6 +99,7 @@ namespace Stratis.Bitcoin.Configuration.Settings
 
             this.BanTimeSeconds = config.GetOrDefault<int>("bantime", ConnectionManagerSettings.DefaultMisbehavingBantimeSeconds);
             this.MaxOutboundConnections = config.GetOrDefault<int>("maxoutboundconnections", ConnectionManagerSettings.DefaultMaxOutboundConnections);
+            this.BurstModeTargetConnections = config.GetOrDefault("burstModeTargetConnections", 1);
         }
 
         /// <summary>List of exclusive end points that the node should be connected to.</summary>
@@ -118,5 +119,8 @@ namespace Stratis.Bitcoin.Configuration.Settings
 
         /// <summary>Maximum number of outbound connections.</summary>
         public int MaxOutboundConnections { get; internal set; }
+
+        /// <summary>Connections number after which burst connectivity mode (connection attempts with no delay in between) will be disabled.</summary>
+        public int BurstModeTargetConnections { get; internal set; }
     }
 }

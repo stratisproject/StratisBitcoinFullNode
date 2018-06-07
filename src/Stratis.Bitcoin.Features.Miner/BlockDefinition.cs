@@ -255,7 +255,7 @@ namespace Stratis.Bitcoin.Features.Miner
             // pblocktemplate->CoinbaseCommitment = GenerateCoinbaseCommitment(*pblock, pindexPrev, chainparams.GetConsensus());
             this.BlockTemplate.VTxFees[0] = -this.fees;
 
-            var powCoinviewRule = this.ConsensusLoop.ConsensusRules.GetRule<PowCoinViewRule>();
+            var powCoinviewRule = this.ConsensusLoop.ConsensusRules.GetRule<CoinViewRule>();
 
             this.coinbase.Outputs[0].Value = this.fees + powCoinviewRule.GetProofOfWorkReward(this.height);
             this.BlockTemplate.TotalFee = this.fees;

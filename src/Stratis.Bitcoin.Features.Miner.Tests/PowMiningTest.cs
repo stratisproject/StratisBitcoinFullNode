@@ -626,7 +626,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
 
             block.Header.Bits = block.Header.GetWorkRequired(this.Network, prevBlock);
             block.UpdateMerkleRoot();
-            while (!block.CheckProofOfWork(this.Network.Consensus))
+            while (!block.CheckProofOfWork())
                 block.Header.Nonce = ++nonce;
 
             return block;
