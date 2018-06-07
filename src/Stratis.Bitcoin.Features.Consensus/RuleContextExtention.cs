@@ -16,20 +16,4 @@ namespace Stratis.Bitcoin.Features.Consensus
 
         public uint256 TargetProofOfStake { get; set; }
     }
-
-    public static class RuleContextExtention
-    {
-        public static void SetStake(this RuleContext ruleContext)
-        {
-            ruleContext.SetItem(new PosRuleContext
-            {
-                BlockStake = new BlockStake(ruleContext.Item<BlockValidationContext>().Block)
-            });
-        }
-
-        public static bool IsPoS(this RuleContext ruleContext)
-        {
-            return ruleContext.Contains<PosRuleContext>();
-        }
-    }
 }

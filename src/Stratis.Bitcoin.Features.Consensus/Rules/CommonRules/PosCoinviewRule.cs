@@ -52,6 +52,12 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
             this.Logger.LogTrace("(-)");
         }
 
+        /// <inheritdoc/>
+        protected override bool IsProtocolCoin(Transaction transaction)
+        {
+            return transaction.IsCoinBase || transaction.IsCoinStake;
+        }
+
         /// <inheritdoc />
         public override void CheckBlockReward(RuleContext context, Money fees, int height, Block block)
         {

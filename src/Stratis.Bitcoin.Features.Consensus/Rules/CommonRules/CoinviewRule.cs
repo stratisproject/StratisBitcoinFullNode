@@ -52,8 +52,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
                 Transaction tx = block.Transactions[txIndex];
                 if (!context.SkipValidation)
                 {
-                    // TODO: Simplify this condition.
-                    if (!tx.IsCoinBase && (!context.IsPoS() || (context.IsPoS() && !tx.IsCoinStake)))
+                    if (!this.IsProtocolCoin(tx))
                     {
                         if (!view.HaveInputs(tx))
                         {
@@ -88,8 +87,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
                         ConsensusErrors.BadBlockSigOps.Throw();
                     }
 
-                    // TODO: Simplify this condition.
-                    if (!tx.IsCoinBase && (!context.IsPoS() || (context.IsPoS() && !tx.IsCoinStake)))
+                    if (!this.IsProtocolCoin(tx))
                     {
                         this.CheckInputs(tx, view, index.Height);
                         fees += view.GetValueIn(tx) - tx.TotalOut;
@@ -150,6 +148,12 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
 
             this.Logger.LogTrace("(-)");
         }
+
+        /// <summary>
+        /// Check whether the transaction is part of the protocol (Coinbase or Coinstake)
+        /// </summary>
+        /// <param name="transaction">The transaction to check.</param>
+        protected abstract bool IsProtocolCoin(Transaction transaction);
 
         /// <summary>
         /// Network specific updates to the context's UTXO set.

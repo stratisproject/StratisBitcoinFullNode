@@ -1,6 +1,7 @@
 ﻿using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
+using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Consensus.Rules;
 
 namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
@@ -15,7 +16,10 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         /// <exception cref="ConsensusErrors.HighHash"> Thrown if block doesn't have a valid PoW header.</exception>
         public override Task RunAsync(RuleContext context)
         {
-            context.SetStake();
+            context.SetItem(new PosRuleContext
+            {
+                BlockStake = new BlockStake(context.Item<BlockValidationContext>().Block)
+            });
 
             if (context.Item<PosRuleContext>().BlockStake.IsProofOfWork())
             {

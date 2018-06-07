@@ -50,11 +50,6 @@ namespace Stratis.Bitcoin.Consensus.Rules
             throw new KeyNotFoundException();
         }
 
-        public bool Contains<T>() where T : class
-        {
-            return this.objectsBag.ContainsKey(typeof(T));
-        }
-
         public void SetItem<T>(T item) where T : class
         {
             if (this.objectsBag.TryAdd(typeof(T), item))
