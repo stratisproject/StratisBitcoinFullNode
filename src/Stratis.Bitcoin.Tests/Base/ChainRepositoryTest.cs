@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using DBreeze;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
@@ -16,35 +17,39 @@ namespace Stratis.Bitcoin.Tests.Base
         }
 
         [Fact]
-        public void FinalizedHeightSavedOnDisk()
+        public async Task FinalizedHeightSavedOnDiskAsync()
         {
             string dir = CreateTestDir(this);
 
             using (var repo = new ChainRepository(dir, new LoggerFactory()))
             {
-                repo.SaveFinalizedBlockHeightAsync(777).GetAwaiter().GetResult();
+                await repo.SaveFinalizedBlockHeightAsync(777).ConfigureAwait(false);
             }
 
             using (var repo = new ChainRepository(dir, new LoggerFactory()))
             {
-                repo.LoadFinalizedBlockHeightAsync().GetAwaiter().GetResult();
-                int finalizedHeight = repo.GetFinalizedBlockHeight();
-                Assert.Equal(777, finalizedHeight);
+                await repo.LoadFinalizedBlockHeightAsync().ConfigureAwait(false);
+                Assert.Equal(777, repo.GetFinalizedBlockHeight());
             }
         }
 
         [Fact]
-        public void FinalizedHeightCantBeDecreased()
+        public async Task FinalizedHeightCantBeDecreasedAsync()
         {
             string dir = CreateTestDir(this);
 
             using (var repo = new ChainRepository(dir, new LoggerFactory()))
             {
-                repo.SaveFinalizedBlockHeightAsync(777).GetAwaiter().GetResult();
-                repo.SaveFinalizedBlockHeightAsync(555).GetAwaiter().GetResult();
+                await repo.SaveFinalizedBlockHeightAsync(777).ConfigureAwait(false);
+                await repo.SaveFinalizedBlockHeightAsync(555).ConfigureAwait(false);
+                
+                Assert.Equal(777, repo.GetFinalizedBlockHeight());
+            }
 
-                int finalizedHeight = repo.GetFinalizedBlockHeight();
-                Assert.Equal(777, finalizedHeight);
+            using (var repo = new ChainRepository(dir, new LoggerFactory()))
+            {
+                await repo.LoadFinalizedBlockHeightAsync().ConfigureAwait(false);
+                Assert.Equal(777, repo.GetFinalizedBlockHeight());
             }
         }
 

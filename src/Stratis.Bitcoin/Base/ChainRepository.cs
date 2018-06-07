@@ -19,8 +19,11 @@ namespace Stratis.Bitcoin.Base
     }
 
     /// <summary>Provider of the last finalized block height.</summary>
-    /// <seealso cref="System.IDisposable" />
-    public interface IFinalizedBlockHeight : IDisposable
+    /// <remarks>
+    /// Finalized block height is the height of the last block that can't be reorged.
+    /// Blocks with height greater than finalized height can be reorged.
+    /// </remarks>
+    public interface IFinalizedBlockHeight
     {
         /// <summary>Gets the finalized block height.</summary>
         /// <returns>Height of a block that can't be reorged away from.</returns>
