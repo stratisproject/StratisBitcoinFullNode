@@ -938,7 +938,7 @@ namespace Stratis.Bitcoin.Consensus
         }
 
         /// <summary>
-        /// Checks if <paramref name="chainedHeader"/> violates the max reorg rule, if <see cref="IChainState.MaxReorgLength"/> is zero this logic is disabled.
+        /// Checks if switching to specified <paramref name="chainedHeader"/> would require rewinding consensus behind the finalized block height.
         /// </summary>
         /// <param name="chainedHeader">The header that needs to be checked for reorg.</param>
         /// <exception cref="MaxReorgViolationException">Thrown in case maximum reorganization rule is violated.</exception>
