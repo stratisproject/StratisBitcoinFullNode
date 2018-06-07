@@ -22,7 +22,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
             context.SetItem(new UnspentOutputSet());
             using (new StopwatchDisposable(o => this.Parent.PerformanceCounter.AddUTXOFetchingTime(o)))
             {
-                uint256[] ids = this.GetIdsToFetch(context.BlockValidationContext.Block, context.Flags.EnforceBIP30);
+                uint256[] ids = this.GetIdsToFetch(context.ValidationContext.Block, context.Flags.EnforceBIP30);
                 FetchCoinsResponse coins = await this.PowParent.UtxoSet.FetchCoinsAsync(ids).ConfigureAwait(false);
                 context.Item<UnspentOutputSet>().SetCoins(coins.UnspentOutputs);
             }

@@ -18,19 +18,19 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         {
             context.SetItem(new PosRuleContext
             {
-                BlockStake = new BlockStake(context.Item<BlockValidationContext>().Block)
+                BlockStake = new BlockStake(context.ValidationContext.Block)
             });
 
             if (context.Item<PosRuleContext>().BlockStake.IsProofOfWork())
             {
-                if (context.CheckPow && !context.BlockValidationContext.Block.Header.CheckProofOfWork())
+                if (context.CheckPow && !context.ValidationContext.Block.Header.CheckProofOfWork())
                 {
                     this.Logger.LogTrace("(-)[HIGH_HASH]");
                     ConsensusErrors.HighHash.Throw();
                 }
             }
 
-            context.NextWorkRequired = this.PosParent.StakeValidator.GetNextTargetRequired(this.PosParent.StakeChain, context.BlockValidationContext.ChainedHeader.Previous, context.Consensus, 
+            context.NextWorkRequired = this.PosParent.StakeValidator.GetNextTargetRequired(this.PosParent.StakeChain, context.ValidationContext.ChainedHeader.Previous, context.Consensus, 
                 context.Item<PosRuleContext>().BlockStake.IsProofOfStake());
 
             return Task.CompletedTask;

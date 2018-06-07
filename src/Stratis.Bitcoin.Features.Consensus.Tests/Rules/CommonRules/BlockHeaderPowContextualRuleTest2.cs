@@ -24,8 +24,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             this.ruleContext.PreviousHeight = 5;
             this.ruleContext.Time = new DateTimeOffset(new DateTime(2017, 1, 1, 0, 1, 0));
             this.ruleContext.NextWorkRequired = new Target(0x1f111115);
-            this.ruleContext.BlockValidationContext.Block = new Block();
-            this.ruleContext.BlockValidationContext.Block.Header.Bits = new Target(0x1f111114);
+            this.ruleContext.ValidationContext.Block = new Block();
+            this.ruleContext.ValidationContext.Block.Header.Bits = new Target(0x1f111114);
 
             var exception = await Assert.ThrowsAsync<ConsensusErrorException>(() => this.consensusRules.RegisterRule<BlockHeaderPowContextualRule>().RunAsync(this.ruleContext));
 
@@ -37,8 +37,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         {
             this.ruleContext.PreviousHeight = 5;
             this.ruleContext.NextWorkRequired = new Target(0x1f111115);
-            this.ruleContext.BlockValidationContext.Block = new Block();
-            this.ruleContext.BlockValidationContext.Block.Header.Bits = new Target(0x1f111116);
+            this.ruleContext.ValidationContext.Block = new Block();
+            this.ruleContext.ValidationContext.Block.Header.Bits = new Target(0x1f111116);
 
             var exception = await Assert.ThrowsAsync<ConsensusErrorException>(() => this.consensusRules.RegisterRule<BlockHeaderPowContextualRule>().RunAsync(this.ruleContext));
 
@@ -51,9 +51,9 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             this.ruleContext.PreviousHeight = 5;
             this.ruleContext.Time = new DateTimeOffset(new DateTime(2017, 1, 1, 0, 1, 0));
             this.ruleContext.NextWorkRequired = new Target(0x1f111115);
-            this.ruleContext.BlockValidationContext.Block = new Block();
-            this.ruleContext.BlockValidationContext.Block.Header.Bits = new Target(0x1f111115);
-            this.ruleContext.BlockValidationContext.Block.Header.BlockTime = new DateTimeOffset(new DateTime(2017, 1, 1, 0, 0, 9));
+            this.ruleContext.ValidationContext.Block = new Block();
+            this.ruleContext.ValidationContext.Block.Header.Bits = new Target(0x1f111115);
+            this.ruleContext.ValidationContext.Block.Header.BlockTime = new DateTimeOffset(new DateTime(2017, 1, 1, 0, 0, 9));
 
             var exception = await Assert.ThrowsAsync<ConsensusErrorException>(() => this.consensusRules.RegisterRule<BlockHeaderPowContextualRule>().RunAsync(this.ruleContext));
 
@@ -66,9 +66,9 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             this.ruleContext.PreviousHeight = 5;
             this.ruleContext.Time = new DateTimeOffset(new DateTime(2017, 1, 1, 0, 1, 0));
             this.ruleContext.NextWorkRequired = new Target(0x1f111115);
-            this.ruleContext.BlockValidationContext.Block = new Block();
-            this.ruleContext.BlockValidationContext.Block.Header.Bits = new Target(0x1f111115);
-            this.ruleContext.BlockValidationContext.Block.Header.BlockTime = new DateTimeOffset(new DateTime(2017, 1, 1, 0, 1, 0));
+            this.ruleContext.ValidationContext.Block = new Block();
+            this.ruleContext.ValidationContext.Block.Header.Bits = new Target(0x1f111115);
+            this.ruleContext.ValidationContext.Block.Header.BlockTime = new DateTimeOffset(new DateTime(2017, 1, 1, 0, 1, 0));
 
             var exception = await Assert.ThrowsAsync<ConsensusErrorException>(() => this.consensusRules.RegisterRule<BlockHeaderPowContextualRule>().RunAsync(this.ruleContext));
 
@@ -81,9 +81,9 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             this.ruleContext.PreviousHeight = 5;
             this.ruleContext.Time = new DateTimeOffset(new DateTime(2017, 1, 1, 0, 1, 0));
             this.ruleContext.NextWorkRequired = new Target(0x1f111115);
-            this.ruleContext.BlockValidationContext.Block = new Block();
-            this.ruleContext.BlockValidationContext.Block.Header.Bits = new Target(0x1f111115);
-            this.ruleContext.BlockValidationContext.Block.Header.BlockTime = new DateTimeOffset(new DateTime(2017, 1, 1, 0, 1, 1));
+            this.ruleContext.ValidationContext.Block = new Block();
+            this.ruleContext.ValidationContext.Block.Header.Bits = new Target(0x1f111115);
+            this.ruleContext.ValidationContext.Block.Header.BlockTime = new DateTimeOffset(new DateTime(2017, 1, 1, 0, 1, 1));
 
             var exception = await Assert.ThrowsAsync<ConsensusErrorException>(() => this.consensusRules.RegisterRule<BlockHeaderPowContextualRule>().RunAsync(this.ruleContext));
 
@@ -97,10 +97,10 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             this.ruleContext.PreviousHeight = this.consensusRules.ConsensusParams.BuriedDeployments[BuriedDeployments.BIP34];
             this.ruleContext.Time = new DateTimeOffset(new DateTime(2017, 1, 1, 0, 1, 0));
             this.ruleContext.NextWorkRequired = new Target(0x1f111115);
-            this.ruleContext.BlockValidationContext.Block = new Block();
-            this.ruleContext.BlockValidationContext.Block.Header.Bits = new Target(0x1f111115);
-            this.ruleContext.BlockValidationContext.Block.Header.BlockTime = new DateTimeOffset(new DateTime(2017, 1, 1, 0, 1, 1));
-            this.ruleContext.BlockValidationContext.Block.Header.Version = 1;
+            this.ruleContext.ValidationContext.Block = new Block();
+            this.ruleContext.ValidationContext.Block.Header.Bits = new Target(0x1f111115);
+            this.ruleContext.ValidationContext.Block.Header.BlockTime = new DateTimeOffset(new DateTime(2017, 1, 1, 0, 1, 1));
+            this.ruleContext.ValidationContext.Block.Header.Version = 1;
 
             var exception = await Assert.ThrowsAsync<ConsensusErrorException>(() => this.consensusRules.RegisterRule<BlockHeaderPowContextualRule>().RunAsync(this.ruleContext));
 
@@ -113,10 +113,10 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             this.ruleContext.PreviousHeight = this.consensusRules.ConsensusParams.BuriedDeployments[BuriedDeployments.BIP34] - 1;
             this.ruleContext.Time = new DateTimeOffset(new DateTime(2017, 1, 1, 0, 1, 0));
             this.ruleContext.NextWorkRequired = new Target(0x1f111115);
-            this.ruleContext.BlockValidationContext.Block = new Block();
-            this.ruleContext.BlockValidationContext.Block.Header.Bits = new Target(0x1f111115);
-            this.ruleContext.BlockValidationContext.Block.Header.BlockTime = new DateTimeOffset(new DateTime(2017, 1, 1, 0, 1, 1));
-            this.ruleContext.BlockValidationContext.Block.Header.Version = 1;
+            this.ruleContext.ValidationContext.Block = new Block();
+            this.ruleContext.ValidationContext.Block.Header.Bits = new Target(0x1f111115);
+            this.ruleContext.ValidationContext.Block.Header.BlockTime = new DateTimeOffset(new DateTime(2017, 1, 1, 0, 1, 1));
+            this.ruleContext.ValidationContext.Block.Header.Version = 1;
 
             var exception = await Assert.ThrowsAsync<ConsensusErrorException>(() => this.consensusRules.RegisterRule<BlockHeaderPowContextualRule>().RunAsync(this.ruleContext));
 
@@ -129,10 +129,10 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             this.ruleContext.PreviousHeight = this.consensusRules.ConsensusParams.BuriedDeployments[BuriedDeployments.BIP66];
             this.ruleContext.Time = new DateTimeOffset(new DateTime(2017, 1, 1, 0, 1, 0));
             this.ruleContext.NextWorkRequired = new Target(0x1f111115);
-            this.ruleContext.BlockValidationContext.Block = new Block();
-            this.ruleContext.BlockValidationContext.Block.Header.Bits = new Target(0x1f111115);
-            this.ruleContext.BlockValidationContext.Block.Header.BlockTime = new DateTimeOffset(new DateTime(2017, 1, 1, 0, 1, 1));
-            this.ruleContext.BlockValidationContext.Block.Header.Version = 2;
+            this.ruleContext.ValidationContext.Block = new Block();
+            this.ruleContext.ValidationContext.Block.Header.Bits = new Target(0x1f111115);
+            this.ruleContext.ValidationContext.Block.Header.BlockTime = new DateTimeOffset(new DateTime(2017, 1, 1, 0, 1, 1));
+            this.ruleContext.ValidationContext.Block.Header.Version = 2;
 
             var exception = await Assert.ThrowsAsync<ConsensusErrorException>(() => this.consensusRules.RegisterRule<BlockHeaderPowContextualRule>().RunAsync(this.ruleContext));
 
@@ -145,10 +145,10 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             this.ruleContext.PreviousHeight = this.consensusRules.ConsensusParams.BuriedDeployments[BuriedDeployments.BIP66] - 1;
             this.ruleContext.Time = new DateTimeOffset(new DateTime(2017, 1, 1, 0, 1, 0));
             this.ruleContext.NextWorkRequired = new Target(0x1f111115);
-            this.ruleContext.BlockValidationContext.Block = new Block();
-            this.ruleContext.BlockValidationContext.Block.Header.Bits = new Target(0x1f111115);
-            this.ruleContext.BlockValidationContext.Block.Header.BlockTime = new DateTimeOffset(new DateTime(2017, 1, 1, 0, 1, 1));
-            this.ruleContext.BlockValidationContext.Block.Header.Version = 2;
+            this.ruleContext.ValidationContext.Block = new Block();
+            this.ruleContext.ValidationContext.Block.Header.Bits = new Target(0x1f111115);
+            this.ruleContext.ValidationContext.Block.Header.BlockTime = new DateTimeOffset(new DateTime(2017, 1, 1, 0, 1, 1));
+            this.ruleContext.ValidationContext.Block.Header.Version = 2;
 
             var exception = await Assert.ThrowsAsync<ConsensusErrorException>(() => this.consensusRules.RegisterRule<BlockHeaderPowContextualRule>().RunAsync(this.ruleContext));
 
@@ -161,10 +161,10 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             this.ruleContext.PreviousHeight = this.consensusRules.ConsensusParams.BuriedDeployments[BuriedDeployments.BIP66];
             this.ruleContext.Time = new DateTimeOffset(new DateTime(2017, 1, 1, 0, 1, 0));
             this.ruleContext.NextWorkRequired = new Target(0x1f111115);
-            this.ruleContext.BlockValidationContext.Block = new Block();
-            this.ruleContext.BlockValidationContext.Block.Header.Bits = new Target(0x1f111115);
-            this.ruleContext.BlockValidationContext.Block.Header.BlockTime = new DateTimeOffset(new DateTime(2017, 1, 1, 0, 1, 1));
-            this.ruleContext.BlockValidationContext.Block.Header.Version = 1;
+            this.ruleContext.ValidationContext.Block = new Block();
+            this.ruleContext.ValidationContext.Block.Header.Bits = new Target(0x1f111115);
+            this.ruleContext.ValidationContext.Block.Header.BlockTime = new DateTimeOffset(new DateTime(2017, 1, 1, 0, 1, 1));
+            this.ruleContext.ValidationContext.Block.Header.Version = 1;
 
             var exception = await Assert.ThrowsAsync<ConsensusErrorException>(() => this.consensusRules.RegisterRule<BlockHeaderPowContextualRule>().RunAsync(this.ruleContext));
 
@@ -177,10 +177,10 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             this.ruleContext.PreviousHeight = this.consensusRules.ConsensusParams.BuriedDeployments[BuriedDeployments.BIP66] - 1;
             this.ruleContext.Time = new DateTimeOffset(new DateTime(2017, 1, 1, 0, 1, 0));
             this.ruleContext.NextWorkRequired = new Target(0x1f111115);
-            this.ruleContext.BlockValidationContext.Block = new Block();
-            this.ruleContext.BlockValidationContext.Block.Header.Bits = new Target(0x1f111115);
-            this.ruleContext.BlockValidationContext.Block.Header.BlockTime = new DateTimeOffset(new DateTime(2017, 1, 1, 0, 1, 1));
-            this.ruleContext.BlockValidationContext.Block.Header.Version = 1;
+            this.ruleContext.ValidationContext.Block = new Block();
+            this.ruleContext.ValidationContext.Block.Header.Bits = new Target(0x1f111115);
+            this.ruleContext.ValidationContext.Block.Header.BlockTime = new DateTimeOffset(new DateTime(2017, 1, 1, 0, 1, 1));
+            this.ruleContext.ValidationContext.Block.Header.Version = 1;
 
             var exception = await Assert.ThrowsAsync<ConsensusErrorException>(() => this.consensusRules.RegisterRule<BlockHeaderPowContextualRule>().RunAsync(this.ruleContext));
 
@@ -193,10 +193,10 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             this.ruleContext.PreviousHeight = this.consensusRules.ConsensusParams.BuriedDeployments[BuriedDeployments.BIP66];
             this.ruleContext.Time = new DateTimeOffset(new DateTime(2017, 1, 1, 0, 1, 0));
             this.ruleContext.NextWorkRequired = new Target(0x1f111115);
-            this.ruleContext.BlockValidationContext.Block = new Block();
-            this.ruleContext.BlockValidationContext.Block.Header.Bits = new Target(0x1f111115);
-            this.ruleContext.BlockValidationContext.Block.Header.BlockTime = new DateTimeOffset(new DateTime(2017, 1, 1, 0, 1, 1));
-            this.ruleContext.BlockValidationContext.Block.Header.Version = 3;
+            this.ruleContext.ValidationContext.Block = new Block();
+            this.ruleContext.ValidationContext.Block.Header.Bits = new Target(0x1f111115);
+            this.ruleContext.ValidationContext.Block.Header.BlockTime = new DateTimeOffset(new DateTime(2017, 1, 1, 0, 1, 1));
+            this.ruleContext.ValidationContext.Block.Header.Version = 3;
 
             var exception = await Assert.ThrowsAsync<ConsensusErrorException>(() => this.consensusRules.RegisterRule<BlockHeaderPowContextualRule>().RunAsync(this.ruleContext));
 
@@ -209,10 +209,10 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             this.ruleContext.PreviousHeight = this.consensusRules.ConsensusParams.BuriedDeployments[BuriedDeployments.BIP66] - 1;
             this.ruleContext.Time = new DateTimeOffset(new DateTime(2017, 1, 1, 0, 1, 0));
             this.ruleContext.NextWorkRequired = new Target(0x1f111115);
-            this.ruleContext.BlockValidationContext.Block = new Block();
-            this.ruleContext.BlockValidationContext.Block.Header.Bits = new Target(0x1f111115);
-            this.ruleContext.BlockValidationContext.Block.Header.BlockTime = new DateTimeOffset(new DateTime(2017, 1, 1, 0, 1, 1));
-            this.ruleContext.BlockValidationContext.Block.Header.Version = 3;
+            this.ruleContext.ValidationContext.Block = new Block();
+            this.ruleContext.ValidationContext.Block.Header.Bits = new Target(0x1f111115);
+            this.ruleContext.ValidationContext.Block.Header.BlockTime = new DateTimeOffset(new DateTime(2017, 1, 1, 0, 1, 1));
+            this.ruleContext.ValidationContext.Block.Header.Version = 3;
 
             var exception = await Assert.ThrowsAsync<ConsensusErrorException>(() => this.consensusRules.RegisterRule<BlockHeaderPowContextualRule>().RunAsync(this.ruleContext));
 
@@ -225,10 +225,10 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             this.ruleContext.PreviousHeight = this.consensusRules.ConsensusParams.BuriedDeployments[BuriedDeployments.BIP66];
             this.ruleContext.Time = new DateTimeOffset(new DateTime(2017, 1, 1, 0, 1, 0));
             this.ruleContext.NextWorkRequired = new Target(0x1f111115);
-            this.ruleContext.BlockValidationContext.Block = new Block();
-            this.ruleContext.BlockValidationContext.Block.Header.Bits = new Target(0x1f111115);
-            this.ruleContext.BlockValidationContext.Block.Header.BlockTime = new DateTimeOffset(new DateTime(2017, 1, 1, 0, 1, 1));
-            this.ruleContext.BlockValidationContext.Block.Header.Version = 2;
+            this.ruleContext.ValidationContext.Block = new Block();
+            this.ruleContext.ValidationContext.Block.Header.Bits = new Target(0x1f111115);
+            this.ruleContext.ValidationContext.Block.Header.BlockTime = new DateTimeOffset(new DateTime(2017, 1, 1, 0, 1, 1));
+            this.ruleContext.ValidationContext.Block.Header.Version = 2;
 
             var exception = await Assert.ThrowsAsync<ConsensusErrorException>(() => this.consensusRules.RegisterRule<BlockHeaderPowContextualRule>().RunAsync(this.ruleContext));
 
@@ -241,10 +241,10 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             this.ruleContext.PreviousHeight = this.consensusRules.ConsensusParams.BuriedDeployments[BuriedDeployments.BIP66] - 1;
             this.ruleContext.Time = new DateTimeOffset(new DateTime(2017, 1, 1, 0, 1, 0));
             this.ruleContext.NextWorkRequired = new Target(0x1f111115);
-            this.ruleContext.BlockValidationContext.Block = new Block();
-            this.ruleContext.BlockValidationContext.Block.Header.Bits = new Target(0x1f111115);
-            this.ruleContext.BlockValidationContext.Block.Header.BlockTime = new DateTimeOffset(new DateTime(2017, 1, 1, 0, 1, 1));
-            this.ruleContext.BlockValidationContext.Block.Header.Version = 2;
+            this.ruleContext.ValidationContext.Block = new Block();
+            this.ruleContext.ValidationContext.Block.Header.Bits = new Target(0x1f111115);
+            this.ruleContext.ValidationContext.Block.Header.BlockTime = new DateTimeOffset(new DateTime(2017, 1, 1, 0, 1, 1));
+            this.ruleContext.ValidationContext.Block.Header.Version = 2;
 
             var exception = await Assert.ThrowsAsync<ConsensusErrorException>(() => this.consensusRules.RegisterRule<BlockHeaderPowContextualRule>().RunAsync(this.ruleContext));
 
@@ -257,10 +257,10 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             this.ruleContext.PreviousHeight = this.consensusRules.ConsensusParams.BuriedDeployments[BuriedDeployments.BIP66];
             this.ruleContext.Time = new DateTimeOffset(new DateTime(2017, 1, 1, 0, 1, 0));
             this.ruleContext.NextWorkRequired = new Target(0x1f111115);
-            this.ruleContext.BlockValidationContext.Block = new Block();
-            this.ruleContext.BlockValidationContext.Block.Header.Bits = new Target(0x1f111115);
-            this.ruleContext.BlockValidationContext.Block.Header.BlockTime = new DateTimeOffset(new DateTime(2017, 1, 1, 0, 1, 1));
-            this.ruleContext.BlockValidationContext.Block.Header.Version = 1;
+            this.ruleContext.ValidationContext.Block = new Block();
+            this.ruleContext.ValidationContext.Block.Header.Bits = new Target(0x1f111115);
+            this.ruleContext.ValidationContext.Block.Header.BlockTime = new DateTimeOffset(new DateTime(2017, 1, 1, 0, 1, 1));
+            this.ruleContext.ValidationContext.Block.Header.Version = 1;
 
             var exception = await Assert.ThrowsAsync<ConsensusErrorException>(() => this.consensusRules.RegisterRule<BlockHeaderPowContextualRule>().RunAsync(this.ruleContext));
 
@@ -273,10 +273,10 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             this.ruleContext.PreviousHeight = this.consensusRules.ConsensusParams.BuriedDeployments[BuriedDeployments.BIP66] - 1;
             this.ruleContext.Time = new DateTimeOffset(new DateTime(2017, 1, 1, 0, 1, 0));
             this.ruleContext.NextWorkRequired = new Target(0x1f111115);
-            this.ruleContext.BlockValidationContext.Block = new Block();
-            this.ruleContext.BlockValidationContext.Block.Header.Bits = new Target(0x1f111115);
-            this.ruleContext.BlockValidationContext.Block.Header.BlockTime = new DateTimeOffset(new DateTime(2017, 1, 1, 0, 1, 1));
-            this.ruleContext.BlockValidationContext.Block.Header.Version = 1;
+            this.ruleContext.ValidationContext.Block = new Block();
+            this.ruleContext.ValidationContext.Block.Header.Bits = new Target(0x1f111115);
+            this.ruleContext.ValidationContext.Block.Header.BlockTime = new DateTimeOffset(new DateTime(2017, 1, 1, 0, 1, 1));
+            this.ruleContext.ValidationContext.Block.Header.Version = 1;
 
             var exception = await Assert.ThrowsAsync<ConsensusErrorException>(() => this.consensusRules.RegisterRule<BlockHeaderPowContextualRule>().RunAsync(this.ruleContext));
 
@@ -289,10 +289,10 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             this.ruleContext.PreviousHeight = this.consensusRules.ConsensusParams.BuriedDeployments[BuriedDeployments.BIP34] - 2;
             this.ruleContext.Time = new DateTimeOffset(new DateTime(2017, 1, 1, 0, 1, 0));
             this.ruleContext.NextWorkRequired = new Target(0x1f111115);
-            this.ruleContext.BlockValidationContext.Block = new Block();
-            this.ruleContext.BlockValidationContext.Block.Header.Bits = new Target(0x1f111115);
-            this.ruleContext.BlockValidationContext.Block.Header.BlockTime = new DateTimeOffset(new DateTime(2017, 1, 1, 0, 1, 1));
-            this.ruleContext.BlockValidationContext.Block.Header.Version = 1;
+            this.ruleContext.ValidationContext.Block = new Block();
+            this.ruleContext.ValidationContext.Block.Header.Bits = new Target(0x1f111115);
+            this.ruleContext.ValidationContext.Block.Header.BlockTime = new DateTimeOffset(new DateTime(2017, 1, 1, 0, 1, 1));
+            this.ruleContext.ValidationContext.Block.Header.Version = 1;
 
             await this.consensusRules.RegisterRule<BlockHeaderPowContextualRule>().RunAsync(this.ruleContext);
         }
@@ -303,10 +303,10 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             this.ruleContext.PreviousHeight = this.consensusRules.ConsensusParams.BuriedDeployments[BuriedDeployments.BIP66] - 2;
             this.ruleContext.Time = new DateTimeOffset(new DateTime(2017, 1, 1, 0, 1, 0));
             this.ruleContext.NextWorkRequired = new Target(0x1f111115);
-            this.ruleContext.BlockValidationContext.Block = new Block();
-            this.ruleContext.BlockValidationContext.Block.Header.Bits = new Target(0x1f111115);
-            this.ruleContext.BlockValidationContext.Block.Header.BlockTime = new DateTimeOffset(new DateTime(2017, 1, 1, 0, 1, 1));
-            this.ruleContext.BlockValidationContext.Block.Header.Version = 2;
+            this.ruleContext.ValidationContext.Block = new Block();
+            this.ruleContext.ValidationContext.Block.Header.Bits = new Target(0x1f111115);
+            this.ruleContext.ValidationContext.Block.Header.BlockTime = new DateTimeOffset(new DateTime(2017, 1, 1, 0, 1, 1));
+            this.ruleContext.ValidationContext.Block.Header.Version = 2;
 
             await this.consensusRules.RegisterRule<BlockHeaderPowContextualRule>().RunAsync(this.ruleContext);
         }
@@ -317,10 +317,10 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             this.ruleContext.PreviousHeight = this.consensusRules.ConsensusParams.BuriedDeployments[BuriedDeployments.BIP65] - 2;
             this.ruleContext.Time = new DateTimeOffset(new DateTime(2017, 1, 1, 0, 1, 0));
             this.ruleContext.NextWorkRequired = new Target(0x1f111115);
-            this.ruleContext.BlockValidationContext.Block = new Block();
-            this.ruleContext.BlockValidationContext.Block.Header.Bits = new Target(0x1f111115);
-            this.ruleContext.BlockValidationContext.Block.Header.BlockTime = new DateTimeOffset(new DateTime(2017, 1, 1, 0, 1, 1));
-            this.ruleContext.BlockValidationContext.Block.Header.Version = 3;
+            this.ruleContext.ValidationContext.Block = new Block();
+            this.ruleContext.ValidationContext.Block.Header.Bits = new Target(0x1f111115);
+            this.ruleContext.ValidationContext.Block.Header.BlockTime = new DateTimeOffset(new DateTime(2017, 1, 1, 0, 1, 1));
+            this.ruleContext.ValidationContext.Block.Header.Version = 3;
 
             await this.consensusRules.RegisterRule<BlockHeaderPowContextualRule>().RunAsync(this.ruleContext);
         }
@@ -331,10 +331,10 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             this.ruleContext.PreviousHeight = this.consensusRules.ConsensusParams.BuriedDeployments[BuriedDeployments.BIP65] + 30;
             this.ruleContext.Time = new DateTimeOffset(new DateTime(2017, 1, 1, 0, 1, 0));
             this.ruleContext.NextWorkRequired = new Target(0x1f111115);
-            this.ruleContext.BlockValidationContext.Block = new Block();
-            this.ruleContext.BlockValidationContext.Block.Header.Bits = new Target(0x1f111115);
-            this.ruleContext.BlockValidationContext.Block.Header.BlockTime = new DateTimeOffset(new DateTime(2017, 1, 1, 0, 1, 1));
-            this.ruleContext.BlockValidationContext.Block.Header.Version = 4;
+            this.ruleContext.ValidationContext.Block = new Block();
+            this.ruleContext.ValidationContext.Block.Header.Bits = new Target(0x1f111115);
+            this.ruleContext.ValidationContext.Block.Header.BlockTime = new DateTimeOffset(new DateTime(2017, 1, 1, 0, 1, 1));
+            this.ruleContext.ValidationContext.Block.Header.Version = 4;
 
             await this.consensusRules.RegisterRule<BlockHeaderPowContextualRule>().RunAsync(this.ruleContext);
         }

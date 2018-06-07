@@ -22,7 +22,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         public override Task RunAsync(RuleContext context)
         {
             DeploymentFlags deploymentFlags = context.Flags;
-            Block block = context.BlockValidationContext.Block;
+            Block block = context.ValidationContext.Block;
 
             // Validation for witness commitments.
             // * We compute the witness hash (which is the hash including witnesses) of all the block's transactions, except the

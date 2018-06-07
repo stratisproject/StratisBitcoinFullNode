@@ -57,7 +57,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
 
             this.ruleContext = new RuleContext()
             {
-                BlockValidationContext = new BlockValidationContext()
+                ValidationContext = new ValidationContext()
             };
         }
 
@@ -136,7 +136,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
 
             this.ruleContext = new RuleContext()
             {
-                BlockValidationContext = new BlockValidationContext()
+                ValidationContext = new ValidationContext()
             };
         }
 

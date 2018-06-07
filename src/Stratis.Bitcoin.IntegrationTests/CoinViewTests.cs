@@ -327,7 +327,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 PreviousHeight = 10111,
                 NextWorkRequired = block.Header.Bits,
                 Time = DateTimeOffset.UtcNow,
-                BlockValidationContext = new BlockValidationContext { Block = block },
+                ValidationContext = new ValidationContext { Block = block },
                 Flags = consensusFlags,
             };
 

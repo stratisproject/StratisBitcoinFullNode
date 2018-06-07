@@ -16,7 +16,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         public CheckSigOpsRuleTest()
         {
             this.options = this.network.Consensus.Option<PowConsensusOptions>();
-            this.ruleContext.BlockValidationContext.Block = new NBitcoin.Block();
+            this.ruleContext.ValidationContext.Block = new NBitcoin.Block();
             this.ruleContext.Consensus = this.network.Consensus;
         }
 
@@ -29,7 +29,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             var transaction = new Transaction();
             var op = new Op() { Code = OpcodeType.OP_CHECKSIG };
             transaction.Inputs.Add(new TxIn(new Script(op, op, op, op)));
-            this.ruleContext.BlockValidationContext.Block.Transactions.Add(transaction);
+            this.ruleContext.ValidationContext.Block.Transactions.Add(transaction);
 
             var exception = await Assert.ThrowsAsync<ConsensusErrorException>(() => this.consensusRules.RegisterRule<CheckSigOpsRule>().RunAsync(this.ruleContext));
 
@@ -46,7 +46,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             var op = new Op() { Code = OpcodeType.OP_CHECKSIG };
             transaction.Inputs.Add(new TxIn(new Script(op, op)));
             transaction.Inputs.Add(new TxIn(new Script(op, op)));
-            this.ruleContext.BlockValidationContext.Block.Transactions.Add(transaction);
+            this.ruleContext.ValidationContext.Block.Transactions.Add(transaction);
 
             var exception = await Assert.ThrowsAsync<ConsensusErrorException>(() => this.consensusRules.RegisterRule<CheckSigOpsRule>().RunAsync(this.ruleContext));
 
@@ -62,7 +62,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             var transaction = new Transaction();
             var op = new Op() { Code = OpcodeType.OP_CHECKSIG };
             transaction.Outputs.Add(new TxOut(new Money(1), new Script(op, op, op, op)));
-            this.ruleContext.BlockValidationContext.Block.Transactions.Add(transaction);
+            this.ruleContext.ValidationContext.Block.Transactions.Add(transaction);
 
             var exception = await Assert.ThrowsAsync<ConsensusErrorException>(() => this.consensusRules.RegisterRule<CheckSigOpsRule>().RunAsync(this.ruleContext));
 
@@ -79,7 +79,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             var op = new Op() { Code = OpcodeType.OP_CHECKSIG };
             transaction.Outputs.Add(new TxOut(new Money(1), new Script(op, op)));
             transaction.Outputs.Add(new TxOut(new Money(1), new Script(op, op)));
-            this.ruleContext.BlockValidationContext.Block.Transactions.Add(transaction);
+            this.ruleContext.ValidationContext.Block.Transactions.Add(transaction);
 
             var exception = await Assert.ThrowsAsync<ConsensusErrorException>(() => this.consensusRules.RegisterRule<CheckSigOpsRule>().RunAsync(this.ruleContext));
 
@@ -96,7 +96,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             var op = new Op() { Code = OpcodeType.OP_CHECKSIG };
             transaction.Inputs.Add(new TxIn(new Script(op, op)));
             transaction.Outputs.Add(new TxOut(new Money(1), new Script(op, op)));
-            this.ruleContext.BlockValidationContext.Block.Transactions.Add(transaction);
+            this.ruleContext.ValidationContext.Block.Transactions.Add(transaction);
 
             var exception = await Assert.ThrowsAsync<ConsensusErrorException>(() => this.consensusRules.RegisterRule<CheckSigOpsRule>().RunAsync(this.ruleContext));
 
@@ -112,7 +112,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             var transaction = new Transaction();
             var op = new Op() { Code = OpcodeType.OP_CHECKSIG };
             transaction.Inputs.Add(new TxIn(new Script(op, op, op, op)));
-            this.ruleContext.BlockValidationContext.Block.Transactions.Add(transaction);
+            this.ruleContext.ValidationContext.Block.Transactions.Add(transaction);
 
             await this.consensusRules.RegisterRule<CheckSigOpsRule>().RunAsync(this.ruleContext);
         }
@@ -127,7 +127,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             var op = new Op() { Code = OpcodeType.OP_CHECKSIG };
             transaction.Inputs.Add(new TxIn(new Script(op, op)));
             transaction.Inputs.Add(new TxIn(new Script(op, op)));
-            this.ruleContext.BlockValidationContext.Block.Transactions.Add(transaction);
+            this.ruleContext.ValidationContext.Block.Transactions.Add(transaction);
 
             await this.consensusRules.RegisterRule<CheckSigOpsRule>().RunAsync(this.ruleContext);
         }
@@ -141,7 +141,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             var transaction = new Transaction();
             var op = new Op() { Code = OpcodeType.OP_CHECKSIG };
             transaction.Outputs.Add(new TxOut(new Money(1), new Script(op, op, op, op)));
-            this.ruleContext.BlockValidationContext.Block.Transactions.Add(transaction);
+            this.ruleContext.ValidationContext.Block.Transactions.Add(transaction);
 
             await this.consensusRules.RegisterRule<CheckSigOpsRule>().RunAsync(this.ruleContext);
         }
@@ -156,7 +156,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             var op = new Op() { Code = OpcodeType.OP_CHECKSIG };
             transaction.Outputs.Add(new TxOut(new Money(1), new Script(op, op)));
             transaction.Outputs.Add(new TxOut(new Money(1), new Script(op, op)));
-            this.ruleContext.BlockValidationContext.Block.Transactions.Add(transaction);
+            this.ruleContext.ValidationContext.Block.Transactions.Add(transaction);
 
             await this.consensusRules.RegisterRule<CheckSigOpsRule>().RunAsync(this.ruleContext);
         }
@@ -171,7 +171,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             var op = new Op() { Code = OpcodeType.OP_CHECKSIG };
             transaction.Inputs.Add(new TxIn(new Script(op, op)));
             transaction.Outputs.Add(new TxOut(new Money(1), new Script(op, op)));
-            this.ruleContext.BlockValidationContext.Block.Transactions.Add(transaction);
+            this.ruleContext.ValidationContext.Block.Transactions.Add(transaction);
 
             await this.consensusRules.RegisterRule<CheckSigOpsRule>().RunAsync(this.ruleContext);
         }
@@ -185,7 +185,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             var transaction = new Transaction();
             var op = new Op() { Code = OpcodeType.OP_CHECKSIG };
             transaction.Inputs.Add(new TxIn(new Script(op, op, op, op)));
-            this.ruleContext.BlockValidationContext.Block.Transactions.Add(transaction);
+            this.ruleContext.ValidationContext.Block.Transactions.Add(transaction);
 
             await this.consensusRules.RegisterRule<CheckSigOpsRule>().RunAsync(this.ruleContext);
         }
@@ -200,7 +200,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             var op = new Op() { Code = OpcodeType.OP_CHECKSIG };
             transaction.Inputs.Add(new TxIn(new Script(op, op)));
             transaction.Inputs.Add(new TxIn(new Script(op, op)));
-            this.ruleContext.BlockValidationContext.Block.Transactions.Add(transaction);
+            this.ruleContext.ValidationContext.Block.Transactions.Add(transaction);
 
             await this.consensusRules.RegisterRule<CheckSigOpsRule>().RunAsync(this.ruleContext);
         }
@@ -214,7 +214,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             var transaction = new Transaction();
             var op = new Op() { Code = OpcodeType.OP_CHECKSIG };
             transaction.Outputs.Add(new TxOut(new Money(1), new Script(op, op, op, op)));
-            this.ruleContext.BlockValidationContext.Block.Transactions.Add(transaction);
+            this.ruleContext.ValidationContext.Block.Transactions.Add(transaction);
 
             await this.consensusRules.RegisterRule<CheckSigOpsRule>().RunAsync(this.ruleContext);
         }
@@ -229,7 +229,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             var op = new Op() { Code = OpcodeType.OP_CHECKSIG };
             transaction.Outputs.Add(new TxOut(new Money(1), new Script(op, op)));
             transaction.Outputs.Add(new TxOut(new Money(1), new Script(op, op)));
-            this.ruleContext.BlockValidationContext.Block.Transactions.Add(transaction);
+            this.ruleContext.ValidationContext.Block.Transactions.Add(transaction);
 
             await this.consensusRules.RegisterRule<CheckSigOpsRule>().RunAsync(this.ruleContext);
         }
@@ -244,7 +244,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             var op = new Op() { Code = OpcodeType.OP_CHECKSIG };
             transaction.Inputs.Add(new TxIn(new Script(op, op)));
             transaction.Outputs.Add(new TxOut(new Money(1), new Script(op, op)));
-            this.ruleContext.BlockValidationContext.Block.Transactions.Add(transaction);
+            this.ruleContext.ValidationContext.Block.Transactions.Add(transaction);
 
             await this.consensusRules.RegisterRule<CheckSigOpsRule>().RunAsync(this.ruleContext);
         }

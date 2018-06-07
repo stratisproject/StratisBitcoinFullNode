@@ -123,21 +123,21 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules
         }
 
         /// <inheritdoc/>
-        public async Task AcceptBlockAsync(BlockValidationContext blockValidationContext)
+        public async Task AcceptBlockAsync(ValidationContext validationContext)
         {
-            Guard.NotNull(blockValidationContext, nameof(blockValidationContext));
-            Guard.NotNull(blockValidationContext.RuleContext, nameof(blockValidationContext.RuleContext));
+            Guard.NotNull(validationContext, nameof(validationContext));
+            Guard.NotNull(validationContext.RuleContext, nameof(validationContext.RuleContext));
 
             try
             {
-                await this.ValidateAndExecuteAsync(blockValidationContext.RuleContext);
+                await this.ValidateAndExecuteAsync(validationContext.RuleContext);
             }
             catch (ConsensusErrorException ex)
             {
-                blockValidationContext.Error = ex.ConsensusError;
+                validationContext.Error = ex.ConsensusError;
             }
 
-            if (blockValidationContext.Error != null)
+            if (validationContext.Error != null)
             {
                 // TODO invoke the error handler rule.
             }

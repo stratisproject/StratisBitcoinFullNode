@@ -22,7 +22,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         {
             Guard.NotNull(context.ConsensusTip, nameof(context.ConsensusTip));
 
-            BlockHeader header = context.BlockValidationContext.Block.Header;
+            BlockHeader header = context.ValidationContext.Block.Header;
 
             int height = context.PreviousHeight + 1;
 

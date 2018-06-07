@@ -19,7 +19,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         public override Task RunAsync(RuleContext context)
         {
             int nHeight = context?.PreviousHeight + 1 ?? 0;
-            Block block = context.BlockValidationContext.Block;
+            Block block = context.ValidationContext.Block;
 
             Script expect = new Script(Op.GetPushOp(nHeight));
             Script actual = block.Transactions[0].Inputs[0].ScriptSig;

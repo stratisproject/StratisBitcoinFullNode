@@ -19,7 +19,7 @@ namespace Stratis.Bitcoin.Consensus.Rules
 
         public Target NextWorkRequired { get; set; }
 
-        public BlockValidationContext BlockValidationContext { get; set; }
+        public ValidationContext ValidationContext { get; set; }
 
         public DeploymentFlags Flags { get; set; }
 
@@ -60,12 +60,12 @@ namespace Stratis.Bitcoin.Consensus.Rules
             throw new KeyNotFoundException();
         }
 
-        public RuleContext(BlockValidationContext blockValidationContext, NBitcoin.Consensus consensus, ChainedHeader consensusTip) : base()
+        public RuleContext(ValidationContext validationContext, NBitcoin.Consensus consensus, ChainedHeader consensusTip) : base()
         {
-            Guard.NotNull(blockValidationContext, nameof(blockValidationContext));
+            Guard.NotNull(validationContext, nameof(validationContext));
             Guard.NotNull(consensus, nameof(consensus));
 
-            this.BlockValidationContext = blockValidationContext;
+            this.ValidationContext = validationContext;
             this.Consensus = consensus;
             this.ConsensusTip = consensusTip;
             this.PreviousHeight = consensusTip.Height;

@@ -47,13 +47,13 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
 
             await base.RunAsync(context).ConfigureAwait(false);
 
-            await this.stakeChain.SetAsync(context.BlockValidationContext.ChainedHeader, context.Item<PosRuleContext>().BlockStake).ConfigureAwait(false);
+            await this.stakeChain.SetAsync(context.ValidationContext.ChainedHeader, context.Item<PosRuleContext>().BlockStake).ConfigureAwait(false);
 
             this.Logger.LogTrace("(-)");
         }
 
         /// <inheritdoc/>
-        protected override bool IsProtocolCoin(Transaction transaction)
+        protected override bool IsProtocolTransaction(Transaction transaction)
         {
             return transaction.IsCoinBase || transaction.IsCoinStake;
         }
@@ -134,8 +134,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         {
             this.Logger.LogTrace("()");
 
-            ChainedHeader chainedHeader = context.BlockValidationContext.ChainedHeader;
-            Block block = context.BlockValidationContext.Block;
+            ChainedHeader chainedHeader = context.ValidationContext.ChainedHeader;
+            Block block = context.ValidationContext.Block;
             BlockStake blockStake = context.Item<PosRuleContext>().BlockStake;
 
             // Verify hash target and signature of coinstake tx.

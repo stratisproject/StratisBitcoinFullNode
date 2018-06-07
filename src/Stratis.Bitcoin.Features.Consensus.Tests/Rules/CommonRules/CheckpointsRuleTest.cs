@@ -18,9 +18,9 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         public async Task RunAsync_CheckpointViolation_ThrowsCheckpointValidationConsensusErrorsExceptionAsync()
         {
             this.ruleContext.PreviousHeight = 1;
-            this.ruleContext.BlockValidationContext.Block = new Block();
+            this.ruleContext.ValidationContext.Block = new Block();
 
-            this.checkpoints.Setup(c => c.CheckHardened(2, this.ruleContext.BlockValidationContext.Block.GetHash()))
+            this.checkpoints.Setup(c => c.CheckHardened(2, this.ruleContext.ValidationContext.Block.GetHash()))
                 .Returns(false);
 
             var exception = await Assert.ThrowsAsync<ConsensusErrorException>(() => this.consensusRules.RegisterRule<CheckpointsRule>().RunAsync(this.ruleContext));
@@ -34,8 +34,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             this.consensusSettings.UseCheckpoints = false;
 
             this.ruleContext.PreviousHeight = 1;
-            this.ruleContext.BlockValidationContext.Block = new Block();
-            this.checkpoints.Setup(c => c.CheckHardened(2, this.ruleContext.BlockValidationContext.Block.GetHash()))
+            this.ruleContext.ValidationContext.Block = new Block();
+            this.checkpoints.Setup(c => c.CheckHardened(2, this.ruleContext.ValidationContext.Block.GetHash()))
                 .Returns(true);
 
             await this.consensusRules.RegisterRule<CheckpointsRule>().RunAsync(this.ruleContext);
@@ -48,10 +48,10 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
 
             this.ruleContext.SkipValidation = false;
             this.ruleContext.PreviousHeight = 1;
-            this.ruleContext.BlockValidationContext.Block = new Block();
-            this.ruleContext.BlockValidationContext.ChainedHeader = this.concurrentChain.GetBlock(5);
+            this.ruleContext.ValidationContext.Block = new Block();
+            this.ruleContext.ValidationContext.ChainedHeader = this.concurrentChain.GetBlock(5);
 
-            this.checkpoints.Setup(c => c.CheckHardened(2, this.ruleContext.BlockValidationContext.Block.GetHash()))
+            this.checkpoints.Setup(c => c.CheckHardened(2, this.ruleContext.ValidationContext.Block.GetHash()))
                 .Returns(true);
             this.checkpoints.Setup(c => c.GetLastCheckpointHeight())
                 .Returns(10);
@@ -68,10 +68,10 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
 
             this.ruleContext.SkipValidation = false;
             this.ruleContext.PreviousHeight = 1;
-            this.ruleContext.BlockValidationContext.Block = new Block();
-            this.ruleContext.BlockValidationContext.ChainedHeader = this.concurrentChain.GetBlock(5);
+            this.ruleContext.ValidationContext.Block = new Block();
+            this.ruleContext.ValidationContext.ChainedHeader = this.concurrentChain.GetBlock(5);
 
-            this.checkpoints.Setup(c => c.CheckHardened(2, this.ruleContext.BlockValidationContext.Block.GetHash()))
+            this.checkpoints.Setup(c => c.CheckHardened(2, this.ruleContext.ValidationContext.Block.GetHash()))
                 .Returns(true);
             this.checkpoints.Setup(c => c.GetLastCheckpointHeight())
                 .Returns(5);
@@ -88,10 +88,10 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
 
             this.ruleContext.SkipValidation = false;
             this.ruleContext.PreviousHeight = 1;
-            this.ruleContext.BlockValidationContext.Block = new Block();
-            this.ruleContext.BlockValidationContext.ChainedHeader = this.concurrentChain.GetBlock(5);
+            this.ruleContext.ValidationContext.Block = new Block();
+            this.ruleContext.ValidationContext.ChainedHeader = this.concurrentChain.GetBlock(5);
 
-            this.checkpoints.Setup(c => c.CheckHardened(2, this.ruleContext.BlockValidationContext.Block.GetHash()))
+            this.checkpoints.Setup(c => c.CheckHardened(2, this.ruleContext.ValidationContext.Block.GetHash()))
                 .Returns(true);
             this.checkpoints.Setup(c => c.GetLastCheckpointHeight())
                 .Returns(3);

@@ -36,8 +36,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         {
             this.Logger.LogTrace("()");
 
-            Block block = context.BlockValidationContext.Block;
-            ChainedHeader index = context.BlockValidationContext.ChainedHeader;
+            Block block = context.ValidationContext.Block;
+            ChainedHeader index = context.ValidationContext.ChainedHeader;
             DeploymentFlags flags = context.Flags;
             UnspentOutputSet view = context.Item<UnspentOutputSet>();
 
@@ -52,7 +52,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
                 Transaction tx = block.Transactions[txIndex];
                 if (!context.SkipValidation)
                 {
-                    if (!this.IsProtocolCoin(tx))
+                    if (!this.IsProtocolTransaction(tx))
                     {
                         if (!view.HaveInputs(tx))
                         {
@@ -87,7 +87,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
                         ConsensusErrors.BadBlockSigOps.Throw();
                     }
 
-                    if (!this.IsProtocolCoin(tx))
+                    if (!this.IsProtocolTransaction(tx))
                     {
                         this.CheckInputs(tx, view, index.Height);
                         fees += view.GetValueIn(tx) - tx.TotalOut;
@@ -141,7 +141,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         {
             this.Logger.LogTrace("()");
 
-            ChainedHeader index = context.BlockValidationContext.ChainedHeader;
+            ChainedHeader index = context.ValidationContext.ChainedHeader;
             UnspentOutputSet view = context.Item<UnspentOutputSet>();
 
             view.Update(transaction, index.Height);
@@ -150,10 +150,10 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         }
 
         /// <summary>
-        /// Check whether the transaction is part of the protocol (Coinbase or Coinstake)
+        /// Check whether the transaction is part of the protocol (Coinbase or Coinstake).
         /// </summary>
         /// <param name="transaction">The transaction to check.</param>
-        protected abstract bool IsProtocolCoin(Transaction transaction);
+        protected abstract bool IsProtocolTransaction(Transaction transaction);
 
         /// <summary>
         /// Network specific updates to the context's UTXO set.

@@ -81,7 +81,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules
 
     /// <summary>
     /// Whether the rule will be considered a rule that only does validation and does not manipulate state in any way.
-    /// When <c>true</c> rule is allowed to skip validation when the <see cref="BlockValidationContext.SkipValidation"/> is set to <c>true</c>.
+    /// When <c>true</c> rule is allowed to skip validation when the <see cref="ValidationContext.SkipValidation"/> is set to <c>true</c>.
     /// </summary>
     /// <remarks>
     /// State in this context is the manipulation of information in the consensus data store based on actions specified in <see cref="Block"/> and <see cref="Transaction"/>.

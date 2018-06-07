@@ -29,7 +29,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             block.Header.HashPrevBlock = this.concurrentChain.GetBlock(3).HashBlock; // invalid
             block.Header.Nonce = RandomUtils.GetUInt32();
 
-            this.ruleContext.BlockValidationContext.Block = block;
+            this.ruleContext.ValidationContext.Block = block;
             this.ruleContext.ConsensusTip = this.concurrentChain.Tip;
             
             var exception = await Assert.ThrowsAsync<ConsensusErrorException>(() => this.consensusRules.RegisterRule<BlockHeaderRule>().RunAsync(this.ruleContext));
@@ -48,12 +48,12 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             block.Header.HashPrevBlock = tip.HashBlock;
             block.Header.Nonce = RandomUtils.GetUInt32();
 
-            this.ruleContext.BlockValidationContext.Block = block;
+            this.ruleContext.ValidationContext.Block = block;
             this.ruleContext.ConsensusTip = tip;
             
             await this.consensusRules.RegisterRule<BlockHeaderRule>().RunAsync(this.ruleContext);
 
-            var chainedHeader = this.ruleContext.BlockValidationContext.ChainedHeader;
+            var chainedHeader = this.ruleContext.ValidationContext.ChainedHeader;
             Assert.IsType<ChainedHeader>(chainedHeader);
 
             Assert.Equal(block.Header.GetHash(), chainedHeader.HashBlock);
@@ -74,7 +74,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             block.Header.HashPrevBlock = tip.HashBlock;
             block.Header.Nonce = RandomUtils.GetUInt32();
 
-            this.ruleContext.BlockValidationContext.Block = block;
+            this.ruleContext.ValidationContext.Block = block;
             this.ruleContext.ConsensusTip = tip;
 
             this.dateTimeProvider.Setup(d => d.GetTimeOffset())
@@ -84,7 +84,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             await this.consensusRules.RegisterRule<BlockHeaderRule>().RunAsync(this.ruleContext);
 
             this.dateTimeProvider.Verify();
-            var chainedBlock = this.ruleContext.BlockValidationContext.ChainedHeader;
+            var chainedBlock = this.ruleContext.ValidationContext.ChainedHeader;
             Assert.Equal(new DateTimeOffset(new DateTime(2017, 1, 1, 1, 1, 1)), this.ruleContext.Time);
             Assert.Equal(chainedBlock.Previous.GetMedianTimePast(), this.ruleContext.Time);
             Assert.Equal(tip.Height, this.ruleContext.PreviousHeight);
@@ -104,7 +104,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             block.Header.HashPrevBlock = this.concurrentChain.Tip.HashBlock;
             block.Header.Nonce = RandomUtils.GetUInt32();
             
-            this.ruleContext.BlockValidationContext.Block = block;
+            this.ruleContext.ValidationContext.Block = block;
             this.ruleContext.ConsensusTip = this.concurrentChain.Tip;
 
             await this.consensusRules.RegisterRule<BlockHeaderRule>().RunAsync(this.ruleContext);

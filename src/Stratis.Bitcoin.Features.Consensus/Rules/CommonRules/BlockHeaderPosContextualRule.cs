@@ -22,7 +22,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         /// <exception cref="ConsensusErrors.ProofOfWorkTooHigh">The block's height is higher than the last allowed PoW block.</exception>
         public override Task RunAsync(RuleContext context)
         {
-            ChainedHeader chainedHeader = context.BlockValidationContext.ChainedHeader;
+            ChainedHeader chainedHeader = context.ValidationContext.ChainedHeader;
             this.Logger.LogTrace("Height of block is {0}, block timestamp is {1}, previous block timestamp is {2}, block version is 0x{3:x}.", chainedHeader.Height, chainedHeader.Header.Time, chainedHeader.Previous.Header.Time, chainedHeader.Header.Version);
 
             if (chainedHeader.Header.Version < 7)
@@ -38,7 +38,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
             }
 
             // Check coinbase timestamp.
-            uint coinbaseTime = context.BlockValidationContext.Block.Transactions[0].Time;
+            uint coinbaseTime = context.ValidationContext.Block.Transactions[0].Time;
             if (chainedHeader.Header.Time > coinbaseTime + PosFutureDriftRule.GetFutureDrift(coinbaseTime))
             {
                 this.Logger.LogTrace("(-)[TIME_TOO_NEW]");
@@ -47,7 +47,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
 
             // Check coinstake timestamp.
             if (context.Item<PosRuleContext>().BlockStake.IsProofOfStake()
-                && !this.CheckCoinStakeTimestamp(chainedHeader.Header.Time, context.BlockValidationContext.Block.Transactions[1].Time))
+                && !this.CheckCoinStakeTimestamp(chainedHeader.Header.Time, context.ValidationContext.Block.Transactions[1].Time))
             {
                 this.Logger.LogTrace("(-)[BAD_TIME]");
                 ConsensusErrors.StakeTimeViolation.Throw();

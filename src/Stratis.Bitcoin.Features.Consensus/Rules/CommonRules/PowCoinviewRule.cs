@@ -26,7 +26,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         }
 
         /// <inheritdoc/>
-        protected override bool IsProtocolCoin(Transaction transaction)
+        protected override bool IsProtocolTransaction(Transaction transaction)
         {
             return transaction.IsCoinBase;
         }

@@ -12,7 +12,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules
     /// </summary>
     /// <remarks>
     /// In order for a block to be valid it has to successfully pass the rules checks.
-    /// A block  that is not valid will result in the <see cref="BlockValidationContext.Error"/> as not <c>null</c>.
+    /// A block  that is not valid will result in the <see cref="ValidationContext.Error"/> as not <c>null</c>.
     /// </remarks>
     public interface IConsensusRules
     {
@@ -38,8 +38,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules
         /// The block will be validated and the <see cref="CoinView"/> db will be updated.
         /// If it's a new block that was mined or staked it will extend the chain and the new block will set <see cref="ConcurrentChain.Tip"/>.
         /// </summary>
-        /// <param name="blockValidationContext">Information about the block to validate.</param>
-        Task AcceptBlockAsync(BlockValidationContext blockValidationContext);
+        /// <param name="validationContext">Information about the block to validate.</param>
+        Task AcceptBlockAsync(ValidationContext validationContext);
 
         /// <summary>
         /// Execute the consensus rule engine.

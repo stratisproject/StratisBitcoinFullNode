@@ -125,7 +125,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
         {
             var rule = new ConsensusRuleWithValidationAttribute();
             this.ruleRegistrations = new List<ConsensusRule> { rule };
-            var blockValidationContext = new BlockValidationContext()
+            var blockValidationContext = new ValidationContext()
             {
                 RuleContext = new RuleContext()
                 {
@@ -147,7 +147,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
             var rule = new ConsensusRuleWithSkipValidationAttribute();
             this.ruleRegistrations = new List<ConsensusRule> { rule };
 
-            var blockValidationContext = new BlockValidationContext()
+            var blockValidationContext = new ValidationContext()
             {
                 RuleContext = new RuleContext()
                 {
@@ -169,7 +169,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
             var rule = new ConsensusRuleWithValidationAttribute();
             this.ruleRegistrations = new List<ConsensusRule> { rule };
 
-            var blockValidationContext = new BlockValidationContext()
+            var blockValidationContext = new ValidationContext()
             {
                 RuleContext = new RuleContext()
                 {
@@ -191,7 +191,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
             var rule = new ConsensusRuleWithSkipValidationAttribute();
             this.ruleRegistrations = new List<ConsensusRule> { rule };
 
-            var blockValidationContext = new BlockValidationContext()
+            var blockValidationContext = new ValidationContext()
             {
                 ChainedHeader = this.concurrentChain.Tip,
                 RuleContext = new RuleContext()
@@ -218,7 +218,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
                 .Verifiable();
 
             this.ruleRegistrations = new List<ConsensusRule> { rule.Object };
-            var blockValidationContext = new BlockValidationContext()
+            var blockValidationContext = new ValidationContext()
             {
                 RuleContext = new RuleContext()
                 {

@@ -24,7 +24,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         [Fact]
         public async Task RunAsync_BadBlockWeight_ThrowsBadBlockWeightConsensusErrorExceptionAsync()
         {
-            this.ruleContext.BlockValidationContext.Block = GenerateBlockWithWeight((this.options.MaxBlockWeight / this.options.WitnessScaleFactor) + 1, TransactionOptions.All);
+            this.ruleContext.ValidationContext.Block = GenerateBlockWithWeight((this.options.MaxBlockWeight / this.options.WitnessScaleFactor) + 1, TransactionOptions.All);
 
             var exception = await Assert.ThrowsAsync<ConsensusErrorException>(() => this.consensusRules.RegisterRule<BlockSizeRule>().RunAsync(this.ruleContext));
 
@@ -34,7 +34,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         [Fact]
         public async Task RunAsync_ZeroTransactions_ThrowsBadBlockLengthConsensusErrorExceptionAsync()
         {
-            this.ruleContext.BlockValidationContext.Block = new Block();
+            this.ruleContext.ValidationContext.Block = new Block();
 
             var exception = await Assert.ThrowsAsync<ConsensusErrorException>(() => this.consensusRules.RegisterRule<BlockSizeRule>().RunAsync(this.ruleContext));
 
@@ -44,14 +44,14 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         [Fact]
         public async Task RunAsync_TransactionCountAboveMaxBlockBaseSize_ThrowsBadBlockLengthConsensusErrorExceptionAsync()
         {
-            this.ruleContext.BlockValidationContext.Block = new Block();
+            this.ruleContext.ValidationContext.Block = new Block();
 
             for (var i = 0; i < this.options.MaxBlockBaseSize + 1; i++)
             {
-                this.ruleContext.BlockValidationContext.Block.Transactions.Add(new Transaction());
+                this.ruleContext.ValidationContext.Block.Transactions.Add(new Transaction());
             }
 
-            int blockWeight = this.CalculateBlockWeight(this.ruleContext.BlockValidationContext.Block, TransactionOptions.All);
+            int blockWeight = this.CalculateBlockWeight(this.ruleContext.ValidationContext.Block, TransactionOptions.All);
 
             // increase max block weight to be able to hit this if statement
             this.options.MaxBlockWeight = (blockWeight * 4) + 100;
@@ -64,8 +64,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         [Fact]
         public async Task RunAsync_BlockSizeAboveMaxBlockBaseSize_ThrowsBadBlockLengthConsensusErrorExceptionAsync()
         {
-            this.ruleContext.BlockValidationContext.Block = GenerateBlockWithWeight(this.options.MaxBlockBaseSize + 1, TransactionOptions.All);
-            int blockWeight = this.CalculateBlockWeight(this.ruleContext.BlockValidationContext.Block, TransactionOptions.All);
+            this.ruleContext.ValidationContext.Block = GenerateBlockWithWeight(this.options.MaxBlockBaseSize + 1, TransactionOptions.All);
+            int blockWeight = this.CalculateBlockWeight(this.ruleContext.ValidationContext.Block, TransactionOptions.All);
 
             // increase max block weight to be able to hit this if statement
             this.options.MaxBlockWeight = (blockWeight * 4) + 1;
@@ -78,7 +78,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         [Fact]
         public async Task RunAsync_AtBlockWeight_BelowMaxBlockBaseSize_DoesNotThrowExceptionAsync()
         {
-            this.ruleContext.BlockValidationContext.Block = GenerateBlockWithWeight(this.options.MaxBlockWeight / this.options.WitnessScaleFactor, TransactionOptions.All);
+            this.ruleContext.ValidationContext.Block = GenerateBlockWithWeight(this.options.MaxBlockWeight / this.options.WitnessScaleFactor, TransactionOptions.All);
             this.options.MaxBlockBaseSize = this.options.MaxBlockWeight + 1000;
 
             await this.consensusRules.RegisterRule<BlockSizeRule>().RunAsync(this.ruleContext);
@@ -87,7 +87,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         [Fact]
         public async Task RunAsync_BelowBlockWeight_BelowMaxBlockBaseSize_DoesNotThrowExceptionAsync()
         {
-            this.ruleContext.BlockValidationContext.Block = GenerateBlockWithWeight((this.options.MaxBlockWeight / this.options.WitnessScaleFactor) - 1, TransactionOptions.All);
+            this.ruleContext.ValidationContext.Block = GenerateBlockWithWeight((this.options.MaxBlockWeight / this.options.WitnessScaleFactor) - 1, TransactionOptions.All);
             this.options.MaxBlockBaseSize = this.options.MaxBlockWeight + 1000;
 
             await this.consensusRules.RegisterRule<BlockSizeRule>().RunAsync(this.ruleContext);
@@ -96,11 +96,11 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         [Fact]
         public async Task TaskAsync_TransactionCountBelowLimit_DoesNotThrowExceptionAsync()
         {
-            this.ruleContext.BlockValidationContext.Block = new Block();
+            this.ruleContext.ValidationContext.Block = new Block();
 
             for (var i = 0; i < 10; i++)
             {
-                this.ruleContext.BlockValidationContext.Block.Transactions.Add(new Transaction());
+                this.ruleContext.ValidationContext.Block.Transactions.Add(new Transaction());
             }
 
             await this.consensusRules.RegisterRule<BlockSizeRule>().RunAsync(this.ruleContext);
@@ -109,7 +109,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         [Fact]
         public async Task RunAsync_BlockAtMaxBlockBaseSize_DoesNotThrowExceptionAsync()
         {
-            this.ruleContext.BlockValidationContext.Block = GenerateBlockWithWeight(this.options.MaxBlockBaseSize, TransactionOptions.All);
+            this.ruleContext.ValidationContext.Block = GenerateBlockWithWeight(this.options.MaxBlockBaseSize, TransactionOptions.All);
             this.options.MaxBlockWeight = (this.options.MaxBlockBaseSize * 4) + 1000;
 
             await this.consensusRules.RegisterRule<BlockSizeRule>().RunAsync(this.ruleContext);
@@ -118,7 +118,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         [Fact]
         public async Task RunAsync_BlockBelowMaxBlockBaseSize_DoesNotThrowExceptionAsync()
         {
-            this.ruleContext.BlockValidationContext.Block = GenerateBlockWithWeight(this.options.MaxBlockBaseSize - 1, TransactionOptions.All);
+            this.ruleContext.ValidationContext.Block = GenerateBlockWithWeight(this.options.MaxBlockBaseSize - 1, TransactionOptions.All);
             this.options.MaxBlockWeight = (this.options.MaxBlockBaseSize * 4) + 1000;
 
             await this.consensusRules.RegisterRule<BlockSizeRule>().RunAsync(this.ruleContext);

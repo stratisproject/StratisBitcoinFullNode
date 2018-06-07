@@ -20,7 +20,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         [Fact]
         public async Task RunAsync_ProofOfStakeBlock_SetsStake_SetsNextWorkRequiredAsync()
         {
-            this.ruleContext.BlockValidationContext = new BlockValidationContext()
+            this.ruleContext.ValidationContext = new ValidationContext()
             {
                 Block = new Block()
                 {
@@ -56,7 +56,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         [Fact]
         public async Task RunAsync_ProofOfWorkBlock_DoNotCheckPow_SetsStake_SetsNextWorkRequiredAsync()
         {
-            this.ruleContext.BlockValidationContext = new BlockValidationContext()
+            this.ruleContext.ValidationContext = new ValidationContext()
             {
                 Block = new Block()
                 {
@@ -96,7 +96,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             this.concurrentChain = MineChainWithHeight(2, this.network);
             this.consensusRules = this.InitializeConsensusRules();
 
-            this.ruleContext.BlockValidationContext = new BlockValidationContext()
+            this.ruleContext.ValidationContext = new ValidationContext()
             {
                 Block = TestRulesContextFactory.MineBlock(this.network, this.concurrentChain),
                 ChainedHeader = this.concurrentChain.Tip
@@ -127,7 +127,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         [Fact]
         public async Task RunAsync_ProofOfWorkBlock_CheckPow_InValidPow_ThrowsHighHashConsensusErrorExceptionAsync()
         {
-            this.ruleContext.BlockValidationContext = new BlockValidationContext()
+            this.ruleContext.ValidationContext = new ValidationContext()
             {
                 Block = new Block()
                 {
