@@ -33,11 +33,11 @@ namespace Stratis.Bitcoin.Configuration.Settings
         /// <remarks>TODO: Currently only takes -debug arg.</remarks>
         public void Load(TextFileConfiguration config)
         {
-            this.DebugArgs = config.GetOrDefault("-debug", string.Empty).Split(',').Where(s => !string.IsNullOrEmpty(s)).ToList();
+            this.DebugArgs = config.GetOrDefault("debug", string.Empty).Split(',').Where(s => !string.IsNullOrEmpty(s)).ToList();
 
             // Get the minimum log level. The default is Information.
             LogLevel minLogLevel = LogLevel.Information;
-            string logLevelArg = config.GetOrDefault("-loglevel", string.Empty);
+            string logLevelArg = config.GetOrDefault("loglevel", string.Empty);
             if (!string.IsNullOrEmpty(logLevelArg))
             {
                 if (!Enum.TryParse(logLevelArg, true, out minLogLevel))

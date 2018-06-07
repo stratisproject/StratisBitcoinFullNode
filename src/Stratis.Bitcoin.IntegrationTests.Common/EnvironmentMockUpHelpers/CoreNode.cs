@@ -345,7 +345,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
                         this.transactions.Clear();
                     }
                     block.UpdateMerkleRoot();
-                    while (!block.CheckProofOfWork(rpc.Network.Consensus))
+                    while (!block.CheckProofOfWork())
                         block.Header.Nonce = ++nonce;
                     blocks.Add(block);
                     chain.SetTip(block.Header);
@@ -539,7 +539,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
                     block.Transactions.AddRange(passedTransactions);
                 }
                 block.UpdateMerkleRoot();
-                while (!block.CheckProofOfWork(fullNode.Network.Consensus))
+                while (!block.CheckProofOfWork())
                     block.Header.Nonce = ++nonce;
                 blocks.Add(block);
                 if (broadcast)

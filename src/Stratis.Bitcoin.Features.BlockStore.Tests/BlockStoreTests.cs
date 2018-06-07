@@ -10,6 +10,7 @@ using Stratis.Bitcoin.Utilities;
 using Xunit;
 using Moq;
 using NBitcoin.DataEncoders;
+using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Tests.Common;
 
 namespace Stratis.Bitcoin.Features.BlockStore.Tests

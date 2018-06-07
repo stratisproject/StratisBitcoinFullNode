@@ -1,52 +1,56 @@
 
-rm "src\Stratis.Bitcoin\bin\release\" -Recurse -Force
-dotnet pack src\Stratis.Bitcoin --configuration Release  
-dotnet nuget push "src\Stratis.Bitcoin\bin\Release\*.nupkg" --source "https://api.nuget.org/v3/index.json"
+rm "src\Stratis.Bitcoin\bin\debug\" -Recurse -Force
+dotnet pack src\Stratis.Bitcoin --configuration Debug --include-source --include-symbols 
+dotnet nuget push "src\Stratis.Bitcoin\bin\debug\*.symbols.nupkg" --source "https://api.nuget.org/v3/index.json"
 
-rm "src\Stratis.Bitcoin.Features.Api\bin\release\" -Recurse -Force
-dotnet pack src\Stratis.Bitcoin.Features.Api --configuration Release  
-dotnet nuget push "src\Stratis.Bitcoin.Features.Api\bin\Release\*.nupkg" --source "https://api.nuget.org/v3/index.json"
+rm "src\Stratis.Bitcoin.Features.Api\bin\debug\" -Recurse -Force
+dotnet pack src\Stratis.Bitcoin.Features.Api --configuration Debug --include-source --include-symbols  
+dotnet nuget push "src\Stratis.Bitcoin.Features.Api\bin\debug\*.symbols.nupkg" --source "https://api.nuget.org/v3/index.json"
 
-rm "src\Stratis.Bitcoin.Features.BlockStore\bin\release\" -Recurse -Force
-dotnet pack src\Stratis.Bitcoin.Features.BlockStore --configuration Release  
-dotnet nuget push "src\Stratis.Bitcoin.Features.BlockStore\bin\Release\*.nupkg" --source "https://api.nuget.org/v3/index.json"
+rm "src\Stratis.Bitcoin.Features.BlockStore\bin\debug\" -Recurse -Force
+dotnet pack src\Stratis.Bitcoin.Features.BlockStore --configuration Debug --include-source --include-symbols  
+dotnet nuget push "src\Stratis.Bitcoin.Features.BlockStore\bin\debug\*.symbols.nupkg" --source "https://api.nuget.org/v3/index.json"
 
-rm "src\Stratis.Bitcoin.Features.Consensus\bin\release\" -Recurse -Force
-dotnet pack src\Stratis.Bitcoin.Features.Consensus --configuration Release  
-dotnet nuget push "src\Stratis.Bitcoin.Features.Consensus\bin\Release\*.nupkg" --source "https://api.nuget.org/v3/index.json"
+rm "src\Stratis.Bitcoin.Features.Consensus\bin\debug\" -Recurse -Force
+dotnet pack src\Stratis.Bitcoin.Features.Consensus --configuration Debug --include-source --include-symbols  
+dotnet nuget push "src\Stratis.Bitcoin.Features.Consensus\bin\debug\*.symbols.nupkg" --source "https://api.nuget.org/v3/index.json"
 
-rm "src\Stratis.Bitcoin.Features.LightWallet\bin\release\" -Recurse -Force
-dotnet pack src\Stratis.Bitcoin.Features.LightWallet --configuration Release  
-dotnet nuget push "src\Stratis.Bitcoin.Features.LightWallet\bin\Release\*.nupkg" --source "https://api.nuget.org/v3/index.json"
+rm "src\Stratis.Bitcoin.Features.LightWallet\bin\debug\" -Recurse -Force
+dotnet pack src\Stratis.Bitcoin.Features.LightWallet --configuration Debug --include-source --include-symbols  
+dotnet nuget push "src\Stratis.Bitcoin.Features.LightWallet\bin\debug\*.symbols.nupkg" --source "https://api.nuget.org/v3/index.json"
 
-rm "src\Stratis.Bitcoin.Features.MemoryPool\bin\release\" -Recurse -Force
-dotnet pack src\Stratis.Bitcoin.Features.MemoryPool --configuration Release 
-dotnet nuget push "src\Stratis.Bitcoin.Features.MemoryPool\bin\Release\*.nupkg" --source "https://api.nuget.org/v3/index.json"
+rm "src\Stratis.Bitcoin.Features.MemoryPool\bin\debug\" -Recurse -Force
+dotnet pack src\Stratis.Bitcoin.Features.MemoryPool --configuration Debug --include-source --include-symbols 
+dotnet nuget push "src\Stratis.Bitcoin.Features.MemoryPool\bin\debug\*.symbols.nupkg" --source "https://api.nuget.org/v3/index.json"
 
-rm "src\Stratis.Bitcoin.Features.Miner\bin\release\" -Recurse -Force
-dotnet pack src\Stratis.Bitcoin.Features.Miner --configuration Release  
-dotnet nuget push "src\Stratis.Bitcoin.Features.Miner\bin\Release\*.nupkg" --source "https://api.nuget.org/v3/index.json"
+rm "src\Stratis.Bitcoin.Features.Miner\bin\debug\" -Recurse -Force
+dotnet pack src\Stratis.Bitcoin.Features.Miner --configuration Debug --include-source --include-symbols  
+dotnet nuget push "src\Stratis.Bitcoin.Features.Miner\bin\debug\*.symbols.nupkg" --source "https://api.nuget.org/v3/index.json"
 
-rm "src\Stratis.Bitcoin.Features.Notifications\bin\release\" -Recurse -Force
-dotnet pack src\Stratis.Bitcoin.Features.Notifications --configuration Release  
-dotnet nuget push "src\Stratis.Bitcoin.Features.Notifications\bin\Release\*.nupkg" --source "https://api.nuget.org/v3/index.json"
+rm "src\Stratis.Bitcoin.Features.Notifications\bin\debug\" -Recurse -Force
+dotnet pack src\Stratis.Bitcoin.Features.Notifications --configuration Debug --include-source --include-symbols  
+dotnet nuget push "src\Stratis.Bitcoin.Features.Notifications\bin\debug\*.symbols.nupkg" --source "https://api.nuget.org/v3/index.json"
 
-rm "src\Stratis.Bitcoin.Features.RPC\bin\release\" -Recurse -Force
-dotnet pack src\Stratis.Bitcoin.Features.RPC --configuration Release  
-dotnet nuget push "src\Stratis.Bitcoin.Features.RPC\bin\Release\*.nupkg" --source "https://api.nuget.org/v3/index.json"
+rm "src\Stratis.Bitcoin.Features.RPC\bin\debug\" -Recurse -Force
+dotnet pack src\Stratis.Bitcoin.Features.RPC --configuration Debug --include-source --include-symbols
+dotnet nuget push "src\Stratis.Bitcoin.Features.RPC\bin\debug\*.symbols.nupkg" --source "https://api.nuget.org/v3/index.json"
 
-rm "src\Stratis.Bitcoin.Features.Wallet\bin\release\" -Recurse -Force
-dotnet pack src\Stratis.Bitcoin.Features.Wallet --configuration Release  
-dotnet nuget push "src\Stratis.Bitcoin.Features.Wallet\bin\Release\*.nupkg" --source "https://api.nuget.org/v3/index.json"
+rm "src\Stratis.Bitcoin.Features.Wallet\bin\debug\" -Recurse -Force
+dotnet pack src\Stratis.Bitcoin.Features.Wallet --configuration Debug --include-source --include-symbols  
+dotnet nuget push "src\Stratis.Bitcoin.Features.Wallet\bin\debug\*.symbols.nupkg" --source "https://api.nuget.org/v3/index.json"
 
-rm "src\Stratis.Bitcoin.Features.WatchOnlyWallet\bin\release\" -Recurse -Force
-dotnet pack src\Stratis.Bitcoin.Features.WatchOnlyWallet --configuration Release  
-dotnet nuget push "src\Stratis.Bitcoin.Features.WatchOnlyWallet\bin\Release\*.nupkg" --source "https://api.nuget.org/v3/index.json"
+rm "src\Stratis.Bitcoin.Features.WatchOnlyWallet\bin\debug\" -Recurse -Force
+dotnet pack src\Stratis.Bitcoin.Features.WatchOnlyWallet --configuration Debug --include-source --include-symbols
+dotnet nuget push "src\Stratis.Bitcoin.Features.WatchOnlyWallet\bin\debug\*.symbols.nupkg" --source "https://api.nuget.org/v3/index.json"
 
-rm "src\Stratis.Bitcoin.Features.Dns\bin\release\" -Recurse -Force
-dotnet pack src\Stratis.Bitcoin.Features.Dns --configuration Release  
-dotnet nuget push "src\Stratis.Bitcoin.Features.Dns\bin\Release\*.nupkg" --source "https://api.nuget.org/v3/index.json"
+rm "src\Stratis.Bitcoin.Features.Dns\bin\debug\" -Recurse -Force
+dotnet pack src\Stratis.Bitcoin.Features.Dns --configuration Debug --include-source --include-symbols  
+dotnet nuget push "src\Stratis.Bitcoin.Features.Dns\bin\debug\*.symbols.nupkg" --source "https://api.nuget.org/v3/index.json"
 
-rm "src\Stratis.Bitcoin.IntegrationTests.Common\bin\release\" -Recurse -Force
-dotnet pack src\Stratis.Bitcoin.IntegrationTests.Common --configuration Release  
-dotnet nuget push "src\Stratis.Bitcoin.IntegrationTests.Common\bin\Release\*.nupkg" --source "https://api.nuget.org/v3/index.json"
+rm "src\Stratis.Bitcoin.Tests.Common\bin\debug\" -Recurse -Force
+dotnet pack src\Stratis.Bitcoin.Tests.Common --configuration Debug --include-source --include-symbols 
+dotnet nuget push "src\Stratis.Bitcoin.Tests.Common\bin\debug\*.symbols.nupkg" --source "https://api.nuget.org/v3/index.json"
+
+rm "src\Stratis.Bitcoin.IntegrationTests.Common\bin\debug\" -Recurse -Force
+dotnet pack src\Stratis.Bitcoin.IntegrationTests.Common --configuration Debug --include-source --include-symbols
+dotnet nuget push "src\Stratis.Bitcoin.IntegrationTests.Common\bin\debug\*.symbols.nupkg" --source "https://api.nuget.org/v3/index.json"

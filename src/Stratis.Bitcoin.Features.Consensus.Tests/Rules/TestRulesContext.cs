@@ -117,7 +117,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
             testRulesContext.DateTimeProvider = DateTimeProvider.Default;
             network.Consensus.Options = new PowConsensusOptions();
 
-            ConsensusSettings consensusSettings = new ConsensusSettings().Load(testRulesContext.NodeSettings);
+            ConsensusSettings consensusSettings = new ConsensusSettings(testRulesContext.NodeSettings);
             testRulesContext.Checkpoints = new Checkpoints();
             testRulesContext.Chain = new ConcurrentChain(network);
 
@@ -144,7 +144,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
 
             var maxTries = int.MaxValue;
 
-            while (maxTries > 0 && !block.CheckProofOfWork(network.Consensus))
+            while (maxTries > 0 && !block.CheckProofOfWork())
             {
                 ++block.Header.Nonce;
                 --maxTries;
