@@ -64,12 +64,6 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
 
                 Assert.Null(blockTemplate.CoinbaseCommitment);
                 Assert.Equal(new Money(1000), blockTemplate.TotalFee);
-                Assert.Equal(2, blockTemplate.TxSigOpsCost.Count);
-                Assert.Equal(-1, blockTemplate.TxSigOpsCost[0]);
-                Assert.Equal(2, blockTemplate.TxSigOpsCost[1]);
-                Assert.Equal(2, blockTemplate.VTxFees.Count);
-                Assert.Equal(new Money(-1000), blockTemplate.VTxFees[0]);
-                Assert.Equal(new Money(1000), blockTemplate.VTxFees[1]);
                 Assert.Equal(2, blockTemplate.Block.Transactions.Count);
                 Assert.Equal(536870912, blockTemplate.Block.Header.Version);
 
@@ -204,8 +198,6 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
                 var result = powBlockAssembler.CreateCoinBase(chain.Tip, this.key.ScriptPubKey);
 
                 Assert.NotEmpty(result.Block.Transactions);
-                Assert.Equal(-1, result.TxSigOpsCost[0]);
-                Assert.Equal(new Money(-1), result.VTxFees[0]);
 
                 var resultingTransaction = result.Block.Transactions[0];
                 Assert.Equal((uint)new DateTime(2017, 1, 7, 0, 0, 1, DateTimeKind.Utc).ToUnixTimestamp(), resultingTransaction.Time);

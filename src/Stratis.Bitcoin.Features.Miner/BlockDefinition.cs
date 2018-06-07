@@ -184,8 +184,6 @@ namespace Stratis.Bitcoin.Features.Miner
             this.coinbase.AddOutput(new TxOut(Money.Zero, this.scriptPubKey));
 
             this.block.AddTransaction(this.coinbase);
-            this.BlockTemplate.VTxFees.Add(-1); // Updated at end.
-            this.BlockTemplate.TxSigOpsCost.Add(-1); // Updated at end.
         }
 
         /// <summary>
@@ -253,7 +251,6 @@ namespace Stratis.Bitcoin.Features.Miner
 
             // TODO: Implement Witness Code
             // pblocktemplate->CoinbaseCommitment = GenerateCoinbaseCommitment(*pblock, pindexPrev, chainparams.GetConsensus());
-            this.BlockTemplate.VTxFees[0] = -this.fees;
 
             var powCoinviewRule = this.ConsensusLoop.ConsensusRules.GetRule<CoinViewRule>();
 
@@ -280,9 +277,6 @@ namespace Stratis.Bitcoin.Features.Miner
             this.logger.LogTrace("({0}.{1}:'{2}', {3}:{4}, txSize:{5})", nameof(mempoolEntry), nameof(mempoolEntry.TransactionHash), mempoolEntry.TransactionHash, nameof(mempoolEntry.ModifiedFee), mempoolEntry.ModifiedFee, mempoolEntry.GetTxSize());
 
             this.block.AddTransaction(mempoolEntry.Transaction);
-
-            this.BlockTemplate.VTxFees.Add(mempoolEntry.Fee);
-            this.BlockTemplate.TxSigOpsCost.Add(mempoolEntry.SigOpCost);
 
             if (this.NeedSizeAccounting)
                 this.BlockSize += mempoolEntry.Transaction.GetSerializedSize();

@@ -1,15 +1,10 @@
-﻿using System.Collections.Generic;
-using NBitcoin;
+﻿using NBitcoin;
 
 namespace Stratis.Bitcoin.Mining
 {
     public sealed class BlockTemplate
     {
         public Block Block;
-
-        public List<Money> VTxFees;
-
-        public List<long> TxSigOpsCost;
 
         public string CoinbaseCommitment;
 
@@ -18,8 +13,6 @@ namespace Stratis.Bitcoin.Mining
         public BlockTemplate(Network network)
         {
             this.Block = network.Consensus.ConsensusFactory.CreateBlock();
-            this.VTxFees = new List<Money>();
-            this.TxSigOpsCost = new List<long>();
         }
     }
 }
