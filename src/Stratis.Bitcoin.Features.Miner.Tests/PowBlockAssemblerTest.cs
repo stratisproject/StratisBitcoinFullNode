@@ -128,7 +128,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
                 Assert.False(this.callbackRuleContext.CheckMerkleRoot);
                 Assert.False(this.callbackRuleContext.CheckPow);
                 Assert.Equal(blockTemplate.Block.GetHash(), this.callbackRuleContext.BlockValidationContext.Block.GetHash());
-                Assert.Equal(chain.GetBlock(5).HashBlock, this.callbackRuleContext.PreviousChainedHeader.HashBlock);
+                Assert.Equal(chain.GetBlock(5).HashBlock, this.callbackRuleContext.ConsensusTip.HashBlock);
                 Assert.Equal(1500, this.callbackRuleContext.Consensus.Option<PowConsensusOptions>().MaxBlockWeight);
                 this.consensusLoop.Verify();
             });
@@ -260,7 +260,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
                 Assert.False(this.callbackRuleContext.CheckMerkleRoot);
                 Assert.False(this.callbackRuleContext.CheckPow);
                 Assert.Equal(block.GetHash(), this.callbackRuleContext.BlockValidationContext.Block.GetHash());
-                Assert.Equal(chain.GetBlock(5).HashBlock, this.callbackRuleContext.PreviousChainedHeader.HashBlock);
+                Assert.Equal(chain.GetBlock(5).HashBlock, this.callbackRuleContext.ConsensusTip.HashBlock);
                 Assert.Equal(1500, this.callbackRuleContext.Consensus.Option<PowConsensusOptions>().MaxBlockWeight);
                 this.consensusLoop.Verify();
             });

@@ -31,7 +31,7 @@ namespace Stratis.Bitcoin.Consensus.Rules
         public bool SkipValidation { get; set; }
 
         /// <summary>The current tip of the chain that has been validated.</summary>
-        public ChainedHeader PreviousChainedHeader { get; set; }
+        public ChainedHeader ConsensusTip { get; set; }
 
         public int PreviousHeight { get; set; }
 
@@ -60,15 +60,15 @@ namespace Stratis.Bitcoin.Consensus.Rules
             throw new KeyNotFoundException();
         }
 
-        public RuleContext(BlockValidationContext blockValidationContext, NBitcoin.Consensus consensus, ChainedHeader previousChainedHeader) : base()
+        public RuleContext(BlockValidationContext blockValidationContext, NBitcoin.Consensus consensus, ChainedHeader consensusTip) : base()
         {
             Guard.NotNull(blockValidationContext, nameof(blockValidationContext));
             Guard.NotNull(consensus, nameof(consensus));
 
             this.BlockValidationContext = blockValidationContext;
             this.Consensus = consensus;
-            this.PreviousChainedHeader = previousChainedHeader;
-            this.PreviousHeight = previousChainedHeader.Height;
+            this.ConsensusTip = consensusTip;
+            this.PreviousHeight = consensusTip.Height;
 
             // TODO: adding flags to determine the flow of logic is not ideal
             // a re-factor is in debate on moving to a consensus rules engine

@@ -20,7 +20,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         /// <exception cref="ConsensusErrors.BadVersion">Thrown if block's version is outdated.</exception>
         public override Task RunAsync(RuleContext context)
         {
-            Guard.NotNull(context.PreviousChainedHeader, nameof(context.PreviousChainedHeader));
+            Guard.NotNull(context.ConsensusTip, nameof(context.ConsensusTip));
 
             BlockHeader header = context.BlockValidationContext.Block.Header;
 
@@ -34,7 +34,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
             }
 
             // Check timestamp against prev.
-            if (header.BlockTime <= context.PreviousChainedHeader.GetMedianTimePast())
+            if (header.BlockTime <= context.ConsensusTip.GetMedianTimePast())
             {
                 this.Logger.LogTrace("(-)[TIME_TOO_OLD]");
                 ConsensusErrors.TimeTooOld.Throw();

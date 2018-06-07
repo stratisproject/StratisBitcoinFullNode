@@ -166,7 +166,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules
                 {
                     if (ruleContext.SkipValidation && ruleDescriptor.CanSkipValidation)
                     {
-                        this.logger.LogTrace("Rule {0} skipped for block at height {1}.", nameof(ruleDescriptor), ruleContext.PreviousChainedHeader?.Height);
+                        this.logger.LogTrace("Rule {0} skipped for block at height {1}.", nameof(ruleDescriptor), ruleContext.ConsensusTip?.Height);
                     }
                     else
                     {
