@@ -22,6 +22,7 @@ namespace Stratis.Bitcoin.Base
     /// <remarks>
     /// Finalized block height is the height of the last block that can't be reorged.
     /// Blocks with height greater than finalized height can be reorged.
+    /// <para>Finalized block height value is always <c>0</c> for blockchains without max reorg property.</para>
     /// </remarks>
     public interface IFinalizedBlockHeight
     {
