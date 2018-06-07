@@ -118,10 +118,16 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <returns>A list of orphan transactions.</returns>
         public List<OrphanTx> OrphansList() // for testing
         {
+            this.logger.LogTrace("()");
+
+            List<OrphanTx> result;
             lock (this.lockObject)
             {
-                return this.mapOrphanTransactions.Values.ToList();
+                result = this.mapOrphanTransactions.Values.ToList();
             }
+
+            this.logger.LogTrace("(-):{0}", result.Count);
+            return result;
         }
 
         /// <summary>
@@ -129,10 +135,16 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// </summary>
         public int OrphansCount() 
         {
+            this.logger.LogTrace("()");
+
+            int result;
             lock (this.lockObject)
             {
-                return this.mapOrphanTransactions.Count;
+                result = this.mapOrphanTransactions.Count;
             }
+
+            this.logger.LogTrace("(-):{0}", result);
+            return result;
         }
 
         /// <summary>
@@ -140,16 +152,17 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// </summary>
         public void RemoveForBlock(List<Transaction> transactionsToRemove)
         {
+            this.logger.LogTrace("({0}.{1}:'{2}')", nameof(transactionsToRemove), nameof(transactionsToRemove.Count), transactionsToRemove.Count);
+
             lock (this.lockObject)
             {
-                lock (this.lockObject)
+                foreach (Transaction transaction in transactionsToRemove)
                 {
-                    foreach (Transaction transaction in transactionsToRemove)
-                    {
-                        this.EraseOrphanTxLock(transaction.GetHash());
-                    }
+                    this.EraseOrphanTxLock(transaction.GetHash());
                 }
             }
+
+            this.logger.LogTrace("(-)");
         }
 
         /// <summary>

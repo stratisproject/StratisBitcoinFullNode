@@ -260,7 +260,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             //  return true;
             //}
 
-            List<TxMempoolInfo> transactionsInMempol = await this.mempoolManager.InfoAllAsync().ConfigureAwait(false);
+            List<TxMempoolInfo> transactionsInMempool = await this.mempoolManager.InfoAllAsync().ConfigureAwait(false);
             Money filterrate = Money.Zero;
 
             // TODO: implement minFeeFilter
@@ -272,7 +272,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             var transactionsToSend = new List<uint256>();
             lock (this.lockObject)
             {
-                foreach (TxMempoolInfo mempoolTransaction in transactionsInMempol)
+                foreach (TxMempoolInfo mempoolTransaction in transactionsInMempool)
                 {
                     uint256 hash = mempoolTransaction.Trx.GetHash();
                     this.inventoryTxToSend.Remove(hash);
