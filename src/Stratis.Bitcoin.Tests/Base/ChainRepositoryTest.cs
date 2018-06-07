@@ -16,6 +16,39 @@ namespace Stratis.Bitcoin.Tests.Base
         }
 
         [Fact]
+        public void FinalizedHeightSavedOnDisk()
+        {
+            string dir = CreateTestDir(this);
+
+            using (var repo = new ChainRepository(dir, new LoggerFactory()))
+            {
+                repo.SaveFinalizedBlockHeightAsync(777).GetAwaiter().GetResult();
+            }
+
+            using (var repo = new ChainRepository(dir, new LoggerFactory()))
+            {
+                repo.LoadFinalizedBlockHeightAsync().GetAwaiter().GetResult();
+                int finalizedHeight = repo.GetFinalizedBlockHeight();
+                Assert.Equal(777, finalizedHeight);
+            }
+        }
+
+        [Fact]
+        public void FinalizedHeightCantBeDecreased()
+        {
+            string dir = CreateTestDir(this);
+
+            using (var repo = new ChainRepository(dir, new LoggerFactory()))
+            {
+                repo.SaveFinalizedBlockHeightAsync(777).GetAwaiter().GetResult();
+                repo.SaveFinalizedBlockHeightAsync(555).GetAwaiter().GetResult();
+
+                int finalizedHeight = repo.GetFinalizedBlockHeight();
+                Assert.Equal(777, finalizedHeight);
+            }
+        }
+
+        [Fact]
         public void SaveWritesChainToDisk()
         {
             string dir = CreateTestDir(this);
