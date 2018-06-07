@@ -108,7 +108,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
 
                                 if (verifyScriptResult == false)
                                 {
-                                    this.Logger.LogTrace("Verify script for transaction `{0}` failed, ScriptSig = `{1}`, ScriptPubKey = `{2}`, script evaluation error = '{3}'", tx.GetHash(), input.ScriptSig, txout.ScriptPubKey, ctx.Error);
+                                    this.Logger.LogTrace("Verify script for transaction '{0}' failed, ScriptSig = '{1}', ScriptPubKey = '{2}', script evaluation error = '{3}'", tx.GetHash(), input.ScriptSig, txout.ScriptPubKey, ctx.Error);
                                 }
 
                                 return verifyScriptResult;
