@@ -83,7 +83,7 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
             }
             catch (RPCException ex)
             {
-                Assert.Equal(RPCErrorCode.RPC_MISC_ERROR, ex.RPCCode);
+                Assert.Equal(RPCErrorCode.RPC_INTERNAL_ERROR, ex.RPCCode);
             }
         }
 
