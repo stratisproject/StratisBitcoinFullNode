@@ -20,7 +20,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         public override Task RunAsync(RuleContext context)
         {
             DeploymentFlags deploymentFlags = context.Flags;
-            int nHeight = context?.PreviousHeight + 1 ?? 0;
+            int newHeight = context.PreviousHeight + 1;
             Block block = context.ValidationContext.Block;
 
             // Start enforcing BIP113 (Median Time Past) using versionbits logic.
@@ -31,7 +31,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
             // Check that all transactions are finalized.
             foreach (Transaction transaction in block.Transactions)
             {
-                if (!transaction.IsFinal(nLockTimeCutoff, nHeight))
+                if (!transaction.IsFinal(nLockTimeCutoff, newHeight))
                 {
                     this.Logger.LogTrace("(-)[TX_NON_FINAL]");
                     ConsensusErrors.BadTransactionNonFinal.Throw();
