@@ -181,6 +181,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         public MemPoolSaveResult Save(Network network, ITxMempool memPool, string fileName = null)
         {
             fileName = fileName ?? DefaultFilename;
+            memPool.WriteFeeEstimates();
             IEnumerable<MempoolPersistenceEntry> toSave = memPool.MapTx.Values.ToArray().Select(tx => MempoolPersistenceEntry.FromTxMempoolEntry(tx));
             return this.Save(network, toSave, fileName);
         }

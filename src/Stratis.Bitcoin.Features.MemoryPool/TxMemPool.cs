@@ -979,13 +979,15 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         }
 
         /// <inheritdoc />
-        public void WriteFeeEstimates(BitcoinStream stream)
+        public void WriteFeeEstimates()
         {
+            this.MinerPolicyEstimator.Write();
         }
 
         /// <inheritdoc />
-        public void ReadFeeEstimates(BitcoinStream stream)
+        public void ReadFeeEstimates()
         {
+            this.MinerPolicyEstimator.Read();
         }
 
         /// <inheritdoc />

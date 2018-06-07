@@ -292,6 +292,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                 }
                 this.mempoolLogger.LogInformation("...{0} entries accepted.", i);
             }
+            this.memPool.ReadFeeEstimates();
         }
     }
 }

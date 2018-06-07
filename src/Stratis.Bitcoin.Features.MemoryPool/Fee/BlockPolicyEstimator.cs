@@ -677,8 +677,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Fee
         /// <summary>
         /// Write estimation data to a file.
         /// </summary>
-        /// <param name="fileout">Stream to write to.</param>
-        public void Write(Stream fileout)
+        public void Write()
         {
             var data = new BlockPolicyData();
             data.BestSeenHeight = this.nBestSeenHeight;

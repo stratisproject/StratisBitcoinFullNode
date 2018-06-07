@@ -172,7 +172,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Interfaces
         /// Read fee estimates from a stream.
         /// </summary>
         /// <param name="stream">Stream to read from.</param>
-        void ReadFeeEstimates(BitcoinStream stream);
+        void ReadFeeEstimates();
 
         /// <summary>
         /// Called when a block is connected. Removes transactions from mempool and updates the miner fee estimator.
@@ -217,7 +217,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Interfaces
         /// <summary>
         /// Write fee estimates to a stream.
         /// </summary>
-        /// <param name="stream">Stream to write to.</param>
-        void WriteFeeEstimates(BitcoinStream stream);
+        void WriteFeeEstimates();
     }
 }
