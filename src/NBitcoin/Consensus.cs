@@ -31,17 +31,19 @@ namespace NBitcoin
         }
 
         /// <summary>
-        /// How many blocks should be on top of the block with coinbase transaction until it's outputs are considered spendable.
+        /// How many blocks should be on top of a coinbase transaction until its outputs are considered spendable.
         /// </summary>
         public long CoinbaseMaturity { get; set; }
 
         /// <summary>
         /// Amount of coins mined when a new network is bootstrapped.
+        /// Set to Money.Zero when there is no premine.
         /// </summary>
         public Money PremineReward { get; set; }
 
         /// <summary>
-        /// The height of the block in which the pre-mined coins should be,
+        /// The height of the block in which the pre-mined coins should be.
+        /// Set to 0 when there is no premine.
         /// </summary>
         public long PremineHeight { get; set; }
 
