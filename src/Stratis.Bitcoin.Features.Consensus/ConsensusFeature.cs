@@ -100,7 +100,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             this.consensusSettings = consensusSettings;
             this.consensusRules = consensusRules;
 
-            this.chainState.MaxReorgLength = network.Consensus.Option<PowConsensusOptions>().MaxReorgLength;
+            this.chainState.MaxReorgLength = network.Consensus.MaxReorgLength;
         }
 
         /// <inheritdoc />

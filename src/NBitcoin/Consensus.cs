@@ -52,6 +52,16 @@ namespace NBitcoin
         /// </summary>
         public Money ProofOfWorkReward { get; set; }
 
+        /// <summary>
+        /// The reward that goes to the miner when a block is mined using proof-of-stake.
+        /// </summary>
+        public Money ProofOfStakeReward { get; set; }
+
+        /// <summary>
+        /// Maximal length of reorganization that the node is willing to accept, or 0 to disable long reorganization protection.
+        /// </summary>
+        public uint MaxReorgLength { get; set; }
+
         public ConsensusOptions Options { get; set; }
 
         public class BuriedDeploymentsArray

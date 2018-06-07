@@ -18,8 +18,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         /// <summary>Database of stake related data for the current blockchain.</summary>
         private IStakeChain stakeChain;
 
-        private PosConsensusOptions posConsensusOptions;
-
         /// <summary>The consensus of the parent Network.</summary>
         private NBitcoin.Consensus consensus;
 
@@ -35,7 +33,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
 
             this.stakeValidator = consensusRules.StakeValidator;
             this.stakeChain = consensusRules.StakeChain;
-            this.posConsensusOptions = this.Parent.ConsensusParams.Option<PosConsensusOptions>();
 
             this.Logger.LogTrace("(-)");
         }
@@ -205,7 +202,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
             if (this.IsPremine(height))
                 return this.consensus.PremineReward;
 
-            return this.posConsensusOptions.ProofOfStakeReward;
+            return this.consensus.ProofOfStakeReward;
         }
 
         /// <summary>

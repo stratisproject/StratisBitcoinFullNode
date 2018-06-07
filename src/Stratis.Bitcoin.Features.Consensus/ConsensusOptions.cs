@@ -8,8 +8,6 @@ namespace Stratis.Bitcoin.Features.Consensus
     // network this are network specific values
     public class PosConsensusOptions : PowConsensusOptions
     {
-        public Money ProofOfStakeReward { get; set; }
-
         /// <summary>Coinstake minimal confirmations softfork activation height for the mainnet.</summary>
         internal const int CoinstakeMinConfirmationActivationHeightMainnet = 940000;
 
@@ -21,9 +19,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// </summary>
         public PosConsensusOptions()
         {
-            this.MaxMoney = long.MaxValue;           
-            this.ProofOfStakeReward = Money.COIN;
-            this.MaxReorgLength = 500;
+            this.MaxMoney = long.MaxValue;
         }
 
         /// <summary>
@@ -77,9 +73,6 @@ namespace Stratis.Bitcoin.Features.Consensus
 
         public long MaxMoney { get; set; }
 
-        /// <summary>Maximal length of reorganization that the node is willing to accept, or 0 to disable long reorganization protection.</summary>
-        public uint MaxReorgLength { get; set; }
-
         /// <summary>
         /// Initializes the default values.
         /// </summary>
@@ -94,9 +87,6 @@ namespace Stratis.Bitcoin.Features.Consensus
             this.MaxBlockBaseSize = 1000000;
             this.MaxBlockSigopsCost = 80000;
             this.MaxMoney = 21000000 * Money.COIN;
-            
-            // No long reorg protection on PoW.
-            this.MaxReorgLength = 0;
         }
     }
 
