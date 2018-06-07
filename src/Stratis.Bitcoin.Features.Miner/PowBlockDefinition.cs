@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.Interfaces;
@@ -14,58 +13,6 @@ namespace Stratis.Bitcoin.Features.Miner
     {
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
-
-        // Container for tracking updates to ancestor feerate as we include (parent)
-        // transactions in a block.
-        public class TxMemPoolModifiedEntry
-        {
-            public TxMemPoolModifiedEntry(TxMempoolEntry entry)
-            {
-                this.iter = entry;
-                this.SizeWithAncestors = entry.SizeWithAncestors;
-                this.ModFeesWithAncestors = entry.ModFeesWithAncestors;
-                this.SigOpCostWithAncestors = entry.SigOpCostWithAncestors;
-            }
-
-            public TxMempoolEntry iter;
-
-            public long SizeWithAncestors;
-
-            public Money ModFeesWithAncestors;
-
-            public long SigOpCostWithAncestors;
-        }
-
-        // This matches the calculation in CompareTxMemPoolEntryByAncestorFee,
-        // except operating on CTxMemPoolModifiedEntry.
-        // TODO: Refactor to avoid duplication of this logic.
-        public class CompareModifiedEntry : IComparer<TxMemPoolModifiedEntry>
-        {
-            public int Compare(TxMemPoolModifiedEntry a, TxMemPoolModifiedEntry b)
-            {
-                Money f1 = a.ModFeesWithAncestors * b.SizeWithAncestors;
-                Money f2 = b.ModFeesWithAncestors * a.SizeWithAncestors;
-
-                if (f1 == f2)
-                    return TxMempool.CompareIteratorByHash.InnerCompare(a.iter, b.iter);
-
-                return f1 > f2 ? 1 : -1;
-            }
-        }
-
-        // A comparator that sorts transactions based on number of ancestors.
-        // This is sufficient to sort an ancestor package in an order that is valid
-        // to appear in a block.
-        public class CompareTxIterByAncestorCount : IComparer<TxMempoolEntry>
-        {
-            public int Compare(TxMempoolEntry a, TxMempoolEntry b)
-            {
-                if (a.CountWithAncestors != b.CountWithAncestors)
-                    return a.CountWithAncestors < b.CountWithAncestors ? -1 : 1;
-
-                return TxMempool.CompareIteratorByHash.InnerCompare(a, b);
-            }
-        }
 
         public PowBlockDefinition(
             IConsensusLoop consensusLoop,

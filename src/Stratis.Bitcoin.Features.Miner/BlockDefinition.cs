@@ -9,9 +9,9 @@ using Stratis.Bitcoin.Features.Consensus.Interfaces;
 using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.MemoryPool.Interfaces;
+using Stratis.Bitcoin.Features.Miner.Comparers;
 using Stratis.Bitcoin.Mining;
 using Stratis.Bitcoin.Utilities;
-using static Stratis.Bitcoin.Features.Miner.PowBlockDefinition;
 
 namespace Stratis.Bitcoin.Features.Miner
 {
@@ -368,7 +368,7 @@ namespace Stratis.Bitcoin.Features.Miner
                 if (mi == null)
                 {
                     modit = mapModifiedTx.Values.OrderByDescending(o => o, compare).First();
-                    iter = modit.iter;
+                    iter = modit.MempoolEntry;
                     fUsingModified = true;
                 }
                 else
@@ -383,7 +383,7 @@ namespace Stratis.Bitcoin.Features.Miner
                         // than the one from mapTx..
                         // Switch which transaction (package) to consider.
 
-                        iter = modit.iter;
+                        iter = modit.MempoolEntry;
                         fUsingModified = true;
                     }
                     else
@@ -421,7 +421,7 @@ namespace Stratis.Bitcoin.Features.Miner
                         // Since we always look at the best entry in mapModifiedTx,
                         // we must erase failed entries so that we can consider the
                         // next best entry on the next loop iteration
-                        mapModifiedTx.Remove(modit.iter.TransactionHash);
+                        mapModifiedTx.Remove(modit.MempoolEntry.TransactionHash);
                         failedTx.Add(iter);
                     }
 
@@ -448,7 +448,7 @@ namespace Stratis.Bitcoin.Features.Miner
                 {
                     if (fUsingModified)
                     {
-                        mapModifiedTx.Remove(modit.iter.TransactionHash);
+                        mapModifiedTx.Remove(modit.MempoolEntry.TransactionHash);
                         failedTx.Add(iter);
                     }
                     continue;
@@ -566,6 +566,7 @@ namespace Stratis.Bitcoin.Features.Miner
                         modEntry = new TxMemPoolModifiedEntry(desc);
                         mapModifiedTx.Add(desc.TransactionHash, modEntry);
                     }
+
                     modEntry.SizeWithAncestors -= setEntry.GetTxSize();
                     modEntry.ModFeesWithAncestors -= setEntry.ModifiedFee;
                     modEntry.SigOpCostWithAncestors -= setEntry.SigOpCost;
