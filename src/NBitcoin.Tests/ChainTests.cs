@@ -207,6 +207,7 @@ namespace NBitcoin.Tests
         public void CanCalculateDifficulty()
         {
             var main = new ConcurrentChain(LoadMainChain());
+            // The state of the line separators may be affected by copy operations - so do an environment independent line split...
             var histories = File.ReadAllText(TestDataLocations.GetFileFromDataFolder("targethistory.csv")).Split(new string[] { "\r\n", "\r", "\n" }, StringSplitOptions.RemoveEmptyEntries);
 
             foreach (var history in histories)

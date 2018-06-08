@@ -206,6 +206,7 @@ namespace NBitcoin.Tests
         {
             Dictionary<string, string> values = new Dictionary<string, string>();
 
+            // The state of the line separators may be affected by copy operations - so do an environment independent line split...
             var lines = data.Split(new string[] { "\r\n", "\r", "\n" }, StringSplitOptions.RemoveEmptyEntries);
             string previous = null;
             foreach(var line in lines)
