@@ -56,10 +56,6 @@ namespace Stratis.FederatedPeg.Features.MainchainGeneratorServices
             
             // Call into sidechain to generate the sidechain ScriptPubKey and Address.
             await this.OutputScriptPubKeyAndAddress(apiPortForSidechain, folderFedMemberKey, multiSigM, multiSigN);
-
-            // Ask the sidechain to mine the pre-mine into the sidechain multi-sig.
-            var address = memberFolderManager.ReadAddress(Chain.Sidechain);
-            await this.MinePremine(apiPortForSidechain, address, 3UL);
         }
 
         //ToDo: Need to find a better way to handle the responses in these API client functions.
@@ -97,27 +93,6 @@ namespace Stratis.FederatedPeg.Features.MainchainGeneratorServices
                 var uri = new Uri(
                     $"http://localhost:{apiPortForSidechain}/api/SidechainGeneratorServices/output-scriptpubkeyandaddress");
                 var request = new JsonContent(outputScriptPubKeyAndAddressRequest);
-                var httpResponseMessage = await client.PostAsync(uri, request);
-            }
-        }
-
-        // Client method to request the premine.
-        private async Task MinePremine(int apiPortForSidechain, string address, ulong numberOfBlocks)
-        {
-            var minePremineRequest = new MinePremineRequest()
-            {
-                Address = address,
-                NumberOfBlocks = numberOfBlocks
-            };
-            
-            using (var client = new HttpClient())
-            {
-                client.DefaultRequestHeaders.Accept.Clear();
-                client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-
-                var uri = new Uri(
-                    $"http://localhost:{apiPortForSidechain}/api/SidechainGeneratorServices/minepremine");
-                var request = new JsonContent(minePremineRequest);
                 var httpResponseMessage = await client.PostAsync(uri, request);
             }
         }

@@ -75,35 +75,6 @@ namespace Stratis.FederatedPeg.Features.SidechainGeneratorServices
         }
 
         /// <summary>
-        /// Performs the premine.
-        /// </summary>
-        /// <param name="minePremineRequest">Object containing the required parameters for this method.</param>
-        /// <returns>A JSON response indicating either success (ok), or error details.</returns>
-        [Route("minepremine")]
-        [HttpPost]
-        public IActionResult MinePremine([FromBody] MinePremineRequest minePremineRequest)
-        {
-            Guard.NotNull(minePremineRequest, nameof(minePremineRequest));
-
-            // checks the request is valid
-            if (!this.ModelState.IsValid)
-            {
-                return BuildErrorResponse(this.ModelState);
-            }
-
-            try
-            {
-                this.sidechainGeneratorServicesManager.MinePremine(minePremineRequest.Address,
-                    minePremineRequest.NumberOfBlocks);
-                return this.Ok();
-            }
-            catch (Exception e)
-            {
-                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, $"Could not mine blocks:{e.Message}", e.ToString());
-            }
-        }
-
-        /// <summary>
         /// Builds an <see cref="IActionResult"/> containing errors contained in the <see cref="ControllerBase.ModelState"/>.
         /// </summary>
         /// <returns>A result containing the errors.</returns>

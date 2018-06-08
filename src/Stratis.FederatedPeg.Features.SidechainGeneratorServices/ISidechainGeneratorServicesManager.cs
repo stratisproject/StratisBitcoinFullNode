@@ -21,13 +21,5 @@
         /// <param name="multiSigN">The number of members in the federation.</param>
         /// <param name="folder">The path to the federation folder on the local machine.</param>
         void OutputScriptPubKeyAndAddress(int multiSigN, int multiSigM, string folder);
-
-        /// <summary>
-        /// Mines the premine into the multi-sig address.
-        /// </summary>
-        /// <param name="address">The destination address.  This is the multi-sig address
-        /// that requires that M members sign the transaction to move funds.</param>
-        /// <param name="numberOfBlocks">The number of blocks to be mined.</param>
-        void MinePremine(string address, ulong numberOfBlocks);
     }
 }

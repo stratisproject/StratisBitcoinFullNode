@@ -59,16 +59,4 @@ namespace Stratis.FederatedPeg.Features.MainchainGeneratorServices.Models
         [Required(ErrorMessage = "The path to the local folder where the federation keys are stored is required.")]
         public string FederationFolder { get; set; }
     }
-
-    /// <summary>
-    /// Properties required to mine the premine.
-    /// </summary>
-    public class MinePremineRequest : RequestModel
-    {
-        [Required(ErrorMessage = "The address is required.")]
-        public string Address { get; set; }
-
-        [Required(ErrorMessage = "Number of blocks is required.")]
-        public ulong NumberOfBlocks { get; set; }
-    }
 }
