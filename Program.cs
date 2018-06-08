@@ -62,5 +62,44 @@ namespace FedKeyPairGen
                 FedKeyPairGenManager.OutputUsage();
             }
         }
+
+        public void MineGenesisBlocks()
+        {
+            string coinbaseText = "https://www.coindesk.com/apple-co-founder-backs-dorsey-bitcoin-become-webs-currency/";
+
+            Console.WriteLine("Looking for genesis blocks  for the 3 networks, this might take a while.");
+
+            Block genesisMain = Network.MineGenesisBlock(new PosConsensusFactory(), coinbaseText, new Target(new uint256("00000fffffffffffffffffffffffffffffffffffffffffffffffffffffffffff")), Money.Coins(50m));
+            BlockHeader headerMain = genesisMain.Header;
+
+            Console.WriteLine("-- MainNet network --");
+            Console.WriteLine("bits: " + headerMain.Bits);
+            Console.WriteLine("nonce: " + headerMain.Nonce);
+            Console.WriteLine("time: " + headerMain.Time);
+            Console.WriteLine("version: " + headerMain.Version);
+            Console.WriteLine("hash: " + headerMain.GetHash());
+            Console.WriteLine("merkleroot: " + headerMain.HashMerkleRoot);
+
+            Block genesisTest = Network.MineGenesisBlock(new PosConsensusFactory(), coinbaseText, new Target(new uint256("0000ffff00000000000000000000000000000000000000000000000000000000")), Money.Coins(50m));
+            BlockHeader headerTest = genesisTest.Header;
+            Console.WriteLine("-- TestNet network --");
+            Console.WriteLine("bits: " + headerTest.Bits);
+            Console.WriteLine("nonce: " + headerTest.Nonce);
+            Console.WriteLine("time: " + headerTest.Time);
+            Console.WriteLine("version: " + headerTest.Version);
+            Console.WriteLine("hash: " + headerTest.GetHash());
+            Console.WriteLine("merkleroot: " + headerTest.HashMerkleRoot);
+
+            Block genesisReg = Network.MineGenesisBlock(new PosConsensusFactory(), coinbaseText, new Target(new uint256("7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff")), Money.Coins(50m));
+            BlockHeader headerReg = genesisReg.Header;
+            Console.WriteLine("-- RegTest network --");
+            Console.WriteLine("bits: " + headerReg.Bits);
+            Console.WriteLine("nonce: " + headerReg.Nonce);
+            Console.WriteLine("time: " + headerReg.Time);
+            Console.WriteLine("version: " + headerReg.Version);
+            Console.WriteLine("hash: " + headerReg.GetHash());
+            Console.WriteLine("merkleroot: " + headerReg.HashMerkleRoot);
+
+        }
     }
 }
