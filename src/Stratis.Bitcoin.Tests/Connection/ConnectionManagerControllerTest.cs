@@ -56,7 +56,6 @@ namespace Stratis.Bitcoin.Tests.Controllers
             Assert.Single(errorResponse.Errors);
             ErrorModel error = errorResponse.Errors[0];
             Assert.Equal(400, error.Status);
-            Assert.StartsWith("System.FormatException", error.Description);
         }
 
         [Fact]
