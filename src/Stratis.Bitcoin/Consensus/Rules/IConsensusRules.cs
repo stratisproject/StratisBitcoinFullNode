@@ -1,11 +1,8 @@
 ﻿using System.Collections.Generic;
 using System.Threading.Tasks;
 using NBitcoin;
-using Stratis.Bitcoin.Consensus;
-using Stratis.Bitcoin.Consensus.Rules;
-using Stratis.Bitcoin.Features.Consensus.CoinViews;
 
-namespace Stratis.Bitcoin.Features.Consensus.Rules
+namespace Stratis.Bitcoin.Consensus.Rules
 {
     /// <summary>
     /// An engine that enforce the execution and validation of consensus rule. 
