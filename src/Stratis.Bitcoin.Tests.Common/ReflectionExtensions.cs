@@ -58,6 +58,24 @@ namespace Stratis.Bitcoin.Tests.Common
             return null;
         }
 
+        /// <summary>
+        /// Sets a private property value for a given object.
+        /// </summary>
+        /// <typeparam name="T">Type of the Property</typeparam>
+        /// <param name="obj">Object from where the Property Value is set</param>
+        /// <param name="propertyName">Property name as string.</param>
+        /// <param name="value">Value to set.</param>
+        /// <returns>PropertyValue</returns>
+        public static void SetPrivatePropertyValue<T>(this object obj, string propertyName, T value)
+        {
+            Type type = obj.GetType();
+
+            if (type.GetProperty(propertyName, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance) == null)
+                throw new ArgumentOutOfRangeException("propertyName", string.Format("Property {0} was not found in Type {1}", propertyName, obj.GetType().FullName));
+
+            type.InvokeMember(propertyName, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.SetProperty | BindingFlags.Instance, null, obj, new object[] { value });
+        }
+
         [System.Diagnostics.DebuggerHidden]
         private static T As<T>(this object obj)
         {

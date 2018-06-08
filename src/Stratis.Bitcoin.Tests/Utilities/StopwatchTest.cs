@@ -40,7 +40,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
             // Give the testing environment a chance to settle down a little bit.
             Thread.Sleep(5000);
 
-            int epsilonMs = 100;
+            int epsilonMs = 500;
             int expectedElapsedMs = 0;
             long elapsedTicksByDispStopwatch = 0;
 

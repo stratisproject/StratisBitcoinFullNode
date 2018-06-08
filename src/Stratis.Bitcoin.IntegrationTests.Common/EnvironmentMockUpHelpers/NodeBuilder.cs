@@ -2,14 +2,13 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.IO.Compression;
 using System.Linq;
-using System.Net.Http;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
 using NBitcoin;
+using NBitcoin.Protocol;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Features.BlockStore;
@@ -19,12 +18,11 @@ using Stratis.Bitcoin.Features.Consensus.Interfaces;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
+using Stratis.Bitcoin.IntegrationTests.Common.Runners;
 using Stratis.Bitcoin.Tests.Common;
 
 namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
 {
-    using NBitcoin.Protocol;
-
     public static class FullNodeExt
     {
         public static WalletManager WalletManager(this FullNode fullNode)
@@ -127,14 +125,14 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
         private static string GetBitcoinCorePath(string version)
         {
             string path;
-            
+
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
                 path = $"../../../../External Libs/Bitcoin Core/{version}/Windows/bitcoind.exe";
             else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
                 path = $"../../../../External Libs/Bitcoin Core/{version}/Linux/bitcoind";
             else
                 path = $"../../../../External Libs/Bitcoin Core/{version}/OSX/bitcoind";
-            
+
             if (File.Exists(path))
                 return path;
 
@@ -177,7 +175,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
 
         public CoreNode CreateSmartContractNode(bool start = false)
         {
-            return CreateNode(new StratisSmartContractNode(this.GetNextDataFolderName()), Network.SmartContractsRegTest, start);
+            return CreateNode(new StratisSmartContractNode(this.GetNextDataFolderName()), Network.SmartContractsRegTest, start, "stratis.conf");
         }
 
         public CoreNode CloneStratisNode(CoreNode cloneNode)
