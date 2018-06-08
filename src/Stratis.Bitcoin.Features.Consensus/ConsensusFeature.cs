@@ -22,6 +22,7 @@ using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
 using Stratis.Bitcoin.Utilities;
 
+[assembly: InternalsVisibleTo("Stratis.Bitcoin.Features.Miner.Tests")]
 [assembly: InternalsVisibleTo("Stratis.Bitcoin.Features.Consensus.Tests")]
 
 namespace Stratis.Bitcoin.Features.Consensus
@@ -99,7 +100,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             this.consensusSettings = consensusSettings;
             this.consensusRules = consensusRules;
 
-            this.chainState.MaxReorgLength = network.Consensus.Option<PowConsensusOptions>().MaxReorgLength;
+            this.chainState.MaxReorgLength = network.Consensus.MaxReorgLength;
         }
 
         /// <inheritdoc />
@@ -225,9 +226,6 @@ namespace Stratis.Bitcoin.Features.Consensus
                     .FeatureServices(services =>
                     {
                         fullNodeBuilder.Network.Consensus.Options = new PosConsensusOptions();
-
-                        if (fullNodeBuilder.Network.IsTest())
-                            fullNodeBuilder.Network.Consensus.Option<PosConsensusOptions>().CoinbaseMaturity = 10;
 
                         services.AddSingleton<ICheckpoints, Checkpoints>();
                         services.AddSingleton<DBreezeCoinView>();
