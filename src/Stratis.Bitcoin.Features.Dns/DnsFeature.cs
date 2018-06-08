@@ -108,12 +108,6 @@ namespace Stratis.Bitcoin.Features.Dns
             this.dataFolders = dataFolders;
         }
 
-        /// <inheritdoc />
-        public override void LoadConfiguration()
-        {
-            this.dnsSettings.Load(this.nodeSettings);
-        }
-
         /// <summary>
         /// Initializes the DNS feature.
         /// </summary>

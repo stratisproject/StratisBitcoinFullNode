@@ -1,7 +1,6 @@
 ﻿using System.Linq;
 using System.Threading.Tasks;
 using NBitcoin;
-using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.Consensus.Interfaces;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Utilities;
@@ -10,32 +9,19 @@ namespace Stratis.Bitcoin.Features.Consensus
 {
     public class ConsensusManager : INetworkDifficulty, IGetUnspentTransaction
     {
-        public IConsensusLoop ConsensusLoop { get; private set; }
+        public IConsensusLoop ConsensusLoop { get; }
 
-        public IDateTimeProvider DateTimeProvider { get; private set; }
+        public Network Network { get; }
 
-        public NodeSettings NodeSettings { get; private set; }
-
-        public Network Network { get; private set; }
-
-        public IPowConsensusValidator ConsensusValidator { get; private set; }
-
-        public ConsensusManager(IConsensusLoop consensusLoop = null, IDateTimeProvider dateTimeProvider = null, NodeSettings nodeSettings = null, Network network = null,
-            IPowConsensusValidator consensusValidator = null)
+        public ConsensusManager(Network network, IConsensusLoop consensusLoop = null)
         {
-            this.ConsensusLoop = consensusLoop;
-            this.DateTimeProvider = dateTimeProvider;
-            this.NodeSettings = nodeSettings;
             this.Network = network;
-            this.ConsensusValidator = consensusValidator;
+            this.ConsensusLoop = consensusLoop;
         }
 
         public Target GetNetworkDifficulty()
         {
-            if ((this.ConsensusValidator?.ConsensusParams != null) && (this.ConsensusLoop?.Tip != null))
-                return this.ConsensusLoop?.Tip?.GetWorkRequired(this.ConsensusValidator.ConsensusParams);
-            else
-                return null;
+            return this.ConsensusLoop?.Tip?.GetWorkRequired(this.Network.Consensus);
         }
 
         /// <inheritdoc />

@@ -16,6 +16,8 @@ namespace Stratis.SmartContracts.Executor.Reflection
         private readonly Network network;
         private readonly SmartContractValidator validator;
 
+        public ReflectionSmartContractExecutorFactory() { }
+
         public ReflectionSmartContractExecutorFactory(
             IKeyEncodingStrategy keyEncodingStrategy,
             ILoggerFactory loggerFactory,

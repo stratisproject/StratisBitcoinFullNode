@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using Stratis.Bitcoin.Utilities.Extensions;
 
 namespace Stratis.Bitcoin.Configuration.Settings
 {
@@ -35,7 +36,7 @@ namespace Stratis.Bitcoin.Configuration.Settings
             try
             {
                 this.Connect.AddRange(config.GetAll("connect")
-                    .Select(c => NodeSettings.ConvertIpAddressToEndpoint(c, nodeSettings.Network.DefaultPort)));
+                    .Select(c => c.ToIPEndPoint(nodeSettings.Network.DefaultPort)));
             }
             catch (FormatException)
             {
@@ -45,7 +46,7 @@ namespace Stratis.Bitcoin.Configuration.Settings
             try
             {
                 this.AddNode.AddRange(config.GetAll("addnode")
-                        .Select(c => NodeSettings.ConvertIpAddressToEndpoint(c, nodeSettings.Network.DefaultPort)));
+                        .Select(c => c.ToIPEndPoint(nodeSettings.Network.DefaultPort)));
             }
             catch (FormatException)
             {
@@ -56,7 +57,7 @@ namespace Stratis.Bitcoin.Configuration.Settings
             try
             {
                 this.Listen.AddRange(config.GetAll("bind")
-                        .Select(c => new NodeServerEndpoint(NodeSettings.ConvertIpAddressToEndpoint(c, port), false)));
+                        .Select(c => new NodeServerEndpoint(c.ToIPEndPoint(port), false)));
             }
             catch (FormatException)
             {
@@ -66,7 +67,7 @@ namespace Stratis.Bitcoin.Configuration.Settings
             try
             {
                 this.Listen.AddRange(config.GetAll("whitebind")
-                        .Select(c => new NodeServerEndpoint(NodeSettings.ConvertIpAddressToEndpoint(c, port), true)));
+                        .Select(c => new NodeServerEndpoint(c.ToIPEndPoint(port), true)));
             }
             catch (FormatException)
             {
@@ -83,7 +84,7 @@ namespace Stratis.Bitcoin.Configuration.Settings
             {
                 try
                 {
-                    this.ExternalEndpoint = NodeSettings.ConvertIpAddressToEndpoint(externalIp, port);
+                    this.ExternalEndpoint = externalIp.ToIPEndPoint(port);
                 }
                 catch (FormatException)
                 {
@@ -98,6 +99,7 @@ namespace Stratis.Bitcoin.Configuration.Settings
 
             this.BanTimeSeconds = config.GetOrDefault<int>("bantime", ConnectionManagerSettings.DefaultMisbehavingBantimeSeconds);
             this.MaxOutboundConnections = config.GetOrDefault<int>("maxoutboundconnections", ConnectionManagerSettings.DefaultMaxOutboundConnections);
+            this.BurstModeTargetConnections = config.GetOrDefault("burstModeTargetConnections", 1);
         }
 
         /// <summary>List of exclusive end points that the node should be connected to.</summary>
@@ -117,5 +119,8 @@ namespace Stratis.Bitcoin.Configuration.Settings
 
         /// <summary>Maximum number of outbound connections.</summary>
         public int MaxOutboundConnections { get; internal set; }
+
+        /// <summary>Connections number after which burst connectivity mode (connection attempts with no delay in between) will be disabled.</summary>
+        public int BurstModeTargetConnections { get; internal set; }
     }
 }

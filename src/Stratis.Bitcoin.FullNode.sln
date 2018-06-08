@@ -117,6 +117,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.ModuleValidation.Ne
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.SmartContracts.Executor.Reflection", "Stratis.SmartContracts.Executor.Reflection\Stratis.SmartContracts.Executor.Reflection.csproj", "{369873E6-0D19-46AF-83D7-37BB4BA9202F}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.Bitcoin.IntegrationTests.Common", "Stratis.Bitcoin.IntegrationTests.Common\Stratis.Bitcoin.IntegrationTests.Common.csproj", "{B20B4F10-E43C-4BCC-B30C-856234BEA09F}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -303,6 +305,10 @@ Global
 		{E8548DDD-F654-4182-AF11-1DBD16EB2E63}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{E8548DDD-F654-4182-AF11-1DBD16EB2E63}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{E8548DDD-F654-4182-AF11-1DBD16EB2E63}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B20B4F10-E43C-4BCC-B30C-856234BEA09F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B20B4F10-E43C-4BCC-B30C-856234BEA09F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B20B4F10-E43C-4BCC-B30C-856234BEA09F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B20B4F10-E43C-4BCC-B30C-856234BEA09F}.Release|Any CPU.Build.0 = Release|Any CPU
 		{369873E6-0D19-46AF-83D7-37BB4BA9202F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{369873E6-0D19-46AF-83D7-37BB4BA9202F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{369873E6-0D19-46AF-83D7-37BB4BA9202F}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -351,6 +357,7 @@ Global
 		{23A4582D-D384-4529-929B-DD2C347DF283} = {BBE2AB92-3C85-408A-BEB4-40B9D4C7BE56}
 		{D70F5442-5222-4943-BA48-CC88F3F063C9} = {1B9A916F-DDAC-4675-B424-EDEDC1A58231}
 		{E8548DDD-F654-4182-AF11-1DBD16EB2E63} = {1B9A916F-DDAC-4675-B424-EDEDC1A58231}
+		{B20B4F10-E43C-4BCC-B30C-856234BEA09F} = {EAE139C2-B19C-4905-9117-8A4068ABD3D2}
 		{369873E6-0D19-46AF-83D7-37BB4BA9202F} = {1B9A916F-DDAC-4675-B424-EDEDC1A58231}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution

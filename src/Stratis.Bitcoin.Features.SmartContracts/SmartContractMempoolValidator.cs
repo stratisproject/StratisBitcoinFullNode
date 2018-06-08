@@ -3,7 +3,7 @@ using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
-using Stratis.Bitcoin.Features.Consensus.Interfaces;
+using Stratis.Bitcoin.Features.Consensus.Rules;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.MemoryPool.Interfaces;
 using Stratis.Bitcoin.Features.SmartContracts.Consensus.Rules;
@@ -35,17 +35,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             new SmartContractFormatRule()
         };
 
-        public SmartContractMempoolValidator(
-            ITxMempool memPool,
-            MempoolSchedulerLock mempoolLock,
-            IPowConsensusValidator consensusValidator,
-            IDateTimeProvider dateTimeProvider,
-            MempoolSettings mempoolSettings,
-            ConcurrentChain chain,
-            CoinView coinView,
-            ILoggerFactory loggerFactory,
-            NodeSettings nodeSettings) 
-            : base(memPool, mempoolLock, consensusValidator, dateTimeProvider, mempoolSettings, chain, coinView, loggerFactory, nodeSettings)
+        public SmartContractMempoolValidator(ITxMempool memPool, MempoolSchedulerLock mempoolLock, IDateTimeProvider dateTimeProvider, MempoolSettings mempoolSettings, ConcurrentChain chain, CoinView coinView, ILoggerFactory loggerFactory, NodeSettings nodeSettings, IConsensusRules consensusRules)
+            : base(memPool, mempoolLock, dateTimeProvider, mempoolSettings, chain, coinView, loggerFactory, nodeSettings, consensusRules)
         {
         }
 

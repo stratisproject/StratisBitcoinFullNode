@@ -296,8 +296,11 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
             }
             catch (Exception e)
             {
-                this.logger.LogError("Exception occurred: {0}", e.ToString());
-                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
+                this.logger.LogError(e, "Exception occurred: {0}", e.StackTrace);
+                if (e is System.FormatException)
+                    return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
+        
+                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.InternalServerError, e.Message, e.ToString());
             }
         }
 
@@ -782,6 +785,34 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                 return this.Json(result.Name);
             }
             catch (Exception e)
+            {
+                this.logger.LogError("Exception occurred: {0}", e.ToString());
+                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
+            }
+        }
+
+        /// <summary>
+        /// Gets a list of accounts for the specified wallet.
+        /// </summary>
+        /// <returns>The list of accounts for the specified wallet</returns>
+        [Route("accounts")]
+        [HttpGet]
+        public IActionResult ListAccounts([FromQuery]ListAccountsModel request)
+        {
+            Guard.NotNull(request, nameof(request));
+
+            // checks the request is valid
+            if (!this.ModelState.IsValid)
+            {
+                return BuildErrorResponse(this.ModelState);
+            }
+
+            try
+            {
+                var result = this.walletManager.GetAccounts(request.WalletName);
+                return this.Json(result.Select(a => a.Name));
+            }
+            catch(Exception e)
             {
                 this.logger.LogError("Exception occurred: {0}", e.ToString());
                 return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
