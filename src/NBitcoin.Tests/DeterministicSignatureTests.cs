@@ -206,7 +206,7 @@ namespace NBitcoin.Tests
         {
             Dictionary<string, string> values = new Dictionary<string, string>();
 
-            var lines = data.Split(new string[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries);
+            var lines = data.Split(new string[] { "\r\n", "\r", "\n" }, StringSplitOptions.RemoveEmptyEntries);
             string previous = null;
             foreach(var line in lines)
             {
