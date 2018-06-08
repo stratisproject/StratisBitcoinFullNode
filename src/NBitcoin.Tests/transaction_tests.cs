@@ -60,7 +60,7 @@ namespace NBitcoin.Tests
             Assert.Equal(CreateBlock(now, 5).Header.BlockTime, chain.Tip.GetMedianTimePast()); // x -1 0 1 2 3 4 5 6 7 8 9 10
         }
 
-        private ChainedBlock CreateBlock(DateTimeOffset now, int offset, ChainBase chain = null)
+        private ChainedHeader CreateBlock(DateTimeOffset now, int offset, ChainBase chain = null)
         {
             Block b = new Block(new BlockHeader()
             {
@@ -69,10 +69,10 @@ namespace NBitcoin.Tests
             if(chain != null)
             {
                 b.Header.HashPrevBlock = chain.Tip.HashBlock;
-                return new ChainedBlock(b.Header, b.Header.GetHash(), chain.Tip);
+                return new ChainedHeader(b.Header, b.Header.GetHash(), chain.Tip);
             }
             else
-                return new ChainedBlock(b.Header, b.Header.GetHash(), 0);
+                return new ChainedHeader(b.Header, b.Header.GetHash(), 0);
         }
 
         [Fact]
@@ -1320,13 +1320,13 @@ namespace NBitcoin.Tests
             MemoryStream ms = new MemoryStream();
             BitcoinStream stream = new BitcoinStream(ms, true);
             stream.ConsensusFactory = Network.Main.Consensus.ConsensusFactory;
-            stream.TransactionOptions = NetworkOptions.Witness;
+            stream.TransactionOptions = TransactionOptions.Witness;
             stream.ReadWrite(before);
 
             ms.Position = 0;
 
             stream = new BitcoinStream(ms, false);
-            stream.TransactionOptions = NetworkOptions.Witness;
+            stream.TransactionOptions = TransactionOptions.Witness;
             stream.ConsensusFactory = Network.Main.Consensus.ConsensusFactory;
             stream.ReadWrite(ref after2);
 
@@ -1460,7 +1460,7 @@ namespace NBitcoin.Tests
             Assert.Equal(witnessCoin.ScriptPubKey, signedTx.Inputs[0].GetSigner(Network.Main).ScriptPubKey);
 
             //Can remove witness data from tx
-            var signedTx2 = signedTx.WithOptions(NetworkOptions.None, Network.Main.Consensus.ConsensusFactory);
+            var signedTx2 = signedTx.WithOptions(TransactionOptions.None, Network.Main.Consensus.ConsensusFactory);
             Assert.Equal(signedTx.GetHash(), signedTx2.GetHash());
             Assert.True(signedTx2.GetSerializedSize() < signedTx.GetSerializedSize());
         }
@@ -2192,7 +2192,7 @@ namespace NBitcoin.Tests
             Assert.Equal("4b3580bbcceb12fee91abc7f9e8e7d092e981d4bb38339204c457a04316d949a", tx.GetHash().ToString());
             Assert.Equal("38331098fb804ef2e6dee7826a74b4af07e631a0f1082ffc063667ccb825d701", tx.GetWitHash().ToString());
 
-            var noWit = tx.WithOptions(NetworkOptions.None, Network.Main.Consensus.ConsensusFactory);
+            var noWit = tx.WithOptions(TransactionOptions.None, Network.Main.Consensus.ConsensusFactory);
             Assert.True(noWit.GetSerializedSize() < tx.GetSerializedSize());
 
             tx = new Transaction("010000000001015d896079097272b13ed9cb22acfabeca9ce83f586d98cc15a08ea2f9c558013b0200000000ffffffff01605af40500000000160014a8cbb5eca9af499cecaa08457690ab367f23d95b02483045022100d3edd272c4ff247c36a1af34a2394859ece319f61ee85f759b94ec0ecd61912402206dbdc7c6ca8f7279405464d2d935b5e171dfd76656872f76399dbf333c0ac3a001fd08020000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000100000000");
@@ -2245,7 +2245,7 @@ namespace NBitcoin.Tests
         public void CanParseTransaction()
         {
 
-            var tests = TestCase.read_json("data/can_parse_transaction.json");
+            var tests = TestCase.read_json(TestDataLocations.GetFileFromDataFolder("can_parse_transaction.json"));
 
             foreach(var test in tests.Select(t => t.GetDynamic(0)))
             {
@@ -2810,7 +2810,7 @@ namespace NBitcoin.Tests
             // Inner arrays are either [ "comment" ]
             // or [[[prevout hash, prevout index, prevout scriptPubKey], [input 2], ...],"], serializedTransaction, enforceP2SH
             // ... where all scripts are stringified scripts.
-            var tests = TestCase.read_json("data/tx_valid.json");
+            var tests = TestCase.read_json(TestDataLocations.GetFileFromDataFolder("tx_valid.json"));
             foreach(var test in tests)
             {
                 string strTest = test.ToString();
@@ -2928,7 +2928,7 @@ namespace NBitcoin.Tests
             // Inner arrays are either [ "comment" ]
             // or [[[prevout hash, prevout index, prevout scriptPubKey], [input 2], ...],"], serializedTransaction, enforceP2SH
             // ... where all scripts are stringified scripts.
-            var tests = TestCase.read_json("data/tx_invalid.json");
+            var tests = TestCase.read_json(TestDataLocations.GetFileFromDataFolder("tx_invalid.json"));
             string comment = null;
             foreach(var test in tests)
             {
@@ -3455,6 +3455,25 @@ namespace NBitcoin.Tests
             t.Outputs[0].ScriptPubKey = new Script() + OpcodeType.OP_RETURN;
             t.Outputs[1].ScriptPubKey = new Script() + OpcodeType.OP_RETURN;
             Assert.True(!StandardScripts.IsStandardTransaction(t));
+        }
+
+        [Fact]
+        public void CanDecodeAndEncodeRawTransaction()
+        {
+            var tests = TestCase.read_json(TestDataLocations.GetFileFromDataFolder("tx_raw.json"));
+            foreach (var test in tests)
+            {
+                var format = (RawFormat)Enum.Parse(typeof(RawFormat), (string)test[0], true);
+                var network = ((string)test[1]) == "Main" ? Network.Main : Network.TestNet;
+                var testData = ((JObject)test[2]).ToString();
+
+                Transaction raw = Transaction.Parse(testData, format, network);
+
+                Assert.True(JToken.DeepEquals(raw.ToString(format, network), testData));
+
+                var raw3 = Transaction.Parse(raw.ToString(format, network), format);
+                Assert.Equal(raw.ToString(format, network), raw3.ToString(format, network));
+            }
         }
 
         private byte[] ParseHex(string data)

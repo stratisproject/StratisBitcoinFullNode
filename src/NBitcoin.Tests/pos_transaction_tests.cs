@@ -60,7 +60,7 @@ namespace NBitcoin.Tests
             Assert.Equal(CreateBlock(now, 5).Header.BlockTime, chain.Tip.GetMedianTimePast()); // x -1 0 1 2 3 4 5 6 7 8 9 10
         }
 
-        private ChainedBlock CreateBlock(DateTimeOffset now, int offset, ChainBase chain = null)
+        private ChainedHeader CreateBlock(DateTimeOffset now, int offset, ChainBase chain = null)
         {
             Block b = new Block(new BlockHeader()
             {
@@ -69,10 +69,10 @@ namespace NBitcoin.Tests
             if (chain != null)
             {
                 b.Header.HashPrevBlock = chain.Tip.HashBlock;
-                return new ChainedBlock(b.Header, b.Header.GetHash(), chain.Tip);
+                return new ChainedHeader(b.Header, b.Header.GetHash(), chain.Tip);
             }
             else
-                return new ChainedBlock(b.Header, b.Header.GetHash(), 0);
+                return new ChainedHeader(b.Header, b.Header.GetHash(), 0);
         }
 
         [Fact]
@@ -1203,14 +1203,14 @@ namespace NBitcoin.Tests
 
             MemoryStream ms = new MemoryStream();
             BitcoinStream stream = new BitcoinStream(ms, true);
-            stream.TransactionOptions = NetworkOptions.None;
+            stream.TransactionOptions = TransactionOptions.None;
             stream.ConsensusFactory = Network.StratisMain.Consensus.ConsensusFactory;
             stream.ReadWrite(before);
 
             ms.Position = 0;
 
             stream = new BitcoinStream(ms, false);
-            stream.TransactionOptions = NetworkOptions.Witness;
+            stream.TransactionOptions = TransactionOptions.Witness;
             stream.ConsensusFactory = Network.StratisMain.Consensus.ConsensusFactory;
             stream.ReadWrite(ref after2);
 
@@ -1312,7 +1312,7 @@ namespace NBitcoin.Tests
             Assert.True(builder.Verify(signedTx));
 
             //Can remove witness data from tx
-            var signedTx2 = signedTx.WithOptions(NetworkOptions.None, Network.StratisMain.Consensus.ConsensusFactory);
+            var signedTx2 = signedTx.WithOptions(TransactionOptions.None, Network.StratisMain.Consensus.ConsensusFactory);
             Assert.Equal(signedTx.GetHash(), signedTx2.GetHash());
             Assert.True(signedTx2.GetSerializedSize() < signedTx.GetSerializedSize());
         }
@@ -1866,7 +1866,7 @@ namespace NBitcoin.Tests
             Assert.Equal("0d66186b23359c2ea9e4f87f0d5784c23025be8f077c4c87a34454c115afeaac", tx.GetHash().ToString());
             Assert.Equal("fee5cfa83e2fe1e516788963b00412667d70c1667609fa73f3bfe9dc6254689d", tx.GetWitHash().ToString());
 
-            var noWit = tx.WithOptions(NetworkOptions.None, Network.StratisMain.Consensus.ConsensusFactory);
+            var noWit = tx.WithOptions(TransactionOptions.None, Network.StratisMain.Consensus.ConsensusFactory);
             Assert.True(noWit.GetSerializedSize() < tx.GetSerializedSize());
 
             tx = Transaction.Load("01000000ec7b1a580001015d896079097272b13ed9cb22acfabeca9ce83f586d98cc15a08ea2f9c558013b0200000000ffffffff01605af40500000000160014a8cbb5eca9af499cecaa08457690ab367f23d95b02483045022100d3edd272c4ff247c36a1af34a2394859ece319f61ee85f759b94ec0ecd61912402206dbdc7c6ca8f7279405464d2d935b5e171dfd76656872f76399dbf333c0ac3a001fd08020000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000100000000", Network.StratisMain);
@@ -1909,7 +1909,7 @@ namespace NBitcoin.Tests
         //http://brainwallet.org/#tx
         public void CanParseTransaction()
         {
-            var tests = TestCase.read_json(TestDataLocations.DataFolder(@"can_parse_transaction.json"));
+            var tests = TestCase.read_json(TestDataLocations.GetFileFromDataPosFolder("can_parse_transaction.json"));
 
             foreach (var test in tests.Select(t => t.GetDynamic(0)))
             {
@@ -2419,7 +2419,7 @@ namespace NBitcoin.Tests
             // Inner arrays are either [ "comment" ]
             // or [[[prevout hash, prevout index, prevout scriptPubKey], [input 2], ...],"], serializedTransaction, enforceP2SH
             // ... where all scripts are stringified scripts.
-            var tests = TestCase.read_json(TestDataLocations.DataFolder(@"tx_valid.json"));
+            var tests = TestCase.read_json(TestDataLocations.GetFileFromDataPosFolder("tx_valid.json"));
             foreach (var test in tests)
             {
                 string strTest = test.ToString();
@@ -2540,7 +2540,7 @@ namespace NBitcoin.Tests
             // Inner arrays are either [ "comment" ]
             // or [[[prevout hash, prevout index, prevout scriptPubKey], [input 2], ...],"], serializedTransaction, enforceP2SH
             // ... where all scripts are stringified scripts.
-            var tests = TestCase.read_json(TestDataLocations.DataFolder(@"tx_invalid.json"));
+            var tests = TestCase.read_json(TestDataLocations.GetFileFromDataPosFolder("tx_invalid.json"));
             string comment = null;
             foreach (var test in tests)
             {
@@ -3076,6 +3076,26 @@ namespace NBitcoin.Tests
             t.Outputs[1].ScriptPubKey = new Script() + OpcodeType.OP_RETURN;
             Assert.True(!StandardScripts.IsStandardTransaction(t));
         }
+
+        //[Fact]
+        //public void CanDecodeAndEncodeRawTransaction()
+        //{
+        //    //var a = new Protocol.AddressManager().Select();
+        //    var tests = TestCase.read_json(TestDataLocations.GetFileFromDataFolder("tx_raw.json"));
+        //    foreach (var test in tests)
+        //    {
+        //        var format = (RawFormat)Enum.Parse(typeof(RawFormat), (string)test[0], true);
+        //        var network = ((string)test[1]) == "Main" ? Network.StratisMain : Network.StratisMain;
+        //        var testData = ((JObject)test[2]).ToString();
+
+        //        Transaction raw = Transaction.Parse(testData, format, network);
+
+        //        TestUtils.AssertJsonEquals(raw.ToString(format, network), testData);
+
+        //        var raw3 = Transaction.Parse(raw.ToString(format, network), format);
+        //        Assert.Equal(raw.ToString(format, network), raw3.ToString(format, network));
+        //    }
+        //}
 
         private byte[] ParseHex(string data)
         {

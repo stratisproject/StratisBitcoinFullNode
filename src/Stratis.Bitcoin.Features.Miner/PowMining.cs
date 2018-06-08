@@ -9,6 +9,7 @@ using Stratis.Bitcoin.Features.Consensus.Interfaces;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.MemoryPool.Interfaces;
 using Stratis.Bitcoin.Features.Miner.Interfaces;
+using Stratis.Bitcoin.Mining;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.Miner
@@ -33,7 +34,7 @@ namespace Stratis.Bitcoin.Features.Miner
         private readonly IAsyncLoopFactory asyncLoopFactory;
 
         /// <summary>Builder that creates a proof-of-work block template.</summary>
-        private readonly PowBlockAssembler blockBuilder;
+        private readonly IBlockProvider blockProvider;
 
         /// <summary>Thread safe chain of block headers from genesis.</summary>
         private readonly ConcurrentChain chain;
@@ -90,7 +91,7 @@ namespace Stratis.Bitcoin.Features.Miner
 
         public PowMining(
             IAsyncLoopFactory asyncLoopFactory,
-            PowBlockAssembler blockBuilder,
+            IBlockProvider blockProvider,
             IConsensusLoop consensusLoop,
             ConcurrentChain chain,
             IDateTimeProvider dateTimeProvider,
@@ -101,7 +102,7 @@ namespace Stratis.Bitcoin.Features.Miner
             ILoggerFactory loggerFactory)
         {
             this.asyncLoopFactory = asyncLoopFactory;
-            this.blockBuilder = blockBuilder;
+            this.blockProvider = blockProvider;
             this.chain = chain;
             this.consensusLoop = consensusLoop;
             this.dateTimeProvider = dateTimeProvider;
@@ -182,14 +183,14 @@ namespace Stratis.Bitcoin.Features.Miner
             {
                 this.miningCancellationTokenSource.Token.ThrowIfCancellationRequested();
 
-                ChainedBlock chainTip = this.consensusLoop.Tip;
+                ChainedHeader chainTip = this.consensusLoop.Tip;
                 if (this.chain.Tip != chainTip)
                 {
                     Task.Delay(TimeSpan.FromMinutes(1), this.nodeLifetime.ApplicationStopping).GetAwaiter().GetResult();
                     continue;
                 }
 
-                BlockTemplate blockTemplate = this.blockBuilder.Build(chainTip, reserveScript.ReserveFullNodeScript);
+                BlockTemplate blockTemplate = this.blockProvider.BuildPowBlock(chainTip, reserveScript.ReserveFullNodeScript);
 
                 if (this.network.Consensus.IsProofOfStake)
                 {
@@ -202,7 +203,7 @@ namespace Stratis.Bitcoin.Features.Miner
                 nExtraNonce = this.IncrementExtraNonce(blockTemplate.Block, chainTip, nExtraNonce);
                 Block block = blockTemplate.Block;
 
-                while ((maxTries > 0) && (block.Header.Nonce < InnerLoopCount) && !block.CheckProofOfWork(this.network.Consensus))
+                while ((maxTries > 0) && (block.Header.Nonce < InnerLoopCount) && !block.CheckProofOfWork())
                 {
                     this.miningCancellationTokenSource.Token.ThrowIfCancellationRequested();
 
@@ -216,7 +217,7 @@ namespace Stratis.Bitcoin.Features.Miner
                 if (block.Header.Nonce == InnerLoopCount)
                     continue;
 
-                var newChain = new ChainedBlock(block.Header, block.GetHash(), chainTip);
+                var newChain = new ChainedHeader(block.Header, block.GetHash(), chainTip);
 
                 if (newChain.ChainWork <= chainTip.ChainWork)
                     continue;
@@ -225,7 +226,7 @@ namespace Stratis.Bitcoin.Features.Miner
 
                 this.consensusLoop.AcceptBlockAsync(blockValidationContext).GetAwaiter().GetResult();
 
-                if (blockValidationContext.ChainedBlock == null)
+                if (blockValidationContext.ChainedHeader == null)
                 {
                     this.logger.LogTrace("(-)[REORG-2]");
                     return blocks;
@@ -240,7 +241,7 @@ namespace Stratis.Bitcoin.Features.Miner
                     return blocks;
                 }
 
-                this.logger.LogInformation("Mined new {0} block: '{1}'.", BlockStake.IsProofOfStake(blockValidationContext.Block) ? "POS" : "POW", blockValidationContext.ChainedBlock);
+                this.logger.LogInformation("Mined new {0} block: '{1}'.", BlockStake.IsProofOfStake(blockValidationContext.Block) ? "POS" : "POW", blockValidationContext.ChainedHeader);
 
                 nHeight++;
                 blocks.Add(block.GetHash());
@@ -252,7 +253,7 @@ namespace Stratis.Bitcoin.Features.Miner
         }
 
         ///<inheritdoc/>
-        public int IncrementExtraNonce(Block pblock, ChainedBlock pindexPrev, int nExtraNonce)
+        public int IncrementExtraNonce(Block pblock, ChainedHeader pindexPrev, int nExtraNonce)
         {
             // Update nExtraNonce
             if (this.hashPrevBlock != pblock.Header.HashPrevBlock)

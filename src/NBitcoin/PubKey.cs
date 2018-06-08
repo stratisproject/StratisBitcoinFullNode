@@ -153,7 +153,7 @@ namespace NBitcoin
 
         public BitcoinPubKeyAddress GetAddress(Network network)
         {
-            return network.CreateBitcoinAddress(this.Hash);
+            return network.CreateBitcoinPubKeyAddress(this.Hash);
         }
 
         public BitcoinScriptAddress GetScriptAddress(Network network)

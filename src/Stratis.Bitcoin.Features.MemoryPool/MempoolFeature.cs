@@ -79,12 +79,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             this.nodeSettings = nodeSettings;
         }
 
-        /// <inheritdoc />
-        public override void LoadConfiguration()
-        {
-            this.mempoolSettings.Load(this.nodeSettings);
-        }
-
         public void AddFeatureStats(StringBuilder benchLogs)
         {
             if (this.mempoolManager != null)
@@ -157,7 +151,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// </summary>
         /// <param name="fullNodeBuilder">Full node builder.</param>
         /// <returns>Full node builder.</returns>
-        public static IFullNodeBuilder UseMempool(this IFullNodeBuilder fullNodeBuilder, Action<MempoolSettings> setup = null)
+        public static IFullNodeBuilder UseMempool(this IFullNodeBuilder fullNodeBuilder)
         {
             LoggingConfiguration.RegisterFeatureNamespace<MempoolFeature>("mempool");
             LoggingConfiguration.RegisterFeatureNamespace<BlockPolicyEstimator>("estimatefee");
@@ -181,7 +175,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                         services.AddSingleton<MempoolSignaled>();
                         services.AddSingleton<IMempoolPersistence, MempoolPersistence>();
                         services.AddSingleton<MempoolController>();
-                        services.AddSingleton<MempoolSettings>(new MempoolSettings(setup));
+                        services.AddSingleton<MempoolSettings>();
                     });
             });
 

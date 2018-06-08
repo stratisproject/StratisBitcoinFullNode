@@ -4,8 +4,10 @@ using System.Linq;
 using System.Net;
 using Microsoft.AspNetCore.Mvc;
 using Stratis.Bitcoin.Configuration;
+using Stratis.Bitcoin.Controllers;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.Utilities;
+using Stratis.Bitcoin.Utilities.Extensions;
 
 namespace Stratis.Bitcoin.Connection
 {
@@ -21,7 +23,7 @@ namespace Stratis.Bitcoin.Connection
         public bool AddNode(string endpointStr, string command)
         {
             Guard.NotNull(this.ConnectionManager, nameof(this.ConnectionManager));
-            IPEndPoint endpoint = NodeSettings.ConvertIpAddressToEndpoint(endpointStr, this.ConnectionManager.Network.DefaultPort);
+            IPEndPoint endpoint = endpointStr.ToIPEndPoint(this.ConnectionManager.Network.DefaultPort);
             switch (command)
             {
                 case "add":

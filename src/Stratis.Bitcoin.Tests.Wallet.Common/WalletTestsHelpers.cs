@@ -80,9 +80,9 @@ namespace Stratis.Bitcoin.Tests.Wallet.Common
             return address;
         }
 
-        public static ChainedBlock AppendBlock(ChainedBlock previous = null, params ConcurrentChain[] chains)
+        public static ChainedHeader AppendBlock(ChainedHeader previous = null, params ConcurrentChain[] chains)
         {
-            ChainedBlock last = null;
+            ChainedHeader last = null;
             var nonce = RandomUtils.GetUInt32();
             foreach (ConcurrentChain chain in chains)
             {
@@ -97,9 +97,9 @@ namespace Stratis.Bitcoin.Tests.Wallet.Common
             return last;
         }
 
-        public static (ChainedBlock ChainedBlock, Block Block) AppendBlock(ChainedBlock previous, ConcurrentChain chain)
+        public static (ChainedHeader ChainedHeader, Block Block) AppendBlock(ChainedHeader previous, ConcurrentChain chain)
         {
-            ChainedBlock last = null;
+            ChainedHeader last = null;
             var nonce = RandomUtils.GetUInt32();
             var block = new Block();
 
@@ -159,7 +159,7 @@ namespace Stratis.Bitcoin.Tests.Wallet.Common
 
         public static Block AppendTransactionInNewBlockToChain(ConcurrentChain chain, Transaction transaction)
         {
-            ChainedBlock last = null;
+            ChainedHeader last = null;
             var nonce = RandomUtils.GetUInt32();
             var block = chain.Network.Consensus.ConsensusFactory.CreateBlock();
             block.AddTransaction(transaction);

@@ -20,6 +20,11 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules
         IEnumerable<ConsensusRuleDescriptor> Rules { get; }
 
         /// <summary>
+        /// Keeps track of how much time different actions took to execute and how many times they were executed.
+        /// </summary>
+        ConsensusPerformanceCounter PerformanceCounter { get; }
+
+        /// <summary>
         /// Register a new rule to the engine
         /// </summary>
         /// <param name="ruleRegistration">A container of rules to register.</param>
@@ -47,6 +52,11 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules
         /// <param name="ruleContext">A context that holds information about the current validated block.</param>
         /// <returns>The processing task.</returns>
         Task ValidateAsync(RuleContext ruleContext);
+
+        /// <summary>
+        /// Gets the consensus rule that is assignable to the supplied generic type.
+        /// </summary>
+        T GetRule<T>() where T : ConsensusRule;
     }
 
     /// <summary>

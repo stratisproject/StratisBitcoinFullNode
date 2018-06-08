@@ -296,8 +296,11 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
             }
             catch (Exception e)
             {
-                this.logger.LogError("Exception occurred: {0}", e.ToString());
-                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
+                this.logger.LogError(e, "Exception occurred: {0}", e.StackTrace);
+                if (e is System.FormatException)
+                    return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
+        
+                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.InternalServerError, e.Message, e.ToString());
             }
         }
 
@@ -789,6 +792,34 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         }
 
         /// <summary>
+        /// Gets a list of accounts for the specified wallet.
+        /// </summary>
+        /// <returns>The list of accounts for the specified wallet</returns>
+        [Route("accounts")]
+        [HttpGet]
+        public IActionResult ListAccounts([FromQuery]ListAccountsModel request)
+        {
+            Guard.NotNull(request, nameof(request));
+
+            // checks the request is valid
+            if (!this.ModelState.IsValid)
+            {
+                return BuildErrorResponse(this.ModelState);
+            }
+
+            try
+            {
+                var result = this.walletManager.GetAccounts(request.WalletName);
+                return this.Json(result.Select(a => a.Name));
+            }
+            catch(Exception e)
+            {
+                this.logger.LogError("Exception occurred: {0}", e.ToString());
+                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
+            }
+        }
+
+        /// <summary>
         /// Gets an unused address.
         /// </summary>
         /// <returns>The last created and unused address or creates a new address (in Base58 format).</returns>
@@ -917,15 +948,15 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                 {
                     // From the list of removed transactions, check which one is the oldest and retrieve the block right before that time.
                     DateTimeOffset earliestDate = result.Min(r => r.creationTime);
-                    ChainedBlock chainedBlock = this.chain.GetBlock(this.chain.GetHeightAtTime(earliestDate.DateTime));
+                    ChainedHeader chainedHeader = this.chain.GetBlock(this.chain.GetHeightAtTime(earliestDate.DateTime));
 
                     // Update the wallet and save it to the file system.
                     Wallet wallet = this.walletManager.GetWallet(request.WalletName);
-                    wallet.SetLastBlockDetailsByCoinType(this.coinType, chainedBlock);
+                    wallet.SetLastBlockDetailsByCoinType(this.coinType, chainedHeader);
                     this.walletManager.SaveWallet(wallet);
 
                     // Start the syncing process from the block before the earliest transaction was seen.
-                    this.walletSyncManager.SyncFromHeight(chainedBlock.Height - 1);
+                    this.walletSyncManager.SyncFromHeight(chainedHeader.Height - 1);
                 }
 
                 IEnumerable<RemovedTransactionModel> model = result.Select(r => new RemovedTransactionModel
@@ -985,7 +1016,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                 return BuildErrorResponse(this.ModelState);
             }
 
-            ChainedBlock block = this.chain.GetBlock(uint256.Parse(model.Hash));
+            ChainedHeader block = this.chain.GetBlock(uint256.Parse(model.Hash));
 
             if (block == null)
             {

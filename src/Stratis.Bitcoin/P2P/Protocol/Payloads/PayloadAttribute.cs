@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.P2P.Protocol.Payloads
 {
@@ -90,6 +91,23 @@ namespace Stratis.Bitcoin.P2P.Protocol.Payloads
             return this;
         }
 
+        /// <summary>
+        /// Add a payload to the Provider by specifying its type.
+        /// </summary>
+        /// <param name="type">The type to payload to add.  Must derive from <see cref="Payload"/>.</param>
+        public void AddPayload(Type payloadType)
+        {
+            Guard.NotNull(payloadType, nameof(payloadType));
+            Guard.Assert(payloadType.IsSubclassOf(typeof(Payload)));
+
+            var payloadAttribute = payloadType.GetCustomAttributes(typeof(PayloadAttribute), true)
+                .OfType<PayloadAttribute>().First();
+            Guard.Assert(payloadAttribute != null);
+
+            this.nameToType.Add(payloadAttribute.Name, payloadType);
+            this.typeToName.Add(payloadType, payloadAttribute.Name);
+        }
+        
         /// <summary>
         /// Get the <see cref="Payload"/> type associated with the command name.
         /// </summary>

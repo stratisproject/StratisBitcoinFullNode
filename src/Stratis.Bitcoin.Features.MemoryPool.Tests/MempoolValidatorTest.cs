@@ -400,7 +400,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             Assert.True(txBuilder.Verify(p2shOverp2wpkh)); //check fully signed
 
             // remove witness data from tx
-            Transaction noWitTx = p2shOverp2wpkh.WithOptions(NetworkOptions.None, Network.RegTest.Consensus.ConsensusFactory);
+            Transaction noWitTx = p2shOverp2wpkh.WithOptions(TransactionOptions.None, Network.RegTest.Consensus.ConsensusFactory);
 
             Assert.Equal(p2shOverp2wpkh.GetHash(), noWitTx.GetHash());
             Assert.True(noWitTx.GetSerializedSize() < p2shOverp2wpkh.GetSerializedSize());
@@ -498,7 +498,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
         [Fact]
         public void AcceptToMemoryPool_NonBIP68CanMine_ReturnsFalse()
         {
-            // TODO: Execute this case CreateMempoolEntry !CheckSequenceLocks(this.chain.Tip, context, PowConsensusValidator.StandardLocktimeVerifyFlags, context.LockPoints)
+            // TODO: Execute this case CreateMempoolEntry !CheckSequenceLocks(this.chain.Tip, context, PowCoinViewRule.StandardLocktimeVerifyFlags, context.LockPoints)
         }
 
         [Fact]
@@ -614,25 +614,25 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
         [Fact]
         public void AcceptToMemoryPool_TxPowConsensusCheckInputNegativeOrOverflow_ReturnsFalse()
         {
-            // TODO: Execute failure case for CheckAllInputs CheckInputs PowConsensusValidator.CheckInputs BadTransactionInputValueOutOfRange
+            // TODO: Execute failure case for CheckAllInputs CheckInputs PowCoinViewRule.CheckInputs BadTransactionInputValueOutOfRange
         }
 
         [Fact]
         public void AcceptToMemoryPool_TxPowConsensusCheckInputBadTransactionInBelowOut_ReturnsFalse()
         {
-            // TODO: Execute failure case for CheckAllInputs CheckInputs PowConsensusValidator.CheckInputs BadTransactionInBelowOut
+            // TODO: Execute failure case for CheckAllInputs CheckInputs PowCoinViewRule.CheckInputs BadTransactionInBelowOut
         }
 
         [Fact]
         public void AcceptToMemoryPool_TxPowConsensusCheckInputNegativeFee_ReturnsFalse()
         {
-            // TODO: Execute failure case for CheckAllInputs CheckInputs PowConsensusValidator.CheckInputs NegativeFee
+            // TODO: Execute failure case for CheckAllInputs CheckInputs PowCoinViewRule.CheckInputs NegativeFee
         }
 
         [Fact]
         public void AcceptToMemoryPool_TxPowConsensusCheckInputFeeOutOfRange_ReturnsFalse()
         {
-            // TODO: Execute failure case for CheckAllInputs CheckInputs PowConsensusValidator.CheckInputs FeeOutOfRange
+            // TODO: Execute failure case for CheckAllInputs CheckInputs PowCoinViewRule.CheckInputs FeeOutOfRange
         }
 
         [Fact]

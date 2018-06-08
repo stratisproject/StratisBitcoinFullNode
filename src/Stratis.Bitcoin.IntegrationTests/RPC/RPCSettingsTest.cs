@@ -1,44 +1,37 @@
 ﻿using NBitcoin;
-using Stratis.Bitcoin.Builder;
-using Stratis.Bitcoin.Configuration;
-using Stratis.Bitcoin.Features.Consensus;
-using Stratis.Bitcoin.Features.RPC;
-using Stratis.Bitcoin.Tests.Common;
-using Xunit;
-
+using Stratis.Bitcoin.Builder;	
+using Stratis.Bitcoin.Configuration;	
+using Stratis.Bitcoin.Features.Consensus;	
+using Stratis.Bitcoin.Features.RPC;	
+using Stratis.Bitcoin.Tests.Common;	
+using Xunit;	
+	
 namespace Stratis.Bitcoin.IntegrationTests.RPC
-{
-    public class RPCSettingsTest : TestBase
-    {
+{	
+    public class RPCSettingsTest : TestBase	
+    {	
         public RPCSettingsTest() : base(Network.Main)
-        {
-        }
-
-        [Fact]
+        {	
+        }	
+	
+        [Fact]	
         public void CanSpecifyRPCSettings()
         {
-            var dir = CreateTestDir(this);
-
-            NodeSettings nodeSettings = new NodeSettings(args:new string[] { $"-datadir={dir}" });
-
+            string dir = CreateTestDir(this);	
+	
+            var nodeSettings = new NodeSettings(args: new string[] { $"-datadir={dir}", "-rpcuser=abc", "-rpcpassword=def", "-rpcport=91" ,"-server=1" });	
+	
             var node = new FullNodeBuilder()
                 .UseNodeSettings(nodeSettings)
                 .UsePowConsensus()
-                .AddRPC(x =>
-                {
-                    x.RpcUser = "abc";
-                    x.RpcPassword = "def";
-                    x.RPCPort = 91;
-                })
-                .Build();
-
+                .AddRPC()	
+                .Build();	
+	
             var settings = node.NodeService<RpcSettings>();
-
-            settings.Load(nodeSettings);
-
-            Assert.Equal("abc", settings.RpcUser);
-            Assert.Equal("def", settings.RpcPassword);
-            Assert.Equal(91, settings.RPCPort);
-        }
-    }
+	
+            Assert.Equal("abc", settings.RpcUser);	
+            Assert.Equal("def", settings.RpcPassword);	
+            Assert.Equal(91, settings.RPCPort);	
+        }	
+    }	
 }

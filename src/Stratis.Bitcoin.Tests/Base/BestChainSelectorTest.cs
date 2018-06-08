@@ -15,11 +15,11 @@ namespace Stratis.Bitcoin.Tests.Base
     public class BestChainSelectorTest
     {
         private readonly Mock<IChainState> chainState;
-        private readonly List<ChainedBlock> chainedBlocks;
+        private readonly List<ChainedHeader> chainedHeaders;
 
         public BestChainSelectorTest()
         {
-            this.chainedBlocks = new List<ChainedBlock>();
+            this.chainedHeaders = new List<ChainedHeader>();
             var chain = new ConcurrentChain(Network.StratisMain);
 
             for (int i = 0; i < 20; ++i)
@@ -31,15 +31,15 @@ namespace Stratis.Bitcoin.Tests.Base
                     Bits = Target.Difficulty1
                 };
 
-                var chainedBlock = new ChainedBlock(header, header.GetHash(), chain.Tip);
+                var chainedHeader = new ChainedHeader(header, header.GetHash(), chain.Tip);
 
-                chain.SetTip(chainedBlock);
+                chain.SetTip(chainedHeader);
                 
-                this.chainedBlocks.Add(chainedBlock);
+                this.chainedHeaders.Add(chainedHeader);
             }
 
             // Let block #5 be the consensus tip.
-            this.chainState = new Mock<IChainState>().SetupProperty(x => x.ConsensusTip, this.chainedBlocks[5]);
+            this.chainState = new Mock<IChainState>().SetupProperty(x => x.ConsensusTip, this.chainedHeaders[5]);
         }
 
         /// <summary>
@@ -51,13 +51,13 @@ namespace Stratis.Bitcoin.Tests.Base
             var chain = new ConcurrentChain(Network.StratisMain);
             var chainSelector = new BestChainSelector(chain, this.chainState.Object, new LoggerFactory());
 
-            chain.SetTip(this.chainedBlocks[10]);
+            chain.SetTip(this.chainedHeaders[10]);
 
-            ChainedBlock tipFromFirstPeer = this.chainedBlocks[15];
+            ChainedHeader tipFromFirstPeer = this.chainedHeaders[15];
             chainSelector.TrySetAvailableTip(0, tipFromFirstPeer);
             Assert.Equal(chain.Tip, tipFromFirstPeer);
 
-            ChainedBlock tipFromSecondPeer = this.chainedBlocks[18];
+            ChainedHeader tipFromSecondPeer = this.chainedHeaders[18];
             chainSelector.TrySetAvailableTip(1, tipFromSecondPeer);
             Assert.Equal(chain.Tip, tipFromSecondPeer);
 
@@ -85,16 +85,16 @@ namespace Stratis.Bitcoin.Tests.Base
             var chain = new ConcurrentChain(Network.StratisMain);
             var chainSelector = new BestChainSelector(chain, this.chainState.Object, new LoggerFactory());
 
-            chain.SetTip(this.chainedBlocks[10]);
+            chain.SetTip(this.chainedHeaders[10]);
             
-            chainSelector.TrySetAvailableTip(0, this.chainedBlocks[15]);
-            chainSelector.TrySetAvailableTip(1, this.chainedBlocks[2]);
-            chainSelector.TrySetAvailableTip(2, this.chainedBlocks[3]);
-            chainSelector.TrySetAvailableTip(3, this.chainedBlocks[4]);
+            chainSelector.TrySetAvailableTip(0, this.chainedHeaders[15]);
+            chainSelector.TrySetAvailableTip(1, this.chainedHeaders[2]);
+            chainSelector.TrySetAvailableTip(2, this.chainedHeaders[3]);
+            chainSelector.TrySetAvailableTip(3, this.chainedHeaders[4]);
             
             await Task.Delay(100).ConfigureAwait(false);
 
-            Assert.Equal(chain.Tip, this.chainedBlocks[15]);
+            Assert.Equal(chain.Tip, this.chainedHeaders[15]);
 
             chainSelector.RemoveAvailableTip(0);
 
@@ -112,9 +112,9 @@ namespace Stratis.Bitcoin.Tests.Base
             var chain = new ConcurrentChain(Network.StratisMain);
             var chainSelector = new BestChainSelector(chain, this.chainState.Object, new LoggerFactory());
 
-            chain.SetTip(this.chainedBlocks[10]);
+            chain.SetTip(this.chainedHeaders[10]);
 
-            ChainedBlock tip = this.chainedBlocks[15];
+            ChainedHeader tip = this.chainedHeaders[15];
 
             chainSelector.TrySetAvailableTip(0, tip);
             chainSelector.TrySetAvailableTip(1, tip);

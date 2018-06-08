@@ -24,7 +24,7 @@ namespace NBitcoin
             set;
         }
 
-        public bool Evaluate(ChainedBlock block)
+        public bool Evaluate(ChainedHeader block)
         {
             var nBlockTime = block.Previous == null ? Utils.UnixTimeToDateTime(0) : block.Previous.GetMedianTimePast();
             return this.MinHeight < block.Height && this.MinTime < nBlockTime;

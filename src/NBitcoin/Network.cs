@@ -3,47 +3,13 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Net;
 using System.Threading;
-using NBitcoin.BouncyCastle.Math;
 using NBitcoin.DataEncoders;
 using NBitcoin.Protocol;
 using NBitcoin.Stealth;
 
 namespace NBitcoin
 {
-    public class DNSSeedData
-    {
-        private IPAddress[] addresses;
-
-        public string Name { get; }
-
-        public string Host { get; }
-
-        public DNSSeedData(string name, string host)
-        {
-            this.Name = name;
-            this.Host = host;
-        }
-
-        public IPAddress[] GetAddressNodes()
-        {
-            if (this.addresses != null)
-            {
-                return this.addresses;
-            }
-
-            this.addresses = Dns.GetHostAddressesAsync(this.Host).GetAwaiter().GetResult();
-
-            return this.addresses;
-        }
-
-        public override string ToString()
-        {
-            return $"{this.Name}({this.Host})";
-        }
-    }
-
     public enum Base58Type
     {
         PUBKEY_ADDRESS,
@@ -67,245 +33,130 @@ namespace NBitcoin
         WITNESS_SCRIPT_ADDRESS
     }
 
-    public enum BuriedDeployments : int
+    public abstract partial class Network
     {
-        /// <summary>
-        /// Height in coinbase
-        /// </summary>
-        BIP34,
+        private static readonly ConcurrentDictionary<string, Network> NetworksContainer = new ConcurrentDictionary<string, Network>();
 
-        /// <summary>
-        /// Height in OP_CLTV
-        /// </summary>
-        BIP65,
+        protected Block Genesis;
 
-        /// <summary>
-        /// Strict DER signature
-        /// </summary>
-        BIP66
-    }
-
-    public class Consensus
-    {
-        /// <summary>
-        /// An extension to <see cref="Consensus"/> to enable additional options to the consensus data.
-        /// </summary>
-        public class ConsensusOptions
+        protected Network()
         {
+            this.Consensus = new Consensus();
         }
-
-        public ConsensusOptions Options { get; set; }
-        public NetworkOptions NetworkOptions { get; set; } = NetworkOptions.TemporaryOptions;
-
-        public class BuriedDeploymentsArray
-        {
-            readonly Consensus parent;
-            readonly int[] heights;
-
-            public BuriedDeploymentsArray(Consensus parent)
-            {
-                this.parent = parent;
-                this.heights = new int[Enum.GetValues(typeof(BuriedDeployments)).Length];
-            }
-
-            public int this[BuriedDeployments index]
-            {
-                get { return this.heights[(int)index]; }
-                set { this.heights[(int)index] = value; }
-            }
-        }
-
-        public class BIP9DeploymentsArray
-        {
-            readonly Consensus parent;
-            readonly BIP9DeploymentsParameters[] parameters;
-
-            public BIP9DeploymentsArray(Consensus parent)
-            {
-                this.parent = parent;
-                this.parameters = new BIP9DeploymentsParameters[Enum.GetValues(typeof(BIP9Deployments)).Length];
-            }
-
-            public BIP9DeploymentsParameters this[BIP9Deployments index]
-            {
-                get { return this.parameters[(int) index]; }
-                set { this.parameters[(int) index] = value; }
-            }
-        }
-
-        public Consensus()
-        {
-            this.BuriedDeployments = new BuriedDeploymentsArray(this);
-            this.BIP9Deployments = new BIP9DeploymentsArray(this);
-
-            this.ConsensusFactory = new ConsensusFactory()
-            {
-                Consensus = this
-            };
-        }
-
-        public BuriedDeploymentsArray BuriedDeployments { get; }
-
-        public BIP9DeploymentsArray BIP9Deployments { get; }
-
-        public int SubsidyHalvingInterval { get; set; }
-
-        public int MajorityEnforceBlockUpgrade { get; set; }
-
-        public int MajorityRejectBlockOutdated { get; set; }
-
-        public int MajorityWindow { get; set; }
-
-        public uint256 BIP34Hash { get; set; }
-
-        public Target PowLimit { get; set; }
-
-        public TimeSpan PowTargetTimespan { get; set; }
-
-        public TimeSpan PowTargetSpacing { get; set; }
-
-        public bool PowAllowMinDifficultyBlocks { get; set; }
-
-        public bool PowNoRetargeting { get; set; }
-
-        public uint256 HashGenesisBlock { get; set; }
-
-        public uint256 MinimumChainWork { get; set; }
-
-        public long DifficultyAdjustmentInterval
-        {
-            get { return ((long) this.PowTargetTimespan.TotalSeconds / (long) this.PowTargetSpacing.TotalSeconds); }
-        }
-
-        public int MinerConfirmationWindow { get; set; }
-
-        public int RuleChangeActivationThreshold { get; set; }
 
         /// <summary>
-        /// Specify the BIP44 coin type for this network
+        /// The public key used in the alert messaging system.
+        /// TODO: remove as per https://github.com/bitcoin/bitcoin/pull/7692.
         /// </summary>
-        public int CoinType { get; set; }
-
-        public BigInteger ProofOfStakeLimit { get; set; }
-
-        public BigInteger ProofOfStakeLimitV2 { get; set; }
-
-        public int LastPOWBlock { get; set; }
+        public PubKey AlertPubKey { get; protected set; }
 
         /// <summary>
-        /// An indicator whether this is a Proof Of Stake network.
+        /// Maximal value for the calculated time offset.
+        /// If the value is over this limit, the time syncing feature will be switched off.
         /// </summary>
-        public bool IsProofOfStake { get; set; }
-
-        /// <summary>The default hash to use for assuming valid blocks.</summary>
-        public uint256 DefaultAssumeValid { get; set; }
+        public int MaxTimeOffsetSeconds { get; protected set; }
 
         /// <summary>
-        /// A factory that enables overloading base types.
+        /// Maximum tip age in seconds to consider node in initial block download.
         /// </summary>
-        public ConsensusFactory ConsensusFactory { get; set; }
+        public int MaxTipAge { get; protected set; }
 
-        public virtual Consensus Clone()
-        {
-            return new Consensus
-            {
-                BIP34Hash = this.BIP34Hash,
-                HashGenesisBlock = this.HashGenesisBlock,
-                MajorityEnforceBlockUpgrade = this.MajorityEnforceBlockUpgrade,
-                MajorityRejectBlockOutdated = this.MajorityRejectBlockOutdated,
-                MajorityWindow = this.MajorityWindow,
-                MinerConfirmationWindow = this.MinerConfirmationWindow,
-                PowAllowMinDifficultyBlocks = this.PowAllowMinDifficultyBlocks,
-                PowLimit = this.PowLimit,
-                PowNoRetargeting = this.PowNoRetargeting,
-                PowTargetSpacing = this.PowTargetSpacing,
-                PowTargetTimespan = this.PowTargetTimespan,
-                RuleChangeActivationThreshold = this.RuleChangeActivationThreshold,
-                SubsidyHalvingInterval = this.SubsidyHalvingInterval,
-                MinimumChainWork = this.MinimumChainWork,
-                CoinType = this.CoinType,
-                IsProofOfStake = this.IsProofOfStake,
-                LastPOWBlock = this.LastPOWBlock,
-                ProofOfStakeLimit = this.ProofOfStakeLimit,
-                ProofOfStakeLimitV2 = this.ProofOfStakeLimitV2,
-                DefaultAssumeValid = this.DefaultAssumeValid,
-                ConsensusFactory = this.ConsensusFactory,
-                NetworkOptions = this.NetworkOptions.Clone()
-            };
-        }
-    }
+        /// <summary>
+        /// Mininum fee rate for all transactions.
+        /// Fees smaller than this are considered zero fee for transaction creation.
+        /// </summary>
+        public long MinTxFee { get; protected set; }
 
-    public partial class Network
-    {
-        private uint magic;
-        private byte[] alertPubKeyArray;
-        private PubKey alertPubKey;
-        private readonly List<DNSSeedData> seeds;
-        private readonly List<NetworkAddress> fixedSeeds;
-        private readonly Dictionary<int, CheckpointInfo> checkpoints = new Dictionary<int, CheckpointInfo>();
-        private Block genesis;
-        private Consensus consensus = new Consensus();
+        /// <summary>
+        /// A fee rate that will be used when fee estimation has insufficient data.
+        /// </summary>
+        public long FallbackFee { get; protected set; }
 
-        public NetworkOptions NetworkOptions
-        {
-            get
-            {
-                return this.consensus.NetworkOptions;
-            }
-        }
+        /// <summary>
+        /// The minimum fee under which transactions may be rejected from being relayed.
+        /// </summary>
+        public long MinRelayTxFee { get; protected set; }
 
-        private Network()
-        {
-            this.seeds = new List<DNSSeedData>();
-            this.fixedSeeds = new List<NetworkAddress>();
-        }
+        /// <summary>
+        /// Port on which to listen for incoming RPC connections.
+        /// </summary>
+        public int RPCPort { get; protected set; }
 
-        public PubKey AlertPubKey
-        {
-            get
-            {
-                if (this.alertPubKey == null)
-                {
-                    this.alertPubKey = new PubKey(this.alertPubKeyArray);
-                }
-                return this.alertPubKey;
-            }
-        }
+        /// <summary>
+        /// The default port on which nodes of this network communicate with external clients. 
+        /// </summary>
+        public int DefaultPort { get; protected set; }
 
-        /// <summary> Maximal value for the calculated time offset. If the value is over this limit, the time syncing feature will be switched off. </summary>
-        public int MaxTimeOffsetSeconds { get; private set; }
+        /// <summary>
+        /// The consensus for this network.
+        /// </summary>
+        public Consensus Consensus { get; protected set; }
 
-        /// <summary>Maximum tip age in seconds to consider node in initial block download.</summary>
-        public int MaxTipAge { get; private set; }
+        /// <summary>
+        /// The name of the network.
+        /// </summary>
+        public string Name { get; protected set; }
 
-        public long MinTxFee { get; private set; }
+        /// <summary>
+        /// A list of additional names the network can be referred as.
+        /// For example, Bitcoin Main can have "Mainnet" as an additional name.
+        /// </summary>
+        public List<string> AdditionalNames { get; protected set; }
 
-        public long FallbackFee { get; private set; }
+        /// <summary>
+        /// The name of the root folder containing blockchains operating with the same consensus rules (for now, this will be bitcoin or stratis).
+        /// </summary>
+        public string RootFolderName { get; protected set; }
 
-        public long MinRelayTxFee { get; private set; }
+        /// <summary>
+        /// The default name used for the network configuration file.
+        /// </summary>
+        public string DefaultConfigFilename { get; protected set; }
 
-        public int RPCPort { get; private set; }
+        /// <summary>
+        /// The list of nodes on the network that our current node tries to connect to.
+        /// </summary>
+        public List<NetworkAddress> SeedNodes { get; protected set; }
 
-        public int DefaultPort { get; private set; }
+        /// <summary>
+        /// The list of DNS seeds from which to get IP addresses when bootstrapping a node.
+        /// </summary>
+        public List<DNSSeedData> DNSSeeds { get; protected set; }
 
-        public Consensus Consensus => this.consensus;
+        /// <summary>
+        /// A list of well-known block hashes.
+        /// The node considers all transactions and blocks up to these checkpoints as valid and irreversible.
+        /// </summary>
+        public Dictionary<int, CheckpointInfo> Checkpoints { get; protected set; }
 
-        public string Name { get; private set; }
+        /// <summary>
+        /// List of prefixes used in Base58 addresses.
+        /// </summary>
+        public byte[][] Base58Prefixes { get; protected set; }
 
-        /// <summary> The name of the root folder containing blockchains operating with the same consensus rules (for now, this will be bitcoin or stratis). </summary>
-        public string RootFolderName { get; private set; }
+        /// <summary>
+        /// A list of Bech32 encoders.
+        /// </summary>
+        public Bech32Encoder[] Bech32Encoders { get; protected set; }
 
-        /// <summary> The default name used for the network configuration file. </summary>
-        public string DefaultConfigFilename { get; private set; }
+        /// <summary>
+        /// A number used to identify the network.
+        /// The message start string is designed to be unlikely to occur in normal data.
+        /// The characters are rarely used upper ascii, not valid as UTF-8, and produce
+        /// a large 4-byte int at any alignment.
+        /// </summary>
+        public uint Magic { get; protected set; }
 
-        public IEnumerable<NetworkAddress> SeedNodes => this.fixedSeeds;
-
-        public IEnumerable<DNSSeedData> DNSSeeds => this.seeds;
-
-        public Dictionary<int, CheckpointInfo> Checkpoints => this.checkpoints;
-
+        /// <summary>
+        /// Byte array representation of a magic number.
+        /// </summary>
         public byte[] MagicBytesArray;
 
+        /// <summary>
+        /// Byte representation of a magic number.
+        /// Uses <see cref="Magic"/> if <see cref="MagicBytesArray"/> is null.
+        /// TODO: Merge these 3 magic properties into fewer.
+        /// </summary>
         public byte[] MagicBytes
         {
             get
@@ -326,81 +177,163 @@ namespace NBitcoin
             }
         }
 
-        public uint Magic => this.magic;
+        /// <summary>
+        /// The UNIX time at inception of the genesis block for this network.
+        /// </summary>
+        public uint GenesisTime { get; protected set; }
 
-        private static readonly ConcurrentDictionary<string, Network> NetworksContainer = new ConcurrentDictionary<string, Network>();
+        /// <summary>
+        /// A hash which proves that a sufficient amount of computation has been carried out to create the genesis block.
+        /// </summary>
+        public uint GenesisNonce { get; protected set; }
 
-        internal static Network Register(NetworkBuilder builder)
+        /// <summary>
+        /// Represents the encoded form of the target threshold as it appears in the block header.
+        /// </summary>
+        public uint GenesisBits { get; protected set; }
+
+        /// <summary>
+        /// The version of the genesis block.
+        /// </summary>
+        public int GenesisVersion { get; protected set; }
+
+        /// <summary>
+        /// The reward for the genesis block, which is unspendable.
+        /// </summary>
+        public Money GenesisReward { get; protected set; }
+
+        /// <summary>
+        /// Register an immutable <see cref="Network"/> instance so it is queryable through <see cref="GetNetwork(string)"/> and <see cref="GetNetworks()"/>.
+        /// </summary>
+        public static Network Register(Network network)
         {
-            if (builder.Name == null)
-                throw new InvalidOperationException("A network name needs to be provided.");
+            IEnumerable<string> networkNames = network.AdditionalNames != null ? new[] { network.Name }.Concat(network.AdditionalNames) : new[] { network.Name };
 
-            if (GetNetwork(builder.Name) != null)
-                throw new InvalidOperationException("The network " + builder.Name + " is already registered.");
-
-            if (builder.Genesis == null)
-                throw new InvalidOperationException("A genesis block needs to be provided.");
-
-            if (builder.Consensus == null)
-                throw new InvalidOperationException("A consensus needs to be provided.");
-
-            Network network = new Network();
-            network.Name = builder.Name;
-            network.RootFolderName = builder.RootFolderName;
-            network.DefaultConfigFilename = builder.DefaultConfigFilename;
-            network.consensus = builder.Consensus;
-            network.magic = builder.Magic;
-            network.DefaultPort = builder.Port;
-            network.RPCPort = builder.RPCPort;
-            network.genesis = builder.Genesis;
-            network.consensus.HashGenesisBlock = network.genesis.GetHash();
-
-            foreach (DNSSeedData seed in builder.Seeds)
+            foreach (string networkName in networkNames)
             {
-                network.seeds.Add(seed);
-            }
+                // Performs a series of checks before registering the network to the list of available networks.
+                if (string.IsNullOrEmpty(networkName))
+                    throw new InvalidOperationException("A network name needs to be provided.");
 
-            foreach (NetworkAddress seed in builder.FixedSeeds)
-            {
-                network.fixedSeeds.Add(seed);
-            }
+                if (GetNetwork(networkName) != null)
+                    throw new InvalidOperationException("The network " + networkName + " is already registered.");
 
-            network.base58Prefixes = Network.Main.base58Prefixes.ToArray();
+                if (network.GetGenesis() == null)
+                    throw new InvalidOperationException("A genesis block needs to be provided.");
 
-            foreach (KeyValuePair<Base58Type, byte[]> kv in builder.Base58Prefixes)
-            {
-                network.base58Prefixes[(int) kv.Key] = kv.Value;
-            }
+                if (network.Consensus == null)
+                    throw new InvalidOperationException("A consensus needs to be provided.");
 
-            network.bech32Encoders = Network.Main.bech32Encoders.ToArray();
-
-            foreach (KeyValuePair<Bech32Type, Bech32Encoder> kv in builder.Bech32Prefixes)
-            {
-                network.bech32Encoders[(int) kv.Key] = kv.Value;
-            }
-
-            foreach (string alias in builder.Aliases)
-            {
-                NetworksContainer.TryAdd(alias.ToLowerInvariant(), network);
-            }
-
-            NetworksContainer.TryAdd(network.Name.ToLowerInvariant(), network);
-
-            network.MaxTimeOffsetSeconds = builder.MaxTimeOffsetSeconds;
-            network.MaxTipAge = builder.MaxTipAge;
-            network.MinTxFee = builder.MinTxFee;
-            network.FallbackFee = builder.FallbackFee;
-            network.MinRelayTxFee = builder.MinRelayTxFee;
-
-            foreach (KeyValuePair<int, CheckpointInfo> checkpoint in builder.Checkpoints)
-            {
-                network.checkpoints.Add(checkpoint.Key, checkpoint.Value);
+                NetworksContainer.TryAdd(networkName.ToLowerInvariant(), network);
             }
 
             return network;
         }
 
-        private static void Assert(bool condition)
+        /// <summary>
+        /// Mines a new genesis block, to use with a new network.
+        /// Typically, 3 such genesis blocks need to be created when bootstrapping a new coin: for Main, Test and Reg networks.
+        /// </summary>
+        /// <param name="consensusFactory">
+        /// The consensus factory used to create transactions and blocks. 
+        /// Use <see cref="PosConsensusFactory"/> for proof-of-stake based networks.
+        /// </param>
+        /// <param name="coinbaseText">
+        /// Traditionally a news headline from the day of the launch, but could be any string or link.
+        /// This will be inserted in the input coinbase transaction script.
+        /// It should be shorter than 92 characters.
+        /// </param>
+        /// <param name="target">
+        /// The difficulty target under which the hash of the block need to be. 
+        /// Some more details: As an example, the target for the Stratis Main network is 00000fffffffffffffffffffffffffffffffffffffffffffffffffffffffffff.
+        /// To make it harder to mine the genesis block, have more zeros at the beginning (keeping the length the same). This will make the target smaller, so finding a number under it will be more difficult.
+        /// To make it easier to mine the genesis block ,do the opposite. Example of an easy one: 00ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff.
+        /// Make the Test and Reg targets ones easier to find than the Main one so that you don't wait too long to mine the genesis block.
+        /// </param>
+        /// <param name="genesisReward">
+        /// Specify how many coins to put in the genesis transaction's output. These coins are unspendable.
+        /// </param>
+        /// <param name="version">
+        /// The version of the transaction and the block header set in the genesis block. 
+        /// </param>
+        /// <example>
+        /// The following example shows the creation of a genesis block.
+        /// <code>
+        /// Block genesis = MineGenesisBlock(new PosConsensusFactory(), "Some topical headline.", new Target(new uint256("000fffff00000000000000000000000000000000000000000000000000000000")), Money.Coins(50m));
+        /// BlockHeader header = genesis.Header;
+        /// Console.WriteLine("Make a note of the following values:");
+        /// Console.WriteLine("bits: " + header.Bits);
+        /// Console.WriteLine("nonce: " + header.Nonce);
+        /// Console.WriteLine("time: " + header.Time);
+        /// Console.WriteLine("version: " + header.Version);
+        /// Console.WriteLine("hash: " + header.GetHash());
+        /// Console.WriteLine("merkleroot: " + header.HashMerkleRoot);
+        /// </code>
+        /// </example>
+        /// <returns>A genesis block.</returns>
+        public static Block MineGenesisBlock(ConsensusFactory consensusFactory, string coinbaseText, Target target, Money genesisReward, int version = 1)
+        {
+            if (target == null)
+                throw new ArgumentException($"Parameter '{nameof(target)}' cannot be null. Example use: new Target(new uint256(\"0000ffff00000000000000000000000000000000000000000000000000000000\"))");
+
+            if (consensusFactory == null)
+                throw new ArgumentException($"Parameter '{nameof(consensusFactory)}' cannot be null. Use 'new ConsensusFactory()' for Bitcoin-like proof-of-work blockchains" +
+                                            "and 'new PosConsensusFactory()' for Stratis-like proof-of-stake blockchains.");
+
+            if (string.IsNullOrEmpty(coinbaseText))
+                throw new ArgumentException($"Parameter '{nameof(coinbaseText)}' cannot be null. Use a news headline or any other appropriate string.");
+
+            if (coinbaseText.Length >= 92)
+                throw new ArgumentException($"Parameter '{nameof(coinbaseText)}' should be shorter than 92 characters.");
+
+            if (genesisReward == null)
+                throw new ArgumentException($"Parameter '{nameof(genesisReward)}' cannot be null. Example use: 'Money.Coins(50m)'.");
+
+            DateTimeOffset time = DateTimeOffset.Now;
+            uint unixTime = Utils.DateTimeToUnixTime(time);
+
+            Transaction txNew = consensusFactory.CreateTransaction();
+            txNew.Version = (uint)version;
+            txNew.Time = unixTime;
+            txNew.AddInput(new TxIn()
+            {
+                ScriptSig = new Script(
+                    Op.GetPushOp(0),
+                    new Op()
+                    {
+                        Code = (OpcodeType)0x1,
+                        PushData = new[] { (byte)42 }
+                    },
+                    Op.GetPushOp(Encoders.ASCII.DecodeData(coinbaseText)))
+            });
+
+            txNew.AddOutput(new TxOut()
+            {
+                Value = genesisReward,
+            });
+
+            Block genesis = consensusFactory.CreateBlock();
+            genesis.Header.BlockTime = time;
+            genesis.Header.Bits = target;
+            genesis.Header.Nonce = 0;
+            genesis.Header.Version = version;
+            genesis.Transactions.Add(txNew);
+            genesis.Header.HashPrevBlock = uint256.Zero;
+            genesis.UpdateMerkleRoot();
+
+            // Iterate over the nonce until the proof-of-work is valid.
+            // This will mean the block header hash is under the target.
+            while (!genesis.CheckProofOfWork())
+            {
+                genesis.Header.Nonce++;
+                if (genesis.Header.Nonce == 0)
+                    genesis.Header.Time++;
+            }
+
+            return genesis;
+        }
+
+        protected static void Assert(bool condition)
         {
             // TODO: use Guard when this moves to the FN.
             if (!condition)
@@ -426,23 +359,18 @@ namespace NBitcoin
             if (!type.HasValue)
                 throw new FormatException("Invalid Base58 version");
             if (type == Base58Type.PUBKEY_ADDRESS)
-                return new BitcoinPubKeyAddress(base58, this);
+                return this.CreateBitcoinPubKeyAddress(base58);
             if (type == Base58Type.SCRIPT_ADDRESS)
-                return new BitcoinScriptAddress(base58, this);
+                return this.CreateBitcoinScriptAddress(base58);
             throw new FormatException("Invalid Base58 version");
-        }
-
-        public BitcoinScriptAddress CreateBitcoinScriptAddress(string base58)
-        {
-            return new BitcoinScriptAddress(base58, this);
         }
 
         private Base58Type? GetBase58Type(string base58)
         {
             var bytes = Encoders.Base58Check.DecodeData(base58);
-            for (int i = 0; i < this.base58Prefixes.Length; i++)
+            for (int i = 0; i < this.Base58Prefixes.Length; i++)
             {
-                var prefix = this.base58Prefixes[i];
+                var prefix = this.Base58Prefixes[i];
                 if (prefix == null)
                     continue;
                 if (bytes.Length < prefix.Length)
@@ -498,7 +426,7 @@ namespace NBitcoin
             if (str == null)
                 throw new ArgumentNullException("str");
 
-            IEnumerable<Network> networks = expectedNetwork == null ? GetNetworks() : new[] {expectedNetwork};
+            IEnumerable<Network> networks = expectedNetwork == null ? GetNetworks() : new[] { expectedNetwork };
             var maybeb58 = true;
             for (int i = 0; i < str.Length; i++)
             {
@@ -526,7 +454,7 @@ namespace NBitcoin
                         bool rightNetwork = expectedNetwork == null || (candidate.Network == expectedNetwork);
                         bool rightType = candidate is T;
                         if (rightNetwork && rightType)
-                            return (T) (object) candidate;
+                            return (T)(object)candidate;
                     }
                     throw new FormatException("Invalid base58 string");
                 }
@@ -535,12 +463,12 @@ namespace NBitcoin
             foreach (Network network in networks)
             {
                 int i = -1;
-                foreach (Bech32Encoder encoder in network.bech32Encoders)
+                foreach (Bech32Encoder encoder in network.Bech32Encoders)
                 {
                     i++;
                     if (encoder == null)
                         continue;
-                    var type = (Bech32Type) i;
+                    var type = (Bech32Type)i;
                     try
                     {
                         byte witVersion;
@@ -553,7 +481,7 @@ namespace NBitcoin
                             candidate = new BitcoinWitScriptAddress(str, network);
 
                         if (candidate is T)
-                            return (T) (object) candidate;
+                            return (T)candidate;
                     }
                     catch (Bech32FormatException)
                     {
@@ -616,7 +544,7 @@ namespace NBitcoin
             if (type == Base58Type.EXT_SECRET_KEY)
                 return this.CreateBitcoinExtKey(base58);
             if (type == Base58Type.PUBKEY_ADDRESS)
-                return new BitcoinPubKeyAddress(base58, this);
+                return this.CreateBitcoinPubKeyAddress(base58);
             if (type == Base58Type.SCRIPT_ADDRESS)
                 return this.CreateBitcoinScriptAddress(base58);
             if (type == Base58Type.SECRET_KEY)
@@ -636,6 +564,11 @@ namespace NBitcoin
             if (type == Base58Type.COLORED_ADDRESS)
                 return this.CreateColoredAddress(base58);
             throw new NotSupportedException("Invalid Base58Data type : " + type.ToString());
+        }
+
+        public BitcoinScriptAddress CreateBitcoinScriptAddress(string base58)
+        {
+            return new BitcoinScriptAddress(base58, this);
         }
 
         private BitcoinColoredAddress CreateColoredAddress(string base58)
@@ -693,6 +626,21 @@ namespace NBitcoin
             return new BitcoinExtKey(base58, this);
         }
 
+        public BitcoinSecret CreateBitcoinSecret(Key key)
+        {
+            return new BitcoinSecret(key, this);
+        }
+
+        public BitcoinPubKeyAddress CreateBitcoinPubKeyAddress(KeyId dest)
+        {
+            return new BitcoinPubKeyAddress(dest, this);
+        }
+
+        public BitcoinPubKeyAddress CreateBitcoinPubKeyAddress(string base58)
+        {
+            return new BitcoinPubKeyAddress(base58, this);
+        }
+
         public override string ToString()
         {
             return this.Name;
@@ -700,10 +648,10 @@ namespace NBitcoin
 
         public Block GetGenesis()
         {
-            return this.genesis.Clone(network: this);
+            return this.Genesis.Clone(network: this);
         }
 
-        public uint256 GenesisHash => this.consensus.HashGenesisBlock;
+        public uint256 GenesisHash => this.Consensus.HashGenesisBlock;
 
         public static IEnumerable<Network> GetNetworks()
         {
@@ -718,16 +666,6 @@ namespace NBitcoin
                 foreach (Network network in others)
                     yield return network;
             }
-        }
-
-        /// <summary>
-        /// Get network from protocol magic number
-        /// </summary>
-        /// <param name="magic">Magic number</param>
-        /// <returns>The network, or null of the magic number does not match any network</returns>
-        public static Network GetNetwork(uint magic)
-        {
-            return GetNetworks().FirstOrDefault(r => r.Magic == magic);
         }
 
         /// <summary>
@@ -749,44 +687,10 @@ namespace NBitcoin
             return null;
         }
 
-        public BitcoinSecret CreateBitcoinSecret(Key key)
-        {
-            return new BitcoinSecret(key, this);
-        }
-
-        public BitcoinPubKeyAddress CreateBitcoinAddress(KeyId dest)
-        {
-            if (dest == null)
-                throw new ArgumentNullException("dest");
-            return new BitcoinPubKeyAddress(dest, this);
-        }
-
-        private BitcoinAddress CreateBitcoinScriptAddress(ScriptId scriptId)
-        {
-            return new BitcoinScriptAddress(scriptId, this);
-        }
-        /*
-        public Message ParseMessage(byte[] bytes, ProtocolVersion version = ProtocolVersion.PROTOCOL_VERSION)
-        {
-            BitcoinStream bstream = new BitcoinStream(bytes);
-            Message message = new Message();
-
-            using (bstream.ProtocolVersionScope(version))
-            {
-                bstream.ReadWrite(ref message);
-            }
-
-            if (message.Magic != this.magic)
-                throw new FormatException("Unexpected magic field in the message");
-
-            return message;
-        }
-        */
-
         public Money GetReward(int nHeight)
         {
             long nSubsidy = new Money(50 * Money.COIN);
-            int halvings = nHeight / this.consensus.SubsidyHalvingInterval;
+            int halvings = nHeight / this.Consensus.SubsidyHalvingInterval;
 
             // Force block reward to zero when right shift is undefined.
             if (halvings >= 64)
@@ -820,13 +724,9 @@ namespace NBitcoin
             return true;
         }
 
-        internal byte[][] base58Prefixes = new byte[12][];
-
-        internal Bech32Encoder[] bech32Encoders = new Bech32Encoder[2];
-
         public Bech32Encoder GetBech32Encoder(Bech32Type type, bool throws)
         {
-            Bech32Encoder encoder = this.bech32Encoders[(int)type];
+            Bech32Encoder encoder = this.Bech32Encoders[(int)type];
             if (encoder == null && throws)
                 throw new NotImplementedException("The network " + this + " does not have any prefix for bech32 " +
                                                   Enum.GetName(typeof(Bech32Type), type));
@@ -835,7 +735,7 @@ namespace NBitcoin
 
         public byte[] GetVersionBytes(Base58Type type, bool throws)
         {
-            var prefix = this.base58Prefixes[(int)type];
+            var prefix = this.Base58Prefixes[(int)type];
             if (prefix == null && throws)
                 throw new NotImplementedException("The network " + this + " does not have any prefix for base58 " +
                                                   Enum.GetName(typeof(Base58Type), type));
@@ -860,6 +760,24 @@ namespace NBitcoin
                 throw new ArgumentNullException("bytes");
             Bech32Encoder encoder = network.GetBech32Encoder(type, true);
             return encoder.Encode(witnessVersion, bytes);
+        }
+
+        protected IEnumerable<NetworkAddress> ConvertToNetworkAddresses(string[] seeds, int defaultPort)
+        {
+            Random rand = new Random();
+            TimeSpan oneWeek = TimeSpan.FromDays(7);
+
+            foreach (string seed in seeds)
+            {
+                // It'll only connect to one or two seed nodes because once it connects,
+                // it'll get a pile of addresses with newer timestamps.
+                // Seed nodes are given a random 'last seen time' of between one and two weeks ago.
+                yield return new NetworkAddress
+                {
+                    Time = DateTime.UtcNow - (TimeSpan.FromSeconds(rand.NextDouble() * oneWeek.TotalSeconds)) - oneWeek,
+                    Endpoint = Utils.ParseIpEndpoint(seed, defaultPort)
+                };
+            }
         }
     }
 }

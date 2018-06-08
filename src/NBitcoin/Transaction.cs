@@ -1076,6 +1076,14 @@ namespace NBitcoin
         }
     }
 
+    [Flags]
+    public enum TransactionOptions : uint
+    {
+        None = 0x00000000,
+        Witness = 0x40000000,
+        All = Witness
+    }
+
     class Witness
     {
         TxInList _Inputs;
@@ -1239,7 +1247,7 @@ namespace NBitcoin
 
         public virtual void ReadWrite(BitcoinStream stream)
         {
-            var witSupported = (((uint)stream.TransactionOptions & (uint)NetworkOptions.Witness) != 0) &&
+            var witSupported = (((uint)stream.TransactionOptions & (uint)TransactionOptions.Witness) != 0) &&
                                 stream.ProtocolVersion >= ProtocolVersion.WITNESS_VERSION;
 
             byte flags = 0;
@@ -1351,7 +1359,7 @@ namespace NBitcoin
             {
                 this.ReadWrite(new BitcoinStream(hs, true)
                 {
-                    TransactionOptions = NetworkOptions.None
+                    TransactionOptions = TransactionOptions.None
                 });
                 h = hs.GetHash();
             }
@@ -1412,7 +1420,7 @@ namespace NBitcoin
             {
                 this.ReadWrite(new BitcoinStream(hs, true)
                 {
-                    TransactionOptions = NetworkOptions.Witness
+                    TransactionOptions = TransactionOptions.Witness
                 });
                 h = hs.GetHash();
             }
@@ -1498,8 +1506,8 @@ namespace NBitcoin
         /// <returns>Transaction size</returns>
         public int GetVirtualSize()
         {
-            var totalSize = this.GetSerializedSize(new NetworkOptions(NetworkOptions.Witness));
-            var strippedSize = this.GetSerializedSize(new NetworkOptions(NetworkOptions.None));
+            var totalSize = this.GetSerializedSize(TransactionOptions.Witness);
+            var strippedSize = this.GetSerializedSize(TransactionOptions.None);
             // This implements the weight = (stripped_size * 4) + witness_size formula,
             // using only serialization with and without witness data. As witness_size
             // is equal to total_size - stripped_size, this formula is identical to:
@@ -1620,7 +1628,7 @@ namespace NBitcoin
         /// <para>ScriptSigs should be filled with either previous scriptPubKeys or redeem script (for P2SH)</para>
         /// <para>For more complex scenario, use TransactionBuilder</para>
         /// </summary>
-        /// <param name="secret"></param>
+        /// <param name="key"></param>
         [Obsolete("Use Sign(Key,ICoin[]) instead)")]
         public void Sign(Network network, Key key, bool assumeP2SH)
         {
@@ -1753,7 +1761,7 @@ namespace NBitcoin
             return new FeeRate(fee, this.GetVirtualSize());
         }
 
-        public bool IsFinal(ChainedBlock block)
+        public bool IsFinal(ChainedHeader block)
         {
             if(block == null)
                 return IsFinal(Utils.UnixTimeToDateTime(0), 0);
@@ -1798,7 +1806,7 @@ namespace NBitcoin
         /// <param name="block">The block being evaluated</param>
         /// <param name="flags">If VerifySequence is not set, returns always true SequenceLock</param>
         /// <returns>Sequence lock of minimum SequenceLock to satisfy</returns>
-        public bool CheckSequenceLocks(int[] prevHeights, ChainedBlock block, LockTimeFlags flags = LockTimeFlags.VerifySequence)
+        public bool CheckSequenceLocks(int[] prevHeights, ChainedHeader block, LockTimeFlags flags = LockTimeFlags.VerifySequence)
         {
             return CalculateSequenceLocks(prevHeights, block, flags).Evaluate(block);
         }
@@ -1810,10 +1818,10 @@ namespace NBitcoin
         /// locked inputs as they do not affect the calculation.
         /// </summary>        
         /// <param name="prevHeights">Previous Height</param>
-        /// <param name="block">The block being evaluated</param>
+        /// <param name="chainedHeader">The Chained block header being evaluated</param>
         /// <param name="flags">If VerifySequence is not set, returns always true SequenceLock</param>
         /// <returns>Sequence lock of minimum SequenceLock to satisfy</returns>
-        public SequenceLock CalculateSequenceLocks(int[] prevHeights, ChainedBlock block, LockTimeFlags flags = LockTimeFlags.VerifySequence)
+        public SequenceLock CalculateSequenceLocks(int[] prevHeights, ChainedHeader chainedHeader, LockTimeFlags flags = LockTimeFlags.VerifySequence)
         {
             if(prevHeights.Length != Inputs.Count)
                 throw new ArgumentException("The number of element in prevHeights should be equal to the number of inputs", "prevHeights");
@@ -1857,7 +1865,7 @@ namespace NBitcoin
 
                 if((txin.Sequence & Sequence.SEQUENCE_LOCKTIME_TYPE_FLAG) != 0)
                 {
-                    long nCoinTime = (long)Utils.DateTimeToUnixTimeLong(block.GetAncestor(Math.Max(nCoinHeight - 1, 0)).GetMedianTimePast());
+                    long nCoinTime = (long)Utils.DateTimeToUnixTimeLong(chainedHeader.GetAncestor(Math.Max(nCoinHeight - 1, 0)).GetMedianTimePast());
 
                     // Time-based relative lock-times are measured from the
                     // smallest allowed timestamp of the block containing the
@@ -1890,11 +1898,11 @@ namespace NBitcoin
         /// <param name="options">Options to keep</param>
         /// <param name="consensusFactory">The network consensus factory.</param>
         /// <returns>A new transaction with only the options wanted</returns>
-        public Transaction WithOptions(NetworkOptions options, ConsensusFactory consensusFactory)
+        public Transaction WithOptions(TransactionOptions options, ConsensusFactory consensusFactory)
         {
-            if(options == NetworkOptions.Witness && HasWitness)
+            if(options == TransactionOptions.Witness && HasWitness)
                 return this;
-            if(options == NetworkOptions.None && !HasWitness)
+            if(options == TransactionOptions.None && !HasWitness)
                 return this;
             var instance = consensusFactory.CreateTransaction();
             var ms = new MemoryStream();

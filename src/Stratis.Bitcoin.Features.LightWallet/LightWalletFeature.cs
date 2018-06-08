@@ -107,13 +107,6 @@ namespace Stratis.Bitcoin.Features.LightWallet
             this.walletSettings = walletSettings;
         }
 
-        /// <inheritdoc />
-        public override void LoadConfiguration()
-        {
-            this.walletSettings.Load(this.nodeSettings);
-            this.walletSettings.IsLightWallet = true;
-        }
-
         /// <summary>
         /// Prints command-line help.
         /// </summary>
@@ -127,6 +120,7 @@ namespace Stratis.Bitcoin.Features.LightWallet
         public override void Initialize()
         {
             this.connectionManager.Parameters.TemplateBehaviors.Add(new DropNodesBehaviour(this.chain, this.connectionManager, this.loggerFactory));
+            this.walletSettings.IsLightWallet = true;
 
             this.walletManager.Start();
             this.walletSyncManager.Start();
@@ -180,7 +174,7 @@ namespace Stratis.Bitcoin.Features.LightWallet
             if (manager != null)
             {
                 int height = manager.LastBlockHeight();
-                ChainedBlock block = this.chain.GetBlock(height);
+                ChainedHeader block = this.chain.GetBlock(height);
                 uint256 hashBlock = block == null ? 0 : block.HashBlock;
 
                 benchLog.AppendLine("LightWallet.Height: ".PadRight(LoggingConfiguration.ColumnLength + 1) +
@@ -213,7 +207,7 @@ namespace Stratis.Bitcoin.Features.LightWallet
     /// </summary>
     public static class FullNodeBuilderLightWalletExtension
     {
-        public static IFullNodeBuilder UseLightWallet(this IFullNodeBuilder fullNodeBuilder, Action<WalletSettings> setup = null)
+        public static IFullNodeBuilder UseLightWallet(this IFullNodeBuilder fullNodeBuilder)
         {
             fullNodeBuilder.ConfigureFeature(features =>
             {
@@ -234,7 +228,7 @@ namespace Stratis.Bitcoin.Features.LightWallet
                         services.AddSingleton<IBroadcasterManager, LightWalletBroadcasterManager>();
                         services.AddSingleton<BroadcasterBehavior>();
                         services.AddSingleton<IInitialBlockDownloadState, LightWalletInitialBlockDownloadState>();
-                        services.AddSingleton<WalletSettings>(new WalletSettings(setup));
+                        services.AddSingleton<WalletSettings>();
                     });
             });
 

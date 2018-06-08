@@ -77,12 +77,6 @@ namespace Stratis.Bitcoin.Features.Wallet
             this.walletSettings = walletSettings;
         }
 
-        /// <inheritdoc />
-        public override void LoadConfiguration()
-        {
-            this.walletSettings.Load(this.nodeSettings);
-        }
-
         /// <summary>
         /// Prints command-line help.
         /// </summary>
@@ -110,7 +104,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             if (walletManager != null)
             {
                 int height = walletManager.LastBlockHeight();
-                ChainedBlock block = this.chain.GetBlock(height);
+                ChainedHeader block = this.chain.GetBlock(height);
                 uint256 hashBlock = block == null ? 0 : block.HashBlock;
 
                 benchLogs.AppendLine("Wallet.Height: ".PadRight(LoggingConfiguration.ColumnLength + 1) +
@@ -166,7 +160,7 @@ namespace Stratis.Bitcoin.Features.Wallet
     /// </summary>
     public static class FullNodeBuilderWalletExtension
     {
-        public static IFullNodeBuilder UseWallet(this IFullNodeBuilder fullNodeBuilder, Action<WalletSettings> setup = null)
+        public static IFullNodeBuilder UseWallet(this IFullNodeBuilder fullNodeBuilder)
         {
             LoggingConfiguration.RegisterFeatureNamespace<WalletFeature>("wallet");
 
@@ -187,7 +181,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                         services.AddSingleton<WalletRPCController>();
                         services.AddSingleton<IBroadcasterManager, FullNodeBroadcasterManager>();
                         services.AddSingleton<BroadcasterBehavior>();
-                        services.AddSingleton<WalletSettings>(new WalletSettings(setup));
+                        services.AddSingleton<WalletSettings>();
                     });
             });
 

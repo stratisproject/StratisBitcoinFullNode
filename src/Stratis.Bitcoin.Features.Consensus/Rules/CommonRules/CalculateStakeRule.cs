@@ -18,14 +18,14 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
 
             if (context.Stake.BlockStake.IsProofOfWork())
             {
-                if (context.CheckPow && !context.BlockValidationContext.Block.Header.CheckProofOfWork(context.Consensus))
+                if (context.CheckPow && !context.BlockValidationContext.Block.Header.CheckProofOfWork())
                 {
                     this.Logger.LogTrace("(-)[HIGH_HASH]");
                     ConsensusErrors.HighHash.Throw();
                 }
             }
 
-            context.NextWorkRequired = this.PosParent.StakeValidator.GetNextTargetRequired(this.PosParent.StakeChain, context.BlockValidationContext.ChainedBlock.Previous, context.Consensus, 
+            context.NextWorkRequired = this.PosParent.StakeValidator.GetNextTargetRequired(this.PosParent.StakeChain, context.BlockValidationContext.ChainedHeader.Previous, context.Consensus, 
                 context.Stake.BlockStake.IsProofOfStake());
 
             return Task.CompletedTask;

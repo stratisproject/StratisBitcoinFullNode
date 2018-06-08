@@ -42,9 +42,9 @@ namespace Stratis.Bitcoin.Features.Notifications.Tests
             string hashLocation = "000000000000000000c03dbe6ee5fedb25877a12e32aa95bc1d3bd480d7a93f9";
             uint256 hash = uint256.Parse(hashLocation);
 
-            ChainedBlock chainedBlock = new ChainedBlock(new BlockHeader(), hash, null);
+            ChainedHeader chainedHeader = new ChainedHeader(new BlockHeader(), hash, null);
             var chain = new Mock<ConcurrentChain>();
-            chain.Setup(c => c.GetBlock(heightLocation)).Returns(chainedBlock);
+            chain.Setup(c => c.GetBlock(heightLocation)).Returns(chainedHeader);
             var blockNotification = new Mock<BlockNotification>(this.LoggerFactory.Object, chain.Object, new Mock<ILookaheadBlockPuller>().Object, new Signals.Signals(), new AsyncLoopFactory(new LoggerFactory()), new NodeLifetime());
 
             // Act
@@ -64,9 +64,9 @@ namespace Stratis.Bitcoin.Features.Notifications.Tests
             string hashLocation = "000000000000000000c03dbe6ee5fedb25877a12e32aa95bc1d3bd480d7a93f9";
             uint256 hash = uint256.Parse(hashLocation);
 
-            ChainedBlock chainedBlock = new ChainedBlock(new BlockHeader(), hash, null);
+            ChainedHeader chainedHeader = new ChainedHeader(new BlockHeader(), hash, null);
             var chain = new Mock<ConcurrentChain>();
-            chain.Setup(c => c.GetBlock(uint256.Parse(hashLocation))).Returns(chainedBlock);
+            chain.Setup(c => c.GetBlock(uint256.Parse(hashLocation))).Returns(chainedHeader);
             var blockNotification = new Mock<BlockNotification>(this.LoggerFactory.Object, chain.Object, new Mock<ILookaheadBlockPuller>().Object, new Signals.Signals(), new AsyncLoopFactory(new LoggerFactory()), new NodeLifetime());
 
             // Act
@@ -85,7 +85,7 @@ namespace Stratis.Bitcoin.Features.Notifications.Tests
             string hashLocation = "000000000000000000c03dbe6ee5fedb25877a12e32aa95bc1d3bd480d7a93f9";
             
             var chain = new Mock<ConcurrentChain>();
-            chain.Setup(c => c.GetBlock(uint256.Parse(hashLocation))).Returns((ChainedBlock)null);
+            chain.Setup(c => c.GetBlock(uint256.Parse(hashLocation))).Returns((ChainedHeader)null);
             var blockNotification = new Mock<BlockNotification>(this.LoggerFactory.Object, chain.Object, new Mock<ILookaheadBlockPuller>().Object, new Signals.Signals(), new AsyncLoopFactory(new LoggerFactory()), new NodeLifetime());
 
             // Act
@@ -122,7 +122,7 @@ namespace Stratis.Bitcoin.Features.Notifications.Tests
         {
             // Set up
             var chain = new Mock<ConcurrentChain>();
-            chain.Setup(c => c.GetBlock(15)).Returns((ChainedBlock)null);
+            chain.Setup(c => c.GetBlock(15)).Returns((ChainedHeader)null);
             var blockNotification = new Mock<BlockNotification>(this.LoggerFactory.Object, chain.Object, new Mock<ILookaheadBlockPuller>().Object, new Signals.Signals(), new AsyncLoopFactory(new LoggerFactory()), new NodeLifetime());
 
             // Act
