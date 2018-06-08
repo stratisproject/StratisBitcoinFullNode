@@ -42,6 +42,12 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         /// <inheritdoc/>
         public override Money GetProofOfWorkReward(int height)
         {
+            if (this.IsPremine(height))
+                return this.consensus.PremineReward;
+
+            if (this.consensus.ProofOfWorkReward == 0)
+                return 0;
+
             int halvings = height / this.consensus.SubsidyHalvingInterval;
 
             // Force block reward to zero when right shift is undefined.

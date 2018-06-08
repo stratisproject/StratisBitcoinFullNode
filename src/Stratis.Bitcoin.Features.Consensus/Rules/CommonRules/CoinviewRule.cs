@@ -417,5 +417,17 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
             data.ReadWrite(bms);
             return (int)bms.Counter.WrittenBytes;
         }
+
+        /// <summary>
+        /// Determines whether the block with specified height is premined.
+        /// </summary>
+        /// <param name="height">Block's height.</param>
+        /// <returns><c>true</c> if the block with provided height is premined, <c>false</c> otherwise.</returns>
+        protected bool IsPremine(int height)
+        {
+            return (this.Consensus.PremineHeight > 0) &&
+                   (this.Consensus.PremineReward > 0) &&
+                   (height == this.Consensus.PremineHeight);
+        }
     }
 }
