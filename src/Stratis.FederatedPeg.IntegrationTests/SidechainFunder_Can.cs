@@ -30,21 +30,80 @@ using WtRecipient = Stratis.Bitcoin.Features.Wallet.Recipient;
 
 using GpTransactionBuildContext = Stratis.Bitcoin.Features.GeneralPurposeWallet.TransactionBuildContext;
 using WtTransactionBuildContext = Stratis.Bitcoin.Features.Wallet.TransactionBuildContext;
+using System;
+using Stratis.ApexD;
 
 //todo: this is pre-refactoring code
 //todo: ensure no duplicate or fake withdrawal or deposit transactions are possible (current work underway)
 
 namespace Stratis.FederatedPeg.IntegrationTests
 {
+    public class FedMember
+    {
+        public string Name { get; set; }
+
+        public Mnemonic Mnemonic { get; set; }
+
+        public string Password { get; set; }
+
+        public PubKey PubKey { get; set; }
+    }
+
     // Use Case references. (See documents in the requirements folder n the repo.)
     // UCInit: Generate and Initialize Sidechain.
     // UCGenF: Generate Federation Member Key Pairs.
     // UCFund: Send Funds to Sidechain.
     public class SidechainFunder_Can
     {
+        private List<FedMember> members;
+
+        public void CreateMembers()
+        {
+            int membersCount = 3;
+            int minSigneesCount = 2;
+
+            // Create the members.
+            members = new List<FedMember>();
+            for (int i = 0; i < membersCount; i++)
+            {
+                Mnemonic mnemonic = new Mnemonic(Wordlist.English, WordCount.Twelve);
+                var pubKey = mnemonic.DeriveExtKey().PrivateKey.PubKey;
+
+                FedMember member = new FedMember
+                {
+                    Name = $"member{i}",
+                    Password = $"pass{i}",
+                    Mnemonic = mnemonic,
+                    PubKey = pubKey
+                };
+
+                members.Add(member);
+            }
+
+            // Create the redeem script.
+            Script redeemScript = PayToMultiSigTemplate.Instance.GenerateScriptPubKey(minSigneesCount, members.Select(p => p.PubKey).ToArray());
+            Console.WriteLine("Redeem script: " + redeemScript.ToString());
+
+            // Create the Apex sidechain multisig address.
+            BitcoinAddress sidechainMultisigAddress = redeemScript.Hash.GetAddress(ApexNetwork.ApexTest);
+            Console.WriteLine("Sidechan P2SH: " + sidechainMultisigAddress.ScriptPubKey);
+            Console.WriteLine("Sidechain Multisig address: " + sidechainMultisigAddress);
+
+            // Create the Stratis Test sidechain multisig address.
+            BitcoinAddress mainchainMultisigAddress = redeemScript.Hash.GetAddress(Network.StratisTest);
+            Console.WriteLine("Mainchain P2SH: " + mainchainMultisigAddress.ScriptPubKey);
+            Console.WriteLine("Mainchain Multisig address: " + mainchainMultisigAddress);
+
+
+            // Tests.
+            var destinations = redeemScript.GetDestinationPublicKeys(ApexNetwork.ApexTest);
+            Assert.Equal(membersCount, destinations.Length);
+        }
+
         [Fact]
         public async Task deposit_funds_to_sidechain()
         {
+            CreateMembers();
             int addNodeDelay = 4000;
 
             TestUtils.ShellCleanupFolder("TestData\\deposit_funds_to_sidechain");

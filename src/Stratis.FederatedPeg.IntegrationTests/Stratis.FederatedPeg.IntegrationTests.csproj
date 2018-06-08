@@ -31,6 +31,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Stratis.ApexD\Stratis.ApexD.csproj" />
     <ProjectReference Include="..\Stratis.Bitcoin.Features.GeneralPurposeWallet\Stratis.Bitcoin.Features.GeneralPurposeWallet.csproj" />
     <ProjectReference Include="..\Stratis.FederatedPeg.Features.FederationGateway\Stratis.FederatedPeg.Features.FederationGateway.csproj" />
     <ProjectReference Include="..\Stratis.FederatedPeg.Features.MainchainGeneratorServices\Stratis.FederatedPeg.Features.MainchainGeneratorServices.csproj" />
