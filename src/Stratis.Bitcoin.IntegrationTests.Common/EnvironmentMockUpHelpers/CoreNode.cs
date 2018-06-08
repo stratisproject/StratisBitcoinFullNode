@@ -62,7 +62,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
             this.Config = Path.Combine(this.runner.DataFolder, configfile);
             this.ConfigParameters.Import(builder.ConfigParameters);
             this.ports = new int[2];
-            this.FindPorts(this.ports);
+            TestHelper.FindPorts(this.ports);
 
             var loggerFactory = new ExtendedLoggerFactory();
             loggerFactory.AddConsoleWithFilters();
@@ -199,29 +199,6 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
                     break;
                 else
                     Thread.Sleep(200);
-            }
-        }
-
-        private void FindPorts(int[] ports)
-        {
-            int i = 0;
-            while (i < ports.Length)
-            {
-                var port = RandomUtils.GetUInt32() % 4000;
-                port = port + 10000;
-                if (ports.Any(p => p == port))
-                    continue;
-                try
-                {
-                    TcpListener l = new TcpListener(IPAddress.Loopback, (int)port);
-                    l.Start();
-                    l.Stop();
-                    ports[i] = (int)port;
-                    i++;
-                }
-                catch (SocketException)
-                {
-                }
             }
         }
 

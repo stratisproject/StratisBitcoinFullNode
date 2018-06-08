@@ -204,17 +204,5 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
 
             return this.consensus.ProofOfStakeReward;
         }
-
-        /// <summary>
-        /// Determines whether the block with specified height is premined.
-        /// </summary>
-        /// <param name="height">Block's height.</param>
-        /// <returns><c>true</c> if the block with provided height is premined, <c>false</c> otherwise.</returns>
-        private bool IsPremine(int height)
-        {
-            return (this.consensus.PremineHeight > 0) &&
-                   (this.consensus.PremineReward > 0) &&
-                   (height == this.consensus.PremineHeight);
-        }
     }
 }
