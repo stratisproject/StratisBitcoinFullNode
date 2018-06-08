@@ -91,7 +91,6 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
                 var posBlockAssembler = new PosBlockDefinition(this.consensusLoop.Object, this.dateTimeProvider.Object, this.LoggerFactory.Object, this.mempool.Object, new MempoolSchedulerLock(), this.network, this.stakeChain.Object, this.stakeValidator.Object);
                 var blockTemplate = posBlockAssembler.Build(chain.Tip, this.key.ScriptPubKey);
 
-                Assert.Null(blockTemplate.CoinbaseCommitment);
                 Assert.Equal(new Money(1000), blockTemplate.TotalFee);
                 Assert.Equal(2, blockTemplate.Block.Transactions.Count);
                 Assert.Equal(536870912, blockTemplate.Block.Header.Version);

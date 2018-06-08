@@ -4,9 +4,8 @@ namespace Stratis.Bitcoin.Mining
 {
     public sealed class BlockTemplate
     {
-        public readonly Block Block;
-
-        public Money TotalFee;
+        public Block Block { get; set; }
+        public Money TotalFee { get; set; }
 
         public BlockTemplate(Network network)
         {
