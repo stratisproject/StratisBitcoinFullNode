@@ -38,9 +38,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <summary>Gets the start time of the performance counter.</summary>
         public DateTime Start { get; }
 
-        /// <summary>Gets the amount of elapsed time between the start and now.</summary>
-        public TimeSpan Elapsed => this.dateTimeProvider.GetUtcNow() - this.Start;
-
         /// <summary>Gets the number of transactions in the memory pool.</summary>
         public long MempoolSize => this.mempoolSize;
 
@@ -50,8 +47,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <summary>
         /// Gets and sets the memory pool orphan transaction count.
         /// </summary>
-        /// <remarks>TODO: Should this use be using the backing mempoolOrphanSize field?</remarks>
-        public long MempoolOrphanSize { get; set; }
+        public long MempoolOrphanSize => this.mempoolOrphanSize;
 
         /// <summary>Gets the count of memory pool hits.</summary>
         public long HitCount => this.hitCount;
