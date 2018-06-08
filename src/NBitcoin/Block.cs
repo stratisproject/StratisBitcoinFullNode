@@ -120,7 +120,7 @@ namespace NBitcoin
             if (hash != null)
                 return hash;
 
-            using (HashStream hs = new HashStream())
+            using (var hs = new HashStream())
             {
                 this.ReadWrite(new BitcoinStream(hs, true));
                 hash = hs.GetHash();
@@ -247,7 +247,7 @@ namespace NBitcoin
         [Obsolete("Should use Block.Load outside of ConsensusFactories")]
         internal Block(byte[] bytes, ConsensusFactory consensusFactory)
         {
-            BitcoinStream stream = new BitcoinStream(bytes)
+            var stream = new BitcoinStream(bytes)
             {
                 ConsensusFactory = consensusFactory
             };
@@ -350,7 +350,7 @@ namespace NBitcoin
         {
             var formatter = new BlockExplorerFormatter();
             JObject block = JObject.Parse(json);
-            JArray txs = (JArray)block["tx"];
+            var txs = (JArray)block["tx"];
             Block blk = network.Consensus.ConsensusFactory.CreateBlock();
             blk.Header.Bits = new Target((uint)block["bits"]);
             blk.Header.BlockTime = Utils.UnixTimeToDateTime((uint)block["time"]);

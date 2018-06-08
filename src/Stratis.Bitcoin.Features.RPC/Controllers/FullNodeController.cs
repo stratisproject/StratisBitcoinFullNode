@@ -4,7 +4,6 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
-using Newtonsoft.Json.Linq;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Controllers;
@@ -194,7 +193,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
             BlockHeaderModel model = null;
             if (this.Chain != null)
             {
-                var blockHeader = this.Chain.GetBlock(uint256.Parse(hash))?.Header;
+                BlockHeader blockHeader = this.Chain.GetBlock(uint256.Parse(hash))?.Header;
                 if (blockHeader != null)
                     model = new BlockHeaderModel(blockHeader);
             }

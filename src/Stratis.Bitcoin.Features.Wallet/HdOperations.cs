@@ -24,7 +24,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             Guard.NotEmpty(accountExtPubKey, nameof(accountExtPubKey));
 
             int change = isChange ? 1 : 0;
-            KeyPath keyPath = new KeyPath($"{change}/{index}");
+            var keyPath = new KeyPath($"{change}/{index}");
             ExtPubKey extPubKey = ExtPubKey.Parse(accountExtPubKey).Derive(keyPath);
             return extPubKey.PubKey;
         }
@@ -45,7 +45,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             Guard.NotNull(network, nameof(network));
 
             // Get the extended key.
-            ExtKey seedExtKey = new ExtKey(privateKey, chainCode);
+            var seedExtKey = new ExtKey(privateKey, chainCode);
             ExtKey addressExtKey = seedExtKey.Derive(new KeyPath(hdPath));
             BitcoinExtKey addressPrivateKey = addressExtKey.GetWif(network);
             return addressPrivateKey;
@@ -64,7 +64,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             Guard.NotNull(privateKey, nameof(privateKey));
             Guard.NotNull(chainCode, nameof(chainCode));
 
-            var accountHdPath = GetAccountHdPath(coinType, accountIndex);
+            string accountHdPath = GetAccountHdPath(coinType, accountIndex);
             return GetExtendedPublicKey(privateKey, chainCode, accountHdPath);
         }
 
@@ -82,7 +82,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             Guard.NotEmpty(hdPath, nameof(hdPath));
 
             // get extended private key
-            ExtKey seedExtKey = new ExtKey(privateKey, chainCode);
+            var seedExtKey = new ExtKey(privateKey, chainCode);
             ExtKey addressExtKey = seedExtKey.Derive(new KeyPath(hdPath));
             ExtPubKey extPubKey = addressExtKey.Neuter();
             return extPubKey;
@@ -159,7 +159,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             if (pathElements.Length < 3)
                 throw new FormatException($"Could not parse CoinType from HdPath {hdPath}.");
 
-            var coinType = 0;
+            int coinType = 0;
             if (int.TryParse(pathElements[2].Replace("'", string.Empty), out coinType))
             {
                 return coinType;
@@ -179,7 +179,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         {
             Guard.NotEmpty(hdPath, nameof(hdPath));
 
-            var hdPathParts = hdPath.Split('/');
+            string[] hdPathParts = hdPath.Split('/');
             if (hdPathParts.Length < 5)
                 throw new FormatException($"Could not parse value from HdPath {hdPath}.");
 

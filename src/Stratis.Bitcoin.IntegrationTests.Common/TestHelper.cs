@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
+using Stratis.Bitcoin.P2P.Peer;
 
 namespace Stratis.Bitcoin.IntegrationTests.Common
 {
@@ -40,7 +41,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
 
         public static void TriggerSync(CoreNode node)
         {
-            foreach (var connectedPeer in node.FullNode.ConnectionManager.ConnectedPeers)
+            foreach (INetworkPeer connectedPeer in node.FullNode.ConnectionManager.ConnectedPeers)
                 connectedPeer.Behavior<ChainHeadersBehavior>().TrySyncAsync().GetAwaiter().GetResult();
         }
 

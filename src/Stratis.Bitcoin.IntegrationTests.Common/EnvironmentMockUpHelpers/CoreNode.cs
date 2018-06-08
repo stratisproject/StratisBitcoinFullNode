@@ -57,7 +57,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
             this.runner = runner;
 
             this.State = CoreNodeState.Stopped;
-            var pass = Encoders.Hex.EncodeData(RandomUtils.GetBytes(20));
+            string pass = Encoders.Hex.EncodeData(RandomUtils.GetBytes(20));
             this.creds = new NetworkCredential(pass, pass);
             this.Config = Path.Combine(this.runner.DataFolder, configfile);
             this.ConfigParameters.Import(builder.ConfigParameters);
@@ -81,8 +81,8 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
 
         public void Sync(CoreNode node, bool keepConnection = false)
         {
-            var rpc = this.CreateRPCClient();
-            var rpc1 = node.CreateRPCClient();
+            RPCClient rpc = this.CreateRPCClient();
+            RPCClient rpc1 = node.CreateRPCClient();
             rpc.AddNode(node.Endpoint, true);
             while (rpc.GetBestBlockHash() != rpc1.GetBestBlockHash())
             {
@@ -207,13 +207,13 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
             int i = 0;
             while (i < ports.Length)
             {
-                var port = RandomUtils.GetUInt32() % 4000;
+                uint port = RandomUtils.GetUInt32() % 4000;
                 port = port + 10000;
                 if (ports.Any(p => p == port))
                     continue;
                 try
                 {
-                    TcpListener l = new TcpListener(IPAddress.Loopback, (int)port);
+                    var l = new TcpListener(IPAddress.Loopback, (int)port);
                     l.Start();
                     l.Stop();
                     ports[i] = (int)port;
@@ -267,27 +267,27 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
 
         public void SelectMempoolTransactions()
         {
-            var rpc = this.CreateRPCClient();
-            var txs = rpc.GetRawMempool();
-            var tasks = txs.Select(t => rpc.GetRawTransactionAsync(t)).ToArray();
+            RPCClient rpc = this.CreateRPCClient();
+            uint256[] txs = rpc.GetRawMempool();
+            Task<Transaction>[] tasks = txs.Select(t => rpc.GetRawTransactionAsync(t)).ToArray();
             Task.WaitAll(tasks);
             this.transactions.AddRange(tasks.Select(t => t.Result).ToArray());
         }
 
         public void Split(Money amount, int parts)
         {
-            var rpc = this.CreateRPCClient();
-            TransactionBuilder builder = new TransactionBuilder(this.FullNode.Network);
+            RPCClient rpc = this.CreateRPCClient();
+            var builder = new TransactionBuilder(this.FullNode.Network);
             builder.AddKeys(rpc.ListSecrets().OfType<ISecret>().ToArray());
             builder.AddCoins(rpc.ListUnspent().Select(c => c.AsCoin()));
-            var secret = this.GetFirstSecret(rpc);
-            foreach (var part in (amount - this.fee).Split(parts))
+            BitcoinSecret secret = this.GetFirstSecret(rpc);
+            foreach (Money part in (amount - this.fee).Split(parts))
             {
                 builder.Send(secret, part);
             }
             builder.SendFees(this.fee);
             builder.SetChange(secret);
-            var tx = builder.BuildTransaction(true);
+            Transaction tx = builder.BuildTransaction(true);
             this.Broadcast(tx);
         }
 
@@ -317,11 +317,11 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
 
         public async Task<Block[]> GenerateAsync(int blockCount, bool includeUnbroadcasted = true, bool broadcast = true)
         {
-            var rpc = this.CreateRPCClient();
+            RPCClient rpc = this.CreateRPCClient();
             BitcoinSecret dest = this.GetFirstSecret(rpc);
-            var bestBlock = rpc.GetBestBlockHash();
+            uint256 bestBlock = rpc.GetBestBlockHash();
             ConcurrentChain chain = null;
-            List<Block> blocks = new List<Block>();
+            var blocks = new List<Block>();
             DateTimeOffset now = this.MockTime == null ? DateTimeOffset.UtcNow : this.MockTime.Value;
 
             using (INetworkPeer peer = this.CreateNetworkPeerClient())
@@ -331,7 +331,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
                 for (int i = 0; i < blockCount; i++)
                 {
                     uint nonce = 0;
-                    Block block = new Block();
+                    var block = new Block();
                     block.Header.HashPrevBlock = chain.Tip.HashBlock;
                     block.Header.Bits = block.Header.GetWorkRequired(rpc.Network, chain.Tip);
                     block.Header.UpdateTime(now, rpc.Network, chain.Tip);
@@ -366,7 +366,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
         /// <returns>The chain of headers.</returns>
         private ConcurrentChain GetChain(INetworkPeer peer, uint256 hashStop = null, CancellationToken cancellationToken = default(CancellationToken))
         {
-            ConcurrentChain chain = new ConcurrentChain(peer.Network);
+            var chain = new ConcurrentChain(peer.Network);
             this.SynchronizeChain(peer, chain, hashStop, cancellationToken);
             return chain;
         }
@@ -435,7 +435,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
                         bool isOurs = false;
                         HeadersPayload headers = null;
 
-                        using (var headersCancel = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken))
+                        using (CancellationTokenSource headersCancel = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken))
                         {
                             headersCancel.CancelAfter(TimeSpan.FromMinutes(1.0));
                             try
@@ -503,7 +503,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
 
         public bool AddToStratisMempool(Transaction trx)
         {
-            var fullNode = (this.runner as StratisBitcoinPowRunner).FullNode;
+            FullNode fullNode = (this.runner as StratisBitcoinPowRunner).FullNode;
             var state = new MempoolValidationState(true);
 
             return fullNode.MempoolManager().Validator.AcceptToMemoryPool(state, trx).Result;
@@ -517,16 +517,16 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
         [Obsolete("Please use GenerateStratisWithMiner instead.")]
         public Block[] GenerateStratis(int blockCount, List<Transaction> passedTransactions = null, bool broadcast = true)
         {
-            var fullNode = (this.runner as StratisBitcoinPowRunner).FullNode;
+            FullNode fullNode = (this.runner as StratisBitcoinPowRunner).FullNode;
             BitcoinSecret dest = this.MinerSecret;
-            List<Block> blocks = new List<Block>();
+            var blocks = new List<Block>();
             DateTimeOffset now = this.MockTime == null ? DateTimeOffset.UtcNow : this.MockTime.Value;
 #if !NOSOCKET
 
             for (int i = 0; i < blockCount; i++)
             {
                 uint nonce = 0;
-                Block block = new Block();
+                var block = new Block();
                 block.Header.HashPrevBlock = fullNode.Chain.Tip.HashBlock;
                 block.Header.Bits = block.Header.GetWorkRequired(fullNode.Network, fullNode.Chain.Tip);
                 block.Header.UpdateTime(now, fullNode.Network, fullNode.Chain.Tip);
@@ -547,7 +547,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
                 {
                     uint256 blockHash = block.GetHash();
                     var newChain = new ChainedHeader(block.Header, blockHash, fullNode.Chain.Tip);
-                    var oldTip = fullNode.Chain.SetTip(newChain);
+                    ChainedHeader oldTip = fullNode.Chain.SetTip(newChain);
                     fullNode.ConsensusLoop().Puller.InjectBlock(blockHash, new DownloadedBlock { Length = block.GetSerializedSize(), Block = block }, CancellationToken.None);
 
                     //try
@@ -589,7 +589,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
 
         public async Task BroadcastBlocksAsync(Block[] blocks, INetworkPeer peer)
         {
-            foreach (var block in blocks)
+            foreach (Block block in blocks)
             {
                 await peer.SendMessageAsync(new InvPayload(block));
                 await peer.SendMessageAsync(new BlockPayload(block));
@@ -622,12 +622,12 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
                 return transactions;
 
             var result = new List<Transaction>();
-            var dictionary = transactions.ToDictionary(t => t.GetHash(), t => new TransactionNode(t));
-            foreach (var transaction in dictionary.Select(d => d.Value))
+            Dictionary<uint256, TransactionNode> dictionary = transactions.ToDictionary(t => t.GetHash(), t => new TransactionNode(t));
+            foreach (TransactionNode transaction in dictionary.Select(d => d.Value))
             {
-                foreach (var input in transaction.Transaction.Inputs)
+                foreach (TxIn input in transaction.Transaction.Inputs)
                 {
-                    var node = dictionary.TryGet(input.PrevOut.Hash);
+                    TransactionNode node = dictionary.TryGet(input.PrevOut.Hash);
                     if (node != null)
                     {
                         transaction.DependsOn.Add(node);
@@ -637,9 +637,9 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
 
             while (dictionary.Count != 0)
             {
-                foreach (var node in dictionary.Select(d => d.Value).ToList())
+                foreach (TransactionNode node in dictionary.Select(d => d.Value).ToList())
                 {
-                    foreach (var parent in node.DependsOn.ToList())
+                    foreach (TransactionNode parent in node.DependsOn.ToList())
                     {
                         if (!dictionary.ContainsKey(parent.Hash))
                             node.DependsOn.Remove(parent);
@@ -661,10 +661,10 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
             if (this.MinerSecret != null)
                 return this.MinerSecret;
 
-            var dest = rpc.ListSecrets().FirstOrDefault();
+            BitcoinSecret dest = rpc.ListSecrets().FirstOrDefault();
             if (dest == null)
             {
-                var address = rpc.GetNewAddress();
+                BitcoinAddress address = rpc.GetNewAddress();
                 dest = rpc.DumpPrivKey(address);
             }
             return dest;

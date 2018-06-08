@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using NBitcoin;
 using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
 using Xunit;
@@ -30,7 +27,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             transaction.Inputs.Add(new TxIn(new Script(op, op, op, op)));
             this.ruleContext.BlockValidationContext.Block.Transactions.Add(transaction);
 
-            var exception = await Assert.ThrowsAsync<ConsensusErrorException>(() => this.consensusRules.RegisterRule<CheckSigOpsRule>().RunAsync(this.ruleContext));
+            ConsensusErrorException exception = await Assert.ThrowsAsync<ConsensusErrorException>(() => this.consensusRules.RegisterRule<CheckSigOpsRule>().RunAsync(this.ruleContext));
 
             Assert.Equal(ConsensusErrors.BadBlockSigOps, exception.ConsensusError);
         }
@@ -47,7 +44,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             transaction.Inputs.Add(new TxIn(new Script(op, op)));
             this.ruleContext.BlockValidationContext.Block.Transactions.Add(transaction);
 
-            var exception = await Assert.ThrowsAsync<ConsensusErrorException>(() => this.consensusRules.RegisterRule<CheckSigOpsRule>().RunAsync(this.ruleContext));
+            ConsensusErrorException exception = await Assert.ThrowsAsync<ConsensusErrorException>(() => this.consensusRules.RegisterRule<CheckSigOpsRule>().RunAsync(this.ruleContext));
 
             Assert.Equal(ConsensusErrors.BadBlockSigOps, exception.ConsensusError);
         }
@@ -63,7 +60,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             transaction.Outputs.Add(new TxOut(new Money(1), new Script(op, op, op, op)));
             this.ruleContext.BlockValidationContext.Block.Transactions.Add(transaction);
 
-            var exception = await Assert.ThrowsAsync<ConsensusErrorException>(() => this.consensusRules.RegisterRule<CheckSigOpsRule>().RunAsync(this.ruleContext));
+            ConsensusErrorException exception = await Assert.ThrowsAsync<ConsensusErrorException>(() => this.consensusRules.RegisterRule<CheckSigOpsRule>().RunAsync(this.ruleContext));
 
             Assert.Equal(ConsensusErrors.BadBlockSigOps, exception.ConsensusError);
         }
@@ -80,7 +77,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             transaction.Outputs.Add(new TxOut(new Money(1), new Script(op, op)));
             this.ruleContext.BlockValidationContext.Block.Transactions.Add(transaction);
 
-            var exception = await Assert.ThrowsAsync<ConsensusErrorException>(() => this.consensusRules.RegisterRule<CheckSigOpsRule>().RunAsync(this.ruleContext));
+            ConsensusErrorException exception = await Assert.ThrowsAsync<ConsensusErrorException>(() => this.consensusRules.RegisterRule<CheckSigOpsRule>().RunAsync(this.ruleContext));
 
             Assert.Equal(ConsensusErrors.BadBlockSigOps, exception.ConsensusError);
         }
@@ -97,7 +94,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             transaction.Outputs.Add(new TxOut(new Money(1), new Script(op, op)));
             this.ruleContext.BlockValidationContext.Block.Transactions.Add(transaction);
 
-            var exception = await Assert.ThrowsAsync<ConsensusErrorException>(() => this.consensusRules.RegisterRule<CheckSigOpsRule>().RunAsync(this.ruleContext));
+            ConsensusErrorException exception = await Assert.ThrowsAsync<ConsensusErrorException>(() => this.consensusRules.RegisterRule<CheckSigOpsRule>().RunAsync(this.ruleContext));
 
             Assert.Equal(ConsensusErrors.BadBlockSigOps, exception.ConsensusError);
         }

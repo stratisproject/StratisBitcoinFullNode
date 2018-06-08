@@ -274,7 +274,7 @@ namespace Stratis.Bitcoin.Features.Consensus
 
             while (!this.nodeLifetime.ApplicationStopping.IsCancellationRequested)
             {
-                BlockValidationContext blockValidationContext = new BlockValidationContext();
+                var blockValidationContext = new BlockValidationContext();
 
                 using (new StopwatchDisposable(o => this.ConsensusRules.PerformanceCounter.AddBlockFetchingTime(o)))
                 {

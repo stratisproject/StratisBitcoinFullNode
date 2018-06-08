@@ -141,7 +141,7 @@ namespace NBitcoin.BouncyCastle.Utilities
         }
         internal static System.Collections.IList CreateArrayList(System.Collections.IEnumerable collection)
         {
-            ArrayList result = new ArrayList();
+            var result = new ArrayList();
             foreach (object o in collection)
             {
                 result.Add(o);

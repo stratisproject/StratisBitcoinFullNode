@@ -239,7 +239,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <inheritdoc />
         public async Task<UnspentOutputs> GetUnspentTransactionAsync(uint256 trxid)
         {
-            var txInfo = await this.InfoAsync(trxid);
+            TxMempoolInfo txInfo = await this.InfoAsync(trxid);
             if (txInfo == null)
             {
                 return null;
@@ -279,7 +279,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                         this.mempoolLogger.LogDebug("...transaction ID '{0}' not accepted to mempool because it already exists.", trxHash);
                         continue;
                     }
-                    MempoolValidationState state = new MempoolValidationState(false) { AcceptTime = entry.Time, OverrideMempoolLimit = true };
+                    var state = new MempoolValidationState(false) { AcceptTime = entry.Time, OverrideMempoolLimit = true };
                     if (await this.Validator.AcceptToMemoryPoolWithTime(state, trx) && this.memPool.MapTx.ContainsKey(trxHash))
                     {
                         i++;

@@ -79,7 +79,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
             }
 
             // Check for duplicate inputs.
-            HashSet<OutPoint> inOutPoints = new HashSet<OutPoint>();
+            var inOutPoints = new HashSet<OutPoint>();
             foreach (TxIn txin in tx.Inputs)
             {
                 if (inOutPoints.Contains(txin.PrevOut))

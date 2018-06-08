@@ -74,7 +74,7 @@ namespace NBitcoin.BouncyCastle.Asn1.X9
             }
             else if(ECAlgorithms.IsF2mCurve(curve))
             {
-                IPolynomialExtensionField field = (IPolynomialExtensionField)curve.Field;
+                var field = (IPolynomialExtensionField)curve.Field;
                 int[] exponents = field.MinimalPolynomial.GetExponentsPresent();
                 if(exponents.Length == 3)
                 {
@@ -186,7 +186,7 @@ namespace NBitcoin.BouncyCastle.Asn1.X9
          */
         public override Asn1Object ToAsn1Object()
         {
-            Asn1EncodableVector v = new Asn1EncodableVector(
+            var v = new Asn1EncodableVector(
                 new DerInteger(BigInteger.One),
                 fieldID,
                 new X9Curve(curve, seed),

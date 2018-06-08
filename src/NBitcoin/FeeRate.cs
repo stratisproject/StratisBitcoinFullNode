@@ -69,7 +69,7 @@ namespace NBitcoin
                 return true;
             if(((object)this == null) || (obj == null))
                 return false;
-            var left = this;
+            FeeRate left = this;
             var right = obj as FeeRate;
             if(right == null)
                 return false;

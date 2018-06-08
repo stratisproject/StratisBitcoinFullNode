@@ -82,7 +82,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
 
         private IActionResult BuildTransaction()
         {
-            var transactionResult = this.proofOfStakeSteps.ProofOfStakeNodeWithCoins.FullNode.NodeService<WalletController>()
+            IActionResult transactionResult = this.proofOfStakeSteps.ProofOfStakeNodeWithCoins.FullNode.NodeService<WalletController>()
                 .BuildTransaction(new BuildTransactionRequest
                 {
                     AccountName = this.proofOfStakeSteps.WalletAccount,
@@ -100,9 +100,9 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
 
         private void the_wallet_history_does_not_include_the_transaction()
         {
-            var walletHistory = this.GetWalletHistory(this.proofOfStakeSteps.ProofOfStakeNodeWithCoins,this.proofOfStakeSteps.PosWallet);
+            WalletHistoryModel walletHistory = this.GetWalletHistory(this.proofOfStakeSteps.ProofOfStakeNodeWithCoins,this.proofOfStakeSteps.PosWallet);
 
-            var accountHistory = walletHistory.AccountsHistoryModel.FirstOrDefault();
+            AccountHistoryModel accountHistory = walletHistory.AccountsHistoryModel.FirstOrDefault();
 
             accountHistory?.TransactionsHistory?.Where(txn => txn.Type == TransactionItemType.Send).Count().Should().Be(0);
         }

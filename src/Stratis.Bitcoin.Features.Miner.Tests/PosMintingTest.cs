@@ -11,6 +11,7 @@ using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.Consensus.Interfaces;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.MemoryPool.Interfaces;
+using Stratis.Bitcoin.Features.Miner.Models;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Mining;
@@ -100,7 +101,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
                 .Returns(asyncLoop)
                 .Verifiable();
 
-            var isSystemTimeOutOfSyncCalled = false;
+            bool isSystemTimeOutOfSyncCalled = false;
             this.timeSyncBehaviorState.Setup(c => c.IsSystemTimeOutOfSync)
                 .Returns(() =>
                 {
@@ -116,7 +117,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
             this.posMinting.Stake(new PosMinting.WalletSecret() { WalletName = "wallet1", WalletPassword = "myPassword" });
             asyncLoop.Run();
 
-            var model = this.posMinting.GetGetStakingInfoModel();
+            GetStakingInfoModel model = this.posMinting.GetGetStakingInfoModel();
             Assert.Equal("Mining error.", model.Errors);
         }
 
@@ -134,7 +135,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
                 .Returns(asyncLoop)
                 .Verifiable();
 
-            var isSystemTimeOutOfSyncCalled = false;
+            bool isSystemTimeOutOfSyncCalled = false;
             this.timeSyncBehaviorState.Setup(c => c.IsSystemTimeOutOfSync)
                 .Returns(() =>
                 {
@@ -150,7 +151,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
             this.posMinting.Stake(new PosMinting.WalletSecret() { WalletName = "wallet1", WalletPassword = "myPassword" });
             asyncLoop.Run();
 
-            var model = this.posMinting.GetGetStakingInfoModel();
+            GetStakingInfoModel model = this.posMinting.GetGetStakingInfoModel();
             Assert.Equal("Consensus error.", model.Errors);
         }
 
@@ -173,7 +174,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
                 .Verifiable();
 
 
-            var isSystemTimeOutOfSyncCalled = false;
+            bool isSystemTimeOutOfSyncCalled = false;
             this.timeSyncBehaviorState.Setup(c => c.IsSystemTimeOutOfSync)
                 .Returns(() =>
                 {
@@ -194,7 +195,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
 
             Assert.True(stakingLoopToken.IsCancellationRequested);
             asyncLoop.Verify(a => a.Dispose());
-            var model = this.posMinting.GetGetStakingInfoModel();
+            GetStakingInfoModel model = this.posMinting.GetGetStakingInfoModel();
             Assert.Null(model.Errors);
             Assert.False(model.Enabled);
         }
@@ -205,7 +206,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
         {
             ChainedHeader chainedHeader = CreateChainedBlockWithNBits(0x1f111111);
 
-            var result = this.posMinting.GetDifficulty(chainedHeader);
+            double result = this.posMinting.GetDifficulty(chainedHeader);
 
             Assert.Equal(0.000001, Math.Round(result, 6));
         }
@@ -215,7 +216,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
         {
             ChainedHeader chainedHeader = CreateChainedBlockWithNBits(0x1ef88f6f);
 
-            var result = this.posMinting.GetDifficulty(chainedHeader);
+            double result = this.posMinting.GetDifficulty(chainedHeader);
 
             Assert.Equal(0.000016, Math.Round(result, 6));
         }
@@ -225,7 +226,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
         {
             ChainedHeader chainedHeader = CreateChainedBlockWithNBits(0x1df88f6f);
 
-            var result = this.posMinting.GetDifficulty(chainedHeader);
+            double result = this.posMinting.GetDifficulty(chainedHeader);
 
             Assert.Equal(0.004023, Math.Round(result, 6));
         }
@@ -235,7 +236,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
         {
             ChainedHeader chainedHeader = CreateChainedBlockWithNBits(0x1cf88f6f);
 
-            var result = this.posMinting.GetDifficulty(chainedHeader);
+            double result = this.posMinting.GetDifficulty(chainedHeader);
 
             Assert.Equal(1.029916, Math.Round(result, 6));
         }
@@ -245,7 +246,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
         {
             ChainedHeader chainedHeader = CreateChainedBlockWithNBits(0x12345678);
 
-            var result = this.posMinting.GetDifficulty(chainedHeader);
+            double result = this.posMinting.GetDifficulty(chainedHeader);
 
             Assert.Equal(5913134931067755359633408.0, Math.Round(result, 6));
         }
@@ -262,7 +263,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
                 .Returns(chainedHeader);
 
             this.posMinting = this.InitializePosMinting();
-            var result = this.posMinting.GetDifficulty(null);
+            double result = this.posMinting.GetDifficulty(null);
 
             Assert.Equal(5913134931067755359633408.0, Math.Round(result, 6));
         }
@@ -273,7 +274,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
             this.consensusLoop.Setup(c => c.Tip)
                 .Returns((ChainedHeader)null);
 
-            var result = this.posMinting.GetDifficulty(null);
+            double result = this.posMinting.GetDifficulty(null);
 
             Assert.Equal(1, result);
         }
@@ -284,7 +285,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
             this.consensusLoop.Setup(c => c.Tip)
                 .Returns((ChainedHeader)null);
 
-            var result = this.posMinting.GetNetworkWeight();
+            double result = this.posMinting.GetNetworkWeight();
 
             Assert.Equal(0, result);
         }
@@ -297,7 +298,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
             this.consensusLoop.Setup(c => c.Tip)
                 .Returns(this.chain.Tip);
 
-            var weight = this.posMinting.GetNetworkWeight();
+            double weight = this.posMinting.GetNetworkWeight();
 
             Assert.Equal(4607763.9659653762, weight);
         }
@@ -310,7 +311,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
             this.consensusLoop.Setup(c => c.Tip)
                 .Returns(this.chain.Tip);
 
-            var weight = this.posMinting.GetNetworkWeight();
+            double weight = this.posMinting.GetNetworkWeight();
 
             Assert.Equal(4701799.9652707893, weight);
         }
@@ -324,7 +325,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
 
             foreach (int blockHeight in new int[] { 74, 75, 76 })
             {
-                var blockHash = this.chain.GetBlock(blockHeight).HashBlock;
+                uint256 blockHash = this.chain.GetBlock(blockHeight).HashBlock;
                 this.powBlocks.Add(blockHash);
             }
 
@@ -332,7 +333,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
             this.consensusLoop.Setup(c => c.Tip)
                 .Returns(this.chain.Tip);
 
-            var weight = this.posMinting.GetNetworkWeight();
+            double weight = this.posMinting.GetNetworkWeight();
 
             Assert.Equal(4607763.9659653762, weight);
         }
@@ -348,7 +349,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
             this.consensusLoop.Setup(c => c.Tip)
                 .Returns(this.chain.Tip);
 
-            var weight = this.posMinting.GetNetworkWeight();
+            double weight = this.posMinting.GetNetworkWeight();
 
             Assert.Equal(4607763.9659653762, weight);
         }
@@ -449,18 +450,18 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
 
             descriptions.Add(utxoDescription);
 
-            var suitableCoins = miner.GetUtxoStakeDescriptionsSuitableForStaking(descriptions, chainTip, chainTip.Header.Time + 64, long.MaxValue);
+            List<PosMinting.UtxoStakeDescription> suitableCoins = miner.GetUtxoStakeDescriptionsSuitableForStaking(descriptions, chainTip, chainTip.Header.Time + 64, long.MaxValue);
             return suitableCoins.Count == 1;
         }
 
         private static void AddBlockToChainWithBlockTimeAndDifficulty(ConcurrentChain chain, int blockAmount, int incrementSeconds, uint nbits, Network network)
         {
-            var prevBlockHash = chain.Tip.HashBlock;
-            var nonce = RandomUtils.GetUInt32();
-            var blockTime = Utils.UnixTimeToDateTime(chain.Tip.Header.Time).UtcDateTime;
-            for (var i = 0; i < blockAmount; i++)
+            uint256 prevBlockHash = chain.Tip.HashBlock;
+            uint nonce = RandomUtils.GetUInt32();
+            DateTime blockTime = Utils.UnixTimeToDateTime(chain.Tip.Header.Time).UtcDateTime;
+            for (int i = 0; i < blockAmount; i++)
             {
-                var block = network.Consensus.ConsensusFactory.CreateBlock();
+                Block block = network.Consensus.ConsensusFactory.CreateBlock();
                 block.AddTransaction(new Transaction());
                 block.UpdateMerkleRoot();
                 block.Header.BlockTime = new DateTimeOffset(blockTime);
@@ -476,12 +477,12 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
         public static ConcurrentChain GenerateChainWithBlockTimeAndHeight(int blockAmount, Network network, int incrementSeconds, uint nbits)
         {
             var chain = new ConcurrentChain(network);
-            var nonce = RandomUtils.GetUInt32();
-            var prevBlockHash = chain.Genesis.HashBlock;
-            var blockTime = Utils.UnixTimeToDateTime(chain.Genesis.Header.Time).UtcDateTime;
-            for (var i = 0; i < blockAmount; i++)
+            uint nonce = RandomUtils.GetUInt32();
+            uint256 prevBlockHash = chain.Genesis.HashBlock;
+            DateTime blockTime = Utils.UnixTimeToDateTime(chain.Genesis.Header.Time).UtcDateTime;
+            for (int i = 0; i < blockAmount; i++)
             {
-                var block = network.Consensus.ConsensusFactory.CreateBlock();
+                Block block = network.Consensus.ConsensusFactory.CreateBlock();
                 block.AddTransaction(new Transaction());
                 block.UpdateMerkleRoot();
                 block.Header.BlockTime = new DateTimeOffset(blockTime);
@@ -498,7 +499,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
 
         private void SetupStakeChain()
         {
-            uint256 callbackBlockId = new uint256();
+            var callbackBlockId = new uint256();
             this.stakeChain.Setup(s => s.Get(It.IsAny<uint256>()))
                 .Callback<uint256>((b) => { callbackBlockId = b; })
                 .Returns(() =>

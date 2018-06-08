@@ -33,12 +33,12 @@ namespace NBitcoin
             {
                 if (stream.Serializing)
                 {
-                    var b = Value.ToBytes();
+                    byte[] b = Value.ToBytes();
                     stream.ReadWrite(ref b);
                 }
                 else
                 {
-                    byte[] b = new byte[WIDTH_BYTE];
+                    var b = new byte[WIDTH_BYTE];
                     stream.ReadWrite(ref b);
                     _Value = new uint256(b);
                 }
@@ -96,7 +96,7 @@ namespace NBitcoin
 
         public static uint256 operator <<(uint256 a, int shift)
         {
-            var source = a.ToArray();
+            uint[] source = a.ToArray();
             var target = new uint[source.Length];
             int k = shift / 32;
             shift = shift % 32;
@@ -112,7 +112,7 @@ namespace NBitcoin
 
         public static uint256 operator >>(uint256 a, int shift)
         {
-            var source = a.ToArray();
+            uint[] source = a.ToArray();
             var target = new uint[source.Length];
             int k = shift / 32;
             shift = shift % 32;
@@ -158,8 +158,8 @@ namespace NBitcoin
 
         public byte GetByte(int index)
         {
-            var uintIndex = index / sizeof(uint);
-            var byteIndex = index % sizeof(uint);
+            int uintIndex = index / sizeof(uint);
+            int byteIndex = index % sizeof(uint);
             UInt32 value;
             switch (uintIndex)
             {
@@ -246,7 +246,7 @@ namespace NBitcoin
             if (str.StartsWith("0x", StringComparison.OrdinalIgnoreCase))
                 str = str.Substring(2);
 
-            var bytes = Encoder.DecodeData(str).Reverse().ToArray();
+            byte[] bytes = Encoder.DecodeData(str).Reverse().ToArray();
             if (bytes.Length != WIDTH_BYTE)
                 throw new FormatException("Invalid hex length");
             pn0 = Utils.ToUInt32(bytes, 4 * 0, true);
@@ -474,12 +474,12 @@ namespace NBitcoin
             {
                 if (stream.Serializing)
                 {
-                    var b = Value.ToBytes();
+                    byte[] b = Value.ToBytes();
                     stream.ReadWrite(ref b);
                 }
                 else
                 {
-                    byte[] b = new byte[WIDTH_BYTE];
+                    var b = new byte[WIDTH_BYTE];
                     stream.ReadWrite(ref b);
                     _Value = new uint160(b);
                 }
@@ -539,8 +539,8 @@ namespace NBitcoin
 
         public byte GetByte(int index)
         {
-            var uintIndex = index / sizeof(uint);
-            var byteIndex = index % sizeof(uint);
+            int uintIndex = index / sizeof(uint);
+            int byteIndex = index % sizeof(uint);
             UInt32 value;
             switch (uintIndex)
             {
@@ -609,7 +609,7 @@ namespace NBitcoin
             if (str.StartsWith("0x", StringComparison.OrdinalIgnoreCase))
                 str = str.Substring(2);
 
-            var bytes = Encoder.DecodeData(str).Reverse().ToArray();
+            byte[] bytes = Encoder.DecodeData(str).Reverse().ToArray();
             if (bytes.Length != WIDTH_BYTE)
                 throw new FormatException("Invalid hex length");
             pn0 = Utils.ToUInt32(bytes, 4 * 0, true);

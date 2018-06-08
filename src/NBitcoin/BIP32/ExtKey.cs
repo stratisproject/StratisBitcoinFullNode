@@ -57,7 +57,7 @@ namespace NBitcoin
         {
             get
             {
-                byte[] chainCodeCopy = new byte[ChainCodeLength];
+                var chainCodeCopy = new byte[ChainCodeLength];
                 Buffer.BlockCopy(vchChainCode, 0, chainCodeCopy, 0, ChainCodeLength);
 
                 return chainCodeCopy;
@@ -160,7 +160,7 @@ namespace NBitcoin
 
         private void SetMaster(byte[] seed)
         {
-            var hashMAC = Hashes.HMACSHA512(hashkey, seed);
+            byte[] hashMAC = Hashes.HMACSHA512(hashkey, seed);
             key = new Key(hashMAC.SafeSubarray(0, 32));
 
             Buffer.BlockCopy(hashMAC, 32, vchChainCode, 0, ChainCodeLength);
@@ -182,7 +182,7 @@ namespace NBitcoin
         /// </summary>
         public ExtPubKey Neuter()
         {
-            ExtPubKey ret = new ExtPubKey
+            var ret = new ExtPubKey
             {
                 nDepth = nDepth,
                 vchFingerprint = vchFingerprint.ToArray(),
@@ -327,31 +327,31 @@ namespace NBitcoin
                 throw new InvalidOperationException("This ExtKey is the root key of the HD tree");
             if(IsHardened)
                 throw new InvalidOperationException("This private key is hardened, so you can't get its parent");
-            var expectedFingerPrint = parent.CalculateChildFingerprint();
+            byte[] expectedFingerPrint = parent.CalculateChildFingerprint();
             if(parent.Depth != this.Depth - 1 || !expectedFingerPrint.SequenceEqual(vchFingerprint))
                 throw new ArgumentException("The parent ExtPubKey is not the immediate parent of this ExtKey", "parent");
 
             byte[] l = null;
-            byte[] ll = new byte[32];
-            byte[] lr = new byte[32];
+            var ll = new byte[32];
+            var lr = new byte[32];
 
-            var pubKey = parent.PubKey.ToBytes();
+            byte[] pubKey = parent.PubKey.ToBytes();
             l = Hashes.BIP32Hash(parent.vchChainCode, nChild, pubKey[0], pubKey.SafeSubarray(1));
             Array.Copy(l, ll, 32);
             Array.Copy(l, 32, lr, 0, 32);
-            var ccChild = lr;
+            byte[] ccChild = lr;
 
-            BigInteger parse256LL = new BigInteger(1, ll);
+            var parse256LL = new BigInteger(1, ll);
             BigInteger N = ECKey.CURVE.N;
 
             if(!ccChild.SequenceEqual(vchChainCode))
                 throw new InvalidOperationException("The derived chain code of the parent is not equal to this child chain code");
 
-            var keyBytes = PrivateKey.ToBytes();
+            byte[] keyBytes = PrivateKey.ToBytes();
             var key = new BigInteger(1, keyBytes);
 
             BigInteger kPar = key.Add(parse256LL.Negate()).Mod(N);
-            var keyParentBytes = kPar.ToByteArrayUnsigned();
+            byte[] keyParentBytes = kPar.ToByteArrayUnsigned();
             if(keyParentBytes.Length < 32)
                 keyParentBytes = new byte[32 - keyParentBytes.Length].Concat(keyParentBytes).ToArray();
 

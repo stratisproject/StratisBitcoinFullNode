@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using Microsoft.AspNetCore.Mvc;
-using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Controllers;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.Utilities;
@@ -54,14 +53,14 @@ namespace Stratis.Bitcoin.Connection
         [ActionDescription("Gets peer information from the connection manager.")]
         public List<PeerNodeModel> GetPeerInfo()
         {
-            List<PeerNodeModel> peerList = new List<PeerNodeModel>();
+            var peerList = new List<PeerNodeModel>();
 
             List<INetworkPeer> peers = this.ConnectionManager.ConnectedPeers.ToList();
             foreach (INetworkPeer peer in peers)
             {
                 if ((peer != null) && (peer.RemoteSocketAddress != null))
                 {
-                    PeerNodeModel peerNode = new PeerNodeModel
+                    var peerNode = new PeerNodeModel
                     {
                         Id = peers.IndexOf(peer),
                         Address = peer.RemoteSocketEndpoint.ToString()
@@ -76,7 +75,7 @@ namespace Stratis.Bitcoin.Connection
                         peerNode.StartingHeight = peer.MyVersion.StartHeight;
                     }
 
-                    ConnectionManagerBehavior connectionManagerBehavior = peer.Behavior<ConnectionManagerBehavior>();
+                    var connectionManagerBehavior = peer.Behavior<ConnectionManagerBehavior>();
                     if (connectionManagerBehavior != null)
                     {
                         peerNode.Inbound = connectionManagerBehavior.Inbound;

@@ -61,7 +61,7 @@ namespace NBitcoin
         {
             get
             {
-                byte[] chainCodeCopy = new byte[ChainCodeLength];
+                var chainCodeCopy = new byte[ChainCodeLength];
                 Buffer.BlockCopy(vchChainCode, 0, chainCodeCopy, 0, ChainCodeLength);
 
                 return chainCodeCopy;
@@ -191,7 +191,7 @@ namespace NBitcoin
 
         public override bool Equals(object obj)
         {
-            ExtPubKey item = obj as ExtPubKey;
+            var item = obj as ExtPubKey;
             if(item == null)
                 return false;
             return Hash.Equals(item.Hash);

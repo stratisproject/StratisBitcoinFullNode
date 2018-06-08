@@ -44,7 +44,7 @@ namespace NBitcoin.OpenAsset
         /// <returns></returns>
         public AssetMoney Abs()
         {
-            var a = this;
+            AssetMoney a = this;
             if(a.Quantity < 0)
                 a = -a;
             return a;
@@ -108,7 +108,7 @@ namespace NBitcoin.OpenAsset
             checked
             {
                 int dec = Pow10(divisibility);
-                var satoshi = amount * dec;
+                decimal satoshi = amount * dec;
                 Quantity = (long)satoshi;
             }
         }
@@ -155,7 +155,7 @@ namespace NBitcoin.OpenAsset
 
         public decimal ToDecimal(int divisibility)
         {
-            var dec = Pow10(divisibility);
+            int dec = Pow10(divisibility);
             // overflow safe because (long / int) always fit in decimal 
             // decimal operations are checked by default
             return (decimal)Quantity / (int)dec;
@@ -193,7 +193,7 @@ namespace NBitcoin.OpenAsset
         {
             if(obj == null)
                 return 1;
-            AssetMoney m = obj as AssetMoney;
+            var m = obj as AssetMoney;
             if(m != null)
                 return _Quantity.CompareTo(m.Quantity);
 #if !(PORTABLE || NETCORE)
@@ -302,7 +302,7 @@ namespace NBitcoin.OpenAsset
 
         public override bool Equals(object obj)
         {
-            AssetMoney item = obj as AssetMoney;
+            var item = obj as AssetMoney;
             if(item == null)
                 return false;
             if(item.Id != Id)
@@ -388,7 +388,7 @@ namespace NBitcoin.OpenAsset
         {
             if(money == null)
                 throw new ArgumentNullException("money");
-            AssetMoney assetMoney = money as AssetMoney;
+            var assetMoney = money as AssetMoney;
             if(assetMoney == null)
                 return false;
             return assetMoney.Id == Id;

@@ -55,7 +55,7 @@ namespace Stratis.Bitcoin.Features.Dns
         private static bool Matches(Domain domain, Domain entry)
         {
             string[] labels = entry.ToString().Split('.');
-            string[] patterns = new string[labels.Length];
+            var patterns = new string[labels.Length];
 
             for (int i = 0; i < labels.Length; i++)
             {
@@ -63,7 +63,7 @@ namespace Stratis.Bitcoin.Features.Dns
                 patterns[i] = label == "*" ? "(\\w+)" : Regex.Escape(label);
             }
 
-            Regex re = new Regex("^" + string.Join("\\.", patterns) + "$");
+            var re = new Regex("^" + string.Join("\\.", patterns) + "$");
             return re.IsMatch(domain.ToString());
         }
 
@@ -121,7 +121,7 @@ namespace Stratis.Bitcoin.Features.Dns
         {
             Guard.NotNull(stream, nameof(stream));
 
-            using (JsonTextReader textReader = new JsonTextReader(new StreamReader(stream)))
+            using (var textReader = new JsonTextReader(new StreamReader(stream)))
             {
                 JsonSerializer serializer = this.CreateSerializer();
                 this.entries = serializer.Deserialize<List<IResourceRecord>>(textReader);
@@ -136,7 +136,7 @@ namespace Stratis.Bitcoin.Features.Dns
         {
             Guard.NotNull(stream, nameof(stream));
 
-            JsonTextWriter textWriter = new JsonTextWriter(new StreamWriter(stream));
+            var textWriter = new JsonTextWriter(new StreamWriter(stream));
             JsonSerializer serializer = this.CreateSerializer();
 
             serializer.Serialize(textWriter, this.entries);

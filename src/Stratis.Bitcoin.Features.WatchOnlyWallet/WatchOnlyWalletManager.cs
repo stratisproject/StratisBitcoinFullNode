@@ -1,5 +1,4 @@
 ﻿using System.Collections.Concurrent;
-using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Configuration;
@@ -71,7 +70,7 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet
         /// <inheritdoc />
         public void WatchAddress(string address)
         {
-            var script = BitcoinAddress.Create(address, this.network).ScriptPubKey;
+            Script script = BitcoinAddress.Create(address, this.network).ScriptPubKey;
 
             if (this.Wallet.WatchedAddresses.ContainsKey(script.ToString()))
             {
@@ -124,7 +123,7 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet
         /// <inheritdoc />
         public void ProcessTransaction(Transaction transaction, Block block = null)
         {
-            var transactionHash = transaction.GetHash();
+            uint256 transactionHash = transaction.GetHash();
             this.logger.LogDebug($"watch only wallet received transaction - hash: {transactionHash}, coin: {this.coinType}");
 
             // Check the transaction inputs to see if a watched address is affected.
@@ -149,7 +148,7 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet
 
                         if (existingTransaction == null)
                         {
-                            TransactionData newTransaction = new TransactionData
+                            var newTransaction = new TransactionData
                             {
                                 Id = transactionHash,
                                 Hex = transaction.ToHex(),
@@ -207,7 +206,7 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet
 
                     if (existingTransaction == null)
                     {
-                        TransactionData newTransaction = new TransactionData
+                        var newTransaction = new TransactionData
                         {
                             Id = transactionHash,
                             Hex = transaction.ToHex(),
@@ -292,7 +291,7 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet
                 return this.fileStorage.LoadByFileName(WalletFileName);
             }
 
-            WatchOnlyWallet watchOnlyWallet = new WatchOnlyWallet
+            var watchOnlyWallet = new WatchOnlyWallet
             {
                 Network = this.network,
                 CoinType = this.coinType,
@@ -348,7 +347,7 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet
         {
             Script scriptToCheck = BitcoinAddress.Create(address, this.network).ScriptPubKey;
 
-            Money balance = new Money(0);
+            var balance = new Money(0);
 
             if (!this.Wallet.WatchedAddresses.ContainsKey(scriptToCheck.ToString()))
                 // Returning zero would be misleading.

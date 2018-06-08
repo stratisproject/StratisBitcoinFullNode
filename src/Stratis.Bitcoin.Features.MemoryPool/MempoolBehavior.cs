@@ -300,7 +300,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
 
             List<TxMempoolInfo> sends = await this.manager.MempoolLock.WriteAsync(() =>
             {
-                List<TxMempoolInfo> ret = new List<TxMempoolInfo>();
+                var ret = new List<TxMempoolInfo>();
                 foreach (TxMempoolInfo txinfo in vtxinfo)
                 {
                     uint256 hash = txinfo.Trx.GetHash();
@@ -357,7 +357,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
 
             //uint32_t nFetchFlags = GetFetchFlags(pfrom, chainActive.Tip(), chainparams.GetConsensus());
 
-            GetDataPayload send = new GetDataPayload();
+            var send = new GetDataPayload();
             foreach (InventoryVector inv in invPayload.Inventory.Where(inv => inv.Type.HasFlag(InventoryType.MSG_TX)))
             {
                 //inv.type |= nFetchFlags;
@@ -440,7 +440,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             // add to local filter
             await this.manager.MempoolLock.WriteAsync(() => this.filterInventoryKnown.TryAdd(trxHash, trxHash));
 
-            MempoolValidationState state = new MempoolValidationState(true);
+            var state = new MempoolValidationState(true);
             if (!await this.orphans.AlreadyHaveAsync(trxHash) && await this.validator.AcceptToMemoryPool(state, trx))
             {
                 await this.validator.SanityCheck();
@@ -484,7 +484,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         {
             this.logger.LogTrace("({0}:'{1}',{2}.{3}:{4})", nameof(peer), peer.RemoteSocketEndpoint, nameof(trxList), "trxList.Count", trxList?.Count());
 
-            Queue<InventoryVector> queue = new Queue<InventoryVector>(trxList.Select(s => new InventoryVector(peer.AddSupportedOptions(InventoryType.MSG_TX), s)));
+            var queue = new Queue<InventoryVector>(trxList.Select(s => new InventoryVector(peer.AddSupportedOptions(InventoryType.MSG_TX), s)));
             while (queue.Count > 0)
             {
                 InventoryVector[] items = queue.TakeAndRemove(ConnectionManager.MaxInventorySize).ToArray();
@@ -563,7 +563,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                 // Determine transactions to relay
                 // Produce a vector with all candidates for sending
                 List<uint256> invs = this.inventoryTxToSend.Keys.Take(InventoryBroadcastMax).ToList();
-                List<uint256> ret = new List<uint256>();
+                var ret = new List<uint256>();
                 foreach (uint256 hash in invs)
                 {
                     // Remove it from the to-be-sent set

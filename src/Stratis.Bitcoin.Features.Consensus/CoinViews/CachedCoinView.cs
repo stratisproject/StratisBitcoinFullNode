@@ -167,9 +167,9 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
             this.logger.LogTrace("({0}.{1}:{2})", nameof(txIds), nameof(txIds.Length), txIds.Length);
 
             FetchCoinsResponse result = null;
-            UnspentOutputs[] outputs = new UnspentOutputs[txIds.Length];
-            List<int> miss = new List<int>();
-            List<uint256> missedTxIds = new List<uint256>();
+            var outputs = new UnspentOutputs[txIds.Length];
+            var miss = new List<int>();
+            var missedTxIds = new List<uint256>();
             using (await this.lockobj.LockAsync().ConfigureAwait(false))
             {
                 for (int i = 0; i < txIds.Length; i++)
@@ -212,7 +212,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                     int index = miss[i];
                     UnspentOutputs unspent = fetchedCoins.UnspentOutputs[i];
                     outputs[index] = unspent;
-                    CacheItem cache = new CacheItem();
+                    var cache = new CacheItem();
                     cache.ExistInInner = unspent != null;
                     cache.IsDirty = false;
                     cache.UnspentOutputs = unspent;
@@ -305,7 +305,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
             using (await this.lockobj.LockAsync().ConfigureAwait(false))
             {
                 // TODO: Do not create new random source every time.
-                Random rand = new Random();
+                var rand = new Random();
                 foreach (KeyValuePair<uint256, CacheItem> entry in this.unspents.ToList())
                 {
                     if (!entry.Value.IsDirty)

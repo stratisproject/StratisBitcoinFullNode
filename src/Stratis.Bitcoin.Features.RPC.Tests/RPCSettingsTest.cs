@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
 using NBitcoin;
 using Stratis.Bitcoin.Configuration;
@@ -18,7 +17,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests
         public void Load_ValidNodeSettings_UpdatesRpcSettingsFromNodeSettings()
         {
             string dir = CreateTestDir(this);
-            var confFile = Path.Combine(dir, "bitcoin.conf");
+            string confFile = Path.Combine(dir, "bitcoin.conf");
             var configLines = new List<string>()
             {
                 "server=true",
@@ -51,7 +50,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests
         public void Load_DefaultConfiguration_UsesDefaultNodeSettings()
         {
             string dir = CreateTestDir(this);
-            var confFile = Path.Combine(dir, "bitcoin.conf");
+            string confFile = Path.Combine(dir, "bitcoin.conf");
             var configLines = new List<string>() { "" };
             WriteConfigurationToFile(confFile, configLines);
 
@@ -74,7 +73,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests
             Assert.Throws<ConfigurationException>(() =>
             {
                 string dir = CreateTestDir(this);
-                var confFile = Path.Combine(dir, "bitcoin.conf");
+                string confFile = Path.Combine(dir, "bitcoin.conf");
                 var configLines = new List<string>()
                 {
                     "server=true",
@@ -95,7 +94,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests
             Assert.Throws<ConfigurationException>(() =>
             {
                 string dir = CreateTestDir(this);
-                var confFile = Path.Combine(dir, "bitcoin.conf");
+                string confFile = Path.Combine(dir, "bitcoin.conf");
                 var configLines = new List<string>()
                 {
                     "server=true",
@@ -116,7 +115,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests
             Assert.Throws<ConfigurationException>(() =>
             {
                 string dir = CreateTestDir(this);
-                var confFile = Path.Combine(dir, "bitcoin.conf");
+                string confFile = Path.Combine(dir, "bitcoin.conf");
                 var configLines = new List<string>()
                 {
                     "server=true",
@@ -140,7 +139,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests
             Assert.Throws<ConfigurationException>(() =>
             {
                 string dir = CreateTestDir(this);
-                var confFile = Path.Combine(dir, "bitcoin.conf");
+                string confFile = Path.Combine(dir, "bitcoin.conf");
                 var configLines = new List<string>()
                 {
                     "server=true",
@@ -162,7 +161,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests
         public void GetUrls_BindsConfigured_ReturnsBindUrls()
         {
             string dir = CreateTestDir(this);
-            var confFile = Path.Combine(dir, "bitcoin.conf");
+            string confFile = Path.Combine(dir, "bitcoin.conf");
             var configLines = new List<string>()
             {
                 "server=true",
@@ -178,7 +177,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests
             var nodeSettings = new NodeSettings(Network.TestNet, args:new string[] { "-conf=" + confFile });
 
             var rpcSettings = new RpcSettings(nodeSettings);
-            var urls = rpcSettings.GetUrls();
+            string[] urls = rpcSettings.GetUrls();
 
             Assert.NotEmpty(urls);
             Assert.Equal("http://127.0.0.1:1378/", urls[0]);
@@ -188,7 +187,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests
         public void GetUrls_NoBindsConfigured_ReturnsEmptyArray()
         {
             string dir = CreateTestDir(this);
-            var confFile = Path.Combine(dir, "bitcoin.conf");
+            string confFile = Path.Combine(dir, "bitcoin.conf");
             var configLines = new List<string>()
             {
                 ""
@@ -199,7 +198,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests
             var nodeSettings = new NodeSettings(Network.TestNet, args:new string[] { "-conf=" + confFile });
 
             var rpcSettings = new RpcSettings(new NodeSettings());
-            var urls = rpcSettings.GetUrls();
+            string[] urls = rpcSettings.GetUrls();
 
             Assert.Empty(urls);
         }

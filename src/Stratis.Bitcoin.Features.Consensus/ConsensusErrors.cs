@@ -61,7 +61,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <inheritdoc />
         public override bool Equals(object obj)
         {
-            ConsensusError item = obj as ConsensusError;
+            var item = obj as ConsensusError;
 
             return (item != null) && (this.Code.Equals(item.Code));
         }

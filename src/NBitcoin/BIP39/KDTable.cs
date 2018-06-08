@@ -8,7 +8,7 @@ namespace NBitcoin
     {
         public static string NormalizeKD(string str)
         {
-            StringBuilder builder = new StringBuilder(str.Length);
+            var builder = new StringBuilder(str.Length);
             foreach(char c in str.ToCharArray())
             {
                 if(!Supported(c))
@@ -24,7 +24,7 @@ namespace NBitcoin
         {
             for(int i = 0 ; i < _SubstitutionTable.Length ; i++)
             {
-                var substituedChar = _SubstitutionTable[i];
+                char substituedChar = _SubstitutionTable[i];
                 if(substituedChar == c)
                 {
                     Substitute(i, builder);

@@ -227,7 +227,7 @@ namespace NBitcoin
         }
         public static Language AutoDetectLanguage(string[] words)
         {
-            List<int> languageCount = new List<int>(new int[] { 0, 0, 0, 0, 0, 0 });
+            var languageCount = new List<int>(new int[] { 0, 0, 0, 0, 0, 0 });
             int index;
 
             foreach(string s in words)
@@ -361,13 +361,13 @@ namespace NBitcoin
         {
             if(values.Any(v => v >= 2048))
                 throw new ArgumentException("values should be between 0 and 2048", "values");
-            BitArray result = new BitArray(values.Length * 11);
+            var result = new BitArray(values.Length * 11);
             int i = 0;
-            foreach(var val in values)
+            foreach(int val in values)
             {
                 for(int p = 0; p < 11; p++)
                 {
-                    var v = (val & (1 << (10 - p))) != 0;
+                    bool v = (val & (1 << (10 - p))) != 0;
                     result.Set(i, v);
                     i++;
                 }

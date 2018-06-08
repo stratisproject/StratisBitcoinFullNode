@@ -55,7 +55,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             IDateTimeProvider dateTimeProvider,
             ILoggerFactory loggerFactory)
         {
-            CoinViewStack stack = new CoinViewStack(coinView);
+            var stack = new CoinViewStack(coinView);
             this.cache = stack.Find<CachedCoinView>();
             this.dbreeze = stack.Find<DBreezeCoinView>();
             this.bottom = stack.Bottom;
@@ -75,7 +75,7 @@ namespace Stratis.Bitcoin.Features.Consensus
 
         public async Task LogAsync()
         {
-            StringBuilder benchLogs = new StringBuilder();
+            var benchLogs = new StringBuilder();
 
             if (this.lookaheadPuller != null)
             {
@@ -91,19 +91,19 @@ namespace Stratis.Bitcoin.Features.Consensus
                 benchLogs.AppendLine("Cache entries".PadRight(LoggingConfiguration.ColumnLength) + this.cache.CacheEntryCount);
             }
 
-            var snapshot = this.consensusLoop.ConsensusRules.PerformanceCounter.Snapshot();
+            ConsensusPerformanceSnapshot snapshot = this.consensusLoop.ConsensusRules.PerformanceCounter.Snapshot();
             benchLogs.AppendLine((snapshot - this.lastSnapshot).ToString());
             this.lastSnapshot = snapshot;
 
             if (this.dbreeze != null)
             {
-                var snapshot2 = this.dbreeze.PerformanceCounter.Snapshot();
+                BackendPerformanceSnapshot snapshot2 = this.dbreeze.PerformanceCounter.Snapshot();
                 benchLogs.AppendLine((snapshot2 - this.lastSnapshot2).ToString());
                 this.lastSnapshot2 = snapshot2;
             }
             if (this.cache != null)
             {
-                var snapshot3 = this.cache.PerformanceCounter.Snapshot();
+                CachePerformanceSnapshot snapshot3 = this.cache.PerformanceCounter.Snapshot();
                 benchLogs.AppendLine((snapshot3 - this.lastSnapshot3).ToString());
                 this.lastSnapshot3 = snapshot3;
             }
