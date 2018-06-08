@@ -201,6 +201,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <inheritdoc />
         public async Task<bool> AcceptToMemoryPoolWithTime(MempoolValidationState state, Transaction tx)
         {
+            this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(state), state?.ToString(), nameof(tx), tx?.GetHash());
             try
             {
                 var vHashTxToUncache = new List<uint256>();
@@ -209,15 +210,20 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                 //    BOOST_FOREACH(const uint256& hashTx, vHashTxToUncache)
                 //        pcoinsTip->Uncache(hashTx);
                 //}
+                this.logger.LogTrace("(-):true");
                 return true;
             }
-            catch (MempoolErrorException)
+            catch (MempoolErrorException mempoolError)
             {
+                this.logger.LogTrace("{0}:'{1}' ErrorCode:'{2}',ErrorMessage:'{3}'", nameof(MempoolErrorException), mempoolError.Message, mempoolError.ValidationState?.Error?.Code, mempoolError.ValidationState?.ErrorMessage);
+                this.logger.LogTrace("(-)[MEMPOOL_EXCEPTION]:false");
                 return false;
             }
             catch (ConsensusErrorException consensusError)
             {
-                state.Error = new MempoolError(consensusError.ConsensusError);
+                this.logger.LogTrace("{0}:'{1}' ErrorCode:'{2}',ErrorMessage:'{3}'", nameof(ConsensusErrorException), consensusError.Message, consensusError.ConsensusError?.Code, consensusError.ConsensusError?.Message);
+                state.Error = new MempoolError(consensusError.ConsensusError);                
+                this.logger.LogTrace("(-)[CONSENSUS_EXCEPTION]:false");
                 return false;
             }
         }

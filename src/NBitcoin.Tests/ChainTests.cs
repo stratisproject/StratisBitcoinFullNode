@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
@@ -14,12 +13,12 @@ namespace NBitcoin.Tests
         public void CanCloneConcurrentChain()
         {
             var chain = new ConcurrentChain(Network.Main);
-            ChainedHeader common = AppendBlock(chain);
-            ChainedHeader fork = AppendBlock(chain);
-            ChainedHeader fork2 = AppendBlock(chain);
+            var common = AppendBlock(chain);
+            var fork = AppendBlock(chain);
+            var fork2 = AppendBlock(chain);
 
             Assert.True(chain.Tip == fork2);
-            ConcurrentChain clone = chain.Clone();
+            var clone = chain.Clone();
             Assert.True(clone.Tip == fork2);
         }
 
@@ -28,10 +27,10 @@ namespace NBitcoin.Tests
         [Trait("UnitTest", "UnitTest")]
         public void CanSaveChain()
         {
-            var chain = new ConcurrentChain(Network.Main);
+            ConcurrentChain chain = new ConcurrentChain(Network.Main);
             AppendBlock(chain);
             AppendBlock(chain);
-            ChainedHeader fork = AppendBlock(chain);
+            var fork = AppendBlock(chain);
             AppendBlock(chain);
 
 
@@ -52,7 +51,7 @@ namespace NBitcoin.Tests
         {
             for (int i = 0; i < 600; i++)
             {
-                byte[] bytes = RandomUtils.GetBytes(120);
+                var bytes = RandomUtils.GetBytes(120);
                 new Script(bytes).ToString();
             }
         }
@@ -61,15 +60,15 @@ namespace NBitcoin.Tests
         [Trait("UnitTest", "UnitTest")]
         public void CanLoadAndSaveConcurrentChain()
         {
-            var cchain = new ConcurrentChain();
-            var chain = new ConcurrentChain(Network.Main);
+            ConcurrentChain cchain = new ConcurrentChain();
+            ConcurrentChain chain = new ConcurrentChain(Network.Main);
             AddBlock(chain);
             AddBlock(chain);
             AddBlock(chain);
 
             cchain.SetTip(chain);
 
-            byte[] bytes = cchain.ToBytes();
+            var bytes = cchain.ToBytes();
             cchain = new ConcurrentChain();
             cchain.Load(bytes);
 
@@ -84,17 +83,17 @@ namespace NBitcoin.Tests
         [Trait("UnitTest", "UnitTest")]
         public void CanBuildConcurrentChain()
         {
-            var cchain = new ConcurrentChain();
-            var chain = new ConcurrentChain(Network.Main);
+            ConcurrentChain cchain = new ConcurrentChain();
+            ConcurrentChain chain = new ConcurrentChain(Network.Main);
             Assert.Null(cchain.SetTip(chain.Tip));
-            ChainedHeader b0 = cchain.Tip;
+            var b0 = cchain.Tip;
             Assert.Equal(cchain.Tip, chain.Tip);
 
-            ChainedHeader b1 = AddBlock(chain);
-            ChainedHeader b2 = AddBlock(chain);
+            var b1 = AddBlock(chain);
+            var b2 = AddBlock(chain);
             AddBlock(chain);
             AddBlock(chain);
-            ChainedHeader b5 = AddBlock(chain);
+            var b5 = AddBlock(chain);
 
             Assert.Equal(cchain.SetTip(chain.Tip), b0);
             Assert.Equal(cchain.Tip, chain.Tip);
@@ -112,8 +111,8 @@ namespace NBitcoin.Tests
             chain.SetTip(b2);
             AddBlock(chain);
             AddBlock(chain);
-            ChainedHeader b5b = AddBlock(chain);
-            ChainedHeader b6b = AddBlock(chain);
+            var b5b = AddBlock(chain);
+            var b6b = AddBlock(chain);
 
             Assert.Equal(cchain.SetTip(b6b), b2);
 
@@ -125,7 +124,7 @@ namespace NBitcoin.Tests
 
         private ChainedHeader AddBlock(ConcurrentChain chain)
         {
-            var header = new BlockHeader();
+            BlockHeader header = new BlockHeader();
             header.Nonce = RandomUtils.GetUInt32();
             header.HashPrevBlock = chain.Tip.HashBlock;
             chain.SetTip(header);
@@ -136,16 +135,16 @@ namespace NBitcoin.Tests
         [Trait("UnitTest", "UnitTest")]
         public void CanIterateConcurrentChain()
         {
-            var chain = new ConcurrentChain(Network.Main);
+            ConcurrentChain chain = new ConcurrentChain(Network.Main);
             AppendBlock(chain);
             AppendBlock(chain);
             AppendBlock(chain);
-            foreach (ChainedHeader b in chain.EnumerateAfter(chain.Genesis))
+            foreach (var b in chain.EnumerateAfter(chain.Genesis))
             {
                 chain.GetBlock(0);
             }
 
-            foreach (ChainedHeader b in chain.ToEnumerable(false))
+            foreach (var b in chain.ToEnumerable(false))
             {
                 chain.GetBlock(0);
             }
@@ -155,11 +154,11 @@ namespace NBitcoin.Tests
         [Trait("UnitTest", "UnitTest")]
         public void CanBuildChain()
         {
-            var chain = new ConcurrentChain(Network.Main);
+            ConcurrentChain chain = new ConcurrentChain(Network.Main);
             AppendBlock(chain);
             AppendBlock(chain);
             AppendBlock(chain);
-            ChainedHeader b = AppendBlock(chain);
+            var b = AppendBlock(chain);
             Assert.Equal(4, chain.Height);
             Assert.Equal(4, b.Height);
             Assert.Equal(b.HashBlock, chain.Tip.HashBlock);
@@ -169,11 +168,11 @@ namespace NBitcoin.Tests
         [Trait("UnitTest", "UnitTest")]
         public void CanFindFork()
         {
-            var chain = new ConcurrentChain(Network.Main);
-            var chain2 = new ConcurrentChain(Network.Main);
+            ConcurrentChain chain = new ConcurrentChain(Network.Main);
+            ConcurrentChain chain2 = new ConcurrentChain(Network.Main);
             AppendBlock(chain);
-            ChainedHeader fork = AppendBlock(chain);
-            ChainedHeader tip = AppendBlock(chain);
+            var fork = AppendBlock(chain);
+            var tip = AppendBlock(chain);
 
             AssertFork(chain, chain2, chain.Genesis);
             chain2 = new ConcurrentChain(Network.TestNet);
@@ -187,12 +186,12 @@ namespace NBitcoin.Tests
 
         private void AssertFork(ConcurrentChain chain, ConcurrentChain chain2, ChainedHeader expectedFork)
         {
-            ChainedHeader fork = this.FindFork(chain, chain2);
+            var fork = this.FindFork(chain, chain2);
             Assert.Equal(expectedFork, fork);
             fork = chain.Tip.FindFork(chain2.Tip);
             Assert.Equal(expectedFork, fork);
 
-            ConcurrentChain temp = chain;
+            var temp = chain;
             chain = chain2;
             chain2 = temp;
 
@@ -208,17 +207,18 @@ namespace NBitcoin.Tests
         public void CanCalculateDifficulty()
         {
             var main = new ConcurrentChain(LoadMainChain());
-            string[] histories = File.ReadAllText(TestDataLocations.GetFileFromDataFolder("targethistory.csv")).Split(new string[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries);
+            // The state of the line separators may be affected by copy operations - so do an environment independent line split...
+            var histories = File.ReadAllText(TestDataLocations.GetFileFromDataFolder("targethistory.csv")).Split(new string[] { "\r\n", "\r", "\n" }, StringSplitOptions.RemoveEmptyEntries);
 
-            foreach (string history in histories)
+            foreach (var history in histories)
             {
-                int height = int.Parse(history.Split(',')[0]);
+                var height = int.Parse(history.Split(',')[0]);
                 var expectedTarget = new Target(new BouncyCastle.Math.BigInteger(history.Split(',')[1], 10));
 
-                BlockHeader block = main.GetBlock(height).Header;
+                var block = main.GetBlock(height).Header;
 
                 Assert.Equal(expectedTarget, block.Bits);
-                Target target = main.GetWorkRequired(Network.Main, height);
+                var target = main.GetWorkRequired(Network.Main, height);
                 Assert.Equal(expectedTarget, target);
             }
         }
@@ -228,7 +228,7 @@ namespace NBitcoin.Tests
         public void CanValidateChain()
         {
             var main = new ConcurrentChain(LoadMainChain());
-            foreach (ChainedHeader h in main.ToEnumerable(false))
+            foreach (var h in main.ToEnumerable(false))
             {
                 Assert.True(h.Validate(Network.Main));
             }
@@ -238,8 +238,8 @@ namespace NBitcoin.Tests
         {
             if (!File.Exists("MainChain1.dat"))
             {
-                var client = new HttpClient();
-                byte[] bytes = client.GetByteArrayAsync("https://aois.blob.core.windows.net/public/MainChain1.dat").GetAwaiter().GetResult();
+                HttpClient client = new HttpClient();
+                var bytes = client.GetByteArrayAsync("https://aois.blob.core.windows.net/public/MainChain1.dat").GetAwaiter().GetResult();
                 File.WriteAllBytes("MainChain1.dat", bytes);
             }
             return File.ReadAllBytes("MainChain1.dat");
@@ -250,23 +250,23 @@ namespace NBitcoin.Tests
         [Trait("UnitTest", "UnitTest")]
         public void CanEnumerateAfterChainedBlock()
         {
-            var chain = new ConcurrentChain(Network.Main);
+            ConcurrentChain chain = new ConcurrentChain(Network.Main);
             AppendBlock(chain);
-            ChainedHeader a = AppendBlock(chain);
-            ChainedHeader b = AppendBlock(chain);
-            ChainedHeader c = AppendBlock(chain);
+            var a = AppendBlock(chain);
+            var b = AppendBlock(chain);
+            var c = AppendBlock(chain);
 
             Assert.True(chain.EnumerateAfter(a).SequenceEqual(new[] { b, c }));
 
-            ChainedHeader d = AppendBlock(chain);
+            var d = AppendBlock(chain);
 
-            IEnumerator<ChainedHeader> enumerator = chain.EnumerateAfter(b).GetEnumerator();
+            var enumerator = chain.EnumerateAfter(b).GetEnumerator();
             enumerator.MoveNext();
             Assert.True(enumerator.Current == c);
 
             chain.SetTip(b);
-            ChainedHeader cc = AppendBlock(chain);
-            ChainedHeader dd = AppendBlock(chain);
+            var cc = AppendBlock(chain);
+            var dd = AppendBlock(chain);
 
             Assert.False(enumerator.MoveNext());
         }
@@ -279,7 +279,7 @@ namespace NBitcoin.Tests
             AppendBlock(chain);
             AppendBlock(chain);
             AppendBlock(chain);
-            ChainedHeader b = AppendBlock(chain);
+            var b = AppendBlock(chain);
             Assert.Equal(14, chain.Height);
             Assert.Equal(14, b.Height);
             Assert.Equal(b.HashBlock, chain.Tip.HashBlock);
@@ -289,13 +289,13 @@ namespace NBitcoin.Tests
         [Trait("UnitTest", "UnitTest")]
         public void CanForkBackward()
         {
-            var chain = new ConcurrentChain(Network.Main);
+            ConcurrentChain chain = new ConcurrentChain(Network.Main);
             AppendBlock(chain);
             AppendBlock(chain);
-            ChainedHeader fork = AppendBlock(chain);
+            var fork = AppendBlock(chain);
 
             //Test single block back fork
-            ChainedHeader last = AppendBlock(chain);
+            var last = AppendBlock(chain);
             Assert.Equal(4, chain.Height);
             Assert.Equal(4, last.Height);
             Assert.Equal(last.HashBlock, chain.Tip.HashBlock);
@@ -307,8 +307,8 @@ namespace NBitcoin.Tests
             Assert.NotNull(chain.GetBlock(fork.HashBlock));
 
             //Test 3 blocks back fork
-            ChainedHeader b1 = AppendBlock(chain);
-            ChainedHeader b2 = AppendBlock(chain);
+            var b1 = AppendBlock(chain);
+            var b2 = AppendBlock(chain);
             last = AppendBlock(chain);
             Assert.Equal(6, chain.Height);
             Assert.Equal(6, last.Height);
@@ -335,10 +335,10 @@ namespace NBitcoin.Tests
             ConcurrentChain chain = CreateChain(10);
             AppendBlock(chain);
             AppendBlock(chain);
-            ChainedHeader fork = AppendBlock(chain);
+            var fork = AppendBlock(chain);
 
             //Test single block back fork
-            ChainedHeader last = AppendBlock(chain);
+            var last = AppendBlock(chain);
             Assert.Equal(14, chain.Height);
             Assert.Equal(14, last.Height);
             Assert.Equal(last.HashBlock, chain.Tip.HashBlock);
@@ -350,8 +350,8 @@ namespace NBitcoin.Tests
             Assert.NotNull(chain.GetBlock(fork.HashBlock));
 
             //Test 3 blocks back fork
-            ChainedHeader b1 = AppendBlock(chain);
-            ChainedHeader b2 = AppendBlock(chain);
+            var b1 = AppendBlock(chain);
+            var b2 = AppendBlock(chain);
             last = AppendBlock(chain);
             Assert.Equal(16, chain.Height);
             Assert.Equal(16, last.Height);
@@ -375,15 +375,15 @@ namespace NBitcoin.Tests
         [Trait("UnitTest", "UnitTest")]
         public void CanForkSide()
         {
-            var side = new ConcurrentChain(Network.Main);
-            var main = new ConcurrentChain(Network.Main);
+            ConcurrentChain side = new ConcurrentChain(Network.Main);
+            ConcurrentChain main = new ConcurrentChain(Network.Main);
             AppendBlock(side, main);
             AppendBlock(side, main);
-            ChainedHeader common = AppendBlock(side, main);
-            ChainedHeader sideb = AppendBlock(side);
-            ChainedHeader mainb1 = AppendBlock(main);
-            ChainedHeader mainb2 = AppendBlock(main);
-            ChainedHeader mainb3 = AppendBlock(main);
+            var common = AppendBlock(side, main);
+            var sideb = AppendBlock(side);
+            var mainb1 = AppendBlock(main);
+            var mainb2 = AppendBlock(main);
+            var mainb3 = AppendBlock(main);
             Assert.Equal(common.HashBlock, side.SetTip(main.Tip).HashBlock);
             Assert.NotNull(side.GetBlock(mainb1.HashBlock));
             Assert.NotNull(side.GetBlock(mainb2.HashBlock));
@@ -401,16 +401,16 @@ namespace NBitcoin.Tests
         [Trait("UnitTest", "UnitTest")]
         public void CanForkSidePartialChain()
         {
-            Block genesis = TestUtils.CreateFakeBlock();
-            var side = new ConcurrentChain(genesis.Header);
-            var main = new ConcurrentChain(genesis.Header);
+            var genesis = TestUtils.CreateFakeBlock();
+            ConcurrentChain side = new ConcurrentChain(genesis.Header);
+            ConcurrentChain main = new ConcurrentChain(genesis.Header);
             AppendBlock(side, main);
             AppendBlock(side, main);
-            ChainedHeader common = AppendBlock(side, main);
-            ChainedHeader sideb = AppendBlock(side);
-            ChainedHeader mainb1 = AppendBlock(main);
-            ChainedHeader mainb2 = AppendBlock(main);
-            ChainedHeader mainb3 = AppendBlock(main);
+            var common = AppendBlock(side, main);
+            var sideb = AppendBlock(side);
+            var mainb1 = AppendBlock(main);
+            var mainb2 = AppendBlock(main);
+            var mainb3 = AppendBlock(main);
             Assert.Equal(common.HashBlock, side.SetTip(main.Tip).HashBlock);
             Assert.NotNull(side.GetBlock(mainb1.HashBlock));
             Assert.NotNull(side.GetBlock(mainb2.HashBlock));
@@ -439,7 +439,7 @@ namespace NBitcoin.Tests
             ConcurrentChain chain = this.CreateChain(skipListLength - 1);
 
             // Also want a copy in array form so can quickly verify indexing.
-            var chainArray = new ChainedHeader[skipListLength];
+            ChainedHeader[] chainArray = new ChainedHeader[skipListLength];
 
             // Check skip height and build out array copy.
             foreach (ChainedHeader block in chain.EnumerateToTip(chain.Genesis))
@@ -452,7 +452,7 @@ namespace NBitcoin.Tests
             }
 
             // Do some random verification of GetAncestor().
-            var random = new Random();
+            Random random = new Random();
             int randCheckCount = 1000;
             for (int i = 0; i < randCheckCount; i++)
             {
@@ -491,7 +491,7 @@ namespace NBitcoin.Tests
             ChainedHeader branchTip = block;
 
             // Test 100 random starting points for locators.
-            var rand = new Random();
+            Random rand = new Random();
             for (int n = 0; n < 100; n++)
             {
                 // Find a random location along chain for locator < mainLength is on main chain > mainLength is on branch.
@@ -537,7 +537,7 @@ namespace NBitcoin.Tests
             var chain = new ConcurrentChain(genesis);
             for (int i = 0; i < height; i++)
             {
-                Block b = TestUtils.CreateFakeBlock();
+                var b = TestUtils.CreateFakeBlock();
                 b.Header.HashPrevBlock = chain.Tip.HashBlock;
                 chain.SetTip(b.Header);
             }
@@ -548,10 +548,10 @@ namespace NBitcoin.Tests
         public ChainedHeader AppendBlock(ChainedHeader previous, params ConcurrentChain[] chains)
         {
             ChainedHeader last = null;
-            uint nonce = RandomUtils.GetUInt32();
-            foreach (ConcurrentChain chain in chains)
+            var nonce = RandomUtils.GetUInt32();
+            foreach (var chain in chains)
             {
-                Block block = TestUtils.CreateFakeBlock(new Transaction());
+                var block = TestUtils.CreateFakeBlock(new Transaction());
                 block.Header.HashPrevBlock = previous == null ? chain.Tip.HashBlock : previous.HashBlock;
                 block.Header.Nonce = nonce;
                 if (!chain.TrySetTip(block.Header, out last))

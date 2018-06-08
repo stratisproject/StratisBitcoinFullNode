@@ -5,7 +5,6 @@ using System.Text;
 using System.Text.RegularExpressions;
 using NBitcoin.BouncyCastle.Asn1;
 using NBitcoin.BouncyCastle.Asn1.Sec;
-using NBitcoin.BouncyCastle.Asn1.X9;
 using NBitcoin.BouncyCastle.Crypto.Parameters;
 using NBitcoin.BouncyCastle.Math;
 using NBitcoin.BouncyCastle.Math.EC;
@@ -110,9 +109,9 @@ namespace NBitcoin.Tests
             var dsa = new DeterministicECDSA(GetHash(test.Hash));
             dsa.setPrivateKey(key);
             dsa.update(Encoding.UTF8.GetBytes(test.Message));
-            byte[] result = dsa.sign();
+            var result = dsa.sign();
 
-            ECDSASignature signature = ECDSASignature.FromDER(result);
+            var signature = ECDSASignature.FromDER(result);
             Assert.Equal(test.S, signature.S);
             Assert.Equal(test.R, signature.R);
         }
@@ -147,7 +146,7 @@ namespace NBitcoin.Tests
         [Trait("UnitTest", "UnitTest")]
         public void DeterministicSignatureTestVectors()
         {
-            foreach(DeterministicSigTest test in ParseTestsDump(File.ReadAllText(TestDataLocations.GetFileFromDataFolder("determiniticECDSA.txt"))))
+            foreach(var test in ParseTestsDump(File.ReadAllText(TestDataLocations.GetFileFromDataFolder("determiniticECDSA.txt"))))
             {
                 TestSig(test);
             }
@@ -155,17 +154,17 @@ namespace NBitcoin.Tests
 
         private IEnumerable<DeterministicSigTest> ParseTestsDump(string testDump)
         {
-            foreach(string curveTest in testDump.Split(new string[] { "Key pair:" }, StringSplitOptions.RemoveEmptyEntries))
+            foreach(var curveTest in testDump.Split(new string[] { "Key pair:" }, StringSplitOptions.RemoveEmptyEntries))
             {
-                string[] tests = curveTest.Split(new string[] { "Signatures:" }, StringSplitOptions.RemoveEmptyEntries);
+                var tests = curveTest.Split(new string[] { "Signatures:" }, StringSplitOptions.RemoveEmptyEntries);
                 if(tests.Length == 1)
                     continue;
                 if(tests.Length != 2)
                     throw new Exception("Test bug");
-                string key = tests[0];
-                string signatures = tests[1];
-                ECPrivateKeyParameters privateKey = ParseKey(key);
-                foreach(DeterministicSigTest test in ParseTests(signatures))
+                var key = tests[0];
+                var signatures = tests[1];
+                var privateKey = ParseKey(key);
+                foreach(var test in ParseTests(signatures))
                 {
                     test.Key = privateKey;
                     yield return test;
@@ -176,9 +175,9 @@ namespace NBitcoin.Tests
 
         private IEnumerable<DeterministicSigTest> ParseTests(string tests)
         {
-            foreach(string test in tests.Split(new string[] { "With " }, StringSplitOptions.RemoveEmptyEntries))
+            foreach(var test in tests.Split(new string[] { "With " }, StringSplitOptions.RemoveEmptyEntries))
             {
-                DeterministicSigTest result = ParseTest("With " + test);
+                var result = ParseTest("With " + test);
                 if(result != null)
                     yield return result;
             }
@@ -186,7 +185,7 @@ namespace NBitcoin.Tests
 
         private DeterministicSigTest ParseTest(string data)
         {
-            Match match = Regex.Match(data, "With (.*?), message = \"?(.*?)\"?:");
+            var match = Regex.Match(data, "With (.*?), message = \"?(.*?)\"?:");
             if(!match.Success)
                 return null;
             data = data.Replace(match.Value, "");
@@ -205,13 +204,14 @@ namespace NBitcoin.Tests
 
         private static Dictionary<string, string> ToDictionnary(string data)
         {
-            var values = new Dictionary<string, string>();
+            Dictionary<string, string> values = new Dictionary<string, string>();
 
-            string[] lines = data.Split(new string[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries);
+            // The state of the line separators may be affected by copy operations - so do an environment independent line split...
+            var lines = data.Split(new string[] { "\r\n", "\r", "\n" }, StringSplitOptions.RemoveEmptyEntries);
             string previous = null;
-            foreach(string line in lines)
+            foreach(var line in lines)
             {
-                string[] kv = line.Replace("\t", "")
+                var kv = line.Replace("\t", "")
                               .Replace(" ", "")
                               .Split(new string[] { ":", "=" }, StringSplitOptions.RemoveEmptyEntries);
                 if(kv.Length != 2)
@@ -232,8 +232,8 @@ namespace NBitcoin.Tests
         {
             Dictionary<string, string> values = ToDictionnary(data);
 
-            string curveName = values["curve"].Replace("NIST", "");
-            X9ECParameters curve = SecNamedCurves.GetByOid(curves[curveName]);
+            var curveName = values["curve"].Replace("NIST", "");
+            var curve = SecNamedCurves.GetByOid(curves[curveName]);
             var domain = new ECDomainParameters(curve.Curve, curve.G, new BigInteger(values["q"], 16), curve.H);
             Assert.Equal(domain.N, curve.N);
 
