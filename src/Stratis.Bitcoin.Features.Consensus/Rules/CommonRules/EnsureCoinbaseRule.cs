@@ -1,6 +1,7 @@
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
+using Stratis.Bitcoin.Consensus.Rules;
 
 namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
 {
@@ -14,7 +15,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         /// <exception cref="ConsensusErrors.BadMultipleCoinbase">The block contains multiple coinbase transactions.</exception>
         public override Task RunAsync(RuleContext context)
         {
-            Block block = context.BlockValidationContext.Block;
+            Block block = context.ValidationContext.Block;
 
             // First transaction must be coinbase, the rest must not be
             if ((block.Transactions.Count == 0) || !block.Transactions[0].IsCoinBase)

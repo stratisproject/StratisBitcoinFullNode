@@ -1,6 +1,7 @@
 ﻿using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
+using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
@@ -22,6 +23,12 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
             this.consensus = this.Parent.Network.Consensus;
 
             this.Logger.LogTrace("(-)");
+        }
+
+        /// <inheritdoc/>
+        protected override bool IsProtocolTransaction(Transaction transaction)
+        {
+            return transaction.IsCoinBase;
         }
 
         /// <inheritdoc/>
