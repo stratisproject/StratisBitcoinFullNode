@@ -74,7 +74,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
         [Fact]
         public void ConnectHeaders_HeadersCantConnect_ShouldFail()
         {
-            TestContext testContext = new TestContext();
+            var testContext = new TestContext();
             ChainedHeaderTree chainedHeaderTree = testContext.CreateChainedHeaderTree();
 
             Assert.Throws<ConnectHeaderException>(() => chainedHeaderTree.ConnectNewHeaders(1, new List<BlockHeader>(new [] { testContext.Network.GetGenesis().Header})));
@@ -131,7 +131,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
         [Fact]
         public void ConnectHeaders_NewAndExistingHeaders_ShouldCreateNewHeaders()
         {
-            TestContext testContext = new TestContext();
+            var testContext = new TestContext();
             ChainedHeaderTree chainedHeaderTree = testContext.CreateChainedHeaderTree();
 
             var chainTip = testContext.ExtendAChain(10);
@@ -142,7 +142,6 @@ namespace Stratis.Bitcoin.Tests.Consensus
             var listOfExistingHeaders = testContext.ChainedHeaderToList(chainTip, 10);
             var listOfNewHeaders = testContext.ChainedHeaderToList(newChainTip, 10);
 
-            testContext.ChainStateMock.Setup(s => s.ConsensusTip).Returns(chainTip);
             chainTip.BlockValidationState = ValidationState.FullyValidated;
 
             var connectedHeadersOld = chainedHeaderTree.ConnectNewHeaders(2, listOfExistingHeaders);
@@ -164,15 +163,13 @@ namespace Stratis.Bitcoin.Tests.Consensus
         [Fact]
         public void ConnectHeaders_SupplyHeadersThenSupplyMore_Both_Tip_PeerId_Maps_ShouldBeUpdated()
         {
-            TestContext testContext = new TestContext();
+            var testContext = new TestContext();
             ChainedHeaderTree cht = testContext.CreateChainedHeaderTree();
             var chainTip = testContext.ExtendAChain(10);
             cht.Initialize(chainTip, true);
             
             var listOfExistingHeaders = testContext.ChainedHeaderToList(chainTip, 10);
             
-            testContext.ChainStateMock.Setup(s => s.ConsensusTip).Returns(chainTip);
-
             cht.ConnectNewHeaders(1, listOfExistingHeaders);
 
             var peerIdsByTipHashBefore = cht.GetPeerIdsByTipHash().ToDictionary(entry => entry.Key, entry => new HashSet<int>(entry.Value));
@@ -211,7 +208,6 @@ namespace Stratis.Bitcoin.Tests.Consensus
             ChainedHeaderTree cht = ctx.CreateChainedHeaderTree();
             var chainTip = ctx.ExtendAChain(5);
             cht.Initialize(chainTip, true);
-            ctx.ChainStateMock.Setup(s => s.ConsensusTip).Returns(chainTip);
             ctx.ConsensusSettings.UseCheckpoints = false;
 
             // Checkpoints are off
