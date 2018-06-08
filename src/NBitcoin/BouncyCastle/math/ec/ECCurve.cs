@@ -147,7 +147,7 @@ namespace NBitcoin.BouncyCastle.Math.EC
 
         protected virtual ECMultiplier CreateDefaultMultiplier()
         {
-            GlvEndomorphism glvEndomorphism = m_endomorphism as GlvEndomorphism;
+            var glvEndomorphism = m_endomorphism as GlvEndomorphism;
             if(glvEndomorphism != null)
             {
                 return new GlvMultiplier(this, glvEndomorphism);
@@ -267,8 +267,8 @@ namespace NBitcoin.BouncyCastle.Math.EC
             /*
              * Figure out which of the points actually need to be normalized
              */
-            ECFieldElement[] zs = new ECFieldElement[len];
-            int[] indices = new int[len];
+            var zs = new ECFieldElement[len];
+            var indices = new int[len];
             int count = 0;
             for(int i = 0; i < len; ++i)
             {
@@ -446,7 +446,7 @@ namespace NBitcoin.BouncyCastle.Math.EC
                             throw new ArgumentException("Incorrect length for compressed encoding", "encoded");
 
                         int yTilde = type & 1;
-                        BigInteger X = new BigInteger(1, encoded, 1, expectedLength);
+                        var X = new BigInteger(1, encoded, 1, expectedLength);
 
                         p = DecompressPoint(yTilde, X);
                         if(!p.SatisfiesCofactor())
@@ -460,8 +460,8 @@ namespace NBitcoin.BouncyCastle.Math.EC
                         if(encoded.Length != (2 * expectedLength + 1))
                             throw new ArgumentException("Incorrect length for uncompressed encoding", "encoded");
 
-                        BigInteger X = new BigInteger(1, encoded, 1, expectedLength);
-                        BigInteger Y = new BigInteger(1, encoded, 1 + expectedLength, expectedLength);
+                        var X = new BigInteger(1, encoded, 1, expectedLength);
+                        var Y = new BigInteger(1, encoded, 1 + expectedLength, expectedLength);
 
                         p = ValidatePoint(X, Y);
                         break;
@@ -473,8 +473,8 @@ namespace NBitcoin.BouncyCastle.Math.EC
                         if(encoded.Length != (2 * expectedLength + 1))
                             throw new ArgumentException("Incorrect length for hybrid encoding", "encoded");
 
-                        BigInteger X = new BigInteger(1, encoded, 1, expectedLength);
-                        BigInteger Y = new BigInteger(1, encoded, 1 + expectedLength, expectedLength);
+                        var X = new BigInteger(1, encoded, 1, expectedLength);
+                        var Y = new BigInteger(1, encoded, 1 + expectedLength, expectedLength);
 
                         if(Y.TestBit(0) != (type == 0x07))
                             throw new ArgumentException("Inconsistent Y coordinate in hybrid encoding", "encoded");

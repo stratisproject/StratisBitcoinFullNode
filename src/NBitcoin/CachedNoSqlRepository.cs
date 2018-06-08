@@ -65,7 +65,7 @@ namespace NBitcoin
         {
             using(@lock.LockWrite())
             {
-                foreach(var data in enumerable)
+                foreach(Tuple<string, byte[]> data in enumerable)
                 {
                     if(data.Item2 == null)
                     {
@@ -94,7 +94,7 @@ namespace NBitcoin
             }
             if(!found)
             {
-                var raw = await InnerRepository.GetAsync<Raw>(key).ConfigureAwait(false);
+                Raw raw = await InnerRepository.GetAsync<Raw>(key).ConfigureAwait(false);
                 if(raw != null)
                 {
                     result = raw.Data;

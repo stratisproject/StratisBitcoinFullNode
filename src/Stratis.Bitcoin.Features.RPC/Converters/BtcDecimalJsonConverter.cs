@@ -11,8 +11,8 @@ namespace Stratis.Bitcoin.Features.RPC.Converters
 
         public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
         {
-            var d = (decimal)value;
-            var result = d.ToString(CultureInfo.InvariantCulture);
+            decimal d = (decimal)value;
+            string result = d.ToString(CultureInfo.InvariantCulture);
             if (!result.Contains('.') || result.Split('.')[1].Length < MinDecimals)
             {
                 result = d.ToString("0." + new string('0', MinDecimals), CultureInfo.InvariantCulture);

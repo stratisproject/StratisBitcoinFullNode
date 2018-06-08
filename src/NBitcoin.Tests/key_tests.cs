@@ -75,12 +75,12 @@ namespace NBitcoin.Tests
             {
                 if(test.PrivateKey != null)
                 {
-                    var secret = Network.Main.CreateBitcoinSecret(test.PrivateKey);
-                    var signature = secret.PrivateKey.SignMessage(test.Message);
+                    BitcoinSecret secret = Network.Main.CreateBitcoinSecret(test.PrivateKey);
+                    string signature = secret.PrivateKey.SignMessage(test.Message);
                     Assert.True(((BitcoinPubKeyAddress)Network.Main.CreateBitcoinAddress(test.Address)).VerifyMessage(test.Message, signature));
                     Assert.True(secret.PubKey.VerifyMessage(test.Message, signature));
                 }
-                BitcoinPubKeyAddress address = (BitcoinPubKeyAddress)Network.Main.CreateBitcoinAddress(test.Address);
+                var address = (BitcoinPubKeyAddress)Network.Main.CreateBitcoinAddress(test.Address);
                 Assert.True(address.VerifyMessage(test.Message, test.Signature));
                 Assert.True(!address.VerifyMessage("bad message", test.Signature));
             }
@@ -94,10 +94,10 @@ namespace NBitcoin.Tests
             byte[] random_challenge = Encoders.Hex.DecodeData("cd8552569d6e4509266ef137584d1e62c7579b5b8ed69bbafa4b864c6521e7c2");
             byte[] signature = Encoders.Hex.DecodeData("20f2d1a42d08c3a362be49275c3ffeeaa415fc040971985548b9f910812237bb41770bf2c8d488428799fbb7e52c11f1a3404011375e4080e077e0e42ab7a5ba02");
 
-            var hiddenChallenge_Sha = Hashes.SHA256(random_challenge);
-            var visualChallenge_Sha = Hashes.SHA256(Encoding.ASCII.GetBytes(visual_challenge));
+            byte[] hiddenChallenge_Sha = Hashes.SHA256(random_challenge);
+            byte[] visualChallenge_Sha = Hashes.SHA256(Encoding.ASCII.GetBytes(visual_challenge));
 
-            PubKey pubKey = new PubKey("023a472219ad3327b07c18273717bb3a40b39b743756bf287fbd5fa9d263237f45");
+            var pubKey = new PubKey("023a472219ad3327b07c18273717bb3a40b39b743756bf287fbd5fa9d263237f45");
             bool verified = pubKey.VerifyMessage(hiddenChallenge_Sha.Concat(visualChallenge_Sha).ToArray(), Encoders.Base64.EncodeData(signature));
             Assert.True(verified);
         }
@@ -143,10 +143,10 @@ namespace NBitcoin.Tests
                 Assert.Equal(new KeyId(test.Hash160), secret.PrivateKey.PubKey.Hash);
                 Assert.Equal(address.Hash, secret.PrivateKey.PubKey.GetAddress(Network.Main).Hash);
 
-                var compressedSec = secret.Copy(true);
+                BitcoinSecret compressedSec = secret.Copy(true);
 
-                var a = secret.PrivateKey.PubKey;
-                var b = compressedSec.PrivateKey.PubKey;
+                PubKey a = secret.PrivateKey.PubKey;
+                PubKey b = compressedSec.PrivateKey.PubKey;
 
                 Assert.Equal(test.CompressedPrivateKeyWIF, compressedSec.ToWif());
                 Assert.Equal(test.CompressedPubKey, compressedSec.PrivateKey.PubKey.ToHex());
@@ -207,7 +207,7 @@ namespace NBitcoin.Tests
                 // normal signatures
 
                 ECDSASignature sign1 = null, sign2 = null, sign1C = null, sign2C = null;
-                List<Task> tasks = new List<Task>();
+                var tasks = new List<Task>();
                 tasks.Add(Task.Run(() => sign1 = key1.Sign(hashMsg)));
                 tasks.Add(Task.Run(() => sign2 = key2.Sign(hashMsg)));
                 tasks.Add(Task.Run(() => sign1C = key1C.Sign(hashMsg)));
@@ -277,8 +277,8 @@ namespace NBitcoin.Tests
         public void key_test_from_bytes()
         {
             //Example private key taken from https://en.bitcoin.it/wiki/Private_key
-            Byte[] privateKey = new Byte[32] { 0xE9, 0x87, 0x3D, 0x79, 0xC6, 0xD8, 0x7D, 0xC0, 0xFB, 0x6A, 0x57, 0x78, 0x63, 0x33, 0x89, 0xF4, 0x45, 0x32, 0x13, 0x30, 0x3D, 0xA6, 0x1F, 0x20, 0xBD, 0x67, 0xFC, 0x23, 0x3A, 0xA3, 0x32, 0x62 };
-            Key key1 = new Key(privateKey, -1, false);
+            var privateKey = new Byte[32] { 0xE9, 0x87, 0x3D, 0x79, 0xC6, 0xD8, 0x7D, 0xC0, 0xFB, 0x6A, 0x57, 0x78, 0x63, 0x33, 0x89, 0xF4, 0x45, 0x32, 0x13, 0x30, 0x3D, 0xA6, 0x1F, 0x20, 0xBD, 0x67, 0xFC, 0x23, 0x3A, 0xA3, 0x32, 0x62 };
+            var key1 = new Key(privateKey, -1, false);
 
             ISecret wifKey = key1.GetWif(NBitcoin.Network.Main);
 

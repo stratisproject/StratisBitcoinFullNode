@@ -40,7 +40,7 @@ namespace NBitcoin
 
         public static byte[] GetBytes(int length)
         {
-            byte[] data = new byte[length];
+            var data = new byte[length];
             if (Random == null)
                 throw new InvalidOperationException("You must set the RNG (RandomUtils.Random) before generating random numbers");
             Random.GetBytes(data);
@@ -53,7 +53,7 @@ namespace NBitcoin
             if (additionalEntropy == null || data.Length == 0)
                 return;
             int pos = entropyIndex;
-            var entropy = additionalEntropy;
+            byte[] entropy = additionalEntropy;
             for (int i = 0; i < data.Length; i++)
             {
                 data[i] ^= entropy[pos % 32];
@@ -82,7 +82,7 @@ namespace NBitcoin
         {
             if (data == null)
                 throw new ArgumentNullException("data");
-            var entropy = Hashes.SHA256(data);
+            byte[] entropy = Hashes.SHA256(data);
             if (additionalEntropy == null)
                 additionalEntropy = entropy;
             else

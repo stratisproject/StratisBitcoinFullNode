@@ -41,18 +41,18 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
         public void Log()
         {
-            StringBuilder performanceLogBuilder = new StringBuilder();
+            var performanceLogBuilder = new StringBuilder();
 
             if (this.repository != null)
             {
-                var snapshot = this.repository.PerformanceCounter.Snapshot();
+                BlockStoreRepositoryPerformanceSnapshot snapshot = this.repository.PerformanceCounter.Snapshot();
                 performanceLogBuilder.AppendLine((snapshot - this.lastRepositorySnapshot).ToString());
                 this.lastRepositorySnapshot = snapshot;
             }
 
             if (this.cache != null)
             {
-                var snapshot = this.cache.PerformanceCounter.Snapshot();
+                BlockStoreCachePerformanceSnapshot snapshot = this.cache.PerformanceCounter.Snapshot();
                 performanceLogBuilder.AppendLine((snapshot - this.lastCacheSnapshot).ToString());
                 this.lastCacheSnapshot = snapshot;
             }

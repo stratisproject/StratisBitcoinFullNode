@@ -146,7 +146,7 @@ namespace NBitcoin
         {
             if(tx == null)
                 throw new ArgumentNullException("tx");
-            var hash = tx.GetHash();
+            uint256 hash = tx.GetHash();
             bool fFound = false;
             // Match if the filter contains the hash of tx
             //  for finding tx when they appear in a block
@@ -173,7 +173,7 @@ namespace NBitcoin
                             Insert(new OutPoint(hash, i));
                         else if((nFlags & (byte)BloomFlags.UPDATE_MASK) == (byte)BloomFlags.UPDATE_P2PUBKEY_ONLY)
                         {
-                            var template = StandardScripts.GetTemplateFromScriptPubKey(Network.Main, txout.ScriptPubKey); // this is only valid for Bitcoin.
+                            ScriptTemplate template = StandardScripts.GetTemplateFromScriptPubKey(Network.Main, txout.ScriptPubKey); // this is only valid for Bitcoin.
                             if(template != null &&
                                     (template.Type == TxOutType.TX_PUBKEY || template.Type == TxOutType.TX_MULTISIG))
                                 Insert(new OutPoint(hash, i));

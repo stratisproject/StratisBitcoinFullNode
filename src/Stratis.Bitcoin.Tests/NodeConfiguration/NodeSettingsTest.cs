@@ -34,7 +34,7 @@ namespace Stratis.Bitcoin.Tests.NodeConfiguration
         {
             // Arrange
             string dataDir = TestBase.CreateDataFolder(this).RootPath;
-            var configFile = Path.Combine(dataDir, "config.txt");
+            string configFile = Path.Combine(dataDir, "config.txt");
             File.WriteAllText(configFile, "agentprefix=def");
             var nodeSettings = new NodeSettings(args: new[] { $"-datadir={dataDir}", $"-conf=config.txt" });
             // Act
@@ -51,7 +51,7 @@ namespace Stratis.Bitcoin.Tests.NodeConfiguration
         {
             // Arrange
             string dataDir = TestBase.CreateDataFolder(this).RootPath;
-            var configFile = Path.Combine(dataDir, "config.txt");
+            string configFile = Path.Combine(dataDir, "config.txt");
             File.WriteAllText(configFile, "agentprefix=def");
             var nodeSettings = new NodeSettings(args: new[] { $"-datadir={dataDir}", $"-conf=config.txt", "-agentprefix=abc" });
             // Act
@@ -68,7 +68,7 @@ namespace Stratis.Bitcoin.Tests.NodeConfiguration
         {
             // Arrange
             string dataDir = TestBase.CreateDataFolder(this).RootPath;
-            var configFile = Path.Combine(dataDir, "config.txt");
+            string configFile = Path.Combine(dataDir, "config.txt");
             File.WriteAllText(configFile, "");
             var nodeSettings = new NodeSettings(args: new[] { $"-datadir={dataDir}", $"-conf=config.txt" });
             // Act
@@ -87,7 +87,7 @@ namespace Stratis.Bitcoin.Tests.NodeConfiguration
             // Arrange
             var nodeSettings = new NodeSettings(args: new[] { "-addnode=0.0.0.0", "-addnode=0.0.0.1" });
             // Act
-            var result = nodeSettings.ConfigReader.GetAll("addnode");
+            string[] result = nodeSettings.ConfigReader.GetAll("addnode");
             // Assert
             Assert.Equal(2, result.Length);
             Assert.Equal("0.0.0.0", result[0]);
@@ -102,11 +102,11 @@ namespace Stratis.Bitcoin.Tests.NodeConfiguration
         {
             // Arrange
             string dataDir = TestBase.CreateDataFolder(this).RootPath;
-            var configFile = Path.Combine(dataDir, "config.txt");
+            string configFile = Path.Combine(dataDir, "config.txt");
             File.WriteAllText(configFile, "addnode=0.0.0.0\r\naddnode=0.0.0.1");
             var nodeSettings = new NodeSettings(args: new[] { $"-datadir={dataDir}", $"-conf=config.txt" });
             // Act
-            var result = nodeSettings.ConfigReader.GetAll("addnode");
+            string[] result = nodeSettings.ConfigReader.GetAll("addnode");
             // Assert
             Assert.Equal(2, result.Length);
             Assert.Equal("0.0.0.0", result[0]);
@@ -121,11 +121,11 @@ namespace Stratis.Bitcoin.Tests.NodeConfiguration
         {
             // Arrange
             string dataDir = TestBase.CreateDataFolder(this).RootPath;
-            var configFile = Path.Combine(dataDir, "config.txt");
+            string configFile = Path.Combine(dataDir, "config.txt");
             File.WriteAllText(configFile, "addnode=0.0.0.0");
             var nodeSettings = new NodeSettings(args: new[] { $"-datadir={dataDir}", $"-conf=config.txt", "-addnode=0.0.0.1" });
             // Act
-            var result = nodeSettings.ConfigReader.GetAll("addnode");
+            string[] result = nodeSettings.ConfigReader.GetAll("addnode");
             // Assert
             Assert.Equal(2, result.Length);
             Assert.Equal("0.0.0.1", result[0]); // Command-line first
@@ -140,11 +140,11 @@ namespace Stratis.Bitcoin.Tests.NodeConfiguration
         {
             // Arrange
             string dataDir = TestBase.CreateDataFolder(this).RootPath;
-            var configFile = Path.Combine(dataDir, "config.txt");
+            string configFile = Path.Combine(dataDir, "config.txt");
             File.WriteAllText(configFile, "");
             var nodeSettings = new NodeSettings(args: new[] { $"-datadir={dataDir}", $"-conf=config.txt" });
             // Act
-            var result = nodeSettings.ConfigReader.GetAll("addnode");
+            string[] result = nodeSettings.ConfigReader.GetAll("addnode");
             // Assert
             Assert.Empty(result);
         }

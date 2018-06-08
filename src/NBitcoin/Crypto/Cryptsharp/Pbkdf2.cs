@@ -114,7 +114,7 @@ namespace NBitcoin.Crypto
         {
             NBitcoin.Crypto.Internal.Check.Range("count", count, 0, int.MaxValue);
 
-            byte[] buffer = new byte[count];
+            var buffer = new byte[count];
             int bytes = Read(buffer, 0, count);
             if(bytes < count)
             {
@@ -142,7 +142,7 @@ namespace NBitcoin.Crypto
         {
             NBitcoin.Crypto.Internal.Check.Range("derivedKeyLength", derivedKeyLength, 0, int.MaxValue);
 
-            using(Pbkdf2 kdf = new Pbkdf2(hmacAlgorithm, salt, iterations))
+            using(var kdf = new Pbkdf2(hmacAlgorithm, salt, iterations))
             {
                 return kdf.Read(derivedKeyLength);
             }

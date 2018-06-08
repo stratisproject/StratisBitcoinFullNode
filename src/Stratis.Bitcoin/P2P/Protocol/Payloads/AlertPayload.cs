@@ -50,7 +50,7 @@ namespace Stratis.Bitcoin.P2P.Protocol.Payloads
         {
             get
             {
-                List<string> messages = new List<string>();
+                var messages = new List<string>();
                 foreach (VarString ver in this.setSubVer)
                 {
                     messages.Add(Encoders.ASCII.EncodeData(ver.GetString()));
@@ -59,8 +59,8 @@ namespace Stratis.Bitcoin.P2P.Protocol.Payloads
             }
             set
             {
-                List<VarString> messages = new List<VarString>();
-                foreach (var v in value)
+                var messages = new List<VarString>();
+                foreach (string v in value)
                 {
                     messages.Add(new VarString(Encoders.ASCII.DecodeData(v)));
                 }
@@ -137,7 +137,7 @@ namespace Stratis.Bitcoin.P2P.Protocol.Payloads
 
         private void UpdatePayload(BitcoinStream stream)
         {
-            MemoryStream ms = new MemoryStream();
+            var ms = new MemoryStream();
             var seria = new BitcoinStream(ms, true);
             seria.ConsensusFactory = stream.ConsensusFactory;
             seria.CopyParameters(stream);

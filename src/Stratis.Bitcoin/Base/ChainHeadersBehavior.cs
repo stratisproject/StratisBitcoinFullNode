@@ -243,7 +243,7 @@ namespace Stratis.Bitcoin.Base
                 return;
             }
 
-            HeadersPayload headers = new HeadersPayload();
+            var headers = new HeadersPayload();
             ChainedHeader consensusTip = this.chainState.ConsensusTip;
             consensusTip = this.Chain.GetBlock(consensusTip.HashBlock);
 

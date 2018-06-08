@@ -74,7 +74,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
     {
         public void Import(NodeConfigParameters configParameters)
         {
-            foreach (var kv in configParameters)
+            foreach (KeyValuePair<string, string> kv in configParameters)
             {
                 if (!this.ContainsKey(kv.Key))
                     this.Add(kv.Key, kv.Value);
@@ -83,8 +83,8 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
 
         public override string ToString()
         {
-            StringBuilder builder = new StringBuilder();
-            foreach (var kv in this)
+            var builder = new StringBuilder();
+            foreach (KeyValuePair<string, string> kv in this)
                 builder.AppendLine(kv.Key + "=" + kv.Value);
             return builder.ToString();
         }
@@ -112,14 +112,14 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
         public static NodeBuilder Create(object caller, [CallerMemberName] string callingMethod = null)
         {
             KillAnyBitcoinInstances();
-            var testFolderPath = TestBase.CreateTestDir(caller, callingMethod);
+            string testFolderPath = TestBase.CreateTestDir(caller, callingMethod);
             return new NodeBuilder(testFolderPath);
         }
 
         public static NodeBuilder Create(string testDirectory)
         {
             KillAnyBitcoinInstances();
-            var testFolderPath = TestBase.CreateTestDir(testDirectory);
+            string testFolderPath = TestBase.CreateTestDir(testDirectory);
             return new NodeBuilder(testFolderPath);
         }
 
@@ -196,14 +196,14 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
 
         private string GetNextDataFolderName()
         {
-            var dataFolderName = Path.Combine(this.rootFolder, this.lastDataFolderIndex.ToString());
+            string dataFolderName = Path.Combine(this.rootFolder, this.lastDataFolderIndex.ToString());
             this.lastDataFolderIndex++;
             return dataFolderName;
         }
 
         public void StartAll()
         {
-            foreach (var node in this.Nodes.Where(n => n.State == CoreNodeState.Stopped))
+            foreach (CoreNode node in this.Nodes.Where(n => n.State == CoreNodeState.Stopped))
             {
                 node.Start();
             }
@@ -211,7 +211,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
 
         public void Dispose()
         {
-            foreach (var node in this.Nodes)
+            foreach (CoreNode node in this.Nodes)
                 node.Kill();
 
             KillAnyBitcoinInstances();
@@ -221,12 +221,12 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
         {
             while (true)
             {
-                var bitcoinDProcesses = Process.GetProcessesByName("bitcoind");
-                var applicableBitcoinDProcesses = bitcoinDProcesses.Where(b => b.MainModule.FileName.Contains("External Libs"));
+                Process[] bitcoinDProcesses = Process.GetProcessesByName("bitcoind");
+                IEnumerable<Process> applicableBitcoinDProcesses = bitcoinDProcesses.Where(b => b.MainModule.FileName.Contains("External Libs"));
                 if (!applicableBitcoinDProcesses.Any())
                     break;
 
-                foreach (var process in applicableBitcoinDProcesses)
+                foreach (Process process in applicableBitcoinDProcesses)
                 {
                     process.Kill();
                     Thread.Sleep(1000);

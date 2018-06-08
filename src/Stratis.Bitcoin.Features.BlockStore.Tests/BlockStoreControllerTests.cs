@@ -7,7 +7,6 @@ using Moq;
 using NBitcoin;
 using Stratis.Bitcoin.Features.BlockStore.Controllers;
 using Stratis.Bitcoin.Features.BlockStore.Models;
-using Stratis.Bitcoin.Tests.Common;
 using Stratis.Bitcoin.Utilities.JsonErrors;
 using Xunit;
 
@@ -70,12 +69,12 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
         [Fact]
         public void Get_Block_When_Hash_Is_Not_Found_Should_Return_Not_Found_Object_Result()
         {
-            var (cache, controller) = GetControllerAndCache();
+            (Mock<IBlockStoreCache> cache, BlockStoreController controller) = GetControllerAndCache();
 
             cache.Setup(c => c.GetBlockAsync(It.IsAny<uint256>()))
                 .Returns(Task.FromResult((Block)null));
 
-            var response = controller.GetBlockAsync(new SearchByHashRequest()
+            Task<IActionResult> response = controller.GetBlockAsync(new SearchByHashRequest()
             { Hash = ValidHash, OutputJson = true });
 
             response.Result.Should().BeOfType<NotFoundObjectResult>();
@@ -87,9 +86,9 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
         [Fact]
         public void Get_Block_When_Hash_Is_Invalid_Should_Error_With_Explanation()
         {
-            var (cache, controller) = GetControllerAndCache();
+            (Mock<IBlockStoreCache> cache, BlockStoreController controller) = GetControllerAndCache();
 
-            var response = controller.GetBlockAsync(new SearchByHashRequest()
+            Task<IActionResult> response = controller.GetBlockAsync(new SearchByHashRequest()
             { Hash = InvalidHash, OutputJson = true });
 
             response.Result.Should().BeOfType<ErrorResult>();
@@ -102,12 +101,12 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
         [Fact]
         public void Get_Block_When_Block_Is_Found_And_Requesting_JsonOuput()
         {
-            var (cache, controller) = GetControllerAndCache();
+            (Mock<IBlockStoreCache> cache, BlockStoreController controller) = GetControllerAndCache();
 
             cache.Setup(c => c.GetBlockAsync(It.IsAny<uint256>()))
                 .Returns(Task.FromResult(Block.Parse(BlockAsHex, Network.StratisTest)));
 
-            var response = controller.GetBlockAsync(new SearchByHashRequest()
+            Task<IActionResult> response = controller.GetBlockAsync(new SearchByHashRequest()
                 {Hash = ValidHash, OutputJson = true});
 
             response.Result.Should().BeOfType<JsonResult>();
@@ -122,12 +121,12 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
         [Fact]
         public void Get_Block_When_Block_Is_Found_And_Requesting_RawOuput()
         {
-                var (cache, controller) = GetControllerAndCache();
+                (Mock<IBlockStoreCache> cache, BlockStoreController controller) = GetControllerAndCache();
 
                 cache.Setup(c => c.GetBlockAsync(It.IsAny<uint256>()))
                     .Returns(Task.FromResult(Block.Parse(BlockAsHex, Network.StratisTest)));
 
-                var response = controller.GetBlockAsync(new SearchByHashRequest()
+                Task<IActionResult> response = controller.GetBlockAsync(new SearchByHashRequest()
                 { Hash = ValidHash, OutputJson = false });
 
                 response.Result.Should().BeOfType<JsonResult>();

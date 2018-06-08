@@ -71,23 +71,23 @@ namespace NBitcoin.Tests
         [Trait("Core", "Core")]
         public void siphash()
         {
-            Hashes.SipHasher hasher = new Hashes.SipHasher(0x0706050403020100UL, 0x0F0E0D0C0B0A0908UL);
+            var hasher = new Hashes.SipHasher(0x0706050403020100UL, 0x0F0E0D0C0B0A0908UL);
             Assert.Equal(0x726fdb47dd0e0e31UL, hasher.Finalize());
-            byte[] t0 = new byte[]{ 0 };
+            var t0 = new byte[]{ 0 };
             hasher.Write(t0);
             Assert.Equal(0x74f839c593dc67fdUL, hasher.Finalize());
-            byte[] t1 = new byte[] { 1, 2, 3, 4, 5, 6, 7 };
+            var t1 = new byte[] { 1, 2, 3, 4, 5, 6, 7 };
             hasher.Write(t1);
             Assert.Equal(0x93f5f5799a932462UL, hasher.Finalize());
             hasher.Write(0x0F0E0D0C0B0A0908UL);
             Assert.Equal(0x3f2acc7f57c29bdbUL, hasher.Finalize());
-            byte[] t2 = new byte[] { 16, 17 };
+            var t2 = new byte[] { 16, 17 };
             hasher.Write(t2);
             Assert.Equal(0x4bc1b3f0968dd39cUL, hasher.Finalize());
-            byte[] t3 = new byte[] { 18, 19, 20, 21, 22, 23, 24, 25, 26 };
+            var t3 = new byte[] { 18, 19, 20, 21, 22, 23, 24, 25, 26 };
             hasher.Write(t3);
             Assert.Equal(0x2f2e6163076bcfadUL, hasher.Finalize());
-            byte[] t4 = new byte[]{ 27, 28, 29, 30, 31 };
+            var t4 = new byte[]{ 27, 28, 29, 30, 31 };
             hasher.Write(t4);
             Assert.Equal(0x7127512f72f27cceUL, hasher.Finalize());
             hasher.Write(0x2726252423222120UL);
@@ -98,15 +98,15 @@ namespace NBitcoin.Tests
             Assert.Equal(0x7127512f72f27cceUL, Hashes.SipHash(0x0706050403020100UL, 0x0F0E0D0C0B0A0908UL, new uint256("1f1e1d1c1b1a191817161514131211100f0e0d0c0b0a09080706050403020100")));
 
             // Check test vectors from spec, one byte at a time
-            Hashes.SipHasher hasher2 = new Hashes.SipHasher(0x0706050403020100UL, 0x0F0E0D0C0B0A0908UL);
+            var hasher2 = new Hashes.SipHasher(0x0706050403020100UL, 0x0F0E0D0C0B0A0908UL);
             for(byte x = 0; x < siphash_4_2_testvec.Length; ++x)
             {
                 Assert.Equal(hasher2.Finalize(), siphash_4_2_testvec[x]);
                 hasher2.Write(new byte[] { x });
             }
             // Check test vectors from spec, eight bytes at a time
-            Hashes.SipHasher hasher3 = new Hashes.SipHasher(0x0706050403020100UL, 0x0F0E0D0C0B0A0908UL);
-            for(var x = 0; x < siphash_4_2_testvec.Length; x += 8)
+            var hasher3 = new Hashes.SipHasher(0x0706050403020100UL, 0x0F0E0D0C0B0A0908UL);
+            for(int x = 0; x < siphash_4_2_testvec.Length; x += 8)
             {
                 Assert.Equal(hasher3.Finalize(), siphash_4_2_testvec[x]);
                 hasher3.Write(uint64_t(x) | (uint64_t(x + 1) << 8) | (uint64_t(x + 2) << 16) | (uint64_t(x + 3) << 24) |
@@ -131,7 +131,7 @@ namespace NBitcoin.Tests
         public void hash160()
         {
             var data = new byte[] { 1, 2, 3, 4 };
-            var result = Hashes.Hash160(data);
+            uint160 result = Hashes.Hash160(data);
             Assert.Equal("706ea1768da7f0c489bf931b362c2d26d8cbd2ec", result.ToString());
         }
 

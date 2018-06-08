@@ -28,7 +28,7 @@ namespace Stratis.Bitcoin.Features.RPC
 
         public static void ConfigureMvc(MvcOptions options, JsonSerializerSettings serializerSettings, ILoggerFactory loggerFactory, ArrayPool<char> charPool, ObjectPoolProvider objectPoolProvider)
         {
-            var jsonOutput = options.OutputFormatters.OfType<JsonOutputFormatter>().First();
+            JsonOutputFormatter jsonOutput = options.OutputFormatters.OfType<JsonOutputFormatter>().First();
             options.OutputFormatters.Remove(jsonOutput);
             options.OutputFormatters.Add(new RPCJsonOutputFormatter(serializerSettings, charPool));
         }

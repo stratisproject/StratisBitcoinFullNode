@@ -131,7 +131,7 @@ namespace Stratis.Bitcoin.P2P
         public void LoadPeers()
         {
             var fileStorage = new FileStorage<List<PeerAddress>>(this.PeerFilePath.AddressManagerFilePath);
-            var peers = fileStorage.LoadByFileName(PeerFileName);
+            List<PeerAddress> peers = fileStorage.LoadByFileName(PeerFileName);
             peers.ForEach(peer =>
             {
                 // Ensure that any address already in store is mapped.
@@ -167,14 +167,14 @@ namespace Stratis.Bitcoin.P2P
             if (!endPoint.Address.IsRoutable(true))
                 return;
             
-            var peerToAdd = PeerAddress.Create(endPoint, source);
+            PeerAddress peerToAdd = PeerAddress.Create(endPoint, source);
             this.peers.TryAdd(peerToAdd.Endpoint, peerToAdd);
         }
 
         /// <inheritdoc/>
         public void AddPeers(IPEndPoint[] endPoints, IPAddress source)
         {
-            foreach (var endPoint in endPoints)
+            foreach (IPEndPoint endPoint in endPoints)
             {
                 this.AddPeer(endPoint, source);
             }
@@ -183,7 +183,7 @@ namespace Stratis.Bitcoin.P2P
         /// <inheritdoc/>
         public void PeerAttempted(IPEndPoint endpoint, DateTime peerAttemptedAt)
         {
-            var peer = this.FindPeer(endpoint);
+            PeerAddress peer = this.FindPeer(endpoint);
             if (peer == null)
                 return;
 
@@ -203,7 +203,7 @@ namespace Stratis.Bitcoin.P2P
         /// <inheritdoc/>
         public void PeerConnected(IPEndPoint endpoint, DateTimeOffset peerConnectedAt)
         {
-            var peer = this.FindPeer(endpoint);
+            PeerAddress peer = this.FindPeer(endpoint);
             if (peer == null)
                 return;
 
@@ -213,7 +213,7 @@ namespace Stratis.Bitcoin.P2P
         /// <inheritdoc/>
         public void PeerDiscoveredFrom(IPEndPoint endpoint, DateTime peerDiscoveredFrom)
         {
-            var peer = this.FindPeer(endpoint);
+            PeerAddress peer = this.FindPeer(endpoint);
             if (peer == null)
                 return;
 
@@ -223,7 +223,7 @@ namespace Stratis.Bitcoin.P2P
         /// <inheritdoc/>
         public void PeerHandshaked(IPEndPoint endpoint, DateTimeOffset peerHandshakedAt)
         {
-            var peer = this.FindPeer(endpoint);
+            PeerAddress peer = this.FindPeer(endpoint);
             if (peer == null)
                 return;
 
@@ -233,7 +233,7 @@ namespace Stratis.Bitcoin.P2P
         /// <inheritdoc/>
         public void PeerSeen(IPEndPoint endpoint, DateTime peerSeenAt)
         {
-            var peer = this.FindPeer(endpoint);
+            PeerAddress peer = this.FindPeer(endpoint);
             if (peer == null)
                 return;
 
@@ -243,7 +243,7 @@ namespace Stratis.Bitcoin.P2P
         /// <inheritdoc/>
         public PeerAddress FindPeer(IPEndPoint endPoint)
         {
-            var peer = this.peers.Skip(0).SingleOrDefault(p => p.Key.Match(endPoint));
+            KeyValuePair<IPEndPoint, PeerAddress> peer = this.peers.Skip(0).SingleOrDefault(p => p.Key.Match(endPoint));
             if (peer.Value != null)
                 return peer.Value;
             return null;

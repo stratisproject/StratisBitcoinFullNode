@@ -328,7 +328,7 @@ namespace Stratis.Bitcoin.Features.Miner
             // mapModifiedTxRes.Select(s => new TxMemPoolModifiedEntry(s)).OrderBy(o => o, new CompareModifiedEntry());
 
             // Keep track of entries that failed inclusion, to avoid duplicate work.
-            TxMempool.SetEntries failedTx = new TxMempool.SetEntries();
+            var failedTx = new TxMempool.SetEntries();
 
             // Start by adding all descendants of previously added txs to mapModifiedTx
             // and modifying them for their already included ancestors.
@@ -437,7 +437,7 @@ namespace Stratis.Bitcoin.Features.Miner
                     continue;
                 }
 
-                TxMempool.SetEntries ancestors = new TxMempool.SetEntries();
+                var ancestors = new TxMempool.SetEntries();
                 long nNoLimit = long.MaxValue;
                 string dummy;
                 this.Mempool.CalculateMemPoolAncestors(iter, ancestors, nNoLimit, nNoLimit, nNoLimit, nNoLimit, out dummy, false);
@@ -485,7 +485,7 @@ namespace Stratis.Bitcoin.Features.Miner
         /// </summary>
         private void OnlyUnconfirmed(TxMempool.SetEntries testSet)
         {
-            foreach (var setEntry in testSet.ToList())
+            foreach (TxMempoolEntry setEntry in testSet.ToList())
             {
                 // Only test txs not already in the block
                 if (this.inBlock.Contains(setEntry))
@@ -554,9 +554,9 @@ namespace Stratis.Bitcoin.Features.Miner
             int descendantsUpdated = 0;
             foreach (TxMempoolEntry setEntry in alreadyAdded)
             {
-                TxMempool.SetEntries setEntries = new TxMempool.SetEntries();
+                var setEntries = new TxMempool.SetEntries();
                 this.MempoolLock.ReadAsync(() => this.Mempool.CalculateDescendants(setEntry, setEntries)).GetAwaiter().GetResult();
-                foreach (var desc in setEntries)
+                foreach (TxMempoolEntry desc in setEntries)
                 {
                     if (alreadyAdded.Contains(desc))
                         continue;

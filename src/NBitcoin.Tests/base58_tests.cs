@@ -33,11 +33,11 @@ namespace NBitcoin.Tests
         [Fact]
         public void ShouldEncodeProperly()
         {
-            foreach(var i in DataSet)
+            foreach(object[] i in DataSet)
             {
                 string data = (string)i[0];
                 string encoded = (string)i[1];
-                var testBytes = Encoders.Hex.DecodeData(data);
+                byte[] testBytes = Encoders.Hex.DecodeData(data);
                 Assert.Equal(encoded, Encoders.Base58.EncodeData(testBytes));
             }
         }
@@ -45,11 +45,11 @@ namespace NBitcoin.Tests
         [Fact]
         public void ShouldDecodeProperly()
         {
-            foreach(var i in DataSet)
+            foreach(object[] i in DataSet)
             {
                 string data = (string)i[0];
                 string encoded = (string)i[1];
-                var testBytes = Encoders.Base58.DecodeData(encoded);
+                byte[] testBytes = Encoders.Base58.DecodeData(encoded);
                 AssertEx.CollectionEquals(Encoders.Hex.DecodeData(data), testBytes);
             }
         }
@@ -62,8 +62,8 @@ namespace NBitcoin.Tests
 
             // check that DecodeBase58 skips whitespace, but still fails with unexpected non-whitespace at the end.
             Assert.Throws<FormatException>(() => Encoders.Base58.DecodeData(" \t\n\v\f\r skip \r\f\v\n\t a"));
-            var result = Encoders.Base58.DecodeData(" \t\n\v\f\r skip \r\f\v\n\t ");
-            var expected2 = Encoders.Hex.DecodeData("971a55");
+            byte[] result = Encoders.Base58.DecodeData(" \t\n\v\f\r skip \r\f\v\n\t ");
+            byte[] expected2 = Encoders.Hex.DecodeData("971a55");
             AssertEx.CollectionEquals(result, expected2);
         }
 
@@ -72,9 +72,9 @@ namespace NBitcoin.Tests
         [Trait("Core", "Core")]
         public void base58_keys_valid_parse()
         {
-            var tests = TestCase.read_json(TestDataLocations.GetFileFromDataFolder("base58_keys_valid.json"));
+            TestCase[] tests = TestCase.read_json(TestDataLocations.GetFileFromDataFolder("base58_keys_valid.json"));
             Network network;
-            foreach(var test in tests)
+            foreach(TestCase test in tests)
             {
                 string strTest = test.ToString();
                 if(test.Count < 3) // Allow for extra stuff (useful for comments)
@@ -99,7 +99,7 @@ namespace NBitcoin.Tests
 
                     // Must be valid private key
                     // Note: CBitcoinSecret::SetString tests isValid, whereas CBitcoinAddress does not!
-                    var secret = network.CreateBitcoinSecret(exp_base58string);
+                    BitcoinSecret secret = network.CreateBitcoinSecret(exp_base58string);
                     //If not valid exception would throw
 
                     Key privkey = secret.PrivateKey;
@@ -113,7 +113,7 @@ namespace NBitcoin.Tests
                 {
                     string exp_addrType = (string)test.GetDynamic(2).addrType; // "script" or "pubkey"
                                                                                // Must be valid public key
-                    var addr = network.CreateBitcoinAddress(exp_base58string);
+                    BitcoinAddress addr = network.CreateBitcoinAddress(exp_base58string);
                     Assert.True((addr is BitcoinScriptAddress) == (exp_addrType == "script"), "isScript mismatch" + strTest);
 
                     if(exp_addrType == "script")
@@ -132,11 +132,11 @@ namespace NBitcoin.Tests
         [Trait("Core", "Core")]
         public void base58_keys_valid_gen()
         {
-            var tests = TestCase.read_json(TestDataLocations.GetFileFromDataFolder("base58_keys_valid.json"));
+            TestCase[] tests = TestCase.read_json(TestDataLocations.GetFileFromDataFolder("base58_keys_valid.json"));
             tests = tests.Concat(TestCase.read_json(TestDataLocations.GetFileFromDataFolder("base58_keys_valid2.json"))).ToArray();
             Network network = null;
 
-            foreach(var test in tests)
+            foreach(TestCase test in tests)
             {
                 string strTest = test.ToString();
                 if(test.Count < 3) // Allow for extra stuff (useful for comments)
@@ -157,7 +157,7 @@ namespace NBitcoin.Tests
                 if(isPrivkey)
                 {
                     bool isCompressed = metadata.isCompressed;
-                    Key key = new Key(exp_payload, fCompressedIn: isCompressed);
+                    var key = new Key(exp_payload, fCompressedIn: isCompressed);
                     BitcoinSecret secret = network.CreateBitcoinSecret(key);
                     Assert.True(secret.ToString() == exp_base58string, "result mismatch: " + strTest);
                 }
@@ -209,7 +209,7 @@ namespace NBitcoin.Tests
         {
             get
             {
-                var dataset = TestCase.read_json(TestDataLocations.GetFileFromDataFolder("base58_keys_invalid.json"));
+                TestCase[] dataset = TestCase.read_json(TestDataLocations.GetFileFromDataFolder("base58_keys_invalid.json"));
                 return dataset.Select(x => x.ToArray());
             }
         }
@@ -218,7 +218,7 @@ namespace NBitcoin.Tests
         [Fact]
         public void base58_keys_invalid()
         {
-            foreach(var i in InvalidKeys)
+            foreach(object[] i in InvalidKeys)
             {
                 string data = (string)i[0];
                 // must be invalid as public and as private key

@@ -22,7 +22,7 @@ namespace NBitcoin.JsonConverters
             if (reader.TokenType == JsonToken.Null)
                 return null;
 
-            var network = (string)reader.Value;
+            string network = (string)reader.Value;
             if (network == null)
                 return null;
             if (network.Equals("MainNet", StringComparison.OrdinalIgnoreCase) || network.Equals("main", StringComparison.OrdinalIgnoreCase))
@@ -31,7 +31,7 @@ namespace NBitcoin.JsonConverters
                 return Network.TestNet;
             if(network.Equals("RegTest", StringComparison.OrdinalIgnoreCase) || network.Equals("reg", StringComparison.OrdinalIgnoreCase))
                 return Network.RegTest;
-            var net = Network.GetNetwork(network);
+            Network net = Network.GetNetwork(network);
             if(net != null)
                 return net;
             throw new JsonObjectException("Unknown network (valid values : main, test, reg)", reader);

@@ -39,7 +39,7 @@ namespace NBitcoin.Crypto
         {
             try
             {
-                Asn1InputStream decoder = new Asn1InputStream(derSig);
+                var decoder = new Asn1InputStream(derSig);
                 var seq = decoder.ReadObject() as DerSequence;
                 if(seq == null || seq.Count != 2)
                     throw new FormatException(InvalidDERSignature);
@@ -56,7 +56,7 @@ namespace NBitcoin.Crypto
         {
             try
             {
-                Asn1InputStream decoder = new Asn1InputStream(derSig);
+                var decoder = new Asn1InputStream(derSig);
                 var seq = decoder.ReadObject() as DerSequence;
                 if(seq == null || seq.Count != 2)
                     throw new FormatException(InvalidDERSignature);
@@ -77,8 +77,8 @@ namespace NBitcoin.Crypto
         public byte[] ToDER()
         {
             // Usually 70-72 bytes.
-            MemoryStream bos = new MemoryStream(72);
-            DerSequenceGenerator seq = new DerSequenceGenerator(bos);
+            var bos = new MemoryStream(72);
+            var seq = new DerSequenceGenerator(bos);
             seq.AddObject(new DerInteger(R));
             seq.AddObject(new DerInteger(S));
             seq.Close();

@@ -1,17 +1,13 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
-using NBitcoin;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Builder.Feature;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Controllers.Models;
-using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.Utilities;
-using System;
 using System.Diagnostics;
-using System.Reflection;
 
 namespace Stratis.Bitcoin.Controllers
 {
@@ -54,7 +50,7 @@ namespace Stratis.Bitcoin.Controllers
         [Route("status")]
         public IActionResult Status()
         {
-            StatusModel model = new StatusModel
+            var model = new StatusModel
             {
                 Version = this.fullNode.Version?.ToString() ?? "0",
                 Agent = this.nodeSettings.Agent,
@@ -78,10 +74,10 @@ namespace Stratis.Bitcoin.Controllers
             // Add the details of connected nodes.
             foreach (INetworkPeer peer in this.connectionManager.ConnectedPeers)
             {
-                ConnectionManagerBehavior connectionManagerBehavior = peer.Behavior<ConnectionManagerBehavior>();
-                ChainHeadersBehavior chainHeadersBehavior = peer.Behavior<ChainHeadersBehavior>();
+                var connectionManagerBehavior = peer.Behavior<ConnectionManagerBehavior>();
+                var chainHeadersBehavior = peer.Behavior<ChainHeadersBehavior>();
 
-                ConnectedPeerModel connectedPeer = new ConnectedPeerModel
+                var connectedPeer = new ConnectedPeerModel
                 {
                     Version = peer.PeerVersion != null ? peer.PeerVersion.UserAgent : "[Unknown]",
                     RemoteSocketEndpoint = peer.RemoteSocketEndpoint.ToString(),

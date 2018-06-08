@@ -1,8 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
+﻿using System.IO;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using NBitcoin;
 using Stratis.Bitcoin.Consensus;
@@ -233,7 +230,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             this.ruleContext.ValidationContext.Block.Transactions.Add(validTransaction);
             this.ruleContext.ValidationContext.Block.Transactions.Add(invalidTransaction);
 
-            var exception = await Assert.ThrowsAsync<ConsensusErrorException>(() => this.consensusRules.RegisterRule<CheckPowTransactionRule>().RunAsync(this.ruleContext));
+            ConsensusErrorException exception = await Assert.ThrowsAsync<ConsensusErrorException>(() => this.consensusRules.RegisterRule<CheckPowTransactionRule>().RunAsync(this.ruleContext));
 
             Assert.Equal(ConsensusErrors.BadTransactionNoInput, exception.ConsensusError);
         }
@@ -244,10 +241,10 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
 
             int transactionWeight = this.CalculateBlockWeight(transaction, options);
 
-            var requiredScriptWeight = weight - transactionWeight - 4;
+            int requiredScriptWeight = weight - transactionWeight - 4;
             transaction.Outputs.RemoveAt(transaction.Outputs.Count - 1);
             // generate nonsense script with required bytes to reach required weight.
-            var script = Script.FromBytesUnsafe(new string('A', requiredScriptWeight).Select(c => (byte)c).ToArray());
+            Script script = Script.FromBytesUnsafe(new string('A', requiredScriptWeight).Select(c => (byte)c).ToArray());
             transaction.Outputs.Add(new TxOut(new Money(10000000000), script));
 
             transactionWeight = this.CalculateBlockWeight(transaction, options);

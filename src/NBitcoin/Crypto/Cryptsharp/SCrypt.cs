@@ -157,7 +157,7 @@ namespace NBitcoin.Crypto
             byte[] B = GetEffectivePbkdf2Salt(key, salt, cost, blockSize, parallel, maxThreads);
             var mac = new NBitcoin.BouncyCastle.Crypto.Macs.HMac(new NBitcoin.BouncyCastle.Crypto.Digests.Sha256Digest());
             mac.Init(new KeyParameter(key));
-            Pbkdf2 kdf = new Pbkdf2(mac, B, 1);
+            var kdf = new Pbkdf2(mac, B, 1);
             Security.Clear(B);
             return kdf;
         }
@@ -187,7 +187,7 @@ namespace NBitcoin.Crypto
             mac.Init(new KeyParameter(P));
             byte[] B = Pbkdf2.ComputeDerivedKey(mac, S, 1, parallel * MFLen);
 #endif
-            uint[] B0 = new uint[B.Length / 4];
+            var B0 = new uint[B.Length / 4];
             for(int i = 0; i < B0.Length; i++)
             {
                 B0[i] = BitPacking.UInt32FromLEBytes(B, i * 4);
@@ -253,7 +253,7 @@ namespace NBitcoin.Crypto
             };
 
             int threadCount = Math.Max(1, Math.Min(Environment.ProcessorCount, Math.Min(maxThreads, parallel)));
-            Task[] threads = new Task[threadCount - 1];
+            var threads = new Task[threadCount - 1];
             for(int i = 0 ; i < threads.Length ; i++)
             {
                 threads[i] = Task.Run(workerThread);
@@ -269,12 +269,12 @@ namespace NBitcoin.Crypto
         {
             uint Nmask = N - 1;
             int Bs = 16 * 2 * r;
-            uint[] scratch1 = new uint[16];
+            var scratch1 = new uint[16];
             uint[] scratchX = new uint[16], scratchY = new uint[Bs];
-            uint[] scratchZ = new uint[Bs];
+            var scratchZ = new uint[Bs];
 
-            uint[] x = new uint[Bs];
-            uint[][] v = new uint[N][];
+            var x = new uint[Bs];
+            var v = new uint[N][];
             for(int i = 0; i < v.Length; i++)
             {
                 v[i] = new uint[Bs];

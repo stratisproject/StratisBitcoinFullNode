@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Net;
-using System.Text;
 using NBitcoin.Protocol;
 
 namespace NBitcoin.Networks
@@ -18,7 +17,7 @@ namespace NBitcoin.Networks
             messageStart[1] = 0x31;
             messageStart[2] = 0x21;
             messageStart[3] = 0x11;
-            var magic = BitConverter.ToUInt32(messageStart, 0); // 0x11213171;
+            uint magic = BitConverter.ToUInt32(messageStart, 0); // 0x11213171;
 
             this.Name = "StratisTest";
             this.Magic = magic;

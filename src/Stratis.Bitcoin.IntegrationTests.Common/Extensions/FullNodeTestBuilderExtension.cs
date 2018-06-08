@@ -18,7 +18,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
         {
             fullNodeBuilder.ConfigureFeature(features =>
             {
-                var feature = features.FeatureRegistrations.FirstOrDefault(f => f.FeatureType == typeof(T));
+                IFeatureRegistration feature = features.FeatureRegistrations.FirstOrDefault(f => f.FeatureType == typeof(T));
                 if (feature != null)
                 {
                     feature.FeatureServices(services =>

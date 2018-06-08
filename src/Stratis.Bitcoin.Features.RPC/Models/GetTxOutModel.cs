@@ -17,7 +17,7 @@ namespace Stratis.Bitcoin.Features.RPC.Models
         {
             if (unspentOutputs != null)
             {
-                var output = unspentOutputs.TryGetOutput(vout);
+                TxOut output = unspentOutputs.TryGetOutput(vout);
                 this.BestBlock = tip.HashBlock;
                 this.Coinbase = unspentOutputs.IsCoinbase;
                 this.Confirmations = NetworkExtensions.MempoolHeight == unspentOutputs.Height ? 0 : tip.Height - (int)unspentOutputs.Height + 1;

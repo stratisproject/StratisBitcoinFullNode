@@ -25,7 +25,7 @@ namespace Stratis.Bitcoin.Controllers
         [Route("Stats")]
         public IActionResult Stats()
         {
-            var content = (this.fullNode as FullNode).LastLogOutput;
+            string content = (this.fullNode as FullNode).LastLogOutput;
             return this.Content(content);
         }
     }

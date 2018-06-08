@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using NBitcoin;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
@@ -45,7 +44,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.CoinViews
 
             var stack = new CoinViewStack(backedCoinView1);
 
-            var coinViews = stack.GetElements().ToList();
+            List<CoinView> coinViews = stack.GetElements().ToList();
 
             Assert.Equal(3, coinViews.Count);
             Assert.True(coinViews[0] is BackedCoinView1);
@@ -61,7 +60,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.CoinViews
 
             var stack = new CoinViewStack(backedCoinView1);
 
-            var coinViews = stack.GetElements().ToList();
+            List<CoinView> coinViews = stack.GetElements().ToList();
 
             Assert.Equal(2, coinViews.Count);
             Assert.True(coinViews[0] is BackedCoinView1);

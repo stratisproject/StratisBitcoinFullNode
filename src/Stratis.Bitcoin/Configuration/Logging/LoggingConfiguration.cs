@@ -158,12 +158,12 @@ namespace Stratis.Bitcoin.Configuration.Logging
                 }
                 else
                 {
-                    HashSet<string> usedCategories = new HashSet<string>(StringComparer.Ordinal);
+                    var usedCategories = new HashSet<string>(StringComparer.Ordinal);
 
                     // Increase selected categories to Debug.
                     foreach (string key in settings.DebugArgs)
                     {
-                        if (!keyCategories.TryGetValue(key.Trim(), out var category))
+                        if (!keyCategories.TryGetValue(key.Trim(), out string category))
                         {
                             // Allow direct specification - e.g. "-debug=Stratis.Bitcoin.Miner".
                             category = key.Trim();
@@ -203,7 +203,7 @@ namespace Stratis.Bitcoin.Configuration.Logging
         /// <returns>The new console settings.</returns>
         public static void AddConsoleWithFilters(this ILoggerFactory loggerFactory)
         {
-            ConsoleLoggerSettings consoleLoggerSettings = new ConsoleLoggerSettings
+            var consoleLoggerSettings = new ConsoleLoggerSettings
             {
                 Switches =
                 {
@@ -214,10 +214,10 @@ namespace Stratis.Bitcoin.Configuration.Logging
                 }
             };
 
-            ConsoleLoggerProvider consoleLoggerProvider = new ConsoleLoggerProvider(consoleLoggerSettings);
+            var consoleLoggerProvider = new ConsoleLoggerProvider(consoleLoggerSettings);
             loggerFactory.AddProvider(consoleLoggerProvider);
 
-            ExtendedLoggerFactory extendedLoggerFactory = loggerFactory as ExtendedLoggerFactory;
+            var extendedLoggerFactory = loggerFactory as ExtendedLoggerFactory;
             Guard.NotNull(extendedLoggerFactory, nameof(extendedLoggerFactory));
             extendedLoggerFactory.ConsoleLoggerProvider = consoleLoggerProvider;
             extendedLoggerFactory.ConsoleSettings = consoleLoggerSettings;
@@ -242,12 +242,12 @@ namespace Stratis.Bitcoin.Configuration.Logging
                     }
                     else
                     {
-                        HashSet<string> usedCategories = new HashSet<string>(StringComparer.Ordinal);
+                        var usedCategories = new HashSet<string>(StringComparer.Ordinal);
 
                         // Increase selected categories to Debug.
                         foreach (string key in settings.DebugArgs)
                         {
-                            if (!keyCategories.TryGetValue(key.Trim(), out var category))
+                            if (!keyCategories.TryGetValue(key.Trim(), out string category))
                             {
                                 // Allow direct specification - e.g. "-debug=Stratis.Bitcoin.Miner".
                                 category = key.Trim();
@@ -273,7 +273,7 @@ namespace Stratis.Bitcoin.Configuration.Logging
         /// <returns>Console logger settings.</returns>
         public static ConsoleLoggerSettings GetConsoleSettings(this ILoggerFactory loggerFactory)
         {
-            ExtendedLoggerFactory extendedLoggerFactory = loggerFactory as ExtendedLoggerFactory;
+            var extendedLoggerFactory = loggerFactory as ExtendedLoggerFactory;
             Guard.NotNull(extendedLoggerFactory, nameof(extendedLoggerFactory));
             return extendedLoggerFactory.ConsoleSettings;
         }
@@ -285,7 +285,7 @@ namespace Stratis.Bitcoin.Configuration.Logging
         /// <returns>Console logger provider.</returns>
         public static ConsoleLoggerProvider GetConsoleLoggerProvider(this ILoggerFactory loggerFactory)
         {
-            ExtendedLoggerFactory extendedLoggerFactory = loggerFactory as ExtendedLoggerFactory;
+            var extendedLoggerFactory = loggerFactory as ExtendedLoggerFactory;
             Guard.NotNull(extendedLoggerFactory, nameof(extendedLoggerFactory));
             return extendedLoggerFactory.ConsoleLoggerProvider;
         }

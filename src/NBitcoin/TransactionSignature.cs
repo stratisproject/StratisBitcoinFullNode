@@ -100,7 +100,7 @@ namespace NBitcoin
 
         public byte[] ToBytes()
         {
-            var sig = _Signature.ToDER();
+            byte[] sig = _Signature.ToDER();
             var result = new byte[sig.Length + 1];
             Array.Copy(sig, 0, result, 0, sig.Length);
             result[result.Length - 1] = (byte)_SigHash;
@@ -139,7 +139,7 @@ namespace NBitcoin
 
         public override bool Equals(object obj)
         {
-            TransactionSignature item = obj as TransactionSignature;
+            var item = obj as TransactionSignature;
             if(item == null)
                 return false;
             return Id.Equals(item.Id);

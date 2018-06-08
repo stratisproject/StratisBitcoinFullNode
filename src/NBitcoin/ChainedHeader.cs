@@ -192,7 +192,7 @@ namespace NBitcoin
         public BlockLocator GetLocator()
         {
             int nStep = 1;
-            List<uint256> blockHashes = new List<uint256>();
+            var blockHashes = new List<uint256>();
 
             ChainedHeader pindex = this;
             while (pindex != null)
@@ -218,7 +218,7 @@ namespace NBitcoin
         /// <inheritdoc />
         public override bool Equals(object obj)
         {
-            ChainedHeader item = obj as ChainedHeader;
+            var item = obj as ChainedHeader;
             if (item == null)
                 return false;
 
@@ -369,7 +369,7 @@ namespace NBitcoin
 
             Target proofOfWorkLimit = consensus.PowLimit;
             ChainedHeader lastBlock = this.Previous;
-            var height = this.Height;
+            int height = this.Height;
 
             if (lastBlock == null)
                 return proofOfWorkLimit;
@@ -431,7 +431,7 @@ namespace NBitcoin
         /// <returns>The median block time.</returns>
         public DateTimeOffset GetMedianTimePast()
         {
-            DateTimeOffset[] median = new DateTimeOffset[MedianTimeSpan];
+            var median = new DateTimeOffset[MedianTimeSpan];
             int begin = MedianTimeSpan;
             int end = MedianTimeSpan;
 
