@@ -38,14 +38,7 @@ namespace Stratis.FederatedPeg
 
             this.federationMember = new FederationMember(this.Name, privateKeyMainchain.PubKey, privateKeySidechain.PubKey);
         }
-
-        //Uses the encryption provider to encypt the private key with the password.
-        internal string GetEncryptedKey(Chain chain)
-        {
-            string key = chain == Chain.Mainchain ? this.PrivateKeyMainchain.ToHex(Network.StratisMain) : this.PrivateKeySidechain.ToHex(Network.StratisMain);
-            return EncryptionProvider.EncryptString(key, this.Password);
-        }
-
+        
         /// <summary>
         /// Creates a new FederationMember and generates new private keys.
         /// </summary>

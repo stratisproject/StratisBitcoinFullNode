@@ -63,17 +63,6 @@ namespace Stratis.FederatedPeg
                 federationMemberPrivate.Name,
                 Filename_Template_Public,
                 federationMemberPrivate.ToFederationMember().PublicKeySideChain.ToString());
-
-            //Private keys.
-            OutputKey(Chain.Mainchain,
-                federationMemberPrivate.Name,
-                Filename_Template_Private,
-                federationMemberPrivate.GetEncryptedKey(Chain.Mainchain));
-
-            OutputKey(Chain.Sidechain,
-                federationMemberPrivate.Name,
-                Filename_Template_Private,
-                federationMemberPrivate.GetEncryptedKey(Chain.Sidechain));
         }
 
         // Outputs key based on the chain and a template.

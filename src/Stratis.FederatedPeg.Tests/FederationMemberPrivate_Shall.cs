@@ -19,10 +19,6 @@ namespace Stratis.FederatedPeg.Tests
             var federationMemberPrivate =
                 new FederationMemberPrivate("Bob", "passPhrase", publicKeyMainchain, publicKeySidechain);
             federationMemberPrivate.Name.Should().Be("Bob");
-            federationMemberPrivate.GetEncryptedKey(Chain.Mainchain).Should().Be(
-                "EMh7xaKO6nFa0XY9fzmJLn4js3xMPgwyl06Np8pDgfMXfViFVX+POLA1Rv9ChsQugtgCjjLUrLlIcfKh8w/5fdnr4qc1/mmHULGuJFduiV8=");
-            federationMemberPrivate.GetEncryptedKey(Chain.Sidechain).Should().Be(
-                "Z3/S0l3pRcHMAAVdUZzptOzrwWqkAPjDJWr/ZJCcWKhyN2sx+Gbz3kzmW7bnXKPuuFr0OzHr12JgW941U8MibMtckHn5B2yu5pJzGlAHZmA=");
         }
 
         [Fact]
