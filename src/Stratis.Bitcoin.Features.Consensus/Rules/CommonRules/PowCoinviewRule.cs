@@ -10,7 +10,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
     public sealed class PowCoinviewRule : CoinViewRule
     {
         /// <summary>Consensus parameters.</summary>
-        private NBitcoin.Consensus consensusParams;
+        private NBitcoin.Consensus consensus;
 
         /// <inheritdoc />
         public override void Initialize()
@@ -19,7 +19,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
 
             base.Initialize();
 
-            this.consensusParams = this.Parent.Network.Consensus;
+            this.consensus = this.Parent.Network.Consensus;
 
             this.Logger.LogTrace("(-)");
         }
@@ -42,13 +42,13 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         /// <inheritdoc/>
         public override Money GetProofOfWorkReward(int height)
         {
-            int halvings = height / this.consensusParams.SubsidyHalvingInterval;
+            int halvings = height / this.consensus.SubsidyHalvingInterval;
 
             // Force block reward to zero when right shift is undefined.
             if (halvings >= 64)
                 return 0;
 
-            Money subsidy = this.PowConsensusOptions.ProofOfWorkReward;
+            Money subsidy = this.consensus.ProofOfWorkReward;
             // Subsidy is cut in half every 210,000 blocks which will occur approximately every 4 years.
             subsidy >>= halvings;
 
