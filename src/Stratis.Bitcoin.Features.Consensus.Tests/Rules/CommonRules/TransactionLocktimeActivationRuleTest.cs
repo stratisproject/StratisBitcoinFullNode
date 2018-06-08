@@ -20,7 +20,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         public async Task RunAsync_DoesNotHaveBIP113Flag_TransactionNotFinal_ThrowsBadTransactionNonFinalConsensusErrorExceptionAsync()
         {
             this.ruleContext.Flags = new Base.Deployments.DeploymentFlags();
-            this.ruleContext.PreviousHeight = 12;
+            this.ruleContext.ConsensusTipHeight = 12;
 
             var transaction = new Transaction();
             transaction.LockTime = new DateTimeOffset(new DateTime(2018, 1, 3, 0, 0, 0, DateTimeKind.Utc));
@@ -37,7 +37,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         public async Task RunAsync_HasBIP113Flag_TransactionNotFinal_ThrowsBadTransactionNonFinalConsensusErrorExceptionAsync()
         {
             this.ruleContext.Flags = new Base.Deployments.DeploymentFlags() { LockTimeFlags = Transaction.LockTimeFlags.MedianTimePast };
-            this.ruleContext.PreviousHeight = 12;
+            this.ruleContext.ConsensusTipHeight = 12;
             this.ruleContext.Time = new DateTimeOffset(new DateTime(2018, 1, 1, 0, 0, 0, DateTimeKind.Utc));
             var transaction = new Transaction();
             transaction.LockTime = new DateTimeOffset(new DateTime(2018, 1, 3, 0, 0, 0, DateTimeKind.Utc));
@@ -53,7 +53,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         public async Task RunAsync_DoesNotHaveBIP113Flag_TransactionFinal_DoesNotThrowExceptionAsync()
         {
             this.ruleContext.Flags = new Base.Deployments.DeploymentFlags();
-            this.ruleContext.PreviousHeight = 12;
+            this.ruleContext.ConsensusTipHeight = 12;
 
             var transaction = new Transaction();
             this.ruleContext.ValidationContext.Block.AddTransaction(transaction);
@@ -66,7 +66,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         public async Task RunAsync_HasBIP113Flag_TransactionFinal_DoesNotThrowExceptionAsync()
         {
             this.ruleContext.Flags = new Base.Deployments.DeploymentFlags() { LockTimeFlags = Transaction.LockTimeFlags.MedianTimePast };
-            this.ruleContext.PreviousHeight = 12;
+            this.ruleContext.ConsensusTipHeight = 12;
             this.ruleContext.Time = new DateTimeOffset(new DateTime(2018, 1, 1, 0, 0, 0, DateTimeKind.Utc));
 
             var transaction = new Transaction();

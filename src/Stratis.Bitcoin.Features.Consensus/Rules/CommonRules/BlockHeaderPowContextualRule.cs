@@ -24,7 +24,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
 
             BlockHeader header = context.ValidationContext.Block.Header;
 
-            int height = context.PreviousHeight + 1;
+            int height = context.ConsensusTipHeight + 1;
 
             // Check proof of work.
             if (header.Bits != context.NextWorkRequired)

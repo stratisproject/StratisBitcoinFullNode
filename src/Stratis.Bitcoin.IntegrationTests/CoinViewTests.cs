@@ -317,7 +317,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 
             var context = new RuleContext
             {
-                PreviousHeight = 10111,
+                ConsensusTipHeight = 10111,
                 NextWorkRequired = block.Header.Bits,
                 Time = DateTimeOffset.UtcNow,
                 ValidationContext = new ValidationContext { Block = block },

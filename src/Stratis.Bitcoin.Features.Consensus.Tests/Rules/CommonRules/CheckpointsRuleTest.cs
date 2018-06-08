@@ -17,7 +17,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         [Fact]
         public async Task RunAsync_CheckpointViolation_ThrowsCheckpointValidationConsensusErrorsExceptionAsync()
         {
-            this.ruleContext.PreviousHeight = 1;
+            this.ruleContext.ConsensusTipHeight = 1;
             this.ruleContext.ValidationContext.Block = new Block();
 
             this.checkpoints.Setup(c => c.CheckHardened(2, this.ruleContext.ValidationContext.Block.GetHash()))
@@ -33,7 +33,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         {
             this.consensusSettings.UseCheckpoints = false;
 
-            this.ruleContext.PreviousHeight = 1;
+            this.ruleContext.ConsensusTipHeight = 1;
             this.ruleContext.ValidationContext.Block = new Block();
             this.checkpoints.Setup(c => c.CheckHardened(2, this.ruleContext.ValidationContext.Block.GetHash()))
                 .Returns(true);
@@ -47,7 +47,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             this.consensusSettings.UseCheckpoints = true;
 
             this.ruleContext.SkipValidation = false;
-            this.ruleContext.PreviousHeight = 1;
+            this.ruleContext.ConsensusTipHeight = 1;
             this.ruleContext.ValidationContext.Block = new Block();
             this.ruleContext.ValidationContext.ChainedHeader = this.concurrentChain.GetBlock(5);
 
@@ -67,7 +67,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             this.consensusSettings.UseCheckpoints = true;
 
             this.ruleContext.SkipValidation = false;
-            this.ruleContext.PreviousHeight = 1;
+            this.ruleContext.ConsensusTipHeight = 1;
             this.ruleContext.ValidationContext.Block = new Block();
             this.ruleContext.ValidationContext.ChainedHeader = this.concurrentChain.GetBlock(5);
 
@@ -87,7 +87,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             this.consensusSettings.UseCheckpoints = true;
 
             this.ruleContext.SkipValidation = false;
-            this.ruleContext.PreviousHeight = 1;
+            this.ruleContext.ConsensusTipHeight = 1;
             this.ruleContext.ValidationContext.Block = new Block();
             this.ruleContext.ValidationContext.ChainedHeader = this.concurrentChain.GetBlock(5);
 

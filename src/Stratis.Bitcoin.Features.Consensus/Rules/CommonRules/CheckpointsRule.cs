@@ -15,7 +15,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         /// <exception cref="ConsensusErrors.CheckpointViolation">The block header hash does not match the expected checkpoint value.</exception>
         public override Task RunAsync(RuleContext context)
         {
-            int height = context.PreviousHeight + 1;
+            int height = context.ConsensusTipHeight + 1;
             BlockHeader header = context.ValidationContext.Block.Header;
 
             // Check that the block header hash matches the known checkpointed value, if any.

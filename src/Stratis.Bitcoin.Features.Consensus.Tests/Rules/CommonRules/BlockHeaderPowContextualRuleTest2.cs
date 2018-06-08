@@ -21,7 +21,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         [Fact]
         public async Task RunAsync_RequiredProofOfWorkNotMetLower_ThrowsBadDiffBitsConsensusErrorAsync()
         {
-            this.ruleContext.PreviousHeight = 5;
+            this.ruleContext.ConsensusTipHeight = 5;
             this.ruleContext.Time = new DateTimeOffset(new DateTime(2017, 1, 1, 0, 1, 0));
             this.ruleContext.NextWorkRequired = new Target(0x1f111115);
             this.ruleContext.ValidationContext.Block = new Block();
@@ -35,7 +35,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         [Fact]
         public async Task RunAsync_RequiredProofOfWorkNotMetHigher_ThrowsBadDiffBitsConsensusErrorAsync()
         {
-            this.ruleContext.PreviousHeight = 5;
+            this.ruleContext.ConsensusTipHeight = 5;
             this.ruleContext.NextWorkRequired = new Target(0x1f111115);
             this.ruleContext.ValidationContext.Block = new Block();
             this.ruleContext.ValidationContext.Block.Header.Bits = new Target(0x1f111116);
@@ -48,7 +48,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         [Fact]
         public async Task RunAsync_TimeTooOldLower_ThrowsTimeTooOldConsensusErrorAsync()
         {
-            this.ruleContext.PreviousHeight = 5;
+            this.ruleContext.ConsensusTipHeight = 5;
             this.ruleContext.ConsensusTip.Header.BlockTime = new DateTimeOffset(new DateTime(2017, 1, 1, 0, 1, 0));
             this.ruleContext.Time = new DateTimeOffset(new DateTime(2017, 1, 1, 0, 1, 0));
             this.ruleContext.NextWorkRequired = new Target(0x1f111115);
@@ -64,7 +64,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         [Fact]
         public async Task RunAsync_TimeTooOldEqual_ThrowsTimeTooOldConsensusErrorAsync()
         {
-            this.ruleContext.PreviousHeight = 5;
+            this.ruleContext.ConsensusTipHeight = 5;
             this.ruleContext.ConsensusTip.Header.BlockTime = new DateTimeOffset(new DateTime(2017, 1, 1, 0, 1, 0));
             this.ruleContext.Time = new DateTimeOffset(new DateTime(2017, 1, 1, 0, 1, 0));
             this.ruleContext.NextWorkRequired = new Target(0x1f111115);
@@ -80,7 +80,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         [Fact]
         public async Task RunAsync_TimeTooNew_ThrowsTimeTooNewConsensusErrorAsync()
         {
-            this.ruleContext.PreviousHeight = 5;
+            this.ruleContext.ConsensusTipHeight = 5;
             this.ruleContext.Time = new DateTime(2016, 12, 31, 10, 0, 0);
             this.ruleContext.NextWorkRequired = new Target(0x1f111115);
             this.ruleContext.ValidationContext.Block = new Block();
@@ -96,7 +96,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         public async Task RunAsync_BadVersionLowerThan2_HeightHigherThanBip34_ThrowsBadVersionConsensusErrorAsync()
         {
             // set height above bip34
-            this.ruleContext.PreviousHeight = this.consensusRules.ConsensusParams.BuriedDeployments[BuriedDeployments.BIP34];
+            this.ruleContext.ConsensusTipHeight = this.consensusRules.ConsensusParams.BuriedDeployments[BuriedDeployments.BIP34];
             this.ruleContext.Time = new DateTimeOffset(new DateTime(2017, 1, 1, 0, 1, 0));
             this.ruleContext.NextWorkRequired = new Target(0x1f111115);
             this.ruleContext.ValidationContext.Block = new Block();
@@ -112,7 +112,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         [Fact]
         public async Task RunAsync_BadVersionLowerThan2_HeightSameAsBip34_ThrowsBadVersionConsensusErrorAsync()
         {
-            this.ruleContext.PreviousHeight = this.consensusRules.ConsensusParams.BuriedDeployments[BuriedDeployments.BIP34] - 1;
+            this.ruleContext.ConsensusTipHeight = this.consensusRules.ConsensusParams.BuriedDeployments[BuriedDeployments.BIP34] - 1;
             this.ruleContext.Time = new DateTimeOffset(new DateTime(2017, 1, 1, 0, 1, 0));
             this.ruleContext.NextWorkRequired = new Target(0x1f111115);
             this.ruleContext.ValidationContext.Block = new Block();
@@ -128,7 +128,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         [Fact]
         public async Task RunAsync_BadVersionLowerThan3_HeightHigherThanBip66_ThrowsBadVersionConsensusErrorAsync()
         {
-            this.ruleContext.PreviousHeight = this.consensusRules.ConsensusParams.BuriedDeployments[BuriedDeployments.BIP66];
+            this.ruleContext.ConsensusTipHeight = this.consensusRules.ConsensusParams.BuriedDeployments[BuriedDeployments.BIP66];
             this.ruleContext.Time = new DateTimeOffset(new DateTime(2017, 1, 1, 0, 1, 0));
             this.ruleContext.NextWorkRequired = new Target(0x1f111115);
             this.ruleContext.ValidationContext.Block = new Block();
@@ -144,7 +144,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         [Fact]
         public async Task RunAsync_BadVersionLowerThan3_HeightSameAsBip66_ThrowsBadVersionConsensusErrorAsync()
         {
-            this.ruleContext.PreviousHeight = this.consensusRules.ConsensusParams.BuriedDeployments[BuriedDeployments.BIP66] - 1;
+            this.ruleContext.ConsensusTipHeight = this.consensusRules.ConsensusParams.BuriedDeployments[BuriedDeployments.BIP66] - 1;
             this.ruleContext.Time = new DateTimeOffset(new DateTime(2017, 1, 1, 0, 1, 0));
             this.ruleContext.NextWorkRequired = new Target(0x1f111115);
             this.ruleContext.ValidationContext.Block = new Block();
@@ -160,7 +160,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         [Fact]
         public async Task RunAsync_BadVersionLowerThan2_HeightHigherThanBip66_ThrowsBadVersionConsensusErrorAsync()
         {
-            this.ruleContext.PreviousHeight = this.consensusRules.ConsensusParams.BuriedDeployments[BuriedDeployments.BIP66];
+            this.ruleContext.ConsensusTipHeight = this.consensusRules.ConsensusParams.BuriedDeployments[BuriedDeployments.BIP66];
             this.ruleContext.Time = new DateTimeOffset(new DateTime(2017, 1, 1, 0, 1, 0));
             this.ruleContext.NextWorkRequired = new Target(0x1f111115);
             this.ruleContext.ValidationContext.Block = new Block();
@@ -176,7 +176,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         [Fact]
         public async Task RunAsync_BadVersionLowerThan2_HeightSameAsBip66_ThrowsBadVersionConsensusErrorAsync()
         {
-            this.ruleContext.PreviousHeight = this.consensusRules.ConsensusParams.BuriedDeployments[BuriedDeployments.BIP66] - 1;
+            this.ruleContext.ConsensusTipHeight = this.consensusRules.ConsensusParams.BuriedDeployments[BuriedDeployments.BIP66] - 1;
             this.ruleContext.Time = new DateTimeOffset(new DateTime(2017, 1, 1, 0, 1, 0));
             this.ruleContext.NextWorkRequired = new Target(0x1f111115);
             this.ruleContext.ValidationContext.Block = new Block();
@@ -192,7 +192,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         [Fact]
         public async Task RunAsync_BadVersionLowerThan4_HeightHigherThanBip65_ThrowsBadVersionConsensusErrorAsync()
         {
-            this.ruleContext.PreviousHeight = this.consensusRules.ConsensusParams.BuriedDeployments[BuriedDeployments.BIP65];
+            this.ruleContext.ConsensusTipHeight = this.consensusRules.ConsensusParams.BuriedDeployments[BuriedDeployments.BIP65];
             this.ruleContext.Time = new DateTimeOffset(new DateTime(2017, 1, 1, 0, 1, 0));
             this.ruleContext.NextWorkRequired = new Target(0x1f111115);
             this.ruleContext.ValidationContext.Block = new Block();
@@ -208,7 +208,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         [Fact]
         public async Task RunAsync_BadVersionLowerThan4_HeightSameAsBip65_ThrowsBadVersionConsensusErrorAsync()
         {
-            this.ruleContext.PreviousHeight = this.consensusRules.ConsensusParams.BuriedDeployments[BuriedDeployments.BIP65] - 1;
+            this.ruleContext.ConsensusTipHeight = this.consensusRules.ConsensusParams.BuriedDeployments[BuriedDeployments.BIP65] - 1;
             this.ruleContext.Time = new DateTimeOffset(new DateTime(2017, 1, 1, 0, 1, 0));
             this.ruleContext.NextWorkRequired = new Target(0x1f111115);
             this.ruleContext.ValidationContext.Block = new Block();
@@ -224,7 +224,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         [Fact]
         public async Task RunAsync_BadVersionLowerThan3_HeightHigherThanBip65_ThrowsBadVersionConsensusErrorAsync()
         {
-            this.ruleContext.PreviousHeight = this.consensusRules.ConsensusParams.BuriedDeployments[BuriedDeployments.BIP66];
+            this.ruleContext.ConsensusTipHeight = this.consensusRules.ConsensusParams.BuriedDeployments[BuriedDeployments.BIP66];
             this.ruleContext.Time = new DateTimeOffset(new DateTime(2017, 1, 1, 0, 1, 0));
             this.ruleContext.NextWorkRequired = new Target(0x1f111115);
             this.ruleContext.ValidationContext.Block = new Block();
@@ -240,7 +240,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         [Fact]
         public async Task RunAsync_BadVersionLowerThan3_HeightSameAsBip65_ThrowsBadVersionConsensusErrorAsync()
         {
-            this.ruleContext.PreviousHeight = this.consensusRules.ConsensusParams.BuriedDeployments[BuriedDeployments.BIP66] - 1;
+            this.ruleContext.ConsensusTipHeight = this.consensusRules.ConsensusParams.BuriedDeployments[BuriedDeployments.BIP66] - 1;
             this.ruleContext.Time = new DateTimeOffset(new DateTime(2017, 1, 1, 0, 1, 0));
             this.ruleContext.NextWorkRequired = new Target(0x1f111115);
             this.ruleContext.ValidationContext.Block = new Block();
@@ -256,7 +256,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         [Fact]
         public async Task RunAsync_BadVersionLowerThan2_HeightHigherThanBip65_ThrowsBadVersionConsensusErrorAsync()
         {
-            this.ruleContext.PreviousHeight = this.consensusRules.ConsensusParams.BuriedDeployments[BuriedDeployments.BIP66];
+            this.ruleContext.ConsensusTipHeight = this.consensusRules.ConsensusParams.BuriedDeployments[BuriedDeployments.BIP66];
             this.ruleContext.Time = new DateTimeOffset(new DateTime(2017, 1, 1, 0, 1, 0));
             this.ruleContext.NextWorkRequired = new Target(0x1f111115);
             this.ruleContext.ValidationContext.Block = new Block();
@@ -272,7 +272,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         [Fact]
         public async Task RunAsync_BadVersionLowerThan2_HeightSameAsBip65_ThrowsBadVersionConsensusErrorAsync()
         {
-            this.ruleContext.PreviousHeight = this.consensusRules.ConsensusParams.BuriedDeployments[BuriedDeployments.BIP66] - 1;
+            this.ruleContext.ConsensusTipHeight = this.consensusRules.ConsensusParams.BuriedDeployments[BuriedDeployments.BIP66] - 1;
             this.ruleContext.Time = new DateTimeOffset(new DateTime(2017, 1, 1, 0, 1, 0));
             this.ruleContext.NextWorkRequired = new Target(0x1f111115);
             this.ruleContext.ValidationContext.Block = new Block();
@@ -288,7 +288,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         [Fact]
         public async Task RunAsync_GoodVersionHeightBelowBip34_DoesNotThrowExceptionAsync()
         {
-            this.ruleContext.PreviousHeight = this.consensusRules.ConsensusParams.BuriedDeployments[BuriedDeployments.BIP34] - 2;
+            this.ruleContext.ConsensusTipHeight = this.consensusRules.ConsensusParams.BuriedDeployments[BuriedDeployments.BIP34] - 2;
             this.ruleContext.Time = new DateTimeOffset(new DateTime(2017, 1, 1, 0, 1, 0));
             this.ruleContext.NextWorkRequired = new Target(0x1f111115);
             this.ruleContext.ValidationContext.Block = new Block();
@@ -302,7 +302,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         [Fact]
         public async Task RunAsync_GoodVersionHeightBelowBip66_DoesNotThrowExceptionAsync()
         {
-            this.ruleContext.PreviousHeight = this.consensusRules.ConsensusParams.BuriedDeployments[BuriedDeployments.BIP66] - 2;
+            this.ruleContext.ConsensusTipHeight = this.consensusRules.ConsensusParams.BuriedDeployments[BuriedDeployments.BIP66] - 2;
             this.ruleContext.Time = new DateTimeOffset(new DateTime(2017, 1, 1, 0, 1, 0));
             this.ruleContext.NextWorkRequired = new Target(0x1f111115);
             this.ruleContext.ValidationContext.Block = new Block();
@@ -316,7 +316,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         [Fact]
         public async Task RunAsync_GoodVersionHeightBelowBip65_DoesNotThrowExceptionAsync()
         {
-            this.ruleContext.PreviousHeight = this.consensusRules.ConsensusParams.BuriedDeployments[BuriedDeployments.BIP65] - 2;
+            this.ruleContext.ConsensusTipHeight = this.consensusRules.ConsensusParams.BuriedDeployments[BuriedDeployments.BIP65] - 2;
             this.ruleContext.Time = new DateTimeOffset(new DateTime(2017, 1, 1, 0, 1, 0));
             this.ruleContext.NextWorkRequired = new Target(0x1f111115);
             this.ruleContext.ValidationContext.Block = new Block();
@@ -330,7 +330,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         [Fact]
         public async Task RunAsync_GoodVersionAboveBIPS_DoesNotThrowExceptionAsync()
         {
-            this.ruleContext.PreviousHeight = this.consensusRules.ConsensusParams.BuriedDeployments[BuriedDeployments.BIP65] + 30;
+            this.ruleContext.ConsensusTipHeight = this.consensusRules.ConsensusParams.BuriedDeployments[BuriedDeployments.BIP65] + 30;
             this.ruleContext.Time = new DateTimeOffset(new DateTime(2017, 1, 1, 0, 1, 0));
             this.ruleContext.NextWorkRequired = new Target(0x1f111115);
             this.ruleContext.ValidationContext.Block = new Block();

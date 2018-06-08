@@ -18,7 +18,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         /// <exception cref="ConsensusErrors.BadCoinbaseHeight">Thrown if coinbase doesn't start with serialized block height.</exception>
         public override Task RunAsync(RuleContext context)
         {
-            int newHeight = context.PreviousHeight + 1;
+            int newHeight = context.ConsensusTipHeight + 1;
             Block block = context.ValidationContext.Block;
 
             Script expect = new Script(Op.GetPushOp(newHeight));

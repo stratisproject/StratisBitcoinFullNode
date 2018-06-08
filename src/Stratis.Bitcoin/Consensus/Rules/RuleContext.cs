@@ -30,8 +30,8 @@ namespace Stratis.Bitcoin.Consensus.Rules
         /// <summary>The current tip of the chain that has been validated.</summary>
         public ChainedHeader ConsensusTip { get; set; }
 
-        /// <summary>The height of the previous block.</summary>
-        public int PreviousHeight { get; set; }
+        /// <summary>The height of the consensus tip.</summary>
+        public int ConsensusTipHeight { get; set; }
 
         public RuleContext()
         {
@@ -45,7 +45,7 @@ namespace Stratis.Bitcoin.Consensus.Rules
             this.ValidationContext = validationContext;
             this.Consensus = consensus;
             this.ConsensusTip = consensusTip;
-            this.PreviousHeight = consensusTip.Height;
+            this.ConsensusTipHeight = consensusTip.Height;
 
             this.MinedBlock = false;
         }
