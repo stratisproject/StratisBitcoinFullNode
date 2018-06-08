@@ -28,6 +28,9 @@ namespace Stratis.Bitcoin.Features.Api
         /// <summary>The default port used by the API when the node runs on the Stratis network.</summary>
         public const string DefaultApiHost = "http://localhost";
 
+        /// <summary>Instance logger.</summary>
+        private readonly ILogger logger;
+
         /// <summary>URI to node's API interface.</summary>
         public Uri ApiUri { get; set; }
 
@@ -38,16 +41,22 @@ namespace Stratis.Bitcoin.Features.Api
         public Timer KeepaliveTimer { get; private set; }
 
         /// <summary>
-        /// Constructs this object whilst providing a callback to override/constrain/extend 
-        /// the settings provided by the Load method.
+        /// Initializes an instance of the object from the default configuration.
         /// </summary>
+        public ApiSettings() : this(NodeSettings.Default())
+        {
+        }
+
+        /// <summary>
+        /// Initializes an instance of the object from the node configuration.
+        /// </summary>
+        /// <param name="nodeSettings">The node configuration.</param>
         public ApiSettings(NodeSettings nodeSettings)
         {
             Guard.NotNull(nodeSettings, nameof(nodeSettings));
 
-            ILogger logger = nodeSettings.LoggerFactory.CreateLogger(typeof(ApiSettings).FullName);
-           
-            logger.LogTrace("()");
+            this.logger = nodeSettings.LoggerFactory.CreateLogger(typeof(ApiSettings).FullName);           
+            this.logger.LogTrace("({0}:'{1}')", nameof(nodeSettings), nodeSettings.Network.Name);
 
             TextFileConfiguration config = nodeSettings.ConfigReader;
 
@@ -70,8 +79,8 @@ namespace Stratis.Bitcoin.Features.Api
                 this.ApiPort = apiUri.Port;
             }
 
-            logger.LogDebug("ApiUri set to {0}.", apiUri);
-            logger.LogDebug("ApiPort set to {0}.", apiPort);
+            this.logger.LogDebug("ApiUri set to '{0}'.", apiUri);
+            this.logger.LogDebug("ApiPort set to {0}.", apiPort);
 
             // Set the keepalive interval (set in seconds).
             int keepAlive = config.GetOrDefault("keepalive", 0);
@@ -84,9 +93,9 @@ namespace Stratis.Bitcoin.Features.Api
                 };
             }
 
-            logger.LogDebug("KeepAlive set to {0}.", keepAlive);
+            this.logger.LogDebug("KeepAlive set to {0}.", keepAlive);
 
-            logger.LogTrace("(-)");
+            this.logger.LogTrace("(-)");
         }
 
         /// <summary>

@@ -26,16 +26,26 @@ namespace Stratis.Bitcoin.Configuration.Settings
         /// <seealso cref="RelayTxes"/>
         private const bool DefaultBlocksOnly = false;
 
+        /// <summary>Instance logger.</summary>
+        private readonly ILogger logger;
+
         /// <summary>
-        /// Default constructor.
+        /// Initializes an instance of the object from the default configuration.
         /// </summary>
+        public ConnectionManagerSettings() : this(NodeSettings.Default())
+        {
+        }
+
+        /// <summary>
+        /// Initializes an instance of the object from the node configuration.
+        /// </summary>
+        /// <param name="nodeSettings">The node configuration.</param>
         public ConnectionManagerSettings(NodeSettings nodeSettings)
         {
             Guard.NotNull(nodeSettings, nameof(nodeSettings));
 
-            ILogger logger = nodeSettings.LoggerFactory.CreateLogger(typeof(ConnectionManagerSettings).FullName);
-
-            logger.LogTrace("()");
+            this.logger = nodeSettings.LoggerFactory.CreateLogger(typeof(ConnectionManagerSettings).FullName);
+            this.logger.LogTrace("({0}:'{1}')", nameof(nodeSettings), nodeSettings.Network.Name);
 
             this.Connect = new List<IPEndPoint>();
             this.AddNode = new List<IPEndPoint>();
@@ -108,29 +118,29 @@ namespace Stratis.Bitcoin.Configuration.Settings
             }
 
             this.BanTimeSeconds = config.GetOrDefault<int>("bantime", ConnectionManagerSettings.DefaultMisbehavingBantimeSeconds);
-            logger.LogDebug("BanTimeSeconds set to {0}.", this.BanTimeSeconds);
+            this.logger.LogDebug("BanTimeSeconds set to {0}.", this.BanTimeSeconds);
 
             this.MaxOutboundConnections = config.GetOrDefault<int>("maxoutboundconnections", ConnectionManagerSettings.DefaultMaxOutboundConnections);
-            logger.LogDebug("MaxOutboundConnections set to {0}.", this.MaxOutboundConnections);
+            this.logger.LogDebug("MaxOutboundConnections set to {0}.", this.MaxOutboundConnections);
 
             this.BurstModeTargetConnections = config.GetOrDefault("burstModeTargetConnections", 1);
-            logger.LogDebug("BurstModeTargetConnections set to {0}.", this.BurstModeTargetConnections);
+            this.logger.LogDebug("BurstModeTargetConnections set to {0}.", this.BurstModeTargetConnections);
 
             this.SyncTimeEnabled = config.GetOrDefault<bool>("synctime", true);
-            logger.LogDebug("Time synchronization with peers is {0}.", this.SyncTimeEnabled ? "enabled" : "disabled");
+            this.logger.LogDebug("Time synchronization with peers is {0}.", this.SyncTimeEnabled ? "enabled" : "disabled");
 
             var agentPrefix = config.GetOrDefault("agentprefix", string.Empty).Replace("-", "");
             if (agentPrefix.Length > MaximumAgentPrefixLength)
                 agentPrefix = agentPrefix.Substring(0, MaximumAgentPrefixLength);
-            logger.LogDebug("AgentPrefix set to {0}.", agentPrefix);
+            this.logger.LogDebug("AgentPrefix set to '{0}'.", agentPrefix);
 
             this.Agent = string.IsNullOrEmpty(agentPrefix) ? nodeSettings.Agent : $"{agentPrefix}-{nodeSettings.Agent}";
-            logger.LogDebug("Agent set to {0}.", this.Agent);
+            this.logger.LogDebug("Agent set to '{0}'.", this.Agent);
 
             this.RelayTxes = !config.GetOrDefault("blocksonly", DefaultBlocksOnly);
-            logger.LogDebug("RelayTxes set to {0}.", this.RelayTxes);
+            this.logger.LogDebug("RelayTxes set to {0}.", this.RelayTxes);
 
-            logger.LogTrace("(-)");
+            this.logger.LogTrace("(-)");
         }
 
         /// <summary>

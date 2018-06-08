@@ -11,6 +11,9 @@ namespace Stratis.Bitcoin.Configuration.Settings
     /// </summary>
     public class ConsensusSettings
     {
+        /// <summary>Instance logger.</summary>
+        private readonly ILogger logger;
+
         /// <summary>Whether use of checkpoints is enabled or not.</summary>
         public bool UseCheckpoints { get; set; }
 
@@ -23,28 +26,38 @@ namespace Stratis.Bitcoin.Configuration.Settings
         /// <summary>Maximum tip age in seconds to consider node in initial block download.</summary>
         public int MaxTipAge { get; private set; }
 
+        /// <summary>
+        /// Initializes an instance of the object from the default configuration.
+        /// </summary>
         public ConsensusSettings() : this(NodeSettings.Default())
         {
         }
 
+        /// <summary>
+        /// Initializes an instance of the object from the node configuration.
+        /// </summary>
+        /// <param name="nodeSettings">The node configuration.</param>
         public ConsensusSettings(NodeSettings nodeSettings)
         {
             Guard.NotNull(nodeSettings, nameof(nodeSettings));
 
-            ILogger logger = nodeSettings.LoggerFactory.CreateLogger(typeof(ConsensusSettings).FullName);
+            this.logger = nodeSettings.LoggerFactory.CreateLogger(typeof(ConsensusSettings).FullName);
+            this.logger.LogTrace("({0}:'{1}')", nameof(nodeSettings), nodeSettings.Network.Name);
 
             TextFileConfiguration config = nodeSettings.ConfigReader;
             this.UseCheckpoints = config.GetOrDefault<bool>("checkpoints", true);
-            logger.LogDebug("Checkpoints are {0}.", this.UseCheckpoints ? "enabled" : "disabled");
+            this.logger.LogDebug("Checkpoints are {0}.", this.UseCheckpoints ? "enabled" : "disabled");
 
             if (config.GetAll("assumevalid").Any(i => i.Equals("0"))) // 0 means validate all blocks.
                 this.BlockAssumedValid = null;
             else
                 this.BlockAssumedValid = config.GetOrDefault<uint256>("assumevalid", nodeSettings.Network.Consensus.DefaultAssumeValid);            
-            logger.LogDebug("Assume valid block is '{0}'.", this.BlockAssumedValid == null ? "disabled" : this.BlockAssumedValid.ToString());
+            this.logger.LogDebug("Assume valid block is '{0}'.", this.BlockAssumedValid == null ? "disabled" : this.BlockAssumedValid.ToString());
 
             this.MaxTipAge = config.GetOrDefault("maxtipage", nodeSettings.Network.MaxTipAge);
-            logger.LogDebug("MaxTipAge set to {0}.", this.MaxTipAge);
+            this.logger.LogDebug("MaxTipAge set to {0}.", this.MaxTipAge);
+
+            this.logger.LogTrace("(-)");
         }
 
         /// <summary>Prints the help information on how to configure the Consensus settings to the logger.</summary>
