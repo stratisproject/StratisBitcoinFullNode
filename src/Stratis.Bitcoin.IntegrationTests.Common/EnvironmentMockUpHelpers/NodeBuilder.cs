@@ -2,9 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.IO.Compression;
 using System.Linq;
-using System.Net.Http;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -24,6 +22,7 @@ using Stratis.Bitcoin.Tests.Common;
 namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
 {
     using NBitcoin.Protocol;
+    using Stratis.Bitcoin.IntegrationTests.Common.Runners;
 
     public static class FullNodeExt
     {
@@ -127,14 +126,14 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
         private static string GetBitcoinCorePath(string version)
         {
             string path;
-            
+
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
                 path = $"../../../../External Libs/Bitcoin Core/{version}/Windows/bitcoind.exe";
             else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
                 path = $"../../../../External Libs/Bitcoin Core/{version}/Linux/bitcoind";
             else
                 path = $"../../../../External Libs/Bitcoin Core/{version}/OSX/bitcoind";
-            
+
             if (File.Exists(path))
                 return path;
 

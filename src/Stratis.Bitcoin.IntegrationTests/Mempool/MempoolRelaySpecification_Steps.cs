@@ -46,7 +46,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Mempool
             this.nodeB.NotInIBD();
             this.nodeC.NotInIBD();
 
-            this.coinbaseMaturity = (int)this.nodeA.FullNode.Network.Consensus.Option<PowConsensusOptions>().CoinbaseMaturity;
+            this.coinbaseMaturity = (int)this.nodeA.FullNode.Network.Consensus.CoinbaseMaturity;
         }
 
         protected void nodeA_mines_coins_that_are_spendable()

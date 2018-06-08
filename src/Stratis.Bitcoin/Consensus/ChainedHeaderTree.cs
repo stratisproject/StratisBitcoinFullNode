@@ -151,6 +151,7 @@ namespace Stratis.Bitcoin.Consensus
         private readonly ICheckpoints checkpoints;
         private readonly IChainState chainState;
         private readonly ConsensusSettings consensusSettings;
+        private readonly IFinalizedBlockHeight finalizedBlockHeight;
 
         /// <summary>A special peer identifier that represents our local node.</summary>
         internal const int LocalPeerId = -1;
@@ -189,12 +190,14 @@ namespace Stratis.Bitcoin.Consensus
             IChainedHeaderValidator chainedHeaderValidator,
             ICheckpoints checkpoints,
             IChainState chainState,
+            IFinalizedBlockHeight finalizedBlockHeight,
             ConsensusSettings consensusSettings)
         {
             this.network = network;
             this.chainedHeaderValidator = chainedHeaderValidator;
             this.checkpoints = checkpoints;
             this.chainState = chainState;
+            this.finalizedBlockHeight = finalizedBlockHeight;
             this.consensusSettings = consensusSettings;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
 
@@ -388,16 +391,13 @@ namespace Stratis.Bitcoin.Consensus
 
                     ChainedHeader fork = this.FindForkIfChainedHeadersNotOnSameChain(peerTip, consensusTip);
 
-                    // Do nothing in case peer's tip is on our consensus chain.
-                    if (fork != null)
-                    {
-                        int reorgLength = consensusTip.Height - fork.Height;
+                    int finalizedHeight = this.finalizedBlockHeight.GetFinalizedBlockHeight();
 
-                        if (reorgLength > maxReorgLength)
-                        {
-                            peerIdsToResync.Add(peerId);
-                            this.logger.LogTrace("Peer with Id {0} claims a chain that violates max reorg, its tip is '{1}'.", peerId, peerTip);
-                        }
+                    // Do nothing in case peer's tip is on our consensus chain.
+                    if ((fork != null) && (fork.Height <= finalizedHeight))
+                    {
+                        peerIdsToResync.Add(peerId);
+                        this.logger.LogTrace("Peer with Id {0} claims a chain that violates max reorg, its tip is '{1}' and the last finalized block height is {2}.", peerId, peerTip, finalizedHeight);
                     }
                 }
             }
@@ -970,7 +970,7 @@ namespace Stratis.Bitcoin.Consensus
         }
 
         /// <summary>
-        /// Checks if <paramref name="chainedHeader"/> violates the max reorg rule, if <see cref="IChainState.MaxReorgLength"/> is zero this logic is disabled.
+        /// Checks if switching to specified <paramref name="chainedHeader"/> would require rewinding consensus behind the finalized block height.
         /// </summary>
         /// <param name="chainedHeader">The header that needs to be checked for reorg.</param>
         /// <exception cref="MaxReorgViolationException">Thrown in case maximum reorganization rule is violated.</exception>
@@ -980,7 +980,7 @@ namespace Stratis.Bitcoin.Consensus
 
             uint maxReorgLength = this.chainState.MaxReorgLength;
             ChainedHeader consensusTip = this.GetConsensusTip();
-            if ((maxReorgLength != 0) && (consensusTip != null))
+            if (maxReorgLength != 0)
             {
                 ChainedHeader fork = chainedHeader.FindFork(consensusTip);
 
@@ -988,9 +988,11 @@ namespace Stratis.Bitcoin.Consensus
                 {
                     int reorgLength = consensusTip.Height - fork.Height;
 
-                    if (reorgLength > maxReorgLength)
+                    int finalizedHeight = this.finalizedBlockHeight.GetFinalizedBlockHeight();
+
+                    if (fork.Height <= finalizedHeight)
                     {
-                        this.logger.LogTrace("Reorganization of length {0} prevented, maximal reorganization length is {1}, consensus tip is '{2}'.", reorgLength, maxReorgLength, consensusTip);
+                        this.logger.LogTrace("Reorganization of length {0} prevented, maximal reorganization length is {1}, consensus tip is '{2}' and the last finalized block height is {3}.", reorgLength, maxReorgLength, consensusTip, finalizedHeight);
                         this.logger.LogTrace("(-)[MAX_REORG_VIOLATION]");
                         throw new MaxReorgViolationException();
                     }

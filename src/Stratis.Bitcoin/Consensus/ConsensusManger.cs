@@ -39,7 +39,8 @@ namespace Stratis.Bitcoin.Consensus
             ConsensusSettings consensusSettings, 
             ConcurrentChain concurrentChain, 
             ILookaheadBlockPuller lookaheadBlockPuller,
-            IConsensusRules consensusRules)
+            IConsensusRules consensusRules,
+            IFinalizedBlockHeight finalizedBlockHeight)
         {
             this.network = network;
             this.chainState = chainState;
@@ -49,7 +50,7 @@ namespace Stratis.Bitcoin.Consensus
             this.consensusRules = consensusRules;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
 
-            this.chainedHeaderTree = new ChainedHeaderTree(network, loggerFactory, chainedHeaderValidator, checkpoints, chainState, consensusSettings);
+            this.chainedHeaderTree = new ChainedHeaderTree(network, loggerFactory, chainedHeaderValidator, checkpoints, chainState, finalizedBlockHeight, consensusSettings);
 
             this.blocksRequested = new Dictionary<uint256, List<Action>>();
             this.toDownloadQueue = new AsyncQueue<(ChainedHeader headerFrom, ChainedHeader headerTo)>();

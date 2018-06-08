@@ -1,24 +1,17 @@
 ﻿using System;
 using System.Globalization;
-using System.IO;
 using System.Linq;
-using System.Net.Http;
 using Microsoft.Extensions.Logging;
-using Moq;
 using NBitcoin;
 using NBitcoin.BitcoinCore;
 using NBitcoin.Crypto;
 using NBitcoin.DataEncoders;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Base.Deployments;
-using Stratis.Bitcoin.BlockPulling;
-using Stratis.Bitcoin.Configuration;
-using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
-using Stratis.Bitcoin.Features.Consensus.Rules;
 using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
@@ -268,7 +261,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         [Fact]
         public void CanSaveChainIncrementally()
         {
-                using (var repo = new ChainRepository(TestBase.CreateTestDir(this)))
+                using (var repo = new ChainRepository(TestBase.CreateTestDir(this), this.loggerFactory))
                 {
                     var chain = new ConcurrentChain(Network.RegTest);
                     repo.LoadAsync(chain).GetAwaiter().GetResult();
