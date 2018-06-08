@@ -1,1 +1,0 @@
-﻿dotnet publish FedKeyPairGen.csproj --output .\bin\release\PublishOutput
