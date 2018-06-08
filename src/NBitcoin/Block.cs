@@ -268,22 +268,7 @@ namespace NBitcoin
             stream.ReadWrite(ref this.header);
             stream.ReadWrite(ref this.transactions);
 
-            if (stream.Serializing)
-                this.BlockSize = stream.Counter.WrittenBytes;
-        }
-
-        public long GetBlockSize(Network network, TransactionOptions transactionOptions = TransactionOptions.None)
-        {
-            if (this.BlockSize != null)
-                return this.BlockSize.Value;
-
-            var bms = new BitcoinStream(Stream.Null, true);
-            bms.TransactionOptions = transactionOptions;
-            bms.ConsensusFactory = network.Consensus.ConsensusFactory;
-            this.ReadWrite(bms);
-            this.BlockSize = bms.Counter.WrittenBytes;
-
-            return this.BlockSize.Value;
+            this.BlockSize = stream.Serializing ? stream.Counter.WrittenBytes : stream.Counter.ReadBytes;
         }
 
         public bool HeaderOnly
