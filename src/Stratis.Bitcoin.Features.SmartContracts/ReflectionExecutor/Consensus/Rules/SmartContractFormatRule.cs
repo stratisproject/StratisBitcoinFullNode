@@ -5,7 +5,7 @@ using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.Rules;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.SmartContracts.Core;
-using Stratis.SmartContracts.ReflectionExecutor;
+using Stratis.SmartContracts.Executor.Reflection;
 using Block = NBitcoin.Block;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Consensus.Rules

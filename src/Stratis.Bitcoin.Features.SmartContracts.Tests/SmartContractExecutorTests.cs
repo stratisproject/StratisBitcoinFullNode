@@ -7,9 +7,9 @@ using Stratis.SmartContracts;
 using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.State;
 using Stratis.SmartContracts.Core.Validation;
-using Stratis.SmartContracts.ReflectionExecutor;
-using Stratis.SmartContracts.ReflectionExecutor.Compilation;
-using Stratis.SmartContracts.ReflectionExecutor.Exceptions;
+using Stratis.SmartContracts.Executor.Reflection;
+using Stratis.SmartContracts.Executor.Reflection.Compilation;
+using Stratis.SmartContracts.Executor.Reflection.Exceptions;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Tests

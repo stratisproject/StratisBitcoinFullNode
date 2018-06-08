@@ -6,8 +6,8 @@ using Stratis.Patricia;
 using Stratis.SmartContracts;
 using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.State;
-using Stratis.SmartContracts.ReflectionExecutor;
-using Stratis.SmartContracts.ReflectionExecutor.Compilation;
+using Stratis.SmartContracts.Executor.Reflection;
+using Stratis.SmartContracts.Executor.Reflection.Compilation;
 using Xunit;
 using Block = Stratis.SmartContracts.Core.Block;
 

@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
@@ -27,7 +27,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Stratis.SmartContracts.Core\Stratis.SmartContracts.Core.csproj" />
-    <ProjectReference Include="..\Stratis.SmartContracts.ReflectionExecutor\Stratis.SmartContracts.ReflectionExecutor.csproj" />
+    <ProjectReference Include="..\Stratis.SmartContracts.Executor.Reflection\Stratis.SmartContracts.Executor.Reflection.csproj" />
     <ProjectReference Include="..\Stratis.SmartContracts\Stratis.SmartContracts.csproj" />
   </ItemGroup>
 
