@@ -2,9 +2,9 @@
 using System.Linq;
 using System.Runtime.CompilerServices;
 using NBitcoin;
-using NBitcoin.DataEncoders;
 using Stratis.Bitcoin.Features.GeneralPurposeWallet;
 using Stratis.Bitcoin.Features.GeneralPurposeWallet.Interfaces;
+using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Sidechains.Features.BlockchainGeneration.Tests.Common;
 using Stratis.Sidechains.Features.BlockchainGeneration.Tests.Common.EnvironmentMockUp;
 
@@ -73,7 +73,8 @@ namespace Stratis.FederatedPeg.IntegrationTests.Helpers
             //Decrypt the private key
             var chain = network.ToChain();
             string privateKeyEncrypted = File.ReadAllText(Path.Combine(this.Folder, $"{memberName}\\PRIVATE_DO_NOT_SHARE_{chain}_{memberName}.txt"));
-            var privateKeyDecryptString = EncryptionProvider.DecryptString(privateKeyEncrypted, memberPassword);
+            
+            var privateKeyDecryptString = HdOperations.DecryptSeed(privateKeyEncrypted, memberPassword, network);
 
             var multiSigAddress = new MultiSigAddress();
 
@@ -83,7 +84,7 @@ namespace Stratis.FederatedPeg.IntegrationTests.Helpers
             var publicKeys = chain == Chain.Mainchain ?
                   (from f in federation.Members orderby f.PublicKeyMainChain.ToHex() select f.PublicKeyMainChain).ToArray()
                 : (from f in federation.Members orderby f.PublicKeySideChain.ToHex() select f.PublicKeySideChain).ToArray();
-            multiSigAddress.Create(new Key(Encoders.Hex.DecodeData(privateKeyDecryptString)), publicKeys, m, network);
+            multiSigAddress.Create(privateKeyDecryptString, publicKeys, m, network);
 
             account.ImportMultiSigAddress(multiSigAddress);
 
