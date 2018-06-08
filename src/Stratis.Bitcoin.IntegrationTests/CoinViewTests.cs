@@ -8,6 +8,8 @@ using NBitcoin.Crypto;
 using NBitcoin.DataEncoders;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Base.Deployments;
+using Stratis.Bitcoin.Consensus;
+using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
@@ -315,14 +317,10 @@ namespace Stratis.Bitcoin.IntegrationTests
 
             var context = new RuleContext
             {
-                BestBlock = new ContextBlockInformation
-                {
-                    MedianTimePast = DateTimeOffset.Parse("2016-03-31T09:02:19+00:00", CultureInfo.InvariantCulture),
-                    Height = 10111
-                },
+                ConsensusTipHeight = 10111,
                 NextWorkRequired = block.Header.Bits,
                 Time = DateTimeOffset.UtcNow,
-                BlockValidationContext = new BlockValidationContext { Block = block },
+                ValidationContext = new ValidationContext { Block = block },
                 Flags = consensusFlags,
             };
 

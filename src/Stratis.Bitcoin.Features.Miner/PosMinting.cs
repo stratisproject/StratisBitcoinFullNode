@@ -9,6 +9,7 @@ using NBitcoin.Crypto;
 using NBitcoin.Protocol;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Connection;
+using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.Consensus.Interfaces;
@@ -594,7 +595,7 @@ namespace Stratis.Bitcoin.Features.Miner
             }
 
             // Validate the block.
-            var blockValidationContext = new BlockValidationContext { Block = block };
+            var blockValidationContext = new ValidationContext { Block = block };
             this.consensusLoop.AcceptBlockAsync(blockValidationContext).GetAwaiter().GetResult();
 
             if (blockValidationContext.ChainedHeader == null)
@@ -916,10 +917,7 @@ namespace Stratis.Bitcoin.Features.Miner
                     {
                         var prevoutStake = new OutPoint(utxoStakeInfo.UtxoSet.TransactionId, utxoStakeInfo.OutPoint.N);
 
-                        var contextInformation = new ContextStakeInformation
-                        {
-                            BlockStake = new BlockStake(block)
-                        };
+                        var contextInformation = new PosRuleContext(new BlockStake(block));
 
                         this.stakeValidator.CheckKernel(contextInformation, chainTip, block.Header.Bits, txTime, prevoutStake);
 

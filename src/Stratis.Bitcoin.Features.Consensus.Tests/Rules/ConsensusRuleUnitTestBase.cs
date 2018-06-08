@@ -7,6 +7,7 @@ using Stratis.Bitcoin.Base.Deployments;
 using Stratis.Bitcoin.BlockPulling;
 using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Consensus;
+using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.Consensus.Interfaces;
 using Stratis.Bitcoin.Features.Consensus.Rules;
@@ -48,10 +49,14 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
             this.ruleRegistration.Setup(r => r.GetRules())
                 .Returns(() => { return this.ruleRegistrations; });
 
-            this.ruleContext = new RuleContext()
+            if (network.Consensus.IsProofOfStake)
             {
-                BlockValidationContext = new BlockValidationContext()
-            };
+                this.ruleContext = new PosRuleContext(new ValidationContext(), this.network.Consensus, this.concurrentChain.Tip);
+            }
+            else
+            {
+                this.ruleContext = new PowRuleContext(new ValidationContext(), this.network.Consensus, this.concurrentChain.Tip);
+            }
         }
 
         protected void AddBlocksToChain(ConcurrentChain chain, int blockAmount)
@@ -59,8 +64,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
             uint nonce = RandomUtils.GetUInt32();
             uint256 prevBlockHash = chain.Tip.HashBlock;
 
-            this.ruleContext.Set = new UnspentOutputSet();
-            this.ruleContext.Set.SetCoins(new UnspentOutputs[0]);
+            (this.ruleContext as UtxoRuleContext).UnspentOutputSet = new UnspentOutputSet();
+            (this.ruleContext as UtxoRuleContext).UnspentOutputSet.SetCoins(new UnspentOutputs[0]);
 
             for (int i = 0; i < blockAmount; i++)
             {
@@ -73,7 +78,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
                 block.Header.Nonce = nonce;
                 chain.SetTip(block.Header);
                 prevBlockHash = block.GetHash();
-                this.ruleContext.Set.Update(transaction, i);
+                (this.ruleContext as UtxoRuleContext).UnspentOutputSet.Update(transaction, i);
                 this.lastAddedTransaction = transaction;
             }
         }
@@ -127,10 +132,14 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
             this.ruleRegistration.Setup(r => r.GetRules())
                 .Returns(() => { return this.ruleRegistrations; });
 
-            this.ruleContext = new RuleContext()
+            if (network.Consensus.IsProofOfStake)
             {
-                BlockValidationContext = new BlockValidationContext()
-            };
+                this.ruleContext = new PosRuleContext(new ValidationContext(), this.network.Consensus, this.concurrentChain.Tip);
+            }
+            else
+            {
+                this.ruleContext = new PowRuleContext(new ValidationContext(), this.network.Consensus, this.concurrentChain.Tip);
+            }
         }
 
         public virtual T InitializeConsensusRules()

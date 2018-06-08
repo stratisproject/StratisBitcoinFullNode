@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Base.Deployments;
+using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
@@ -39,10 +40,10 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         {
             this.Logger.LogTrace("()");
 
-            Block block = context.BlockValidationContext.Block;
-            ChainedHeader index = context.BlockValidationContext.ChainedHeader;
+            Block block = context.ValidationContext.Block;
+            ChainedHeader index = context.ValidationContext.ChainedHeader;
             DeploymentFlags flags = context.Flags;
-            UnspentOutputSet view = context.Set;
+            UnspentOutputSet view = (context as UtxoRuleContext).UnspentOutputSet;
 
             this.Parent.PerformanceCounter.AddProcessedBlocks(1);
 
@@ -55,8 +56,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
                 Transaction tx = block.Transactions[txIndex];
                 if (!context.SkipValidation)
                 {
-                    // TODO: Simplify this condition.
-                    if (!tx.IsCoinBase && (!context.IsPoS || (context.IsPoS && !tx.IsCoinStake)))
+                    if (!this.IsProtocolTransaction(tx))
                     {
                         if (!view.HaveInputs(tx))
                         {
@@ -91,8 +91,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
                         ConsensusErrors.BadBlockSigOps.Throw();
                     }
 
-                    // TODO: Simplify this condition.
-                    if (!tx.IsCoinBase && (!context.IsPoS || (context.IsPoS && !tx.IsCoinStake)))
+                    if (!this.IsProtocolTransaction(tx))
                     {
                         this.CheckInputs(tx, view, index.Height);
                         fees += view.GetValueIn(tx) - tx.TotalOut;
@@ -153,13 +152,19 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         {
             this.Logger.LogTrace("()");
 
-            ChainedHeader index = context.BlockValidationContext.ChainedHeader;
-            UnspentOutputSet view = context.Set;
+            ChainedHeader index = context.ValidationContext.ChainedHeader;
+            UnspentOutputSet view = (context as UtxoRuleContext).UnspentOutputSet;
 
             view.Update(transaction, index.Height);
 
             this.Logger.LogTrace("(-)");
         }
+
+        /// <summary>
+        /// Check whether the transaction is part of the protocol (Coinbase or Coinstake).
+        /// </summary>
+        /// <param name="transaction">The transaction to check.</param>
+        protected abstract bool IsProtocolTransaction(Transaction transaction);
 
         /// <summary>
         /// Network specific updates to the context's UTXO set.

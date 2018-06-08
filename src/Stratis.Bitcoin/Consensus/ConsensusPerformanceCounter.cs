@@ -4,7 +4,7 @@ using System.Threading;
 using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Utilities;
 
-namespace Stratis.Bitcoin.Features.Consensus
+namespace Stratis.Bitcoin.Consensus
 {
     public class ConsensusPerformanceSnapshot
     {
@@ -145,12 +145,12 @@ namespace Stratis.Bitcoin.Features.Consensus
             return builder.ToString();
         }
 
-        internal static string ToTimespan(TimeSpan timespan)
+        public static string ToTimespan(TimeSpan timespan)
         {
             return timespan.ToString("c");
         }
 
-        internal static string ToKBSec(ulong count)
+        public static string ToKBSec(ulong count)
         {
             return count + "/s";
         }

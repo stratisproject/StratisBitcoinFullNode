@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Moq;
 using NBitcoin;
 using Stratis.Bitcoin.Connection;
+using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.P2P;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.Tests.Common;
@@ -54,12 +55,12 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
         private async Task NodeIsSynced_PeerSendsABadBlockAndPeerDisconnected_ThePeerGetsBanned_Async(
             Func<TestChainContext, Task<Block>> createBadBlock)
         {
-            (TestChainContext context, IPEndPoint peerEndPoint) = await this.InitialiseContextAndPeerEndpointAsync();
+            var (context, peerEndPoint) = await this.InitialiseContextAndPeerEndpointAsync();
             context.MockReadOnlyNodesCollection.Setup(s => s.FindByEndpoint(It.IsAny<IPEndPoint>()))
                 .Returns((INetworkPeer)null);
 
-            Block badBlock = await createBadBlock(context);
-            await context.Consensus.AcceptBlockAsync(new BlockValidationContext { Block = badBlock, Peer = peerEndPoint });
+            var badBlock = await createBadBlock(context);
+            await context.Consensus.AcceptBlockAsync(new ValidationContext { Block = badBlock, Peer = peerEndPoint });
 
             Assert.True(context.PeerBanning.IsBanned(peerEndPoint));
         }
@@ -81,12 +82,12 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
         private async Task NodeIsSynced_PeerSendsABadBlockAndPeerIsConnected_ThePeerGetsBanned_Async(
             Func<TestChainContext, Task<Block>> createBadBlock)
         {
-            (TestChainContext context, IPEndPoint peerEndPoint) = await this.InitialiseContextAndPeerEndpointAsync();
+            var (context, peerEndPoint) = await this.InitialiseContextAndPeerEndpointAsync();
 
             MockPeerConnection(context, false);
 
-            Block badBlock = await createBadBlock(context);
-            await context.Consensus.AcceptBlockAsync(new BlockValidationContext { Block = badBlock, Peer = peerEndPoint });
+            var badBlock = await createBadBlock(context);
+            await context.Consensus.AcceptBlockAsync(new ValidationContext { Block = badBlock, Peer = peerEndPoint });
 
             Assert.True(context.PeerBanning.IsBanned(peerEndPoint));
         }
@@ -118,11 +119,11 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
         private async Task NodeIsSynced_PeerSendsABadBlockAndPeerIsWhitelisted_ThePeerIsNotBanned_Async(
             Func<TestChainContext, Task<Block>> createBadBlock)
         {
-            (TestChainContext context, IPEndPoint peerEndPoint) = await this.InitialiseContextAndPeerEndpointAsync();
+            var (context, peerEndPoint) = await this.InitialiseContextAndPeerEndpointAsync();
 
             MockPeerConnection(context, true);
-            Block badBlock = await createBadBlock(context);
-            await context.Consensus.AcceptBlockAsync(new BlockValidationContext { Block = badBlock, Peer = peerEndPoint });
+            var badBlock = await createBadBlock(context);
+            await context.Consensus.AcceptBlockAsync(new ValidationContext { Block = badBlock, Peer = peerEndPoint });
 
             Assert.False(context.PeerBanning.IsBanned(peerEndPoint));
         }
@@ -143,16 +144,16 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
 
         private async Task NodeIsSynced_PeerSendsABadBlockAndErrorIsNotBanError_ThePeerIsNotBanned_Async(Func<TestChainContext, Task<Block>> createBadBlock)
         {
-            (TestChainContext context, IPEndPoint peerEndPoint) = await this.InitialiseContextAndPeerEndpointAsync();
+            var (context, peerEndPoint) = await this.InitialiseContextAndPeerEndpointAsync();
 
             MockPeerConnection(context, false);
-            Block badBlock = await createBadBlock(context);
+            var badBlock = await createBadBlock(context);
 
-            var blockValidationContext = new BlockValidationContext
+            var blockValidationContext = new ValidationContext
             {
                 Block = badBlock,
                 Peer = peerEndPoint,
-                BanDurationSeconds = BlockValidationContext.BanDurationNoBan
+                BanDurationSeconds = ValidationContext.BanDurationNoBan
             };
 
             await context.Consensus.AcceptBlockAsync(blockValidationContext);
@@ -176,12 +177,12 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
 
         private async Task NodeIsSynced_PeerSendsABadBlockAndPeerIsBannedAndBanIsExpired_ThePeerIsNotBanned_Async(Func<TestChainContext, Task<Block>> createBadBlock)
         {
-            (TestChainContext context, IPEndPoint peerEndPoint) = await this.InitialiseContextAndPeerEndpointAsync();
+            var (context, peerEndPoint) = await this.InitialiseContextAndPeerEndpointAsync();
 
             MockPeerConnection(context, false);
-            Block badBlock = await createBadBlock(context);
+            var badBlock = await createBadBlock(context);
 
-            var blockValidationContext = new BlockValidationContext
+            var blockValidationContext = new ValidationContext
             {
                 Block = badBlock,
                 Peer = peerEndPoint,

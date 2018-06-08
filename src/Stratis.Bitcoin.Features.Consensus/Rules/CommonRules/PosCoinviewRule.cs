@@ -1,6 +1,7 @@
 ﻿using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
+using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Features.Consensus.Interfaces;
 using Stratis.Bitcoin.Utilities;
 
@@ -46,10 +47,16 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
             this.CheckAndComputeStake(context);
 
             await base.RunAsync(context).ConfigureAwait(false);
-
-            await this.stakeChain.SetAsync(context.BlockValidationContext.ChainedHeader, context.Stake.BlockStake).ConfigureAwait(false);
+            PosRuleContext posRuleContext = context as PosRuleContext;
+            await this.stakeChain.SetAsync(context.ValidationContext.ChainedHeader, posRuleContext.BlockStake).ConfigureAwait(false);
 
             this.Logger.LogTrace("(-)");
+        }
+
+        /// <inheritdoc/>
+        protected override bool IsProtocolTransaction(Transaction transaction)
+        {
+            return transaction.IsCoinBase || transaction.IsCoinStake;
         }
 
         /// <inheritdoc />
@@ -59,7 +66,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
 
             if (BlockStake.IsProofOfStake(block))
             {
-                Money stakeReward = block.Transactions[1].TotalOut - context.Stake.TotalCoinStakeValueIn;
+                PosRuleContext posRuleContext = context as PosRuleContext;
+                Money stakeReward = block.Transactions[1].TotalOut - posRuleContext.TotalCoinStakeValueIn;
                 Money calcStakeReward = fees + this.GetProofOfStakeReward(height);
 
                 this.Logger.LogTrace("Block stake reward is {0}, calculated reward is {1}.", stakeReward, calcStakeReward);
@@ -88,10 +96,12 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         {
             this.Logger.LogTrace("()");
 
-            UnspentOutputSet view = context.Set;
+            PosRuleContext posRuleContext = context as PosRuleContext;
+
+            UnspentOutputSet view = posRuleContext.UnspentOutputSet;
 
             if (transaction.IsCoinStake)
-                context.Stake.TotalCoinStakeValueIn = view.GetValueIn(transaction);
+                posRuleContext.TotalCoinStakeValueIn = view.GetValueIn(transaction);
 
             base.UpdateUTXOSet(context, transaction);
 
@@ -128,9 +138,10 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         {
             this.Logger.LogTrace("()");
 
-            ChainedHeader chainedHeader = context.BlockValidationContext.ChainedHeader;
-            Block block = context.BlockValidationContext.Block;
-            BlockStake blockStake = context.Stake.BlockStake;
+            ChainedHeader chainedHeader = context.ValidationContext.ChainedHeader;
+            Block block = context.ValidationContext.Block;
+            PosRuleContext posRuleContext = context as PosRuleContext;
+            BlockStake blockStake = posRuleContext.BlockStake;
 
             // Verify hash target and signature of coinstake tx.
             if (BlockStake.IsProofOfStake(block))
@@ -144,14 +155,14 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
                 // Only do proof of stake validation for blocks that are after the assumevalid block or after the last checkpoint.
                 if (!context.SkipValidation)
                 {
-                    this.stakeValidator.CheckProofOfStake(context.Stake, prevChainedHeader, prevBlockStake, block.Transactions[1], chainedHeader.Header.Bits.ToCompact());
+                    this.stakeValidator.CheckProofOfStake(posRuleContext, prevChainedHeader, prevBlockStake, block.Transactions[1], chainedHeader.Header.Bits.ToCompact());
                 }
                 else this.Logger.LogTrace("POS validation skipped for block at height {0}.", chainedHeader.Height);
             }
 
             // PoW is checked in CheckBlock().
             if (BlockStake.IsProofOfWork(block))
-                context.Stake.HashProofOfStake = chainedHeader.Header.GetPoWHash();
+                posRuleContext.HashProofOfStake = chainedHeader.Header.GetPoWHash();
 
             // Compute stake entropy bit for stake modifier.
             if (!blockStake.SetStakeEntropyBit(blockStake.GetStakeEntropyBit()))
@@ -161,7 +172,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
             }
 
             // Record proof hash value.
-            blockStake.HashProof = context.Stake.HashProofOfStake;
+            blockStake.HashProof = posRuleContext.HashProofOfStake;
 
             int lastCheckpointHeight = this.Parent.Checkpoints.GetLastCheckpointHeight();
             if (chainedHeader.Height > lastCheckpointHeight)
