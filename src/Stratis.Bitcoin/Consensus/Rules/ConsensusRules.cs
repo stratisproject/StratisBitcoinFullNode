@@ -175,6 +175,12 @@ namespace Stratis.Bitcoin.Consensus.Rules
         public abstract RuleContext CreateRuleContext(ValidationContext validationContext, ChainedHeader consensusTip);
 
         /// <inheritdoc />
+        public abstract Task<uint256> GetBlockHashAsync();
+
+        /// <inheritdoc />
+        public abstract Task<uint256> RewindAsync();
+
+        /// <inheritdoc />
         public T GetRule<T>() where T : ConsensusRule
         {
             return (T)this.Rules.Single(r => r.Rule is T).Rule;

@@ -40,6 +40,18 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules
         {
             return new PowRuleContext(validationContext, this.Network.Consensus, consensusTip);
         }
+
+        /// <inheritdoc />
+        public override Task<uint256> GetBlockHashAsync()
+        {
+            return this.UtxoSet.GetBlockHashAsync();
+        }
+
+        /// <inheritdoc />
+        public override Task<uint256> RewindAsync()
+        {
+            return this.UtxoSet.Rewind();
+        }
     }
 
     /// <summary>

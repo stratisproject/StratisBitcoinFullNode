@@ -7,6 +7,7 @@ using NBitcoin;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.BlockPulling;
 using Stratis.Bitcoin.Configuration.Settings;
+using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Consensus
@@ -20,6 +21,7 @@ namespace Stratis.Bitcoin.Consensus
         private readonly ConsensusSettings consensusSettings;
         private readonly ConcurrentChain concurrentChain;
         private readonly ILookaheadBlockPuller lookaheadBlockPuller;
+        private readonly IConsensusRules consensusRules;
 
         /// <summary>The current tip of the chain that has been validated.</summary>
         public ChainedHeader Tip { get; private set; }
@@ -28,41 +30,55 @@ namespace Stratis.Bitcoin.Consensus
 
         private AsyncQueue<(ChainedHeader headerFrom, ChainedHeader headerTo)> toDownloadQueue;
 
-        public ConsensusManager(Network network, ILoggerFactory loggerFactory, IChainedHeaderTree chainedHeaderTree, IChainState chainState, ConsensusSettings consensusSettings, ConcurrentChain concurrentChain, ILookaheadBlockPuller lookaheadBlockPuller)
+        public ConsensusManager(
+            Network network, 
+            ILoggerFactory loggerFactory, 
+            IChainState chainState, 
+            IChainedHeaderValidator chainedHeaderValidator, 
+            ICheckpoints checkpoints, 
+            ConsensusSettings consensusSettings, 
+            ConcurrentChain concurrentChain, 
+            ILookaheadBlockPuller lookaheadBlockPuller,
+            IConsensusRules consensusRules)
         {
             this.network = network;
-            this.chainedHeaderTree = chainedHeaderTree;
             this.chainState = chainState;
             this.consensusSettings = consensusSettings;
             this.concurrentChain = concurrentChain;
             this.lookaheadBlockPuller = lookaheadBlockPuller;
+            this.consensusRules = consensusRules;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
+
+            this.chainedHeaderTree = new ChainedHeaderTree(network, loggerFactory, chainedHeaderValidator, checkpoints, chainState, consensusSettings);
+
+            this.blocksRequested = new Dictionary<uint256, List<Action>>();
+            this.toDownloadQueue = new AsyncQueue<(ChainedHeader headerFrom, ChainedHeader headerTo)>();
         }
 
         public async Task InitializeAsync()
         {
             this.logger.LogTrace("()");
 
-            //uint256 utxoHash = await this.UTXOSet.GetBlockHashAsync().ConfigureAwait(false);
-            //bool blockStoreDisabled = this.chainState.BlockStoreTip == null;
+            uint256 utxoHash = await this.consensusRules.GetBlockHashAsync().ConfigureAwait(false);
+            bool blockStoreDisabled = this.chainState.BlockStoreTip == null;
 
-            //while (true)
-            //{
-            //    this.Tip = this.concurrentChain.GetBlock(utxoHash);
+            while (true)
+            {
+                this.Tip = this.concurrentChain.GetBlock(utxoHash);
 
-            //    if ((this.Tip != null) && (blockStoreDisabled || (this.chainState.BlockStoreTip.Height >= this.Tip.Height)))
-            //        break;
+                if ((this.Tip != null) && (blockStoreDisabled || (this.chainState.BlockStoreTip.Height >= this.Tip.Height)))
+                    break;
 
-            //    // In case block store initialized behind, rewind until or before the block store tip.
-            //    // The node will complete loading before connecting to peers so the chain will never know if a reorg happened.
-            //    utxoHash = await this.UTXOSet.Rewind().ConfigureAwait(false);
-            //}
+                // In case block store initialized behind, rewind until or before the block store tip.
+                // The node will complete loading before connecting to peers so the chain will never know if a reorg happened.
+                utxoHash = await this.consensusRules.RewindAsync().ConfigureAwait(false);
+            }
 
-            //this.concurrentChain.SetTip(this.Tip);
+            this.concurrentChain.SetTip(this.Tip);
 
-            //this.lookaheadBlockPuller.SetLocation(this.Tip);
+            this.lookaheadBlockPuller.SetLocation(this.Tip);
 
-            //this.chainedHeaderTree.Initialize(this.Tip, !blockStoreDisabled);
+            this.chainedHeaderTree.Initialize(this.Tip, !blockStoreDisabled);
 
             this.logger.LogTrace("(-)");
         }

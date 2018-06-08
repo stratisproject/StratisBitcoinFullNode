@@ -64,6 +64,22 @@ namespace Stratis.Bitcoin.Consensus.Rules
         /// Each network type can specify it's own <see cref="RuleContext"/>.
         /// </remarks>
         RuleContext CreateRuleContext(ValidationContext validationContext, ChainedHeader consensusTip);
+
+        /// <summary>
+        /// Retrieves the block hash of the current tip of the chain.
+        /// </summary>
+        /// <returns>Block hash of the current tip of the chain.</returns>
+        Task<uint256> GetBlockHashAsync();
+
+        /// <summary>
+        /// Rewinds the chain to the last saved state.
+        /// <para>
+        /// This operation includes removing the recent transactions
+        /// and restoring the chain to an earlier state.
+        /// </para>
+        /// </summary>
+        /// <returns>Hash of the block header which is now the tip of the chain.</returns>
+        Task<uint256> RewindAsync();
     }
 
     /// <summary>

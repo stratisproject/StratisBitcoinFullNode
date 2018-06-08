@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.IO;
 using System.Runtime.CompilerServices;
+using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Moq;
 using NBitcoin;
@@ -72,6 +73,16 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
         }
 
         public override RuleContext CreateRuleContext(ValidationContext validationContext, ChainedHeader tip)
+        {
+            throw new System.NotImplementedException();
+        }
+
+        public override Task<uint256> GetBlockHashAsync()
+        {
+            throw new System.NotImplementedException();
+        }
+
+        public override Task<uint256> RewindAsync()
         {
             throw new System.NotImplementedException();
         }
