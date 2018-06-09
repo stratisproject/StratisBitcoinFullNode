@@ -6,6 +6,8 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Settings;
+using Stratis.Bitcoin.Consensus;
+using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Features.Consensus.Rules;
 using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
 using Xunit;
@@ -123,7 +125,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
         {
             var rule = new ConsensusRuleWithValidationAttribute();
             this.ruleRegistrations = new List<ConsensusRule> { rule };
-            var blockValidationContext = new BlockValidationContext()
+            var blockValidationContext = new ValidationContext()
             {
                 RuleContext = new RuleContext()
                 {
@@ -145,7 +147,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
             var rule = new ConsensusRuleWithSkipValidationAttribute();
             this.ruleRegistrations = new List<ConsensusRule> { rule };
 
-            var blockValidationContext = new BlockValidationContext()
+            var blockValidationContext = new ValidationContext()
             {
                 RuleContext = new RuleContext()
                 {
@@ -167,7 +169,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
             var rule = new ConsensusRuleWithValidationAttribute();
             this.ruleRegistrations = new List<ConsensusRule> { rule };
 
-            var blockValidationContext = new BlockValidationContext()
+            var blockValidationContext = new ValidationContext()
             {
                 RuleContext = new RuleContext()
                 {
@@ -189,7 +191,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
             var rule = new ConsensusRuleWithSkipValidationAttribute();
             this.ruleRegistrations = new List<ConsensusRule> { rule };
 
-            var blockValidationContext = new BlockValidationContext()
+            var blockValidationContext = new ValidationContext()
             {
                 ChainedHeader = this.concurrentChain.Tip,
                 RuleContext = new RuleContext()
@@ -216,7 +218,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
                 .Verifiable();
 
             this.ruleRegistrations = new List<ConsensusRule> { rule.Object };
-            var blockValidationContext = new BlockValidationContext()
+            var blockValidationContext = new ValidationContext()
             {
                 RuleContext = new RuleContext()
                 {

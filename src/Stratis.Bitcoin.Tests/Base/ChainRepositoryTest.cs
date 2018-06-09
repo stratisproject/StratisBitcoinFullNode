@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using DBreeze;
+using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Tests.Common;
@@ -15,13 +17,50 @@ namespace Stratis.Bitcoin.Tests.Base
         }
 
         [Fact]
+        public async Task FinalizedHeightSavedOnDiskAsync()
+        {
+            string dir = CreateTestDir(this);
+
+            using (var repo = new ChainRepository(dir, new LoggerFactory()))
+            {
+                await repo.SaveFinalizedBlockHeightAsync(777);
+            }
+
+            using (var repo = new ChainRepository(dir, new LoggerFactory()))
+            {
+                await repo.LoadFinalizedBlockHeightAsync();
+                Assert.Equal(777, repo.GetFinalizedBlockHeight());
+            }
+        }
+
+        [Fact]
+        public async Task FinalizedHeightCantBeDecreasedAsync()
+        {
+            string dir = CreateTestDir(this);
+
+            using (var repo = new ChainRepository(dir, new LoggerFactory()))
+            {
+                await repo.SaveFinalizedBlockHeightAsync(777);
+                await repo.SaveFinalizedBlockHeightAsync(555);
+                
+                Assert.Equal(777, repo.GetFinalizedBlockHeight());
+            }
+
+            using (var repo = new ChainRepository(dir, new LoggerFactory()))
+            {
+                await repo.LoadFinalizedBlockHeightAsync();
+                Assert.Equal(777, repo.GetFinalizedBlockHeight());
+            }
+        }
+
+        [Fact]
         public void SaveWritesChainToDisk()
         {
             string dir = CreateTestDir(this);
             var chain = new ConcurrentChain(Network.StratisRegTest);
             this.AppendBlock(chain);
 
-            using (var repo = new ChainRepository(dir))
+            using (var repo = new ChainRepository(dir, new LoggerFactory()))
             {
                 repo.SaveAsync(chain).GetAwaiter().GetResult();
             }
@@ -66,7 +105,7 @@ namespace Stratis.Bitcoin.Tests.Base
                     transaction.Commit();
                 }
             }
-            using (var repo = new ChainRepository(dir))
+            using (var repo = new ChainRepository(dir, new LoggerFactory()))
             {
                 var testChain = new ConcurrentChain(Network.StratisRegTest);
                 repo.LoadAsync(testChain).GetAwaiter().GetResult();

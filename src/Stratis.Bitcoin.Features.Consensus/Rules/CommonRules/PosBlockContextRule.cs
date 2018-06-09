@@ -1,4 +1,5 @@
 ﻿using System.Threading.Tasks;
+using Stratis.Bitcoin.Consensus.Rules;
 
 namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
 {

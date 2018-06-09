@@ -60,7 +60,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
 
         private void node1_sends_funds_to_node2_TO_fifty_addresses()
         {
-            this.CoinBaseMaturity = (int)this.nodes[NodeOne].FullNode.Network.Consensus.Option<PowConsensusOptions>().CoinbaseMaturity;
+            this.CoinBaseMaturity = (int)this.nodes[NodeOne].FullNode.Network.Consensus.CoinbaseMaturity;
 
             this.Mine100Coins(this.nodes[NodeOne]);
 

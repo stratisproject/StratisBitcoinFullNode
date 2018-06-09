@@ -1,6 +1,7 @@
 ﻿using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
+using Stratis.Bitcoin.Consensus.Rules;
 
 namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
 {
@@ -22,7 +23,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         /// <exception cref="ConsensusErrors.BlockTimestampTooFar">The block timestamp is too far into the future.</exception>
         public override Task RunAsync(RuleContext context)
         {
-            Block block = context.BlockValidationContext.Block;
+            Block block = context.ValidationContext.Block;
 
             long adjustedTime = this.Parent.DateTimeProvider.GetAdjustedTimeAsUnixTimestamp();
 
@@ -30,7 +31,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
             if (block.Header.Time > adjustedTime + GetFutureDrift(adjustedTime))
             {
                 // The block can be valid only after its time minus the future drift.
-                context.BlockValidationContext.RejectUntil = Utils.UnixTimeToDateTime(block.Header.Time - GetFutureDrift(block.Header.Time)).UtcDateTime;
+                context.ValidationContext.RejectUntil = Utils.UnixTimeToDateTime(block.Header.Time - GetFutureDrift(block.Header.Time)).UtcDateTime;
                 this.Logger.LogTrace("(-)[TIME_TOO_FAR]");
                 ConsensusErrors.BlockTimestampTooFar.Throw();
             }
