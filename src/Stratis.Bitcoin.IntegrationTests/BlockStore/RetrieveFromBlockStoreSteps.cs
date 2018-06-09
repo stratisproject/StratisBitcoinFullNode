@@ -92,7 +92,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
 
         public void some_real_blocks_with_a_uint256_identifier()
         {
-            this.maturity = (int)this.node.FullNode.Network.Consensus.Option<PowConsensusOptions>().CoinbaseMaturity;
+            this.maturity = (int)this.node.FullNode.Network.Consensus.CoinbaseMaturity;
             this.blockIds = this.node.GenerateStratisWithMiner(this.maturity + 1);
         }
 
