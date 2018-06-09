@@ -69,7 +69,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
             this.WaitForNodeToSync(node);
 
             var spendable = node.FullNode.WalletManager().GetSpendableTransactionsInWallet(walletName);
-            var amountShouldBe = node.FullNode.Network.Consensus.Option<PosConsensusOptions>().PremineReward + node.FullNode.Network.Consensus.Option<PosConsensusOptions>().ProofOfWorkReward;
+            var amountShouldBe = node.FullNode.Network.Consensus.PremineReward + node.FullNode.Network.Consensus.ProofOfWorkReward;
             spendable.Sum(s => s.Transaction.Amount).Should().Be(amountShouldBe);
         }
 

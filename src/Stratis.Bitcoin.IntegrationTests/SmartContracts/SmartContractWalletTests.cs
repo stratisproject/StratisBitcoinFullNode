@@ -5,7 +5,6 @@ using System.Text;
 using Microsoft.AspNetCore.Mvc;
 using NBitcoin;
 using Stratis.Bitcoin.Features.BlockStore;
-using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.SmartContracts.Models;
 using Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers;
 using Stratis.Bitcoin.Features.Wallet;
@@ -53,7 +52,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 Key key = wallet.GetExtendedPrivateKeyForAddress(Password, addr).PrivateKey;
 
                 scSender.SetDummyMinerSecret(new BitcoinSecret(key, scSender.FullNode.Network));
-                var maturity = (int)scSender.FullNode.Network.Consensus.Option<PowConsensusOptions>().CoinbaseMaturity;
+                var maturity = (int)scSender.FullNode.Network.Consensus.CoinbaseMaturity;
                 scSender.GenerateSmartContractStratis(maturity + 5);
                 // wait for block repo for block sync to work
 
@@ -120,7 +119,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 Key key = wallet.GetExtendedPrivateKeyForAddress(Password, addr).PrivateKey;
 
                 scSender.SetDummyMinerSecret(new BitcoinSecret(key, scSender.FullNode.Network));
-                var maturity = (int)scSender.FullNode.Network.Consensus.Option<PowConsensusOptions>().CoinbaseMaturity;
+                var maturity = (int)scSender.FullNode.Network.Consensus.CoinbaseMaturity;
                 scSender.GenerateSmartContractStratisWithMiner(maturity + 5);
 
                 // Wait for block repo for block sync to work.
@@ -250,7 +249,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
 
                 scSender.SetDummyMinerSecret(new BitcoinSecret(key, scSender.FullNode.Network));
                 scReceiver.SetDummyMinerSecret(new BitcoinSecret(key, scReceiver.FullNode.Network));
-                var maturity = (int)scSender.FullNode.Network.Consensus.Option<PowConsensusOptions>().CoinbaseMaturity;
+                var maturity = (int)scSender.FullNode.Network.Consensus.CoinbaseMaturity;
                 scSender.GenerateSmartContractStratisWithMiner(maturity + 5);
                 TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(scSender));
                 var total = scSender.FullNode.WalletManager().GetSpendableTransactionsInWallet(WalletName).Sum(s => s.Transaction.Amount);
@@ -397,8 +396,10 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
 
                 scSender.SetDummyMinerSecret(new BitcoinSecret(key, scSender.FullNode.Network));
                 scReceiver.SetDummyMinerSecret(new BitcoinSecret(key, scReceiver.FullNode.Network));
-                var maturity = (int)scSender.FullNode.Network.Consensus.Option<PowConsensusOptions>().CoinbaseMaturity;
+
+                var maturity = (int)scSender.FullNode.Network.Consensus.CoinbaseMaturity;
                 scSender.GenerateSmartContractStratisWithMiner(maturity + 5);
+
                 TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(scSender));
                 var total = scSender.FullNode.WalletManager().GetSpendableTransactionsInWallet(WalletName).Sum(s => s.Transaction.Amount);
                 Assert.Equal(Money.COIN * (maturity + 5) * 50, total);

@@ -379,10 +379,13 @@ namespace NBitcoin.Tests
             var spendingTransaction = CreateSpendingTransaction(wit, scriptSig, creditingTransaction);
             ScriptError actual;
             Script.VerifyScript(Network.Main, scriptSig, scriptPubKey, spendingTransaction, 0, amount, flags, SigHash.Undefined, out actual);
-            Assert.True(expectedError == actual, "Test : " + testIndex + " " + comment);            
+            Assert.True(expectedError == actual, "Test : " + testIndex + " " + comment);
 #if !NOCONSENSUSLIB
-            var ok = Script.VerifyScriptConsensus(scriptPubKey, spendingTransaction, 0, amount, flags);
-            Assert.True(ok == (expectedError == ScriptError.OK), "[ConsensusLib] Test : " + testIndex + " " + comment);
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                var ok = Script.VerifyScriptConsensus(scriptPubKey, spendingTransaction, 0, amount, flags);
+                Assert.True(ok == (expectedError == ScriptError.OK), "[ConsensusLib] Test : " + testIndex + " " + comment);
+            }
 #endif
         }
 
@@ -768,7 +771,10 @@ namespace NBitcoin.Tests
         {
             Assert.False(Script.VerifyScript(Network.Main, scriptPubKey, tx, n, null, flags));
 #if !NOCONSENSUSLIB
-            Assert.False(Script.VerifyScriptConsensus(scriptPubKey, tx, (uint)n, flags));
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                Assert.False(Script.VerifyScriptConsensus(scriptPubKey, tx, (uint)n, flags));
+            }
 #endif
         }
 
@@ -776,7 +782,10 @@ namespace NBitcoin.Tests
         {
             Assert.True(Script.VerifyScript(Network.Main, scriptPubKey, tx, n, null, flags));
 #if !NOCONSENSUSLIB
-            Assert.True(Script.VerifyScriptConsensus(scriptPubKey, tx, (uint)n, flags));
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                Assert.True(Script.VerifyScriptConsensus(scriptPubKey, tx, (uint)n, flags));
+            }
 #endif
         }
 

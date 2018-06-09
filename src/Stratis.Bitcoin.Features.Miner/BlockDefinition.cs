@@ -106,10 +106,7 @@ namespace Stratis.Bitcoin.Features.Miner
         protected Transaction coinbase;
 
         /// <summary>
-        /// The current height of the block being assembled.
-        /// <para>
-        /// This is set in <see cref="ComputeBlockVersion"/>
-        /// </para>
+        /// Chain context for the block.
         /// </summary>
         protected int height;
 

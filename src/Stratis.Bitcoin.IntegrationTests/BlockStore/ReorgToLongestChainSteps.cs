@@ -152,7 +152,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
         private void mining_continues_to_maturity_to_allow_spend()
         {
             var coinbaseMaturity = (int)this.nodes[Bob].FullNode
-                .Network.Consensus.Option<PowConsensusOptions>().CoinbaseMaturity;
+                .Network.Consensus.CoinbaseMaturity;
 
             this.sharedSteps.MineBlocks(coinbaseMaturity, this.nodes[Bob], AccountZero, WalletZero, WalletPassword);
 

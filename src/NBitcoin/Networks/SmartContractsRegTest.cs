@@ -41,7 +41,13 @@ namespace NBitcoin.Networks
             this.Consensus.PowNoRetargeting = true;
             this.Consensus.RuleChangeActivationThreshold = 108;
             this.Consensus.MinerConfirmationWindow = 144;
+
             this.Consensus.IsSmartContracts = true;
+            this.Consensus.CoinbaseMaturity = 5;
+            this.Consensus.PremineReward = Money.Zero;
+            this.Consensus.ProofOfWorkReward = Money.Coins(50);
+            this.Consensus.ProofOfStakeReward = Money.Zero;
+            this.Consensus.MaxReorgLength = 0;
 
             this.Consensus.BIP9Deployments[BIP9Deployments.TestDummy] = new BIP9DeploymentsParameters(28, 0, 999999999);
             this.Consensus.BIP9Deployments[BIP9Deployments.CSV] = new BIP9DeploymentsParameters(0, 0, 999999999);

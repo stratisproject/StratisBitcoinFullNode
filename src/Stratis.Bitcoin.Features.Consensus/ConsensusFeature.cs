@@ -20,7 +20,6 @@ using Stratis.Bitcoin.Features.Consensus.Rules;
 using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
-using Stratis.Bitcoin.Utilities;
 
 [assembly: InternalsVisibleTo("Stratis.Bitcoin.Features.Miner.Tests")]
 [assembly: InternalsVisibleTo("Stratis.Bitcoin.Features.Consensus.Tests")]
@@ -100,7 +99,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             this.consensusSettings = consensusSettings;
             this.consensusRules = consensusRules;
 
-            this.chainState.MaxReorgLength = network.Consensus.Option<PowConsensusOptions>().MaxReorgLength;
+            this.chainState.MaxReorgLength = network.Consensus.MaxReorgLength;
         }
 
         /// <inheritdoc />
@@ -227,9 +226,6 @@ namespace Stratis.Bitcoin.Features.Consensus
                     {
                         fullNodeBuilder.Network.Consensus.Options = new PosConsensusOptions();
 
-                        if (fullNodeBuilder.Network.IsTest())
-                            fullNodeBuilder.Network.Consensus.Option<PosConsensusOptions>().CoinbaseMaturity = 10;
-
                         services.AddSingleton<ICheckpoints, Checkpoints>();
                         services.AddSingleton<DBreezeCoinView>();
                         services.AddSingleton<CoinView, CachedCoinView>();
@@ -246,38 +242,6 @@ namespace Stratis.Bitcoin.Features.Consensus
                         services.AddSingleton<IConsensusRules, PosConsensusRules>();
                         services.AddSingleton<IRuleRegistration, PosConsensusRulesRegistration>();
                     });
-            });
-
-            return fullNodeBuilder;
-        }
-
-        public static IFullNodeBuilder UseSmartContractConsensus(this IFullNodeBuilder fullNodeBuilder)
-        {
-            LoggingConfiguration.RegisterFeatureNamespace<ConsensusFeature>("consensus");
-            LoggingConfiguration.RegisterFeatureClass<ConsensusStats>("bench");
-
-            fullNodeBuilder.ConfigureFeature(features =>
-            {
-                features
-                .AddFeature<ConsensusFeature>()
-                .FeatureServices(services =>
-                {
-                    // TODO: this should be set on the network build
-                    fullNodeBuilder.Network.Consensus.Options = new SmartContractConsensusOptions();
-
-                    services.AddSingleton<ICheckpoints, Checkpoints>();
-                    services.AddSingleton<NBitcoin.Consensus.ConsensusOptions, SmartContractConsensusOptions>();
-                    services.AddSingleton<DBreezeCoinView>();
-                    services.AddSingleton<CoinView, CachedCoinView>();
-                    services.AddSingleton<LookaheadBlockPuller>().AddSingleton<ILookaheadBlockPuller, LookaheadBlockPuller>(provider => provider.GetService<LookaheadBlockPuller>()); ;
-                    services.AddSingleton<IConsensusLoop, ConsensusLoop>();
-                    services.AddSingleton<IInitialBlockDownloadState, InitialBlockDownloadState>();
-                    services.AddSingleton<ConsensusController>();
-                    services.AddSingleton<ConsensusStats>();
-                    services.AddSingleton<ConsensusSettings>();
-                    services.AddSingleton<IConsensusRules, PowConsensusRules>();
-                    services.AddSingleton<IRuleRegistration, PowConsensusRulesRegistration>();
-                });
             });
 
             return fullNodeBuilder;

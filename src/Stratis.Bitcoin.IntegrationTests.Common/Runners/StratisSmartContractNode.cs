@@ -25,7 +25,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.Runners
             this.FullNode = (FullNode)new FullNodeBuilder()
                 .UseNodeSettings(settings)
                 .UseBlockStore()
-                .UseSmartContractConsensus()
+                .UsePowConsensus()
                 .UseMempool()
                 .AddMining()
                 .UseWallet()
