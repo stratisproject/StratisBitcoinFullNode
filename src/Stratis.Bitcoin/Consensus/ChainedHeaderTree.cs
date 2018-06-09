@@ -38,7 +38,6 @@ namespace Stratis.Bitcoin.Consensus
     /// </summary>
     /// <remarks>
     /// This component is an extension of <see cref="ConsensusManager"/> and is strongly linked to its functionality, it should never be called outside of CM.
-    /// TODO: When Consensus  Manager is created reference it here.
     /// <para>
     /// View of the chains that are presented by connected peers might be incomplete because we always
     /// receive only chunk of headers claimed by the peer in one message.
@@ -51,7 +50,100 @@ namespace Stratis.Bitcoin.Consensus
     /// This class is not thread safe and it the role of the component that uses this class to prevent race conditions.
     /// </para>
     /// </remarks>
-    internal sealed class ChainedHeaderTree
+    public interface IChainedHeaderTree
+    {
+        /// <summary>
+        /// Initialize the tree with consensus tip.
+        /// </summary>
+        /// <param name="consensusTip">The consensus tip.</param>
+        /// <param name="blockStoreEnabled">Specifies if block store is enabled.</param>
+        /// <exception cref="ConsensusException">Thrown in case given <paramref name="consensusTip"/> is on a wrong network.</exception>
+        void Initialize(ChainedHeader consensusTip, bool blockStoreEnabled);
+
+        /// <summary>
+        /// Remove a peer and the entire branch of the tree that it claims unless the
+        /// headers are part of our consensus chain or are claimed by other peers.
+        /// </summary>
+        /// <param name="networkPeerId">Id of a peer that was disconnected.</param>
+        void PeerDisconnected(int networkPeerId);
+
+        /// <summary>
+        /// Mark a <see cref="ChainedHeader"/> as <see cref="ValidationState.FullyValidated"/>.
+        /// </summary>
+        /// <param name="chainedHeader">The fully validated header.</param>
+        void FullValidationSucceeded(ChainedHeader chainedHeader);
+
+        /// <summary>
+        /// Handles situation when partial validation for block data for a given <see cref="ChainedHeader"/> was successful.
+        /// </summary>
+        /// <remarks>
+        /// In case partial validation was successful we want to partially validate all the next blocks for which we have block data for.
+        /// <para>
+        /// If block that was just partially validated has more cumulative chainwork than our consensus tip we want to switch our consensus tip to this block.
+        /// </para>
+        /// </remarks>
+        /// <param name="chainedHeader">The chained header.</param>
+        /// <param name="reorgRequired"><c>true</c> in case we want to switch our consensus tip to <paramref name="chainedHeader"/>.</param>
+        /// <returns>List of chained headers which block data should be partially validated next. Or <c>null</c> if none should be validated.</returns>
+        List<ChainedHeader> PartialValidationSucceeded(ChainedHeader chainedHeader, out bool reorgRequired);
+
+        /// <summary>
+        /// Handles situation when block data was considered to be invalid
+        /// for a given header during the partial or full validation.
+        /// </summary>
+        /// <param name="chainedHeader">Chained header which block data failed the validation.</param>
+        /// <returns>List of peer Ids that were claiming chain that contains an invalid block. Such peers should be banned.</returns>
+        List<int> PartialOrFullValidationFailed(ChainedHeader chainedHeader);
+
+        /// <summary>
+        /// Handles situation when consensuses tip was changed.
+        /// </summary>
+        /// <param name="newConsensusTip">The new consensus tip.</param>
+        /// <returns>List of peer Ids that violate max reorg rule.</returns>
+        List<int> ConsensusTipChanged(ChainedHeader newConsensusTip);
+
+        /// <summary>
+        /// Finds the header and verifies block integrity.
+        /// </summary>
+        /// <param name="block">The block.</param>
+        /// <returns>Chained header for a given block.</returns>
+        /// <exception cref="BlockDownloadedForMissingChainedHeaderException">Thrown when block data is presented for a chained block that doesn't exist.</exception>
+        ChainedHeader FindHeaderAndVerifyBlockIntegrity(Block block);
+
+        /// <summary>
+        /// Handles situation when blocks the data is downloaded for a given chained header.
+        /// </summary>
+        /// <param name="chainedHeader">Chained header that represents <paramref name="block"/>.</param>
+        /// <param name="block">Block data.</param>
+        /// <returns><c>true</c> in case partial validation is required for the downloaded block, <c>false</c> otherwise.</returns>
+        bool BlockDataDownloaded(ChainedHeader chainedHeader, Block block);
+
+        /// <summary>
+        /// A new list of headers are presented by a peer, the headers will try to be connected to the tree.
+        /// Blocks associated with headers that are interesting (i.e. represent a chain with greater chainwork than our consensus tip)
+        /// will be requested for download.
+        /// </summary>
+        /// <remarks>
+        /// The headers are assumed to be in consecutive order.
+        /// </remarks>
+        /// <param name="networkPeerId">Id of a peer that presented the headers.</param>
+        /// <param name="headers">The list of headers to connect to the tree.</param>
+        /// <returns>
+        /// Information about which blocks need to be downloaded together with information about which input headers were processed.
+        /// Only headers that we can validate will be processed. The rest of the headers will be submitted later again for processing.
+        /// </returns>
+        ConnectNewHeadersResult ConnectNewHeaders(int networkPeerId, List<BlockHeader> headers);
+
+        /// <summary>
+        /// Creates the chained header for a new block.
+        /// </summary>
+        /// <param name="block">The block.</param>
+        /// <returns>Newly created and connected chained header for the specified block.</returns>
+        ChainedHeader CreateChainedHeaderWithBlock(Block block);
+    }
+
+    /// <inheritdoc />
+    internal sealed class ChainedHeaderTree : IChainedHeaderTree
     {
         private readonly Network network;
         private readonly IChainedHeaderValidator chainedHeaderValidator;
@@ -59,6 +151,7 @@ namespace Stratis.Bitcoin.Consensus
         private readonly ICheckpoints checkpoints;
         private readonly IChainState chainState;
         private readonly ConsensusSettings consensusSettings;
+        private readonly IFinalizedBlockHeight finalizedBlockHeight;
 
         /// <summary>A special peer identifier that represents our local node.</summary>
         internal const int LocalPeerId = -1;
@@ -97,12 +190,14 @@ namespace Stratis.Bitcoin.Consensus
             IChainedHeaderValidator chainedHeaderValidator,
             ICheckpoints checkpoints,
             IChainState chainState,
+            IFinalizedBlockHeight finalizedBlockHeight,
             ConsensusSettings consensusSettings)
         {
             this.network = network;
             this.chainedHeaderValidator = chainedHeaderValidator;
             this.checkpoints = checkpoints;
             this.chainState = chainState;
+            this.finalizedBlockHeight = finalizedBlockHeight;
             this.consensusSettings = consensusSettings;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
 
@@ -111,12 +206,7 @@ namespace Stratis.Bitcoin.Consensus
             this.chainedHeadersByHash = new Dictionary<uint256, ChainedHeader>();
         }
 
-        /// <summary>
-        /// Initialize the tree with consensus tip.
-        /// </summary>
-        /// <param name="consensusTip">The consensus tip.</param>
-        /// <param name="blockStoreEnabled">Specifies if block store is enabled.</param>
-        /// <exception cref="ConsensusException">Thrown in case given <paramref name="consensusTip"/> is on a wrong network.</exception>
+        /// <inheritdoc />
         public void Initialize(ChainedHeader consensusTip, bool blockStoreEnabled)
         {
             this.logger.LogTrace("({0}:'{1}',{2}:{3})", nameof(consensusTip), consensusTip, nameof(blockStoreEnabled), blockStoreEnabled);
@@ -155,11 +245,7 @@ namespace Stratis.Bitcoin.Consensus
             return this.chainedHeadersByHash[consensusTipHash];
         }
 
-        /// <summary>
-        /// Remove a peer and the entire branch of the tree that it claims unless the
-        /// headers are part of our consensus chain or are claimed by other peers.
-        /// </summary>
-        /// <param name="networkPeerId">Id of a peer that was disconnected.</param>
+        // <inheritdoc />
         public void PeerDisconnected(int networkPeerId)
         {
             this.logger.LogTrace("({0}:{1})", nameof(networkPeerId), networkPeerId);
@@ -175,7 +261,7 @@ namespace Stratis.Bitcoin.Consensus
             {
                 this.logger.LogError("Header '{0}' not found but it is claimed by {1} as its tip.", peerTipHash, networkPeerId);
                 this.logger.LogTrace("(-)[HEADER_NOT_FOUND]");
-                throw new Exception("Header not found!");
+                throw new ConsensusException("Header not found!");
             }
 
             this.RemovePeerClaim(networkPeerId, peerTip);
@@ -183,10 +269,7 @@ namespace Stratis.Bitcoin.Consensus
             this.logger.LogTrace("(-)");
         }
 
-        /// <summary>
-        /// Mark a <see cref="ChainedHeader"/> as <see cref="ValidationState.FullyValidated"/>.
-        /// </summary>
-        /// <param name="chainedHeader">The fully validated header.</param>
+        /// <inheritdoc />
         public void FullValidationSucceeded(ChainedHeader chainedHeader)
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(chainedHeader), chainedHeader);
@@ -196,18 +279,7 @@ namespace Stratis.Bitcoin.Consensus
             this.logger.LogTrace("(-)");
         }
 
-        /// <summary>
-        /// Handles situation when partial validation for block data for a given <see cref="ChainedHeader"/> was successful.
-        /// </summary>
-        /// <remarks>
-        /// In case partial validation was successful we want to partially validate all the next blocks for which we have block data for.
-        /// <para>
-        /// If block that was just partially validated has more cumulative chainwork than our consensus tip we want to switch our consensus tip to this block.
-        /// </para>
-        /// </remarks>
-        /// <param name="chainedHeader">The chained header.</param>
-        /// <param name="reorgRequired"><c>true</c> in case we want to switch our consensus tip to <paramref name="chainedHeader"/>.</param>
-        /// <returns>List of chained headers which block data should be partially validated next. Or <c>null</c> if none should be validated.</returns>
+        /// <inheritdoc />
         public List<ChainedHeader> PartialValidationSucceeded(ChainedHeader chainedHeader, out bool reorgRequired)
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(chainedHeader), chainedHeader);
@@ -268,12 +340,7 @@ namespace Stratis.Bitcoin.Consensus
             this.logger.LogTrace("(-)");
         }
 
-        /// <summary>
-        /// Handles situation when block data was considered to be invalid
-        /// for a given header during the partial or full validation.
-        /// </summary>
-        /// <param name="chainedHeader">Chained header which block data failed the validation.</param>
-        /// <returns>List of peer Ids that were claiming chain that contains an invalid block. Such peers should be banned.</returns>
+        /// <inheritdoc />
         public List<int> PartialOrFullValidationFailed(ChainedHeader chainedHeader)
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(chainedHeader), chainedHeader);
@@ -286,11 +353,7 @@ namespace Stratis.Bitcoin.Consensus
             return peersToBan;
         }
 
-        /// <summary>
-        /// Handles situation when consensuses tip was changed.
-        /// </summary>
-        /// <param name="newConsensusTip">The new consensus tip.</param>
-        /// <returns>List of peer Ids that violate max reorg rule.</returns>
+        /// <inheritdoc />
         public List<int> ConsensusTipChanged(ChainedHeader newConsensusTip)
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(newConsensusTip), newConsensusTip);
@@ -328,16 +391,13 @@ namespace Stratis.Bitcoin.Consensus
 
                     ChainedHeader fork = this.FindForkIfChainedHeadersNotOnSameChain(peerTip, consensusTip);
 
-                    // Do nothing in case peer's tip is on our consensus chain.
-                    if (fork != null)
-                    {
-                        int reorgLength = consensusTip.Height - fork.Height;
+                    int finalizedHeight = this.finalizedBlockHeight.GetFinalizedBlockHeight();
 
-                        if (reorgLength > maxReorgLength)
-                        {
-                            peerIdsToResync.Add(peerId);
-                            this.logger.LogTrace("Peer with Id {0} claims a chain that violates max reorg, its tip is '{1}'.", peerId, peerTip);
-                        }
+                    // Do nothing in case peer's tip is on our consensus chain.
+                    if ((fork != null) && (fork.Height <= finalizedHeight))
+                    {
+                        peerIdsToResync.Add(peerId);
+                        this.logger.LogTrace("Peer with Id {0} claims a chain that violates max reorg, its tip is '{1}' and the last finalized block height is {2}.", peerId, peerTip, finalizedHeight);
                     }
                 }
             }
@@ -449,13 +509,7 @@ namespace Stratis.Bitcoin.Consensus
             this.logger.LogTrace("(-)");
         }
 
-
-        /// <summary>
-        /// Finds the header and verifies block integrity.
-        /// </summary>
-        /// <param name="block">The block.</param>
-        /// <returns>Chained header for a given block.</returns>
-        /// <exception cref="BlockDownloadedForMissingChainedHeaderException">Thrown when block data is presented for a chained block that doesn't exist.</exception>
+        /// <inheritdoc />
         public ChainedHeader FindHeaderAndVerifyBlockIntegrity(Block block)
         {
             uint256 blockHash = block.GetHash();
@@ -475,12 +529,7 @@ namespace Stratis.Bitcoin.Consensus
             return chainedHeader;
         }
 
-        /// <summary>
-        /// Handles situation when blocks the data is downloaded for a given chained header.
-        /// </summary>
-        /// <param name="chainedHeader">Chained header that represents <paramref name="block"/>.</param>
-        /// <param name="block">Block data.</param>
-        /// <returns><c>true</c> in case partial validation is required for the downloaded block, <c>false</c> otherwise.</returns>
+        /// <inheritdoc />
         public bool BlockDataDownloaded(ChainedHeader chainedHeader, Block block)
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(chainedHeader), chainedHeader);
@@ -501,20 +550,7 @@ namespace Stratis.Bitcoin.Consensus
             return partialValidationRequired;
         }
 
-        /// <summary>
-        /// A new list of headers are presented by a peer, the headers will try to be connected to the tree.
-        /// Blocks associated with headers that are interesting (i.e. represent a chain with greater chainwork than our consensus tip)
-        /// will be requested for download.
-        /// </summary>
-        /// <remarks>
-        /// The headers are assumed to be in consecutive order.
-        /// </remarks>
-        /// <param name="networkPeerId">Id of a peer that presented the headers.</param>
-        /// <param name="headers">The list of headers to connect to the tree.</param>
-        /// <returns>
-        /// Information about which blocks need to be downloaded together with information about which input headers were processed.
-        /// Only headers that we can validate will be processed. The rest of the headers will be submitted later again for processing.
-        /// </returns>
+        /// <inheritdoc />
         public ConnectNewHeadersResult ConnectNewHeaders(int networkPeerId, List<BlockHeader> headers)
         {
             Guard.NotNull(headers, nameof(headers));
@@ -817,11 +853,7 @@ namespace Stratis.Bitcoin.Consensus
             this.logger.LogTrace("(-)");
         }
 
-        /// <summary>
-        /// Creates the chained header for a new block.
-        /// </summary>
-        /// <param name="block">The block.</param>
-        /// <returns>Newly created and connected chained header for the specified block.</returns>
+        /// <inheritdoc />
         public ChainedHeader CreateChainedHeaderWithBlock(Block block)
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(block), block.GetHash());
@@ -938,7 +970,7 @@ namespace Stratis.Bitcoin.Consensus
         }
 
         /// <summary>
-        /// Checks if <paramref name="chainedHeader"/> violates the max reorg rule, if <see cref="IChainState.MaxReorgLength"/> is zero this logic is disabled.
+        /// Checks if switching to specified <paramref name="chainedHeader"/> would require rewinding consensus behind the finalized block height.
         /// </summary>
         /// <param name="chainedHeader">The header that needs to be checked for reorg.</param>
         /// <exception cref="MaxReorgViolationException">Thrown in case maximum reorganization rule is violated.</exception>
@@ -948,7 +980,7 @@ namespace Stratis.Bitcoin.Consensus
 
             uint maxReorgLength = this.chainState.MaxReorgLength;
             ChainedHeader consensusTip = this.GetConsensusTip();
-            if ((maxReorgLength != 0) && (consensusTip != null))
+            if (maxReorgLength != 0)
             {
                 ChainedHeader fork = chainedHeader.FindFork(consensusTip);
 
@@ -956,9 +988,11 @@ namespace Stratis.Bitcoin.Consensus
                 {
                     int reorgLength = consensusTip.Height - fork.Height;
 
-                    if (reorgLength > maxReorgLength)
+                    int finalizedHeight = this.finalizedBlockHeight.GetFinalizedBlockHeight();
+
+                    if (fork.Height <= finalizedHeight)
                     {
-                        this.logger.LogTrace("Reorganization of length {0} prevented, maximal reorganization length is {1}, consensus tip is '{2}'.", reorgLength, maxReorgLength, consensusTip);
+                        this.logger.LogTrace("Reorganization of length {0} prevented, maximal reorganization length is {1}, consensus tip is '{2}' and the last finalized block height is {3}.", reorgLength, maxReorgLength, consensusTip, finalizedHeight);
                         this.logger.LogTrace("(-)[MAX_REORG_VIOLATION]");
                         throw new MaxReorgViolationException();
                     }

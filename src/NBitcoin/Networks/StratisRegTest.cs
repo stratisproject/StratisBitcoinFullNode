@@ -28,6 +28,7 @@ namespace NBitcoin.Networks
             this.Consensus.PowNoRetargeting = true;
             this.Consensus.PowLimit = new Target(new uint256("7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"));
             this.Consensus.DefaultAssumeValid = null; // turn off assumevalid for regtest.
+            this.Consensus.CoinbaseMaturity = 10;
 
             this.Base58Prefixes[(int)Base58Type.PUBKEY_ADDRESS] = new byte[] { (65) };
             this.Base58Prefixes[(int)Base58Type.SCRIPT_ADDRESS] = new byte[] { (196) };

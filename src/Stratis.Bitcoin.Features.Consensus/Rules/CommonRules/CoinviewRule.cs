@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Base.Deployments;
+using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
@@ -20,11 +21,15 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         /// <summary>Consensus options.</summary>
         public PowConsensusOptions PowConsensusOptions { get; private set; }
 
+        /// <summary>The consensus.</summary>
+        private NBitcoin.Consensus Consensus { get; set; }
+
         /// <inheritdoc />
         public override void Initialize()
         {
             this.Logger.LogTrace("()");
 
+            this.Consensus = this.Parent.Network.Consensus;
             this.PowConsensusOptions = this.Parent.Network.Consensus.Option<PowConsensusOptions>();
 
             this.Logger.LogTrace("(-)");
@@ -35,10 +40,10 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         {
             this.Logger.LogTrace("()");
 
-            Block block = context.BlockValidationContext.Block;
-            ChainedHeader index = context.BlockValidationContext.ChainedHeader;
+            Block block = context.ValidationContext.Block;
+            ChainedHeader index = context.ValidationContext.ChainedHeader;
             DeploymentFlags flags = context.Flags;
-            UnspentOutputSet view = context.Set;
+            UnspentOutputSet view = (context as UtxoRuleContext).UnspentOutputSet;
 
             this.Parent.PerformanceCounter.AddProcessedBlocks(1);
 
@@ -51,8 +56,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
                 Transaction tx = block.Transactions[txIndex];
                 if (!context.SkipValidation)
                 {
-                    // TODO: Simplify this condition.
-                    if (!tx.IsCoinBase && (!context.IsPoS || (context.IsPoS && !tx.IsCoinStake)))
+                    if (!this.IsProtocolTransaction(tx))
                     {
                         if (!view.HaveInputs(tx))
                         {
@@ -87,8 +91,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
                         ConsensusErrors.BadBlockSigOps.Throw();
                     }
 
-                    // TODO: Simplify this condition.
-                    if (!tx.IsCoinBase && (!context.IsPoS || (context.IsPoS && !tx.IsCoinStake)))
+                    if (!this.IsProtocolTransaction(tx))
                     {
                         this.CheckInputs(tx, view, index.Height);
                         fees += view.GetValueIn(tx) - tx.TotalOut;
@@ -149,13 +152,19 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         {
             this.Logger.LogTrace("()");
 
-            ChainedHeader index = context.BlockValidationContext.ChainedHeader;
-            UnspentOutputSet view = context.Set;
+            ChainedHeader index = context.ValidationContext.ChainedHeader;
+            UnspentOutputSet view = (context as UtxoRuleContext).UnspentOutputSet;
 
             view.Update(transaction, index.Height);
 
             this.Logger.LogTrace("(-)");
         }
+
+        /// <summary>
+        /// Check whether the transaction is part of the protocol (Coinbase or Coinstake).
+        /// </summary>
+        /// <param name="transaction">The transaction to check.</param>
+        protected abstract bool IsProtocolTransaction(Transaction transaction);
 
         /// <summary>
         /// Network specific updates to the context's UTXO set.
@@ -188,9 +197,9 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
             // If prev is coinbase, check that it's matured
             if (coins.IsCoinbase)
             {
-                if ((spendHeight - coins.Height) < this.PowConsensusOptions.CoinbaseMaturity)
+                if ((spendHeight - coins.Height) < this.Consensus.CoinbaseMaturity)
                 {
-                    this.Logger.LogTrace("Coinbase transaction height {0} spent at height {1}, but maturity is set to {2}.", coins.Height, spendHeight, this.PowConsensusOptions.CoinbaseMaturity);
+                    this.Logger.LogTrace("Coinbase transaction height {0} spent at height {1}, but maturity is set to {2}.", coins.Height, spendHeight, this.Consensus.CoinbaseMaturity);
                     this.Logger.LogTrace("(-)[COINBASE_PREMATURE_SPENDING]");
                     ConsensusErrors.BadTransactionPrematureCoinbaseSpending.Throw();
                 }
@@ -412,6 +421,18 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
             bms.ConsensusFactory = this.Parent.Network.Consensus.ConsensusFactory;
             data.ReadWrite(bms);
             return (int)bms.Counter.WrittenBytes;
+        }
+
+        /// <summary>
+        /// Determines whether the block with specified height is premined.
+        /// </summary>
+        /// <param name="height">Block's height.</param>
+        /// <returns><c>true</c> if the block with provided height is premined, <c>false</c> otherwise.</returns>
+        protected bool IsPremine(int height)
+        {
+            return (this.Consensus.PremineHeight > 0) &&
+                   (this.Consensus.PremineReward > 0) &&
+                   (height == this.Consensus.PremineHeight);
         }
     }
 }
