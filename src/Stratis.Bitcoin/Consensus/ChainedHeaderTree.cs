@@ -385,6 +385,7 @@ namespace Stratis.Bitcoin.Consensus
 
             // When we are switching to a different chain remove block data for blocks that are being reorged away.
             // We are also marking block data availability as header only because we expect block store to reorganize those blocks shortly.
+            // In case chain that we reorged away from gets a prolongation which will make it desirable we will need to redownload all those blocks again.
             if (fork != oldConsensusTip)
             {
                 this.logger.LogTrace("Consensus tip is being changed to another chain, removing block data for the old chain.");
