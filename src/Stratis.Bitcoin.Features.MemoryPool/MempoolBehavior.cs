@@ -104,29 +104,12 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <summary>Time of last memory pool request in unix time.</summary>
         public long LastMempoolReq { get; private set; }
 
-        /// <summary>Time of next inventory send in unix time.</summary>
-        public long NextInvSend { get; set; }
-
         /// <summary>Whether memory pool is in state where it is ready to send it's inventory.</summary>
         public bool CanSend
         {
             get
             {
-                if (!this.AttachedPeer?.PeerVersion?.Relay ?? true)
-                    return false;
-
-                // Check whether periodic sends should happen
-                bool sendTrickle = this.AttachedPeer.Behavior<ConnectionManagerBehavior>().Whitelisted;
-
-                if (this.NextInvSend < this.mempoolManager.DateTimeProvider.GetTime())
-                {
-                    sendTrickle = true;
-                    // Use half the delay for outbound peers, as there is less privacy concern for them.
-                    this.NextInvSend = this.mempoolManager.DateTimeProvider.GetTime() + 10;
-                    // TODO: PoissonNextSend(nNow, InventoryBroadcastInterval >> !pto->fInbound);
-                }
-
-                return sendTrickle;
+                return (this.AttachedPeer?.PeerVersion?.Relay ?? false);
             }
         }
 
@@ -244,7 +227,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             }
 
             if (!this.CanSend)
-                return;
+                return;            
 
             //if (!(pfrom->GetLocalServices() & NODE_BLOOM) && !pfrom->fWhitelisted)
             //{
@@ -293,7 +276,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
 
             this.logger.LogTrace("Sending transaction inventory to peer '{0}'.", peer.RemoteSocketEndpoint);
             await this.SendAsTxInventoryAsync(peer, transactionsToSend);
-            this.LastMempoolReq = this.mempoolManager.DateTimeProvider.GetTime();
+            this.LastMempoolReq = this.mempoolManager.DateTimeProvider.GetTime();            
 
             this.logger.LogTrace("(-)");
         }

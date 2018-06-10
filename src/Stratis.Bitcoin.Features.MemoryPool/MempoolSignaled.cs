@@ -128,8 +128,8 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                     await behaviour.SendTrickleAsync().ConfigureAwait(false);
             },
             this.nodeLifetime.ApplicationStopping,
-            repeatEvery: TimeSpans.TenSeconds,
-            startAfter: TimeSpans.TenSeconds);
+            repeatEvery: TimeSpans.FiveSeconds,
+            startAfter: TimeSpans.FiveSeconds);
         }
 
         public void Stop()
