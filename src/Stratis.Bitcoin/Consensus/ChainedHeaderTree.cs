@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
@@ -10,7 +9,6 @@ using Stratis.Bitcoin.Utilities;
 namespace Stratis.Bitcoin.Consensus
 {
     /// <summary>Validates <see cref="ChainedHeader"/> instances.</summary>
-    /// TODO use local CT instead of chain state?
     public interface IChainedHeaderValidator
     {
         /// <summary>
@@ -52,6 +50,16 @@ namespace Stratis.Bitcoin.Consensus
     /// </remarks>
     public interface IChainedHeaderTree
     {
+        /// <summary>
+        /// Gets size of unconsumed blocks data in bytes.
+        /// It represents amount of memory which is occupied by block data that is waiting to be processed.
+        /// </summary>
+        /// <remarks>
+        /// This value is increased every time a new block is downloaded.
+        /// It's decreased when block header is being disconnected or when consensus tip is changed.
+        /// </remarks>
+        long UnconsumedBlocksDataBytes { get; }
+
         /// <summary>
         /// Initialize the tree with consensus tip.
         /// </summary>
@@ -153,6 +161,9 @@ namespace Stratis.Bitcoin.Consensus
         private readonly ConsensusSettings consensusSettings;
         private readonly IFinalizedBlockHeight finalizedBlockHeight;
 
+        /// <inheritdoc />
+        public long UnconsumedBlocksDataBytes { get; private set; }
+
         /// <summary>A special peer identifier that represents our local node.</summary>
         internal const int LocalPeerId = -1;
 
@@ -204,6 +215,7 @@ namespace Stratis.Bitcoin.Consensus
             this.peerTipsByPeerId = new Dictionary<int, uint256>();
             this.peerIdsByTipHash = new Dictionary<uint256, HashSet<int>>();
             this.chainedHeadersByHash = new Dictionary<uint256, ChainedHeader>();
+            this.UnconsumedBlocksDataBytes = 0;
         }
 
         /// <inheritdoc />
@@ -358,6 +370,18 @@ namespace Stratis.Bitcoin.Consensus
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(newConsensusTip), newConsensusTip);
 
+            ChainedHeader oldConsensusTip = this.GetConsensusTip();
+            ChainedHeader fork = newConsensusTip.FindFork(oldConsensusTip);
+            ChainedHeader currentHeader = newConsensusTip;
+
+            while (currentHeader != fork)
+            {
+                this.UnconsumedBlocksDataBytes -= currentHeader.Block.BlockSize.Value;
+                this.logger.LogTrace("Size of unconsumed block data is decreased by {0}, new value is {1}.", currentHeader.Block.BlockSize.Value, this.UnconsumedBlocksDataBytes);
+
+                currentHeader = currentHeader.Previous;
+            }
+
             // Switch consensus tip to the new block header.
             this.AddOrReplacePeerTip(LocalPeerId, newConsensusTip.HashBlock);
 
@@ -503,8 +527,13 @@ namespace Stratis.Bitcoin.Consensus
             this.logger.LogTrace("({0}:'{1}')", nameof(header), header);
 
             header.Previous.Next.Remove(header);
-
             this.chainedHeadersByHash.Remove(header.HashBlock);
+
+            if (header.Block != null)
+            {
+                this.UnconsumedBlocksDataBytes -= header.Block.BlockSize.Value;
+                this.logger.LogTrace("Size of unconsumed block data is decreased by {0}, new value is {1}.", header.Block.BlockSize.Value, this.UnconsumedBlocksDataBytes);
+            }
 
             this.logger.LogTrace("(-)");
         }
@@ -542,6 +571,9 @@ namespace Stratis.Bitcoin.Consensus
 
             chainedHeader.BlockDataAvailability = BlockDataAvailabilityState.BlockAvailable;
             chainedHeader.Block = block;
+
+            this.UnconsumedBlocksDataBytes += chainedHeader.Block.BlockSize.Value;
+            this.logger.LogTrace("Size of unconsumed block data is increased by {0}, new value is {1}.", chainedHeader.Block.BlockSize.Value, this.UnconsumedBlocksDataBytes);
 
             bool partialValidationRequired = chainedHeader.Previous.BlockValidationState == ValidationState.PartiallyValidated
                                           || chainedHeader.Previous.BlockValidationState == ValidationState.FullyValidated;
