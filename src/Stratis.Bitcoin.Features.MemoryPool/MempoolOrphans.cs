@@ -523,10 +523,10 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <summary>
         /// Erase all orphans for a specific peer node.
         /// </summary>
-        /// <param name="peer">Peer node id</param>
-        public void EraseOrphansFor(ulong peer)
+        /// <param name="peerId">Peer node id</param>
+        public void EraseOrphansFor(ulong peerId)
         {
-            this.logger.LogTrace("({0}:{1})", nameof(peer), peer);
+            this.logger.LogTrace("({0}:{1})", nameof(peerId), peerId);
 
             lock (this.lockObject)
             {
@@ -537,15 +537,15 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                 List<OrphanTx> orphansToErase = this.mapOrphanTransactions.Values.ToList();
                 foreach (OrphanTx erase in orphansToErase)
                 {
-                    if (erase.NodeId == peer)
+                    if (erase.NodeId == peerId)
                     {
                         erased += this.EraseOrphanTxLock(erase.Tx.GetHash()) ? 1 : 0;
                     }
                 }
 
                 if (erased > 0)
-                    this.logger.LogInformation("Erased {0} orphan tx from peer {1}", erased, peer);
-            };
+                    this.logger.LogInformation("Erased {0} orphan tx from peer {1}", erased, peerId);
+            }
 
             this.logger.LogTrace("(-)");
         }
