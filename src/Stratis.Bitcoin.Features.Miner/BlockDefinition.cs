@@ -209,7 +209,7 @@ namespace Stratis.Bitcoin.Features.Miner
         /// </summary>
         /// <param name="chainTip">Tip of the chain that this instance will work with without touching any shared chain resources.</param>
         /// <param name="scriptPubKey">Script that explains what conditions must be met to claim ownership of a coin.</param>
-        /// <returns>The contructed <see cref="Miner.BlockTemplate"/>.</returns>
+        /// <returns>The contructed <see cref="Mining.BlockTemplate"/>.</returns>
         protected void OnBuild(ChainedHeader chainTip, Script scriptPubKey)
         {
             this.Configure();
