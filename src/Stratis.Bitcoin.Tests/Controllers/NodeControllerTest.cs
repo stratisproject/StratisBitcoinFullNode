@@ -63,20 +63,6 @@ namespace Stratis.Bitcoin.Tests.Controllers
         }
 
         [Fact]
-        public void Shutdown_WithoutFullNode_DoesNotThrowException()
-        {
-            IFullNode fullNode = null;
-            this.controller = new NodeController(fullNode, this.LoggerFactory.Object,
-                this.dateTimeProvider.Object, this.chainState.Object, this.nodeSettings,
-                this.connectionManager.Object, this.chain, this.network, this.pooledTransaction.Object,
-                this.pooledGetUnspentTransaction.Object, this.getUnspentTransaction.Object, this.networkDifficulty.Object);
-
-            var result = this.controller.Shutdown();
-
-            OkResult okResult = Assert.IsType<OkResult>(result);
-        }
-
-        [Fact]
         public void Stop_WithFullNode_DisposesFullNodeAsync()
         {
             var result = this.controller.Shutdown();
@@ -561,23 +547,6 @@ namespace Stratis.Bitcoin.Tests.Controllers
             ErrorModel error = errorResponse.Errors[0];
             Assert.Equal(400, error.Status);
             Assert.StartsWith("System.NotImplementedException", error.Description);
-        }
-
-        [Fact]
-        public void GetBlockHeader_ChainNull_ReturnsNull()
-        {
-            this.chain = null;
-            string hash = "12341341545245";
-            bool isJsonFormat = true;
-            this.controller = new NodeController(this.fullNode.Object, this.LoggerFactory.Object, 
-                this.dateTimeProvider.Object, this.chainState.Object, this.nodeSettings, 
-                this.connectionManager.Object, this.chain, this.network, this.pooledTransaction.Object, 
-                this.pooledGetUnspentTransaction.Object, this.getUnspentTransaction.Object, this.networkDifficulty.Object);
-
-            var json = (JsonResult)this.controller.GetBlockHeader(hash, isJsonFormat);
-
-            BlockHeaderModel resultModel = (BlockHeaderModel)json.Value;
-            Assert.Null(resultModel);
         }
 
         [Fact]

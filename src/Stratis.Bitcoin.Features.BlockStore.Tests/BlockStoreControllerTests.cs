@@ -156,25 +156,6 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
 
             Assert.Equal(2, result);
         }
-
-        [Fact]
-        public void GetBlockCount_NullchainState_ThrowsArgumentNullException()
-        {
-            var logger = new Mock<ILoggerFactory>();
-            var cache = new Mock<IBlockStoreCache>();
-
-            logger.Setup(l => l.CreateLogger(It.IsAny<string>())).Returns(Mock.Of<ILogger>);
-
-            var controller = new BlockStoreController(logger.Object, cache.Object, null);
-
-            IActionResult result = controller.GetBlockCount();
-            ErrorResult errorResult = Assert.IsType<ErrorResult>(result);
-            ErrorResponse errorResponse = Assert.IsType<ErrorResponse>(errorResult.Value);
-            Assert.Single(errorResponse.Errors);
-            ErrorModel error = errorResponse.Errors[0];
-            Assert.Equal(400, error.Status);
-            Assert.StartsWith("System.ArgumentNullException", error.Description);
-        }
                
         private static (Mock<IBlockStoreCache> cache, BlockStoreController controller) GetControllerAndCache()
         {

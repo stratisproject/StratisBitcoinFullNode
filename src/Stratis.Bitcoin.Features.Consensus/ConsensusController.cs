@@ -23,10 +23,15 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <summary>Manager of the longest fully validated chain of blocks.</summary>
         public IConsensusLoop ConsensusLoop { get; private set; }
 
-        public ConsensusController(ILoggerFactory loggerFactory, IChainState chainState = null,
-            IConsensusLoop consensusLoop = null, ConcurrentChain chain = null)
+        public ConsensusController(ILoggerFactory loggerFactory, IChainState chainState,
+            IConsensusLoop consensusLoop, ConcurrentChain chain)
             : base(chainState: chainState, chain: chain)
         {
+            Guard.NotNull(loggerFactory, nameof(loggerFactory));
+            Guard.NotNull(consensusLoop, nameof(consensusLoop));
+            Guard.NotNull(chain, nameof(chain));
+            Guard.NotNull(chainState, nameof(chainState));
+
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.ConsensusLoop = consensusLoop;
         }
@@ -40,8 +45,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         [ActionDescription("Get the hash of the block at the consensus tip.")]
         public uint256 GetBestBlockHashRPC()
         {
-            Guard.NotNull(this.ChainState, nameof(this.ChainState));
-            return this.ChainState?.ConsensusTip?.HashBlock;
+            return this.ChainState.ConsensusTip?.HashBlock;
         }
 
         /// <summary>
@@ -74,9 +78,6 @@ namespace Stratis.Bitcoin.Features.Consensus
         [ActionDescription("Gets the hash of the block at the given height.")]
         public uint256 GetBlockHashRPC(int height)
         {
-            Guard.NotNull(this.ConsensusLoop, nameof(this.ConsensusLoop));
-            Guard.NotNull(this.Chain, nameof(this.Chain));
-
             this.logger.LogDebug("GetBlockHash {0}", height);
 
             uint256 bestBlockHash = this.ConsensusLoop.Tip?.HashBlock;
@@ -99,7 +100,6 @@ namespace Stratis.Bitcoin.Features.Consensus
         {
             try
             {
-                Guard.NotNull(height, nameof(height));
                 return this.Json(this.GetBlockHashRPC(height));
             }
             catch (Exception e)

@@ -32,6 +32,10 @@ namespace Stratis.Bitcoin.Features.BlockStore.Controllers
         public BlockStoreController(ILoggerFactory loggerFactory, 
             IBlockStoreCache blockStoreCache, IChainState chainState)
         {
+            Guard.NotNull(loggerFactory, nameof(loggerFactory));
+            Guard.NotNull(blockStoreCache, nameof(blockStoreCache));
+            Guard.NotNull(chainState, nameof(chainState));
+
             this.blockStoreCache = blockStoreCache;
             this.chainState = chainState;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
@@ -78,7 +82,6 @@ namespace Stratis.Bitcoin.Features.BlockStore.Controllers
         {
             try
             {
-                Guard.NotNull(this.chainState, nameof(this.chainState));
                 return this.Json(this.chainState.ConsensusTip.Height);
             }
             catch (Exception e)

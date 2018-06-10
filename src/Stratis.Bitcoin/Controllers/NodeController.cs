@@ -68,6 +68,15 @@ namespace Stratis.Bitcoin.Controllers
             IGetUnspentTransaction getUnspentTransaction = null,
             INetworkDifficulty networkDifficulty = null)
         {
+            Guard.NotNull(fullNode, nameof(fullNode));
+            Guard.NotNull(network, nameof(network));
+            Guard.NotNull(chain, nameof(chain));
+            Guard.NotNull(loggerFactory, nameof(loggerFactory));
+            Guard.NotNull(nodeSettings, nameof(nodeSettings));
+            Guard.NotNull(chainState, nameof(chainState));
+            Guard.NotNull(connectionManager, nameof(connectionManager));
+            Guard.NotNull(dateTimeProvider, nameof(dateTimeProvider));
+
             this.fullNode = fullNode;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.dateTimeProvider = dateTimeProvider;
@@ -102,7 +111,7 @@ namespace Stratis.Bitcoin.Controllers
                 ConsensusHeight = this.chainState.ConsensusTip.Height,
                 DataDirectoryPath = this.nodeSettings.DataDir,
                 Testnet = this.network.IsTest(),
-                RelayFee = this.nodeSettings?.MinRelayTxFeeRate?.FeePerK?.ToUnit(MoneyUnit.BTC) ?? 0,
+                RelayFee = this.nodeSettings.MinRelayTxFeeRate?.FeePerK?.ToUnit(MoneyUnit.BTC) ?? 0,
                 RunningTime = this.dateTimeProvider.GetUtcNow() - this.fullNode.StartTime
             };
 
@@ -160,7 +169,6 @@ namespace Stratis.Bitcoin.Controllers
         {
             try
             {
-                Guard.NotNull(this.logger, nameof(this.logger));
                 Guard.NotEmpty(hash, nameof(hash));
 
                 this.logger.LogDebug("GetBlockHeader {0}", hash);
@@ -202,9 +210,6 @@ namespace Stratis.Bitcoin.Controllers
         {
             try
             {
-                Guard.NotNull(this.fullNode, nameof(this.fullNode));
-                Guard.NotNull(this.network, nameof(this.network));
-                Guard.NotNull(this.chain, nameof(this.chain));
                 Guard.NotEmpty(trxid, nameof(trxid));
 
                 uint256 txid;
@@ -257,7 +262,6 @@ namespace Stratis.Bitcoin.Controllers
         {
             try
             {
-                Guard.NotNull(this.network, nameof(this.network));
                 Guard.NotEmpty(address, nameof(address));
 
                 ValidatedAddress res = new ValidatedAddress();
@@ -308,8 +312,6 @@ namespace Stratis.Bitcoin.Controllers
         {
             try
             {
-                Guard.NotNull(this.network, nameof(this.network));
-                Guard.NotNull(this.chain, nameof(this.chain));
                 Guard.NotEmpty(trxid, nameof(trxid));
 
                 uint256 txid;
@@ -351,11 +353,8 @@ namespace Stratis.Bitcoin.Controllers
         [Route("stop")]
         public IActionResult Shutdown()
         {
-            if (this.fullNode != null)
-            {
-                // Start the node shutdown process.
-                this.fullNode.Dispose();
-            }
+            // Start the node shutdown process.
+            this.fullNode?.Dispose();
 
             return this.Ok();
         }

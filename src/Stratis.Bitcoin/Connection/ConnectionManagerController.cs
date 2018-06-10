@@ -40,7 +40,6 @@ namespace Stratis.Bitcoin.Connection
         [ActionDescription("Adds a node to the connection manager.")]
         public bool AddNodeRPC(string endpointStr, string command)
         {
-            Guard.NotNull(this.ConnectionManager, nameof(this.ConnectionManager));
             IPEndPoint endpoint = endpointStr.ToIPEndPoint(this.ConnectionManager.Network.DefaultPort);
             switch (command)
             {
