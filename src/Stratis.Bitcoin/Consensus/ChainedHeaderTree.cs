@@ -51,7 +51,7 @@ namespace Stratis.Bitcoin.Consensus
     public interface IChainedHeaderTree
     {
         /// <summary>
-        /// Gets size of unconsumed blocks data in bytes.
+        /// Total size of unconsumed blocks data in bytes.
         /// It represents amount of memory which is occupied by block data that is waiting to be processed.
         /// </summary>
         /// <remarks>
@@ -373,6 +373,8 @@ namespace Stratis.Bitcoin.Consensus
             ChainedHeader oldConsensusTip = this.GetConsensusTip();
             ChainedHeader fork = newConsensusTip.FindFork(oldConsensusTip);
             ChainedHeader currentHeader = newConsensusTip;
+
+            this.logger.LogTrace("Old consensus tip: '{0}', new consensus tip: '{1}', fork point: '{2}'.", oldConsensusTip, newConsensusTip, fork);
 
             // Consider blocks that became a part of our best chain as consumed.
             while (currentHeader != fork)
