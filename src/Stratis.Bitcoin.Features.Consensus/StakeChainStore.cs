@@ -128,7 +128,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             }
 
             //var chainedHeader = this.chain.GetBlock(blockid);
-            StakeItem item = new StakeItem { BlockId = chainedHeader.HashBlock, Height = chainedHeader.Height, BlockStake = blockStake, InStore = false };
+            var item = new StakeItem { BlockId = chainedHeader.HashBlock, Height = chainedHeader.Height, BlockStake = blockStake, InStore = false };
             bool added = this.items.TryAdd(chainedHeader.HashBlock, item);
             if (added)
                 await this.FlushAsync(false).ConfigureAwait(false);

@@ -55,7 +55,7 @@ namespace Stratis.Bitcoin.Features.Miner.Models
         /// <inheritdoc />
         public object Clone()
         {
-            GetStakingInfoModel res = new GetStakingInfoModel
+            var res = new GetStakingInfoModel
             {
                 Enabled = this.Enabled,
                 Staking = this.Staking,

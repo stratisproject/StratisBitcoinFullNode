@@ -47,7 +47,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
             this.CheckAndComputeStake(context);
 
             await base.RunAsync(context).ConfigureAwait(false);
-            PosRuleContext posRuleContext = context as PosRuleContext;
+            var posRuleContext = context as PosRuleContext;
             await this.stakeChain.SetAsync(context.ValidationContext.ChainedHeader, posRuleContext.BlockStake).ConfigureAwait(false);
 
             this.Logger.LogTrace("(-)");
@@ -66,7 +66,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
 
             if (BlockStake.IsProofOfStake(block))
             {
-                PosRuleContext posRuleContext = context as PosRuleContext;
+                var posRuleContext = context as PosRuleContext;
                 Money stakeReward = block.Transactions[1].TotalOut - posRuleContext.TotalCoinStakeValueIn;
                 Money calcStakeReward = fees + this.GetProofOfStakeReward(height);
 
@@ -96,7 +96,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         {
             this.Logger.LogTrace("()");
 
-            PosRuleContext posRuleContext = context as PosRuleContext;
+            var posRuleContext = context as PosRuleContext;
 
             UnspentOutputSet view = posRuleContext.UnspentOutputSet;
 
@@ -140,7 +140,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
 
             ChainedHeader chainedHeader = context.ValidationContext.ChainedHeader;
             Block block = context.ValidationContext.Block;
-            PosRuleContext posRuleContext = context as PosRuleContext;
+            var posRuleContext = context as PosRuleContext;
             BlockStake blockStake = posRuleContext.BlockStake;
 
             // Verify hash target and signature of coinstake tx.

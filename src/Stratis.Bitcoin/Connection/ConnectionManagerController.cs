@@ -98,14 +98,14 @@ namespace Stratis.Bitcoin.Connection
         [ActionDescription("Gets peer information from the connection manager.")]
         public List<PeerNodeModel> GetPeerInfoRPC()
         {
-            List<PeerNodeModel> peerList = new List<PeerNodeModel>();
+            var peerList = new List<PeerNodeModel>();
 
             List<INetworkPeer> peers = this.ConnectionManager.ConnectedPeers.ToList();
             foreach (INetworkPeer peer in peers)
             {
                 if ((peer != null) && (peer.RemoteSocketAddress != null))
                 {
-                    PeerNodeModel peerNode = new PeerNodeModel
+                    var peerNode = new PeerNodeModel
                     {
                         Id = peers.IndexOf(peer),
                         Address = peer.RemoteSocketEndpoint.ToString()
@@ -120,7 +120,7 @@ namespace Stratis.Bitcoin.Connection
                         peerNode.StartingHeight = peer.MyVersion.StartHeight;
                     }
 
-                    ConnectionManagerBehavior connectionManagerBehavior = peer.Behavior<ConnectionManagerBehavior>();
+                    var connectionManagerBehavior = peer.Behavior<ConnectionManagerBehavior>();
                     if (connectionManagerBehavior != null)
                     {
                         peerNode.Inbound = connectionManagerBehavior.Inbound;

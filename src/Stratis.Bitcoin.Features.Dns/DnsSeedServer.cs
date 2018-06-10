@@ -175,7 +175,7 @@ namespace Stratis.Bitcoin.Features.Dns
                 {
                     this.logger.LogInformation("Loading cached DNS masterfile from {0}", path);
 
-                    using (FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read))
+                    using (var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read))
                     {
                         this.MasterFile.Load(stream);
                     }
@@ -220,7 +220,7 @@ namespace Stratis.Bitcoin.Features.Dns
                         this.logger.LogTrace("DNS request received of size {0} from endpoint {1}.", request.Item2.Length, request.Item1);
 
                         // Received a request, now handle it.
-                        Stopwatch stopWatch = new Stopwatch();
+                        var stopWatch = new Stopwatch();
                         stopWatch.Start();
 
                         await this.HandleRequestAsync(request);
@@ -304,7 +304,7 @@ namespace Stratis.Bitcoin.Features.Dns
             {
                 if (disposing)
                 {
-                    IDisposable disposableClient = this.udpClient as IDisposable;
+                    var disposableClient = this.udpClient as IDisposable;
                     disposableClient?.Dispose();
 
                     this.metricsLoop?.Dispose();
@@ -493,7 +493,7 @@ namespace Stratis.Bitcoin.Features.Dns
             try
             {
                 // Print out total and period values.
-                StringBuilder metricOutput = new StringBuilder();
+                var metricOutput = new StringBuilder();
                 metricOutput.AppendLine("==========DNS Metrics==========");
                 metricOutput.AppendLine();
                 metricOutput.AppendFormat(this.MetricsOutputFormat, "Snapshot Time", this.dateTimeProvider.GetAdjustedTime());
@@ -550,7 +550,7 @@ namespace Stratis.Bitcoin.Features.Dns
 
                 this.logger.LogInformation("Saving cached DNS masterfile to {0}", path);
 
-                using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Write))
+                using (var stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Write))
                 {
                     this.MasterFile.Save(stream);
                 }

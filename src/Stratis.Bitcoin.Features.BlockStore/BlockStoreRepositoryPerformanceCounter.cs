@@ -161,7 +161,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
         public override string ToString()
         {
-            StringBuilder builder = new StringBuilder();
+            var builder = new StringBuilder();
 
             builder.AppendLine($"===={this.Name} Repository Stats(%)====");
             builder.AppendLine("Hit Count:".PadRight(LoggingConfiguration.ColumnLength) + this.TotalRepositoryHitCount);
@@ -169,7 +169,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             builder.AppendLine("Delete Count:".PadRight(LoggingConfiguration.ColumnLength) + this.TotalRepositoryDeleteCount);
             builder.AppendLine("Insert Count:".PadRight(LoggingConfiguration.ColumnLength) + this.TotalRepositoryInsertCount);
 
-            var total = this.TotalRepositoryMissCount + this.TotalRepositoryHitCount;
+            long total = this.TotalRepositoryMissCount + this.TotalRepositoryHitCount;
             if (this.TotalRepositoryHitCount > 0 || this.TotalRepositoryMissCount > 0)
             {
                 builder.AppendLine("Hit:".PadRight(LoggingConfiguration.ColumnLength) + ((decimal)this.TotalRepositoryHitCount * 100m / total).ToString("0.00") + " %");

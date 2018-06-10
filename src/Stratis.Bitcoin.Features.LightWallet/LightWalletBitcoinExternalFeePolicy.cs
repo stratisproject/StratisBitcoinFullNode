@@ -54,7 +54,7 @@ namespace Stratis.Bitcoin.Features.LightWallet
             {
                 // This will run evry 3 to 10 minutes randomly
                 // So the API provider is not able to identify our transaction with a timing attack
-                var waitMinutes = new Random().Next(3, 10);
+                int waitMinutes = new Random().Next(3, 10);
 
                 HttpResponseMessage response = null;
                 try
@@ -91,7 +91,7 @@ namespace Stratis.Bitcoin.Features.LightWallet
 
                 if (token.IsCancellationRequested) return;
 
-                var json = JObject.Parse(await response.Content.ReadAsStringAsync().ConfigureAwait(false));
+                JObject json = JObject.Parse(await response.Content.ReadAsStringAsync().ConfigureAwait(false));
                 this.lowTxFeePerKb = new FeeRate(new Money((int)(json.Value<decimal>("low_fee_per_kb")), MoneyUnit.Satoshi));
                 this.mediumTxFeePerKb = new FeeRate(new Money((int)(json.Value<decimal>("medium_fee_per_kb")), MoneyUnit.Satoshi));
                 this.highTxFeePerKb = new FeeRate(new Money((int)(json.Value<decimal>("high_fee_per_kb")), MoneyUnit.Satoshi));
