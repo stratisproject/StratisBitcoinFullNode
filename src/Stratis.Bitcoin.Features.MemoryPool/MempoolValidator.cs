@@ -7,6 +7,8 @@ using NBitcoin;
 using NBitcoin.Protocol;
 using Stratis.Bitcoin.Base.Deployments;
 using Stratis.Bitcoin.Configuration;
+using Stratis.Bitcoin.Consensus;
+using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.Consensus.Rules;
@@ -195,12 +197,13 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <summary>Gets a counter for tracking memory pool performance.</summary>
         public MempoolPerformanceCounter PerformanceCounter { get; }
 
-        /// <summary>Gets the consensus options from the <see cref="PowCoinViewRule"/></summary>
+        /// <summary>Gets the consensus options from the <see cref="CoinViewRule"/></summary>
         public PowConsensusOptions ConsensusOptions => this.network.Consensus.Option<PowConsensusOptions>();
 
         /// <inheritdoc />
         public async Task<bool> AcceptToMemoryPoolWithTime(MempoolValidationState state, Transaction tx)
         {
+            this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(state), state?.ToString(), nameof(tx), tx?.GetHash());
             try
             {
                 List<uint256> vHashTxToUncache = new List<uint256>();
@@ -209,15 +212,20 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                 //    BOOST_FOREACH(const uint256& hashTx, vHashTxToUncache)
                 //        pcoinsTip->Uncache(hashTx);
                 //}
+                this.logger.LogTrace("(-):true");
                 return true;
             }
-            catch (MempoolErrorException)
+            catch (MempoolErrorException mempoolError)
             {
+                this.logger.LogTrace("{0}:'{1}' ErrorCode:'{2}',ErrorMessage:'{3}'", nameof(MempoolErrorException), mempoolError.Message, mempoolError.ValidationState?.Error?.Code, mempoolError.ValidationState?.ErrorMessage);
+                this.logger.LogTrace("(-)[MEMPOOL_EXCEPTION]:false");
                 return false;
             }
             catch (ConsensusErrorException consensusError)
             {
-                state.Error = new MempoolError(consensusError.ConsensusError);
+                this.logger.LogTrace("{0}:'{1}' ErrorCode:'{2}',ErrorMessage:'{3}'", nameof(ConsensusErrorException), consensusError.Message, consensusError.ConsensusError?.Code, consensusError.ConsensusError?.Message);
+                state.Error = new MempoolError(consensusError.ConsensusError);                
+                this.logger.LogTrace("(-)[CONSENSUS_EXCEPTION]:false");
                 return false;
             }
         }
@@ -238,7 +246,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <summary>
         /// Validates that the transaction is the final transaction."/>
         /// Validated by comparing the transaction vs chain tip.
-        /// If <see cref="PowCoinViewRule.StandardLocktimeVerifyFlags"/> flag is set then
+        /// If <see cref="CoinViewRule.StandardLocktimeVerifyFlags"/> flag is set then
         /// use the block time at the end of the block chain for validation.
         /// Otherwise use the current time for the block time.
         /// </summary>
@@ -748,7 +756,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             if (context.Transaction.HasWitness && this.mempoolSettings.NodeSettings.RequireStandard && !this.IsWitnessStandard(context.Transaction, context.View))
                 context.State.Invalid(MempoolErrors.NonstandardWitness).Throw();
 
-            context.SigOpsCost = consensusRules.GetRule<PowCoinViewRule>().GetTransactionSignatureOperationCost(context.Transaction, context.View.Set,
+            context.SigOpsCost = consensusRules.GetRule<CoinViewRule>().GetTransactionSignatureOperationCost(context.Transaction, context.View.Set,
                 new DeploymentFlags { ScriptFlags = ScriptVerify.Standard });
 
             Money nValueIn = context.View.GetValueIn(context.Transaction);
@@ -1046,7 +1054,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             Transaction tx = context.Transaction;
             if (!context.Transaction.IsCoinBase)
             {
-                this.consensusRules.GetRule<PowCoinViewRule>().CheckInputs(context.Transaction, context.View.Set, this.chain.Height + 1);
+                this.consensusRules.GetRule<CoinViewRule>().CheckInputs(context.Transaction, context.View.Set, this.chain.Height + 1);
 
                 for (int iInput = 0; iInput < tx.Inputs.Count; iInput++)
                 {

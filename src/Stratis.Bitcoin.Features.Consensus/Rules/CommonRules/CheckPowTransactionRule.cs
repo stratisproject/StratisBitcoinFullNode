@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
+using Stratis.Bitcoin.Consensus.Rules;
 
 namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
 {
@@ -22,7 +23,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         /// <exception cref="ConsensusErrors.BadTransactionNullPrevout">Thrown if transaction contains a null prevout.</exception>
         public override Task RunAsync(RuleContext context)
         {
-            Block block = context.BlockValidationContext.Block;
+            Block block = context.ValidationContext.Block;
             var options = context.Consensus.Option<PowConsensusOptions>();
 
             // Check transactions

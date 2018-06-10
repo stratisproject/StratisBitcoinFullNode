@@ -22,38 +22,16 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// </summary>
         public bool IsLightWallet { get; set; }
 
-        /// <summary>
-        /// A callback allow changing the default settings.
-        /// </summary>
-        private readonly Action<WalletSettings> callback;
-
-        /// <summary>
-        /// Initializes an instance of the object.
-        /// </summary>
-        public WalletSettings()
-        {
+        public WalletSettings() : this(NodeSettings.Default())
+        {	
         }
 
-        /// <summary>
-        /// Initializes an instance of the object.
-        /// </summary>
-        /// <param name="callback">Callback routine to be called once the wallet settings are loaded.</param>
-        public WalletSettings(Action<WalletSettings> callback = null)
-        {
-            this.callback = callback;
-        }
-
-        /// <summary>
-        /// Loads the wallet settings from the application configuration.
-        /// </summary>
-        /// <param name="nodeSettings">Application configuration.</param>
-        public void Load(NodeSettings nodeSettings)
+        public WalletSettings(NodeSettings nodeSettings)
         {
             Guard.NotNull(nodeSettings, nameof(nodeSettings));
 
             TextFileConfiguration config = nodeSettings.ConfigReader;
             this.SaveTransactionHex = config.GetOrDefault<bool>("savetrxhex", false);
-            this.callback?.Invoke(this);
         }
 
         /// <summary>

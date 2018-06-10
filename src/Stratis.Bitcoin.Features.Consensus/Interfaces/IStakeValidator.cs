@@ -18,7 +18,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Interfaces
         /// <param name="transactionTime">Transaction time.</param>
         /// <param name="prevout">Information about transaction id and index.</param>
         /// <param name="prevBlockTime">The previous block time.</param>
-        void CheckKernel(ContextStakeInformation context, ChainedHeader prevChainedHeader, uint headerBits, long transactionTime, OutPoint prevout);
+        void CheckKernel(PosRuleContext context, ChainedHeader prevChainedHeader, uint headerBits, long transactionTime, OutPoint prevout);
 
         /// <summary>
         /// Checks if provided transaction is a valid coinstake transaction.
@@ -28,7 +28,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Interfaces
         /// <param name="prevBlockStake">Information about previous staked block.</param>
         /// <param name="transaction">The transaction.</param>
         /// <param name="headerBits">Chained block's header bits, which define the difficulty target.</param>
-        void CheckProofOfStake(ContextStakeInformation context, ChainedHeader prevChainedHeader, BlockStake prevBlockStake, Transaction transaction, uint headerBits);
+        void CheckProofOfStake(PosRuleContext context, ChainedHeader prevChainedHeader, BlockStake prevBlockStake, Transaction transaction, uint headerBits);
 
         /// <summary>
         /// Computes stake modifier.

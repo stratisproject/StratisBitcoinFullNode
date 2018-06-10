@@ -11,6 +11,8 @@ using Stratis.Bitcoin.BlockPulling;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Connection;
+using Stratis.Bitcoin.Consensus;
+using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.Consensus.Interfaces;
 using Stratis.Bitcoin.Features.Consensus.Rules;
@@ -83,7 +85,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
 
             network.Consensus.Options = new PowConsensusOptions();
 
-            ConsensusSettings consensusSettings = new ConsensusSettings().Load(testChainContext.NodeSettings);
+            ConsensusSettings consensusSettings = new ConsensusSettings(testChainContext.NodeSettings);
             testChainContext.Checkpoints = new Checkpoints();
 
             testChainContext.Chain = new ConcurrentChain(network);
@@ -188,7 +190,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
         private static void TryFindNonceForProofOfWork(TestChainContext testChainContext, BlockTemplate newBlock)
         {
             var maxTries = int.MaxValue;
-            while (maxTries > 0 && !newBlock.Block.CheckProofOfWork(testChainContext.Network.Consensus))
+            while (maxTries > 0 && !newBlock.Block.CheckProofOfWork())
             {
                 ++newBlock.Block.Header.Nonce;
                 --maxTries;
@@ -207,7 +209,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
 
         private static async Task ValidateBlock(TestChainContext testChainContext, BlockTemplate newBlock)
         {
-            var context = new BlockValidationContext { Block = newBlock.Block };
+            var context = new ValidationContext { Block = newBlock.Block };
             await testChainContext.Consensus.AcceptBlockAsync(context);
             Assert.Null(context.Error);
         }

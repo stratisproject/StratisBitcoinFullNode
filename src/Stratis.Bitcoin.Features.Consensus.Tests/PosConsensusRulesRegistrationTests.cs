@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using FluentAssertions;
+using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Features.Consensus.Rules;
 using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
 using Xunit;
@@ -42,7 +43,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
             this.rules.ElementAt(18).Should().BeOfType<PosBlockSignatureRule>();
             this.rules.ElementAt(19).Should().BeOfType<LoadCoinviewRule>();
             this.rules.ElementAt(20).Should().BeOfType<TransactionDuplicationActivationRule>();
-            this.rules.ElementAt(21).Should().BeOfType<PosCoinViewRule>();
+            this.rules.ElementAt(21).Should().BeOfType<PosCoinviewRule>();
         }
     }
 }

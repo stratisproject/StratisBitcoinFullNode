@@ -1,5 +1,5 @@
-﻿using System;
-using System.Net;
+﻿using System.Net;
+using NBitcoin;
 
 namespace Stratis.Bitcoin.Utilities.Extensions
 {
@@ -39,22 +39,16 @@ namespace Stratis.Bitcoin.Utilities.Extensions
         /// - [1233:3432:2434:2343:3234:2345:6546:4534]:8333
         /// - ::ffff:192.168.4.1
         /// - ::ffff:192.168.4.1:80
+        /// - google.com (Resolves domain name to IP Address)
+        /// - google.com:80 ('')
+        /// - 1233:3432:2434:2343:3234:2345:6546:4534
         /// </remarks>
         /// <exception cref="ArgumentOutOfRangeException">Thrown in case of the port number is out of range.</exception>    
-        /// <exception cref="FormatException">Thrown in case of ipAddress is invalid.</exception>    
+        /// <exception cref="FormatException">Thrown in case of ipAddress or port number is invalid.</exception>    
+        /// <exception cref="SocketException">Thrown if the ipAddress is not a valid host name.</exception>    
         public static IPEndPoint ToIPEndPoint(this string ipAddress, int port)
         {
-            // Get the position of the last ':'.
-            int colon = ipAddress.LastIndexOf(':');
-
-            // If the last ':' is not followed by ']' or '.' then is must be an ip address / port number separator.
-            if (colon >= 0 && ipAddress.IndexOf(']', colon) < 0 && ipAddress.IndexOf('.', colon) < 0)
-            {
-                port = int.Parse(ipAddress.Substring(colon + 1));
-                ipAddress = ipAddress.Substring(0, colon);
-            }
-
-            return new IPEndPoint(IPAddress.Parse(ipAddress), port);
+            return Utils.ParseIpEndpoint(ipAddress, port);
         }
     }
 }

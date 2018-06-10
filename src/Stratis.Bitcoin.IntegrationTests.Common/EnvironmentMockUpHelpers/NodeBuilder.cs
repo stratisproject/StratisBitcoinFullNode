@@ -2,14 +2,14 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.IO.Compression;
 using System.Linq;
-using System.Net.Http;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
 using NBitcoin;
+using Stratis.Bitcoin.Base;
+using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
@@ -21,6 +21,9 @@ using Stratis.Bitcoin.Tests.Common;
 
 namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
 {
+    using NBitcoin.Protocol;
+    using Stratis.Bitcoin.IntegrationTests.Common.Runners;
+
     public static class FullNodeExt
     {
         public static WalletManager WalletManager(this FullNode fullNode)
@@ -53,9 +56,9 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
             return fullNode.NodeService<BlockStoreManager>();
         }
 
-        public static ChainedHeader HighestPersistedBlock(this FullNode fullNode)
+        public static ChainedHeader GetBlockStoreTip(this FullNode fullNode)
         {
-            return fullNode.NodeService<IBlockRepository>().HighestPersistedBlock;
+            return fullNode.NodeService<IChainState>().BlockStoreTip;
         }
     }
 
@@ -123,14 +126,14 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
         private static string GetBitcoinCorePath(string version)
         {
             string path;
-            
+
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
                 path = $"../../../../External Libs/Bitcoin Core/{version}/Windows/bitcoind.exe";
             else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
                 path = $"../../../../External Libs/Bitcoin Core/{version}/Linux/bitcoind";
             else
                 path = $"../../../../External Libs/Bitcoin Core/{version}/OSX/bitcoind";
-            
+
             if (File.Exists(path))
                 return path;
 
@@ -177,6 +180,18 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
             this.Nodes.Add(node);
             this.Nodes.Remove(cloneNode);
             return node;
+        }
+
+        /// <summary>A helper method to create a node instance with a non-standard set of features enabled. The node can be PoW or PoS, as long as the appropriate features are provided.</summary>
+        /// <param name="dataDir">The node's data directory where downloaded chain data gets stored.</param>
+        /// <param name="callback">A callback accepting an instance of <see cref="IFullNodeBuilder"/> that constructs a node with a custom feature set.</param>
+        /// <param name="network">The network the node will be running on.</param>
+        /// <param name="protocolVersion">Use <see cref="ProtocolVersion.PROTOCOL_VERSION"/> for BTC PoW-like networks and <see cref="ProtocolVersion.ALT_PROTOCOL_VERSION"/> for Stratis PoS-like networks.</param>
+        /// <param name="configFileName">The name for the node's configuration file.</param>
+        /// <param name="agent">A user agent string to distinguish different node versions from each other.</param>
+        public CoreNode CreateCustomNode(bool start, Action<IFullNodeBuilder> callback, Network network, ProtocolVersion protocolVersion = ProtocolVersion.PROTOCOL_VERSION, string configFileName = "custom.conf", string agent = "Custom")
+        {
+            return CreateNode(new CustomNodeRunner(this.GetNextDataFolderName(), callback, network, protocolVersion, configFileName, agent), network, start, configFileName);
         }
 
         private string GetNextDataFolderName()

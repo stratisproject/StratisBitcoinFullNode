@@ -216,7 +216,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             Mnemonic mnemonic = string.IsNullOrEmpty(mnemonicList)
                 ? new Mnemonic(Wordlist.English, WordCount.Twelve)
                 : new Mnemonic(mnemonicList);
-            ExtKey extendedKey = HdOperations.GetHdPrivateKey(mnemonic, passphrase);
+            ExtKey extendedKey = HdOperations.GetExtendedKey(mnemonic, passphrase);
 
             // Create a wallet file.
             string encryptedSeed = extendedKey.PrivateKey.GetEncryptedBitcoinSecret(password, this.network).ToWif();
@@ -295,7 +295,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             ExtKey extendedKey;
             try
             {
-                extendedKey = HdOperations.GetHdPrivateKey(mnemonic, passphrase);
+                extendedKey = HdOperations.GetExtendedKey(mnemonic, passphrase);
             }
             catch (NotSupportedException ex)
             {

@@ -35,7 +35,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
                 mockLoggerFactory.Setup(i => i.CreateLogger(It.IsAny<string>())).Returns(new Mock<ILogger>().Object);
                 ILoggerFactory loggerFactory = mockLoggerFactory.Object;
 
-                MempoolSettings settings = new MempoolSettings(i => { })
+                MempoolSettings settings = new MempoolSettings(NodeSettings.Default())
                 {
                     MempoolExpiry = MempoolExpiry
                 };
@@ -59,7 +59,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
                 Mock<IMempoolPersistence> mockPersist = new Mock<IMempoolPersistence>();
                 Mock<CoinView> mockCoinView = new Mock<CoinView>();
 
-                return new MempoolManager(new MempoolSchedulerLock(), mempool, mockValidator.Object, null, dateTime, settings, mockPersist.Object, mockCoinView.Object, loggerFactory, nodeSettings.Network);
+                return new MempoolManager(new MempoolSchedulerLock(), mempool, mockValidator.Object, dateTime, settings, mockPersist.Object, mockCoinView.Object, loggerFactory, nodeSettings.Network);
             }
         }
 

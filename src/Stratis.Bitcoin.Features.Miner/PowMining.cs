@@ -4,6 +4,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
+using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.Interfaces;
 using Stratis.Bitcoin.Features.MemoryPool;
@@ -203,7 +204,7 @@ namespace Stratis.Bitcoin.Features.Miner
                 nExtraNonce = this.IncrementExtraNonce(blockTemplate.Block, chainTip, nExtraNonce);
                 Block block = blockTemplate.Block;
 
-                while ((maxTries > 0) && (block.Header.Nonce < InnerLoopCount) && !block.CheckProofOfWork(this.network.Consensus))
+                while ((maxTries > 0) && (block.Header.Nonce < InnerLoopCount) && !block.CheckProofOfWork())
                 {
                     this.miningCancellationTokenSource.Token.ThrowIfCancellationRequested();
 
@@ -222,7 +223,7 @@ namespace Stratis.Bitcoin.Features.Miner
                 if (newChain.ChainWork <= chainTip.ChainWork)
                     continue;
 
-                var blockValidationContext = new BlockValidationContext { Block = block };
+                var blockValidationContext = new ValidationContext { Block = block };
 
                 this.consensusLoop.AcceptBlockAsync(blockValidationContext).GetAwaiter().GetResult();
 

@@ -10,6 +10,8 @@ using Stratis.Bitcoin.BlockPulling;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Connection;
+using Stratis.Bitcoin.Consensus;
+using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.Consensus.Interfaces;
@@ -72,7 +74,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             IDateTimeProvider dateTimeProvider = DateTimeProvider.Default;
 
             network.Consensus.Options = new PowConsensusOptions();
-            ConsensusSettings consensusSettings = new ConsensusSettings().Load(nodeSettings);
+            ConsensusSettings consensusSettings = new ConsensusSettings(nodeSettings);
             ConcurrentChain chain = new ConcurrentChain(network);
             CachedCoinView cachedCoinView = new CachedCoinView(new InMemoryCoinView(chain.Tip.HashBlock), DateTimeProvider.Default, loggerFactory);
             NetworkPeerFactory networkPeerFactory = new NetworkPeerFactory(network, dateTimeProvider, loggerFactory, new PayloadProvider().DiscoverPayloads(), new SelfEndpointTracker());
@@ -99,11 +101,8 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             BlockTemplate newBlock = blockDefinition.Build(chain.Tip, scriptPubKey);
             chain.SetTip(newBlock.Block.Header);
 
-            var ruleContext = new RuleContext(new BlockValidationContext { Block = newBlock.Block }, network.Consensus, consensusLoop.Tip)
-            {
-                CheckPow = false,
-                CheckMerkleRoot = false,
-            };
+            var ruleContext = consensusRules.CreateRuleContext(new ValidationContext {Block = newBlock.Block}, consensusLoop.Tip);
+            ruleContext.MinedBlock = true;
             await consensusLoop.ValidateAndExecuteBlockAsync(ruleContext);
 
             List<BlockInfo> blockinfo = CreateBlockInfoList();
@@ -136,11 +135,8 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
                 currentBlock.Header.Nonce = blockinfo[i].nonce;
 
                 chain.SetTip(currentBlock.Header);
-                var ruleContextForBlock = new RuleContext(new BlockValidationContext { Block = currentBlock }, network.Consensus, consensusLoop.Tip)
-                {
-                    CheckPow = false,
-                    CheckMerkleRoot = false,
-                };
+                var ruleContextForBlock = consensusRules.CreateRuleContext(new ValidationContext { Block = currentBlock }, consensusLoop.Tip);
+                ruleContextForBlock.MinedBlock = true;
                 await consensusLoop.ValidateAndExecuteBlockAsync(ruleContextForBlock);
                 blocks.Add(currentBlock);
             }

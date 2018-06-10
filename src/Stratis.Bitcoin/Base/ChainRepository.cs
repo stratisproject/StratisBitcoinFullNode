@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using DBreeze;
 using DBreeze.DataTypes;
+using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Utilities;
@@ -17,23 +18,123 @@ namespace Stratis.Bitcoin.Base
         Task SaveAsync(ConcurrentChain chain);
     }
 
-    public class ChainRepository : IChainRepository
+    /// <summary>Provider of the last finalized block height.</summary>
+    /// <remarks>
+    /// Finalized block height is the height of the last block that can't be reorged.
+    /// Blocks with height greater than finalized height can be reorged.
+    /// <para>Finalized block height value is always <c>0</c> for blockchains without max reorg property.</para>
+    /// </remarks>
+    public interface IFinalizedBlockHeight
     {
+        /// <summary>Gets the finalized block height.</summary>
+        /// <returns>Height of a block that can't be reorged away from.</returns>
+        int GetFinalizedBlockHeight();
+
+        /// <summary>Loads the finalised block height from the database.</summary>
+        Task LoadFinalizedBlockHeightAsync();
+
+        /// <summary>Saves the finalized block height to the database if it is greater than the previous value.</summary>
+        /// <param name="height">Block height.</param>
+        /// <returns><c>true</c> if new value was set, <c>false</c> if <paramref name="height"/> is lower or equal than current value.</returns>
+        Task<bool> SaveFinalizedBlockHeightAsync(int height);
+    }
+
+    public class ChainRepository : IChainRepository, IFinalizedBlockHeight
+    {
+        /// <summary>Instance logger.</summary>
+        private readonly ILogger logger;
+
         /// <summary>Access to DBreeze database.</summary>
         private readonly DBreezeEngine dbreeze;
 
         private BlockLocator locator;
 
-        public ChainRepository(string folder)
+        /// <summary>Database key under which the block height of the last finalized block height is stored.</summary>
+        private static readonly byte[] finalizedBlockKey = new byte[0];
+
+        /// <summary>Height of a block that can't be reorged away from.</summary>
+        private int finalizedHeight;
+
+        public ChainRepository(string folder, ILoggerFactory loggerFactory)
         {
             Guard.NotEmpty(folder, nameof(folder));
+            Guard.NotNull(loggerFactory, nameof(loggerFactory));
+
+            this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
 
             this.dbreeze = new DBreezeEngine(folder);
         }
 
-        public ChainRepository(DataFolder dataFolder)
-            : this(dataFolder.ChainPath)
+        public ChainRepository(DataFolder dataFolder, ILoggerFactory loggerFactory)
+            : this(dataFolder.ChainPath, loggerFactory)
         {
+        }
+
+        /// <inheritdoc />
+        public int GetFinalizedBlockHeight()
+        {
+            return this.finalizedHeight;
+        }
+
+        /// <inheritdoc />
+        public Task LoadFinalizedBlockHeightAsync()
+        {
+            this.logger.LogTrace("()");
+
+            Task task = Task.Run(() =>
+            {
+                this.logger.LogTrace("()");
+
+                using (DBreeze.Transactions.Transaction transaction = this.dbreeze.GetTransaction())
+                {
+                    transaction.ValuesLazyLoadingIsOn = false;
+                    
+                    Row<byte[], int> row = transaction.Select<byte[], int>("FinalizedBlock", finalizedBlockKey);
+                    if (!row.Exists)
+                    {
+                        this.finalizedHeight = 0;
+                        this.logger.LogTrace("Finalized block height doesn't exist in the database.");
+                    }
+                    else
+                        this.finalizedHeight = row.Value;
+                    
+                    this.logger.LogTrace("(-):{0}={1}", nameof(this.finalizedHeight), this.finalizedHeight);
+                }
+            });
+
+            this.logger.LogTrace("(-)");
+            return task;
+        }
+
+        /// <inheritdoc />
+        public Task<bool> SaveFinalizedBlockHeightAsync(int height)
+        {
+            this.logger.LogTrace("({0}:{1})", nameof(height), height);
+
+            if (height <= this.finalizedHeight)
+            {
+                this.logger.LogTrace("(-)[CANT_GO_BACK]:false");
+                return Task.FromResult(false);
+            }
+            
+            this.finalizedHeight = height;
+
+            Task<bool> task = Task.Run(() =>
+            {
+                this.logger.LogTrace("()");
+
+                using (DBreeze.Transactions.Transaction transaction = this.dbreeze.GetTransaction())
+                {
+                    transaction.Insert<byte[], int>("FinalizedBlock", finalizedBlockKey, height);
+                    transaction.Commit();
+                }
+
+                this.logger.LogTrace("(-):true");
+                return true;
+            });
+
+            this.logger.LogTrace("(-)");
+            return task;
         }
 
         public Task LoadAsync(ConcurrentChain chain)
@@ -89,7 +190,7 @@ namespace Stratis.Bitcoin.Base
                     ChainedHeader tip = chain.Tip;
                     ChainedHeader toSave = tip;
 
-                    List<ChainedHeader> headers = new List<ChainedHeader>();
+                    var headers = new List<ChainedHeader>();
                     while (toSave != fork)
                     {
                         headers.Add(toSave);

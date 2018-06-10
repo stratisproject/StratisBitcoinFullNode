@@ -5,6 +5,10 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using NBitcoin;
 using Stratis.Bitcoin.Base.Deployments;
+using Stratis.Bitcoin.Configuration;
+using Stratis.Bitcoin.Configuration.Settings;
+using Stratis.Bitcoin.Consensus;
+using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.Consensus.Rules;
 using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
@@ -16,7 +20,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
     /// <summary>
     /// These tests only cover the first part of BIP68 and not the MaxSigOps, coinview update or scripts verify or calculate block rewards
     /// </summary>
-    public class PowCoinViewRuleTests 
+    public class PowCoinViewRuleTests
     {
         private Exception caughtExecption;
         private Mock<ILogger> logger;
@@ -24,11 +28,11 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         private RuleContext ruleContext;
         private UnspentOutputSet coinView;
         private Transaction transactionWithCoinbaseFromPreviousBlock;
-        private readonly PowCoinViewRule rule;
+        private readonly CoinViewRule rule;
 
         public PowCoinViewRuleTests()
         {
-            this.rule = new PowCoinViewRule();
+            this.rule = new PowCoinviewRule();
         }
 
         [Fact]
@@ -58,16 +62,16 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         {
             this.coinView = new UnspentOutputSet();
             this.coinView.SetCoins(new UnspentOutputs[0]);
-            this.ruleContext.Set = this.coinView;
+            (this.ruleContext as UtxoRuleContext).UnspentOutputSet = this.coinView;
             this.coinView.Update(this.transactionWithCoinbaseFromPreviousBlock, 0);
         }
 
         private void AndARuleContext()
         {
-            this.ruleContext = new RuleContext { };
-            this.ruleContext.BlockValidationContext = new BlockValidationContext();
-            this.ruleContext.BlockValidationContext.ChainedHeader = new ChainedHeader(new BlockHeader(), new uint256("bcd7d5de8d3bcc7b15e7c8e5fe77c0227cdfa6c682ca13dcf4910616f10fdd06"), HeightOfBlockchain);
-            this.ruleContext.BlockValidationContext.Block = new Block() { Transactions = new List<Transaction>() };
+            this.ruleContext = new PowRuleContext { };
+            this.ruleContext.ValidationContext = new ValidationContext();
+            this.ruleContext.ValidationContext.ChainedHeader = new ChainedHeader(new BlockHeader(), new uint256("bcd7d5de8d3bcc7b15e7c8e5fe77c0227cdfa6c682ca13dcf4910616f10fdd06"), HeightOfBlockchain);
+            this.ruleContext.ValidationContext.Block = new Block() { Transactions = new List<Transaction>() };
         }
 
         protected void WhenExecutingTheRule(ConsensusRule rule, RuleContext ruleContext)
@@ -118,7 +122,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             };
 
             this.ruleContext.Flags = new DeploymentFlags() { LockTimeFlags = Transaction.LockTimeFlags.VerifySequence };
-            this.ruleContext.BlockValidationContext.Block.Transactions.Add(transaction);
+            this.ruleContext.ValidationContext.Block.Transactions.Add(transaction);
         }
 
         private void GivenACoinbaseTransactionFromAPreviousBlock()
@@ -131,7 +135,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
 
         private void AndATransactionWithNoUnspentOutputsAsInput()
         {
-            this.ruleContext.BlockValidationContext.Block.Transactions.Add(new Transaction { Inputs = { new TxIn() } });
+            this.ruleContext.ValidationContext.Block.Transactions.Add(new Transaction { Inputs = { new TxIn() } });
         }
     }
 }

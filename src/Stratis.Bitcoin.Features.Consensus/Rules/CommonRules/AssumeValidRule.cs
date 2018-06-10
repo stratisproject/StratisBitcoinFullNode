@@ -1,6 +1,7 @@
 ﻿using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
+using Stratis.Bitcoin.Consensus.Rules;
 
 namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
 {
@@ -24,9 +25,9 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
             if (!context.SkipValidation && (this.Parent.ConsensusSettings.BlockAssumedValid != null))
             {
                 ChainedHeader assumeValidBlock = this.Parent.Chain.GetBlock(this.Parent.ConsensusSettings.BlockAssumedValid);
-                context.SkipValidation = (assumeValidBlock != null) && (context.BlockValidationContext.ChainedHeader.Height <= assumeValidBlock.Height);
+                context.SkipValidation = (assumeValidBlock != null) && (context.ValidationContext.ChainedHeader.Height <= assumeValidBlock.Height);
                 if (context.SkipValidation)
-                    this.Logger.LogTrace("Block validation will be partially skipped due to block height {0} is not greater than assumed valid block height {1}.", context.BlockValidationContext.ChainedHeader.Height, assumeValidBlock.Height);
+                    this.Logger.LogTrace("Block validation will be partially skipped due to block height {0} is not greater than assumed valid block height {1}.", context.ValidationContext.ChainedHeader.Height, assumeValidBlock.Height);
             }
 
             return Task.CompletedTask;

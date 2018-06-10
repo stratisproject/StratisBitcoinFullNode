@@ -248,15 +248,19 @@ namespace Stratis.Bitcoin
                 benchLogs.AppendLine();
                 benchLogs.AppendLine("======Connection======");
                 benchLogs.AppendLine(this.ConnectionManager.GetNodeStats());
-                this.logger.LogInformation(benchLogs.ToString());
+                this.LastLogOutput = benchLogs.ToString();
+
+                this.logger.LogInformation(this.LastLogOutput);
                 return Task.CompletedTask;
             },
-                this.nodeLifetime.ApplicationStopping,
-                repeatEvery: TimeSpans.FiveSeconds,
-                startAfter: TimeSpans.FiveSeconds);
+            this.nodeLifetime.ApplicationStopping,
+            repeatEvery: TimeSpans.FiveSeconds,
+            startAfter: TimeSpans.FiveSeconds);
 
             this.Resources.Add(periodicLogLoop);
         }
+
+        public string LastLogOutput { get; private set; }
 
         /// <inheritdoc />
         public void Dispose()

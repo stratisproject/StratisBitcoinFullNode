@@ -113,7 +113,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 var tip = coreCreateNode.FindBlock(5).Last();
                 stratisNode.CreateRPCClient().AddNode(coreCreateNode.Endpoint, true);
                 TestHelper.WaitLoop(() => stratisNode.CreateRPCClient().GetBestBlockHash() == coreCreateNode.CreateRPCClient().GetBestBlockHash());
-                TestHelper.WaitLoop(() => stratisNode.FullNode.HighestPersistedBlock().HashBlock == stratisNode.FullNode.Chain.Tip.HashBlock);
+                TestHelper.WaitLoop(() => stratisNode.FullNode.GetBlockStoreTip().HashBlock == stratisNode.FullNode.Chain.Tip.HashBlock);
 
                 var bestBlockHash = stratisNode.CreateRPCClient().GetBestBlockHash();
                 Assert.Equal(tip.GetHash(), bestBlockHash);

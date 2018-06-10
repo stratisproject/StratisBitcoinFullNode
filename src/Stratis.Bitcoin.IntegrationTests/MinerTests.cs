@@ -13,6 +13,8 @@ using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Connection;
+using Stratis.Bitcoin.Consensus;
+using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.Consensus.Rules;
@@ -149,7 +151,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 loggerFactory.AddConsoleWithFilters();
 
                 NodeSettings nodeSettings = new NodeSettings(args: new string[] { "-checkpoints" });
-                var consensusSettings = new ConsensusSettings().Load(nodeSettings);
+                var consensusSettings = new ConsensusSettings(nodeSettings);
 
                 NetworkPeerFactory networkPeerFactory = new NetworkPeerFactory(this.network, dateTimeProvider, loggerFactory, new PayloadProvider().DiscoverPayloads(), new SelfEndpointTracker());
 
@@ -178,7 +180,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 // Simple block creation, nothing special yet:
                 this.newBlock = AssemblerForTest(this).Build(this.chain.Tip, this.scriptPubKey);
                 this.chain.SetTip(this.newBlock.Block.Header);
-                await this.consensus.ValidateAndExecuteBlockAsync(new RuleContext(new BlockValidationContext { Block = this.newBlock.Block }, this.network.Consensus, this.consensus.Tip) { CheckPow = false, CheckMerkleRoot = false });
+                await this.consensus.ValidateAndExecuteBlockAsync(new RuleContext(new ValidationContext { Block = this.newBlock.Block }, this.network.Consensus, this.consensus.Tip) { MinedBlock = true });
 
                 // We can't make transactions until we have inputs
                 // Therefore, load 100 blocks :)
@@ -208,7 +210,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                     pblock.Header.Nonce = this.blockinfo[i].nonce;
 
                     this.chain.SetTip(pblock.Header);
-                    await this.consensus.ValidateAndExecuteBlockAsync(new RuleContext(new BlockValidationContext { Block = pblock }, this.network.Consensus, this.consensus.Tip) { CheckPow = false, CheckMerkleRoot = false });
+                    await this.consensus.ValidateAndExecuteBlockAsync(new RuleContext(new ValidationContext { Block = pblock }, this.network.Consensus, this.consensus.Tip) { MinedBlock = true });
                     blocks.Add(pblock);
                 }
 

@@ -1,6 +1,6 @@
 ﻿using System;
+using System.Net.Sockets;
 using Microsoft.Extensions.DependencyInjection;
-using NBitcoin;
 using Stratis.Bitcoin.Connection;
 using Xunit;
 
@@ -14,7 +14,7 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
             string testDirectory = CreateTestDir(this);
 
             IFullNode fullNode = this.BuildServicedNode(testDirectory);
-            ConnectionManagerController controller = fullNode.Services.ServiceProvider.GetService<ConnectionManagerController>();
+            var controller = fullNode.Services.ServiceProvider.GetService<ConnectionManagerController>();
 
             Assert.ThrowsAny<System.Net.Sockets.SocketException>(() => { controller.AddNodeRPC("0.0.0.0", "onetry"); });
             Assert.Throws<ArgumentException>(() => { controller.AddNodeRPC("0.0.0.0", "notarealcommand"); });
@@ -29,7 +29,7 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
 
             IFullNode fullNode = this.BuildServicedNode(testDirectory);
 
-            ConnectionManagerController controller = fullNode.Services.ServiceProvider.GetService<ConnectionManagerController>();
+            var controller = fullNode.Services.ServiceProvider.GetService<ConnectionManagerController>();
 
             var connectionManager = fullNode.NodeService<IConnectionManager>();
             controller.AddNodeRPC("0.0.0.0", "add");

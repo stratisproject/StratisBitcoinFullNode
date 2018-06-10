@@ -1,4 +1,5 @@
 ﻿using NBitcoin;
+using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.Consensus
 {
@@ -7,20 +8,11 @@ namespace Stratis.Bitcoin.Features.Consensus
     // network this are network specific values
     public class PosConsensusOptions : PowConsensusOptions
     {
-        public new Money ProofOfWorkReward { get; set; }
+        /// <summary>Coinstake minimal confirmations softfork activation height for the mainnet.</summary>
+        internal const int CoinstakeMinConfirmationActivationHeightMainnet = 940000;
 
-        public Money ProofOfStakeReward { get; set; }
-
-        public Money PremineReward { get; set; }
-
-        public long PremineHeight { get; set; }
-
-        public long StakeMinConfirmations { get; set; }
-
-        public long StakeMinAge { get; set; }
-
-        /// <summary>Time to elapse before new modifier is computed.</summary>
-        public long StakeModifierInterval { get; set; }
+        /// <summary>Coinstake minimal confirmations softfork activation height for the testnet.</summary>
+        internal const int CoinstakeMinConfirmationActivationHeightTestnet = 436000;
 
         /// <summary>
         /// Initializes the default values.
@@ -28,16 +20,19 @@ namespace Stratis.Bitcoin.Features.Consensus
         public PosConsensusOptions()
         {
             this.MaxMoney = long.MaxValue;
-            this.CoinbaseMaturity = 50;
+        }
 
-            this.ProofOfWorkReward = Money.Coins(4);
-            this.ProofOfStakeReward = Money.COIN;
-            this.PremineReward = Money.Coins(98000000);
-            this.PremineHeight = 2;
-            this.StakeMinConfirmations = 50;
-            this.StakeMinAge = 60;
-            this.StakeModifierInterval = 10 * 60;
-            this.MaxReorgLength = 500;
+        /// <summary>
+        /// Gets the minimum confirmations amount required for a coin to be good enough to participate in staking.
+        /// </summary>
+        /// <param name="height">Block height.</param>
+        /// <param name="network">The network.</param>
+        public virtual int GetStakeMinConfirmations(int height, Network network)
+        {
+            if (network.IsTest())
+                return height < CoinstakeMinConfirmationActivationHeightTestnet ? 10 : 20;
+
+            return height < CoinstakeMinConfirmationActivationHeightMainnet ? 50 : 500;
         }
     }
 
@@ -79,16 +74,6 @@ namespace Stratis.Bitcoin.Features.Consensus
         public long MaxMoney { get; set; }
 
         /// <summary>
-        /// How many blocks should be on top of the block with coinbase transaction until it's outputs are considered spendable.
-        /// </summary>
-        public long CoinbaseMaturity { get; set; }
-
-        public Money ProofOfWorkReward { get; set; }
-
-        /// <summary>Maximal length of reorganization that the node is willing to accept, or 0 to disable long reorganization protection.</summary>
-        public uint MaxReorgLength { get; set; }
-
-        /// <summary>
         /// Initializes the default values.
         /// </summary>
         public PowConsensusOptions()
@@ -102,11 +87,6 @@ namespace Stratis.Bitcoin.Features.Consensus
             this.MaxBlockBaseSize = 1000000;
             this.MaxBlockSigopsCost = 80000;
             this.MaxMoney = 21000000 * Money.COIN;
-            this.CoinbaseMaturity = 100;
-            this.ProofOfWorkReward = Money.Coins(50);
-
-            // No long reorg protection on PoW.
-            this.MaxReorgLength = 0;
         }
     }
 

@@ -1,5 +1,4 @@
-﻿using System;
-using System.Net;
+﻿using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
@@ -11,10 +10,12 @@ using Stratis.Bitcoin.BlockPulling;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Connection;
+using Stratis.Bitcoin.Consensus;
+using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.Consensus.Interfaces;
 using Stratis.Bitcoin.Features.Consensus.Rules;
-using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
+using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
 using Stratis.Bitcoin.Utilities;
 
@@ -24,52 +25,6 @@ using Stratis.Bitcoin.Utilities;
 namespace Stratis.Bitcoin.Features.Consensus
 {
     /// <summary>
-    /// Information about a block that is required for its validation.
-    /// It is used when a new block is downloaded or mined.
-    /// </summary>
-    public class BlockValidationContext
-    {
-        /// <summary>A value indicating the peer should not be banned.</summary>
-        public const int BanDurationNoBan = -1;
-
-        /// <summary>A value indicating the peer ban time should be <see cref="ConnectionManagerSettings.BanTimeSeconds"/>.</summary>
-        public const int BanDurationDefaultBan = 0;
-
-        /// <summary>The chain of headers associated with the block.</summary>
-        public ChainedHeader ChainedHeader { get; set; }
-
-        /// <summary>Downloaded or mined block to be validated.</summary>
-        public Block Block { get; set; }
-
-        /// <summary>
-        /// The peer this block came from, <c>null</c> if the block was mined.
-        /// </summary>
-        public IPEndPoint Peer { get; set; }
-
-        /// <summary>If the block validation failed this will be set with the reason of failure.</summary>
-        public ConsensusError Error { get; set; }
-
-        /// <summary>
-        /// If the block validation failed with <see cref="ConsensusErrors.BlockTimestampTooFar"/>
-        /// then this is set to a time until which the block should be marked as invalid. Otherwise it is <c>null</c>.
-        /// </summary>
-        public DateTime? RejectUntil { get; set; }
-
-        /// <summary>
-        /// If the block validation failed with a <see cref="ConsensusError"/> that is considered malicious the peer will get banned.
-        /// The ban, unless specified otherwise, will default to <see cref="ConnectionManagerSettings.BanTimeSeconds"/>.
-        /// </summary>
-        /// <remarks>
-        /// Setting this value to be <see cref="BanDurationNoBan"/> will prevent the peer from being banned.
-        /// Setting this value to be <see cref="BanDurationDefaultBan"/> will default to <see cref="ConnectionManagerSettings.BanTimeSeconds"/>.
-        /// </remarks>
-        public int BanDurationSeconds { get; set; }
-
-        /// <summary>The context of the validation processes.</summary>
-        public RuleContext RuleContext { get; set; }
-    }
-
-    /// <summary>
     /// Consumes incoming blocks, validates and executes them.
     /// </summary>
     /// <remarks>
@@ -77,8 +32,11 @@ namespace Stratis.Bitcoin.Features.Consensus
     /// Blocks are coming from <see cref="ILookaheadBlockPuller"/> or Miner/Staker and get validated by get validated by the <see cref="IConsensusRules" /> engine.
     /// See either the <see cref="FullNodeBuilderConsensusExtension.PowConsensusRulesRegistration"/> for PoW or the <see cref="FullNodeBuilderConsensusExtension.PowConsensusRulesRegistration"/> for PoS.
     /// </para>
+    /// <para>
+    /// When consensus loop is being initialized we rewind it in case block store is behind or the <see cref="Tip"/> is not part of the best chain.
+    /// </para>
     /// </remarks>
-    public class ConsensusLoop : IConsensusLoop
+    public class ConsensusLoop : IConsensusLoop, INetworkDifficulty, IGetUnspentTransaction
     {
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
@@ -133,6 +91,13 @@ namespace Stratis.Bitcoin.Features.Consensus
 
         /// <summary>Provider of time functions.</summary>
         private readonly IDateTimeProvider dateTimeProvider;
+
+        /// <summary>
+        /// Specifies time threshold which is used to determine if flush is required.
+        /// When consensus tip timestamp is greater than current time minus the threshold the flush is required. 
+        /// </summary>
+        /// <remarks>Used only on blockchains without max reorg property.</remarks>
+        private const int FlushRequiredThresholdSeconds = 2 * 24 * 60 * 60;
 
         /// <summary>
         /// Initialize a new instance of <see cref="ConsensusLoop"/>.
@@ -213,15 +178,17 @@ namespace Stratis.Bitcoin.Features.Consensus
             this.logger.LogTrace("()");
 
             uint256 utxoHash = await this.UTXOSet.GetBlockHashAsync().ConfigureAwait(false);
+            bool blockStoreDisabled = this.chainState.BlockStoreTip == null;
+
             while (true)
             {
                 this.Tip = this.Chain.GetBlock(utxoHash);
-                if (this.Tip != null)
+               
+                if ((this.Tip != null) && (blockStoreDisabled || (this.chainState.BlockStoreTip.Height >= this.Tip.Height)))
                     break;
 
-                // TODO: this rewind code may never happen.
-                // The node will complete loading before connecting to peers so the
-                // chain will never know if a reorg happened.
+                // In case block store initialized behind, rewind until or before the block store tip.
+                // The node will complete loading before connecting to peers so the chain will never know if a reorg happened.
                 utxoHash = await this.UTXOSet.Rewind().ConfigureAwait(false);
             }
 
@@ -261,7 +228,7 @@ namespace Stratis.Bitcoin.Features.Consensus
 
             while (!this.nodeLifetime.ApplicationStopping.IsCancellationRequested)
             {
-                BlockValidationContext blockValidationContext = new BlockValidationContext();
+                ValidationContext validationContext = new ValidationContext();
 
                 using (new StopwatchDisposable(o => this.ConsensusRules.PerformanceCounter.AddBlockFetchingTime(o)))
                 {
@@ -292,12 +259,12 @@ namespace Stratis.Bitcoin.Features.Consensus
                         }
                     }
 
-                    blockValidationContext.Block = lookaheadResult.Block;
-                    blockValidationContext.Peer = lookaheadResult.Peer;
+                    validationContext.Block = lookaheadResult.Block;
+                    validationContext.Peer = lookaheadResult.Peer;
                 }
 
                 this.logger.LogTrace("Block received from puller.");
-                await this.AcceptBlockAsync(blockValidationContext).ConfigureAwait(false);
+                await this.AcceptBlockAsync(validationContext).ConfigureAwait(false);
             }
 
             this.logger.LogTrace("(-)");
@@ -337,33 +304,33 @@ namespace Stratis.Bitcoin.Features.Consensus
         }
 
         /// <inheritdoc/>
-        public async Task AcceptBlockAsync(BlockValidationContext blockValidationContext)
+        public async Task AcceptBlockAsync(ValidationContext validationContext)
         {
             this.logger.LogTrace("()");
 
             using (await this.consensusLock.LockAsync(this.nodeLifetime.ApplicationStopping).ConfigureAwait(false))
             {
-                blockValidationContext.RuleContext = new RuleContext(blockValidationContext, this.Chain.Network.Consensus, this.Tip);
+                validationContext.RuleContext = this.ConsensusRules.CreateRuleContext(validationContext, this.Tip);
                 
                 // TODO: Once all code is migrated to rules this can be uncommented and the logic in this method moved to the IConsensusRules.AcceptBlockAsync()
                 // await this.consensusRules.AcceptBlockAsync(blockValidationContext);
 
                 try
                 {
-                    await this.ValidateAndExecuteBlockAsync(blockValidationContext.RuleContext).ConfigureAwait(false);
+                    await this.ValidateAndExecuteBlockAsync(validationContext.RuleContext).ConfigureAwait(false);
                 }
                 catch (ConsensusErrorException ex)
                 {
-                    blockValidationContext.Error = ex.ConsensusError;
+                    validationContext.Error = ex.ConsensusError;
                 }
 
-                if (blockValidationContext.Error != null)
+                if (validationContext.Error != null)
                 {
-                    uint256 rejectedBlockHash = blockValidationContext.Block.GetHash();
-                    this.logger.LogError("Block '{0}' rejected: {1}", rejectedBlockHash, blockValidationContext.Error.Message);
+                    uint256 rejectedBlockHash = validationContext.Block.GetHash();
+                    this.logger.LogError("Block '{0}' rejected: {1}", rejectedBlockHash, validationContext.Error.Message);
 
                     // Check if the error is a consensus failure.
-                    if (blockValidationContext.Error == ConsensusErrors.InvalidPrevTip)
+                    if (validationContext.Error == ConsensusErrors.InvalidPrevTip)
                     {
                         if (!this.Chain.Contains(this.Tip.HashBlock))
                         {
@@ -380,7 +347,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                     // Pull again.
                     this.Puller.SetLocation(this.Tip);
 
-                    if (blockValidationContext.Error == ConsensusErrors.BadWitnessNonceSize)
+                    if (validationContext.Error == ConsensusErrors.BadWitnessNonceSize)
                     {
                         this.logger.LogInformation("You probably need witness information, activating witness requirement for peers.");
                         this.connectionManager.AddDiscoveredNodesRequirement(NetworkPeerServices.NODE_WITNESS);
@@ -395,18 +362,18 @@ namespace Stratis.Bitcoin.Features.Consensus
                     this.logger.LogTrace("Chain reverted back to block '{0}'.", this.Tip);
 
                     bool peerShouldGetBanned =
-                        blockValidationContext.BanDurationSeconds != BlockValidationContext.BanDurationNoBan;
-                    if ((blockValidationContext.Peer != null) && peerShouldGetBanned)
+                        validationContext.BanDurationSeconds != ValidationContext.BanDurationNoBan;
+                    if ((validationContext.Peer != null) && peerShouldGetBanned)
                     {
-                        int banDuration = blockValidationContext.BanDurationSeconds == BlockValidationContext.BanDurationDefaultBan ? this.connectionManager.ConnectionSettings.BanTimeSeconds : blockValidationContext.BanDurationSeconds;
-                        this.peerBanning.BanPeer(blockValidationContext.Peer, banDuration, $"Invalid block received: {blockValidationContext.Error.Message}");
+                        int banDuration = validationContext.BanDurationSeconds == ValidationContext.BanDurationDefaultBan ? this.connectionManager.ConnectionSettings.BanTimeSeconds : validationContext.BanDurationSeconds;
+                        this.peerBanning.BanPeer(validationContext.Peer, banDuration, $"Invalid block received: {validationContext.Error.Message}");
                     }
 
-                    if (blockValidationContext.Error != ConsensusErrors.BadTransactionDuplicate)
+                    if (validationContext.Error != ConsensusErrors.BadTransactionDuplicate)
                     {
                         // Since ChainHeadersBehavior check PoW, MarkBlockInvalid can't be spammed.
-                        this.logger.LogError("Marking block '{0}' as invalid{1}.", rejectedBlockHash, blockValidationContext.RejectUntil != null ? string.Format(" until {0:yyyy-MM-dd HH:mm:ss}", blockValidationContext.RejectUntil.Value) : "");
-                        this.chainState.MarkBlockInvalid(rejectedBlockHash, blockValidationContext.RejectUntil);
+                        this.logger.LogError("Marking block '{0}' as invalid{1}.", rejectedBlockHash, validationContext.RejectUntil != null ? string.Format(" until {0:yyyy-MM-dd HH:mm:ss}", validationContext.RejectUntil.Value) : "");
+                        this.chainState.MarkBlockInvalid(rejectedBlockHash, validationContext.RejectUntil);
                     } 
                 }
                 else
@@ -414,10 +381,8 @@ namespace Stratis.Bitcoin.Features.Consensus
                     this.logger.LogTrace("Block '{0}' accepted.", this.Tip);
 
                     this.chainState.ConsensusTip = this.Tip;
-
-                    // We really want to flush if we are at the top of the chain.
-                    // Otherwise, we just allow the flush to happen if it is needed.
-                    bool forceFlush = this.Chain.Tip.HashBlock == blockValidationContext.ChainedHeader?.HashBlock;
+                    
+                    bool forceFlush = this.FlushRequired();
                     await this.FlushAsync(forceFlush).ConfigureAwait(false);
 
                     if (this.Tip.ChainWork > this.Chain.Tip.ChainWork)
@@ -429,11 +394,26 @@ namespace Stratis.Bitcoin.Features.Consensus
                         this.logger.LogDebug("Block extends best chain tip to '{0}'.", this.Tip);
                     }
 
-                    this.signals.SignalBlock(blockValidationContext.Block);
+                    this.signals.SignalBlock(validationContext.Block);
                 }
             }
 
-            this.logger.LogTrace("(-):*.{0}='{1}',*.{2}='{3}'", nameof(blockValidationContext.ChainedHeader), blockValidationContext.ChainedHeader, nameof(blockValidationContext.Error), blockValidationContext.Error?.Message);
+            this.logger.LogTrace("(-):*.{0}='{1}',*.{2}='{3}'", nameof(validationContext.ChainedHeader), validationContext.ChainedHeader, nameof(validationContext.Error), validationContext.Error?.Message);
+        }
+
+        /// <summary>
+        /// Calculates if coinview flush is required.
+        /// </summary>
+        /// <remarks>
+        /// For blockchains with max reorg property flush is required when consensus tip is less than max reorg blocks behind the chain tip.
+        /// If there is no max reorg property - flush is required when consensus tip timestamp is less than <see cref="FlushRequiredThresholdSeconds"/> behind the adjusted time.
+        /// </remarks>
+        private bool FlushRequired()
+        {
+            if (this.chainState.MaxReorgLength != 0)
+                return this.Chain.Height - this.Tip.Height < this.chainState.MaxReorgLength;
+            
+            return this.Tip.Header.Time > this.dateTimeProvider.GetAdjustedTimeAsUnixTimestamp() - FlushRequiredThresholdSeconds;
         }
 
         /// <inheritdoc/>
@@ -459,10 +439,11 @@ namespace Stratis.Bitcoin.Features.Consensus
             // Persist the changes to the coinview. This will likely only be stored in memory,
             // unless the coinview treashold is reached.
             this.logger.LogTrace("Saving coinview changes.");
-            await this.UTXOSet.SaveChangesAsync(context.Set.GetCoins(this.UTXOSet), null, this.Tip.HashBlock, context.BlockValidationContext.ChainedHeader.HashBlock).ConfigureAwait(false);
+            UtxoRuleContext utxoRuleContext = context as UtxoRuleContext;
+            await this.UTXOSet.SaveChangesAsync(utxoRuleContext.UnspentOutputSet.GetCoins(this.UTXOSet), null, this.Tip.HashBlock, context.ValidationContext.ChainedHeader.HashBlock).ConfigureAwait(false);
 
             // Set the new tip.
-            this.Tip = context.BlockValidationContext.ChainedHeader;
+            this.Tip = context.ValidationContext.ChainedHeader;
             this.logger.LogTrace("(-)[OK]");
         }
 
@@ -475,6 +456,21 @@ namespace Stratis.Bitcoin.Features.Consensus
                 await cachedCoinView.FlushAsync(force).ConfigureAwait(false);
 
             this.logger.LogTrace("(-)");
+        }
+
+        /// <inheritdoc/>
+        public Target GetNetworkDifficulty()
+        {
+            return this.Tip?.GetWorkRequired(this.nodeSettings.Network.Consensus);
+        }
+
+        /// <inheritdoc />
+        public async Task<UnspentOutputs> GetUnspentTransactionAsync(uint256 trxid)
+        {
+            CoinViews.FetchCoinsResponse response = null;
+            if (this.UTXOSet != null)
+                response = await this.UTXOSet.FetchCoinsAsync(new[] { trxid }).ConfigureAwait(false);
+            return response?.UnspentOutputs?.SingleOrDefault();
         }
     }
 }

@@ -65,6 +65,9 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <summary>Defines a set of options that are used by the consensus rules of Proof Of Stake (POS).</summary>
         private readonly PosConsensusOptions consensusOptions;
 
+        /// <inheritdoc cref="Network"/>
+        private readonly Network network;
+
         /// <inheritdoc />
         /// <param name="network">Specification of the network the node runs on - regtest/testnet/mainnet.</param>
         /// <param name="stakeChain">Database of stake related data for the current blockchain.</param>
@@ -77,6 +80,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             this.stakeChain = stakeChain;
             this.chain = chain;
             this.coinView = coinView;
+            this.network = network;
             this.consensusOptions = network.Consensus.Option<PosConsensusOptions>();
         }
 
@@ -172,7 +176,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         }
 
         /// <inheritdoc/>
-        public void CheckProofOfStake(ContextStakeInformation context, ChainedHeader prevChainedHeader, BlockStake prevBlockStake, Transaction transaction, uint headerBits)
+        public void CheckProofOfStake(PosRuleContext context, ChainedHeader prevChainedHeader, BlockStake prevBlockStake, Transaction transaction, uint headerBits)
         {
             this.logger.LogTrace("({0}:'{1}',{2}.{3}:'{4}',{5}:0x{6:X})", nameof(prevChainedHeader), prevChainedHeader.HashBlock, nameof(prevBlockStake), nameof(prevBlockStake.HashProof), prevBlockStake.HashProof, nameof(headerBits), headerBits);
 
@@ -204,7 +208,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             }
 
             // Min age requirement.
-            if (this.IsConfirmedInNPrevBlocks(prevUtxo, prevChainedHeader, this.consensusOptions.StakeMinConfirmations - 1))
+            if (this.IsConfirmedInNPrevBlocks(prevUtxo, prevChainedHeader, this.consensusOptions.GetStakeMinConfirmations(prevChainedHeader.Height + 1, this.network) - 1))
             {
                 this.logger.LogTrace("(-)[BAD_STAKE_DEPTH]");
                 ConsensusErrors.InvalidStakeDepth.Throw();
@@ -234,7 +238,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         }
 
         /// <inheritdoc/>
-        public void CheckKernel(ContextStakeInformation context, ChainedHeader prevChainedHeader, uint headerBits, long transactionTime, OutPoint prevout)
+        public void CheckKernel(PosRuleContext context, ChainedHeader prevChainedHeader, uint headerBits, long transactionTime, OutPoint prevout)
         {
             this.logger.LogTrace("({0}:'{1}',{2}:0x{3:X},{4}:{5},{6}:'{7}.{8}')", nameof(prevChainedHeader), prevChainedHeader,
                 nameof(headerBits), headerBits, nameof(transactionTime), transactionTime, nameof(prevout), prevout.Hash, prevout.N);
@@ -254,7 +258,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             }
 
             UnspentOutputs prevUtxo = coins.UnspentOutputs[0];
-            if (this.IsConfirmedInNPrevBlocks(prevUtxo, prevChainedHeader, this.consensusOptions.StakeMinConfirmations - 1))
+            if (this.IsConfirmedInNPrevBlocks(prevUtxo, prevChainedHeader, this.consensusOptions.GetStakeMinConfirmations(prevChainedHeader.Height + 1, this.network) - 1))
             {
                 this.logger.LogTrace("(-)[LOW_COIN_AGE]");
                 ConsensusErrors.InvalidStakeDepth.Throw();
@@ -380,7 +384,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// </remarks>
         /// <exception cref="ConsensusErrors.StakeTimeViolation">Thrown in case transaction time is lower than it's own UTXO timestamp.</exception>
         /// <exception cref="ConsensusErrors.StakeHashInvalidTarget">Thrown in case PoS hash doesn't meet target protocol.</exception>
-        private void CheckStakeKernelHash(ContextStakeInformation context, uint headerBits, BlockStake prevBlockStake, UnspentOutputs stakingCoins,
+        private void CheckStakeKernelHash(PosRuleContext context, uint headerBits, BlockStake prevBlockStake, UnspentOutputs stakingCoins,
             OutPoint prevout, uint transactionTime)
         {
             this.logger.LogTrace("({0}:{1:X},{2}.{3}:'{4}',{5}:'{6}/{7}',{8}:'{9}',{10}:{11})",

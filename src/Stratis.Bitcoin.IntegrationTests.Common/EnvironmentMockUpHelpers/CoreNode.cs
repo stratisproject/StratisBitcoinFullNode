@@ -15,6 +15,7 @@ using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.Miner;
 using Stratis.Bitcoin.Features.Miner.Interfaces;
+using Stratis.Bitcoin.IntegrationTests.Common.Runners;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.P2P;
 using Stratis.Bitcoin.P2P.Peer;
@@ -61,7 +62,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
             this.Config = Path.Combine(this.runner.DataFolder, configfile);
             this.ConfigParameters.Import(builder.ConfigParameters);
             this.ports = new int[2];
-            this.FindPorts(this.ports);
+            TestHelper.FindPorts(this.ports);
 
             var loggerFactory = new ExtendedLoggerFactory();
             loggerFactory.AddConsoleWithFilters();
@@ -129,7 +130,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
         public void Start()
         {
             Directory.CreateDirectory(this.runner.DataFolder);
-            
+
             var config = new NodeConfigParameters();
             config.Add("regtest", "1");
             config.Add("rest", "1");
@@ -198,29 +199,6 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
                     break;
                 else
                     Thread.Sleep(200);
-            }
-        }
-
-        private void FindPorts(int[] ports)
-        {
-            int i = 0;
-            while (i < ports.Length)
-            {
-                var port = RandomUtils.GetUInt32() % 4000;
-                port = port + 10000;
-                if (ports.Any(p => p == port))
-                    continue;
-                try
-                {
-                    TcpListener l = new TcpListener(IPAddress.Loopback, (int)port);
-                    l.Start();
-                    l.Stop();
-                    ports[i] = (int)port;
-                    i++;
-                }
-                catch (SocketException)
-                {
-                }
             }
         }
 
@@ -345,7 +323,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
                         this.transactions.Clear();
                     }
                     block.UpdateMerkleRoot();
-                    while (!block.CheckProofOfWork(rpc.Network.Consensus))
+                    while (!block.CheckProofOfWork())
                         block.Header.Nonce = ++nonce;
                     blocks.Add(block);
                     chain.SetTip(block.Header);
@@ -539,7 +517,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
                     block.Transactions.AddRange(passedTransactions);
                 }
                 block.UpdateMerkleRoot();
-                while (!block.CheckProofOfWork(fullNode.Network.Consensus))
+                while (!block.CheckProofOfWork())
                     block.Header.Nonce = ++nonce;
                 blocks.Add(block);
                 if (broadcast)
