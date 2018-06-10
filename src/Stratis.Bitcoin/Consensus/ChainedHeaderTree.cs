@@ -374,12 +374,31 @@ namespace Stratis.Bitcoin.Consensus
             ChainedHeader fork = newConsensusTip.FindFork(oldConsensusTip);
             ChainedHeader currentHeader = newConsensusTip;
 
+            // Consider blocks that became a part of our best chain as consumed.
             while (currentHeader != fork)
             {
                 this.UnconsumedBlocksDataBytes -= currentHeader.Block.BlockSize.Value;
                 this.logger.LogTrace("Size of unconsumed block data is decreased by {0}, new value is {1}.", currentHeader.Block.BlockSize.Value, this.UnconsumedBlocksDataBytes);
 
                 currentHeader = currentHeader.Previous;
+            }
+
+            // When we are switching to a different chain remove block data for blocks that are being reorged away.
+            // We are also marking block data availability as header only because we expect block store to reorganize those blocks shortly.
+            if (fork != oldConsensusTip)
+            {
+                this.logger.LogTrace("Consensus tip is being changed to another chain, removing block data for the old chain.");
+                currentHeader = oldConsensusTip;
+
+                while (currentHeader != fork)
+                {
+                    currentHeader.Block = null;
+                    currentHeader.BlockDataAvailability = BlockDataAvailabilityState.HeaderOnly;
+
+                    this.logger.LogTrace("Block data for '{0}' is removed.", currentHeader);
+
+                    currentHeader = currentHeader.Previous;
+                }
             }
 
             // Switch consensus tip to the new block header.
