@@ -27,6 +27,7 @@ namespace Stratis.ApexD
         {
             try
             {
+                args = args.Concat(new[] { "apiport=38225" }).ToArray();
                 NodeSettings nodeSettings = new NodeSettings(ApexNetwork.ApexTest, protocolVersion: ProtocolVersion.ALT_PROTOCOL_VERSION, args: args);
 
                 var node = new FullNodeBuilder()
