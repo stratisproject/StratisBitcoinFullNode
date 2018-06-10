@@ -169,7 +169,7 @@ namespace Stratis.Bitcoin.Consensus
 
         /// <summary>Specifies for how many blocks from the consensus tip the block data should be kept in the memory.</summary>
         /// <remarks>
-        /// TODO: calculate the actual value based on the max block size. Set threshold in mb.
+        /// TODO: calculate the actual value based on the max block size. Set threshold in bytes. Make it configurable.
         /// </remarks>
         internal const int KeepBlockDataForLastBlocks = 100;
 
