@@ -227,7 +227,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             }
 
             if (!this.CanSend)
-                return;            
+                return;
 
             //if (!(pfrom->GetLocalServices() & NODE_BLOOM) && !pfrom->fWhitelisted)
             //{
@@ -276,7 +276,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
 
             this.logger.LogTrace("Sending transaction inventory to peer '{0}'.", peer.RemoteSocketEndpoint);
             await this.SendAsTxInventoryAsync(peer, transactionsToSend);
-            this.LastMempoolReq = this.mempoolManager.DateTimeProvider.GetTime();            
+            this.LastMempoolReq = this.mempoolManager.DateTimeProvider.GetTime();
 
             this.logger.LogTrace("(-)");
         }
