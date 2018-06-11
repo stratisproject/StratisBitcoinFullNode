@@ -11,7 +11,8 @@ namespace NBitcoin
         {
 
         }
-        uint _TransactionCount;
+
+        private uint _TransactionCount;
         public uint TransactionCount
         {
             get
@@ -24,7 +25,7 @@ namespace NBitcoin
             }
         }
 
-        List<uint256> _Hashes = new List<uint256>();
+        private List<uint256> _Hashes = new List<uint256>();
         public List<uint256> Hashes
         {
             get
@@ -33,7 +34,7 @@ namespace NBitcoin
             }
         }
 
-        BitArray _Flags = new BitArray(0);
+        private BitArray _Flags = new BitArray(0);
         public BitArray Flags
         {
             get

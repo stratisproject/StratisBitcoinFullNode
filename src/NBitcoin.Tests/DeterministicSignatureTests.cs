@@ -37,14 +37,14 @@ namespace NBitcoin.Tests
 
         }
 
-        static Dictionary<string, DerObjectIdentifier> curves;
+        private static Dictionary<string, DerObjectIdentifier> curves;
         public DeterministicSignatureTests()
         {
 
 
         }
 
-        class DeterministicSigTest
+        private class DeterministicSigTest
         {
 
             public BigInteger K

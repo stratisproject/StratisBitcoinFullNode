@@ -23,13 +23,13 @@ namespace NBitcoin
         private const int FingerprintLength = 4;
         private const int ChainCodeLength = 32;
 
-        Key key;
-        byte[] vchChainCode = new byte[ChainCodeLength];
-        uint nChild;
-        byte nDepth;
-        byte[] vchFingerprint = new byte[FingerprintLength];
+        private Key key;
+        private byte[] vchChainCode = new byte[ChainCodeLength];
+        private uint nChild;
+        private byte nDepth;
+        private byte[] vchFingerprint = new byte[FingerprintLength];
 
-        static readonly byte[] hashkey = Encoders.ASCII.DecodeData("Bitcoin seed");
+        private static readonly byte[] hashkey = Encoders.ASCII.DecodeData("Bitcoin seed");
 
         /// <summary>
         /// Gets the depth of this extended key from the root key.

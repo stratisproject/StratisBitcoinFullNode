@@ -106,7 +106,7 @@ namespace NBitcoin.OpenAsset
             return Utils.GetHashCode(_Bytes);
         }
 
-        string _Str;
+        private string _Str;
         public override string ToString()
         {
             if(_Str == null)

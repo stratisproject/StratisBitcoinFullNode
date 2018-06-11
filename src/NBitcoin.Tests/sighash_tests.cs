@@ -6,9 +6,9 @@ namespace NBitcoin.Tests
 {
     public class sighash_tests
     {
-        static Random rand = new Random();
+        private static Random rand = new Random();
 
-        static Script RandomScript()
+        private static Script RandomScript()
         {
             OpcodeType[] oplist = { OpcodeType.OP_FALSE, OpcodeType.OP_1, OpcodeType.OP_2, OpcodeType.OP_3, OpcodeType.OP_CHECKSIG, OpcodeType.OP_IF, OpcodeType.OP_VERIF, OpcodeType.OP_RETURN, OpcodeType.OP_CODESEPARATOR };
             var script = new Script();

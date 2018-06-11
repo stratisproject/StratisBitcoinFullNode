@@ -9,7 +9,7 @@ namespace NBitcoin
 {
     public partial class BitcoinStream
     {
-        VarInt _VarInt = new VarInt(0);
+        private VarInt _VarInt = new VarInt(0);
         
         private void ReadWriteArray<T>(ref T[] data) where T : IBitcoinSerializable
         {
@@ -207,8 +207,8 @@ namespace NBitcoin
             ReadWriteArray(ref data);
         }
 
-        
-        uint256.MutableUint256 _MutableUint256 = new uint256.MutableUint256(uint256.Zero);
+
+        private uint256.MutableUint256 _MutableUint256 = new uint256.MutableUint256(uint256.Zero);
         public void ReadWrite(ref uint256 value)
         {
             value = value ?? uint256.Zero;
@@ -239,7 +239,8 @@ namespace NBitcoin
                 value = list.Select(l=>l.Value).ToList();
             }
         }
-        uint160.MutableUint160 _MutableUint160 = new uint160.MutableUint160(uint160.Zero);
+
+        private uint160.MutableUint160 _MutableUint160 = new uint160.MutableUint160(uint160.Zero);
         public void ReadWrite(ref uint160 value)
         {
             value = value ?? uint160.Zero;

@@ -85,7 +85,8 @@ namespace NBitcoin.Crypto
             return bos.ToArray();
 
         }
-        const string InvalidDERSignature = "Invalid DER signature";
+
+        private const string InvalidDERSignature = "Invalid DER signature";
         public static ECDSASignature FromDER(byte[] sig)
         {
             return new ECDSASignature(sig);

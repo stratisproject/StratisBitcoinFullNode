@@ -52,7 +52,7 @@ namespace NBitcoin
             return null;
         }
 
-        ScriptId _Hash;
+        private ScriptId _Hash;
         public ScriptId Hash
         {
             get
@@ -104,9 +104,9 @@ namespace NBitcoin
             _Network = network;
         }
 
-        string _Str;        
+        private string _Str;
 
-        Script _ScriptPubKey;
+        private Script _ScriptPubKey;
         public Script ScriptPubKey
         {
             get

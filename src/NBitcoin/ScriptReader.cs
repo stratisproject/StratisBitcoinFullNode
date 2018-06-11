@@ -341,7 +341,8 @@ namespace NBitcoin
         {
 
         }
-        string _Name;
+
+        private string _Name;
         public string Name
         {
             get
@@ -352,8 +353,8 @@ namespace NBitcoin
             }
         }
 
-        OpcodeType _Code;
-        static readonly bool[] _ValidOpCode;
+        private OpcodeType _Code;
+        private static readonly bool[] _ValidOpCode;
 
         private static bool[] GetValidOpCode()
         {
@@ -537,8 +538,8 @@ namespace NBitcoin
             }
         }
 
-        static string unknown = "OP_UNKNOWN(0x";
-        const int MAX_SCRIPT_ELEMENT_SIZE = 520;
+        private static string unknown = "OP_UNKNOWN(0x";
+        private const int MAX_SCRIPT_ELEMENT_SIZE = 520;
         internal static Op Read(TextReader textReader)
         {
             string opname = ReadWord(textReader);

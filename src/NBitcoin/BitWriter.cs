@@ -5,9 +5,9 @@ using System.Text;
 
 namespace NBitcoin
 {
-    class BitReader
+    internal class BitReader
     {
-        BitArray array;
+        private BitArray array;
         public BitReader(byte[] data, int bitCount)
         {
             var writer = new BitWriter();
@@ -98,9 +98,10 @@ namespace NBitcoin
             return builder.ToString();
         }
     }
-    class BitWriter
+
+    internal class BitWriter
     {
-        List<bool> values = new List<bool>();
+        private List<bool> values = new List<bool>();
         public int Count
         {
             get
@@ -136,7 +137,7 @@ namespace NBitcoin
         }
 
         //BitArray.CopyTo do not exist in portable lib
-        static byte[] ToByteArray(BitArray bits)
+        private static byte[] ToByteArray(BitArray bits)
         {
             int arrayLength = bits.Length / 8;
             if(bits.Length % 8 != 0)
@@ -165,7 +166,7 @@ namespace NBitcoin
         }
 
 
-        static byte[] SwapEndianBytes(byte[] bytes)
+        private static byte[] SwapEndianBytes(byte[] bytes)
         {
             var output = new byte[bytes.Length];
             for(int i = 0; i < output.Length; i++)
@@ -191,7 +192,7 @@ namespace NBitcoin
             }
         }
 
-        int _Position;
+        private int _Position;
         public int Position
         {
             get

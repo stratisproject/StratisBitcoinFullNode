@@ -84,7 +84,7 @@ namespace NBitcoin.RPC
             _UsernamePassword = null;
         }
 
-        string _CookieFile;
+        private string _CookieFile;
 
         /// <summary>
         /// Username and password
@@ -102,7 +102,8 @@ namespace NBitcoin.RPC
                 _UsernamePassword = value;
             }
         }
-        NetworkCredential _UsernamePassword;
+
+        private NetworkCredential _UsernamePassword;
 
         public override string ToString()
         {

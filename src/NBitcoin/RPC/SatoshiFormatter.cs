@@ -8,7 +8,7 @@ using Newtonsoft.Json.Linq;
 
 namespace NBitcoin.RPC
 {
-    class SatoshiFormatter : RawFormatter
+    internal class SatoshiFormatter : RawFormatter
     {
         private readonly Network network;
 

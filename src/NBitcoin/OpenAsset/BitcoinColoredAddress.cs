@@ -40,7 +40,7 @@ namespace NBitcoin
             }
         }
 
-        BitcoinAddress _Address;
+        private BitcoinAddress _Address;
         public BitcoinAddress Address
         {
             get

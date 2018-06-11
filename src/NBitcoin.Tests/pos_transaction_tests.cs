@@ -1156,8 +1156,10 @@ namespace NBitcoin.Tests
                 items = l.ToArray();
             });
         }
-        delegate void BitcoinStreamCoverageCoreDelegate<TItem>(BitcoinStream bs, ref TItem[] items);
-        void BitcoinStreamCoverageCore<TItem>(TItem[] input, BitcoinStreamCoverageCoreDelegate<TItem> roundTrip)
+
+        private delegate void BitcoinStreamCoverageCoreDelegate<TItem>(BitcoinStream bs, ref TItem[] items);
+
+        private void BitcoinStreamCoverageCore<TItem>(TItem[] input, BitcoinStreamCoverageCoreDelegate<TItem> roundTrip)
         {
             TItem[] before = input.ToArray();
             var ms = new MemoryStream();
@@ -1687,7 +1689,7 @@ namespace NBitcoin.Tests
             }
         }
 
-        static StandardTransactionPolicy EasyPolicy = new StandardTransactionPolicy(Network.StratisMain)
+        private static StandardTransactionPolicy EasyPolicy = new StandardTransactionPolicy(Network.StratisMain)
         {
             MaxTransactionSize = null,
             MaxTxFee = null,
@@ -1695,7 +1697,7 @@ namespace NBitcoin.Tests
             ScriptVerify = ScriptVerify.Standard & ~ScriptVerify.LowS
         };
 
-        static StandardTransactionPolicy RelayPolicy = new StandardTransactionPolicy(Network.StratisMain)
+        private static StandardTransactionPolicy RelayPolicy = new StandardTransactionPolicy(Network.StratisMain)
         {
             MaxTransactionSize = null,
             MaxTxFee = null,
@@ -1746,7 +1748,8 @@ namespace NBitcoin.Tests
             }
             Assert.True(builder.Verify(spending));
         }
-        ScriptVerify allowHighS = ScriptVerify.Standard & ~ScriptVerify.LowS;
+
+        private ScriptVerify allowHighS = ScriptVerify.Standard & ~ScriptVerify.LowS;
         [Fact]
         [Trait("UnitTest", "UnitTest")]
         public void CanUseLockTime()
@@ -1996,7 +1999,7 @@ namespace NBitcoin.Tests
             Invalid
         }
 
-        class Combinaison
+        private class Combinaison
         {
             public SigHash SigHash
             {
@@ -2010,7 +2013,7 @@ namespace NBitcoin.Tests
             }
         }
 
-        IEnumerable<Combinaison> GetCombinaisons()
+        private IEnumerable<Combinaison> GetCombinaisons()
         {
             foreach (SigHash sighash in new[] { SigHash.All, SigHash.Single, SigHash.None })
             {
@@ -2465,7 +2468,7 @@ namespace NBitcoin.Tests
             }
         }
 
-        ScriptVerify ParseFlags(string strFlags)
+        private ScriptVerify ParseFlags(string strFlags)
         {
             ScriptVerify flags = 0;
             string[] words = strFlags.Split(',');
@@ -2659,7 +2662,7 @@ namespace NBitcoin.Tests
             return dummyTransactions;
         }
 
-        class CKeyStore
+        private class CKeyStore
         {
             internal List<Tuple<Key, PubKey>> _Keys = new List<Tuple<Key, PubKey>>();
             internal List<Script> _Scripts = new List<Script>();
@@ -2679,12 +2682,12 @@ namespace NBitcoin.Tests
             }
         }
 
-        void CreateCreditAndSpend(CKeyStore keystore, Script outscript, ref Transaction output, ref Transaction input, bool success = true)
+        private void CreateCreditAndSpend(CKeyStore keystore, Script outscript, ref Transaction output, ref Transaction input, bool success = true)
         {
             CreateCreditAndSpend(keystore, outscript, ref output, ref input, DateTime.Now, success);
         }
 
-        void CreateCreditAndSpend(CKeyStore keystore, Script outscript, ref Transaction output, ref Transaction input, DateTime posTimeStamp, bool success = true)
+        private void CreateCreditAndSpend(CKeyStore keystore, Script outscript, ref Transaction output, ref Transaction input, DateTime posTimeStamp, bool success = true)
         {
             Transaction outputm = Network.StratisMain.Consensus.ConsensusFactory.CreateTransaction();
             outputm.Version = 1;
@@ -2767,7 +2770,7 @@ namespace NBitcoin.Tests
             return builder;
         }
 
-        void CheckWithFlag(Transaction output, Transaction input, ScriptVerify flags, bool success)
+        private void CheckWithFlag(Transaction output, Transaction input, ScriptVerify flags, bool success)
         {
             Transaction inputi = input.Clone(network: Network.StratisMain);
             var ctx = new ScriptEvaluationContext(Network.StratisMain);
@@ -2776,7 +2779,7 @@ namespace NBitcoin.Tests
             Assert.True(ret == success);
         }
 
-        static Script PushAll(ContextStack<byte[]> values)
+        private static Script PushAll(ContextStack<byte[]> values)
         {
             var result = new List<Op>();
             foreach (byte[] v in values.Reverse())
@@ -2793,7 +2796,7 @@ namespace NBitcoin.Tests
             return new Script(result.ToArray());
         }
 
-        void ReplaceRedeemScript(TxIn input, Script redeemScript)
+        private void ReplaceRedeemScript(TxIn input, Script redeemScript)
         {
             var ctx = new ScriptEvaluationContext(Network.StratisMain);
             ctx.ScriptVerify = ScriptVerify.StrictEnc;

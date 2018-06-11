@@ -342,7 +342,7 @@ namespace NBitcoin
 
     public class Script
     {
-        static readonly Script _Empty = new Script();
+        private static readonly Script _Empty = new Script();
         public static Script Empty
         {
             get
@@ -506,7 +506,7 @@ namespace NBitcoin
             return Encoders.Hex.EncodeData(_Script);
         }
 
-        Script _PaymentScript;
+        private Script _PaymentScript;
 
         /// <summary>
         /// Get the P2SH scriptPubKey of this script
@@ -838,7 +838,7 @@ namespace NBitcoin
             return n;
         }
 
-        ScriptId _Hash;
+        private ScriptId _Hash;
         public ScriptId Hash
         {
             get
@@ -846,7 +846,8 @@ namespace NBitcoin
                 return _Hash ?? (_Hash = new ScriptId(this));
             }
         }
-        WitScriptId _WitHash;
+
+        private WitScriptId _WitHash;
         public WitScriptId WitHash
         {
             get

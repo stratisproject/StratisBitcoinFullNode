@@ -8,7 +8,7 @@ namespace NBitcoin
     {
         public class MutableUint256 : IBitcoinSerializable
         {
-            uint256 _Value;
+            private uint256 _Value;
             public uint256 Value
             {
                 get
@@ -44,13 +44,14 @@ namespace NBitcoin
                 }
             }
         }
-        static readonly uint256 _Zero = new uint256();
+
+        private static readonly uint256 _Zero = new uint256();
         public static uint256 Zero
         {
             get { return _Zero; }
         }
 
-        static readonly uint256 _One = new uint256(1);
+        private static readonly uint256 _One = new uint256(1);
         public static uint256 One
         {
             get { return _One; }
@@ -449,7 +450,7 @@ namespace NBitcoin
     {
         public class MutableUint160 : IBitcoinSerializable
         {
-            uint160 _Value;
+            private uint160 _Value;
             public uint160 Value
             {
                 get
@@ -485,13 +486,14 @@ namespace NBitcoin
                 }
             }
         }
-        static readonly uint160 _Zero = new uint160();
+
+        private static readonly uint160 _Zero = new uint160();
         public static uint160 Zero
         {
             get { return _Zero; }
         }
 
-        static readonly uint160 _One = new uint160(1);
+        private static readonly uint160 _One = new uint160(1);
         public static uint160 One
         {
             get { return _One; }

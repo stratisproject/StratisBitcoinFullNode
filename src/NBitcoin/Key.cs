@@ -22,7 +22,7 @@ namespace NBitcoin
             return Network.Parse<BitcoinEncryptedSecret>(wif, network).GetKey(password);
         }
 
-        byte[] vch = new byte[0];
+        private byte[] vch = new byte[0];
         internal ECKey _ECKey;
         public bool IsCompressed
         {
@@ -75,7 +75,7 @@ namespace NBitcoin
             return candidateKey > 0 && candidateKey < N;
         }
 
-        PubKey _PubKey;
+        private PubKey _PubKey;
 
         public PubKey PubKey
         {

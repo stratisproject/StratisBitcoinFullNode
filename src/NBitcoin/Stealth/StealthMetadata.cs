@@ -49,7 +49,7 @@ namespace NBitcoin.Stealth
             Fill(this, new Script(OpcodeType.OP_RETURN, Op.GetPushOp(data.ToArray())));
         }
 
-        static TxNullDataTemplate _Template = new TxNullDataTemplate(1024 * 4);
+        private static TxNullDataTemplate _Template = new TxNullDataTemplate(1024 * 4);
         private static bool Fill(StealthMetadata output, Script metadata)
         {
             byte[][] datas = _Template.ExtractScriptPubKeyParameters(Network.Main, metadata);

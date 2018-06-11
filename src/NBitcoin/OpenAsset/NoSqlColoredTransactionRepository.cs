@@ -33,7 +33,7 @@ namespace NBitcoin.OpenAsset
             }
         }
 
-        ITransactionRepository _Transactions;
+        private ITransactionRepository _Transactions;
         #region IColoredTransactionRepository Members
 
         public ITransactionRepository Transactions

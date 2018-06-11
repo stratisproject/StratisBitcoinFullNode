@@ -89,12 +89,12 @@ namespace NBitcoin.Crypto
 
         public class SipHasher
         {
-            ulong v_0;
-            ulong v_1;
-            ulong v_2;
-            ulong v_3;
-            ulong count;
-            ulong tmp;
+            private ulong v_0;
+            private ulong v_1;
+            private ulong v_2;
+            private ulong v_3;
+            private ulong count;
+            private ulong tmp;
             public SipHasher(ulong k0, ulong k1)
             {
                 v_0 = 0x736f6d6570736575UL ^ k0;
@@ -229,7 +229,7 @@ namespace NBitcoin.Crypto
                 }
             }
 
-            static void SIPROUND(ref ulong v_0, ref ulong v_1, ref ulong v_2, ref ulong v_3)
+            private static void SIPROUND(ref ulong v_0, ref ulong v_1, ref ulong v_2, ref ulong v_3)
             {
                 v_0 += v_1;
                 v_1 = rotl64(v_1, 13);

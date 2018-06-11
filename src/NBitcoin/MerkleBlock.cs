@@ -10,7 +10,7 @@ namespace NBitcoin
 
         }
         // Public only for unit testing
-        BlockHeader header;
+        private BlockHeader header;
 
         public BlockHeader Header
         {
@@ -23,7 +23,8 @@ namespace NBitcoin
                 header = value;
             }
         }
-        PartialMerkleTree _PartialMerkleTree;
+
+        private PartialMerkleTree _PartialMerkleTree;
 
         public PartialMerkleTree PartialMerkleTree
         {

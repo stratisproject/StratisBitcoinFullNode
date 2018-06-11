@@ -16,7 +16,7 @@ namespace NBitcoin
 
     public class Scope : IDisposable
     {
-        Action close;
+        private Action close;
         public Scope(Action open, Action close)
         {
             this.close = close;
@@ -48,7 +48,7 @@ namespace NBitcoin
     // TODO: Make NetworkOptions required in the constructors of this class.
     public partial class BitcoinStream
     {
-        int maxArraySize = 1024 * 1024;
+        private int maxArraySize = 1024 * 1024;
         public int MaxArraySize
         {
             get
@@ -62,7 +62,7 @@ namespace NBitcoin
         }
 
         //ReadWrite<T>(ref T data)
-        static MethodInfo readWriteTyped;
+        private static MethodInfo readWriteTyped;
         static BitcoinStream()
         {
             readWriteTyped = typeof(BitcoinStream)
@@ -355,7 +355,7 @@ namespace NBitcoin
             });
         }
 
-        ProtocolVersion protocolVersion = ProtocolVersion.PROTOCOL_VERSION;
+        private ProtocolVersion protocolVersion = ProtocolVersion.PROTOCOL_VERSION;
         public ProtocolVersion ProtocolVersion
         {
             get
@@ -368,7 +368,7 @@ namespace NBitcoin
             }
         }
 
-        TransactionOptions transactionSupportedOptions = TransactionOptions.All;
+        private TransactionOptions transactionSupportedOptions = TransactionOptions.All;
         public TransactionOptions TransactionOptions
         {
             get

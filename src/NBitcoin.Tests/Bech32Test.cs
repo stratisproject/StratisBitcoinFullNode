@@ -65,8 +65,8 @@ namespace NBitcoin.Tests
             }
         }
 
-        Bech32Encoder bech32 = Encoders.Bech32("bc");
-        Bech32Encoder tbech32 = Encoders.Bech32("tb");
+        private Bech32Encoder bech32 = Encoders.Bech32("bc");
+        private Bech32Encoder tbech32 = Encoders.Bech32("tb");
         [Fact]
         public void ValidAddress()
         {

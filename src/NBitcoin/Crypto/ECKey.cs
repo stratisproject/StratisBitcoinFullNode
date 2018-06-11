@@ -17,7 +17,8 @@ namespace NBitcoin.Crypto
                 return _Key as ECPrivateKeyParameters;
             }
         }
-        readonly ECKeyParameters _Key;
+
+        private readonly ECKeyParameters _Key;
 
 
         public static readonly BigInteger HALF_CURVE_ORDER = null;
@@ -53,7 +54,7 @@ namespace NBitcoin.Crypto
             }
         }
 
-        ECDomainParameters _DomainParameter;
+        private ECDomainParameters _DomainParameter;
         public ECDomainParameters DomainParameter
         {
             get

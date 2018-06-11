@@ -7,7 +7,7 @@ namespace NBitcoin.OpenAsset
 {
     public class ColorMarker : IBitcoinSerializable
     {
-        const ushort Tag = 0x414f;
+        private const ushort Tag = 0x414f;
         public static ColorMarker TryParse(string script)
         {
             return TryParse(new Script(script));
@@ -180,7 +180,8 @@ namespace NBitcoin.OpenAsset
                 throw new ArgumentNullException("quantities");
             Quantities = quantities;
         }
-        ushort _Version = 1;
+
+        private ushort _Version = 1;
         public ushort Version
         {
             get
@@ -193,7 +194,7 @@ namespace NBitcoin.OpenAsset
             }
         }
 
-        ulong[] _Quantities;
+        private ulong[] _Quantities;
         public ulong[] Quantities
         {
             get
@@ -220,7 +221,7 @@ namespace NBitcoin.OpenAsset
             SetQuantity((uint)index, quantity);
         }
 
-        byte[] _Metadata = new byte[0];
+        private byte[] _Metadata = new byte[0];
         public byte[] Metadata
         {
             get
@@ -257,7 +258,8 @@ namespace NBitcoin.OpenAsset
             stream.ReadWriteAsVarString(ref _Metadata);
             return ms.ToArray();
         }
-        static readonly TxNullDataTemplate _Template = new TxNullDataTemplate(1024 * 5);
+
+        private static readonly TxNullDataTemplate _Template = new TxNullDataTemplate(1024 * 5);
 
         public static ColorMarker Get(Transaction transaction)
         {

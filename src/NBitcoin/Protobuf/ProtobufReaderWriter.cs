@@ -11,7 +11,7 @@ namespace NBitcoin.Protobuf
         internal const int PROTOBUF_LENDELIM = 2; // string, bytes, embedded messages, packed repeated fields
         internal const int PROTOBUF_32BIT = 5; // fixed32, sfixed32, float
 
-        Stream _Inner;
+        private Stream _Inner;
         public Stream Inner
         {
             get
@@ -65,7 +65,7 @@ namespace NBitcoin.Protobuf
             Position += ioIndex;
         }
 
-        Encoding Encoding = Encoding.UTF8;
+        private Encoding Encoding = Encoding.UTF8;
 
         public void WriteKey(int key, int type)
         {
@@ -129,7 +129,7 @@ namespace NBitcoin.Protobuf
             Position += value.Length;
         }
 
-        int _Position;
+        private int _Position;
         public int Position
         {
             get
@@ -144,6 +144,6 @@ namespace NBitcoin.Protobuf
             }
         }
 
-        const int MaxLength = 60000;
+        private const int MaxLength = 60000;
     }
 }

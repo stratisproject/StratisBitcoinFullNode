@@ -469,7 +469,7 @@ namespace NBitcoin
             return new BigInteger(1, data);
         }
 
-        static readonly TraceSource _TraceSource = new TraceSource("NBitcoin");
+        private static readonly TraceSource _TraceSource = new TraceSource("NBitcoin");
 
         internal static bool error(string msg)
         {
@@ -483,7 +483,7 @@ namespace NBitcoin
         }
 
 
-        static DateTimeOffset unixRef = new DateTimeOffset(1970, 1, 1, 0, 0, 0, TimeSpan.Zero);
+        private static DateTimeOffset unixRef = new DateTimeOffset(1970, 1, 1, 0, 0, 0, TimeSpan.Zero);
 
         public static uint DateTimeToUnixTime(DateTimeOffset dt)
         {

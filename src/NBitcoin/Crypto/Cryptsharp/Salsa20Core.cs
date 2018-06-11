@@ -28,7 +28,7 @@ namespace NBitcoin.Crypto
     /// </summary>
     public static class Salsa20Core
     {
-        static uint R(uint a, int b)
+        private static uint R(uint a, int b)
         {
             return (a << b) | (a >> (32 - b));
         }

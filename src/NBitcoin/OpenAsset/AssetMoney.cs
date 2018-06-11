@@ -5,7 +5,7 @@ namespace NBitcoin.OpenAsset
 {
     public class AssetMoney : IComparable, IComparable<AssetMoney>, IEquatable<AssetMoney>, IMoney
     {
-        long _Quantity;
+        private long _Quantity;
         public long Quantity
         {
             get

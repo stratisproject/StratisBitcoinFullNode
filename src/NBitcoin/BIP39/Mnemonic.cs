@@ -82,11 +82,11 @@ namespace NBitcoin
             return RandomUtils.GetBytes(entArray[i] / 8);
         }
 
-        static readonly int[] msArray = new[] { 12, 15, 18, 21, 24 };
-        static readonly int[] csArray = new[] { 4, 5, 6, 7, 8 };
-        static readonly int[] entArray = new[] { 128, 160, 192, 224, 256 };
+        private static readonly int[] msArray = new[] { 12, 15, 18, 21, 24 };
+        private static readonly int[] csArray = new[] { 4, 5, 6, 7, 8 };
+        private static readonly int[] entArray = new[] { 128, 160, 192, 224, 256 };
 
-        bool? _IsValidChecksum;
+        private bool? _IsValidChecksum;
         public bool IsValidChecksum
         {
             get
@@ -235,7 +235,7 @@ namespace NBitcoin
             return new ExtKey(DeriveSeed(passphrase));
         }
 
-        static Byte[] Concat(Byte[] source1, Byte[] source2)
+        private static Byte[] Concat(Byte[] source1, Byte[] source2)
         {
             //Most efficient way to merge two arrays this according to http://stackoverflow.com/questions/415291/best-way-to-combine-two-or-more-byte-arrays-in-c-sharp
             var buffer = new Byte[source1.Length + source2.Length];
@@ -246,7 +246,7 @@ namespace NBitcoin
         }
 
 
-        string _Mnemonic;
+        private string _Mnemonic;
         public override string ToString()
         {
             return _Mnemonic;

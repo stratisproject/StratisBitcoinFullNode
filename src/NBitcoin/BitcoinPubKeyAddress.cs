@@ -58,7 +58,7 @@ namespace NBitcoin
             return key.Hash == Hash;
         }
 
-        KeyId _KeyId;
+        private KeyId _KeyId;
         public KeyId Hash
         {
             get

@@ -45,7 +45,7 @@ namespace NBitcoin
 {
     public class RandomNumberGeneratorRandom : IRandom
     {
-        readonly RandomNumberGenerator _Instance;
+        private readonly RandomNumberGenerator _Instance;
         public RandomNumberGeneratorRandom()
         {
             _Instance = RandomNumberGenerator.Create();

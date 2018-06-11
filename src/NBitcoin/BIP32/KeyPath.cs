@@ -53,7 +53,7 @@ namespace NBitcoin
             _Indexes = indexes;
         }
 
-        readonly uint[] _Indexes;
+        private readonly uint[] _Indexes;
         public uint this[int index]
         {
             get
@@ -137,7 +137,7 @@ namespace NBitcoin
             return ToString().GetHashCode();
         }
 
-        string _Path;
+        private string _Path;
         public override string ToString()
         {
             return _Path ?? (_Path = string.Join("/", _Indexes.Select(ToString).ToArray()));

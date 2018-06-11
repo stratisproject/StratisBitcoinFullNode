@@ -111,7 +111,7 @@ namespace NBitcoin
         }
 
 
-        void SetNull()
+        private void SetNull()
         {
             hash = uint256.Zero;
             n = uint.MaxValue;
@@ -185,9 +185,10 @@ namespace NBitcoin
         {
             this.prevout = prevout;
         }
-        OutPoint prevout = new OutPoint();
-        Script scriptSig = Script.Empty;
-        uint nSequence = uint.MaxValue;
+
+        private OutPoint prevout = new OutPoint();
+        private Script scriptSig = Script.Empty;
+        private uint nSequence = uint.MaxValue;
 
         public Sequence Sequence
         {
@@ -235,7 +236,7 @@ namespace NBitcoin
             return scriptSig.GetSigner(network) ?? witScript.GetSigner(network);
         }
 
-        WitScript witScript = WitScript.Empty;
+        private WitScript witScript = WitScript.Empty;
 
         /// <summary>
         /// The witness script (Witness script is not serialized and deserialized at the TxIn level, but at the Transaction level)
@@ -303,7 +304,7 @@ namespace NBitcoin
         // * if e==9, we only know the resulting number is not zero, so output 1 + 10*(n - 1) + 9
         // (this is decodable, as d is in [1-9] and e is in [0-9])
 
-        ulong CompressAmount(ulong n)
+        private ulong CompressAmount(ulong n)
         {
             if(n == 0)
                 return 0;
@@ -325,7 +326,7 @@ namespace NBitcoin
             }
         }
 
-        ulong DecompressAmount(ulong x)
+        private ulong DecompressAmount(ulong x)
         {
             // x = 0  OR  x = 1+10*(9*n + d - 1) + e  OR  x = 1+10*(n - 1) + 9
             if(x == 0)
@@ -403,8 +404,8 @@ namespace NBitcoin
         // this can potentially be extended together with a new nVersion for
         // transactions, in which case this value becomes dependent on nVersion
         // and nHeight of the enclosing transaction.
-        const uint nSpecialScripts = 6;
-        byte[] _Script;
+        private const uint nSpecialScripts = 6;
+        private byte[] _Script;
         public byte[] ScriptBytes
         {
             get
@@ -426,7 +427,7 @@ namespace NBitcoin
             return new Script(_Script);
         }
 
-        byte[] Compress()
+        private byte[] Compress()
         {
             byte[] result = null;
             Script script = Script.FromBytesUnsafe(_Script);
@@ -466,7 +467,7 @@ namespace NBitcoin
             return null;
         }
 
-        Script Decompress(uint nSize, byte[] data)
+        private Script Decompress(uint nSize, byte[] data)
         {
             switch(nSize)
             {
@@ -546,7 +547,7 @@ namespace NBitcoin
 
     public class TxOut : IBitcoinSerializable, IDestination
     {
-        Script publicKey = Script.Empty;
+        private Script publicKey = Script.Empty;
         public Script ScriptPubKey
         {
             get
@@ -579,8 +580,8 @@ namespace NBitcoin
             ScriptPubKey = scriptPubKey;
         }
 
-        readonly static Money NullMoney = new Money(-1);
-        Money _Value = NullMoney;
+        private readonly static Money NullMoney = new Money(-1);
+        private Money _Value = NullMoney;
         public Money Value
         {
             get
@@ -845,7 +846,7 @@ namespace NBitcoin
 
     public class WitScript
     {
-        byte[][] _Pushes;
+        private byte[][] _Pushes;
         public WitScript(string script)
         {
             string[] parts = script.Split(new[] { '\t', ' ' }, StringSplitOptions.RemoveEmptyEntries);
@@ -903,7 +904,8 @@ namespace NBitcoin
             var stream = new BitcoinStream(ms, false);
             ReadCore(stream);
         }
-        WitScript()
+
+        private WitScript()
         {
 
         }
@@ -926,7 +928,8 @@ namespace NBitcoin
             script.ReadCore(stream);
             return script;
         }
-        void ReadCore(BitcoinStream stream)
+
+        private void ReadCore(BitcoinStream stream)
         {
             var pushes = new List<byte[]>();
             uint pushCount = 0;
@@ -961,7 +964,7 @@ namespace NBitcoin
             }
         }
 
-        static WitScript _Empty = new WitScript(new byte[0][], true);
+        private static WitScript _Empty = new WitScript(new byte[0][], true);
 
         public static WitScript Empty
         {
@@ -1084,9 +1087,9 @@ namespace NBitcoin
         All = Witness
     }
 
-    class Witness
+    internal class Witness
     {
-        TxInList _Inputs;
+        private TxInList _Inputs;
         public Witness(TxInList inputs)
         {
             _Inputs = inputs;
@@ -1129,7 +1132,7 @@ namespace NBitcoin
             }
         }
 
-        uint nVersion = 1;
+        private uint nVersion = 1;
 
         public uint Version
         {
@@ -1157,9 +1160,9 @@ namespace NBitcoin
             }
         }
 
-        TxInList vin;
-        TxOutList vout;
-        LockTime nLockTime;
+        private TxInList vin;
+        private TxOutList vout;
+        private LockTime nLockTime;
 
         public Transaction()
         {
@@ -1241,7 +1244,7 @@ namespace NBitcoin
         }
 
         //Since it is impossible to serialize a transaction with 0 input without problems during deserialization with wit activated, we fit a flag in the version to workaround it
-        const uint NoDummyInput = (1 << 27);
+        private const uint NoDummyInput = (1 << 27);
 
         #region IBitcoinSerializable Members
 
@@ -1388,7 +1391,7 @@ namespace NBitcoin
             return clone;
         }
 
-        uint256[] _Hashes = null;
+        private uint256[] _Hashes = null;
 
         public uint256 GetWitHash()
         {

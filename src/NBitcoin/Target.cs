@@ -10,7 +10,7 @@ namespace NBitcoin
     /// </summary>
     public class Target
     {
-        static Target _Difficulty1 = new Target(new byte[] { 0x1d, 0x00, 0xff, 0xff });
+        private static Target _Difficulty1 = new Target(new byte[] { 0x1d, 0x00, 0xff, 0xff });
         public static Target Difficulty1
         {
             get
@@ -37,8 +37,7 @@ namespace NBitcoin
         }
 
 
-
-        BigInteger _Target;
+        private BigInteger _Target;
 
         public Target(byte[] compact)
         {
@@ -81,7 +80,7 @@ namespace NBitcoin
             return (uint)val[0] + (uint)(val[1] << 8) + (uint)(val[2] << 16) + (uint)(exp << 24);
         }
 
-        double? _Difficulty;
+        private double? _Difficulty;
         
         public double Difficulty
         {

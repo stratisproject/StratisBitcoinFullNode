@@ -196,7 +196,7 @@ namespace NBitcoin
             return vchRet.ToArray();
         }
 
-        static byte[] pchOnionCat = new byte[] { 0xFD, 0x87, 0xD8, 0x7E, 0xEB, 0x43 };
+        private static byte[] pchOnionCat = new byte[] { 0xFD, 0x87, 0xD8, 0x7E, 0xEB, 0x43 };
         public static bool IsTor(this IPAddress address)
         {
             byte[] bytes = address.GetAddressBytes();
@@ -209,7 +209,7 @@ namespace NBitcoin
             return address.MapToIPv6Ex();
         }
 
-        static bool? _IsRunningOnMono;
+        private static bool? _IsRunningOnMono;
         public static bool IsRunningOnMono()
         {
             if(_IsRunningOnMono == null)
