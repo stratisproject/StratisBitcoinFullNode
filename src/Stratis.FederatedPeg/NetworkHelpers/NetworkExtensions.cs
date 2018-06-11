@@ -1,5 +1,7 @@
 ﻿using NBitcoin;
 using Stratis.Sidechains.Features.BlockchainGeneration;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace Stratis.FederatedPeg
 {
@@ -8,6 +10,11 @@ namespace Stratis.FederatedPeg
     /// </summary>
     public static class NetworkExtensions
     {
+        public static readonly List<string> MainChainNames = new List<Network> {
+            Network.StratisMain, Network.StratisTest, Network.StratisRegTest,
+            Network.Main, Network.TestNet, Network.RegTest
+        }.Select(n => n.Name.ToLower()).ToList();
+
         /// <summary>
         /// Returns whether we are on a sidechain or a mainchain network.
         /// </summary>
@@ -15,7 +22,7 @@ namespace Stratis.FederatedPeg
         /// <returns>This function tests for a sidechain and returns mainchain for any non sidechain network.</returns>
         public static Chain ToChain(this Network network)
         {
-            return network.Name.ToLower().Contains("sidechain") ? Chain.Sidechain : Chain.Mainchain;
+            return MainChainNames.Contains(network.Name.ToLower()) ? Chain.Mainchain : Chain.Sidechain;
         }
 
         /// <summary>
