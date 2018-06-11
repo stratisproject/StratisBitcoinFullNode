@@ -105,7 +105,7 @@ namespace Stratis.Bitcoin.Controllers
                 Version = this.fullNode.Version?.ToString() ?? "0",
                 ProtocolVersion = (uint)(this.nodeSettings.ProtocolVersion),
                 Difficulty = GetNetworkDifficulty(this.networkDifficulty)?.Difficulty ?? 0,
-                Agent = this.nodeSettings.Agent,
+                Agent = this.connectionManager.ConnectionSettings.Agent,
                 ProcessId = Process.GetCurrentProcess().Id,
                 Network = this.fullNode.Network.Name,
                 ConsensusHeight = this.chainState.ConsensusTip.Height,
