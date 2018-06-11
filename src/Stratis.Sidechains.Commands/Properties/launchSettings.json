@@ -1,8 +1,0 @@
-{
-  "profiles": {
-    "Stratis.Sidechains.Commands": {
-      "commandName": "Executable",
-      "executablePath": "%SystemRoot%\\system32\\WindowsPowerShell\\v1.0\\powershell.exe"
-    }
-  }
-}

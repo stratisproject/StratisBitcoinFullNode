@@ -32,10 +32,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.FederatedPeg.Featur
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.Bitcoin.Features.GeneralPurposeWallet", "Stratis.Bitcoin.Features.GeneralPurposeWallet\Stratis.Bitcoin.Features.GeneralPurposeWallet.csproj", "{A1540310-B5B0-4A78-8017-22204B46B7AA}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.Sidechains.Commands", "Stratis.Sidechains.Commands\Stratis.Sidechains.Commands.csproj", "{C0713C90-AEA9-4E92-AFC1-CF404E0CE267}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.Sidechains.Commands.Tests", "Stratis.Sidechains.Commands.Tests\Stratis.Sidechains.Commands.Tests.csproj", "{D7719E99-E532-4CB5-93C8-874DD47498EB}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.Sidechains.Features.BlockchainGeneration", "Stratis.Sidechains.Features.BlockchainGeneration\Stratis.Sidechains.Features.BlockchainGeneration.csproj", "{3DEB5772-3918-483E-8B6B-7BDD9AA6B6B9}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.Sidechains.Features.BlockchainGeneration.IntegrationTests", "Stratis.Sidechains.Features.BlockchainGeneration.IntegrationTests\Stratis.Sidechains.Features.BlockchainGeneration.IntegrationTests.csproj", "{0B889C55-6F30-48CC-B51E-F635F8644B28}"
@@ -50,7 +46,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.FederatedSidechains
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.FederatedSidechains.Initialisation.Tests", "Stratis.FederatedSidechains.Initialisation.Tests\Stratis.FederatedSidechains.Initialisation.Tests.csproj", "{3D106928-3A8E-4EB1-9F9A-45856DBAA16B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Stratis.ApexD", "Stratis.ApexD\Stratis.ApexD.csproj", "{C3FF2EF8-50B6-43D8-AC78-BCFEBF7DE394}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.ApexD", "Stratis.ApexD\Stratis.ApexD.csproj", "{C3FF2EF8-50B6-43D8-AC78-BCFEBF7DE394}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -106,14 +102,6 @@ Global
 		{A1540310-B5B0-4A78-8017-22204B46B7AA}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A1540310-B5B0-4A78-8017-22204B46B7AA}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A1540310-B5B0-4A78-8017-22204B46B7AA}.Release|Any CPU.Build.0 = Release|Any CPU
-		{C0713C90-AEA9-4E92-AFC1-CF404E0CE267}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{C0713C90-AEA9-4E92-AFC1-CF404E0CE267}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{C0713C90-AEA9-4E92-AFC1-CF404E0CE267}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{C0713C90-AEA9-4E92-AFC1-CF404E0CE267}.Release|Any CPU.Build.0 = Release|Any CPU
-		{D7719E99-E532-4CB5-93C8-874DD47498EB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{D7719E99-E532-4CB5-93C8-874DD47498EB}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{D7719E99-E532-4CB5-93C8-874DD47498EB}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{D7719E99-E532-4CB5-93C8-874DD47498EB}.Release|Any CPU.Build.0 = Release|Any CPU
 		{3DEB5772-3918-483E-8B6B-7BDD9AA6B6B9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{3DEB5772-3918-483E-8B6B-7BDD9AA6B6B9}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{3DEB5772-3918-483E-8B6B-7BDD9AA6B6B9}.Release|Any CPU.ActiveCfg = Release|Any CPU
