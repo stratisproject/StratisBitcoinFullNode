@@ -1,6 +1,9 @@
-﻿using Moq;
+﻿using System;
+using System.IO;
+using Moq;
 using NBitcoin;
 using Stratis.Bitcoin.Configuration;
+using Stratis.Bitcoin.Tests.Common;
 using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.Receipts;
 using Xunit;
@@ -13,8 +16,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
         public DBreezeContractReceiptStorageTest()
         {
-            TestDirectory folder = TestDirectory.Create();
-            this.receiptStorage = new DBreezeContractReceiptStorage(new DataFolder(folder.FolderName));
+            var folder = TestBase.AssureEmptyDir(Path.Combine(AppContext.BaseDirectory, "TestData"));
+            this.receiptStorage = new DBreezeContractReceiptStorage(new DataFolder(folder));
         }
 
         [Fact]
