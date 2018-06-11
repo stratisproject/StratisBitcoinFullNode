@@ -1,6 +1,9 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Reflection;
 using System.Text;
 using NBitcoin;
+using Nethereum.RLP;
 using Newtonsoft.Json;
 using Stratis.SmartContracts.Core;
 
@@ -48,60 +51,105 @@ namespace Stratis.SmartContracts.Executor.Reflection.Serialization
                 return BitConverter.GetBytes((ulong)o);
 
             if (o is sbyte)
+            {
+                var bytes = BitConverter.GetBytes((sbyte) o);
                 return BitConverter.GetBytes((sbyte)o);
+            }
 
             if (o is string)
                 return Encoding.UTF8.GetBytes((string)o);
             
             // This is obviously nasty, but our goal is to add custom data type support first and optimize later
             if (o.GetType().IsValueType)
-                return Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(o, Formatting.None, JsonSerializerSettings));
+                return SerializeType(o, network);
+                //return Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(o, Formatting.None, JsonSerializerSettings));
 
             throw new Exception(string.Format("{0} is not supported.", o.GetType().Name));
         }
 
+        private byte[] SerializeType(object o, Network network)
+        {
+            List<byte[]> toEncode = new List<byte[]>(); 
+
+            foreach (FieldInfo field in o.GetType().GetFields())
+            {
+                object value = field.GetValue(o);
+                byte[] serialized = Serialize(value, network);
+                toEncode.Add(RLP.EncodeElement(serialized));
+            }
+
+            return RLP.EncodeList(toEncode.ToArray());
+        }
+
         public T Deserialize<T>(byte[] stream, Network network)
         {
-            if (stream == null || stream.Length == 0)
+            object deserialized = Deserialize(typeof(T), stream, network);
+            if (deserialized == null)
                 return default(T);
 
-            if (typeof(T) == typeof(byte[]))
-                return (T)(object)stream;
+            return (T) deserialized;
+        }
 
-            if (typeof(T) == typeof(byte))
-                return (T)(object)stream[0];
+        private object Deserialize(Type type, byte[] stream, Network network)
+        {
+            if (stream == null || stream.Length == 0)
+                return null;
 
-            if (typeof(T) == typeof(char))
-                return (T)(object)Convert.ToChar(stream[0]);
+            if (type == typeof(byte[]))
+                return (object)stream;
 
-            if (typeof(T) == typeof(Address))
-                return (T)(object)new uint160(stream).ToAddress(network);
+            if (type == typeof(byte))
+                return (object)stream[0];
 
-            if (typeof(T) == typeof(bool))
-                return (T)(object)(Convert.ToBoolean(stream[0]));
+            if (type == typeof(char))
+                return (object)Convert.ToChar(stream[0]);
 
-            if (typeof(T) == typeof(int))
-                return (T)(object)(BitConverter.ToInt32(stream, 0));
+            if (type == typeof(Address))
+                return (object)new uint160(stream).ToAddress(network);
 
-            if (typeof(T) == typeof(long))
-                return (T)(object)(BitConverter.ToInt64(stream, 0));
+            if (type == typeof(bool))
+                return (object)(Convert.ToBoolean(stream[0]));
 
-            if (typeof(T) == typeof(sbyte))
-                return (T)(object)(Convert.ToSByte(stream[0]));
+            if (type == typeof(int))
+                return (object)(BitConverter.ToInt32(stream, 0));
 
-            if (typeof(T) == typeof(string))
-                return (T)(object)(Encoding.UTF8.GetString(stream));
+            if (type == typeof(long))
+                return (object)(BitConverter.ToInt64(stream, 0));
 
-            if (typeof(T) == typeof(uint))
-                return (T)(object)(BitConverter.ToUInt32(stream, 0));
+            if (type == typeof(sbyte))
+                return (object)(byte[]) stream;
 
-            if (typeof(T) == typeof(ulong))
-                return (T)(object)(BitConverter.ToUInt64(stream, 0));
+            if (type == typeof(string))
+                return (object)(Encoding.UTF8.GetString(stream));
 
-            if (typeof(T).IsValueType)
-                return JsonConvert.DeserializeObject<T>(Encoding.UTF8.GetString(stream), JsonSerializerSettings);
+            if (type == typeof(uint))
+                return (object)(BitConverter.ToUInt32(stream, 0));
 
-            throw new Exception(string.Format("{0} is not supported.", typeof(T).Name));
+            if (type == typeof(ulong))
+                return (object)(BitConverter.ToUInt64(stream, 0));
+
+            if (type.IsValueType)
+                return DeserializeType(type, stream, network);
+                //return JsonConvert.DeserializeObject<T>(Encoding.UTF8.GetString(stream), JsonSerializerSettings);
+
+            throw new Exception(string.Format("{0} is not supported.", type.Name));
+        }
+
+        private object DeserializeType(Type type, byte[] bytes, Network network)
+        {
+            RLPCollection collection = (RLPCollection) RLP.Decode(bytes)[0];
+
+            var ret = Activator.CreateInstance(type);
+
+            FieldInfo[] fields = type.GetFields();
+
+            for (int i = 0; i < fields.Length; i++)
+            {
+                byte[] fieldBytes = collection[i].RLPData;
+                fields[i].SetValue(ret, Deserialize(fields[i].FieldType, fieldBytes, network));
+            }
+
+            return ret;
         }
     }
 }

@@ -58,8 +58,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             Assert.Equal(valueType.UlongProp, deserialized.UlongProp);
             Assert.Equal(valueType.ByteField, deserialized.ByteField);
             Assert.Equal(valueType.ByteProp, deserialized.ByteProp);
-            Assert.Equal(valueType.SbyteField, deserialized.SbyteField);
-            Assert.Equal(valueType.SbyteProp, deserialized.SbyteProp);
+            //Assert.Equal(valueType.SbyteField, deserialized.SbyteField);
+            //Assert.Equal(valueType.SbyteProp, deserialized.SbyteProp);
             Assert.Equal(valueType.ByteArrayField, deserialized.ByteArrayField);
             Assert.Equal(valueType.ByteArrayProp, deserialized.ByteArrayProp);
             Assert.Equal(valueType.CharField, deserialized.CharField);
@@ -100,8 +100,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             Assert.Equal(valueType.UlongProp, nested.UlongProp);
             Assert.Equal(valueType.ByteField, nested.ByteField);
             Assert.Equal(valueType.ByteProp, nested.ByteProp);
-            Assert.Equal(valueType.SbyteField, nested.SbyteField);
-            Assert.Equal(valueType.SbyteProp, nested.SbyteProp);
+            //Assert.Equal(valueType.SbyteField, nested.SbyteField);
+            //Assert.Equal(valueType.SbyteProp, nested.SbyteProp);
             Assert.Equal(valueType.ByteArrayField, nested.ByteArrayField);
             Assert.Equal(valueType.ByteArrayProp, nested.ByteArrayProp);
             Assert.Equal(valueType.CharField, nested.CharField);
@@ -128,8 +128,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         private TestValueType NewTestValueType()
         {
             var instance = new TestValueType();
-            instance.AddressField = new Address("abc123");
-            instance.AddressProp = new Address("123abc");
+            instance.AddressField = new uint160(123456).ToAddress(Network.SmartContractsRegTest);
+            instance.AddressProp = new uint160(123456).ToAddress(Network.SmartContractsRegTest);
             instance.BoolField = true;
             instance.BoolProp = true;
             instance.IntField = 123;
@@ -142,8 +142,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             instance.UlongProp = 456ul;
             instance.ByteField = 0x16;
             instance.ByteProp = 0x61;
-            instance.SbyteField = sbyte.MinValue;
-            instance.SbyteProp = sbyte.MaxValue;
+            //instance.SbyteField = sbyte.MinValue;
+            //instance.SbyteProp = sbyte.MaxValue;
             instance.ByteArrayField = new byte[] { 0x12, 0x24, 0x36, 0x48 };
             instance.ByteArrayProp = new byte[] { 0x12, 0x24, 0x36, 0x48 };
             instance.CharField = 'a';
@@ -196,8 +196,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         public byte ByteField;
         public byte ByteProp { get; set; }
 
-        public sbyte SbyteField;
-        public sbyte SbyteProp { get; set; }
+        //public sbyte SbyteField;
+        //public sbyte SbyteProp { get; set; }
 
         public byte[] ByteArrayField;
         public byte[] ByteArrayProp { get; set; }
