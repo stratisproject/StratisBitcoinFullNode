@@ -387,7 +387,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         /// <returns><c>true</c> if the value is in range. Otherwise <c>false</c>.</returns>
         private bool MoneyRange(long value)
         {
-            return ((value >= 0) && (value <= this.PowConsensusOptions.MaxMoney));
+            return ((value >= 0) && (value <= this.Consensus.MaxMoney));
         }
 
         /// <summary>

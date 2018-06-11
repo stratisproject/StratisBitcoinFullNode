@@ -62,6 +62,11 @@ namespace NBitcoin
         /// </summary>
         public uint MaxReorgLength { get; set; }
 
+        /// <summary>
+        /// The maximum amount of coins in any transaction.
+        /// </summary>
+        public long MaxMoney { get; set; }
+
         public ConsensusOptions Options { get; set; }
 
         public class BuriedDeploymentsArray

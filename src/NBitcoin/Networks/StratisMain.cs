@@ -60,6 +60,7 @@ namespace NBitcoin.Networks
             this.Consensus.ProofOfWorkReward = Money.Coins(4);
             this.Consensus.ProofOfStakeReward = Money.COIN;
             this.Consensus.MaxReorgLength = 500;
+            this.Consensus.MaxMoney = long.MaxValue;
 
             this.Base58Prefixes = new byte[12][];
             this.Base58Prefixes[(int)Base58Type.PUBKEY_ADDRESS] = new byte[] { (63) };
