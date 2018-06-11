@@ -14,7 +14,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
     /// <summary>
     /// Controller providing operations on the Mempool.
     /// </summary>
-    [Route("api/[controller]")]
     public class MempoolController : FeatureController
     {
         public MempoolManager MempoolManager { get; private set; }
@@ -40,7 +39,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// Lists the contents of the memory pool.
         /// </summary>
         /// <returns>Json formatted <see cref="List{T}<see cref="uint256"/>"/> containing the memory pool contents. Returns <see cref="IActionResult"/> formatted error if fails.</returns>
-        [Route("getrawmempool")]
+        [Route("api/[controller]/getrawmempool")]
         [HttpGet]
         public async Task<IActionResult> GetRawMempoolAsync()
         {

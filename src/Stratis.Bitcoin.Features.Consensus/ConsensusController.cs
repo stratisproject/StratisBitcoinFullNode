@@ -14,7 +14,6 @@ namespace Stratis.Bitcoin.Features.Consensus
     /// <summary>
     /// A <see cref="FeatureController"/> that provides API and RPC methods from the consensus loop.
     /// </summary>
-    [Route("api/[controller]")]
     public class ConsensusController : FeatureController
     {
         /// <summary>Instance logger.</summary>
@@ -53,7 +52,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// API wrapper of RPC call.
         /// </summary>
         /// <returns>Json formatted <see cref="uint256"/> hash of the block at the consensus tip. Returns <see cref="IActionResult"/> formatted error if fails.</returns>
-        [Route("getbestblockhash")]
+        [Route("api/[controller]/getbestblockhash")]
         [HttpGet]
         public IActionResult GetBestBlockHashAPI()
         {
@@ -94,7 +93,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// </summary>
         /// <param name="request">A <see cref="GetBlockHashRequestModel"/> request containing the height.</param>
         /// <returns>Json formatted <see cref="uint256"/> hash of the block at the given height. <c>Null</c> if block not found. Returns <see cref="IActionResult"/> formatted error if fails.</returns>
-        [Route("getblockhash")]
+        [Route("api/[controller]/getblockhash")]
         [HttpGet]
         public IActionResult GetBlockHashAPI([FromQuery] int height)
         {
