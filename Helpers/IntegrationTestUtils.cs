@@ -8,11 +8,12 @@ using NBitcoin;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Features.GeneralPurposeWallet;
 using Stratis.Bitcoin.Features.GeneralPurposeWallet.Interfaces;
+using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
 using Stratis.Bitcoin.P2P.Peer;
-using Stratis.Sidechains.Features.BlockchainGeneration.Tests.Common.EnvironmentMockUp;
+
 //using CoreNode = Stratis.Bitcoin.
 
-namespace Stratis.FederatedPeg.IntegrationTests
+namespace Stratis.FederatedPeg.IntegrationTests.Helpers
 {
     internal class IntegrationTestUtils
     {

@@ -2,11 +2,12 @@
 using System.Linq;
 using System.Runtime.CompilerServices;
 using NBitcoin;
-using Stratis.Bitcoin.Features.GeneralPurposeWallet;
+using NBitcoin.DataEncoders;using Stratis.Bitcoin.Features.GeneralPurposeWallet;
 using Stratis.Bitcoin.Features.GeneralPurposeWallet.Interfaces;
+
 using Stratis.Bitcoin.Features.Wallet;
-using Stratis.Sidechains.Features.BlockchainGeneration.Tests.Common;
-using Stratis.Sidechains.Features.BlockchainGeneration.Tests.Common.EnvironmentMockUp;
+using Stratis.Bitcoin.Tests.Common;using Stratis.Bitcoin.IntegrationTests.Common;
+using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
 
 namespace Stratis.FederatedPeg.IntegrationTests.Helpers
 {
@@ -19,7 +20,7 @@ namespace Stratis.FederatedPeg.IntegrationTests.Helpers
         {
             this.Folder = Path.Combine(Path.Combine(Directory.GetCurrentDirectory(), $"Federations\\{caller}"));
             Directory.CreateDirectory(this.Folder);
-            TestUtils.ShellCleanupFolder(this.Folder);
+            TestBase.AssureEmptyDir(this.Folder);
         }
 
         public MemberFolderManager CreateMemberFolderManager()
@@ -80,7 +81,7 @@ namespace Stratis.FederatedPeg.IntegrationTests.Helpers
 
             var memberFolderManager = new MemberFolderManager(this.Folder);
             var federation = memberFolderManager.LoadFederation(m, n);
-           
+
             var publicKeys = chain == Chain.Mainchain ?
                   (from f in federation.Members orderby f.PublicKeyMainChain.ToHex() select f.PublicKeyMainChain).ToArray()
                 : (from f in federation.Members orderby f.PublicKeySideChain.ToHex() select f.PublicKeySideChain).ToArray();
