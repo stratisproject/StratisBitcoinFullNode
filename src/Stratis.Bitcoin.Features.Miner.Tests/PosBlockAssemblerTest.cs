@@ -48,25 +48,6 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
         }
 
         [Fact]
-        public void TestBlockValidity_DoesNotValidateBlockUsingRuleContext()
-        {
-            var newOptions = new PosConsensusOptions() { MaxBlockWeight = 1500 };
-
-            this.ExecuteWithConsensusOptions(newOptions, () =>
-            {
-                var chain = GenerateChainWithHeight(5, this.network, new Key());
-                this.SetupRulesEngine(chain);
-
-                this.consensusLoop.Setup(c => c.Tip).Returns(chain.GetBlock(5));
-
-                var posBlockAssembler = new PosTestBlockAssembler(this.consensusLoop.Object, this.network, new MempoolSchedulerLock(), this.mempool.Object, this.dateTimeProvider.Object, this.stakeChain.Object, this.stakeValidator.Object, this.LoggerFactory.Object);
-                posBlockAssembler.OnTestBlockValidity();
-
-                this.consensusLoop.Verify(c => c.ValidateBlock(It.IsAny<RuleContext>()), Times.Exactly(0));
-            });
-        }
-
-        [Fact]
         public void UpdateHeaders_UsingChainAndNetwork_PreparesStakeBlockHeaders()
         {
             this.ExecuteWithConsensusOptions(new PosConsensusOptions(), () =>
@@ -81,7 +62,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
 
                 var posBlockAssembler = new PosTestBlockAssembler(this.consensusLoop.Object, this.network, new MempoolSchedulerLock(), this.mempool.Object, this.dateTimeProvider.Object, this.stakeChain.Object, this.stakeValidator.Object, this.LoggerFactory.Object);
 
-                var block = posBlockAssembler.OnUpdateHeaders(chain.Tip);
+                var block = posBlockAssembler.UpdateHeaders(chain.Tip);
 
                 Assert.Equal(chain.Tip.HashBlock, block.Header.HashPrevBlock);
                 Assert.Equal((uint)1483747200, block.Header.Time);
@@ -111,14 +92,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
                 var posBlockAssembler = new PosBlockDefinition(this.consensusLoop.Object, this.dateTimeProvider.Object, this.LoggerFactory.Object, this.mempool.Object, new MempoolSchedulerLock(), this.network, this.stakeChain.Object, this.stakeValidator.Object);
                 var blockTemplate = posBlockAssembler.Build(chain.Tip, this.key.ScriptPubKey);
 
-                Assert.Null(blockTemplate.CoinbaseCommitment);
                 Assert.Equal(new Money(1000), blockTemplate.TotalFee);
-                Assert.Equal(2, blockTemplate.TxSigOpsCost.Count);
-                Assert.Equal(-1, blockTemplate.TxSigOpsCost[0]);
-                Assert.Equal(2, blockTemplate.TxSigOpsCost[1]);
-                Assert.Equal(2, blockTemplate.VTxFees.Count);
-                Assert.Equal(new Money(-1000), blockTemplate.VTxFees[0]);
-                Assert.Equal(new Money(1000), blockTemplate.VTxFees[1]);
                 Assert.Equal(2, blockTemplate.Block.Transactions.Count);
                 Assert.Equal(536870912, blockTemplate.Block.Header.Version);
 
@@ -198,7 +172,6 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
             });
         }
 
-
         [Fact]
         public void ComputeBlockVersion_UsingChainTipAndConsensus_Bip9DeploymentActive_UpdatesHeightAndVersion()
         {
@@ -237,7 +210,6 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
             }
         }
 
-
         [Fact]
         public void CreateCoinbase_CreatesCoinbaseTemplateTransaction_AddsToBlockTemplate()
         {
@@ -252,8 +224,6 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
                 var result = posBlockAssembler.CreateCoinBase(chain.Tip, this.key.ScriptPubKey);
 
                 Assert.NotEmpty(result.Block.Transactions);
-                Assert.Equal(-1, result.TxSigOpsCost[0]);
-                Assert.Equal(new Money(-1), result.VTxFees[0]);
 
                 var resultingTransaction = result.Block.Transactions[0];
                 Assert.Equal((uint)new DateTime(2017, 1, 7, 0, 0, 1, DateTimeKind.Utc).ToUnixTimestamp(), resultingTransaction.Time);
@@ -512,15 +482,10 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
                 base.block = this.BlockTemplate.Block;
             }
 
-            public new void OnTestBlockValidity()
-            {
-                base.OnTestBlockValidity();
-            }
-
-            public Block OnUpdateHeaders(ChainedHeader chainTip)
+            public Block UpdateHeaders(ChainedHeader chainTip)
             {
                 this.ChainTip = chainTip;
-                base.OnUpdateHeaders();
+                base.UpdateHeaders();
                 return this.block;
             }
 

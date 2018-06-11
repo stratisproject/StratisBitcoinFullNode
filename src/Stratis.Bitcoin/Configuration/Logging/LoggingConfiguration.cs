@@ -44,7 +44,6 @@ namespace Stratis.Bitcoin.Configuration.Logging
         private static readonly Dictionary<string, string> keyCategories = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
         {
             //{ "addrman", "" },
-            //{ "alert", "" },
             //{ "cmpctblock", "" }
             //{ "coindb", "" },
             //{ "http", "" },

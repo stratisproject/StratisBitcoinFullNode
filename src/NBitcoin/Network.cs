@@ -43,13 +43,7 @@ namespace NBitcoin
         {
             this.Consensus = new Consensus();
         }
-
-        /// <summary>
-        /// The public key used in the alert messaging system.
-        /// TODO: remove as per https://github.com/bitcoin/bitcoin/pull/7692.
-        /// </summary>
-        public PubKey AlertPubKey { get; protected set; }
-
+        
         /// <summary>
         /// Maximal value for the calculated time offset.
         /// If the value is over this limit, the time syncing feature will be switched off.

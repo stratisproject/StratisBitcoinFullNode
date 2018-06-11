@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Net.Sockets;
 using Microsoft.Extensions.DependencyInjection;
 using Stratis.Bitcoin.Connection;
 using Xunit;
@@ -17,7 +18,7 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
 
             Assert.ThrowsAny<System.Net.Sockets.SocketException>(() => { controller.AddNodeRPC("0.0.0.0", "onetry"); });
             Assert.Throws<ArgumentException>(() => { controller.AddNodeRPC("0.0.0.0", "notarealcommand"); });
-            Assert.Throws<FormatException>(() => { controller.AddNodeRPC("a.b.c.d", "onetry"); });
+            Assert.Throws<SocketException>(() => { controller.AddNodeRPC("a.b.c.d", "onetry"); });
             Assert.True(controller.AddNodeRPC("0.0.0.0", "remove"));
         }
 

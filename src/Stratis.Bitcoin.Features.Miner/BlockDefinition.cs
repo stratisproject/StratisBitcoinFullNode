@@ -9,9 +9,9 @@ using Stratis.Bitcoin.Features.Consensus.Interfaces;
 using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.MemoryPool.Interfaces;
+using Stratis.Bitcoin.Features.Miner.Comparers;
 using Stratis.Bitcoin.Mining;
 using Stratis.Bitcoin.Utilities;
-using static Stratis.Bitcoin.Features.Miner.PowBlockDefinition;
 
 namespace Stratis.Bitcoin.Features.Miner
 {
@@ -184,8 +184,6 @@ namespace Stratis.Bitcoin.Features.Miner
             this.coinbase.AddOutput(new TxOut(Money.Zero, this.scriptPubKey));
 
             this.block.AddTransaction(this.coinbase);
-            this.BlockTemplate.VTxFees.Add(-1); // Updated at end.
-            this.BlockTemplate.TxSigOpsCost.Add(-1); // Updated at end.
         }
 
         /// <summary>
@@ -253,21 +251,17 @@ namespace Stratis.Bitcoin.Features.Miner
 
             // TODO: Implement Witness Code
             // pblocktemplate->CoinbaseCommitment = GenerateCoinbaseCommitment(*pblock, pindexPrev, chainparams.GetConsensus());
-            this.BlockTemplate.VTxFees[0] = -this.fees;
 
-            var powCoinviewRule = this.ConsensusLoop.ConsensusRules.GetRule<CoinViewRule>();
-
-            this.coinbase.Outputs[0].Value = this.fees + powCoinviewRule.GetProofOfWorkReward(this.height);
+            var coinviewRule = this.ConsensusLoop.ConsensusRules.GetRule<CoinViewRule>();
+            this.coinbase.Outputs[0].Value = this.fees + coinviewRule.GetProofOfWorkReward(this.height);
             this.BlockTemplate.TotalFee = this.fees;
 
             int nSerializeSize = this.block.GetSerializedSize();
-            this.logger.LogDebug("Serialized size is {0} bytes, block weight is {1}, number of txs is {2}, tx fees are {3}, number of sigops is {4}.", nSerializeSize, powCoinviewRule.GetBlockWeight(this.block), this.BlockTx, this.fees, this.BlockSigOpsCost);
+            this.logger.LogDebug("Serialized size is {0} bytes, block weight is {1}, number of txs is {2}, tx fees are {3}, number of sigops is {4}.", nSerializeSize, coinviewRule.GetBlockWeight(this.block), this.BlockTx, this.fees, this.BlockSigOpsCost);
 
-            this.OnUpdateHeaders();
+            this.UpdateHeaders();
 
             //pblocktemplate->TxSigOpsCost[0] = WITNESS_SCALE_FACTOR * GetLegacySigOpCount(*pblock->vtx[0]);
-
-            this.OnTestBlockValidity();
 
             //int64_t nTime2 = GetTimeMicros();
 
@@ -282,9 +276,6 @@ namespace Stratis.Bitcoin.Features.Miner
             this.logger.LogTrace("({0}.{1}:'{2}', {3}:{4}, txSize:{5})", nameof(mempoolEntry), nameof(mempoolEntry.TransactionHash), mempoolEntry.TransactionHash, nameof(mempoolEntry.ModifiedFee), mempoolEntry.ModifiedFee, mempoolEntry.GetTxSize());
 
             this.block.AddTransaction(mempoolEntry.Transaction);
-
-            this.BlockTemplate.VTxFees.Add(mempoolEntry.Fee);
-            this.BlockTemplate.TxSigOpsCost.Add(mempoolEntry.SigOpCost);
 
             if (this.NeedSizeAccounting)
                 this.BlockSize += mempoolEntry.Transaction.GetSerializedSize();
@@ -370,7 +361,7 @@ namespace Stratis.Bitcoin.Features.Miner
                 if (mi == null)
                 {
                     modit = mapModifiedTx.Values.OrderByDescending(o => o, compare).First();
-                    iter = modit.iter;
+                    iter = modit.MempoolEntry;
                     fUsingModified = true;
                 }
                 else
@@ -385,7 +376,7 @@ namespace Stratis.Bitcoin.Features.Miner
                         // than the one from mapTx..
                         // Switch which transaction (package) to consider.
 
-                        iter = modit.iter;
+                        iter = modit.MempoolEntry;
                         fUsingModified = true;
                     }
                     else
@@ -423,7 +414,7 @@ namespace Stratis.Bitcoin.Features.Miner
                         // Since we always look at the best entry in mapModifiedTx,
                         // we must erase failed entries so that we can consider the
                         // next best entry on the next loop iteration
-                        mapModifiedTx.Remove(modit.iter.TransactionHash);
+                        mapModifiedTx.Remove(modit.MempoolEntry.TransactionHash);
                         failedTx.Add(iter);
                     }
 
@@ -450,7 +441,7 @@ namespace Stratis.Bitcoin.Features.Miner
                 {
                     if (fUsingModified)
                     {
-                        mapModifiedTx.Remove(modit.iter.TransactionHash);
+                        mapModifiedTx.Remove(modit.MempoolEntry.TransactionHash);
                         failedTx.Add(iter);
                     }
                     continue;
@@ -568,6 +559,7 @@ namespace Stratis.Bitcoin.Features.Miner
                         modEntry = new TxMemPoolModifiedEntry(desc);
                         mapModifiedTx.Add(desc.TransactionHash, modEntry);
                     }
+
                     modEntry.SizeWithAncestors -= setEntry.GetTxSize();
                     modEntry.ModFeesWithAncestors -= setEntry.ModifiedFee;
                     modEntry.SigOpCostWithAncestors -= setEntry.SigOpCost;
@@ -577,13 +569,18 @@ namespace Stratis.Bitcoin.Features.Miner
             return descendantsUpdated;
         }
 
-        /// <summary>Logic specific as to how the block will be built.</summary>
+        /// <summary>Network specific logic specific as to how the block will be built.</summary>
         public abstract BlockTemplate Build(ChainedHeader chainTip, Script scriptPubKey);
 
-        /// <summary>Logic specific to how the block's header will be set.</summary>
-        public abstract void OnUpdateHeaders();
+        /// <summary>Update the block's header information.</summary>
+        protected void UpdateBaseHeaders()
+        {
+            this.block.Header.HashPrevBlock = this.ChainTip.HashBlock;
+            this.block.Header.UpdateTime(this.DateTimeProvider.GetTimeOffset(), this.Network, this.ChainTip);
+            this.block.Header.Nonce = 0;
+        }
 
-        /// <summary>Logic specific to how the block will be validated.</summary>
-        public abstract void OnTestBlockValidity();
+        /// <summary>Network specific logic specific as to how the block's header will be set.</summary>
+        public abstract void UpdateHeaders();
     }
 }
