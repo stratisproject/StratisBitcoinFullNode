@@ -229,7 +229,7 @@ namespace NBitcoin
         {
             if(Serializing)
             {
-                var list = value == null ? null : value.Select(v=>v.AsBitcoinSerializable()).ToList();
+                List<uint256.MutableUint256> list = value == null ? null : value.Select(v=>v.AsBitcoinSerializable()).ToList();
                 this.ReadWrite(ref list);
             }
             else
@@ -260,7 +260,7 @@ namespace NBitcoin
         {
             if(Serializing)
             {
-                var list = value == null ? null : value.Select(v=>v.AsBitcoinSerializable()).ToList();
+                List<uint160.MutableUint160> list = value == null ? null : value.Select(v=>v.AsBitcoinSerializable()).ToList();
                 this.ReadWrite(ref list);
             }
             else

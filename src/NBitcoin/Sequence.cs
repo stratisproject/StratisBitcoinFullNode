@@ -83,7 +83,7 @@ namespace NBitcoin
         {
             if(period.TotalSeconds > (0xFFFF * 512) || period.TotalSeconds < 0)
                 throw new ArgumentOutOfRangeException("Relative lock time must be positive and lower or equals to " + (0xFFFF * 512) + " seconds (approx 388 days)");
-            var value = (uint)(period.TotalSeconds / (1 << Sequence.SEQUENCE_LOCKTIME_GRANULARITY));
+            uint value = (uint)(period.TotalSeconds / (1 << Sequence.SEQUENCE_LOCKTIME_GRANULARITY));
             value |= SEQUENCE_LOCKTIME_TYPE_FLAG;
             _ValueInv = 0xFFFFFFFF - (uint)value;
         }
@@ -132,7 +132,7 @@ namespace NBitcoin
         {
             if(IsRelativeLock)
             {
-                StringBuilder builder = new StringBuilder();
+                var builder = new StringBuilder();
                 builder.Append("Relative lock (" + LockType + "): ");
                 if(LockType == SequenceLockType.Height)
                     builder.Append(LockHeight + " blocks");

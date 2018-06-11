@@ -96,7 +96,7 @@ namespace NBitcoin.BouncyCastle.Crypto.Digests
 
         public override void Reset(IMemoable other)
         {
-            Sha512Digest d = (Sha512Digest)other;
+            var d = (Sha512Digest)other;
 
             CopyIn(d);
         }

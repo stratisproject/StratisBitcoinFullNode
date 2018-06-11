@@ -22,8 +22,8 @@ namespace NBitcoin
             if(address is IBase58Data)
             {
                 var b58 = (IBase58Data)address;
-                var version = address.Network.GetVersionBytes(b58.Type, true);
-                var data = Encoders.Base58Check.DecodeData(b58.ToString()).Skip(version.Length).ToArray();
+                byte[] version = address.Network.GetVersionBytes(b58.Type, true);
+                byte[] data = Encoders.Base58Check.DecodeData(b58.ToString()).Skip(version.Length).ToArray();
                 return version.Concat(data).ToArray();
             }
             else
@@ -47,7 +47,7 @@ namespace NBitcoin
             {
                 if(_Address == null)
                 {
-                    var base58 = Encoders.Base58Check.EncodeData(vchData);
+                    string base58 = Encoders.Base58Check.EncodeData(vchData);
                     _Address = BitcoinAddress.Create(base58, Network);
                 }
                 return _Address;
@@ -76,8 +76,8 @@ namespace NBitcoin
 
         public static string GetWrappedBase58(string base58, Network network)
         {
-            var coloredVersion = network.GetVersionBytes(Base58Type.COLORED_ADDRESS, true);
-            var inner = Encoders.Base58Check.DecodeData(base58);
+            byte[] coloredVersion = network.GetVersionBytes(Base58Type.COLORED_ADDRESS, true);
+            byte[] inner = Encoders.Base58Check.DecodeData(base58);
             inner = inner.Skip(coloredVersion.Length).ToArray();
             return Encoders.Base58Check.EncodeData(inner);
         }

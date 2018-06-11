@@ -31,7 +31,7 @@ namespace NBitcoin.JsonConverters
 
             try
             {
-                var value = reader.Value.ToString();
+                string value = reader.Value.ToString();
                 return new BitcoinAssetId(value, Network).AssetId;
             }
             catch(FormatException)

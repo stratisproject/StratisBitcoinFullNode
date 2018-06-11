@@ -39,7 +39,7 @@ namespace NBitcoin.Stealth
                 throw new ArgumentNullException("rawform");
             _BitCount = bitcount;
 
-            var byteCount = GetPrefixByteLength(bitcount);
+            int byteCount = GetPrefixByteLength(bitcount);
             if(rawform.Length == byteCount)
                 _Rawform = rawform.ToArray();
             if(rawform.Length < byteCount)
@@ -52,7 +52,7 @@ namespace NBitcoin.Stealth
 
             for(int i = 0; i < byteCount; i++)
             {
-                var numberBits = Math.Min(8, bitleft);
+                int numberBits = Math.Min(8, bitleft);
                 _Mask[i] = (byte)((1 << numberBits) - 1);
                 bitleft -= numberBits;
                 if(bitleft == 0)
@@ -81,7 +81,7 @@ namespace NBitcoin.Stealth
 
         public uint GetEncodedForm()
         {
-            var encoded =
+            byte[] encoded =
                 _Rawform.Length == 4 ? _Rawform : _Rawform.Concat(new byte[4 - _Rawform.Length]).ToArray();
 
             return Utils.ToUInt32(encoded, true);
@@ -89,7 +89,7 @@ namespace NBitcoin.Stealth
 
         public bool Match(uint value)
         {
-            var data = Utils.ToBytes(value, true);
+            byte[] data = Utils.ToBytes(value, true);
             if(data.Length * 8 < _BitCount)
                 return false;
 
@@ -170,11 +170,11 @@ namespace NBitcoin.Stealth
             {
                 try
                 {
-                    MemoryStream ms = new MemoryStream(vchData);
+                    var ms = new MemoryStream(vchData);
                     this.Options = (byte)ms.ReadByte();
                     this.ScanPubKey = new PubKey(ms.ReadBytes(33));
-                    var pubkeycount = (byte)ms.ReadByte();
-                    List<PubKey> pubKeys = new List<PubKey>();
+                    byte pubkeycount = (byte)ms.ReadByte();
+                    var pubKeys = new List<PubKey>();
                     for(int i = 0; i < pubkeycount; i++)
                     {
                         pubKeys.Add(new PubKey(ms.ReadBytes(33)));
@@ -182,10 +182,10 @@ namespace NBitcoin.Stealth
                     SpendPubKeys = pubKeys.ToArray();
                     SignatureCount = (byte)ms.ReadByte();
 
-                    var bitcount = (byte)ms.ReadByte();
-                    var byteLength = BitField.GetPrefixByteLength(bitcount);
+                    byte bitcount = (byte)ms.ReadByte();
+                    int byteLength = BitField.GetPrefixByteLength(bitcount);
 
-                    var prefix = ms.ReadBytes(byteLength);
+                    byte[] prefix = ms.ReadBytes(byteLength);
                     Prefix = new BitField(prefix, bitcount);
                 }
                 catch(Exception)
@@ -197,11 +197,11 @@ namespace NBitcoin.Stealth
         }
         private static byte[] GenerateBytes(PubKey scanKey, PubKey[] pubKeys, BitField bitField, int signatureCount)
         {
-            MemoryStream ms = new MemoryStream();
+            var ms = new MemoryStream();
             ms.WriteByte(0); //Options
             ms.Write(scanKey.Compress().ToBytes(), 0, 33);
             ms.WriteByte((byte)pubKeys.Length);
-            foreach(var key in pubKeys)
+            foreach(PubKey key in pubKeys)
             {
                 ms.Write(key.Compress().ToBytes(), 0, 33);
             }
@@ -211,7 +211,7 @@ namespace NBitcoin.Stealth
             else
             {
                 ms.WriteByte((byte)bitField.BitCount);
-                var raw = bitField.GetRawForm();
+                byte[] raw = bitField.GetRawForm();
                 ms.Write(raw, 0, raw.Length);
             }
             return ms.ToArray();
@@ -264,7 +264,7 @@ namespace NBitcoin.Stealth
             if(ephemKey == null)
                 ephemKey = new Key();
 
-            var metadata = StealthMetadata.CreateMetadata(ephemKey, this.Prefix);
+            StealthMetadata metadata = StealthMetadata.CreateMetadata(ephemKey, this.Prefix);
             return new StealthPayment(this, ephemKey, metadata);
         }
 

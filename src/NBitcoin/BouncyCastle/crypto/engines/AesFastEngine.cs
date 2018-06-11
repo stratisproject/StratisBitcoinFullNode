@@ -632,7 +632,7 @@ namespace NBitcoin.BouncyCastle.Crypto.Engines
             int KC = keyLen >> 2;
             this.ROUNDS = KC + 6;  // This is not always true for the generalized Rijndael that allows larger block sizes
 
-            uint[][] W = new uint[ROUNDS + 1][]; // 4 words in a block
+            var W = new uint[ROUNDS + 1][]; // 4 words in a block
             for(int i = 0; i <= ROUNDS; ++i)
             {
                 W[i] = new uint[4];
@@ -844,7 +844,7 @@ namespace NBitcoin.BouncyCastle.Crypto.Engines
             bool forEncryption,
             ICipherParameters parameters)
         {
-            KeyParameter keyParameter = parameters as KeyParameter;
+            var keyParameter = parameters as KeyParameter;
 
             if(keyParameter == null)
                 throw new ArgumentException("invalid parameter passed to AES init - "

@@ -22,7 +22,7 @@ namespace NBitcoin.BouncyCastle.Crypto
         public override bool Equals(
             object obj)
         {
-            AsymmetricKeyParameter other = obj as AsymmetricKeyParameter;
+            var other = obj as AsymmetricKeyParameter;
 
             if(other == null)
             {

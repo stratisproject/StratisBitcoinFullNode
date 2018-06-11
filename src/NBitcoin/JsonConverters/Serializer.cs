@@ -40,7 +40,7 @@ namespace NBitcoin.JsonConverters
         }
         public static T ToObject<T>(string data, Network network)
         {
-            JsonSerializerSettings settings = new JsonSerializerSettings
+            var settings = new JsonSerializerSettings
             {
                 Formatting = Formatting.Indented
             };
@@ -50,7 +50,7 @@ namespace NBitcoin.JsonConverters
 
         public static string ToString<T>(T response, Network network)
         {
-            JsonSerializerSettings settings = new JsonSerializerSettings
+            var settings = new JsonSerializerSettings
             {
                 Formatting = Formatting.Indented
             };

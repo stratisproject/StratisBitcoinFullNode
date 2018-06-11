@@ -60,7 +60,7 @@ namespace NBitcoin.BouncyCastle.Math.Field
             {
                 return true;
             }
-            GenericPolynomialExtensionField other = obj as GenericPolynomialExtensionField;
+            var other = obj as GenericPolynomialExtensionField;
             if(null == other)
             {
                 return false;

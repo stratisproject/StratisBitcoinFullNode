@@ -110,8 +110,8 @@ namespace NBitcoin.Tests
         {
             ExtKey key = ExtKey.Parse("xprv9s21ZrQH143K3Z9EwCXrA5VbypnvWGiE9z22S1cLLPi7r8DVUkTabBvMjeirS8KCyppw24KoD4sFmja8UDU4VL32SBdip78LY6sz3X2GPju")
                 .Derive(1);
-            var pubkey = key.Neuter();
-            var childKey = key.Derive(1);
+            ExtPubKey pubkey = key.Neuter();
+            ExtKey childKey = key.Derive(1);
 
             ExtKey recovered = childKey.GetParentExtKey(pubkey);
             Assert.Equal(recovered.ToString(Network.Main), key.ToString(Network.Main));
@@ -130,8 +130,8 @@ namespace NBitcoin.Tests
             for(int i = 0; i < 255; i++)
             {
                 ExtKey key = new ExtKey().Derive((uint)i);
-                var childKey = key.Derive((uint)i);
-                var pubKey = key.Neuter();
+                ExtKey childKey = key.Derive((uint)i);
+                ExtPubKey pubKey = key.Neuter();
                 ExtKey recovered = childKey.GetParentExtKey(pubKey);
                 Assert.Equal(recovered.ToString(Network.Main), key.ToString(Network.Main));
             }
@@ -142,9 +142,9 @@ namespace NBitcoin.Tests
         public void CanRecoverExtKeyFromExtPubKeyAndSecret()
         {
             ExtKey key = new ExtKey().Derive(1);
-            var underlying = key.PrivateKey.GetBitcoinSecret(Network.Main);
-            var pubKey = key.Neuter().GetWif(Network.Main);
-            ExtKey key2 = new ExtKey(pubKey, underlying);
+            BitcoinSecret underlying = key.PrivateKey.GetBitcoinSecret(Network.Main);
+            BitcoinExtPubKey pubKey = key.Neuter().GetWif(Network.Main);
+            var key2 = new ExtKey(pubKey, underlying);
             Assert.Equal(key.ToString(Network.Main), key2.ToString(Network.Main));
         }
 
@@ -152,7 +152,7 @@ namespace NBitcoin.Tests
         [Trait("UnitTest", "UnitTest")]
         public void CanUseKeyPath()
         {
-            var keyPath = KeyPath.Parse("0/1/2/3");
+            KeyPath keyPath = KeyPath.Parse("0/1/2/3");
             Assert.Equal("0/1/2/3", keyPath.ToString());
             var key = new ExtKey();
             Assert.Equal(key
@@ -162,7 +162,7 @@ namespace NBitcoin.Tests
                             .Derive(3)
                             .ToString(Network.Main), key.Derive(keyPath).ToString(Network.Main));
 
-            var neuter = key.Neuter();
+            ExtPubKey neuter = key.Neuter();
             Assert.Equal(neuter
                             .Derive(0)
                             .Derive(1)
@@ -209,7 +209,7 @@ namespace NBitcoin.Tests
         public void CanRoundTripExtKeyBase58Data()
         {
             var key = new ExtKey();
-            var pubkey = key.Neuter();
+            ExtPubKey pubkey = key.Neuter();
             Assert.True(ExtKey.Parse(key.ToString(Network.Main)).ToString(Network.Main) == key.ToString(Network.Main));
             Assert.True(ExtPubKey.Parse(pubkey.ToString(Network.Main)).ToString(Network.Main) == pubkey.ToString(Network.Main));
         }
@@ -218,7 +218,7 @@ namespace NBitcoin.Tests
         public void CanCheckChildKey()
         {
             var parent = new ExtKey();
-            var child = parent.Derive(1);
+            ExtKey child = parent.Derive(1);
             var notchild = new ExtKey();
 
             Assert.True(child.IsChildOf(parent));
@@ -231,14 +231,14 @@ namespace NBitcoin.Tests
             Assert.False(notchild.Neuter().IsChildOf(parent.Neuter()));
             Assert.False(parent.Neuter().IsParentOf(notchild.Neuter()));
 
-            var keyA = parent.Neuter();
+            ExtPubKey keyA = parent.Neuter();
             var keyB = new ExtPubKey(keyA.ToBytes());
             AssertEx.CollectionEquals(keyA.ToBytes(), keyB.ToBytes());
         }
         private void RunTest(TestVector test)
         {
-            var seed = TestUtils.ParseHex(test.strHexMaster);
-            ExtKey key = new ExtKey(seed);
+            byte[] seed = TestUtils.ParseHex(test.strHexMaster);
+            var key = new ExtKey(seed);
             ExtPubKey pubkey = key.Neuter();
             foreach(TestDerivation derive in test.vDerive)
             {

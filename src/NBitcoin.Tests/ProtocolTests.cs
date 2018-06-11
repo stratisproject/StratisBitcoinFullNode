@@ -108,7 +108,7 @@ namespace NBitcoin.Tests
             _Server1.Dispose();
             _Server2.Dispose();
             */
-            foreach(var dispo in _Disposables)
+            foreach(IDisposable dispo in _Disposables)
                 dispo.Dispose();
         }
 

@@ -138,12 +138,12 @@ namespace NBitcoin
         {
             if (this.Serializing)
             {
-                VarString str = new VarString(bytes);
+                var str = new VarString(bytes);
                 str.ReadWrite(this);
             }
             else
             {
-                VarString str = new VarString();
+                var str = new VarString();
                 str.ReadWrite(this);
                 bytes = str.GetString(true);
             }
@@ -193,7 +193,7 @@ namespace NBitcoin
 
         public void ReadWrite<T>(ref T data) where T : IBitcoinSerializable
         {
-            var obj = data;
+            T obj = data;
             if (obj == null)
             {
                 if (!this.ConsensusFactory.TryCreateNew<T>(out obj))
@@ -220,7 +220,7 @@ namespace NBitcoin
             where TList : List<TItem>, new()
             where TItem : IBitcoinSerializable, new()
         {
-            var dataArray = data == null ? null : data.ToArray();
+            TItem[] dataArray = data == null ? null : data.ToArray();
 
             if (this.Serializing && dataArray == null)
             {
@@ -277,7 +277,7 @@ namespace NBitcoin
             ulong valueTemp = 0;
             for (int i = 0; i < bytes.Length; i++)
             {
-                var v = (ulong)bytes[i];
+                ulong v = (ulong)bytes[i];
                 valueTemp += v << (i * 8);
             }
             value = valueTemp;
@@ -300,7 +300,7 @@ namespace NBitcoin
             }
             else
             {
-                var readen = this.Inner.ReadEx(data, offset, count, this.ReadCancellationToken);
+                int readen = this.Inner.ReadEx(data, offset, count, this.ReadCancellationToken);
                 if (readen == 0)
                     throw new EndOfStreamException("No more byte to read");
                 this.Counter.AddRead(readen);
@@ -328,7 +328,7 @@ namespace NBitcoin
             }
             else
             {
-                var readen = this.Inner.ReadByte();
+                int readen = this.Inner.ReadByte();
                 if (readen == -1)
                     throw new EndOfStreamException("No more byte to read");
                 data = (byte)readen;
@@ -344,7 +344,7 @@ namespace NBitcoin
 
         public IDisposable BigEndianScope()
         {
-            var old = this.IsBigEndian;
+            bool old = this.IsBigEndian;
             return new Scope(() =>
             {
                 this.IsBigEndian = true;
@@ -388,7 +388,7 @@ namespace NBitcoin
 
         public IDisposable ProtocolVersionScope(ProtocolVersion version)
         {
-            var old = this.ProtocolVersion;
+            ProtocolVersion old = this.ProtocolVersion;
             return new Scope(() =>
             {
                 this.ProtocolVersion = version;
@@ -419,7 +419,7 @@ namespace NBitcoin
 
         public IDisposable SerializationTypeScope(SerializationType value)
         {
-            var old = this.Type;
+            SerializationType old = this.Type;
             return new Scope(() =>
             {
                 this.Type = value;

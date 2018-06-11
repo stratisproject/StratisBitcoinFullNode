@@ -1,6 +1,7 @@
 ﻿using System.Linq;
 using System.Security;
 using System.Text;
+using NBitcoin.BouncyCastle.Asn1.X9;
 using NBitcoin.BouncyCastle.Math;
 using NBitcoin.Crypto;
 using NBitcoin.DataEncoders;
@@ -31,24 +32,24 @@ namespace NBitcoin
 
         private static string GenerateWif(Key key, string password, Network network)
         {
-            var vch = key.ToBytes();
+            byte[] vch = key.ToBytes();
             //Compute the Bitcoin address (ASCII),
-            var addressBytes = Encoders.ASCII.DecodeData(key.PubKey.GetAddress(network).ToString());
+            byte[] addressBytes = Encoders.ASCII.DecodeData(key.PubKey.GetAddress(network).ToString());
             // and take the first four bytes of SHA256(SHA256()) of it. Let's call this "addresshash".
-            var addresshash = Hashes.Hash256(addressBytes).ToBytes().SafeSubarray(0, 4);
+            byte[] addresshash = Hashes.Hash256(addressBytes).ToBytes().SafeSubarray(0, 4);
 
-            var derived = SCrypt.BitcoinComputeDerivedKey(Encoding.UTF8.GetBytes(password), addresshash);
+            byte[] derived = SCrypt.BitcoinComputeDerivedKey(Encoding.UTF8.GetBytes(password), addresshash);
 
-            var encrypted = EncryptKey(vch, derived);
+            byte[] encrypted = EncryptKey(vch, derived);
 
 
 
-            var version = network.GetVersionBytes(Base58Type.ENCRYPTED_SECRET_KEY_NO_EC, true);
+            byte[] version = network.GetVersionBytes(Base58Type.ENCRYPTED_SECRET_KEY_NO_EC, true);
             byte flagByte = 0;
             flagByte |= 0x0C0;
             flagByte |= (key.IsCompressed ? (byte)0x20 : (byte)0x00);
 
-            var bytes = version
+            byte[] bytes = version
                             .Concat(new[] { flagByte })
                             .Concat(addresshash)
                             .Concat(encrypted).ToArray();
@@ -83,13 +84,13 @@ namespace NBitcoin
 
         public override Key GetKey(string password)
         {
-            var derived = SCrypt.BitcoinComputeDerivedKey(password, AddressHash);
-            var bitcoinprivkey = DecryptKey(Encrypted, derived);
+            byte[] derived = SCrypt.BitcoinComputeDerivedKey(password, AddressHash);
+            byte[] bitcoinprivkey = DecryptKey(Encrypted, derived);
 
             var key = new Key(bitcoinprivkey, fCompressedIn: IsCompressed);
 
-            var addressBytes = Encoders.ASCII.DecodeData(key.PubKey.GetAddress(Network).ToString());
-            var salt = Hashes.Hash256(addressBytes).ToBytes().SafeSubarray(0, 4);
+            byte[] addressBytes = Encoders.ASCII.DecodeData(key.PubKey.GetAddress(Network).ToString());
+            byte[] salt = Hashes.Hash256(addressBytes).ToBytes().SafeSubarray(0, 4);
 
             if(!Utils.ArrayEqual(salt, AddressHash))
                 throw new SecurityException("Invalid password (or invalid Network)");
@@ -138,7 +139,7 @@ namespace NBitcoin
         {
             get
             {
-                var hasLotSequence = (vchData[0] & 0x04) != 0;
+                bool hasLotSequence = (vchData[0] & 0x04) != 0;
                 if(!hasLotSequence)
                     return null;
                 return _LotSequence ?? (_LotSequence = new LotSequence(OwnerEntropy.SafeSubarray(4, 4)));
@@ -175,29 +176,29 @@ namespace NBitcoin
 
         public override Key GetKey(string password)
         {
-            var encrypted = PartialEncrypted.ToArray();
+            byte[] encrypted = PartialEncrypted.ToArray();
             //Derive passfactor using scrypt with ownerentropy and the user's passphrase and use it to recompute passpoint
             byte[] passfactor = CalculatePassFactor(password, LotSequence, OwnerEntropy);
-            var passpoint = CalculatePassPoint(passfactor);
+            byte[] passpoint = CalculatePassPoint(passfactor);
 
-            var derived = SCrypt.BitcoinComputeDerivedKey2(passpoint, this.AddressHash.Concat(this.OwnerEntropy).ToArray());
+            byte[] derived = SCrypt.BitcoinComputeDerivedKey2(passpoint, this.AddressHash.Concat(this.OwnerEntropy).ToArray());
 
             //Decrypt encryptedpart1 to yield the remainder of seedb.
-            var seedb = DecryptSeed(encrypted, derived);
-            var factorb = Hashes.Hash256(seedb).ToBytes();
+            byte[] seedb = DecryptSeed(encrypted, derived);
+            byte[] factorb = Hashes.Hash256(seedb).ToBytes();
 
-            var curve = ECKey.Secp256k1;
+            X9ECParameters curve = ECKey.Secp256k1;
 
             //Multiply passfactor by factorb mod N to yield the private key associated with generatedaddress.
-            var keyNum = new BigInteger(1, passfactor).Multiply(new BigInteger(1, factorb)).Mod(curve.N);
-            var keyBytes = keyNum.ToByteArrayUnsigned();
+            BigInteger keyNum = new BigInteger(1, passfactor).Multiply(new BigInteger(1, factorb)).Mod(curve.N);
+            byte[] keyBytes = keyNum.ToByteArrayUnsigned();
             if(keyBytes.Length < 32)
                 keyBytes = new byte[32 - keyBytes.Length].Concat(keyBytes).ToArray();
 
             var key = new Key(keyBytes, fCompressedIn: IsCompressed);
 
-            var generatedaddress = key.PubKey.GetAddress(Network);
-            var addresshash = HashAddress(generatedaddress);
+            BitcoinPubKeyAddress generatedaddress = key.PubKey.GetAddress(Network);
+            byte[] addresshash = HashAddress(generatedaddress);
 
             if(!Utils.ArrayEqual(addresshash, AddressHash))
                 throw new SecurityException("Invalid password (or invalid Network)");
@@ -229,8 +230,8 @@ namespace NBitcoin
             }
             else
             {
-                var ownersalt = ownerEntropy.SafeSubarray(0, 4);
-                var prefactor = SCrypt.BitcoinComputeDerivedKey(Encoding.UTF8.GetBytes(password), ownersalt, 32);
+                byte[] ownersalt = ownerEntropy.SafeSubarray(0, 4);
+                byte[] prefactor = SCrypt.BitcoinComputeDerivedKey(Encoding.UTF8.GetBytes(password), ownersalt, 32);
                 passfactor = Hashes.Hash256(prefactor.Concat(ownerEntropy).ToArray()).ToBytes();
             }
             return passfactor;
@@ -308,10 +309,10 @@ namespace NBitcoin
         {
             get
             {
-                var lenOk = vchData.Length == ValidLength;
+                bool lenOk = vchData.Length == ValidLength;
                 if(!lenOk)
                     return false;
-                var reserved = (vchData[0] & 0x10) == 0 && (vchData[0] & 0x08) == 0;
+                bool reserved = (vchData[0] & 0x10) == 0 && (vchData[0] & 0x08) == 0;
                 return reserved;
             }
         }
@@ -333,7 +334,7 @@ namespace NBitcoin
 #else
         internal static Aes CreateAES256()
         {
-            var aes = Aes.Create();
+            Aes aes = Aes.Create();
             aes.KeySize = 256;
             aes.Mode = CipherMode.ECB;
             aes.IV = new byte[16];
@@ -342,24 +343,24 @@ namespace NBitcoin
 #endif
         internal static byte[] EncryptKey(byte[] key, byte[] derived)
         {
-            var keyhalf1 = key.SafeSubarray(0, 16);
-            var keyhalf2 = key.SafeSubarray(16, 16);
+            byte[] keyhalf1 = key.SafeSubarray(0, 16);
+            byte[] keyhalf2 = key.SafeSubarray(16, 16);
             return EncryptKey(keyhalf1, keyhalf2, derived);
         }
 
         private static byte[] EncryptKey(byte[] keyhalf1, byte[] keyhalf2, byte[] derived)
         {
-            var derivedhalf1 = derived.SafeSubarray(0, 32);
-            var derivedhalf2 = derived.SafeSubarray(32, 32);
+            byte[] derivedhalf1 = derived.SafeSubarray(0, 32);
+            byte[] derivedhalf2 = derived.SafeSubarray(32, 32);
 
             var encryptedhalf1 = new byte[16];
             var encryptedhalf2 = new byte[16];
 #if USEBC || WINDOWS_UWP
             var aes = BitcoinEncryptedSecret.CreateAES256(true, derivedhalf2);
 #else
-            var aes = CreateAES256();
+            Aes aes = CreateAES256();
             aes.Key = derivedhalf2;
-            var encrypt = aes.CreateEncryptor();
+            ICryptoTransform encrypt = aes.CreateEncryptor();
 #endif
 
             for(int i = 0; i < 16; i++)
@@ -387,23 +388,23 @@ namespace NBitcoin
 
         internal static byte[] DecryptKey(byte[] encrypted, byte[] derived)
         {
-            var derivedhalf1 = derived.SafeSubarray(0, 32);
-            var derivedhalf2 = derived.SafeSubarray(32, 32);
+            byte[] derivedhalf1 = derived.SafeSubarray(0, 32);
+            byte[] derivedhalf2 = derived.SafeSubarray(32, 32);
 
-            var encryptedHalf1 = encrypted.SafeSubarray(0, 16);
-            var encryptedHalf2 = encrypted.SafeSubarray(16, 16);
+            byte[] encryptedHalf1 = encrypted.SafeSubarray(0, 16);
+            byte[] encryptedHalf2 = encrypted.SafeSubarray(16, 16);
 
-            byte[] bitcoinprivkey1 = new byte[16];
-            byte[] bitcoinprivkey2 = new byte[16];
+            var bitcoinprivkey1 = new byte[16];
+            var bitcoinprivkey2 = new byte[16];
 
 #if USEBC || WINDOWS_UWP
             var aes = CreateAES256(false, derivedhalf2);
             aes.ProcessBytes(encryptedHalf1, 0, 16, bitcoinprivkey1, 0);
             aes.ProcessBytes(encryptedHalf1, 0, 16, bitcoinprivkey1, 0);
 #else
-            var aes = CreateAES256();
+            Aes aes = CreateAES256();
             aes.Key = derivedhalf2;
-            var decrypt = aes.CreateDecryptor();
+            ICryptoTransform decrypt = aes.CreateDecryptor();
             //Need to call that two time, seems AES bug
             decrypt.TransformBlock(encryptedHalf1, 0, 16, bitcoinprivkey1, 0);
             decrypt.TransformBlock(encryptedHalf1, 0, 16, bitcoinprivkey1, 0);
@@ -434,8 +435,8 @@ namespace NBitcoin
 
         internal static byte[] EncryptSeed(byte[] seedb, byte[] derived)
         {
-            var derivedhalf1 = derived.SafeSubarray(0, 32);
-            var derivedhalf2 = derived.SafeSubarray(32, 32);
+            byte[] derivedhalf1 = derived.SafeSubarray(0, 32);
+            byte[] derivedhalf2 = derived.SafeSubarray(32, 32);
 
             var encryptedhalf1 = new byte[16];
             var encryptedhalf2 = new byte[16];
@@ -443,9 +444,9 @@ namespace NBitcoin
 #if USEBC || WINDOWS_UWP
             var aes = CreateAES256(true, derivedhalf2);
 #else
-            var aes = CreateAES256();
+            Aes aes = CreateAES256();
             aes.Key = derivedhalf2;
-            var encrypt = aes.CreateEncryptor();
+            ICryptoTransform encrypt = aes.CreateEncryptor();
 #endif
             //AES256Encrypt(seedb[0...15] xor derivedhalf1[0...15], derivedhalf2), call the 16-byte result encryptedpart1
             for(int i = 0; i < 16; i++)
@@ -460,7 +461,7 @@ namespace NBitcoin
 #endif
 
             //AES256Encrypt((encryptedpart1[8...15] + seedb[16...23]) xor derivedhalf1[16...31], derivedhalf2), call the 16-byte result encryptedpart2. The "+" operator is concatenation.
-            var half = encryptedhalf1.SafeSubarray(8, 8).Concat(seedb.SafeSubarray(16, 8)).ToArray();
+            byte[] half = encryptedhalf1.SafeSubarray(8, 8).Concat(seedb.SafeSubarray(16, 8)).ToArray();
             for(int i = 0; i < 16; i++)
             {
                 derivedhalf1[16 + i] = (byte)(half[i] ^ derivedhalf1[16 + i]);
@@ -476,19 +477,19 @@ namespace NBitcoin
 
         internal static byte[] DecryptSeed(byte[] encrypted, byte[] derived)
         {
-            byte[] seedb = new byte[24];
-            var derivedhalf1 = derived.SafeSubarray(0, 32);
-            var derivedhalf2 = derived.SafeSubarray(32, 32);
+            var seedb = new byte[24];
+            byte[] derivedhalf1 = derived.SafeSubarray(0, 32);
+            byte[] derivedhalf2 = derived.SafeSubarray(32, 32);
 
-            var encryptedhalf2 = encrypted.SafeSubarray(16, 16);
+            byte[] encryptedhalf2 = encrypted.SafeSubarray(16, 16);
 #if USEBC || WINDOWS_UWP
             var aes = CreateAES256(false, derivedhalf2);
 #else
-            var aes = CreateAES256();
+            Aes aes = CreateAES256();
             aes.Key = derivedhalf2;
-            var decrypt = aes.CreateDecryptor();
+            ICryptoTransform decrypt = aes.CreateDecryptor();
 #endif
-            byte[] half = new byte[16];
+            var half = new byte[16];
             //Decrypt encryptedpart2 using AES256Decrypt to yield the last 8 bytes of seedb and the last 8 bytes of encryptedpart1.
 #if USEBC || WINDOWS_UWP
             aes.ProcessBytes(encryptedhalf2, 0, 16, half, 0);
@@ -514,7 +515,7 @@ namespace NBitcoin
             {
                 encrypted[i + 8] = half[i];
             }
-            var encryptedhalf1 = encrypted.SafeSubarray(0, 16);
+            byte[] encryptedhalf1 = encrypted.SafeSubarray(0, 16);
 #if USEBC || WINDOWS_UWP
             aes.ProcessBytes(encryptedhalf1, 0, 16, seedb, 0);
             aes.ProcessBytes(encryptedhalf1, 0, 16, seedb, 0);

@@ -1,6 +1,5 @@
 ﻿using Newtonsoft.Json;
 
-
 namespace NBitcoin
 {
     public class ValidatedAddress

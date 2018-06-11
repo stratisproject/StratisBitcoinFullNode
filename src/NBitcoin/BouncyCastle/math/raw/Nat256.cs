@@ -1345,7 +1345,7 @@ namespace NBitcoin.BouncyCastle.Math.Raw
 
         public static BigInteger ToBigInteger(uint[] x)
         {
-            byte[] bs = new byte[32];
+            var bs = new byte[32];
             for(int i = 0; i < 8; ++i)
             {
                 uint x_i = x[i];
@@ -1359,7 +1359,7 @@ namespace NBitcoin.BouncyCastle.Math.Raw
 
         public static BigInteger ToBigInteger64(ulong[] x)
         {
-            byte[] bs = new byte[32];
+            var bs = new byte[32];
             for(int i = 0; i < 4; ++i)
             {
                 ulong x_i = x[i];
