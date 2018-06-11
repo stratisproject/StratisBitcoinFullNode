@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Reflection;
 
-using Stratis.FederatedPeg;
-
 namespace FedKeyPairGen
 {
     // The FedKeyPairGenManager handles console output and input.
