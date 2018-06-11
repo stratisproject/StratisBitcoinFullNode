@@ -1,8 +1,7 @@
 ﻿using System;
-using Microsoft.AspNetCore.Mvc.Formatters;
 using Newtonsoft.Json;
 
-namespace Stratis.Sidechains.Features.BlockchainGeneration
+namespace Stratis.Sidechains.Features.BlockchainGeneration.Network
 {
     public class NetworkInfoRequest : INetworkInfoRequest
     {

@@ -4,6 +4,7 @@ using System.Text;
 using System.Threading.Tasks;
 using NBitcoin;
 using Stratis.Sidechains.Features.BlockchainGeneration;
+using Stratis.Sidechains.Features.BlockchainGeneration.Network;
 
 namespace Stratis.Sidechains.Features.BlockchainGeneration
 {

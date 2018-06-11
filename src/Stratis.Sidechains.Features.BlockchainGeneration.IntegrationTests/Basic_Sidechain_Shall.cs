@@ -1,7 +1,8 @@
 using Xunit;
 using FluentAssertions;
-using Stratis.Sidechains.Features.BlockchainGeneration.Tests.Common.EnvironmentMockUp;
-
+using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
+using Stratis.FederatedSidechains.IntegrationTests.Common;
+using Stratis.Sidechains.Features.BlockchainGeneration.Network;
 namespace Stratis.Sidechains.Features.BlockchainGeneration.IntegrationTests
 {
     [Collection("SidechainIdentifierTests")]
@@ -12,9 +13,9 @@ namespace Stratis.Sidechains.Features.BlockchainGeneration.IntegrationTests
         [Fact]
         public void Start_Up()
         {
-            using (var nodeBuilder = NodeBuilder.Create())
+            using (var nodeBuilder = NodeBuilder.Create(this))
             {
-                var coreNode = nodeBuilder.CreatePosSidechainNode("enigma", false);
+                var coreNode = nodeBuilder.CreatePowPosMiningNode(SidechainNetwork.SidechainRegTest);
                 coreNode.Start();
                 coreNode.State.Should().Be(CoreNodeState.Running);
             }

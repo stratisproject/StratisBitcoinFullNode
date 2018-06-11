@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Linq;
 
-namespace Stratis.Sidechains.Features.BlockchainGeneration
+namespace Stratis.Sidechains.Features.BlockchainGeneration.Network
 {
     //immutable scoped singleton pattern
     //This singleton allows is to access the name and info of the sidechain in

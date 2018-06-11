@@ -2,12 +2,10 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Runtime.InteropServices;
-using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
 
-namespace Stratis.Sidechains.Features.BlockchainGeneration
+namespace Stratis.Sidechains.Features.BlockchainGeneration.Network
 {
     internal sealed class DefaultSidechainInfoProvider : ISidechainInfoProvider
     {

@@ -17,6 +17,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Stratis.FederatedPeg.Features.MainchainGeneratorServices\Stratis.FederatedPeg.Features.MainchainGeneratorServices.csproj" />
     <ProjectReference Include="..\Stratis.FederatedPeg\Stratis.FederatedPeg.csproj" />
   </ItemGroup>
 

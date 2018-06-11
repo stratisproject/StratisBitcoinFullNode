@@ -11,7 +11,12 @@ using Stratis.Bitcoin.Features.RPC;
 using Stratis.Bitcoin.Features.Wallet;
 using Xunit;
 using System.Linq;
-using Stratis.Sidechains.Features.BlockchainGeneration.Tests.Common.EnvironmentMockUp;
+using NBitcoin.Protocol;
+using Stratis.Bitcoin.Features.Miner.Interfaces;
+using Stratis.Bitcoin.IntegrationTests.Common;
+using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
+using Stratis.Sidechains.Features.BlockchainGeneration;
+using Stratis.Sidechains.Features.BlockchainGeneration.Network;
 using Xunit.Sdk;
 
 namespace EnigmaChain.IntegrationTests
@@ -19,22 +24,26 @@ namespace EnigmaChain.IntegrationTests
     [Collection("SidechainIdentifierTests")]
     public class Generated_Node_Shall
     {
-        [Fact]
+        [Fact(Skip = "waiting for mining changes on the full node")]
+        //TODO this needs to be fixed, waiting for changes on the full node to get
+        //premine reward on POW
         public async Task Mine_Premine()
         {
-            using (var nodeBuilder = NodeBuilder.Create())
+            using (var nodeBuilder = NodeBuilder.Create(this))
             {
-                var sidechainNode = nodeBuilder.CreatePosSidechainNode("enigma", false, fullNodeBuilder =>
+                var sidechainNode = nodeBuilder.CreateCustomNode(false, fullNodeBuilder =>
+                //var sidechainNode = nodeBuilder.CreatePosSidechainNode("enigma", false, fullNodeBuilder =>
                 {
                     fullNodeBuilder
                         .UseBlockStore()
                         .UsePosConsensus()
                         .UseMempool()
                         .UseWallet()
-                        .AddPowPosMining()
+                        .AddMining()
+                        .SubstituteDateTimeProviderFor<MiningFeature>()
                         .UseApi()
                         .AddRPC();
-                });
+                }, SidechainNetwork.SidechainRegTest);
 
                 //command line args and start
                 sidechainNode.ConfigParameters.Add("apiuri", "http://localhost:38771");
@@ -42,17 +51,30 @@ namespace EnigmaChain.IntegrationTests
                 sidechainNode.ConfigParameters.Add("addnode", "127.0.0.1:38000");
                 sidechainNode.Start();
 
+                sidechainNode.FullNode.Chain.Tip.Height.Should().Be(0);
+
                 //create wallet
-                var mnemonic = sidechainNode.FullNode.WalletManager().CreateWallet("123456", "wallet");
+                var walletManager = sidechainNode.FullNode.WalletManager();
+                var mnemonic = walletManager.CreateWallet("123456", "wallet");
                 mnemonic.Words.Length.Should().Be(12);
 
+                var powMinting = sidechainNode.FullNode.NodeService<IPowMining>();
+
+                var walletAccountReference = new WalletAccountReference("wallet", "account 0");
+                var bitcoinAddress = walletManager.GetUnusedAddress(walletAccountReference);
+
+                powMinting.GenerateBlocks(new ReserveScript(bitcoinAddress.ScriptPubKey), 3UL, int.MaxValue);
+
+                sidechainNode.FullNode.Chain.Tip.Height.Should().Be(3);
+
                 //mine three blocks using RPC
-                RPCClient rpc = sidechainNode.CreateRPCClient();
-                rpc.SendCommand(NBitcoin.RPC.RPCOperations.generate, 3);
-                rpc.GetBlockCount().Should().Be(3);
+                //RPCClient rpc = sidechainNode.CreateRPCClient();
+                //sidechainNode.FullNode.Services.ServiceProvider<IPowMining>;
+                //rpc.SendCommand(NBitcoin.RPC.RPCOperations.generate, 10);
+                //rpc.GetBlockCount().Should().Be(10);
 
                 //test the wallet balance
-                var total = sidechainNode.FullNode.WalletManager().GetSpendableTransactionsInWallet("wallet").Sum(s => s.Transaction.Amount);
+                var total = walletManager.GetSpendableTransactionsInWallet("wallet").Sum(s => s.Transaction.Amount);
                 total.Should().Be(9800000800000000L);
             }
         }

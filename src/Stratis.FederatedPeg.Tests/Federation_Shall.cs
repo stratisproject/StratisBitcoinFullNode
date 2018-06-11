@@ -5,6 +5,7 @@ using Xunit;
 
 using NBitcoin;
 using Stratis.Sidechains.Features.BlockchainGeneration;
+using Stratis.Sidechains.Features.BlockchainGeneration.Network;
 
 namespace Stratis.FederatedPeg.Tests
 {
@@ -49,7 +50,7 @@ namespace Stratis.FederatedPeg.Tests
 
                 address.Length.Should().BeLessThan(40);
                 address.Length.Should().BeGreaterThan(1);
-                address.StartsWith("2").Should().BeTrue();
+                address.Should().StartWith("x");
             }
         }
 

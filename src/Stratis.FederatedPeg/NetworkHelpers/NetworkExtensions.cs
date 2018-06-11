@@ -1,8 +1,8 @@
-﻿using NBitcoin;
-using Stratis.Sidechains.Features.BlockchainGeneration;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
-
+using NBitcoin;
+using Stratis.Sidechains.Features.BlockchainGeneration;
+using Stratis.Sidechains.Features.BlockchainGeneration.Network;
 namespace Stratis.FederatedPeg
 {
     /// <summary>

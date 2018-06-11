@@ -1,6 +1,6 @@
 ﻿using Newtonsoft.Json;
 
-namespace Stratis.Sidechains.Features.BlockchainGeneration
+namespace Stratis.Sidechains.Features.BlockchainGeneration.Network
 {
     public class SidechainInfoBase<T> where T : INetworkInfoRequest
     {

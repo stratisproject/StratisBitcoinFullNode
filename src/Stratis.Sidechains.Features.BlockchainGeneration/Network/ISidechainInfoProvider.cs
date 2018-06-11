@@ -1,10 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 
-namespace Stratis.Sidechains.Features.BlockchainGeneration
+namespace Stratis.Sidechains.Features.BlockchainGeneration.Network
 {
     public interface ISidechainInfoProvider
     {

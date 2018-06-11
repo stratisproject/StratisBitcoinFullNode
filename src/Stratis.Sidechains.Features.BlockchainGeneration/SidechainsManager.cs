@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using NBitcoin;
 using Newtonsoft.Json;
 using Stratis.Bitcoin.Configuration;
+using Stratis.Sidechains.Features.BlockchainGeneration.Network;
 
 namespace Stratis.Sidechains.Features.BlockchainGeneration
 {
@@ -17,18 +18,16 @@ namespace Stratis.Sidechains.Features.BlockchainGeneration
             NullValueHandling = NullValueHandling.Include,
             ConstructorHandling = ConstructorHandling.AllowNonPublicDefaultConstructor
         };
-        private CoinDetails _coinDetails;
-        private readonly string _folder;
-        private readonly string _networkName;
-        private readonly string _sidechainName;
+        private CoinDetails coinDetails;
+        private readonly string folder;
+        private readonly NBitcoin.Network network;
 
         public SidechainsManager(NodeSettings nodeSettings)
         {
             //TODO: probably add the infornations about the sidechains in the nodeSettings 
             var directoryInfo = new DirectoryInfo(nodeSettings.DataDir);
-            _folder = directoryInfo.Parent.Parent.FullName;
-            _networkName = nodeSettings.Network.Name;
-            _sidechainName = directoryInfo.Parent.Name;
+            folder = directoryInfo.Parent.Parent.FullName;
+            network = nodeSettings.Network;
         }
 
         public async Task<Dictionary<string, SidechainInfo>> ListSidechains()
@@ -38,14 +37,9 @@ namespace Stratis.Sidechains.Features.BlockchainGeneration
 
         public async Task<CoinDetails> GetCoinDetails()
         {
-            if (_coinDetails != null) return _coinDetails;
-            var infoProvider = new DefaultSidechainInfoProvider(_folder);
-            var sidechainInfo = await infoProvider.GetSidechainInfoAsync(_sidechainName);
-            //if(sidechainInfo.NetworkInfoByName[])
-            var networkInfo = sidechainInfo.NetworkInfoByName[_networkName];
-            _coinDetails = new CoinDetails(networkInfo.CoinSymbol, sidechainInfo.CoinName, sidechainInfo.CoinType);
-            return _coinDetails;
-
+            if (coinDetails != null) return coinDetails;
+            coinDetails = new CoinDetails(network.Consensus.CoinType, network.Name);
+            return coinDetails;
         }
 
         public async Task NewSidechain(SidechainInfoRequest sidechainInfoRequest)
@@ -66,7 +60,7 @@ namespace Stratis.Sidechains.Features.BlockchainGeneration
 
         private async Task SaveSidechains(Dictionary<string, SidechainInfo> dictionary)
         {
-            string filename = Path.Combine(_folder, "sidechains.json");
+            string filename = Path.Combine(folder, "sidechains.json");
 
             string json = JsonConvert.SerializeObject(dictionary, Formatting.Indented, this.jsonSerializerSettings);
             using (var fileStream = File.OpenWrite(filename))
@@ -78,7 +72,7 @@ namespace Stratis.Sidechains.Features.BlockchainGeneration
 
         private async Task<Dictionary<string, SidechainInfo>> GetSidechains()
         {
-            string filename = Path.Combine(_folder, "sidechains.json");
+            string filename = Path.Combine(folder, "sidechains.json");
             if (System.IO.File.Exists(filename) == false)
                 return new Dictionary<string, SidechainInfo>();
             else

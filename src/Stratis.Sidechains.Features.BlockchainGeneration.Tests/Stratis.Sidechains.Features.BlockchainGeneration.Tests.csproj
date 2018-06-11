@@ -22,12 +22,14 @@
     <PackageReference Include="Stratis.Bitcoin.Features.BlockStore" Version="1.1.7-beta" />
     <PackageReference Include="Stratis.Bitcoin.Features.Consensus" Version="1.1.7-beta" />
     <PackageReference Include="Stratis.Bitcoin.Features.MemoryPool" Version="1.1.7-beta" />
+    <PackageReference Include="Stratis.Bitcoin.IntegrationTests.Common" Version="1.1.7-beta" />
     <PackageReference Include="xunit" Version="2.3.1" />
     <PackageReference Include="xunit.runner.visualstudio" Version="2.3.1" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Stratis.Sidechains.Features.BlockchainGeneration.Tests.Common\Stratis.Sidechains.Features.BlockchainGeneration.Tests.Common.csproj" />
+    <ProjectReference Include="..\Stratis.FederatedSidechains.IntegrationTests.Common\Stratis.FederatedSidechains.IntegrationTests.Common.csproj" />
+    <ProjectReference Include="..\Stratis.Sidechains.Features.BlockchainGeneration\Stratis.Sidechains.Features.BlockchainGeneration.csproj" />
   </ItemGroup>
 
 </Project>

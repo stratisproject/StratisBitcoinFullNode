@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using NBitcoin;
 using Stratis.Bitcoin.Utilities.JsonErrors;
+using Stratis.Sidechains.Features.BlockchainGeneration.Network;
 
 namespace Stratis.Sidechains.Features.BlockchainGeneration
 {

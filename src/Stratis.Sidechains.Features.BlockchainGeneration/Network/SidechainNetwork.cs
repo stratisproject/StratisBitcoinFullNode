@@ -1,26 +1,28 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
-using System.Threading;
 using NBitcoin;
-using NBitcoin.BouncyCastle.Math;
 using NBitcoin.DataEncoders;
 using NBitcoin.Networks;
 using NBitcoin.Protocol;
 
-namespace Stratis.Sidechains.Features.BlockchainGeneration
+namespace Stratis.Sidechains.Features.BlockchainGeneration.Network
 {
+    /// <summary>
+    /// This is the "default" definition of a sidechain network that is a copy of
+    /// the Apex chain
+    /// </summary> 
     public class SidechainNetwork
     {
-        public const string SidechainMainName = "SidechainMain";
-        public const string SidechainTestName = "SidechainTest";
-        public const string SidechainRegTestName = "SidechainRegTest";
+        public const string ChainName = "Sidechain";
+        public const string MainNetworkName = ChainName + "Main";
+        public const string TestNetworkName = ChainName + "Test";
+        public const string RegTestNetworkName = ChainName + "RegTest";
 
-        public static Network SidechainMain => Network.GetNetwork(SidechainMainName) ?? Network.Register(new SidechainMain());
+        public static NBitcoin.Network SidechainMain => NBitcoin.Network.GetNetwork(MainNetworkName) ?? NBitcoin.Network.Register(new SidechainMain());
 
-        public static Network SidechainTest => Network.GetNetwork(SidechainTestName) ?? Network.Register(new SidechainTest());
+        public static NBitcoin.Network SidechainTest => NBitcoin.Network.GetNetwork(TestNetworkName) ?? NBitcoin.Network.Register(new SidechainTest());
 
-        public static Network SidechainRegTest => Network.GetNetwork(SidechainRegTestName) ?? Network.Register(new SidechainRegTest());
+        public static NBitcoin.Network SidechainRegTest => NBitcoin.Network.GetNetwork(RegTestNetworkName) ?? NBitcoin.Network.Register(new SidechainRegTest());
 
         public static Block CreateSidechainGenesisBlock(ConsensusFactory consensusFactory, uint nTime, uint nNonce, uint nBits, int nVersion, Money genesisReward)
         {
@@ -66,35 +68,33 @@ namespace Stratis.Sidechains.Features.BlockchainGeneration
     {
         public SidechainMain()
         {
-            // The message start string is designed to be unlikely to occur in normal data.
-            // The characters are rarely used upper ASCII, not valid as UTF-8, and produce
-            // a large 4-byte int at any alignment.
-            var messageStart = new byte[4];
-            messageStart[0] = 0x70;
-            messageStart[1] = 0x35;
-            messageStart[2] = 0x22;
-            messageStart[3] = 0x05;
-            var magic = BitConverter.ToUInt32(messageStart, 0); //0x5223570; 
+            this.Name = SidechainNetwork.MainNetworkName;
+            this.RootFolderName = SidechainNetwork.ChainName.ToLowerInvariant();
+            this.DefaultConfigFilename = $"{SidechainNetwork.ChainName.ToLowerInvariant()}.conf";
+            this.DefaultPort = 36000;
+            this.RPCPort = 36100;
+            this.Base58Prefixes[(int)Base58Type.PUBKEY_ADDRESS] = new byte[] { 23 }; // A
+            this.Base58Prefixes[(int)Base58Type.SCRIPT_ADDRESS] = new byte[] { 83 }; // a
+            this.Magic = 0x522357A;
 
-
-            SidechainInfo sidechainInfo = SidechainIdentifier.Instance.InfoProvider
-                .GetSidechainInfo(SidechainIdentifier.Instance.Name);
-            var networkInfo = sidechainInfo.MainNet;
-
-            this.Name = SidechainNetwork.SidechainMainName;
-            this.RootFolderName = SidechainIdentifier.Instance.Name;
-            this.DefaultConfigFilename = $"{SidechainIdentifier.Instance.Name}.conf";
-            this.DefaultPort = networkInfo.Port;
-            this.RPCPort = networkInfo.RpcPort;
-            this.Base58Prefixes[(int)Base58Type.PUBKEY_ADDRESS] = new byte[] { (byte)networkInfo.AddressPrefix };
-            this.Magic = 0;
-
-            this.Consensus.CoinType = sidechainInfo.CoinType;
+            this.Consensus.CoinType = 3000;
             this.Consensus.DefaultAssumeValid = null;
 
-            this.Genesis = SidechainNetwork.CreateSidechainGenesisBlock(this.Consensus.ConsensusFactory, networkInfo.Time, networkInfo.Nonce, this.Consensus.PowLimit, 1, Money.Coins(50m));
+            this.Checkpoints = new Dictionary<int, CheckpointInfo>();
+            this.DNSSeeds = new List<DNSSeedData>();
+            this.SeedNodes = new List<NetworkAddress>();
+
+            // Create the genesis block.
+            this.GenesisTime = 1528217223;
+            this.GenesisNonce = 58285;
+            this.GenesisBits = this.Consensus.PowLimit.ToCompact();
+            this.GenesisVersion = 1;
+            this.GenesisReward = Money.Coins(50m);
+
+            this.Genesis = SidechainNetwork.CreateSidechainGenesisBlock(this.Consensus.ConsensusFactory, this.GenesisTime, this.GenesisNonce, this.Consensus.PowLimit, this.GenesisVersion, this.GenesisReward);
             this.Consensus.HashGenesisBlock = this.Genesis.GetHash();
-            Assert(this.Consensus.HashGenesisBlock.ToString() == networkInfo.GenesisHashHex);
+            Assert(this.Consensus.HashGenesisBlock.ToString() == "000009a6434326a4851f0e95285351839c287182bd2b62ca8765ce30007605e1");
+            Assert(this.Genesis.Header.HashMerkleRoot == uint256.Parse("070b7da316f93439d05240db30a9ca4f6019d550e0b6af9a8ac1b075726c9403"));
         }
     }
 
@@ -102,37 +102,34 @@ namespace Stratis.Sidechains.Features.BlockchainGeneration
     {
         public SidechainTest()
         {
-            // The message start string is designed to be unlikely to occur in normal data.
-            // The characters are rarely used upper ASCII, not valid as UTF-8, and produce
-            // a large 4-byte int at any alignment.
-            var messageStart = new byte[4];
-            messageStart[0] = 0x71;
-            messageStart[1] = 0x31;
-            messageStart[2] = 0x21;
-            messageStart[3] = 0x11;
-            var magic = BitConverter.ToUInt32(messageStart, 0); //0x5223570; 
+            this.Name = SidechainNetwork.TestNetworkName;
+            this.RootFolderName = SidechainNetwork.ChainName.ToLowerInvariant();
+            this.DefaultConfigFilename = $"{SidechainNetwork.ChainName.ToLowerInvariant()}.conf";
+            this.DefaultPort = 36001;
+            this.RPCPort = 36101;
+            this.Base58Prefixes[(int)Base58Type.PUBKEY_ADDRESS] = new byte[] { 55 }; // P
+            this.Base58Prefixes[(int)Base58Type.SCRIPT_ADDRESS] = new byte[] { 117 }; // p
+            this.Magic = 0x522357B;
 
-            SidechainInfo sidechainInfo = SidechainIdentifier.Instance.InfoProvider
-                .GetSidechainInfo(SidechainIdentifier.Instance.Name);
-            var networkInfo = sidechainInfo.TestNet;
-
-            this.Name = SidechainNetwork.SidechainMainName;
-            this.RootFolderName = SidechainIdentifier.Instance.Name;
-            this.DefaultConfigFilename = $"{SidechainIdentifier.Instance.Name}.conf";
-            this.DefaultPort = networkInfo.Port; //36178 updated for sidechains
-            this.RPCPort = networkInfo.RpcPort;  //36174 updated for sidechains
-            this.Base58Prefixes[(int)Base58Type.PUBKEY_ADDRESS] = new byte[] { (byte)networkInfo.AddressPrefix }; //65     //updated for sidechains
-            this.Base58Prefixes[(int)Base58Type.SCRIPT_ADDRESS] = new byte[] { (196) };
-            this.Base58Prefixes[(int)Base58Type.SECRET_KEY] = new byte[] { (65 + 128) };
-            this.Magic = magic;
-
-            this.Consensus.CoinType = sidechainInfo.CoinType;
+            this.Consensus.CoinType = 3001;
             this.Consensus.DefaultAssumeValid = null;
             this.Consensus.PowLimit = new Target(new uint256("0000ffff00000000000000000000000000000000000000000000000000000000"));
 
-            this.Genesis = SidechainNetwork.CreateSidechainGenesisBlock(this.Consensus.ConsensusFactory, networkInfo.Time, networkInfo.Nonce, this.Consensus.PowLimit, 1, Money.Coins(50m));
+            this.Checkpoints = new Dictionary<int, CheckpointInfo>();
+            this.DNSSeeds = new List<DNSSeedData>();
+            this.SeedNodes = new List<NetworkAddress>();
+
+            // Create the genesis block.
+            this.GenesisTime = 1528217189;
+            this.GenesisNonce = 9027;
+            this.GenesisBits = this.Consensus.PowLimit.ToCompact();
+            this.GenesisVersion = 1;
+            this.GenesisReward = Money.Coins(50m);
+
+            this.Genesis = SidechainNetwork.CreateSidechainGenesisBlock(this.Consensus.ConsensusFactory, this.GenesisTime, this.GenesisNonce, this.Consensus.PowLimit, this.GenesisVersion, this.GenesisReward);
             this.Consensus.HashGenesisBlock = this.Genesis.GetHash();
-            Assert(this.Consensus.HashGenesisBlock.ToString() == networkInfo.GenesisHashHex);
+            Assert(this.Consensus.HashGenesisBlock.ToString() == "0000e451752bac9f67cb5d63fd32442ba42d42b1b2ea28131d91e1e3f29f523b");
+            Assert(this.Genesis.Header.HashMerkleRoot == uint256.Parse("7326e99b152ce27951b0e9633c2663e8ddfd4006752d1721d579a22046e2d8fb"));
         }
     }
 
@@ -140,43 +137,42 @@ namespace Stratis.Sidechains.Features.BlockchainGeneration
     {
         public SidechainRegTest()
         {
-            var messageStart = new byte[4];
-            messageStart[0] = 0xcd;
-            messageStart[1] = 0xf2;
-            messageStart[2] = 0xc0;
-            messageStart[3] = 0xef;
-            var magic = BitConverter.ToUInt32(messageStart, 0); // 0xefc0f2cd
 
-            var networkInfo = SidechainIdentifier.Instance.InfoProvider
-                .GetSidechainInfo(SidechainIdentifier.Instance.Name).RegTest;
+            this.Name = SidechainNetwork.RegTestNetworkName;
+            this.RootFolderName = SidechainNetwork.ChainName.ToLowerInvariant();
+            this.DefaultConfigFilename = $"{SidechainNetwork.ChainName.ToLowerInvariant()}.conf";
+            this.DefaultPort = 36002;
+            this.RPCPort = 36102;
 
-            this.Name = SidechainNetwork.SidechainRegTestName;
-            this.RootFolderName = SidechainIdentifier.Instance.Name;
-            this.DefaultConfigFilename = $"{SidechainIdentifier.Instance.Name}.conf";
-            this.DefaultPort = networkInfo.Port;
-            this.RPCPort = networkInfo.RpcPort;
-
-            this.Magic = magic;
+            this.Magic = 0x522357C;
             this.MinTxFee = 0;
             this.FallbackFee = 0;
             this.MinRelayTxFee = 0;
 
+            this.Consensus.CoinType = 3001;
             this.Consensus.PowAllowMinDifficultyBlocks = true;
             this.Consensus.PowNoRetargeting = true;
             this.Consensus.PowLimit = new Target(new uint256("7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"));
             this.Consensus.DefaultAssumeValid = null; // turn off assumevalid for regtest.
 
-            this.Base58Prefixes[(int)Base58Type.PUBKEY_ADDRESS] = new byte[] { (byte)networkInfo.AddressPrefix };
-            this.Base58Prefixes[(int)Base58Type.SCRIPT_ADDRESS] = new byte[] { (196) };
-            this.Base58Prefixes[(int)Base58Type.SECRET_KEY] = new byte[] { (65 + 128) };
+            this.Base58Prefixes[(int)Base58Type.PUBKEY_ADDRESS] = new byte[] { 75 }; // X
+            this.Base58Prefixes[(int)Base58Type.SCRIPT_ADDRESS] = new byte[] { 137 }; // x
 
             this.Checkpoints = new Dictionary<int, CheckpointInfo>();
             this.DNSSeeds = new List<DNSSeedData>();
             this.SeedNodes = new List<NetworkAddress>();
 
-            this.Genesis = SidechainNetwork.CreateSidechainGenesisBlock(this.Consensus.ConsensusFactory, networkInfo.Time, networkInfo.Nonce, this.Consensus.PowLimit, 1, Money.Coins(50m));
+            // Create the genesis block.
+            this.GenesisTime = 1528217336;
+            this.GenesisNonce = 2;
+            this.GenesisBits = this.Consensus.PowLimit.ToCompact();
+            this.GenesisVersion = 1;
+            this.GenesisReward = Money.Coins(50m);
+
+            this.Genesis = SidechainNetwork.CreateSidechainGenesisBlock(this.Consensus.ConsensusFactory, this.GenesisTime, this.GenesisNonce, this.Consensus.PowLimit, this.GenesisVersion, this.GenesisReward);
             this.Consensus.HashGenesisBlock = this.Genesis.GetHash();
-            Assert(this.Consensus.HashGenesisBlock.ToString() == networkInfo.GenesisHashHex);
+            Assert(this.Consensus.HashGenesisBlock.ToString() == "0688f8440feed473792edc56e365bb7ab20ae2d4e2010cfb8af4ccadaa53e611");
+            Assert(this.Genesis.Header.HashMerkleRoot == uint256.Parse("a835d145c6011d3731b0ab5a8f2108f635a5197ccd2e69b74cac1dfa9007db4b"));
         }
     }
 }

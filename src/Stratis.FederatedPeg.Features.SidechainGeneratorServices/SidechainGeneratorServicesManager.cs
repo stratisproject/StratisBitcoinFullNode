@@ -4,6 +4,7 @@ using Stratis.Bitcoin.Features.Miner;
 using Stratis.Bitcoin.Features.Miner.Interfaces;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Sidechains.Features.BlockchainGeneration;
+using Stratis.Sidechains.Features.BlockchainGeneration.Network;
 
 namespace Stratis.FederatedPeg.Features.SidechainGeneratorServices
 {

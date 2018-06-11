@@ -1,4 +1,4 @@
-﻿namespace Stratis.Sidechains.Features.BlockchainGeneration
+﻿namespace Stratis.Sidechains.Features.BlockchainGeneration.Network
 {
     public interface INetworkInfoRequest
     {
