@@ -46,7 +46,7 @@ namespace NBitcoin
         /// <returns><c>true</c> if it is assignable.</returns>
         protected bool IsBlockHeader<T>()
         {
-            return this.IsAssignable<T>(this.blockHeaderType, this.isAssignableFromBlockHeader);
+            return IsAssignable<T>(this.blockHeaderType, this.isAssignableFromBlockHeader);
         }
 
         /// <summary>
@@ -56,7 +56,7 @@ namespace NBitcoin
         /// <returns><c>true</c> if it is assignable.</returns>
         protected bool IsBlock<T>()
         {
-            return this.IsAssignable<T>(this.blockType, this.isAssignableFromBlock);
+            return IsAssignable<T>(this.blockType, this.isAssignableFromBlock);
         }
 
         /// <summary>
@@ -66,7 +66,7 @@ namespace NBitcoin
         /// <returns><c>true</c> if it is assignable.</returns>
         protected bool IsTransaction<T>()
         {
-            return this.IsAssignable<T>(this.transactionType, this.isAssignableFromTransaction);
+            return IsAssignable<T>(this.transactionType, this.isAssignableFromTransaction);
         }
 
         /// <summary>
@@ -102,19 +102,19 @@ namespace NBitcoin
         public virtual bool TryCreateNew<T>(out T result) where T : IBitcoinSerializable
         {
             result = default(T);
-            if (this.IsBlock<T>())
+            if (IsBlock<T>())
             {
-                result = (T)(object)this.CreateBlock();
+                result = (T)(object)CreateBlock();
                 return true;
             }
-            if (this.IsBlockHeader<T>())
+            if (IsBlockHeader<T>())
             {
-                result = (T)(object)this.CreateBlockHeader();
+                result = (T)(object)CreateBlockHeader();
                 return true;
             }
-            if (this.IsTransaction<T>())
+            if (IsTransaction<T>())
             {
-                result = (T)(object)this.CreateTransaction();
+                result = (T)(object)CreateTransaction();
                 return true;
             }
             return false;
@@ -150,7 +150,7 @@ namespace NBitcoin
         public virtual Block CreateBlock()
         {
 #pragma warning disable CS0618 // Type or member is obsolete
-            return new Block(this.CreateBlockHeader());
+            return new Block(CreateBlockHeader());
 #pragma warning restore CS0618 // Type or member is obsolete
         }
 

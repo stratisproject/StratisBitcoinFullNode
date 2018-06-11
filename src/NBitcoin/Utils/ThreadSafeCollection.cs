@@ -20,7 +20,7 @@ namespace NBitcoin
             if(item == null)
                 throw new ArgumentNullException("item");
             OnAdding(item);
-            _Behaviors.TryAdd(item, item);
+            this._Behaviors.TryAdd(item, item);
             return new ActionDisposable(() =>
             {
             }, () => Remove(item));
@@ -36,7 +36,7 @@ namespace NBitcoin
         public bool Remove(T item)
         {
             T old;
-            bool removed = _Behaviors.TryRemove(item, out old);
+            bool removed = this._Behaviors.TryRemove(item, out old);
             if(removed)
                 OnRemoved(old);
             return removed;
@@ -74,7 +74,7 @@ namespace NBitcoin
             foreach(U b in this.OfType<U>())
             {
                 T behavior;
-                _Behaviors.TryRemove(b, out behavior);
+                this._Behaviors.TryRemove(b, out behavior);
             }
         }
 
@@ -82,7 +82,7 @@ namespace NBitcoin
 
         public IEnumerator<T> GetEnumerator()
         {
-            return _Behaviors.Select(k => k.Key).GetEnumerator();
+            return this._Behaviors.Select(k => k.Key).GetEnumerator();
         }
 
         #endregion

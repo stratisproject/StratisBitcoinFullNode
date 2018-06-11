@@ -12,18 +12,18 @@ namespace NBitcoin
         {
             if(client == null)
                 throw new ArgumentNullException("client");
-            _Client = client;
+            this._Client = client;
         }
 #region ITransactionRepository Members
 
         public Task<Transaction> GetAsync(uint256 txId)
         {
-            return _Client.GetRawTransactionAsync(txId, false);
+            return this._Client.GetRawTransactionAsync(txId, false);
         }
 
         public Task BroadcastAsync(Transaction tx)
         {
-            return _Client.SendRawTransactionAsync(tx);
+            return this._Client.SendRawTransactionAsync(tx);
         }
 
         public Task PutAsync(uint256 txId, Transaction tx)

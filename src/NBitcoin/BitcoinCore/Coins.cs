@@ -86,14 +86,14 @@ namespace NBitcoin.BitcoinCore
             this.nVersion = tx.Version;
             this.nHeight = (uint)height;
 
-            this.ClearUnspendable();
-            this.UpdateValue();
+            ClearUnspendable();
+            UpdateValue();
         }
 
         private void UpdateValue()
         {
             this.Value = this.Outputs
-                .Where(o => !this.IsNull(o))
+                .Where(o => !IsNull(o))
                 .Sum(o=> o.Value);
         }
 
@@ -107,14 +107,14 @@ namespace NBitcoin.BitcoinCore
             // Remove spent outputs at the end of vout.
             for(int i = count - 1; i >= 0; i--)
             {
-                if (this.IsNull(this.Outputs[i]))
+                if (IsNull(this.Outputs[i]))
                     this.Outputs.RemoveAt(i);
                 else
                     break;
             }
         }
 
-        public int UnspentCount => this.Outputs.Count(c => !this.IsNull(c));
+        public int UnspentCount => this.Outputs.Count(c => !IsNull(c));
 
         #region IBitcoinSerializable Members
 
@@ -123,10 +123,10 @@ namespace NBitcoin.BitcoinCore
             if (stream.Serializing)
             {
                 uint nMaskSize = 0, nMaskCode = 0;
-                this.CalcMaskSize(ref nMaskSize, ref nMaskCode);
+                CalcMaskSize(ref nMaskSize, ref nMaskCode);
 
-                bool fFirst = this.Outputs.Count > 0 && !this.IsNull(this.Outputs[0]);
-                bool fSecond = this.Outputs.Count > 1 && !this.IsNull(this.Outputs[1]);
+                bool fFirst = this.Outputs.Count > 0 && !IsNull(this.Outputs[0]);
+                bool fSecond = this.Outputs.Count > 1 && !IsNull(this.Outputs[1]);
                 uint nCode = unchecked((uint)(8 * (nMaskCode - (fFirst || fSecond ? 0 : 1)) + (this.CoinBase ? 1 : 0) + (fFirst ? 2 : 0) + (fSecond ? 4 : 0)));
 
                 // version
@@ -140,7 +140,7 @@ namespace NBitcoin.BitcoinCore
                 {
                     byte chAvail = 0;
                     for (uint i = 0; i < 8 && 2 + b * 8 + i < this.Outputs.Count; i++)
-                        if(!this.IsNull(this.Outputs[2 + (int)b * 8 + (int)i]))
+                        if(!IsNull(this.Outputs[2 + (int)b * 8 + (int)i]))
                             chAvail |= (byte)(1 << (int)i);
 
                     stream.ReadWrite(ref chAvail);
@@ -149,7 +149,7 @@ namespace NBitcoin.BitcoinCore
                 // txouts themself
                 for (uint i = 0; i < this.Outputs.Count; i++)
                 {
-                    if (!this.IsNull(this.Outputs[(int)i]))
+                    if (!IsNull(this.Outputs[(int)i]))
                     {
                         var compressedTx = new TxOutCompressor(this.Outputs[(int)i]);
                         stream.ReadWrite(ref compressedTx);
@@ -219,8 +219,8 @@ namespace NBitcoin.BitcoinCore
                     stream.ReadWrite(ref this.nTime);
                 }
 
-                this.Cleanup();
-                this.UpdateValue();
+                Cleanup();
+                UpdateValue();
             }
         }
 
@@ -236,7 +236,7 @@ namespace NBitcoin.BitcoinCore
                 bool fZero = true;
                 for (uint i = 0; i < 8 && 2 + b * 8 + i < this.Outputs.Count; i++)
                 {
-                    if (!this.IsNull(this.Outputs[2 + (int)b * 8 + (int)i]))
+                    if (!IsNull(this.Outputs[2 + (int)b * 8 + (int)i]))
                     {
                         fZero = false;
                         continue;
@@ -256,12 +256,12 @@ namespace NBitcoin.BitcoinCore
         // check whether a particular output is still available
         public bool IsAvailable(uint position)
         {
-            return position <= int.MaxValue && position < this.Outputs.Count && !this.IsNull(this.Outputs[(int)position]);
+            return position <= int.MaxValue && position < this.Outputs.Count && !IsNull(this.Outputs[(int)position]);
         }
 
         public TxOut TryGetOutput(uint position)
         {
-            if (!this.IsAvailable(position))
+            if (!IsAvailable(position))
                 return null;
 
             return this.Outputs[(int)position];
@@ -269,7 +269,7 @@ namespace NBitcoin.BitcoinCore
 
         // check whether the entire CCoins is spent
         // note that only !IsPruned() CCoins can be serialized
-        public bool IsPruned => this.IsEmpty || this.Outputs.All(v => this.IsNull(v));
+        public bool IsPruned => this.IsEmpty || this.Outputs.All(v => IsNull(v));
 
         #endregion
 
@@ -282,7 +282,7 @@ namespace NBitcoin.BitcoinCore
                     this.Outputs[i] = NullTxOut;
             }
 
-            this.Cleanup();
+            Cleanup();
         }
 
         public void MergeFrom(Coins otherCoin)
@@ -295,7 +295,7 @@ namespace NBitcoin.BitcoinCore
             for (int i = 0; i < otherCoin.Outputs.Count; i++)
                 this.Outputs[i] = otherCoin.Outputs[i];
 
-            this.UpdateValue();
+            UpdateValue();
         }
     }
 }

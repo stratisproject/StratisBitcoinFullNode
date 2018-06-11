@@ -51,7 +51,7 @@ namespace NBitcoin.OpenAsset
 
         public CoinprismColoredTransactionRepository(Network network)
         {
-            _network = network;
+            this._network = network;
         }
 
 #region IColoredTransactionRepository Members
@@ -70,9 +70,9 @@ namespace NBitcoin.OpenAsset
             {
                 var result = new ColoredTransaction();
 
-                String url = _network == Network.Main ? String.Format("https://api.coinprism.com/v1/transactions/{0}", txId) : String.Format("https://testnet.api.coinprism.com/v1/transactions/{0}", txId);
+                String url = this._network == Network.Main ? String.Format("https://api.coinprism.com/v1/transactions/{0}", txId) : String.Format("https://testnet.api.coinprism.com/v1/transactions/{0}", txId);
 
-                HttpWebRequest req = HttpWebRequest.CreateHttp(url);
+                HttpWebRequest req = WebRequest.CreateHttp(url);
                 req.Method = "GET";
 
 //#if !NOCUSTOMSSLVALIDATION
@@ -157,8 +157,8 @@ namespace NBitcoin.OpenAsset
             if(transaction == null)
                 throw new ArgumentNullException("transaction");
 
-            String url = _network == Network.Main ? "https://api.coinprism.com/v1/transactions/v1/sendrawtransaction" : "https://testnet.api.coinprism.com/v1/sendrawtransaction";
-            HttpWebRequest req = HttpWebRequest.CreateHttp(url);
+            String url = this._network == Network.Main ? "https://api.coinprism.com/v1/transactions/v1/sendrawtransaction" : "https://testnet.api.coinprism.com/v1/sendrawtransaction";
+            HttpWebRequest req = WebRequest.CreateHttp(url);
             req.Method = "POST";
             req.ContentType = "application/json";
 //#if !NOCUSTOMSSLVALIDATION

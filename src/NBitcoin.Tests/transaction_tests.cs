@@ -1784,12 +1784,12 @@ namespace NBitcoin.Tests
             partiallySigned.Sign(Network.Main, privKeys[1], true);
 
 
-            AssertCorrectlySigned(partiallySigned, fundingTransaction.Outputs[0].ScriptPubKey, allowHighS);
+            AssertCorrectlySigned(partiallySigned, fundingTransaction.Outputs[0].ScriptPubKey, this.allowHighS);
 
             //Verify the transaction from the gist is also correctly signed
             Transaction gistTransaction = Transaction.Parse("0100000001aca7f3b45654c230e0886a57fb988c3044ef5e8f7f39726d305c61d5e818903c00000000fd5d010048304502200187af928e9d155c4b1ac9c1c9118153239aba76774f775d7c1f9c3e106ff33c0221008822b0f658edec22274d0b6ae9de10ebf2da06b1bbdaaba4e50eb078f39e3d78014730440220795f0f4f5941a77ae032ecb9e33753788d7eb5cb0c78d805575d6b00a1d9bfed02203e1f4ad9332d1416ae01e27038e945bc9db59c732728a383a6f1ed2fb99da7a4014cc952410491bba2510912a5bd37da1fb5b1673010e43d2c6d812c514e91bfa9f2eb129e1c183329db55bd868e209aac2fbc02cb33d98fe74bf23f0c235d6126b1d8334f864104865c40293a680cb9c020e7b1e106d8c1916d3cef99aa431a56d253e69256dac09ef122b1a986818a7cb624532f062c1d1f8722084861c5c3291ccffef4ec687441048d2455d2403e08708fc1f556002f1b6cd83f992d085097f9974ab08a28838f07896fbab08f39495e15fa6fad6edbfb1e754e35fa1c7844c41f322a1863d4621353aeffffffff0140420f00000000001976a914ae56b4db13554d321c402db3961187aed1bbed5b88ac00000000");
 
-            AssertCorrectlySigned(gistTransaction, fundingTransaction.Outputs[0].ScriptPubKey, allowHighS); //One sig in the hard code tx is high
+            AssertCorrectlySigned(gistTransaction, fundingTransaction.Outputs[0].ScriptPubKey, this.allowHighS); //One sig in the hard code tx is high
 
             //Can sign out of order
             partiallySigned = spendTransaction.Clone();
@@ -1928,11 +1928,11 @@ namespace NBitcoin.Tests
 
             DuplicateInputPolicyError dup = errors.OfType<DuplicateInputPolicyError>().Single();
             AssertEx.CollectionEquals(new uint[] { 0, 1 }, dup.InputIndices);
-            AssertEx.Equals(new OutPoint(funding, 0), dup.OutPoint);
+            Equals(new OutPoint(funding, 0), dup.OutPoint);
 
             ScriptPolicyError script = errors.OfType<ScriptPolicyError>().Single();
-            AssertEx.Equals(alice.ScriptPubKey, script.ScriptPubKey);
-            AssertEx.Equals(3, script.InputIndex);
+            Equals(alice.ScriptPubKey, script.ScriptPubKey);
+            Equals(3, script.InputIndex);
 
             NotEnoughFundsPolicyError fees = errors.OfType<NotEnoughFundsPolicyError>().Single();
             Assert.Equal(fees.Missing, Money.Coins(0.7m));
@@ -2195,7 +2195,7 @@ namespace NBitcoin.Tests
 
             var expected = new Key(Encoders.Hex.DecodeData("c477f9f65c22cce20657faa5b2d1d8122336f851a508a1ed04e479c34985bf96"), fCompressedIn: false);
 
-            var expectedBigInt = new NBitcoin.BouncyCastle.Math.BigInteger(1, Encoders.Hex.DecodeData("c477f9f65c22cce20657faa5b2d1d8122336f851a508a1ed04e479c34985bf96"));
+            var expectedBigInt = new BigInteger(1, Encoders.Hex.DecodeData("c477f9f65c22cce20657faa5b2d1d8122336f851a508a1ed04e479c34985bf96"));
             BigInteger priv = (z1.Multiply(sig2.S).Subtract(z2.Multiply(sig1.S)).Mod(n)).Divide(sig1.R.Multiply(sig1.S.Subtract(sig2.S)).Mod(n));
             Assert.Equal(expectedBigInt.ToString(), priv.ToString());
 
@@ -2216,7 +2216,7 @@ namespace NBitcoin.Tests
 
         private ECDSASignature ToPositive(ECDSASignature sig)
         {
-            return new ECDSASignature(new BouncyCastle.Math.BigInteger(1, sig.R.ToByteArray()), new BouncyCastle.Math.BigInteger(1, sig.S.ToByteArray()));
+            return new ECDSASignature(new BigInteger(1, sig.R.ToByteArray()), new BigInteger(1, sig.S.ToByteArray()));
         }
 
         public enum HashModification
@@ -2947,17 +2947,17 @@ namespace NBitcoin.Tests
             internal List<Script> _Scripts = new List<Script>();
             internal void AddKeyPubKey(Key key, PubKey pubkey)
             {
-                _Keys.Add(Tuple.Create(key, pubkey));
+                this._Keys.Add(Tuple.Create(key, pubkey));
             }
 
             internal void RemoveKeyPubKey(Key key)
             {
-                _Keys.Remove(_Keys.First(o => o.Item1 == key));
+                this._Keys.Remove(this._Keys.First(o => o.Item1 == key));
             }
 
             internal void AddCScript(Script scriptPubkey)
             {
-                _Scripts.Add(scriptPubkey);
+                this._Scripts.Add(scriptPubkey);
             }
         }
 

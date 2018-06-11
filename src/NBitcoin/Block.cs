@@ -64,7 +64,7 @@ namespace NBitcoin
 
         public BlockHeader()
         {
-            this.SetNull();
+            SetNull();
         }
 
         public static BlockHeader Load(byte[] hex, Network network)
@@ -122,7 +122,7 @@ namespace NBitcoin
 
             using (var hs = new HashStream())
             {
-                this.ReadWrite(new BitcoinStream(hs, true));
+                ReadWrite(new BitcoinStream(hs, true));
                 hash = hs.GetHash();
             }
 
@@ -141,7 +141,7 @@ namespace NBitcoin
         /// <returns>A hash.</returns>
         public virtual uint256 GetPoWHash()
         {
-            return this.GetHash();
+            return GetHash();
         }
 
         /// <summary>
@@ -155,7 +155,7 @@ namespace NBitcoin
                 this.hashes = new uint256[1];
 
             if (!lazily && this.hashes[0] == null)
-                this.hashes[0] = this.GetHash();
+                this.hashes[0] = GetHash();
         }
 
         public bool CheckProofOfWork()
@@ -164,12 +164,12 @@ namespace NBitcoin
             if ((bits.CompareTo(BigInteger.Zero) <= 0) || (bits.CompareTo(Pow256) >= 0))
                 return false;
 
-            return this.GetPoWHash() <= this.Bits.ToUInt256();
+            return GetPoWHash() <= this.Bits.ToUInt256();
         }
 
         public override string ToString()
         {
-            return this.GetHash().ToString();
+            return GetHash().ToString();
         }
 
         /// <summary>
@@ -189,7 +189,7 @@ namespace NBitcoin
 
             // Updating time can change work required on testnet.
             if (consensus.PowAllowMinDifficultyBlocks)
-                this.Bits = this.GetWorkRequired(consensus, prev);
+                this.Bits = GetWorkRequired(consensus, prev);
         }
 
         /// <summary>
@@ -200,17 +200,17 @@ namespace NBitcoin
         /// <param name="prev">Previous block.</param>
         public void UpdateTime(DateTimeOffset now, Network network, ChainedHeader prev)
         {
-            this.UpdateTime(now, network.Consensus, prev);
+            UpdateTime(now, network.Consensus, prev);
         }
 
         public Target GetWorkRequired(Network network, ChainedHeader prev)
         {
-            return this.GetWorkRequired(network.Consensus, prev);
+            return GetWorkRequired(network.Consensus, prev);
         }
 
         public Target GetWorkRequired(Consensus consensus, ChainedHeader prev)
         {
-            return new ChainedHeader(this, this.GetHash(), prev).GetWorkRequired(consensus);
+            return new ChainedHeader(this, GetHash(), prev).GetWorkRequired(consensus);
         }
     }
 
@@ -236,14 +236,14 @@ namespace NBitcoin
         public Block()
         {
             this.header = new BlockHeader();
-            this.SetNull();
+            SetNull();
         }
 
         [Obsolete("Should use Block.Load outside of ConsensusFactories")]
         internal Block(BlockHeader blockHeader)
         {
             this.header = new BlockHeader();
-            this.SetNull();
+            SetNull();
             this.header = blockHeader;
         }
 
@@ -255,7 +255,7 @@ namespace NBitcoin
                 ConsensusFactory = consensusFactory
             };
 
-            this.ReadWrite(stream);
+            ReadWrite(stream);
         }
 
         [Obsolete("Should use Block.Load outside of ConsensusFactories")]
@@ -325,7 +325,7 @@ namespace NBitcoin
                 ConsensusFactory = consensusFactory
             };
 
-            this.ReadWrite(bms);
+            ReadWrite(bms);
             ms.Position = 0;
             bms = new BitcoinStream(ms, false)
             {

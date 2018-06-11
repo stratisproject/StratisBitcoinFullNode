@@ -24,7 +24,7 @@ namespace NBitcoin.BouncyCastle.Asn1
         internal override void Encode(
             DerOutputStream derOut)
         {
-            derOut.WriteEncoded(Asn1Tags.Null, zeroBytes);
+            derOut.WriteEncoded(Asn1Tags.Null, this.zeroBytes);
         }
 
         protected override bool Asn1Equals(

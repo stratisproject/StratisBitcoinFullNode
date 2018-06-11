@@ -61,7 +61,7 @@ namespace NBitcoin
         {
             get
             {
-                return _FirstHalf ?? (_FirstHalf = vchData.SafeSubarray(ValidLength - 32, 16));
+                return this._FirstHalf ?? (this._FirstHalf = this.vchData.SafeSubarray(this.ValidLength - 32, 16));
             }
         }
 
@@ -70,7 +70,7 @@ namespace NBitcoin
         {
             get
             {
-                return _Encrypted ?? (_Encrypted = EncryptedHalf1.Concat(EncryptedHalf2).ToArray());
+                return this._Encrypted ?? (this._Encrypted = this.EncryptedHalf1.Concat(this.EncryptedHalf2).ToArray());
             }
         }
 
@@ -84,15 +84,15 @@ namespace NBitcoin
 
         public override Key GetKey(string password)
         {
-            byte[] derived = SCrypt.BitcoinComputeDerivedKey(password, AddressHash);
-            byte[] bitcoinprivkey = DecryptKey(Encrypted, derived);
+            byte[] derived = SCrypt.BitcoinComputeDerivedKey(password, this.AddressHash);
+            byte[] bitcoinprivkey = DecryptKey(this.Encrypted, derived);
 
-            var key = new Key(bitcoinprivkey, fCompressedIn: IsCompressed);
+            var key = new Key(bitcoinprivkey, fCompressedIn: this.IsCompressed);
 
-            byte[] addressBytes = Encoders.ASCII.DecodeData(key.PubKey.GetAddress(Network).ToString());
+            byte[] addressBytes = Encoders.ASCII.DecodeData(key.PubKey.GetAddress(this.Network).ToString());
             byte[] salt = Hashes.Hash256(addressBytes).ToBytes().SafeSubarray(0, 4);
 
-            if(!Utils.ArrayEqual(salt, AddressHash))
+            if(!Utils.ArrayEqual(salt, this.AddressHash))
                 throw new SecurityException("Invalid password (or invalid Network)");
             return key;
         }
@@ -131,7 +131,7 @@ namespace NBitcoin
         {
             get
             {
-                return _OwnerEntropy ?? (_OwnerEntropy = vchData.SafeSubarray(ValidLength - 32, 8));
+                return this._OwnerEntropy ?? (this._OwnerEntropy = this.vchData.SafeSubarray(this.ValidLength - 32, 8));
             }
         }
 
@@ -140,10 +140,10 @@ namespace NBitcoin
         {
             get
             {
-                bool hasLotSequence = (vchData[0] & 0x04) != 0;
+                bool hasLotSequence = (this.vchData[0] & 0x04) != 0;
                 if(!hasLotSequence)
                     return null;
-                return _LotSequence ?? (_LotSequence = new LotSequence(OwnerEntropy.SafeSubarray(4, 4)));
+                return this._LotSequence ?? (this._LotSequence = new LotSequence(this.OwnerEntropy.SafeSubarray(4, 4)));
             }
         }
 
@@ -152,7 +152,7 @@ namespace NBitcoin
         {
             get
             {
-                return _EncryptedHalfHalf1 ?? (_EncryptedHalfHalf1 = vchData.SafeSubarray(ValidLength - 32 + 8, 8));
+                return this._EncryptedHalfHalf1 ?? (this._EncryptedHalfHalf1 = this.vchData.SafeSubarray(this.ValidLength - 32 + 8, 8));
             }
         }
 
@@ -161,7 +161,7 @@ namespace NBitcoin
         {
             get
             {
-                return _PartialEncrypted ?? (_PartialEncrypted = EncryptedHalfHalf1.Concat(new byte[8]).Concat(EncryptedHalf2).ToArray());
+                return this._PartialEncrypted ?? (this._PartialEncrypted = this.EncryptedHalfHalf1.Concat(new byte[8]).Concat(this.EncryptedHalf2).ToArray());
             }
         }
 
@@ -177,9 +177,9 @@ namespace NBitcoin
 
         public override Key GetKey(string password)
         {
-            byte[] encrypted = PartialEncrypted.ToArray();
+            byte[] encrypted = this.PartialEncrypted.ToArray();
             //Derive passfactor using scrypt with ownerentropy and the user's passphrase and use it to recompute passpoint
-            byte[] passfactor = CalculatePassFactor(password, LotSequence, OwnerEntropy);
+            byte[] passfactor = CalculatePassFactor(password, this.LotSequence, this.OwnerEntropy);
             byte[] passpoint = CalculatePassPoint(passfactor);
 
             byte[] derived = SCrypt.BitcoinComputeDerivedKey2(passpoint, this.AddressHash.Concat(this.OwnerEntropy).ToArray());
@@ -196,12 +196,12 @@ namespace NBitcoin
             if(keyBytes.Length < 32)
                 keyBytes = new byte[32 - keyBytes.Length].Concat(keyBytes).ToArray();
 
-            var key = new Key(keyBytes, fCompressedIn: IsCompressed);
+            var key = new Key(keyBytes, fCompressedIn: this.IsCompressed);
 
-            BitcoinPubKeyAddress generatedaddress = key.PubKey.GetAddress(Network);
+            BitcoinPubKeyAddress generatedaddress = key.PubKey.GetAddress(this.Network);
             byte[] addresshash = HashAddress(generatedaddress);
 
-            if(!Utils.ArrayEqual(addresshash, AddressHash))
+            if(!Utils.ArrayEqual(addresshash, this.AddressHash))
                 throw new SecurityException("Invalid password (or invalid Network)");
 
             return key;
@@ -283,14 +283,14 @@ namespace NBitcoin
         {
             get
             {
-                return _AddressHash ?? (_AddressHash = vchData.SafeSubarray(1, 4));
+                return this._AddressHash ?? (this._AddressHash = this.vchData.SafeSubarray(1, 4));
             }
         }
         public bool IsCompressed
         {
             get
             {
-                return (vchData[0] & 0x20) != 0;
+                return (this.vchData[0] & 0x20) != 0;
             }
         }
 
@@ -299,7 +299,7 @@ namespace NBitcoin
         {
             get
             {
-                return _LastHalf ?? (_LastHalf = vchData.Skip(ValidLength - 16).ToArray());
+                return this._LastHalf ?? (this._LastHalf = this.vchData.Skip(this.ValidLength - 16).ToArray());
             }
         }
         protected int ValidLength = (1 + 4 + 16 + 16);
@@ -309,10 +309,10 @@ namespace NBitcoin
         {
             get
             {
-                bool lenOk = vchData.Length == ValidLength;
+                bool lenOk = this.vchData.Length == this.ValidLength;
                 if(!lenOk)
                     return false;
-                bool reserved = (vchData[0] & 0x10) == 0 && (vchData[0] & 0x08) == 0;
+                bool reserved = (this.vchData[0] & 0x10) == 0 && (this.vchData[0] & 0x08) == 0;
                 return reserved;
             }
         }
@@ -320,7 +320,7 @@ namespace NBitcoin
         public abstract Key GetKey(string password);
         public BitcoinSecret GetSecret(string password)
         {
-            return new BitcoinSecret(GetKey(password), Network);
+            return new BitcoinSecret(GetKey(password), this.Network);
         }
 
 #if USEBC || WINDOWS_UWP

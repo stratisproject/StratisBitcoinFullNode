@@ -187,7 +187,7 @@ namespace NBitcoin.Tests
 
         private void AssertFork(ConcurrentChain chain, ConcurrentChain chain2, ChainedHeader expectedFork)
         {
-            ChainedHeader fork = this.FindFork(chain, chain2);
+            ChainedHeader fork = FindFork(chain, chain2);
             Assert.Equal(expectedFork, fork);
             fork = chain.Tip.FindFork(chain2.Tip);
             Assert.Equal(expectedFork, fork);
@@ -196,7 +196,7 @@ namespace NBitcoin.Tests
             chain = chain2;
             chain2 = temp;
 
-            fork = this.FindFork(chain, chain2);
+            fork = FindFork(chain, chain2);
             Assert.Equal(expectedFork, fork);
             fork = chain.Tip.FindFork(chain2.Tip);
             Assert.Equal(expectedFork, fork);
@@ -437,7 +437,7 @@ namespace NBitcoin.Tests
             int skipListLength = 300000;
 
             // Want a chain of exact length so subtract the genesis block.
-            ConcurrentChain chain = this.CreateChain(skipListLength - 1);
+            ConcurrentChain chain = CreateChain(skipListLength - 1);
 
             // Also want a copy in array form so can quickly verify indexing.
             var chainArray = new ChainedHeader[skipListLength];
@@ -478,7 +478,7 @@ namespace NBitcoin.Tests
             int branchLength = 50000;
 
             // Make a main chain 100000 blocks long.
-            ConcurrentChain chain = this.CreateChain(mainLength - 1);
+            ConcurrentChain chain = CreateChain(mainLength - 1);
 
             // Make a branch that splits off at block 49999, 50000 blocks long.
             ChainedHeader mainTip = chain.Tip;

@@ -23,7 +23,7 @@ namespace NBitcoin
     {
         public TxNullDataTemplate(int maxScriptSize)
         {
-            MaxScriptSizeLimit = maxScriptSize;
+            this.MaxScriptSizeLimit = maxScriptSize;
         }
         private static readonly TxNullDataTemplate _Instance = new TxNullDataTemplate(MAX_OP_RETURN_RELAY);
         public static TxNullDataTemplate Instance
@@ -43,7 +43,7 @@ namespace NBitcoin
             byte[] bytes = scriptPubKey.ToBytes(true);
             if(bytes.Length == 0 ||
                 bytes[0] != (byte)OpcodeType.OP_RETURN ||
-                bytes.Length > MaxScriptSizeLimit)
+                bytes.Length > this.MaxScriptSizeLimit)
             {
                 needMoreCheck = false;
                 return false;
@@ -83,8 +83,8 @@ namespace NBitcoin
                 ops[1 + i] = Op.GetPushOp(data[i]);
             }
             var script = new Script(ops);
-            if(script.ToBytes(true).Length > MaxScriptSizeLimit)
-                throw new ArgumentOutOfRangeException("data", "Data in OP_RETURN should have a maximum size of " + MaxScriptSizeLimit + " bytes");
+            if(script.ToBytes(true).Length > this.MaxScriptSizeLimit)
+                throw new ArgumentOutOfRangeException("data", "Data in OP_RETURN should have a maximum size of " + this.MaxScriptSizeLimit + " bytes");
             return script;
         }
 
@@ -304,7 +304,7 @@ namespace NBitcoin
         }
         public TransactionSignature[] GetMultisigSignatures(Network network)
         {
-            return PayToMultiSigTemplate.Instance.ExtractScriptSigParameters(network, new Script(Pushes.Select(p => Op.GetPushOp(p)).ToArray()));
+            return PayToMultiSigTemplate.Instance.ExtractScriptSigParameters(network, new Script(this.Pushes.Select(p => Op.GetPushOp(p)).ToArray()));
         }
     }
     //https://github.com/bitcoin/bips/blob/master/bip-0016.mediawiki
@@ -574,7 +574,7 @@ namespace NBitcoin
         {
             get
             {
-                return PublicKey.WitHash;
+                return this.PublicKey.WitHash;
             }
         }
     }
@@ -595,7 +595,7 @@ namespace NBitcoin
         {
             get
             {
-                return PublicKey.Hash;
+                return this.PublicKey.Hash;
             }
         }
         #region IDestination Members
@@ -604,7 +604,7 @@ namespace NBitcoin
         {
             get
             {
-                return Hash.ScriptPubKey;
+                return this.Hash.ScriptPubKey;
             }
         }
 
