@@ -34,7 +34,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         {
             if (context.MinedBlock) return Task.CompletedTask;
             
-            var block = context.ValidationContext.Block;
+            Block block = context.ValidationContext.Block;
 
             uint256 hashMerkleRoot2 = BlockMerkleRoot(block, out bool mutated);
             if (block.Header.HashMerkleRoot != hashMerkleRoot2)

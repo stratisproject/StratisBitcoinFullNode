@@ -51,7 +51,7 @@ namespace Stratis.Bitcoin.Configuration.Settings
             this.AddNode = new List<IPEndPoint>();
             this.Listen = new List<NodeServerEndpoint>();
 
-            var config = nodeSettings.ConfigReader;
+            TextFileConfiguration config = nodeSettings.ConfigReader;
 
             try
             {
@@ -73,7 +73,7 @@ namespace Stratis.Bitcoin.Configuration.Settings
                 throw new ConfigurationException("Invalid 'addnode' parameter.");
             }
 
-            var port = config.GetOrDefault<int>("port", nodeSettings.Network.DefaultPort);
+            int port = config.GetOrDefault<int>("port", nodeSettings.Network.DefaultPort);
             try
             {
                 this.Listen.AddRange(config.GetAll("bind")
@@ -99,7 +99,7 @@ namespace Stratis.Bitcoin.Configuration.Settings
                 this.Listen.Add(new NodeServerEndpoint(new IPEndPoint(IPAddress.Parse("0.0.0.0"), port), false));
             }
 
-            var externalIp = config.GetOrDefault<string>("externalip", null);
+            string externalIp = config.GetOrDefault<string>("externalip", null);
             if (externalIp != null)
             {
                 try

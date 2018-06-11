@@ -25,10 +25,10 @@ namespace Stratis.BreezeD
             try
             {
                 // Get the API uri.
-                var isTestNet = args.Contains("-testnet");
-                var isStratis = args.Contains("stratis");
+                bool isTestNet = args.Contains("-testnet");
+                bool isStratis = args.Contains("stratis");
 
-                var agent = "Breeze";
+                string agent = "Breeze";
 
                 NodeSettings nodeSettings;
 

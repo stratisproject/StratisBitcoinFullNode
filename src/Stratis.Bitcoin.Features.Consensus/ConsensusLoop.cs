@@ -227,7 +227,7 @@ namespace Stratis.Bitcoin.Features.Consensus
 
             while (!this.nodeLifetime.ApplicationStopping.IsCancellationRequested)
             {
-                ValidationContext validationContext = new ValidationContext();
+                var validationContext = new ValidationContext();
 
                 using (new StopwatchDisposable(o => this.ConsensusRules.PerformanceCounter.AddBlockFetchingTime(o)))
                 {
@@ -438,7 +438,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             // Persist the changes to the coinview. This will likely only be stored in memory,
             // unless the coinview treashold is reached.
             this.logger.LogTrace("Saving coinview changes.");
-            UtxoRuleContext utxoRuleContext = context as UtxoRuleContext;
+            var utxoRuleContext = context as UtxoRuleContext;
             await this.UTXOSet.SaveChangesAsync(utxoRuleContext.UnspentOutputSet.GetCoins(this.UTXOSet), null, this.Tip.HashBlock, context.ValidationContext.ChainedHeader.HashBlock).ConfigureAwait(false);
 
             // Set the new tip.

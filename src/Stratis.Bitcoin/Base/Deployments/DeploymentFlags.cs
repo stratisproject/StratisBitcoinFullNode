@@ -1,4 +1,5 @@
-﻿using NBitcoin;
+﻿using System;
+using NBitcoin;
 
 namespace Stratis.Bitcoin.Base.Deployments
 {
@@ -46,7 +47,7 @@ namespace Stratis.Bitcoin.Base.Deployments
             this.EnforceBIP30 = this.EnforceBIP30 && ((bip34HeightChainedHeader == null) || !(bip34HeightChainedHeader.HashBlock == chainparams.BIP34Hash));
 
             // BIP16 didn't become active until Apr 1 2012.
-            var nBIP16SwitchTime = Utils.UnixTimeToDateTime(1333238400);
+            DateTimeOffset nBIP16SwitchTime = Utils.UnixTimeToDateTime(1333238400);
             bool fStrictPayToScriptHash = (nextBlock.Header.BlockTime >= nBIP16SwitchTime);
 
             this.ScriptFlags = fStrictPayToScriptHash ? ScriptVerify.P2SH : ScriptVerify.None;

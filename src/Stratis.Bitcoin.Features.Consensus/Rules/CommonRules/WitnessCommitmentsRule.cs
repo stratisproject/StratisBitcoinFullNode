@@ -50,7 +50,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
                         ConsensusErrors.BadWitnessNonceSize.Throw();
                     }
 
-                    byte[] hashed = new byte[64];
+                    var hashed = new byte[64];
                     Buffer.BlockCopy(hashWitness.ToBytes(), 0, hashed, 0, 32);
                     Buffer.BlockCopy(witness.Pushes.First(), 0, hashed, 32, 32);
                     hashWitness = Hashes.Hash256(hashed);
@@ -110,7 +110,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
             int commitpos = -1;
             for (int i = 0; i < block.Transactions[0].Outputs.Count; i++)
             {
-                var scriptPubKey = block.Transactions[0].Outputs[i].ScriptPubKey;
+                Script scriptPubKey = block.Transactions[0].Outputs[i].ScriptPubKey;
 
                 if (scriptPubKey.Length >= 38)
                 {

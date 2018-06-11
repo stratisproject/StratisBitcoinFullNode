@@ -129,7 +129,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                     using (new StopwatchDisposable(o => this.PerformanceCounter.AddQueryTime(o)))
                     {
                         uint256 blockHash = this.GetCurrentHash(transaction);
-                        UnspentOutputs[] result = new UnspentOutputs[txIds.Length];
+                        var result = new UnspentOutputs[txIds.Length];
                         this.PerformanceCounter.AddQueriedEntities(txIds.Length);
 
                         int i = 0;
@@ -192,7 +192,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
             int insertedEntities = 0;
 
             List<UnspentOutputs> all = unspentOutputs.ToList();
-            Dictionary<uint256, TxOut[]> unspentToOriginal = new Dictionary<uint256, TxOut[]>(all.Count);
+            var unspentToOriginal = new Dictionary<uint256, TxOut[]>(all.Count);
             using (new StopwatchDisposable(o => this.PerformanceCounter.AddInsertTime(o)))
             {
                 if (originalOutputs != null)

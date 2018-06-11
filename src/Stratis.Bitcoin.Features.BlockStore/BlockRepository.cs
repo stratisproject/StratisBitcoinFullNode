@@ -622,11 +622,11 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
             // Access hash keys in sorted order.
             var byteListComparer = new ByteListComparer();
-            var keys = hashes.Select(hash => (hash, hash.ToBytes())).ToList();
+            List<(uint256, byte[])> keys = hashes.Select(hash => (hash, hash.ToBytes())).ToList();
 
             keys.Sort((key1, key2) => byteListComparer.Compare(key1.Item2, key2.Item2));
 
-            foreach (var key in keys)
+            foreach ((uint256, byte[]) key in keys)
             {
                 Row<byte[], Block> blockRow = dbreezeTransaction.Select<byte[], Block>("Block", key.Item2);
                 if (blockRow.Exists)

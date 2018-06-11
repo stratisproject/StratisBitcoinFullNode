@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Moq;
 using NBitcoin;
 using Stratis.Bitcoin.Consensus;
+using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.Interfaces;
 using Stratis.Bitcoin.Features.MemoryPool;
@@ -22,6 +23,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
         private Mock<IAsyncLoopFactory> asyncLoopFactory;
         private ConcurrentChain chain;
         private Mock<IConsensusLoop> consensusLoop;
+        private Mock<IConsensusRules> consensusRules;
         private NBitcoin.Consensus.ConsensusOptions initialNetworkOptions;
         private PowMiningTestFixture fixture;
         private Mock<ITxMempool> mempool;
@@ -510,6 +512,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
                     this.mempool.Object,
                     this.mempoolLock,
                     this.network,
+                    this.consensusRules, 
                     null);
         }
 

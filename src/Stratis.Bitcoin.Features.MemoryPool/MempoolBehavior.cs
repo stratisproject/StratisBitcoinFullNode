@@ -329,7 +329,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
 
             //uint32_t nFetchFlags = GetFetchFlags(pfrom, chainActive.Tip(), chainparams.GetConsensus());
 
-            GetDataPayload send = new GetDataPayload();
+            var send = new GetDataPayload();
             foreach (InventoryVector inv in invPayload.Inventory.Where(inv => inv.Type.HasFlag(InventoryType.MSG_TX)))
             {
                 //inv.type |= nFetchFlags;
@@ -414,7 +414,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             }
             this.logger.LogTrace("Added transaction ID '{0}' to known inventory filter.", trxHash);
 
-            MempoolValidationState state = new MempoolValidationState(true);
+            var state = new MempoolValidationState(true);
             if (!await this.orphans.AlreadyHaveAsync(trxHash) && await this.validator.AcceptToMemoryPool(state, trx))
             {
                 await this.validator.SanityCheck();
@@ -459,7 +459,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         {
             this.logger.LogTrace("({0}:'{1}',{2}.{3}:{4})", nameof(peer), peer.RemoteSocketEndpoint, nameof(trxList), "trxList.Count", trxList.Count);
 
-            Queue<InventoryVector> queue = new Queue<InventoryVector>(trxList.Select(s => new InventoryVector(peer.AddSupportedOptions(InventoryType.MSG_TX), s)));
+            var queue = new Queue<InventoryVector>(trxList.Select(s => new InventoryVector(peer.AddSupportedOptions(InventoryType.MSG_TX), s)));
             while (queue.Count > 0)
             {
                 InventoryVector[] items = queue.TakeAndRemove(ConnectionManager.MaxInventorySize).ToArray();

@@ -1,10 +1,10 @@
 ﻿using System;
 using System.Text;
 using System.Timers;
-using Stratis.Bitcoin.Configuration;
-using Stratis.Bitcoin.Utilities;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
+using Stratis.Bitcoin.Configuration;
+using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.Api
 {

@@ -1,4 +1,8 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using System;
+using System.Diagnostics;
+using System.Net;
+using System.Threading.Tasks;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Base;
@@ -10,10 +14,6 @@ using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Utilities.JsonErrors;
-using System;
-using System.Diagnostics;
-using System.Net;
-using System.Threading.Tasks;
 
 namespace Stratis.Bitcoin.Controllers
 {
@@ -100,7 +100,7 @@ namespace Stratis.Bitcoin.Controllers
         public IActionResult Status()
         {
             // Output has been merged with RPC's GetInfo() since they provided similar functionality. 
-            StatusModel model = new StatusModel
+            var model = new StatusModel
             {
                 Version = this.fullNode.Version?.ToString() ?? "0",
                 ProtocolVersion = (uint)(this.nodeSettings.ProtocolVersion),
@@ -128,10 +128,10 @@ namespace Stratis.Bitcoin.Controllers
             // Add the details of connected nodes.
             foreach (INetworkPeer peer in this.connectionManager.ConnectedPeers)
             {
-                ConnectionManagerBehavior connectionManagerBehavior = peer.Behavior<ConnectionManagerBehavior>();
-                ChainHeadersBehavior chainHeadersBehavior = peer.Behavior<ChainHeadersBehavior>();
+                var connectionManagerBehavior = peer.Behavior<ConnectionManagerBehavior>();
+                var chainHeadersBehavior = peer.Behavior<ChainHeadersBehavior>();
 
-                ConnectedPeerModel connectedPeer = new ConnectedPeerModel
+                var connectedPeer = new ConnectedPeerModel
                 {
                     Version = peer.PeerVersion != null ? peer.PeerVersion.UserAgent : "[Unknown]",
                     RemoteSocketEndpoint = peer.RemoteSocketEndpoint.ToString(),
@@ -264,7 +264,7 @@ namespace Stratis.Bitcoin.Controllers
             {
                 Guard.NotEmpty(address, nameof(address));
 
-                ValidatedAddress res = new ValidatedAddress();
+                var res = new ValidatedAddress();
                 res.IsValid = false;
                 // P2WPKH
                 if (BitcoinWitPubKeyAddress.IsValid(address, ref this.network, out Exception _))
@@ -374,7 +374,7 @@ namespace Stratis.Bitcoin.Controllers
             Guard.NotNull(fullNode, nameof(fullNode));
 
             ChainedHeader block = null;
-            IBlockStore blockStore = fullNode.NodeFeature<IBlockStore>();
+            var blockStore = fullNode.NodeFeature<IBlockStore>();
             uint256 blockid = blockStore != null ? await blockStore.GetTrxBlockIdAsync(trxid).ConfigureAwait(false) : null;
             if (blockid != null)
             {
