@@ -2,6 +2,7 @@
 using System.Threading.Tasks;
 using Moq;
 using NBitcoin;
+using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Consensus.Rules;
 using Stratis.Bitcoin.Utilities;
@@ -56,13 +57,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
             TestRulesContext testContext = TestRulesContextFactory.CreateAsync(this.network);
             SmartContractFormatRule rule = testContext.CreateRule<SmartContractFormatRule>();
 
-            var context = new RuleContext(new BlockValidationContext(), testContext.Network.Consensus,
-                testContext.Chain.Tip)
-            {
-                Set = GetMockOutputSet()
-            };
-
-            context.BlockValidationContext.Block = testContext.Network.Consensus.ConsensusFactory.CreateBlock();
+            var context = new PowRuleContext(new ValidationContext(), testContext.Network.Consensus, testContext.Chain.Tip);
+            context.UnspentOutputSet = GetMockOutputSet();
+            context.ValidationContext.Block = testContext.Network.Consensus.ConsensusFactory.CreateBlock();
 
             var gasPriceSatoshis = 20;
             var gasLimit = 4_000_000;
@@ -89,7 +86,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
 
             Transaction transaction = transactionBuilder.BuildTransaction(false);
 
-            context.BlockValidationContext.Block.Transactions = new List<Transaction>
+            context.ValidationContext.Block.Transactions = new List<Transaction>
             {
                transaction
             };
@@ -103,12 +100,12 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
             TestRulesContext testContext = TestRulesContextFactory.CreateAsync(this.network);
             SmartContractFormatRule rule = testContext.CreateRule<SmartContractFormatRule>();
 
-            var context = new RuleContext(new BlockValidationContext(), testContext.Network.Consensus, testContext.Chain.Tip)
+            var context = new PowRuleContext(new ValidationContext(), testContext.Network.Consensus, testContext.Chain.Tip)
             {
-                Set = GetMockOutputSet()
+                UnspentOutputSet = GetMockOutputSet()
             };
 
-            context.BlockValidationContext.Block = testContext.Network.Consensus.ConsensusFactory.CreateBlock();
+            context.ValidationContext.Block = testContext.Network.Consensus.ConsensusFactory.CreateBlock();
 
             var gasPriceSatoshis = 20;
             var gasLimit = 4000000;
@@ -139,7 +136,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
 
             Transaction transaction = transactionBuilder.BuildTransaction(false);
 
-            context.BlockValidationContext.Block.Transactions = new List<Transaction>
+            context.ValidationContext.Block.Transactions = new List<Transaction>
             {
                 transaction
             };
@@ -156,9 +153,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
             TestRulesContext testContext = TestRulesContextFactory.CreateAsync(this.network);
             SmartContractFormatRule rule = testContext.CreateRule<SmartContractFormatRule>();
 
-            var context = new RuleContext(new BlockValidationContext(), testContext.Network.Consensus, testContext.Chain.Tip);
+            var context = new PowRuleContext(new ValidationContext(), testContext.Network.Consensus, testContext.Chain.Tip);
 
-            context.BlockValidationContext.Block = testContext.Network.Consensus.ConsensusFactory.CreateBlock();
+            context.ValidationContext.Block = testContext.Network.Consensus.ConsensusFactory.CreateBlock();
 
             var gasPriceSatoshis = 20;
             var gasLimit = 4000000;
@@ -187,7 +184,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
 
             Transaction transaction = transactionBuilder.BuildTransaction(false);
 
-            context.BlockValidationContext.Block.Transactions = new List<Transaction>
+            context.ValidationContext.Block.Transactions = new List<Transaction>
             {
                 transaction
             };

@@ -2,8 +2,8 @@
 using System.Linq;
 using System.Threading.Tasks;
 using NBitcoin;
-using Stratis.Bitcoin.Features.Consensus;
-using Stratis.Bitcoin.Features.Consensus.Rules;
+using Stratis.Bitcoin.Consensus;
+using Stratis.Bitcoin.Consensus.Rules;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Consensus.Rules
 {
@@ -15,7 +15,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Consensus.Rules
     {
         public override Task RunAsync(RuleContext context)
         {
-            Block block = context.BlockValidationContext.Block;
+            Block block = context.ValidationContext.Block;
 
             IEnumerable<Transaction> opSpendTransactions = block.Transactions.Where(tx =>
                 tx.IsSmartContractSpendTransaction());
@@ -46,9 +46,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Consensus.Rules
 
         private void Throw()
         {
-            // TODO make nicer
-            new ConsensusError("opspend-did-not-follow-opcall",
-                "transaction contained an op-spend that did not follow an op-call").Throw();
+            new ConsensusError("opspend-did-not-follow-opcall", "transaction contained an op-spend that did not follow an op-call").Throw();
         }
     }
 }

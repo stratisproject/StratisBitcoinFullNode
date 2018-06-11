@@ -1,6 +1,8 @@
 using System.Linq;
 using System.Threading.Tasks;
 using NBitcoin;
+using Stratis.Bitcoin.Consensus;
+using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.Rules;
 using Stratis.Bitcoin.Features.MemoryPool;
@@ -26,19 +28,18 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Consensus.R
 
         public SmartContractFormatRule()
         {
-
         }
 
         public override Task RunAsync(RuleContext context)
         {
-            Block block = context.BlockValidationContext.Block;
+            Block block = context.ValidationContext.Block;
 
             foreach (Transaction transaction in block.Transactions.Where(x => !x.IsCoinBase && !x.IsCoinStake))
             {
                 if (!transaction.IsSmartContractExecTransaction())
                     return Task.CompletedTask;
 
-                Money transactionFee = transaction.GetFee(context.Set);
+                Money transactionFee = transaction.GetFee(((UtxoRuleContext)context).UnspentOutputSet);
 
                 CheckTransaction(transaction, transactionFee);
             }

@@ -2,8 +2,8 @@
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Configuration;
+using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
-using Stratis.Bitcoin.Features.Consensus.Rules;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.MemoryPool.Interfaces;
 using Stratis.Bitcoin.Features.SmartContracts.Consensus.Rules;
@@ -44,6 +44,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         protected override void PreMempoolChecks(MempoolValidationContext context)
         {
             base.PreMempoolChecks(context);
+
             foreach (ISmartContractMempoolRule rule in preTxRules)
             {
                 rule.CheckTransaction(context);
@@ -51,9 +52,10 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         }
 
         /// <inheritdoc />
-        protected override void CheckFee(MempoolValidationContext context)
+        public override void CheckFee(MempoolValidationContext context)
         {
             base.CheckFee(context);
+
             foreach (ISmartContractMempoolRule rule in feeTxRules)
             {
                 rule.CheckTransaction(context);

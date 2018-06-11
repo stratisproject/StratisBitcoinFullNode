@@ -18,6 +18,7 @@ using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Consensus;
+using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.Consensus.Rules;
@@ -237,7 +238,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 // Simple block creation, nothing special yet:
                 this.newBlock = AssemblerForTest(this).Build(this.chain.Tip, this.scriptPubKey);
                 this.chain.SetTip(this.newBlock.Block.Header);
-                await this.consensus.ValidateAndExecuteBlockAsync(new RuleContext(new BlockValidationContext { Block = this.newBlock.Block }, this.network.Consensus, this.consensus.Tip) { CheckPow = false, CheckMerkleRoot = false });
+                await this.consensus.ValidateAndExecuteBlockAsync(new RuleContext(new ValidationContext { Block = this.newBlock.Block }, this.network.Consensus, this.consensus.Tip) { MinedBlock = true });
 
                 // We can't make transactions until we have inputs
                 // Therefore, load 100 blocks :)
@@ -268,7 +269,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                     pblock.Header.Nonce = this.blockinfo[i].nonce;
 
                     this.chain.SetTip(pblock.Header);
-                    await this.consensus.ValidateAndExecuteBlockAsync(new RuleContext(new BlockValidationContext { Block = pblock }, this.network.Consensus, this.consensus.Tip) { CheckPow = false, CheckMerkleRoot = false });
+                    await this.consensus.ValidateAndExecuteBlockAsync(new RuleContext(new ValidationContext { Block = pblock }, this.network.Consensus, this.consensus.Tip) { MinedBlock = true });
                     blocks.Add(pblock);
                 }
 
@@ -771,7 +772,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
         {
             BlockTemplate pblocktemplate = AssemblerForTest(context).Build(context.chain.Tip, context.scriptPubKey);
             context.chain.SetTip(pblocktemplate.Block.Header);
-            await context.consensus.ValidateAndExecuteBlockAsync(new RuleContext(new BlockValidationContext { Block = pblocktemplate.Block }, context.network.Consensus, context.consensus.Tip) { CheckPow = false, CheckMerkleRoot = false });
+            await context.consensus.ValidateAndExecuteBlockAsync(new RuleContext(new ValidationContext { Block = pblocktemplate.Block }, context.network.Consensus, context.consensus.Tip) { MinedBlock = true });
             return pblocktemplate;
         }
     }

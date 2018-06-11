@@ -1,7 +1,8 @@
 ﻿using System.Collections.Generic;
 using System.Threading.Tasks;
 using NBitcoin;
-using Stratis.Bitcoin.Features.Consensus;
+using Stratis.Bitcoin.Consensus;
+using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Features.SmartContracts.Consensus.Rules;
 using Stratis.SmartContracts;
 using Stratis.SmartContracts.Executor.Reflection;
@@ -24,8 +25,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
             TestRulesContext testContext = TestRulesContextFactory.CreateAsync(this.network);
             OpCreateZeroValueRule rule = testContext.CreateRule<OpCreateZeroValueRule>();
 
-            RuleContext context = new RuleContext(new BlockValidationContext(), testContext.Network.Consensus, testContext.Chain.Tip);
-            context.BlockValidationContext.Block = testContext.Network.Consensus.ConsensusFactory.CreateBlock();
+            RuleContext context = new RuleContext(new ValidationContext(), testContext.Network.Consensus, testContext.Chain.Tip);
+            context.ValidationContext.Block = testContext.Network.Consensus.ConsensusFactory.CreateBlock();
 
             var gasPriceSatoshis = 20;
             var gasLimit = 4000000;
@@ -35,7 +36,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
             byte[] serialized = carrier.Serialize();
             Script script = new Script(serialized);
 
-            context.BlockValidationContext.Block.Transactions = new List<Transaction>
+            context.ValidationContext.Block.Transactions = new List<Transaction>
             {
                 new Transaction
                 {
@@ -55,8 +56,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
             TestRulesContext testContext = TestRulesContextFactory.CreateAsync(this.network);
             OpCreateZeroValueRule rule = testContext.CreateRule<OpCreateZeroValueRule>();
 
-            RuleContext context = new RuleContext(new BlockValidationContext(), testContext.Network.Consensus, testContext.Chain.Tip);
-            context.BlockValidationContext.Block = testContext.Network.Consensus.ConsensusFactory.CreateBlock();
+            RuleContext context = new RuleContext(new ValidationContext(), testContext.Network.Consensus, testContext.Chain.Tip);
+            context.ValidationContext.Block = testContext.Network.Consensus.ConsensusFactory.CreateBlock();
 
             var gasPriceSatoshis = 20;
             var gasLimit = 4000000;
@@ -90,7 +91,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
 
             Transaction tx = transactionBuilder.BuildTransaction(false);
 
-            context.BlockValidationContext.Block.Transactions = new List<Transaction>
+            context.ValidationContext.Block.Transactions = new List<Transaction>
             {
                tx
             };
@@ -104,8 +105,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
             TestRulesContext testContext = TestRulesContextFactory.CreateAsync(this.network);
             OpCreateZeroValueRule rule = testContext.CreateRule<OpCreateZeroValueRule>();
 
-            RuleContext context = new RuleContext(new BlockValidationContext(), testContext.Network.Consensus, testContext.Chain.Tip);
-            context.BlockValidationContext.Block = testContext.Network.Consensus.ConsensusFactory.CreateBlock();
+            RuleContext context = new RuleContext(new ValidationContext(), testContext.Network.Consensus, testContext.Chain.Tip);
+            context.ValidationContext.Block = testContext.Network.Consensus.ConsensusFactory.CreateBlock();
 
             var gasPriceSatoshis = 20;
             var gasLimit = 4000000;
@@ -115,7 +116,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
             byte[] serialized = carrier.Serialize();
             Script script = new Script(serialized);
 
-            context.BlockValidationContext.Block.Transactions = new List<Transaction>
+            context.ValidationContext.Block.Transactions = new List<Transaction>
             {
                 new Transaction
                 {

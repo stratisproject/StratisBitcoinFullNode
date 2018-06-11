@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
@@ -10,7 +9,6 @@ using Stratis.Bitcoin.Utilities;
 using Xunit;
 using Moq;
 using NBitcoin.DataEncoders;
-using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Tests.Common;
 
 namespace Stratis.Bitcoin.Features.BlockStore.Tests

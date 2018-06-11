@@ -1,8 +1,8 @@
 ﻿using System.Linq;
 using System.Threading.Tasks;
 using NBitcoin;
-using Stratis.Bitcoin.Features.Consensus;
-using Stratis.Bitcoin.Features.Consensus.Rules;
+using Stratis.Bitcoin.Consensus;
+using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Features.MemoryPool;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Consensus.Rules
@@ -15,7 +15,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Consensus.Rules
     {
         public override Task RunAsync(RuleContext context)
         {
-            Block block = context.BlockValidationContext.Block;
+            Block block = context.ValidationContext.Block;
 
             foreach (Transaction transaction in block.Transactions)
             {
@@ -33,13 +33,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Consensus.Rules
         private void CheckTransaction(Transaction transaction)
         {
             var smartContractExecCount = transaction.Outputs.Count(o => o.ScriptPubKey.IsSmartContractExec);
-
             if (smartContractExecCount > 1)
-            {
-                // TODO make nicer
-                new ConsensusError("multiple-smartcontractexec-outputs",
-                    "transaction contains multiple smartcontractexec outputs").Throw();
-            }
+                new ConsensusError("multiple-smartcontractexec-outputs", "transaction contains multiple smartcontractexec outputs").Throw();
         }
     }
 }

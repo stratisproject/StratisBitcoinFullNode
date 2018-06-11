@@ -4,6 +4,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
+using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.Interfaces;
 using Stratis.Bitcoin.Features.MemoryPool;
@@ -222,7 +223,7 @@ namespace Stratis.Bitcoin.Features.Miner
                 if (newChain.ChainWork <= chainTip.ChainWork)
                     continue;
 
-                var blockValidationContext = new BlockValidationContext { Block = block };
+                var blockValidationContext = new ValidationContext { Block = block };
 
                 this.consensusLoop.AcceptBlockAsync(blockValidationContext).GetAwaiter().GetResult();
 

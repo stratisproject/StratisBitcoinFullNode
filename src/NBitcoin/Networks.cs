@@ -26,9 +26,6 @@ namespace NBitcoin
         /// <summary> The name of the root folder containing the different Stratis blockchains (StratisMain, StratisTest, StratisRegTest). </summary>
         public const string StratisRootFolderName = "stratis";
 
-        /// <summary> The name of the root folder containing the different smart contract blockchains. </summary>
-        public const string StratisSmartContractFolderName = "smartcontracts";
-
         /// <summary> The default name used for the Stratis configuration file. </summary>
         public const string StratisDefaultConfigFilename = "stratis.conf";
 
@@ -47,6 +44,7 @@ namespace NBitcoin
         public static Network SmartContractsTest => Network.GetNetwork("SmartContractsTest") ?? Register(new SmartContractsTest());
 
         public static Network SmartContractsRegTest => Network.GetNetwork("SmartContractsRegTest") ?? Register(new SmartContractsRegTest());
+
         protected static Block CreateBitcoinGenesisBlock(ConsensusFactory consensusFactory, uint nTime, uint nNonce, uint nBits, int nVersion, Money genesisReward)
         {
             string pszTimestamp = "The Times 03/Jan/2009 Chancellor on brink of second bailout for banks";

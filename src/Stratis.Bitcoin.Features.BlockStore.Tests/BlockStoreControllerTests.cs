@@ -5,9 +5,10 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Moq;
 using NBitcoin;
+using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Features.BlockStore.Controllers;
 using Stratis.Bitcoin.Features.BlockStore.Models;
-using Stratis.Bitcoin.Tests.Common;
+using Stratis.Bitcoin.Tests.Wallet.Common;
 using Stratis.Bitcoin.Utilities.JsonErrors;
 using Xunit;
 
@@ -135,14 +136,36 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
                 ((Block)(result.Value)).ToHex(Network.StratisTest).Should().Be(BlockAsHex); 
         }
 
+        [Fact]
+        public void GetBlockCount_ReturnsHeightFromChainState()
+        {
+            var logger = new Mock<ILoggerFactory>();
+            var cache = new Mock<IBlockStoreCache>();
+            var chainState = new Mock<IChainState>();
+            ConcurrentChain chain = WalletTestsHelpers.GenerateChainWithHeight(3, Network.StratisTest);
+
+            logger.Setup(l => l.CreateLogger(It.IsAny<string>())).Returns(Mock.Of<ILogger>);
+
+            chainState.Setup(c => c.ConsensusTip)
+                .Returns(chain.GetBlock(2));
+
+            var controller = new BlockStoreController(logger.Object, cache.Object, chainState.Object);
+
+            var json = (JsonResult)controller.GetBlockCount();
+            int result = int.Parse(json.Value.ToString());
+
+            Assert.Equal(2, result);
+        }
+               
         private static (Mock<IBlockStoreCache> cache, BlockStoreController controller) GetControllerAndCache()
         {
             var logger = new Mock<ILoggerFactory>();
             var cache = new Mock<IBlockStoreCache>();
+            var chainState = new Mock<IChainState>();
 
             logger.Setup(l => l.CreateLogger(It.IsAny<string>())).Returns(Mock.Of<ILogger>);
 
-            var controller = new BlockStoreController(logger.Object, cache.Object);
+            var controller = new BlockStoreController(logger.Object, cache.Object, chainState.Object);
 
             return (cache, controller);
         }

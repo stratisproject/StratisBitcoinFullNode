@@ -1,7 +1,8 @@
 ﻿using System.Collections.Generic;
 using System.Threading.Tasks;
 using NBitcoin;
-using Stratis.Bitcoin.Features.Consensus;
+using Stratis.Bitcoin.Consensus;
+using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Features.SmartContracts.Consensus.Rules;
 using Xunit;
 
@@ -15,11 +16,11 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
             TestRulesContext testContext = TestRulesContextFactory.CreateAsync(Network.SmartContractsRegTest);
             OpSpendRule rule = testContext.CreateRule<OpSpendRule>();
 
-            var context = new RuleContext(new BlockValidationContext(), Network.SmartContractsRegTest.Consensus, testContext.Chain.Tip);
+            var context = new RuleContext(new ValidationContext(), Network.SmartContractsRegTest.Consensus, testContext.Chain.Tip);
 
-            context.BlockValidationContext.Block = testContext.Network.Consensus.ConsensusFactory.CreateBlock();
-            context.BlockValidationContext.Block.Header.HashPrevBlock = testContext.Chain.Tip.HashBlock;
-            context.BlockValidationContext.Block.Transactions = new List<Transaction>
+            context.ValidationContext.Block = testContext.Network.Consensus.ConsensusFactory.CreateBlock();
+            context.ValidationContext.Block.Header.HashPrevBlock = testContext.Chain.Tip.HashBlock;
+            context.ValidationContext.Block.Transactions = new List<Transaction>
             {
                 new Transaction()
                 {
@@ -46,10 +47,10 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
             TestRulesContext testContext = TestRulesContextFactory.CreateAsync(Network.SmartContractsRegTest);
             OpSpendRule rule = testContext.CreateRule<OpSpendRule>();
 
-            var context = new RuleContext(new BlockValidationContext(), Network.SmartContractsRegTest.Consensus, testContext.Chain.Tip);
-            context.BlockValidationContext.Block = testContext.Network.Consensus.ConsensusFactory.CreateBlock();
-            context.BlockValidationContext.Block.Header.HashPrevBlock = testContext.Chain.Tip.HashBlock;
-            context.BlockValidationContext.Block.Transactions = new List<Transaction>
+            var context = new RuleContext(new ValidationContext(), Network.SmartContractsRegTest.Consensus, testContext.Chain.Tip);
+            context.ValidationContext.Block = testContext.Network.Consensus.ConsensusFactory.CreateBlock();
+            context.ValidationContext.Block.Header.HashPrevBlock = testContext.Chain.Tip.HashBlock;
+            context.ValidationContext.Block.Transactions = new List<Transaction>
             {
                 new Transaction()
                 {
@@ -69,10 +70,10 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
             TestRulesContext testContext = TestRulesContextFactory.CreateAsync(Network.SmartContractsRegTest);
             OpSpendRule rule = testContext.CreateRule<OpSpendRule>();
 
-            var context = new RuleContext(new BlockValidationContext(), Network.SmartContractsRegTest.Consensus, testContext.Chain.Tip);
-            context.BlockValidationContext.Block = testContext.Network.Consensus.ConsensusFactory.CreateBlock();
-            context.BlockValidationContext.Block.Header.HashPrevBlock = testContext.Chain.Tip.HashBlock;
-            context.BlockValidationContext.Block.Transactions = new List<Transaction>
+            var context = new RuleContext(new ValidationContext(), Network.SmartContractsRegTest.Consensus, testContext.Chain.Tip);
+            context.ValidationContext.Block = testContext.Network.Consensus.ConsensusFactory.CreateBlock();
+            context.ValidationContext.Block.Header.HashPrevBlock = testContext.Chain.Tip.HashBlock;
+            context.ValidationContext.Block.Transactions = new List<Transaction>
             {
                 new Transaction()
                 {

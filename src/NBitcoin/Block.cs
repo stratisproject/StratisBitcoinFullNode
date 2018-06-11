@@ -220,6 +220,9 @@ namespace NBitcoin
 
         private BlockHeader header;
 
+        /// <summary>The size of the block in bytes, the block must be serialized for this property to be set.</summary>
+        public long? BlockSize { get; protected set; }
+
         // network and disk
         private List<Transaction> transactions = new List<Transaction>();
         public List<Transaction> Transactions { get { return this.transactions; } set { this.transactions = value; } }
@@ -264,6 +267,8 @@ namespace NBitcoin
         {
             stream.ReadWrite(ref this.header);
             stream.ReadWrite(ref this.transactions);
+
+            this.BlockSize = stream.Serializing ? stream.Counter.WrittenBytes : stream.Counter.ReadBytes;
         }
 
         public bool HeaderOnly
@@ -278,6 +283,7 @@ namespace NBitcoin
         {
             this.header.SetNull();
             this.transactions.Clear();
+            this.BlockSize = null;
         }
 
         public BlockHeader Header => this.header;

@@ -11,6 +11,7 @@ using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Consensus;
+using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.Consensus.Interfaces;
@@ -96,15 +97,12 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             MempoolSchedulerLock mempoolLock = new MempoolSchedulerLock();
 
             // Simple block creation, nothing special yet:
-            PowBlockDefinition blockDefinition = CreatePowBlockAssembler(consensusLoop, dateTimeProvider, loggerFactory as LoggerFactory, mempool, mempoolLock, network);
+            PowBlockDefinition blockDefinition = CreatePowBlockAssembler(consensusLoop, consensusRules, dateTimeProvider, loggerFactory as LoggerFactory, mempool, mempoolLock, network);
             BlockTemplate newBlock = blockDefinition.Build(chain.Tip, scriptPubKey);
             chain.SetTip(newBlock.Block.Header);
 
-            var ruleContext = new RuleContext(new BlockValidationContext { Block = newBlock.Block }, network.Consensus, consensusLoop.Tip)
-            {
-                CheckPow = false,
-                CheckMerkleRoot = false,
-            };
+            var ruleContext = consensusRules.CreateRuleContext(new ValidationContext {Block = newBlock.Block}, consensusLoop.Tip);
+            ruleContext.MinedBlock = true;
             await consensusLoop.ValidateAndExecuteBlockAsync(ruleContext);
 
             List<BlockInfo> blockinfo = CreateBlockInfoList();
@@ -137,17 +135,14 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
                 currentBlock.Header.Nonce = blockinfo[i].nonce;
 
                 chain.SetTip(currentBlock.Header);
-                var ruleContextForBlock = new RuleContext(new BlockValidationContext { Block = currentBlock }, network.Consensus, consensusLoop.Tip)
-                {
-                    CheckPow = false,
-                    CheckMerkleRoot = false,
-                };
+                var ruleContextForBlock = consensusRules.CreateRuleContext(new ValidationContext { Block = currentBlock }, consensusLoop.Tip);
+                ruleContextForBlock.MinedBlock = true;
                 await consensusLoop.ValidateAndExecuteBlockAsync(ruleContextForBlock);
                 blocks.Add(currentBlock);
             }
 
             // Just to make sure we can still make simple blocks
-            blockDefinition = CreatePowBlockAssembler(consensusLoop, dateTimeProvider, loggerFactory as LoggerFactory, mempool, mempoolLock, network);
+            blockDefinition = CreatePowBlockAssembler(consensusLoop, consensusRules, dateTimeProvider, loggerFactory as LoggerFactory, mempool, mempoolLock, network);
             newBlock = blockDefinition.Build(chain.Tip, scriptPubKey);
 
             MempoolValidator mempoolValidator = new MempoolValidator(mempool, mempoolLock, dateTimeProvider, new MempoolSettings(nodeSettings), chain, cachedCoinView, loggerFactory, nodeSettings, consensusRules);
@@ -224,12 +219,13 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
         /// Creates a proof of work block assembler.
         /// </summary>
         /// <param name="consensusLoop">Consensus loop.</param>
+        /// <param name="consensusRules"></param>
         /// <param name="dateTimeProvider">Date and time provider.</param>
         /// <param name="mempool">Memory pool for transactions.</param>
         /// <param name="mempoolLock">Async lock for memory pool.</param>
         /// <param name="network">Network running on.</param>
         /// <returns>Proof of work block assembler.</returns>
-        private static PowBlockDefinition CreatePowBlockAssembler(IConsensusLoop consensusLoop, IDateTimeProvider dateTimeProvider, LoggerFactory loggerFactory, TxMempool mempool, MempoolSchedulerLock mempoolLock, Network network)
+        private static PowBlockDefinition CreatePowBlockAssembler(IConsensusLoop consensusLoop, IConsensusRules consensusRules, IDateTimeProvider dateTimeProvider, LoggerFactory loggerFactory, TxMempool mempool, MempoolSchedulerLock mempoolLock, Network network)
         {
             var options = new BlockDefinitionOptions
             {
@@ -240,7 +236,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             var blockMinFeeRate = new FeeRate(PowMining.DefaultBlockMinTxFee);
             options.BlockMinFeeRate = blockMinFeeRate;
 
-            return new PowBlockDefinition(consensusLoop, dateTimeProvider, loggerFactory, mempool, mempoolLock, network, options);
+            return new PowBlockDefinition(consensusLoop, dateTimeProvider, loggerFactory, mempool, mempoolLock, network, consensusRules, options);
         }
     }
 }

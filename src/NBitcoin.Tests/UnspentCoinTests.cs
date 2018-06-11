@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 using NBitcoin.RPC;
 using Newtonsoft.Json.Linq;
 using Xunit;

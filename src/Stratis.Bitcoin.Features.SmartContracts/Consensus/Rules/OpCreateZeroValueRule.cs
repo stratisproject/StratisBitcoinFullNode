@@ -1,8 +1,8 @@
 ﻿using System.Linq;
 using System.Threading.Tasks;
 using NBitcoin;
-using Stratis.Bitcoin.Features.Consensus;
-using Stratis.Bitcoin.Features.Consensus.Rules;
+using Stratis.Bitcoin.Consensus;
+using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Block = NBitcoin.Block;
 
@@ -16,9 +16,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Consensus.Rules
     {
         public override Task RunAsync(RuleContext context)
         {
-            Block block = context.BlockValidationContext.Block;
+            Block block = context.ValidationContext.Block;
 
-            foreach(Transaction transaction in block.Transactions)
+            foreach (Transaction transaction in block.Transactions)
             {
                 CheckTransaction(transaction);
             }
@@ -48,9 +48,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Consensus.Rules
 
         private void Throw()
         {
-            // TODO make nicer
-            new ConsensusError("op-create-had-nonzero-value",
-                "op create had nonzero value").Throw();
+            new ConsensusError("op-create-had-nonzero-value", "op create had nonzero value").Throw();
         }
     }
 }

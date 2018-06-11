@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
-using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
@@ -33,7 +32,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
 
         private int[] ports;
         private NodeRunner runner;
-        private readonly NetworkCredential NetworkCredentials;
+        private readonly NetworkCredential creds;
         private List<Transaction> transactions = new List<Transaction>();
         private HashSet<OutPoint> locked = new HashSet<OutPoint>();
         private Money fee = Money.Coins(0.0001m);
@@ -59,11 +58,11 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
 
             this.State = CoreNodeState.Stopped;
             var pass = Encoders.Hex.EncodeData(RandomUtils.GetBytes(20));
-            this.NetworkCredentials = new NetworkCredential(pass, pass);
+            this.creds = new NetworkCredential(pass, pass);
             this.Config = Path.Combine(this.runner.DataFolder, configfile);
             this.ConfigParameters.Import(builder.ConfigParameters);
             this.ports = new int[2];
-            this.FindPorts(this.ports);
+            TestHelper.FindPorts(this.ports);
 
             var loggerFactory = new ExtendedLoggerFactory();
             loggerFactory.AddConsoleWithFilters();
@@ -89,8 +88,8 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
 
         private string GetRPCAuth()
         {
-            if (!this.CookieAuth)
-                return this.NetworkCredentials.UserName + ":" + this.NetworkCredentials.Password;
+            if (!CookieAuth)
+                return creds.UserName + ":" + creds.Password;
             else
                 return "cookiefile=" + Path.Combine(this.runner.DataFolder, "regtest", ".cookie");
         }
@@ -129,10 +128,10 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
             config.Add("rest", "1");
             config.Add("server", "1");
             config.Add("txindex", "1");
-            if (!this.CookieAuth)
+            if (!CookieAuth)
             {
-                config.Add("rpcuser", this.NetworkCredentials.UserName);
-                config.Add("rpcpassword", this.NetworkCredentials.Password);
+                config.Add("rpcuser", creds.UserName);
+                config.Add("rpcpassword", creds.Password);
             }
             config.Add("port", this.ports[0].ToString());
             config.Add("rpcport", this.ports[1].ToString());
@@ -193,29 +192,6 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
                     break;
                 else
                     Thread.Sleep(200);
-            }
-        }
-
-        private void FindPorts(int[] ports)
-        {
-            int i = 0;
-            while (i < ports.Length)
-            {
-                var port = RandomUtils.GetUInt32() % 4000;
-                port = port + 10000;
-                if (ports.Any(p => p == port))
-                    continue;
-                try
-                {
-                    TcpListener l = new TcpListener(IPAddress.Loopback, (int)port);
-                    l.Start();
-                    l.Stop();
-                    ports[i] = (int)port;
-                    i++;
-                }
-                catch (SocketException)
-                {
-                }
             }
         }
 

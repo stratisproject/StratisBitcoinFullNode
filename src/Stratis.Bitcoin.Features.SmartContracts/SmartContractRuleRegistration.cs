@@ -2,8 +2,8 @@
 using System.Collections.Generic;
 using System.Linq;
 using Stratis.Bitcoin.Builder;
+using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
-using Stratis.Bitcoin.Features.Consensus.Rules;
 using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
 using Stratis.Bitcoin.Features.SmartContracts.Consensus.Rules;
 using Stratis.Bitcoin.Utilities;

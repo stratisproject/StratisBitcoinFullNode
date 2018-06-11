@@ -1,4 +1,4 @@
-﻿using Stratis.Bitcoin.Features.Consensus.Rules;
+﻿using Stratis.Bitcoin.Consensus.Rules;
 
 namespace Stratis.Bitcoin.Features.SmartContracts
 {
