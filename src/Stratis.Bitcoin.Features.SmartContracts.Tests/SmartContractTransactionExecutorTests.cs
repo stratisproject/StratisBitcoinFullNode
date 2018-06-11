@@ -2,13 +2,11 @@
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using Moq;
 using NBitcoin;
 using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Patricia;
 using Stratis.SmartContracts;
 using Stratis.SmartContracts.Core;
-using Stratis.SmartContracts.Core.Receipts;
 using Stratis.SmartContracts.Core.State;
 using Stratis.SmartContracts.Core.Validation;
 using Stratis.SmartContracts.Executor.Reflection;
@@ -27,7 +25,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         private readonly ILoggerFactory loggerFactory;
         private readonly Network network;
         private readonly ContractStateRepositoryRoot stateRepository;
-        private readonly ISmartContractReceiptStorage receiptStorage;
         private readonly SmartContractValidator validator;
 
         public SmartContractTransactionExecutorTests()
@@ -38,7 +35,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             this.network = Network.SmartContractsRegTest;
             this.validator = new SmartContractValidator(new ISmartContractValidator[] { });
             this.stateRepository = new ContractStateRepositoryRoot(new NoDeleteSource<byte[], byte[]>(new MemoryDictionarySource()));
-            this.receiptStorage = Mock.Of<ISmartContractReceiptStorage>();
         }
 
         [Fact]
