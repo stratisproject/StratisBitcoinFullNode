@@ -39,7 +39,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
 
             using (this.lockobj.LockRead())
             {
-                UnspentOutputs[] result = new UnspentOutputs[txIds.Length];
+                var result = new UnspentOutputs[txIds.Length];
                 for (int i = 0; i < txIds.Length; i++)
                 {
                     result[i] = this.unspents.TryGet(txIds[i]);

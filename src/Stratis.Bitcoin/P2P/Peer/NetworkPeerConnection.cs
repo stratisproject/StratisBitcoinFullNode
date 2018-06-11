@@ -248,7 +248,7 @@ namespace Stratis.Bitcoin.P2P.Peer
 
                 this.logger.LogTrace("Sending message: '{0}'", message);
 
-                using (MemoryStream ms = new MemoryStream())
+                using (var ms = new MemoryStream())
                 {
                     message.ReadWrite(new BitcoinStream(ms, true)
                     {
@@ -349,7 +349,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             int checksumSize = protocolVersion >= ProtocolVersion.MEMPOOL_GD_VERSION ? Message.ChecksumSize : 0;
             int headerSize = Message.CommandSize + Message.LengthSize + checksumSize;
 
-            byte[] messageHeader = new byte[headerSize];
+            var messageHeader = new byte[headerSize];
             await this.ReadBytesAsync(messageHeader, 0, headerSize, cancellation).ConfigureAwait(false);
 
             // Then extract the length, which is the message payload size.
@@ -362,7 +362,7 @@ namespace Stratis.Bitcoin.P2P.Peer
 
             // Read the payload.
             int magicLength = this.network.MagicBytes.Length;
-            byte[] message = new byte[magicLength + headerSize + length];
+            var message = new byte[magicLength + headerSize + length];
 
             await this.ReadBytesAsync(message, magicLength + headerSize, (int)length, cancellation).ConfigureAwait(false);
 
@@ -388,7 +388,7 @@ namespace Stratis.Bitcoin.P2P.Peer
         {
             this.logger.LogTrace("()");
 
-            byte[] bytes = new byte[1];
+            var bytes = new byte[1];
             for (int i = 0; i < magic.Length; i++)
             {
                 byte expectedByte = magic[i];

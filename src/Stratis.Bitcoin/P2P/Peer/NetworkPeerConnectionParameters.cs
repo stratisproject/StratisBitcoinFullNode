@@ -76,7 +76,7 @@ namespace Stratis.Bitcoin.P2P.Peer
 
         public VersionPayload CreateVersion(IPEndPoint peerAddress, Network network, DateTimeOffset timeStamp)
         {
-            VersionPayload version = new VersionPayload()
+            var version = new VersionPayload()
             {
                 Nonce = this.Nonce == null ? RandomUtils.GetUInt64() : this.Nonce.Value,
                 UserAgent = this.UserAgent,

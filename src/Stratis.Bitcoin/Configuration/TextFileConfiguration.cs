@@ -63,7 +63,7 @@ namespace Stratis.Bitcoin.Configuration
             this.args = new Dictionary<string, List<string>>();
             int lineNumber = 0;
             // Process all lines, even if empty.
-            foreach (var l in data.Split(new[] { "\r\n", "\n" }, StringSplitOptions.None))
+            foreach (string l in data.Split(new[] { "\r\n", "\n" }, StringSplitOptions.None))
             {
                 // Track line numbers, also for empty lines.
                 lineNumber++;
@@ -96,7 +96,7 @@ namespace Stratis.Bitcoin.Configuration
         /// <param name="value">Argument value.</param>
         private void Add(string key, string value)
         {
-            if (!this.args.TryGetValue(key, out var list))
+            if (!this.args.TryGetValue(key, out List<string> list))
             {
                 list = new List<string>();
                 this.args.Add(key, list);
@@ -110,9 +110,9 @@ namespace Stratis.Bitcoin.Configuration
         /// <param name="destination">Target instance to merge current instance into.</param>
         public void MergeInto(TextFileConfiguration destination)
         {
-            foreach (var kv in this.args)
+            foreach (KeyValuePair<string, List<string>> kv in this.args)
             {
-                foreach (var v in kv.Value)
+                foreach (string v in kv.Value)
                     destination.Add(kv.Key, v);
             }
         }
@@ -125,7 +125,7 @@ namespace Stratis.Bitcoin.Configuration
         public string[] GetAll(string key)
         {
             // Get the values with the - prefix.
-            if (!this.args.TryGetValue($"-{key}", out var values))
+            if (!this.args.TryGetValue($"-{key}", out List<string> values))
                 values = new List<string>();
 
             return values.ToArray();
@@ -140,7 +140,7 @@ namespace Stratis.Bitcoin.Configuration
         /// <returns>Value of the argument or a default value if no value was set.</returns>
         public T GetOrDefault<T>(string key, T defaultValue)
         {
-            if (!this.args.TryGetValue($"-{key}", out var values))
+            if (!this.args.TryGetValue($"-{key}", out List<string> values))
                 return defaultValue;
 
             try

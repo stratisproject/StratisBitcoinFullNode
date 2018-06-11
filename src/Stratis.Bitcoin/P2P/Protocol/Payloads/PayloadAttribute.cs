@@ -100,7 +100,7 @@ namespace Stratis.Bitcoin.P2P.Protocol.Payloads
             Guard.NotNull(payloadType, nameof(payloadType));
             Guard.Assert(payloadType.IsSubclassOf(typeof(Payload)));
 
-            var payloadAttribute = payloadType.GetCustomAttributes(typeof(PayloadAttribute), true)
+            PayloadAttribute payloadAttribute = payloadType.GetCustomAttributes(typeof(PayloadAttribute), true)
                 .OfType<PayloadAttribute>().First();
             Guard.Assert(payloadAttribute != null);
 

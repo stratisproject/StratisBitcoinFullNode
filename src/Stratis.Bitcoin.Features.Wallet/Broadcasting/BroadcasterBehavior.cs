@@ -89,9 +89,9 @@ namespace Stratis.Bitcoin.Features.Wallet.Broadcasting
         private void ProcessInvPayload(InvPayload invPayload)
         {
             // if node has transaction we broadcast
-            foreach (var inv in invPayload.Inventory.Where(x => x.Type == InventoryType.MSG_TX))
+            foreach (InventoryVector inv in invPayload.Inventory.Where(x => x.Type == InventoryType.MSG_TX))
             {
-                var txEntry = this.broadcasterManager.GetTransaction(inv.Hash);
+                TransactionBroadcastEntry txEntry = this.broadcasterManager.GetTransaction(inv.Hash);
                 if (txEntry != null)
                 {
                     this.broadcasterManager.AddOrUpdate(txEntry.Transaction, State.Propagated);

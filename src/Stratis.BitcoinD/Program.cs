@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Threading.Tasks;
+using Stratis.Bitcoin;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.BlockStore;
@@ -23,9 +24,9 @@ namespace Stratis.BitcoinD
         {
             try
             {
-                NodeSettings nodeSettings = new NodeSettings(args:args);
+                var nodeSettings = new NodeSettings(args:args);
 
-                var node = new FullNodeBuilder()
+                IFullNode node = new FullNodeBuilder()
                     .UseNodeSettings(nodeSettings)
                     .UseBlockStore()
                     .UsePowConsensus()

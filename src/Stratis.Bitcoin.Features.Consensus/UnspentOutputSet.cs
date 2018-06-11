@@ -12,7 +12,7 @@ namespace Stratis.Bitcoin.Features.Consensus
 
         public TxOut GetOutputFor(TxIn txIn)
         {
-            var unspent = this.unspents.TryGet(txIn.PrevOut.Hash);
+            UnspentOutputs unspent = this.unspents.TryGet(txIn.PrevOut.Hash);
             if (unspent == null)
                 return null;
 
@@ -43,9 +43,9 @@ namespace Stratis.Bitcoin.Features.Consensus
         {
             if (!transaction.IsCoinBase)
             {
-                foreach (var input in transaction.Inputs)
+                foreach (TxIn input in transaction.Inputs)
                 {
-                    var c = this.AccessCoins(input.PrevOut.Hash);
+                    UnspentOutputs c = this.AccessCoins(input.PrevOut.Hash);
                     c.Spend(input.PrevOut.N);
                 }
             }

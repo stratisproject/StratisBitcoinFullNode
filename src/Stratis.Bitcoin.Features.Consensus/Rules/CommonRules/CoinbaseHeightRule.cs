@@ -21,7 +21,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
             int newHeight = context.ConsensusTipHeight + 1;
             Block block = context.ValidationContext.Block;
 
-            Script expect = new Script(Op.GetPushOp(newHeight));
+            var expect = new Script(Op.GetPushOp(newHeight));
             Script actual = block.Transactions[0].Inputs[0].ScriptSig;
             if (!this.StartWith(actual.ToBytes(true), expect.ToBytes(true)))
             {
