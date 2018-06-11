@@ -2,6 +2,7 @@
 using System.Linq;
 using NBitcoin;
 using NBitcoin.DataEncoders;
+using Stratis.ApexD;
 
 namespace FedKeyPairGen
 {
@@ -99,6 +100,40 @@ namespace FedKeyPairGen
             Console.WriteLine("hash: " + headerReg.GetHash());
             Console.WriteLine("merkleroot: " + headerReg.HashMerkleRoot);
 
+        }
+
+        public void CreateMultisigAddresses()
+        {
+            // The following creates 2 members and creates 2-of-5 multisig addresses for both StratisTest and ApexTest.
+            int pubKeysCount = 5;
+            int mComponent = 2;
+
+            PubKey[] pubKeys = new PubKey[pubKeysCount];
+
+            for (int i = 0; i < pubKeysCount; i++)
+            {
+                string password = "mypassword";
+
+                // Create a mnemonic and get the corresponding pubKey.
+                Mnemonic mnemonic = new Mnemonic(Wordlist.English, WordCount.Twelve);
+                var pubKey = mnemonic.DeriveExtKey().PrivateKey.PubKey;
+                pubKeys[i] = pubKey;
+                
+                Console.WriteLine($"Mnemonic - Please note the following 12 words down in a secure place: {string.Join(" ", mnemonic.Words)}");
+                Console.WriteLine($"PubKey   - Please share the following public key with the person responsible for the sidechain generation: {Encoders.Hex.EncodeData((pubKey).ToBytes(false))}");
+                Console.WriteLine(Environment.NewLine);
+            }
+
+            Script payToMultiSig = PayToMultiSigTemplate.Instance.GenerateScriptPubKey(mComponent, pubKeys);
+            Console.WriteLine("Redeem script: " + payToMultiSig.ToString());
+
+            BitcoinAddress sidechainMultisigAddress = payToMultiSig.Hash.GetAddress(ApexNetwork.ApexTest);
+            Console.WriteLine("Sidechan P2SH: " + sidechainMultisigAddress.ScriptPubKey);
+            Console.WriteLine("Sidechain Multisig address: " + sidechainMultisigAddress);
+
+            BitcoinAddress mainchainMultisigAddress = payToMultiSig.Hash.GetAddress(Network.StratisTest);
+            Console.WriteLine("Mainchain P2SH: " + mainchainMultisigAddress.ScriptPubKey);
+            Console.WriteLine("Mainchain Multisig address: " + mainchainMultisigAddress);
         }
     }
 }
