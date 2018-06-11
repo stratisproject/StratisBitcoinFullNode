@@ -4,67 +4,56 @@ using System.Reflection;
 using System.Text;
 using NBitcoin;
 using Nethereum.RLP;
-using Newtonsoft.Json;
 using Stratis.SmartContracts.Core;
+using Stratis.SmartContracts.Executor.Reflection.Exceptions;
 
 namespace Stratis.SmartContracts.Executor.Reflection.Serialization
 {
     /// <summary>
-    /// The end goal for this class is to take in any object and serialize it to bytes, or vice versa.
-    /// Will likely need to be highly complex in the future but right now we just fall back to JSON worst case.
-    /// This idea may be ridiculous so we can always have custom methods that have to be called on PersistentState in the future.
+    /// This class serializes and deserializes specific data types
+    /// when persisting items inside a smart contract.
     /// </summary>
     public class PersistentStateSerializer
     {
-        public static JsonSerializerSettings JsonSerializerSettings = new JsonSerializerSettings
-        {
-            NullValueHandling = NullValueHandling.Ignore
-        };
-
         public byte[] Serialize(object o, Network network)
         {
-            if (o is byte[])
-                return (byte[])o;
+            if (o is null)
+                return new byte[0];
 
-            if (o is byte)
-                return new byte[] { (byte)o };
+            if (o is byte[] bytes)
+                return bytes;
 
-            if (o is char)
-                return new byte[] { Convert.ToByte(((char)o)) };
+            if (o is byte b1)
+                return new byte[] { b1 };
 
-            if (o is Address)
-                return ((Address)o).ToUint160(network).ToBytes();
+            if (o is char c)
+                return new byte[] { Convert.ToByte(c) };
 
-            if (o is bool)
-                return (BitConverter.GetBytes((bool)o));
+            if (o is Address address)
+                return address.ToUint160(network).ToBytes();
 
-            if (o is int)
-                return BitConverter.GetBytes((int)o);
+            if (o is bool b)
+                return (BitConverter.GetBytes(b));
 
-            if (o is long)
-                return BitConverter.GetBytes((long)o);
+            if (o is int i)
+                return BitConverter.GetBytes(i);
 
-            if (o is uint)
-                return BitConverter.GetBytes((uint)o);
+            if (o is long l)
+                return BitConverter.GetBytes(l);
 
-            if (o is ulong)
-                return BitConverter.GetBytes((ulong)o);
+            if (o is uint u)
+                return BitConverter.GetBytes(u);
 
-            if (o is sbyte)
-            {
-                var bytes = BitConverter.GetBytes((sbyte) o);
-                return BitConverter.GetBytes((sbyte)o);
-            }
+            if (o is ulong ul)
+                return BitConverter.GetBytes(ul);
 
-            if (o is string)
-                return Encoding.UTF8.GetBytes((string)o);
+            if (o is string s)
+                return Encoding.UTF8.GetBytes(s);
             
-            // This is obviously nasty, but our goal is to add custom data type support first and optimize later
             if (o.GetType().IsValueType)
                 return SerializeType(o, network);
-                //return Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(o, Formatting.None, JsonSerializerSettings));
-
-            throw new Exception(string.Format("{0} is not supported.", o.GetType().Name));
+                
+            throw new PersistentStateSerializationException(string.Format("{0} is not supported.", o.GetType().Name));
         }
 
         private byte[] SerializeType(object o, Network network)
@@ -96,43 +85,39 @@ namespace Stratis.SmartContracts.Executor.Reflection.Serialization
                 return null;
 
             if (type == typeof(byte[]))
-                return (object)stream;
+                return stream;
 
             if (type == typeof(byte))
-                return (object)stream[0];
+                return stream[0];
 
             if (type == typeof(char))
-                return (object)Convert.ToChar(stream[0]);
+                return Convert.ToChar(stream[0]);
 
             if (type == typeof(Address))
-                return (object)new uint160(stream).ToAddress(network);
+                return new uint160(stream).ToAddress(network);
 
             if (type == typeof(bool))
-                return (object)(Convert.ToBoolean(stream[0]));
+                return Convert.ToBoolean(stream[0]);
 
             if (type == typeof(int))
-                return (object)(BitConverter.ToInt32(stream, 0));
+                return BitConverter.ToInt32(stream, 0);
 
             if (type == typeof(long))
-                return (object)(BitConverter.ToInt64(stream, 0));
-
-            if (type == typeof(sbyte))
-                return (object)(byte[]) stream;
+                return BitConverter.ToInt64(stream, 0);
 
             if (type == typeof(string))
-                return (object)(Encoding.UTF8.GetString(stream));
+                return Encoding.UTF8.GetString(stream);
 
             if (type == typeof(uint))
-                return (object)(BitConverter.ToUInt32(stream, 0));
+                return BitConverter.ToUInt32(stream, 0);
 
             if (type == typeof(ulong))
-                return (object)(BitConverter.ToUInt64(stream, 0));
+                return BitConverter.ToUInt64(stream, 0);
 
             if (type.IsValueType)
                 return DeserializeType(type, stream, network);
-                //return JsonConvert.DeserializeObject<T>(Encoding.UTF8.GetString(stream), JsonSerializerSettings);
-
-            throw new Exception(string.Format("{0} is not supported.", type.Name));
+                
+            throw new PersistentStateSerializationException(string.Format("{0} is not supported.", type.Name));
         }
 
         private object DeserializeType(Type type, byte[] bytes, Network network)
