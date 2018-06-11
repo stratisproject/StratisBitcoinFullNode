@@ -132,9 +132,9 @@ namespace Stratis.Bitcoin.Tests.Consensus
         public void ConnectHeaders_NewAndExistingHeaders_ShouldCreateNewHeaders()
         {
             var testContext = new TestContext();
-            ChainedHeaderTree chainedHeaderTree = testContext.CreateChainedHeaderTree();
+            var chainedHeaderTree = testContext.CreateChainedHeaderTree();
 
-            var chainTip = testContext.ExtendAChain(10);
+            ChainedHeader chainTip = testContext.ExtendAChain(10);
             chainedHeaderTree.Initialize(chainTip, true); // initialize the tree with 10 headers
             chainTip.BlockDataAvailability = BlockDataAvailabilityState.BlockAvailable;
             ChainedHeader newChainTip = testContext.ExtendAChain(10, chainTip); // create 10 more headers
@@ -144,14 +144,14 @@ namespace Stratis.Bitcoin.Tests.Consensus
 
             chainTip.BlockValidationState = ValidationState.FullyValidated;
 
-            var connectedHeadersOld = chainedHeaderTree.ConnectNewHeaders(2, listOfExistingHeaders);
-            var connectedHeadersNew = chainedHeaderTree.ConnectNewHeaders(1, listOfNewHeaders);
+            var connectedHeadersResultOld = chainedHeaderTree.ConnectNewHeaders(2, listOfExistingHeaders);
+            var connectedHeadersResultNew = chainedHeaderTree.ConnectNewHeaders(1, listOfNewHeaders);
 
             Assert.Equal(21, chainedHeaderTree.GetChainedHeadersByHash().Count);
             Assert.Equal(10, listOfNewHeaders.Count);
-            Assert.True(testContext.NoDownloadRequested(connectedHeadersOld));
-            Assert.Equal(listOfNewHeaders.Last(), connectedHeadersNew.DownloadTo.Header);
-            Assert.Equal(listOfNewHeaders.First(), connectedHeadersNew.DownloadFrom.Header);
+            Assert.True(testContext.NoDownloadRequested(connectedHeadersResultOld));
+            Assert.Equal(listOfNewHeaders.Last(), connectedHeadersResultNew.DownloadTo.Header);
+            Assert.Equal(listOfNewHeaders.First(), connectedHeadersResultNew.DownloadFrom.Header);
         }
 
         /// <summary>
@@ -164,8 +164,8 @@ namespace Stratis.Bitcoin.Tests.Consensus
         public void ConnectHeaders_SupplyHeadersThenSupplyMore_Both_Tip_PeerId_Maps_ShouldBeUpdated()
         {
             var testContext = new TestContext();
-            ChainedHeaderTree cht = testContext.CreateChainedHeaderTree();
-            var chainTip = testContext.ExtendAChain(10);
+            var cht = testContext.CreateChainedHeaderTree();
+            ChainedHeader chainTip = testContext.ExtendAChain(10);
             cht.Initialize(chainTip, true);
             
             var listOfExistingHeaders = testContext.ChainedHeaderToList(chainTip, 10);
@@ -205,25 +205,25 @@ namespace Stratis.Bitcoin.Tests.Consensus
         {
             // Setup
             var ctx = new TestContext();
-            ChainedHeaderTree cht = ctx.CreateChainedHeaderTree();
-            var chainTip = ctx.ExtendAChain(5);
+            var cht = ctx.CreateChainedHeaderTree();
+            ChainedHeader chainTip = ctx.ExtendAChain(5);
             cht.Initialize(chainTip, true);
             ctx.ConsensusSettings.UseCheckpoints = false;
 
             // Checkpoints are off
             Assert.False(ctx.ConsensusSettings.UseCheckpoints);
             ChainedHeader newChainTip = ctx.ExtendAChain(7, chainTip);
-            List<BlockHeader> listOfNewHeaders = ctx.ChainedHeaderToList(newChainTip, 7);
+            var listOfNewBlockHeaders = ctx.ChainedHeaderToList(newChainTip, 7);
 
             // Peer 1 supplies some headers
-            var peer1Headers = listOfNewHeaders.GetRange(0,3);
+            var peer1Headers = listOfNewBlockHeaders.GetRange(0,3);
             cht.ConnectNewHeaders(1, peer1Headers);
 
             // Peer 2 supplies some more headers
-            var peer2Headers = listOfNewHeaders.GetRange(3, 4);
-            var connectedNewHeaders = cht.ConnectNewHeaders(2, peer2Headers);
-            var chainedHeaderFrom = connectedNewHeaders.DownloadFrom;
-            var chainedHeaderTo = connectedNewHeaders.DownloadTo;
+            var peer2Headers = listOfNewBlockHeaders.GetRange(3, 4);
+            var connectNewHeadersResult = cht.ConnectNewHeaders(2, peer2Headers);
+            var chainedHeaderFrom = connectNewHeadersResult.DownloadFrom;
+            var chainedHeaderTo = connectNewHeadersResult.DownloadTo;
             int headersToDownloadCount = chainedHeaderTo.Height - chainedHeaderFrom.Height + 1; // Inclusive
             
             // ToDownload array of the same size as the amount of headers
