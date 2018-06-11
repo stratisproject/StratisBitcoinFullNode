@@ -22,7 +22,7 @@ namespace NBitcoin
         /// <returns></returns>
         public static KeyPath Parse(string path)
         {
-            var parts = path
+            uint[] parts = path
                 .Split(new[] { '/' }, StringSplitOptions.RemoveEmptyEntries)
                 .Where(p => p != "m")
                 .Select(ParseCore)
@@ -43,8 +43,8 @@ namespace NBitcoin
         private static uint ParseCore(string i)
         {
             bool hardened = i.EndsWith("'");
-            var nonhardened = hardened ? i.Substring(0, i.Length - 1) : i;
-            var index = uint.Parse(nonhardened);
+            string nonhardened = hardened ? i.Substring(0, i.Length - 1) : i;
+            uint index = uint.Parse(nonhardened);
             return hardened ? index | 0x80000000u : index;
         }
 
@@ -106,14 +106,14 @@ namespace NBitcoin
         {
             if(_Indexes.Length == 0)
                 return null;
-            var indices = _Indexes.ToArray();
+            uint[] indices = _Indexes.ToArray();
             indices[indices.Length - 1]++;
             return new KeyPath(indices);
         }
 
         public override bool Equals(object obj)
         {
-            KeyPath item = obj as KeyPath;
+            var item = obj as KeyPath;
             if(item == null)
                 return false;
             return ToString().Equals(item.ToString());
@@ -145,8 +145,8 @@ namespace NBitcoin
 
         private static string ToString(uint i)
         {
-            var hardened = (i & 0x80000000u) != 0;
-            var nonhardened = (i & ~0x80000000u);
+            bool hardened = (i & 0x80000000u) != 0;
+            uint nonhardened = (i & ~0x80000000u);
             return hardened ? nonhardened + "'" : nonhardened.ToString(CultureInfo.InvariantCulture);
         }
 

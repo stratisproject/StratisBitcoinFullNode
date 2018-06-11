@@ -15,7 +15,7 @@ namespace NBitcoin
 
         protected override Task PutBytesBatch(IEnumerable<Tuple<string, byte[]>> enumerable)
         {
-            foreach(var data in enumerable)
+            foreach(Tuple<string, byte[]> data in enumerable)
             {
                 if(data.Item2 == null)
                 {

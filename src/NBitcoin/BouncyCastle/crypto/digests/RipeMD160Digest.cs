@@ -597,7 +597,7 @@ namespace NBitcoin.BouncyCastle.Crypto.Digests
 
         public override void Reset(IMemoable other)
         {
-            RipeMD160Digest d = (RipeMD160Digest)other;
+            var d = (RipeMD160Digest)other;
 
             CopyIn(d);
         }

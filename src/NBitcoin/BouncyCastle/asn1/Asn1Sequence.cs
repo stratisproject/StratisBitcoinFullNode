@@ -174,7 +174,7 @@ namespace NBitcoin.BouncyCastle.Asn1
         protected override bool Asn1Equals(
             Asn1Object asn1Object)
         {
-            Asn1Sequence other = asn1Object as Asn1Sequence;
+            var other = asn1Object as Asn1Sequence;
 
             if(other == null)
                 return false;
@@ -199,7 +199,7 @@ namespace NBitcoin.BouncyCastle.Asn1
 
         private Asn1Encodable GetCurrent(IEnumerator e)
         {
-            Asn1Encodable encObj = (Asn1Encodable)e.Current;
+            var encObj = (Asn1Encodable)e.Current;
 
             // unfortunately null was allowed as a substitute for DER null
             if(encObj == null)

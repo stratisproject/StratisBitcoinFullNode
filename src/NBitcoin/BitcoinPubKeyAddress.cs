@@ -12,7 +12,7 @@ namespace NBitcoin
         public BitcoinPubKeyAddress(string base58, Network expectedNetwork)
             : base(Validate(base58, ref expectedNetwork), expectedNetwork)
         {
-            var decoded = Encoders.Base58Check.DecodeData(base58);
+            byte[] decoded = Encoders.Base58Check.DecodeData(base58);
             _KeyId = new KeyId(new uint160(decoded.Skip(expectedNetwork.GetVersionBytes(Base58Type.PUBKEY_ADDRESS, true).Length).ToArray()));
         }
 
@@ -27,8 +27,8 @@ namespace NBitcoin
         {
             if (base58 == null)
                 throw new ArgumentNullException("base58");
-            var data = Encoders.Base58Check.DecodeData(base58);
-            var versionBytes = expectedNetwork.GetVersionBytes(Base58Type.PUBKEY_ADDRESS, false);
+            byte[] data = Encoders.Base58Check.DecodeData(base58);
+            byte[] versionBytes = expectedNetwork.GetVersionBytes(Base58Type.PUBKEY_ADDRESS, false);
             if (versionBytes != null && data.StartWith(versionBytes))
             {
                 if (data.Length == versionBytes.Length + 20)
@@ -54,7 +54,7 @@ namespace NBitcoin
 
         public bool VerifyMessage(string message, string signature)
         {
-            var key = PubKey.RecoverFromMessage(message, signature);
+            PubKey key = PubKey.RecoverFromMessage(message, signature);
             return key.Hash == Hash;
         }
 

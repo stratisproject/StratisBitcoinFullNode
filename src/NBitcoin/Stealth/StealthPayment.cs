@@ -74,14 +74,14 @@ namespace NBitcoin.Stealth
 
         public static KeyId[] ExtractKeyIDs(Script script)
         {
-            var keyId = PayToPubkeyHashTemplate.Instance.ExtractScriptPubKeyParameters(script);
+            KeyId keyId = PayToPubkeyHashTemplate.Instance.ExtractScriptPubKeyParameters(script);
             if(keyId != null)
             {
                 return new[] { keyId };
             }
             else
             {
-                var para = PayToMultiSigTemplate.Instance.ExtractScriptPubKeyParameters(Network.Main, script);
+                PayToMultiSigTemplateParameters para = PayToMultiSigTemplate.Instance.ExtractScriptPubKeyParameters(Network.Main, script);
                 if(para == null)
                     throw new ArgumentException("Invalid stealth spendable output script", "spendable");
                 return para.PubKeys.Select(k => k.Hash).ToArray();
@@ -140,14 +140,14 @@ namespace NBitcoin.Stealth
 
         public static StealthPayment[] GetPayments(Transaction transaction, BitcoinStealthAddress address, Key scan)
         {
-            List<StealthPayment> result = new List<StealthPayment>();
+            var result = new List<StealthPayment>();
             for(int i = 0; i < transaction.Outputs.Count - 1; i++)
             {
-                var metadata = StealthMetadata.TryParse(transaction.Outputs[i].ScriptPubKey);
+                StealthMetadata metadata = StealthMetadata.TryParse(transaction.Outputs[i].ScriptPubKey);
                 if(metadata != null && (address == null || address.Prefix.Match(metadata.BitField)))
                 {
-                    var scriptPubKey = transaction.Outputs[i + 1].ScriptPubKey;
-                    var scriptId = PayToScriptHashTemplate.Instance.ExtractScriptPubKeyParameters(scriptPubKey);
+                    Script scriptPubKey = transaction.Outputs[i + 1].ScriptPubKey;
+                    ScriptId scriptId = PayToScriptHashTemplate.Instance.ExtractScriptPubKeyParameters(scriptPubKey);
                     Script expectedScriptPubKey = address == null ? scriptPubKey : null;
                     Script redeem = null;
 

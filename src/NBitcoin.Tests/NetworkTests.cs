@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -50,12 +51,12 @@ namespace NBitcoin.Tests
         [Trait("UnitTest", "UnitTest")]
         public void ReadMagicByteWithFirstByteDuplicated()
         {
-            var bytes = Network.Main.MagicBytes.ToList();
+            List<byte> bytes = Network.Main.MagicBytes.ToList();
             bytes.Insert(0, bytes.First());
 
             using(var memstrema = new MemoryStream(bytes.ToArray()))
             {
-                var found = Network.Main.ReadMagic(memstrema, new CancellationToken());
+                bool found = Network.Main.ReadMagic(memstrema, new CancellationToken());
                 Assert.True(found);
             }
         }

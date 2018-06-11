@@ -12,7 +12,7 @@ namespace NBitcoin
         public BitcoinScriptAddress(string base58, Network expectedNetwork)
             : base(Validate(base58, ref expectedNetwork), expectedNetwork)
         {
-            var decoded = Encoders.Base58Check.DecodeData(base58);
+            byte[] decoded = Encoders.Base58Check.DecodeData(base58);
             _Hash = new ScriptId(new uint160(decoded.Skip(expectedNetwork.GetVersionBytes(Base58Type.SCRIPT_ADDRESS, true).Length).ToArray()));
         }
 
@@ -27,8 +27,8 @@ namespace NBitcoin
         {
             if (base58 == null)
                 throw new ArgumentNullException("base58");
-            var data = Encoders.Base58Check.DecodeData(base58);
-            var versionBytes = expectedNetwork.GetVersionBytes(Base58Type.SCRIPT_ADDRESS, false);
+            byte[] data = Encoders.Base58Check.DecodeData(base58);
+            byte[] versionBytes = expectedNetwork.GetVersionBytes(Base58Type.SCRIPT_ADDRESS, false);
             if (versionBytes != null && data.StartWith(versionBytes))
             {
                 if (data.Length == versionBytes.Length + 20)
@@ -153,7 +153,7 @@ namespace NBitcoin
 
         public override bool Equals(object obj)
         {
-            BitcoinAddress item = obj as BitcoinAddress;
+            var item = obj as BitcoinAddress;
             if(item == null)
                 return false;
             return _Str.Equals(item._Str);

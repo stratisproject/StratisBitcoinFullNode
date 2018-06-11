@@ -40,7 +40,7 @@ namespace NBitcoin.BouncyCastle.Crypto.Parameters
             if(obj == this)
                 return true;
 
-            ECPublicKeyParameters other = obj as ECPublicKeyParameters;
+            var other = obj as ECPublicKeyParameters;
 
             if(other == null)
                 return false;

@@ -29,7 +29,7 @@ namespace NBitcoin
             if(wordlist == null)
                 wordlist = Wordlist.AutoDetect(mnemonic) ?? Wordlist.English;
 
-            var words = mnemonic.Split(new char[] { ' ', '　' }, StringSplitOptions.RemoveEmptyEntries);
+            string[] words = mnemonic.Split(new char[] { ' ', '　' }, StringSplitOptions.RemoveEmptyEntries);
             //if the sentence is not at least 12 characters or cleanly divisible by 3, it is bad!
             if(!CorrectWordCount(words.Length))
             {
@@ -52,13 +52,13 @@ namespace NBitcoin
             if(entropy == null)
                 entropy = RandomUtils.GetBytes(32);
 
-            var i = Array.IndexOf(entArray, entropy.Length * 8);
+            int i = Array.IndexOf(entArray, entropy.Length * 8);
             if(i == -1)
                 throw new ArgumentException("The length for entropy should be : " + String.Join(",", entArray), "entropy");
 
             int cs = csArray[i];
             byte[] checksum = Hashes.SHA256(entropy);
-            BitWriter entcsResult = new BitWriter();
+            var entcsResult = new BitWriter();
 
             entcsResult.Write(entropy);
             entcsResult.Write(checksum, cs);
@@ -75,7 +75,7 @@ namespace NBitcoin
 
         private static byte[] GenerateEntropy(WordCount wordCount)
         {
-            var ms = (int)wordCount;
+            int ms = (int)wordCount;
             if(!CorrectWordCount(ms))
                 throw new ArgumentException("Word count should be equal to 12,15,18,21 or 24", "wordCount");
             int i = Array.IndexOf(msArray, (int)wordCount);
@@ -97,14 +97,14 @@ namespace NBitcoin
                     int cs = csArray[i];
                     int ent = entArray[i];
 
-                    BitWriter writer = new BitWriter();
-                    var bits = Wordlist.ToBits(_Indices);
+                    var writer = new BitWriter();
+                    BitArray bits = Wordlist.ToBits(_Indices);
                     writer.Write(bits, ent);
-                    var entropy = writer.ToBytes();
-                    var checksum = Hashes.SHA256(entropy);
+                    byte[] entropy = writer.ToBytes();
+                    byte[] checksum = Hashes.SHA256(entropy);
 
                     writer.Write(checksum, cs);
-                    var expectedIndices = writer.ToIntegers();
+                    int[] expectedIndices = writer.ToIntegers();
                     _IsValidChecksum = expectedIndices.SequenceEqual(_Indices);
                 }
                 return _IsValidChecksum.Value;
@@ -171,8 +171,8 @@ namespace NBitcoin
         public byte[] DeriveSeed(string passphrase = null)
         {
             passphrase = passphrase ?? "";
-            var salt = Concat(Encoding.UTF8.GetBytes("mnemonic"), Normalize(passphrase));
-            var bytes = Normalize(_Mnemonic);
+            byte[] salt = Concat(Encoding.UTF8.GetBytes("mnemonic"), Normalize(passphrase));
+            byte[] bytes = Normalize(_Mnemonic);
 
 #if USEBC || WINDOWS_UWP || NETCORE
             var mac = new NBitcoin.BouncyCastle.Crypto.Macs.HMac(new NBitcoin.BouncyCastle.Crypto.Digests.Sha512Digest());
@@ -238,7 +238,7 @@ namespace NBitcoin
         static Byte[] Concat(Byte[] source1, Byte[] source2)
         {
             //Most efficient way to merge two arrays this according to http://stackoverflow.com/questions/415291/best-way-to-combine-two-or-more-byte-arrays-in-c-sharp
-            Byte[] buffer = new Byte[source1.Length + source2.Length];
+            var buffer = new Byte[source1.Length + source2.Length];
             System.Buffer.BlockCopy(source1, 0, buffer, 0, source1.Length);
             System.Buffer.BlockCopy(source2, 0, buffer, source1.Length, source2.Length);
 

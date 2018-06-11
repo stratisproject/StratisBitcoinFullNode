@@ -25,7 +25,7 @@ namespace NBitcoin
                 catch
                 {
                 }
-            CancellationTokenSource source = new CancellationTokenSource();
+            var source = new CancellationTokenSource();
             source.CancelAfter(20000);
             while(true)
             {

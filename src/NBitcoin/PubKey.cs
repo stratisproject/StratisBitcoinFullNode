@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using System.Text;
+using NBitcoin.BouncyCastle.Asn1.X9;
 using NBitcoin.BouncyCastle.Crypto.Parameters;
 using NBitcoin.BouncyCastle.Math;
 using NBitcoin.BouncyCastle.Math.EC;
@@ -95,7 +96,7 @@ namespace NBitcoin
 
         public static bool Check(byte[] data, int offset, int count, bool deep)
         {
-            var quick = data != null &&
+            bool quick = data != null &&
                     (
                         (count == 33 && (data[offset + 0] == 0x02 || data[offset + 0] == 0x03)) ||
                         (count == 65 && (data[offset + 0] == 0x04 || data[offset + 0] == 0x06 || data[offset + 0] == 0x07))
@@ -158,7 +159,7 @@ namespace NBitcoin
 
         public BitcoinScriptAddress GetScriptAddress(Network network)
         {
-            var redeem = PayToPubkeyTemplate.Instance.GenerateScriptPubKey(this);
+            Script redeem = PayToPubkeyTemplate.Instance.GenerateScriptPubKey(this);
             return new BitcoinScriptAddress(redeem.Hash, network);
         }
 
@@ -223,9 +224,9 @@ namespace NBitcoin
         /// <returns>True if signatures is valid</returns>
         public bool VerifyMessage(byte[] messageBytes, string signature)
         {
-            var sig = DecodeSigString(signature);
-            var messageSigned = Utils.FormatMessageForSigning(messageBytes);
-            var hash = Hashes.Hash256(messageSigned);
+            ECDSASignature sig = DecodeSigString(signature);
+            byte[] messageSigned = Utils.FormatMessageForSigning(messageBytes);
+            uint256 hash = Hashes.Hash256(messageSigned);
             return ECKey.Verify(hash, sig);
         }
 
@@ -236,13 +237,13 @@ namespace NBitcoin
         /// <returns></returns>
         private static ECDSASignature DecodeSigString(string signature)
         {
-            var signatureEncoded = Encoders.Base64.DecodeData(signature);
+            byte[] signatureEncoded = Encoders.Base64.DecodeData(signature);
             return DecodeSig(signatureEncoded);
         }
         private static ECDSASignature DecodeSig(byte[] signatureEncoded)
         {
-            BigInteger r = new BigInteger(1, signatureEncoded.SafeSubarray(1, 32));
-            BigInteger s = new BigInteger(1, signatureEncoded.SafeSubarray(33, 32));
+            var r = new BigInteger(1, signatureEncoded.SafeSubarray(1, 32));
+            var s = new BigInteger(1, signatureEncoded.SafeSubarray(33, 32));
             var sig = new ECDSASignature(r, s);
             return sig;
         }
@@ -256,9 +257,9 @@ namespace NBitcoin
 
         public static PubKey RecoverFromMessage(byte[] messageBytes, string signatureText)
         {
-            var signatureEncoded = Encoders.Base64.DecodeData(signatureText);
-            var message = Utils.FormatMessageForSigning(messageBytes);
-            var hash = Hashes.Hash256(message);
+            byte[] signatureEncoded = Encoders.Base64.DecodeData(signatureText);
+            byte[] message = Utils.FormatMessageForSigning(messageBytes);
+            uint256 hash = Hashes.Hash256(message);
             return RecoverCompact(hash, signatureEncoded);
         }
 
@@ -277,7 +278,7 @@ namespace NBitcoin
             if(header < 27 || header > 34)
                 throw new ArgumentException("Header byte out of range: " + header);
 
-            var sig = DecodeSig(signatureEncoded);
+            ECDSASignature sig = DecodeSig(signatureEncoded);
             bool compressed = false;
 
             if(header >= 31)
@@ -295,11 +296,11 @@ namespace NBitcoin
         public PubKey Derivate(byte[] cc, uint nChild, out byte[] ccChild)
         {
             byte[] lr = null;
-            byte[] l = new byte[32];
-            byte[] r = new byte[32];
+            var l = new byte[32];
+            var r = new byte[32];
             if((nChild >> 31) == 0)
             {
-                var pubKey = ToBytes();
+                byte[] pubKey = ToBytes();
                 lr = Hashes.BIP32Hash(cc, nChild, pubKey[0], pubKey.Skip(1).ToArray());
             }
             else
@@ -312,12 +313,12 @@ namespace NBitcoin
 
 
             BigInteger N = ECKey.CURVE.N;
-            BigInteger parse256LL = new BigInteger(1, l);
+            var parse256LL = new BigInteger(1, l);
 
             if(parse256LL.CompareTo(N) >= 0)
                 throw new InvalidOperationException("You won a prize ! this should happen very rarely. Take a screenshot, and roll the dice again.");
 
-            var q = ECKey.CURVE.G.Multiply(parse256LL).Add(ECKey.GetPublicKeyParameters().Q);
+            ECPoint q = ECKey.CURVE.G.Multiply(parse256LL).Add(ECKey.GetPublicKeyParameters().Q);
             if(q.IsInfinity)
                 throw new InvalidOperationException("You won the big prize ! this would happen only 1 in 2^127. Take a screenshot, and roll the dice again.");
 
@@ -328,7 +329,7 @@ namespace NBitcoin
 
         public override bool Equals(object obj)
         {
-            PubKey item = obj as PubKey;
+            var item = obj as PubKey;
             if(item == null)
                 return false;
             return ToHex().Equals(item.ToHex());
@@ -362,20 +363,20 @@ namespace NBitcoin
         }
         public PubKey Uncover(Key priv, PubKey pub)
         {
-            var curve = ECKey.Secp256k1;
-            var hash = GetStealthSharedSecret(priv, pub);
+            X9ECParameters curve = ECKey.Secp256k1;
+            byte[] hash = GetStealthSharedSecret(priv, pub);
             //Q' = Q + cG
-            var qprim = curve.G.Multiply(new BigInteger(1, hash)).Add(curve.Curve.DecodePoint(this.ToBytes()));
+            ECPoint qprim = curve.G.Multiply(new BigInteger(1, hash)).Add(curve.Curve.DecodePoint(this.ToBytes()));
             return new PubKey(qprim.GetEncoded()).Compress(this.IsCompressed);
         }
 
         internal static byte[] GetStealthSharedSecret(Key priv, PubKey pub)
         {
-            var curve = ECKey.Secp256k1;
-            var pubec = curve.Curve.DecodePoint(pub.ToBytes());
-            var p = pubec.Multiply(new BigInteger(1, priv.ToBytes()));
-            var pBytes = new PubKey(p.GetEncoded()).Compress().ToBytes();
-            var hash = Hashes.SHA256(pBytes);
+            X9ECParameters curve = ECKey.Secp256k1;
+            ECPoint pubec = curve.Curve.DecodePoint(pub.ToBytes());
+            ECPoint p = pubec.Multiply(new BigInteger(1, priv.ToBytes()));
+            byte[] pBytes = new PubKey(p.GetEncoded()).Compress().ToBytes();
+            byte[] hash = Hashes.SHA256(pBytes);
             return hash;
         }
 

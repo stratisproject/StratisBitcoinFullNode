@@ -525,7 +525,7 @@ namespace NBitcoin.BouncyCastle.Math.EC
 
         private long[] ResizedInts(int newLen)
         {
-            long[] newInts = new long[newLen];
+            var newInts = new long[newLen];
             Array.Copy(m_ints, 0, newInts, 0, System.Math.Min(m_ints.Length, newLen));
             return newInts;
         }
@@ -539,7 +539,7 @@ namespace NBitcoin.BouncyCastle.Math.EC
             }
 
             long highestInt = m_ints[usedLen - 1];
-            byte[] temp = new byte[8];
+            var temp = new byte[8];
             int barrI = 0;
             bool trailingZeroBytesDone = false;
             for(int j = 7; j >= 0; j--)
@@ -553,7 +553,7 @@ namespace NBitcoin.BouncyCastle.Math.EC
             }
 
             int barrLen = 8 * (usedLen - 1) + barrI;
-            byte[] barr = new byte[barrLen];
+            var barr = new byte[barrLen];
             for(int j = 0; j < barrI; j++)
             {
                 barr[j] = temp[j];
@@ -903,7 +903,7 @@ namespace NBitcoin.BouncyCastle.Math.EC
                 /*
                  * Fast path for small A, with performance dependent only on the number of set bits
                  */
-                long[] c0 = new long[cLen];
+                var c0 = new long[cLen];
                 MultiplyWord(a0, B.m_ints, bLen, c0, 0);
 
                 /*
@@ -920,12 +920,12 @@ namespace NBitcoin.BouncyCastle.Math.EC
             /*
              * Lookup table for the offset of each B in the tables
              */
-            int[] ti = new int[16];
+            var ti = new int[16];
 
             /*
              * Precompute table of all 4-bit products of B
              */
-            long[] T0 = new long[bMax << 4];
+            var T0 = new long[bMax << 4];
             int tOff = bMax;
             ti[1] = tOff;
             Array.Copy(B.m_ints, 0, T0, tOff, bLen);
@@ -945,12 +945,12 @@ namespace NBitcoin.BouncyCastle.Math.EC
             /*
              * Second table with all 4-bit products of B shifted 4 bits
              */
-            long[] T1 = new long[T0.Length];
+            var T1 = new long[T0.Length];
             ShiftUp(T0, 0, T1, 0, T0.Length, 4);
             //        shiftUp(T0, bMax, T1, bMax, tOff, 4);
 
             long[] a = A.m_ints;
-            long[] c = new long[cLen];
+            var c = new long[cLen];
 
             int MASK = 0xF;
 
@@ -1038,7 +1038,7 @@ namespace NBitcoin.BouncyCastle.Math.EC
                 /*
                  * Fast path for small A, with performance dependent only on the number of set bits
                  */
-                long[] c0 = new long[cLen];
+                var c0 = new long[cLen];
                 MultiplyWord(a0, B.m_ints, bLen, c0, 0);
 
                 /*
@@ -1055,12 +1055,12 @@ namespace NBitcoin.BouncyCastle.Math.EC
             /*
              * Lookup table for the offset of each B in the tables
              */
-            int[] ti = new int[16];
+            var ti = new int[16];
 
             /*
              * Precompute table of all 4-bit products of B
              */
-            long[] T0 = new long[bMax << 4];
+            var T0 = new long[bMax << 4];
             int tOff = bMax;
             ti[1] = tOff;
             Array.Copy(B.m_ints, 0, T0, tOff, bLen);
@@ -1080,12 +1080,12 @@ namespace NBitcoin.BouncyCastle.Math.EC
             /*
              * Second table with all 4-bit products of B shifted 4 bits
              */
-            long[] T1 = new long[T0.Length];
+            var T1 = new long[T0.Length];
             ShiftUp(T0, 0, T1, 0, T0.Length, 4);
             //        ShiftUp(T0, bMax, T1, bMax, tOff, 4);
 
             long[] a = A.m_ints;
-            long[] c = new long[cLen << 3];
+            var c = new long[cLen << 3];
 
             int MASK = 0xF;
 
@@ -1173,7 +1173,7 @@ namespace NBitcoin.BouncyCastle.Math.EC
                 /*
                  * Fast path for small A, with performance dependent only on the number of set bits
                  */
-                long[] c0 = new long[cLen];
+                var c0 = new long[cLen];
                 MultiplyWord(a0, B.m_ints, bLen, c0, 0);
 
                 /*
@@ -1234,7 +1234,7 @@ namespace NBitcoin.BouncyCastle.Math.EC
             /*
              * Create a single temporary buffer, with an offset table to find the positions of things in it 
              */
-            int[] ci = new int[1 << width];
+            var ci = new int[1 << width];
             int cTotal = aLen;
             {
                 ci[0] = cTotal;
@@ -1250,7 +1250,7 @@ namespace NBitcoin.BouncyCastle.Math.EC
             // NOTE: Provide a safe dump for "high zeroes" since we are adding 'bMax' and not 'bLen'
             ++cTotal;
 
-            long[] c = new long[cTotal];
+            var c = new long[cTotal];
 
             // Prepare A in Interleaved form, according to the chosen width
             Interleave(A.m_ints, 0, c, 0, aLen, width);
@@ -1403,7 +1403,7 @@ namespace NBitcoin.BouncyCastle.Math.EC
                 /*
                  * Fast path for small A, with performance dependent only on the number of set bits
                  */
-                long[] c0 = new long[cLen];
+                var c0 = new long[cLen];
                 MultiplyWord(a0, B.m_ints, bLen, c0, 0);
 
                 /*
@@ -1421,12 +1421,12 @@ namespace NBitcoin.BouncyCastle.Math.EC
             /*
              * Lookup table for the offset of each B in the tables
              */
-            int[] ti = new int[16];
+            var ti = new int[16];
 
             /*
              * Precompute table of all 4-bit products of B
              */
-            long[] T0 = new long[bMax << 4];
+            var T0 = new long[bMax << 4];
             int tOff = bMax;
             ti[1] = tOff;
             Array.Copy(B.m_ints, 0, T0, tOff, bLen);
@@ -1446,12 +1446,12 @@ namespace NBitcoin.BouncyCastle.Math.EC
             /*
              * Second table with all 4-bit products of B shifted 4 bits
              */
-            long[] T1 = new long[T0.Length];
+            var T1 = new long[T0.Length];
             ShiftUp(T0, 0, T1, 0, T0.Length, 4);
             //        ShiftUp(T0, bMax, T1, bMax, tOff, 4);
 
             long[] a = A.m_ints;
-            long[] c = new long[cLen << 3];
+            var c = new long[cLen << 3];
 
             int MASK = 0xF;
 
@@ -1681,7 +1681,7 @@ namespace NBitcoin.BouncyCastle.Math.EC
             }
 
             int _2len = len << 1;
-            long[] r = new long[_2len];
+            var r = new long[_2len];
 
             int pos = 0;
             while(pos < _2len)
@@ -1703,7 +1703,7 @@ namespace NBitcoin.BouncyCastle.Math.EC
             }
 
             int mLen = (m + 63) >> 6;
-            long[] r = new long[mLen << 1];
+            var r = new long[mLen << 1];
             Array.Copy(m_ints, 0, r, 0, len);
 
             while(--n >= 0)
@@ -1724,7 +1724,7 @@ namespace NBitcoin.BouncyCastle.Math.EC
             }
 
             int _2len = len << 1;
-            long[] r = new long[_2len];
+            var r = new long[_2len];
 
             int pos = 0;
             while(pos < _2len)
@@ -2080,24 +2080,24 @@ namespace NBitcoin.BouncyCastle.Math.EC
             }
 
             // u(z) := a(z)
-            LongArray uz = (LongArray)Copy();
+            var uz = (LongArray)Copy();
 
             int t = (m + 63) >> 6;
 
             // v(z) := f(z)
-            LongArray vz = new LongArray(t);
+            var vz = new LongArray(t);
             ReduceBit(vz.m_ints, 0, m, m, ks);
 
             // g1(z) := 1, g2(z) := 0
-            LongArray g1z = new LongArray(t);
+            var g1z = new LongArray(t);
             g1z.m_ints[0] = 1L;
-            LongArray g2z = new LongArray(t);
+            var g2z = new LongArray(t);
 
-            int[] uvDeg = new int[] { uzDegree, m + 1 };
-            LongArray[] uv = new LongArray[] { uz, vz };
+            var uvDeg = new int[] { uzDegree, m + 1 };
+            var uv = new LongArray[] { uz, vz };
 
-            int[] ggDeg = new int[] { 1, 0 };
-            LongArray[] gg = new LongArray[] { g1z, g2z };
+            var ggDeg = new int[] { 1, 0 };
+            var gg = new LongArray[] { g1z, g2z };
 
             int b = 1;
             int duv1 = uvDeg[b];
@@ -2198,7 +2198,7 @@ namespace NBitcoin.BouncyCastle.Math.EC
                 return "0";
             }
 
-            StringBuilder sb = new StringBuilder(Convert.ToString(m_ints[--i], 2));
+            var sb = new StringBuilder(Convert.ToString(m_ints[--i], 2));
             while(--i >= 0)
             {
                 string s = Convert.ToString(m_ints[i], 2);

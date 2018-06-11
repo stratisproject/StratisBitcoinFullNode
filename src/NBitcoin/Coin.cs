@@ -295,9 +295,9 @@ namespace NBitcoin
                 throw new ArgumentNullException("tx");
             if(txId == null)
                 txId = tx.GetHash();
-            foreach(var entry in colored.Issuances.Concat(colored.Transfers))
+            foreach(ColoredEntry entry in colored.Issuances.Concat(colored.Transfers))
             {
-                var txout = tx.Outputs[entry.Index];
+                TxOut txout = tx.Outputs[entry.Index];
                 yield return new ColoredCoin(entry.Asset, new Coin(new OutPoint(txId, entry.Index), txout));
             }
         }
@@ -310,7 +310,7 @@ namespace NBitcoin
         {
             if(txId == null)
                 txId = tx.GetHash();
-            var colored = tx.GetColoredTransaction(repo);
+            ColoredTransaction colored = tx.GetColoredTransaction(repo);
             return Find(txId, tx, colored);
         }
 
@@ -430,7 +430,7 @@ namespace NBitcoin
                 throw new InvalidOperationException("You need to provide P2WSH or P2SH redeem script with Coin.ToScriptCoin()");
             if(_OverrideScriptCode != null)
                 return _OverrideScriptCode;
-            var key = PayToWitPubKeyHashTemplate.Instance.ExtractScriptPubKeyParameters(network, ScriptPubKey);
+            WitKeyId key = PayToWitPubKeyHashTemplate.Instance.ExtractScriptPubKeyParameters(network, ScriptPubKey);
             if(key != null)
                 return key.AsKeyId().ScriptPubKey;
             return ScriptPubKey;
@@ -654,7 +654,7 @@ namespace NBitcoin
         {
             if(!IsP2SH)
                 return null;
-            var p2shRedeem = RedeemType == RedeemType.P2SH ? Redeem :
+            Script p2shRedeem = RedeemType == RedeemType.P2SH ? Redeem :
                             RedeemType == RedeemType.WitnessV0 ? Redeem.WitHash.ScriptPubKey :
                             null;
             if(p2shRedeem == null)
@@ -678,7 +678,7 @@ namespace NBitcoin
             if(Redeem == null)
                 throw new ArgumentException("redeem cannot be null", "redeem");
 
-            var expectedDestination = GetRedeemHash(network, TxOut.ScriptPubKey);
+            TxDestination expectedDestination = GetRedeemHash(network, TxOut.ScriptPubKey);
             if(expectedDestination == null)
             {
                 throw new ArgumentException("the provided scriptPubKey is not P2SH or P2WSH");
@@ -720,7 +720,7 @@ namespace NBitcoin
                 throw new InvalidOperationException("You need to provide the P2WSH redeem script with ScriptCoin.ToScriptCoin()");
             if(_OverrideScriptCode != null)
                 return _OverrideScriptCode;
-            var key = PayToWitPubKeyHashTemplate.Instance.ExtractScriptPubKeyParameters(network, Redeem);
+            WitKeyId key = PayToWitPubKeyHashTemplate.Instance.ExtractScriptPubKeyParameters(network, Redeem);
             if(key != null)
                 return key.AsKeyId().ScriptPubKey;
             return Redeem;
@@ -733,7 +733,7 @@ namespace NBitcoin
 
         public override HashVersion GetHashVersion(Network network)
         {
-            var isWitness = PayToWitTemplate.Instance.CheckScriptPubKey(network, ScriptPubKey) ||
+            bool isWitness = PayToWitTemplate.Instance.CheckScriptPubKey(network, ScriptPubKey) ||
                             PayToWitTemplate.Instance.CheckScriptPubKey(network, Redeem) ||
                             RedeemType == NBitcoin.RedeemType.WitnessV0;
             return isWitness ? HashVersion.Witness : HashVersion.Original;
@@ -811,11 +811,11 @@ namespace NBitcoin
         /// <returns></returns>
         public static StealthCoin Find(Transaction tx, BitcoinStealthAddress address, Key scan)
         {
-            var payment = address.GetPayments(tx, scan).FirstOrDefault();
+            StealthPayment payment = address.GetPayments(tx, scan).FirstOrDefault();
             if(payment == null)
                 return null;
-            var txId = tx.GetHash();
-            var txout = tx.Outputs.First(o => o.ScriptPubKey == payment.ScriptPubKey);
+            uint256 txId = tx.GetHash();
+            TxOut txout = tx.Outputs.First(o => o.ScriptPubKey == payment.ScriptPubKey);
             return new StealthCoin(new OutPoint(txId, tx.Outputs.IndexOf(txout)), txout, payment.Redeem, payment.Metadata, address);
         }
 
