@@ -60,7 +60,7 @@ namespace NBitcoin
         internal const int SEQUENCE_LOCKTIME_GRANULARITY = 9;
 
 
-        uint _ValueInv;
+        private uint _ValueInv;
         public uint Value
         {
             get

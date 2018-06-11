@@ -7,7 +7,7 @@ namespace NBitcoin
 
     public static class StandardScripts
     {
-        static readonly ScriptTemplate[] _StandardTemplates = new ScriptTemplate[]
+        private static readonly ScriptTemplate[] _StandardTemplates = new ScriptTemplate[]
         {
             PayToPubkeyHashTemplate.Instance,
             PayToPubkeyTemplate.Instance,

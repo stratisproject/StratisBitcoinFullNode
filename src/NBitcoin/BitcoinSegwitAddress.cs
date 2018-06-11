@@ -84,7 +84,7 @@ namespace NBitcoin
             return key.WitHash == this.Hash;
         }
 
-        WitKeyId _Hash;
+        private WitKeyId _Hash;
         public WitKeyId Hash
         {
             get
@@ -183,7 +183,7 @@ namespace NBitcoin
             return null;
         }
 
-        WitScriptId _Hash;
+        private WitScriptId _Hash;
         public WitScriptId Hash
         {
             get

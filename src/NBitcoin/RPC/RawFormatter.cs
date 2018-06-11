@@ -6,7 +6,7 @@ using Newtonsoft.Json.Linq;
 
 namespace NBitcoin.RPC
 {
-    abstract class RawFormatter
+    internal abstract class RawFormatter
     {
         public Network Network { get; set; }
 

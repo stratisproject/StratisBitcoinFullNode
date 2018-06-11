@@ -23,16 +23,16 @@ namespace NBitcoin
 
         }
         // 20,000 items with fp rate < 0.1% or 10,000 items and <0.0001%
-        const uint MAX_BLOOM_FILTER_SIZE = 36000; // bytes
-        const uint MAX_HASH_FUNCS = 50;
-        const decimal LN2SQUARED = 0.4804530139182014246671025263266649717305529515945455M;
-        const decimal LN2 = 0.6931471805599453094172321214581765680755001343602552M;
+        private const uint MAX_BLOOM_FILTER_SIZE = 36000; // bytes
+        private const uint MAX_HASH_FUNCS = 50;
+        private const decimal LN2SQUARED = 0.4804530139182014246671025263266649717305529515945455M;
+        private const decimal LN2 = 0.6931471805599453094172321214581765680755001343602552M;
 
 
-        byte[] vData;
-        uint nHashFuncs;
-        uint nTweak;
-        byte nFlags;
+        private byte[] vData;
+        private uint nHashFuncs;
+        private uint nTweak;
+        private byte nFlags;
         private bool isFull = false;
         private bool isEmpty;
 
@@ -61,7 +61,7 @@ namespace NBitcoin
 
         }
 
-        uint Hash(uint nHashNum, byte[] vDataToHash)
+        private uint Hash(uint nHashNum, byte[] vDataToHash)
         {
             // 0xFBA4C795 chosen as it guarantees a reasonable bit difference between nHashNum values.
             return (uint)(Hashes.MurmurHash3(nHashNum * 0xFBA4C795 + nTweak, vDataToHash) % (vData.Length * 8));

@@ -48,7 +48,8 @@ namespace NBitcoin
         }
 
         #region ISecret Members
-        Key _Key;
+
+        private Key _Key;
         public Key PrivateKey
         {
             get

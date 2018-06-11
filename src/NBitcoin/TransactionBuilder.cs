@@ -33,7 +33,8 @@ namespace NBitcoin
         {
 
         }
-        Random _Rand = new Random();
+
+        private Random _Rand = new Random();
         public DefaultCoinSelector(int seed)
         {
             _Rand = new Random(seed);
@@ -170,10 +171,10 @@ namespace NBitcoin
     {
         internal class TransactionBuilderSigner : ISigner
         {
-            ICoin coin;
-            SigHash sigHash;
-            IndexedTxIn txIn;
-            TransactionBuilder builder;
+            private ICoin coin;
+            private SigHash sigHash;
+            private IndexedTxIn txIn;
+            private TransactionBuilder builder;
             public TransactionBuilderSigner(TransactionBuilder builder, ICoin coin, SigHash sigHash, IndexedTxIn txIn)
             {
                 this.builder = builder;
@@ -192,8 +193,8 @@ namespace NBitcoin
         }
         internal class TransactionBuilderKeyRepository : IKeyRepository
         {
-            TransactionSigningContext _Ctx;
-            TransactionBuilder _TxBuilder;
+            private TransactionSigningContext _Ctx;
+            private TransactionBuilder _TxBuilder;
             public TransactionBuilderKeyRepository(TransactionBuilder txBuilder, TransactionSigningContext ctx)
             {
                 _Ctx = ctx;
@@ -209,7 +210,7 @@ namespace NBitcoin
             #endregion
         }
 
-        class KnownSignatureSigner : ISigner, IKeyRepository
+        private class KnownSignatureSigner : ISigner, IKeyRepository
         {
             private ICoin coin;
             private SigHash sigHash;
@@ -217,7 +218,7 @@ namespace NBitcoin
             private List<Tuple<PubKey, ECDSASignature>> _KnownSignatures;
             private Dictionary<KeyId, ECDSASignature> _VerifiedSignatures = new Dictionary<KeyId, ECDSASignature>();
             private Dictionary<uint256, PubKey> _DummyToRealKey = new Dictionary<uint256, PubKey>();
-            TransactionBuilder builder;
+            private TransactionBuilder builder;
 
             public KnownSignatureSigner(TransactionBuilder builder, List<Tuple<PubKey, ECDSASignature>> _KnownSignatures, ICoin coin, SigHash sigHash, IndexedTxIn txIn)
             {
@@ -348,7 +349,7 @@ namespace NBitcoin
                 }
             }
 
-            ColorMarker _Marker;
+            private ColorMarker _Marker;
 
             public ColorMarker GetColorMarker(bool issuance)
             {
@@ -442,7 +443,7 @@ namespace NBitcoin
 
         internal class BuilderGroup
         {
-            TransactionBuilder _Parent;
+            private TransactionBuilder _Parent;
             public BuilderGroup(TransactionBuilder parent)
             {
                 _Parent = parent;
@@ -450,7 +451,7 @@ namespace NBitcoin
                 Builders.Add(SetChange);
             }
 
-            IMoney SetChange(TransactionBuildingContext ctx)
+            private IMoney SetChange(TransactionBuildingContext ctx)
             {
                 var changeAmount = (Money)ctx.ChangeAmount;
                 if(changeAmount.Satoshi == 0)
@@ -494,8 +495,8 @@ namespace NBitcoin
             }
         }
 
-        List<BuilderGroup> _BuilderGroups = new List<BuilderGroup>();
-        BuilderGroup _CurrentGroup = null;
+        private List<BuilderGroup> _BuilderGroups = new List<BuilderGroup>();
+        private BuilderGroup _CurrentGroup = null;
         internal BuilderGroup CurrentGroup
         {
             get
@@ -603,14 +604,14 @@ namespace NBitcoin
             set;
         }
 
-        LockTime? _LockTime;
+        private LockTime? _LockTime;
         public TransactionBuilder SetLockTime(LockTime lockTime)
         {
             _LockTime = lockTime;
             return this;
         }
 
-        List<Key> _Keys = new List<Key>();
+        private List<Key> _Keys = new List<Key>();
 
         public TransactionBuilder AddKeys(params ISecret[] keys)
         {
@@ -686,7 +687,7 @@ namespace NBitcoin
             return Send(destination.ScriptPubKey, amount);
         }
 
-        readonly static TxNullDataTemplate _OpReturnTemplate = new TxNullDataTemplate(1024 * 1024);
+        private readonly static TxNullDataTemplate _OpReturnTemplate = new TxNullDataTemplate(1024 * 1024);
 
         /// <summary>
         /// Send bitcoins to a destination
@@ -711,10 +712,10 @@ namespace NBitcoin
             return this;
         }
 
-        SendBuilder _LastSendBuilder;
-        SendBuilder _SubstractFeeBuilder;
+        private SendBuilder _LastSendBuilder;
+        private SendBuilder _SubstractFeeBuilder;
 
-        class SendBuilder
+        private class SendBuilder
         {
             internal TxOut _TxOut;
 
@@ -808,7 +809,7 @@ namespace NBitcoin
             return this;
         }
 
-        IMoney SetColoredChange(TransactionBuildingContext ctx)
+        private IMoney SetColoredChange(TransactionBuildingContext ctx)
         {
             var changeAmount = (AssetMoney)ctx.ChangeAmount;
             if(changeAmount.Quantity == 0)
@@ -851,11 +852,12 @@ namespace NBitcoin
             return this;
         }
 
-        Money GetDust()
+        private Money GetDust()
         {
             return GetDust(new Script(new byte[25]));
         }
-        Money GetDust(Script script)
+
+        private Money GetDust(Script script)
         {
             if(StandardTransactionPolicy == null || StandardTransactionPolicy.MinRelayTxFee == null)
                 return Money.Zero;
@@ -879,7 +881,7 @@ namespace NBitcoin
         }
 
 
-        string _OpReturnUser;
+        private string _OpReturnUser;
         private void AssertOpReturn(string name)
         {
             if(_OpReturnUser == null)
@@ -917,7 +919,7 @@ namespace NBitcoin
             return IssueAsset(destination.ScriptPubKey, asset);
         }
 
-        AssetId _IssuedAsset;
+        private AssetId _IssuedAsset;
 
         public TransactionBuilder IssueAsset(Script scriptPubKey, AssetMoney asset)
         {
@@ -961,7 +963,7 @@ namespace NBitcoin
             return this;
         }
 
-        Money _TotalFee = Money.Zero;
+        private Money _TotalFee = Money.Zero;
 
         /// <summary>
         /// Split the estimated fees accross the several groups (separated by Then())
@@ -1660,7 +1662,7 @@ namespace NBitcoin
             throw new NotSupportedException("Unsupported scriptPubKey");
         }
 
-        List<Tuple<PubKey, ECDSASignature>> _KnownSignatures = new List<Tuple<PubKey, ECDSASignature>>();
+        private List<Tuple<PubKey, ECDSASignature>> _KnownSignatures = new List<Tuple<PubKey, ECDSASignature>>();
 
         private Key FindKey(TransactionSigningContext ctx, Script scriptPubKey)
         {
@@ -1721,7 +1723,7 @@ namespace NBitcoin
         }
 
 
-        Transaction _CompletedTransaction;
+        private Transaction _CompletedTransaction;
 
         /// <summary>
         /// Allows to keep building on the top of a partially built transaction
@@ -1775,7 +1777,7 @@ namespace NBitcoin
             return this;
         }
 
-        Dictionary<Script, Script> _ScriptPubKeyToRedeem = new Dictionary<Script, Script>();
+        private Dictionary<Script, Script> _ScriptPubKeyToRedeem = new Dictionary<Script, Script>();
         public TransactionBuilder AddKnownRedeems(params Script[] knownRedeems)
         {
             foreach(Script redeem in knownRedeems)

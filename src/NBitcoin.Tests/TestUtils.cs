@@ -5,7 +5,7 @@ using NBitcoin.DataEncoders;
 
 namespace NBitcoin.Tests
 {
-    class TestUtils
+    internal class TestUtils
     {
         public static void Eventually(Func<bool> act)
         {

@@ -8,7 +8,7 @@ namespace NBitcoin.OpenAsset
     /// </summary>
     public class NullColoredTransactionRepository : IColoredTransactionRepository
     {
-        ITransactionRepository _Inner;
+        private ITransactionRepository _Inner;
         public NullColoredTransactionRepository(ITransactionRepository repo)
         {
             if(repo == null)

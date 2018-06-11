@@ -12,7 +12,7 @@ namespace NBitcoin.Tests
     //https://github.com/OpenAssets/open-assets-protocol/blob/master/specification.mediawiki
     public class ColoredCoinsTests
     {
-        class ColoredCoinTester
+        private class ColoredCoinTester
         {
             public ColoredCoinTester([CallerMemberName]string test = null)
             {
@@ -41,7 +41,8 @@ namespace NBitcoin.Tests
                 set;
             }
         }
-        class TestCase
+
+        private class TestCase
         {
             public string test
             {
@@ -60,7 +61,7 @@ namespace NBitcoin.Tests
             }
         }
 
-        class AssetKey
+        private class AssetKey
         {
             public AssetKey()
             {

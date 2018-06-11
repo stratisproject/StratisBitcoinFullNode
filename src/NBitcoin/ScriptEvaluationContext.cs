@@ -159,9 +159,9 @@ namespace NBitcoin
     {
         public Network Network { get; }
 
-        class CScriptNum
+        private class CScriptNum
         {
-            const long nMaxNumSize = 4;
+            private const long nMaxNumSize = 4;
             /**
              * Numeric opcodes (OP_1ADD, etc) are restricted to operating on 4-byte integers.
              * The semantics are subtle, though: operands must be in the range [-2^31 +1...2^31 -1],
@@ -344,7 +344,7 @@ namespace NBitcoin
                 return serialize(m_value);
             }
 
-            static byte[] serialize(long value)
+            private static byte[] serialize(long value)
             {
                 if(value == 0)
                     return new byte[0];
@@ -377,7 +377,7 @@ namespace NBitcoin
                 return result.ToArray();
             }
 
-            static long set_vch(byte[] vch)
+            private static long set_vch(byte[] vch)
             {
                 if(vch.Length == 0)
                     return 0;
@@ -398,7 +398,7 @@ namespace NBitcoin
             }
         }
 
-        ContextStack<byte[]> _stack = new ContextStack<byte[]>();
+        private ContextStack<byte[]> _stack = new ContextStack<byte[]>();
 
         public ContextStack<byte[]> Stack
         {
@@ -631,9 +631,9 @@ namespace NBitcoin
         }
 
 
-        static readonly byte[] vchFalse = new byte[0];
-        static readonly byte[] vchZero = new byte[0];
-        static readonly byte[] vchTrue = new byte[] { 1 };
+        private static readonly byte[] vchFalse = new byte[0];
+        private static readonly byte[] vchZero = new byte[0];
+        private static readonly byte[] vchTrue = new byte[] { 1 };
 
         private const int MAX_SCRIPT_ELEMENT_SIZE = 520;
 
@@ -645,7 +645,8 @@ namespace NBitcoin
         {
             return EvalScript(script, checker, (int)hashVersion);
         }
-        bool EvalScript(Script s, TransactionChecker checker, int hashversion)
+
+        private bool EvalScript(Script s, TransactionChecker checker, int hashversion)
         {
             if(s.Length > 10000)
                 return SetError(ScriptError.ScriptSize);
@@ -1491,7 +1492,7 @@ namespace NBitcoin
             return SetSuccess(ScriptError.OK);
         }
 
-        bool CheckSequence(CScriptNum nSequence, TransactionChecker checker)
+        private bool CheckSequence(CScriptNum nSequence, TransactionChecker checker)
         {
             Transaction txTo = checker.Transaction;
             int nIn = checker.Index;
@@ -1541,7 +1542,7 @@ namespace NBitcoin
         }
 
 
-        bool CheckLockTime(CScriptNum nLockTime, TransactionChecker checker)
+        private bool CheckLockTime(CScriptNum nLockTime, TransactionChecker checker)
         {
             Transaction txTo = checker.Transaction;
             int nIn = checker.Index;
@@ -1662,7 +1663,7 @@ namespace NBitcoin
             return true;
         }
 
-        static bool IsCompressedPubKey(byte[] vchPubKey)
+        private static bool IsCompressedPubKey(byte[] vchPubKey)
         {
             if(vchPubKey.Length != 33)
             {
@@ -1697,7 +1698,7 @@ namespace NBitcoin
             return true;
         }
 
-        static bool IsDefinedHashtypeSignature(byte[] vchSig)
+        private static bool IsDefinedHashtypeSignature(byte[] vchSig)
         {
             if(vchSig.Length == 0)
             {
@@ -1740,7 +1741,7 @@ namespace NBitcoin
             set;
         }
 
-        static byte[] vchMaxModOrder = new byte[]
+        private static byte[] vchMaxModOrder = new byte[]
         {
             0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,
             0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFE,
@@ -1748,7 +1749,7 @@ namespace NBitcoin
             0xBF,0xD2,0x5E,0x8C,0xD0,0x36,0x41,0x40
         };
 
-        static byte[] vchMaxModHalfOrder = new byte[]
+        private static byte[] vchMaxModHalfOrder = new byte[]
         {
              0x7F,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,
              0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,
@@ -1876,7 +1877,7 @@ namespace NBitcoin
         }
 
 
-        bool CheckMinimalPush(byte[] data, OpcodeType opcode)
+        private bool CheckMinimalPush(byte[] data, OpcodeType opcode)
         {
             if(data.Length == 0)
             {
@@ -1926,7 +1927,7 @@ namespace NBitcoin
             return false;
         }
 
-        List<SignedHash> _SignedHashes = new List<SignedHash>();
+        private List<SignedHash> _SignedHashes = new List<SignedHash>();
         public IEnumerable<SignedHash> SignedHashes
         {
             get
@@ -1954,7 +1955,8 @@ namespace NBitcoin
         {
             return CheckSig(vchSig, vchPubKey, scriptCode, new TransactionChecker(txTo, nIn), 0);
         }
-        bool CheckSig(byte[] vchSig, byte[] vchPubKey, Script scriptCode, TransactionChecker checker, int sigversion)
+
+        private bool CheckSig(byte[] vchSig, byte[] vchPubKey, Script scriptCode, TransactionChecker checker, int sigversion)
         {
             PubKey pubkey = null;
             try

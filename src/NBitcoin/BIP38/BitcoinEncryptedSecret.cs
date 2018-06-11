@@ -56,7 +56,7 @@ namespace NBitcoin
             return Encoders.Base58Check.EncodeData(bytes);
         }
 
-        byte[] _FirstHalf;
+        private byte[] _FirstHalf;
         public byte[] EncryptedHalf1
         {
             get
@@ -126,7 +126,7 @@ namespace NBitcoin
         {
         }
 
-        byte[] _OwnerEntropy;
+        private byte[] _OwnerEntropy;
         public byte[] OwnerEntropy
         {
             get
@@ -134,7 +134,8 @@ namespace NBitcoin
                 return _OwnerEntropy ?? (_OwnerEntropy = vchData.SafeSubarray(ValidLength - 32, 8));
             }
         }
-        LotSequence _LotSequence;
+
+        private LotSequence _LotSequence;
         public LotSequence LotSequence
         {
             get
@@ -146,7 +147,7 @@ namespace NBitcoin
             }
         }
 
-        byte[] _EncryptedHalfHalf1;
+        private byte[] _EncryptedHalfHalf1;
         public byte[] EncryptedHalfHalf1
         {
             get
@@ -155,7 +156,7 @@ namespace NBitcoin
             }
         }
 
-        byte[] _PartialEncrypted;
+        private byte[] _PartialEncrypted;
         public byte[] PartialEncrypted
         {
             get
@@ -277,8 +278,7 @@ namespace NBitcoin
         }
 
 
-
-        byte[] _AddressHash;
+        private byte[] _AddressHash;
         public byte[] AddressHash
         {
             get
@@ -294,7 +294,7 @@ namespace NBitcoin
             }
         }
 
-        byte[] _LastHalf;
+        private byte[] _LastHalf;
         public byte[] EncryptedHalf2
         {
             get

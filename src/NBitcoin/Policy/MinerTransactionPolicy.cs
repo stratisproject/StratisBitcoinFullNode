@@ -49,12 +49,12 @@ namespace NBitcoin.Policy
     }
     public class MinerTransactionPolicy : ITransactionPolicy
     {
-        MinerTransactionPolicy()
+        private MinerTransactionPolicy()
         {
 
         }
 
-        readonly static MinerTransactionPolicy _Instance = new MinerTransactionPolicy();
+        private readonly static MinerTransactionPolicy _Instance = new MinerTransactionPolicy();
         public static MinerTransactionPolicy Instance
         {
             get

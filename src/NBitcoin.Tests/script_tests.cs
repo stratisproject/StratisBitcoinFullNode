@@ -16,7 +16,7 @@ namespace NBitcoin.Tests
 {
     public class script_tests
     {
-        static Dictionary<string, OpcodeType> mapOpNames = new Dictionary<string, OpcodeType>();
+        private static Dictionary<string, OpcodeType> mapOpNames = new Dictionary<string, OpcodeType>();
         public static Script ParseScript(string s)
         {
             var result = new MemoryStream();
@@ -624,7 +624,7 @@ namespace NBitcoin.Tests
         }
 
 
-        Script sign_multisig(Script scriptPubKey, Key[] keys, Transaction transaction)
+        private Script sign_multisig(Script scriptPubKey, Key[] keys, Transaction transaction)
         {
             uint256 hash = Script.SignatureHash(Network.Main, scriptPubKey, transaction, 0, SigHash.All);
 
@@ -648,11 +648,12 @@ namespace NBitcoin.Tests
             return new Script(ops.ToArray());
         }
 
-        Script sign_multisig(Script scriptPubKey, Key key, Transaction transaction)
+        private Script sign_multisig(Script scriptPubKey, Key key, Transaction transaction)
         {
             return sign_multisig(scriptPubKey, new Key[] { key }, transaction);
         }
-        ScriptVerify flags = ScriptVerify.P2SH | ScriptVerify.StrictEnc;
+
+        private ScriptVerify flags = ScriptVerify.P2SH | ScriptVerify.StrictEnc;
         [Fact]
         [Trait("Core", "Core")]
         public void script_CHECKMULTISIG12()

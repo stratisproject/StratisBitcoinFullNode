@@ -113,7 +113,7 @@ namespace NBitcoin
             return name;
         }
 
-        static Dictionary<string, Wordlist> _LoadedLists = new Dictionary<string, Wordlist>();
+        private static Dictionary<string, Wordlist> _LoadedLists = new Dictionary<string, Wordlist>();
         public static async Task<Wordlist> LoadWordList(string name)
         {
             if(name == null)

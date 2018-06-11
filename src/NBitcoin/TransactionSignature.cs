@@ -6,7 +6,7 @@ namespace NBitcoin
 {
     public class TransactionSignature
     {
-        static readonly TransactionSignature _Empty = new TransactionSignature(new ECDSASignature(NBitcoin.BouncyCastle.Math.BigInteger.ValueOf(0), NBitcoin.BouncyCastle.Math.BigInteger.ValueOf(0)), SigHash.All);
+        private static readonly TransactionSignature _Empty = new TransactionSignature(new ECDSASignature(NBitcoin.BouncyCastle.Math.BigInteger.ValueOf(0), NBitcoin.BouncyCastle.Math.BigInteger.ValueOf(0)), SigHash.All);
         public static TransactionSignature Empty
         {
             get
@@ -126,7 +126,7 @@ namespace NBitcoin
             }.CheckSig(this, pubKey, scriptPubKey, tx, nIndex);
         }
 
-        string _Id;
+        private string _Id;
         private string Id
         {
             get

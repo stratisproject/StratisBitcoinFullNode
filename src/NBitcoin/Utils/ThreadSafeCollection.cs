@@ -8,7 +8,7 @@ namespace NBitcoin
 {
     public class ThreadSafeCollection<T> : IEnumerable<T>
     {
-        ConcurrentDictionary<T, T> _Behaviors = new ConcurrentDictionary<T, T>();
+        private ConcurrentDictionary<T, T> _Behaviors = new ConcurrentDictionary<T, T>();
 
         /// <summary>
         /// Add an item to the collection

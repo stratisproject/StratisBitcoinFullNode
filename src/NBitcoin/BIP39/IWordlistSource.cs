@@ -11,7 +11,7 @@ namespace NBitcoin
 
     public class HardcodedWordlistSource : IWordlistSource
     {
-        static Dictionary<string, string> _WordLists;
+        private static Dictionary<string, string> _WordLists;
         static HardcodedWordlistSource()
         {
             var dico = new Dictionary<string, string>();

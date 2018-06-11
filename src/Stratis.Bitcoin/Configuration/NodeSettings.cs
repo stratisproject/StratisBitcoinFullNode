@@ -32,7 +32,7 @@ namespace Stratis.Bitcoin.Configuration
     /// </summary>
     public class NodeSettings
     {
-        const int MaximumAgentPrefixLength = 10;
+        private const int MaximumAgentPrefixLength = 10;
 
         /// <summary>Version of the protocol the current implementation supports.</summary>
         public const ProtocolVersion SupportedProtocolVersion = ProtocolVersion.SENDHEADERS_VERSION;

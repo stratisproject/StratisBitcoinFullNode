@@ -19,7 +19,7 @@ namespace NBitcoin
         {
         }
 
-        byte[] _AddressHash;
+        private byte[] _AddressHash;
         public byte[] AddressHash
         {
             get
@@ -34,7 +34,8 @@ namespace NBitcoin
                 return (vchData[0] & 0x20) != 0;
             }
         }
-        byte[] _OwnerEntropy;
+
+        private byte[] _OwnerEntropy;
         public byte[] OwnerEntropy
         {
             get
@@ -42,7 +43,8 @@ namespace NBitcoin
                 return _OwnerEntropy ?? (_OwnerEntropy = vchData.SafeSubarray(5, 8));
             }
         }
-        LotSequence _LotSequence;
+
+        private LotSequence _LotSequence;
         public LotSequence LotSequence
         {
             get
@@ -58,8 +60,9 @@ namespace NBitcoin
             }
         }
 
-        byte[] _EncryptedPointB;
-        byte[] EncryptedPointB
+        private byte[] _EncryptedPointB;
+
+        private byte[] EncryptedPointB
         {
             get
             {

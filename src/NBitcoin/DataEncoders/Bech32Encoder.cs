@@ -20,8 +20,7 @@ namespace NBitcoin.DataEncoders
     }
     public class Bech32Encoder : DataEncoder
     {
-
-        int[] GF1024_EXP = new int[] {
+        private int[] GF1024_EXP = new int[] {
   1, 303, 635, 446, 997, 640, 121, 142, 959, 420, 350, 438, 166, 39, 543,
   335, 831, 691, 117, 632, 719, 97, 107, 374, 558, 797, 54, 150, 858, 877,
   724, 1013, 294, 23, 354, 61, 164, 633, 992, 538, 469, 659, 174, 868, 184,
@@ -94,7 +93,7 @@ namespace NBitcoin.DataEncoders
   626, 978, 825, 344, 605, 654, 209
         };
 
-        int[] GF1024_LOG = new[] {
+        private int[] GF1024_LOG = new[] {
           -1, 0, 99, 363, 198, 726, 462, 132, 297, 495, 825, 528, 561, 693, 231,
           66, 396, 429, 594, 990, 924, 264, 627, 33, 660, 759, 792, 858, 330, 891,
           165, 957, 104, 259, 518, 208, 280, 776, 416, 13, 426, 333, 618, 339, 641,
@@ -171,7 +170,7 @@ namespace NBitcoin.DataEncoders
         private static readonly uint[] Generator = { 0x3b6a57b2U, 0x26508e6dU, 0x1ea119faU, 0x3d4233ddU, 0x2a1462b3U };
 
 
-        uint syndrome(uint residue)
+        private uint syndrome(uint residue)
         {
             uint low = residue & 0x1f;
             return (uint)(low ^ (low << 10) ^ (low << 20) ^
@@ -203,7 +202,7 @@ namespace NBitcoin.DataEncoders
         }
 
 
-        int[] locate_errors(uint residue, int length)
+        private int[] locate_errors(uint residue, int length)
         {
             if(residue == 0)
             {
@@ -303,7 +302,7 @@ namespace NBitcoin.DataEncoders
             return chk;
         }
 
-        bool VerifyChecksum(byte[] data, int bechStringLen, out int[] errorPosition)
+        private bool VerifyChecksum(byte[] data, int bechStringLen, out int[] errorPosition)
         {
             errorPosition = null;
             byte[] values = _HrpExpand.Concat(data);

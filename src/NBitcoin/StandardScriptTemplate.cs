@@ -775,7 +775,7 @@ namespace NBitcoin
 
     public class PayToWitPubKeyHashTemplate : PayToWitTemplate
     {
-        static PayToWitPubKeyHashTemplate _Instance;
+        private static PayToWitPubKeyHashTemplate _Instance;
         public new static PayToWitPubKeyHashTemplate Instance
         {
             get
@@ -863,7 +863,7 @@ namespace NBitcoin
 
     public class PayToWitScriptHashTemplate : PayToWitTemplate
     {
-        static PayToWitScriptHashTemplate _Instance;
+        private static PayToWitScriptHashTemplate _Instance;
         public new static PayToWitScriptHashTemplate Instance
         {
             get
@@ -958,7 +958,7 @@ namespace NBitcoin
 
     public class PayToWitTemplate : ScriptTemplate
     {
-        static PayToWitTemplate _Instance;
+        private static PayToWitTemplate _Instance;
         public static PayToWitTemplate Instance
         {
             get

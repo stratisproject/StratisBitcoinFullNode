@@ -76,7 +76,8 @@ namespace NBitcoin
             get;
             private set;
         }
-        uint256 _Hash;
+
+        private uint256 _Hash;
         public MerkleNode Parent
         {
             get;

@@ -316,7 +316,7 @@ namespace NBitcoin
             throw new FormatException("Impossible to parse the string in a bitcoin amount");
         }
 
-        long _Satoshis;
+        private long _Satoshis;
         public long Satoshi
         {
             get
@@ -677,7 +677,7 @@ namespace NBitcoin
         }
 
 
-        static Money _Zero = new Money(0);
+        private static Money _Zero = new Money(0);
         public static Money Zero
         {
             get
@@ -823,7 +823,7 @@ namespace NBitcoin
         #endregion
     }
 
-    static class CharExtensions
+    internal static class CharExtensions
     {
         // .NET Char class already provides an static IsDigit method however
         // it behaves differently depending on if char is a Latin or not.

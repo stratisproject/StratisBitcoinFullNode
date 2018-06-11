@@ -7,8 +7,8 @@ namespace NBitcoin.Stealth
 {
     public class BitField
     {
-        byte[] _Rawform;
-        byte[] _Mask;
+        private byte[] _Rawform;
+        private byte[] _Mask;
         private readonly int _BitCount;
         public int BitCount
         {

@@ -7,7 +7,7 @@ using NBitcoin.BouncyCastle.Crypto.Signers;
 
 namespace NBitcoin.Crypto
 {
-    static class DeterministicDSAExtensions
+    internal static class DeterministicDSAExtensions
     {
         public static void Update(this IMac hmac, byte[] input)
         {

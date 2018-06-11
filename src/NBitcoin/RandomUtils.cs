@@ -9,7 +9,7 @@ namespace NBitcoin
 {
     public class UnsecureRandom : IRandom
     {
-        Random _Rand = new Random();
+        private Random _Rand = new Random();
         #region IRandom Members
 
         public void GetBytes(byte[] output)
@@ -68,8 +68,8 @@ namespace NBitcoin
             entropyIndex = pos % 32;
         }
 
-        static volatile byte[] additionalEntropy = null;
-        static volatile int entropyIndex = 0;
+        private static volatile byte[] additionalEntropy = null;
+        private static volatile int entropyIndex = 0;
 
         public static void AddEntropy(string data)
         {

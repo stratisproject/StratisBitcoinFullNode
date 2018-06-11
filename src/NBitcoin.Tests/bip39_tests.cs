@@ -222,7 +222,7 @@ namespace NBitcoin.Tests
             string rangeTable = builder.ToString();
         }
 
-        class CharRangeT : IEnumerable<char>
+        private class CharRangeT : IEnumerable<char>
         {
             public int From;
             public int To;

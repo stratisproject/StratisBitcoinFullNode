@@ -22,7 +22,8 @@ namespace NBitcoin.OpenAsset
             Index = index;
             Asset = asset;
         }
-        uint _Index;
+
+        private uint _Index;
         public uint Index
         {
             get
@@ -34,7 +35,8 @@ namespace NBitcoin.OpenAsset
                 _Index = value;
             }
         }
-        AssetMoney _Asset = new AssetMoney(new AssetId(new uint160(0)));
+
+        private AssetMoney _Asset = new AssetMoney(new AssetId(new uint160(0)));
         public AssetMoney Asset
         {
             get
@@ -101,7 +103,7 @@ namespace NBitcoin.OpenAsset
             return FetchColorsAsync(txId, tx, repo).GetAwaiter().GetResult();
         }
 
-        class ColoredFrame
+        private class ColoredFrame
         {
             public uint256 TransactionId
             {
@@ -382,7 +384,7 @@ namespace NBitcoin.OpenAsset
             }
         }
 
-        ColorMarker _Marker;
+        private ColorMarker _Marker;
         public ColorMarker Marker
         {
             get
@@ -395,7 +397,7 @@ namespace NBitcoin.OpenAsset
             }
         }
 
-        List<ColoredEntry> _Issuances;
+        private List<ColoredEntry> _Issuances;
         public List<ColoredEntry> Issuances
         {
             get
@@ -408,7 +410,7 @@ namespace NBitcoin.OpenAsset
             }
         }
 
-        List<ColoredEntry> _Transfers;
+        private List<ColoredEntry> _Transfers;
         public List<ColoredEntry> Transfers
         {
             get
@@ -471,7 +473,7 @@ namespace NBitcoin.OpenAsset
 
 #endregion
 
-        List<ColoredEntry> _Inputs;
+        private List<ColoredEntry> _Inputs;
         public List<ColoredEntry> Inputs
         {
             get

@@ -59,8 +59,9 @@ namespace NBitcoin
             }
         }
 
-        ECKey _ECKey;
-        ECKey ECKey
+        private ECKey _ECKey;
+
+        private ECKey ECKey
         {
             get
             {
@@ -114,8 +115,8 @@ namespace NBitcoin
             }
         }
 
-        byte[] vch = new byte[0];
-        KeyId _ID;
+        private byte[] vch = new byte[0];
+        private KeyId _ID;
         public KeyId Hash
         {
             get
@@ -127,7 +128,8 @@ namespace NBitcoin
                 return _ID;
             }
         }
-        WitKeyId _WitID;
+
+        private WitKeyId _WitID;
         public WitKeyId WitHash
         {
             get
@@ -402,7 +404,7 @@ namespace NBitcoin
 
         #region IDestination Members
 
-        Script _ScriptPubKey;
+        private Script _ScriptPubKey;
         public Script ScriptPubKey
         {
             get

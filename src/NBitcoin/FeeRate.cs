@@ -16,7 +16,7 @@ namespace NBitcoin
             }
         }
 
-        readonly static FeeRate _Zero = new FeeRate(Money.Zero);
+        private readonly static FeeRate _Zero = new FeeRate(Money.Zero);
         public static FeeRate Zero
         {
             get

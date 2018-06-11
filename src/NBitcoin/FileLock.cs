@@ -12,7 +12,7 @@ namespace NBitcoin
     }
     public class FileLock : IDisposable
     {
-        FileStream _Fs = null;
+        private FileStream _Fs = null;
         public FileLock(string filePath, FileLockType lockType)
         {
             if(filePath == null)

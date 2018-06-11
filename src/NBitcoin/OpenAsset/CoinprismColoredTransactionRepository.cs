@@ -28,7 +28,7 @@ namespace NBitcoin.OpenAsset
     {
         private Network _network = Network.Main;
 
-        class CoinprismTransactionRepository : ITransactionRepository
+        private class CoinprismTransactionRepository : ITransactionRepository
         {
 #region ITransactionRepository Members
 

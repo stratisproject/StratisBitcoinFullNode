@@ -28,7 +28,7 @@ namespace NBitcoin
             }
         }
 
-        Func<BitcoinConfirmationCode> _CalculateConfirmation;
+        private Func<BitcoinConfirmationCode> _CalculateConfirmation;
         private BitcoinConfirmationCode _ConfirmationCode;
         public BitcoinConfirmationCode ConfirmationCode
         {
@@ -112,7 +112,7 @@ namespace NBitcoin
             }
         }
 
-        readonly byte[] _Bytes;
+        private readonly byte[] _Bytes;
         public byte[] ToBytes()
         {
             return _Bytes.ToArray();
@@ -196,7 +196,7 @@ namespace NBitcoin
         {
         }
 
-        LotSequence _LotSequence;
+        private LotSequence _LotSequence;
         public LotSequence LotSequence
         {
             get
@@ -281,7 +281,7 @@ namespace NBitcoin
         }
 
 
-        byte[] _OwnerEntropy;
+        private byte[] _OwnerEntropy;
         public byte[] OwnerEntropy
         {
             get
@@ -289,7 +289,8 @@ namespace NBitcoin
                 return _OwnerEntropy ?? (_OwnerEntropy = vchData.Skip(1).Take(8).ToArray());
             }
         }
-        byte[] _Passpoint;
+
+        private byte[] _Passpoint;
         public byte[] Passpoint
         {
             get

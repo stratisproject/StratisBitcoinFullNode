@@ -5,7 +5,7 @@ using Newtonsoft.Json.Linq;
 
 namespace NBitcoin.RPC
 {
-    class BlockExplorerFormatter : RawFormatter
+    internal class BlockExplorerFormatter : RawFormatter
     {
         protected override void BuildTransaction(JObject json, Transaction tx)
         {

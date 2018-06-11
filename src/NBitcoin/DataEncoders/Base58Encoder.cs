@@ -44,7 +44,7 @@ namespace NBitcoin.DataEncoders
 
     public class Base58Encoder : DataEncoder
     {
-        static readonly BigInteger bn58 = BigInteger.ValueOf(58);
+        private static readonly BigInteger bn58 = BigInteger.ValueOf(58);
         public override string EncodeData(byte[] data, int offset, int count)
         {
             
