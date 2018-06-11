@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using NBitcoin;
 using NBitcoin.DataEncoders;
@@ -76,6 +76,11 @@ namespace Stratis.ApexD
 
             this.Consensus.CoinType = 3000;
             this.Consensus.DefaultAssumeValid = null;
+            this.Consensus.CoinbaseMaturity = 50;
+            this.Consensus.PremineReward = Money.Coins(20000000);
+            this.Consensus.ProofOfWorkReward = Money.Zero;
+            this.Consensus.ProofOfStakeReward = Money.Zero;
+            this.Consensus.MaxReorgLength = 0;
 
             this.Checkpoints = new Dictionary<int, CheckpointInfo>();
             this.DNSSeeds = new List<DNSSeedData>();
@@ -111,6 +116,7 @@ namespace Stratis.ApexD
             this.Consensus.CoinType = 3001;
             this.Consensus.DefaultAssumeValid = null;
             this.Consensus.PowLimit = new Target(new uint256("0000ffff00000000000000000000000000000000000000000000000000000000"));
+            this.Consensus.CoinbaseMaturity = 10;
 
             this.Checkpoints = new Dictionary<int, CheckpointInfo>();
             this.DNSSeeds = new List<DNSSeedData>();
@@ -134,7 +140,7 @@ namespace Stratis.ApexD
     {
         public ApexRegTest()
         {
-            
+
             this.Name = ApexNetwork.RegTestNetworkName;
             this.RootFolderName = ApexNetwork.ChainName.ToLowerInvariant();
             this.DefaultConfigFilename = $"{ApexNetwork.ChainName.ToLowerInvariant()}.conf";
@@ -151,10 +157,11 @@ namespace Stratis.ApexD
             this.Consensus.PowNoRetargeting = true;
             this.Consensus.PowLimit = new Target(new uint256("7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"));
             this.Consensus.DefaultAssumeValid = null; // turn off assumevalid for regtest.
+            this.Consensus.CoinbaseMaturity = 10;
 
             this.Base58Prefixes[(int)Base58Type.PUBKEY_ADDRESS] = new byte[] { 75 }; // X
             this.Base58Prefixes[(int)Base58Type.SCRIPT_ADDRESS] = new byte[] { 137 }; // x
-            
+
             this.Checkpoints = new Dictionary<int, CheckpointInfo>();
             this.DNSSeeds = new List<DNSSeedData>();
             this.SeedNodes = new List<NetworkAddress>();

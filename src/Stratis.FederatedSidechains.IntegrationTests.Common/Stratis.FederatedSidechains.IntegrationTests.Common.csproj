@@ -5,7 +5,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Stratis.Bitcoin.IntegrationTests.Common" Version="1.1.7-beta" />
+    <PackageReference Include="Stratis.Bitcoin.IntegrationTests.Common" Version="1.1.9-beta" />
   </ItemGroup>
 
   <ItemGroup>

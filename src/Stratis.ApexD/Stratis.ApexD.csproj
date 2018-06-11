@@ -8,13 +8,19 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Stratis.Bitcoin" Version="1.1.7-beta" />
-    <PackageReference Include="Stratis.Bitcoin.Api" Version="1.1.7-beta" />
-    <PackageReference Include="Stratis.Bitcoin.Features.BlockStore" Version="1.1.7-beta" />
-    <PackageReference Include="Stratis.Bitcoin.Features.Consensus" Version="1.1.7-beta" />
-    <PackageReference Include="Stratis.Bitcoin.Features.MemoryPool" Version="1.1.7-beta" />
-    <PackageReference Include="Stratis.Bitcoin.Features.Miner" Version="1.1.7-beta" />
-    <PackageReference Include="Stratis.Bitcoin.Features.Wallet" Version="1.1.7-beta" />
+    <PackageReference Include="Stratis.Bitcoin" Version="1.1.9-beta" />
+    <PackageReference Include="Stratis.Bitcoin.Api" Version="1.1.9-beta" />
+    <PackageReference Include="Stratis.Bitcoin.Features.BlockStore" Version="1.1.9-beta" />
+    <PackageReference Include="Stratis.Bitcoin.Features.Consensus" Version="1.1.9-beta" />
+    <PackageReference Include="Stratis.Bitcoin.Features.MemoryPool" Version="1.1.9-beta" />
+    <PackageReference Include="Stratis.Bitcoin.Features.Miner" Version="1.1.9-beta" />
+    <PackageReference Include="Stratis.Bitcoin.Features.Wallet" Version="1.1.9-beta" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Update="NLog.config">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+  
 </Project>

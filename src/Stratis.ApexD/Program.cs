@@ -33,11 +33,11 @@ namespace Stratis.ApexD
                 var node = new FullNodeBuilder()
                     .UseNodeSettings(nodeSettings)
                     .UseBlockStore()
-                    .UsePowConsensus() //.UsePosConsensus()
+                    .UsePowConsensus()
                     .UseMempool()
                     .AddRPC()
                     .UseWallet()
-                    .AddMining() //.AddPowPosMining()
+                    .AddMining()
                     .UseApi()
                     .Build();
 

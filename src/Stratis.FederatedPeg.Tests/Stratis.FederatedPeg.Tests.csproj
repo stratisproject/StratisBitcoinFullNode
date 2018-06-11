@@ -16,9 +16,9 @@
   <ItemGroup>
     <PackageReference Include="FluentAssertions" Version="5.2.0" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.7.2" />
-    <PackageReference Include="NStratis" Version="4.0.0.57" />
-    <PackageReference Include="Stratis.Bitcoin" Version="1.1.7-beta" />
-    <PackageReference Include="Stratis.Bitcoin.Api" Version="1.1.7-beta" />
+    <PackageReference Include="NStratis" Version="4.0.0.58" />
+    <PackageReference Include="Stratis.Bitcoin" Version="1.1.9-beta" />
+    <PackageReference Include="Stratis.Bitcoin.Api" Version="1.1.9-beta" />
     <PackageReference Include="xunit" Version="2.3.1" />
     <PackageReference Include="xunit.runner.visualstudio" Version="2.3.1" />
   </ItemGroup>
