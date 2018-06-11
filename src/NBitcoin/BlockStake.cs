@@ -256,6 +256,8 @@ namespace NBitcoin
         {
             base.ReadWrite(stream);
             stream.ReadWrite(ref this.blockSignature);
+
+            this.BlockSize = stream.Serializing ? stream.Counter.WrittenBytes : stream.Counter.ReadBytes;
         }
     }
 }

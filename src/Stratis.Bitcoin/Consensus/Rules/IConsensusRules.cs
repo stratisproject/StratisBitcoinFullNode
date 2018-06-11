@@ -1,16 +1,15 @@
 ﻿using System.Collections.Generic;
 using System.Threading.Tasks;
 using NBitcoin;
-using Stratis.Bitcoin.Features.Consensus.CoinViews;
 
-namespace Stratis.Bitcoin.Features.Consensus.Rules
+namespace Stratis.Bitcoin.Consensus.Rules
 {
     /// <summary>
     /// An engine that enforce the execution and validation of consensus rule. 
     /// </summary>
     /// <remarks>
     /// In order for a block to be valid it has to successfully pass the rules checks.
-    /// A block  that is not valid will result in the <see cref="BlockValidationContext.Error"/> as not <c>null</c>.
+    /// A block  that is not valid will result in the <see cref="ValidationContext.Error"/> as not <c>null</c>.
     /// </remarks>
     public interface IConsensusRules
     {
@@ -36,8 +35,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules
         /// The block will be validated and the <see cref="CoinView"/> db will be updated.
         /// If it's a new block that was mined or staked it will extend the chain and the new block will set <see cref="ConcurrentChain.Tip"/>.
         /// </summary>
-        /// <param name="blockValidationContext">Information about the block to validate.</param>
-        Task AcceptBlockAsync(BlockValidationContext blockValidationContext);
+        /// <param name="validationContext">Information about the block to validate.</param>
+        Task AcceptBlockAsync(ValidationContext validationContext);
 
         /// <summary>
         /// Execute the consensus rule engine.
@@ -57,6 +56,30 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules
         /// Gets the consensus rule that is assignable to the supplied generic type.
         /// </summary>
         T GetRule<T>() where T : ConsensusRule;
+
+        /// <summary>
+        /// Create an instance of the <see cref="RuleContext"/> to be used by consensus validation.
+        /// </summary>
+        /// <remarks>
+        /// Each network type can specify it's own <see cref="RuleContext"/>.
+        /// </remarks>
+        RuleContext CreateRuleContext(ValidationContext validationContext, ChainedHeader consensusTip);
+
+        /// <summary>
+        /// Retrieves the block hash of the current tip of the chain.
+        /// </summary>
+        /// <returns>Block hash of the current tip of the chain.</returns>
+        Task<uint256> GetBlockHashAsync();
+
+        /// <summary>
+        /// Rewinds the chain to the last saved state.
+        /// <para>
+        /// This operation includes removing the recent transactions
+        /// and restoring the chain to an earlier state.
+        /// </para>
+        /// </summary>
+        /// <returns>Hash of the block header which is now the tip of the chain.</returns>
+        Task<uint256> RewindAsync();
     }
 
     /// <summary>

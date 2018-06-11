@@ -1,6 +1,8 @@
 ﻿using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
+using Stratis.Bitcoin.Consensus;
+using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.Interfaces;
 using Stratis.Bitcoin.Features.MemoryPool;
@@ -108,10 +110,9 @@ namespace Stratis.Bitcoin.Features.Miner
         {
             this.logger.LogTrace("()");
 
-            var context = new RuleContext(new BlockValidationContext { Block = this.block }, this.Network.Consensus, this.ConsensusLoop.Tip)
+            var context = new PowRuleContext(new ValidationContext { Block = this.block }, this.Network.Consensus, this.ConsensusLoop.Tip)
             {
-                CheckPow = false,
-                CheckMerkleRoot = false,
+                MinedBlock = true,
             };
 
             this.ConsensusLoop.ValidateBlock(context);

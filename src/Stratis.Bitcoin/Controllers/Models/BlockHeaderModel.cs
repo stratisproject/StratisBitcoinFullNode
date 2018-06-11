@@ -3,16 +3,17 @@ using NBitcoin.DataEncoders;
 using Newtonsoft.Json;
 using Stratis.Bitcoin.Utilities;
 
-namespace Stratis.Bitcoin.Features.RPC.Models
+namespace Stratis.Bitcoin.Controllers.Models
 {
     /// <summary>
-    /// Data structure for RPC block headers.
+    /// Data structure for block headers.
+    /// Copied from RPC
     /// <see cref="https://bitcoin.org/en/developer-reference#getblockheader"/>
     /// </summary>
     public class BlockHeaderModel
     {
         /// <summary>
-        /// Constructs a RPC BlockHeaderModel from a block header object.
+        /// Constructs a BlockHeaderModel from a block header object.
         /// </summary>
         /// <param name="blockHeader">The block header.</param>
         public BlockHeaderModel(BlockHeader blockHeader)
