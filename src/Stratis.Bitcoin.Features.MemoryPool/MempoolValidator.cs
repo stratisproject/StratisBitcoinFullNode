@@ -995,7 +995,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <param name="context">Current validation context.</param>
         private void CheckAllInputs(MempoolValidationContext context)
         {
-            ScriptVerify scriptVerifyFlags = ScriptVerify.Standard;
+            var scriptVerifyFlags = ScriptVerify.Standard;
             if (!this.mempoolSettings.RequireStandard)
             {
                 // TODO: implement -promiscuousmempoolflags
