@@ -91,7 +91,6 @@ namespace Stratis.Bitcoin.Features.RPC
                 this.logger.LogDebug("RpcUser set to '{0}'.", this.RpcUser);
 
                 this.RpcPassword = config.GetOrDefault<string>("rpcpassword", null);
-                this.logger.LogDebug("RpcPassword set to '{0}'.", (this.RpcPassword == null) ? "" : "******");
 
                 try
                 {

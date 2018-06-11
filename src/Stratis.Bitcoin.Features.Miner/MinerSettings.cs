@@ -75,7 +75,6 @@ namespace Stratis.Bitcoin.Features.Miner
                 this.WalletPassword = config.GetOrDefault<string>("walletpassword", null);
             }
             this.logger.LogDebug("WalletName set to '{0}'.", this.WalletName);
-            this.logger.LogDebug("WalletPassword set to '{0}'.", (this.WalletPassword == null) ? "" : "******");
 
             this.logger.LogTrace("(-)");
         }
