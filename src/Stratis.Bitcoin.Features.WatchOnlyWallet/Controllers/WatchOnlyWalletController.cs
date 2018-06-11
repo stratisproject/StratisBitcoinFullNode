@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Net;
 using Microsoft.AspNetCore.Mvc;
-using Stratis.Bitcoin.Features.RPC.Models;
+using Stratis.Bitcoin.Controllers.Models;
 using Stratis.Bitcoin.Features.WatchOnlyWallet.Models;
 using Stratis.Bitcoin.Utilities.JsonErrors;
 

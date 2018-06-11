@@ -1,6 +1,4 @@
-﻿using Stratis.Bitcoin.Base;
-
-namespace Stratis.Bitcoin.Features.BlockStore
+﻿namespace Stratis.Bitcoin.Features.BlockStore
 {
     public class BlockStoreManager
     {
