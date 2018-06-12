@@ -34,27 +34,23 @@ namespace Stratis.FederatedPeg.Tests
         [Fact]
         public void correctly_identify_sidechain()
         {
-            string sidechain_folder = @"..\..\..\..\..\assets";
-            using (SidechainIdentifier.Create("enigma", sidechain_folder))
-            {
-                //reg test
-                var network = SidechainNetwork.SidechainRegTest;
-                var chain = network.ToChain();
-                chain.Should().Be(Chain.Sidechain);
-                chain.Should().NotBe(Chain.Mainchain);
+            //reg test	
+            var network = SidechainNetwork.SidechainRegTest;
+            var chain = network.ToChain();
+            chain.Should().Be(Chain.Sidechain);
+            chain.Should().NotBe(Chain.Mainchain);
 
-                //testnet
-                network = SidechainNetwork.SidechainTest;
-                chain = network.ToChain();
-                chain.Should().Be(Chain.Sidechain);
-                chain.Should().NotBe(Chain.Mainchain);
+            //testnet	
+            network = SidechainNetwork.SidechainTest;
+            chain = network.ToChain();
+            chain.Should().Be(Chain.Sidechain);
+            chain.Should().NotBe(Chain.Mainchain);
 
-                //mainnet
-                network = SidechainNetwork.SidechainMain;
-                chain = network.ToChain();
-                chain.Should().Be(Chain.Sidechain);
-                chain.Should().NotBe(Chain.Mainchain);
-            }
+            //mainnet	
+            network = SidechainNetwork.SidechainMain;
+            chain = network.ToChain();
+            chain.Should().Be(Chain.Sidechain);
+            chain.Should().NotBe(Chain.Mainchain);
         }
     }
 }

@@ -40,40 +40,6 @@ namespace Stratis.FederatedPeg.Tests
         }
 
         [Fact]
-        public void generate_public_address()
-        {
-            string sidechain_folder = @"..\..\..\..\..\assets";
-            using (SidechainIdentifier.Create("enigma", sidechain_folder))
-            {
-                var federation = new Federation(2, 3, this.GetSampleMembers());
-                string address = federation.GenerateScriptPubkey(Chain.Sidechain).Hash.GetAddress(SidechainNetwork.SidechainRegTest).ToString();
-
-                address.Length.Should().BeLessThan(40);
-                address.Length.Should().BeGreaterThan(1);
-                address.Should().StartWith("x");
-            }
-        }
-
-        [Fact]
-        public void can_round_trip_serialize_public_key()
-        {
-            string sidechain_folder = @"..\..\..\..\..\assets";
-            using (SidechainIdentifier.Create("enigma", sidechain_folder))
-            {
-                var key = new Key();
-                var pubKey = key.PubKey;
-                string pubKeyString = pubKey.ToHex();
-
-                File.WriteAllText("test.txt", pubKeyString);
-                string txt = File.ReadAllText("test.txt");
-                txt.Should().Be(pubKeyString);
-
-                var pubKey2 = new PubKey(pubKeyString);
-                pubKey.Should().BeEquivalentTo(pubKey2);
-            }
-        }
-
-        [Fact]
         public void give_correct_payment_script()
         {
             var publicKey1 = new PubKey("0374860560f816100ee4917af0bfb416d559cfcbb587e539e55f09e22c8cf07c9a");
