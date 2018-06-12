@@ -1150,7 +1150,7 @@ namespace NBitcoin
             if(selection == null)
             {
                 throw new NotEnoughFundsException("Not enough funds to cover the target",
-                    @group.Name,
+                    group.Name,
                     target.Sub(unconsumed.Select(u => u.Amount).Sum(zero))
                 );
             }
@@ -1160,7 +1160,7 @@ namespace NBitcoin
             if(change.CompareTo(zero) == -1)
             {
                 throw new NotEnoughFundsException("Not enough funds to cover the target",
-                    @group.Name,
+                    group.Name,
                     change.Negate()
                 );
             }
