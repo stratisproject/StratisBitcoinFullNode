@@ -1,5 +1,10 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Net;
+using NBitcoin;
 using Stratis.Bitcoin.Configuration;
+using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.FederatedPeg.Features.FederationGateway
@@ -9,20 +14,41 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
     /// </summary>
     public sealed class FederationGatewaySettings
     {
+        private const string RedeemScriptParam = "redeemscript";
+
         public FederationGatewaySettings(NodeSettings nodeSettings)
         {
             Guard.NotNull(nodeSettings, nameof(nodeSettings));
 
-            TextFileConfiguration config = nodeSettings.ConfigReader;
-            this.MemberName = config.GetOrDefault("membername", "unspecified");
-            this.MultiSigM = config.GetOrDefault("multisigM", 0);
-            this.MultiSigN = config.GetOrDefault("multisigN", 0);
-            this.MultiSigWalletName = config.GetOrDefault("multisigwalletname", "multisig_wallet");
-            this.PublicKey = config.GetOrDefault<string>("publickey", null);
-            this.FederationFolder = config.GetOrDefault<string>("federationfolder", null);
-            this.MemberPrivateFolder = config.GetOrDefault<string>("memberprivatefolder", null);
-            this.CounterChainApiPort = config.GetOrDefault("counterchainapiport", 0);
+            var configReader = nodeSettings.ConfigReader;
+            var redeemScriptRaw = configReader.GetOrDefault<string>(RedeemScriptParam, null);
+            if (redeemScriptRaw == null)
+                throw new ConfigurationException($"could not find {RedeemScriptParam} configuration parameter");
+
+            this.RedeemScript = new Script(redeemScriptRaw);
+            this.MultiSigAddress = RedeemScript.Hash.GetAddress(nodeSettings.Network);
+            var payToMultisigScriptParams = PayToMultiSigTemplate.Instance.ExtractScriptPubKeyParameters(
+                nodeSettings.Network, this.RedeemScript);
+            this.MultiSigM = configReader.GetOrDefault("multisigM", payToMultisigScriptParams.SignatureCount);
+            this.MultiSigN = configReader.GetOrDefault("multisigN", payToMultisigScriptParams.PubKeys.Length);
+
+            var connectionManagerSettings = new ConnectionManagerSettings();
+            connectionManagerSettings.Load(nodeSettings);
+            this.MemberName =
+                configReader.GetOrDefault("membername", connectionManagerSettings.ExternalEndpoint.ToString());
+
+            this.MultiSigWalletName = configReader.GetOrDefault("multisigwalletname", "multisig_wallet");
+            this.PublicKey = configReader.GetOrDefault<string>("publickey", null);
+            this.FederationFolder = configReader.GetOrDefault<string>("federationfolder", null);
+            this.MemberPrivateFolder = configReader.GetOrDefault<string>("memberprivatefolder", null);
+            this.CounterChainApiPort = configReader.GetOrDefault("counterchainapiport", 0);
+
+            this.FederationNodeIPs = configReader.GetOrDefault<string>("federationips", null)?
+                .Split(',').Select(IPAddress.Parse)
+                .Where(ip => ip.ToString() != connectionManagerSettings.ExternalEndpoint.Address.ToString());
         }
+
+        public IEnumerable<IPAddress> FederationNodeIPs { get; set; }
 
         /// <summary>
         /// The MemberName is used to distiguish between federation gateways in the debug logs.
@@ -64,5 +90,15 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
         /// The name of the multisig wallet used for the multisig transactions.
         /// </summary>
         public string MultiSigWalletName { get; set; }
+
+        /// <summary>
+        /// Mutlisig bitcoin address.
+        /// </summary>
+        public BitcoinAddress MultiSigAddress { get; set; }
+
+        /// <summary>
+        /// Pay2Multisig redeem script.
+        /// </summary>
+        public Script RedeemScript { get; set; }
     }
 }

@@ -103,15 +103,10 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
         }
         
         /// <inheritdoc/>>
-        public void Initialize()
+        public void Initialize(FederationGatewaySettings federationGatewaySettings)
         {
             // Read the relevant multisig address with help of the folder manager.
-            var memberFolderManager = new MemberFolderManager(federationGatewaySettings.FederationFolder);
-
-            // Initialize chain specifics.
-            var chain = network.ToChain();
-            var multiSigAddress = memberFolderManager.ReadAddress(chain);
-            this.script = BitcoinAddress.Create(multiSigAddress, this.network).ScriptPubKey;
+            this.script = this.federationGatewaySettings.MultiSigAddress.ScriptPubKey;
 
             // Load the auditor if present.
             this.crossChainTransactionAuditor?.Initialize();
