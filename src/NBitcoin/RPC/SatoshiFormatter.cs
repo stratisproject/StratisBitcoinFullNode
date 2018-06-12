@@ -125,7 +125,7 @@ namespace NBitcoin.RPC
                     WritePropertyValue(writer, "type", GetScriptType(txout.ScriptPubKey.FindTemplate(this.network)));
                     writer.WritePropertyName("addresses");
                     writer.WriteStartArray();
-                    writer.WriteValue(destinations[0].GetAddress(Network).ToString());
+                    writer.WriteValue(destinations[0].GetAddress(this.Network).ToString());
                     writer.WriteEndArray();
                 }
                 else

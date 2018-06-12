@@ -97,37 +97,37 @@ namespace NBitcoin.Crypto
             private ulong tmp;
             public SipHasher(ulong k0, ulong k1)
             {
-                v_0 = 0x736f6d6570736575UL ^ k0;
-                v_1 = 0x646f72616e646f6dUL ^ k1;
-                v_2 = 0x6c7967656e657261UL ^ k0;
-                v_3 = 0x7465646279746573UL ^ k1;
-                count = 0;
-                tmp = 0;
+                this.v_0 = 0x736f6d6570736575UL ^ k0;
+                this.v_1 = 0x646f72616e646f6dUL ^ k1;
+                this.v_2 = 0x6c7967656e657261UL ^ k0;
+                this.v_3 = 0x7465646279746573UL ^ k1;
+                this.count = 0;
+                this.tmp = 0;
             }
 
             public SipHasher Write(ulong data)
             {
-                ulong v0 = v_0, v1 = v_1, v2 = v_2, v3 = v_3;
+                ulong v0 = this.v_0, v1 = this.v_1, v2 = this.v_2, v3 = this.v_3;
                 v3 ^= data;
                 SIPROUND(ref v0, ref v1, ref v2, ref v3);
                 SIPROUND(ref v0, ref v1, ref v2, ref v3);
                 v0 ^= data;
 
-                v_0 = v0;
-                v_1 = v1;
-                v_2 = v2;
-                v_3 = v3;
+                this.v_0 = v0;
+                this.v_1 = v1;
+                this.v_2 = v2;
+                this.v_3 = v3;
 
-                count += 8;
+                this.count += 8;
                 return this;
             }
 
             public SipHasher Write(byte[] data)
             {
-                ulong v0 = v_0, v1 = v_1, v2 = v_2, v3 = v_3;
+                ulong v0 = this.v_0, v1 = this.v_1, v2 = this.v_2, v3 = this.v_3;
                 int size = data.Length;
-                ulong t = tmp;
-                ulong c = count;
+                ulong t = this.tmp;
+                ulong c = this.count;
                 int offset = 0;
 
                 while(size-- != 0)
@@ -144,21 +144,21 @@ namespace NBitcoin.Crypto
                     }
                 }
 
-                v_0 = v0;
-                v_1 = v1;
-                v_2 = v2;
-                v_3 = v3;
-                count = c;
-                tmp = t;
+                this.v_0 = v0;
+                this.v_1 = v1;
+                this.v_2 = v2;
+                this.v_3 = v3;
+                this.count = c;
+                this.tmp = t;
 
                 return this;
             }
 
             public ulong Finalize()
             {
-                ulong v0 = v_0, v1 = v_1, v2 = v_2, v3 = v_3;
+                ulong v0 = this.v_0, v1 = this.v_1, v2 = this.v_2, v3 = this.v_3;
 
-                ulong t = tmp | (((ulong)count) << 56);
+                ulong t = this.tmp | (((ulong) this.count) << 56);
 
                 v3 ^= t;
                 SIPROUND(ref v0, ref v1, ref v2, ref v3);

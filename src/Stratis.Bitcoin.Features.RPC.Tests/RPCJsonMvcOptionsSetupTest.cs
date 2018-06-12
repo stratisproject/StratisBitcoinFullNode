@@ -12,7 +12,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests
         public void ConfigureMvcReplacesJsonFormattedWithRPCJsonOutputFormatter()
         {
             var settings = new JsonSerializerSettings();
-            var charpool = ArrayPool<char>.Create();
+            ArrayPool<char> charpool = ArrayPool<char>.Create();
             var options = new MvcOptions();
             options.OutputFormatters.Clear();
             options.OutputFormatters.Add(new JsonOutputFormatter(settings, charpool));

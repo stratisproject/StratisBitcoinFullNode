@@ -236,7 +236,7 @@ namespace NBitcoin.BitcoinCore
                 bool fZero = true;
                 for (uint i = 0; i < 8 && 2 + b * 8 + i < this.Outputs.Count; i++)
                 {
-                    if (!this.IsNull(this.Outputs[2 + (int)b * 8 + (int)i]))
+                    if (!IsNull(this.Outputs[2 + (int)b * 8 + (int)i]))
                     {
                         fZero = false;
                         continue;
@@ -256,7 +256,7 @@ namespace NBitcoin.BitcoinCore
         // check whether a particular output is still available
         public bool IsAvailable(uint position)
         {
-            return position <= int.MaxValue && position < this.Outputs.Count && !this.IsNull(this.Outputs[(int)position]);
+            return position <= int.MaxValue && position < this.Outputs.Count && !IsNull(this.Outputs[(int)position]);
         }
 
         public TxOut TryGetOutput(uint position)

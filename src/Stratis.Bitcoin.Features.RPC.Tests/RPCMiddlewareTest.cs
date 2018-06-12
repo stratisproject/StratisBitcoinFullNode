@@ -100,7 +100,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests
         [Fact]
         public void InvokeAuthorizedWithBasicAuthorizationHeaderForUnauthorizedUserReturns401()
         {
-            var header = Convert.ToBase64String(Encoding.ASCII.GetBytes("MyUser"));
+            string header = Convert.ToBase64String(Encoding.ASCII.GetBytes("MyUser"));
             this.request.Headers.Add("Authorization", "Basic " + header);
             this.InitializeFeatureContext();
             this.authorization.Setup(a => a.IsAuthorized(It.IsAny<IPAddress>()))
@@ -139,7 +139,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests
             this.httpContext.Response.Body.Position = 0;
             using (var reader = new StreamReader(this.httpContext.Response.Body))
             {
-                var expected = string.Format("{{{0}  \"result\": null,{0}  \"error\": {{{0}    \"code\": -1,{0}    \"message\": \"Argument error: Name is required.\"{0}  }}{0}}}", Environment.NewLine);
+                string expected = string.Format("{{{0}  \"result\": null,{0}  \"error\": {{{0}    \"code\": -1,{0}    \"message\": \"Argument error: Name is required.\"{0}  }}{0}}}", Environment.NewLine);
                 Assert.Equal(expected, reader.ReadToEnd());
                 Assert.Equal(StatusCodes.Status200OK, this.httpContext.Response.StatusCode);
             }
@@ -158,7 +158,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests
             this.httpContext.Response.Body.Position = 0;
             using (var reader = new StreamReader(this.httpContext.Response.Body))
             {
-                var expected = string.Format("{{{0}  \"result\": null,{0}  \"error\": {{{0}    \"code\": -1,{0}    \"message\": \"Argument error: Int x is invalid format.\"{0}  }}{0}}}", Environment.NewLine);
+                string expected = string.Format("{{{0}  \"result\": null,{0}  \"error\": {{{0}    \"code\": -1,{0}    \"message\": \"Argument error: Int x is invalid format.\"{0}  }}{0}}}", Environment.NewLine);
                 Assert.Equal(expected, reader.ReadToEnd());
                 Assert.Equal(StatusCodes.Status200OK, this.httpContext.Response.StatusCode);
             }
@@ -176,7 +176,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests
             this.httpContext.Response.Body.Position = 0;
             using (var reader = new StreamReader(this.httpContext.Response.Body))
             {
-                var expected = string.Format("{{{0}  \"result\": null,{0}  \"error\": {{{0}    \"code\": -32601,{0}    \"message\": \"Method not found\"{0}  }}{0}}}", Environment.NewLine);
+                string expected = string.Format("{{{0}  \"result\": null,{0}  \"error\": {{{0}    \"code\": -32601,{0}    \"message\": \"Method not found\"{0}  }}{0}}}", Environment.NewLine);
                 Assert.Equal(expected, reader.ReadToEnd());
                 Assert.Equal(StatusCodes.Status404NotFound, this.httpContext.Response.StatusCode);
             }
@@ -194,7 +194,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests
             this.httpContext.Response.Body.Position = 0;
             using (var reader = new StreamReader(this.httpContext.Response.Body))
             {
-                var expected = string.Format("{{{0}  \"result\": null,{0}  \"error\": {{{0}    \"code\": -32603,{0}    \"message\": \"Internal error\"{0}  }}{0}}}", Environment.NewLine);
+                string expected = string.Format("{{{0}  \"result\": null,{0}  \"error\": {{{0}    \"code\": -32603,{0}    \"message\": \"Internal error\"{0}  }}{0}}}", Environment.NewLine);
                 Assert.Equal(expected, reader.ReadToEnd());
                 Assert.Equal(StatusCodes.Status500InternalServerError, this.httpContext.Response.StatusCode);
                 this.AssertLog(this.Logger, LogLevel.Error, "Internal error while calling RPC Method");
@@ -214,7 +214,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests
             this.httpContext.Response.Body.Position = 0;
             using (var reader = new StreamReader(this.httpContext.Response.Body))
             {
-                var expected = string.Format("{{{0}  \"result\": null,{0}  \"error\": {{{0}    \"code\": -32603,{0}    \"message\": \"Internal error\"{0}  }}{0}}}", Environment.NewLine);
+                string expected = string.Format("{{{0}  \"result\": null,{0}  \"error\": {{{0}    \"code\": -32603,{0}    \"message\": \"Internal error\"{0}  }}{0}}}", Environment.NewLine);
                 Assert.Equal(expected, reader.ReadToEnd());
                 Assert.Equal(StatusCodes.Status200OK, this.httpContext.Response.StatusCode);
                 this.AssertLog<InvalidOperationException>(this.Logger, LogLevel.Error, "Operation not valid.", "Internal error while calling RPC Method");
@@ -223,7 +223,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests
 
         private void SetupValidAuthorization()
         {
-            var header = Convert.ToBase64String(Encoding.ASCII.GetBytes("MyUser"));
+            string header = Convert.ToBase64String(Encoding.ASCII.GetBytes("MyUser"));
             this.request.Headers.Add("Authorization", "Basic " + header);
             this.authorization.Setup(a => a.IsAuthorized(It.IsAny<IPAddress>()))
                 .Returns(true);

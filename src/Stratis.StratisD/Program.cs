@@ -28,7 +28,6 @@ namespace Stratis.StratisD
             {
                 var nodeSettings = new NodeSettings(protocolVersion:ProtocolVersion.ALT_PROTOCOL_VERSION, args:args);
 
-                // NOTES: running BTC and STRAT side by side is not possible yet as the flags for serialization are static
                 IFullNode node = new FullNodeBuilder()
                     .UseNodeSettings(nodeSettings)
                     .UseBlockStore()

@@ -108,7 +108,7 @@ namespace NBitcoin.Tests
             _Server1.Dispose();
             _Server2.Dispose();
             */
-            foreach(IDisposable dispo in _Disposables)
+            foreach(IDisposable dispo in this._Disposables)
                 dispo.Dispose();
         }
 
@@ -119,7 +119,7 @@ namespace NBitcoin.Tests
         private List<IDisposable> _Disposables = new List<IDisposable>();
         internal void AddDisposable(IDisposable disposable)
         {
-            _Disposables.Add(disposable);
+            this._Disposables.Add(disposable);
         }
     }
     public class ProtocolTests

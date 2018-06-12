@@ -65,7 +65,7 @@ namespace Stratis.Bitcoin.Tests.Controllers
         [Fact]
         public void Stop_WithFullNode_DisposesFullNodeAsync()
         {
-            var result = this.controller.Shutdown();
+            IActionResult result = this.controller.Shutdown();
 
             this.fullNode.Verify(f => f.Dispose());
         }
@@ -78,8 +78,8 @@ namespace Stratis.Bitcoin.Tests.Controllers
             
             IActionResult result = await this.controller.GetRawTransactionAsync(txid,verbose).ConfigureAwait(false);
 
-            ErrorResult errorResult = Assert.IsType<ErrorResult>(result);
-            ErrorResponse errorResponse = Assert.IsType<ErrorResponse>(errorResult.Value);
+            var errorResult = Assert.IsType<ErrorResult>(result);
+            var errorResponse = Assert.IsType<ErrorResponse>(errorResult.Value);
             Assert.Single(errorResponse.Errors);
             ErrorModel error = errorResponse.Errors[0];
             Assert.Equal(400, error.Status);
@@ -89,7 +89,7 @@ namespace Stratis.Bitcoin.Tests.Controllers
         [Fact]
         public async Task GetRawTransactionAsync_TransactionCannotBeFound_ReturnsNullAsync()
         {
-            uint256 txId = new uint256(12142124);
+            var txId = new uint256(12142124);
             this.pooledTransaction.Setup(p => p.GetTransaction(txId))
                 .ReturnsAsync((Transaction)null)
                 .Verifiable();
@@ -116,7 +116,7 @@ namespace Stratis.Bitcoin.Tests.Controllers
         [Fact]
         public async Task GetRawTransactionAsync_TransactionNotInPooledTransaction_ReturnsTransactionFromBlockStoreAsync()
         {
-            uint256 txId = new uint256(12142124);
+            var txId = new uint256(12142124);
             this.pooledTransaction.Setup(p => p.GetTransaction(txId))
                 .ReturnsAsync((Transaction)null);
             Transaction transaction = this.CreateTransaction();
@@ -133,7 +133,7 @@ namespace Stratis.Bitcoin.Tests.Controllers
             bool verbose = false;
 
             var json = (JsonResult)await this.controller.GetRawTransactionAsync(txid, verbose).ConfigureAwait(false);
-            TransactionBriefModel resultModel = (TransactionBriefModel)json.Value;
+            var resultModel = (TransactionBriefModel)json.Value;
 
             Assert.NotNull(json);
             var model = Assert.IsType<TransactionBriefModel>(resultModel);
@@ -143,7 +143,7 @@ namespace Stratis.Bitcoin.Tests.Controllers
         [Fact]
         public async Task GetRawTransactionAsync_NullVerbose_ReturnsBriefModelAsync()
         {
-            uint256 txId = new uint256(12142124);
+            var txId = new uint256(12142124);
             Transaction transaction = this.CreateTransaction();
             var blockStore = new Mock<IBlockStore>();
             blockStore.Setup(b => b.GetTrxAsync(txId))
@@ -157,7 +157,7 @@ namespace Stratis.Bitcoin.Tests.Controllers
             string txid = txId.ToString();
 
             var json = (JsonResult) await this.controller.GetRawTransactionAsync(txid).ConfigureAwait(false);
-            TransactionBriefModel resultModel = (TransactionBriefModel)json.Value;
+            var resultModel = (TransactionBriefModel)json.Value;
 
             Assert.NotNull(resultModel);
             Assert.IsType<TransactionBriefModel>(resultModel);
@@ -167,7 +167,7 @@ namespace Stratis.Bitcoin.Tests.Controllers
         [Fact]
         public async Task GetRawTransactionAsync_PooledTransactionServiceNotAvailable_ReturnsTransactionFromBlockStoreAsync()
         {
-            uint256 txId = new uint256(12142124);
+            var txId = new uint256(12142124);
             Transaction transaction = this.CreateTransaction();
             var blockStore = new Mock<IBlockStore>();
             blockStore.Setup(b => b.GetTrxAsync(txId))
@@ -182,7 +182,7 @@ namespace Stratis.Bitcoin.Tests.Controllers
             bool verbose = false;
 
             var json = (JsonResult)await this.controller.GetRawTransactionAsync(txid, verbose).ConfigureAwait(false);
-            TransactionBriefModel resultModel = (TransactionBriefModel)json.Value;
+            var resultModel = (TransactionBriefModel)json.Value;
 
             Assert.NotNull(resultModel);
             Assert.Equal(transaction.ToHex(), resultModel.Hex);
@@ -191,7 +191,7 @@ namespace Stratis.Bitcoin.Tests.Controllers
         [Fact]
         public async Task GetRawTransactionAsync_PooledTransactionAndBlockStoreServiceNotAvailable_ReturnsNullAsync()
         {
-            uint256 txId = new uint256(12142124);
+            var txId = new uint256(12142124);
             this.fullNode.Setup(f => f.NodeFeature<IBlockStore>(false))
                 .Returns(default(IBlockStore))
                 .Verifiable();
@@ -213,9 +213,9 @@ namespace Stratis.Bitcoin.Tests.Controllers
         {
             this.chainState.Setup(c => c.ConsensusTip)
                 .Returns(this.chain.Tip);
-            var block = this.chain.GetBlock(1);
+            ChainedHeader block = this.chain.GetBlock(1);
             Transaction transaction = this.CreateTransaction();
-            uint256 txId = new uint256(12142124);
+            var txId = new uint256(12142124);
             this.pooledTransaction.Setup(p => p.GetTransaction(txId))
                 .ReturnsAsync(transaction);
             var blockStore = new Mock<IBlockStore>();
@@ -231,7 +231,7 @@ namespace Stratis.Bitcoin.Tests.Controllers
             bool verbose = true;
 
             var json = (JsonResult)await this.controller.GetRawTransactionAsync(txid, verbose).ConfigureAwait(false);
-            TransactionVerboseModel resultModel = (TransactionVerboseModel)json.Value;
+            var resultModel = (TransactionVerboseModel)json.Value;
 
             Assert.NotNull(resultModel);
             var model = Assert.IsType<TransactionVerboseModel>(resultModel);
@@ -245,7 +245,7 @@ namespace Stratis.Bitcoin.Tests.Controllers
             Assert.Equal(Utils.DateTimeToUnixTime(block.Header.BlockTime), model.Time);
             Assert.Equal(Utils.DateTimeToUnixTime(block.Header.BlockTime), model.BlockTime);
             Assert.NotEmpty(model.VIn);
-            var input = model.VIn[0];
+            Vin input = model.VIn[0];
             var expectedInput = new Vin(transaction.Inputs[0].PrevOut, transaction.Inputs[0].Sequence, transaction.Inputs[0].ScriptSig);
             Assert.Equal(expectedInput.Coinbase, input.Coinbase);
             Assert.Equal(expectedInput.ScriptSig, input.ScriptSig);
@@ -253,7 +253,7 @@ namespace Stratis.Bitcoin.Tests.Controllers
             Assert.Equal(expectedInput.TxId, input.TxId);
             Assert.Equal(expectedInput.VOut, input.VOut);
             Assert.NotEmpty(model.VOut);
-            var output = model.VOut[0];
+            Vout output = model.VOut[0];
             var expectedOutput = new Vout(0, transaction.Outputs[0], this.network);
             Assert.Equal(expectedOutput.Value, output.Value);
             Assert.Equal(expectedOutput.N, output.N);
@@ -263,9 +263,9 @@ namespace Stratis.Bitcoin.Tests.Controllers
         [Fact]
         public async Task GetTaskAsync_Verbose_ChainStateTipNull_DoesNotCalulateConfirmationsAsync()
         {
-            var block = this.chain.GetBlock(1);
+            ChainedHeader block = this.chain.GetBlock(1);
             Transaction transaction = this.CreateTransaction();
-            uint256 txId = new uint256(12142124);
+            var txId = new uint256(12142124);
             this.pooledTransaction.Setup(p => p.GetTransaction(txId))
                 .ReturnsAsync(transaction);
             var blockStore = new Mock<IBlockStore>();
@@ -281,7 +281,7 @@ namespace Stratis.Bitcoin.Tests.Controllers
             bool verbose = true;
 
             var json = (JsonResult)await this.controller.GetRawTransactionAsync(txid, verbose).ConfigureAwait(false);
-            TransactionVerboseModel resultModel = (TransactionVerboseModel)json.Value;
+            var resultModel = (TransactionVerboseModel)json.Value;
 
             Assert.NotNull(resultModel);
             var model = Assert.IsType<TransactionVerboseModel>(resultModel);
@@ -292,7 +292,7 @@ namespace Stratis.Bitcoin.Tests.Controllers
         public async Task GetTaskAsync_Verbose_BlockNotFoundOnChain_ReturnsTransactionVerboseModelWithoutBlockInformationAsync()
         {
             Transaction transaction = this.CreateTransaction();
-            uint256 txId = new uint256(12142124);
+            var txId = new uint256(12142124);
             this.pooledTransaction.Setup(p => p.GetTransaction(txId))
                 .ReturnsAsync(transaction);
             var blockStore = new Mock<IBlockStore>();
@@ -308,7 +308,7 @@ namespace Stratis.Bitcoin.Tests.Controllers
             bool verbose = true;
 
             var json = (JsonResult)await this.controller.GetRawTransactionAsync(txid, verbose).ConfigureAwait(false);
-            TransactionVerboseModel resultModel = (TransactionVerboseModel)json.Value;
+            var resultModel = (TransactionVerboseModel)json.Value;
 
             Assert.NotNull(resultModel);
             var model = Assert.IsType<TransactionVerboseModel>(resultModel);
@@ -327,8 +327,8 @@ namespace Stratis.Bitcoin.Tests.Controllers
 
             IActionResult result = await this.controller.GetTxOutAsync(txid, vout, includeMemPool).ConfigureAwait(false);
 
-            ErrorResult errorResult = Assert.IsType<ErrorResult>(result);
-            ErrorResponse errorResponse = Assert.IsType<ErrorResponse>(errorResult.Value);
+            var errorResult = Assert.IsType<ErrorResult>(result);
+            var errorResponse = Assert.IsType<ErrorResponse>(errorResult.Value);
             Assert.Single(errorResponse.Errors);
             ErrorModel error = errorResponse.Errors[0];
             Assert.Equal(400, error.Status);
@@ -347,7 +347,7 @@ namespace Stratis.Bitcoin.Tests.Controllers
             string txid = txId.ToString();            
 
             var json = (JsonResult) await this.controller.GetTxOutAsync(txid).ConfigureAwait(false);
-            GetTxOutModel resultModel = (GetTxOutModel)json.Value;
+            var resultModel = (GetTxOutModel)json.Value;
 
             this.getUnspentTransaction.Verify();
             Assert.Equal(this.chain.Tip.HashBlock, resultModel.BestBlock);
@@ -447,7 +447,7 @@ namespace Stratis.Bitcoin.Tests.Controllers
             bool includeMemPool = false;
 
             var json = (JsonResult)await this.controller.GetTxOutAsync(txid, vout, includeMemPool).ConfigureAwait(false);
-            GetTxOutModel resultModel = (GetTxOutModel)json.Value;
+            var resultModel = (GetTxOutModel)json.Value;
 
             this.getUnspentTransaction.Verify();
             Assert.Equal(this.chain.Tip.HashBlock, resultModel.BestBlock);
@@ -475,7 +475,7 @@ namespace Stratis.Bitcoin.Tests.Controllers
             bool includeMemPool = true;
 
             var json = (JsonResult)await this.controller.GetTxOutAsync(txid, vout, includeMemPool).ConfigureAwait(false);
-            GetTxOutModel resultModel = (GetTxOutModel)json.Value;
+            var resultModel = (GetTxOutModel)json.Value;
 
             this.pooledGetUnspentTransaction.Verify();
             Assert.Equal(this.chain.Tip.HashBlock, resultModel.BestBlock);
@@ -499,7 +499,7 @@ namespace Stratis.Bitcoin.Tests.Controllers
             bool includeMemPool = false;
 
             var json = (JsonResult)await this.controller.GetTxOutAsync(txid, vout, includeMemPool).ConfigureAwait(false);
-            GetTxOutModel resultModel = (GetTxOutModel)json.Value;
+            var resultModel = (GetTxOutModel)json.Value;
 
             this.getUnspentTransaction.Verify();
             Assert.Equal(this.chain.Tip.HashBlock, resultModel.BestBlock);
@@ -523,7 +523,7 @@ namespace Stratis.Bitcoin.Tests.Controllers
             bool includeMemPool = true;
 
             var json = (JsonResult)await this.controller.GetTxOutAsync(txid, vout, includeMemPool).ConfigureAwait(false);
-            GetTxOutModel resultModel = (GetTxOutModel)json.Value;
+            var resultModel = (GetTxOutModel)json.Value;
 
             this.pooledGetUnspentTransaction.Verify();
             Assert.Equal(this.chain.Tip.HashBlock, resultModel.BestBlock);
@@ -541,8 +541,8 @@ namespace Stratis.Bitcoin.Tests.Controllers
 
             IActionResult result = this.controller.GetBlockHeader(hash, isJsonFormat);
 
-            ErrorResult errorResult = Assert.IsType<ErrorResult>(result);
-            ErrorResponse errorResponse = Assert.IsType<ErrorResponse>(errorResult.Value);
+            var errorResult = Assert.IsType<ErrorResult>(result);
+            var errorResponse = Assert.IsType<ErrorResponse>(errorResult.Value);
             Assert.Single(errorResponse.Errors);
             ErrorModel error = errorResponse.Errors[0];
             Assert.Equal(400, error.Status);
@@ -552,13 +552,13 @@ namespace Stratis.Bitcoin.Tests.Controllers
         [Fact]
         public void GetBlockHeader_BlockHeaderFound_ReturnsBlockHeaderModel()
         {
-            var block = this.chain.GetBlock(2);
-            var bits = GetBlockHeaderBits(block.Header);
+            ChainedHeader block = this.chain.GetBlock(2);
+            string bits = GetBlockHeaderBits(block.Header);
             string hash = block.HashBlock.ToString();
             bool isJsonFormat = true;
 
             var json = (JsonResult)this.controller.GetBlockHeader(hash, isJsonFormat);
-            BlockHeaderModel resultModel = (BlockHeaderModel)json.Value;
+            var resultModel = (BlockHeaderModel)json.Value;
 
             Assert.NotNull(resultModel);
             Assert.Equal((uint)block.Header.Version, resultModel.Version);
@@ -576,7 +576,7 @@ namespace Stratis.Bitcoin.Tests.Controllers
             bool isJsonFormat = true;
 
             var json = (JsonResult)this.controller.GetBlockHeader(hash, isJsonFormat);
-            BlockHeaderModel resultModel = (BlockHeaderModel)json.Value;
+            var resultModel = (BlockHeaderModel)json.Value;
 
             Assert.Null(resultModel);
         }
@@ -588,8 +588,8 @@ namespace Stratis.Bitcoin.Tests.Controllers
 
             IActionResult result = this.controller.ValidateAddress(address);
 
-            ErrorResult errorResult = Assert.IsType<ErrorResult>(result);
-            ErrorResponse errorResponse = Assert.IsType<ErrorResponse>(errorResult.Value);
+            var errorResult = Assert.IsType<ErrorResult>(result);
+            var errorResponse = Assert.IsType<ErrorResponse>(errorResult.Value);
             Assert.Single(errorResponse.Errors);
             ErrorModel error = errorResponse.Errors[0];
             Assert.Equal(400, error.Status);
@@ -600,13 +600,13 @@ namespace Stratis.Bitcoin.Tests.Controllers
         public void ValidateAddress_ValidAddressOfDifferentNetwork_ReturnsFalse()
         {
             // P2PKH
-            var pubkeyaddress = new Key().PubKey.GetAddress(Network.Main);
+            BitcoinPubKeyAddress pubkeyaddress = new Key().PubKey.GetAddress(Network.Main);
             string address = pubkeyaddress.ToString();
 
             var json = (JsonResult)this.controller.ValidateAddress(address);
-            ValidatedAddress resultModel = (ValidatedAddress)json.Value;
+            var resultModel = (ValidatedAddress)json.Value;
 
-            var isValid = resultModel.IsValid;
+            bool isValid = resultModel.IsValid;
             Assert.False(isValid);
         }
 
@@ -614,13 +614,13 @@ namespace Stratis.Bitcoin.Tests.Controllers
         public void ValidateAddress_ValidP2PKHAddress_ReturnsTrue()
         {
             // P2PKH
-            var pubkeyaddress = new Key().PubKey.GetAddress(this.network);
+            BitcoinPubKeyAddress pubkeyaddress = new Key().PubKey.GetAddress(this.network);
             string address = pubkeyaddress.ToString();
 
             var json = (JsonResult)this.controller.ValidateAddress(address);
-            ValidatedAddress resultModel = (ValidatedAddress)json.Value;
+            var resultModel = (ValidatedAddress)json.Value;
 
-            var isValid = resultModel.IsValid;
+            bool isValid = resultModel.IsValid;
             Assert.True(isValid);
         }
 
@@ -628,13 +628,13 @@ namespace Stratis.Bitcoin.Tests.Controllers
         public void ValidateAddress_ValidP2SHAddress_ReturnsTrue()
         {
             // P2SH
-            var scriptaddress = new Key().ScriptPubKey.GetScriptAddress(this.network);
+            BitcoinScriptAddress scriptaddress = new Key().ScriptPubKey.GetScriptAddress(this.network);
             string address = scriptaddress.ToString();
 
             var json = (JsonResult)this.controller.ValidateAddress(address);
-            ValidatedAddress resultModel = (ValidatedAddress)json.Value;
+            var resultModel = (ValidatedAddress)json.Value;
 
-            var isValid = resultModel.IsValid;
+            bool isValid = resultModel.IsValid;
             Assert.True(isValid);
         }
 
@@ -642,13 +642,13 @@ namespace Stratis.Bitcoin.Tests.Controllers
         public void ValidateAddress_ValidP2WPKHAddress_ReturnsTrue()
         {
             // P2WPKH
-            var btcaddress = new Key().PubKey.WitHash.GetAddress(this.network);
+            BitcoinAddress btcaddress = new Key().PubKey.WitHash.GetAddress(this.network);
             string address = btcaddress.ToString();
 
             var json = (JsonResult)this.controller.ValidateAddress(address);
-            ValidatedAddress resultModel = (ValidatedAddress)json.Value;
+            var resultModel = (ValidatedAddress)json.Value;
 
-            var isValid = resultModel.IsValid;
+            bool isValid = resultModel.IsValid;
             Assert.True(isValid);
         }
 
@@ -656,13 +656,13 @@ namespace Stratis.Bitcoin.Tests.Controllers
         public void ValidateAddress_ValidP2WSHAddress_ReturnsTrue()
         {
             // P2WSH
-            var scriptaddress = new Key().PubKey.ScriptPubKey.WitHash.ScriptPubKey.GetWitScriptAddress(this.network);
+            BitcoinWitScriptAddress scriptaddress = new Key().PubKey.ScriptPubKey.WitHash.ScriptPubKey.GetWitScriptAddress(this.network);
             string address = scriptaddress.ToString();
 
             var json = (JsonResult)this.controller.ValidateAddress(address);
-            ValidatedAddress resultModel = (ValidatedAddress)json.Value;
+            var resultModel = (ValidatedAddress)json.Value;
 
-            var isValid = resultModel.IsValid;
+            bool isValid = resultModel.IsValid;
             Assert.True(isValid);
         }
 

@@ -16,7 +16,7 @@ namespace NBitcoin.Policy
         public NotEnoughFundsPolicyError(string message, IMoney missing)
             : base(BuildMessage(message, missing))
         {
-            Missing = missing;
+            this.Missing = missing;
         }
 
         private static string BuildMessage(string message, IMoney missing)
@@ -44,7 +44,7 @@ namespace NBitcoin.Policy
 
         internal Exception AsException()
         {
-            return new NotEnoughFundsException(ToString(), null, Missing);
+            return new NotEnoughFundsException(ToString(), null, this.Missing);
         }
     }
     public class MinerTransactionPolicy : ITransactionPolicy

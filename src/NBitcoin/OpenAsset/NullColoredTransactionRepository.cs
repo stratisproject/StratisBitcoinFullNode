@@ -13,7 +13,7 @@ namespace NBitcoin.OpenAsset
         {
             if(repo == null)
                 throw new ArgumentNullException("repo");
-            _Inner = repo;
+            this._Inner = repo;
         }
         #region IColoredTransactionRepository Members
 
@@ -21,7 +21,7 @@ namespace NBitcoin.OpenAsset
         {
             get
             {
-                return _Inner;
+                return this._Inner;
             }
         }
 

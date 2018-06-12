@@ -86,13 +86,13 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
 
             network.Consensus.Options = new PowConsensusOptions();
 
-            ConsensusSettings consensusSettings = new ConsensusSettings(testChainContext.NodeSettings);
+            var consensusSettings = new ConsensusSettings(testChainContext.NodeSettings);
             testChainContext.Checkpoints = new Checkpoints();
 
             testChainContext.Chain = new ConcurrentChain(network);
-            CachedCoinView cachedCoinView = new CachedCoinView(new InMemoryCoinView(testChainContext.Chain.Tip.HashBlock), DateTimeProvider.Default, testChainContext.LoggerFactory);
+            var cachedCoinView = new CachedCoinView(new InMemoryCoinView(testChainContext.Chain.Tip.HashBlock), DateTimeProvider.Default, testChainContext.LoggerFactory);
 
-            DataFolder dataFolder = new DataFolder(TestBase.AssureEmptyDir(dataDir));
+            var dataFolder = new DataFolder(TestBase.AssureEmptyDir(dataDir));
             testChainContext.PeerAddressManager = new PeerAddressManager(DateTimeProvider.Default, dataFolder, testChainContext.LoggerFactory, new SelfEndpointTracker());
 
             testChainContext.MockConnectionManager = new Moq.Mock<IConnectionManager>();
@@ -103,9 +103,9 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
 
             testChainContext.ConnectionManager = testChainContext.MockConnectionManager.Object;
 
-            LookaheadBlockPuller blockPuller = new LookaheadBlockPuller(testChainContext.Chain, testChainContext.ConnectionManager, testChainContext.LoggerFactory);
+            var blockPuller = new LookaheadBlockPuller(testChainContext.Chain, testChainContext.ConnectionManager, testChainContext.LoggerFactory);
             testChainContext.PeerBanning = new PeerBanning(testChainContext.ConnectionManager, testChainContext.LoggerFactory, testChainContext.DateTimeProvider, testChainContext.PeerAddressManager);
-            NodeDeployments deployments = new NodeDeployments(testChainContext.Network, testChainContext.Chain);
+            var deployments = new NodeDeployments(testChainContext.Network, testChainContext.Chain);
             testChainContext.ConsensusRules = new PowConsensusRules(testChainContext.Network, testChainContext.LoggerFactory, testChainContext.DateTimeProvider, testChainContext.Chain, deployments, consensusSettings, testChainContext.Checkpoints, new InMemoryCoinView(new uint256()), new Mock<ILookaheadBlockPuller>().Object).Register(new FullNodeBuilderConsensusExtension.PowConsensusRulesRegistration());
             testChainContext.Consensus = new ConsensusLoop(new AsyncLoopFactory(testChainContext.LoggerFactory), new NodeLifetime(), testChainContext.Chain, cachedCoinView, blockPuller, new NodeDeployments(network, testChainContext.Chain), testChainContext.LoggerFactory, new ChainState(new InvalidBlockHashStore(testChainContext.DateTimeProvider)), testChainContext.ConnectionManager, testChainContext.DateTimeProvider, new Signals.Signals(), consensusSettings, testChainContext.NodeSettings, testChainContext.PeerBanning, testChainContext.ConsensusRules);
             await testChainContext.Consensus.StartAsync();
@@ -135,7 +135,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
             var mempoolLock = new MempoolSchedulerLock();
 
             // Simple block creation, nothing special yet:
-            List<Block> blocks = new List<Block>();
+            var blocks = new List<Block>();
             for (int i = 0; i < count; ++i)
             {
                 BlockTemplate newBlock = await MineBlockAsync(testChainContext, receiver, mempool, mempoolLock, mutateLastBlock && i == count - 1);
@@ -180,17 +180,17 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
 
         private static void BuildMutatedBlock(BlockTemplate newBlock)
         {
-            var coinbaseTransaction = newBlock.Block.Transactions[0];
-            var outTransaction = Transactions.BuildNewTransactionFromExistingTransaction(coinbaseTransaction, 0);
+            Transaction coinbaseTransaction = newBlock.Block.Transactions[0];
+            Transaction outTransaction = Transactions.BuildNewTransactionFromExistingTransaction(coinbaseTransaction, 0);
             newBlock.Block.Transactions.Add(outTransaction);
-            var duplicateTransaction = Transactions.BuildNewTransactionFromExistingTransaction(coinbaseTransaction, 1);
+            Transaction duplicateTransaction = Transactions.BuildNewTransactionFromExistingTransaction(coinbaseTransaction, 1);
             newBlock.Block.Transactions.Add(duplicateTransaction);
             newBlock.Block.Transactions.Add(duplicateTransaction);
         }
 
         private static void TryFindNonceForProofOfWork(TestChainContext testChainContext, BlockTemplate newBlock)
         {
-            var maxTries = int.MaxValue;
+            int maxTries = int.MaxValue;
             while (maxTries > 0 && !newBlock.Block.CheckProofOfWork())
             {
                 ++newBlock.Block.Header.Nonce;
@@ -203,7 +203,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
 
         private static void CheckBlockIsMutated(BlockTemplate newBlock)
         {
-            var transactionHashes = newBlock.Block.Transactions.Select(t => t.GetHash()).ToList();
+            List<uint256> transactionHashes = newBlock.Block.Transactions.Select(t => t.GetHash()).ToList();
             BlockMerkleRootRule.ComputeMerkleRoot(transactionHashes, out bool isMutated);
             isMutated.Should().Be(true);
         }

@@ -34,7 +34,7 @@ namespace NBitcoin.BouncyCastle.Crypto.Parameters
 
         public byte[] GetKey()
         {
-            return (byte[])key.Clone();
+            return (byte[]) this.key.Clone();
         }
     }
 

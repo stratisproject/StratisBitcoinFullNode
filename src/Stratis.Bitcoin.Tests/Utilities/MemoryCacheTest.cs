@@ -1,6 +1,6 @@
 ﻿using NBitcoin;
-using Xunit;
 using Stratis.Bitcoin.Utilities;
+using Xunit;
 
 namespace Stratis.Bitcoin.Tests.Utilities
 {

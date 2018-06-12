@@ -99,18 +99,18 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
         {
             string dataDir = GetTestDirectoryPath(this);
 
-            BitcoinSecret minerSecret = new BitcoinSecret(new Key(), Network.RegTest);
+            var minerSecret = new BitcoinSecret(new Key(), Network.RegTest);
             ITestChainContext context = await TestChainFactory.CreateAsync(Network.RegTest, minerSecret.PubKey.Hash.ScriptPubKey, dataDir);
             IMempoolValidator validator = context.MempoolValidator;
             Assert.NotNull(validator);
 
-            BitcoinSecret destSecret = new BitcoinSecret(new Key(), Network.RegTest);
-            Transaction tx = new Transaction();
+            var destSecret = new BitcoinSecret(new Key(), Network.RegTest);
+            var tx = new Transaction();
             tx.AddInput(new TxIn(new OutPoint(context.SrcTxs[0].GetHash(), 0), PayToPubkeyHashTemplate.Instance.GenerateScriptPubKey(minerSecret.PubKey)));
             tx.AddOutput(new TxOut(new Money(Money.CENT * 11), destSecret.PubKeyHash));
             tx.Sign(Network.RegTest, minerSecret, false);
 
-            MempoolValidationState state = new MempoolValidationState(false);
+            var state = new MempoolValidationState(false);
             bool isSuccess = await validator.AcceptToMemoryPool(state, tx);
             Assert.True(isSuccess, "P2PKH tx not valid.");
         }
@@ -125,19 +125,19 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
         {
             string dataDir = GetTestDirectoryPath(this);
 
-            BitcoinSecret miner = new BitcoinSecret(new Key(), Network.RegTest);
+            var miner = new BitcoinSecret(new Key(), Network.RegTest);
             ITestChainContext context = await TestChainFactory.CreateAsync(Network.RegTest, miner.PubKey.Hash.ScriptPubKey, dataDir);
             IMempoolValidator validator = context.MempoolValidator;
             Assert.NotNull(validator);
 
-            BitcoinSecret alice = new BitcoinSecret(new Key(), Network.RegTest);
-            BitcoinSecret bob = new BitcoinSecret(new Key(), Network.RegTest);
-            BitcoinSecret satoshi = new BitcoinSecret(new Key(), Network.RegTest);
+            var alice = new BitcoinSecret(new Key(), Network.RegTest);
+            var bob = new BitcoinSecret(new Key(), Network.RegTest);
+            var satoshi = new BitcoinSecret(new Key(), Network.RegTest);
 
             // Fund Alice, Bob, Satoshi
             // 50 Coins come from first tx on chain - send satoshi 1, bob 2, Alice 1.5 and change back to miner
-            Coin coin = new Coin(context.SrcTxs[0].GetHash(), 0, context.SrcTxs[0].TotalOut, miner.ScriptPubKey);
-            TransactionBuilder txBuilder = new TransactionBuilder(Network.RegTest);
+            var coin = new Coin(context.SrcTxs[0].GetHash(), 0, context.SrcTxs[0].TotalOut, miner.ScriptPubKey);
+            var txBuilder = new TransactionBuilder(Network.RegTest);
             Transaction multiOutputTx = txBuilder
                 .AddCoins(new List<Coin> { coin })
                 .AddKeys(miner)
@@ -148,7 +148,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
                 .SetChange(miner.GetAddress())
                 .BuildTransaction(true);
             Assert.True(txBuilder.Verify(multiOutputTx)); //check fully signed
-            MempoolValidationState state = new MempoolValidationState(false);
+            var state = new MempoolValidationState(false);
             Assert.True(await validator.AcceptToMemoryPool(state, multiOutputTx), $"Transaction: {nameof(multiOutputTx)} failed mempool validation.");
 
             // Alice then Bob sends to Satoshi
@@ -189,15 +189,15 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
         {
             string dataDir = GetTestDirectoryPath(this);
 
-            BitcoinSecret miner = new BitcoinSecret(new Key(), Network.RegTest);
+            var miner = new BitcoinSecret(new Key(), Network.RegTest);
             ITestChainContext context = await TestChainFactory.CreateAsync(Network.RegTest, miner.PubKey.Hash.ScriptPubKey, dataDir);
             IMempoolValidator validator = context.MempoolValidator;
             Assert.NotNull(validator);
 
-            BitcoinSecret alice = new BitcoinSecret(new Key(), Network.RegTest);
-            BitcoinSecret bob = new BitcoinSecret(new Key(), Network.RegTest);
-            BitcoinSecret satoshi = new BitcoinSecret(new Key(), Network.RegTest);
-            BitcoinSecret nico = new BitcoinSecret(new Key(), Network.RegTest);
+            var alice = new BitcoinSecret(new Key(), Network.RegTest);
+            var bob = new BitcoinSecret(new Key(), Network.RegTest);
+            var satoshi = new BitcoinSecret(new Key(), Network.RegTest);
+            var nico = new BitcoinSecret(new Key(), Network.RegTest);
 
             // corp needs two out of three of alice, bob, nico
             Script corpMultiSig = PayToMultiSigTemplate
@@ -206,8 +206,8 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
 
             // Fund corp
             // 50 Coins come from first tx on chain - send corp 42 and change back to miner
-            Coin coin = new Coin(context.SrcTxs[0].GetHash(), 0, context.SrcTxs[0].TotalOut, miner.ScriptPubKey);
-            TransactionBuilder txBuilder = new TransactionBuilder(Network.RegTest);
+            var coin = new Coin(context.SrcTxs[0].GetHash(), 0, context.SrcTxs[0].TotalOut, miner.ScriptPubKey);
+            var txBuilder = new TransactionBuilder(Network.RegTest);
             Transaction sendToMultiSigTx = txBuilder
                 .AddCoins(new List<Coin> { coin })
                 .AddKeys(miner)
@@ -216,7 +216,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
                 .SetChange(miner.GetAddress())
                 .BuildTransaction(true);
             Assert.True(txBuilder.Verify(sendToMultiSigTx)); //check fully signed
-            MempoolValidationState state = new MempoolValidationState(false);
+            var state = new MempoolValidationState(false);
             Assert.True(await validator.AcceptToMemoryPool(state, sendToMultiSigTx), $"Transaction: {nameof(sendToMultiSigTx)} failed mempool validation.");
 
             // AliceBobNico corp. send to Satoshi
@@ -257,15 +257,15 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
         {
             string dataDir = GetTestDirectoryPath(this);
 
-            BitcoinSecret miner = new BitcoinSecret(new Key(), Network.RegTest);
+            var miner = new BitcoinSecret(new Key(), Network.RegTest);
             ITestChainContext context = await TestChainFactory.CreateAsync(Network.RegTest, miner.PubKey.Hash.ScriptPubKey, dataDir);
             IMempoolValidator validator = context.MempoolValidator;
             Assert.NotNull(validator);
 
-            BitcoinSecret alice = new BitcoinSecret(new Key(), Network.RegTest);
-            BitcoinSecret bob = new BitcoinSecret(new Key(), Network.RegTest);
-            BitcoinSecret satoshi = new BitcoinSecret(new Key(), Network.RegTest);
-            BitcoinSecret nico = new BitcoinSecret(new Key(), Network.RegTest);
+            var alice = new BitcoinSecret(new Key(), Network.RegTest);
+            var bob = new BitcoinSecret(new Key(), Network.RegTest);
+            var satoshi = new BitcoinSecret(new Key(), Network.RegTest);
+            var nico = new BitcoinSecret(new Key(), Network.RegTest);
 
             // corp needs two out of three of alice, bob, nico
             Script corpMultiSig = PayToMultiSigTemplate
@@ -277,8 +277,8 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
 
             // Fund corp
             // 50 Coins come from first tx on chain - send corp 42 and change back to miner
-            Coin coin = new Coin(context.SrcTxs[0].GetHash(), 0, context.SrcTxs[0].TotalOut, miner.ScriptPubKey);
-            TransactionBuilder txBuilder = new TransactionBuilder(Network.RegTest);
+            var coin = new Coin(context.SrcTxs[0].GetHash(), 0, context.SrcTxs[0].TotalOut, miner.ScriptPubKey);
+            var txBuilder = new TransactionBuilder(Network.RegTest);
             Transaction fundP2shTx = txBuilder
                 .AddCoins(new List<Coin> { coin })
                 .AddKeys(miner)
@@ -287,7 +287,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
                 .SetChange(miner.GetAddress())
                 .BuildTransaction(true);
             Assert.True(txBuilder.Verify(fundP2shTx)); //check fully signed
-            MempoolValidationState state = new MempoolValidationState(false);
+            var state = new MempoolValidationState(false);
             Assert.True(await validator.AcceptToMemoryPool(state, fundP2shTx), $"Transaction: {nameof(fundP2shTx)} failed mempool validation.");
 
             // AliceBobNico corp. send 20 to Satoshi
@@ -317,17 +317,17 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
         {
             string dataDir = GetTestDirectoryPath(this);
 
-            BitcoinSecret miner = new BitcoinSecret(new Key(), Network.RegTest);
+            var miner = new BitcoinSecret(new Key(), Network.RegTest);
             ITestChainContext context = await TestChainFactory.CreateAsync(Network.RegTest, miner.PubKey.WitHash.ScriptPubKey, dataDir);
             IMempoolValidator validator = context.MempoolValidator;
             Assert.NotNull(validator);
 
-            BitcoinSecret bob = new BitcoinSecret(new Key(), Network.RegTest);
+            var bob = new BitcoinSecret(new Key(), Network.RegTest);
 
             // Fund Bob
             // 50 Coins come from first tx on chain - send bob 42 and change back to miner
-            Coin witnessCoin = new Coin(context.SrcTxs[0].GetHash(), 0, context.SrcTxs[0].TotalOut, miner.PubKey.WitHash.ScriptPubKey);
-            TransactionBuilder txBuilder = new TransactionBuilder(Network.RegTest);
+            var witnessCoin = new Coin(context.SrcTxs[0].GetHash(), 0, context.SrcTxs[0].TotalOut, miner.PubKey.WitHash.ScriptPubKey);
+            var txBuilder = new TransactionBuilder(Network.RegTest);
             Transaction p2wpkhTx = txBuilder
                 .AddCoins(witnessCoin)
                 .AddKeys(miner)
@@ -336,7 +336,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
                 .SetChange(miner)
                 .BuildTransaction(true);
             Assert.True(txBuilder.Verify(p2wpkhTx)); //check fully signed
-            MempoolValidationState state = new MempoolValidationState(false);
+            var state = new MempoolValidationState(false);
             Assert.True(await validator.AcceptToMemoryPool(state, p2wpkhTx), $"Transaction: {nameof(p2wpkhTx)} failed mempool validation.");
         }
 
@@ -348,17 +348,17 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
         {
             string dataDir = GetTestDirectoryPath(this);
 
-            BitcoinSecret miner = new BitcoinSecret(new Key(), Network.RegTest);
+            var miner = new BitcoinSecret(new Key(), Network.RegTest);
             ITestChainContext context = await TestChainFactory.CreateAsync(Network.RegTest, miner.PubKey.ScriptPubKey.WitHash.ScriptPubKey, dataDir);
             IMempoolValidator validator = context.MempoolValidator;
             Assert.NotNull(validator);
 
-            BitcoinSecret bob = new BitcoinSecret(new Key(), Network.RegTest);
+            var bob = new BitcoinSecret(new Key(), Network.RegTest);
 
             // Fund Bob
             // 50 Coins come from first tx on chain - send bob 42 and change back to miner
             ScriptCoin witnessCoin = ScriptCoin.Create(Network.RegTest, context.SrcTxs[0].GetHash(), 0, context.SrcTxs[0].TotalOut, miner.PubKey.ScriptPubKey.WitHash.ScriptPubKey, miner.PubKey.ScriptPubKey).AssertCoherent(Network.RegTest);
-            TransactionBuilder txBuilder = new TransactionBuilder(Network.RegTest);
+            var txBuilder = new TransactionBuilder(Network.RegTest);
             Transaction p2wshTx = txBuilder
                 .AddCoins(witnessCoin)
                 .AddKeys(miner)
@@ -367,7 +367,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
                 .SetChange(miner)
                 .BuildTransaction(true);
             Assert.True(txBuilder.Verify(p2wshTx)); //check fully signed
-            MempoolValidationState state = new MempoolValidationState(false);
+            var state = new MempoolValidationState(false);
             Assert.True(await validator.AcceptToMemoryPool(state, p2wshTx), $"Transaction: {nameof(p2wshTx)} failed mempool validation.");
         }
 
@@ -379,17 +379,17 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
         {
             string dataDir = GetTestDirectoryPath(this);
 
-            BitcoinSecret miner = new BitcoinSecret(new Key(), Network.RegTest);
+            var miner = new BitcoinSecret(new Key(), Network.RegTest);
             ITestChainContext context = await TestChainFactory.CreateAsync(Network.RegTest, miner.PubKey.ScriptPubKey.WitHash.ScriptPubKey.Hash.ScriptPubKey, dataDir);
             IMempoolValidator validator = context.MempoolValidator;
             Assert.NotNull(validator);
 
-            BitcoinSecret bob = new BitcoinSecret(new Key(), Network.RegTest);
+            var bob = new BitcoinSecret(new Key(), Network.RegTest);
 
             // Fund Bob
             // 50 Coins come from first tx on chain - send bob 42 and change back to miner
             ScriptCoin witnessCoin =  ScriptCoin.Create(Network.RegTest, context.SrcTxs[0].GetHash(), 0, context.SrcTxs[0].TotalOut, miner.PubKey.ScriptPubKey.WitHash.ScriptPubKey.Hash.ScriptPubKey, miner.PubKey.ScriptPubKey);
-            TransactionBuilder txBuilder = new TransactionBuilder(Network.RegTest);
+            var txBuilder = new TransactionBuilder(Network.RegTest);
             Transaction p2shOverp2wpkh = txBuilder
                 .AddCoins(witnessCoin)
                 .AddKeys(miner)
@@ -406,7 +406,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             Assert.True(noWitTx.GetSerializedSize() < p2shOverp2wpkh.GetSerializedSize());
 
             Assert.True(txBuilder.Verify(p2shOverp2wpkh)); //check fully signed
-            MempoolValidationState state = new MempoolValidationState(false);
+            var state = new MempoolValidationState(false);
             Assert.True(await validator.AcceptToMemoryPool(state, p2shOverp2wpkh), $"Transaction: {nameof(p2shOverp2wpkh)} failed mempool validation.");
         }
 
@@ -555,11 +555,11 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
 
             string dataDir = GetTestDirectoryPath(this);
 
-            BitcoinSecret miner = new BitcoinSecret(new Key(), Network.RegTest);
+            var miner = new BitcoinSecret(new Key(), Network.RegTest);
             ITestChainContext context = await TestChainFactory.CreateAsync(Network.RegTest, miner.PubKey.Hash.ScriptPubKey, dataDir).ConfigureAwait(false);
             IMempoolValidator validator = context.MempoolValidator;
-            BitcoinSecret bob = new BitcoinSecret(new Key(), Network.RegTest);
-            TransactionBuilder txBuilder = new TransactionBuilder(Network.RegTest);
+            var bob = new BitcoinSecret(new Key(), Network.RegTest);
+            var txBuilder = new TransactionBuilder(Network.RegTest);
 
             //Create Coin from first tx on chain
             var coin = new Coin(context.SrcTxs[0].GetHash(), 0, context.SrcTxs[0].TotalOut, PayToPubkeyHashTemplate.Instance.GenerateScriptPubKey(miner.PubKey));
@@ -572,7 +572,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
                .SendFees("0.001")
                .SetChange(miner)
                .BuildTransaction(true);
-            MempoolValidationState state = new MempoolValidationState(false);
+            var state = new MempoolValidationState(false);
 
             //Mempool should accept it, there's nothing wrong
             Assert.True(await validator.AcceptToMemoryPool(state, originalTx).ConfigureAwait(false), $"Transaction: {nameof(originalTx)} failed mempool validation.");

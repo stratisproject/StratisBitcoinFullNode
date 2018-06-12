@@ -36,7 +36,7 @@ namespace NBitcoin
         {
             get
             {
-                return Address != null;
+                return this.Address != null;
             }
         }
 
@@ -45,12 +45,12 @@ namespace NBitcoin
         {
             get
             {
-                if(_Address == null)
+                if(this._Address == null)
                 {
-                    string base58 = Encoders.Base58Check.EncodeData(vchData);
-                    _Address = BitcoinAddress.Create(base58, Network);
+                    string base58 = Encoders.Base58Check.EncodeData(this.vchData);
+                    this._Address = BitcoinAddress.Create(base58, this.Network);
                 }
-                return _Address;
+                return this._Address;
             }
         }
 
@@ -68,7 +68,7 @@ namespace NBitcoin
         {
             get
             {
-                return Address.ScriptPubKey;
+                return this.Address.ScriptPubKey;
             }
         }
 

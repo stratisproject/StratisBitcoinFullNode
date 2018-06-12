@@ -30,7 +30,7 @@ namespace NBitcoin.BouncyCastle.Crypto.Parameters
         {
             get
             {
-                return algorithm;
+                return this.algorithm;
             }
         }
 
@@ -38,7 +38,7 @@ namespace NBitcoin.BouncyCastle.Crypto.Parameters
         {
             get
             {
-                return parameters;
+                return this.parameters;
             }
         }
 
@@ -59,12 +59,12 @@ namespace NBitcoin.BouncyCastle.Crypto.Parameters
         protected bool Equals(
             ECKeyParameters other)
         {
-            return parameters.Equals(other.parameters) && base.Equals(other);
+            return this.parameters.Equals(other.parameters) && base.Equals(other);
         }
 
         public override int GetHashCode()
         {
-            return parameters.GetHashCode() ^ base.GetHashCode();
+            return this.parameters.GetHashCode() ^ base.GetHashCode();
         }
 
         internal static string VerifyAlgorithmName(string algorithm)

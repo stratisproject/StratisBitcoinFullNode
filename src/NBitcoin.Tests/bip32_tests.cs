@@ -21,13 +21,13 @@ namespace NBitcoin.Tests
 
             public TestVector(string strHexMasterIn)
             {
-                strHexMaster = strHexMasterIn;
+                this.strHexMaster = strHexMasterIn;
             }
 
             public TestVector Add(string pub, string prv, uint nChild)
             {
-                vDerive.Add(new TestDerivation());
-                TestDerivation der = vDerive.Last();
+                this.vDerive.Add(new TestDerivation());
+                TestDerivation der = this.vDerive.Last();
                 der.pub = pub;
                 der.prv = prv;
                 der.nChild = nChild;
@@ -81,14 +81,14 @@ namespace NBitcoin.Tests
         [Trait("Core", "Core")]
         public void bip32_test1()
         {
-            RunTest(test1);
+            RunTest(this.test1);
         }
 
         [Fact]
         [Trait("Core", "Core")]
         public void bip32_test2()
         {
-            RunTest(test2);
+            RunTest(this.test2);
         }
 
         [Fact]

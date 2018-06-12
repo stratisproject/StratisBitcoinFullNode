@@ -826,7 +826,7 @@ namespace NBitcoin.BouncyCastle.Math.EC.Abc
         */
         public static AbstractF2mPoint[] GetPreComp(AbstractF2mPoint p, sbyte a)
         {
-            sbyte[][] alphaTnaf = (a == 0) ? Tnaf.Alpha0Tnaf : Tnaf.Alpha1Tnaf;
+            sbyte[][] alphaTnaf = (a == 0) ? Alpha0Tnaf : Alpha1Tnaf;
 
             var pu = new AbstractF2mPoint[(uint)(alphaTnaf.Length + 1) >> 1];
             pu[0] = p;
@@ -834,7 +834,7 @@ namespace NBitcoin.BouncyCastle.Math.EC.Abc
             uint precompLen = (uint)alphaTnaf.Length;
             for(uint i = 3; i < precompLen; i += 2)
             {
-                pu[i >> 1] = Tnaf.MultiplyFromTnaf(p, alphaTnaf[i]);
+                pu[i >> 1] = MultiplyFromTnaf(p, alphaTnaf[i]);
             }
 
             p.Curve.NormalizeAll(pu);
