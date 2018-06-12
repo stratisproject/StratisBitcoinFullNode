@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using FluentAssertions;
 using Moq;
 using NBitcoin;
 using Stratis.Bitcoin.Base;
@@ -229,6 +230,53 @@ namespace Stratis.Bitcoin.Tests.Consensus
             
             // ToDownload array of the same size as the amount of headers
             Assert.Equal(headersToDownloadCount, peer2Headers.Count);
+        }
+
+        /// <summary>
+        /// Issue 13 @ Create 2 chains Chain A and Chain B, where Chain A has more chain work than B. Connect both
+        /// chains to chain header tree. Consensus tip should be set to chain A. Now extend / update Chain B to make it have
+        /// more chain work. Attempt to connect B again. Consensus tip should be set to chain B.
+        /// </summary>
+        [Fact]
+        public void PresentDifferentChains_AlternativeChainWithMoreChainWorkShouldAlwaysBeMarkedForDownload()
+        {
+            // Chain header tree setup
+            var ctx = new TestContext();
+            ChainedHeaderTree cht = ctx.CreateChainedHeaderTree();
+            ChainedHeader initialChainTip = ctx.ExtendAChain(5);
+            cht.Initialize(initialChainTip, true);
+
+            // Chains A and B setup
+            const int commonChainSize = 4;
+            const int chainAExtension = 4;
+            const int chainBExtension = 2;
+            ChainedHeader commonChainTip = ctx.ExtendAChain(commonChainSize, initialChainTip); // ie. h1=h2=h3=h4
+            ChainedHeader chainATip = ctx.ExtendAChain(chainAExtension, commonChainTip); // ie. (h1=h2=h3=h4)=a5=a6=a7=a8
+            ChainedHeader chainBTip = ctx.ExtendAChain(chainBExtension, commonChainTip); // ie. (h1=h2=h3=h4)=b5=b6
+            List<BlockHeader> listOfChainABlockHeaders = ctx.ChainedHeaderToList(chainATip, commonChainSize + chainAExtension);
+            List<BlockHeader> listOfChainBBlockHeaders = ctx.ChainedHeaderToList(chainBTip, commonChainSize + chainBExtension);
+
+            // Chain A is presented by peer 1. DownoadTo should be chain A tip
+            ConnectNewHeadersResult connectNewHeadersResult = cht.ConnectNewHeaders(1, listOfChainABlockHeaders);
+            ChainedHeader chainedHeaderTo = connectNewHeadersResult.DownloadTo;
+            chainedHeaderTo.HashBlock.Should().Be(chainATip.HashBlock);
+
+            // Chain B is presented by peer 2. DownoadTo should be not set as chain
+            // B has less chain work
+            connectNewHeadersResult = cht.ConnectNewHeaders(2, listOfChainBBlockHeaders);
+            chainedHeaderTo = connectNewHeadersResult.DownloadTo;
+            chainedHeaderTo.Should().BeNull();
+
+            // Add more chain work and blocks into chain B
+            const int chainBAdditionalBLocks = 4;
+            chainBTip = ctx.ExtendAChain(chainBAdditionalBLocks, chainBTip); // ie. (h1=h2=h3=h4)=b5=b6=b7=b8=b9=b10
+            listOfChainBBlockHeaders = ctx.ChainedHeaderToList(chainBTip, commonChainSize + chainBExtension + chainBAdditionalBLocks);
+
+            // Chain B is presented by peer 2 again. DownoadTo should be now be chain B tip
+            // as B has more chain work than chain A
+            connectNewHeadersResult = cht.ConnectNewHeaders(2, listOfChainBBlockHeaders);
+            chainedHeaderTo = connectNewHeadersResult.DownloadTo;
+            chainedHeaderTo.HashBlock.Should().Be(chainBTip.HashBlock);
         }
     }
 }
