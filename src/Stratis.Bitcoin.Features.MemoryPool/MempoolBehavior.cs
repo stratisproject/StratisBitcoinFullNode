@@ -102,16 +102,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         }
         
         /// <summary>Time of last memory pool request in unix time.</summary>
-        public long LastMempoolReq { get; private set; }
-
-        /// <summary>Whether memory pool is in state where it is ready to send it's inventory.</summary>
-        public bool CanSend
-        {
-            get
-            {
-                return (this.AttachedPeer?.PeerVersion?.Relay ?? false);
-            }
-        }
+        public long LastMempoolReq { get; private set; } 
 
         /// <inheritdoc />
         protected override void AttachCore()
@@ -225,9 +216,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                 this.logger.LogTrace("(-)[PEER_MISMATCH]");
                 return;
             }
-
-            if (!this.CanSend)
-                return;
 
             //if (!(pfrom->GetLocalServices() & NODE_BLOOM) && !pfrom->fWhitelisted)
             //{
@@ -517,7 +505,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         {
             this.logger.LogTrace("()");
 
-            if (!this.CanSend)
+            if (!this.AttachedPeer?.PeerVersion?.Relay ?? true)  
             {
                 this.logger.LogTrace("(-)[NO_SEND]");
                 return;

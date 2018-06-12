@@ -129,7 +129,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             },
             this.nodeLifetime.ApplicationStopping,
             repeatEvery: TimeSpans.FiveSeconds,
-            startAfter: TimeSpans.FiveSeconds);
+            startAfter: TimeSpans.TenSeconds);
         }
 
         public void Stop()
