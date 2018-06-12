@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using Microsoft.Extensions.Logging;
 using NBitcoin;
 
 namespace Stratis.Bitcoin.Configuration
@@ -122,11 +123,13 @@ namespace Stratis.Bitcoin.Configuration
         /// </summary>
         /// <param name="key">Name of the argument (excluding the dash prefix).</param>
         /// <returns>Values for the specified argument.</returns>
-        public string[] GetAll(string key)
+        public string[] GetAll(string key, ILogger logger = null)
         {
             // Get the values with the - prefix.
             if (!this.args.TryGetValue($"-{key}", out List<string> values))
                 values = new List<string>();
+
+            logger?.LogDebug("GetAll('{0}') returned {1} entries.", values.Count);
 
             return values.ToArray();
         }
@@ -138,13 +141,34 @@ namespace Stratis.Bitcoin.Configuration
         /// <param name="key">Name of the argument.</param>
         /// <param name="defaultValue">Default value to return if no argument value is defined.</param>
         /// <returns>Value of the argument or a default value if no value was set.</returns>
-        public T GetOrDefault<T>(string key, T defaultValue)
+        public T GetOrDefault<T>(string key, T defaultValue, ILogger logger = null)
         {
             if (!this.args.TryGetValue($"-{key}", out List<string> values))
+            {
+                if (logger != null)
+                {
+                    if (typeof(T) == typeof(string))
+                        logger.LogDebug("('{0}':'{1}') returning default.", key, defaultValue);
+                    else
+                        logger.LogDebug("('{0}':{1}) returning default.", key, defaultValue);
+                }
+
                 return defaultValue;
+            }
 
             try
             {
+                if (logger != null)
+                {
+                    if (key.ToLower().Contains("password"))
+                        throw new ArgumentException("Can't log a password value");
+
+                    if (typeof(T) == typeof(string))
+                        logger.LogDebug("('{0}':'{1}') returning value '{2}'.", key, defaultValue, values[0]);
+                    else
+                        logger.LogDebug("('{0}':{1}) returning value {2}.", key, defaultValue, values[0]);
+                }
+
                 return this.ConvertValue<T>(values[0]);
             }
             catch (FormatException)

@@ -60,11 +60,11 @@ namespace Stratis.Bitcoin.Features.Api
 
             TextFileConfiguration config = nodeSettings.ConfigReader;
 
-            string apiHost = config.GetOrDefault("apiuri", DefaultApiHost);
+            string apiHost = config.GetOrDefault("apiuri", DefaultApiHost, this.logger);
             var apiUri = new Uri(apiHost);
 
             // Find out which port should be used for the API.
-            int apiPort = config.GetOrDefault("apiport", GetDefaultPort(nodeSettings.Network));
+            int apiPort = config.GetOrDefault("apiport", GetDefaultPort(nodeSettings.Network), this.logger);
 
             // If no port is set in the API URI.
             if (apiUri.IsDefaultPort)
@@ -79,11 +79,8 @@ namespace Stratis.Bitcoin.Features.Api
                 this.ApiPort = apiUri.Port;
             }
 
-            this.logger.LogDebug("ApiUri set to '{0}'.", apiUri);
-            this.logger.LogDebug("ApiPort set to {0}.", apiPort);
-
             // Set the keepalive interval (set in seconds).
-            int keepAlive = config.GetOrDefault("keepalive", 0);
+            int keepAlive = config.GetOrDefault("keepalive", 0, this.logger);
             if (keepAlive > 0)
             {
                 this.KeepaliveTimer = new Timer
@@ -92,8 +89,6 @@ namespace Stratis.Bitcoin.Features.Api
                     Interval = keepAlive * 1000
                 };
             }
-
-            this.logger.LogDebug("KeepAlive set to {0}.", keepAlive);
 
             this.logger.LogTrace("(-)");
         }

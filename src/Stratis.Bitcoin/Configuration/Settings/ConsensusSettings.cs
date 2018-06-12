@@ -45,17 +45,13 @@ namespace Stratis.Bitcoin.Configuration.Settings
             this.logger.LogTrace("({0}:'{1}')", nameof(nodeSettings), nodeSettings.Network.Name);
 
             TextFileConfiguration config = nodeSettings.ConfigReader;
-            this.UseCheckpoints = config.GetOrDefault<bool>("checkpoints", true);
-            this.logger.LogDebug("Checkpoints are {0}.", this.UseCheckpoints ? "enabled" : "disabled");
+            this.UseCheckpoints = config.GetOrDefault<bool>("checkpoints", true, this.logger);
 
-            if (config.GetAll("assumevalid").Any(i => i.Equals("0"))) // 0 means validate all blocks.
+            this.BlockAssumedValid = config.GetOrDefault<uint256>("assumevalid", nodeSettings.Network.Consensus.DefaultAssumeValid, this.logger);
+            if (this.BlockAssumedValid == 0)
                 this.BlockAssumedValid = null;
-            else
-                this.BlockAssumedValid = config.GetOrDefault<uint256>("assumevalid", nodeSettings.Network.Consensus.DefaultAssumeValid);            
-            this.logger.LogDebug("Assume valid block is '{0}'.", this.BlockAssumedValid == null ? "disabled" : this.BlockAssumedValid.ToString());
 
-            this.MaxTipAge = config.GetOrDefault("maxtipage", nodeSettings.Network.MaxTipAge);
-            this.logger.LogDebug("MaxTipAge set to {0}.", this.MaxTipAge);
+            this.MaxTipAge = config.GetOrDefault("maxtipage", nodeSettings.Network.MaxTipAge, this.logger);
 
             this.logger.LogTrace("(-)");
         }

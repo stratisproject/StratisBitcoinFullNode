@@ -74,41 +74,18 @@ namespace Stratis.Bitcoin.Features.MemoryPool
 
             TextFileConfiguration config = nodeSettings.ConfigReader;
 
-            this.MaxMempool = config.GetOrDefault("maxmempool", MempoolValidator.DefaultMaxMempoolSize);
-            this.logger.LogDebug("MaxMempool set to {0}.", this.MaxMempool);
-
-            this.MempoolExpiry = config.GetOrDefault("mempoolexpiry", MempoolValidator.DefaultMempoolExpiry);
-            this.logger.LogDebug("MempoolExpiry set to {0}.", this.MempoolExpiry);
-
-            this.RelayPriority = config.GetOrDefault("relaypriority", MempoolValidator.DefaultRelaypriority);
-            this.logger.LogDebug("RelayPriority set to {0}.", this.RelayPriority);
-
-            this.LimitFreeRelay = config.GetOrDefault("limitfreerelay", MempoolValidator.DefaultLimitfreerelay);
-            this.logger.LogDebug("LimitFreeRelay set to {0}.", this.LimitFreeRelay);
-
-            this.LimitAncestors = config.GetOrDefault("limitancestorcount", MempoolValidator.DefaultAncestorLimit);
-            this.logger.LogDebug("LimitAncestors set to {0}.", this.LimitAncestors);
-
-            this.LimitAncestorSize = config.GetOrDefault("limitancestorsize", MempoolValidator.DefaultAncestorSizeLimit);
-            this.logger.LogDebug("LimitAncestorSize set to {0}.", this.LimitAncestorSize);
-
-            this.LimitDescendants = config.GetOrDefault("limitdescendantcount", MempoolValidator.DefaultDescendantLimit);
-            this.logger.LogDebug("LimitDescendants set to {0}.", this.LimitDescendants);
-
-            this.LimitDescendantSize = config.GetOrDefault("limitdescendantsize", MempoolValidator.DefaultDescendantSizeLimit);
-            this.logger.LogDebug("LimitDescendantSize set to {0}.", this.LimitDescendantSize);
-
-            this.EnableReplacement = config.GetOrDefault("mempoolreplacement", MempoolValidator.DefaultEnableReplacement);
-            this.logger.LogDebug("EnableReplacement set to {0}.", this.EnableReplacement);
-
-            this.MaxOrphanTx = config.GetOrDefault("maxorphantx", MempoolOrphans.DefaultMaxOrphanTransactions);
-            this.logger.LogDebug("MaxOrphanTx set to {0}.", this.MaxOrphanTx);
-
-            this.WhiteListRelay = config.GetOrDefault("whitelistrelay", DefaultWhiteListRelay);
-            this.logger.LogDebug("WhiteListRelay set to {0}.", this.WhiteListRelay);
-
-            this.RequireStandard = config.GetOrDefault("acceptnonstdtxn", !(nodeSettings.Network.IsTest()));
-            this.logger.LogDebug("RequireStandard set to {0}.", this.RequireStandard);
+            this.MaxMempool = config.GetOrDefault("maxmempool", MempoolValidator.DefaultMaxMempoolSize, this.logger);
+            this.MempoolExpiry = config.GetOrDefault("mempoolexpiry", MempoolValidator.DefaultMempoolExpiry, this.logger);
+            this.RelayPriority = config.GetOrDefault("relaypriority", MempoolValidator.DefaultRelaypriority, this.logger);
+            this.LimitFreeRelay = config.GetOrDefault("limitfreerelay", MempoolValidator.DefaultLimitfreerelay, this.logger);
+            this.LimitAncestors = config.GetOrDefault("limitancestorcount", MempoolValidator.DefaultAncestorLimit, this.logger);
+            this.LimitAncestorSize = config.GetOrDefault("limitancestorsize", MempoolValidator.DefaultAncestorSizeLimit, this.logger);
+            this.LimitDescendants = config.GetOrDefault("limitdescendantcount", MempoolValidator.DefaultDescendantLimit, this.logger);
+            this.LimitDescendantSize = config.GetOrDefault("limitdescendantsize", MempoolValidator.DefaultDescendantSizeLimit, this.logger);
+            this.EnableReplacement = config.GetOrDefault("mempoolreplacement", MempoolValidator.DefaultEnableReplacement, this.logger);
+            this.MaxOrphanTx = config.GetOrDefault("maxorphantx", MempoolOrphans.DefaultMaxOrphanTransactions, this.logger);
+            this.WhiteListRelay = config.GetOrDefault("whitelistrelay", DefaultWhiteListRelay, this.logger);
+            this.RequireStandard = config.GetOrDefault("acceptnonstdtxn", !(nodeSettings.Network.IsTest()), this.logger);
 
             this.logger.LogTrace("(-)");
         }
