@@ -18,6 +18,7 @@ namespace NBitcoin
             if(filePath == null)
                 throw new ArgumentNullException("filePath");
             if(!File.Exists(filePath))
+            {
                 try
                 {
                     File.Create(filePath).Dispose();
@@ -25,6 +26,8 @@ namespace NBitcoin
                 catch
                 {
                 }
+            }
+
             var source = new CancellationTokenSource();
             source.CancelAfter(20000);
             while(true)

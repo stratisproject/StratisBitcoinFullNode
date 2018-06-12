@@ -171,8 +171,10 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Fee
             int countedTxs = 0;
             // Repopulate the current block states
             for (int i = 0; i < entries.Count; i++)
+            {
                 if (this.ProcessBlockTx(nBlockHeight, entries[i]))
                     countedTxs++;
+            }
 
             // Update all exponential averages with the current block state
             this.feeStats.UpdateMovingAverages();
@@ -313,8 +315,10 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Fee
 
             double median = -1;
             while (median < 0 && confTarget <= this.feeStats.GetMaxConfirms())
+            {
                 median = this.feeStats.EstimateMedianVal(confTarget++, SufficientFeeTxs, MinSuccessPct, true,
                     this.nBestSeenHeight);
+            }
 
             answerFoundAtTarget = confTarget - 1;
 

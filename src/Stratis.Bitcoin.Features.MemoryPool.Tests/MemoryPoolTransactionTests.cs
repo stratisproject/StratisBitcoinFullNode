@@ -103,10 +103,12 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             Assert.Equal(pool.Size, sortedOrder.Count());
             int count = 0;
             using (List<TxMempoolEntry>.Enumerator it = sortedSource.GetEnumerator())
+            {
                 for (; it.MoveNext(); ++count)
                 {
                     Assert.Equal(it.Current.TransactionHash.ToString(), sortedOrder[count]);
                 }
+            }
         }
 
         [Fact]

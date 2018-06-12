@@ -1764,8 +1764,11 @@ namespace NBitcoin
             if((long) this.nLockTime < ((long) this.nLockTime < LockTime.LOCKTIME_THRESHOLD ? (long)blockHeight : nBlockTime))
                 return true;
             foreach(TxIn txin in this.Inputs)
+            {
                 if(!txin.IsFinal)
                     return false;
+            }
+
             return true;
         }
 
@@ -1963,8 +1966,10 @@ namespace NBitcoin
             else
             {
                 foreach(TxIn txin in this.Inputs)
+                {
                     if(txin.PrevOut.IsNull)
                         return TransactionCheckResult.NullInputPrevOut;
+                }
             }
 
             return TransactionCheckResult.Success;
