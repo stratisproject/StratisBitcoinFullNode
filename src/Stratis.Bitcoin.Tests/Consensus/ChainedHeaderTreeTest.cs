@@ -256,12 +256,12 @@ namespace Stratis.Bitcoin.Tests.Consensus
             List<BlockHeader> listOfChainABlockHeaders = ctx.ChainedHeaderToList(chainATip, commonChainSize + chainAExtension);
             List<BlockHeader> listOfChainBBlockHeaders = ctx.ChainedHeaderToList(chainBTip, commonChainSize + chainBExtension);
 
-            // Chain A is presented by peer 1. DownloadTo should be chain A tip
+            // Chain A is presented by peer 1. DownloadTo should be Chain A tip
             ConnectNewHeadersResult connectNewHeadersResult = cht.ConnectNewHeaders(1, listOfChainABlockHeaders);
             ChainedHeader chainedHeaderTo = connectNewHeadersResult.DownloadTo;
             chainedHeaderTo.HashBlock.Should().Be(chainATip.HashBlock);
 
-            // Chain B is presented by peer 2. DownloadTo should be not set as chain
+            // Chain B is presented by peer 2. DownloadTo should be not set, as Chain
             // B has less chain work
             connectNewHeadersResult = cht.ConnectNewHeaders(2, listOfChainBBlockHeaders);
             chainedHeaderTo = connectNewHeadersResult.DownloadTo;
@@ -272,7 +272,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
             chainBTip = ctx.ExtendAChain(chainBAdditionalBLocks, chainBTip); // ie. (h1=h2=h3=h4)=b5=b6=b7=b8=b9=b10
             listOfChainBBlockHeaders = ctx.ChainedHeaderToList(chainBTip, commonChainSize + chainBExtension + chainBAdditionalBLocks);
 
-            // Chain B is presented by peer 2 again. DownloadTo should be now be chain B tip
+            // Chain B is presented by peer 2 again. DownloadTo should now be Chain B tip
             // as B has more chain work than chain A
             connectNewHeadersResult = cht.ConnectNewHeaders(2, listOfChainBBlockHeaders);
             chainedHeaderTo = connectNewHeadersResult.DownloadTo;
