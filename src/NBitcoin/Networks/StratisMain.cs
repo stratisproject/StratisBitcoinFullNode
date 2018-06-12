@@ -31,6 +31,7 @@ namespace NBitcoin.Networks
             this.RootFolderName = StratisRootFolderName;
             this.DefaultConfigFilename = StratisDefaultConfigFilename;
             this.MaxTimeOffsetSeconds = 25 * 60;
+            this.CoinTicker = "STRAT";
 
             this.Consensus.SubsidyHalvingInterval = 210000;
             this.Consensus.MajorityEnforceBlockUpgrade = 750;
