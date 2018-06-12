@@ -22,7 +22,6 @@ using Stratis.FederatedPeg.Features.FederationGateway;
 using Stratis.FederatedPeg.Features.MainchainGeneratorServices;
 using Stratis.FederatedPeg.Features.SidechainGeneratorServices;
 using Stratis.FederatedPeg.IntegrationTests.Helpers;
-using Stratis.FederatedSidechains.IntegrationTests.Common;
 using Xunit;
 using FeeType = Stratis.Bitcoin.Features.Wallet.FeeType;
 using GpRecipient = Stratis.Bitcoin.Features.GeneralPurposeWallet.Recipient;
@@ -31,6 +30,7 @@ using WtRecipient = Stratis.Bitcoin.Features.Wallet.Recipient;
 using GpTransactionBuildContext = Stratis.Bitcoin.Features.GeneralPurposeWallet.TransactionBuildContext;
 using WtTransactionBuildContext = Stratis.Bitcoin.Features.Wallet.TransactionBuildContext;
 using System;
+using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Networks.Apex;
 using Stratis.Sidechains.Features.BlockchainGeneration;
 
@@ -207,7 +207,7 @@ namespace Stratis.FederatedPeg.IntegrationTests
                 // added Mainchain/Sidechain Generation Services.
 
                 // Create mainchain with MainchainGeneratorServices.
-                var mainchainNode_GeneratorRole = nodeBuilder.CreateCustomNodeWithFreeApiPort(false, fullNodeBuilder =>
+                var mainchainNode_GeneratorRole = nodeBuilder.CreateCustomNode(false, fullNodeBuilder =>
                 {
                     // We will run 10+ nodes in this integration test.
                     // All these nodes will output to one console.
@@ -228,7 +228,7 @@ namespace Stratis.FederatedPeg.IntegrationTests
                 await Task.Delay(3000);
 
                 //Create sidechain with SidechainGeneratorServices.
-                var sidechainNode_GeneratorRole = nodeBuilder.CreateCustomNodeWithFreeApiPort(false, fullNodeBuilder =>
+                var sidechainNode_GeneratorRole = nodeBuilder.CreateCustomNode(false, fullNodeBuilder =>
                     {
                         fullNodeBuilder
                             .UseBlockStore()
@@ -246,7 +246,7 @@ namespace Stratis.FederatedPeg.IntegrationTests
 
                 //At the same time we create another sidechain node and connect it to the newly initialized Sidechain
                 //to create a new sidechain network.
-                var sidechainNode_Member1_Wallet = nodeBuilder.CreateCustomNodeWithFreeApiPort(false, fullNodeBuilder =>
+                var sidechainNode_Member1_Wallet = nodeBuilder.CreateCustomNode(false, fullNodeBuilder =>
                     {
                         fullNodeBuilder
                             .UseBlockStore()
@@ -268,7 +268,7 @@ namespace Stratis.FederatedPeg.IntegrationTests
                     agent: "SidechainMember1Wallet "
                 );
 
-                var sidechainNode_FunderRole = nodeBuilder.CreateCustomNodeWithFreeApiPort(false, fullNodeBuilder =>
+                var sidechainNode_FunderRole = nodeBuilder.CreateCustomNode(false, fullNodeBuilder =>
                     {
                         fullNodeBuilder
                             .UseBlockStore()
@@ -314,7 +314,7 @@ namespace Stratis.FederatedPeg.IntegrationTests
                 await IntegrationTestUtils.WaitLoop(() => IntegrationTestUtils.AreNodesSynced(sidechainNode_GeneratorRole, sidechainNode_Member1_Wallet));
 
                 // Create a wallet and add our multi-sig.
-                await ApiCalls.CreateGeneralPurposeWallet(sidechainNode_Member1_Wallet.ApiPort(), "multisig_wallet", "password");
+                await ApiCalls.CreateGeneralPurposeWallet(sidechainNode_Member1_Wallet.GetApiPort(), "multisig_wallet", "password");
                 var account_member1 = fedFolder.ImportPrivateKeyToWallet(sidechainNode_Member1_Wallet, "multisig_wallet", "password", "member1", "pass1", 2, 3, SidechainNetwork.SidechainRegTest);
 
                 // UCInit:  The actor navigates to an initialize sidechain feature. He enters the multi-sig
@@ -323,7 +323,7 @@ namespace Stratis.FederatedPeg.IntegrationTests
                 //          The actor issues the Initialize Sidechain Command. The sidechain is initialized.
                 // UCInit:  The actor receives the ScriptPubKey (redeem script) files for each Federated Member.
                 //          A public address is also generated. (InitSidechain does this.)
-                await ApiCalls.InitSidechain("enigma", mainchainNode_GeneratorRole.ApiPort(), sidechainNode_GeneratorRole.ApiPort(), 2, 3, fedFolder.Folder);
+                await ApiCalls.InitSidechain("enigma", mainchainNode_GeneratorRole.GetApiPort(), sidechainNode_GeneratorRole.GetApiPort(), 2, 3, fedFolder.Folder);
 
                 File.Exists(Path.Combine(fedFolder.Folder, "Mainchain_Address.txt")).Should().BeTrue();
                 File.Exists(Path.Combine(fedFolder.Folder, "Sidechain_Address.txt")).Should().BeTrue();
@@ -381,12 +381,12 @@ namespace Stratis.FederatedPeg.IntegrationTests
 
                 // This step will be UI but we can simulate it with just the backend code that the UI will use.
                 string sidechainWallet = "sidechain_wallet";
-                string mnemonic = await ApiCalls.Mnemonic(sidechainNode_Member1_Wallet.ApiPort());
-                string create_mnemonic = await ApiCalls.Create(sidechainNode_Member1_Wallet.ApiPort(), mnemonic, sidechainWallet,
+                string mnemonic = await ApiCalls.Mnemonic(sidechainNode_Member1_Wallet.GetApiPort());
+                string create_mnemonic = await ApiCalls.Create(sidechainNode_Member1_Wallet.GetApiPort(), mnemonic, sidechainWallet,
                     sidechainNode_Member1_Wallet.FullNode.DataFolder.WalletPath);
                 create_mnemonic.Should().Be(mnemonic);
                 //and gets an address. we'll use this as the sidechain destination address where he wants to send his funds
-                string addressSidechain = await ApiCalls.UnusedAddress(sidechainNode_Member1_Wallet.ApiPort(), sidechainWallet);
+                string addressSidechain = await ApiCalls.UnusedAddress(sidechainNode_Member1_Wallet.GetApiPort(), sidechainWallet);
 
                 // USFund:  The actor navigates to his Mainchain wallet and issues the command to Send Funds
                 //          to Sidechain.  The actor views the name of the chain and therefore can verify
@@ -396,7 +396,7 @@ namespace Stratis.FederatedPeg.IntegrationTests
 
                 //start mainchain
                 //we are now acting as a Sidechain Funder.
-                var mainchain_SidechainFunder1 = nodeBuilder.CreateCustomNodeWithFreeApiPort(false, fullNodeBuilder =>
+                var mainchain_SidechainFunder1 = nodeBuilder.CreateCustomNode(false, fullNodeBuilder =>
                 {
                     fullNodeBuilder
                         .UseBlockStore()
@@ -409,7 +409,7 @@ namespace Stratis.FederatedPeg.IntegrationTests
                 }, this.mainchainNetwork, agent: "MainchainSidechainFunder1 ");
 
                 //start a second mainchain
-                var mainchain_SidechainFunder2 = nodeBuilder.CreateCustomNodeWithFreeApiPort(false, fullNodeBuilder =>
+                var mainchain_SidechainFunder2 = nodeBuilder.CreateCustomNode(false, fullNodeBuilder =>
                 {
                     fullNodeBuilder
                         .UseBlockStore()
@@ -431,12 +431,12 @@ namespace Stratis.FederatedPeg.IntegrationTests
 
                 //mine some strat mainchain coins
                 string mainchainWallet = "mainchain_wallet";
-                mnemonic = await ApiCalls.Mnemonic(mainchain_SidechainFunder1.ApiPort());
-                create_mnemonic = await ApiCalls.Create(mainchain_SidechainFunder1.ApiPort(), mnemonic, mainchainWallet,
+                mnemonic = await ApiCalls.Mnemonic(mainchain_SidechainFunder1.GetApiPort());
+                create_mnemonic = await ApiCalls.Create(mainchain_SidechainFunder1.GetApiPort(), mnemonic, mainchainWallet,
                     mainchain_SidechainFunder1.FullNode.DataFolder.WalletPath);
                 create_mnemonic.Should().Be(mnemonic);
                 //our source address
-                string addressMainchain = await ApiCalls.UnusedAddress(mainchain_SidechainFunder1.ApiPort(), mainchainWallet);
+                string addressMainchain = await ApiCalls.UnusedAddress(mainchain_SidechainFunder1.GetApiPort(), mainchainWallet);
 
                 //put some strat in the source address
                 var powMinting = mainchain_SidechainFunder1.FullNode.NodeService<IPowMining>();
@@ -486,7 +486,7 @@ namespace Stratis.FederatedPeg.IntegrationTests
                 //
                 // Act as a Federation Gateway (mainchain)
                 // 
-                var mainchain_FederationGateway1 = nodeBuilder.CreateCustomNodeWithFreeApiPort(false, fullNodeBuilder =>
+                var mainchain_FederationGateway1 = nodeBuilder.CreateCustomNode(false, fullNodeBuilder =>
                 {
                     fullNodeBuilder
                         .UseBlockStore()
@@ -511,7 +511,7 @@ namespace Stratis.FederatedPeg.IntegrationTests
 
                 await Task.Delay(5000);
 
-                var mainchain_FederationGateway2 = nodeBuilder.CreateCustomNodeWithFreeApiPort(false, fullNodeBuilder =>
+                var mainchain_FederationGateway2 = nodeBuilder.CreateCustomNode(false, fullNodeBuilder =>
                 {
                     fullNodeBuilder
                         .UseBlockStore()
@@ -536,7 +536,7 @@ namespace Stratis.FederatedPeg.IntegrationTests
 
                 await Task.Delay(5000);
 
-                var mainchain_FederationGateway3 = nodeBuilder.CreateCustomNodeWithFreeApiPort(false, fullNodeBuilder =>
+                var mainchain_FederationGateway3 = nodeBuilder.CreateCustomNode(false, fullNodeBuilder =>
                 {
                     fullNodeBuilder
                         .UseBlockStore()
@@ -564,7 +564,7 @@ namespace Stratis.FederatedPeg.IntegrationTests
                 //
                 // Act as a Federation Gateway (sidechain)
                 // 
-                var sidechain_FederationGateway1 = nodeBuilder.CreateCustomNodeWithFreeApiPort(false, fullNodeBuilder =>
+                var sidechain_FederationGateway1 = nodeBuilder.CreateCustomNode(false, fullNodeBuilder =>
                 {
                     fullNodeBuilder
                         .UseBlockStore()
@@ -592,7 +592,7 @@ namespace Stratis.FederatedPeg.IntegrationTests
 
                 await Task.Delay(5000);
 
-                var sidechain_FederationGateway2 = nodeBuilder.CreateCustomNodeWithFreeApiPort(false, fullNodeBuilder =>
+                var sidechain_FederationGateway2 = nodeBuilder.CreateCustomNode(false, fullNodeBuilder =>
                 {
                     fullNodeBuilder
                         .UseBlockStore()
@@ -619,7 +619,7 @@ namespace Stratis.FederatedPeg.IntegrationTests
 
                 await Task.Delay(5000);
 
-                var sidechain_FederationGateway3 = nodeBuilder.CreateCustomNodeWithFreeApiPort(false, fullNodeBuilder =>
+                var sidechain_FederationGateway3 = nodeBuilder.CreateCustomNode(false, fullNodeBuilder =>
                 {
                     fullNodeBuilder
                         .UseBlockStore()
@@ -643,12 +643,12 @@ namespace Stratis.FederatedPeg.IntegrationTests
                 sidechain_FederationGateway3.ConfigParameters.Add("multisigN", "3");
 
                 //link the mainchain and sidechain nodes together
-                mainchain_FederationGateway1.ConfigParameters.Add("counterchainapiport", sidechain_FederationGateway1.ApiPort().ToString());
-                mainchain_FederationGateway2.ConfigParameters.Add("counterchainapiport", sidechain_FederationGateway2.ApiPort().ToString());
-                mainchain_FederationGateway3.ConfigParameters.Add("counterchainapiport", sidechain_FederationGateway3.ApiPort().ToString());
-                sidechain_FederationGateway1.ConfigParameters.Add("counterchainapiport", mainchain_FederationGateway1.ApiPort().ToString());
-                sidechain_FederationGateway2.ConfigParameters.Add("counterchainapiport", mainchain_FederationGateway2.ApiPort().ToString());
-                sidechain_FederationGateway3.ConfigParameters.Add("counterchainapiport", mainchain_FederationGateway3.ApiPort().ToString());
+                mainchain_FederationGateway1.ConfigParameters.Add("counterchainapiport", sidechain_FederationGateway1.GetApiPort().ToString());
+                mainchain_FederationGateway2.ConfigParameters.Add("counterchainapiport", sidechain_FederationGateway2.GetApiPort().ToString());
+                mainchain_FederationGateway3.ConfigParameters.Add("counterchainapiport", sidechain_FederationGateway3.GetApiPort().ToString());
+                sidechain_FederationGateway1.ConfigParameters.Add("counterchainapiport", mainchain_FederationGateway1.GetApiPort().ToString());
+                sidechain_FederationGateway2.ConfigParameters.Add("counterchainapiport", mainchain_FederationGateway2.GetApiPort().ToString());
+                sidechain_FederationGateway3.ConfigParameters.Add("counterchainapiport", mainchain_FederationGateway3.GetApiPort().ToString());
 
                 await Task.Delay(5000);
 
@@ -742,15 +742,15 @@ namespace Stratis.FederatedPeg.IntegrationTests
 
                 //create wallets on the sidechains
                 //sidechain_FederationGateway1
-                await ApiCalls.CreateGeneralPurposeWallet(sidechain_FederationGateway1.ApiPort(), "multisig_wallet", "password");
+                await ApiCalls.CreateGeneralPurposeWallet(sidechain_FederationGateway1.GetApiPort(), "multisig_wallet", "password");
                 var account_fed_member1_sidechain = fedFolder.ImportPrivateKeyToWallet(sidechain_FederationGateway1, "multisig_wallet", "password", "member1", "pass1", 2, 3, SidechainNetwork.SidechainRegTest);
 
                 //sidechain_FederationGateway2
-                await ApiCalls.CreateGeneralPurposeWallet(sidechain_FederationGateway2.ApiPort(), "multisig_wallet", "password");
+                await ApiCalls.CreateGeneralPurposeWallet(sidechain_FederationGateway2.GetApiPort(), "multisig_wallet", "password");
                 var account_fed_member2_sidechain = fedFolder.ImportPrivateKeyToWallet(sidechain_FederationGateway2, "multisig_wallet", "password", "member2", "pass2", 2, 3, SidechainNetwork.SidechainRegTest);
 
                 //sidechain_FederationGateway3
-                await ApiCalls.CreateGeneralPurposeWallet(sidechain_FederationGateway3.ApiPort(), "multisig_wallet", "password");
+                await ApiCalls.CreateGeneralPurposeWallet(sidechain_FederationGateway3.GetApiPort(), "multisig_wallet", "password");
                 var account_fed_member3_sidechain = fedFolder.ImportPrivateKeyToWallet(sidechain_FederationGateway3, "multisig_wallet", "password", "member3", "pass3", 2, 3, SidechainNetwork.SidechainRegTest);
 
                 await Task.Delay(5000);
@@ -795,15 +795,15 @@ namespace Stratis.FederatedPeg.IntegrationTests
 
                 //create wallets on the mainchains
                 //mainchain_FederationGateway1
-                await ApiCalls.CreateGeneralPurposeWallet(mainchain_FederationGateway1.ApiPort(), "multisig_wallet", "password");
+                await ApiCalls.CreateGeneralPurposeWallet(mainchain_FederationGateway1.GetApiPort(), "multisig_wallet", "password");
                 var account_fed_member1_mainchain = fedFolder.ImportPrivateKeyToWallet(mainchain_FederationGateway1, "multisig_wallet", "password", "member1", "pass1", 2, 3, Network.StratisRegTest);
 
                 //mainchain_FederationGateway2
-                await ApiCalls.CreateGeneralPurposeWallet(mainchain_FederationGateway2.ApiPort(), "multisig_wallet", "password");
+                await ApiCalls.CreateGeneralPurposeWallet(mainchain_FederationGateway2.GetApiPort(), "multisig_wallet", "password");
                 var account_fed_member2_mainchain = fedFolder.ImportPrivateKeyToWallet(mainchain_FederationGateway2, "multisig_wallet", "password", "member2", "pass2", 2, 3, Network.StratisRegTest);
 
                 //mainchain_FederationGateway3
-                await ApiCalls.CreateGeneralPurposeWallet(mainchain_FederationGateway3.ApiPort(), "multisig_wallet", "password");
+                await ApiCalls.CreateGeneralPurposeWallet(mainchain_FederationGateway3.GetApiPort(), "multisig_wallet", "password");
                 var account_fed_member3_mainchain = fedFolder.ImportPrivateKeyToWallet(mainchain_FederationGateway3, "multisig_wallet", "password", "member3", "pass3", 2, 3, Network.StratisRegTest);
 
                 //generate a block to include our transaction
@@ -947,7 +947,7 @@ namespace Stratis.FederatedPeg.IntegrationTests
                 await Task.Delay(5000);
 
                 //create a new node three
-                var mainchain_FederationGateway3v2 = nodeBuilder.CreateCustomNodeWithFreeApiPort(false, fullNodeBuilder =>
+                var mainchain_FederationGateway3v2 = nodeBuilder.CreateCustomNode(false, fullNodeBuilder =>
                 {
                     fullNodeBuilder
                         .UseBlockStore()
@@ -971,8 +971,8 @@ namespace Stratis.FederatedPeg.IntegrationTests
                 mainchain_FederationGateway3v2.ConfigParameters.Add("multisigN", "3");
 
                 // change the fed3 sidechain api port
-                sidechain_FederationGateway3.ConfigParameters.AddOrReplace("counterchainapiport", mainchain_FederationGateway3v2.ApiPort().ToString());
-                mainchain_FederationGateway3v2.ConfigParameters.Add("counterchainapiport", sidechain_FederationGateway3.ApiPort().ToString());
+                sidechain_FederationGateway3.ConfigParameters.AddOrReplace("counterchainapiport", mainchain_FederationGateway3v2.GetApiPort().ToString());
+                mainchain_FederationGateway3v2.ConfigParameters.Add("counterchainapiport", sidechain_FederationGateway3.GetApiPort().ToString());
 
                 await Task.Delay(1000);
 

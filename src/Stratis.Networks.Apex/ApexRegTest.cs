@@ -14,11 +14,11 @@ namespace Stratis.Networks.Apex
             this.DefaultConfigFilename = $"{ApexNetwork.ChainName.ToLowerInvariant()}.conf";
             this.DefaultPort = 36002;
             this.RPCPort = 36102;
-
             this.Magic = 0x522357C;
             this.MinTxFee = 0;
             this.FallbackFee = 0;
             this.MinRelayTxFee = 0;
+            this.CoinTicker = "TAPX";
 
             this.Consensus.CoinType = 3001;
             this.Consensus.PowAllowMinDifficultyBlocks = true;
@@ -26,6 +26,7 @@ namespace Stratis.Networks.Apex
             this.Consensus.PowLimit = new Target(new uint256("7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"));
             this.Consensus.DefaultAssumeValid = null; // turn off assumevalid for regtest.
             this.Consensus.CoinbaseMaturity = 10;
+            this.Consensus.MaxMoney = Money.Coins(20000000);
 
             this.Base58Prefixes[(int)Base58Type.PUBKEY_ADDRESS] = new byte[] { 75 }; // X
             this.Base58Prefixes[(int)Base58Type.SCRIPT_ADDRESS] = new byte[] { 137 }; // x

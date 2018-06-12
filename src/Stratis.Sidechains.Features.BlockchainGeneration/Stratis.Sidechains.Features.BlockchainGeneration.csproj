@@ -12,7 +12,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Stratis.Bitcoin" Version="1.1.9-beta" />
+    <PackageReference Include="Stratis.Bitcoin" Version="1.1.11-beta" />
   </ItemGroup>
 
 </Project>

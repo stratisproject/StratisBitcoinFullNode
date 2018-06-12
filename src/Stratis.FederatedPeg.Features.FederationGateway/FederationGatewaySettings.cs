@@ -32,8 +32,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
             this.MultiSigM = configReader.GetOrDefault("multisigM", payToMultisigScriptParams.SignatureCount);
             this.MultiSigN = configReader.GetOrDefault("multisigN", payToMultisigScriptParams.PubKeys.Length);
 
-            var connectionManagerSettings = new ConnectionManagerSettings();
-            connectionManagerSettings.Load(nodeSettings);
+            var connectionManagerSettings = new ConnectionManagerSettings(nodeSettings);
             this.MemberName =
                 configReader.GetOrDefault("membername", connectionManagerSettings.ExternalEndpoint.ToString());
 

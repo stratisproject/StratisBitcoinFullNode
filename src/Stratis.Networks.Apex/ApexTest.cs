@@ -16,11 +16,13 @@ namespace Stratis.Networks.Apex
             this.Base58Prefixes[(int)Base58Type.PUBKEY_ADDRESS] = new byte[] { 55 }; // P
             this.Base58Prefixes[(int)Base58Type.SCRIPT_ADDRESS] = new byte[] { 117 }; // p
             this.Magic = 0x522357B;
+            this.CoinTicker = "TAPX";
 
             this.Consensus.CoinType = 3001;
             this.Consensus.DefaultAssumeValid = null;
             this.Consensus.PowLimit = new Target(new uint256("0000ffff00000000000000000000000000000000000000000000000000000000"));
             this.Consensus.CoinbaseMaturity = 10;
+            this.Consensus.MaxMoney = Money.Coins(20000000);
 
             this.Checkpoints = new Dictionary<int, CheckpointInfo>();
             this.DNSSeeds = new List<DNSSeedData>();

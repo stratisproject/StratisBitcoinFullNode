@@ -17,6 +17,7 @@ namespace Stratis.Networks.Apex
             this.Base58Prefixes[(int)Base58Type.PUBKEY_ADDRESS] = new byte[] { 23 }; // A
             this.Base58Prefixes[(int)Base58Type.SCRIPT_ADDRESS] = new byte[] { 83 }; // a
             this.Magic = 0x522357A;
+            this.CoinTicker = "APX";
 
             this.Consensus.CoinType = 3000;
             this.Consensus.DefaultAssumeValid = null;
@@ -25,7 +26,8 @@ namespace Stratis.Networks.Apex
             this.Consensus.ProofOfWorkReward = Money.Zero;
             this.Consensus.ProofOfStakeReward = Money.Zero;
             this.Consensus.MaxReorgLength = 0;
-
+            this.Consensus.MaxMoney = Money.Coins(20000000);
+            
             this.Checkpoints = new Dictionary<int, CheckpointInfo>();
             this.DNSSeeds = new List<DNSSeedData>();
             this.SeedNodes = new List<NetworkAddress>();

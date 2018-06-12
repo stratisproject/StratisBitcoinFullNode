@@ -12,8 +12,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="NStratis" Version="4.0.0.58" />
-    <PackageReference Include="Stratis.Bitcoin" Version="1.1.9-beta" />
+    <PackageReference Include="NStratis" Version="4.0.0.60" />
+    <PackageReference Include="Stratis.Bitcoin" Version="1.1.11-beta" />
   </ItemGroup>
 
   <ItemGroup>
