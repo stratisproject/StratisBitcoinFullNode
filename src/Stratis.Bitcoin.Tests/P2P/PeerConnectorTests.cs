@@ -1,5 +1,4 @@
 ﻿using System;
-using System.IO;
 using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
@@ -54,7 +53,6 @@ namespace Stratis.Bitcoin.Tests.P2P
             peerAddressManager.AddPeer(endpointDiscoveredNode, IPAddress.Loopback);
 
             var nodeSettings = new NodeSettings();
-            nodeSettings.LoadConfiguration();
 
             var connectionManagerSettings = new ConnectionManagerSettings();
             connectionManagerSettings.Load(nodeSettings);
@@ -86,7 +84,6 @@ namespace Stratis.Bitcoin.Tests.P2P
             var peerAddressManager = new PeerAddressManager(DateTimeProvider.Default, peerFolder, this.extendedLoggerFactory, new SelfEndpointTracker());
 
             var nodeSettings = new NodeSettings();
-            nodeSettings.LoadConfiguration();
 
             var connectionSettings = new ConnectionManagerSettings();
             connectionSettings.Load(nodeSettings);

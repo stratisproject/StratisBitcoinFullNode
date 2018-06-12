@@ -9,15 +9,18 @@ using NBitcoin.Crypto;
 using NBitcoin.Protocol;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Connection;
+using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.Consensus.Interfaces;
+using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.MemoryPool.Interfaces;
 using Stratis.Bitcoin.Features.Miner.Interfaces;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Interfaces;
+using Stratis.Bitcoin.Mining;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.Miner
@@ -39,7 +42,7 @@ namespace Stratis.Bitcoin.Features.Miner
     /// <item>Each of the tasks mentioned above will try to find a solution for proof of stake target. This is done by creating a coinstake
     /// transaction with each of the available UTXOs combined with all valid unix timestamps that were not checked.
     /// Those timestamps are within a time interval from now to now - searchInterval seconds. Only timestamps that are divisible by
-    /// <c><see cref="PosConsensusValidator.StakeTimestampMask"/> + 1</c> are valid candidates (this is done to decrease granularity of timestamps).
+    /// <c><see cref="PosCoinviewRule.StakeTimestampMask"/> + 1</c> are valid candidates (this is done to decrease granularity of timestamps).
     /// Search interval is a length of an unexplored block time space in seconds.
     /// Task calculates the kernel's hash (kernel is the first input in the coinstake transaction) using the next formula:
     /// <c>hash(stakeModifierV2 + stakingCoins.Time + prevout.Hash + prevout.N + transactionTime)</c>.
@@ -180,7 +183,7 @@ namespace Stratis.Bitcoin.Features.Miner
         public const int MaxBlockSizeGen = MaxBlockSize / 2;
 
         /// <summary>Builder that creates a proof-of-stake block template.</summary>
-        private readonly PosBlockAssembler blockBuilder;
+        private readonly IBlockProvider blockProvider;
 
         /// <summary><c>true</c> if coinstake transaction splits the coin and generates extra UTXO
         /// to prevent halting chain; <c>false</c> to disable coinstake splitting.</summary>
@@ -230,9 +233,6 @@ namespace Stratis.Bitcoin.Features.Miner
 
         /// <summary>A manager providing operations on wallets.</summary>
         private readonly IWalletManager walletManager;
-
-        /// <summary>Provides value for PoS reward and checks PoS kernel.</summary>
-        private readonly IPosConsensusValidator posConsensusValidator;
 
         /// <summary>Factory for creating loggers.</summary>
         private readonly ILoggerFactory loggerFactory;
@@ -329,7 +329,7 @@ namespace Stratis.Bitcoin.Features.Miner
         /// <param name="timeSyncBehaviorState">State of time synchronization feature that stores collected data samples.</param>
         /// <param name="loggerFactory">Factory for creating loggers.</param>
         public PosMinting(
-            PosBlockAssembler blockBuilder,
+            IBlockProvider blockProvider,
             IConsensusLoop consensusLoop,
             ConcurrentChain chain,
             Network network,
@@ -347,7 +347,7 @@ namespace Stratis.Bitcoin.Features.Miner
             ITimeSyncBehaviorState timeSyncBehaviorState,
             ILoggerFactory loggerFactory)
         {
-            this.blockBuilder = blockBuilder;
+            this.blockProvider = blockProvider;
             this.consensusLoop = consensusLoop;
             this.chain = chain;
             this.network = network;
@@ -372,8 +372,6 @@ namespace Stratis.Bitcoin.Features.Miner
             this.lastCoinStakeSearchPrevBlockHash = 0;
             this.targetReserveBalance = 0; // TOOD:settings.targetReserveBalance
             this.stakeProgressFlag = StakeNotInProgress;
-
-            this.posConsensusValidator = consensusLoop.Validator as IPosConsensusValidator;
 
             this.rpcGetStakingInfoModel = new Miner.Models.GetStakingInfoModel();
         }
@@ -446,7 +444,7 @@ namespace Stratis.Bitcoin.Features.Miner
                 return;
             }
 
-            this.stakeCancellationTokenSource?.Cancel();  
+            this.stakeCancellationTokenSource?.Cancel();
             this.logger.LogTrace("Disposing staking loop.");
             this.stakingLoop?.Dispose();
             this.stakingLoop = null;
@@ -503,7 +501,7 @@ namespace Stratis.Bitcoin.Features.Miner
                     blockTemplate = null;
                 }
 
-                uint coinstakeTimestamp = (uint)this.dateTimeProvider.GetAdjustedTimeAsUnixTimestamp() & ~PosConsensusValidator.StakeTimestampMask;
+                uint coinstakeTimestamp = (uint)this.dateTimeProvider.GetAdjustedTimeAsUnixTimestamp() & ~BlockHeaderPosContextualRule.StakeTimestampMask;
                 if (coinstakeTimestamp <= this.lastCoinStakeSearchTime)
                 {
                     this.logger.LogTrace("Current coinstake time {0} is not greater than last search timestamp {1}.", coinstakeTimestamp, this.lastCoinStakeSearchTime);
@@ -542,7 +540,7 @@ namespace Stratis.Bitcoin.Features.Miner
                 this.logger.LogTrace("Wallet contains {0} coins.", new Money(totalBalance));
 
                 if (blockTemplate == null)
-                    blockTemplate = this.blockBuilder.Build(chainTip, new Script());
+                    blockTemplate = this.blockProvider.BuildPosBlock(chainTip, new Script());
 
                 if (!(blockTemplate.Block is PosBlock block))
                 {
@@ -597,7 +595,7 @@ namespace Stratis.Bitcoin.Features.Miner
             }
 
             // Validate the block.
-            var blockValidationContext = new BlockValidationContext { Block = block };
+            var blockValidationContext = new ValidationContext { Block = block };
             this.consensusLoop.AcceptBlockAsync(blockValidationContext).GetAwaiter().GetResult();
 
             if (blockValidationContext.ChainedHeader == null)
@@ -719,7 +717,7 @@ namespace Stratis.Bitcoin.Features.Miner
             }
 
             // Select UTXOs with suitable depth.
-            List<UtxoStakeDescription> stakingUtxoDescriptions = this.GetUtxoStakeDescriptionsSuitableForStaking(utxoStakeDescriptions, coinstakeContext.CoinstakeTx.Time, balance - this.targetReserveBalance);
+            List<UtxoStakeDescription> stakingUtxoDescriptions = this.GetUtxoStakeDescriptionsSuitableForStaking(utxoStakeDescriptions, chainTip, coinstakeContext.CoinstakeTx.Time, balance - this.targetReserveBalance);
             if (!stakingUtxoDescriptions.Any())
             {
                 this.rpcGetStakingInfoModel.Staking = false;
@@ -743,7 +741,7 @@ namespace Stratis.Bitcoin.Features.Miner
 
             // If the time after applying the mask is lower than minimal allowed time,
             // it is simply too early for us to mine, there can't be any valid solution.
-            if ((coinstakeContext.CoinstakeTx.Time & ~PosConsensusValidator.StakeTimestampMask) < minimalAllowedTime)
+            if ((coinstakeContext.CoinstakeTx.Time & ~BlockHeaderPosContextualRule.StakeTimestampMask) < minimalAllowedTime)
             {
                 this.logger.LogTrace("(-)[TOO_EARLY_TIME_AFTER_LAST_BLOCK]:false");
                 return false;
@@ -756,7 +754,7 @@ namespace Stratis.Bitcoin.Features.Miner
             var workers = new Task[workerCount];
             var workerContexts = new CoinstakeWorkerContext[workerCount];
 
-            CoinstakeWorkerResult workersResult = new CoinstakeWorkerResult();
+            var workersResult = new CoinstakeWorkerResult();
             for (int workerIndex = 0; workerIndex < workerCount; workerIndex++)
             {
                 var cwc = new CoinstakeWorkerContext
@@ -785,8 +783,9 @@ namespace Stratis.Bitcoin.Features.Miner
             }
 
             this.logger.LogTrace("Worker #{0} found the kernel.", workersResult.KernelFoundIndex);
+            
             // Get reward for newly created block.
-            long reward = fees + this.posConsensusValidator.GetProofOfStakeReward(chainTip.Height + 1);
+            long reward = fees + this.consensusLoop.ConsensusRules.GetRule<PosCoinviewRule>().GetProofOfStakeReward(chainTip.Height + 1);
             if (reward <= 0)
             {
                 // TODO: This can't happen unless we remove reward for mined block.
@@ -797,7 +796,7 @@ namespace Stratis.Bitcoin.Features.Miner
             }
 
             // Split stake if above threshold.
-            bool splitStake = this.GetSplitStake(nonEmptyUtxos);
+            bool splitStake = this.GetSplitStake(nonEmptyUtxos, chainTip);
             if (splitStake)
             {
                 this.logger.LogTrace("Coinstake UTXO will be split to two.");
@@ -910,7 +909,7 @@ namespace Stratis.Bitcoin.Features.Miner
                     if (txTime < minimalAllowedTime)
                         break;
 
-                    if ((txTime & PosConsensusValidator.StakeTimestampMask) != 0)
+                    if ((txTime & BlockHeaderPosContextualRule.StakeTimestampMask) != 0)
                         continue;
 
                     context.Logger.LogTrace("Trying with transaction time {0}...", txTime);
@@ -918,12 +917,9 @@ namespace Stratis.Bitcoin.Features.Miner
                     {
                         var prevoutStake = new OutPoint(utxoStakeInfo.UtxoSet.TransactionId, utxoStakeInfo.OutPoint.N);
 
-                        var contextInformation = new ContextStakeInformation
-                        {
-                            BlockStake = new BlockStake(block)
-                        };
+                        var contextInformation = new PosRuleContext(new BlockStake(block));
 
-                        this.posConsensusValidator.StakeValidator.CheckKernel(contextInformation, chainTip, block.Header.Bits, txTime, prevoutStake);
+                        this.stakeValidator.CheckKernel(contextInformation, chainTip, block.Header.Bits, txTime, prevoutStake);
 
                         if (context.Result.SetKernelFoundIndex(context.Index))
                         {
@@ -1023,16 +1019,17 @@ namespace Stratis.Bitcoin.Features.Miner
         /// </para>
         /// </summary>
         /// <param name="utxoStakeDescriptions">List of UTXO descriptions that are candidates for being used for staking.</param>
+        /// <param name="chainTip">Tip of the best chain.</param>
         /// <param name="spendTime">Timestamp of the coinstake transaction.</param>
         /// <param name="targetValue">Target money amount of UTXOs that can be used for staking.</param>
         /// <returns>List of UTXO descriptions that meet the requirements for staking.</returns>
-        private List<UtxoStakeDescription> GetUtxoStakeDescriptionsSuitableForStaking(List<UtxoStakeDescription> utxoStakeDescriptions, uint spendTime, long targetValue)
+        internal List<UtxoStakeDescription> GetUtxoStakeDescriptionsSuitableForStaking(List<UtxoStakeDescription> utxoStakeDescriptions, ChainedHeader chainTip, uint spendTime, long targetValue)
         {
             this.logger.LogTrace("({0}.{1}:{2},{3}:{4},{5}:{6})", nameof(utxoStakeDescriptions), nameof(utxoStakeDescriptions.Count), utxoStakeDescriptions.Count, nameof(spendTime), spendTime, nameof(targetValue), targetValue);
             var res = new List<UtxoStakeDescription>();
 
             long currentValue = 0;
-            long requiredDepth = this.network.Consensus.Option<PosConsensusOptions>().StakeMinConfirmations;
+            long requiredDepth = this.network.Consensus.Option<PosConsensusOptions>().GetStakeMinConfirmations(chainTip.Height + 1, this.network) - 1;
             foreach (UtxoStakeDescription utxoStakeDescription in utxoStakeDescriptions.OrderByDescending(x => x.TxOut.Value))
             {
                 int depth = this.GetDepthInMainChain(utxoStakeDescription);
@@ -1086,7 +1083,7 @@ namespace Stratis.Bitcoin.Features.Miner
             if (!(utxoStakeDescription.UtxoSet.IsCoinbase || utxoStakeDescription.UtxoSet.IsCoinstake))
                 return 0;
 
-            return Math.Max(0, (int)this.network.Consensus.Option<PosConsensusOptions>().CoinbaseMaturity + 1 - this.GetDepthInMainChain(utxoStakeDescription));
+            return Math.Max(0, (int)this.network.Consensus.CoinbaseMaturity + 1 - this.GetDepthInMainChain(utxoStakeDescription));
         }
 
         /// <summary>
@@ -1103,9 +1100,8 @@ namespace Stratis.Bitcoin.Features.Miner
             ChainedHeader chainedBlock = this.chain.GetBlock(utxoStakeDescription.HashBlock);
 
             if (chainedBlock == null)
-                return -1;
+                return this.mempoolLock.ReadAsync(() => this.mempool.Exists(utxoStakeDescription.UtxoSet.TransactionId) ? 0 : -1).GetAwaiter().GetResult(); 
 
-            // TODO: Check if in memory pool then return 0.
             return this.chain.Tip.Height - chainedBlock.Height + 1;
         }
 
@@ -1188,7 +1184,7 @@ namespace Stratis.Bitcoin.Features.Miner
 
             if (stakesTime != 0) res = stakeKernelsAvg / stakesTime;
 
-            res *= PosConsensusValidator.StakeTimestampMask + 1;
+            res *= BlockHeaderPosContextualRule.StakeTimestampMask + 1;
 
             this.logger.LogTrace("(-):{0}", res);
             return res;
@@ -1208,12 +1204,12 @@ namespace Stratis.Bitcoin.Features.Miner
         /// <remarks>The coinstake is split if the number of non-empty UTXOs we have in the wallet
         /// is under the given threshold.</remarks>
         /// <seealso cref="CoinstakeSplitLimitMultiplier"/>
-        private bool GetSplitStake(int utxoCount)
+        private bool GetSplitStake(int utxoCount, ChainedHeader chainTip)
         {
             this.logger.LogTrace("({0}:{1})", nameof(utxoCount), utxoCount);
 
-            long maturityLimit = this.network.Consensus.Option<PosConsensusOptions>().CoinbaseMaturity;
-            long coinAgeLimit = this.network.Consensus.Option<PosConsensusOptions>().StakeMinConfirmations;
+            long maturityLimit = this.network.Consensus.CoinbaseMaturity;
+            long coinAgeLimit = this.network.Consensus.Option<PosConsensusOptions>().GetStakeMinConfirmations(chainTip.Height + 1, this.network);
             long requiredCoinAgeForStaking = Math.Max(maturityLimit, coinAgeLimit);
             this.logger.LogTrace("Required coin age for staking is {0}.", requiredCoinAgeForStaking);
 

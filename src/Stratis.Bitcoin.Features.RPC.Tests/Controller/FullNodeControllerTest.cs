@@ -1,19 +1,17 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Net;
-using System.Text;
 using System.Threading.Tasks;
 using Moq;
 using NBitcoin;
 using NBitcoin.DataEncoders;
 using NBitcoin.Protocol;
-using Newtonsoft.Json.Linq;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Connection;
+using Stratis.Bitcoin.Controllers.Models;
 using Stratis.Bitcoin.Features.Consensus.Interfaces;
 using Stratis.Bitcoin.Features.RPC.Controllers;
-using Stratis.Bitcoin.Features.RPC.Models;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.Tests.Common.Logging;
@@ -417,13 +415,14 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
         [Fact]
         public void GetInfo_TestNet_ReturnsInfoModel()
         {
+            this.nodeSettings = new NodeSettings(protocolVersion: ProtocolVersion.NO_BLOOM_VERSION, args: new[] { "-minrelaytxfeerate=1000" });
+            this.controller = new FullNodeController(this.LoggerFactory.Object, this.pooledTransaction.Object, this.pooledGetUnspentTransaction.Object, this.getUnspentTransaction.Object, this.networkDifficulty.Object,
+    this.consensusLoop.Object, this.fullNode.Object, this.nodeSettings, this.network, this.chain, this.chainState.Object, this.connectionManager.Object);
+          
             this.fullNode.Setup(f => f.Version)
                 .Returns(new Version(15, 0));
             this.networkDifficulty.Setup(n => n.GetNetworkDifficulty())
                 .Returns(new Target(121221121212));
-
-            this.nodeSettings.ProtocolVersion = ProtocolVersion.NO_BLOOM_VERSION;
-            this.nodeSettings.MinRelayTxFeeRate = new FeeRate(new Money(1000));
 
             this.chainState.Setup(c => c.ConsensusTip)
                 .Returns(this.chain.Tip);

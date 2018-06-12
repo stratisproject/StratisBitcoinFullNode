@@ -192,7 +192,7 @@ namespace NBitcoin.BouncyCastle.Crypto.Signers
         protected virtual BigInteger CalculateE(BigInteger n, byte[] message)
         {
             int messageBitLength = message.Length * 8;
-            BigInteger trunc = new BigInteger(1, message);
+            var trunc = new BigInteger(1, message);
 
             if(n.BitLength < messageBitLength)
             {

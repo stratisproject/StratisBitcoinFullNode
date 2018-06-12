@@ -24,9 +24,9 @@ namespace NBitcoin.Crypto
         public static uint256 Hash256(byte[] data, int offset, int count)
         {
 #if USEBC || WINDOWS_UWP || NETCORE
-            Sha256Digest sha256 = new Sha256Digest();
+            var sha256 = new Sha256Digest();
             sha256.BlockUpdate(data, offset, count);
-            byte[] rv = new byte[32];
+            var rv = new byte[32];
             sha256.DoFinal(rv, 0);
             sha256.BlockUpdate(rv, 0, rv.Length);
             sha256.DoFinal(rv, 0);
@@ -72,9 +72,9 @@ namespace NBitcoin.Crypto
         public static byte[] RIPEMD160(byte[] data, int offset, int count)
         {
 #if USEBC || WINDOWS_UWP || NETCORE
-            RipeMD160Digest ripemd = new RipeMD160Digest();
+            var ripemd = new RipeMD160Digest();
             ripemd.BlockUpdate(data, offset, count);
-            byte[] rv = new byte[20];
+            var rv = new byte[20];
             ripemd.DoFinal(rv, 0);
             return rv;
 #else
@@ -89,12 +89,12 @@ namespace NBitcoin.Crypto
 
         public class SipHasher
         {
-            ulong v_0;
-            ulong v_1;
-            ulong v_2;
-            ulong v_3;
-            ulong count;
-            ulong tmp;
+            private ulong v_0;
+            private ulong v_1;
+            private ulong v_2;
+            private ulong v_3;
+            private ulong count;
+            private ulong tmp;
             public SipHasher(ulong k0, ulong k1)
             {
                 v_0 = 0x736f6d6570736575UL ^ k0;
@@ -125,9 +125,9 @@ namespace NBitcoin.Crypto
             public SipHasher Write(byte[] data)
             {
                 ulong v0 = v_0, v1 = v_1, v2 = v_2, v3 = v_3;
-                var size = data.Length;
-                var t = tmp;
-                var c = count;
+                int size = data.Length;
+                ulong t = tmp;
+                ulong c = count;
                 int offset = 0;
 
                 while(size-- != 0)
@@ -229,7 +229,7 @@ namespace NBitcoin.Crypto
                 }
             }
 
-            static void SIPROUND(ref ulong v_0, ref ulong v_1, ref ulong v_2, ref ulong v_3)
+            private static void SIPROUND(ref ulong v_0, ref ulong v_1, ref ulong v_2, ref ulong v_3)
             {
                 v_0 += v_1;
                 v_1 = rotl64(v_1, 13);
@@ -257,7 +257,7 @@ namespace NBitcoin.Crypto
         {
             var sha1 = new Sha1Digest();
             sha1.BlockUpdate(data, offset, count);
-            byte[] rv = new byte[20];
+            var rv = new byte[20];
             sha1.DoFinal(rv, 0);
             return rv;
         }
@@ -270,9 +270,9 @@ namespace NBitcoin.Crypto
         public static byte[] SHA256(byte[] data, int offset, int count)
         {
 #if USEBC || WINDOWS_UWP || NETCORE
-            Sha256Digest sha256 = new Sha256Digest();
+            var sha256 = new Sha256Digest();
             sha256.BlockUpdate(data, offset, count);
-            byte[] rv = new byte[32];
+            var rv = new byte[32];
             sha256.DoFinal(rv, 0);
             return rv;
 #else
@@ -312,7 +312,7 @@ namespace NBitcoin.Crypto
             uint k1 = 0;
             uint streamLength = 0;
 
-            using(BinaryReader reader = new BinaryReader(new MemoryStream(vDataToHash)))
+            using(var reader = new BinaryReader(new MemoryStream(vDataToHash)))
             {
                 byte[] chunk = reader.ReadBytes(4);
                 while(chunk.Length > 0)
@@ -395,7 +395,7 @@ namespace NBitcoin.Crypto
 #endif
         public static byte[] BIP32Hash(byte[] chainCode, uint nChild, byte header, byte[] data)
         {
-            byte[] num = new byte[4];
+            var num = new byte[4];
             num[0] = (byte)((nChild >> 24) & 0xFF);
             num[1] = (byte)((nChild >> 16) & 0xFF);
             num[2] = (byte)((nChild >> 8) & 0xFF);

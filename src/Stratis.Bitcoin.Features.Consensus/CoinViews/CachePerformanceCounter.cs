@@ -177,7 +177,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         public override string ToString()
         {
             long total = this.TotalMissCount + this.TotalHitCount;
-            StringBuilder builder = new StringBuilder();
+            var builder = new StringBuilder();
             builder.AppendLine("====Cache Stats(%)====");
             if (total != 0)
             {

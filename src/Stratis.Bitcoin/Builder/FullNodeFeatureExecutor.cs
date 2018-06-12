@@ -54,7 +54,6 @@ namespace Stratis.Bitcoin.Builder
             try
             {
                 this.Execute(service => service.ValidateDependencies(this.node.Services));
-                this.Execute(service => service.LoadConfiguration());
                 this.Execute(service => service.Initialize());
             }
             catch (Exception ex)
@@ -91,12 +90,12 @@ namespace Stratis.Bitcoin.Builder
 
             if (this.node.Services != null)
             {
-                var iterator = this.node.Services.Features;
+                IEnumerable<IFullNodeFeature> iterator = this.node.Services.Features;
 
                 if (reverseOrder)
                     iterator = iterator.Reverse();
 
-                foreach (var service in iterator)
+                foreach (IFullNodeFeature service in iterator)
                 {
                     try
                     {

@@ -4,6 +4,7 @@ using System.Linq;
 using Microsoft.Extensions.Logging;
 using Moq;
 using NBitcoin;
+using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Tests.Common.Logging;
@@ -23,11 +24,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
         public WalletSyncManagerTest()
         {
-            this.storeSettings = new StoreSettings
-            {
-                Prune = false
-            };
-
+            this.storeSettings = new StoreSettings(new NodeSettings(Network.StratisMain));
             this.chain = new ConcurrentChain(Network.StratisMain);
             this.walletManager = new Mock<IWalletManager>();
             this.blockStoreCache = new Mock<IBlockStoreCache>();

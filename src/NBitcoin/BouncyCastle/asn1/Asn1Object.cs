@@ -15,8 +15,8 @@ namespace NBitcoin.BouncyCastle.Asn1
         {
             try
             {
-                MemoryStream input = new MemoryStream(data, false);
-                Asn1InputStream asn1 = new Asn1InputStream(input, data.Length);
+                var input = new MemoryStream(data, false);
+                var asn1 = new Asn1InputStream(input, data.Length);
                 Asn1Object result = asn1.ReadObject();
                 if(input.Position != input.Length)
                     throw new IOException("extra data found after object");

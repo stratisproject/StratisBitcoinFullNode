@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
 using NBitcoin;
 using Stratis.Bitcoin.Configuration;
@@ -33,8 +32,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests
 
             var nodeSettings = new NodeSettings(Network.TestNet, args:new string[] { "-conf=" + confFile });
 
-            var rpcSettings = new RpcSettings();
-            rpcSettings.Load(nodeSettings);
+            var rpcSettings = new RpcSettings(nodeSettings);
 
             Assert.True(rpcSettings.Server);
             Assert.Equal(1378, rpcSettings.RPCPort);
@@ -47,29 +45,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests
             Assert.NotEmpty(rpcSettings.AllowIp);
             Assert.Equal("0.0.0.0", rpcSettings.AllowIp[0].ToString());
         }
-
-        [Fact]
-        public void Load_ValidNodeSettings_CallbackConfigured_InvokesCallback()
-        {
-            string dir = CreateTestDir(this);
-            var confFile = Path.Combine(dir, "bitcoin.conf");
-            var configLines = new List<string>() { "" };
-            WriteConfigurationToFile(confFile, configLines);
-
-            var nodeSettings = new NodeSettings(Network.TestNet, args:new string[] { "-conf=" + confFile });
-
-            var callbackCalled = false;
-            Action<RpcSettings> callback = (RpcSettings settings) =>
-            {
-                callbackCalled = true;
-            };
-
-            var rpcSettings = new RpcSettings(callback);
-            rpcSettings.Load(nodeSettings);
-
-            Assert.True(callbackCalled);
-        }
-
+        
         [Fact]
         public void Load_DefaultConfiguration_UsesDefaultNodeSettings()
         {
@@ -80,8 +56,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests
 
             var nodeSettings = new NodeSettings(Network.TestNet, args:new string[] { "-conf=" + confFile });
 
-            var rpcSettings = new RpcSettings();
-            rpcSettings.Load(nodeSettings);
+            var rpcSettings = new RpcSettings(nodeSettings);
 
             Assert.False(rpcSettings.Server);
             Assert.Equal(18332, rpcSettings.RPCPort);
@@ -109,8 +84,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests
 
                 var nodeSettings = new NodeSettings(Network.TestNet, args:new string[] { "-conf=" + confFile });
 
-                var rpcSettings = new RpcSettings();
-                rpcSettings.Load(nodeSettings);
+                var rpcSettings = new RpcSettings(nodeSettings);
             });
         }
 
@@ -131,8 +105,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests
 
                 var nodeSettings = new NodeSettings(Network.TestNet, args:new string[] { "-conf=" + confFile });
 
-                var rpcSettings = new RpcSettings();
-                rpcSettings.Load(nodeSettings);
+                var rpcSettings = new RpcSettings(nodeSettings);
             });
         }
 
@@ -156,8 +129,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests
 
                 var nodeSettings = new NodeSettings(Network.TestNet, args:new string[] { "-conf=" + confFile });
 
-                var rpcSettings = new RpcSettings();
-                rpcSettings.Load(nodeSettings);
+                var rpcSettings = new RpcSettings(nodeSettings);
             });
         }
 
@@ -181,8 +153,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests
 
                 var nodeSettings = new NodeSettings(Network.TestNet, args:new string[] { "-conf=" + confFile });
 
-                var rpcSettings = new RpcSettings();
-                rpcSettings.Load(nodeSettings);
+                var rpcSettings = new RpcSettings(nodeSettings);
             });
         }
 
@@ -205,8 +176,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests
 
             var nodeSettings = new NodeSettings(Network.TestNet, args:new string[] { "-conf=" + confFile });
 
-            var rpcSettings = new RpcSettings();
-            rpcSettings.Load(nodeSettings);
+            var rpcSettings = new RpcSettings(nodeSettings);
             var urls = rpcSettings.GetUrls();
 
             Assert.NotEmpty(urls);
@@ -227,7 +197,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests
 
             var nodeSettings = new NodeSettings(Network.TestNet, args:new string[] { "-conf=" + confFile });
 
-            var rpcSettings = new RpcSettings();
+            var rpcSettings = new RpcSettings(new NodeSettings());
             var urls = rpcSettings.GetUrls();
 
             Assert.Empty(urls);

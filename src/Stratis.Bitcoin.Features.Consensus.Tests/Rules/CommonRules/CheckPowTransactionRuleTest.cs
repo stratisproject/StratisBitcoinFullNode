@@ -1,10 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
+﻿using System.IO;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using NBitcoin;
+using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
 using Xunit;
 
@@ -207,10 +205,10 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             transaction.Outputs.Add(new TxOut(new Money(this.options.MaxMoney / 2), (IDestination)null));
             transaction.Outputs.Add(new TxOut(new Money(this.options.MaxMoney / 2), (IDestination)null));
 
-            this.ruleContext.BlockValidationContext.Block = new Block();
+            this.ruleContext.ValidationContext.Block = new Block();
             this.ruleContext.Consensus = this.network.Consensus;
-            this.ruleContext.BlockValidationContext.Block.Transactions.Add(transaction);
-            this.ruleContext.BlockValidationContext.Block.Transactions.Add(transaction);
+            this.ruleContext.ValidationContext.Block.Transactions.Add(transaction);
+            this.ruleContext.ValidationContext.Block.Transactions.Add(transaction);
 
             var rule = this.consensusRules.RegisterRule<CheckPowTransactionRule>();
 
@@ -227,10 +225,10 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
 
             var invalidTransaction = new Transaction();
 
-            this.ruleContext.BlockValidationContext.Block = new Block();
+            this.ruleContext.ValidationContext.Block = new Block();
             this.ruleContext.Consensus = this.network.Consensus;
-            this.ruleContext.BlockValidationContext.Block.Transactions.Add(validTransaction);
-            this.ruleContext.BlockValidationContext.Block.Transactions.Add(invalidTransaction);
+            this.ruleContext.ValidationContext.Block.Transactions.Add(validTransaction);
+            this.ruleContext.ValidationContext.Block.Transactions.Add(invalidTransaction);
 
             var exception = await Assert.ThrowsAsync<ConsensusErrorException>(() => this.consensusRules.RegisterRule<CheckPowTransactionRule>().RunAsync(this.ruleContext));
 

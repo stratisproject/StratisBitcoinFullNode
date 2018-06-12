@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System.Collections.Generic;
+using System.Linq;
 using NBitcoin.DataEncoders;
 
 namespace NBitcoin
@@ -12,7 +13,7 @@ namespace NBitcoin
 
         private static byte[] ToBytes(Key key)
         {
-            var keyBytes = key.ToBytes();
+            byte[] keyBytes = key.ToBytes();
             if(!key.IsCompressed)
                 return keyBytes;
             else
@@ -47,7 +48,8 @@ namespace NBitcoin
         }
 
         #region ISecret Members
-        Key _Key;
+
+        private Key _Key;
         public Key PrivateKey
         {
             get
@@ -90,7 +92,7 @@ namespace NBitcoin
             else
             {
                 byte[] result = Encoders.Base58Check.DecodeData(wifData);
-                var resultList = result.ToList();
+                List<byte> resultList = result.ToList();
 
                 if(compressed.Value)
                 {

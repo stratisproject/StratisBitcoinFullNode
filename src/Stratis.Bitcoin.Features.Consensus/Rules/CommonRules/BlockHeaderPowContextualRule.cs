@@ -2,6 +2,7 @@
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
+using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
@@ -19,11 +20,11 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         /// <exception cref="ConsensusErrors.BadVersion">Thrown if block's version is outdated.</exception>
         public override Task RunAsync(RuleContext context)
         {
-            Guard.NotNull(context.BestBlock, nameof(context.BestBlock));
+            Guard.NotNull(context.ConsensusTip, nameof(context.ConsensusTip));
 
-            BlockHeader header = context.BlockValidationContext.Block.Header;
+            BlockHeader header = context.ValidationContext.Block.Header;
 
-            int height = context.BestBlock.Height + 1;
+            int height = context.ConsensusTipHeight + 1;
 
             // Check proof of work.
             if (header.Bits != context.NextWorkRequired)
@@ -33,7 +34,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
             }
 
             // Check timestamp against prev.
-            if (header.BlockTime <= context.BestBlock.MedianTimePast)
+            if (header.BlockTime <= context.ConsensusTip.GetMedianTimePast())
             {
                 this.Logger.LogTrace("(-)[TIME_TOO_OLD]");
                 ConsensusErrors.TimeTooOld.Throw();

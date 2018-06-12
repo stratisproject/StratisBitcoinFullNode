@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Base.Deployments;
+using Stratis.Bitcoin.Consensus.Rules;
 
 namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
 {
@@ -17,10 +18,10 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         /// <exception cref="ConsensusErrors.BadCoinbaseHeight">Thrown if coinbase doesn't start with serialized block height.</exception>
         public override Task RunAsync(RuleContext context)
         {
-            int nHeight = context.BestBlock?.Height + 1 ?? 0;
-            Block block = context.BlockValidationContext.Block;
+            int newHeight = context.ConsensusTipHeight + 1;
+            Block block = context.ValidationContext.Block;
 
-            Script expect = new Script(Op.GetPushOp(nHeight));
+            var expect = new Script(Op.GetPushOp(newHeight));
             Script actual = block.Transactions[0].Inputs[0].ScriptSig;
             if (!this.StartWith(actual.ToBytes(true), expect.ToBytes(true)))
             {

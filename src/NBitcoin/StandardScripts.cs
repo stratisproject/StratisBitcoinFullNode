@@ -7,7 +7,7 @@ namespace NBitcoin
 
     public static class StandardScripts
     {
-        static readonly ScriptTemplate[] _StandardTemplates = new ScriptTemplate[]
+        private static readonly ScriptTemplate[] _StandardTemplates = new ScriptTemplate[]
         {
             PayToPubkeyHashTemplate.Instance,
             PayToPubkeyTemplate.Instance,
@@ -40,7 +40,7 @@ namespace NBitcoin
         }
         private static bool IsStandardScriptSig(Network network, Script scriptSig, Script scriptPubKey)
         {
-            var template = GetTemplateFromScriptPubKey(network, scriptPubKey);
+            ScriptTemplate template = GetTemplateFromScriptPubKey(network, scriptPubKey);
             if(template == null)
                 return false;
 
@@ -63,7 +63,7 @@ namespace NBitcoin
             if(tx.IsCoinBase)
                 return true; // Coinbases don't use vin normally
 
-            foreach(var input in tx.Inputs)
+            foreach(TxIn input in tx.Inputs)
             {
                 TxOut prev = coinsView.GetOutputFor(input);
                 if(prev == null)

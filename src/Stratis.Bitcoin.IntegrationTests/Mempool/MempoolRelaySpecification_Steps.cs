@@ -1,10 +1,11 @@
-﻿using System.Linq;
+﻿using System.IO;
+using System.Linq;
 using FluentAssertions;
 using FluentAssertions.Common;
 using NBitcoin;
 using Stratis.Bitcoin.Connection;
-using Stratis.Bitcoin.Features.Consensus;
-using Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers;
+using Stratis.Bitcoin.IntegrationTests.Common;
+using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
 using Xunit.Abstractions;
 
 namespace Stratis.Bitcoin.IntegrationTests.Mempool
@@ -25,7 +26,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Mempool
 
         protected override void BeforeTest()
         {
-            this.nodeBuilder = NodeBuilder.Create(caller: this.CurrentTest.DisplayName);
+            this.nodeBuilder = NodeBuilder.Create(Path.Combine(this.GetType().Name, this.CurrentTest.DisplayName));
         }
 
         protected override void AfterTest()
@@ -44,7 +45,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Mempool
             this.nodeB.NotInIBD();
             this.nodeC.NotInIBD();
 
-            this.coinbaseMaturity = (int)this.nodeA.FullNode.Network.Consensus.Option<PowConsensusOptions>().CoinbaseMaturity;
+            this.coinbaseMaturity = (int)this.nodeA.FullNode.Network.Consensus.CoinbaseMaturity;
         }
 
         protected void nodeA_mines_coins_that_are_spendable()

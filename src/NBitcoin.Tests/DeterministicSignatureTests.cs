@@ -5,6 +5,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using NBitcoin.BouncyCastle.Asn1;
 using NBitcoin.BouncyCastle.Asn1.Sec;
+using NBitcoin.BouncyCastle.Asn1.X9;
 using NBitcoin.BouncyCastle.Crypto.Parameters;
 using NBitcoin.BouncyCastle.Math;
 using NBitcoin.BouncyCastle.Math.EC;
@@ -36,14 +37,14 @@ namespace NBitcoin.Tests
 
         }
 
-        static Dictionary<string, DerObjectIdentifier> curves;
+        private static Dictionary<string, DerObjectIdentifier> curves;
         public DeterministicSignatureTests()
         {
 
 
         }
 
-        class DeterministicSigTest
+        private class DeterministicSigTest
         {
 
             public BigInteger K
@@ -109,9 +110,9 @@ namespace NBitcoin.Tests
             var dsa = new DeterministicECDSA(GetHash(test.Hash));
             dsa.setPrivateKey(key);
             dsa.update(Encoding.UTF8.GetBytes(test.Message));
-            var result = dsa.sign();
+            byte[] result = dsa.sign();
 
-            var signature = ECDSASignature.FromDER(result);
+            ECDSASignature signature = ECDSASignature.FromDER(result);
             Assert.Equal(test.S, signature.S);
             Assert.Equal(test.R, signature.R);
         }
@@ -146,7 +147,7 @@ namespace NBitcoin.Tests
         [Trait("UnitTest", "UnitTest")]
         public void DeterministicSignatureTestVectors()
         {
-            foreach(var test in ParseTestsDump(File.ReadAllText("Data/determiniticECDSA.txt")))
+            foreach(DeterministicSigTest test in ParseTestsDump(File.ReadAllText(TestDataLocations.GetFileFromDataFolder("determiniticECDSA.txt"))))
             {
                 TestSig(test);
             }
@@ -154,17 +155,17 @@ namespace NBitcoin.Tests
 
         private IEnumerable<DeterministicSigTest> ParseTestsDump(string testDump)
         {
-            foreach(var curveTest in testDump.Split(new string[] { "Key pair:" }, StringSplitOptions.RemoveEmptyEntries))
+            foreach(string curveTest in testDump.Split(new string[] { "Key pair:" }, StringSplitOptions.RemoveEmptyEntries))
             {
-                var tests = curveTest.Split(new string[] { "Signatures:" }, StringSplitOptions.RemoveEmptyEntries);
+                string[] tests = curveTest.Split(new string[] { "Signatures:" }, StringSplitOptions.RemoveEmptyEntries);
                 if(tests.Length == 1)
                     continue;
                 if(tests.Length != 2)
                     throw new Exception("Test bug");
-                var key = tests[0];
-                var signatures = tests[1];
-                var privateKey = ParseKey(key);
-                foreach(var test in ParseTests(signatures))
+                string key = tests[0];
+                string signatures = tests[1];
+                ECPrivateKeyParameters privateKey = ParseKey(key);
+                foreach(DeterministicSigTest test in ParseTests(signatures))
                 {
                     test.Key = privateKey;
                     yield return test;
@@ -175,9 +176,9 @@ namespace NBitcoin.Tests
 
         private IEnumerable<DeterministicSigTest> ParseTests(string tests)
         {
-            foreach(var test in tests.Split(new string[] { "With " }, StringSplitOptions.RemoveEmptyEntries))
+            foreach(string test in tests.Split(new string[] { "With " }, StringSplitOptions.RemoveEmptyEntries))
             {
-                var result = ParseTest("With " + test);
+                DeterministicSigTest result = ParseTest("With " + test);
                 if(result != null)
                     yield return result;
             }
@@ -185,7 +186,7 @@ namespace NBitcoin.Tests
 
         private DeterministicSigTest ParseTest(string data)
         {
-            var match = Regex.Match(data, "With (.*?), message = \"?(.*?)\"?:");
+            Match match = Regex.Match(data, "With (.*?), message = \"?(.*?)\"?:");
             if(!match.Success)
                 return null;
             data = data.Replace(match.Value, "");
@@ -204,13 +205,14 @@ namespace NBitcoin.Tests
 
         private static Dictionary<string, string> ToDictionnary(string data)
         {
-            Dictionary<string, string> values = new Dictionary<string, string>();
+            var values = new Dictionary<string, string>();
 
-            var lines = data.Split(new string[] { "\r\n" }, StringSplitOptions.RemoveEmptyEntries);
+            // The state of the line separators may be affected by copy operations - so do an environment independent line split...
+            string[] lines = data.Split(new string[] { "\r\n", "\r", "\n" }, StringSplitOptions.RemoveEmptyEntries);
             string previous = null;
-            foreach(var line in lines)
+            foreach(string line in lines)
             {
-                var kv = line.Replace("\t", "")
+                string[] kv = line.Replace("\t", "")
                               .Replace(" ", "")
                               .Split(new string[] { ":", "=" }, StringSplitOptions.RemoveEmptyEntries);
                 if(kv.Length != 2)
@@ -231,8 +233,8 @@ namespace NBitcoin.Tests
         {
             Dictionary<string, string> values = ToDictionnary(data);
 
-            var curveName = values["curve"].Replace("NIST", "");
-            var curve = SecNamedCurves.GetByOid(curves[curveName]);
+            string curveName = values["curve"].Replace("NIST", "");
+            X9ECParameters curve = SecNamedCurves.GetByOid(curves[curveName]);
             var domain = new ECDomainParameters(curve.Curve, curve.G, new BigInteger(values["q"], 16), curve.H);
             Assert.Equal(domain.N, curve.N);
 

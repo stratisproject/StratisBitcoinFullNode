@@ -6,11 +6,11 @@ namespace NBitcoin.OpenAsset
 {
     public class CachedColoredTransactionRepository : IColoredTransactionRepository
     {
-        IColoredTransactionRepository _Inner;
-        CachedTransactionRepository _InnerTransactionRepository;
-        Dictionary<uint256, ColoredTransaction> _ColoredTransactions = new Dictionary<uint256, ColoredTransaction>();
-        Queue<uint256> _EvictionQueue = new Queue<uint256>();
-        ReaderWriterLock _lock = new ReaderWriterLock();
+        private IColoredTransactionRepository _Inner;
+        private CachedTransactionRepository _InnerTransactionRepository;
+        private Dictionary<uint256, ColoredTransaction> _ColoredTransactions = new Dictionary<uint256, ColoredTransaction>();
+        private Queue<uint256> _EvictionQueue = new Queue<uint256>();
+        private ReaderWriterLock _lock = new ReaderWriterLock();
 
         public ColoredTransaction GetFromCache(uint256 txId)
         {

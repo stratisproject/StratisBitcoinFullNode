@@ -1,14 +1,15 @@
 ﻿using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using FluentAssertions;
 using NBitcoin;
-using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Controllers;
 using Stratis.Bitcoin.Features.Wallet.Models;
-using Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers;
-using Stratis.Bitcoin.IntegrationTests.TestFramework;
+using Stratis.Bitcoin.IntegrationTests.Common;
+using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
+using Stratis.Bitcoin.Tests.Common.TestFramework;
 using Xunit.Abstractions;
 
 namespace Stratis.Bitcoin.IntegrationTests.BlockStore
@@ -48,7 +49,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
 
         protected override void BeforeTest()
         {
-            this.builder = NodeBuilder.Create(caller: this.CurrentTest.DisplayName);
+            this.builder = NodeBuilder.Create(Path.Combine(this.GetType().Name, this.CurrentTest.DisplayName));
         }
 
         protected override void AfterTest()
@@ -90,7 +91,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
 
         public void some_real_blocks_with_a_uint256_identifier()
         {
-            this.maturity = (int)this.node.FullNode.Network.Consensus.Option<PowConsensusOptions>().CoinbaseMaturity;
+            this.maturity = (int)this.node.FullNode.Network.Consensus.CoinbaseMaturity;
             this.blockIds = this.node.GenerateStratisWithMiner(this.maturity + 1);
         }
 

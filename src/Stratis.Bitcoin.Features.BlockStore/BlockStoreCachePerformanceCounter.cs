@@ -161,7 +161,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
         public override string ToString()
         {
-            StringBuilder builder = new StringBuilder();
+            var builder = new StringBuilder();
 
             builder.AppendLine($"===={this.Name} Cache Stats(%)====");
             builder.AppendLine("Hit Count:".PadRight(LoggingConfiguration.ColumnLength) + this.TotalCacheHitCount);
@@ -169,7 +169,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             builder.AppendLine("Remove Count:".PadRight(LoggingConfiguration.ColumnLength) + this.TotalCacheRemoveCount);
             builder.AppendLine("Set Count:".PadRight(LoggingConfiguration.ColumnLength) + this.TotalCacheSetCount);
 
-            var total = this.TotalCacheMissCount + this.TotalCacheHitCount;
+            long total = this.TotalCacheMissCount + this.TotalCacheHitCount;
             if (this.TotalCacheHitCount > 0 || this.TotalCacheMissCount > 0)
             {
                 builder.AppendLine("Hit:".PadRight(LoggingConfiguration.ColumnLength) + ((decimal)this.TotalCacheHitCount * 100m / total).ToString("0.00") + " %");

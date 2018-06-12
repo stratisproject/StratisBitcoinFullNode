@@ -53,7 +53,7 @@ namespace NBitcoin
 
         public override bool Equals(object obj)
         {
-            TxDestination item = obj as TxDestination;
+            var item = obj as TxDestination;
             if(item == null)
                 return false;
             return Utils.ArrayEqual(_DestBytes, item._DestBytes) && item.GetType() == this.GetType();
@@ -77,7 +77,7 @@ namespace NBitcoin
             return Utils.GetHashCode(_DestBytes);
         }
 
-        string _Str;
+        private string _Str;
         public override string ToString()
         {
             if(_Str == null)

@@ -1,6 +1,7 @@
 ﻿using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
+using Stratis.Bitcoin.Consensus.Rules;
 
 namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
 {
@@ -9,6 +10,9 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
     /// </summary>
     public class PosFutureDriftRule : StakeStoreConsensusRule
     {
+        /// <summary>Drifting Bug Fix, hardfork on Sat, 19 Nov 2016 00:00:00 GMT.</summary>
+        public const long DriftingBugFixTimestamp = 1479513600;
+
         /// <summary>New future drift in seconds after the hardfork.</summary>
         private const int NewFutureDriftSeconds = 15;
 
@@ -19,7 +23,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         /// <exception cref="ConsensusErrors.BlockTimestampTooFar">The block timestamp is too far into the future.</exception>
         public override Task RunAsync(RuleContext context)
         {
-            Block block = context.BlockValidationContext.Block;
+            Block block = context.ValidationContext.Block;
 
             long adjustedTime = this.Parent.DateTimeProvider.GetAdjustedTimeAsUnixTimestamp();
 
@@ -27,7 +31,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
             if (block.Header.Time > adjustedTime + GetFutureDrift(adjustedTime))
             {
                 // The block can be valid only after its time minus the future drift.
-                context.BlockValidationContext.RejectUntil = Utils.UnixTimeToDateTime(block.Header.Time - GetFutureDrift(block.Header.Time)).UtcDateTime;
+                context.ValidationContext.RejectUntil = Utils.UnixTimeToDateTime(block.Header.Time - GetFutureDrift(block.Header.Time)).UtcDateTime;
                 this.Logger.LogTrace("(-)[TIME_TOO_FAR]");
                 ConsensusErrors.BlockTimestampTooFar.Throw();
             }
@@ -59,7 +63,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
             // TODO: Break this rule to only be used by the statis chain 
             // this is a specific Stratis bug fix where the blockchain drifted 24 hour ahead as the protocol allowed that.
             // the protocol was fixed but historical blocks are still effected.
-            return time > PosConsensusValidator.DriftingBugFixTimestamp;
+            return time > DriftingBugFixTimestamp;
         }
     }
 }

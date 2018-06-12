@@ -252,10 +252,10 @@ namespace Stratis.Bitcoin.Connection
 
         public string GetStats()
         {
-            StringBuilder builder = new StringBuilder();
+            var builder = new StringBuilder();
             lock (this.downloads)
             {
-                PerformanceSnapshot diffTotal = new PerformanceSnapshot(0, 0);
+                var diffTotal = new PerformanceSnapshot(0, 0);
                 builder.AppendLine("=======Connections=======");
                 foreach (INetworkPeer peer in this.ConnectedPeers)
                 {
@@ -299,8 +299,8 @@ namespace Stratis.Bitcoin.Connection
 
             foreach (INetworkPeer peer in this.ConnectedPeers)
             {
-                ConnectionManagerBehavior connectionManagerBehavior = peer.Behavior<ConnectionManagerBehavior>();
-                ChainHeadersBehavior chainHeadersBehavior = peer.Behavior<ChainHeadersBehavior>();
+                var connectionManagerBehavior = peer.Behavior<ConnectionManagerBehavior>();
+                var chainHeadersBehavior = peer.Behavior<ChainHeadersBehavior>();
 
                 string agent = peer.PeerVersion != null ? peer.PeerVersion.UserAgent : "[Unknown]";
                 builder.AppendLine(

@@ -51,12 +51,12 @@ namespace NBitcoin.BouncyCastle.Crypto.Signers
             Arrays.Fill(V, (byte)0x01);
             Arrays.Fill(K, (byte)0);
 
-            byte[] x = new byte[(n.BitLength + 7) / 8];
+            var x = new byte[(n.BitLength + 7) / 8];
             byte[] dVal = BigIntegers.AsUnsignedByteArray(d);
 
             Array.Copy(dVal, 0, x, x.Length - dVal.Length, dVal.Length);
 
-            byte[] m = new byte[(n.BitLength + 7) / 8];
+            var m = new byte[(n.BitLength + 7) / 8];
 
             BigInteger mInt = BitsToInt(message);
 
@@ -100,7 +100,7 @@ namespace NBitcoin.BouncyCastle.Crypto.Signers
 
         public virtual BigInteger NextK()
         {
-            byte[] t = new byte[((n.BitLength + 7) / 8)];
+            var t = new byte[((n.BitLength + 7) / 8)];
 
             for(;;)
             {
@@ -139,7 +139,7 @@ namespace NBitcoin.BouncyCastle.Crypto.Signers
 
         private BigInteger BitsToInt(byte[] t)
         {
-            BigInteger v = new BigInteger(1, t);
+            var v = new BigInteger(1, t);
 
             if(t.Length * 8 > n.BitLength)
             {

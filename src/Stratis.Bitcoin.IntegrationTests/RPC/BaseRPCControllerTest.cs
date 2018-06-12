@@ -6,7 +6,6 @@ using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.RPC;
 using Stratis.Bitcoin.Tests.Common;
-using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.IntegrationTests.RPC
 {
@@ -29,8 +28,8 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
             NodeSettings nodeSettings = new NodeSettings(args:new string[] { $"-datadir={dir}" });
             var fullNodeBuilder = new FullNodeBuilder(nodeSettings);
             IFullNode fullNode = fullNodeBuilder
-                .UsePowConsensus()
                 .UseBlockStore()
+                .UsePowConsensus()
                 .UseMempool()
                 .AddRPC()
                 .Build();

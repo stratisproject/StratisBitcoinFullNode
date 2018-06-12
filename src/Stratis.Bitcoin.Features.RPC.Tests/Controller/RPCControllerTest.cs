@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Net;
 using System.Text;
 using Microsoft.AspNetCore.Hosting;
@@ -11,13 +10,13 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Abstractions;
 using Microsoft.AspNetCore.Mvc.Controllers;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
-using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.Primitives;
 using Moq;
 using NBitcoin;
 using NBitcoin.RPC;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.RPC.Controllers;
 using Stratis.Bitcoin.Features.RPC.Models;
 using Stratis.Bitcoin.Tests.Common.Logging;
@@ -46,7 +45,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
             this.fullNode.Setup(f => f.Network)
                 .Returns(this.network);
             this.rpcHost = new Mock<IWebHost>();
-            this.rpcSettings = new RpcSettings();
+            this.rpcSettings = new RpcSettings(new NodeSettings(this.network));
             this.serviceProvider = new Mock<IServiceProvider>();
             this.rpcClientFactory = new Mock<IRPCClientFactory>();
             this.actionDescriptorCollectionProvider = new Mock<IActionDescriptorCollectionProvider>();

@@ -214,8 +214,8 @@ namespace NBitcoin.RPC
 
                 if (options.SubtractFeeFromOutputs != null)
                 {
-                    JArray array = new JArray();
-                    foreach(var v in options.SubtractFeeFromOutputs)
+                    var array = new JArray();
+                    foreach(int v in options.SubtractFeeFromOutputs)
                     {
                         array.Add(new JValue(v));
                     }

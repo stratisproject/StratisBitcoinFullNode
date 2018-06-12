@@ -4,10 +4,10 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
-using Newtonsoft.Json.Linq;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Controllers;
+using Stratis.Bitcoin.Controllers.Models;
 using Stratis.Bitcoin.Features.Consensus.Interfaces;
 using Stratis.Bitcoin.Features.RPC.Models;
 using Stratis.Bitcoin.Interfaces;
@@ -16,11 +16,15 @@ using Stratis.Bitcoin.Utilities.Extensions;
 
 namespace Stratis.Bitcoin.Features.RPC.Controllers
 {
+    /// <summary>
+    /// A <see cref="FeatureController"/> that implements several RPC methods for the full node.
+    /// </summary>
     public class FullNodeController : FeatureController
     {
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
 
+        /// <summary>An interface implementation used to retrieve a transaction.</summary>
         private readonly IPooledTransaction pooledTransaction;
 
         /// <summary>An interface implementation used to retrieve unspent transactions from a pooled source.</summary>
@@ -29,6 +33,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
         /// <summary>An interface implementation used to retrieve unspent transactions.</summary>
         private readonly IGetUnspentTransaction getUnspentTransaction;
 
+        /// <summary>An interface implementation used to retrieve the network difficulty target.</summary>
         private readonly INetworkDifficulty networkDifficulty;
 
         /// <summary>Manager of the longest fully validated chain of blocks.</summary>
@@ -63,6 +68,9 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
             this.consensusLoop = consensusLoop;
         }
 
+        /// <summary>
+        /// Stops the full node.
+        /// </summary>
         [ActionName("stop")]
         [ActionDescription("Stops the full node.")]
         public Task Stop()
@@ -76,6 +84,14 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
             return Task.CompletedTask;
         }
 
+        /// <summary>
+        /// Retrieves a transaction given a transaction hash in either simple or verbose form.
+        /// </summary>
+        /// <param name="txid">The transaction hash.</param>
+        /// <param name="verbose">Non-zero if verbose model wanted.</param>
+        /// <returns>A <see cref="TransactionBriefModel"/> or <see cref="TransactionVerboseModel"/> as specified by verbose. <c>null</c> if no transaction matching the hash.</returns>
+        /// <exception cref="ArgumentException">Thrown if txid is invalid uint256.</exception>"
+        /// <remarks>Requires txindex=1, otherwise only txes that spend or create UTXOs for a wallet can be returned.</remarks>
         [ActionName("getrawtransaction")]
         [ActionDescription("Gets a raw, possibly pooled, transaction from the full node.")]
         public async Task<TransactionModel> GetRawTransactionAsync(string txid, int verbose = 0)
@@ -107,10 +123,11 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
         /// <summary>
         /// Implements gettextout RPC call.
         /// </summary>
-        /// <param name="txid">The transaction id</param>
-        /// <param name="vout">The vout number</param>
-        /// <param name="includeMemPool">Whether to include the mempool</param>
-        /// <returns>The GetTxOut rpc format</returns>
+        /// <param name="txid">The transaction id.</param>
+        /// <param name="vout">The vout number.</param>
+        /// <param name="includeMemPool">Whether to include the mempool.</param>
+        /// <returns>A <see cref="GetTxOutModel"/> containing the unspent outputs of the transaction id and vout. <c>null</c> if unspent outputs not found.</returns>
+        /// <exception cref="ArgumentException">Thrown if txid is invalid.</exception>"
         [ActionName("gettxout")]
         [ActionDescription("Gets the unspent outputs of a transaction id and vout number.")]
         public async Task<GetTxOutModel> GetTxOutAsync(string txid, uint vout, bool includeMemPool = true)
@@ -135,6 +152,10 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
             return new GetTxOutModel(unspentOutputs, vout, this.Network, this.Chain.Tip);
         }
 
+        /// <summary>
+        /// Implements the getblockcount RPC call. 
+        /// </summary>
+        /// <returns>The current consensus tip height.</returns>
         [ActionName("getblockcount")]
         [ActionDescription("Gets the current consensus tip height.")]
         public int GetBlockCount()
@@ -142,6 +163,10 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
             return this.consensusLoop?.Tip.Height ?? -1;
         }
 
+        /// <summary>
+        /// Implements the getinfo RPC call.
+        /// </summary>
+        /// <returns>A <see cref="GetInfoModel"/> with information about the full node.</returns>
         [ActionName("getinfo")]
         [ActionDescription("Gets general information about the full node.")]
         public GetInfoModel GetInfo()
@@ -174,9 +199,11 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
         /// <summary>
         /// Implements getblockheader RPC call.
         /// </summary>
-        /// <param name="hash">Hash of block.</param>
+        /// <param name="hash">Hash of the block.</param>
         /// <param name="isJsonFormat">Indicates whether to provide data in Json or binary format.</param>
         /// <returns>The block header rpc format.</returns>
+        /// <exception cref="NotImplementedException">Thrown if isJsonFormat = false</exception>
+        /// <remarks>The binary format is not supported with RPC.</remarks>
         [ActionName("getblockheader")]
         [ActionDescription("Gets the block header of the block identified by the hash.")]
         public BlockHeaderModel GetBlockHeader(string hash, bool isJsonFormat = true)
@@ -194,7 +221,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
             BlockHeaderModel model = null;
             if (this.Chain != null)
             {
-                var blockHeader = this.Chain.GetBlock(uint256.Parse(hash))?.Header;
+                BlockHeader blockHeader = this.Chain.GetBlock(uint256.Parse(hash))?.Header;
                 if (blockHeader != null)
                     model = new BlockHeaderModel(blockHeader);
             }
@@ -207,6 +234,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
         /// </summary>
         /// <param name="address">bech32 or base58 BitcoinAddress to validate.</param>
         /// <returns>ValidatedAddress containing a boolean indicating address validity</returns>
+        /// <exception cref="ArgumentNullException">Thrown if address provided is null/empty.</exception>
         [ActionName("validateaddress")]
         [ActionDescription("Returns information about a bech32 or base58 bitcoin address")]
         public ValidatedAddress ValidateAddress(string address)

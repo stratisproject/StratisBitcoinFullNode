@@ -11,6 +11,8 @@ using Stratis.Bitcoin.BlockPulling;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Connection;
+using Stratis.Bitcoin.Consensus;
+using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.Consensus.Interfaces;
 using Stratis.Bitcoin.Features.Consensus.Rules;
@@ -18,6 +20,7 @@ using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.MemoryPool.Fee;
 using Stratis.Bitcoin.Features.Miner;
+using Stratis.Bitcoin.Mining;
 using Stratis.Bitcoin.P2P;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.Tests.Common;
@@ -35,6 +38,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
         public List<Block> Blocks { get; set; }
 
         public ConsensusLoop Consensus { get; set; }
+
+        public ConsensusRules ConsensusRules { get; set; }
 
         public PeerBanning PeerBanning { get; set; }
 
@@ -82,10 +87,9 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
 
             network.Consensus.Options = new PowConsensusOptions();
 
-            ConsensusSettings consensusSettings = new ConsensusSettings().Load(testChainContext.NodeSettings);
+            ConsensusSettings consensusSettings = new ConsensusSettings(testChainContext.NodeSettings);
             testChainContext.Checkpoints = new Checkpoints();
 
-            PowConsensusValidator consensusValidator = new PowConsensusValidator(network, testChainContext.Checkpoints, testChainContext.DateTimeProvider, testChainContext.LoggerFactory);
             testChainContext.Chain = new ConcurrentChain(network);
             CachedCoinView cachedCoinView = new CachedCoinView(new InMemoryCoinView(testChainContext.Chain.Tip.HashBlock), DateTimeProvider.Default, testChainContext.LoggerFactory);
 
@@ -103,14 +107,14 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
             LookaheadBlockPuller blockPuller = new LookaheadBlockPuller(testChainContext.Chain, testChainContext.ConnectionManager, testChainContext.LoggerFactory);
             testChainContext.PeerBanning = new PeerBanning(testChainContext.ConnectionManager, testChainContext.LoggerFactory, testChainContext.DateTimeProvider, testChainContext.PeerAddressManager);
             NodeDeployments deployments = new NodeDeployments(testChainContext.Network, testChainContext.Chain);
-            ConsensusRules consensusRules = new PowConsensusRules(testChainContext.Network, testChainContext.LoggerFactory, testChainContext.DateTimeProvider, testChainContext.Chain, deployments, consensusSettings, testChainContext.Checkpoints, new InMemoryCoinView(new uint256()), new Mock<ILookaheadBlockPuller>().Object).Register(new FullNodeBuilderConsensusExtension.PowConsensusRulesRegistration());
-            testChainContext.Consensus = new ConsensusLoop(new AsyncLoopFactory(testChainContext.LoggerFactory), consensusValidator, new NodeLifetime(), testChainContext.Chain, cachedCoinView, blockPuller, new NodeDeployments(network, testChainContext.Chain), testChainContext.LoggerFactory, new ChainState(new InvalidBlockHashStore(testChainContext.DateTimeProvider)), testChainContext.ConnectionManager, testChainContext.DateTimeProvider, new Signals.Signals(), consensusSettings, testChainContext.NodeSettings, testChainContext.PeerBanning, consensusRules);
+            testChainContext.ConsensusRules = new PowConsensusRules(testChainContext.Network, testChainContext.LoggerFactory, testChainContext.DateTimeProvider, testChainContext.Chain, deployments, consensusSettings, testChainContext.Checkpoints, new InMemoryCoinView(new uint256()), new Mock<ILookaheadBlockPuller>().Object).Register(new FullNodeBuilderConsensusExtension.PowConsensusRulesRegistration());
+            testChainContext.Consensus = new ConsensusLoop(new AsyncLoopFactory(testChainContext.LoggerFactory), new NodeLifetime(), testChainContext.Chain, cachedCoinView, blockPuller, new NodeDeployments(network, testChainContext.Chain), testChainContext.LoggerFactory, new ChainState(new InvalidBlockHashStore(testChainContext.DateTimeProvider)), testChainContext.ConnectionManager, testChainContext.DateTimeProvider, new Signals.Signals(), consensusSettings, testChainContext.NodeSettings, testChainContext.PeerBanning, testChainContext.ConsensusRules);
             await testChainContext.Consensus.StartAsync();
 
             return testChainContext;
         }
 
-        public static async Task<List<Block>> MineBlocksWithLastBlockMutatedAsync(TestChainContext testChainContext, 
+        public static async Task<List<Block>> MineBlocksWithLastBlockMutatedAsync(TestChainContext testChainContext,
             int count, Script receiver)
         {
             return await MineBlocksAsync(testChainContext, count, receiver, true);
@@ -135,7 +139,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
             List<Block> blocks = new List<Block>();
             for (int i = 0; i < count; ++i)
             {
-                BlockTemplate newBlock = await MineBlockAsync(testChainContext, receiver, mempool, mempoolLock, mutateLastBlock && i == count-1);
+                BlockTemplate newBlock = await MineBlockAsync(testChainContext, receiver, mempool, mempoolLock, mutateLastBlock && i == count - 1);
 
                 blocks.Add(newBlock.Block);
             }
@@ -163,7 +167,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
         private static BlockTemplate CreateBlockTemplate(TestChainContext testChainContext, Script scriptPubKey,
             TxMempool mempool, MempoolSchedulerLock mempoolLock)
         {
-            PowBlockAssembler blockAssembler = CreatePowBlockAssembler(testChainContext.Consensus,
+            PowBlockDefinition blockAssembler = CreatePowBlockAssembler(testChainContext.Consensus, testChainContext.ConsensusRules,
                 testChainContext.DateTimeProvider, testChainContext.LoggerFactory as LoggerFactory, mempool, mempoolLock,
                 testChainContext.Network);
 
@@ -188,7 +192,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
         private static void TryFindNonceForProofOfWork(TestChainContext testChainContext, BlockTemplate newBlock)
         {
             var maxTries = int.MaxValue;
-            while (maxTries > 0 && !newBlock.Block.CheckProofOfWork(testChainContext.Network.Consensus))
+            while (maxTries > 0 && !newBlock.Block.CheckProofOfWork())
             {
                 ++newBlock.Block.Header.Nonce;
                 --maxTries;
@@ -207,7 +211,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
 
         private static async Task ValidateBlock(TestChainContext testChainContext, BlockTemplate newBlock)
         {
-            var context = new BlockValidationContext {Block = newBlock.Block};
+            var context = new ValidationContext { Block = newBlock.Block };
             await testChainContext.Consensus.AcceptBlockAsync(context);
             Assert.Null(context.Error);
         }
@@ -220,11 +224,12 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
         /// <param name="chain">Block chain.</param>
         /// <param name="mempoolLock">Async lock for memory pool.</param>
         /// <param name="mempool">Memory pool for transactions.</param>
+        /// <param name="consensusRules">The rules.</param>
         /// <param name="dateTimeProvider">Date and time provider.</param>
         /// <returns>Proof of work block assembler.</returns>
-        private static PowBlockAssembler CreatePowBlockAssembler(IConsensusLoop consensusLoop, IDateTimeProvider dateTimeProvider, LoggerFactory loggerFactory, TxMempool mempool, MempoolSchedulerLock mempoolLock, Network network)
+        private static PowBlockDefinition CreatePowBlockAssembler(IConsensusLoop consensusLoop, IConsensusRules consensusRules, IDateTimeProvider dateTimeProvider, LoggerFactory loggerFactory, TxMempool mempool, MempoolSchedulerLock mempoolLock, Network network)
         {
-            var options = new AssemblerOptions
+            var options = new BlockDefinitionOptions
             {
                 BlockMaxWeight = network.Consensus.Option<PowConsensusOptions>().MaxBlockWeight,
                 BlockMaxSize = network.Consensus.Option<PowConsensusOptions>().MaxBlockSerializedSize
@@ -233,7 +238,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
             var blockMinFeeRate = new FeeRate(PowMining.DefaultBlockMinTxFee);
             options.BlockMinFeeRate = blockMinFeeRate;
 
-            return new PowBlockAssembler(consensusLoop, dateTimeProvider, loggerFactory, mempool, mempoolLock, network, options);
+            return new PowBlockDefinition(consensusLoop, dateTimeProvider, loggerFactory, mempool, mempoolLock, network, consensusRules, options);
         }
     }
 }

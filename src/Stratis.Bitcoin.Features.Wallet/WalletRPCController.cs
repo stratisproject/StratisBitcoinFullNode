@@ -24,17 +24,17 @@ namespace Stratis.Bitcoin.Features.Wallet
         [ActionDescription("Sends money to a bitcoin address.")]
         public uint256 SendToAddress(BitcoinAddress bitcoinAddress, Money amount)
         {
-            var account = this.GetAccount();
+            WalletAccountReference account = this.GetAccount();
             return uint256.Zero;
         }
 
         private WalletAccountReference GetAccount()
         {
             //TODO: Support multi wallet like core by mapping passed RPC credentials to a wallet/account
-            var w = this.WalletManager.GetWalletsNames().FirstOrDefault();
+            string w = this.WalletManager.GetWalletsNames().FirstOrDefault();
             if (w == null)
                 throw new RPCServerException(NBitcoin.RPC.RPCErrorCode.RPC_INVALID_REQUEST, "No wallet found");
-            var account = this.WalletManager.GetAccounts(w).FirstOrDefault();
+            HdAccount account = this.WalletManager.GetAccounts(w).FirstOrDefault();
             return new WalletAccountReference(w, account.Name);
         }
     }

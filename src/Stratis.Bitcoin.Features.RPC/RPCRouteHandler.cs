@@ -40,15 +40,15 @@ namespace Stratis.Bitcoin.Features.RPC
         {
             Guard.NotNull(context, nameof(context));
 
-            MemoryStream ms = new MemoryStream();
+            var ms = new MemoryStream();
             await context.HttpContext.Request.Body.CopyToAsync(ms);
             context.HttpContext.Request.Body = ms;
             ms.Position = 0;
-            var req = JObject.Load(new JsonTextReader(new StreamReader(ms)));
+            JObject req = JObject.Load(new JsonTextReader(new StreamReader(ms)));
             ms.Position = 0;
-            var method = (string)req["method"];
+            string method = (string)req["method"];
 
-            var controllerName = this.actionDescriptor.ActionDescriptors.Items.OfType<ControllerActionDescriptor>()
+            string controllerName = this.actionDescriptor.ActionDescriptors.Items.OfType<ControllerActionDescriptor>()
                     .FirstOrDefault(w => w.ActionName == method)?.ControllerName ?? string.Empty;
 
             context.RouteData.Values.Add("action", method);

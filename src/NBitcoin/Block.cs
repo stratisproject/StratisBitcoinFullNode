@@ -105,6 +105,10 @@ namespace NBitcoin
 
         #endregion
 
+        /// <summary>
+        /// Generates the hash of a <see cref="BlockHeader"/>.
+        /// </summary>
+        /// <returns>A hash.</returns>
         public virtual uint256 GetHash()
         {
             uint256 hash = null;
@@ -116,7 +120,7 @@ namespace NBitcoin
             if (hash != null)
                 return hash;
 
-            using (HashStream hs = new HashStream())
+            using (var hs = new HashStream())
             {
                 this.ReadWrite(new BitcoinStream(hs, true));
                 hash = hs.GetHash();
@@ -131,6 +135,10 @@ namespace NBitcoin
             return hash;
         }
 
+        /// <summary>
+        /// Generates a hash for a proof-of-work block header.
+        /// </summary>
+        /// <returns>A hash.</returns>
         public virtual uint256 GetPoWHash()
         {
             return this.GetHash();
@@ -150,7 +158,7 @@ namespace NBitcoin
                 this.hashes[0] = this.GetHash();
         }
 
-        public bool CheckProofOfWork(Consensus consensus)
+        public bool CheckProofOfWork()
         {
             BigInteger bits = this.Bits.ToBigInteger();
             if ((bits.CompareTo(BigInteger.Zero) <= 0) || (bits.CompareTo(Pow256) >= 0))
@@ -212,6 +220,9 @@ namespace NBitcoin
 
         private BlockHeader header;
 
+        /// <summary>The size of the block in bytes, the block must be serialized for this property to be set.</summary>
+        public long? BlockSize { get; protected set; }
+
         // network and disk
         private List<Transaction> transactions = new List<Transaction>();
         public List<Transaction> Transactions { get { return this.transactions; } set { this.transactions = value; } }
@@ -239,7 +250,7 @@ namespace NBitcoin
         [Obsolete("Should use Block.Load outside of ConsensusFactories")]
         internal Block(byte[] bytes, ConsensusFactory consensusFactory)
         {
-            BitcoinStream stream = new BitcoinStream(bytes)
+            var stream = new BitcoinStream(bytes)
             {
                 ConsensusFactory = consensusFactory
             };
@@ -256,6 +267,8 @@ namespace NBitcoin
         {
             stream.ReadWrite(ref this.header);
             stream.ReadWrite(ref this.transactions);
+
+            this.BlockSize = stream.Serializing ? stream.Counter.WrittenBytes : stream.Counter.ReadBytes;
         }
 
         public bool HeaderOnly
@@ -270,13 +283,14 @@ namespace NBitcoin
         {
             this.header.SetNull();
             this.transactions.Clear();
+            this.BlockSize = null;
         }
 
         public BlockHeader Header => this.header;
 
         public uint256 GetHash()
         {
-            // Block's hash is his header's hash.
+            // A Block's hash is it's header's hash.
             return this.header.GetHash();
         }
 
@@ -328,9 +342,9 @@ namespace NBitcoin
             this.Header.HashMerkleRoot = GetMerkleRoot().Hash;
         }
 
-        public bool CheckProofOfWork(Consensus consensus)
+        public bool CheckProofOfWork()
         {
-            return this.Header.CheckProofOfWork(consensus);
+            return this.Header.CheckProofOfWork();
         }
 
         public bool CheckMerkleRoot()
@@ -342,7 +356,7 @@ namespace NBitcoin
         {
             var formatter = new BlockExplorerFormatter();
             JObject block = JObject.Parse(json);
-            JArray txs = (JArray)block["tx"];
+            var txs = (JArray)block["tx"];
             Block blk = network.Consensus.ConsensusFactory.CreateBlock();
             blk.Header.Bits = new Target((uint)block["bits"]);
             blk.Header.BlockTime = Utils.UnixTimeToDateTime((uint)block["time"]);

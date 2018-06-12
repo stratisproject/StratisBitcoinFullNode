@@ -1,15 +1,16 @@
 ﻿using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using FluentAssertions;
 using NBitcoin;
-using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Controllers;
 using Stratis.Bitcoin.Features.Wallet.Models;
-using Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers;
-using Stratis.Bitcoin.IntegrationTests.TestFramework;
+using Stratis.Bitcoin.IntegrationTests.Common;
+using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
+using Stratis.Bitcoin.Tests.Common.TestFramework;
 using Xunit.Abstractions;
 
 namespace Stratis.Bitcoin.IntegrationTests.Transactions
@@ -36,7 +37,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Transactions
         }
         protected override void BeforeTest()
         {
-            this.builder = NodeBuilder.Create(caller: this.CurrentTest.DisplayName);
+            this.builder = NodeBuilder.Create(Path.Combine(this.GetType().Name, this.CurrentTest.DisplayName));
         }
 
         protected override void AfterTest()
@@ -68,7 +69,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Transactions
         {
             this.key = this.sendingWallet.GetExtendedPrivateKeyForAddress(this.password, this.senderAddress).PrivateKey;
             this.senderNode.SetDummyMinerSecret(new BitcoinSecret(this.key, this.senderNode.FullNode.Network));
-            var maturity = (int)this.senderNode.FullNode.Network.Consensus.Option<PowConsensusOptions>().CoinbaseMaturity;
+            var maturity = (int)this.senderNode.FullNode.Network.Consensus.CoinbaseMaturity;
             this.senderNode.GenerateStratisWithMiner(maturity + 5);
             TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(this.senderNode));
 

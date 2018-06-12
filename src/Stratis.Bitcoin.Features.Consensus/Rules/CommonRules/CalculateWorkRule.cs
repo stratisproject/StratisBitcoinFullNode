@@ -1,5 +1,6 @@
 ﻿using System.Threading.Tasks;
 using NBitcoin;
+using Stratis.Bitcoin.Consensus.Rules;
 
 namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
 {
@@ -13,10 +14,10 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         /// <exception cref="ConsensusErrors.HighHash"> Thrown if block doesn't have a valid PoS header.</exception>
         public override Task RunAsync(RuleContext context)
         {
-            if (context.CheckPow && !context.BlockValidationContext.Block.Header.CheckProofOfWork(context.Consensus))
+            if (!context.MinedBlock && !context.ValidationContext.Block.Header.CheckProofOfWork())
                 ConsensusErrors.HighHash.Throw();
 
-            context.NextWorkRequired = context.BlockValidationContext.ChainedHeader.GetWorkRequired(context.Consensus);
+            context.NextWorkRequired = context.ValidationContext.ChainedHeader.GetWorkRequired(context.Consensus);
 
             return Task.CompletedTask;
         }

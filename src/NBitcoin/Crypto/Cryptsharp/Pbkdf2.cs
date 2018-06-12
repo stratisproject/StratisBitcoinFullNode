@@ -52,15 +52,16 @@ namespace NBitcoin.Crypto
     internal class Pbkdf2 : Stream
     {
         #region PBKDF2
-        byte[] _saltBuffer, _digest, _digestT1;
+
+        private byte[] _saltBuffer, _digest, _digestT1;
 
 #if USEBC || WINDOWS_UWP || NETCORE
-        IMac _hmacAlgorithm;
+        private IMac _hmacAlgorithm;
 #else
         KeyedHashAlgorithm _hmacAlgorithm;
 #endif
 
-        int _iterations;
+        private int _iterations;
 
         /// <summary>
         /// Creates a new PBKDF2 stream.
@@ -114,7 +115,7 @@ namespace NBitcoin.Crypto
         {
             NBitcoin.Crypto.Internal.Check.Range("count", count, 0, int.MaxValue);
 
-            byte[] buffer = new byte[count];
+            var buffer = new byte[count];
             int bytes = Read(buffer, 0, count);
             if(bytes < count)
             {
@@ -142,7 +143,7 @@ namespace NBitcoin.Crypto
         {
             NBitcoin.Crypto.Internal.Check.Range("derivedKeyLength", derivedKeyLength, 0, int.MaxValue);
 
-            using(Pbkdf2 kdf = new Pbkdf2(hmacAlgorithm, salt, iterations))
+            using(var kdf = new Pbkdf2(hmacAlgorithm, salt, iterations))
             {
                 return kdf.Read(derivedKeyLength);
             }
@@ -183,7 +184,7 @@ namespace NBitcoin.Crypto
         }
 #endif
 
-        void ComputeBlock(uint pos)
+        private void ComputeBlock(uint pos)
         {
             BitPacking.BEBytesFromUInt32(pos, _saltBuffer, _saltBuffer.Length - 4);
             ComputeHmac(_saltBuffer, _digestT1);
@@ -202,7 +203,7 @@ namespace NBitcoin.Crypto
         }
 
 #if USEBC || WINDOWS_UWP || NETCORE
-        void ComputeHmac(byte[] input, byte[] output)
+        private void ComputeHmac(byte[] input, byte[] output)
         {
             var hash = new byte[_hmacAlgorithm.GetMacSize()];
             _hmacAlgorithm.BlockUpdate(input, 0, input.Length);
@@ -221,7 +222,8 @@ namespace NBitcoin.Crypto
         #endregion
 
         #region Stream
-        long _blockStart, _blockEnd, _pos;
+
+        private long _blockStart, _blockEnd, _pos;
 
         /// <exclude />
         public override void Flush()

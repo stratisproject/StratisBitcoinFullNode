@@ -26,7 +26,7 @@ namespace NBitcoin.JsonConverters
             try
             {
 
-                var bytes = Encoders.Hex.DecodeData((string)reader.Value);
+                byte[] bytes = Encoders.Hex.DecodeData((string)reader.Value);
                 if(objectType == typeof(Key))
                     return new Key(bytes);
                 else
@@ -43,7 +43,7 @@ namespace NBitcoin.JsonConverters
 
         private static void InverseIfNeeded(Type type, byte[] bytes)
         {
-            var inverse = type == typeof(uint256) || type == typeof(uint160);
+            bool inverse = type == typeof(uint256) || type == typeof(uint160);
             if(inverse)
                 Array.Reverse(bytes);
         }
@@ -52,7 +52,7 @@ namespace NBitcoin.JsonConverters
         {
             if(value != null)
             {
-                var bytes = ((IBitcoinSerializable)value).ToBytes();
+                byte[] bytes = ((IBitcoinSerializable)value).ToBytes();
                 writer.WriteValue(Encoders.Hex.EncodeData(bytes));
             }
         }

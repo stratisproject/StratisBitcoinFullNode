@@ -1,19 +1,16 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Moq;
 using NBitcoin;
 using Stratis.Bitcoin.Base.Deployments;
 using Stratis.Bitcoin.BlockPulling;
+using Stratis.Bitcoin.Configuration.Settings;
+using Stratis.Bitcoin.Consensus;
+using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.Consensus.Interfaces;
-using Stratis.Bitcoin.Features.Consensus.Rules;
-using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
 using Stratis.Bitcoin.Utilities;
-using Xunit;
 
 namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
 {
@@ -30,6 +27,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
         protected List<ConsensusRule> ruleRegistrations;
         protected Mock<IRuleRegistration> ruleRegistration;
         protected RuleContext ruleContext;
+        protected Transaction lastAddedTransaction;
 
         protected ConsensusRuleUnitTestBase(Network network)
         {
@@ -50,26 +48,37 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
             this.ruleRegistration.Setup(r => r.GetRules())
                 .Returns(() => { return this.ruleRegistrations; });
 
-            this.ruleContext = new RuleContext()
+            if (network.Consensus.IsProofOfStake)
             {
-                BlockValidationContext = new BlockValidationContext()
-            };
+                this.ruleContext = new PosRuleContext(new ValidationContext(), this.network.Consensus, this.concurrentChain.Tip);
+            }
+            else
+            {
+                this.ruleContext = new PowRuleContext(new ValidationContext(), this.network.Consensus, this.concurrentChain.Tip);
+            }
         }
 
-        protected static void AddBlocksToChain(ConcurrentChain chain, int blockAmount)
+        protected void AddBlocksToChain(ConcurrentChain chain, int blockAmount)
         {
             var nonce = RandomUtils.GetUInt32();
             var prevBlockHash = chain.Tip.HashBlock;
+
+            (this.ruleContext as UtxoRuleContext).UnspentOutputSet = new UnspentOutputSet();
+            (this.ruleContext as UtxoRuleContext).UnspentOutputSet.SetCoins(new UnspentOutputs[0]);
+
             for (var i = 0; i < blockAmount; i++)
             {
                 var block = chain.Network.Consensus.ConsensusFactory.CreateBlock();
-                block.AddTransaction(chain.Network.Consensus.ConsensusFactory.CreateTransaction());
+                Transaction transaction = chain.Network.Consensus.ConsensusFactory.CreateTransaction();
+                block.AddTransaction(transaction);
                 block.UpdateMerkleRoot();
                 block.Header.BlockTime = new DateTimeOffset(new DateTime(2017, 1, 1, 0, 0, 0, DateTimeKind.Utc).AddDays(i));
                 block.Header.HashPrevBlock = prevBlockHash;
                 block.Header.Nonce = nonce;
                 chain.SetTip(block.Header);
                 prevBlockHash = block.GetHash();
+                (this.ruleContext as UtxoRuleContext).UnspentOutputSet.Update(transaction, i);
+                this.lastAddedTransaction = transaction;
             }
         }
     }
@@ -122,10 +131,14 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
             this.ruleRegistration.Setup(r => r.GetRules())
                 .Returns(() => { return this.ruleRegistrations; });
 
-            this.ruleContext = new RuleContext()
+            if (network.Consensus.IsProofOfStake)
             {
-                BlockValidationContext = new BlockValidationContext()
-            };
+                this.ruleContext = new PosRuleContext(new ValidationContext(), this.network.Consensus, this.concurrentChain.Tip);
+            }
+            else
+            {
+                this.ruleContext = new PowRuleContext(new ValidationContext(), this.network.Consensus, this.concurrentChain.Tip);
+            }
         }
 
         public virtual T InitializeConsensusRules()
