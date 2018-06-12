@@ -46,7 +46,7 @@ namespace NBitcoin
 
             if (IsProofOfStake(block))
             {
-                SetProofOfStake();
+                this.SetProofOfStake();
                 this.StakeTime = block.Transactions[1].Time;
                 this.PrevoutStake = block.Transactions[1].Inputs[0].PrevOut;
             }
@@ -80,7 +80,7 @@ namespace NBitcoin
             stream.ReadWrite(ref this.Mint);
             stream.ReadWrite(ref this.StakeModifier);
             stream.ReadWrite(ref this.StakeModifierV2);
-            if (IsProofOfStake())
+            if (this.IsProofOfStake())
             {
                 stream.ReadWrite(ref this.PrevoutStake);
                 stream.ReadWrite(ref this.StakeTime);
@@ -169,7 +169,7 @@ namespace NBitcoin
         /// <inheritdoc />
         public override Block CreateBlock()
         {
-            return new PosBlock(CreateBlockHeader());
+            return new PosBlock(this.CreateBlockHeader());
         }
 
         /// <inheritdoc />
@@ -208,7 +208,7 @@ namespace NBitcoin
             if (this.version > 6)
                 hash = Hashes.Hash256(this.ToBytes());
             else
-                hash = GetPoWHash();
+                hash = this.GetPoWHash();
 
             innerHashes = this.hashes;
             if (innerHashes != null)
