@@ -357,6 +357,12 @@ namespace Stratis.Bitcoin.Consensus
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(chainedHeader), chainedHeader);
 
+            if (!this.chainedHeadersByHash.ContainsKey(chainedHeader.HashBlock))
+            {
+                this.logger.LogTrace("(-)[NOT_FOUND]");
+                return new List<int>();
+            }
+
             List<int> peersToBan = this.RemoveSubtree(chainedHeader);
 
             this.RemoveUnclaimedBranch(chainedHeader.Previous);
