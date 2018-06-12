@@ -12,8 +12,8 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests.Notifications
         public void OnNextCoreProcessesOnTheWalletSyncManager()
         {
             var walletSyncManager = new Mock<IWalletSyncManager>();
-            TransactionObserver observer = new TransactionObserver(walletSyncManager.Object);
-            Transaction transaction = new Transaction();
+            var observer = new TransactionObserver(walletSyncManager.Object);
+            var transaction = new Transaction();
 
             observer.OnNext(transaction);
 

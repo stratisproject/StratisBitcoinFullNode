@@ -69,7 +69,7 @@ namespace Stratis.Bitcoin.Tests.Builder
         {
             var action = new Action<IServiceCollection>(e => { e.AddSingleton<IServiceProvider>(); });
 
-            var result = this.fullNodeBuilder.ConfigureServices(action);
+            IFullNodeBuilder result = this.fullNodeBuilder.ConfigureServices(action);
 
             Assert.Single(this.serviceCollectionDelegates);
             Assert.Equal(action, this.serviceCollectionDelegates[0]);
@@ -79,9 +79,9 @@ namespace Stratis.Bitcoin.Tests.Builder
         [Fact]
         public void ConfigureFeatureAddsFeatureToDelegatesList()
         {
-            var action = new Action<IFeatureCollection>(e => { var registrations = e.FeatureRegistrations; });
+            var action = new Action<IFeatureCollection>(e => { List<IFeatureRegistration> registrations = e.FeatureRegistrations; });
 
-            var result = this.fullNodeBuilder.ConfigureFeature(action);
+            IFullNodeBuilder result = this.fullNodeBuilder.ConfigureFeature(action);
 
             Assert.Single(this.featureCollectionDelegates);
             Assert.Equal(action, this.featureCollectionDelegates[0]);
@@ -91,9 +91,9 @@ namespace Stratis.Bitcoin.Tests.Builder
         [Fact]
         public void ConfigureServiceProviderAddsServiceProviderToDelegatesList()
         {
-            var action = new Action<IServiceProvider>(e => { var serv = e.GetService(typeof(string)); });
+            var action = new Action<IServiceProvider>(e => { object serv = e.GetService(typeof(string)); });
 
-            var result = this.fullNodeBuilder.ConfigureServiceProvider(action);
+            IFullNodeBuilder result = this.fullNodeBuilder.ConfigureServiceProvider(action);
 
             Assert.Single(this.serviceProviderDelegates);
             Assert.Equal(action, this.serviceProviderDelegates[0]);
@@ -103,7 +103,7 @@ namespace Stratis.Bitcoin.Tests.Builder
         [Fact]
         public void BuildWithInitialServicesSetupConfiguresFullNodeUsingConfiguration()
         {
-            var dataDir = "TestData/FullNodeBuilder/BuildWithInitialServicesSetup";
+            string dataDir = "TestData/FullNodeBuilder/BuildWithInitialServicesSetup";
             var nodeSettings = new NodeSettings(Network.StratisRegTest, args: new string[] { $"-datadir={dataDir}" });
 
             this.fullNodeBuilder = new FullNodeBuilder(nodeSettings, this.serviceCollectionDelegates, this.serviceProviderDelegates, this.featureCollectionDelegates, this.featureCollection);
@@ -119,7 +119,7 @@ namespace Stratis.Bitcoin.Tests.Builder
                 e.AddFeature<DummyFeature>();
             });
 
-            var result = this.fullNodeBuilder.Build();
+            IFullNode result = this.fullNodeBuilder.Build();
 
             Assert.NotNull(result);
         }
@@ -127,7 +127,7 @@ namespace Stratis.Bitcoin.Tests.Builder
         [Fact]
         public void BuildConfiguresFullNodeUsingConfiguration()
         {
-            var dataDir = "TestData/FullNodeBuilder/BuildConfiguresFullNodeUsingConfiguration";
+            string dataDir = "TestData/FullNodeBuilder/BuildConfiguresFullNodeUsingConfiguration";
             var nodeSettings = new NodeSettings(args: new string[] { $"-datadir={dataDir}" });
 
             this.fullNodeBuilder.ConfigureServices(e =>
@@ -144,7 +144,7 @@ namespace Stratis.Bitcoin.Tests.Builder
                 e.AddFeature<DummyFeature>();
             });
 
-            var result = this.fullNodeBuilder.Build();
+            IFullNode result = this.fullNodeBuilder.Build();
 
             Assert.NotNull(result);
         }
@@ -168,7 +168,7 @@ namespace Stratis.Bitcoin.Tests.Builder
         [Fact]
         public void BuildTwiceThrowsException()
         {
-            var dataDir = "TestData/FullNodeBuilder/BuildConfiguresFullNodeUsingConfiguration";
+            string dataDir = "TestData/FullNodeBuilder/BuildConfiguresFullNodeUsingConfiguration";
             var nodeSettings = new NodeSettings(args: new string[] { $"-datadir={dataDir}" });
 
             Assert.Throws<InvalidOperationException>(() =>

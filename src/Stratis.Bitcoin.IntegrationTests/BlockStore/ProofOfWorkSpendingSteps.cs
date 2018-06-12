@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using FluentAssertions;
@@ -44,7 +45,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
 
         private void a_sending_and_receiving_stratis_bitcoin_node_and_wallet()
         {
-            var nodeGroup = this.nodeGroupBuilder
+            IDictionary<string, CoreNode> nodeGroup = this.nodeGroupBuilder
                 .StratisPowNode("sending").Start().NotInIBD()
                 .WithWallet(SendingWalletName, WalletPassword)
                 .StratisPowNode("receiving").Start().NotInIBD()
@@ -79,12 +80,12 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
 
         private void spending_the_coins_from_original_block()
         {
-            var sendtoAddress = this.receivingStratisBitcoinNode.FullNode.WalletManager()
+            HdAddress sendtoAddress = this.receivingStratisBitcoinNode.FullNode.WalletManager()
                 .GetUnusedAddresses(new WalletAccountReference(ReceivingWalletName, AccountName), 2).ElementAt(1);
 
             try
             {
-                var transactionBuildContext = SharedSteps.CreateTransactionBuildContext(
+                TransactionBuildContext transactionBuildContext = SharedSteps.CreateTransactionBuildContext(
                     SendingWalletName,
                     AccountName,
                     WalletPassword,
@@ -120,7 +121,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
 
         private void the_transaction_is_put_in_the_mempool()
         {
-            var tx = this.sendingStratisBitcoinNode.FullNode.MempoolManager().GetTransaction(this.lastTransaction.GetHash()).GetAwaiter().GetResult();
+            Transaction tx = this.sendingStratisBitcoinNode.FullNode.MempoolManager().GetTransaction(this.lastTransaction.GetHash()).GetAwaiter().GetResult();
             tx.GetHash().Should().Be(this.lastTransaction.GetHash());
             this.caughtException.Should().BeNull();
         }

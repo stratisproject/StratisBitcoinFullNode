@@ -1,7 +1,7 @@
-﻿using Stratis.Bitcoin.Configuration;	
-using Stratis.Bitcoin.Tests.Common.Logging;	
-using Xunit;	
-	
+﻿using Stratis.Bitcoin.Configuration;
+using Stratis.Bitcoin.Tests.Common.Logging;
+using Xunit;
+
 namespace Stratis.Bitcoin.Features.Miner.Tests
 {	
     public class MinerSettingsTest : LogsTestBase	

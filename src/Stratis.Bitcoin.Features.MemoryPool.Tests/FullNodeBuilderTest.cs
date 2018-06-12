@@ -22,7 +22,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             // mempool requires all the features to be a fullnode
 
 
-            NodeSettings nodeSettings = new NodeSettings(args: new string[] {
+            var nodeSettings = new NodeSettings(args: new string[] {
                 $"-datadir=Stratis.Bitcoin.Features.MemoryPool.Tests/TestData/FullNodeBuilderTest/CanHaveAllServicesTest" });
             var fullNodeBuilder = new FullNodeBuilder(nodeSettings);
             IFullNode fullNode = fullNodeBuilder
