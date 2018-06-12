@@ -13,7 +13,6 @@ using Stratis.FederatedPeg.Features.SidechainGeneratorServices;
 using Stratis.Sidechains.Features.BlockchainGeneration;
 using Stratis.Sidechains.Features.BlockchainGeneration.Network;
 using System;
-using System.Linq;
 using System.Threading.Tasks;
 namespace Stratis.SidechainD
 {
@@ -21,85 +20,25 @@ namespace Stratis.SidechainD
     {
         public static void Main(string[] args)
         {
-            Program.SidechainGeneratorAsync(args).Wait();
-			//MinimalAsync(args).Wait();
-            //FullAsync(args).Wait();
+            MainAsync(args).Wait();
         }
 
-        public static async Task SidechainGeneratorAsync(string[] args)
+        public static async Task MainAsync(string[] args)
         {
             try
             {
-                var sidechainIdentifier = SidechainIdentifier.CreateFromArgs(args);
-                NodeSettings nodeSettings = new NodeSettings(SidechainNetwork.SidechainRegTest, 
-					ProtocolVersion.ALT_PROTOCOL_VERSION, args: args);
-
-                var node = new FullNodeBuilder()
-                    .UseNodeSettings(nodeSettings)
-                    .UsePosConsensus()
-                    .UseBlockStore()
-                    .UseMempool()
-                    .UseWallet()
-                    .AddPowPosMining()
-                    .AddSidechainGeneratorServices()
-                    .UseApi()
-                    .AddRPC()
-                    .Build();
-
-                await node.RunAsync();
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine("There was a problem initializing the node. Details: '{0}'", ex.Message);
-            }
-        }
-		
-		//minimum skeleton version of a blockchain
-        public static async Task MinimalAsync(string[] args)
-        {
-            try
-            {
-                var sidechainIdentifier = SidechainIdentifier.CreateFromArgs(args);
-                NodeSettings nodeSettings = new NodeSettings(SidechainNetwork.SidechainRegTest,
-                    ProtocolVersion.ALT_PROTOCOL_VERSION, args: args);
-
-                var node = new FullNodeBuilder()
-                    .UseNodeSettings(nodeSettings)
-                    .UseSimpleIBD()
-                    .Build();
-
-                await node.RunAsync();
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine("There was a problem initializing the node. Details: '{0}'", ex.Message);
-            }
-        }
-        public static async Task FullAsync(string[] args)
-        {
-            try
-            {
-                //testnet
-                //qedcGY2KkpZiQ3JsMTBcPd8JwAXM4vz9Nb
-                //regtest
-                //SPgEYdqmrbkLBR3dAhUgsRDvyHZyhpvPFs
-                //mainnet
-                //RaYuu3wJJ2cJkPtfb6RCbsF4aQgYrfGNqR
-
-                args = args.Concat(new [] { "mineaddress=RaYuu3wJJ2cJkPtfb6RCbsF4aQgYrfGNqR", "mine=1" }).ToArray();
-                var sidechainIdentifier = SidechainIdentifier.CreateFromArgs(args);
+                // To mine the premine coins, adapt and uncomment the following line.
+                // args = args.Concat(new [] { "mineaddress=RaYuu3wJJ2cJkPtfb6RCbsF4aQgYrfGNqR", "mine=1" }).ToArray();
                 NodeSettings nodeSettings = new NodeSettings(SidechainNetwork.SidechainTest, ProtocolVersion.ALT_PROTOCOL_VERSION, args: args);
                 
                 var node = new FullNodeBuilder()
                       .UseNodeSettings(nodeSettings)
-                      .UsePosConsensus()
                       .UseBlockStore()
+                      .UsePowConsensus()
                       .UseMempool()
                       .UseWallet()
-                      .AddPowPosMining()
                       .UseApi()
                       .AddRPC()
-                      .UseSidechains()
                       .Build();
 
                 await node.RunAsync();

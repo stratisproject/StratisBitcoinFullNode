@@ -120,10 +120,9 @@ namespace Stratis.FederatedPeg.IntegrationTests
             string sidechain_folder = @"..\..\..\..\..\assets";
 
             using (var nodeBuilder = NodeBuilder.Create(this))
-            using (SidechainIdentifier.Create("enigma", sidechain_folder))
+           // using (SidechainIdentifier.Create("enigma", sidechain_folder))
             {
-                SidechainIdentifier.Instance.Name.Should().Be("enigma");
-
+             
                 //creates the federation folder
                 var fedFolder = new TestFederationFolder();
 

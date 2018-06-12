@@ -8,12 +8,6 @@
     public interface ISidechainGeneratorServicesManager
     {
         /// <summary>
-        /// Returns the name of the Sidechain.
-        /// </summary>
-        /// <returns>The sidechain name.</returns>
-        string GetSidechainName();
-
-        /// <summary>
         /// Outputs the Sidechain multisig redeem script and the address of the multi-sig
         /// into the federation folder.
         /// </summary>

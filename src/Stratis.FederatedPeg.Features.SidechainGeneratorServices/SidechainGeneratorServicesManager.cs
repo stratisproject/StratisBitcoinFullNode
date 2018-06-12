@@ -32,12 +32,6 @@ namespace Stratis.FederatedPeg.Features.SidechainGeneratorServices
         }
 
         ///<inheritdoc/>
-        public string GetSidechainName()
-        {
-            return SidechainIdentifier.Instance.Name;
-        }
-
-        ///<inheritdoc/>
         public void OutputScriptPubKeyAndAddress(int multiSigM, int multiSigN, string folder)
         {
             // Load the federation members from the specified folder.

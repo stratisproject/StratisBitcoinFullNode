@@ -22,26 +22,9 @@ namespace Stratis.Sidechains.Features.BlockchainGeneration.Network
             //ComputeGenesisHash();
         }
 
-
-        private Target GetPowLimit()
-        {
-            if (this.NetworkName == SidechainNetwork.MainNetworkName) return new Target(new uint256("00000fffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"));
-            if (this.NetworkName == SidechainNetwork.TestNetworkName) return new Target(uint256.Parse("0000ffff00000000000000000000000000000000000000000000000000000000"));
-            if (this.NetworkName == SidechainNetwork.RegTestNetworkName) return new Target(new uint256("7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"));
-            throw new ArgumentException("invalid sidechain network name");
-        }
-
         internal static NetworkInfo FromNetworkInfoRequest(string networkName, NetworkInfoRequest request)
         {
             return new NetworkInfo(networkName, request.Time, request.Nonce, request.MessageStart, request.AddressPrefix, request.Port, request.RpcPort, request.ApiPort, request.CoinSymbol, request.GenesisHashHex);
-        }
-
-        private void ValidateOrAssignGenesisHash(string computedGenesisHashHex)
-        {
-            if (string.IsNullOrWhiteSpace(GenesisHashHex))
-                GenesisHashHex = computedGenesisHashHex;
-            else if (!GenesisHashHex.Equals(computedGenesisHashHex, StringComparison.InvariantCultureIgnoreCase))
-                throw new InvalidOperationException("The supplied Genesis Hash is not in line with the computed Genesis Hash");
         }
     }
 }

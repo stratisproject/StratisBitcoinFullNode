@@ -34,10 +34,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.Bitcoin.Features.Ge
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.Sidechains.Features.BlockchainGeneration", "Stratis.Sidechains.Features.BlockchainGeneration\Stratis.Sidechains.Features.BlockchainGeneration.csproj", "{3DEB5772-3918-483E-8B6B-7BDD9AA6B6B9}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.Sidechains.Features.BlockchainGeneration.IntegrationTests", "Stratis.Sidechains.Features.BlockchainGeneration.IntegrationTests\Stratis.Sidechains.Features.BlockchainGeneration.IntegrationTests.csproj", "{0B889C55-6F30-48CC-B51E-F635F8644B28}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.Sidechains.Features.BlockchainGeneration.Tests", "Stratis.Sidechains.Features.BlockchainGeneration.Tests\Stratis.Sidechains.Features.BlockchainGeneration.Tests.csproj", "{08C42E76-2A9F-4E00-80A5-8AFDB3FE71A8}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.FederatedSidechains.Initialisation", "Stratis.FederatedSidechains.Initialisation\Stratis.FederatedSidechains.Initialisation.csproj", "{3526B5DB-8E08-445F-9DCE-65566491D94F}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.FederatedSidechains.Initialisation.Tests", "Stratis.FederatedSidechains.Initialisation.Tests\Stratis.FederatedSidechains.Initialisation.Tests.csproj", "{3D106928-3A8E-4EB1-9F9A-45856DBAA16B}"
@@ -46,7 +42,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.ApexD", "Stratis.Ap
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.FederatedSidechains.IntegrationTests.Common", "Stratis.FederatedSidechains.IntegrationTests.Common\Stratis.FederatedSidechains.IntegrationTests.Common.csproj", "{636ED4E6-42FF-45DA-8728-D2AF2515549F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Stratis.Networks.Apex", "Stratis.Networks.Apex\Stratis.Networks.Apex.csproj", "{E28F1D74-D3D3-4BF0-A06F-12BACC3C662C}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.Networks.Apex", "Stratis.Networks.Apex\Stratis.Networks.Apex.csproj", "{E28F1D74-D3D3-4BF0-A06F-12BACC3C662C}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -106,14 +102,6 @@ Global
 		{3DEB5772-3918-483E-8B6B-7BDD9AA6B6B9}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{3DEB5772-3918-483E-8B6B-7BDD9AA6B6B9}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{3DEB5772-3918-483E-8B6B-7BDD9AA6B6B9}.Release|Any CPU.Build.0 = Release|Any CPU
-		{0B889C55-6F30-48CC-B51E-F635F8644B28}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{0B889C55-6F30-48CC-B51E-F635F8644B28}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{0B889C55-6F30-48CC-B51E-F635F8644B28}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{0B889C55-6F30-48CC-B51E-F635F8644B28}.Release|Any CPU.Build.0 = Release|Any CPU
-		{08C42E76-2A9F-4E00-80A5-8AFDB3FE71A8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{08C42E76-2A9F-4E00-80A5-8AFDB3FE71A8}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{08C42E76-2A9F-4E00-80A5-8AFDB3FE71A8}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{08C42E76-2A9F-4E00-80A5-8AFDB3FE71A8}.Release|Any CPU.Build.0 = Release|Any CPU
 		{3526B5DB-8E08-445F-9DCE-65566491D94F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{3526B5DB-8E08-445F-9DCE-65566491D94F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{3526B5DB-8E08-445F-9DCE-65566491D94F}.Release|Any CPU.ActiveCfg = Release|Any CPU

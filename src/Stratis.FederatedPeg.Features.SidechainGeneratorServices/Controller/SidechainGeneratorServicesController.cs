@@ -24,25 +24,6 @@ namespace Stratis.FederatedPeg.Features.SidechainGeneratorServices
         }
 
         /// <summary>
-        /// Gets the name of the sidechain that the node is running.
-        /// </summary>
-        /// <returns>The name of the sidechain.</returns>
-        [Route("get-sidechainname")]
-        [HttpGet]
-        public IActionResult GetSidechainName()
-        {
-            try
-            {
-                var sidechainName = this.sidechainGeneratorServicesManager.GetSidechainName();
-                return this.Json(sidechainName);
-            }
-            catch (Exception e)
-            {
-                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
-            }
-        }
-
-        /// <summary>
         /// Outputs the sidechain multi-sig redeem script needed for transaction signing and 
         /// the address of the multi-sig.
         /// </summary>
