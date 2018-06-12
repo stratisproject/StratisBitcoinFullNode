@@ -278,9 +278,9 @@ namespace Stratis.Bitcoin.Tests.Consensus
             ChainedHeader chainedHeaderFrom = connectNewHeadersResult.DownloadFrom;
             ChainedHeader chainedHeaderTo = connectNewHeadersResult.DownloadTo;
             int headersToDownloadCount = chainedHeaderTo.Height - chainedHeaderFrom.Height + 1; // Inclusive
-
+            
             // ToDownload array of the same size as the amount of headers
-            headersToDownloadCount.Should().Be(peer2Headers.Count);
+            Assert.Equal(headersToDownloadCount, peer2Headers.Count);
         }
 
         /// <summary>
