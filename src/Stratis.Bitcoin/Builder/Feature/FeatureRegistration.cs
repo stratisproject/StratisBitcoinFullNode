@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using Microsoft.Extensions.DependencyInjection;
 using Stratis.Bitcoin.Utilities;
 
@@ -92,7 +93,7 @@ namespace Stratis.Bitcoin.Builder.Feature
                 .AddSingleton(this.FeatureType)
                 .AddSingleton(typeof(IFullNodeFeature), provider => provider.GetService(this.FeatureType));
 
-            foreach (var configureServicesDelegate in this.ConfigureServicesDelegates)
+            foreach (Action<IServiceCollection> configureServicesDelegate in this.ConfigureServicesDelegates)
                 configureServicesDelegate(serviceCollection);
 
             if (this.FeatureStartupType != null)
@@ -145,8 +146,8 @@ namespace Stratis.Bitcoin.Builder.Feature
         /// <param name="startupType">Type of the feature registration startup class. If it implements ConfigureServices method, it is invoked to configure the feature's services.</param>
         private void FeatureStartup(IServiceCollection serviceCollection, Type startupType)
         {
-            var method = startupType.GetMethod("ConfigureServices");
-            var parameters = method?.GetParameters();
+            MethodInfo method = startupType.GetMethod("ConfigureServices");
+            ParameterInfo[] parameters = method?.GetParameters();
             if ((method != null) && method.IsStatic && (parameters?.Length == 1) && (parameters.First().ParameterType == typeof(IServiceCollection)))
                 method.Invoke(null, new object[] { serviceCollection });
         }

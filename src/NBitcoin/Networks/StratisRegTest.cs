@@ -14,7 +14,7 @@ namespace NBitcoin.Networks
             messageStart[1] = 0xf2;
             messageStart[2] = 0xc0;
             messageStart[3] = 0xef;
-            var magic = BitConverter.ToUInt32(messageStart, 0); // 0xefc0f2cd
+            uint magic = BitConverter.ToUInt32(messageStart, 0); // 0xefc0f2cd
 
             this.Name = "StratisRegTest";
             this.Magic = magic;

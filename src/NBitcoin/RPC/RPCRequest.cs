@@ -73,7 +73,7 @@ namespace NBitcoin.RPC
                     else if(Params[i] is Array)
                     {
                         writer.WriteStartArray();
-                        foreach(var x in (Array)Params[i])
+                        foreach(object x in (Array)Params[i])
                         {
                             writer.WriteValue(x);
                         }

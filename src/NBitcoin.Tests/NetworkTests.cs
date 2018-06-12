@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -50,12 +51,12 @@ namespace NBitcoin.Tests
         [Trait("UnitTest", "UnitTest")]
         public void ReadMagicByteWithFirstByteDuplicated()
         {
-            var bytes = Network.Main.MagicBytes.ToList();
+            List<byte> bytes = Network.Main.MagicBytes.ToList();
             bytes.Insert(0, bytes.First());
 
             using(var memstrema = new MemoryStream(bytes.ToArray()))
             {
-                var found = Network.Main.ReadMagic(memstrema, new CancellationToken());
+                bool found = Network.Main.ReadMagic(memstrema, new CancellationToken());
                 Assert.True(found);
             }
         }
@@ -77,7 +78,6 @@ namespace NBitcoin.Tests
             Assert.Equal(Network.BitcoinRootFolderName, network.RootFolderName);
             Assert.Equal(Network.BitcoinDefaultConfigFilename, network.DefaultConfigFilename);
             Assert.Equal(0xD9B4BEF9, network.Magic);
-            Assert.Equal(new PubKey(Encoders.Hex.DecodeData("04fc9702847840aaf195de8442ebecedf5b095cdbb9bc716bda9110971b28a49e0ead8564ff0db22209e0374782c093bb899692d524e9d6a6956e7c5ecbcd68284")), network.AlertPubKey);
             Assert.Equal(8333, network.DefaultPort);
             Assert.Equal(8332, network.RPCPort);
             Assert.Equal(Network.BitcoinMaxTimeOffsetSeconds, network.MaxTimeOffsetSeconds);
@@ -158,7 +158,6 @@ namespace NBitcoin.Tests
             Assert.Equal(Network.BitcoinRootFolderName, network.RootFolderName);
             Assert.Equal(Network.BitcoinDefaultConfigFilename, network.DefaultConfigFilename);
             Assert.Equal(0x0709110B.ToString(), network.Magic.ToString());
-            Assert.Equal(new PubKey(Encoders.Hex.DecodeData("04302390343f91cc401d56d68b123028bf52e5fca1939df127f63c6467cdf9c8e2c14b61104cf817d0b780da337893ecc4aaff1309e536162dabbdb45200ca2b0a")), network.AlertPubKey);
             Assert.Equal(18333, network.DefaultPort);
             Assert.Equal(18332, network.RPCPort);
             Assert.Equal(Network.BitcoinMaxTimeOffsetSeconds, network.MaxTimeOffsetSeconds);

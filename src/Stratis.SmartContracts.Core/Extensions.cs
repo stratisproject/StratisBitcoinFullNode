@@ -42,8 +42,5 @@ namespace Stratis.SmartContracts.Core
             }
             return valueIn - transaction.TotalOut;
         }
-
     }
 }
-
-

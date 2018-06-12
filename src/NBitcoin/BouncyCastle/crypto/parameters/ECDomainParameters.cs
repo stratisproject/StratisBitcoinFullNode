@@ -96,7 +96,7 @@ namespace NBitcoin.BouncyCastle.Crypto.Parameters
             if(obj == this)
                 return true;
 
-            ECDomainParameters other = obj as ECDomainParameters;
+            var other = obj as ECDomainParameters;
 
             if(other == null)
                 return false;

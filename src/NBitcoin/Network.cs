@@ -45,12 +45,6 @@ namespace NBitcoin
         }
 
         /// <summary>
-        /// The public key used in the alert messaging system.
-        /// TODO: remove as per https://github.com/bitcoin/bitcoin/pull/7692.
-        /// </summary>
-        public PubKey AlertPubKey { get; protected set; }
-
-        /// <summary>
         /// Maximal value for the calculated time offset.
         /// If the value is over this limit, the time syncing feature will be switched off.
         /// </summary>
@@ -367,10 +361,10 @@ namespace NBitcoin
 
         private Base58Type? GetBase58Type(string base58)
         {
-            var bytes = Encoders.Base58Check.DecodeData(base58);
+            byte[] bytes = Encoders.Base58Check.DecodeData(base58);
             for (int i = 0; i < this.Base58Prefixes.Length; i++)
             {
-                var prefix = this.Base58Prefixes[i];
+                byte[] prefix = this.Base58Prefixes[i];
                 if (prefix == null)
                     continue;
                 if (bytes.Length < prefix.Length)
@@ -392,8 +386,8 @@ namespace NBitcoin
                         continue;
                     if (type.Value == Base58Type.COLORED_ADDRESS)
                     {
-                        var raw = Encoders.Base58Check.DecodeData(base58);
-                        var version = network.GetVersionBytes(type.Value, false);
+                        byte[] raw = Encoders.Base58Check.DecodeData(base58);
+                        byte[] version = network.GetVersionBytes(type.Value, false);
                         if (version == null)
                             continue;
                         raw = raw.Skip(version.Length).ToArray();
@@ -427,7 +421,7 @@ namespace NBitcoin
                 throw new ArgumentNullException("str");
 
             IEnumerable<Network> networks = expectedNetwork == null ? GetNetworks() : new[] { expectedNetwork };
-            var maybeb58 = true;
+            bool maybeb58 = true;
             for (int i = 0; i < str.Length; i++)
             {
                 if (!Base58Encoder.pszBase58Chars.Contains(str[i]))
@@ -472,7 +466,7 @@ namespace NBitcoin
                     try
                     {
                         byte witVersion;
-                        var bytes = encoder.Decode(str, out witVersion);
+                        byte[] bytes = encoder.Decode(str, out witVersion);
                         object candidate = null;
 
                         if (witVersion == 0 && bytes.Length == 20 && type == Bech32Type.WITNESS_PUBKEY_ADDRESS)
@@ -509,7 +503,7 @@ namespace NBitcoin
                 {
                     if (type.Value == Base58Type.COLORED_ADDRESS)
                     {
-                        var wrapped = BitcoinColoredAddress.GetWrappedBase58(base58, network);
+                        string wrapped = BitcoinColoredAddress.GetWrappedBase58(base58, network);
                         Base58Type? wrappedType = network.GetBase58Type(wrapped);
                         if (wrappedType == null)
                             continue;
@@ -704,13 +698,13 @@ namespace NBitcoin
 
         public bool ReadMagic(Stream stream, CancellationToken cancellation, bool throwIfEOF = false)
         {
-            byte[] bytes = new byte[1];
+            var bytes = new byte[1];
             for (int i = 0; i < this.MagicBytes.Length; i++)
             {
                 i = Math.Max(0, i);
                 cancellation.ThrowIfCancellationRequested();
 
-                var read = stream.ReadEx(bytes, 0, bytes.Length, cancellation);
+                int read = stream.ReadEx(bytes, 0, bytes.Length, cancellation);
                 if (read == 0)
                     if (throwIfEOF)
                         throw new EndOfStreamException("No more bytes to read");
@@ -735,7 +729,7 @@ namespace NBitcoin
 
         public byte[] GetVersionBytes(Base58Type type, bool throws)
         {
-            var prefix = this.Base58Prefixes[(int)type];
+            byte[] prefix = this.Base58Prefixes[(int)type];
             if (prefix == null && throws)
                 throw new NotImplementedException("The network " + this + " does not have any prefix for base58 " +
                                                   Enum.GetName(typeof(Base58Type), type));
@@ -748,7 +742,7 @@ namespace NBitcoin
                 throw new ArgumentNullException("network");
             if (bytes == null)
                 throw new ArgumentNullException("bytes");
-            var versionBytes = network.GetVersionBytes(type, true);
+            byte[] versionBytes = network.GetVersionBytes(type, true);
             return Encoders.Base58Check.EncodeData(versionBytes.Concat(bytes));
         }
 
@@ -764,7 +758,7 @@ namespace NBitcoin
 
         protected IEnumerable<NetworkAddress> ConvertToNetworkAddresses(string[] seeds, int defaultPort)
         {
-            Random rand = new Random();
+            var rand = new Random();
             TimeSpan oneWeek = TimeSpan.FromDays(7);
 
             foreach (string seed in seeds)

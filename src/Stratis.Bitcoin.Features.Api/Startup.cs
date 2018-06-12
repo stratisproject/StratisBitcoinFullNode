@@ -55,7 +55,7 @@ namespace Stratis.Bitcoin.Features.Api
                     options.Filters.Add(typeof(LoggingActionFilter));
 
                     ServiceProvider serviceProvider = services.BuildServiceProvider();
-                    ApiSettings apiSettings = (ApiSettings)serviceProvider.GetRequiredService(typeof(ApiSettings));
+                    var apiSettings = (ApiSettings)serviceProvider.GetRequiredService(typeof(ApiSettings));
                     if (apiSettings.KeepaliveTimer != null)
                     {
                         options.Filters.Add(typeof(KeepaliveActionFilter));
@@ -71,9 +71,9 @@ namespace Stratis.Bitcoin.Features.Api
                 setup.SwaggerDoc("v1", new Info { Title = "Stratis.Bitcoin.Api", Version = "v1" });
 
                 //Set the comments path for the swagger json and ui.
-                var basePath = PlatformServices.Default.Application.ApplicationBasePath;
-                var apiXmlPath = Path.Combine(basePath, "Stratis.Bitcoin.Api.xml");
-                var walletXmlPath = Path.Combine(basePath, "Stratis.Bitcoin.LightWallet.xml");
+                string basePath = PlatformServices.Default.Application.ApplicationBasePath;
+                string apiXmlPath = Path.Combine(basePath, "Stratis.Bitcoin.Api.xml");
+                string walletXmlPath = Path.Combine(basePath, "Stratis.Bitcoin.LightWallet.xml");
 
                 if (File.Exists(apiXmlPath))
                 {

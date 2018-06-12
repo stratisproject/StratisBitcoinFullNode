@@ -68,7 +68,7 @@ namespace Stratis.Bitcoin.Connection
 
             if (peer != null)
             {
-                ConnectionManagerBehavior peerBehavior = peer.Behavior<ConnectionManagerBehavior>();
+                var peerBehavior = peer.Behavior<ConnectionManagerBehavior>();
                 if (!peerBehavior.Whitelisted)
                 {
                     peer.Disconnect($"The peer was banned, reason: {reason}");

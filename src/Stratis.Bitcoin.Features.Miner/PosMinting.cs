@@ -754,7 +754,7 @@ namespace Stratis.Bitcoin.Features.Miner
             var workers = new Task[workerCount];
             var workerContexts = new CoinstakeWorkerContext[workerCount];
 
-            CoinstakeWorkerResult workersResult = new CoinstakeWorkerResult();
+            var workersResult = new CoinstakeWorkerResult();
             for (int workerIndex = 0; workerIndex < workerCount; workerIndex++)
             {
                 var cwc = new CoinstakeWorkerContext

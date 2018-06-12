@@ -35,7 +35,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         internal const int BatchThresholdSizeBytes = 5 * 1000 * 1000;
 
         /// <summary>The current batch size in bytes.</summary>
-        private int currentBatchSizeBytes;
+        private long currentBatchSizeBytes;
 
         /// <summary>The highest stored block in the repository.</summary>
         private ChainedHeader storeTip;
@@ -258,7 +258,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
                     batch.Add(item);
 
-                    this.currentBatchSizeBytes += item.Block.GetSerializedSize();
+                    this.currentBatchSizeBytes += item.Block.BlockSize.Value;
 
                     saveBatch = saveBatch || (item.ChainedHeader == this.chain.Tip) || (this.currentBatchSizeBytes >= BatchThresholdSizeBytes);
                 }

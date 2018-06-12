@@ -148,7 +148,7 @@ namespace NBitcoin.BouncyCastle.Math.EC.Abc
 
         public BigInteger Round()
         {
-            SimpleBigDecimal oneHalf = new SimpleBigDecimal(BigInteger.One, 1);
+            var oneHalf = new SimpleBigDecimal(BigInteger.One, 1);
             return Add(oneHalf.AdjustScale(scale)).Floor();
         }
 
@@ -205,7 +205,7 @@ namespace NBitcoin.BouncyCastle.Math.EC.Abc
             }
             string leftOfPoint = floorBigInt.ToString();
 
-            char[] fractCharArr = new char[scale];
+            var fractCharArr = new char[scale];
             string fractStr = fract.ToString(2);
             int fractLen = fractStr.Length;
             int zeroes = scale - fractLen;
@@ -219,7 +219,7 @@ namespace NBitcoin.BouncyCastle.Math.EC.Abc
             }
             string rightOfPoint = new string(fractCharArr);
 
-            StringBuilder sb = new StringBuilder(leftOfPoint);
+            var sb = new StringBuilder(leftOfPoint);
             sb.Append(".");
             sb.Append(rightOfPoint);
 
@@ -232,7 +232,7 @@ namespace NBitcoin.BouncyCastle.Math.EC.Abc
             if(this == obj)
                 return true;
 
-            SimpleBigDecimal other = obj as SimpleBigDecimal;
+            var other = obj as SimpleBigDecimal;
 
             if(other == null)
                 return false;

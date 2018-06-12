@@ -109,7 +109,7 @@ namespace Stratis.Bitcoin
         {
             if (this.Services != null)
             {
-                var feature = this.Services.Features.OfType<T>().FirstOrDefault();
+                T feature = this.Services.Features.OfType<T>().FirstOrDefault();
                 if (feature != null)
                     return feature;
             }
@@ -232,17 +232,17 @@ namespace Stratis.Bitcoin
         {
             IAsyncLoop periodicLogLoop = this.AsyncLoopFactory.Run("PeriodicLog", (cancellation) =>
             {
-                StringBuilder benchLogs = new StringBuilder();
+                var benchLogs = new StringBuilder();
 
                 benchLogs.AppendLine("======Node stats====== " + this.DateTimeProvider.GetUtcNow().ToString(CultureInfo.InvariantCulture) + " agent " +
                                      this.ConnectionManager.Parameters.UserAgent);
 
                 // Display node stats grouped together.
-                foreach (var feature in this.Services.Features.OfType<INodeStats>())
+                foreach (INodeStats feature in this.Services.Features.OfType<INodeStats>())
                     feature.AddNodeStats(benchLogs);
 
                 // Now display the other stats.
-                foreach (var feature in this.Services.Features.OfType<IFeatureStats>())
+                foreach (IFeatureStats feature in this.Services.Features.OfType<IFeatureStats>())
                     feature.AddFeatureStats(benchLogs);
 
                 benchLogs.AppendLine();

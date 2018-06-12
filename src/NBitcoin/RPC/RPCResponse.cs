@@ -67,7 +67,7 @@ namespace NBitcoin.RPC
 
         public static RPCResponse Load(Stream stream)
         {
-            JsonTextReader reader = new JsonTextReader(new StreamReader(stream, Encoding.UTF8));
+            var reader = new JsonTextReader(new StreamReader(stream, Encoding.UTF8));
             return new RPCResponse(JObject.Load(reader));
         }
 

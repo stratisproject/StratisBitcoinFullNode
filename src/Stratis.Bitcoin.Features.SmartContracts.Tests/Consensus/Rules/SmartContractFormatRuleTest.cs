@@ -1,6 +1,5 @@
 ﻿using System.Collections.Generic;
 using System.Threading.Tasks;
-using Moq;
 using NBitcoin;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Features.Consensus;
@@ -23,21 +22,22 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
 
         private UnspentOutputSet GetMockOutputSet()
         {
+            Transaction transaction = this.network.Consensus.ConsensusFactory.CreateTransaction();
+
             var fakeTxOut = new TxOut
             {
                 Value = 100_000_000
             };
 
-            var unspentOutputMock = new Mock<UnspentOutputSet>();
-            unspentOutputMock.Setup(x => x.AccessCoins(It.IsAny<uint256>())).Returns(new UnspentOutputs()
+            var coins = new UnspentOutputs(new uint(), transaction)
             {
-                Outputs = new TxOut[]
-                {
-                    fakeTxOut
-                }
-            });
+                Outputs = new TxOut[] { fakeTxOut }
+            };
 
-            return unspentOutputMock.Object;
+            var unspentOutputs = new UnspentOutputSet();
+            unspentOutputs.SetCoins(new[] { coins });
+
+            return unspentOutputs;
         }
 
         [Fact]

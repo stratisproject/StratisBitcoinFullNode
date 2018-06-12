@@ -47,7 +47,7 @@ namespace NBitcoin.BouncyCastle.Asn1
         protected override bool Asn1Equals(
             Asn1Object asn1Object)
         {
-            DerOctetString other = asn1Object as DerOctetString;
+            var other = asn1Object as DerOctetString;
 
             if(other == null)
                 return false;

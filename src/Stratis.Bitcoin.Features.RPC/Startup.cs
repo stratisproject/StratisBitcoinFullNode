@@ -43,8 +43,8 @@ namespace Stratis.Bitcoin.Features.RPC
 
             var fullNode = serviceProvider.GetService<FullNode>();
 
-            RPCAuthorization authorizedAccess = new RPCAuthorization();
-            var cookieStr = "__cookie__:" + new uint256(RandomUtils.GetBytes(32));
+            var authorizedAccess = new RPCAuthorization();
+            string cookieStr = "__cookie__:" + new uint256(RandomUtils.GetBytes(32));
             File.WriteAllText(fullNode.DataFolder.RpcCookieFile, cookieStr);
             authorizedAccess.Authorized.Add(cookieStr);
             if (rpcSettings.RpcPassword != null)
@@ -53,7 +53,7 @@ namespace Stratis.Bitcoin.Features.RPC
             }
             authorizedAccess.AllowIp.AddRange(rpcSettings.AllowIp);
 
-            var options = GetMVCOptions(serviceProvider);
+            MvcJsonOptions options = GetMVCOptions(serviceProvider);
             Serializer.RegisterFrontConverters(options.SerializerSettings, fullNode.Network);
             app.UseMiddleware(typeof(RPCMiddleware), authorizedAccess);
             app.UseRPC();

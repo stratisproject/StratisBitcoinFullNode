@@ -198,10 +198,10 @@ namespace Stratis.Bitcoin.Features.Dns
             Domain responsibleDomain = this.ReadDomainJson(jObject, ResponsibleDomainNameFieldName);
             long serialNumber = jObject[SerialNumberFieldName].Value<long>();
 
-            TimeSpan refreshInterval = jObject[RefreshIntervalFieldName].ToObject<TimeSpan>(serializer);
-            TimeSpan retryInterval = jObject[RetryIntervalFieldName].ToObject<TimeSpan>(serializer);
-            TimeSpan expireInterval = jObject[ExpireIntervalFieldName].ToObject<TimeSpan>(serializer);
-            TimeSpan minimumTimeToLive = jObject[MinimumTimeToLiveFieldName].ToObject<TimeSpan>(serializer);
+            var refreshInterval = jObject[RefreshIntervalFieldName].ToObject<TimeSpan>(serializer);
+            var retryInterval = jObject[RetryIntervalFieldName].ToObject<TimeSpan>(serializer);
+            var expireInterval = jObject[ExpireIntervalFieldName].ToObject<TimeSpan>(serializer);
+            var minimumTimeToLive = jObject[MinimumTimeToLiveFieldName].ToObject<TimeSpan>(serializer);
 
             return new StartOfAuthorityResourceRecord(domain, masterDomain, responsibleDomain, serialNumber, refreshInterval, retryInterval, expireInterval, minimumTimeToLive);
         }

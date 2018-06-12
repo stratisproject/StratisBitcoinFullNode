@@ -82,7 +82,7 @@ namespace NBitcoin.RPC
 
         public static Block ToBlock(RPCBlock rpcBlock, ConsensusFactory consensusFactory)
         {
-            var block = consensusFactory.CreateBlock();
+            Block block = consensusFactory.CreateBlock();
 
             block.Header.Time = rpcBlock.time;
                 //BlockStake = new BlockStake
@@ -99,7 +99,7 @@ namespace NBitcoin.RPC
 
             if (!string.IsNullOrEmpty(rpcBlock.signature))
             {
-                PosBlock posBlock = block as PosBlock;
+                var posBlock = block as PosBlock;
                 if (posBlock == null)
                     throw new Exception();
 

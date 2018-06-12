@@ -10,13 +10,14 @@ using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
 {
-    // [ExecutionRule] - For smart contracts, we need to do validation on the fee for particular transactions. See GasBudgetRule. As such, we need this rule to be available in both cases : Validation and Execution. 
+    // [ExecutionRule] 
+    // TODO: For smart contracts, we need to do validation on the fee for particular transactions. See GasBudgetRule. As such, we need this rule to be available in both cases : Validation and Execution. 
     public class LoadCoinviewRule : UtxoStoreConsensusRule
     {
         /// <inheritdoc />
         public override async Task RunAsync(RuleContext context)
         {
-            UtxoRuleContext utxoRuleContext = context as UtxoRuleContext;
+            var utxoRuleContext = context as UtxoRuleContext;
 
             // Load the UTXO set of the current block. UTXO may be loaded from cache or from disk.
             // The UTXO set is stored in the context.
@@ -62,7 +63,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         {
             this.Logger.LogTrace("({0}:'{1}',{2}:{3})", nameof(block), block.GetHash(), nameof(enforceBIP30), enforceBIP30);
 
-            HashSet<uint256> ids = new HashSet<uint256>();
+            var ids = new HashSet<uint256>();
             foreach (Transaction tx in block.Transactions)
             {
                 if (enforceBIP30)

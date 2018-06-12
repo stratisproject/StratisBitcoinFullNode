@@ -11,7 +11,7 @@ namespace Stratis.Bitcoin.Utilities.Extensions
             if (endPointv4.Address.IsIPv4MappedToIPv6)
                 return endPointv4;
 
-            var mapped = new IPAddress(endPointv4.Address.GetAddressBytes()).MapToIPv6();
+            IPAddress mapped = new IPAddress(endPointv4.Address.GetAddressBytes()).MapToIPv6();
             var mappedIPEndPoint = new IPEndPoint(mapped, endPointv4.Port);
             return mappedIPEndPoint;
         }

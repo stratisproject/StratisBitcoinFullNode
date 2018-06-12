@@ -166,7 +166,7 @@ namespace Stratis.Bitcoin.Builder
             // Print command-line help
             if (this.NodeSettings?.PrintHelpAndExit ?? false)
             {
-                foreach (var featureRegistration in this.Features.FeatureRegistrations)
+                foreach (IFeatureRegistration featureRegistration in this.Features.FeatureRegistrations)
                 {
                     MethodInfo printHelp = featureRegistration.FeatureType.GetMethod("PrintHelp", BindingFlags.Public | BindingFlags.Static);
 
@@ -213,15 +213,15 @@ namespace Stratis.Bitcoin.Builder
 
             // register services before features
             // as some of the features may depend on independent services
-            foreach (var configureServices in this.configureServicesDelegates)
+            foreach (Action<IServiceCollection> configureServices in this.configureServicesDelegates)
                 configureServices(this.Services);
 
             // configure features
-            foreach (var configureFeature in this.featuresRegistrationDelegates)
+            foreach (Action<IFeatureCollection> configureFeature in this.featuresRegistrationDelegates)
                 configureFeature(this.Features);
 
             // configure features startup            
-            foreach (var featureRegistration in this.Features.FeatureRegistrations)
+            foreach (IFeatureRegistration featureRegistration in this.Features.FeatureRegistrations)
             {
                 try
                 {
@@ -247,7 +247,7 @@ namespace Stratis.Bitcoin.Builder
         /// <param name="serviceProvider"></param>
         private void ConfigureServices(IServiceProvider serviceProvider)
         {
-            foreach (var configure in this.configureDelegates)
+            foreach (Action<IServiceProvider> configure in this.configureDelegates)
                 configure(serviceProvider);
         }
     }

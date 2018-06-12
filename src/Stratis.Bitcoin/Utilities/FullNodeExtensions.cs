@@ -18,7 +18,7 @@ namespace Stratis.Bitcoin.Utilities
         public static async Task RunAsync(this IFullNode node)
         {
             var done = new ManualResetEventSlim(false);
-            using (CancellationTokenSource cts = new CancellationTokenSource())
+            using (var cts = new CancellationTokenSource())
             {
                 Action shutdown = () =>
                 {
@@ -38,7 +38,7 @@ namespace Stratis.Bitcoin.Utilities
                     done.Wait();
                 };
 
-                var assemblyLoadContext = AssemblyLoadContext.GetLoadContext(typeof(FullNode).GetTypeInfo().Assembly);
+                AssemblyLoadContext assemblyLoadContext = AssemblyLoadContext.GetLoadContext(typeof(FullNode).GetTypeInfo().Assembly);
                 assemblyLoadContext.Unloading += context => shutdown();
 
                 Console.CancelKeyPress += (sender, eventArgs) =>

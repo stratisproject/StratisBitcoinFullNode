@@ -202,7 +202,7 @@ namespace NBitcoin.BouncyCastle.Math.EC
             {
                 return this.m_zs;
             }
-            ECFieldElement[] copy = new ECFieldElement[zsLen];
+            var copy = new ECFieldElement[zsLen];
             Array.Copy(this.m_zs, 0, copy, 0, zsLen);
             return copy;
         }
@@ -400,7 +400,7 @@ namespace NBitcoin.BouncyCastle.Math.EC
             {
                 // TODO Consider just requiring already normalized, to avoid silent performance degradation
 
-                ECPoint[] points = new ECPoint[] { this, c1.ImportPoint(p2) };
+                var points = new ECPoint[] { this, c1.ImportPoint(p2) };
 
                 // TODO This is a little strong, really only requires coZNormalizeAll to get Zs equal
                 c1.NormalizeAll(points);
@@ -437,7 +437,7 @@ namespace NBitcoin.BouncyCastle.Math.EC
                 return "INF";
             }
 
-            StringBuilder sb = new StringBuilder();
+            var sb = new StringBuilder();
             sb.Append('(');
             sb.Append(this.RawXCoord);
             sb.Append(',');
@@ -527,7 +527,7 @@ namespace NBitcoin.BouncyCastle.Math.EC
 
             if(compressed)
             {
-                byte[] PO = new byte[X.Length + 1];
+                var PO = new byte[X.Length + 1];
                 PO[0] = (byte)(normed.CompressionYTilde ? 0x03 : 0x02);
                 Array.Copy(X, 0, PO, 1, X.Length);
                 return PO;
@@ -536,7 +536,7 @@ namespace NBitcoin.BouncyCastle.Math.EC
             byte[] Y = normed.YCoord.GetEncoded();
 
             {
-                byte[] PO = new byte[X.Length + Y.Length + 1];
+                var PO = new byte[X.Length + Y.Length + 1];
                 PO[0] = 0x04;
                 Array.Copy(X, 0, PO, 1, X.Length);
                 Array.Copy(Y, 0, PO, X.Length + 1, Y.Length);

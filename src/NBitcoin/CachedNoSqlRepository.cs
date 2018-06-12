@@ -8,7 +8,7 @@ namespace NBitcoin
 {
     public class CachedNoSqlRepository : NoSqlRepository
     {
-        class Raw : IBitcoinSerializable
+        private class Raw : IBitcoinSerializable
         {
             public Raw()
             {
@@ -50,10 +50,11 @@ namespace NBitcoin
                 return _InnerRepository;
             }
         }
-        Dictionary<string, byte[]> _Table = new Dictionary<string, byte[]>();
-        HashSet<string> _Removed = new HashSet<string>();
-        HashSet<string> _Added = new HashSet<string>();
-        ReaderWriterLock @lock = new ReaderWriterLock();
+
+        private Dictionary<string, byte[]> _Table = new Dictionary<string, byte[]>();
+        private HashSet<string> _Removed = new HashSet<string>();
+        private HashSet<string> _Added = new HashSet<string>();
+        private ReaderWriterLock @lock = new ReaderWriterLock();
 
         public override async Task PutBatch(IEnumerable<Tuple<string, IBitcoinSerializable>> values)
         {
@@ -65,7 +66,7 @@ namespace NBitcoin
         {
             using(@lock.LockWrite())
             {
-                foreach(var data in enumerable)
+                foreach(Tuple<string, byte[]> data in enumerable)
                 {
                     if(data.Item2 == null)
                     {
@@ -94,7 +95,7 @@ namespace NBitcoin
             }
             if(!found)
             {
-                var raw = await InnerRepository.GetAsync<Raw>(key).ConfigureAwait(false);
+                Raw raw = await InnerRepository.GetAsync<Raw>(key).ConfigureAwait(false);
                 if(raw != null)
                 {
                     result = raw.Data;

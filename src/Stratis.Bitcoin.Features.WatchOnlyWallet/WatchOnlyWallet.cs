@@ -199,10 +199,10 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet
         /// <inheritdoc />
         public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
         {
-            IEnumerable<WatchedAddress> watchedAddesses = serializer.Deserialize<IEnumerable<WatchedAddress>>(reader);
+            var watchedAddesses = serializer.Deserialize<IEnumerable<WatchedAddress>>(reader);
 
-            ConcurrentDictionary<string, WatchedAddress> watchedAddressesDictionary = new ConcurrentDictionary<string, WatchedAddress>();
-            foreach (var watchedAddress in watchedAddesses)
+            var watchedAddressesDictionary = new ConcurrentDictionary<string, WatchedAddress>();
+            foreach (WatchedAddress watchedAddress in watchedAddesses)
             {
                 watchedAddressesDictionary.TryAdd(watchedAddress.Script.ToString(), watchedAddress);
             }
@@ -213,7 +213,7 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet
         /// <inheritdoc />
         public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
         {
-            ConcurrentDictionary<string, WatchedAddress> watchedAddressesDictionary = (ConcurrentDictionary<string, WatchedAddress>)value;
+            var watchedAddressesDictionary = (ConcurrentDictionary<string, WatchedAddress>)value;
             serializer.Serialize(writer, watchedAddressesDictionary.Values);
         }
     }
@@ -234,10 +234,10 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet
         /// <inheritdoc />
         public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
         {
-            IEnumerable<TransactionData> transactions = serializer.Deserialize<IEnumerable<TransactionData>>(reader);
+            var transactions = serializer.Deserialize<IEnumerable<TransactionData>>(reader);
 
-            ConcurrentDictionary<string, TransactionData> transactionsDictionary = new ConcurrentDictionary<string, TransactionData>();
-            foreach (var transaction in transactions)
+            var transactionsDictionary = new ConcurrentDictionary<string, TransactionData>();
+            foreach (TransactionData transaction in transactions)
             {
                 transactionsDictionary.TryAdd(transaction.Transaction.GetHash().ToString(), transaction);
             }
@@ -248,7 +248,7 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet
         /// <inheritdoc />
         public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
         {
-            ConcurrentDictionary<string, TransactionData> transactionsDictionary = (ConcurrentDictionary<string, TransactionData>)value;
+            var transactionsDictionary = (ConcurrentDictionary<string, TransactionData>)value;
             serializer.Serialize(writer, transactionsDictionary.Values);
         }
     }

@@ -9,6 +9,7 @@ using Stratis.Bitcoin.Builder.Feature;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Features.Notifications.Controllers;
 using Stratis.Bitcoin.Features.Notifications.Interfaces;
+using Stratis.Bitcoin.P2P.Peer;
 
 [assembly: InternalsVisibleTo("Stratis.Bitcoin.Features.Notifications.Tests")]
 
@@ -44,7 +45,7 @@ namespace Stratis.Bitcoin.Features.Notifications
 
         public override void Initialize()
         {
-            var connectionParameters = this.connectionManager.Parameters;
+            NetworkPeerConnectionParameters connectionParameters = this.connectionManager.Parameters;
             connectionParameters.TemplateBehaviors.Add(new BlockPullerBehavior(this.blockPuller, this.loggerFactory));
 
             this.blockNotification.Start();

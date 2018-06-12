@@ -124,7 +124,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             this.chainState.ConsensusTip = this.consensusLoop.Tip;
             this.connectionManager.Parameters.TemplateBehaviors.Add(new BlockPullerBehavior(this.blockPuller, this.loggerFactory));
 
-            var flags = this.nodeDeployments.GetFlags(this.consensusLoop.Tip);
+            DeploymentFlags flags = this.nodeDeployments.GetFlags(this.consensusLoop.Tip);
             if (flags.ScriptFlags.HasFlag(ScriptVerify.Witness))
                 this.connectionManager.AddDiscoveredNodesRequirement(NetworkPeerServices.NODE_WITNESS);
 
