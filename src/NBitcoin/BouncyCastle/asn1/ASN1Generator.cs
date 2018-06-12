@@ -9,14 +9,14 @@ namespace NBitcoin.BouncyCastle.Asn1
         protected Asn1Generator(
             Stream outStream)
         {
-            _out = outStream;
+            this._out = outStream;
         }
 
         protected Stream Out
         {
             get
             {
-                return _out;
+                return this._out;
             }
         }
 

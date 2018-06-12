@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Abstractions;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
@@ -24,7 +25,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests
         [Fact]
         public void CreateValueProviderAsyncCreatesValueProviderForContext()
         {
-            var task = this.provider.CreateValueProviderAsync(this.context);
+            Task task = this.provider.CreateValueProviderAsync(this.context);
             task.Wait();
 
             Assert.Equal(1, this.context.ValueProviders.Count);
@@ -34,7 +35,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests
         [Fact]
         public void ContainsPrefixWithoutRouteDataReturnsFalse()
         {
-            var result = this.provider.ContainsPrefix("rpc_");
+            bool result = this.provider.ContainsPrefix("rpc_");
 
             Assert.False(result);
         }
@@ -44,7 +45,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests
         {
             this.actionContext.RouteData = new RouteData();
 
-            var result = this.provider.ContainsPrefix("rpc_");
+            bool result = this.provider.ContainsPrefix("rpc_");
 
             Assert.False(result);
         }
@@ -55,7 +56,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests
             this.actionContext.RouteData = new RouteData();
             this.actionContext.RouteData.Values.Add("req", "");
 
-            var result = this.provider.ContainsPrefix("rpc_");
+            bool result = this.provider.ContainsPrefix("rpc_");
 
             Assert.False(result);
         }
@@ -67,7 +68,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests
             this.actionContext.RouteData.Values.Add("req", new JObject());
             this.actionContext.ActionDescriptor = null;
 
-            var result = this.provider.ContainsPrefix("rpc_");
+            bool result = this.provider.ContainsPrefix("rpc_");
 
             Assert.False(result);
         }
@@ -80,7 +81,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests
             this.actionContext.ActionDescriptor = new ActionDescriptor();
             this.actionContext.ActionDescriptor.Parameters = null;
 
-            var result = this.provider.ContainsPrefix("rpc_");
+            bool result = this.provider.ContainsPrefix("rpc_");
 
             Assert.False(result);
         }
@@ -93,7 +94,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests
             this.actionContext.ActionDescriptor = new ActionDescriptor();
             this.actionContext.ActionDescriptor.Parameters = new List<ParameterDescriptor>();
 
-            var result = this.provider.ContainsPrefix("rpc_");
+            bool result = this.provider.ContainsPrefix("rpc_");
 
             Assert.False(result);
         }
@@ -111,7 +112,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests
             this.actionContext.ActionDescriptor.Parameters.Add(new ParameterDescriptor { Name = "2" });
             this.actionContext.ActionDescriptor.Parameters.Add(new ParameterDescriptor { Name = "rpc_" });
 
-            var result = this.provider.ContainsPrefix("rpc_");
+            bool result = this.provider.ContainsPrefix("rpc_");
 
             Assert.False(result);
         }
@@ -127,7 +128,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests
             this.actionContext.ActionDescriptor.Parameters = new List<ParameterDescriptor>();
             this.actionContext.ActionDescriptor.Parameters.Add(new ParameterDescriptor { Name = "rpc_" });
 
-            var result = this.provider.ContainsPrefix("rpc_");
+            bool result = this.provider.ContainsPrefix("rpc_");
 
             Assert.False(result);
         }
@@ -143,7 +144,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests
             this.actionContext.ActionDescriptor.Parameters = new List<ParameterDescriptor>();
             this.actionContext.ActionDescriptor.Parameters.Add(new ParameterDescriptor { Name = "rpc_" });
 
-            var result = this.provider.ContainsPrefix("rpc_");
+            bool result = this.provider.ContainsPrefix("rpc_");
 
             Assert.True(result);
         }
@@ -159,7 +160,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests
             this.actionContext.ActionDescriptor.Parameters = new List<ParameterDescriptor>();
             this.actionContext.ActionDescriptor.Parameters.Add(new ParameterDescriptor { Name = "rpc_" });
 
-            var result = this.provider.GetValue("rpc_");
+            ValueProviderResult result = this.provider.GetValue("rpc_");
 
             Assert.Equal("Yes", result.FirstValue);
         }
@@ -175,7 +176,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests
             this.actionContext.ActionDescriptor.Parameters = new List<ParameterDescriptor>();
             this.actionContext.ActionDescriptor.Parameters.Add(new ParameterDescriptor { Name = "rpc_" });
 
-            var result = this.provider.GetValue("rpc_");
+            ValueProviderResult result = this.provider.GetValue("rpc_");
 
             Assert.Null(result.FirstValue);
         }

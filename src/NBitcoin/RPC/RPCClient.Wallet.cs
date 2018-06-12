@@ -214,8 +214,8 @@ namespace NBitcoin.RPC
 
                 if (options.SubtractFeeFromOutputs != null)
                 {
-                    JArray array = new JArray();
-                    foreach(var v in options.SubtractFeeFromOutputs)
+                    var array = new JArray();
+                    foreach(int v in options.SubtractFeeFromOutputs)
                     {
                         array.Add(new JValue(v));
                     }
@@ -246,7 +246,7 @@ namespace NBitcoin.RPC
                 return tx.ToHex();
 
             // if there is, do this ACK so that NBitcoin does not change the version number
-            return Encoders.Hex.EncodeData(tx.ToBytes(NBitcoin.Protocol.ProtocolVersion.WITNESS_VERSION - 1));
+            return Encoders.Hex.EncodeData(tx.ToBytes(Protocol.ProtocolVersion.WITNESS_VERSION - 1));
         }
 
         // getreceivedbyaddress

@@ -69,7 +69,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Transactions
         {
             this.key = this.sendingWallet.GetExtendedPrivateKeyForAddress(this.password, this.senderAddress).PrivateKey;
             this.senderNode.SetDummyMinerSecret(new BitcoinSecret(this.key, this.senderNode.FullNode.Network));
-            var maturity = (int)this.senderNode.FullNode.Network.Consensus.CoinbaseMaturity;
+            int maturity = (int)this.senderNode.FullNode.Network.Consensus.CoinbaseMaturity;
             this.senderNode.GenerateStratisWithMiner(maturity + 5);
             TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(this.senderNode));
 
@@ -125,15 +125,15 @@ namespace Stratis.Bitcoin.IntegrationTests.Transactions
 
         private async Task the_transaction_should_appear_in_the_blockchain()
         {
-            var block = await this.senderNode.FullNode.BlockStoreManager().BlockRepository
+            Block block = await this.senderNode.FullNode.BlockStoreManager().BlockRepository
                     .GetAsync(this.blockWithOpReturnId);
 
-            var transactionFromBlock = block.Transactions
+            Transaction transactionFromBlock = block.Transactions
                 .Single(t => t.ToHex() == this.transaction.ToHex());
 
-            var opReturnOutputFromBlock = transactionFromBlock.Outputs.Single(t => t.ScriptPubKey.IsUnspendable);
+            TxOut opReturnOutputFromBlock = transactionFromBlock.Outputs.Single(t => t.ScriptPubKey.IsUnspendable);
             opReturnOutputFromBlock.Value.Satoshi.Should().Be(0);
-            var ops = opReturnOutputFromBlock.ScriptPubKey.ToOps().ToList();
+            List<Op> ops = opReturnOutputFromBlock.ScriptPubKey.ToOps().ToList();
             ops.First().Code.Should().Be(OpcodeType.OP_RETURN);
             ops.Last().PushData.Should().BeEquivalentTo(Encoding.UTF8.GetBytes(this.opReturnContent));
         }

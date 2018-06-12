@@ -10,12 +10,12 @@ namespace NBitcoin.BouncyCastle.Asn1.X9
             {
                 lock(this)
                 {
-                    if(parameters == null)
+                    if(this.parameters == null)
                     {
-                        parameters = CreateParameters();
+                        this.parameters = CreateParameters();
                     }
 
-                    return parameters;
+                    return this.parameters;
                 }
             }
         }

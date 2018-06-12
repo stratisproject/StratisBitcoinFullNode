@@ -127,36 +127,36 @@ namespace NBitcoin.BouncyCastle.Utilities
             return result;
         }
 #else
-        internal static System.Collections.IList CreateArrayList()
+        internal static IList CreateArrayList()
         {
             return new ArrayList();
         }
-        internal static System.Collections.IList CreateArrayList(int capacity)
+        internal static IList CreateArrayList(int capacity)
         {
             return new ArrayList(capacity);
         }
-        internal static System.Collections.IList CreateArrayList(System.Collections.ICollection collection)
+        internal static IList CreateArrayList(ICollection collection)
         {
             return new ArrayList(collection);
         }
-        internal static System.Collections.IList CreateArrayList(System.Collections.IEnumerable collection)
+        internal static IList CreateArrayList(IEnumerable collection)
         {
-            ArrayList result = new ArrayList();
+            var result = new ArrayList();
             foreach (object o in collection)
             {
                 result.Add(o);
             }
             return result;
         }
-        internal static System.Collections.IDictionary CreateHashtable()
+        internal static IDictionary CreateHashtable()
         {
             return new Hashtable();
         }
-        internal static System.Collections.IDictionary CreateHashtable(int capacity)
+        internal static IDictionary CreateHashtable(int capacity)
         {
             return new Hashtable(capacity);
         }
-        internal static System.Collections.IDictionary CreateHashtable(System.Collections.IDictionary dictionary)
+        internal static IDictionary CreateHashtable(IDictionary dictionary)
         {
             return new Hashtable(dictionary);
         }

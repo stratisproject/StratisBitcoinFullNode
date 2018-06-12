@@ -45,10 +45,10 @@ namespace Stratis.Bitcoin.Tests.Utilities
             long elapsedTicksByDispStopwatch = 0;
 
             DateTime startTime = DateTime.UtcNow;
-            System.Diagnostics.Stopwatch diagStopwatch = new System.Diagnostics.Stopwatch();
+            var diagStopwatch = new System.Diagnostics.Stopwatch();
 
             int delayTimeMs = 0;
-            Random rnd = new Random();
+            var rnd = new Random();
             for (int i = 0; i < 10; i++)
             {
                 int delay = rnd.Next(1000);
@@ -72,8 +72,8 @@ namespace Stratis.Bitcoin.Tests.Utilities
 
             DateTime endTime = DateTime.UtcNow.AddMilliseconds(-delayTimeMs);
             TimeSpan elapsedTimeByDateTime = endTime - startTime;
-            TimeSpan elapsedTimeByDiagStopwatch = new TimeSpan(diagStopwatch.Elapsed.Ticks);
-            TimeSpan elapsedTimeByDispStopwatch = new TimeSpan(elapsedTicksByDispStopwatch);
+            var elapsedTimeByDiagStopwatch = new TimeSpan(diagStopwatch.Elapsed.Ticks);
+            var elapsedTimeByDispStopwatch = new TimeSpan(elapsedTicksByDispStopwatch);
             TimeSpan elapsedTimeByCalculation = TimeSpan.FromMilliseconds(expectedElapsedMs);
 
             // Check that the measured times do not differ by more than "epsilonMs".

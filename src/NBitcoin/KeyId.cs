@@ -10,20 +10,20 @@ namespace NBitcoin
 
         public TxDestination()
         {
-            _DestBytes = new byte[] { 0 };
+            this._DestBytes = new byte[] { 0 };
         }
 
         public TxDestination(byte[] value)
         {
             if(value == null)
                 throw new ArgumentNullException("value");
-            _DestBytes = value;
+            this._DestBytes = value;
         }
 
         public TxDestination(string value)
         {
-            _DestBytes = Encoders.Hex.DecodeData(value);
-            _Str = value;
+            this._DestBytes = Encoders.Hex.DecodeData(value);
+            this._Str = value;
         }
 
         public abstract BitcoinAddress GetAddress(Network network);
@@ -45,22 +45,22 @@ namespace NBitcoin
         public byte[] ToBytes(bool @unsafe)
         {
             if(@unsafe)
-                return _DestBytes;
-            var array = new byte[_DestBytes.Length];
-            Array.Copy(_DestBytes, array, _DestBytes.Length);
+                return this._DestBytes;
+            var array = new byte[this._DestBytes.Length];
+            Array.Copy(this._DestBytes, array, this._DestBytes.Length);
             return array;
         }
 
         public override bool Equals(object obj)
         {
-            TxDestination item = obj as TxDestination;
+            var item = obj as TxDestination;
             if(item == null)
                 return false;
-            return Utils.ArrayEqual(_DestBytes, item._DestBytes) && item.GetType() == this.GetType();
+            return Utils.ArrayEqual(this._DestBytes, item._DestBytes) && item.GetType() == GetType();
         }
         public static bool operator ==(TxDestination a, TxDestination b)
         {
-            if(System.Object.ReferenceEquals(a, b))
+            if(ReferenceEquals(a, b))
                 return true;
             if(((object)a == null) || ((object)b == null))
                 return false;
@@ -74,15 +74,14 @@ namespace NBitcoin
 
         public override int GetHashCode()
         {
-            return Utils.GetHashCode(_DestBytes);
+            return Utils.GetHashCode(this._DestBytes);
         }
 
-        string _Str;
+        private string _Str;
         public override string ToString()
         {
-            if(_Str == null)
-                _Str = Encoders.Hex.EncodeData(_DestBytes);
-            return _Str;
+            if(this._Str == null) this._Str = Encoders.Hex.EncodeData(this._DestBytes);
+            return this._Str;
         }
     }
     public class KeyId : TxDestination
@@ -159,7 +158,7 @@ namespace NBitcoin
         {
             get
             {
-                return PayToWitTemplate.Instance.GenerateScriptPubKey(OpcodeType.OP_0, _DestBytes);
+                return PayToWitTemplate.Instance.GenerateScriptPubKey(OpcodeType.OP_0, this._DestBytes);
             }
         }
 
@@ -168,7 +167,7 @@ namespace NBitcoin
         {
             get
             {
-                return new KeyId(_DestBytes).ScriptPubKey;
+                return new KeyId(this._DestBytes).ScriptPubKey;
             }
         }
 
@@ -217,7 +216,7 @@ namespace NBitcoin
         {
             get
             {
-                return PayToWitTemplate.Instance.GenerateScriptPubKey(OpcodeType.OP_0, _DestBytes);
+                return PayToWitTemplate.Instance.GenerateScriptPubKey(OpcodeType.OP_0, this._DestBytes);
             }
         }
 

@@ -38,7 +38,7 @@ namespace NBitcoin.BouncyCastle.Math.EC
         {
             get
             {
-                return BitLength == 1;
+                return this.BitLength == 1;
             }
         }
 
@@ -106,12 +106,12 @@ namespace NBitcoin.BouncyCastle.Math.EC
 
         public override string ToString()
         {
-            return this.ToBigInteger().ToString(16);
+            return ToBigInteger().ToString(16);
         }
 
         public virtual byte[] GetEncoded()
         {
-            return BigIntegers.AsUnsignedByteArray((FieldSize + 7) / 8, ToBigInteger());
+            return BigIntegers.AsUnsignedByteArray((this.FieldSize + 7) / 8, ToBigInteger());
         }
     }
 
@@ -156,7 +156,7 @@ namespace NBitcoin.BouncyCastle.Math.EC
 
         public override BigInteger ToBigInteger()
         {
-            return x;
+            return this.x;
         }
 
         /**
@@ -176,7 +176,7 @@ namespace NBitcoin.BouncyCastle.Math.EC
         {
             get
             {
-                return q.BitLength;
+                return this.q.BitLength;
             }
         }
 
@@ -184,36 +184,36 @@ namespace NBitcoin.BouncyCastle.Math.EC
         {
             get
             {
-                return q;
+                return this.q;
             }
         }
 
         public override ECFieldElement Add(
             ECFieldElement b)
         {
-            return new FpFieldElement(q, r, ModAdd(x, b.ToBigInteger()));
+            return new FpFieldElement(this.q, this.r, ModAdd(this.x, b.ToBigInteger()));
         }
 
         public override ECFieldElement AddOne()
         {
-            BigInteger x2 = x.Add(BigInteger.One);
-            if(x2.CompareTo(q) == 0)
+            BigInteger x2 = this.x.Add(BigInteger.One);
+            if(x2.CompareTo(this.q) == 0)
             {
                 x2 = BigInteger.Zero;
             }
-            return new FpFieldElement(q, r, x2);
+            return new FpFieldElement(this.q, this.r, x2);
         }
 
         public override ECFieldElement Subtract(
             ECFieldElement b)
         {
-            return new FpFieldElement(q, r, ModSubtract(x, b.ToBigInteger()));
+            return new FpFieldElement(this.q, this.r, ModSubtract(this.x, b.ToBigInteger()));
         }
 
         public override ECFieldElement Multiply(
             ECFieldElement b)
         {
-            return new FpFieldElement(q, r, ModMult(x, b.ToBigInteger()));
+            return new FpFieldElement(this.q, this.r, ModMult(this.x, b.ToBigInteger()));
         }
 
         public override ECFieldElement MultiplyMinusProduct(ECFieldElement b, ECFieldElement x, ECFieldElement y)
@@ -221,7 +221,7 @@ namespace NBitcoin.BouncyCastle.Math.EC
             BigInteger ax = this.x, bx = b.ToBigInteger(), xx = x.ToBigInteger(), yx = y.ToBigInteger();
             BigInteger ab = ax.Multiply(bx);
             BigInteger xy = xx.Multiply(yx);
-            return new FpFieldElement(q, r, ModReduce(ab.Subtract(xy)));
+            return new FpFieldElement(this.q, this.r, ModReduce(ab.Subtract(xy)));
         }
 
         public override ECFieldElement MultiplyPlusProduct(ECFieldElement b, ECFieldElement x, ECFieldElement y)
@@ -230,27 +230,27 @@ namespace NBitcoin.BouncyCastle.Math.EC
             BigInteger ab = ax.Multiply(bx);
             BigInteger xy = xx.Multiply(yx);
             BigInteger sum = ab.Add(xy);
-            if(r != null && r.SignValue < 0 && sum.BitLength > (q.BitLength << 1))
+            if(this.r != null && this.r.SignValue < 0 && sum.BitLength > (this.q.BitLength << 1))
             {
-                sum = sum.Subtract(q.ShiftLeft(q.BitLength));
+                sum = sum.Subtract(this.q.ShiftLeft(this.q.BitLength));
             }
-            return new FpFieldElement(q, r, ModReduce(sum));
+            return new FpFieldElement(this.q, this.r, ModReduce(sum));
         }
 
         public override ECFieldElement Divide(
             ECFieldElement b)
         {
-            return new FpFieldElement(q, r, ModMult(x, ModInverse(b.ToBigInteger())));
+            return new FpFieldElement(this.q, this.r, ModMult(this.x, ModInverse(b.ToBigInteger())));
         }
 
         public override ECFieldElement Negate()
         {
-            return x.SignValue == 0 ? this : new FpFieldElement(q, r, q.Subtract(x));
+            return this.x.SignValue == 0 ? this : new FpFieldElement(this.q, this.r, this.q.Subtract(this.x));
         }
 
         public override ECFieldElement Square()
         {
-            return new FpFieldElement(q, r, ModMult(x, x));
+            return new FpFieldElement(this.q, this.r, ModMult(this.x, this.x));
         }
 
         public override ECFieldElement SquareMinusProduct(ECFieldElement x, ECFieldElement y)
@@ -258,7 +258,7 @@ namespace NBitcoin.BouncyCastle.Math.EC
             BigInteger ax = this.x, xx = x.ToBigInteger(), yx = y.ToBigInteger();
             BigInteger aa = ax.Multiply(ax);
             BigInteger xy = xx.Multiply(yx);
-            return new FpFieldElement(q, r, ModReduce(aa.Subtract(xy)));
+            return new FpFieldElement(this.q, this.r, ModReduce(aa.Subtract(xy)));
         }
 
         public override ECFieldElement SquarePlusProduct(ECFieldElement x, ECFieldElement y)
@@ -267,17 +267,17 @@ namespace NBitcoin.BouncyCastle.Math.EC
             BigInteger aa = ax.Multiply(ax);
             BigInteger xy = xx.Multiply(yx);
             BigInteger sum = aa.Add(xy);
-            if(r != null && r.SignValue < 0 && sum.BitLength > (q.BitLength << 1))
+            if(this.r != null && this.r.SignValue < 0 && sum.BitLength > (this.q.BitLength << 1))
             {
-                sum = sum.Subtract(q.ShiftLeft(q.BitLength));
+                sum = sum.Subtract(this.q.ShiftLeft(this.q.BitLength));
             }
-            return new FpFieldElement(q, r, ModReduce(sum));
+            return new FpFieldElement(this.q, this.r, ModReduce(sum));
         }
 
         public override ECFieldElement Invert()
         {
             // TODO Modular inversion can be faster for a (Generalized) Mersenne Prime.
-            return new FpFieldElement(q, r, ModInverse(x));
+            return new FpFieldElement(this.q, this.r, ModInverse(this.x));
         }
 
         /**
@@ -286,48 +286,48 @@ namespace NBitcoin.BouncyCastle.Math.EC
          */
         public override ECFieldElement Sqrt()
         {
-            if(IsZero || IsOne)
+            if(this.IsZero || this.IsOne)
                 return this;
 
-            if(!q.TestBit(0))
+            if(!this.q.TestBit(0))
                 throw Platform.CreateNotImplementedException("even value of q");
 
-            if(q.TestBit(1)) // q == 4m + 3
+            if(this.q.TestBit(1)) // q == 4m + 3
             {
-                BigInteger e = q.ShiftRight(2).Add(BigInteger.One);
-                return CheckSqrt(new FpFieldElement(q, r, x.ModPow(e, q)));
+                BigInteger e = this.q.ShiftRight(2).Add(BigInteger.One);
+                return CheckSqrt(new FpFieldElement(this.q, this.r, this.x.ModPow(e, this.q)));
             }
 
-            if(q.TestBit(2)) // q == 8m + 5
+            if(this.q.TestBit(2)) // q == 8m + 5
             {
-                BigInteger t1 = x.ModPow(q.ShiftRight(3), q);
-                BigInteger t2 = ModMult(t1, x);
+                BigInteger t1 = this.x.ModPow(this.q.ShiftRight(3), this.q);
+                BigInteger t2 = ModMult(t1, this.x);
                 BigInteger t3 = ModMult(t2, t1);
 
                 if(t3.Equals(BigInteger.One))
                 {
-                    return CheckSqrt(new FpFieldElement(q, r, t2));
+                    return CheckSqrt(new FpFieldElement(this.q, this.r, t2));
                 }
 
                 // TODO This is constant and could be precomputed
-                BigInteger t4 = BigInteger.Two.ModPow(q.ShiftRight(2), q);
+                BigInteger t4 = BigInteger.Two.ModPow(this.q.ShiftRight(2), this.q);
 
                 BigInteger y = ModMult(t2, t4);
 
-                return CheckSqrt(new FpFieldElement(q, r, y));
+                return CheckSqrt(new FpFieldElement(this.q, this.r, y));
             }
 
             // q == 8m + 1
 
-            BigInteger legendreExponent = q.ShiftRight(1);
-            if(!(x.ModPow(legendreExponent, q).Equals(BigInteger.One)))
+            BigInteger legendreExponent = this.q.ShiftRight(1);
+            if(!(this.x.ModPow(legendreExponent, this.q).Equals(BigInteger.One)))
                 return null;
 
             BigInteger X = this.x;
             BigInteger fourX = ModDouble(ModDouble(X));
             ;
 
-            BigInteger k = legendreExponent.Add(BigInteger.One), qMinusOne = q.Subtract(BigInteger.One);
+            BigInteger k = legendreExponent.Add(BigInteger.One), qMinusOne = this.q.Subtract(BigInteger.One);
 
             BigInteger U, V;
             do
@@ -335,10 +335,10 @@ namespace NBitcoin.BouncyCastle.Math.EC
                 BigInteger P;
                 do
                 {
-                    P = BigInteger.Arbitrary(q.BitLength);
+                    P = BigInteger.Arbitrary(this.q.BitLength);
                 }
-                while(P.CompareTo(q) >= 0
-                    || !ModReduce(P.Multiply(P).Subtract(fourX)).ModPow(legendreExponent, q).Equals(qMinusOne));
+                while(P.CompareTo(this.q) >= 0
+                    || !ModReduce(P.Multiply(P).Subtract(fourX)).ModPow(legendreExponent, this.q).Equals(qMinusOne));
 
                 BigInteger[] result = LucasSequence(P, X, k);
                 U = result[0];
@@ -346,7 +346,7 @@ namespace NBitcoin.BouncyCastle.Math.EC
 
                 if(ModMult(V, V).Equals(fourX))
                 {
-                    return new FpFieldElement(q, r, ModHalfAbs(V));
+                    return new FpFieldElement(this.q, this.r, ModHalfAbs(V));
                 }
             }
             while(U.Equals(BigInteger.One) || U.Equals(qMinusOne));
@@ -416,9 +416,9 @@ namespace NBitcoin.BouncyCastle.Math.EC
         protected virtual BigInteger ModAdd(BigInteger x1, BigInteger x2)
         {
             BigInteger x3 = x1.Add(x2);
-            if(x3.CompareTo(q) >= 0)
+            if(x3.CompareTo(this.q) >= 0)
             {
-                x3 = x3.Subtract(q);
+                x3 = x3.Subtract(this.q);
             }
             return x3;
         }
@@ -426,9 +426,9 @@ namespace NBitcoin.BouncyCastle.Math.EC
         protected virtual BigInteger ModDouble(BigInteger x)
         {
             BigInteger _2x = x.ShiftLeft(1);
-            if(_2x.CompareTo(q) >= 0)
+            if(_2x.CompareTo(this.q) >= 0)
             {
-                _2x = _2x.Subtract(q);
+                _2x = _2x.Subtract(this.q);
             }
             return _2x;
         }
@@ -437,7 +437,7 @@ namespace NBitcoin.BouncyCastle.Math.EC
         {
             if(x.TestBit(0))
             {
-                x = q.Add(x);
+                x = this.q.Add(x);
             }
             return x.ShiftRight(1);
         }
@@ -446,16 +446,16 @@ namespace NBitcoin.BouncyCastle.Math.EC
         {
             if(x.TestBit(0))
             {
-                x = q.Subtract(x);
+                x = this.q.Subtract(x);
             }
             return x.ShiftRight(1);
         }
 
         protected virtual BigInteger ModInverse(BigInteger x)
         {
-            int bits = FieldSize;
+            int bits = this.FieldSize;
             int len = (bits + 31) >> 5;
-            uint[] p = Nat.FromBigInteger(bits, q);
+            uint[] p = Nat.FromBigInteger(bits, this.q);
             uint[] n = Nat.FromBigInteger(bits, x);
             uint[] z = Nat.Create(len);
             Mod.Invert(p, n, z);
@@ -469,9 +469,9 @@ namespace NBitcoin.BouncyCastle.Math.EC
 
         protected virtual BigInteger ModReduce(BigInteger x)
         {
-            if(r == null)
+            if(this.r == null)
             {
-                x = x.Mod(q);
+                x = x.Mod(this.q);
             }
             else
             {
@@ -480,18 +480,18 @@ namespace NBitcoin.BouncyCastle.Math.EC
                 {
                     x = x.Abs();
                 }
-                int qLen = q.BitLength;
-                if(r.SignValue > 0)
+                int qLen = this.q.BitLength;
+                if(this.r.SignValue > 0)
                 {
                     BigInteger qMod = BigInteger.One.ShiftLeft(qLen);
-                    bool rIsOne = r.Equals(BigInteger.One);
+                    bool rIsOne = this.r.Equals(BigInteger.One);
                     while(x.BitLength > (qLen + 1))
                     {
                         BigInteger u = x.ShiftRight(qLen);
                         BigInteger v = x.Remainder(qMod);
                         if(!rIsOne)
                         {
-                            u = u.Multiply(r);
+                            u = u.Multiply(this.r);
                         }
                         x = u.Add(v);
                     }
@@ -499,10 +499,10 @@ namespace NBitcoin.BouncyCastle.Math.EC
                 else
                 {
                     int d = ((qLen - 1) & 31) + 1;
-                    BigInteger mu = r.Negate();
+                    BigInteger mu = this.r.Negate();
                     BigInteger u = mu.Multiply(x.ShiftRight(qLen - d));
                     BigInteger quot = u.ShiftRight(qLen + d);
-                    BigInteger v = quot.Multiply(q);
+                    BigInteger v = quot.Multiply(this.q);
                     BigInteger bk1 = BigInteger.One.ShiftLeft(qLen + d);
                     v = v.Remainder(bk1);
                     x = x.Remainder(bk1);
@@ -512,13 +512,13 @@ namespace NBitcoin.BouncyCastle.Math.EC
                         x = x.Add(bk1);
                     }
                 }
-                while(x.CompareTo(q) >= 0)
+                while(x.CompareTo(this.q) >= 0)
                 {
-                    x = x.Subtract(q);
+                    x = x.Subtract(this.q);
                 }
                 if(negative && x.SignValue != 0)
                 {
-                    x = q.Subtract(x);
+                    x = this.q.Subtract(x);
                 }
             }
             return x;
@@ -529,7 +529,7 @@ namespace NBitcoin.BouncyCastle.Math.EC
             BigInteger x3 = x1.Subtract(x2);
             if(x3.SignValue < 0)
             {
-                x3 = x3.Add(q);
+                x3 = x3.Add(this.q);
             }
             return x3;
         }
@@ -540,7 +540,7 @@ namespace NBitcoin.BouncyCastle.Math.EC
             if(obj == this)
                 return true;
 
-            FpFieldElement other = obj as FpFieldElement;
+            var other = obj as FpFieldElement;
 
             if(other == null)
                 return false;
@@ -551,12 +551,12 @@ namespace NBitcoin.BouncyCastle.Math.EC
         public virtual bool Equals(
             FpFieldElement other)
         {
-            return q.Equals(other.q) && base.Equals(other);
+            return this.q.Equals(other.q) && base.Equals(other);
         }
 
         public override int GetHashCode()
         {
-            return q.GetHashCode() ^ base.GetHashCode();
+            return this.q.GetHashCode() ^ base.GetHashCode();
         }
     }
 
@@ -680,7 +680,7 @@ namespace NBitcoin.BouncyCastle.Math.EC
         {
             get
             {
-                return x.Degree();
+                return this.x.Degree();
             }
         }
 
@@ -688,7 +688,7 @@ namespace NBitcoin.BouncyCastle.Math.EC
         {
             get
             {
-                return x.IsOne();
+                return this.x.IsOne();
             }
         }
 
@@ -696,18 +696,18 @@ namespace NBitcoin.BouncyCastle.Math.EC
         {
             get
             {
-                return x.IsZero();
+                return this.x.IsZero();
             }
         }
 
         public override bool TestBitZero()
         {
-            return x.TestBitZero();
+            return this.x.TestBitZero();
         }
 
         public override BigInteger ToBigInteger()
         {
-            return x.ToBigInteger();
+            return this.x.ToBigInteger();
         }
 
         public override string FieldName
@@ -722,7 +722,7 @@ namespace NBitcoin.BouncyCastle.Math.EC
         {
             get
             {
-                return m;
+                return this.m;
             }
         }
 
@@ -747,8 +747,8 @@ namespace NBitcoin.BouncyCastle.Math.EC
                     + "both instances of F2mFieldElement");
             }
 
-            F2mFieldElement aF2m = (F2mFieldElement)a;
-            F2mFieldElement bF2m = (F2mFieldElement)b;
+            var aF2m = (F2mFieldElement)a;
+            var bF2m = (F2mFieldElement)b;
 
             if(aF2m.representation != bF2m.representation)
             {
@@ -769,14 +769,14 @@ namespace NBitcoin.BouncyCastle.Math.EC
             // elements involved are checked in ECPoint.F2m
             // checkFieldElements(this, b);
             LongArray iarrClone = this.x.Copy();
-            F2mFieldElement bF2m = (F2mFieldElement)b;
+            var bF2m = (F2mFieldElement)b;
             iarrClone.AddShiftedByWords(bF2m.x, 0);
-            return new F2mFieldElement(m, ks, iarrClone);
+            return new F2mFieldElement(this.m, this.ks, iarrClone);
         }
 
         public override ECFieldElement AddOne()
         {
-            return new F2mFieldElement(m, ks, x.AddOne());
+            return new F2mFieldElement(this.m, this.ks, this.x.AddOne());
         }
 
         public override ECFieldElement Subtract(
@@ -796,7 +796,7 @@ namespace NBitcoin.BouncyCastle.Math.EC
             // No check performed here for performance reasons. Instead the
             // elements involved are checked in ECPoint.F2m
             // checkFieldElements(this, b);
-            return new F2mFieldElement(m, ks, x.ModMultiply(((F2mFieldElement)b).x, m, ks));
+            return new F2mFieldElement(this.m, this.ks, this.x.ModMultiply(((F2mFieldElement)b).x, this.m, this.ks));
         }
 
         public override ECFieldElement MultiplyMinusProduct(ECFieldElement b, ECFieldElement x, ECFieldElement y)
@@ -808,8 +808,8 @@ namespace NBitcoin.BouncyCastle.Math.EC
         {
             LongArray ax = this.x, bx = ((F2mFieldElement)b).x, xx = ((F2mFieldElement)x).x, yx = ((F2mFieldElement)y).x;
 
-            LongArray ab = ax.Multiply(bx, m, ks);
-            LongArray xy = xx.Multiply(yx, m, ks);
+            LongArray ab = ax.Multiply(bx, this.m, this.ks);
+            LongArray xy = xx.Multiply(yx, this.m, this.ks);
 
             if(ab == ax || ab == bx)
             {
@@ -817,9 +817,9 @@ namespace NBitcoin.BouncyCastle.Math.EC
             }
 
             ab.AddShiftedByWords(xy, 0);
-            ab.Reduce(m, ks);
+            ab.Reduce(this.m, this.ks);
 
-            return new F2mFieldElement(m, ks, ab);
+            return new F2mFieldElement(this.m, this.ks, ab);
         }
 
         public override ECFieldElement Divide(
@@ -838,7 +838,7 @@ namespace NBitcoin.BouncyCastle.Math.EC
 
         public override ECFieldElement Square()
         {
-            return new F2mFieldElement(m, ks, x.ModSquare(m, ks));
+            return new F2mFieldElement(this.m, this.ks, this.x.ModSquare(this.m, this.ks));
         }
 
         public override ECFieldElement SquareMinusProduct(ECFieldElement x, ECFieldElement y)
@@ -850,8 +850,8 @@ namespace NBitcoin.BouncyCastle.Math.EC
         {
             LongArray ax = this.x, xx = ((F2mFieldElement)x).x, yx = ((F2mFieldElement)y).x;
 
-            LongArray aa = ax.Square(m, ks);
-            LongArray xy = xx.Multiply(yx, m, ks);
+            LongArray aa = ax.Square(this.m, this.ks);
+            LongArray xy = xx.Multiply(yx, this.m, this.ks);
 
             if(aa == ax)
             {
@@ -859,24 +859,24 @@ namespace NBitcoin.BouncyCastle.Math.EC
             }
 
             aa.AddShiftedByWords(xy, 0);
-            aa.Reduce(m, ks);
+            aa.Reduce(this.m, this.ks);
 
-            return new F2mFieldElement(m, ks, aa);
+            return new F2mFieldElement(this.m, this.ks, aa);
         }
 
         public override ECFieldElement SquarePow(int pow)
         {
-            return pow < 1 ? this : new F2mFieldElement(m, ks, x.ModSquareN(pow, m, ks));
+            return pow < 1 ? this : new F2mFieldElement(this.m, this.ks, this.x.ModSquareN(pow, this.m, this.ks));
         }
 
         public override ECFieldElement Invert()
         {
-            return new F2mFieldElement(this.m, this.ks, this.x.ModInverse(m, ks));
+            return new F2mFieldElement(this.m, this.ks, this.x.ModInverse(this.m, this.ks));
         }
 
         public override ECFieldElement Sqrt()
         {
-            return (x.IsZero() || x.IsOne()) ? this : SquarePow(m - 1);
+            return (this.x.IsZero() || this.x.IsOne()) ? this : SquarePow(this.m - 1);
         }
 
         /**
@@ -957,7 +957,7 @@ namespace NBitcoin.BouncyCastle.Math.EC
             if(obj == this)
                 return true;
 
-            F2mFieldElement other = obj as F2mFieldElement;
+            var other = obj as F2mFieldElement;
 
             if(other == null)
                 return false;
@@ -976,7 +976,7 @@ namespace NBitcoin.BouncyCastle.Math.EC
 
         public override int GetHashCode()
         {
-            return x.GetHashCode() ^ m ^ Arrays.GetHashCode(ks);
+            return this.x.GetHashCode() ^ this.m ^ Arrays.GetHashCode(this.ks);
         }
     }
 }

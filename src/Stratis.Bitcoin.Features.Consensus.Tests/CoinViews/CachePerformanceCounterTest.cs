@@ -47,12 +47,12 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.CoinViews
             this.performanceCounter.AddHitCount(15);
             this.performanceCounter.AddMissCount(7);
 
-            var snapshot1 = this.performanceCounter.Snapshot();
+            CachePerformanceSnapshot snapshot1 = this.performanceCounter.Snapshot();
 
             this.performanceCounter.AddHitCount(50);
             this.performanceCounter.AddMissCount(9);
 
-            var snapshot2 = this.performanceCounter.Snapshot();
+            CachePerformanceSnapshot snapshot2 = this.performanceCounter.Snapshot();
 
             Assert.Equal(15, snapshot1.TotalHitCount);
             Assert.Equal(7, snapshot1.TotalMissCount);

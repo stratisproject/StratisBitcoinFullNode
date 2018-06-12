@@ -11,17 +11,17 @@ namespace NBitcoin.Protobuf
         internal const int PROTOBUF_LENDELIM = 2; // string, bytes, embedded messages, packed repeated fields
         internal const int PROTOBUF_32BIT = 5; // fixed32, sfixed32, float
 
-        Stream _Inner;
+        private Stream _Inner;
         public Stream Inner
         {
             get
             {
-                return _Inner;
+                return this._Inner;
             }
         }
         public ProtobufReaderWriter(Stream stream)
         {
-            _Inner = stream;
+            this._Inner = stream;
         }
 
         public ulong ReadULong()
@@ -39,11 +39,11 @@ namespace NBitcoin.Protobuf
             int i = 0;
             while((b & 0x80) != 0)
             {
-                var v = _Inner.ReadByte();
+                int v = this._Inner.ReadByte();
                 if(v < 0)
                     return false;
                 b = (byte)v;
-                Position++;
+                this.Position++;
                 varInt += (ulong)(b & 0x7f) << 7 * i++;
             }
             value = ((b & 0x80) != 0) ? 0 : varInt;
@@ -52,7 +52,7 @@ namespace NBitcoin.Protobuf
 
         public void WriteULong(ulong value)
         {
-            byte[] ioBuffer = new byte[10];
+            var ioBuffer = new byte[10];
             int ioIndex = 0;
             int count = 0;
             do
@@ -61,11 +61,11 @@ namespace NBitcoin.Protobuf
                 count++;
             } while((value >>= 7) != 0);
             ioBuffer[ioIndex - 1] &= 0x7F;
-            _Inner.Write(ioBuffer, 0, ioIndex);
-            Position += ioIndex;
+            this._Inner.Write(ioBuffer, 0, ioIndex);
+            this.Position += ioIndex;
         }
 
-        Encoding Encoding = Encoding.UTF8;
+        private Encoding Encoding = Encoding.UTF8;
 
         public void WriteKey(int key, int type)
         {
@@ -87,32 +87,32 @@ namespace NBitcoin.Protobuf
 
         public string ReadString()
         {
-            var len = ReadULong();
+            ulong len = ReadULong();
             AssertBounds(len);
-            byte[] ioBuffer = new byte[(int)len];
-            _Inner.Read(ioBuffer, 0, ioBuffer.Length);
-            Position += ioBuffer.Length;
-            return Encoding.GetString(ioBuffer, 0, ioBuffer.Length);
+            var ioBuffer = new byte[(int)len];
+            this._Inner.Read(ioBuffer, 0, ioBuffer.Length);
+            this.Position += ioBuffer.Length;
+            return this.Encoding.GetString(ioBuffer, 0, ioBuffer.Length);
         }
 
         public void WriteString(string value)
         {
-            var predicted = Encoding.GetByteCount(value);
+            int predicted = this.Encoding.GetByteCount(value);
             WriteULong((ulong)predicted);
             AssertBounds((ulong)predicted);
-            byte[] ioBuffer = new byte[predicted];
-            Encoding.GetBytes(value, 0, predicted, ioBuffer, 0);
-            _Inner.Write(ioBuffer, 0, predicted);
-            Position += predicted;
+            var ioBuffer = new byte[predicted];
+            this.Encoding.GetBytes(value, 0, predicted, ioBuffer, 0);
+            this._Inner.Write(ioBuffer, 0, predicted);
+            this.Position += predicted;
         }
 
         public byte[] ReadBytes()
         {
-            var len = ReadULong();
+            ulong len = ReadULong();
             AssertBounds(len);
-            byte[] ioBuffer = new byte[(int)len];
-            _Inner.Read(ioBuffer, 0, ioBuffer.Length);
-            Position += ioBuffer.Length;
+            var ioBuffer = new byte[(int)len];
+            this._Inner.Read(ioBuffer, 0, ioBuffer.Length);
+            this.Position += ioBuffer.Length;
             return ioBuffer;
         }
 
@@ -125,25 +125,25 @@ namespace NBitcoin.Protobuf
         public void WriteBytes(byte[] value)
         {
             WriteULong((ulong)value.Length);
-            _Inner.Write(value, 0, value.Length);
-            Position += value.Length;
+            this._Inner.Write(value, 0, value.Length);
+            this.Position += value.Length;
         }
 
-        int _Position;
+        private int _Position;
         public int Position
         {
             get
             {
-                return _Position;
+                return this._Position;
             }
             private set
             {
-                _Position = value;
-                if(Position > MaxLength)
+                this._Position = value;
+                if(this.Position > MaxLength)
                     throw new ArgumentOutOfRangeException("The deserialized message is too big");
             }
         }
 
-        const int MaxLength = 60000;
+        private const int MaxLength = 60000;
     }
 }

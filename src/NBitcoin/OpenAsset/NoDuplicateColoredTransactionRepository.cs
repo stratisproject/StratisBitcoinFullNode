@@ -10,9 +10,10 @@ namespace NBitcoin.OpenAsset
         {
             if(inner == null)
                 throw new ArgumentNullException("inner");
-            _Inner = inner;
+            this._Inner = inner;
         }
-        IColoredTransactionRepository _Inner;
+
+        private IColoredTransactionRepository _Inner;
         #region IColoredTransactionRepository Members
 
         public ITransactionRepository Transactions
@@ -25,12 +26,12 @@ namespace NBitcoin.OpenAsset
 
         public Task<ColoredTransaction> GetAsync(uint256 txId)
         {
-            return Request("c" + txId.ToString(), () => _Inner.GetAsync(txId));
+            return Request("c" + txId.ToString(), () => this._Inner.GetAsync(txId));
         }
 
         public Task PutAsync(uint256 txId, ColoredTransaction tx)
         {
-            return _Inner.PutAsync(txId, tx);
+            return this._Inner.PutAsync(txId, tx);
         }
 
         #endregion
@@ -39,41 +40,41 @@ namespace NBitcoin.OpenAsset
 
         Task<Transaction> ITransactionRepository.GetAsync(uint256 txId)
         {
-            return Request("t" + txId.ToString(), () => _Inner.Transactions.GetAsync(txId));
+            return Request("t" + txId.ToString(), () => this._Inner.Transactions.GetAsync(txId));
         }
 
         public Task PutAsync(uint256 txId, Transaction tx)
         {
-            return _Inner.Transactions.PutAsync(txId, tx);
+            return this._Inner.Transactions.PutAsync(txId, tx);
         }
 
         #endregion
 
-        Dictionary<string, Task> _Tasks = new Dictionary<string, Task>();
-        ReaderWriterLock @lock = new ReaderWriterLock();
+        private Dictionary<string, Task> _Tasks = new Dictionary<string, Task>();
+        private ReaderWriterLock @lock = new ReaderWriterLock();
 
-        Task<T> Request<T>(string key, Func<Task<T>> wrapped)
+        private Task<T> Request<T>(string key, Func<Task<T>> wrapped)
         {
             Task<T> task = null;
-            using(@lock.LockRead())
+            using(this.@lock.LockRead())
             {
-                task = _Tasks.TryGet(key) as Task<T>;
+                task = this._Tasks.TryGet(key) as Task<T>;
             }
             if(task != null)
                 return task;
-            using(@lock.LockWrite())
+            using(this.@lock.LockWrite())
             {
-                task = _Tasks.TryGet(key) as Task<T>;
+                task = this._Tasks.TryGet(key) as Task<T>;
                 if(task != null)
                     return task;
                 task = wrapped();
-                _Tasks.Add(key, task);
+                this._Tasks.Add(key, task);
             }
             task.ContinueWith((_) =>
             {
-                using(@lock.LockWrite())
+                using(this.@lock.LockWrite())
                 {
-                    _Tasks.Remove(key);
+                    this._Tasks.Remove(key);
                 }
             });
             return task;

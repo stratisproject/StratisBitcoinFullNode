@@ -16,7 +16,7 @@ namespace NBitcoin.Tests
         [Trait("UnitTest", "UnitTest")]
         public void CanGenerateMnemonicOfSpecificLength()
         {
-            foreach(var count in new[] { WordCount.Twelve, WordCount.TwentyFour, WordCount.TwentyOne, WordCount.Fifteen, WordCount.Eighteen })
+            foreach(WordCount count in new[] { WordCount.Twelve, WordCount.TwentyFour, WordCount.TwentyOne, WordCount.Fifteen, WordCount.Eighteen })
             {
                 Assert.Equal((int)count, new Mnemonic(Wordlist.English, count).Words.Length);
             }
@@ -36,14 +36,14 @@ namespace NBitcoin.Tests
         [Trait("UnitTest", "UnitTest")]
         public void EngTest()
         {
-            var test = JObject.Parse(File.ReadAllText(TestDataLocations.GetFileFromDataFolder("bip39_vectors.json")));
+            JObject test = JObject.Parse(File.ReadAllText(TestDataLocations.GetFileFromDataFolder("bip39_vectors.json")));
 
-            foreach(var language in test.Properties())
+            foreach(JProperty language in test.Properties())
             {
-                var lang = GetList(language.Name);
-                foreach(var langTest in ((JArray)language.Value).OfType<JArray>().Take(2))
+                Wordlist lang = GetList(language.Name);
+                foreach(JArray langTest in ((JArray)language.Value).OfType<JArray>().Take(2))
                 {
-                    var entropy = Encoders.Hex.DecodeData(langTest[0].ToString());
+                    byte[] entropy = Encoders.Hex.DecodeData(langTest[0].ToString());
                     string mnemonicStr = langTest[1].ToString();
                     string seed = langTest[2].ToString();
                     var mnemonic = new Mnemonic(mnemonicStr, lang);
@@ -62,8 +62,8 @@ namespace NBitcoin.Tests
         [Trait("UnitTest", "UnitTest")]
         public void KDTableCanNormalize()
         {
-            var input = "あおぞら";
-            var expected = "あおぞら";
+            string input = "あおぞら";
+            string expected = "あおぞら";
             Assert.False(input == expected);
             Assert.Equal(expected, KDTable.NormalizeKD(input));
         }
@@ -72,19 +72,19 @@ namespace NBitcoin.Tests
         [Trait("UnitTest", "UnitTest")]
         public void JapTest()
         {
-            var test = JArray.Parse(File.ReadAllText(TestDataLocations.GetFileFromDataFolder("bip39_JP.json"), Encoding.UTF32));
+            JArray test = JArray.Parse(File.ReadAllText(TestDataLocations.GetFileFromDataFolder("bip39_JP.json"), Encoding.UTF32));
 
-            foreach(var unitTest in test.OfType<JObject>())
+            foreach(JObject unitTest in test.OfType<JObject>())
             {
-                var entropy = Encoders.Hex.DecodeData(unitTest["entropy"].ToString());
+                byte[] entropy = Encoders.Hex.DecodeData(unitTest["entropy"].ToString());
                 string mnemonicStr = unitTest["mnemonic"].ToString();
                 string seed = unitTest["seed"].ToString();
                 string passphrase = unitTest["passphrase"].ToString();
                 var mnemonic = new Mnemonic(mnemonicStr, Wordlist.Japanese);
                 Assert.True(mnemonic.IsValidChecksum);
                 Assert.Equal(seed, Encoders.Hex.EncodeData(mnemonic.DeriveSeed(passphrase)));
-                var bip32 = unitTest["bip32_xprv"].ToString();
-                var bip32Actual = mnemonic.DeriveExtKey(passphrase).ToString(Network.Main);
+                string bip32 = unitTest["bip32_xprv"].ToString();
+                string bip32Actual = mnemonic.DeriveExtKey(passphrase).ToString(Network.Main);
                 Assert.Equal(bip32, bip32Actual.ToString());
                 mnemonic = new Mnemonic(Wordlist.Japanese, entropy);
                 Assert.True(mnemonic.IsValidChecksum);
@@ -156,22 +156,22 @@ namespace NBitcoin.Tests
         //[Fact]
         private void GenerateHardcodedBIP39Dictionary()
         {
-            StringBuilder builder = new StringBuilder();
-            foreach(var lang in new[] { Language.ChineseSimplified, Language.ChineseTraditional, Language.English, Language.Japanese, Language.Spanish, Language.French })
+            var builder = new StringBuilder();
+            foreach(Language lang in new[] { Language.ChineseSimplified, Language.ChineseTraditional, Language.English, Language.Japanese, Language.Spanish, Language.French })
             {
                 string name = Wordlist.GetLanguageFileName(lang);
                 builder.AppendLine("dico.Add(\"" + name + "\",\"" + GetLanguage(lang) + "\");");
             }
-            var dico = builder.ToString();
+            string dico = builder.ToString();
         }
 
         [Fact]
         public void GenerateHardcodedNormalization()
         {
-            StringBuilder builder = new StringBuilder();
+            var builder = new StringBuilder();
             builder.Append("\"");
-            HashSet<char> chars = new HashSet<char>();
-            List<CharRangeT> ranges = new List<CharRangeT>();
+            var chars = new HashSet<char>();
+            var ranges = new List<CharRangeT>();
             ranges.Add(CharRange(0, 1000)); //Some latin language accent
             ranges.Add(CharRange(0x3040, 0x309F)); //Hiragana
             ranges.Add(CharRange(0x30A0, 0x30FF)); //Katakana
@@ -193,7 +193,7 @@ namespace NBitcoin.Tests
             ranges.Add(CharRange(0x2000, 0x206F));
             ranges.Add(CharRange(0x20A0, 0x20CF));
 
-            foreach(var letter in ranges.SelectMany(c => c).OrderBy(c => c))
+            foreach(char letter in ranges.SelectMany(c => c).OrderBy(c => c))
             {
                 string nonNormal = new String(new[] { letter });
                 try
@@ -210,19 +210,19 @@ namespace NBitcoin.Tests
             }
 
             builder.Append("\"");
-            var substitutionTable = builder.ToString();
+            string substitutionTable = builder.ToString();
 
             builder = new StringBuilder();
             builder.AppendLine("{");
-            foreach(var range in ranges)
+            foreach(CharRangeT range in ranges)
             {
                 builder.AppendLine("new[]{" + range.From + "," + range.To + "},");
             }
             builder.AppendLine("}");
-            var rangeTable = builder.ToString();
+            string rangeTable = builder.ToString();
         }
 
-        class CharRangeT : IEnumerable<char>
+        private class CharRangeT : IEnumerable<char>
         {
             public int From;
             public int To;
@@ -232,7 +232,7 @@ namespace NBitcoin.Tests
 
             public IEnumerator<char> GetEnumerator()
             {
-                return Chars.GetEnumerator();
+                return this.Chars.GetEnumerator();
             }
 
 
@@ -244,8 +244,8 @@ namespace NBitcoin.Tests
 
         private CharRangeT CharRange(char[] chars)
         {
-            var min = chars.Select(c => (int)c).Min();
-            var max = chars.Select(c => (int)c).Max();
+            int min = chars.Select(c => (int)c).Min();
+            int max = chars.Select(c => (int)c).Max();
             return CharRange(min, max);
         }
 
@@ -261,8 +261,8 @@ namespace NBitcoin.Tests
         private string GetLanguage(Language lang)
         {
             string name = Wordlist.GetLanguageFileName(lang);
-            System.Net.Http.HttpClient client = new System.Net.Http.HttpClient();
-            var data = client.GetAsync("https://raw.githubusercontent.com/bitcoin/bips/master/bip-0039/" + name + ".txt").Result.Content.ReadAsStringAsync().Result;
+            var client = new System.Net.Http.HttpClient();
+            string data = client.GetAsync("https://raw.githubusercontent.com/bitcoin/bips/master/bip-0039/" + name + ".txt").Result.Content.ReadAsStringAsync().Result;
             return data.Replace("\n", "\\n");
         }
     }

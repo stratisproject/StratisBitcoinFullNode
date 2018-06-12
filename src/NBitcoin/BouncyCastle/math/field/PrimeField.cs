@@ -14,7 +14,7 @@
         {
             get
             {
-                return characteristic;
+                return this.characteristic;
             }
         }
 
@@ -32,17 +32,17 @@
             {
                 return true;
             }
-            PrimeField other = obj as PrimeField;
+            var other = obj as PrimeField;
             if(null == other)
             {
                 return false;
             }
-            return characteristic.Equals(other.characteristic);
+            return this.characteristic.Equals(other.characteristic);
         }
 
         public override int GetHashCode()
         {
-            return characteristic.GetHashCode();
+            return this.characteristic.GetHashCode();
         }
     }
 }

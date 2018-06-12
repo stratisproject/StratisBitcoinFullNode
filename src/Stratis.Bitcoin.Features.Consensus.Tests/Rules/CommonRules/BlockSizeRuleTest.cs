@@ -23,7 +23,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         {
             this.ruleContext.ValidationContext.Block = GenerateBlockWithWeight((this.options.MaxBlockWeight / this.options.WitnessScaleFactor) + 1, TransactionOptions.All);
 
-            var exception = await Assert.ThrowsAsync<ConsensusErrorException>(() => this.consensusRules.RegisterRule<BlockSizeRule>().RunAsync(this.ruleContext));
+            ConsensusErrorException exception = await Assert.ThrowsAsync<ConsensusErrorException>(() => this.consensusRules.RegisterRule<BlockSizeRule>().RunAsync(this.ruleContext));
 
             Assert.Equal(ConsensusErrors.BadBlockWeight, exception.ConsensusError);
         }
@@ -33,7 +33,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         {
             this.ruleContext.ValidationContext.Block = new Block();
 
-            var exception = await Assert.ThrowsAsync<ConsensusErrorException>(() => this.consensusRules.RegisterRule<BlockSizeRule>().RunAsync(this.ruleContext));
+            ConsensusErrorException exception = await Assert.ThrowsAsync<ConsensusErrorException>(() => this.consensusRules.RegisterRule<BlockSizeRule>().RunAsync(this.ruleContext));
 
             Assert.Equal(ConsensusErrors.BadBlockLength, exception.ConsensusError);
         }
@@ -43,7 +43,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         {
             this.ruleContext.ValidationContext.Block = new Block();
 
-            for (var i = 0; i < this.options.MaxBlockBaseSize + 1; i++)
+            for (int i = 0; i < this.options.MaxBlockBaseSize + 1; i++)
             {
                 this.ruleContext.ValidationContext.Block.Transactions.Add(new Transaction());
             }
@@ -53,7 +53,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             // increase max block weight to be able to hit this if statement
             this.options.MaxBlockWeight = (blockWeight * 4) + 100;
 
-            var exception = await Assert.ThrowsAsync<ConsensusErrorException>(() => this.consensusRules.RegisterRule<BlockSizeRule>().RunAsync(this.ruleContext));
+            ConsensusErrorException exception = await Assert.ThrowsAsync<ConsensusErrorException>(() => this.consensusRules.RegisterRule<BlockSizeRule>().RunAsync(this.ruleContext));
 
             Assert.Equal(ConsensusErrors.BadBlockLength, exception.ConsensusError);
         }
@@ -67,7 +67,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             // increase max block weight to be able to hit this if statement
             this.options.MaxBlockWeight = (blockWeight * 4) + 1;
 
-            var exception = await Assert.ThrowsAsync<ConsensusErrorException>(() => this.consensusRules.RegisterRule<BlockSizeRule>().RunAsync(this.ruleContext));
+            ConsensusErrorException exception = await Assert.ThrowsAsync<ConsensusErrorException>(() => this.consensusRules.RegisterRule<BlockSizeRule>().RunAsync(this.ruleContext));
 
             Assert.Equal(ConsensusErrors.BadBlockLength, exception.ConsensusError);
         }
@@ -95,7 +95,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         {
             this.ruleContext.ValidationContext.Block = new Block();
 
-            for (var i = 0; i < 10; i++)
+            for (int i = 0; i < 10; i++)
             {
                 this.ruleContext.ValidationContext.Block.Transactions.Add(new Transaction());
             }
@@ -130,10 +130,10 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
 
             int blockWeight = this.CalculateBlockWeight(block, options);
 
-            var requiredScriptWeight = weight - blockWeight - 4;
+            int requiredScriptWeight = weight - blockWeight - 4;
             block.Transactions[0].Outputs.Clear();
             // generate nonsense script with required bytes to reach required weight.
-            var script = Script.FromBytesUnsafe(new string('A', requiredScriptWeight).Select(c => (byte)c).ToArray());
+            Script script = Script.FromBytesUnsafe(new string('A', requiredScriptWeight).Select(c => (byte)c).ToArray());
             transaction.Outputs.Add(new TxOut(new Money(10000000000), script));
 
             blockWeight = this.CalculateBlockWeight(block, options);

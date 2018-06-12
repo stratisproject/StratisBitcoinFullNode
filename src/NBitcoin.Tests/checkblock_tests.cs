@@ -11,7 +11,7 @@ namespace NBitcoin.Tests
         [Trait("UnitTest", "UnitTest")]
         public void CanCalculateMerkleRoot()
         {
-            Block block = new Block();
+            var block = new Block();
             block.ReadWrite(Encoders.Hex.DecodeData(File.ReadAllText(TestDataLocations.GetFileFromDataFolder("block169482.txt"))));
             Assert.Equal(block.Header.HashMerkleRoot, block.GetMerkleRoot().Hash);
         }        
