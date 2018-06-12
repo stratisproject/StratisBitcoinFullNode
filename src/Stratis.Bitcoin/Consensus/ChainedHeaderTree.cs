@@ -300,7 +300,13 @@ namespace Stratis.Bitcoin.Consensus
 
             if (!this.chainedHeadersByHash.ContainsKey(chainedHeader.HashBlock))
             {
-                this.logger.LogTrace("(-)[HEADER_NOT_FOUND]");
+                this.logger.LogTrace("(-)[HEADER_NOT_FOUND]:null");
+                return null;
+            }
+
+            if (chainedHeader.Block == null)
+            {
+                this.logger.LogTrace("(-)[BLOCK_DATA_NULL]:null");
                 return null;
             }
 
