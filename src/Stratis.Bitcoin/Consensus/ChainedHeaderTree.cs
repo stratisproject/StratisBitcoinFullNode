@@ -300,7 +300,13 @@ namespace Stratis.Bitcoin.Consensus
 
             if (!this.chainedHeadersByHash.ContainsKey(chainedHeader.HashBlock))
             {
-                this.logger.LogTrace("(-)[HEADER_NOT_FOUND]");
+                this.logger.LogTrace("(-)[HEADER_NOT_FOUND]:null");
+                return null;
+            }
+
+            if (chainedHeader.Block == null)
+            {
+                this.logger.LogTrace("(-)[BLOCK_DATA_NULL]:null");
                 return null;
             }
 
@@ -356,6 +362,12 @@ namespace Stratis.Bitcoin.Consensus
         public List<int> PartialOrFullValidationFailed(ChainedHeader chainedHeader)
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(chainedHeader), chainedHeader);
+
+            if (!this.chainedHeadersByHash.ContainsKey(chainedHeader.HashBlock))
+            {
+                this.logger.LogTrace("(-)[NOT_FOUND]");
+                return new List<int>();
+            }
 
             List<int> peersToBan = this.RemoveSubtree(chainedHeader);
 
