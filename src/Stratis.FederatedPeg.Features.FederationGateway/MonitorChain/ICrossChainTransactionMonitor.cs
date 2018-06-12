@@ -19,7 +19,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
         /// Sets the multisig redeem script that we are interested in. (There are two possibilities mainchain or sidechain address.)
         /// Initilize and load the store.
         /// </summary>
-        void Initialize();
+        void Initialize(FederationGatewaySettings federationGatewaySettings);
 
         /// <summary>
         /// The BlockObserver will tell us when a block is incoming. Here we look at each block and iterate through the transactions

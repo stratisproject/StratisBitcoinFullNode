@@ -80,7 +80,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
             // subscribe to receiving transactions
             this.blockSubscriberDisposable = this.signals.SubscribeForBlocks(new BlockObserver(this.crossChainTransactionMonitor));
 
-            this.crossChainTransactionMonitor.Initialize();
+            this.crossChainTransactionMonitor.Initialize(federationGatewaySettings);
             this.monitorChainSessionManager.Initialize();
 
             var networkPeerConnectionParameters = this.connectionManager.Parameters;

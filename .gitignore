@@ -246,3 +246,4 @@ ModelManifest.xml
 # FAKE - F# Make
 .fake/
 
+/src/Stratis.FederationGatewayD/Properties/PublishProfiles/FolderProfile.pubxml

@@ -28,7 +28,7 @@ namespace Stratis.FederatedPeg
         /// <param name="folder">The folder to manage.</param>
         public MemberFolderManager(string folder)
         {
-            if (folder == string.Empty)
+            if (string.IsNullOrWhiteSpace(folder))
                 folder = Environment.CurrentDirectory;
 
             if (!Directory.Exists(folder))
