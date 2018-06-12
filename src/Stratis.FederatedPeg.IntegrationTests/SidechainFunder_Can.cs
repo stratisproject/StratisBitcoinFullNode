@@ -16,7 +16,6 @@ using Stratis.Bitcoin.Features.RPC;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Controllers;
 using Stratis.Bitcoin.Features.Wallet.Models;
-using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
 using Stratis.Bitcoin.Tests.Common;
 using Stratis.FederatedPeg.Features.FederationGateway;
@@ -34,7 +33,7 @@ using WtRecipient = Stratis.Bitcoin.Features.Wallet.Recipient;
 using GpTransactionBuildContext = Stratis.Bitcoin.Features.GeneralPurposeWallet.TransactionBuildContext;
 using WtTransactionBuildContext = Stratis.Bitcoin.Features.Wallet.TransactionBuildContext;
 using System;
-using Stratis.ApexD;
+using Stratis.Networks.Apex;
 
 //todo: this is pre-refactoring code
 //todo: ensure no duplicate or fake withdrawal or deposit transactions are possible (current work underway)
@@ -90,7 +89,7 @@ namespace Stratis.FederatedPeg.IntegrationTests
             Console.WriteLine("Redeem script: " + redeemScript.ToString());
 
             // Create the Apex sidechain multisig address.
-            BitcoinAddress sidechainMultisigAddress = redeemScript.Hash.GetAddress(ApexNetwork.ApexTest);
+            BitcoinAddress sidechainMultisigAddress = redeemScript.Hash.GetAddress(ApexNetwork.Test);
             Console.WriteLine("Sidechan P2SH: " + sidechainMultisigAddress.ScriptPubKey);
             Console.WriteLine("Sidechain Multisig address: " + sidechainMultisigAddress);
 
@@ -101,7 +100,7 @@ namespace Stratis.FederatedPeg.IntegrationTests
 
 
             // Tests.
-            var destinations = redeemScript.GetDestinationPublicKeys(ApexNetwork.ApexTest);
+            var destinations = redeemScript.GetDestinationPublicKeys(ApexNetwork.Test);
             Assert.Equal(membersCount, destinations.Length);
         }
         [Fact(Skip = "Waiting for mining changes on the full node")]        public async Task deposit_funds_to_sidechain()

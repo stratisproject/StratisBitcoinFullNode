@@ -13,6 +13,7 @@ using Stratis.Bitcoin.Features.Miner;
 using Stratis.Bitcoin.Features.RPC;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Utilities;
+using Stratis.Networks.Apex;
 
 namespace Stratis.ApexD
 {
@@ -28,7 +29,7 @@ namespace Stratis.ApexD
             try
             {
                 args = args.Concat(new[] { "apiport=38225" }).ToArray();
-                NodeSettings nodeSettings = new NodeSettings(ApexNetwork.ApexTest, protocolVersion: ProtocolVersion.ALT_PROTOCOL_VERSION, args: args);
+                NodeSettings nodeSettings = new NodeSettings(ApexNetwork.Test, protocolVersion: ProtocolVersion.ALT_PROTOCOL_VERSION, args: args);
 
                 var node = new FullNodeBuilder()
                     .UseNodeSettings(nodeSettings)
