@@ -19,7 +19,6 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// </summary>
         public PosConsensusOptions()
         {
-            this.MaxMoney = long.MaxValue;
         }
 
         /// <summary>
@@ -71,7 +70,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <summary>The maximum allowed number of signature check operations in a block (network rule).</summary>
         public int MaxBlockSigopsCost { get; set; }
 
-        public long MaxMoney { get; set; }
+        
 
         /// <summary>
         /// Initializes the default values.
@@ -86,7 +85,6 @@ namespace Stratis.Bitcoin.Features.Consensus
             this.MaxStandardTxWeight = 400000;
             this.MaxBlockBaseSize = 1000000;
             this.MaxBlockSigopsCost = 80000;
-            this.MaxMoney = 21000000 * Money.COIN;
         }
     }
 
