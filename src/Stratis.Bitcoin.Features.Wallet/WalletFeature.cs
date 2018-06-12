@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using Microsoft.Extensions.DependencyInjection;
@@ -99,7 +100,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <inheritdoc />
         public void AddNodeStats(StringBuilder benchLogs)
         {
-            WalletManager walletManager = this.walletManager as WalletManager;
+            var walletManager = this.walletManager as WalletManager;
 
             if (walletManager != null)
             {
@@ -116,16 +117,16 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <inheritdoc />
         public void AddFeatureStats(StringBuilder benchLog)
         {
-            var walletNames = this.walletManager.GetWalletsNames();
+            IEnumerable<string> walletNames = this.walletManager.GetWalletsNames();
 
             if (walletNames.Any())
             {
                 benchLog.AppendLine();
                 benchLog.AppendLine("======Wallets======");
 
-                foreach (var walletName in walletNames)
+                foreach (string walletName in walletNames)
                 {
-                    var items = this.walletManager.GetSpendableTransactionsInWallet(walletName, 1);
+                    IEnumerable<UnspentOutputReference> items = this.walletManager.GetSpendableTransactionsInWallet(walletName, 1);
                     benchLog.AppendLine("Wallet: " + (walletName + ",").PadRight(LoggingConfiguration.ColumnLength) + " Confirmed balance: " + new Money(items.Sum(s => s.Transaction.Amount)).ToString());
                 }
             }

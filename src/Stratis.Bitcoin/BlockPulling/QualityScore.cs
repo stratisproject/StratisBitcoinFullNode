@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using Microsoft.Extensions.Logging;
 using Stratis.Bitcoin.Utilities;
 
@@ -94,7 +93,7 @@ namespace Stratis.Bitcoin.BlockPulling
             lock (this.lockObject)
             {
                 // Add new sample to the mix.
-                PeerSample newSample = new PeerSample();
+                var newSample = new PeerSample();
                 newSample.TimePerKb = timePerKb;
                 newSample.Peer = peer;
 

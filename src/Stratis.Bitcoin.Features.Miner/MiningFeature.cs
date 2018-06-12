@@ -103,7 +103,7 @@ namespace Stratis.Bitcoin.Features.Miner
         {
             if (this.timeSyncBehaviorState.IsSystemTimeOutOfSync)
             {
-                var errorMessage = "Staking cannot start, your system time does not match that of other nodes on the network." + Environment.NewLine
+                string errorMessage = "Staking cannot start, your system time does not match that of other nodes on the network." + Environment.NewLine
                                     + "Please adjust your system time and restart the node.";
                 this.logger.LogError(errorMessage);
                 throw new ConfigurationException(errorMessage);
@@ -121,7 +121,7 @@ namespace Stratis.Bitcoin.Features.Miner
             }
             else
             {
-                var errorMessage = "Staking not started, wallet name or password were not provided.";
+                string errorMessage = "Staking not started, wallet name or password were not provided.";
                 this.logger.LogError(errorMessage);
                 throw new ConfigurationException(errorMessage);
             }
@@ -187,7 +187,7 @@ namespace Stratis.Bitcoin.Features.Miner
             if (this.minerSettings.Mine || this.minerSettings.Stake)
             {
                 services.Features.EnsureFeature<BlockStoreFeature>();
-                StoreSettings blockSettings = services.ServiceProvider.GetService<StoreSettings>();
+                var blockSettings = services.ServiceProvider.GetService<StoreSettings>();
                 if (blockSettings.Prune)
                     throw new ConfigurationException("BlockStore prune mode is incompatible with mining and staking.");
             }

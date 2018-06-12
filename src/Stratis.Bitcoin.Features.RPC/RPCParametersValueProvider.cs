@@ -1,5 +1,6 @@
 ﻿using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Mvc.Abstractions;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Newtonsoft.Json.Linq;
 using Stratis.Bitcoin.Utilities;
@@ -68,16 +69,16 @@ namespace Stratis.Bitcoin.Features.RPC
             if ((this.context.ActionContext.ActionDescriptor == null) || (this.context.ActionContext.ActionDescriptor.Parameters == null))
                 return null;
 
-            var parameter = this.context.ActionContext.ActionDescriptor.Parameters.FirstOrDefault(p => p.Name == key);
+            ParameterDescriptor parameter = this.context.ActionContext.ActionDescriptor.Parameters.FirstOrDefault(p => p.Name == key);
             if (parameter == null)
                 return null;
 
-            var index = this.context.ActionContext.ActionDescriptor.Parameters.IndexOf(parameter);
+            int index = this.context.ActionContext.ActionDescriptor.Parameters.IndexOf(parameter);
             var parameters = (JArray)req["params"];
             if ((index < 0) || (index >= parameters.Count))
                 return null;
 
-            var jtoken = parameters[index];
+            JToken jtoken = parameters[index];
             return jtoken == null ? null : jtoken.ToString();
         }
     }

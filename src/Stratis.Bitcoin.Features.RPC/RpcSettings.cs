@@ -61,7 +61,7 @@ namespace Stratis.Bitcoin.Features.RPC
         /// <param name="nodeSettings">Application configuration.</param>
         private void LoadSettingsFromConfig(NodeSettings nodeSettings)
         {
-            var config = nodeSettings.ConfigReader;
+            TextFileConfiguration config = nodeSettings.ConfigReader;
 
             this.Server = config.GetOrDefault<bool>("server", false);
             this.RPCPort = config.GetOrDefault<int>("rpcport", nodeSettings.Network.RPCPort);
@@ -142,7 +142,7 @@ namespace Stratis.Bitcoin.Features.RPC
         /// <param name="network">The network to use.</param>
         public static void PrintHelp(Network network)
         {
-            var defaults = NodeSettings.Default();
+            NodeSettings defaults = NodeSettings.Default();
             var builder = new StringBuilder();
 
             builder.AppendLine($"-server=<0 or 1>          Accept command line and JSON-RPC commands. Default false.");

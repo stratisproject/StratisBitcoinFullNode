@@ -10,7 +10,7 @@ namespace NBitcoin
     {
         public static MerkleNode GetRoot(IEnumerable<uint256> leafs)
         {
-            var row = leafs.Select(l => new MerkleNode(l)).ToList();
+            List<MerkleNode> row = leafs.Select(l => new MerkleNode(l)).ToList();
             if(row.Count == 0)
                 return new MerkleNode(uint256.Zero);
             while(row.Count != 1)
@@ -18,8 +18,8 @@ namespace NBitcoin
                 var parentRow = new List<MerkleNode>();
                 for(int i = 0; i < row.Count; i += 2)
                 {
-                    var left = row[i];
-                    var right = i + 1 < row.Count ? row[i + 1] : null;
+                    MerkleNode left = row[i];
+                    MerkleNode right = i + 1 < row.Count ? row[i + 1] : null;
                     var parent = new MerkleNode(left, right);
                     parentRow.Add(parent);
                 }
@@ -66,7 +66,7 @@ namespace NBitcoin
 
         public void UpdateHash()
         {
-            var right = Right ?? Left;
+            MerkleNode right = Right ?? Left;
             if(Left != null && Left.Hash != null && right.Hash != null)
                 _Hash = Hashes.Hash256(Left.Hash.ToBytes().Concat(right.Hash.ToBytes()).ToArray());
         }
@@ -76,7 +76,8 @@ namespace NBitcoin
             get;
             private set;
         }
-        uint256 _Hash;
+
+        private uint256 _Hash;
         public MerkleNode Parent
         {
             get;
@@ -121,7 +122,7 @@ namespace NBitcoin
 
         public IEnumerable<MerkleNode> Ancestors()
         {
-            var n = Parent;
+            MerkleNode n = Parent;
             while(n != null)
             {
                 yield return n;
@@ -138,14 +139,14 @@ namespace NBitcoin
         {
             if(!hierachy)
                 return ToString();
-            StringBuilder builder = new StringBuilder();
+            var builder = new StringBuilder();
             ToString(builder, 0);
             return builder.ToString();
         }
 
         private void ToString(StringBuilder builder, int indent)
         {
-            var tabs = new String(Enumerable.Range(0, indent).Select(_ => '\t').ToArray());
+            string tabs = new String(Enumerable.Range(0, indent).Select(_ => '\t').ToArray());
             builder.Append(tabs);
             builder.AppendLine(ToString());
             if(Left != null)

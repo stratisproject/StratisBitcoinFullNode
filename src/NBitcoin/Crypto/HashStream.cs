@@ -89,8 +89,8 @@ namespace NBitcoin.Crypto
         }
 
 
-        byte[] _Buffer = new byte[32];
-        byte _Pos;
+        private byte[] _Buffer = new byte[32];
+        private byte _Pos;
         public override void WriteByte(byte value)
         {
             _Buffer[_Pos++] = value;
@@ -104,7 +104,7 @@ namespace NBitcoin.Crypto
         }
 
 #if(USEBC || WINDOWS_UWP || NETCORE)
-        BouncyCastle.Crypto.Digests.Sha256Digest sha = new BouncyCastle.Crypto.Digests.Sha256Digest();
+        private BouncyCastle.Crypto.Digests.Sha256Digest sha = new BouncyCastle.Crypto.Digests.Sha256Digest();
         private void ProcessBlock()
         {
             sha.BlockUpdate(_Buffer, 0, _Pos);

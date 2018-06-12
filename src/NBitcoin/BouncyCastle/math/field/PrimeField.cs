@@ -32,7 +32,7 @@
             {
                 return true;
             }
-            PrimeField other = obj as PrimeField;
+            var other = obj as PrimeField;
             if(null == other)
             {
                 return false;

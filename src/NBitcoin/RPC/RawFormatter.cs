@@ -6,7 +6,7 @@ using Newtonsoft.Json.Linq;
 
 namespace NBitcoin.RPC
 {
-    abstract class RawFormatter
+    internal abstract class RawFormatter
     {
         public Network Network { get; set; }
 
@@ -34,7 +34,7 @@ namespace NBitcoin.RPC
 
         public Transaction Parse(JObject obj)
         {
-            Transaction tx = new Transaction();
+            var tx = new Transaction();
             BuildTransaction(obj, tx);
             return tx;
         }

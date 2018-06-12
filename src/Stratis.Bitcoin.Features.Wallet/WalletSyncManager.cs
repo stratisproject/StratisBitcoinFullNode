@@ -78,7 +78,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                 // a common fork and bringing the wallet back to a good
                 // state (behind the best chain).
                 ICollection<uint256> locators = this.walletManager.GetFirstWalletBlockLocator();
-                BlockLocator blockLocator = new BlockLocator { Blocks = locators.ToList() };
+                var blockLocator = new BlockLocator { Blocks = locators.ToList() };
                 ChainedHeader fork = this.chain.FindFork(blockLocator);
                 this.walletManager.RemoveBlocks(fork);
                 this.walletManager.WalletTipHash = fork.HashBlock;
@@ -146,7 +146,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                         return;
                     }
 
-                    var token = this.nodeLifetime.ApplicationStopping;
+                    CancellationToken token = this.nodeLifetime.ApplicationStopping;
                     this.logger.LogTrace("Wallet tip '{0}' is behind the new tip '{1}'.", this.walletTip, newTip);
 
                     ChainedHeader next = this.walletTip;

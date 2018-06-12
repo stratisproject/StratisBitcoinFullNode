@@ -12,7 +12,7 @@ namespace NBitcoin.BouncyCastle.Asn1
         public static Asn1EncodableVector FromEnumerable(
             IEnumerable e)
         {
-            Asn1EncodableVector v = new Asn1EncodableVector();
+            var v = new Asn1EncodableVector();
             foreach(Asn1Encodable obj in e)
             {
                 v.Add(obj);

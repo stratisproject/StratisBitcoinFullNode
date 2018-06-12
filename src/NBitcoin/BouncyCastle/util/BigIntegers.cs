@@ -40,7 +40,7 @@ namespace NBitcoin.BouncyCastle.Utilities
             if(bytes.Length == length)
                 return bytes;
 
-            byte[] tmp = new byte[length];
+            var tmp = new byte[length];
             Array.Copy(bytes, 0, tmp, tmp.Length - bytes.Length, bytes.Length);
             return tmp;
         }
@@ -75,7 +75,7 @@ namespace NBitcoin.BouncyCastle.Utilities
 
             for(int i = 0; i < MaxIterations; ++i)
             {
-                BigInteger x = new BigInteger(max.BitLength, random);
+                var x = new BigInteger(max.BitLength, random);
                 if(x.CompareTo(min) >= 0 && x.CompareTo(max) <= 0)
                 {
                     return x;

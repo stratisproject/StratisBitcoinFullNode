@@ -6,7 +6,7 @@ namespace NBitcoin
 {
     public class TransactionSignature
     {
-        static readonly TransactionSignature _Empty = new TransactionSignature(new ECDSASignature(NBitcoin.BouncyCastle.Math.BigInteger.ValueOf(0), NBitcoin.BouncyCastle.Math.BigInteger.ValueOf(0)), SigHash.All);
+        private static readonly TransactionSignature _Empty = new TransactionSignature(new ECDSASignature(NBitcoin.BouncyCastle.Math.BigInteger.ValueOf(0), NBitcoin.BouncyCastle.Math.BigInteger.ValueOf(0)), SigHash.All);
         public static TransactionSignature Empty
         {
             get
@@ -100,7 +100,7 @@ namespace NBitcoin
 
         public byte[] ToBytes()
         {
-            var sig = _Signature.ToDER();
+            byte[] sig = _Signature.ToDER();
             var result = new byte[sig.Length + 1];
             Array.Copy(sig, 0, result, 0, sig.Length);
             result[result.Length - 1] = (byte)_SigHash;
@@ -126,7 +126,7 @@ namespace NBitcoin
             }.CheckSig(this, pubKey, scriptPubKey, tx, nIndex);
         }
 
-        string _Id;
+        private string _Id;
         private string Id
         {
             get
@@ -139,7 +139,7 @@ namespace NBitcoin
 
         public override bool Equals(object obj)
         {
-            TransactionSignature item = obj as TransactionSignature;
+            var item = obj as TransactionSignature;
             if(item == null)
                 return false;
             return Id.Equals(item.Id);

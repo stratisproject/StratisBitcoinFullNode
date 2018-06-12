@@ -11,7 +11,7 @@ namespace NBitcoin.Protobuf
         internal const int PROTOBUF_LENDELIM = 2; // string, bytes, embedded messages, packed repeated fields
         internal const int PROTOBUF_32BIT = 5; // fixed32, sfixed32, float
 
-        Stream _Inner;
+        private Stream _Inner;
         public Stream Inner
         {
             get
@@ -39,7 +39,7 @@ namespace NBitcoin.Protobuf
             int i = 0;
             while((b & 0x80) != 0)
             {
-                var v = _Inner.ReadByte();
+                int v = _Inner.ReadByte();
                 if(v < 0)
                     return false;
                 b = (byte)v;
@@ -52,7 +52,7 @@ namespace NBitcoin.Protobuf
 
         public void WriteULong(ulong value)
         {
-            byte[] ioBuffer = new byte[10];
+            var ioBuffer = new byte[10];
             int ioIndex = 0;
             int count = 0;
             do
@@ -65,7 +65,7 @@ namespace NBitcoin.Protobuf
             Position += ioIndex;
         }
 
-        Encoding Encoding = Encoding.UTF8;
+        private Encoding Encoding = Encoding.UTF8;
 
         public void WriteKey(int key, int type)
         {
@@ -87,9 +87,9 @@ namespace NBitcoin.Protobuf
 
         public string ReadString()
         {
-            var len = ReadULong();
+            ulong len = ReadULong();
             AssertBounds(len);
-            byte[] ioBuffer = new byte[(int)len];
+            var ioBuffer = new byte[(int)len];
             _Inner.Read(ioBuffer, 0, ioBuffer.Length);
             Position += ioBuffer.Length;
             return Encoding.GetString(ioBuffer, 0, ioBuffer.Length);
@@ -97,10 +97,10 @@ namespace NBitcoin.Protobuf
 
         public void WriteString(string value)
         {
-            var predicted = Encoding.GetByteCount(value);
+            int predicted = Encoding.GetByteCount(value);
             WriteULong((ulong)predicted);
             AssertBounds((ulong)predicted);
-            byte[] ioBuffer = new byte[predicted];
+            var ioBuffer = new byte[predicted];
             Encoding.GetBytes(value, 0, predicted, ioBuffer, 0);
             _Inner.Write(ioBuffer, 0, predicted);
             Position += predicted;
@@ -108,9 +108,9 @@ namespace NBitcoin.Protobuf
 
         public byte[] ReadBytes()
         {
-            var len = ReadULong();
+            ulong len = ReadULong();
             AssertBounds(len);
-            byte[] ioBuffer = new byte[(int)len];
+            var ioBuffer = new byte[(int)len];
             _Inner.Read(ioBuffer, 0, ioBuffer.Length);
             Position += ioBuffer.Length;
             return ioBuffer;
@@ -129,7 +129,7 @@ namespace NBitcoin.Protobuf
             Position += value.Length;
         }
 
-        int _Position;
+        private int _Position;
         public int Position
         {
             get
@@ -144,6 +144,6 @@ namespace NBitcoin.Protobuf
             }
         }
 
-        const int MaxLength = 60000;
+        private const int MaxLength = 60000;
     }
 }

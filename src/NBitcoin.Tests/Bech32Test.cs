@@ -41,7 +41,7 @@ namespace NBitcoin.Tests
         [Fact]
         public void CanDetectError()
         {
-            var bech = Encoders.Bech32("bc");
+            Bech32Encoder bech = Encoders.Bech32("bc");
             byte wit;
             var ex = Assert.Throws<Bech32FormatException>(() => bech.Decode("bc1zw508e6qejxtdg4y5r3zarvaryvg6kdaj", out wit));
             Assert.Single(ex.ErrorIndexes);
@@ -56,21 +56,21 @@ namespace NBitcoin.Tests
         [Fact]
         public void ValidateValidChecksum()
         {
-            foreach(var test in VALID_CHECKSUM)
+            foreach(string test in VALID_CHECKSUM)
             {
-                var bech = Bech32Encoder.ExtractEncoderFromString(test);
-                var pos = test.LastIndexOf('1');
-                var test2 = test.Substring(0, pos + 1) + ((test[pos + 1]) ^ 1) + test.Substring(pos + 2);
+                Bech32Encoder bech = Bech32Encoder.ExtractEncoderFromString(test);
+                int pos = test.LastIndexOf('1');
+                string test2 = test.Substring(0, pos + 1) + ((test[pos + 1]) ^ 1) + test.Substring(pos + 2);
                 Assert.Throws<FormatException>(() => bech.DecodeData(test2));
             }
         }
 
-        Bech32Encoder bech32 = Encoders.Bech32("bc");
-        Bech32Encoder tbech32 = Encoders.Bech32("tb");
+        private Bech32Encoder bech32 = Encoders.Bech32("bc");
+        private Bech32Encoder tbech32 = Encoders.Bech32("tb");
         [Fact]
         public void ValidAddress()
         {
-            foreach(var address in VALID_ADDRESS)
+            foreach(string[] address in VALID_ADDRESS)
             {
                 byte witVer;
                 byte[] witProg;
@@ -86,11 +86,11 @@ namespace NBitcoin.Tests
                     encoder = tbech32;
                 }
 
-                var scriptPubkey = Scriptpubkey(witVer, witProg);
-                var hex = string.Join("", scriptPubkey.Select(x => x.ToString("x2")));
+                byte[] scriptPubkey = Scriptpubkey(witVer, witProg);
+                string hex = string.Join("", scriptPubkey.Select(x => x.ToString("x2")));
                 Assert.Equal(hex, address[1]);
 
-                var addr = encoder.Encode(witVer, witProg);
+                string addr = encoder.Encode(witVer, witProg);
                 Assert.Equal(address[0].ToLowerInvariant(), addr);
             }
         }
@@ -98,7 +98,7 @@ namespace NBitcoin.Tests
         [Fact]
         public void InvalidAddress()
         {
-            foreach(var test in INVALID_ADDRESS)
+            foreach(string test in INVALID_ADDRESS)
             {
                 byte witver;
                 try
@@ -116,7 +116,7 @@ namespace NBitcoin.Tests
 
         private static byte[] Scriptpubkey(byte witver, byte[] witprog)
         {
-            var v = witver > 0 ? witver + 0x50 : 0;
+            int v = witver > 0 ? witver + 0x50 : 0;
             return (new[] { (byte)v, (byte)witprog.Length }).Concat(witprog);
         }
     }

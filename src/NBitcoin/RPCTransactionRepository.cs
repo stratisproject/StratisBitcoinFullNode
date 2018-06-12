@@ -7,7 +7,7 @@ namespace NBitcoin
 {
     public class RPCTransactionRepository : ITransactionRepository
     {
-        RPCClient _Client;
+        private RPCClient _Client;
         public RPCTransactionRepository(RPCClient client)
         {
             if(client == null)

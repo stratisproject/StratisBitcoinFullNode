@@ -27,7 +27,7 @@ namespace NBitcoin.RPC
 
             if(str.StartsWith("cookiefile=", StringComparison.OrdinalIgnoreCase))
             {
-                var path = str.Substring("cookiefile=".Length);
+                string path = str.Substring("cookiefile=".Length);
                 connectionString = new RPCCredentialString();
                 connectionString.CookieFile = path;
                 return true;
@@ -35,7 +35,7 @@ namespace NBitcoin.RPC
 
             if(str.IndexOf(':') != -1)
             {
-                var parts = str.Split(new char[] { ':' }, StringSplitOptions.RemoveEmptyEntries);
+                string[] parts = str.Split(new char[] { ':' }, StringSplitOptions.RemoveEmptyEntries);
                 if(parts.Length >= 2)
                 {
                     parts[1] = string.Join(":", parts.Skip(1).ToArray());
@@ -84,7 +84,7 @@ namespace NBitcoin.RPC
             _UsernamePassword = null;
         }
 
-        string _CookieFile;
+        private string _CookieFile;
 
         /// <summary>
         /// Username and password
@@ -102,7 +102,8 @@ namespace NBitcoin.RPC
                 _UsernamePassword = value;
             }
         }
-        NetworkCredential _UsernamePassword;
+
+        private NetworkCredential _UsernamePassword;
 
         public override string ToString()
         {

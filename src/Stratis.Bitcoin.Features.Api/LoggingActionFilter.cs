@@ -27,7 +27,7 @@ namespace Stratis.Bitcoin.Features.Api
             HttpRequest request = context.HttpContext.Request;
 
             // get the body
-            var body = string.Empty;
+            string body = string.Empty;
             IDictionary<string, object> arguments = context.ActionArguments;
             if (request.ContentLength != null && arguments != null && arguments.Any())
             {

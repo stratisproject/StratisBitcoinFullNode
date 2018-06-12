@@ -5,12 +5,12 @@ using System.Text;
 
 namespace NBitcoin
 {
-    class BitReader
+    internal class BitReader
     {
-        BitArray array;
+        private BitArray array;
         public BitReader(byte[] data, int bitCount)
         {
-            BitWriter writer = new BitWriter();
+            var writer = new BitWriter();
             writer.Write(data, bitCount);
             array = writer.ToBitArray();
         }
@@ -24,7 +24,7 @@ namespace NBitcoin
 
         public bool Read()
         {
-            var v = array.Get(Position);
+            bool v = array.Get(Position);
             Position++;
             return v;
         }
@@ -40,7 +40,7 @@ namespace NBitcoin
             uint value = 0;
             for(int i = 0; i < bitCount; i++)
             {
-                var v = Read() ? 1U : 0U;
+                uint v = Read() ? 1U : 0U;
                 value += (v << i);
             }
             return value;
@@ -56,7 +56,7 @@ namespace NBitcoin
 
         public BitArray ToBitArray()
         {
-            BitArray result = new BitArray(array.Length);
+            var result = new BitArray(array.Length);
             for(int i = 0; i < array.Length; i++)
                 result.Set(i, array.Get(i));
             return result;
@@ -78,8 +78,8 @@ namespace NBitcoin
         {
             while(Position != Count && b.Position != b.Count)
             {
-                var valuea = Read();
-                var valueb = b.Read();
+                bool valuea = Read();
+                bool valueb = b.Read();
                 if(valuea != valueb)
                     return false;
             }
@@ -88,7 +88,7 @@ namespace NBitcoin
 
         public override string ToString()
         {
-            StringBuilder builder = new StringBuilder(array.Length);
+            var builder = new StringBuilder(array.Length);
             for(int i = 0; i < Count; i++)
             {
                 if(i != 0 && i % 8 == 0)
@@ -98,9 +98,10 @@ namespace NBitcoin
             return builder.ToString();
         }
     }
-    class BitWriter
+
+    internal class BitWriter
     {
-        List<bool> values = new List<bool>();
+        private List<bool> values = new List<bool>();
         public int Count
         {
             get
@@ -122,26 +123,26 @@ namespace NBitcoin
         public void Write(byte[] bytes, int bitCount)
         {
             bytes = SwapEndianBytes(bytes);
-            BitArray array = new BitArray(bytes);
+            var array = new BitArray(bytes);
             values.InsertRange(Position, array.OfType<bool>().Take(bitCount));
             _Position += bitCount;
         }
 
         public byte[] ToBytes()
         {
-            var array = ToBitArray();
-            var bytes = ToByteArray(array);
+            BitArray array = ToBitArray();
+            byte[] bytes = ToByteArray(array);
             bytes = SwapEndianBytes(bytes);
             return bytes;
         }
 
         //BitArray.CopyTo do not exist in portable lib
-        static byte[] ToByteArray(BitArray bits)
+        private static byte[] ToByteArray(BitArray bits)
         {
             int arrayLength = bits.Length / 8;
             if(bits.Length % 8 != 0)
                 arrayLength++;
-            byte[] array = new byte[arrayLength];
+            var array = new byte[arrayLength];
 
             for(int i = 0; i < bits.Length; i++)
             {
@@ -165,9 +166,9 @@ namespace NBitcoin
         }
 
 
-        static byte[] SwapEndianBytes(byte[] bytes)
+        private static byte[] SwapEndianBytes(byte[] bytes)
         {
-            byte[] output = new byte[bytes.Length];
+            var output = new byte[bytes.Length];
             for(int i = 0; i < output.Length; i++)
             {
                 byte newByte = 0;
@@ -191,7 +192,7 @@ namespace NBitcoin
             }
         }
 
-        int _Position;
+        private int _Position;
         public int Position
         {
             get
@@ -236,7 +237,7 @@ namespace NBitcoin
 
         public override string ToString()
         {
-            StringBuilder builder = new StringBuilder(values.Count);
+            var builder = new StringBuilder(values.Count);
             for(int i = 0; i < Count; i++)
             {
                 if(i != 0 && i % 8 == 0)

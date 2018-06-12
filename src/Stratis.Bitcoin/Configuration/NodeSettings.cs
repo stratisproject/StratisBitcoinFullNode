@@ -32,7 +32,7 @@ namespace Stratis.Bitcoin.Configuration
     /// </summary>
     public class NodeSettings
     {
-        const int MaximumAgentPrefixLength = 10;
+        private const int MaximumAgentPrefixLength = 10;
 
         /// <summary>Version of the protocol the current implementation supports.</summary>
         public const ProtocolVersion SupportedProtocolVersion = ProtocolVersion.SENDHEADERS_VERSION;
@@ -152,8 +152,8 @@ namespace Stratis.Bitcoin.Configuration
             if (this.Network == null)
             {
                 // Find out if we need to run on testnet or regtest from the config file.
-                var testNet = this.ConfigReader.GetOrDefault<bool>("testnet", false);
-                var regTest = this.ConfigReader.GetOrDefault<bool>("regtest", false);
+                bool testNet = this.ConfigReader.GetOrDefault<bool>("testnet", false);
+                bool regTest = this.ConfigReader.GetOrDefault<bool>("regtest", false);
 
                 this.Logger.LogDebug("Network type: testnet='{0}', regtest='{1}'.", testNet, regTest);
 
@@ -237,9 +237,9 @@ namespace Stratis.Bitcoin.Configuration
             {
                 this.Logger.LogDebug("Creating configuration file '{0}'.", this.ConfigurationFile);
 
-                StringBuilder builder = new StringBuilder();
+                var builder = new StringBuilder();
 
-                foreach (var featureRegistration in features)
+                foreach (IFeatureRegistration featureRegistration in features)
                 {
                     MethodInfo getDefaultConfiguration = featureRegistration.FeatureType.GetMethod("BuildDefaultConfigurationFile", BindingFlags.Public | BindingFlags.Static);
                     if (getDefaultConfiguration != null)
@@ -272,7 +272,7 @@ namespace Stratis.Bitcoin.Configuration
         /// </summary>
         private void LoadConfiguration()
         {
-            var config = this.ConfigReader;
+            TextFileConfiguration config = this.ConfigReader;
 
             this.RequireStandard = config.GetOrDefault("acceptnonstdtxn", !(this.Network.IsTest()));
             this.Logger.LogDebug("RequireStandard set to {0}.", this.RequireStandard);
@@ -292,14 +292,14 @@ namespace Stratis.Bitcoin.Configuration
             this.SyncTimeEnabled = config.GetOrDefault<bool>("synctime", true);
             this.Logger.LogDebug("Time synchronization with peers is {0}.", this.SyncTimeEnabled ? "enabled" : "disabled");
 
-            var agentPrefix = config.GetOrDefault("agentprefix", string.Empty).Replace("-","");
+            string agentPrefix = config.GetOrDefault("agentprefix", string.Empty).Replace("-","");
             if (agentPrefix.Length > MaximumAgentPrefixLength)
                 agentPrefix = agentPrefix.Substring(0, MaximumAgentPrefixLength);
             this.Logger.LogDebug("AgentPrefix set to {0}.", agentPrefix);
 
             // Since we are relying on the "this.Agent" value that may have been changed by an earlier call to 
             // this method follow good coding practice and ensure that we always get the same result on subsequent calls.
-            var agent = this.Agent.Substring(this.Agent.IndexOf("-") + 1);
+            string agent = this.Agent.Substring(this.Agent.IndexOf("-") + 1);
             this.Agent = string.IsNullOrEmpty(agentPrefix) ? agent : $"{agentPrefix}-{agent}";
             this.Logger.LogDebug("Agent set to {0}.", this.Agent);
         }
@@ -317,7 +317,7 @@ namespace Stratis.Bitcoin.Configuration
             // Directory paths are different between Windows or Linux/OSX systems.
             if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
-                var home = Environment.GetEnvironmentVariable("HOME");
+                string home = Environment.GetEnvironmentVariable("HOME");
                 if (!string.IsNullOrEmpty(home))
                 {
                     this.Logger.LogDebug("Using HOME environment variable for initializing application data.");
@@ -330,7 +330,7 @@ namespace Stratis.Bitcoin.Configuration
             }
             else
             {
-                var localAppData = Environment.GetEnvironmentVariable("APPDATA");
+                string localAppData = Environment.GetEnvironmentVariable("APPDATA");
                 if (!string.IsNullOrEmpty(localAppData))
                 {
                     this.Logger.LogDebug("Using APPDATA environment variable for initializing application data.");
@@ -358,8 +358,8 @@ namespace Stratis.Bitcoin.Configuration
         {
             Guard.NotNull(network, nameof(network));
 
-            var defaults = Default(network:network);
-            var daemonName = Path.GetFileName(Assembly.GetEntryAssembly().Location);
+            NodeSettings defaults = Default(network:network);
+            string daemonName = Path.GetFileName(Assembly.GetEntryAssembly().Location);
 
             var builder = new StringBuilder();
             builder.AppendLine("Usage:");
@@ -399,7 +399,7 @@ namespace Stratis.Bitcoin.Configuration
         /// <param name="network">The network to base the defaults off.</param>
         public static void BuildDefaultConfigurationFile(StringBuilder builder, Network network)
         {
-            var defaults = Default(network:network);
+            NodeSettings defaults = Default(network:network);
 
             builder.AppendLine("####Node Settings####");
             builder.AppendLine($"#An optional prefix for the node's user agent shared with peers. Truncated if over { MaximumAgentPrefixLength } characters.");

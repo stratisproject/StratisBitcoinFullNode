@@ -113,7 +113,7 @@ namespace Stratis.Bitcoin.Utilities
         {
             Guard.NotEmpty(fileExtension, nameof(fileExtension));
 
-            var filesPaths = this.GetFilesPaths(fileExtension);
+            IEnumerable<string> filesPaths = this.GetFilesPaths(fileExtension);
             return filesPaths.Select(p => Path.GetFileName(p));
         }
 
@@ -147,8 +147,8 @@ namespace Stratis.Bitcoin.Utilities
             // Get the paths of files with the extension
             IEnumerable<string> filesPaths = this.GetFilesPaths(fileExtension);
 
-            List<T> files = new List<T>();
-            foreach (var filePath in filesPaths)
+            var files = new List<T>();
+            foreach (string filePath in filesPaths)
             {
                 string fileName = Path.GetFileName(filePath);
 

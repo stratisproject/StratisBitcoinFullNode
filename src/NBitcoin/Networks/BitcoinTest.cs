@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using System.Collections.Generic;
 using NBitcoin.DataEncoders;
 using NBitcoin.Protocol;
 
@@ -13,7 +11,6 @@ namespace NBitcoin.Networks
             this.Name = "TestNet";
             this.AdditionalNames = new List<string> { "test" };
             this.Magic = 0x0709110B;
-            this.AlertPubKey = new PubKey(Encoders.Hex.DecodeData("04302390343f91cc401d56d68b123028bf52e5fca1939df127f63c6467cdf9c8e2c14b61104cf817d0b780da337893ecc4aaff1309e536162dabbdb45200ca2b0a"));
             this.DefaultPort = 18333;
             this.RPCPort = 18332;
 

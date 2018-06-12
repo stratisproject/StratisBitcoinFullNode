@@ -12,7 +12,8 @@ namespace NBitcoin.OpenAsset
                 throw new ArgumentNullException("inner");
             _Inner = inner;
         }
-        IColoredTransactionRepository _Inner;
+
+        private IColoredTransactionRepository _Inner;
         #region IColoredTransactionRepository Members
 
         public ITransactionRepository Transactions
@@ -49,10 +50,10 @@ namespace NBitcoin.OpenAsset
 
         #endregion
 
-        Dictionary<string, Task> _Tasks = new Dictionary<string, Task>();
-        ReaderWriterLock @lock = new ReaderWriterLock();
+        private Dictionary<string, Task> _Tasks = new Dictionary<string, Task>();
+        private ReaderWriterLock @lock = new ReaderWriterLock();
 
-        Task<T> Request<T>(string key, Func<Task<T>> wrapped)
+        private Task<T> Request<T>(string key, Func<Task<T>> wrapped)
         {
             Task<T> task = null;
             using(@lock.LockRead())

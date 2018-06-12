@@ -18,7 +18,7 @@ namespace NBitcoin
         private const int FingerprintLength = 4;
         private const int ChainCodeLength = 32;
 
-        static readonly byte[] validPubKey = Encoders.Hex.DecodeData("0374ef3990e387b5a2992797f14c031a64efd80e5cb843d7c1d4a0274a9bc75e55");
+        private static readonly byte[] validPubKey = Encoders.Hex.DecodeData("0374ef3990e387b5a2992797f14c031a64efd80e5cb843d7c1d4a0274a9bc75e55");
         internal byte nDepth;
         internal byte[] vchFingerprint = new byte[FingerprintLength];
         internal uint nChild;
@@ -61,7 +61,7 @@ namespace NBitcoin
         {
             get
             {
-                byte[] chainCodeCopy = new byte[ChainCodeLength];
+                var chainCodeCopy = new byte[ChainCodeLength];
                 Buffer.BlockCopy(vchChainCode, 0, chainCodeCopy, 0, ChainCodeLength);
 
                 return chainCodeCopy;
@@ -191,7 +191,7 @@ namespace NBitcoin
 
         public override bool Equals(object obj)
         {
-            ExtPubKey item = obj as ExtPubKey;
+            var item = obj as ExtPubKey;
             if(item == null)
                 return false;
             return Hash.Equals(item.Hash);

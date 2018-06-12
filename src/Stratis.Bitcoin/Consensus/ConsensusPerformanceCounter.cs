@@ -110,7 +110,7 @@ namespace Stratis.Bitcoin.Consensus
 
         public override string ToString()
         {
-            StringBuilder builder = new StringBuilder();
+            var builder = new StringBuilder();
 
             builder.AppendLine("====Blk Fetching Speed====");
             if (this.TotalProcessedInputs > 0)
@@ -134,7 +134,7 @@ namespace Stratis.Bitcoin.Consensus
             if (this.TotalProcessedBlocks > 0)
                 builder.AppendLine("Blocks:".PadRight(LoggingConfiguration.ColumnLength) + (this.TotalUTXOFetchingTime.TotalMilliseconds / this.TotalProcessedBlocks).ToString("0.0000") + " ms/tx");
             builder.AppendLine("====Speed breakdown(%)====");
-            var total = this.totalBlockFetchingTime + this.totalUTXOFetchingTime + this.totalBlockValidationTime;
+            long total = this.totalBlockFetchingTime + this.totalUTXOFetchingTime + this.totalBlockValidationTime;
             if (total > 0)
             {
                 builder.AppendLine("Blk Fetching:".PadRight(LoggingConfiguration.ColumnLength) + ((decimal)this.totalBlockFetchingTime * 100m / total).ToString("0.00") + " %");

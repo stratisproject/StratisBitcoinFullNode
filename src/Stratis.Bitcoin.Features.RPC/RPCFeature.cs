@@ -77,7 +77,7 @@ namespace Stratis.Bitcoin.Features.RPC
                     {
                         // copies all the services defined for the full node to the Api.
                         // also copies over singleton instances already defined
-                        foreach (var service in this.fullNodeBuilder.Services)
+                        foreach (ServiceDescriptor service in this.fullNodeBuilder.Services)
                         {
                             object obj = this.fullNode.Services.ServiceProvider.GetService(service.ServiceType);
 

@@ -90,7 +90,7 @@ namespace NBitcoin
 
         public byte[] ToBytes()
         {
-            MemoryStream ms = new MemoryStream();
+            var ms = new MemoryStream();
             this.WriteTo(ms);
             return ms.ToArray();
         }
@@ -117,7 +117,7 @@ namespace NBitcoin
 
         public ConcurrentChain Clone()
         {
-            ConcurrentChain chain = new ConcurrentChain();
+            var chain = new ConcurrentChain();
             chain.network = this.network;
             chain.tip = this.tip;
             using (this.lockObject.LockRead())

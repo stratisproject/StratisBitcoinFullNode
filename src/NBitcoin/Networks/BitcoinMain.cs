@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using NBitcoin.DataEncoders;
 
 namespace NBitcoin.Networks
@@ -19,7 +18,6 @@ namespace NBitcoin.Networks
             // The characters are rarely used upper ASCII, not valid as UTF-8, and produce
             // a large 4-byte int at any alignment.
             this.Magic = 0xD9B4BEF9;
-            this.AlertPubKey = new PubKey(Encoders.Hex.DecodeData("04fc9702847840aaf195de8442ebecedf5b095cdbb9bc716bda9110971b28a49e0ead8564ff0db22209e0374782c093bb899692d524e9d6a6956e7c5ecbcd68284"));
             this.DefaultPort = 8333;
             this.RPCPort = 8332;
             this.MaxTimeOffsetSeconds = BitcoinMaxTimeOffsetSeconds;

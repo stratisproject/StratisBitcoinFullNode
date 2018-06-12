@@ -46,13 +46,13 @@ namespace NBitcoin
 
         public async Task<Transaction> GetAsync(uint256 txId)
         {
-            using(HttpClient client = new HttpClient())
+            using(var client = new HttpClient())
             {
-                var tx = await client.GetAsync(BaseUri.AbsoluteUri + "transactions/" + txId + "?format=raw").ConfigureAwait(false);
+                HttpResponseMessage tx = await client.GetAsync(BaseUri.AbsoluteUri + "transactions/" + txId + "?format=raw").ConfigureAwait(false);
                 if(tx.StatusCode == System.Net.HttpStatusCode.NotFound)
                     return null;
                 tx.EnsureSuccessStatusCode();
-                var bytes = await tx.Content.ReadAsByteArrayAsync().ConfigureAwait(false);
+                byte[] bytes = await tx.Content.ReadAsByteArrayAsync().ConfigureAwait(false);
                 return new Transaction(bytes);
             }
         }

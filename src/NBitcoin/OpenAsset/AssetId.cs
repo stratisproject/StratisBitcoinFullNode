@@ -82,7 +82,7 @@ namespace NBitcoin.OpenAsset
 
         public override bool Equals(object obj)
         {
-            AssetId item = obj as AssetId;
+            var item = obj as AssetId;
             if(item == null)
                 return false;
             return Utils.ArrayEqual(_Bytes, item._Bytes);
@@ -106,7 +106,7 @@ namespace NBitcoin.OpenAsset
             return Utils.GetHashCode(_Bytes);
         }
 
-        string _Str;
+        private string _Str;
         public override string ToString()
         {
             if(_Str == null)
