@@ -16,7 +16,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Models
         protected static string ModelToJson(object model)
         {
             var formatter = new RPCJsonOutputFormatter(new JsonSerializerSettings(), System.Buffers.ArrayPool<char>.Create());
-            StringWriter sw = new StringWriter();
+            var sw = new StringWriter();
             formatter.WriteObject(sw, model);
             string json = sw.ToString();
             return json;
