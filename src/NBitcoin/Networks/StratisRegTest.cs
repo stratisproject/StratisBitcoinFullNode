@@ -23,6 +23,7 @@ namespace NBitcoin.Networks
             this.MinTxFee = 0;
             this.FallbackFee = 0;
             this.MinRelayTxFee = 0;
+            this.CoinTicker = "TSTRAT";
 
             this.Consensus.PowAllowMinDifficultyBlocks = true;
             this.Consensus.PowNoRetargeting = true;

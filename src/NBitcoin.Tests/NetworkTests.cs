@@ -85,6 +85,7 @@ namespace NBitcoin.Tests
             Assert.Equal(1000, network.MinTxFee);
             Assert.Equal(20000, network.FallbackFee);
             Assert.Equal(1000, network.MinRelayTxFee);
+            Assert.Equal("BTC", network.CoinTicker);
 
             Assert.Equal(2, network.Bech32Encoders.Length);
             Assert.Equal(new Bech32Encoder("bc").ToString(), network.Bech32Encoders[(int)Bech32Type.WITNESS_PUBKEY_ADDRESS].ToString());
@@ -165,6 +166,7 @@ namespace NBitcoin.Tests
             Assert.Equal(1000, network.MinTxFee);
             Assert.Equal(20000, network.FallbackFee);
             Assert.Equal(1000, network.MinRelayTxFee);
+            Assert.Equal("TBTC", network.CoinTicker);
 
             Assert.Equal(2, network.Bech32Encoders.Length);
             Assert.Equal(new Bech32Encoder("tb").ToString(), network.Bech32Encoders[(int)Bech32Type.WITNESS_PUBKEY_ADDRESS].ToString());
@@ -245,6 +247,7 @@ namespace NBitcoin.Tests
             Assert.Equal(1000, network.MinTxFee);
             Assert.Equal(20000, network.FallbackFee);
             Assert.Equal(1000, network.MinRelayTxFee);
+            Assert.Equal("TBTC", network.CoinTicker);
 
             Assert.Equal(2, network.Bech32Encoders.Length);
             Assert.Equal(new Bech32Encoder("tb").ToString(), network.Bech32Encoders[(int)Bech32Type.WITNESS_PUBKEY_ADDRESS].ToString());
@@ -325,6 +328,7 @@ namespace NBitcoin.Tests
             Assert.Equal(10000, network.MinTxFee);
             Assert.Equal(60000, network.FallbackFee);
             Assert.Equal(10000, network.MinRelayTxFee);
+            Assert.Equal("STRAT", network.CoinTicker);
 
             Assert.Equal(2, network.Bech32Encoders.Length);
             Assert.Equal(new Bech32Encoder("bc").ToString(), network.Bech32Encoders[(int)Bech32Type.WITNESS_PUBKEY_ADDRESS].ToString());
@@ -402,6 +406,7 @@ namespace NBitcoin.Tests
             Assert.Equal(10000, network.MinTxFee);
             Assert.Equal(60000, network.FallbackFee);
             Assert.Equal(10000, network.MinRelayTxFee);
+            Assert.Equal("TSTRAT", network.CoinTicker);
 
             Assert.Equal(2, network.Bech32Encoders.Length);
             Assert.Equal(new Bech32Encoder("bc").ToString(), network.Bech32Encoders[(int)Bech32Type.WITNESS_PUBKEY_ADDRESS].ToString());
@@ -479,6 +484,7 @@ namespace NBitcoin.Tests
             Assert.Equal(0, network.MinTxFee);
             Assert.Equal(0, network.FallbackFee);
             Assert.Equal(0, network.MinRelayTxFee);
+            Assert.Equal("TSTRAT", network.CoinTicker);
 
             Assert.Equal(2, network.Bech32Encoders.Length);
             Assert.Equal(new Bech32Encoder("bc").ToString(), network.Bech32Encoders[(int)Bech32Type.WITNESS_PUBKEY_ADDRESS].ToString());

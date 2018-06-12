@@ -98,6 +98,11 @@ namespace NBitcoin
         public List<string> AdditionalNames { get; protected set; }
 
         /// <summary>
+        /// An indicative coin ticker for use with external applications.
+        /// </summary>
+        public string CoinTicker { get; set; }
+
+        /// <summary>
         /// The name of the root folder containing blockchains operating with the same consensus rules (for now, this will be bitcoin or stratis).
         /// </summary>
         public string RootFolderName { get; protected set; }

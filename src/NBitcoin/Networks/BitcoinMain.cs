@@ -25,6 +25,7 @@ namespace NBitcoin.Networks
             this.MinTxFee = 1000;
             this.FallbackFee = 20000;
             this.MinRelayTxFee = 1000;
+            this.CoinTicker = "BTC";
 
             this.Consensus = new Consensus();
             this.Consensus.SubsidyHalvingInterval = 210000;

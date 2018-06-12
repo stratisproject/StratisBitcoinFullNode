@@ -23,6 +23,7 @@ namespace NBitcoin.Networks
             this.Magic = magic;
             this.DefaultPort = 26178;
             this.RPCPort = 26174;
+            this.CoinTicker = "TSTRAT";
 
             this.Consensus.PowLimit = new Target(new uint256("0000ffff00000000000000000000000000000000000000000000000000000000"));
             this.Consensus.DefaultAssumeValid = new uint256("0x98fa6ef0bca5b431f15fd79dc6f879dc45b83ed4b1bbe933a383ef438321958e"); // 372652
