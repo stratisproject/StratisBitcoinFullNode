@@ -90,7 +90,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
             var testContext = new TestContext();
             ChainedHeaderTree chainedHeaderTree = testContext.CreateChainedHeaderTree();
 
-            Assert.Throws<ConnectHeaderException>(() => chainedHeaderTree.ConnectNewHeaders(1, new List<BlockHeader>(new[] { testContext.Network.GetGenesis().Header })));
+            Assert.Throws<ConnectHeaderException>(() => chainedHeaderTree.ConnectNewHeaders(1, new List<BlockHeader>(new [] { testContext.Network.GetGenesis().Header})));
         }
 
         [Fact]
@@ -180,9 +180,9 @@ namespace Stratis.Bitcoin.Tests.Consensus
             ChainedHeaderTree cht = testContext.CreateChainedHeaderTree();
             ChainedHeader chainTip = testContext.ExtendAChain(10);
             cht.Initialize(chainTip, true);
-
+            
             List<BlockHeader> listOfExistingHeaders = testContext.ChainedHeaderToList(chainTip, 10);
-
+            
             cht.ConnectNewHeaders(1, listOfExistingHeaders);
 
             Dictionary<uint256, HashSet<int>> peerIdsByTipHashBefore = cht.GetPeerIdsByTipHash().ToDictionary(entry => entry.Key, entry => new HashSet<int>(entry.Value));
@@ -269,7 +269,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
             List<BlockHeader> listOfNewBlockHeaders = ctx.ChainedHeaderToList(newChainTip, 7);
 
             // Peer 1 supplies some headers
-            List<BlockHeader> peer1Headers = listOfNewBlockHeaders.GetRange(0, 3);
+            List<BlockHeader> peer1Headers = listOfNewBlockHeaders.GetRange(0,3);
             cht.ConnectNewHeaders(1, peer1Headers);
 
             // Peer 2 supplies some more headers
