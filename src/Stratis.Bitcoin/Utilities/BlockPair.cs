@@ -1,7 +1,6 @@
 ﻿using NBitcoin;
-using Stratis.Bitcoin.Utilities;
 
-namespace Stratis.Bitcoin.Features.BlockStore
+namespace Stratis.Bitcoin.Utilities
 {
     /// <summary>
     /// Structure made of a block and its chained header.

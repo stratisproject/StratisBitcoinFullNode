@@ -112,6 +112,11 @@ namespace Stratis.Bitcoin.Features.BlockStore
             return this.blockRepository.GetTrxBlockIdAsync(trxid);
         }
 
+        public Task<Block> GetBlockAsync(uint256 blockHash)
+        {
+            throw new System.NotImplementedException();
+        }
+
         public override void Initialize()
         {
             this.logger.LogTrace("()");

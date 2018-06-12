@@ -1,10 +1,12 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Utilities;
+using Stratis.Bitcoin.Utilities.Extensions;
 
 namespace Stratis.Bitcoin.Consensus
 {
@@ -28,6 +30,8 @@ namespace Stratis.Bitcoin.Consensus
         /// <param name="block">The block that is going to be validated.</param>
         /// <param name="chainedHeader">The chained header of the block that will be validated.</param>
         void VerifyBlockIntegrity(Block block, ChainedHeader chainedHeader);
+
+        void StartPartialValidation(BlockPair blockPair, Action<BlockPair, bool> onPartialValidationCompletedCallback);
     }
 
     /// <summary>
@@ -148,6 +152,12 @@ namespace Stratis.Bitcoin.Consensus
         /// <param name="block">The block.</param>
         /// <returns>Newly created and connected chained header for the specified block.</returns>
         ChainedHeader CreateChainedHeaderWithBlock(Block block);
+
+        /// <summary>
+        /// Get the block and its chained header if it exists.
+        /// </summary>
+        /// <returns>The block and its chained header.</returns>
+        BlockPair GetBlockPair(uint256 blockHash);
     }
 
     /// <inheritdoc />
@@ -248,6 +258,21 @@ namespace Stratis.Bitcoin.Consensus
             this.AddOrReplacePeerTip(LocalPeerId, consensusTip.HashBlock);
             
             this.logger.LogTrace("(-)");
+        }
+
+        // <inheritdoc />
+        public BlockPair GetBlockPair(uint256 blockHash)
+        {
+            this.logger.LogTrace("({0}:{1})", nameof(blockHash), blockHash);
+
+            BlockPair blockPair = null;
+            if (this.chainedHeadersByHash.TryGetValue(blockHash, out ChainedHeader chainedHeader))
+            {
+                blockPair = new BlockPair(chainedHeader.Block, chainedHeader);
+            }
+
+            this.logger.LogTrace("(-):'{0}'", blockPair);
+            return blockPair;
         }
 
         /// <summary>Gets the consensus tip.</summary>
@@ -1077,6 +1102,17 @@ namespace Stratis.Bitcoin.Consensus
         public override string ToString()
         {
             return $"{nameof(this.DownloadFrom)}='{this.DownloadFrom}',{nameof(this.DownloadTo)}='{this.DownloadTo}',{nameof(this.Consumed)}='{this.Consumed}'";
+        }
+
+        /// <summary>
+        /// Convert the <see cref="DownloadFrom"/> and <see cref="DownloadTo"/> to a list of consecutive hashes.
+        /// </summary>
+        public List<uint256> ToHashList()
+        {
+            List<uint256> blockHashes = this.DownloadTo.ToConsecutiveList(this.DownloadFrom)
+                .Select(s => s.HashBlock).ToList();
+
+            return blockHashes;
         }
     }
 }
