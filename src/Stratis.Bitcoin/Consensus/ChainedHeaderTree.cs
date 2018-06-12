@@ -123,7 +123,7 @@ namespace Stratis.Bitcoin.Consensus
         ChainedHeader FindHeaderAndVerifyBlockIntegrity(Block block);
 
         /// <summary>
-        /// Handles situation when blocks the data is downloaded for a given chained header.
+        /// Handles situation when the data of a block is downloaded for a given chained header.
         /// </summary>
         /// <param name="chainedHeader">Chained header that represents <paramref name="block"/>.</param>
         /// <param name="block">Block data.</param>

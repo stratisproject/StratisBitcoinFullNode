@@ -26,5 +26,11 @@ namespace Stratis.Bitcoin.Utilities
             this.Block = block;
             this.ChainedHeader = chainedHeader;
         }
+
+        /// <inheritdoc />
+        public override string ToString()
+        {
+            return this.ChainedHeader.ToString();
+        }
     }
 }
