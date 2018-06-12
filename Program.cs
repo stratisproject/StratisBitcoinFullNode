@@ -2,7 +2,7 @@
 using System.Linq;
 using NBitcoin;
 using NBitcoin.DataEncoders;
-using Stratis.ApexD;
+using Stratis.Networks.Apex;
 
 namespace FedKeyPairGen
 {
@@ -127,7 +127,7 @@ namespace FedKeyPairGen
             Script payToMultiSig = PayToMultiSigTemplate.Instance.GenerateScriptPubKey(mComponent, pubKeys);
             Console.WriteLine("Redeem script: " + payToMultiSig.ToString());
 
-            BitcoinAddress sidechainMultisigAddress = payToMultiSig.Hash.GetAddress(ApexNetwork.ApexTest);
+            BitcoinAddress sidechainMultisigAddress = payToMultiSig.Hash.GetAddress(ApexNetwork.Test);
             Console.WriteLine("Sidechan P2SH: " + sidechainMultisigAddress.ScriptPubKey);
             Console.WriteLine("Sidechain Multisig address: " + sidechainMultisigAddress);
 
