@@ -382,7 +382,7 @@ namespace NBitcoin.BouncyCastle.Math.EC
             ECPointMap pointMap = glvEndomorphism.PointMap;
             if(glvEndomorphism.HasEfficientPointMap)
             {
-                return ECAlgorithms.ImplSumOfMultiplies(ps, pointMap, abs);
+                return ImplSumOfMultiplies(ps, pointMap, abs);
             }
 
             var pqs = new ECPoint[len << 1];
@@ -393,7 +393,7 @@ namespace NBitcoin.BouncyCastle.Math.EC
                 pqs[j++] = q;
             }
 
-            return ECAlgorithms.ImplSumOfMultiplies(pqs, abs);
+            return ImplSumOfMultiplies(pqs, abs);
         }
 
         internal static ECPoint ImplSumOfMultiplies(ECPoint[] ps, ECPointMap pointMap, BigInteger[] ks)

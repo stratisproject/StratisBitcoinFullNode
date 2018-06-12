@@ -339,7 +339,7 @@ namespace NBitcoin
 
         public void UpdateMerkleRoot()
         {
-            this.Header.HashMerkleRoot = GetMerkleRoot().Hash;
+            this.Header.HashMerkleRoot = this.GetMerkleRoot().Hash;
         }
 
         public bool CheckProofOfWork()
@@ -349,7 +349,7 @@ namespace NBitcoin
 
         public bool CheckMerkleRoot()
         {
-            return this.Header.HashMerkleRoot == GetMerkleRoot().Hash;
+            return this.Header.HashMerkleRoot == this.GetMerkleRoot().Hash;
         }
 
         public static Block ParseJson(Network network, string json)

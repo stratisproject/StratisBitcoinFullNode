@@ -28,7 +28,7 @@ namespace NBitcoin.BouncyCastle.Asn1
         public DerInteger(
             int value)
         {
-            bytes = BigInteger.ValueOf(value).ToByteArray();
+            this.bytes = BigInteger.ValueOf(value).ToByteArray();
         }
 
         public DerInteger(
@@ -37,7 +37,7 @@ namespace NBitcoin.BouncyCastle.Asn1
             if(value == null)
                 throw new ArgumentNullException("value");
 
-            bytes = value.ToByteArray();
+            this.bytes = value.ToByteArray();
         }
 
         public DerInteger(
@@ -50,7 +50,7 @@ namespace NBitcoin.BouncyCastle.Asn1
         {
             get
             {
-                return new BigInteger(bytes);
+                return new BigInteger(this.bytes);
             }
         }
 
@@ -62,19 +62,19 @@ namespace NBitcoin.BouncyCastle.Asn1
         {
             get
             {
-                return new BigInteger(1, bytes);
+                return new BigInteger(1, this.bytes);
             }
         }
 
         internal override void Encode(
             DerOutputStream derOut)
         {
-            derOut.WriteEncoded(Asn1Tags.Integer, bytes);
+            derOut.WriteEncoded(Asn1Tags.Integer, this.bytes);
         }
 
         protected override int Asn1GetHashCode()
         {
-            return Arrays.GetHashCode(bytes);
+            return Arrays.GetHashCode(this.bytes);
         }
 
         protected override bool Asn1Equals(
@@ -90,7 +90,7 @@ namespace NBitcoin.BouncyCastle.Asn1
 
         public override string ToString()
         {
-            return Value.ToString();
+            return this.Value.ToString();
         }
     }
 }

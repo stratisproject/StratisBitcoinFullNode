@@ -11,8 +11,8 @@ namespace NBitcoin.RPC
     {
         internal RPCError(JObject error)
         {
-            Code = (RPCErrorCode)((int)error.GetValue("code"));
-            Message = (string)error.GetValue("message");
+            this.Code = (RPCErrorCode)((int)error.GetValue("code"));
+            this.Message = (string)error.GetValue("message");
         }
         public RPCErrorCode Code
         {
@@ -34,9 +34,10 @@ namespace NBitcoin.RPC
             var error = json.GetValue("error") as JObject;
             if(error != null)
             {
-                Error = new RPCError(error);
+                this.Error = new RPCError(error);
             }
-            Result = json.GetValue("result") as JToken;
+
+            this.Result = json.GetValue("result") as JToken;
         }
         public RPCError Error
         {
@@ -59,9 +60,9 @@ namespace NBitcoin.RPC
         {
             get
             {
-                if(Result == null)
+                if(this.Result == null)
                     return null;
-                return Result.ToString();
+                return this.Result.ToString();
             }
         }
 
@@ -73,9 +74,9 @@ namespace NBitcoin.RPC
 
         public void ThrowIfError()
         {
-            if(Error != null)
+            if(this.Error != null)
             {
-                throw new RPCException(Error.Code, Error.Message, this);
+                throw new RPCException(this.Error.Code, this.Error.Message, this);
             }
         }
     }

@@ -29,17 +29,17 @@ namespace NBitcoin
         /// <summary> The default name used for the Stratis configuration file. </summary>
         public const string StratisDefaultConfigFilename = "stratis.conf";
 
-        public static Network Main => Network.GetNetwork("Main") ?? Register(new BitcoinMain());
+        public static Network Main => GetNetwork("Main") ?? Register(new BitcoinMain());
 
-        public static Network TestNet => Network.GetNetwork("TestNet") ?? Register(new BitcoinTest());
+        public static Network TestNet => GetNetwork("TestNet") ?? Register(new BitcoinTest());
 
-        public static Network RegTest => Network.GetNetwork("RegTest") ?? Register(new BitcoinRegTest());
+        public static Network RegTest => GetNetwork("RegTest") ?? Register(new BitcoinRegTest());
 
-        public static Network StratisMain => Network.GetNetwork("StratisMain") ?? Register(new StratisMain());
+        public static Network StratisMain => GetNetwork("StratisMain") ?? Register(new StratisMain());
 
-        public static Network StratisTest => Network.GetNetwork("StratisTest") ?? Register(new StratisTest());
+        public static Network StratisTest => GetNetwork("StratisTest") ?? Register(new StratisTest());
 
-        public static Network StratisRegTest => Network.GetNetwork("StratisRegTest") ?? Register(new StratisRegTest());
+        public static Network StratisRegTest => GetNetwork("StratisRegTest") ?? Register(new StratisRegTest());
 
         protected static Block CreateBitcoinGenesisBlock(ConsensusFactory consensusFactory, uint nTime, uint nNonce, uint nBits, int nVersion, Money genesisReward)
         {

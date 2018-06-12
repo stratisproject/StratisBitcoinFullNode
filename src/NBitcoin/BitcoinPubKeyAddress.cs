@@ -13,7 +13,7 @@ namespace NBitcoin
             : base(Validate(base58, ref expectedNetwork), expectedNetwork)
         {
             byte[] decoded = Encoders.Base58Check.DecodeData(base58);
-            _KeyId = new KeyId(new uint160(decoded.Skip(expectedNetwork.GetVersionBytes(Base58Type.PUBKEY_ADDRESS, true).Length).ToArray()));
+            this._KeyId = new KeyId(new uint160(decoded.Skip(expectedNetwork.GetVersionBytes(Base58Type.PUBKEY_ADDRESS, true).Length).ToArray()));
         }
 
         private static string Validate(string base58, ref Network expectedNetwork)
@@ -42,7 +42,7 @@ namespace NBitcoin
         public BitcoinPubKeyAddress(KeyId keyId, Network network) :
             base(NotNull(keyId) ?? Network.CreateBase58(Base58Type.PUBKEY_ADDRESS, keyId.ToBytes(), network), network)
         {
-            _KeyId = keyId;
+            this._KeyId = keyId;
         }
 
         private static string NotNull(KeyId keyId)
@@ -55,7 +55,7 @@ namespace NBitcoin
         public bool VerifyMessage(string message, string signature)
         {
             PubKey key = PubKey.RecoverFromMessage(message, signature);
-            return key.Hash == Hash;
+            return key.Hash == this.Hash;
         }
 
         private KeyId _KeyId;
@@ -63,7 +63,7 @@ namespace NBitcoin
         {
             get
             {
-                return _KeyId;
+                return this._KeyId;
             }
         }
 

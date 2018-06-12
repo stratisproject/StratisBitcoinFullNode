@@ -93,7 +93,7 @@ namespace NBitcoin.BouncyCastle.Asn1.X9
         {
             get
             {
-                return id;
+                return this.id;
             }
         }
 
@@ -101,7 +101,7 @@ namespace NBitcoin.BouncyCastle.Asn1.X9
         {
             get
             {
-                return parameters;
+                return this.parameters;
             }
         }
 
@@ -116,7 +116,7 @@ namespace NBitcoin.BouncyCastle.Asn1.X9
          */
         public override Asn1Object ToAsn1Object()
         {
-            return new DerSequence(id, parameters);
+            return new DerSequence(this.id, this.parameters);
         }
     }
 }

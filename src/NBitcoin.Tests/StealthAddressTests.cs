@@ -347,19 +347,19 @@ namespace NBitcoin.Tests
         public override string ToString()
         {
             return
-                    "StealthAddress = \"" + StealthAddress + "\",\r\n" +
+                    "StealthAddress = \"" + this.StealthAddress + "\",\r\n" +
 
-                    "ScanSecret = \"" + ScanSecret + "\",\r\n" +
-                    "ScanPubKey = \"" + ScanPubKey + "\",\r\n" +
+                    "ScanSecret = \"" + this.ScanSecret + "\",\r\n" +
+                    "ScanPubKey = \"" + this.ScanPubKey + "\",\r\n" +
 
-                    "SpendSecret = \"" + SpendSecret + "\",\r\n" +
-                    "SpendPubKey = \"" + SpendPubKey + "\",\r\n" +
+                    "SpendSecret = \"" + this.SpendSecret + "\",\r\n" +
+                    "SpendPubKey = \"" + this.SpendPubKey + "\",\r\n" +
 
-                    "EphemSecret = \"" + EphemSecret + "\",\r\n" +
-                    "EphemPubKey = \"" + EphemPubKey + "\",\r\n" +
+                    "EphemSecret = \"" + this.EphemSecret + "\",\r\n" +
+                    "EphemPubKey = \"" + this.EphemPubKey + "\",\r\n" +
 
-                    "StealthSecret = \"" + StealthSecret + "\",\r\n" +
-                    "StealthPubKey = \"" + StealthPubKey + "\",\r\n";
+                    "StealthSecret = \"" + this.StealthSecret + "\",\r\n" +
+                    "StealthPubKey = \"" + this.StealthPubKey + "\",\r\n";
         }
     }
 }

@@ -45,7 +45,7 @@ namespace NBitcoin
             {
                 byte exp = compact[0];
                 var val = new BigInteger(compact.SafeSubarray(1, 3));
-                _Target = val.ShiftLeft(8  * (exp - 3));
+                this._Target = val.ShiftLeft(8  * (exp - 3));
             }
             else
                 throw new FormatException("Invalid number of bytes");
@@ -53,13 +53,13 @@ namespace NBitcoin
         
         public Target(BigInteger target)
         {
-            _Target = target;
-            _Target = new Target(this.ToCompact())._Target;
+            this._Target = target;
+            this._Target = new Target(ToCompact())._Target;
         }
         public Target(uint256 target)
         {
-            _Target = new BigInteger(target.ToBytes(false));
-            _Target = new Target(this.ToCompact())._Target;
+            this._Target = new BigInteger(target.ToBytes(false));
+            this._Target = new Target(ToCompact())._Target;
         }
 
         public static implicit operator Target(uint a)
@@ -86,28 +86,29 @@ namespace NBitcoin
         {
             get
             {
-                if(_Difficulty == null)
+                if(this._Difficulty == null)
                 {
-                    BigInteger[] qr = Difficulty1._Target.DivideAndRemainder(_Target);
+                    BigInteger[] qr = Difficulty1._Target.DivideAndRemainder(this._Target);
                     BigInteger quotient = qr[0];
                     BigInteger remainder = qr[1];
                     BigInteger decimalPart = BigInteger.Zero;
                     for(int i = 0; i < 12; i++)
                     {
-                        BigInteger div = (remainder.Multiply(BigInteger.Ten)).Divide(_Target);
+                        BigInteger div = (remainder.Multiply(BigInteger.Ten)).Divide(this._Target);
 
                         decimalPart = decimalPart.Multiply(BigInteger.Ten);
                         decimalPart = decimalPart.Add(div);
 
-                        remainder = remainder.Multiply(BigInteger.Ten).Subtract(div.Multiply(_Target));
+                        remainder = remainder.Multiply(BigInteger.Ten).Subtract(div.Multiply(this._Target));
                     }
-                    _Difficulty = double.Parse(quotient.ToString() + "." + decimalPart.ToString(), new NumberFormatInfo()
+
+                    this._Difficulty = double.Parse(quotient.ToString() + "." + decimalPart.ToString(), new NumberFormatInfo()
                     {
                         NegativeSign = "-",
                         NumberDecimalSeparator = "."
                     });
                 }
-                return _Difficulty.Value;
+                return this._Difficulty.Value;
             }
         }
 
@@ -118,11 +119,11 @@ namespace NBitcoin
             var item = obj as Target;
             if(item == null)
                 return false;
-            return _Target.Equals(item._Target);
+            return this._Target.Equals(item._Target);
         }
         public static bool operator ==(Target a, Target b)
         {
-            if(System.Object.ReferenceEquals(a, b))
+            if(ReferenceEquals(a, b))
                 return true;
             if(((object)a == null) || ((object)b == null))
                 return false;
@@ -136,12 +137,12 @@ namespace NBitcoin
 
         public override int GetHashCode()
         {
-            return _Target.GetHashCode();
+            return this._Target.GetHashCode();
         }
         
         public BigInteger ToBigInteger()
         {
-            return _Target;
+            return this._Target;
         }
 
         public uint ToCompact()
@@ -151,7 +152,7 @@ namespace NBitcoin
 
         public uint256 ToUInt256()
         {
-            return ToUInt256(_Target);
+            return ToUInt256(this._Target);
         }
 
         internal static uint256 ToUInt256(BigInteger input)

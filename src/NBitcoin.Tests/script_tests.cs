@@ -684,15 +684,15 @@ namespace NBitcoin.Tests
             txTo12.Outputs[0].Value = 1;
             txTo12.Inputs[0].ScriptSig = sign_multisig(scriptPubKey12, key1, txTo12);
 
-            AssertValidScript(scriptPubKey12, txTo12, 0, flags);
+            AssertValidScript(scriptPubKey12, txTo12, 0, this.flags);
             txTo12.Outputs[0].Value = 2;
-            AssertInvalidScript(scriptPubKey12, txTo12, 0, flags);
+            AssertInvalidScript(scriptPubKey12, txTo12, 0, this.flags);
 
             txTo12.Inputs[0].ScriptSig = sign_multisig(scriptPubKey12, key2, txTo12);
-            AssertValidScript(scriptPubKey12, txTo12, 0, flags);
+            AssertValidScript(scriptPubKey12, txTo12, 0, this.flags);
 
             txTo12.Inputs[0].ScriptSig = sign_multisig(scriptPubKey12, key3, txTo12);
-            AssertInvalidScript(scriptPubKey12, txTo12, 0, flags);
+            AssertInvalidScript(scriptPubKey12, txTo12, 0, this.flags);
         }
 
         [Fact]
@@ -728,59 +728,59 @@ namespace NBitcoin.Tests
 
             var keys = new Key[] { key1, key2 };
             txTo23.Inputs[0].ScriptSig = sign_multisig(scriptPubKey23, keys, txTo23);
-            AssertValidScript(scriptPubKey23, txTo23, 0, flags);
+            AssertValidScript(scriptPubKey23, txTo23, 0, this.flags);
 
             keys = new Key[] { key1, key3 };
             txTo23.Inputs[0].ScriptSig = sign_multisig(scriptPubKey23, keys, txTo23);
-            AssertValidScript(scriptPubKey23, txTo23, 0, flags);
+            AssertValidScript(scriptPubKey23, txTo23, 0, this.flags);
 
             keys = new Key[] { key2, key3 };
             txTo23.Inputs[0].ScriptSig = sign_multisig(scriptPubKey23, keys, txTo23);
-            AssertValidScript(scriptPubKey23, txTo23, 0, flags);
+            AssertValidScript(scriptPubKey23, txTo23, 0, this.flags);
 
             keys = new Key[] { key2, key2 }; // Can't re-use sig
             txTo23.Inputs[0].ScriptSig = sign_multisig(scriptPubKey23, keys, txTo23);
-            AssertInvalidScript(scriptPubKey23, txTo23, 0, flags);
+            AssertInvalidScript(scriptPubKey23, txTo23, 0, this.flags);
 
             keys = new Key[] { key2, key1 }; // sigs must be in correct order
             txTo23.Inputs[0].ScriptSig = sign_multisig(scriptPubKey23, keys, txTo23);
-            AssertInvalidScript(scriptPubKey23, txTo23, 0, flags);
+            AssertInvalidScript(scriptPubKey23, txTo23, 0, this.flags);
 
             keys = new Key[] { key3, key2 }; // sigs must be in correct order
             txTo23.Inputs[0].ScriptSig = sign_multisig(scriptPubKey23, keys, txTo23);
-            AssertInvalidScript(scriptPubKey23, txTo23, 0, flags);
+            AssertInvalidScript(scriptPubKey23, txTo23, 0, this.flags);
 
             keys = new Key[] { key4, key2 };// sigs must match pubkeys
             txTo23.Inputs[0].ScriptSig = sign_multisig(scriptPubKey23, keys, txTo23);
-            AssertInvalidScript(scriptPubKey23, txTo23, 0, flags);
+            AssertInvalidScript(scriptPubKey23, txTo23, 0, this.flags);
 
             keys = new Key[] { key1, key4 };// sigs must match pubkeys
             txTo23.Inputs[0].ScriptSig = sign_multisig(scriptPubKey23, keys, txTo23);
-            AssertInvalidScript(scriptPubKey23, txTo23, 0, flags);
+            AssertInvalidScript(scriptPubKey23, txTo23, 0, this.flags);
 
             keys = new Key[0]; // Must have signatures
             txTo23.Inputs[0].ScriptSig = sign_multisig(scriptPubKey23, keys, txTo23);
-            AssertInvalidScript(scriptPubKey23, txTo23, 0, flags);
+            AssertInvalidScript(scriptPubKey23, txTo23, 0, this.flags);
         }
 
         private void AssertInvalidScript(Script scriptPubKey, Transaction tx, int n, ScriptVerify verify)
         {
-            Assert.False(Script.VerifyScript(Network.Main, scriptPubKey, tx, n, null, flags));
+            Assert.False(Script.VerifyScript(Network.Main, scriptPubKey, tx, n, null, this.flags));
 #if !NOCONSENSUSLIB
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
-                Assert.False(Script.VerifyScriptConsensus(scriptPubKey, tx, (uint)n, flags));
+                Assert.False(Script.VerifyScriptConsensus(scriptPubKey, tx, (uint)n, this.flags));
             }
 #endif
         }
 
         private void AssertValidScript(Script scriptPubKey, Transaction tx, int n, ScriptVerify verify)
         {
-            Assert.True(Script.VerifyScript(Network.Main, scriptPubKey, tx, n, null, flags));
+            Assert.True(Script.VerifyScript(Network.Main, scriptPubKey, tx, n, null, this.flags));
 #if !NOCONSENSUSLIB
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
-                Assert.True(Script.VerifyScriptConsensus(scriptPubKey, tx, (uint)n, flags));
+                Assert.True(Script.VerifyScriptConsensus(scriptPubKey, tx, (uint)n, this.flags));
             }
 #endif
         }

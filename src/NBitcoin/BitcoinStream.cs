@@ -27,7 +27,7 @@ namespace NBitcoin
 
         public void Dispose()
         {
-            close();
+            this.close();
         }
 
         #endregion
@@ -241,7 +241,7 @@ namespace NBitcoin
 
         public void ReadWrite(ref byte[] arr)
         {
-            this.ReadWriteBytes(ref arr);
+            ReadWriteBytes(ref arr);
         }
 
         public void ReadWrite(ref byte[] arr, int offset, int count)

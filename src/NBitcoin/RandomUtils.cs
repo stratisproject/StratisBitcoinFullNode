@@ -14,9 +14,9 @@ namespace NBitcoin
 
         public void GetBytes(byte[] output)
         {
-            lock (_Rand)
+            lock (this._Rand)
             {
-                _Rand.NextBytes(output);
+                this._Rand.NextBytes(output);
             }
         }
 
