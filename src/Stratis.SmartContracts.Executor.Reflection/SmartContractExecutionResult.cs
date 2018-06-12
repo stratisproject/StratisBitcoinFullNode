@@ -48,6 +48,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
         public SmartContractExecutionResult()
         {
             this.Refunds = new List<TxOut>();
+            this.InternalTransfers = new List<TransferInfo>();
         }
 
         /// <summary>

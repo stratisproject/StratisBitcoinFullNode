@@ -44,7 +44,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts
 
             rules.Add(new TxOutSmartContractExecRule());
             rules.Add(new OpSpendRule());
-            rules.Add(new OpCreateZeroValueRule());
             rules.Add(new SmartContractCoinviewRule(this.coinView(), this.executorFactory(), this.originalStateRoot()));
 
             return rules;

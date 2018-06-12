@@ -22,7 +22,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         /// </summary>
         private static readonly List<ISmartContractMempoolRule> preTxRules = new List<ISmartContractMempoolRule>
         {
-            new OpCreateZeroValueRule(),
+            //new OpCreateZeroValueRule(),
             new MempoolOpSpendRule(),
             new TxOutSmartContractExecRule()
         };

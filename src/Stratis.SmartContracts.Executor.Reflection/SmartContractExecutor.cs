@@ -196,6 +196,15 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
             // To start with, no value transfers on create. Can call other contracts but send 0 only.
             this.stateSnapshot.SetCode(newContractAddress, this.carrier.ContractExecutionCode);
+
+            IList<TransferInfo> transfers = this.Result.InternalTransfers;
+
+            if (transfers != null && transfers.Any() || this.carrier.Value > 0)
+            {
+                var condensingTx = new CondensingTx(this.carrier.ContractAddress, this.loggerFactory, transfers, this.stateSnapshot, this.network, this.transactionContext);
+                this.Result.InternalTransaction = condensingTx.CreateCondensingTransaction();
+            }
+
             this.stateSnapshot.Commit();
 
             this.logger.LogTrace("(-):{0}={1}", nameof(newContractAddress), newContractAddress);
@@ -303,7 +312,6 @@ namespace Stratis.SmartContracts.Executor.Reflection
             this.stateSnapshot.Commit();
 
             this.logger.LogTrace("(-)");
-
         }
 
         /// <summary>
