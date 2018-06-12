@@ -607,10 +607,7 @@ namespace NBitcoin
         /// If true, the TransactionBuilder will not select coins whose fee to spend is higher than its value. (Default: true)
         /// The cost of spending a coin is based on the <see cref="FilterUneconomicalCoinsRate"/>.
         /// </summary>
-        public bool FilterUneconomicalCoins
-        {
-            get; set;
-        } = true;
+        public bool FilterUneconomicalCoins { get; set; } = true;
 
         /// <summary>
         /// If <see cref="FilterUneconomicalCoins"/> is true, this rate is used to know if an output is economical.

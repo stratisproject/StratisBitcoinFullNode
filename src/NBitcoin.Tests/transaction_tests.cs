@@ -201,7 +201,6 @@ namespace NBitcoin.Tests
                 CreateCoin("3.0")
             }, Money.Parse("10.0")));
 
-
             // Should spend all coins belonging to same scriptPubKey
             var bob = new Key().ScriptPubKey;
             var alice = new Key().ScriptPubKey;

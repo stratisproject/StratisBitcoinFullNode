@@ -4,7 +4,7 @@ using System;
 namespace NBitcoin.RPC
 {
     /// <summary>
-    /// RPC error code thrown by the <see cref="RPCClient"/>
+    /// RPC error code thrown by the <see cref="RPCClient"/>.
     /// </summary>
     public enum RPCErrorCode
     {
@@ -33,56 +33,56 @@ namespace NBitcoin.RPC
         //! General application defined errors
 
         /// <summary>
-        /// std::exception thrown in command handling
+        /// Exception thrown in command handling.
         /// </summary>
         RPC_MISC_ERROR = -1,
         /// <summary>
-        /// Server is in safe mode, and command is not allowed in safe mode
+        /// Server is in safe mode, and command is not allowed in safe mode.
         /// </summary>
         RPC_FORBIDDEN_BY_SAFE_MODE = -2,
         /// <summary>
-        /// Unexpected type was passed as parameter
+        /// Unexpected type was passed as parameter.
         /// </summary>
         RPC_TYPE_ERROR = -3,
 
         /// <summary>
-        /// Invalid address or key
+        /// Invalid address or key.
         /// </summary>
         RPC_INVALID_ADDRESS_OR_KEY = -5,
         /// <summary>
-        /// Ran out of memory during operation
+        /// Ran out of memory during operation.
         /// </summary>
         RPC_OUT_OF_MEMORY = -7,
         /// <summary>
-        /// Invalid, missing or duplicate parameter
+        /// Invalid, missing or duplicate parameter.
         /// </summary>
         RPC_INVALID_PARAMETER = -8,
         /// <summary>
-        /// Database error
+        /// Database error.
         /// </summary>
         RPC_DATABASE_ERROR = -20,
         /// <summary>
-        /// Error parsing or validating structure in raw format
+        /// Error parsing or validating structure in raw format.
         /// </summary>
         RPC_DESERIALIZATION_ERROR = -22,
         /// <summary>
-        /// General error during transaction or block submission
+        /// General error during transaction or block submission.
         /// </summary>
         RPC_VERIFY_ERROR = -25,
         /// <summary>
-        /// Transaction or block was rejected by network rules
+        /// Transaction or block was rejected by network rules.
         /// </summary>
         RPC_VERIFY_REJECTED = -26,
         /// <summary>
-        /// Transaction already in chain
+        /// Transaction already in chain.
         /// </summary>
         RPC_VERIFY_ALREADY_IN_CHAIN = -27,
         /// <summary>
-        /// Client still warming up
+        /// Client still warming up.
         /// </summary>
         RPC_IN_WARMUP = -28,
         /// <summary>
-        /// RPC method is deprecated
+        /// RPC method is deprecated.
         /// </summary>
         RPC_METHOD_DEPRECATED = -32,
 
@@ -93,77 +93,77 @@ namespace NBitcoin.RPC
 
         //! P2P client errors
         /// <summary>
-        /// Bitcoin is not connected
+        /// Bitcoin is not connected.
         /// </summary>
         RPC_CLIENT_NOT_CONNECTED = -9,
         /// <summary>
-        /// Still downloading initial blocks
+        /// Still downloading initial blocks.
         /// </summary>
         RPC_CLIENT_IN_INITIAL_DOWNLOAD = -10,
         /// <summary>
-        /// Node is already added
+        /// Node is already added.
         /// </summary>
         RPC_CLIENT_NODE_ALREADY_ADDED = -23,
         /// <summary>
-        /// Node has not been added before
+        /// Node has not been added before.
         /// </summary>
         RPC_CLIENT_NODE_NOT_ADDED = -24,
         /// <summary>
-        /// Node to disconnect not found in connected nodes
+        /// Node to disconnect not found in connected nodes.
         /// </summary>
         RPC_CLIENT_NODE_NOT_CONNECTED = -29,
         /// <summary>
-        /// Invalid IP/Subnet
+        /// Invalid IP/Subnet.
         /// </summary>
         RPC_CLIENT_INVALID_IP_OR_SUBNET = -30,
         /// <summary>
-        /// No valid connection manager instance found
+        /// No valid connection manager instance found.
         /// </summary>
         RPC_CLIENT_P2P_DISABLED = -31,
 
         //! Wallet errors
         /// <summary>
-        /// Unspecified problem with wallet (key not found etc.)
+        /// Unspecified problem with wallet (key not found etc.).
         /// </summary>
         RPC_WALLET_ERROR = -4,
         /// <summary>
-        /// Not enough funds in wallet or account
+        /// Not enough funds in wallet or account.
         /// </summary>
         RPC_WALLET_INSUFFICIENT_FUNDS = -6,
         /// <summary>
-        /// Invalid account name
+        /// Invalid account name.
         /// </summary>
         RPC_WALLET_INVALID_ACCOUNT_NAME = -11,
         /// <summary>
-        /// Keypool ran out, call keypoolrefill first
+        /// Keypool ran out, call keypoolrefill first.
         /// </summary>
         RPC_WALLET_KEYPOOL_RAN_OUT = -12,
         /// <summary>
-        /// Enter the wallet passphrase with walletpassphrase first
+        /// Enter the wallet passphrase with walletpassphrase first.
         /// </summary>
         RPC_WALLET_UNLOCK_NEEDED = -13,
         /// <summary>
-        /// The wallet passphrase entered was incorrect
+        /// The wallet passphrase entered was incorrect.
         /// </summary>
         RPC_WALLET_PASSPHRASE_INCORRECT = -14,
         /// <summary>
-        /// Command given in wrong wallet encryption state (encrypting an encrypted wallet etc.)
+        /// Command given in wrong wallet encryption state (encrypting an encrypted wallet etc.).
         /// </summary>
         RPC_WALLET_WRONG_ENC_STATE = -15,
         /// <summary>
-        /// Failed to encrypt the wallet
+        /// Failed to encrypt the wallet.
         /// </summary>
         RPC_WALLET_ENCRYPTION_FAILED = -16,
         /// <summary>
-        /// Wallet is already unlocked
+        /// Wallet is already unlocked.
         /// </summary>
         RPC_WALLET_ALREADY_UNLOCKED = -17,
         /// <summary>
-        /// Invalid wallet specified
+        /// Invalid wallet specified.
         /// </summary>
         RPC_WALLET_NOT_FOUND = -18,
         /// <summary>
-        /// No wallet specified (error when there are multiple wallets loaded)
+        /// No wallet specified (error when there are multiple wallets loaded).
         /// </summary>
         RPC_WALLET_NOT_SPECIFIED = -19
     }
