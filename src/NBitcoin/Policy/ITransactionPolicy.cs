@@ -10,7 +10,8 @@ namespace NBitcoin.Policy
         {
 
         }
-        string _Message;
+
+        private string _Message;
         public TransactionPolicyError(string message)
         {
             _Message = message;
@@ -201,7 +202,7 @@ namespace NBitcoin.Policy
     }
     public class CoinNotFoundPolicyError : InputPolicyError
     {
-        IndexedTxIn _TxIn;
+        private IndexedTxIn _TxIn;
         public CoinNotFoundPolicyError(IndexedTxIn txIn)
             : base("No coin matching " + txIn.PrevOut + " was found", txIn)
         {

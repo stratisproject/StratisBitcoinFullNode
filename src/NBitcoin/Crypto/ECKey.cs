@@ -17,7 +17,8 @@ namespace NBitcoin.Crypto
                 return _Key as ECPrivateKeyParameters;
             }
         }
-        readonly ECKeyParameters _Key;
+
+        private readonly ECKeyParameters _Key;
 
 
         public static readonly BigInteger HALF_CURVE_ORDER = null;
@@ -38,7 +39,7 @@ namespace NBitcoin.Crypto
                 _Key = new ECPrivateKeyParameters(new NBitcoin.BouncyCastle.Math.BigInteger(1, vch), DomainParameter);
             else
             {
-                var q = Secp256k1.Curve.DecodePoint(vch);
+                ECPoint q = Secp256k1.Curve.DecodePoint(vch);
                 _Key = new ECPublicKeyParameters("EC", q, DomainParameter);
             }
         }
@@ -53,7 +54,7 @@ namespace NBitcoin.Crypto
             }
         }
 
-        ECDomainParameters _DomainParameter;
+        private ECDomainParameters _DomainParameter;
         public ECDomainParameters DomainParameter
         {
             get
@@ -70,7 +71,7 @@ namespace NBitcoin.Crypto
             AssertPrivateKey();
             var signer = new DeterministicECDSA();
             signer.setPrivateKey(PrivateKey);
-            var sig = ECDSASignature.FromDER(signer.signHash(hash.ToBytes()));
+            ECDSASignature sig = ECDSASignature.FromDER(signer.signHash(hash.ToBytes()));
             return sig.MakeCanonical();
         }
 
@@ -92,10 +93,10 @@ namespace NBitcoin.Crypto
 
         public PubKey GetPubKey(bool isCompressed)
         {
-            var q = GetPublicKeyParameters().Q;
+            ECPoint q = GetPublicKeyParameters().Q;
             //Pub key (q) is composed into X and Y, the compressed form only include X, which can derive Y along with 02 or 03 prepent depending on whether Y in even or odd.
             q = q.Normalize();
-            var result = Secp256k1.Curve.CreatePoint(q.XCoord.ToBigInteger(), q.YCoord.ToBigInteger()).GetEncoded(isCompressed);
+            byte[] result = Secp256k1.Curve.CreatePoint(q.XCoord.ToBigInteger(), q.YCoord.ToBigInteger()).GetEncoded(isCompressed);
             return new PubKey(result);
         }
 
@@ -125,14 +126,14 @@ namespace NBitcoin.Crypto
                 throw new ArgumentNullException("message");
 
 
-            var curve = ECKey.Secp256k1;
+            X9ECParameters curve = ECKey.Secp256k1;
 
             // 1.0 For j from 0 to h   (h == recId here and the loop is outside this function)
             //   1.1 Let x = r + jn
 
-            var n = curve.N;
-            var i = NBitcoin.BouncyCastle.Math.BigInteger.ValueOf((long)recId / 2);
-            var x = sig.R.Add(i.Multiply(n));
+            BigInteger n = curve.N;
+            BigInteger i = NBitcoin.BouncyCastle.Math.BigInteger.ValueOf((long)recId / 2);
+            BigInteger x = sig.R.Add(i.Multiply(n));
 
             //   1.2. Convert the integer x to an octet string X of length mlen using the conversion routine
             //        specified in Section 2.3.7, where mlen = ⌈(log2 p)/8⌉ or mlen = ⌈m/8⌉.
@@ -141,7 +142,7 @@ namespace NBitcoin.Crypto
             //        do another iteration of Step 1.
             //
             // More concisely, what these points mean is to use X as a compressed public key.
-            var prime = ((SecP256K1Curve)curve.Curve).QQ;
+            BigInteger prime = ((SecP256K1Curve)curve.Curve).QQ;
             if(x.CompareTo(prime) >= 0)
             {
                 return null;
@@ -169,10 +170,10 @@ namespace NBitcoin.Crypto
             // We can find the additive inverse by subtracting e from zero then taking the mod. For example the additive
             // inverse of 3 modulo 11 is 8 because 3 + 8 mod 11 = 0, and -3 mod 11 = 8.
 
-            var eInv = NBitcoin.BouncyCastle.Math.BigInteger.Zero.Subtract(e).Mod(n);
-            var rInv = sig.R.ModInverse(n);
-            var srInv = rInv.Multiply(sig.S).Mod(n);
-            var eInvrInv = rInv.Multiply(eInv).Mod(n);
+            BigInteger eInv = NBitcoin.BouncyCastle.Math.BigInteger.Zero.Subtract(e).Mod(n);
+            BigInteger rInv = sig.R.ModInverse(n);
+            BigInteger srInv = rInv.Multiply(sig.S).Mod(n);
+            BigInteger eInvrInv = rInv.Multiply(eInv).Mod(n);
             ECPoint q = ECAlgorithms.SumOfTwoMultiplies(curve.G, eInvrInv, R, srInv);
             q = q.Normalize();
             if(compressed)
@@ -184,7 +185,7 @@ namespace NBitcoin.Crypto
 
         private static ECPoint DecompressKey(NBitcoin.BouncyCastle.Math.BigInteger xBN, bool yBit)
         {
-            var curve = ECKey.Secp256k1.Curve;
+            ECCurve curve = ECKey.Secp256k1.Curve;
             byte[] compEnc = X9IntegerConverter.IntegerToBytes(xBN, 1 + X9IntegerConverter.GetByteLength(curve));
             compEnc[0] = (byte)(yBit ? 0x03 : 0x02);
             return curve.DecodePoint(compEnc);

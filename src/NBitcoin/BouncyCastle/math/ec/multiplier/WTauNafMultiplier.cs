@@ -26,8 +26,8 @@ namespace NBitcoin.BouncyCastle.Math.EC.Multiplier
             if(!(point is AbstractF2mPoint))
                 throw new ArgumentException("Only AbstractF2mPoint can be used in WTauNafMultiplier");
 
-            AbstractF2mPoint p = (AbstractF2mPoint)point;
-            AbstractF2mCurve curve = (AbstractF2mCurve)p.Curve;
+            var p = (AbstractF2mPoint)point;
+            var curve = (AbstractF2mCurve)p.Curve;
             int m = curve.FieldSize;
             sbyte a = (sbyte)curve.A.ToBigInteger().IntValue;
             sbyte mu = Tnaf.GetMu(a);
@@ -72,7 +72,7 @@ namespace NBitcoin.BouncyCastle.Math.EC.Multiplier
         */
         private static AbstractF2mPoint MultiplyFromWTnaf(AbstractF2mPoint p, sbyte[] u, PreCompInfo preCompInfo)
         {
-            AbstractF2mCurve curve = (AbstractF2mCurve)p.Curve;
+            var curve = (AbstractF2mCurve)p.Curve;
             sbyte a = (sbyte)curve.A.ToBigInteger().IntValue;
 
             AbstractF2mPoint[] pu;
@@ -80,7 +80,7 @@ namespace NBitcoin.BouncyCastle.Math.EC.Multiplier
             {
                 pu = Tnaf.GetPreComp(p, a);
 
-                WTauNafPreCompInfo pre = new WTauNafPreCompInfo();
+                var pre = new WTauNafPreCompInfo();
                 pre.PreComp = pu;
                 curve.SetPreCompInfo(p, PRECOMP_NAME, pre);
             }
@@ -90,7 +90,7 @@ namespace NBitcoin.BouncyCastle.Math.EC.Multiplier
             }
 
             // TODO Include negations in precomp (optionally) and use from here
-            AbstractF2mPoint[] puNeg = new AbstractF2mPoint[pu.Length];
+            var puNeg = new AbstractF2mPoint[pu.Length];
             for(int i = 0; i < pu.Length; ++i)
             {
                 puNeg[i] = (AbstractF2mPoint)pu[i].Negate();
@@ -98,7 +98,7 @@ namespace NBitcoin.BouncyCastle.Math.EC.Multiplier
 
 
             // q = infinity
-            AbstractF2mPoint q = (AbstractF2mPoint)p.Curve.Infinity;
+            var q = (AbstractF2mPoint)p.Curve.Infinity;
 
             int tauCount = 0;
             for(int i = u.Length - 1; i >= 0; i--)

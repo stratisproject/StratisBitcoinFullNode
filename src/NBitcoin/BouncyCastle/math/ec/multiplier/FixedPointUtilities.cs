@@ -33,7 +33,7 @@
                 int bits = GetCombSize(c);
                 int d = (bits + minWidth - 1) / minWidth;
 
-                ECPoint[] pow2Table = new ECPoint[minWidth];
+                var pow2Table = new ECPoint[minWidth];
                 pow2Table[0] = p;
                 for(int i = 1; i < minWidth; ++i)
                 {

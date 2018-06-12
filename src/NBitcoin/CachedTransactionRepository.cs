@@ -6,10 +6,10 @@ namespace NBitcoin
 {
     public class CachedTransactionRepository : ITransactionRepository
     {
-        ITransactionRepository _Inner;
-        Dictionary<uint256, Transaction> _Transactions = new Dictionary<uint256, Transaction>();
-        Queue<uint256> _EvictionQueue = new Queue<uint256>();
-        ReaderWriterLock @lock = new ReaderWriterLock();
+        private ITransactionRepository _Inner;
+        private Dictionary<uint256, Transaction> _Transactions = new Dictionary<uint256, Transaction>();
+        private Queue<uint256> _EvictionQueue = new Queue<uint256>();
+        private ReaderWriterLock @lock = new ReaderWriterLock();
         public CachedTransactionRepository(ITransactionRepository inner)
         {
             if(inner == null)

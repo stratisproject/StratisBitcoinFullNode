@@ -12,7 +12,7 @@ namespace NBitcoin
     }
     public class FileLock : IDisposable
     {
-        FileStream _Fs = null;
+        private FileStream _Fs = null;
         public FileLock(string filePath, FileLockType lockType)
         {
             if(filePath == null)
@@ -25,7 +25,7 @@ namespace NBitcoin
                 catch
                 {
                 }
-            CancellationTokenSource source = new CancellationTokenSource();
+            var source = new CancellationTokenSource();
             source.CancelAfter(20000);
             while(true)
             {

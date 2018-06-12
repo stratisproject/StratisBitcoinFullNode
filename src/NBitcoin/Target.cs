@@ -10,7 +10,7 @@ namespace NBitcoin
     /// </summary>
     public class Target
     {
-        static Target _Difficulty1 = new Target(new byte[] { 0x1d, 0x00, 0xff, 0xff });
+        private static Target _Difficulty1 = new Target(new byte[] { 0x1d, 0x00, 0xff, 0xff });
         public static Target Difficulty1
         {
             get
@@ -37,14 +37,13 @@ namespace NBitcoin
         }
 
 
-
-        BigInteger _Target;
+        private BigInteger _Target;
 
         public Target(byte[] compact)
         {
             if(compact.Length == 4)
             {
-                var exp = compact[0];
+                byte exp = compact[0];
                 var val = new BigInteger(compact.SafeSubarray(1, 3));
                 _Target = val.ShiftLeft(8  * (exp - 3));
             }
@@ -69,11 +68,11 @@ namespace NBitcoin
         }
         public static implicit operator uint(Target a)
         {
-            var bytes = a._Target.ToByteArray();
-            var val = bytes.SafeSubarray(0, Math.Min(bytes.Length, 3));
+            byte[] bytes = a._Target.ToByteArray();
+            byte[] val = bytes.SafeSubarray(0, Math.Min(bytes.Length, 3));
             Array.Reverse(val);
-            var exp = (byte)(bytes.Length);
-            var missing = 4 - val.Length;
+            byte exp = (byte)(bytes.Length);
+            int missing = 4 - val.Length;
             if(missing > 0)
                 val = val.Concat(new byte[missing]).ToArray();
             if(missing < 0)
@@ -81,7 +80,7 @@ namespace NBitcoin
             return (uint)val[0] + (uint)(val[1] << 8) + (uint)(val[2] << 16) + (uint)(exp << 24);
         }
 
-        double? _Difficulty;
+        private double? _Difficulty;
         
         public double Difficulty
         {
@@ -89,13 +88,13 @@ namespace NBitcoin
             {
                 if(_Difficulty == null)
                 {
-                    var qr = Difficulty1._Target.DivideAndRemainder(_Target);
-                    var quotient = qr[0];
-                    var remainder = qr[1];
-                    var decimalPart = BigInteger.Zero;
+                    BigInteger[] qr = Difficulty1._Target.DivideAndRemainder(_Target);
+                    BigInteger quotient = qr[0];
+                    BigInteger remainder = qr[1];
+                    BigInteger decimalPart = BigInteger.Zero;
                     for(int i = 0; i < 12; i++)
                     {
-                        var div = (remainder.Multiply(BigInteger.Ten)).Divide(_Target);
+                        BigInteger div = (remainder.Multiply(BigInteger.Ten)).Divide(_Target);
 
                         decimalPart = decimalPart.Multiply(BigInteger.Ten);
                         decimalPart = decimalPart.Add(div);
@@ -116,7 +115,7 @@ namespace NBitcoin
 
         public override bool Equals(object obj)
         {
-            Target item = obj as Target;
+            var item = obj as Target;
             if(item == null)
                 return false;
             return _Target.Equals(item._Target);
@@ -157,9 +156,9 @@ namespace NBitcoin
 
         internal static uint256 ToUInt256(BigInteger input)
         {
-            var array = input.ToByteArray();
+            byte[] array = input.ToByteArray();
 
-            var missingZero = 32 - array.Length;
+            int missingZero = 32 - array.Length;
             if(missingZero < 0)
                 throw new InvalidOperationException("Awful bug, this should never happen");
             if(missingZero != 0)

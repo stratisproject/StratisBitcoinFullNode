@@ -34,7 +34,7 @@ namespace NBitcoin.JsonConverters
 
             try
             {
-                var result = Network.Parse(reader.Value.ToString(), null);
+                IBitcoinString result = Network.Parse(reader.Value.ToString(), null);
                 if(result == null)
                 {
                     throw new JsonObjectException("Invalid BitcoinString data", reader);

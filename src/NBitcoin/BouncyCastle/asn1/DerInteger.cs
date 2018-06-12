@@ -80,7 +80,7 @@ namespace NBitcoin.BouncyCastle.Asn1
         protected override bool Asn1Equals(
             Asn1Object asn1Object)
         {
-            DerInteger other = asn1Object as DerInteger;
+            var other = asn1Object as DerInteger;
 
             if(other == null)
                 return false;

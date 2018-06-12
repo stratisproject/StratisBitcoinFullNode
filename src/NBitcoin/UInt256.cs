@@ -8,7 +8,7 @@ namespace NBitcoin
     {
         public class MutableUint256 : IBitcoinSerializable
         {
-            uint256 _Value;
+            private uint256 _Value;
             public uint256 Value
             {
                 get
@@ -33,24 +33,25 @@ namespace NBitcoin
             {
                 if (stream.Serializing)
                 {
-                    var b = Value.ToBytes();
+                    byte[] b = Value.ToBytes();
                     stream.ReadWrite(ref b);
                 }
                 else
                 {
-                    byte[] b = new byte[WIDTH_BYTE];
+                    var b = new byte[WIDTH_BYTE];
                     stream.ReadWrite(ref b);
                     _Value = new uint256(b);
                 }
             }
         }
-        static readonly uint256 _Zero = new uint256();
+
+        private static readonly uint256 _Zero = new uint256();
         public static uint256 Zero
         {
             get { return _Zero; }
         }
 
-        static readonly uint256 _One = new uint256(1);
+        private static readonly uint256 _One = new uint256(1);
         public static uint256 One
         {
             get { return _One; }
@@ -96,7 +97,7 @@ namespace NBitcoin
 
         public static uint256 operator <<(uint256 a, int shift)
         {
-            var source = a.ToArray();
+            uint[] source = a.ToArray();
             var target = new uint[source.Length];
             int k = shift / 32;
             shift = shift % 32;
@@ -112,7 +113,7 @@ namespace NBitcoin
 
         public static uint256 operator >>(uint256 a, int shift)
         {
-            var source = a.ToArray();
+            uint[] source = a.ToArray();
             var target = new uint[source.Length];
             int k = shift / 32;
             shift = shift % 32;
@@ -158,8 +159,8 @@ namespace NBitcoin
 
         public byte GetByte(int index)
         {
-            var uintIndex = index / sizeof(uint);
-            var byteIndex = index % sizeof(uint);
+            int uintIndex = index / sizeof(uint);
+            int byteIndex = index % sizeof(uint);
             UInt32 value;
             switch (uintIndex)
             {
@@ -246,7 +247,7 @@ namespace NBitcoin
             if (str.StartsWith("0x", StringComparison.OrdinalIgnoreCase))
                 str = str.Substring(2);
 
-            var bytes = Encoder.DecodeData(str).Reverse().ToArray();
+            byte[] bytes = Encoder.DecodeData(str).Reverse().ToArray();
             if (bytes.Length != WIDTH_BYTE)
                 throw new FormatException("Invalid hex length");
             pn0 = Utils.ToUInt32(bytes, 4 * 0, true);
@@ -449,7 +450,7 @@ namespace NBitcoin
     {
         public class MutableUint160 : IBitcoinSerializable
         {
-            uint160 _Value;
+            private uint160 _Value;
             public uint160 Value
             {
                 get
@@ -474,24 +475,25 @@ namespace NBitcoin
             {
                 if (stream.Serializing)
                 {
-                    var b = Value.ToBytes();
+                    byte[] b = Value.ToBytes();
                     stream.ReadWrite(ref b);
                 }
                 else
                 {
-                    byte[] b = new byte[WIDTH_BYTE];
+                    var b = new byte[WIDTH_BYTE];
                     stream.ReadWrite(ref b);
                     _Value = new uint160(b);
                 }
             }
         }
-        static readonly uint160 _Zero = new uint160();
+
+        private static readonly uint160 _Zero = new uint160();
         public static uint160 Zero
         {
             get { return _Zero; }
         }
 
-        static readonly uint160 _One = new uint160(1);
+        private static readonly uint160 _One = new uint160(1);
         public static uint160 One
         {
             get { return _One; }
@@ -539,8 +541,8 @@ namespace NBitcoin
 
         public byte GetByte(int index)
         {
-            var uintIndex = index / sizeof(uint);
-            var byteIndex = index % sizeof(uint);
+            int uintIndex = index / sizeof(uint);
+            int byteIndex = index % sizeof(uint);
             UInt32 value;
             switch (uintIndex)
             {
@@ -609,7 +611,7 @@ namespace NBitcoin
             if (str.StartsWith("0x", StringComparison.OrdinalIgnoreCase))
                 str = str.Substring(2);
 
-            var bytes = Encoder.DecodeData(str).Reverse().ToArray();
+            byte[] bytes = Encoder.DecodeData(str).Reverse().ToArray();
             if (bytes.Length != WIDTH_BYTE)
                 throw new FormatException("Invalid hex length");
             pn0 = Utils.ToUInt32(bytes, 4 * 0, true);

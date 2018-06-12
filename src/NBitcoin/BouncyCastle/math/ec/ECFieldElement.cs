@@ -540,7 +540,7 @@ namespace NBitcoin.BouncyCastle.Math.EC
             if(obj == this)
                 return true;
 
-            FpFieldElement other = obj as FpFieldElement;
+            var other = obj as FpFieldElement;
 
             if(other == null)
                 return false;
@@ -747,8 +747,8 @@ namespace NBitcoin.BouncyCastle.Math.EC
                     + "both instances of F2mFieldElement");
             }
 
-            F2mFieldElement aF2m = (F2mFieldElement)a;
-            F2mFieldElement bF2m = (F2mFieldElement)b;
+            var aF2m = (F2mFieldElement)a;
+            var bF2m = (F2mFieldElement)b;
 
             if(aF2m.representation != bF2m.representation)
             {
@@ -769,7 +769,7 @@ namespace NBitcoin.BouncyCastle.Math.EC
             // elements involved are checked in ECPoint.F2m
             // checkFieldElements(this, b);
             LongArray iarrClone = this.x.Copy();
-            F2mFieldElement bF2m = (F2mFieldElement)b;
+            var bF2m = (F2mFieldElement)b;
             iarrClone.AddShiftedByWords(bF2m.x, 0);
             return new F2mFieldElement(m, ks, iarrClone);
         }
@@ -957,7 +957,7 @@ namespace NBitcoin.BouncyCastle.Math.EC
             if(obj == this)
                 return true;
 
-            F2mFieldElement other = obj as F2mFieldElement;
+            var other = obj as F2mFieldElement;
 
             if(other == null)
                 return false;
