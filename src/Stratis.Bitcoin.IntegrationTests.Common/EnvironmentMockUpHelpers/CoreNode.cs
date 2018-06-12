@@ -60,7 +60,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
             this.creds = new NetworkCredential(pass, pass);
             this.Config = Path.Combine(this.runner.DataFolder, configfile);
             this.ConfigParameters.Import(builder.ConfigParameters);
-            this.ports = new int[2];
+            this.ports = new int[3];
             TestHelper.FindPorts(this.ports);
 
             var loggerFactory = new ExtendedLoggerFactory();
@@ -142,6 +142,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
             }
             config.Add("port", this.ports[0].ToString());
             config.Add("rpcport", this.ports[1].ToString());
+            config.Add("apiport", this.ports[2].ToString());
             config.Add("printtoconsole", "1");
             config.Add("keypool", "10");
             config.Add("agentprefix", "node" + this.ports[0].ToString());
