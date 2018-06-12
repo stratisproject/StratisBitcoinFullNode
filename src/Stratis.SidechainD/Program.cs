@@ -1,19 +1,26 @@
-﻿using NBitcoin.Protocol;
+﻿using System;
+using System.Linq;
+using System.Threading.Tasks;
+using NBitcoin;
+using NBitcoin.Protocol;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.Api;
 using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.MemoryPool;
+using Stratis.Bitcoin.Features.Miner;
 using Stratis.Bitcoin.Features.RPC;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Utilities;
-using Stratis.Sidechains.Features.BlockchainGeneration;
-using System;
-using System.Threading.Tasks;
+using Stratis.Networks.Apex;
+
 namespace Stratis.SidechainD
 {
-    public class Program
+    /// <summary>
+    /// Starts a console app that includes the sidechain network parameters and that should be distributed to the sidechain users.
+    /// </summary>
+    class Program
     {
         public static void Main(string[] args)
         {
@@ -24,27 +31,26 @@ namespace Stratis.SidechainD
         {
             try
             {
-                // To mine the premine coins, adapt and uncomment the following line.
-                // args = args.Concat(new [] { "mineaddress=RaYuu3wJJ2cJkPtfb6RCbsF4aQgYrfGNqR", "mine=1" }).ToArray();
-                NodeSettings nodeSettings = new NodeSettings(SidechainNetwork.SidechainTest, ProtocolVersion.ALT_PROTOCOL_VERSION, args: args);
-                
-                var node = new FullNodeBuilder()
-                      .UseNodeSettings(nodeSettings)
-                      .UseBlockStore()
-                      .UsePowConsensus()
-                      .UseMempool()
-                      .UseWallet()
-                      .UseApi()
-                      .AddRPC()
-                      .Build();
+                args = args.Concat(new[] { "apiport=38225" }).ToArray();
+                NodeSettings nodeSettings = new NodeSettings(ApexNetwork.Test, protocolVersion: ProtocolVersion.ALT_PROTOCOL_VERSION, args: args);
 
-                await node.RunAsync();
+                var node = new FullNodeBuilder()
+                    .UseNodeSettings(nodeSettings)
+                    .UseBlockStore()
+                    .UsePowConsensus()
+                    .UseMempool()
+                    .AddRPC()
+                    .UseWallet()
+                    .UseApi()
+                    .Build();
+
+                if (node != null)
+                    await node.RunAsync();
             }
             catch (Exception ex)
             {
                 Console.WriteLine("There was a problem initializing the node. Details: '{0}'", ex.Message);
             }
-            Console.ReadLine();
         }
     }
 }

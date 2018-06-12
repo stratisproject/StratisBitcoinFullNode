@@ -19,8 +19,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Stratis.ApexD\Stratis.ApexD.csproj" />
     <ProjectReference Include="..\Stratis.FederatedPeg\Stratis.FederatedPeg.csproj" />
+    <ProjectReference Include="..\Stratis.Networks.Apex\Stratis.Networks.Apex.csproj" />
   </ItemGroup>
 
 </Project>

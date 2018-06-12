@@ -5,10 +5,6 @@ VisualStudioVersion = 15.0.27004.2009
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FedKeyPairGen", "FedKeyPairGen\FedKeyPairGen.csproj", "{E72E7605-B499-4078-ACD9-13BD6B052321}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.SidechainD", "Stratis.SidechainD\Stratis.SidechainD.csproj", "{FF363FEC-25D7-40B4-A562-838FE5EC801A}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.MainchainD", "Stratis.MainchainD\Stratis.MainchainD.csproj", "{D7F71427-49EE-4AD5-BFB3-CE2042CFC7EE}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.FederatedPeg.Features.SidechainGeneratorServices", "Stratis.FederatedPeg.Features.SidechainGeneratorServices\Stratis.FederatedPeg.Features.SidechainGeneratorServices.csproj", "{86FDCC68-1F36-4D0B-A618-E286B054D283}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.FederatedPeg.IntegrationTests", "Stratis.FederatedPeg.IntegrationTests\Stratis.FederatedPeg.IntegrationTests.csproj", "{EB41C31A-FF32-4164-822D-43D1D9AC7FEA}"
@@ -34,7 +30,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.FederatedSidechains
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.FederatedSidechains.Initialisation.Tests", "Stratis.FederatedSidechains.Initialisation.Tests\Stratis.FederatedSidechains.Initialisation.Tests.csproj", "{3D106928-3A8E-4EB1-9F9A-45856DBAA16B}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.ApexD", "Stratis.ApexD\Stratis.ApexD.csproj", "{C3FF2EF8-50B6-43D8-AC78-BCFEBF7DE394}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.SidechainD", "Stratis.SidechainD\Stratis.SidechainD.csproj", "{C3FF2EF8-50B6-43D8-AC78-BCFEBF7DE394}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.FederatedSidechains.IntegrationTests.Common", "Stratis.FederatedSidechains.IntegrationTests.Common\Stratis.FederatedSidechains.IntegrationTests.Common.csproj", "{636ED4E6-42FF-45DA-8728-D2AF2515549F}"
 EndProject
@@ -52,14 +48,6 @@ Global
 		{E72E7605-B499-4078-ACD9-13BD6B052321}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{E72E7605-B499-4078-ACD9-13BD6B052321}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{E72E7605-B499-4078-ACD9-13BD6B052321}.Release|Any CPU.Build.0 = Release|Any CPU
-		{FF363FEC-25D7-40B4-A562-838FE5EC801A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{FF363FEC-25D7-40B4-A562-838FE5EC801A}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{FF363FEC-25D7-40B4-A562-838FE5EC801A}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{FF363FEC-25D7-40B4-A562-838FE5EC801A}.Release|Any CPU.Build.0 = Release|Any CPU
-		{D7F71427-49EE-4AD5-BFB3-CE2042CFC7EE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{D7F71427-49EE-4AD5-BFB3-CE2042CFC7EE}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{D7F71427-49EE-4AD5-BFB3-CE2042CFC7EE}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{D7F71427-49EE-4AD5-BFB3-CE2042CFC7EE}.Release|Any CPU.Build.0 = Release|Any CPU
 		{86FDCC68-1F36-4D0B-A618-E286B054D283}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{86FDCC68-1F36-4D0B-A618-E286B054D283}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{86FDCC68-1F36-4D0B-A618-E286B054D283}.Release|Any CPU.ActiveCfg = Release|Any CPU

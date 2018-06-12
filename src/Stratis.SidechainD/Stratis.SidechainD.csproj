@@ -1,31 +1,30 @@
-<Project Sdk="Microsoft.NET.Sdk">
-
-  <PropertyGroup Label="Globals">
-    <SccProjectName>SAK</SccProjectName>
-    <SccProvider>SAK</SccProvider>
-    <SccAuxPath>SAK</SccAuxPath>
-    <SccLocalPath>SAK</SccLocalPath>
-  </PropertyGroup>
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>netcoreapp2.0</TargetFramework>
+    <AssemblyName>Stratis.SidechainD</AssemblyName>
+    <PackageId>Stratis.SidechainD</PackageId>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="NStratis" Version="4.0.0.58" />
     <PackageReference Include="Stratis.Bitcoin" Version="1.1.9-beta" />
     <PackageReference Include="Stratis.Bitcoin.Api" Version="1.1.9-beta" />
     <PackageReference Include="Stratis.Bitcoin.Features.BlockStore" Version="1.1.9-beta" />
     <PackageReference Include="Stratis.Bitcoin.Features.Consensus" Version="1.1.9-beta" />
     <PackageReference Include="Stratis.Bitcoin.Features.MemoryPool" Version="1.1.9-beta" />
     <PackageReference Include="Stratis.Bitcoin.Features.Miner" Version="1.1.9-beta" />
-    <PackageReference Include="Stratis.Bitcoin.Features.RPC" Version="1.1.9-beta" />
     <PackageReference Include="Stratis.Bitcoin.Features.Wallet" Version="1.1.9-beta" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Stratis.FederatedPeg.Features.SidechainGeneratorServices\Stratis.FederatedPeg.Features.SidechainGeneratorServices.csproj" />
+    <ProjectReference Include="..\Stratis.Networks.Apex\Stratis.Networks.Apex.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Update="NLog.config">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+  
 </Project>
