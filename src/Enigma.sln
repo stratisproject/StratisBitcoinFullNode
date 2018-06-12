@@ -28,11 +28,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.FederatedPeg.Featur
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.FederationGatewayD", "Stratis.FederationGatewayD\Stratis.FederationGatewayD.csproj", "{147DE180-A113-4E52-B542-B56B1F0276FB}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.FederatedPeg.Features.FederationGateway.Tests", "Stratis.FederatedPeg.Features.FederationGateway.Tests\Stratis.FederatedPeg.Features.FederationGateway.Tests.csproj", "{35511E25-4672-4EBA-9507-B77C422086E3}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.Bitcoin.Features.GeneralPurposeWallet", "Stratis.Bitcoin.Features.GeneralPurposeWallet\Stratis.Bitcoin.Features.GeneralPurposeWallet.csproj", "{A1540310-B5B0-4A78-8017-22204B46B7AA}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.Sidechains.Features.BlockchainGeneration", "Stratis.Sidechains.Features.BlockchainGeneration\Stratis.Sidechains.Features.BlockchainGeneration.csproj", "{3DEB5772-3918-483E-8B6B-7BDD9AA6B6B9}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.FederatedSidechains.Initialisation", "Stratis.FederatedSidechains.Initialisation\Stratis.FederatedSidechains.Initialisation.csproj", "{3526B5DB-8E08-445F-9DCE-65566491D94F}"
 EndProject
@@ -43,6 +39,8 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.FederatedSidechains.IntegrationTests.Common", "Stratis.FederatedSidechains.IntegrationTests.Common\Stratis.FederatedSidechains.IntegrationTests.Common.csproj", "{636ED4E6-42FF-45DA-8728-D2AF2515549F}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.Networks.Apex", "Stratis.Networks.Apex\Stratis.Networks.Apex.csproj", "{E28F1D74-D3D3-4BF0-A06F-12BACC3C662C}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.Sidechains.Features.BlockchainGeneration", "Stratis.Sidechains.Features.BlockchainGeneration\Stratis.Sidechains.Features.BlockchainGeneration.csproj", "{08AC72D1-A2D7-4682-A2C1-8AED2F83EF99}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -90,18 +88,10 @@ Global
 		{147DE180-A113-4E52-B542-B56B1F0276FB}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{147DE180-A113-4E52-B542-B56B1F0276FB}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{147DE180-A113-4E52-B542-B56B1F0276FB}.Release|Any CPU.Build.0 = Release|Any CPU
-		{35511E25-4672-4EBA-9507-B77C422086E3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{35511E25-4672-4EBA-9507-B77C422086E3}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{35511E25-4672-4EBA-9507-B77C422086E3}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{35511E25-4672-4EBA-9507-B77C422086E3}.Release|Any CPU.Build.0 = Release|Any CPU
 		{A1540310-B5B0-4A78-8017-22204B46B7AA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{A1540310-B5B0-4A78-8017-22204B46B7AA}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A1540310-B5B0-4A78-8017-22204B46B7AA}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A1540310-B5B0-4A78-8017-22204B46B7AA}.Release|Any CPU.Build.0 = Release|Any CPU
-		{3DEB5772-3918-483E-8B6B-7BDD9AA6B6B9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{3DEB5772-3918-483E-8B6B-7BDD9AA6B6B9}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{3DEB5772-3918-483E-8B6B-7BDD9AA6B6B9}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{3DEB5772-3918-483E-8B6B-7BDD9AA6B6B9}.Release|Any CPU.Build.0 = Release|Any CPU
 		{3526B5DB-8E08-445F-9DCE-65566491D94F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{3526B5DB-8E08-445F-9DCE-65566491D94F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{3526B5DB-8E08-445F-9DCE-65566491D94F}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -122,6 +112,10 @@ Global
 		{E28F1D74-D3D3-4BF0-A06F-12BACC3C662C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{E28F1D74-D3D3-4BF0-A06F-12BACC3C662C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{E28F1D74-D3D3-4BF0-A06F-12BACC3C662C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{08AC72D1-A2D7-4682-A2C1-8AED2F83EF99}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{08AC72D1-A2D7-4682-A2C1-8AED2F83EF99}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{08AC72D1-A2D7-4682-A2C1-8AED2F83EF99}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{08AC72D1-A2D7-4682-A2C1-8AED2F83EF99}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -23,8 +23,6 @@ using Stratis.FederatedPeg.Features.MainchainGeneratorServices;
 using Stratis.FederatedPeg.Features.SidechainGeneratorServices;
 using Stratis.FederatedPeg.IntegrationTests.Helpers;
 using Stratis.FederatedSidechains.IntegrationTests.Common;
-using Stratis.Sidechains.Features.BlockchainGeneration;
-using Stratis.Sidechains.Features.BlockchainGeneration.Network;
 using Xunit;
 using FeeType = Stratis.Bitcoin.Features.Wallet.FeeType;
 using GpRecipient = Stratis.Bitcoin.Features.GeneralPurposeWallet.Recipient;
@@ -34,6 +32,7 @@ using GpTransactionBuildContext = Stratis.Bitcoin.Features.GeneralPurposeWallet.
 using WtTransactionBuildContext = Stratis.Bitcoin.Features.Wallet.TransactionBuildContext;
 using System;
 using Stratis.Networks.Apex;
+using Stratis.Sidechains.Features.BlockchainGeneration;
 
 //todo: this is pre-refactoring code
 //todo: ensure no duplicate or fake withdrawal or deposit transactions are possible (current work underway)

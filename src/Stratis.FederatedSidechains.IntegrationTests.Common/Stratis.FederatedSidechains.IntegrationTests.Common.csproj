@@ -8,8 +8,4 @@
     <PackageReference Include="Stratis.Bitcoin.IntegrationTests.Common" Version="1.1.9-beta" />
   </ItemGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\Stratis.Sidechains.Features.BlockchainGeneration\Stratis.Sidechains.Features.BlockchainGeneration.csproj" />
-  </ItemGroup>
-
 </Project>

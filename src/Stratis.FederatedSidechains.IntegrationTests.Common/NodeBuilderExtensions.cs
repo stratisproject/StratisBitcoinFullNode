@@ -1,21 +1,9 @@
 ﻿using System;
-using System.Linq;
-using System.Net;
-using System.Net.Sockets;
 using NBitcoin;
 using NBitcoin.Protocol;
 using Stratis.Bitcoin.Builder;
-using Stratis.Bitcoin.Configuration;
-using Stratis.Bitcoin.Features.Api;
-using Stratis.Bitcoin.Features.BlockStore;
-using Stratis.Bitcoin.Features.Consensus;
-using Stratis.Bitcoin.Features.MemoryPool;
-using Stratis.Bitcoin.Features.Miner;
-using Stratis.Bitcoin.Features.RPC;
-using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
-using Stratis.Sidechains.Features.BlockchainGeneration;
 
 namespace Stratis.FederatedSidechains.IntegrationTests.Common
 {

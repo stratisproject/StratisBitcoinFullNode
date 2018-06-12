@@ -1,7 +1,6 @@
 ﻿using FluentAssertions;
 using NBitcoin;
 using Stratis.Sidechains.Features.BlockchainGeneration;
-using Stratis.Sidechains.Features.BlockchainGeneration.Network;
 using Xunit;
 
 namespace Stratis.FederatedPeg.Tests

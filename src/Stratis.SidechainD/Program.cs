@@ -5,13 +5,10 @@ using Stratis.Bitcoin.Features.Api;
 using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.MemoryPool;
-using Stratis.Bitcoin.Features.Miner;
 using Stratis.Bitcoin.Features.RPC;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Utilities;
-using Stratis.FederatedPeg.Features.SidechainGeneratorServices;
 using Stratis.Sidechains.Features.BlockchainGeneration;
-using Stratis.Sidechains.Features.BlockchainGeneration.Network;
 using System;
 using System.Threading.Tasks;
 namespace Stratis.SidechainD
