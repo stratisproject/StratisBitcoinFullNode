@@ -237,12 +237,14 @@ namespace Stratis.Bitcoin.Consensus
 
                 if (blockPair == null)
                 {
+                    this.logger.LogTrace("Block hash '{0}' is not part of the tree.", blockHash);
                     processesBlock(null);
                     continue;
                 }
 
                 if (blockPair.Block != null)
                 {
+                    this.logger.LogTrace("Block pair '{0}' was found in memory.", blockPair);
                     processesBlock(blockPair);
                     continue;
                 }
@@ -252,12 +254,15 @@ namespace Stratis.Bitcoin.Consensus
                     Block block = await this.blockStore.GetBlockAsync(blockHash);
                     if (block != null)
                     {
-                        processesBlock(new BlockPair(block, blockPair.ChainedHeader));
+                        var newBlockPair = new BlockPair(block, blockPair.ChainedHeader);
+                        this.logger.LogTrace("Block pair '{0}' was found in store.", newBlockPair);
+                        processesBlock(newBlockPair);
                         continue;
                     }
                 }
-
+                
                 downloadJob.Add(blockHash);
+                this.logger.LogTrace("Block hash '{0}' is queued for download.", blockHash);
             }
 
             // Note in this case the list of headers might not be consecutive anymore.
@@ -271,7 +276,7 @@ namespace Stratis.Bitcoin.Consensus
         /// If the tree has too many unconsumed blocks or the download will wait, the amount of blocks to downloaded depends on the avg value in <see cref="IBlockPuller.AverageBlockSize"/>.
         /// </summary>
         /// <remarks>
-        /// Requests that have too many blocks will be plit in batches.
+        /// Requests that have too many blocks will be split in batches.
         /// </remarks>
         private void ProcessDownloadQueueLocked()
         {
