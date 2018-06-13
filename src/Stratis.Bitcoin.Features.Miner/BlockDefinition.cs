@@ -260,33 +260,55 @@ namespace Stratis.Bitcoin.Features.Miner
             this.logger.LogDebug("Serialized size is {0} bytes, block weight is {1}, number of txs is {2}, tx fees are {3}, number of sigops is {4}.", nSerializeSize, coinviewRule.GetBlockWeight(this.block), this.BlockTx, this.fees, this.BlockSigOpsCost);
 
             this.UpdateHeaders();
-
-            //pblocktemplate->TxSigOpsCost[0] = WITNESS_SCALE_FACTOR * GetLegacySigOpCount(*pblock->vtx[0]);
-
-            //int64_t nTime2 = GetTimeMicros();
-
-            //LogPrint(BCLog::BENCH, "CreateNewBlock() packages: %.2fms (%d packages, %d updated descendants), validity: %.2fms (total %.2fms)\n", 0.001 * (nTime1 - nTimeStart), nPackagesSelected, nDescendantsUpdated, 0.001 * (nTime2 - nTime1), 0.001 * (nTime2 - nTimeStart));
         }
 
         /// <summary>
-        /// Adds a transaction to the block from the given mempool entry.
+        /// Network specific logic to add a transaction to the block from a given mempool entry.
         /// </summary>
-        private void AddToBlock(TxMempoolEntry mempoolEntry)
-        {
-            this.logger.LogTrace("({0}.{1}:'{2}', {3}:{4}, txSize:{5})", nameof(mempoolEntry), nameof(mempoolEntry.TransactionHash), mempoolEntry.TransactionHash, nameof(mempoolEntry.ModifiedFee), mempoolEntry.ModifiedFee, mempoolEntry.GetTxSize());
+        public abstract void AddToBlock(TxMempoolEntry mempoolEntry);
 
-            this.block.AddTransaction(mempoolEntry.Transaction);
+        /// <summary>
+        /// Adds a transaction to the block and updates the <see cref="BlockSize"/> and <see cref="BlockTx"/> values.
+        /// </summary>
+        protected void AddTransactionToBlock(Transaction transaction)
+        {
+            this.logger.LogTrace("({0}:{1}, {2}:{3})", nameof(transaction), transaction.GetHash());
+
+            this.block.AddTransaction(transaction);
+            this.BlockTx++;
 
             if (this.NeedSizeAccounting)
-                this.BlockSize += mempoolEntry.Transaction.GetSerializedSize();
+                this.BlockSize += transaction.GetSerializedSize();
 
-            this.BlockWeight += mempoolEntry.TxWeight;
-            this.BlockTx++;
+            this.logger.LogTrace("(-){0}:{1}, {2}:{3}", nameof(this.BlockTx), this.BlockTx, nameof(this.BlockSize), this.BlockSize);
+        }
+
+        /// <summary>
+        /// Updates block statistics from the given mempool entry.
+        /// <para>The block's <see cref="BlockSigOpsCost"/> and <see cref="BlockWeight"/> values are adjusted.
+        /// </para>
+        /// </summary>
+        protected void UpdateBlockStatistics(TxMempoolEntry mempoolEntry)
+        {
+            this.logger.LogTrace("({0}.{1}:{2}, {3}.{4}:{5})", nameof(mempoolEntry), nameof(mempoolEntry.SigOpCost), mempoolEntry.SigOpCost, nameof(mempoolEntry), nameof(mempoolEntry.TxWeight), mempoolEntry.TxWeight);
+
             this.BlockSigOpsCost += mempoolEntry.SigOpCost;
-            this.fees += mempoolEntry.Fee;
+            this.BlockWeight += mempoolEntry.TxWeight;
             this.inBlock.Add(mempoolEntry);
 
-            this.logger.LogTrace("(-)");
+            this.logger.LogTrace("(-){0}:{1}, {2}:{3}", nameof(this.BlockWeight), this.BlockWeight, nameof(this.BlockSigOpsCost), this.BlockSigOpsCost);
+        }
+
+        /// <summary>
+        /// Updates the total fee amount for this block.
+        /// </summary>
+        protected void UpdateTotalFees(Money fee)
+        {
+            this.logger.LogTrace("({0}:{1})", nameof(fee), fee);
+
+            this.fees += fee;
+
+            this.logger.LogTrace("(-){0}:{1}", nameof(this.fees), this.fees);
         }
 
         /// <summary>

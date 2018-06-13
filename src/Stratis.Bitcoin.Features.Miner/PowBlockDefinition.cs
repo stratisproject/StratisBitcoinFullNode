@@ -2,7 +2,6 @@
 using NBitcoin;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Consensus.Rules;
-using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.Interfaces;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.MemoryPool.Interfaces;
@@ -14,8 +13,6 @@ namespace Stratis.Bitcoin.Features.Miner
     public class PowBlockDefinition : BlockDefinition
     {
         private readonly IConsensusRules consensusRules;
-
-        /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
 
         public PowBlockDefinition(
@@ -31,6 +28,17 @@ namespace Stratis.Bitcoin.Features.Miner
         {
             this.consensusRules = consensusRules;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
+        }
+
+        public override void AddToBlock(TxMempoolEntry mempoolEntry)
+        {
+            this.logger.LogTrace("({0}.{1}:'{2}', {3}:{4})", nameof(mempoolEntry), nameof(mempoolEntry.TransactionHash), mempoolEntry.TransactionHash, nameof(mempoolEntry.ModifiedFee), mempoolEntry.ModifiedFee);
+
+            this.AddTransactionToBlock(mempoolEntry.Transaction);
+            this.UpdateBlockStatistics(mempoolEntry);
+            this.UpdateTotalFees(mempoolEntry.Fee);
+
+            this.logger.LogTrace("(-)");
         }
 
         /// <inheritdoc/>
