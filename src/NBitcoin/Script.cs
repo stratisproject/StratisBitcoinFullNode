@@ -1190,11 +1190,13 @@ namespace NBitcoin
             if(result == null)
                 return scriptSig1.Length < scriptSig2.Length ? input2 : input1;
             if(!isWitness)
+            {
                 return new ScriptSigs()
                 {
                     ScriptSig = result,
                     WitSig = WitScript.Empty
                 };
+            }
             else
             {
                 return new ScriptSigs()
@@ -1218,10 +1220,13 @@ namespace NBitcoin
                 return PushAll(Max(sigs1, sigs2));
 
             if(template is PayToPubkeyTemplate || template is PayToPubkeyHashTemplate)
+            {
                 if(sigs1.Length == 0 || sigs1[0].Length == 0)
                     return PushAll(sigs2);
                 else
                     return PushAll(sigs1);
+            }
+
             if(template is PayToScriptHashTemplate || template is PayToWitTemplate)
             {
                 if(sigs1.Length == 0 || sigs1[sigs1.Length - 1].Length == 0)

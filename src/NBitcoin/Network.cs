@@ -276,8 +276,10 @@ namespace NBitcoin
                 throw new ArgumentException($"Parameter '{nameof(target)}' cannot be null. Example use: new Target(new uint256(\"0000ffff00000000000000000000000000000000000000000000000000000000\"))");
 
             if (consensusFactory == null)
+            {
                 throw new ArgumentException($"Parameter '{nameof(consensusFactory)}' cannot be null. Use 'new ConsensusFactory()' for Bitcoin-like proof-of-work blockchains" +
                                             "and 'new PosConsensusFactory()' for Stratis-like proof-of-stake blockchains.");
+            }
 
             if (string.IsNullOrEmpty(coinbaseText))
                 throw new ArgumentException($"Parameter '{nameof(coinbaseText)}' cannot be null. Use a news headline or any other appropriate string.");
@@ -711,10 +713,13 @@ namespace NBitcoin
 
                 int read = stream.ReadEx(bytes, 0, bytes.Length, cancellation);
                 if (read == 0)
+                {
                     if (throwIfEOF)
                         throw new EndOfStreamException("No more bytes to read");
                     else
                         return false;
+                }
+
                 if (read != 1)
                     i--;
                 else if (this.MagicBytesArray[i] != bytes[0])
@@ -727,8 +732,11 @@ namespace NBitcoin
         {
             Bech32Encoder encoder = this.Bech32Encoders[(int)type];
             if (encoder == null && throws)
+            {
                 throw new NotImplementedException("The network " + this + " does not have any prefix for bech32 " +
                                                   Enum.GetName(typeof(Bech32Type), type));
+            }
+
             return encoder;
         }
 
@@ -736,8 +744,11 @@ namespace NBitcoin
         {
             byte[] prefix = this.Base58Prefixes[(int)type];
             if (prefix == null && throws)
+            {
                 throw new NotImplementedException("The network " + this + " does not have any prefix for base58 " +
                                                   Enum.GetName(typeof(Base58Type), type));
+            }
+
             return prefix?.ToArray();
         }
 

@@ -575,8 +575,11 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         public bool HasNoInputsOf(Transaction tx)
         {
             foreach (TxIn txInput in tx.Inputs)
+            {
                 if (this.Exists(txInput.PrevOut.Hash))
                     return false;
+            }
+
             return true;
         }
 
