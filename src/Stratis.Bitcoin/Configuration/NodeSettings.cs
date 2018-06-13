@@ -114,8 +114,8 @@ namespace Stratis.Bitcoin.Configuration
 
             // By default, we look for a file named '<network>.conf' in the network's data directory,
             // but both the data directory and the configuration file path may be changed using the -datadir and -conf command-line arguments.
-            this.ConfigurationFile = this.ConfigReader.GetOrDefault<string>("conf", null)?.NormalizeDirectorySeparator();
-            this.DataDir = this.ConfigReader.GetOrDefault<string>("datadir",  null)?.NormalizeDirectorySeparator();        
+            this.ConfigurationFile = this.ConfigReader.GetOrDefault<string>("conf", null, this.Logger)?.NormalizeDirectorySeparator();
+            this.DataDir = this.ConfigReader.GetOrDefault<string>("datadir",  null, this.Logger)?.NormalizeDirectorySeparator();        
 
             // If the configuration file is relative then assume it is relative to the data folder and combine the paths.
             if (this.DataDir != null && this.ConfigurationFile != null)
@@ -141,10 +141,8 @@ namespace Stratis.Bitcoin.Configuration
             if (this.Network == null)
             {
                 // Find out if we need to run on testnet or regtest from the config file.
-                bool testNet = this.ConfigReader.GetOrDefault<bool>("testnet", false);
-                bool regTest = this.ConfigReader.GetOrDefault<bool>("regtest", false);
-
-                this.Logger.LogDebug("Network type: testnet='{0}', regtest='{1}'.", testNet, regTest);
+                bool testNet = this.ConfigReader.GetOrDefault<bool>("testnet", false, this.Logger);
+                bool regTest = this.ConfigReader.GetOrDefault<bool>("regtest", false, this.Logger);
 
                 if (testNet && regTest)
                     throw new ConfigurationException("Invalid combination of regtest and testnet.");
@@ -199,8 +197,8 @@ namespace Stratis.Bitcoin.Configuration
         {
             get
             {
-                return this.ConfigReader.GetOrDefault<bool>("help", false) ||
-                    this.ConfigReader.GetOrDefault<bool>("-help", false);
+                return this.ConfigReader.GetOrDefault<bool>("help", false, this.Logger) ||
+                    this.ConfigReader.GetOrDefault<bool>("-help", false, this.Logger);
             }
         }
 
@@ -263,14 +261,9 @@ namespace Stratis.Bitcoin.Configuration
         {
             TextFileConfiguration config = this.ConfigReader;
 
-            this.MinTxFeeRate = new FeeRate(config.GetOrDefault("mintxfee", this.Network.MinTxFee));
-            this.Logger.LogDebug("MinTxFeeRate set to {0}.", this.MinTxFeeRate);
-
-            this.FallbackTxFeeRate = new FeeRate(config.GetOrDefault("fallbackfee", this.Network.FallbackFee));
-            this.Logger.LogDebug("FallbackTxFeeRate set to {0}.", this.FallbackTxFeeRate);
-
-            this.MinRelayTxFeeRate = new FeeRate(config.GetOrDefault("minrelaytxfee", this.Network.MinRelayTxFee));
-            this.Logger.LogDebug("MinRelayTxFeeRate set to {0}.", this.MinRelayTxFeeRate);
+            this.MinTxFeeRate = new FeeRate(config.GetOrDefault("mintxfee", this.Network.MinTxFee, this.Logger));
+            this.FallbackTxFeeRate = new FeeRate(config.GetOrDefault("fallbackfee", this.Network.FallbackFee, this.Logger));
+            this.MinRelayTxFeeRate = new FeeRate(config.GetOrDefault("minrelaytxfee", this.Network.MinRelayTxFee, this.Logger));
         }
 
         /// <summary>
@@ -339,6 +332,8 @@ namespace Stratis.Bitcoin.Configuration
             builder.AppendLine($"-help/--help              Show this help.");
             builder.AppendLine($"-conf=<Path>              Path to the configuration file. Defaults to {defaults.ConfigurationFile}.");
             builder.AppendLine($"-datadir=<Path>           Path to the data directory. Defaults to {defaults.DataDir}.");
+            builder.AppendLine($"-debug[=<string>]         Set 'Debug' logging level. Specify what to log via e.g. '-debug=Stratis.Bitcoin.Miner,Stratis.Bitcoin.Wallet'.");
+            builder.AppendLine($"-loglevel=<string>        Direct control over the logging level: '-loglevel=trace/debug/info/warn/error/fatal'.");
 
             // Can be overridden in configuration file.
             builder.AppendLine($"-testnet                  Use the testnet chain.");

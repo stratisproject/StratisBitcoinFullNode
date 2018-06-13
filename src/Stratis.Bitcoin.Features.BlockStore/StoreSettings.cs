@@ -50,17 +50,10 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
             TextFileConfiguration config = nodeSettings.ConfigReader;
 
-            this.Prune = config.GetOrDefault<bool>("prune", false);
-            this.logger.LogDebug("Prune set to {0}.", this.Prune);
-
-            this.TxIndex = config.GetOrDefault<bool>("txindex", false);
-            this.logger.LogDebug("TxIndex set to {0}.", this.TxIndex);
-
-            this.ReIndex = config.GetOrDefault<bool>("reindex", false);
-            this.logger.LogDebug("ReIndex set to {0}.", this.ReIndex);
-
-            this.MaxCacheBlocksCount = nodeSettings.ConfigReader.GetOrDefault("maxCacheBlocksCount", DefaultMaxCacheBlocksCount);
-            this.logger.LogDebug("MaxCacheBlocksCount set to {0}.", this.MaxCacheBlocksCount);
+            this.Prune = config.GetOrDefault<bool>("prune", false, this.logger);
+            this.TxIndex = config.GetOrDefault<bool>("txindex", false, this.logger);
+            this.ReIndex = config.GetOrDefault<bool>("reindex", false, this.logger);
+            this.MaxCacheBlocksCount = nodeSettings.ConfigReader.GetOrDefault("maxCacheBlocksCount", DefaultMaxCacheBlocksCount, this.logger);
 
             if (this.Prune && this.TxIndex)
                 throw new ConfigurationException("Prune mode is incompatible with -txindex");

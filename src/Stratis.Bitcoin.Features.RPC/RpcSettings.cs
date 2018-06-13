@@ -79,23 +79,18 @@ namespace Stratis.Bitcoin.Features.RPC
         {
             TextFileConfiguration config = nodeSettings.ConfigReader;
 
-            this.Server = config.GetOrDefault<bool>("server", false);
-            this.logger.LogDebug("Server set to {0}.", this.Server);
-
-            this.RPCPort = config.GetOrDefault<int>("rpcport", nodeSettings.Network.RPCPort);
-            this.logger.LogDebug("Port set to {0}.", this.RPCPort);
+            this.Server = config.GetOrDefault<bool>("server", false, this.logger);
+            this.RPCPort = config.GetOrDefault<int>("rpcport", nodeSettings.Network.RPCPort, this.logger);
 
             if (this.Server)
             {
-                this.RpcUser = config.GetOrDefault<string>("rpcuser", null);
-                this.logger.LogDebug("RpcUser set to '{0}'.", this.RpcUser);
-
-                this.RpcPassword = config.GetOrDefault<string>("rpcpassword", null);
+                this.RpcUser = config.GetOrDefault<string>("rpcuser", null, this.logger);
+                this.RpcPassword = config.GetOrDefault<string>("rpcpassword", null); // No logging!
 
                 try
                 {
                     this.AllowIp = config
-                        .GetAll("rpcallowip")
+                        .GetAll("rpcallowip", this.logger)
                         .Select(p => IPAddress.Parse(p))
                         .ToList();
                 }
@@ -103,12 +98,11 @@ namespace Stratis.Bitcoin.Features.RPC
                 {
                     throw new ConfigurationException("Invalid rpcallowip value");
                 }
-                this.logger.LogDebug("AllowIp set to {0} entries.", this.AllowIp.Count);
 
                 try
                 {
                     this.DefaultBindings = config
-                        .GetAll("rpcbind")
+                        .GetAll("rpcbind", this.logger)
                         .Select(p => p.ToIPEndPoint(this.RPCPort))
                         .ToList();
                 }
@@ -116,7 +110,6 @@ namespace Stratis.Bitcoin.Features.RPC
                 {
                     throw new ConfigurationException("Invalid rpcbind value");
                 }
-                this.logger.LogDebug("DefaultBindings set to {0} entries.", this.DefaultBindings.Count);
             }
         }
 
