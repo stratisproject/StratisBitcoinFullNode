@@ -113,7 +113,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         }
 
         /// <summary>
-        /// Announces blocks on all connected nodes memory pool behaviors every ten seconds.
+        /// Announces blocks on all connected nodes memory pool behaviors every five seconds.
         /// </summary>
         public void Start()
         {
