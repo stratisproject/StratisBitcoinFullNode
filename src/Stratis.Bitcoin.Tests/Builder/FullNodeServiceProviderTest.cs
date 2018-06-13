@@ -30,7 +30,7 @@ namespace Stratis.Bitcoin.Tests.Builder
             };
 
             var fullnodeServiceProvider = new FullNodeServiceProvider(this.serviceProvider.Object, types);
-            var result = fullnodeServiceProvider.Features.ToList();
+            List<IFullNodeFeature> result = fullnodeServiceProvider.Features.ToList();
 
             Assert.Equal(2, result.Count);
             Assert.Equal(typeof(TestFeatureStub), result[0].GetType());
@@ -46,7 +46,7 @@ namespace Stratis.Bitcoin.Tests.Builder
             };
 
             var fullnodeServiceProvider = new FullNodeServiceProvider(this.serviceProvider.Object, types);
-            var result = fullnodeServiceProvider.Features.ToList();
+            List<IFullNodeFeature> result = fullnodeServiceProvider.Features.ToList();
 
             Assert.Equal(2, result.Count);
             Assert.Equal(typeof(TestFeatureStub2), result[0].GetType());

@@ -23,7 +23,7 @@ namespace NBitcoin.BouncyCastle.Asn1
 
         public Stream GetOctetStream()
         {
-            return new MemoryStream(str, false);
+            return new MemoryStream(this.str, false);
         }
 
         public Asn1OctetStringParser Parser
@@ -36,7 +36,7 @@ namespace NBitcoin.BouncyCastle.Asn1
 
         public virtual byte[] GetOctets()
         {
-            return str;
+            return this.str;
         }
 
         protected override int Asn1GetHashCode()

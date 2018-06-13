@@ -1,5 +1,6 @@
 ﻿using Stratis.Bitcoin.Tests.Common.TestFramework;
 using Xunit;
+
 // Disable warnings about "this" qualifier to make the Specification more readable
 // ReSharper disable ArrangeThisQualifier
 

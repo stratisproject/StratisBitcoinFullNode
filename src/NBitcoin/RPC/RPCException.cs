@@ -173,9 +173,9 @@ namespace NBitcoin.RPC
         public RPCException(RPCErrorCode code, string message, RPCResponse result)
             : base(String.IsNullOrEmpty(message) ? FindMessage(code) : message)
         {
-            _RPCCode = code;
-            _RPCCodeMessage = FindMessage(code);
-            _RPCResult = result;
+            this._RPCCode = code;
+            this._RPCCodeMessage = FindMessage(code);
+            this._RPCResult = result;
         }
 
         private readonly RPCResponse _RPCResult;
@@ -183,7 +183,7 @@ namespace NBitcoin.RPC
         {
             get
             {
-                return _RPCResult;
+                return this._RPCResult;
             }
         }
 
@@ -223,7 +223,7 @@ namespace NBitcoin.RPC
         {
             get
             {
-                return _RPCCode;
+                return this._RPCCode;
             }
         }
 
@@ -232,7 +232,7 @@ namespace NBitcoin.RPC
         {
             get
             {
-                return _RPCCodeMessage;
+                return this._RPCCodeMessage;
             }
         }
     }

@@ -57,22 +57,22 @@ namespace NBitcoin.OpenAsset
                 stream.ReadWrite(ref marker);
                 if(marker != Tag)
                     return false;
-                stream.ReadWrite(ref _Version);
-                if(_Version != 1)
+                stream.ReadWrite(ref this._Version);
+                if(this._Version != 1)
                     return false;
 
                 ulong quantityCount = 0;
                 stream.ReadWriteAsVarInt(ref quantityCount);
-                Quantities = new ulong[quantityCount];
+                this.Quantities = new ulong[quantityCount];
 
                 for(ulong i = 0; i < quantityCount; i++)
                 {
-                    Quantities[i] = ReadLEB128(stream);
-                    if(Quantities[i] > MAX_QUANTITY)
+                    this.Quantities[i] = ReadLEB128(stream);
+                    if(this.Quantities[i] > MAX_QUANTITY)
                         return false;
                 }
 
-                stream.ReadWriteAsVarString(ref _Metadata);
+                stream.ReadWriteAsVarString(ref this._Metadata);
                 if(stream.Inner.Position != data.Length)
                     return false;
                 return true;
@@ -166,7 +166,7 @@ namespace NBitcoin.OpenAsset
 
         public ColorMarker()
         {
-            Quantities = new ulong[0];
+            this.Quantities = new ulong[0];
         }
         public ColorMarker(Script script)
         {
@@ -178,7 +178,7 @@ namespace NBitcoin.OpenAsset
         {
             if(quantities == null)
                 throw new ArgumentNullException("quantities");
-            Quantities = quantities;
+            this.Quantities = quantities;
         }
 
         private ushort _Version = 1;
@@ -186,11 +186,11 @@ namespace NBitcoin.OpenAsset
         {
             get
             {
-                return _Version;
+                return this._Version;
             }
             set
             {
-                _Version = value;
+                this._Version = value;
             }
         }
 
@@ -199,21 +199,20 @@ namespace NBitcoin.OpenAsset
         {
             get
             {
-                return _Quantities;
+                return this._Quantities;
             }
             set
             {
-                _Quantities = value;
+                this._Quantities = value;
             }
         }
 
         public void SetQuantity(uint index, long quantity)
         {
-            if(Quantities == null)
-                Quantities = new ulong[0];
-            if(Quantities.Length <= index)
-                Array.Resize(ref _Quantities, (int)index + 1);
-            Quantities[index] = checked((ulong)quantity);
+            if(this.Quantities == null) this.Quantities = new ulong[0];
+            if(this.Quantities.Length <= index)
+                Array.Resize(ref this._Quantities, (int)index + 1);
+            this.Quantities[index] = checked((ulong)quantity);
         }
 
         public void SetQuantity(int index, long quantity)
@@ -226,11 +225,11 @@ namespace NBitcoin.OpenAsset
         {
             get
             {
-                return _Metadata;
+                return this._Metadata;
             }
             set
             {
-                _Metadata = value;
+                this._Metadata = value;
             }
         }
         private const ulong MAX_QUANTITY = ((1UL << 63) - 1);
@@ -246,16 +245,16 @@ namespace NBitcoin.OpenAsset
             var ms = new MemoryStream();
             var stream = new BitcoinStream(ms, true);
             stream.ReadWrite(Tag);
-            stream.ReadWrite(ref _Version);
+            stream.ReadWrite(ref this._Version);
             uint quantityCount = (uint)this.Quantities.Length;
             stream.ReadWriteAsVarInt(ref quantityCount);
             for(int i = 0; i < quantityCount; i++)
             {
-                if(Quantities[i] > MAX_QUANTITY)
-                    throw new ArgumentOutOfRangeException("Quantity should not exceed " + Quantities[i]);
-                WriteLEB128(Quantities[i], stream);
+                if(this.Quantities[i] > MAX_QUANTITY)
+                    throw new ArgumentOutOfRangeException("Quantity should not exceed " + this.Quantities[i]);
+                WriteLEB128(this.Quantities[i], stream);
             }
-            stream.ReadWriteAsVarString(ref _Metadata);
+            stream.ReadWriteAsVarString(ref this._Metadata);
             return ms.ToArray();
         }
 
@@ -324,14 +323,14 @@ namespace NBitcoin.OpenAsset
 
         public bool HasValidQuantitiesCount(Transaction tx)
         {
-            return Quantities.Length <= tx.Outputs.Count - 1;
+            return this.Quantities.Length <= tx.Outputs.Count - 1;
         }
 
         public Uri GetMetadataUrl()
         {
-            if(Metadata == null || Metadata.Length == 0)
+            if(this.Metadata == null || this.Metadata.Length == 0)
                 return null;
-            string result = Encoders.ASCII.EncodeData(Metadata);
+            string result = Encoders.ASCII.EncodeData(this.Metadata);
             if(!result.StartsWith("u="))
                 return null;
             Uri uri = null;
@@ -343,10 +342,11 @@ namespace NBitcoin.OpenAsset
         {
             if(uri == null)
             {
-                Metadata = new byte[0];
+                this.Metadata = new byte[0];
                 return;
             }
-            Metadata = Encoders.ASCII.DecodeData("u=" + uri.AbsoluteUri);
+
+            this.Metadata = Encoders.ASCII.DecodeData("u=" + uri.AbsoluteUri);
             return;
         }
     }

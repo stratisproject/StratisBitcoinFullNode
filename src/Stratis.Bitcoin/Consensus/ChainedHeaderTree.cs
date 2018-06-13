@@ -298,9 +298,18 @@ namespace Stratis.Bitcoin.Consensus
 
             reorgRequired = false;
 
+            // Can happen in case peer was disconnected during the validation and it was the only peer claiming that header.
             if (!this.chainedHeadersByHash.ContainsKey(chainedHeader.HashBlock))
             {
-                this.logger.LogTrace("(-)[HEADER_NOT_FOUND]");
+                this.logger.LogTrace("(-)[HEADER_NOT_FOUND]:null");
+                return null;
+            }
+
+            // Can happen when peer was disconnected after sending the block but before the validation was completed
+            // and right after that a new peer connected and presented the same header.
+            if (chainedHeader.Block == null)
+            {
+                this.logger.LogTrace("(-)[BLOCK_DATA_NULL]:null");
                 return null;
             }
 
@@ -356,6 +365,13 @@ namespace Stratis.Bitcoin.Consensus
         public List<int> PartialOrFullValidationFailed(ChainedHeader chainedHeader)
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(chainedHeader), chainedHeader);
+
+            // Can happen in case peer was disconnected during the validation and it was the only peer claiming that header.
+            if (!this.chainedHeadersByHash.ContainsKey(chainedHeader.HashBlock))
+            {
+                this.logger.LogTrace("(-)[NOT_FOUND]");
+                return new List<int>();
+            }
 
             List<int> peersToBan = this.RemoveSubtree(chainedHeader);
 

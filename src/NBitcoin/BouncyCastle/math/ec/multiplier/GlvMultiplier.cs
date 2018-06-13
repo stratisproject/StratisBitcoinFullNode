@@ -20,15 +20,15 @@ namespace NBitcoin.BouncyCastle.Math.EC.Multiplier
 
         protected override ECPoint MultiplyPositive(ECPoint p, BigInteger k)
         {
-            if(!curve.Equals(p.Curve))
+            if(!this.curve.Equals(p.Curve))
                 throw new InvalidOperationException();
 
             BigInteger n = p.Curve.Order;
-            BigInteger[] ab = glvEndomorphism.DecomposeScalar(k.Mod(n));
+            BigInteger[] ab = this.glvEndomorphism.DecomposeScalar(k.Mod(n));
             BigInteger a = ab[0], b = ab[1];
 
-            ECPointMap pointMap = glvEndomorphism.PointMap;
-            if(glvEndomorphism.HasEfficientPointMap)
+            ECPointMap pointMap = this.glvEndomorphism.PointMap;
+            if(this.glvEndomorphism.HasEfficientPointMap)
             {
                 return ECAlgorithms.ImplShamirsTrickWNaf(p, a, pointMap, b);
             }

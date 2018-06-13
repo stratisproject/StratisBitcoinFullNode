@@ -19,8 +19,8 @@ namespace NBitcoin.OpenAsset
         {
             if(asset == null)
                 throw new ArgumentNullException("asset");
-            Index = index;
-            Asset = asset;
+            this.Index = index;
+            this.Asset = asset;
         }
 
         private uint _Index;
@@ -28,11 +28,11 @@ namespace NBitcoin.OpenAsset
         {
             get
             {
-                return _Index;
+                return this._Index;
             }
             set
             {
-                _Index = value;
+                this._Index = value;
             }
         }
 
@@ -41,23 +41,23 @@ namespace NBitcoin.OpenAsset
         {
             get
             {
-                return _Asset;
+                return this._Asset;
             }
             set
             {
-                _Asset = value;
+                this._Asset = value;
             }
         }
 #region IBitcoinSerializable Members
 
         public void ReadWrite(BitcoinStream stream)
         {
-            stream.ReadWriteAsVarInt(ref _Index);
+            stream.ReadWriteAsVarInt(ref this._Index);
             if(stream.Serializing)
             {
-                byte[] assetId = Asset.Id.ToBytes();
+                byte[] assetId = this.Asset.Id.ToBytes();
                 stream.ReadWrite(ref assetId);
-                long quantity = Asset.Quantity;
+                long quantity = this.Asset.Quantity;
                 stream.ReadWrite(ref quantity);
             }
             else
@@ -66,7 +66,7 @@ namespace NBitcoin.OpenAsset
                 stream.ReadWrite(ref assetId);
                 long quantity = 0;
                 stream.ReadWrite(ref quantity);
-                Asset = new AssetMoney(new AssetId(assetId), quantity);
+                this.Asset = new AssetMoney(new AssetId(assetId), quantity);
             }
         }
 
@@ -74,10 +74,10 @@ namespace NBitcoin.OpenAsset
 
         public override string ToString()
         {
-            if(Asset == null)
-                return "[" + Index + "]";
+            if(this.Asset == null)
+                return "[" + this.Index + "]";
             else
-                return "[" + Index + "] " + Asset;
+                return "[" + this.Index + "] " + this.Asset;
         }
     }
     public class ColoredTransaction : IBitcoinSerializable
@@ -246,8 +246,8 @@ namespace NBitcoin.OpenAsset
 
         public ColoredEntry GetColoredEntry(uint n)
         {
-            return Issuances
-                .Concat(Transfers)
+            return this.Issuances
+                .Concat(this.Transfers)
                 .FirstOrDefault(i => i.Index == n);
         }
 
@@ -277,9 +277,9 @@ namespace NBitcoin.OpenAsset
 
         public ColoredTransaction()
         {
-            Issuances = new List<ColoredEntry>();
-            Transfers = new List<ColoredEntry>();
-            Inputs = new List<ColoredEntry>();
+            this.Issuances = new List<ColoredEntry>();
+            this.Transfers = new List<ColoredEntry>();
+            this.Inputs = new List<ColoredEntry>();
         }
 
         public ColoredTransaction(uint256 txId, Transaction tx, ColoredCoin[] spentCoins, Script issuanceScriptPubkey)
@@ -306,7 +306,7 @@ namespace NBitcoin.OpenAsset
                         Asset = prevAsset.Amount
                     };
                     previousAssetQueue.Enqueue(input);
-                    Inputs.Add(input);
+                    this.Inputs.Add(input);
                 }
             }
 
@@ -316,7 +316,8 @@ namespace NBitcoin.OpenAsset
             {
                 return;
             }
-            Marker = marker;
+
+            this.Marker = marker;
             if(!marker.HasValidQuantitiesCount(tx))
             {
                 return;
@@ -341,7 +342,7 @@ namespace NBitcoin.OpenAsset
                     issuedAsset = issuanceScriptPubkey.Hash.ToAssetId();
                 }
                 entry.Asset = new AssetMoney(issuedAsset, entry.Asset.Quantity);
-                Issuances.Add(entry);
+                this.Issuances.Add(entry);
             }
 
             long used = 0;
@@ -357,8 +358,8 @@ namespace NBitcoin.OpenAsset
                 //If there are less asset units in the input sequence than in the output sequence, the transaction is considered invalid and all outputs are uncolored. 
                 if(previousAssetQueue.Count == 0)
                 {
-                    Transfers.Clear();
-                    Issuances.Clear();
+                    this.Transfers.Clear();
+                    this.Issuances.Clear();
                     return;
                 }
                 entry.Asset = new AssetMoney(previousAssetQueue.Peek().Asset.Id, entry.Asset.Quantity);
@@ -367,8 +368,8 @@ namespace NBitcoin.OpenAsset
                 {
                     if(previousAssetQueue.Count == 0 || previousAssetQueue.Peek().Asset.Id != entry.Asset.Id)
                     {
-                        Transfers.Clear();
-                        Issuances.Clear();
+                        this.Transfers.Clear();
+                        this.Issuances.Clear();
                         return;
                     }
                     long assertPart = Math.Min(previousAssetQueue.Peek().Asset.Quantity - used, remaining);
@@ -380,7 +381,8 @@ namespace NBitcoin.OpenAsset
                         used = 0;
                     }
                 }
-                Transfers.Add(entry);
+
+                this.Transfers.Add(entry);
             }
         }
 
@@ -389,11 +391,11 @@ namespace NBitcoin.OpenAsset
         {
             get
             {
-                return _Marker;
+                return this._Marker;
             }
             set
             {
-                _Marker = value;
+                this._Marker = value;
             }
         }
 
@@ -402,11 +404,11 @@ namespace NBitcoin.OpenAsset
         {
             get
             {
-                return _Issuances;
+                return this._Issuances;
             }
             set
             {
-                _Issuances = value;
+                this._Issuances = value;
             }
         }
 
@@ -415,23 +417,22 @@ namespace NBitcoin.OpenAsset
         {
             get
             {
-                return _Transfers;
+                return this._Transfers;
             }
             set
             {
-                _Transfers = value;
+                this._Transfers = value;
             }
         }
 
         public AssetMoney[] GetDestroyedAssets()
         {
-            IEnumerable<AssetMoney> burned = Inputs
+            IEnumerable<AssetMoney> burned = this.Inputs
                 .Select(i => i.Asset)
                 .GroupBy(i => i.Id)
                 .Select(g => g.Sum(g.Key));
 
-            IEnumerable<AssetMoney> transfered =
-                Transfers
+            IEnumerable<AssetMoney> transfered = this.Transfers
                 .Select(i => i.Asset)
                 .GroupBy(i => i.Id)
                 .Select(g => -g.Sum(g.Key));
@@ -449,8 +450,8 @@ namespace NBitcoin.OpenAsset
         {
             if(stream.Serializing)
             {
-                if(_Marker != null)
-                    stream.ReadWrite(ref _Marker);
+                if(this._Marker != null)
+                    stream.ReadWrite(ref this._Marker);
                 else
                     stream.ReadWrite(new Script());
             }
@@ -460,15 +461,15 @@ namespace NBitcoin.OpenAsset
                 stream.ReadWrite(ref script);
                 if(script.Length != 0)
                 {
-                    _Marker = new ColorMarker(script);
+                    this._Marker = new ColorMarker(script);
                 }
                 else
                 {
                 }
             }
-            stream.ReadWrite(ref _Inputs);
-            stream.ReadWrite(ref _Issuances);
-            stream.ReadWrite(ref _Transfers);
+            stream.ReadWrite(ref this._Inputs);
+            stream.ReadWrite(ref this._Issuances);
+            stream.ReadWrite(ref this._Transfers);
         }
 
 #endregion
@@ -478,11 +479,11 @@ namespace NBitcoin.OpenAsset
         {
             get
             {
-                return _Inputs;
+                return this._Inputs;
             }
             set
             {
-                _Inputs = value;
+                this._Inputs = value;
             }
         }
 #if !NOJSONNET
@@ -496,21 +497,21 @@ namespace NBitcoin.OpenAsset
             var obj = new JObject();
             var inputs = new JArray();
             obj.Add(new JProperty("inputs", inputs));
-            foreach(ColoredEntry input in Inputs)
+            foreach(ColoredEntry input in this.Inputs)
             {
                 WriteEntry(network, inputs, input);
             }
 
             var issuances = new JArray();
             obj.Add(new JProperty("issuances", issuances));
-            foreach(ColoredEntry issuance in Issuances)
+            foreach(ColoredEntry issuance in this.Issuances)
             {
                 WriteEntry(network, issuances, issuance);
             }
 
             var transfers = new JArray();
             obj.Add(new JProperty("transfers", transfers));
-            foreach(ColoredEntry transfer in Transfers)
+            foreach(ColoredEntry transfer in this.Transfers)
             {
                 WriteEntry(network, transfers, transfer);
             }

@@ -64,7 +64,7 @@ namespace NBitcoin
 
         public static bool IsIPv4(this IPAddress address)
         {
-            return address.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork || address.IsIPv4MappedToIPv6Ex();
+            return address.AddressFamily == AddressFamily.InterNetwork || address.IsIPv4MappedToIPv6Ex();
         }
 
         public static bool IsRFC3927(this IPAddress address)

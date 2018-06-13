@@ -31,10 +31,8 @@ namespace NBitcoin
             {
                 try
                 {
-                    if(lockType == FileLockType.Read)
-                        _Fs = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read);
-                    if(lockType == FileLockType.ReadWrite)
-                        _Fs = new FileStream(filePath, FileMode.Open, FileAccess.ReadWrite, FileShare.None);
+                    if(lockType == FileLockType.Read) this._Fs = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read);
+                    if(lockType == FileLockType.ReadWrite) this._Fs = new FileStream(filePath, FileMode.Open, FileAccess.ReadWrite, FileShare.None);
                     break;
                 }
                 catch(IOException)
@@ -48,7 +46,7 @@ namespace NBitcoin
 
         public void Dispose()
         {
-            _Fs.Dispose();
+            this._Fs.Dispose();
         }
 
 

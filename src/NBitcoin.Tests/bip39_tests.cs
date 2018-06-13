@@ -232,7 +232,7 @@ namespace NBitcoin.Tests
 
             public IEnumerator<char> GetEnumerator()
             {
-                return Chars.GetEnumerator();
+                return this.Chars.GetEnumerator();
             }
 
 

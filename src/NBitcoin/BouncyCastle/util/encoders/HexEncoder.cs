@@ -18,19 +18,19 @@ namespace NBitcoin.BouncyCastle.Utilities.Encoders
 
         protected void InitialiseDecodingTable()
         {
-            Arrays.Fill(decodingTable, (byte)0xff);
+            Arrays.Fill(this.decodingTable, (byte)0xff);
 
-            for(int i = 0; i < encodingTable.Length; i++)
+            for(int i = 0; i < this.encodingTable.Length; i++)
             {
-                decodingTable[encodingTable[i]] = (byte)i;
+                this.decodingTable[this.encodingTable[i]] = (byte)i;
             }
 
-            decodingTable['A'] = decodingTable['a'];
-            decodingTable['B'] = decodingTable['b'];
-            decodingTable['C'] = decodingTable['c'];
-            decodingTable['D'] = decodingTable['d'];
-            decodingTable['E'] = decodingTable['e'];
-            decodingTable['F'] = decodingTable['f'];
+            this.decodingTable['A'] = this.decodingTable['a'];
+            this.decodingTable['B'] = this.decodingTable['b'];
+            this.decodingTable['C'] = this.decodingTable['c'];
+            this.decodingTable['D'] = this.decodingTable['d'];
+            this.decodingTable['E'] = this.decodingTable['e'];
+            this.decodingTable['F'] = this.decodingTable['f'];
         }
 
         public HexEncoder()
@@ -53,8 +53,8 @@ namespace NBitcoin.BouncyCastle.Utilities.Encoders
             {
                 int v = data[i];
 
-                outStream.WriteByte(encodingTable[v >> 4]);
-                outStream.WriteByte(encodingTable[v & 0xf]);
+                outStream.WriteByte(this.encodingTable[v >> 4]);
+                outStream.WriteByte(this.encodingTable[v & 0xf]);
             }
 
             return length * 2;
@@ -99,14 +99,14 @@ namespace NBitcoin.BouncyCastle.Utilities.Encoders
                     i++;
                 }
 
-                b1 = decodingTable[data[i++]];
+                b1 = this.decodingTable[data[i++]];
 
                 while(i < end && Ignore((char)data[i]))
                 {
                     i++;
                 }
 
-                b2 = decodingTable[data[i++]];
+                b2 = this.decodingTable[data[i++]];
 
                 if((b1 | b2) >= 0x80)
                     throw new IOException("invalid characters encountered in Hex data");
@@ -152,14 +152,14 @@ namespace NBitcoin.BouncyCastle.Utilities.Encoders
                     i++;
                 }
 
-                b1 = decodingTable[data[i++]];
+                b1 = this.decodingTable[data[i++]];
 
                 while(i < end && Ignore(data[i]))
                 {
                     i++;
                 }
 
-                b2 = decodingTable[data[i++]];
+                b2 = this.decodingTable[data[i++]];
 
                 if((b1 | b2) >= 0x80)
                     throw new IOException("invalid characters encountered in Hex data");

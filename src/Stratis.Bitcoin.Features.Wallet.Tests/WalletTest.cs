@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System.Collections.Generic;
+using System.Linq;
 using NBitcoin;
 using Xunit;
 
@@ -14,7 +15,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             wallet.AccountsRoot.Add(CreateAccountRootWithHdAccountHavingAddresses("BitcoinAccount", CoinType.Bitcoin));
             wallet.AccountsRoot.Add(CreateAccountRootWithHdAccountHavingAddresses("StratisAccount2", CoinType.Stratis));
 
-            var result = wallet.GetAccountsByCoinType(CoinType.Stratis);
+            IEnumerable<HdAccount> result = wallet.GetAccountsByCoinType(CoinType.Stratis);
 
             Assert.Equal(2, result.Count());
             Assert.Equal("StratisAccount", result.ElementAt(0).Name);
@@ -26,7 +27,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         {
             var wallet = new Wallet();
 
-            var result = wallet.GetAccountsByCoinType(CoinType.Stratis);
+            IEnumerable<HdAccount> result = wallet.GetAccountsByCoinType(CoinType.Stratis);
 
             Assert.Empty(result);
         }
@@ -35,16 +36,16 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         public void GetAllTransactionsByCoinTypeReturnsTransactionsFromWalletByCoinType()
         {
             var wallet = new Wallet();
-            var stratisAccountRoot = CreateAccountRootWithHdAccountHavingAddresses("StratisAccount", CoinType.Stratis);
-            var bitcoinAccountRoot = CreateAccountRootWithHdAccountHavingAddresses("BitcoinAccount", CoinType.Bitcoin);
-            var stratisAccountRoot2 = CreateAccountRootWithHdAccountHavingAddresses("StratisAccount2", CoinType.Stratis);
+            AccountRoot stratisAccountRoot = CreateAccountRootWithHdAccountHavingAddresses("StratisAccount", CoinType.Stratis);
+            AccountRoot bitcoinAccountRoot = CreateAccountRootWithHdAccountHavingAddresses("BitcoinAccount", CoinType.Bitcoin);
+            AccountRoot stratisAccountRoot2 = CreateAccountRootWithHdAccountHavingAddresses("StratisAccount2", CoinType.Stratis);
 
-            var transaction1 = CreateTransaction(new uint256(1), new Money(15000), 1);
-            var transaction2 = CreateTransaction(new uint256(2), new Money(91209), 1);
-            var transaction3 = CreateTransaction(new uint256(3), new Money(32145), 1);
-            var transaction4 = CreateTransaction(new uint256(4), new Money(654789), 1);
-            var transaction5 = CreateTransaction(new uint256(5), new Money(52387), 1);
-            var transaction6 = CreateTransaction(new uint256(6), new Money(879873), 1);
+            TransactionData transaction1 = CreateTransaction(new uint256(1), new Money(15000), 1);
+            TransactionData transaction2 = CreateTransaction(new uint256(2), new Money(91209), 1);
+            TransactionData transaction3 = CreateTransaction(new uint256(3), new Money(32145), 1);
+            TransactionData transaction4 = CreateTransaction(new uint256(4), new Money(654789), 1);
+            TransactionData transaction5 = CreateTransaction(new uint256(5), new Money(52387), 1);
+            TransactionData transaction6 = CreateTransaction(new uint256(6), new Money(879873), 1);
 
             stratisAccountRoot.Accounts.ElementAt(0).InternalAddresses.ElementAt(0).Transactions.Add(transaction1);
             stratisAccountRoot.Accounts.ElementAt(0).ExternalAddresses.ElementAt(0).Transactions.Add(transaction2);
@@ -57,7 +58,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             wallet.AccountsRoot.Add(bitcoinAccountRoot);
             wallet.AccountsRoot.Add(stratisAccountRoot2);
 
-            var result = wallet.GetAllTransactionsByCoinType(CoinType.Stratis).ToList();
+            List<TransactionData> result = wallet.GetAllTransactionsByCoinType(CoinType.Stratis).ToList();
 
             Assert.Equal(4, result.Count);
             Assert.Equal(transaction2, result[0]);
@@ -70,17 +71,17 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         public void GetAllTransactionsByCoinTypeWithoutMatchingAccountReturnsEmptyList()
         {
             var wallet = new Wallet();
-            var bitcoinAccountRoot = CreateAccountRootWithHdAccountHavingAddresses("BitcoinAccount", CoinType.Bitcoin);
+            AccountRoot bitcoinAccountRoot = CreateAccountRootWithHdAccountHavingAddresses("BitcoinAccount", CoinType.Bitcoin);
 
-            var transaction1 = CreateTransaction(new uint256(3), new Money(32145), 1);
-            var transaction2 = CreateTransaction(new uint256(4), new Money(654789), 1);
+            TransactionData transaction1 = CreateTransaction(new uint256(3), new Money(32145), 1);
+            TransactionData transaction2 = CreateTransaction(new uint256(4), new Money(654789), 1);
 
             bitcoinAccountRoot.Accounts.ElementAt(0).InternalAddresses.ElementAt(0).Transactions.Add(transaction1);
             bitcoinAccountRoot.Accounts.ElementAt(0).ExternalAddresses.ElementAt(0).Transactions.Add(transaction2);
 
             wallet.AccountsRoot.Add(bitcoinAccountRoot);
 
-            var result = wallet.GetAllTransactionsByCoinType(CoinType.Stratis).ToList();
+            List<TransactionData> result = wallet.GetAllTransactionsByCoinType(CoinType.Stratis).ToList();
 
             Assert.Empty(result);
         }
@@ -90,7 +91,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         {
             var wallet = new Wallet();
 
-            var result = wallet.GetAllTransactionsByCoinType(CoinType.Stratis).ToList();
+            List<TransactionData> result = wallet.GetAllTransactionsByCoinType(CoinType.Stratis).ToList();
 
             Assert.Empty(result);
         }
@@ -99,14 +100,14 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         public void GetAllPubKeysByCoinTypeReturnsPubkeysFromWalletByCoinType()
         {
             var wallet = new Wallet();
-            var stratisAccountRoot = CreateAccountRootWithHdAccountHavingAddresses("StratisAccount", CoinType.Stratis);
-            var bitcoinAccountRoot = CreateAccountRootWithHdAccountHavingAddresses("BitcoinAccount", CoinType.Bitcoin);
-            var stratisAccountRoot2 = CreateAccountRootWithHdAccountHavingAddresses("StratisAccount2", CoinType.Stratis);
+            AccountRoot stratisAccountRoot = CreateAccountRootWithHdAccountHavingAddresses("StratisAccount", CoinType.Stratis);
+            AccountRoot bitcoinAccountRoot = CreateAccountRootWithHdAccountHavingAddresses("BitcoinAccount", CoinType.Bitcoin);
+            AccountRoot stratisAccountRoot2 = CreateAccountRootWithHdAccountHavingAddresses("StratisAccount2", CoinType.Stratis);
             wallet.AccountsRoot.Add(stratisAccountRoot);
             wallet.AccountsRoot.Add(bitcoinAccountRoot);
             wallet.AccountsRoot.Add(stratisAccountRoot2);
 
-            var result = wallet.GetAllPubKeysByCoinType(CoinType.Stratis).ToList();
+            List<Script> result = wallet.GetAllPubKeysByCoinType(CoinType.Stratis).ToList();
 
             Assert.Equal(4, result.Count);
             Assert.Equal(stratisAccountRoot.Accounts.ElementAt(0).ExternalAddresses.ElementAt(0).ScriptPubKey, result[0]);
@@ -119,10 +120,10 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         public void GetAllPubKeysByCoinTypeWithoutMatchingCoinTypeReturnsEmptyList()
         {
             var wallet = new Wallet();
-            var bitcoinAccountRoot = CreateAccountRootWithHdAccountHavingAddresses("BitcoinAccount", CoinType.Bitcoin);
+            AccountRoot bitcoinAccountRoot = CreateAccountRootWithHdAccountHavingAddresses("BitcoinAccount", CoinType.Bitcoin);
             wallet.AccountsRoot.Add(bitcoinAccountRoot);
 
-            var result = wallet.GetAllPubKeysByCoinType(CoinType.Stratis).ToList();
+            List<Script> result = wallet.GetAllPubKeysByCoinType(CoinType.Stratis).ToList();
 
             Assert.Empty(result);
         }
@@ -132,7 +133,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         {
             var wallet = new Wallet();
 
-            var result = wallet.GetAllPubKeysByCoinType(CoinType.Stratis).ToList();
+            List<Script> result = wallet.GetAllPubKeysByCoinType(CoinType.Stratis).ToList();
 
             Assert.Empty(result);
         }

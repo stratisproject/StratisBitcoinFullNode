@@ -11,7 +11,7 @@ namespace NBitcoin
             Bech32Encoder encoder = expectedNetwork.GetBech32Encoder(Bech32Type.WITNESS_PUBKEY_ADDRESS, true);
             byte witVersion;
             byte[] decoded = encoder.Decode(bech32, out witVersion);
-            _Hash = new WitKeyId(decoded);
+            this._Hash = new WitKeyId(decoded);
         }
 
         private static string Validate(string bech32, ref Network expectedNetwork)
@@ -68,7 +68,7 @@ namespace NBitcoin
         public BitcoinWitPubKeyAddress(WitKeyId segwitKeyId, Network network) :
             base(NotNull(segwitKeyId) ?? Network.CreateBech32(Bech32Type.WITNESS_PUBKEY_ADDRESS, segwitKeyId.ToBytes(), 0, network), network)
         {
-            _Hash = segwitKeyId;
+            this._Hash = segwitKeyId;
         }
 
         private static string NotNull(WitKeyId segwitKeyId)
@@ -89,14 +89,14 @@ namespace NBitcoin
         {
             get
             {
-                return _Hash;
+                return this._Hash;
             }
         }
 
 
         protected override Script GeneratePaymentScript()
         {
-            return PayToWitTemplate.Instance.GenerateScriptPubKey(OpcodeType.OP_0, Hash._DestBytes);
+            return PayToWitTemplate.Instance.GenerateScriptPubKey(OpcodeType.OP_0, this.Hash._DestBytes);
         }
 
         public Bech32Type Type
@@ -116,7 +116,7 @@ namespace NBitcoin
             Bech32Encoder encoder = expectedNetwork.GetBech32Encoder(Bech32Type.WITNESS_SCRIPT_ADDRESS, true);
             byte witVersion;
             byte[] decoded = encoder.Decode(bech32, out witVersion);
-            _Hash = new WitScriptId(decoded);
+            this._Hash = new WitScriptId(decoded);
         }
 
         private static string Validate(string bech32, ref Network expectedNetwork)
@@ -172,7 +172,7 @@ namespace NBitcoin
         public BitcoinWitScriptAddress(WitScriptId segwitScriptId, Network network)
     : base(NotNull(segwitScriptId) ?? Network.CreateBech32(Bech32Type.WITNESS_SCRIPT_ADDRESS, segwitScriptId.ToBytes(), 0, network), network)
         {
-            _Hash = segwitScriptId;
+            this._Hash = segwitScriptId;
         }
 
 
@@ -188,13 +188,13 @@ namespace NBitcoin
         {
             get
             {
-                return _Hash;
+                return this._Hash;
             }
         }        
 
         protected override Script GeneratePaymentScript()
         {
-            return PayToWitTemplate.Instance.GenerateScriptPubKey(OpcodeType.OP_0, Hash._DestBytes);
+            return PayToWitTemplate.Instance.GenerateScriptPubKey(OpcodeType.OP_0, this.Hash._DestBytes);
         }
 
         public Bech32Type Type
