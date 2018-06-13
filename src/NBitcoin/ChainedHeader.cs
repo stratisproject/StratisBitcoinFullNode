@@ -542,23 +542,20 @@ namespace NBitcoin
         /// <param name="stopHeader">The header at the bottom.</param>
         /// <returns>List of consecutive items.</returns>
         /// <exception cref="InvalidOperationException">Then the items are not on the same chain.</exception>
-        public List<ChainedHeader> ToConsecutiveList(ChainedHeader stopHeader)
+        public IEnumerable<ChainedHeader> ToConsecutiveList(ChainedHeader stopHeader)
         {
             if (stopHeader == null)
                 throw new ArgumentNullException("block");
 
-            var downloadList = new List<ChainedHeader>();
             ChainedHeader current = this;
             while (current != stopHeader)
             {
                 if (current == null)
                     throw new InvalidOperationException("Headers not on the same chain.");
 
-                downloadList.Add(current);
+                yield return current;
                 current = current.Previous;
             }
-
-            return downloadList;
         }
 
         /// <summary>

@@ -1102,12 +1102,19 @@ namespace Stratis.Bitcoin.Consensus
         }
 
         /// <summary>
-        /// Convert the <see cref="DownloadFrom"/> and <see cref="DownloadTo"/> to a list of consecutive hashes.
+        /// Convert the <see cref="DownloadFrom"/> and <see cref="DownloadTo"/> to a list of consecutive hashes where the fist item in the list is the hash of the download from.
         /// </summary>
         public List<uint256> ToHashList()
         {
-            List<uint256> blockHashes = this.DownloadTo.ToConsecutiveList(this.DownloadFrom)
-                .Select(s => s.HashBlock).ToList();
+            int size = this.DownloadTo.Height - this.DownloadFrom.Height;
+            List<uint256> blockHashes = new List<uint256>(size);
+
+            int index = size - 1;
+            foreach (ChainedHeader chainedHeader in this.DownloadTo.ToConsecutiveList(this.DownloadFrom))
+            {
+                blockHashes[index] = chainedHeader.HashBlock;
+                index--;
+            }
 
             return blockHashes;
         }
