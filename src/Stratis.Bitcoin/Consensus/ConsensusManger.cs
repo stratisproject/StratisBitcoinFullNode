@@ -1,12 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Configuration.Settings;
+using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Interfaces;
+using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.Primitives;
 
 namespace Stratis.Bitcoin.Consensus
@@ -35,6 +38,7 @@ namespace Stratis.Bitcoin.Consensus
         private readonly ConsensusSettings consensusSettings;
         private readonly IBlockPuller blockPuller;
         private readonly IConsensusRules consensusRules;
+        private readonly IConnectionManager connectionManager;
         private readonly IBlockStore blockStore;
 
         /// <summary>The current tip of the chain that has been validated.</summary>
@@ -48,6 +52,8 @@ namespace Stratis.Bitcoin.Consensus
 
         private readonly object blockRequestedLock;
 
+        private readonly object reorgLock;
+
         public ConsensusManager(
             Network network, 
             ILoggerFactory loggerFactory, 
@@ -55,10 +61,10 @@ namespace Stratis.Bitcoin.Consensus
             IBlockValidator blockValidator, 
             ICheckpoints checkpoints, 
             ConsensusSettings consensusSettings, 
-            ConcurrentChain concurrentChain,
             IBlockPuller blockPuller,
             IConsensusRules consensusRules,
             IFinalizedBlockHeight finalizedBlockHeight,
+            IConnectionManager connectionManager,
             IBlockStore blockStore = null)
         {
             this.network = network;
@@ -67,12 +73,14 @@ namespace Stratis.Bitcoin.Consensus
             this.consensusSettings = consensusSettings;
             this.blockPuller = blockPuller;
             this.consensusRules = consensusRules;
+            this.connectionManager = connectionManager;
             this.blockStore = blockStore;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
 
             this.chainedHeaderTree = new ChainedHeaderTree(network, loggerFactory, blockValidator, checkpoints, chainState, finalizedBlockHeight, consensusSettings);
 
             this.treeLock = new object();
+            this.reorgLock = new object();
             this.blockRequestedLock = new object();
 
             this.blocksRequested = new Dictionary<uint256, List<OnBlockDownloadedCallback>>();
@@ -216,9 +224,65 @@ namespace Stratis.Bitcoin.Consensus
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(chainedHeaderBlock), chainedHeaderBlock);
 
+            bool reorged = false;
+            List<ChainedHeader> nextHeadersToValidate = null;
 
+            lock (this.reorgLock)
+            {
+                bool reorgRequired = false;
+
+                lock (this.treeLock)
+                {
+                    nextHeadersToValidate = this.chainedHeaderTree.PartialValidationSucceeded(chainedHeaderBlock.ChainedHeader, out reorgRequired);
+                }
+
+                if (reorgRequired)
+                {
+                    reorged = this.FullyValidateAndReorgLocked();
+                }
+            }
+
+            if (reorged)
+            {
+                List<ConnectNewHeadersResult> blocksToDownload = new List<ConnectNewHeadersResult>();
+
+                var peers = this.connectionManager.ConnectedPeers;
+
+                foreach (INetworkPeer peer in peers)
+                {
+                    List<ChainedHeader> headersToConnect =  peer.Behavior<ChainHeadersBehavior>().ConsensusAdvanced(this.Tip);
+
+                    if (headersToConnect != null)
+                    {
+                        List<BlockHeader> headers = headersToConnect.Select(ch => ch.Header).ToList();
+
+                        lock (this.treeLock)
+                        {
+                            ConnectNewHeadersResult connectNewHeaders = this.chainedHeaderTree.ConnectNewHeaders(peer.Connection.Id, headers);
+                            blocksToDownload.Add(connectNewHeaders);
+                        }
+                    }
+                }
+
+                foreach (ConnectNewHeadersResult newHeaders in blocksToDownload)
+                {
+                    this.DownloadBlocks(newHeaders.ToHashList(), this.ProcessDownloadedBlock);
+                }
+            }
+
+            // Start validating all next blocks that come after the current block,
+            // all headers in this list have the blocks present in the header.
+            foreach (ChainedHeader chainedHeader in nextHeadersToValidate)
+            {
+                this.blockValidator.StartPartialValidation( new ChainedHeaderBlock(chainedHeader.Block, chainedHeader), this.OnPartialValidationCompletedCallback);
+            }
 
             this.logger.LogTrace("(-)");
+        }
+
+        private bool FullyValidateAndReorgLocked()
+        {
+            return false;
         }
 
         private void DownloadBlocks(List<uint256> blockHashes, OnBlockDownloadedCallback onBlockDownloadedCallback)
