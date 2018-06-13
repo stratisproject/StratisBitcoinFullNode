@@ -51,13 +51,12 @@ namespace Stratis.Bitcoin.Tests.Consensus
 
                 for (int i = 0; i < count; i++)
                 {
-                    Interlocked.Increment(ref nonceValue);
                     BlockHeader header = this.Network.Consensus.ConsensusFactory.CreateBlockHeader();
                     header.HashPrevBlock = previousHeader.HashBlock;
                     header.Bits = difficultyAdjustmentDivisor == 1 
                                         ? previousHeader.Header.Bits 
                                         : this.ChangeDifficulty(previousHeader, difficultyAdjustmentDivisor);
-                    header.Nonce = (uint) nonceValue;
+                    header.Nonce = (uint)Interlocked.Increment(ref nonceValue);
                     var newHeader = new ChainedHeader(header, header.GetHash(), previousHeader);
                     Block block = this.Network.Consensus.ConsensusFactory.CreateBlock();
                     block.GetSerializedSize();
