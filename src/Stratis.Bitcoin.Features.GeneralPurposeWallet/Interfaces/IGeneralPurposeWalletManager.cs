@@ -49,8 +49,9 @@ namespace Stratis.Bitcoin.Features.GeneralPurposeWallet.Interfaces
 		/// </summary>
 		/// <param name="password">The password used to encrypt sensitive info.</param>
 		/// <param name="name">The name of the wallet.</param>
-		/// <returns>A mnemonic defining the wallet's seed used to generate addresses.</returns>
-		GeneralPurposeWallet CreateWallet(string password, string name);
+		/// <param name="multisigMnemonic">Specify the mnemonic for the multisigs instead of allowing a random generation.</param>
+		/// <returns>A mnemonic defining the wallet's seed used to generate multisig addresses.</returns>
+		Mnemonic CreateWallet(string password, string name, string multisigMnemonic = null);
 
 		/*
 		/// <summary>
@@ -245,9 +246,5 @@ namespace Stratis.Bitcoin.Features.GeneralPurposeWallet.Interfaces
 		/// </summary>
 		/// <returns></returns>
 		DateTimeOffset GetOldestWalletCreationTime();
-
-	    Transaction SignPartialTransaction(Transaction partial, ICollection<MultiSigAddress> multiSigAddresses);
-        
-        Transaction CombinePartialTransactions(Transaction[] partials, ICollection<MultiSigAddress> multiSigAddresses);
 	}
 }

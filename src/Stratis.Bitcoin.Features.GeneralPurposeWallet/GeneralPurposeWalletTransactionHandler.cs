@@ -37,7 +37,7 @@ namespace Stratis.Bitcoin.Features.GeneralPurposeWallet
 
         private readonly ILogger logger;
 
-        public Network Network { get; }
+	    private readonly Network network;
 
         public GeneralPurposeWalletTransactionHandler(
             ILoggerFactory loggerFactory,
@@ -45,9 +45,9 @@ namespace Stratis.Bitcoin.Features.GeneralPurposeWallet
             IGeneralPurposeWalletFeePolicy walletFeePolicy,
             Network network)
         {
-            this.Network = network;
             this.walletManager = walletManager;
             this.walletFeePolicy = walletFeePolicy;
+	        this.network = network;
             this.coinType = (CoinType)network.Consensus.CoinType;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
         }
@@ -160,7 +160,7 @@ namespace Stratis.Bitcoin.Features.GeneralPurposeWallet
                 {
                     FeeType = feeType,
                     MinConfirmations = allowUnconfirmed ? 0 : 1,
-                    TransactionBuilder = new TransactionBuilder(this.Network)
+                    TransactionBuilder = new TransactionBuilder(this.network)
                 };
 
                 this.AddRecipients(context);
@@ -196,7 +196,7 @@ namespace Stratis.Bitcoin.Features.GeneralPurposeWallet
             Guard.NotNull(context.Recipients, nameof(context.Recipients));
             Guard.NotNull(context.AccountReference, nameof(context.AccountReference));
 
-            context.TransactionBuilder = new TransactionBuilder(this.Network);
+            context.TransactionBuilder = new TransactionBuilder(this.network);
 
             this.AddRecipients(context);
             this.AddOpReturnOutput(context);
@@ -242,7 +242,9 @@ namespace Stratis.Bitcoin.Features.GeneralPurposeWallet
 					    continue;
 
 				    var address = unspentOutputsItem.Address;
-				    signingKeys.Add(address.PrivateKey.GetBitcoinSecret(wallet.Network));
+				    var privKey = address.GetPrivateKey(wallet.EncryptedSeed, wallet.ChainCode, context.WalletPassword, wallet.Network);
+				    var secret = new BitcoinSecret(privKey, wallet.Network);
+					signingKeys.Add(secret);
 				    added.Add(unspentOutputsItem.Address);
 			    }
 			}
@@ -383,7 +385,7 @@ namespace Stratis.Bitcoin.Features.GeneralPurposeWallet
 		        var coins = new List<Coin>();
 		        foreach (var item in context.UnspentMultiSigOutputs.OrderByDescending(a => a.Transaction.Amount))
 		        {
-					coins.Add(ScriptCoin.Create(this.Network, item.Transaction.Id, (uint)item.Transaction.Index, item.Transaction.Amount, item.Transaction.ScriptPubKey, item.Address.RedeemScript));
+					coins.Add(ScriptCoin.Create(this.network, item.Transaction.Id, (uint)item.Transaction.Index, item.Transaction.Amount, item.Transaction.ScriptPubKey, item.Address.RedeemScript));
 			        sum += item.Transaction.Amount;
 			        index++;
 

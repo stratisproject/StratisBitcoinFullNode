@@ -31,6 +31,19 @@ namespace Stratis.Bitcoin.Features.GeneralPurposeWallet
 		public string Name { get; set; }
 
 		/// <summary>
+		/// The seed for this wallet's multisig addresses, password encrypted.
+		/// </summary>
+		[JsonProperty(PropertyName = "encryptedSeed")]
+		public string EncryptedSeed { get; set; }
+
+		/// <summary>
+		/// The chain code for the multisig addresses.
+		/// </summary>
+		[JsonProperty(PropertyName = "chainCode")]
+		[JsonConverter(typeof(ByteArrayConverter))]
+		public byte[] ChainCode { get; set; }
+
+		/// <summary>
 		/// Gets or sets the merkle path.
 		/// </summary>
 		[JsonProperty(PropertyName = "blockLocator", ItemConverterType = typeof(UInt256JsonConverter))]
@@ -344,6 +357,26 @@ namespace Stratis.Bitcoin.Features.GeneralPurposeWallet
 		public string Name { get; set; }
 
 		/// <summary>
+		/// For multisig addresses: a path to the account as defined in BIP44.
+		/// </summary>
+		[JsonProperty(PropertyName = "hdPath")]
+		public string HdPath { get; set; }
+
+		/// <summary>
+		/// The extended pub key belonging to this cosigner.
+		/// Used to generate portions of multisig addresses.
+		/// </summary>
+		[JsonProperty(PropertyName = "extPubKey")]
+		public string ExtendedPubKey { get; set; }
+
+		/// <summary>
+		/// The extended pub keys of the other cosigners involved in the multisig.
+		/// The assumption is that each account has its own group of cosigners.
+		/// </summary>
+		[JsonProperty(PropertyName = "extPubKeys")]
+		public ICollection<string> ExtendedPubKeys { get; set; }
+
+		/// <summary>
 		/// Gets or sets the creation time.
 		/// </summary>
 		[JsonProperty(PropertyName = "creationTime")]
@@ -401,6 +434,159 @@ namespace Stratis.Bitcoin.Features.GeneralPurposeWallet
 
 			// The address was already imported
 			return false;
+		}
+
+		public Transaction SignPartialTransaction(Transaction partial, GeneralPurposeWallet wallet, string password, Network network)
+		{
+			// Find which multisig address is being referred to by the inputs
+			// TODO: Require this to be passed in as a parameter to save the lookup?
+
+			MultiSigAddress multiSigAddress = null;
+
+			foreach (MultiSigAddress address in this.MultiSigAddresses)
+			{
+				foreach (TransactionData tx in address.Transactions)
+				{
+					foreach (var input in partial.Inputs)
+					{
+						if (input.PrevOut.Hash == tx.Id)
+						{
+							multiSigAddress = address;
+						}
+					}
+				}
+			}
+
+			if (multiSigAddress == null)
+				throw new GeneralPurposeWalletException(
+					"Unable to determine which multisig address to combine partial transactions for");
+
+			// Need to get the same ScriptCoins used by the other signatories.
+			// It is assumed that the funds are present in the MultiSigAddress
+			// transactions.
+
+			// Find the transaction(s) in the MultiSigAddress that have the
+			// referenced inputs among their outputs.
+
+			List<Transaction> fundingTransactions = new List<Transaction>();
+
+			foreach (TransactionData tx in multiSigAddress.Transactions)
+			{
+				foreach (var output in tx.Transaction.Outputs.AsIndexedOutputs())
+				{
+					foreach (var input in partial.Inputs)
+					{
+						if (input.PrevOut.Hash == tx.Id && input.PrevOut.N == output.N)
+							fundingTransactions.Add(tx.Transaction);
+					}
+				}
+			}
+
+			// Then convert the outputs to Coins & make ScriptCoins out of them.
+
+			List<ScriptCoin> scriptCoins = new List<ScriptCoin>();
+
+			foreach (var tx in fundingTransactions)
+			{
+				foreach (var coin in tx.Outputs.AsCoins())
+				{
+					// Only care about outputs for our particular multisig
+					if (coin.ScriptPubKey == multiSigAddress.ScriptPubKey)
+					{
+						scriptCoins.Add(coin.ToScriptCoin(multiSigAddress.RedeemScript));
+					}
+				}
+			}
+
+			// Need to construct a transaction using a transaction builder with
+			// the appropriate state
+
+			TransactionBuilder builder = new TransactionBuilder(network);
+
+			Transaction signed =
+				builder
+					.AddCoins(scriptCoins)
+					.AddKeys(multiSigAddress.GetPrivateKey(wallet.EncryptedSeed, wallet.ChainCode, password, network))
+					.SignTransaction(partial);
+
+			return signed;
+		}
+
+		public Transaction CombinePartialTransactions(Transaction[] partials, Network network)
+		{
+			Transaction firstPartial = partials[0];
+
+			// Find which multisig address is being referred to by the inputs
+			// TODO: Require this to be passed in as a parameter to save the lookup?
+
+			MultiSigAddress multiSigAddress = null;
+
+			foreach (MultiSigAddress address in this.MultiSigAddresses)
+			{
+				foreach (TransactionData tx in address.Transactions)
+				{
+					foreach (var input in firstPartial.Inputs)
+					{
+						if (input.PrevOut.Hash == tx.Id)
+						{
+							multiSigAddress = address;
+						}
+					}
+				}
+			}
+
+			if (multiSigAddress == null)
+				throw new GeneralPurposeWalletException(
+					"Unable to determine which multisig address to combine partial transactions for");
+
+			// Need to get the same ScriptCoins used by the other signatories.
+			// It is assumed that the funds are present in the MultiSigAddress
+			// transactions.
+
+			// Find the transaction(s) in the MultiSigAddress that have the
+			// referenced inputs among their outputs.
+
+			List<Transaction> fundingTransactions = new List<Transaction>();
+
+			foreach (TransactionData tx in multiSigAddress.Transactions)
+			{
+				foreach (var output in tx.Transaction.Outputs.AsIndexedOutputs())
+				{
+					foreach (var input in firstPartial.Inputs)
+					{
+						if (input.PrevOut.Hash == tx.Id && input.PrevOut.N == output.N)
+							fundingTransactions.Add(tx.Transaction);
+					}
+				}
+			}
+
+			// Then convert the outputs to Coins & make ScriptCoins out of them.
+
+			List<ScriptCoin> scriptCoins = new List<ScriptCoin>();
+
+			foreach (var tx in fundingTransactions)
+			{
+				foreach (var coin in tx.Outputs.AsCoins())
+				{
+					// Only care about outputs for our particular multisig
+					if (coin.ScriptPubKey == multiSigAddress.ScriptPubKey)
+					{
+						scriptCoins.Add(coin.ToScriptCoin(multiSigAddress.RedeemScript));
+					}
+				}
+			}
+
+			// Need to construct a transaction using a transaction builder with
+			// the appropriate state
+
+			TransactionBuilder builder = new TransactionBuilder(network);
+
+			Transaction combined =
+				builder
+					.AddCoins(scriptCoins)
+					.CombineSignatures(partials);
+
+			return combined;
 		}
 
 		/// <summary>

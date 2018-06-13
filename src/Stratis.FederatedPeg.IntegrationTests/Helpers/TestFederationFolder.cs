@@ -85,9 +85,11 @@ namespace Stratis.FederatedPeg.IntegrationTests.Helpers
             var publicKeys = chain == Chain.Mainchain ?
                   (from f in federation.Members orderby f.PublicKeyMainChain.ToHex() select f.PublicKeyMainChain).ToArray()
                 : (from f in federation.Members orderby f.PublicKeySideChain.ToHex() select f.PublicKeySideChain).ToArray();
-            multiSigAddress.Create(privateKeyDecryptString, publicKeys, m, network);
+            
+            // TODO: Change this to generate the requisite ExtKeys and ExtPubKeys instead
+            //multiSigAddress.Create(privateKeyDecryptString, publicKeys, m, network);
 
-            account.ImportMultiSigAddress(multiSigAddress);
+            //account.ImportMultiSigAddress(multiSigAddress);
 
             generalWalletManager.SaveWallet(wallet);
 
