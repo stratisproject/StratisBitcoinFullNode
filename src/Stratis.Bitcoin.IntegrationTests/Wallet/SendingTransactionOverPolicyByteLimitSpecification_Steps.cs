@@ -3,13 +3,13 @@ using System.Collections.Generic;
 using System.Linq;
 using FluentAssertions;
 using NBitcoin;
-using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Controllers;
 using Stratis.Bitcoin.Features.Wallet.Models;
-using Stratis.Bitcoin.IntegrationTests.Builders;
-using Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers;
-using Stratis.Bitcoin.IntegrationTests.TestFramework;
+using Stratis.Bitcoin.IntegrationTests.Common;
+using Stratis.Bitcoin.IntegrationTests.Common.Builders;
+using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
+using Stratis.Bitcoin.Tests.Common.TestFramework;
 using Xunit.Abstractions;
 
 namespace Stratis.Bitcoin.IntegrationTests.Wallet
@@ -79,7 +79,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
 
         private void Node1BuildsTransactionToSendToNode2(int txoutputs)
         { 
-            this.CoinBaseMaturity = (int) this.nodes[NodeOne].FullNode.Network.Consensus.Option<PowConsensusOptions>().CoinbaseMaturity;
+            this.CoinBaseMaturity = (int) this.nodes[NodeOne].FullNode.Network.Consensus.CoinbaseMaturity;
 
             this.MineBlocks(this.nodes[NodeOne]);
 

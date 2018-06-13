@@ -1,12 +1,12 @@
 ﻿using System.Linq;
 using FluentAssertions;
 using NBitcoin;
-using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Controllers;
 using Stratis.Bitcoin.Features.Wallet.Models;
-using Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers;
-using Stratis.Bitcoin.IntegrationTests.TestFramework;
+using Stratis.Bitcoin.IntegrationTests.Common;
+using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
+using Stratis.Bitcoin.Tests.Common.TestFramework;
 using Stratis.Bitcoin.Utilities.JsonErrors;
 using Xunit.Abstractions;
 
@@ -25,7 +25,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
 
         protected override void BeforeTest()
         {
-            this.builder = NodeBuilder.Create();
+            this.builder = NodeBuilder.Create(this);
             this.stratisSender = this.builder.CreateStratisPowNode();
             this.stratisReceiver = this.builder.CreateStratisPowNode();
 
@@ -51,7 +51,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             var key = wallet.GetExtendedPrivateKeyForAddress("123456", addr).PrivateKey;
 
             this.stratisSender.SetDummyMinerSecret(new BitcoinSecret(key, this.stratisSender.FullNode.Network));
-            var maturity = (int)this.stratisSender.FullNode.Network.Consensus.Option<PowConsensusOptions>().CoinbaseMaturity;
+            var maturity = (int)this.stratisSender.FullNode.Network.Consensus.CoinbaseMaturity;
 
             this.stratisSender.GenerateStratisWithMiner(maturity + 5);
 
