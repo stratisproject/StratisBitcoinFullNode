@@ -223,9 +223,8 @@ namespace Stratis.Bitcoin.Consensus
         {
             this.logger.LogTrace("({0}.{1}:{2})", nameof(blockHashes), nameof(blockHashes.Count), blockHashes.Count);
 
-            // TODO: verify the blockHashes are consecutive
-
-            List<uint256> downloadJob = new List<uint256>();
+            List<uint256> downloadRequests = new List<uint256>();
+            ChainedHeaderBlock previousBlock = null;
 
             for (int i = blockHashes.Count - 1; i >= 0; i--)
             {
@@ -234,7 +233,7 @@ namespace Stratis.Bitcoin.Consensus
 
                 lock (this.treeLock)
                 {
-                    chainedHeaderBlock = this.chainedHeaderTree.GetBlockPair(blockHash);
+                    chainedHeaderBlock = this.chainedHeaderTree.GetChainedHeaderBlock(blockHash);
                 }
 
                 if (chainedHeaderBlock == null)
@@ -257,18 +256,26 @@ namespace Stratis.Bitcoin.Consensus
                     if (block != null)
                     {
                         var newBlockPair = new ChainedHeaderBlock(block, chainedHeaderBlock.ChainedHeader);
-                        this.logger.LogTrace("Block pair '{0}' was found in store.", newBlockPair);
+                        this.logger.LogTrace("Chained header block '{0}' was found in store.", newBlockPair);
                         onBlockDownloadedCallback(newBlockPair);
                         continue;
                     }
                 }
-                
-                downloadJob.Add(blockHash);
+
+                // If the list of blocks hashes requested for download are not consecutive we batch them
+                if (previousBlock != null && chainedHeaderBlock.ChainedHeader.Previous.HashBlock != previousBlock.ChainedHeader.HashBlock)
+                {
+                    this.logger.LogTrace("Block header '{0}' is not consecutive to previous block header '{1}'.", chainedHeaderBlock, previousBlock);
+                    this.DownloadBlocks(downloadRequests, this.ProcessDownloadedBlock);
+                    downloadRequests = new List<uint256>();
+                }
+
+                previousBlock = chainedHeaderBlock;
+                downloadRequests.Add(blockHash);
                 this.logger.LogTrace("Block hash '{0}' is queued for download.", blockHash);
             }
 
-            // Note in this case the list of headers might not be consecutive anymore.
-            this.DownloadBlocks(downloadJob, this.ProcessDownloadedBlock);
+            this.DownloadBlocks(downloadRequests, this.ProcessDownloadedBlock);
 
             this.logger.LogTrace("(-)");
         }

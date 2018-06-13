@@ -134,7 +134,7 @@ namespace Stratis.Bitcoin.Consensus
         /// Get the block and its chained header if it exists.
         /// </summary>
         /// <returns>The block and its chained header.</returns>
-        ChainedHeaderBlock GetBlockPair(uint256 blockHash);
+        ChainedHeaderBlock GetChainedHeaderBlock(uint256 blockHash);
     }
 
     /// <inheritdoc />
@@ -238,7 +238,7 @@ namespace Stratis.Bitcoin.Consensus
         }
 
         // <inheritdoc />
-        public ChainedHeaderBlock GetBlockPair(uint256 blockHash)
+        public ChainedHeaderBlock GetChainedHeaderBlock(uint256 blockHash)
         {
             this.logger.LogTrace("({0}:{1})", nameof(blockHash), blockHash);
 
