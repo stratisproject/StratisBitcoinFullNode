@@ -20,7 +20,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Stratis.FederatedPeg\Stratis.FederatedPeg.csproj" />
-    <ProjectReference Include="..\Stratis.Networks.Apex\Stratis.Networks.Apex.csproj" />
+    <ProjectReference Include="..\Stratis.Sidechains.Networks\Stratis.Sidechains.Networks.csproj" />
   </ItemGroup>
 
 </Project>
