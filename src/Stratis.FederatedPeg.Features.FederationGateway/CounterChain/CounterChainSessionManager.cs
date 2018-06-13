@@ -142,7 +142,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.CounterChain
 
             var partials = from t in counterChainSession.PartialTransactions where t != null select t;
 
-            var combinedTransaction = this.generalPurposeWalletManager.CombinePartialTransactions(partials.ToArray(), account.MultiSigAddresses);
+            var combinedTransaction = account.CombinePartialTransactions(partials.ToArray(), network);
             this.broadcastManager.BroadcastTransactionAsync(combinedTransaction).GetAwaiter().GetResult();
             this.logger.LogInformation("(-)");
         }
@@ -172,6 +172,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.CounterChain
             this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} SessionId encoded bytes length = {sessionId.ToBytes().Length}.");
 
             // We are the Boss so first I build the multisig transaction template.
+            // TODO: The password is currently hardcoded here
             var multiSigContext = new TransactionBuildContext(
                 new GeneralPurposeWalletAccountReference(this.federationGatewaySettings.MultiSigWalletName, "account 0"),
                 new[] { new Recipient { Amount = amount, ScriptPubKey = destination } }.ToList(),
@@ -194,7 +195,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.CounterChain
 
             if (counterChainSession == null) return uint256.One;
             this.MarkSessionAsSigned(counterChainSession);
-            var partialTransaction = this.generalPurposeWalletManager.SignPartialTransaction(templateTransaction, account.MultiSigAddresses);
+            var partialTransaction = account.SignPartialTransaction(templateTransaction, wallet, "password", network);
 
             uint256 bossCard = BossTable.MakeBossTableEntry(sessionId, this.federationGatewaySettings.PublicKey);
             this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} ProcessCounterChainSession: My bossCard: {bossCard}.");
