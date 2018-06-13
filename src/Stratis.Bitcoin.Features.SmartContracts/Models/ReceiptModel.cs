@@ -26,7 +26,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Models
             {
                 TxHash = new uint256(receipt.TxHash).ToString(),
                 BlockHeight = receipt.BlockHeight,
-                ContractAddress = new uint160(receipt.ContractAddress).ToAddress(network),
+                ContractAddress = receipt.NewContractAddress != null ? new uint160(receipt.NewContractAddress).ToAddress(network).ToString() : null,
                 Successful = receipt.Successful,
                 Exception = receipt.Exception,
                 Returned = receipt.Returned

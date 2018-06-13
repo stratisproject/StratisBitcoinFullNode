@@ -1,4 +1,5 @@
-﻿using NBitcoin;
+﻿using System;
+using NBitcoin;
 
 namespace Stratis.SmartContracts.Core.Receipts
 {
@@ -10,7 +11,19 @@ namespace Stratis.SmartContracts.Core.Receipts
         /// <summary>
         /// Save the receipt to a permanent location.
         /// </summary>
-        void SaveReceipt(uint256 txHash, ulong blockHeight, ISmartContractExecutionResult executionResult, uint160 contractAddress);
+        void SaveReceipt(ISmartContractTransactionContext txContext, ISmartContractExecutionResult result);
+
+        /// <summary>
+        /// Save the receipt to a permanent location.
+        /// </summary>
+        void SaveReceipt(
+            uint256 txHash,
+            ulong blockHeight,
+            uint160 newContractAddress,
+            ulong gasConsumed,
+            bool successful,
+            Exception exception,
+            object returned);
 
         /// <summary>
         /// Retrieve the saved receipt for a given transaction hash.

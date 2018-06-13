@@ -1,12 +1,10 @@
 ﻿using System.Linq;
 using Microsoft.Extensions.Logging;
-using Moq;
 using NBitcoin;
 using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Patricia;
 using Stratis.SmartContracts;
 using Stratis.SmartContracts.Core;
-using Stratis.SmartContracts.Core.Receipts;
 using Stratis.SmartContracts.Core.State;
 using Stratis.SmartContracts.Core.Validation;
 using Stratis.SmartContracts.Executor.Reflection;
@@ -26,7 +24,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         private readonly Network network;
         private readonly IContractStateRepository state;
         private readonly SmartContractValidator validator;
-        private readonly ISmartContractReceiptStorage receiptStorage;
+
         public SmartContractExecutorTests()
         {
             this.keyEncodingStrategy = BasicKeyEncodingStrategy.Default;
@@ -35,7 +33,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             this.network = Network.SmartContractsRegTest;
             this.state = new ContractStateRepositoryRoot(new NoDeleteSource<byte[], byte[]>(new MemoryDictionarySource()));
             this.validator = new SmartContractValidator(new ISmartContractValidator[] { });
-            this.receiptStorage = Mock.Of<ISmartContractReceiptStorage>();
         }
 
         [Fact]
@@ -71,7 +68,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 this.keyEncodingStrategy,
                 this.loggerFactory,
                 this.network,
-                this.receiptStorage,
                 this.state,
                 transactionContext,
                 this.validator);
@@ -121,7 +117,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 this.keyEncodingStrategy,
                 this.loggerFactory,
                 this.network,
-                this.receiptStorage,
                 this.state,
                 txContext,
                 this.validator
@@ -151,7 +146,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 this.keyEncodingStrategy,
                 this.loggerFactory,
                 this.network,
-                this.receiptStorage,
                 this.state,
                 transactionContext,
                 this.validator
@@ -178,7 +172,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 this.keyEncodingStrategy,
                 this.loggerFactory,
                 this.network,
-                this.receiptStorage,
                 this.state,
                 transactionContext,
                 this.validator
@@ -214,7 +207,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 this.keyEncodingStrategy,
                 this.loggerFactory,
                 this.network,
-                this.receiptStorage,
                 this.state,
                 transactionContext,
                 this.validator
@@ -248,7 +240,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 this.keyEncodingStrategy,
                 this.loggerFactory,
                 this.network,
-                this.receiptStorage,
                 this.state,
                 transactionContext,
                 this.validator

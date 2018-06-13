@@ -1,6 +1,8 @@
-﻿using DBreeze;
+﻿using System;
+using DBreeze;
 using NBitcoin;
 using Stratis.Bitcoin.Configuration;
+using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.SmartContracts.Core.Receipts
 {
@@ -15,9 +17,24 @@ namespace Stratis.SmartContracts.Core.Receipts
         }
 
         /// <inheritdoc />
-        public void SaveReceipt(uint256 txHash, ulong blockHeight, ISmartContractExecutionResult executionResult, uint160 contractAddress)
+        public void SaveReceipt(ISmartContractTransactionContext txContext, ISmartContractExecutionResult result)
         {
-            var receipt = new SmartContractReceipt(txHash, blockHeight, executionResult, contractAddress);
+            SaveReceipt(txContext.TransactionHash, txContext.BlockHeight, result.NewContractAddress, result.GasConsumed, !result.Revert, result.Exception, result.Return);
+        }
+
+        /// <inheritdoc />
+        public void SaveReceipt(
+            uint256 txHash,
+            ulong blockHeight,
+            uint160 newContractAddress,
+            ulong gasConsumed,
+            bool successful,
+            Exception exception,
+            object returned)
+        {
+            Guard.NotNull(txHash, nameof(txHash));
+
+            var receipt = new SmartContractReceipt(txHash, blockHeight, newContractAddress, gasConsumed, successful, exception, returned);
 
             using (DBreeze.Transactions.Transaction t = this.engine.GetTransaction())
             {

@@ -203,7 +203,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
 
                 this.receiptStorage = new DBreezeContractReceiptStorage(new DataFolder(folder));
 
-                this.executorFactory = new ReflectionSmartContractExecutorFactory(this.keyEncodingStrategy, loggerFactory, this.network, this.receiptStorage, this.validator);
+                this.executorFactory = new ReflectionSmartContractExecutorFactory(this.keyEncodingStrategy, loggerFactory, this.network, this.validator);
 
                 var networkPeerFactory = new NetworkPeerFactory(this.network, dateTimeProvider, loggerFactory, new PayloadProvider(), new SelfEndpointTracker());
 
@@ -218,7 +218,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 var deployments = new NodeDeployments(this.network, this.chain);
 
                 var fullNodeBuilder = new Mock<IFullNodeBuilder>();
-                fullNodeBuilder.SetupGet(f => f.ServiceProvider).Returns(new MockServiceProvider(this.cachedCoinView, this.executorFactory, this.stateRoot));
+                fullNodeBuilder.SetupGet(f => f.ServiceProvider).Returns(new MockServiceProvider(this.cachedCoinView, this.executorFactory, this.stateRoot, loggerFactory, this.receiptStorage));
                 var smartContractRuleRegistration = new SmartContractRuleRegistration(fullNodeBuilder.Object);
                 smartContractRuleRegistration.SetPreviousRegistration(new PowConsensusRulesRegistration());
 
@@ -779,29 +779,28 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
 
     public sealed class MockServiceProvider : IServiceProvider
     {
-        private readonly CoinView coinView;
-        private readonly ISmartContractExecutorFactory executorFactory;
-        private readonly ContractStateRepositoryRoot originalStateRoot;
+        private readonly Dictionary<Type, object> registered;
 
-        public MockServiceProvider(CoinView coinView, ISmartContractExecutorFactory executorFactory, ContractStateRepositoryRoot originalStateRoot)
+        public MockServiceProvider(
+            CoinView coinView,
+            ISmartContractExecutorFactory executorFactory,
+            ContractStateRepositoryRoot stateRoot,
+            ILoggerFactory loggerFactory,
+            ISmartContractReceiptStorage receiptStorage)
         {
-            this.coinView = coinView;
-            this.executorFactory = executorFactory;
-            this.originalStateRoot = originalStateRoot;
+            this.registered = new Dictionary<Type, object>
+            {
+                { typeof(CoinView), coinView },
+                { typeof(ISmartContractExecutorFactory), executorFactory },
+                { typeof(ContractStateRepositoryRoot), stateRoot },
+                { typeof(ILoggerFactory), loggerFactory },
+                { typeof(ISmartContractReceiptStorage), receiptStorage }
+            };
         }
 
         public object GetService(Type serviceType)
         {
-            if (serviceType == typeof(CoinView))
-                return this.coinView;
-
-            if (serviceType == typeof(ISmartContractExecutorFactory))
-                return this.executorFactory;
-
-            if (serviceType == typeof(ContractStateRepositoryRoot))
-                return this.originalStateRoot;
-
-            return null;
+            return this.registered[serviceType];
         }
     }
 }

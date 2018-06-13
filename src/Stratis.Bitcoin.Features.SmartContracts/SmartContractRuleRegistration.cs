@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using Microsoft.Extensions.Logging;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
@@ -8,6 +9,7 @@ using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
 using Stratis.Bitcoin.Features.SmartContracts.Consensus.Rules;
 using Stratis.Bitcoin.Utilities;
 using Stratis.SmartContracts.Core;
+using Stratis.SmartContracts.Core.Receipts;
 using Stratis.SmartContracts.Core.State;
 
 namespace Stratis.Bitcoin.Features.SmartContracts
@@ -18,7 +20,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         private Func<CoinView> coinView;
         private Func<ISmartContractExecutorFactory> executorFactory;
         private readonly IFullNodeBuilder fullNodeBuilder;
+        private Func<ILoggerFactory> loggerFactory;
         private Func<ContractStateRepositoryRoot> originalStateRoot;
+        private Func<ISmartContractReceiptStorage> receiptStorage;
 
         public SmartContractRuleRegistration(IFullNodeBuilder fullNodeBuilder)
         {
@@ -31,7 +35,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts
 
             this.coinView = () => this.fullNodeBuilder.ServiceProvider.GetService(typeof(CoinView)) as CoinView;
             this.executorFactory = () => this.fullNodeBuilder.ServiceProvider.GetService(typeof(ISmartContractExecutorFactory)) as ISmartContractExecutorFactory;
+            this.loggerFactory = () => this.fullNodeBuilder.ServiceProvider.GetService(typeof(ILoggerFactory)) as ILoggerFactory;
             this.originalStateRoot = () => this.fullNodeBuilder.ServiceProvider.GetService(typeof(ContractStateRepositoryRoot)) as ContractStateRepositoryRoot;
+            this.receiptStorage = () => this.fullNodeBuilder.ServiceProvider.GetService(typeof(ISmartContractReceiptStorage)) as ISmartContractReceiptStorage;
         }
 
         public IEnumerable<ConsensusRule> GetRules()
@@ -45,7 +51,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             rules.Add(new TxOutSmartContractExecRule());
             rules.Add(new OpSpendRule());
             rules.Add(new OpCreateZeroValueRule());
-            rules.Add(new SmartContractCoinviewRule(this.coinView(), this.executorFactory(), this.originalStateRoot()));
+            rules.Add(new SmartContractCoinviewRule(this.coinView(), this.executorFactory(), this.loggerFactory(), this.originalStateRoot(), this.receiptStorage()));
 
             return rules;
         }
