@@ -11,24 +11,8 @@ namespace Stratis.Bitcoin.Features.BlockStore
     /// </summary>
     public class StoreSettings
     {
-        public StoreSettings() : this(NodeSettings.Default())
-        {
-        }
-
-        public StoreSettings(NodeSettings nodeSettings)
-        {
-            Guard.NotNull(nodeSettings, nameof(nodeSettings));
-
-            TextFileConfiguration config = nodeSettings.ConfigReader;
-
-            this.Prune = config.GetOrDefault<bool>("prune", false);
-            this.TxIndex = config.GetOrDefault<bool>("txindex", false);
-            this.ReIndex = config.GetOrDefault<bool>("reindex", false);
-            this.MaxCacheBlocksCount = nodeSettings.ConfigReader.GetOrDefault("maxCacheBlocksCount", DefaultMaxCacheBlocksCount);
-
-            if (this.Prune && this.TxIndex)
-                throw new ConfigurationException("Prune mode is incompatible with -txindex");
-        }
+        /// <summary>Instance logger.</summary>
+        private readonly ILogger logger;
 
         // Initialize 'MaxCacheBlocksCount' with default value of maximum 300 blocks or with user defined value.
         // Value of 300 is chosen because it covers most of the cases when not synced node is connected and trying to sync from us.
@@ -45,6 +29,37 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
         /// <summary>The maximum amount of blocks the cache can contain.</summary>
         public int MaxCacheBlocksCount { get; set; }
+
+        /// <summary>
+        /// Initializes an instance of the object from the default configuration.
+        /// </summary>
+        public StoreSettings() : this(NodeSettings.Default())
+        {
+        }
+
+        /// <summary>
+        /// Initializes an instance of the object from the node configuration.
+        /// </summary>
+        /// <param name="nodeSettings">The node configuration.</param>
+        public StoreSettings(NodeSettings nodeSettings)
+        {
+            Guard.NotNull(nodeSettings, nameof(nodeSettings));
+
+            this.logger = nodeSettings.LoggerFactory.CreateLogger(typeof(StoreSettings).FullName);
+            this.logger.LogTrace("({0}:'{1}')", nameof(nodeSettings), nodeSettings.Network.Name);
+
+            TextFileConfiguration config = nodeSettings.ConfigReader;
+
+            this.Prune = config.GetOrDefault<bool>("prune", false, this.logger);
+            this.TxIndex = config.GetOrDefault<bool>("txindex", false, this.logger);
+            this.ReIndex = config.GetOrDefault<bool>("reindex", false, this.logger);
+            this.MaxCacheBlocksCount = nodeSettings.ConfigReader.GetOrDefault("maxCacheBlocksCount", DefaultMaxCacheBlocksCount, this.logger);
+
+            if (this.Prune && this.TxIndex)
+                throw new ConfigurationException("Prune mode is incompatible with -txindex");
+
+            this.logger.LogTrace("(-)");
+        }
 
         /// <summary>Prints the help information on how to configure the block store settings to the logger.</summary>
         public static void PrintHelp()

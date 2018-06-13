@@ -34,7 +34,7 @@ namespace NBitcoin.BouncyCastle.Crypto.Utilities
 
         internal static byte[] UInt32_To_BE(uint n)
         {
-            byte[] bs = new byte[4];
+            var bs = new byte[4];
             UInt32_To_BE(n, bs, 0);
             return bs;
         }
@@ -57,7 +57,7 @@ namespace NBitcoin.BouncyCastle.Crypto.Utilities
 
         internal static byte[] UInt32_To_BE(uint[] ns)
         {
-            byte[] bs = new byte[4 * ns.Length];
+            var bs = new byte[4 * ns.Length];
             UInt32_To_BE(ns, bs, 0);
             return bs;
         }
@@ -98,7 +98,7 @@ namespace NBitcoin.BouncyCastle.Crypto.Utilities
 
         internal static byte[] UInt64_To_BE(ulong n)
         {
-            byte[] bs = new byte[8];
+            var bs = new byte[8];
             UInt64_To_BE(n, bs, 0);
             return bs;
         }
@@ -117,7 +117,7 @@ namespace NBitcoin.BouncyCastle.Crypto.Utilities
 
         internal static byte[] UInt64_To_BE(ulong[] ns)
         {
-            byte[] bs = new byte[8 * ns.Length];
+            var bs = new byte[8 * ns.Length];
             UInt64_To_BE(ns, bs, 0);
             return bs;
         }
@@ -182,7 +182,7 @@ namespace NBitcoin.BouncyCastle.Crypto.Utilities
 
         internal static byte[] UInt32_To_LE(uint n)
         {
-            byte[] bs = new byte[4];
+            var bs = new byte[4];
             UInt32_To_LE(n, bs, 0);
             return bs;
         }
@@ -205,7 +205,7 @@ namespace NBitcoin.BouncyCastle.Crypto.Utilities
 
         internal static byte[] UInt32_To_LE(uint[] ns)
         {
-            byte[] bs = new byte[4 * ns.Length];
+            var bs = new byte[4 * ns.Length];
             UInt32_To_LE(ns, bs, 0);
             return bs;
         }
@@ -255,7 +255,7 @@ namespace NBitcoin.BouncyCastle.Crypto.Utilities
 
         internal static uint[] LE_To_UInt32(byte[] bs, int off, int count)
         {
-            uint[] ns = new uint[count];
+            var ns = new uint[count];
             for(int i = 0; i < ns.Length; ++i)
             {
                 ns[i] = LE_To_UInt32(bs, off);
@@ -266,7 +266,7 @@ namespace NBitcoin.BouncyCastle.Crypto.Utilities
 
         internal static byte[] UInt64_To_LE(ulong n)
         {
-            byte[] bs = new byte[8];
+            var bs = new byte[8];
             UInt64_To_LE(n, bs, 0);
             return bs;
         }

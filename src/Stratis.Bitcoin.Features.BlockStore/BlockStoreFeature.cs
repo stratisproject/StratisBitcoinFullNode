@@ -96,10 +96,12 @@ namespace Stratis.Bitcoin.Features.BlockStore
             ChainedHeader highestBlock = this.chainState.BlockStoreTip;
 
             if (highestBlock != null)
+            {
                 benchLogs.AppendLine($"{this.name}.Height: ".PadRight(LoggingConfiguration.ColumnLength + 1) +
-                    highestBlock.Height.ToString().PadRight(8) +
-                    $" {this.name}.Hash: ".PadRight(LoggingConfiguration.ColumnLength - 1) +
-                    highestBlock.HashBlock);
+                                     highestBlock.Height.ToString().PadRight(8) +
+                                     $" {this.name}.Hash: ".PadRight(LoggingConfiguration.ColumnLength - 1) +
+                                     highestBlock.HashBlock);
+            }
         }
 
         public override void Initialize()

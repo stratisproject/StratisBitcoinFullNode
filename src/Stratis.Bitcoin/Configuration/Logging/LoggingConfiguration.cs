@@ -146,34 +146,26 @@ namespace Stratis.Bitcoin.Configuration.Logging
             LogManager.Configuration.AddTarget(mainTarget);
 
             // Default logging level is Info for all components.
-            var defaultRule = new LoggingRule($"{nameof(Stratis)}.{nameof(Bitcoin)}.*", NLog.LogLevel.Info, mainTarget);
+            var defaultRule = new LoggingRule($"{nameof(Stratis)}.{nameof(Bitcoin)}.*", settings.LogLevel, mainTarget);
 
-            if (settings.DebugArgs.Any())
+            if (settings.DebugArgs.Any() && settings.DebugArgs[0] != "1")
             {
-                if (settings.DebugArgs[0] == "1")
-                {
-                    // Increase all logging to Debug level.
-                    defaultRule = new LoggingRule($"{nameof(Stratis)}.{nameof(Bitcoin)}.*", NLog.LogLevel.Debug, mainTarget);
-                }
-                else
-                {
-                    var usedCategories = new HashSet<string>(StringComparer.Ordinal);
+                var usedCategories = new HashSet<string>(StringComparer.Ordinal);
 
-                    // Increase selected categories to Debug.
-                    foreach (string key in settings.DebugArgs)
+                // Increase selected categories to Debug.
+                foreach (string key in settings.DebugArgs)
+                {
+                    if (!keyCategories.TryGetValue(key.Trim(), out string category))
                     {
-                        if (!keyCategories.TryGetValue(key.Trim(), out string category))
-                        {
-                            // Allow direct specification - e.g. "-debug=Stratis.Bitcoin.Miner".
-                            category = key.Trim();
-                        }
+                        // Allow direct specification - e.g. "-debug=Stratis.Bitcoin.Miner".
+                        category = key.Trim();
+                    }
 
-                        if (!usedCategories.Contains(category))
-                        {
-                            usedCategories.Add(category);
-                            var rule = new LoggingRule(category, NLog.LogLevel.Debug, mainTarget);
-                            LogManager.Configuration.LoggingRules.Add(rule);
-                        }
+                    if (!usedCategories.Contains(category))
+                    {
+                        usedCategories.Add(category);
+                        var rule = new LoggingRule(category, settings.LogLevel, mainTarget);
+                        LogManager.Configuration.LoggingRules.Add(rule);
                     }
                 }
             }

@@ -22,8 +22,8 @@ namespace NBitcoin
             if(address is IBase58Data)
             {
                 var b58 = (IBase58Data)address;
-                var version = address.Network.GetVersionBytes(b58.Type, true);
-                var data = Encoders.Base58Check.DecodeData(b58.ToString()).Skip(version.Length).ToArray();
+                byte[] version = address.Network.GetVersionBytes(b58.Type, true);
+                byte[] data = Encoders.Base58Check.DecodeData(b58.ToString()).Skip(version.Length).ToArray();
                 return version.Concat(data).ToArray();
             }
             else
@@ -36,21 +36,21 @@ namespace NBitcoin
         {
             get
             {
-                return Address != null;
+                return this.Address != null;
             }
         }
 
-        BitcoinAddress _Address;
+        private BitcoinAddress _Address;
         public BitcoinAddress Address
         {
             get
             {
-                if(_Address == null)
+                if(this._Address == null)
                 {
-                    var base58 = Encoders.Base58Check.EncodeData(vchData);
-                    _Address = BitcoinAddress.Create(base58, Network);
+                    string base58 = Encoders.Base58Check.EncodeData(this.vchData);
+                    this._Address = BitcoinAddress.Create(base58, this.Network);
                 }
-                return _Address;
+                return this._Address;
             }
         }
 
@@ -68,7 +68,7 @@ namespace NBitcoin
         {
             get
             {
-                return Address.ScriptPubKey;
+                return this.Address.ScriptPubKey;
             }
         }
 
@@ -76,8 +76,8 @@ namespace NBitcoin
 
         public static string GetWrappedBase58(string base58, Network network)
         {
-            var coloredVersion = network.GetVersionBytes(Base58Type.COLORED_ADDRESS, true);
-            var inner = Encoders.Base58Check.DecodeData(base58);
+            byte[] coloredVersion = network.GetVersionBytes(Base58Type.COLORED_ADDRESS, true);
+            byte[] inner = Encoders.Base58Check.DecodeData(base58);
             inner = inner.Skip(coloredVersion.Length).ToArray();
             return Encoders.Base58Check.EncodeData(inner);
         }

@@ -76,14 +76,14 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             this.performanceCounter.AddCacheRemoveCount(3);
             this.performanceCounter.AddCacheSetCount(1);
 
-            var snapshot1 = this.performanceCounter.Snapshot();
+            BlockStoreCachePerformanceSnapshot snapshot1 = this.performanceCounter.Snapshot();
 
             this.performanceCounter.AddCacheHitCount(50);
             this.performanceCounter.AddCacheMissCount(9);
             this.performanceCounter.AddCacheRemoveCount(6);
             this.performanceCounter.AddCacheSetCount(67);
 
-            var snapshot2 = this.performanceCounter.Snapshot();
+            BlockStoreCachePerformanceSnapshot snapshot2 = this.performanceCounter.Snapshot();
 
             Assert.Equal(15, snapshot1.TotalCacheHitCount);
             Assert.Equal(7, snapshot1.TotalCacheMissCount);

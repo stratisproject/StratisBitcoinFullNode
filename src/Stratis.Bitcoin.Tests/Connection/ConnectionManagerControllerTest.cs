@@ -34,8 +34,8 @@ namespace Stratis.Bitcoin.Tests.Controllers
 
             IActionResult result = this.controller.AddNodeAPI(endpoint, command);
 
-            ErrorResult errorResult = Assert.IsType<ErrorResult>(result);
-            ErrorResponse errorResponse = Assert.IsType<ErrorResponse>(errorResult.Value);
+            var errorResult = Assert.IsType<ErrorResult>(result);
+            var errorResponse = Assert.IsType<ErrorResponse>(errorResult.Value);
             Assert.Single(errorResponse.Errors);
             ErrorModel error = errorResponse.Errors[0];
             Assert.Equal(400, error.Status);
@@ -50,8 +50,8 @@ namespace Stratis.Bitcoin.Tests.Controllers
 
             IActionResult result = this.controller.AddNodeAPI(endpoint, command);
 
-            ErrorResult errorResult = Assert.IsType<ErrorResult>(result);
-            ErrorResponse errorResponse = Assert.IsType<ErrorResponse>(errorResult.Value);
+            var errorResult = Assert.IsType<ErrorResult>(result);
+            var errorResponse = Assert.IsType<ErrorResponse>(errorResult.Value);
             Assert.Single(errorResponse.Errors);
             ErrorModel error = errorResponse.Errors[0];
             Assert.Equal(400, error.Status);

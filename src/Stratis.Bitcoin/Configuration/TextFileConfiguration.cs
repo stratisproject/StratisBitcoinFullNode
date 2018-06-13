@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using Microsoft.Extensions.Logging;
 using NBitcoin;
 
 namespace Stratis.Bitcoin.Configuration
@@ -121,12 +122,16 @@ namespace Stratis.Bitcoin.Configuration
         /// Retrieves all values of a specific argument name (where the name excludes the dash prefix).
         /// </summary>
         /// <param name="key">Name of the argument (excluding the dash prefix).</param>
+        /// <param name="logger">The settings logger used to log the value. Logs on Debug level.</param>
         /// <returns>Values for the specified argument.</returns>
-        public string[] GetAll(string key)
+        public string[] GetAll(string key, ILogger logger = null)
         {
             // Get the values with the - prefix.
             if (!this.args.TryGetValue($"-{key}", out List<string> values))
                 values = new List<string>();
+
+            logger?.LogDebug("{0} entries were returned for the key '{1}': {2}", 
+                values.Count, key, string.Join(",", values.Select(str => $"'{str}'")));
 
             return values.ToArray();
         }
@@ -137,15 +142,21 @@ namespace Stratis.Bitcoin.Configuration
         /// <typeparam name="T">Type of the argument value.</typeparam>
         /// <param name="key">Name of the argument.</param>
         /// <param name="defaultValue">Default value to return if no argument value is defined.</param>
+        /// <param name="logger">The settings logger to use to log the value. Logs on Debug level.</param>
         /// <returns>Value of the argument or a default value if no value was set.</returns>
-        public T GetOrDefault<T>(string key, T defaultValue)
+        public T GetOrDefault<T>(string key, T defaultValue, ILogger logger = null)
         {
             if (!this.args.TryGetValue($"-{key}", out List<string> values))
+            {
+                logger?.LogDebug("Default value '{0}' was selected for the key '{1}'.", defaultValue, key);
                 return defaultValue;
+            }
 
             try
             {
-                return this.ConvertValue<T>(values[0]);
+                var value = this.ConvertValue<T>(values[0]);
+                logger?.LogDebug("Value '{0}' was loaded for the key '{1}'.", value, key);
+                return value;
             }
             catch (FormatException)
             {
@@ -194,8 +205,8 @@ namespace Stratis.Bitcoin.Configuration
 
             if (typeof(T) == typeof(uint256))
             {
-                uint256 value;
-                if (!uint256.TryParse(str, out value))
+                uint256 value = null;
+                if (str != "0" && !uint256.TryParse(str, out value))
                     throw new FormatException($"Cannot parse uint256 from {str}.");
                 return (T)(object)value;
             }

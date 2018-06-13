@@ -39,7 +39,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
                     BlockHeader header = this.Network.Consensus.ConsensusFactory.CreateBlockHeader();
                     header.HashPrevBlock = previousHeader.HashBlock;
                     header.Bits = previousHeader.Header.Bits - 1000; // just increase difficulty.
-                    ChainedHeader newHeader = new ChainedHeader(header, header.GetHash(), previousHeader);
+                    var newHeader = new ChainedHeader(header, header.GetHash(), previousHeader);
                     previousHeader = newHeader;
                 }
 

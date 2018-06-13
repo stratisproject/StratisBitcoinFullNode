@@ -152,7 +152,7 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
         [Fact]
         public void InvalidCommandSendRPCException()
         {
-            RPCException ex = Assert.Throws<RPCException>(() => this.rpcTestFixture.RpcClient.SendCommand("donotexist"));
+            var ex = Assert.Throws<RPCException>(() => this.rpcTestFixture.RpcClient.SendCommand("donotexist"));
             Assert.True(ex.RPCCode == RPCErrorCode.RPC_METHOD_NOT_FOUND);
         }
     }

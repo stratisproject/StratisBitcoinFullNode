@@ -41,7 +41,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
         [Fact]
         public void SerializerWithUint256ReturnsAsBytes()
         {
-            uint256 val = new uint256();
+            var val = new uint256();
 
             byte[] result = this.dbreezeSerializer.Serializer(val);
 
@@ -62,8 +62,8 @@ namespace Stratis.Bitcoin.Tests.Utilities
         [Fact]
         public void DeserializerWithCoinsDeserializesObject()
         {
-            var network = Network.StratisRegTest;
-            var genesis = network.GetGenesis();
+            Network network = Network.StratisRegTest;
+            Block genesis = network.GetGenesis();
             var coins = new Coins(genesis.Transactions[0], 0);
 
             var result = (Coins)this.dbreezeSerializer.Deserializer(coins.ToBytes(network: Network.StratisRegTest), typeof(Coins));
@@ -83,9 +83,9 @@ namespace Stratis.Bitcoin.Tests.Utilities
         [Fact]
         public void DeserializerWithBlockHeaderDeserializesObject()
         {
-            var network = Network.StratisRegTest;
-            var genesis = network.GetGenesis();
-            var blockHeader = genesis.Header;
+            Network network = Network.StratisRegTest;
+            Block genesis = network.GetGenesis();
+            BlockHeader blockHeader = genesis.Header;
 
             var result = (BlockHeader)this.dbreezeSerializer.Deserializer(blockHeader.ToBytes(network: Network.StratisRegTest), typeof(BlockHeader));
 
@@ -139,7 +139,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
         [Fact]
         public void DBreezeEngineAbleToAccessExistingTransactionData()
         {
-            var dir = CreateTestDir(this);
+            string dir = CreateTestDir(this);
             uint256[] data = SetupTransactionData(dir);
 
             using (var engine = new DBreezeEngine(dir))

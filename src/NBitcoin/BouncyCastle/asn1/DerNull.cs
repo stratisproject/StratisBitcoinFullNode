@@ -10,7 +10,7 @@ namespace NBitcoin.BouncyCastle.Asn1
     {
         public static readonly DerNull Instance = new DerNull(0);
 
-        byte[] zeroBytes = new byte[0];
+        private byte[] zeroBytes = new byte[0];
 
         [Obsolete("Use static Instance object")]
         public DerNull()
@@ -24,7 +24,7 @@ namespace NBitcoin.BouncyCastle.Asn1
         internal override void Encode(
             DerOutputStream derOut)
         {
-            derOut.WriteEncoded(Asn1Tags.Null, zeroBytes);
+            derOut.WriteEncoded(Asn1Tags.Null, this.zeroBytes);
         }
 
         protected override bool Asn1Equals(

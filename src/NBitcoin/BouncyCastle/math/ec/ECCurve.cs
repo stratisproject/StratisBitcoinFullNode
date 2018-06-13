@@ -61,20 +61,20 @@ namespace NBitcoin.BouncyCastle.Math.EC
 
             public ECCurve Create()
             {
-                if(!outer.SupportsCoordinateSystem(coord))
+                if(!this.outer.SupportsCoordinateSystem(this.coord))
                 {
                     throw new InvalidOperationException("unsupported coordinate system");
                 }
 
-                ECCurve c = outer.CloneCurve();
-                if(c == outer)
+                ECCurve c = this.outer.CloneCurve();
+                if(c == this.outer)
                 {
                     throw new InvalidOperationException("implementation returned current curve");
                 }
 
-                c.m_coord = coord;
-                c.m_endomorphism = endomorphism;
-                c.m_multiplier = multiplier;
+                c.m_coord = this.coord;
+                c.m_endomorphism = this.endomorphism;
+                c.m_multiplier = this.multiplier;
 
                 return c;
             }
@@ -147,7 +147,7 @@ namespace NBitcoin.BouncyCastle.Math.EC
 
         protected virtual ECMultiplier CreateDefaultMultiplier()
         {
-            GlvEndomorphism glvEndomorphism = m_endomorphism as GlvEndomorphism;
+            var glvEndomorphism = this.m_endomorphism as GlvEndomorphism;
             if(glvEndomorphism != null)
             {
                 return new GlvMultiplier(this, glvEndomorphism);
@@ -205,7 +205,7 @@ namespace NBitcoin.BouncyCastle.Math.EC
             }
             if(p.IsInfinity)
             {
-                return Infinity;
+                return this.Infinity;
             }
 
             // TODO Default behaviour could be improved if the two curves have the same coordinate system by copying any Z coordinates.
@@ -254,8 +254,8 @@ namespace NBitcoin.BouncyCastle.Math.EC
 
             switch(this.CoordinateSystem)
             {
-                case ECCurve.COORD_AFFINE:
-                case ECCurve.COORD_LAMBDA_AFFINE:
+                case COORD_AFFINE:
+                case COORD_LAMBDA_AFFINE:
                     {
                         if(iso != null)
                             throw new ArgumentException("not valid for affine coordinates", "iso");
@@ -267,8 +267,8 @@ namespace NBitcoin.BouncyCastle.Math.EC
             /*
              * Figure out which of the points actually need to be normalized
              */
-            ECFieldElement[] zs = new ECFieldElement[len];
-            int[] indices = new int[len];
+            var zs = new ECFieldElement[len];
+            var indices = new int[len];
             int count = 0;
             for(int i = 0; i < len; ++i)
             {
@@ -303,7 +303,7 @@ namespace NBitcoin.BouncyCastle.Math.EC
         {
             get
             {
-                return m_field;
+                return this.m_field;
             }
         }
 
@@ -311,7 +311,7 @@ namespace NBitcoin.BouncyCastle.Math.EC
         {
             get
             {
-                return m_a;
+                return this.m_a;
             }
         }
 
@@ -319,7 +319,7 @@ namespace NBitcoin.BouncyCastle.Math.EC
         {
             get
             {
-                return m_b;
+                return this.m_b;
             }
         }
 
@@ -327,7 +327,7 @@ namespace NBitcoin.BouncyCastle.Math.EC
         {
             get
             {
-                return m_order;
+                return this.m_order;
             }
         }
 
@@ -335,7 +335,7 @@ namespace NBitcoin.BouncyCastle.Math.EC
         {
             get
             {
-                return m_cofactor;
+                return this.m_cofactor;
             }
         }
 
@@ -343,7 +343,7 @@ namespace NBitcoin.BouncyCastle.Math.EC
         {
             get
             {
-                return m_coord;
+                return this.m_coord;
             }
         }
 
@@ -379,9 +379,9 @@ namespace NBitcoin.BouncyCastle.Math.EC
                 return true;
             if(null == other)
                 return false;
-            return Field.Equals(other.Field)
-                && A.ToBigInteger().Equals(other.A.ToBigInteger())
-                && B.ToBigInteger().Equals(other.B.ToBigInteger());
+            return this.Field.Equals(other.Field)
+                && this.A.ToBigInteger().Equals(other.A.ToBigInteger())
+                && this.B.ToBigInteger().Equals(other.B.ToBigInteger());
         }
 
         public override bool Equals(object obj)
@@ -398,7 +398,7 @@ namespace NBitcoin.BouncyCastle.Math.EC
 
         public virtual ECEndomorphism GetEndomorphism()
         {
-            return m_endomorphism;
+            return this.m_endomorphism;
         }
 
         /**
@@ -425,7 +425,7 @@ namespace NBitcoin.BouncyCastle.Math.EC
         public virtual ECPoint DecodePoint(byte[] encoded)
         {
             ECPoint p = null;
-            int expectedLength = (FieldSize + 7) / 8;
+            int expectedLength = (this.FieldSize + 7) / 8;
 
             byte type = encoded[0];
             switch(type)
@@ -435,7 +435,7 @@ namespace NBitcoin.BouncyCastle.Math.EC
                         if(encoded.Length != 1)
                             throw new ArgumentException("Incorrect length for infinity encoding", "encoded");
 
-                        p = Infinity;
+                        p = this.Infinity;
                         break;
                     }
 
@@ -446,7 +446,7 @@ namespace NBitcoin.BouncyCastle.Math.EC
                             throw new ArgumentException("Incorrect length for compressed encoding", "encoded");
 
                         int yTilde = type & 1;
-                        BigInteger X = new BigInteger(1, encoded, 1, expectedLength);
+                        var X = new BigInteger(1, encoded, 1, expectedLength);
 
                         p = DecompressPoint(yTilde, X);
                         if(!p.SatisfiesCofactor())
@@ -460,8 +460,8 @@ namespace NBitcoin.BouncyCastle.Math.EC
                         if(encoded.Length != (2 * expectedLength + 1))
                             throw new ArgumentException("Incorrect length for uncompressed encoding", "encoded");
 
-                        BigInteger X = new BigInteger(1, encoded, 1, expectedLength);
-                        BigInteger Y = new BigInteger(1, encoded, 1 + expectedLength, expectedLength);
+                        var X = new BigInteger(1, encoded, 1, expectedLength);
+                        var Y = new BigInteger(1, encoded, 1 + expectedLength, expectedLength);
 
                         p = ValidatePoint(X, Y);
                         break;
@@ -473,8 +473,8 @@ namespace NBitcoin.BouncyCastle.Math.EC
                         if(encoded.Length != (2 * expectedLength + 1))
                             throw new ArgumentException("Incorrect length for hybrid encoding", "encoded");
 
-                        BigInteger X = new BigInteger(1, encoded, 1, expectedLength);
-                        BigInteger Y = new BigInteger(1, encoded, 1 + expectedLength, expectedLength);
+                        var X = new BigInteger(1, encoded, 1, expectedLength);
+                        var Y = new BigInteger(1, encoded, 1 + expectedLength, expectedLength);
 
                         if(Y.TestBit(0) != (type == 0x07))
                             throw new ArgumentException("Inconsistent Y coordinate in hybrid encoding", "encoded");
@@ -504,13 +504,13 @@ namespace NBitcoin.BouncyCastle.Math.EC
 
         public override bool IsValidFieldElement(BigInteger x)
         {
-            return x != null && x.SignValue >= 0 && x.CompareTo(Field.Characteristic) < 0;
+            return x != null && x.SignValue >= 0 && x.CompareTo(this.Field.Characteristic) < 0;
         }
 
         protected override ECPoint DecompressPoint(int yTilde, BigInteger X1)
         {
             ECFieldElement x = FromBigInteger(X1);
-            ECFieldElement rhs = x.Square().Add(A).Multiply(x).Add(B);
+            ECFieldElement rhs = x.Square().Add(this.A).Multiply(x).Add(this.B);
             ECFieldElement y = rhs.Sqrt();
 
             /*
@@ -580,7 +580,7 @@ namespace NBitcoin.BouncyCastle.Math.EC
 
         protected override ECCurve CloneCurve()
         {
-            return new FpCurve(m_q, m_r, m_a, m_b, m_order, m_cofactor);
+            return new FpCurve(this.m_q, this.m_r, this.m_a, this.m_b, this.m_order, this.m_cofactor);
         }
 
         public override bool SupportsCoordinateSystem(int coord)
@@ -601,7 +601,7 @@ namespace NBitcoin.BouncyCastle.Math.EC
         {
             get
             {
-                return m_q;
+                return this.m_q;
             }
         }
 
@@ -609,7 +609,7 @@ namespace NBitcoin.BouncyCastle.Math.EC
         {
             get
             {
-                return m_infinity;
+                return this.m_infinity;
             }
         }
 
@@ -617,7 +617,7 @@ namespace NBitcoin.BouncyCastle.Math.EC
         {
             get
             {
-                return m_q.BitLength;
+                return this.m_q.BitLength;
             }
         }
 
@@ -711,7 +711,7 @@ namespace NBitcoin.BouncyCastle.Math.EC
 
         public override bool IsValidFieldElement(BigInteger x)
         {
-            return x != null && x.SignValue >= 0 && x.BitLength <= FieldSize;
+            return x != null && x.SignValue >= 0 && x.BitLength <= this.FieldSize;
         }
 
         [Obsolete("Per-point compression property will be removed")]
@@ -726,7 +726,7 @@ namespace NBitcoin.BouncyCastle.Math.EC
                     {
                         if(X.IsZero)
                         {
-                            if(!Y.Square().Equals(B))
+                            if(!Y.Square().Equals(this.B))
                                 throw new ArgumentException();
                         }
                         else
@@ -750,11 +750,11 @@ namespace NBitcoin.BouncyCastle.Math.EC
             ECFieldElement xp = FromBigInteger(X1), yp = null;
             if(xp.IsZero)
             {
-                yp = B.Sqrt();
+                yp = this.B.Sqrt();
             }
             else
             {
-                ECFieldElement beta = xp.Square().Invert().Multiply(B).Add(A).Add(xp);
+                ECFieldElement beta = xp.Square().Invert().Multiply(this.B).Add(this.A).Add(xp);
                 ECFieldElement z = SolveQuadradicEquation(beta);
 
                 if(z != null)
@@ -803,7 +803,7 @@ namespace NBitcoin.BouncyCastle.Math.EC
 
             ECFieldElement gamma, z, zeroElement = FromBigInteger(BigInteger.Zero);
 
-            int m = FieldSize;
+            int m = this.FieldSize;
             do
             {
                 ECFieldElement t = FromBigInteger(BigInteger.Arbitrary(m));
@@ -833,17 +833,17 @@ namespace NBitcoin.BouncyCastle.Math.EC
          */
         internal virtual BigInteger[] GetSi()
         {
-            if(si == null)
+            if(this.si == null)
             {
                 lock(this)
                 {
-                    if(si == null)
+                    if(this.si == null)
                     {
-                        si = Tnaf.GetSi(this);
+                        this.si = Tnaf.GetSi(this);
                     }
                 }
             }
-            return si;
+            return this.si;
         }
 
         /**
@@ -854,7 +854,7 @@ namespace NBitcoin.BouncyCastle.Math.EC
         {
             get
             {
-                return m_order != null && m_cofactor != null && m_b.IsOne && (m_a.IsZero || m_a.IsOne);
+                return this.m_order != null && this.m_cofactor != null && this.m_b.IsOne && (this.m_a.IsZero || this.m_a.IsOne);
             }
         }
     }
@@ -1068,7 +1068,7 @@ namespace NBitcoin.BouncyCastle.Math.EC
 
         protected override ECCurve CloneCurve()
         {
-            return new F2mCurve(m, k1, k2, k3, m_a, m_b, m_order, m_cofactor);
+            return new F2mCurve(this.m, this.k1, this.k2, this.k3, this.m_a, this.m_b, this.m_order, this.m_cofactor);
         }
 
         public override bool SupportsCoordinateSystem(int coord)
@@ -1086,7 +1086,7 @@ namespace NBitcoin.BouncyCastle.Math.EC
 
         protected override ECMultiplier CreateDefaultMultiplier()
         {
-            if(IsKoblitz)
+            if(this.IsKoblitz)
             {
                 return new WTauNafMultiplier();
             }
@@ -1098,7 +1098,7 @@ namespace NBitcoin.BouncyCastle.Math.EC
         {
             get
             {
-                return m;
+                return this.m;
             }
         }
 
@@ -1121,7 +1121,7 @@ namespace NBitcoin.BouncyCastle.Math.EC
         {
             get
             {
-                return m_infinity;
+                return this.m_infinity;
             }
         }
 
@@ -1129,7 +1129,7 @@ namespace NBitcoin.BouncyCastle.Math.EC
         {
             get
             {
-                return m;
+                return this.m;
             }
         }
 
@@ -1140,14 +1140,14 @@ namespace NBitcoin.BouncyCastle.Math.EC
          */
         public bool IsTrinomial()
         {
-            return k2 == 0 && k3 == 0;
+            return this.k2 == 0 && this.k3 == 0;
         }
 
         public int K1
         {
             get
             {
-                return k1;
+                return this.k1;
             }
         }
 
@@ -1155,7 +1155,7 @@ namespace NBitcoin.BouncyCastle.Math.EC
         {
             get
             {
-                return k2;
+                return this.k2;
             }
         }
 
@@ -1163,7 +1163,7 @@ namespace NBitcoin.BouncyCastle.Math.EC
         {
             get
             {
-                return k3;
+                return this.k3;
             }
         }
 
@@ -1172,7 +1172,7 @@ namespace NBitcoin.BouncyCastle.Math.EC
         {
             get
             {
-                return m_order;
+                return this.m_order;
             }
         }
 
@@ -1181,7 +1181,7 @@ namespace NBitcoin.BouncyCastle.Math.EC
         {
             get
             {
-                return m_cofactor;
+                return this.m_cofactor;
             }
         }
     }

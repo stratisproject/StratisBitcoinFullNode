@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -15,7 +16,7 @@ namespace NBitcoin.Tests
 {
     public class util_tests
     {
-        static byte[] ParseHex_expected = new byte[]{
+        private static byte[] ParseHex_expected = new byte[]{
     0x04, 0x67, 0x8a, 0xfd, 0xb0, 0xfe, 0x55, 0x48, 0x27, 0x19, 0x67, 0xf1, 0xa6, 0x71, 0x30, 0xb7,
     0x10, 0x5c, 0xd6, 0xa8, 0x28, 0xe0, 0x39, 0x09, 0xa6, 0x79, 0x62, 0xe0, 0xea, 0x1f, 0x61, 0xde,
     0xb6, 0x49, 0xf6, 0xbc, 0x3f, 0x4c, 0xef, 0x38, 0xc4, 0xf3, 0x55, 0x04, 0xe5, 0x1e, 0xc1, 0x12,
@@ -27,7 +28,7 @@ namespace NBitcoin.Tests
         public void util_ParseHex()
         {
             // Basic test vector
-            var result = Encoders.Hex.DecodeData("04678afdb0fe5548271967f1a67130b7105cd6a828e03909a67962e0EA1f61deb649f6bc3f4cef38c4f35504e51ec112de5c384df7ba0b8d578a4c702b6bf11d5f");
+            byte[] result = Encoders.Hex.DecodeData("04678afdb0fe5548271967f1a67130b7105cd6a828e03909a67962e0EA1f61deb649f6bc3f4cef38c4f35504e51ec112de5c384df7ba0b8d578a4c702b6bf11d5f");
             AssertEx.CollectionEquals(result, ParseHex_expected);
 
             // Spaces between bytes must not be supported
@@ -68,7 +69,7 @@ namespace NBitcoin.Tests
                 }.EncodeData(ParseHex_expected, 0, 0),
                 "");
 
-            var ParseHex_vec = ParseHex_expected.Take(5).ToArray();
+            byte[] ParseHex_vec = ParseHex_expected.Take(5).ToArray();
 
             AssertEx.Equal(
                 new HexEncoder()
@@ -113,7 +114,7 @@ namespace NBitcoin.Tests
 
 
             //Test .ToNetwork()
-            var addr = pubkey.GetAddress(Network.Main);
+            BitcoinPubKeyAddress addr = pubkey.GetAddress(Network.Main);
             Assert.Equal("16UwLL9Risc3QfPqBUvKofHmBQ7wMtjvM", addr.ToString());
             Assert.Equal("mfcSEPR8EkJrpX91YkTJ9iscdAzppJrG9j", addr.ToNetwork(Network.TestNet).ToString());
 
@@ -133,9 +134,9 @@ namespace NBitcoin.Tests
         [Trait("UnitTest", "UnitTest")]
         public void ScryptTest()
         {
-            var message = "Hello world message";
-            var salt = Encoding.UTF8.GetBytes("This is salt");
-            var result = SCrypt.BitcoinComputeDerivedKey(message, salt);
+            string message = "Hello world message";
+            byte[] salt = Encoding.UTF8.GetBytes("This is salt");
+            byte[] result = SCrypt.BitcoinComputeDerivedKey(message, salt);
             Assert.Equal("2331e1fe210127c9ac8fa95eb388e9dd072893890e2ee5646318ceb66089bbfe5ab45f762feeddf53d21c9a2cb183869247c9814f2bff1917fbea8239c548d1d"
                 , Encoders.Hex.EncodeData(result));
         }
@@ -177,7 +178,7 @@ namespace NBitcoin.Tests
             //Check http://blockchain.info/block-index/394713/0000000000000000729a4a7e084c90f932d038c407a6535a51dfecdfba1c8906
             Assert.True(uint256.Parse("0x0000000000000000729a4a7e084c90f932d038c407a6535a51dfecdfba1c8906 ") < new Target(419470732).ToUInt256());
 
-            var genesis = Network.Main.GetGenesis();
+            Block genesis = Network.Main.GetGenesis();
             Assert.True(genesis.GetHash() < genesis.Header.Bits.ToUInt256());
             Assert.True(Target.Difficulty1 == Target.Difficulty1);
         }
@@ -249,15 +250,15 @@ namespace NBitcoin.Tests
                 new object[]{ 1.23456789m, MoneyUnit.BTC, 1.23456789m, MoneyUnit.BTC  },
             };
 
-            foreach(var test in tests)
+            foreach(object[] test in tests)
             {
-                var inputAmount = (decimal)test[0];
+                decimal inputAmount = (decimal)test[0];
                 var inputUnit = (MoneyUnit)test[1];
-                var outputAmount = (decimal)test[2];
+                decimal outputAmount = (decimal)test[2];
                 var outputUnit = (MoneyUnit)test[3];
 
                 var result = new Money(inputAmount, inputUnit);
-                var actual = result.ToUnit(outputUnit);
+                decimal actual = result.ToUnit(outputUnit);
 
                 Assert.Equal(outputAmount, actual);
 
@@ -273,7 +274,7 @@ namespace NBitcoin.Tests
         public void util_ParseMoney()
         {
             Money ret;
-            foreach(var prefix in new string[] { "", "+", "-" })
+            foreach(string prefix in new string[] { "", "+", "-" })
             {
                 int multiplier = prefix == "-" ? -1 : 1;
                 Assert.True(Money.TryParse(prefix + "0.0", out ret));
@@ -333,7 +334,7 @@ namespace NBitcoin.Tests
             Assert.Throws<ArgumentOutOfRangeException>(() => CanSplitMoneyCore(Money.Satoshis(1000), 0));
             CanSplitMoneyCore(Money.Satoshis(0), 10);
 
-            var result = Money.Satoshis(20).Split(3).ToArray();
+            Money[] result = Money.Satoshis(20).Split(3).ToArray();
             Assert.True(result[0].Satoshi == 7);
             Assert.True(result[1].Satoshi == 7);
             Assert.True(result[2].Satoshi == 6);
@@ -341,11 +342,11 @@ namespace NBitcoin.Tests
 
         private void CanSplitMoneyCore(Money money, int parts)
         {
-            var splitted = money.Split(parts).ToArray();
+            Money[] splitted = money.Split(parts).ToArray();
             Assert.True(splitted.Length == parts);
             Assert.True(splitted.Sum() == money);
-            var groups = splitted.Select(s => s.Satoshi).GroupBy(o => o);
-            var differentValues = groups.Count();
+            IEnumerable<IGrouping<long, long>> groups = splitted.Select(s => s.Satoshi).GroupBy(o => o);
+            int differentValues = groups.Count();
             Assert.True(differentValues == 1 || differentValues == 2);
         }
 
@@ -354,10 +355,10 @@ namespace NBitcoin.Tests
         public void CanSplitMoneyBag()
         {
             var gold = new AssetId(new Key());
-            MoneyBag bag = new MoneyBag();
+            var bag = new MoneyBag();
             bag += Money.Coins(12);
             bag += new AssetMoney(gold, 10);
-            var splitted = bag.Split(12).ToArray();
+            MoneyBag[] splitted = bag.Split(12).ToArray();
             Assert.Equal(Money.Coins(1.0m), splitted[0].GetAmount(null));
             Assert.Equal(new AssetMoney(gold, 1), splitted[0].GetAmount(gold));
             Assert.Equal(new AssetMoney(gold, 0), splitted[11].GetAmount(gold));
@@ -375,7 +376,7 @@ namespace NBitcoin.Tests
             Assert.Throws<ArgumentOutOfRangeException>(() => CanSplitAssetMoneyCore(gold, 1000, 0));
             CanSplitAssetMoneyCore(gold, 0, 10);
 
-            var result = new AssetMoney(gold, 20).Split(3).ToArray();
+            AssetMoney[] result = new AssetMoney(gold, 20).Split(3).ToArray();
             Assert.True(result[0].Quantity == 7);
             Assert.True(result[1].Quantity == 7);
             Assert.True(result[2].Quantity == 6);
@@ -384,12 +385,12 @@ namespace NBitcoin.Tests
 
         private void CanSplitAssetMoneyCore(AssetId asset, long amount, int parts)
         {
-            AssetMoney money = new AssetMoney(asset, amount);
-            var splitted = money.Split(parts).ToArray();
+            var money = new AssetMoney(asset, amount);
+            AssetMoney[] splitted = money.Split(parts).ToArray();
             Assert.True(splitted.Length == parts);
             Assert.True(splitted.Sum(asset) == money);
-            var groups = splitted.Select(s => s.Quantity).GroupBy(o => o);
-            var differentValues = groups.Count();
+            IEnumerable<IGrouping<long, long>> groups = splitted.Select(s => s.Quantity).GroupBy(o => o);
+            int differentValues = groups.Count();
             Assert.True(differentValues == 1 || differentValues == 2);
         }
 
@@ -399,8 +400,8 @@ namespace NBitcoin.Tests
         {
             var privateKey = new Key();
             var otherKey = new Key();
-            var bitcoinSecret = privateKey.GetWif(Network.Main);
-            var samePrivateKey = bitcoinSecret.PrivateKey;
+            BitcoinSecret bitcoinSecret = privateKey.GetWif(Network.Main);
+            Key samePrivateKey = bitcoinSecret.PrivateKey;
             Assert.Equal(samePrivateKey, privateKey);
             Assert.True(samePrivateKey == privateKey);
             Assert.False(samePrivateKey != privateKey);
@@ -514,10 +515,10 @@ namespace NBitcoin.Tests
         [Trait("UnitTest", "UnitTest")]
         public void CanRoundTripBigIntegerToBytes()
         {
-            foreach(var expected in Enumerable.Range(-100, 100))
+            foreach(int expected in Enumerable.Range(-100, 100))
             {
-                var bytes = Utils.BigIntegerToBytes(BigInteger.ValueOf(expected));
-                var actual = Utils.BytesToBigInteger(bytes);
+                byte[] bytes = Utils.BigIntegerToBytes(BigInteger.ValueOf(expected));
+                BigInteger actual = Utils.BytesToBigInteger(bytes);
                 Assert.Equal<BigInteger>(BigInteger.ValueOf(expected), actual);
             }
         }
@@ -526,9 +527,9 @@ namespace NBitcoin.Tests
         [Trait("UnitTest", "UnitTest")]
         public void CanDivideMoney()
         {
-            var bobInput = Money.Coins(1.1M);
-            var aliceInput = Money.Coins(0.275M);
-            var actual = (bobInput + aliceInput) / 2;
+            Money bobInput = Money.Coins(1.1M);
+            Money aliceInput = Money.Coins(0.275M);
+            Money actual = (bobInput + aliceInput) / 2;
             Money expected = Money.Satoshis((bobInput.Satoshi + aliceInput.Satoshi) / 2);
             Assert.Equal(expected, actual);
         }
@@ -558,7 +559,7 @@ namespace NBitcoin.Tests
         [Trait("UnitTest", "UnitTest")]
         public void NetworksAreValid()
         {
-            foreach(var network in Network.GetNetworks())
+            foreach(Network network in Network.GetNetworks())
             {
                 Assert.NotNull(network);
             }
@@ -594,7 +595,7 @@ namespace NBitcoin.Tests
             {
                 var pubKey = new PubKey(test.Pubkey);
                 var key = new Key(Encoders.Hex.DecodeData(test.Private));
-                var secret = pubKey.GetSharedSecret(key);
+                byte[] secret = pubKey.GetSharedSecret(key);
                 Assert.Equal(test.ExpectedSecret, Encoders.Hex.EncodeData(secret));
             }
         }
@@ -613,7 +614,7 @@ namespace NBitcoin.Tests
             Assert.Equal("OP_DUP OP_HASH160 4d29186f76581c7375d70499afd1d585149d42cd OP_EQUALVERIFY OP_CHECKSIG", pubKey.Hash.ScriptPubKey.ToString());
             Assert.Equal("0359d3092e4a8d5f3b3948235b5dec7395259273ccf3c4e9d5e16695a3fc9588d6 OP_CHECKSIG", pubKey.ScriptPubKey.ToString());
 
-            Script script = new Script("0359d3092e4a8d5f3b3948235b5dec7395259273ccf3c4e9d5e16695a3fc9588d6 OP_CHECKSIG");
+            var script = new Script("0359d3092e4a8d5f3b3948235b5dec7395259273ccf3c4e9d5e16695a3fc9588d6 OP_CHECKSIG");
             Assert.Equal("OP_HASH160 a216e3bce8c1b3adf376731b6cd0b6936c4e053f OP_EQUAL", script.PaymentScript.ToString());
         }
 
@@ -645,7 +646,7 @@ namespace NBitcoin.Tests
                 Network = Network.RegTest
             };
 
-            var result = Network.Parse(address.Base58, address.Network);
+            IBitcoinString result = Network.Parse(address.Base58, address.Network);
             Assert.IsType<BitcoinColoredAddress>(result);
             Assert.True(result.Network == Network.RegTest);
 
@@ -663,7 +664,7 @@ namespace NBitcoin.Tests
             result = Network.Parse(address.Base58, null);
             Assert.True(result.Network == Network.TestNet);
 
-            var str = Serializer.ToString(new DummyClass() { ExtPubKey = new ExtKey().Neuter().GetWif(Network.RegTest) }, Network.RegTest);
+            string str = Serializer.ToString(new DummyClass() { ExtPubKey = new ExtKey().Neuter().GetWif(Network.RegTest) }, Network.RegTest);
             Assert.NotNull(Serializer.ToObject<DummyClass>(str, Network.RegTest));
         }
 
@@ -798,19 +799,21 @@ namespace NBitcoin.Tests
                 }
                 else
                 {
-                    var result = Network.Parse(test.Base58, null);
+                    IBitcoinString result = Network.Parse(test.Base58, null);
                     Assert.True(test.ExpectedType == result.GetType());
                     if(test.Network != null)
                         Assert.Equal(test.Network, result.Network);
                     Network.Parse(test.Base58, test.Network);
 
                     if(test.Network != null)
-                        foreach(var network in Network.GetNetworks())
+                    {
+                        foreach(Network network in Network.GetNetworks())
                         {
                             if(network == test.Network)
                                 break;
                             Assert.Throws<FormatException>(() => Network.Parse(test.Base58, network));
                         }
+                    }
                 }
             }
         }
@@ -819,10 +822,10 @@ namespace NBitcoin.Tests
         [Trait("UnitTest", "UnitTest")]
         public void CanParseBlockJSON()
         {
-            var jobj = JObject.Parse(File.ReadAllText(TestDataLocations.GetFileFromDataBlockFolder("Block1.json")));
+            JObject jobj = JObject.Parse(File.ReadAllText(TestDataLocations.GetFileFromDataBlockFolder("Block1.json")));
             var array = (JArray)jobj["mrkl_tree"];
-            var expected = array.OfType<JValue>().Select(v => uint256.Parse(v.ToString())).ToList();
-            var block = Block.ParseJson(Network.Main, File.ReadAllText(TestDataLocations.GetFileFromDataBlockFolder("Block1.json")));
+            List<uint256> expected = array.OfType<JValue>().Select(v => uint256.Parse(v.ToString())).ToList();
+            Block block = Block.ParseJson(Network.Main, File.ReadAllText(TestDataLocations.GetFileFromDataBlockFolder("Block1.json")));
             Assert.Equal("000000000000000040cd080615718eb68f00a0138706e7afd4068f3e08d4ca20", block.GetHash().ToString());
             Assert.True(block.CheckMerkleRoot());
         }
@@ -831,7 +834,7 @@ namespace NBitcoin.Tests
         [Trait("UnitTest", "UnitTest")]
         public void CanConvertToUnixTime()
         {
-            var date = Utils.UnixTimeToDateTime(1368576000);
+            DateTimeOffset date = Utils.UnixTimeToDateTime(1368576000);
             Assert.Equal(new DateTimeOffset(2013, 5, 15, 0, 0, 0, TimeSpan.Zero), date);
             Assert.Equal((uint)1368576000, Utils.DateTimeToUnixTime(date));
 
@@ -889,7 +892,7 @@ namespace NBitcoin.Tests
             var b1 = new MoneyBag(new AssetMoney(msft, 10), new AssetMoney(goog, 3));
             var b2 = new MoneyBag(new AssetMoney(msft, 1), new AssetMoney(goog, -5));
 
-            var b1_2 = b1 - (b2) + (new Money(10000));
+            MoneyBag b1_2 = b1 - (b2) + (new Money(10000));
             Assert.True(
                 b1_2.SequenceEqual(new IMoney[] { new AssetMoney(msft, 9), new AssetMoney(goog, 8), new Money(10000) }));
         }

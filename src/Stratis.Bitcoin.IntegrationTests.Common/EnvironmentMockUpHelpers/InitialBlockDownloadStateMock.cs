@@ -1,7 +1,7 @@
 ﻿using System;
 using NBitcoin;
 using Stratis.Bitcoin.Base;
-using Stratis.Bitcoin.Configuration;
+using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Interfaces;
@@ -22,13 +22,13 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
 
         private readonly InitialBlockDownloadState innerBlockDownloadState;
 
-        public InitialBlockDownloadStateMock(IChainState chainState, Network network, NodeSettings nodeSettings,
+        public InitialBlockDownloadStateMock(IChainState chainState, Network network, ConsensusSettings consensusSettings,
             ICheckpoints checkpoints)
         {
             this.lockIbdUntil = DateTime.MinValue;
             this.dateTimeProvider = DateTimeProvider.Default;
 
-            this.innerBlockDownloadState = new InitialBlockDownloadState(chainState, network, nodeSettings, checkpoints);
+            this.innerBlockDownloadState = new InitialBlockDownloadState(chainState, network, consensusSettings, checkpoints);
         }
 
         public bool IsInitialBlockDownload()

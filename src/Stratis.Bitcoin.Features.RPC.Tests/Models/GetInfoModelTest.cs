@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System.Collections.Generic;
+using System.Linq;
 using NBitcoin;
 using Newtonsoft.Json.Linq;
 using Stratis.Bitcoin.Features.RPC.Models;
@@ -42,7 +43,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Models
         [Fact]
         public void GetInfoSerializeFullTest()
         {
-            var expectedOrderedPropertyNames = AllPropertyNames;
+            string[] expectedOrderedPropertyNames = AllPropertyNames;
             var info = new GetInfoModel
             {
                 Connections = 0,
@@ -56,7 +57,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Models
 
             JObject obj = ModelToJObject(info);
             Assert.True(obj.HasValues);
-            var actualOrderedPropertyNames = obj.Children().Select(o => (o as JProperty)?.Name);
+            IEnumerable<string> actualOrderedPropertyNames = obj.Children().Select(o => (o as JProperty)?.Name);
 
             Assert.Equal(expectedOrderedPropertyNames, actualOrderedPropertyNames);
         }
@@ -64,12 +65,12 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Models
         [Fact]
         public void GetInfoSerializeSparseTest()
         {
-            var expectedOrderedPropertyNames = RequiredPropertyNames;
+            string[] expectedOrderedPropertyNames = RequiredPropertyNames;
             var info = new GetInfoModel();
 
             JObject obj = ModelToJObject(info);
             Assert.True(obj.HasValues);
-            var actualOrderedPropertyNames = obj.Children().Select(o => (o as JProperty)?.Name);
+            IEnumerable<string> actualOrderedPropertyNames = obj.Children().Select(o => (o as JProperty)?.Name);
 
             Assert.Equal(expectedOrderedPropertyNames, actualOrderedPropertyNames);
         }
@@ -121,7 +122,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Models
 
             JObject obj = JObject.Parse(json);
             IOrderedEnumerable<string> actualSortedPropertyNames = obj.Children().Select(o => (o as JProperty)?.Name).OrderBy(name => name);
-            GetInfoModel model = Newtonsoft.Json.JsonConvert.DeserializeObject<GetInfoModel>(json);
+            var model = Newtonsoft.Json.JsonConvert.DeserializeObject<GetInfoModel>(json);
 
             Assert.Equal(expectedSortedPropertyNames, actualSortedPropertyNames);
             Assert.Equal(1010000u, model.Version);

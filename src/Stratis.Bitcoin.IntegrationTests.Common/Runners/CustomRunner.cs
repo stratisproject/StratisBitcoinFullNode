@@ -27,7 +27,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.Runners
         public override void BuildNode()
         {
             var settings = new NodeSettings(this.network, this.protocolVersion, this.agent, new string[] { "-conf=" + this.configFileName, "-datadir=" + this.DataFolder });
-            var builder = new FullNodeBuilder().UseNodeSettings(settings);
+            IFullNodeBuilder builder = new FullNodeBuilder().UseNodeSettings(settings);
 
             this.callback(builder);
             this.FullNode = (FullNode)builder.Build();

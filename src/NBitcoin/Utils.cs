@@ -45,25 +45,25 @@ namespace NBitcoin
                 {
 
                     byte[] version = network.GetVersionBytes(b58.Type, true);
-                    var inner = Encoders.Base58Check.DecodeData(b58.ToString()).Skip(version.Length).ToArray();
-                    var newBase58 = Encoders.Base58Check.EncodeData(version.Concat(inner).ToArray());
+                    byte[] inner = Encoders.Base58Check.DecodeData(b58.ToString()).Skip(version.Length).ToArray();
+                    string newBase58 = Encoders.Base58Check.EncodeData(version.Concat(inner).ToArray());
                     return Network.Parse<T>(newBase58, network);
                 }
                 else
                 {
-                    var colored = BitcoinColoredAddress.GetWrappedBase58(obj.ToString(), obj.Network);
-                    var address = Network.Parse<BitcoinAddress>(colored, obj.Network).ToNetwork(network);
+                    string colored = BitcoinColoredAddress.GetWrappedBase58(obj.ToString(), obj.Network);
+                    BitcoinAddress address = Network.Parse<BitcoinAddress>(colored, obj.Network).ToNetwork(network);
                     return (T)(object)address.ToColoredAddress();
                 }
             }
             else if(obj is IBech32Data)
             {
                 var b32 = (IBech32Data)obj;
-                var encoder = b32.Network.GetBech32Encoder(b32.Type, true);
+                Bech32Encoder encoder = b32.Network.GetBech32Encoder(b32.Type, true);
                 byte wit;
-                var data = encoder.Decode(b32.ToString(), out wit);
+                byte[] data = encoder.Decode(b32.ToString(), out wit);
                 encoder = network.GetBech32Encoder(b32.Type, true);
-                var str = encoder.Encode(wit, data);
+                string str = encoder.Encode(wit, data);
                 return (T)(object)Network.Parse<T>(str, network);
             }
             else
@@ -104,7 +104,7 @@ namespace NBitcoin
             if(list.Count == count)
                 return new T[0];
 
-            List<T> removed = new List<T>();
+            var removed = new List<T>();
 
             for(int i = list.Count - 1; i + 1 > count; i--)
             {
@@ -124,9 +124,9 @@ namespace NBitcoin
         }
         public static IEnumerable<List<T>> Partition<T>(this IEnumerable<T> source, Func<int> max)
         {
-            var partitionSize = max();
-            List<T> toReturn = new List<T>(partitionSize);
-            foreach(var item in source)
+            int partitionSize = max();
+            var toReturn = new List<T>(partitionSize);
+            foreach(T item in source)
             {
                 toReturn.Add(item);
                 if(toReturn.Count == partitionSize)
@@ -292,7 +292,7 @@ namespace NBitcoin
             if(offset < 0 || offset > array.Length)
                 throw new ArgumentOutOfRangeException("offset");
 
-            var count = array.Length - offset;
+            int count = array.Length - offset;
             var data = new byte[count];
             Buffer.BlockCopy(array, offset, data, 0, count);
             return data;
@@ -300,11 +300,11 @@ namespace NBitcoin
 
         internal static byte[] Concat(this byte[] arr, params byte[][] arrs)
         {
-            var len = arr.Length + arrs.Sum(a => a.Length);
+            int len = arr.Length + arrs.Sum(a => a.Length);
             var ret = new byte[len];
             Buffer.BlockCopy(arr, 0, ret, 0, arr.Length);
-            var pos = arr.Length;
-            foreach(var a in arrs)
+            int pos = arr.Length;
+            foreach(byte[] a in arrs)
             {
                 Buffer.BlockCopy(a, 0, ret, pos, a.Length);
                 pos += a.Length;
@@ -348,8 +348,8 @@ namespace NBitcoin
                 return false;
             if(b == null)
                 return false;
-            var alen = a.Length - startA;
-            var blen = b.Length - startB;
+            int alen = a.Length - startA;
+            int blen = b.Length - startB;
 
             if(alen < length || blen < length)
                 return false;
@@ -369,12 +369,12 @@ namespace NBitcoin
         //http://bitcoinj.googlecode.com/git-history/keychain/core/src/main/java/com/google/bitcoin/core/Utils.java
         internal static byte[] FormatMessageForSigning(byte[] messageBytes)
         {
-            MemoryStream ms = new MemoryStream();
+            var ms = new MemoryStream();
 
             ms.WriteByte((byte)BITCOIN_SIGNED_MESSAGE_HEADER_BYTES.Length);
             Write(ms, BITCOIN_SIGNED_MESSAGE_HEADER_BYTES);
 
-            VarInt size = new VarInt((ulong)messageBytes.Length);
+            var size = new VarInt((ulong)messageBytes.Length);
             Write(ms, size.ToBytes());
             Write(ms, messageBytes);
             return ms.ToArray();
@@ -389,7 +389,7 @@ namespace NBitcoin
                 throw new Exception("Only AddressFamily.InterNetworkV4 can be converted to IPv6");
 
             byte[] ipv4Bytes = address.GetAddressBytes();
-            byte[] ipv6Bytes = new byte[16] {
+            var ipv6Bytes = new byte[16] {
              0,0, 0,0, 0,0, 0,0, 0,0, 0xFF,0xFF,
              ipv4Bytes [0], ipv4Bytes [1], ipv4Bytes [2], ipv4Bytes [3]
              };
@@ -418,13 +418,13 @@ namespace NBitcoin
             ms.Write(bytes, 0, bytes.Length);
         }
 
-        internal static Array BigIntegerToBytes(NBitcoin.BouncyCastle.Math.BigInteger b, int numBytes)
+        internal static Array BigIntegerToBytes(BigInteger b, int numBytes)
         {
             if(b == null)
             {
                 return null;
             }
-            byte[] bytes = new byte[numBytes];
+            var bytes = new byte[numBytes];
             byte[] biBytes = b.ToByteArray();
             int start = (biBytes.Length == numBytes + 1) ? 1 : 0;
             int length = Math.Min(biBytes.Length, numBytes);
@@ -445,7 +445,7 @@ namespace NBitcoin
                 isPositive = false;
                 num = num.Multiply(BigInteger.ValueOf(-1));
             }
-            var array = num.ToByteArray();
+            byte[] array = num.ToByteArray();
             Array.Reverse(array);
             if(!isPositive)
                 array[array.Length - 1] |= 0x80;
@@ -459,7 +459,7 @@ namespace NBitcoin
             if(data.Length == 0)
                 return BigInteger.Zero;
             data = data.ToArray();
-            var positive = (data[data.Length - 1] & 0x80) == 0;
+            bool positive = (data[data.Length - 1] & 0x80) == 0;
             if(!positive)
             {
                 data[data.Length - 1] &= unchecked((byte)~0x80);
@@ -469,7 +469,7 @@ namespace NBitcoin
             return new BigInteger(1, data);
         }
 
-        static readonly TraceSource _TraceSource = new TraceSource("NBitcoin");
+        private static readonly TraceSource _TraceSource = new TraceSource("NBitcoin");
 
         internal static bool error(string msg)
         {
@@ -483,7 +483,7 @@ namespace NBitcoin
         }
 
 
-        static DateTimeOffset unixRef = new DateTimeOffset(1970, 1, 1, 0, 0, 0, TimeSpan.Zero);
+        private static DateTimeOffset unixRef = new DateTimeOffset(1970, 1, 1, 0, 0, 0, TimeSpan.Zero);
 
         public static uint DateTimeToUnixTime(DateTimeOffset dt)
         {
@@ -495,7 +495,7 @@ namespace NBitcoin
             dt = dt.ToUniversalTime();
             if(dt < unixRef)
                 throw new ArgumentOutOfRangeException("The supplied datetime can't be expressed in unix timestamp");
-            var result = (dt - unixRef).TotalSeconds;
+            double result = (dt - unixRef).TotalSeconds;
             if(result > UInt32.MaxValue)
                 throw new ArgumentOutOfRangeException("The supplied datetime can't be expressed in unix timestamp");
             return (ulong)result;
@@ -503,17 +503,17 @@ namespace NBitcoin
 
         public static DateTimeOffset UnixTimeToDateTime(uint timestamp)
         {
-            var span = TimeSpan.FromSeconds(timestamp);
+            TimeSpan span = TimeSpan.FromSeconds(timestamp);
             return unixRef + span;
         }
         public static DateTimeOffset UnixTimeToDateTime(ulong timestamp)
         {
-            var span = TimeSpan.FromSeconds(timestamp);
+            TimeSpan span = TimeSpan.FromSeconds(timestamp);
             return unixRef + span;
         }
         public static DateTimeOffset UnixTimeToDateTime(long timestamp)
         {
-            var span = TimeSpan.FromSeconds(timestamp);
+            TimeSpan span = TimeSpan.FromSeconds(timestamp);
             return unixRef + span;
         }
 
@@ -522,7 +522,7 @@ namespace NBitcoin
         public static string ExceptionToString(Exception exception)
         {
             Exception ex = exception;
-            StringBuilder stringBuilder = new StringBuilder(128);
+            var stringBuilder = new StringBuilder(128);
             while(ex != null)
             {
                 stringBuilder.Append(ex.GetType().Name);
@@ -543,11 +543,11 @@ namespace NBitcoin
             rand = rand ?? new Random();
             for(int i = 0; i < arr.Length; i++)
             {
-                var fromIndex = rand.Next(arr.Length);
-                var from = arr[fromIndex];
+                int fromIndex = rand.Next(arr.Length);
+                T from = arr[fromIndex];
 
-                var toIndex = rand.Next(arr.Length);
-                var to = arr[toIndex];
+                int toIndex = rand.Next(arr.Length);
+                T to = arr[toIndex];
 
                 arr[toIndex] = from;
                 arr[fromIndex] = to;
@@ -558,11 +558,11 @@ namespace NBitcoin
             rand = rand ?? new Random();
             for(int i = 0; i < arr.Count; i++)
             {
-                var fromIndex = rand.Next(arr.Count);
-                var from = arr[fromIndex];
+                int fromIndex = rand.Next(arr.Count);
+                T from = arr[fromIndex];
 
-                var toIndex = rand.Next(arr.Count);
-                var to = arr[toIndex];
+                int toIndex = rand.Next(arr.Count);
+                T to = arr[toIndex];
 
                 arr[toIndex] = from;
                 arr[fromIndex] = to;
@@ -570,7 +570,7 @@ namespace NBitcoin
         }
         public static void Shuffle<T>(T[] arr, int seed)
         {
-            Random rand = new Random(seed);
+            var rand = new Random(seed);
             Shuffle(arr, rand);
         }
 
@@ -581,7 +581,7 @@ namespace NBitcoin
 
 
 #if !NOSOCKET
-        public static void SafeCloseSocket(System.Net.Sockets.Socket socket)
+        public static void SafeCloseSocket(Socket socket)
         {
             try
             {
@@ -599,9 +599,9 @@ namespace NBitcoin
             }
         }
 
-        public static System.Net.IPEndPoint EnsureIPv6(System.Net.IPEndPoint endpoint)
+        public static IPEndPoint EnsureIPv6(IPEndPoint endpoint)
         {
-            if(endpoint.AddressFamily == System.Net.Sockets.AddressFamily.InterNetworkV6)
+            if(endpoint.AddressFamily == AddressFamily.InterNetworkV6)
                 return endpoint;
             return new IPEndPoint(endpoint.Address.MapToIPv6Ex(), endpoint.Port);
         }

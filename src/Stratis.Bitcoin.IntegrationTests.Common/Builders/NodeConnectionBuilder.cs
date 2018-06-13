@@ -49,9 +49,9 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.Builders
 
         public void DisconnectAll()
         {
-            foreach (var node in this.nodes)
+            foreach (KeyValuePair<string, CoreNode> node in this.nodes)
             {
-                foreach (var otherNode in this.nodes.Where(x => x.Key != node.Key))
+                foreach (KeyValuePair<string, CoreNode> otherNode in this.nodes.Where(x => x.Key != node.Key))
                 {
                     node.Value.CreateRPCClient().RemoveNode(otherNode.Value.Endpoint);
                 }

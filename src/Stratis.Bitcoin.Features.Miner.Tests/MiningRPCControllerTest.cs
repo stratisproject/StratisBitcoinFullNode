@@ -91,7 +91,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
                 .Returns(new List<HdAccount>() {
                     WalletTestsHelpers.CreateAccount("test")
                 });
-            var address = WalletTestsHelpers.CreateAddress(false);
+            HdAddress address = WalletTestsHelpers.CreateAddress(false);
             this.walletManager.Setup(w => w.GetUnusedAddress(It.IsAny<WalletAccountReference>()))
                 .Returns(address);
 
@@ -100,7 +100,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
                     new NBitcoin.uint256(1255632623)
                 });
 
-            var result = this.controller.Generate(1);
+            List<uint256> result = this.controller.Generate(1);
 
             Assert.NotEmpty(result);
 
@@ -142,7 +142,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
 
             var exception = Assert.Throws<ConfigurationException>(() =>
             {
-                var result = this.controller.StartStaking("myWallet", "password1");
+                bool result = this.controller.StartStaking("myWallet", "password1");
             });
 
             Assert.Contains("Staking cannot start", exception.Message);
@@ -158,7 +158,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
             this.fullNode.Setup(f => f.NodeFeature<MiningFeature>(true))
                 .Returns(new MiningFeature(Network.Main, new MinerSettings(Configuration.NodeSettings.Default()), Configuration.NodeSettings.Default(), this.LoggerFactory.Object, this.timeSyncBehaviorState.Object, this.powMining.Object, this.posMinting.Object));
 
-            var result = this.controller.StartStaking("myWallet", "password1");
+            bool result = this.controller.StartStaking("myWallet", "password1");
 
             Assert.True(result);
             this.posMinting.Verify(p => p.Stake(It.Is<PosMinting.WalletSecret>(s => s.WalletName == "myWallet" && s.WalletPassword == "password1")), Times.Exactly(1));
@@ -169,7 +169,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
         {
             this.controller = new MiningRPCController(this.powMining.Object, this.fullNode.Object, this.LoggerFactory.Object, this.walletManager.Object, null);
 
-            var result = this.controller.GetStakingInfo(true);
+            GetStakingInfoModel result = this.controller.GetStakingInfo(true);
 
             Assert.Equal(JsonConvert.SerializeObject(new GetStakingInfoModel()), JsonConvert.SerializeObject(result));
         }
@@ -184,7 +184,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
                     CurrentBlockSize = 150000
                 }).Verifiable();
 
-            var result = this.controller.GetStakingInfo(true);
+            GetStakingInfoModel result = this.controller.GetStakingInfo(true);
             
             Assert.True(result.Enabled);
             Assert.Equal(150000, result.CurrentBlockSize);

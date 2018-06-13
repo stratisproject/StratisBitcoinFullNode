@@ -33,21 +33,21 @@ namespace NBitcoin.BouncyCastle.Asn1
         {
             get
             {
-                return _remaining;
+                return this._remaining;
             }
         }
 
         public override int ReadByte()
         {
-            if(_remaining == 0)
+            if(this._remaining == 0)
                 return -1;
 
-            int b = _in.ReadByte();
+            int b = this._in.ReadByte();
 
             if(b < 0)
-                throw new EndOfStreamException("DEF length " + _originalLength + " object truncated by " + _remaining);
+                throw new EndOfStreamException("DEF length " + this._originalLength + " object truncated by " + this._remaining);
 
-            if(--_remaining == 0)
+            if(--this._remaining == 0)
             {
                 SetParentEofDetect(true);
             }
@@ -60,16 +60,16 @@ namespace NBitcoin.BouncyCastle.Asn1
             int off,
             int len)
         {
-            if(_remaining == 0)
+            if(this._remaining == 0)
                 return 0;
 
-            int toRead = System.Math.Min(len, _remaining);
-            int numRead = _in.Read(buf, off, toRead);
+            int toRead = System.Math.Min(len, this._remaining);
+            int numRead = this._in.Read(buf, off, toRead);
 
             if(numRead < 1)
-                throw new EndOfStreamException("DEF length " + _originalLength + " object truncated by " + _remaining);
+                throw new EndOfStreamException("DEF length " + this._originalLength + " object truncated by " + this._remaining);
 
-            if((_remaining -= numRead) == 0)
+            if((this._remaining -= numRead) == 0)
             {
                 SetParentEofDetect(true);
             }
@@ -79,22 +79,22 @@ namespace NBitcoin.BouncyCastle.Asn1
 
         internal void ReadAllIntoByteArray(byte[] buf)
         {
-            if(_remaining != buf.Length)
+            if(this._remaining != buf.Length)
                 throw new ArgumentException("buffer length not right for data");
 
-            if((_remaining -= Streams.ReadFully(_in, buf)) != 0)
-                throw new EndOfStreamException("DEF length " + _originalLength + " object truncated by " + _remaining);
+            if((this._remaining -= Streams.ReadFully(this._in, buf)) != 0)
+                throw new EndOfStreamException("DEF length " + this._originalLength + " object truncated by " + this._remaining);
             SetParentEofDetect(true);
         }
 
         internal byte[] ToArray()
         {
-            if(_remaining == 0)
+            if(this._remaining == 0)
                 return EmptyBytes;
 
-            byte[] bytes = new byte[_remaining];
-            if((_remaining -= Streams.ReadFully(_in, bytes)) != 0)
-                throw new EndOfStreamException("DEF length " + _originalLength + " object truncated by " + _remaining);
+            var bytes = new byte[this._remaining];
+            if((this._remaining -= Streams.ReadFully(this._in, bytes)) != 0)
+                throw new EndOfStreamException("DEF length " + this._originalLength + " object truncated by " + this._remaining);
             SetParentEofDetect(true);
             return bytes;
         }

@@ -262,7 +262,9 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             try
             {
                 using (var fs = new FileStream(filePath, FileMode.Open))
+                {
                     return this.LoadFromStream(network, fs);
+                }
             }
             catch (Exception ex)
             {
