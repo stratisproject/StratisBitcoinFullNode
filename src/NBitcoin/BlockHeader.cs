@@ -138,6 +138,12 @@ namespace NBitcoin
             return this.GetHash();
         }
 
+        [Obsolete("Call PrecomputeHash(true, true) instead")]
+        public void CacheHashes()
+        {
+            this.PrecomputeHash(true, true);
+        }
+
         /// <summary>
         /// Precompute the block header hash so that later calls to <see cref="GetHash()"/> will returns the precomputed hash.
         /// </summary>

@@ -190,12 +190,14 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
         /// <param name="agent">A user agent string to distinguish different node versions from each other.</param>
         public CoreNode CreateCustomNode(bool start, Action<IFullNodeBuilder> callback, Network network, ProtocolVersion protocolVersion = ProtocolVersion.PROTOCOL_VERSION, string configFileName = "custom.conf", string agent = "Custom")
         {
-            return CreateNode(new CustomNodeRunner(this.GetNextDataFolderName(), callback, network, protocolVersion, configFileName, agent), network, start, configFileName);
+            return CreateNode(new CustomNodeRunner(this.GetNextDataFolderName(agent), callback, network, protocolVersion, configFileName, agent), network, start, configFileName);
         }
 
-        private string GetNextDataFolderName()
+        private string GetNextDataFolderName(string folderName = null)
         {
-            string dataFolderName = Path.Combine(this.rootFolder, this.lastDataFolderIndex.ToString());
+            var numberedFolderName = string.Join(".",
+                new[] {this.lastDataFolderIndex.ToString(), folderName}.Where(s => s != null));
+            string dataFolderName = Path.Combine(this.rootFolder, numberedFolderName);
             this.lastDataFolderIndex++;
             return dataFolderName;
         }
