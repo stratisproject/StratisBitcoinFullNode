@@ -200,13 +200,24 @@ namespace NBitcoin.Tests
                 CreateCoin("3.0"),
                 CreateCoin("3.0")
             }, Money.Parse("10.0")));
+
+            // Should spend all coins belonging to same scriptPubKey
+            var bob = new Key().ScriptPubKey;
+            var alice = new Key().ScriptPubKey;
+            var selected = selector.Select(new ICoin[] { CreateCoin("5", bob), CreateCoin("5", bob) }, Money.Parse("2.0")).ToArray();
+            Assert.Equal(2, selected.Length);
+
+            selected = selector.Select(new ICoin[] { CreateCoin("5", alice), CreateCoin("5", bob) }, Money.Parse("2.0")).ToArray();
+            Assert.Equal(1, selected.Length);
+            ///////
         }
 
-        private Coin CreateCoin(Money amount)
+        private Coin CreateCoin(Money amount, Script scriptPubKey = null)
         {
             return new Coin(new OutPoint(Rand(), 0), new TxOut()
             {
-                Value = amount
+                Value = amount,
+                ScriptPubKey = scriptPubKey
             });
         }
 
@@ -367,6 +378,7 @@ namespace NBitcoin.Tests
             //Scenario 1 : Carla knows aliceBobCoins so she can calculate how much coin she need to complete the transaction
             //Carla fills and signs
             txBuilder = new TransactionBuilder();
+            ((DefaultCoinSelector)txBuilder.CoinSelector).GroupByScriptPubKey = false;
             Transaction carlaSigned = txBuilder
                 .AddCoins(aliceBobCoins)
                 .Then()
@@ -393,6 +405,7 @@ namespace NBitcoin.Tests
             //Scenario 2 : Carla is told by Bob to complete 0.05 BTC
             //Carla fills and signs
             txBuilder = new TransactionBuilder();
+            ((DefaultCoinSelector)txBuilder.CoinSelector).GroupByScriptPubKey = false;
             carlaSigned = txBuilder
                 .AddKeys(carlaKey)
                 .AddCoins(carlaCoins)
@@ -421,6 +434,73 @@ namespace NBitcoin.Tests
             return amounts
                 .Select(a => new Coin(RandOutpoint(), new TxOut(a, destination.PubKey.Hash)))
                 .ToArray();
+        }
+
+        [Fact]
+        [Trait("UnitTest", "UnitTest")]
+        public void CanPrecomputeHashes()
+        {
+            Transaction tx = new Transaction();
+            tx.AddInput(new TxIn(RandomCoin(Money.Coins(1.0m), new Key()).Outpoint, Script.Empty));
+            tx.Inputs[0].WitScript = new WitScript(Op.GetPushOp(3));
+            tx.AddOutput(RandomCoin(Money.Coins(1.0m), new Key()).TxOut);
+            var template = tx.Clone();
+
+            // If lazy is true, then the cache will be calculated later
+            tx = template.Clone();
+            var initialHashes = new uint256[] { tx.GetHash(), tx.GetWitHash() };
+            tx.PrecomputeHash(false, true);
+            tx.Outputs[0].Value = Money.Coins(1.1m);
+            var afterHashes = new uint256[] { tx.GetHash(), tx.GetWitHash() };
+            Assert.NotEqual(initialHashes[0], afterHashes[0]);
+            Assert.NotEqual(initialHashes[1], afterHashes[1]);
+            Assert.NotEqual(afterHashes[1], afterHashes[0]);
+            /////
+
+            // If lazy is false, then the cache is calculated now
+            tx = template.Clone();
+            initialHashes = new uint256[] { tx.GetHash(), tx.GetWitHash() };
+            tx.PrecomputeHash(false, false);
+            tx.Outputs[0].Value = Money.Coins(1.1m);
+            afterHashes = new uint256[] { tx.GetHash(), tx.GetWitHash() };
+            // The hash should be outdated, because they were not calculated during second call to tx.GetHash()
+            Assert.Equal(initialHashes[0], afterHashes[0]);
+            Assert.Equal(initialHashes[1], afterHashes[1]);
+            Assert.NotEqual(afterHashes[1], afterHashes[0]);
+            /////
+
+            // If invalidExisting is false, then the cache is not recalculated
+            tx = template.Clone();
+            initialHashes = new uint256[] { tx.GetHash(), tx.GetWitHash() };
+            tx.PrecomputeHash(false, false);
+            tx.Outputs[0].Value = Money.Coins(1.1m);
+            afterHashes = new uint256[] { tx.GetHash(), tx.GetWitHash() };
+            // Out of date...
+            Assert.Equal(initialHashes[0], afterHashes[0]);
+            Assert.Equal(initialHashes[1], afterHashes[1]);
+            tx.PrecomputeHash(false, false);
+            // Always out of date...
+            var afterHashes2 = new uint256[] { tx.GetHash(), tx.GetWitHash() };
+            Assert.Equal(afterHashes2[0], afterHashes[0]);
+            Assert.Equal(afterHashes2[1], afterHashes[1]);
+            Assert.NotEqual(afterHashes2[1], afterHashes2[0]);
+            ///////
+
+            // If invalidExisting is true, then the cache is recalculated
+            tx = template.Clone();
+            initialHashes = new uint256[] { tx.GetHash(), tx.GetWitHash() };
+            tx.PrecomputeHash(false, false);
+            tx.Outputs[0].Value = Money.Coins(1.1m);
+            afterHashes = new uint256[] { tx.GetHash(), tx.GetWitHash() };
+            // Out of date...
+            Assert.Equal(initialHashes[0], afterHashes[0]);
+            Assert.Equal(initialHashes[1], afterHashes[1]);
+            tx.PrecomputeHash(true, false);
+            // Not out of date anymore...
+            afterHashes2 = new uint256[] { tx.GetHash(), tx.GetWitHash() };
+            Assert.NotEqual(afterHashes2[0], afterHashes[0]);
+            Assert.NotEqual(afterHashes2[1], afterHashes[1]);
+            ///////
         }
 
         [Fact]
@@ -1384,6 +1464,36 @@ namespace NBitcoin.Tests
             Transaction signedTx2 = signedTx.WithOptions(TransactionOptions.None, Network.Main.Consensus.ConsensusFactory);
             Assert.Equal(signedTx.GetHash(), signedTx2.GetHash());
             Assert.True(signedTx2.GetSerializedSize() < signedTx.GetSerializedSize());
+        }
+
+        [Fact]
+        [Trait("UnitTest", "UnitTest")]
+        public void CanFilterUneconomicalCoins()
+        {
+            var builder = new TransactionBuilder();
+            var alice = new Key();
+            var bob = new Key();
+            //P2SH(P2WSH)
+            var previousTx = new Transaction();
+            previousTx.Outputs.Add(new TxOut(Money.Coins(1.0m), alice.PubKey.ScriptPubKey.WitHash.ScriptPubKey.Hash));
+            var previousCoin = previousTx.Outputs.AsCoins().First();
+
+            var witnessCoin = new ScriptCoin(previousCoin, alice.PubKey.ScriptPubKey);
+            builder = new TransactionBuilder();
+            builder.AddKeys(alice);
+            builder.AddCoins(witnessCoin);
+            builder.Send(bob, Money.Coins(0.4m));
+            builder.SendFees(Money.Satoshis(30000));
+            builder.SetChange(alice);
+            builder.BuildTransaction(true);
+            builder.FilterUneconomicalCoinsRate = new FeeRate(Money.Coins(1m), 1);
+            Assert.Throws<NotEnoughFundsException>(() => builder.BuildTransaction(true));
+            builder.FilterUneconomicalCoins = false;
+            builder.BuildTransaction(true);
+            builder.FilterUneconomicalCoins = true;
+            Assert.Throws<NotEnoughFundsException>(() => builder.BuildTransaction(true));
+            builder.FilterUneconomicalCoinsRate = new FeeRate(Money.Satoshis(1m), 1);
+            builder.BuildTransaction(true);
         }
 
         [Fact]
