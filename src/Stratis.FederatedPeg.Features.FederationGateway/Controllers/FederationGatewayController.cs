@@ -5,6 +5,7 @@ using System.Net;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
+using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Utilities.JsonErrors;
@@ -20,15 +21,26 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Controllers
     [Route("api/[controller]")]
     public class FederationGatewayController : Controller
     {
+        /// <summary>Instance logger.</summary>
+        private readonly ILogger logger;
+
         private ICounterChainSessionManager counterChainSessionManager;
 
         private IMonitorChainSessionManager monitorChainSessionManager;
 
-        public FederationGatewayController(ICounterChainSessionManager counterChainSessionManager,
-            IMonitorChainSessionManager monitorChainSessionManager)
+        /// <summary>Specification of the network the node runs on.</summary>
+        private readonly Network network;
+
+        public FederationGatewayController(
+            ILoggerFactory loggerFactory, 
+            ICounterChainSessionManager counterChainSessionManager,
+            IMonitorChainSessionManager monitorChainSessionManager, 
+            Network network)
         {
+            this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.monitorChainSessionManager = monitorChainSessionManager;
             this.counterChainSessionManager = counterChainSessionManager;
+            this.network = network;
         }
 
         [Route("create-session-oncounterchain")]
@@ -86,6 +98,35 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Controllers
             catch (Exception e)
             {
                 return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, $"Could not initialize sidechain:{e.Message}", e.ToString());
+            }
+        }
+
+        /// <summary>
+        /// Imports the federation member's mnemonic key.
+        /// </summary>
+        /// <param name="request">The object containing the parameters used to recover a wallet.</param>
+        /// <returns></returns>
+        [Route("import-key")]
+        [HttpPost]
+        public IActionResult ImportMemberKey([FromBody]ImportMemberKeyRequest request)
+        {
+            Guard.NotNull(request, nameof(request));
+
+            // checks the request is valid
+            if (!this.ModelState.IsValid)
+            {
+                return BuildErrorResponse(this.ModelState);
+            }
+
+            try
+            {
+                this.counterChainSessionManager.ImportMemberKey(request.Password, request.Mnemonic);
+                return this.Ok();
+            }
+            catch (Exception e)
+            {
+                this.logger.LogError("Exception occurred: {0}", e.ToString());
+                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
             }
         }
 

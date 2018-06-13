@@ -1,15 +1,23 @@
 ﻿using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin;
+using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Features.GeneralPurposeWallet;
 using Stratis.Bitcoin.Features.GeneralPurposeWallet.Interfaces;
+using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.P2P.Peer;
+using Stratis.Bitcoin.Utilities;
+using Stratis.FederatedPeg.Features.FederationGateway.Models;
+using CoinType = Stratis.Bitcoin.Features.GeneralPurposeWallet.CoinType;
+using Recipient = Stratis.Bitcoin.Features.GeneralPurposeWallet.Recipient;
+using TransactionBuildContext = Stratis.Bitcoin.Features.GeneralPurposeWallet.TransactionBuildContext;
 
 namespace Stratis.FederatedPeg.Features.FederationGateway.CounterChain
 {
@@ -43,18 +51,45 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.CounterChain
         // The logger. It's the logger.
         private readonly ILogger logger;
 
+        /// <summary>Provider of time functions.</summary>
+        private readonly IDateTimeProvider dateTimeProvider;
+
         // The shoulders we stand on.
         private IFullNode fullnode;
+
+        /// <summary>An object capable of storing <see cref="MemberDetails"/>s to the file system.</summary>
+        private readonly FileStorage<MemberDetails> fileStorage;
+
+        /// <summary>
+        /// The name of the member details file.
+        /// </summary>
+        private const string MemberDetailsFileName = "member_details.json";
+
+        public MemberDetails MemberDetails { get; }
 
         // The sessions are stored here.
         private ConcurrentDictionary<uint256, CounterChainSession> sessions = new ConcurrentDictionary<uint256, CounterChainSession>();
 
         // Get everything together before we get going.
-        public CounterChainSessionManager(ILoggerFactory loggerFactory, IGeneralPurposeWalletManager generalPurposeWalletManager,
-            IGeneralPurposeWalletTransactionHandler generalPurposeWalletTransactionHandler, IConnectionManager connectionManager, Network network,
-            FederationGatewaySettings federationGatewaySettings, IInitialBlockDownloadState initialBlockDownloadState, IFullNode fullnode,
-            IGeneralPurposeWalletBroadcasterManager broadcastManager, ConcurrentChain concurrentChain, ICrossChainTransactionAuditor crossChainTransactionAuditor = null)
+        public CounterChainSessionManager(
+            ILoggerFactory loggerFactory, 
+            IGeneralPurposeWalletManager generalPurposeWalletManager,
+            IGeneralPurposeWalletTransactionHandler generalPurposeWalletTransactionHandler, 
+            IConnectionManager connectionManager, 
+            Network network,
+            FederationGatewaySettings federationGatewaySettings, 
+            IInitialBlockDownloadState initialBlockDownloadState, 
+            IFullNode fullnode,
+            IGeneralPurposeWalletBroadcasterManager broadcastManager, 
+            ConcurrentChain concurrentChain,
+            DataFolder dataFolder,
+            IDateTimeProvider dateTimeProvider,
+            ICrossChainTransactionAuditor crossChainTransactionAuditor = null)
         {
+            Guard.NotNull(loggerFactory, nameof(loggerFactory));
+            Guard.NotNull(network, nameof(network));
+            Guard.NotNull(dataFolder, nameof(dataFolder));
+
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.network = network;
             this.connectionManager = connectionManager;
@@ -65,6 +100,12 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.CounterChain
             this.generalPurposeWalletManager = generalPurposeWalletManager;
             this.generalPurposeWalletTransactionHandler = generalPurposeWalletTransactionHandler;
             this.federationGatewaySettings = federationGatewaySettings;
+            this.dateTimeProvider = dateTimeProvider;
+            this.fileStorage = new FileStorage<MemberDetails>(dataFolder.RootPath);
+
+            if (this.fileStorage.Exists(MemberDetailsFileName))
+                this.MemberDetails = this.fileStorage.LoadByFileName(MemberDetailsFileName);
+            
         }
 
         ///<inheritdoc/>
@@ -289,5 +330,54 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.CounterChain
             this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} has signed session {session.SessionId}.");
             session.HaveISigned = true;
         }
+
+        /// <inheritdoc />
+        public void ImportMemberKey(string password, string mnemonic)
+        {
+            Guard.NotEmpty(password, nameof(password));
+            Guard.NotEmpty(mnemonic, nameof(mnemonic));
+            
+            // Get the extended key.
+            ExtKey extendedKey;
+            try
+            {
+                extendedKey = HdOperations.GetExtendedKey(mnemonic, password);
+            }
+            catch (NotSupportedException ex)
+            {
+                this.logger.LogTrace("Exception occurred: {0}", ex.ToString());
+                this.logger.LogTrace("(-)[EXCEPTION]");
+
+                if (ex.Message == "Unknown")
+                    throw new WalletException("Please make sure you enter valid mnemonic words.");
+
+                throw;
+            }
+
+            // Create a wallet file.
+            string encryptedSeed = extendedKey.PrivateKey.GetEncryptedBitcoinSecret(password, this.network).ToWif();
+
+            MemberDetails memberDetails = new MemberDetails
+            {
+                EncryptedSeed = encryptedSeed,
+                CreationTime = this.dateTimeProvider.GetTimeOffset()
+            };
+
+            // Save the changes to the file and add addresses to be tracked.
+            this.SaveMemberDetails(memberDetails);
+
+            this.logger.LogTrace("(-)");
+        }
+
+        public void SaveMemberDetails(MemberDetails memberDetails)
+        {
+            Guard.NotNull(memberDetails, nameof(memberDetails));
+            this.logger.LogTrace("({0}:'{1}')", nameof(memberDetails), memberDetails);
+
+            this.fileStorage.SaveToFile(memberDetails, MemberDetailsFileName);
+
+            this.logger.LogTrace("(-)");
+        }
+
     }
 }

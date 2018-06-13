@@ -14,6 +14,7 @@
   <ItemGroup>
     <PackageReference Include="Stratis.Bitcoin" Version="1.1.11-beta" />
     <PackageReference Include="Stratis.Bitcoin.Features.Notifications" Version="1.1.11-beta" />
+    <PackageReference Include="Stratis.Bitcoin.Features.Wallet" Version="1.1.11-beta" />
   </ItemGroup>
 
   <ItemGroup>
