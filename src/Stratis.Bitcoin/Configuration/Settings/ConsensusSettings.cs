@@ -1,5 +1,4 @@
-﻿using System.Linq;
-using System.Text;
+﻿using System.Text;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Utilities;
@@ -45,8 +44,8 @@ namespace Stratis.Bitcoin.Configuration.Settings
             this.logger.LogTrace("({0}:'{1}')", nameof(nodeSettings), nodeSettings.Network.Name);
 
             TextFileConfiguration config = nodeSettings.ConfigReader;
-            this.UseCheckpoints = config.GetOrDefault<bool>("checkpoints", true, this.logger);
 
+            this.UseCheckpoints = config.GetOrDefault<bool>("checkpoints", true, this.logger);
             this.BlockAssumedValid = config.GetOrDefault<uint256>("assumevalid", nodeSettings.Network.Consensus.DefaultAssumeValid, this.logger);
             this.MaxTipAge = config.GetOrDefault("maxtipage", nodeSettings.Network.MaxTipAge, this.logger);
 

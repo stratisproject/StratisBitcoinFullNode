@@ -64,7 +64,6 @@ namespace Stratis.Bitcoin.Features.Miner
                 this.MineAddress = config.GetOrDefault<string>("mineaddress", null, this.logger);
 
             this.Stake = config.GetOrDefault<bool>("stake", false, this.logger);
-
             if (this.Stake)
             {
                 this.WalletName = config.GetOrDefault<string>("walletname", null, this.logger);

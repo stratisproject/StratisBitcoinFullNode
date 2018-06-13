@@ -121,14 +121,14 @@ namespace Stratis.Bitcoin.Configuration.Settings
             this.MaxOutboundConnections = config.GetOrDefault<int>("maxoutboundconnections", ConnectionManagerSettings.DefaultMaxOutboundConnections, this.logger);
             this.BurstModeTargetConnections = config.GetOrDefault("burstModeTargetConnections", 1, this.logger);
             this.SyncTimeEnabled = config.GetOrDefault<bool>("synctime", true, this.logger);
+            this.RelayTxes = !config.GetOrDefault("blocksonly", DefaultBlocksOnly, this.logger);
+
             var agentPrefix = config.GetOrDefault("agentprefix", string.Empty, this.logger).Replace("-", "");
             if (agentPrefix.Length > MaximumAgentPrefixLength)
                 agentPrefix = agentPrefix.Substring(0, MaximumAgentPrefixLength);
 
             this.Agent = string.IsNullOrEmpty(agentPrefix) ? nodeSettings.Agent : $"{agentPrefix}-{nodeSettings.Agent}";
             this.logger.LogDebug("Agent set to '{0}'.", this.Agent);
-
-            this.RelayTxes = !config.GetOrDefault("blocksonly", DefaultBlocksOnly, this.logger);
 
             this.logger.LogTrace("(-)");
         }
