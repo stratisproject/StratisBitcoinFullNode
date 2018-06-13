@@ -1,8 +1,12 @@
 {
   "profiles": {
-    "Stratis.FederationGatewayD": {
+    "Stratis.FederationGatewayD Sidechain": {
       "commandName": "Project",
-      "commandLineArgs": "-sidechain -datadir=\"%AppData%\\Roaming\\StratisNode\\apex\\Test.Gateway.To.Stratis\" -conf=\"apex.gateway.conf\""
+      "commandLineArgs": "-sidechain -conf=\"apex.gateway.conf\""
+    },
+    "Stratis.FederationGatewayD Mainchain": {
+      "commandName": "Project",
+      "commandLineArgs": "-mainchain -conf=\"stratis.gateway.conf\""
     }
   }
 }
