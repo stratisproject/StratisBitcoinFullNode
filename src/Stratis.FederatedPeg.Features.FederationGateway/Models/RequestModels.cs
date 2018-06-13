@@ -57,4 +57,13 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Models
         [Required(ErrorMessage = "Destination Address required.")]
         public string DestinationAddress { get; set; }
     }
+
+    public class ImportMemberKeyRequest : RequestModel
+    {
+        [Required(ErrorMessage = "A mnemonic is required.")]
+        public string Mnemonic { get; set; }
+
+        [Required(ErrorMessage = "A password is required.")]
+        public string Password { get; set; }
+    }
 }
