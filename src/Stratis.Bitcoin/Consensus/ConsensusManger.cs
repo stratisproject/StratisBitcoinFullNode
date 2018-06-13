@@ -14,9 +14,12 @@ using Stratis.Bitcoin.Utilities.Extensions;
 
 namespace Stratis.Bitcoin.Consensus
 {
+    /// <summary>
+    /// TODO: use this interface on the new block puller.
+    /// </summary>
     public interface IBlockPuller
     {
-        void NewTipClaimed();
+        void NewTipClaimed(int networkPeerId, ChainedHeader chainedHeader);
 
         long AverageBlockSize { get; }
 
@@ -31,7 +34,7 @@ namespace Stratis.Bitcoin.Consensus
         private readonly ILogger logger;
         private readonly IChainedHeaderTree chainedHeaderTree;
         private readonly IChainState chainState;
-        private readonly IChainedHeaderValidator chainedHeaderValidator;
+        private readonly IBlockValidator blockValidator;
         private readonly ConsensusSettings consensusSettings;
         private readonly IBlockPuller blockPuller;
         private readonly IConsensusRules consensusRules;
@@ -50,7 +53,7 @@ namespace Stratis.Bitcoin.Consensus
             Network network, 
             ILoggerFactory loggerFactory, 
             IChainState chainState, 
-            IChainedHeaderValidator chainedHeaderValidator, 
+            IBlockValidator blockValidator, 
             ICheckpoints checkpoints, 
             ConsensusSettings consensusSettings, 
             ConcurrentChain concurrentChain,
@@ -61,14 +64,14 @@ namespace Stratis.Bitcoin.Consensus
         {
             this.network = network;
             this.chainState = chainState;
-            this.chainedHeaderValidator = chainedHeaderValidator;
+            this.blockValidator = blockValidator;
             this.consensusSettings = consensusSettings;
             this.blockPuller = blockPuller;
             this.consensusRules = consensusRules;
             this.blockStore = blockStore;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
 
-            this.chainedHeaderTree = new ChainedHeaderTree(network, loggerFactory, chainedHeaderValidator, checkpoints, chainState, finalizedBlockHeight, consensusSettings);
+            this.chainedHeaderTree = new ChainedHeaderTree(network, loggerFactory, blockValidator, checkpoints, chainState, finalizedBlockHeight, consensusSettings);
 
             this.treeLock = new object();
 
@@ -106,7 +109,10 @@ namespace Stratis.Bitcoin.Consensus
                 utxoHash = await this.consensusRules.RewindAsync().ConfigureAwait(false);
             }
 
-            this.chainedHeaderTree.Initialize(this.Tip, !blockStoreDisabled);
+            lock (this.treeLock)
+            {
+                this.chainedHeaderTree.Initialize(this.Tip, !blockStoreDisabled);
+            }
 
             this.logger.LogTrace("(-)");
         }
@@ -127,7 +133,7 @@ namespace Stratis.Bitcoin.Consensus
             lock (this.treeLock)
             {
                 newHeaders = this.chainedHeaderTree.ConnectNewHeaders(peerId, headers);
-                this.blockPuller.NewTipClaimed();
+                this.blockPuller.NewTipClaimed(peerId, newHeaders.Consumed); // TODO: should this be inside the lock?
             }
 
             if (newHeaders?.DownloadTo != null)
@@ -174,7 +180,7 @@ namespace Stratis.Bitcoin.Consensus
 
             if (partialValidationRequired)
             {
-                this.chainedHeaderValidator.StartPartialValidation(blockPair, this.OnPartialValidationCompletedCallback);
+                this.blockValidator.StartPartialValidation(blockPair, this.OnPartialValidationCompletedCallback);
             }
 
             this.logger.LogTrace("(-)");

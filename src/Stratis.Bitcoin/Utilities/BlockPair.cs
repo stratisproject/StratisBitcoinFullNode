@@ -16,11 +16,10 @@ namespace Stratis.Bitcoin.Utilities
         /// <summary>
         /// Creates instance of <see cref="BlockPair" />.
         /// </summary>
-        /// <param name="block">The block.</param>
+        /// <param name="block">The block, the block can be <c>null</c>.</param>
         /// <param name="chainedHeader">Chained header of the <paramref name="block"/>.</param>
         public BlockPair(Block block, ChainedHeader chainedHeader)
         {
-            Guard.NotNull(block, nameof(block));
             Guard.NotNull(chainedHeader, nameof(chainedHeader));
 
             this.Block = block;

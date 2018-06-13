@@ -19,7 +19,7 @@ using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.BlockStore
 {
-    public class BlockStoreFeature : FullNodeFeature, IBlockStore, INodeStats
+    public class BlockStoreFeature : FullNodeFeature, INodeStats
     {
         private readonly ConcurrentChain chain;
 
@@ -100,21 +100,6 @@ namespace Stratis.Bitcoin.Features.BlockStore
                     highestBlock.Height.ToString().PadRight(8) +
                     $" {this.name}.Hash: ".PadRight(LoggingConfiguration.ColumnLength - 1) +
                     highestBlock.HashBlock);
-        }
-
-        public Task<Transaction> GetTrxAsync(uint256 trxid)
-        {
-            return this.blockRepository.GetTrxAsync(trxid);
-        }
-
-        public Task<uint256> GetTrxBlockIdAsync(uint256 trxid)
-        {
-            return this.blockRepository.GetTrxBlockIdAsync(trxid);
-        }
-
-        public Task<Block> GetBlockAsync(uint256 blockHash)
-        {
-            throw new System.NotImplementedException();
         }
 
         public override void Initialize()

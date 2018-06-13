@@ -10,30 +10,6 @@ using Stratis.Bitcoin.Utilities.Extensions;
 
 namespace Stratis.Bitcoin.Consensus
 {
-    /// <summary>Validates <see cref="ChainedHeader"/> instances.</summary>
-    public interface IChainedHeaderValidator
-    {
-        /// <summary>
-        /// Validation of a header that was seen for the first time.
-        /// </summary>
-        /// <param name="chainedHeader">The chained header to be validated.</param>
-        void ValidateHeader(ChainedHeader chainedHeader);
-
-        /// <summary>
-        /// Verifies that the block data corresponds to the chain header.
-        /// </summary>
-        /// <remarks>  
-        /// This validation represents minimal required validation for every block that we download.
-        /// It should be performed even if the block is behind last checkpoint or part of assume valid chain.
-        /// TODO specify what exceptions are thrown (add throws xmldoc)
-        /// </remarks>
-        /// <param name="block">The block that is going to be validated.</param>
-        /// <param name="chainedHeader">The chained header of the block that will be validated.</param>
-        void VerifyBlockIntegrity(Block block, ChainedHeader chainedHeader);
-
-        void StartPartialValidation(BlockPair blockPair, Action<BlockPair, bool> onPartialValidationCompletedCallback);
-    }
-
     /// <summary>
     /// Tree of chained block headers that are being claimed by the connected peers and the node itself.
     /// It represents all chains we potentially can sync with.
@@ -123,7 +99,7 @@ namespace Stratis.Bitcoin.Consensus
         ChainedHeader FindHeaderAndVerifyBlockIntegrity(Block block);
 
         /// <summary>
-        /// Handles situation when the data of a block is downloaded for a given chained header.
+        /// Handles situation when the blocks data is downloaded for a given chained header.
         /// </summary>
         /// <param name="chainedHeader">Chained header that represents <paramref name="block"/>.</param>
         /// <param name="block">Block data.</param>
@@ -164,7 +140,7 @@ namespace Stratis.Bitcoin.Consensus
     internal sealed class ChainedHeaderTree : IChainedHeaderTree
     {
         private readonly Network network;
-        private readonly IChainedHeaderValidator chainedHeaderValidator;
+        private readonly IBlockValidator blockValidator;
         private readonly ILogger logger;
         private readonly ICheckpoints checkpoints;
         private readonly IChainState chainState;
@@ -208,14 +184,14 @@ namespace Stratis.Bitcoin.Consensus
         public ChainedHeaderTree(
             Network network,
             ILoggerFactory loggerFactory,
-            IChainedHeaderValidator chainedHeaderValidator,
+            IBlockValidator blockValidator,
             ICheckpoints checkpoints,
             IChainState chainState,
             IFinalizedBlockHeight finalizedBlockHeight,
             ConsensusSettings consensusSettings)
         {
             this.network = network;
-            this.chainedHeaderValidator = chainedHeaderValidator;
+            this.blockValidator = blockValidator;
             this.checkpoints = checkpoints;
             this.chainState = chainState;
             this.finalizedBlockHeight = finalizedBlockHeight;
@@ -599,7 +575,7 @@ namespace Stratis.Bitcoin.Consensus
                 throw new BlockDownloadedForMissingChainedHeaderException();
             }
 
-            this.chainedHeaderValidator.VerifyBlockIntegrity(block, chainedHeader);
+            this.blockValidator.VerifyBlockIntegrity(block, chainedHeader);
 
             this.logger.LogTrace("(-):'{0}'", chainedHeader);
             return chainedHeader;
@@ -1018,7 +994,7 @@ namespace Stratis.Bitcoin.Consensus
         {
             var newChainedHeader = new ChainedHeader(currentBlockHeader, currentBlockHeader.GetHash(), previousChainedHeader);
 
-            this.chainedHeaderValidator.ValidateHeader(newChainedHeader);
+            this.blockValidator.ValidateHeader(newChainedHeader);
 
             previousChainedHeader.Next.Add(newChainedHeader);
             this.chainedHeadersByHash.Add(newChainedHeader.HashBlock, newChainedHeader);

@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Base;
+using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.BlockStore
@@ -25,7 +26,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
     /// When block store is being initialized we delete blocks that are not on the best chain.
     /// </para>
     /// </remarks>
-    public class BlockStoreQueue : IDisposable
+    public class BlockStoreQueue : IBlockStore, IDisposable
     {
         /// <summary>Maximum interval between saving batches.</summary>
         /// <remarks>Interval value is a prime number that wasn't used as an interval in any other component. That prevents having CPU consumption spikes.</remarks>
@@ -146,7 +147,25 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
             this.logger.LogTrace("(-)");
         }
-        
+
+        /// <inheritdoc/>
+        public Task<Transaction> GetTrxAsync(uint256 trxid)
+        {
+            return this.blockRepository.GetTrxAsync(trxid);
+        }
+
+        /// <inheritdoc/>
+        public Task<uint256> GetTrxBlockIdAsync(uint256 trxid)
+        {
+            return this.blockRepository.GetTrxBlockIdAsync(trxid);
+        }
+
+        /// <inheritdoc/>
+        public Task<Block> GetBlockAsync(uint256 blockHash)
+        {
+            throw new System.NotImplementedException();
+        }
+
         /// <summary>Sets the internal store tip and exposes the store tip to other components through the chain state.</summary>
         private void SetStoreTip(ChainedHeader newTip)
         {
