@@ -48,9 +48,6 @@ namespace Stratis.Bitcoin.Configuration.Settings
             this.UseCheckpoints = config.GetOrDefault<bool>("checkpoints", true, this.logger);
 
             this.BlockAssumedValid = config.GetOrDefault<uint256>("assumevalid", nodeSettings.Network.Consensus.DefaultAssumeValid, this.logger);
-            if (this.BlockAssumedValid == 0)
-                this.BlockAssumedValid = null;
-
             this.MaxTipAge = config.GetOrDefault("maxtipage", nodeSettings.Network.MaxTipAge, this.logger);
 
             this.logger.LogTrace("(-)");
