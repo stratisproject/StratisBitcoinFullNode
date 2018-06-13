@@ -124,7 +124,7 @@ namespace Stratis.Bitcoin.Consensus
         /// <param name="peerId">The peer that is providing the headers.</param>
         /// <param name="headers">The list of new headers.</param>
         /// <returns>The last chained header that is connected to the tree.</returns>
-        public ChainedHeader HeadersPresentedAsync(int peerId, List<BlockHeader> headers)
+        public ChainedHeader HeadersPresented(int peerId, List<BlockHeader> headers)
         {
             this.logger.LogTrace("({0}:{1},{2}.{3}:{4})", nameof(peerId), peerId, nameof(headers), nameof(headers.Count), headers.Count);
 
@@ -188,9 +188,35 @@ namespace Stratis.Bitcoin.Consensus
 
         private void OnPartialValidationCompletedCallback(ChainedHeaderBlock chainedHeaderBlock, bool success)
         {
-            this.logger.LogTrace("({0}:'{1}',{2}.{3}:{4})", nameof(chainedHeaderBlock), chainedHeaderBlock, nameof(success), success);
+            this.logger.LogTrace("({0}:'{1}',{2}:{3})", nameof(chainedHeaderBlock), chainedHeaderBlock, nameof(success), success);
 
-            // TODO
+            if (success)
+            {
+                this.OnPartialValidationSucceeded(chainedHeaderBlock);
+            }
+            else
+            {
+                List<int> peersToBan;
+
+                lock (this.treeLock)
+                {
+                    peersToBan = this.chainedHeaderTree.PartialOrFullValidationFailed(chainedHeaderBlock.ChainedHeader);
+                }
+
+                foreach (int peerId in peersToBan)
+                {
+                    // TODO: ban and disconnect those peers
+                }
+            }
+
+            this.logger.LogTrace("(-)");
+        }
+
+        private void OnPartialValidationSucceeded(ChainedHeaderBlock chainedHeaderBlock)
+        {
+            this.logger.LogTrace("({0}:'{1}')", nameof(chainedHeaderBlock), chainedHeaderBlock);
+
+
 
             this.logger.LogTrace("(-)");
         }
@@ -364,7 +390,7 @@ namespace Stratis.Bitcoin.Consensus
                 long blocksToAsk = freeMb / this.blockPuller.AverageBlockSize;
                 this.logger.LogTrace("The slot of available blocks to ask is {0}.", blocksToAsk);
 
-                if (request.BlocksToDownload.Count < blocksToAsk)
+                if (request.BlocksToDownload.Count <= blocksToAsk)
                 {
                     this.toDownloadQueue.Dequeue();
                     this.blockPuller.RequestNewData(request);
