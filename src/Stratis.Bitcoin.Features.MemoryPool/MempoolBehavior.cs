@@ -505,12 +505,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         {
             this.logger.LogTrace("()");
 
-            if (!this.AttachedPeer?.PeerVersion?.Relay ?? true)  
-            {
-                this.logger.LogTrace("(-)[NO_SEND]");
-                return;
-            }
-
             INetworkPeer peer = this.AttachedPeer;
             if (peer == null)
             {

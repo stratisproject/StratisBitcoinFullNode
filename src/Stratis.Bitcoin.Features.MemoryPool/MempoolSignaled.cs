@@ -113,7 +113,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         }
 
         /// <summary>
-        /// Announces blocks on all connected nodes memory pool behaviours every ten seconds.
+        /// Announces blocks on all connected nodes memory pool behaviors every ten seconds.
         /// </summary>
         public void Start()
         {
@@ -123,10 +123,10 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                 if (!peers.Any())
                     return;
 
-                // announce the blocks on each nodes behaviour
-                IEnumerable<MempoolBehavior> behaviours = peers.Select(s => s.Behavior<MempoolBehavior>());
-                foreach (MempoolBehavior behaviour in behaviours)
-                    await behaviour.SendTrickleAsync().ConfigureAwait(false);
+                // Announce the blocks on each nodes behavior which supports relaying.
+                IEnumerable<MempoolBehavior> behaviors = peers.Where(x => x.PeerVersion?.Relay ?? false).Select(x => x.Behavior<MempoolBehavior>());               
+                foreach (MempoolBehavior behavior in behaviors)
+                    await behavior.SendTrickleAsync().ConfigureAwait(false);
             },
             this.nodeLifetime.ApplicationStopping,
             repeatEvery: TimeSpans.FiveSeconds,
