@@ -1053,7 +1053,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             /// <summary>Gets a collection of memory pool entries ordered by ancestor score.</summary>
             public IEnumerable<TxMempoolEntry> AncestorScore
             {
-                get { return this.Values.OrderBy(o => o, new CompareTxMemPoolEntryByAncestorFee()); }
+                get { return this.Values.OrderByDescending(o => o, new CompareTxMemPoolEntryByAncestorFee()); }
             }
 
             /// <summary>
@@ -1192,26 +1192,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                 /// <inheritdoc />
                 public int Compare(TxMempoolEntry a, TxMempoolEntry b)
                 {
-                    double aFees = a.ModFeesWithAncestors.Satoshi;
-                    double aSize = a.SizeWithAncestors;
-
-                    double bFees = b.ModFeesWithAncestors.Satoshi;
-                    double bSize = b.SizeWithAncestors;
-
-                    // Avoid division by rewriting (a/b > c/d) as (a*d > c*b).
-                    double f1 = aFees * bSize;
-                    double f2 = aSize * bFees;
-
-                    if (f1 == f2)
-                    {
-                        if (a.TransactionHash < b.TransactionHash)
-                            return -1;
-                        return 1;
-                    }
-
-                    if (f1 > f2)
-                        return -1;
-                    return 1;
+                    return TxMempoolEntry.CompareFees(a, b);
                 }
             }
         }
@@ -1224,20 +1205,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             /// <inheritdoc />
             public int Compare(TxMempoolEntry a, TxMempoolEntry b)
             {
-                return InnerCompare(a, b);
-            }
-
-            /// <summary>
-            /// Compares transaction hash of two memory pool entries.
-            /// </summary>
-            /// <param name="a">Memory pool entry.</param>
-            /// <param name="b">Memory pool entry.</param>
-            /// <returns>Result of comparison function.</returns>
-            public static int InnerCompare(TxMempoolEntry a, TxMempoolEntry b)
-            {
-                if (a.TransactionHash == b.TransactionHash) return 0;
-                if (a.TransactionHash < b.TransactionHash) return -1;
-                return 1;
+                return a.CompareTo(b);
             }
         }
 
