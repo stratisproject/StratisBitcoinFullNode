@@ -289,7 +289,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
             // Chain B is presented by peer 2. DownloadTo should be not set, as chain
             // B has less chain work.
             connectNewHeadersResult = cht.ConnectNewHeaders(2, listOfChainBBlockHeaders);
-            connectNewHeadersResult.Should().BeNull();
+            connectNewHeadersResult.DownloadTo.Should().BeNull();
 
             // Add more chain work and blocks into chain B.
             const int chainBAdditionalBlocks = 4;
