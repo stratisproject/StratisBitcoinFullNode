@@ -33,7 +33,7 @@ namespace NBitcoin.BouncyCastle.Math.EC.Custom.Sec
         {
             get
             {
-                return Nat256.IsZero(x);
+                return Nat256.IsZero(this.x);
             }
         }
 
@@ -41,18 +41,18 @@ namespace NBitcoin.BouncyCastle.Math.EC.Custom.Sec
         {
             get
             {
-                return Nat256.IsOne(x);
+                return Nat256.IsOne(this.x);
             }
         }
 
         public override bool TestBitZero()
         {
-            return Nat256.GetBit(x, 0) == 1;
+            return Nat256.GetBit(this.x, 0) == 1;
         }
 
         public override BigInteger ToBigInteger()
         {
-            return Nat256.ToBigInteger(x);
+            return Nat256.ToBigInteger(this.x);
         }
 
         public override string FieldName
@@ -74,28 +74,28 @@ namespace NBitcoin.BouncyCastle.Math.EC.Custom.Sec
         public override ECFieldElement Add(ECFieldElement b)
         {
             uint[] z = Nat256.Create();
-            SecP256K1Field.Add(x, ((SecP256K1FieldElement)b).x, z);
+            SecP256K1Field.Add(this.x, ((SecP256K1FieldElement)b).x, z);
             return new SecP256K1FieldElement(z);
         }
 
         public override ECFieldElement AddOne()
         {
             uint[] z = Nat256.Create();
-            SecP256K1Field.AddOne(x, z);
+            SecP256K1Field.AddOne(this.x, z);
             return new SecP256K1FieldElement(z);
         }
 
         public override ECFieldElement Subtract(ECFieldElement b)
         {
             uint[] z = Nat256.Create();
-            SecP256K1Field.Subtract(x, ((SecP256K1FieldElement)b).x, z);
+            SecP256K1Field.Subtract(this.x, ((SecP256K1FieldElement)b).x, z);
             return new SecP256K1FieldElement(z);
         }
 
         public override ECFieldElement Multiply(ECFieldElement b)
         {
             uint[] z = Nat256.Create();
-            SecP256K1Field.Multiply(x, ((SecP256K1FieldElement)b).x, z);
+            SecP256K1Field.Multiply(this.x, ((SecP256K1FieldElement)b).x, z);
             return new SecP256K1FieldElement(z);
         }
 
@@ -104,21 +104,21 @@ namespace NBitcoin.BouncyCastle.Math.EC.Custom.Sec
             //return Multiply(b.Invert());
             uint[] z = Nat256.Create();
             Mod.Invert(SecP256K1Field.P, ((SecP256K1FieldElement)b).x, z);
-            SecP256K1Field.Multiply(z, x, z);
+            SecP256K1Field.Multiply(z, this.x, z);
             return new SecP256K1FieldElement(z);
         }
 
         public override ECFieldElement Negate()
         {
             uint[] z = Nat256.Create();
-            SecP256K1Field.Negate(x, z);
+            SecP256K1Field.Negate(this.x, z);
             return new SecP256K1FieldElement(z);
         }
 
         public override ECFieldElement Square()
         {
             uint[] z = Nat256.Create();
-            SecP256K1Field.Square(x, z);
+            SecP256K1Field.Square(this.x, z);
             return new SecP256K1FieldElement(z);
         }
 
@@ -126,7 +126,7 @@ namespace NBitcoin.BouncyCastle.Math.EC.Custom.Sec
         {
             //return new SecP256K1FieldElement(ToBigInteger().ModInverse(Q));
             uint[] z = Nat256.Create();
-            Mod.Invert(SecP256K1Field.P, x, z);
+            Mod.Invert(SecP256K1Field.P, this.x, z);
             return new SecP256K1FieldElement(z);
         }
 
@@ -213,12 +213,12 @@ namespace NBitcoin.BouncyCastle.Math.EC.Custom.Sec
                 return true;
             if(null == other)
                 return false;
-            return Nat256.Eq(x, other.x);
+            return Nat256.Eq(this.x, other.x);
         }
 
         public override int GetHashCode()
         {
-            return Q.GetHashCode() ^ Arrays.GetHashCode(x, 0, 8);
+            return Q.GetHashCode() ^ Arrays.GetHashCode(this.x, 0, 8);
         }
     }
 }

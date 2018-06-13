@@ -12,20 +12,21 @@ namespace NBitcoin.Tests
     //https://github.com/OpenAssets/open-assets-protocol/blob/master/specification.mediawiki
     public class ColoredCoinsTests
     {
-        class ColoredCoinTester
+        private class ColoredCoinTester
         {
             public ColoredCoinTester([CallerMemberName]string test = null)
             {
-                var testcase = JsonConvert.DeserializeObject<TestCase[]>(File.ReadAllText(TestDataLocations.GetFileFromDataFolder("openasset-known-tx.json")))
+                TestCase testcase = JsonConvert.DeserializeObject<TestCase[]>(File.ReadAllText(TestDataLocations.GetFileFromDataFolder("openasset-known-tx.json")))
                     .First(t => t.test == test);
-                NoSqlTransactionRepository repository = new NoSqlTransactionRepository();
-                foreach(var tx in testcase.txs)
+                var repository = new NoSqlTransactionRepository();
+                foreach(string tx in testcase.txs)
                 {
-                    var txObj = Transaction.Parse(tx);
+                    Transaction txObj = Transaction.Parse(tx);
                     repository.Put(txObj.GetHash(), txObj);
                 }
-                TestedTxId = uint256.Parse(testcase.testedtx);
-                Repository = new NullColoredTransactionRepository(repository);
+
+                this.TestedTxId = uint256.Parse(testcase.testedtx);
+                this.Repository = new NullColoredTransactionRepository(repository);
             }
 
 
@@ -41,7 +42,8 @@ namespace NBitcoin.Tests
                 set;
             }
         }
-        class TestCase
+
+        private class TestCase
         {
             public string test
             {
@@ -60,13 +62,13 @@ namespace NBitcoin.Tests
             }
         }
 
-        class AssetKey
+        private class AssetKey
         {
             public AssetKey()
             {
-                Key = new Key();
-                ScriptPubKey = Key.PubKey.GetAddress(Network.Main).ScriptPubKey;
-                Id = ScriptPubKey.Hash.ToAssetId();
+                this.Key = new Key();
+                this.ScriptPubKey = this.Key.PubKey.GetAddress(Network.Main).ScriptPubKey;
+                this.Id = this.ScriptPubKey.Hash.ToAssetId();
             }
             public Key Key
             {
@@ -90,12 +92,12 @@ namespace NBitcoin.Tests
         public void CanParseColoredAddress()
         {
             var address = new BitcoinPubKeyAddress("16UwLL9Risc3QfPqBUvKofHmBQ7wMtjvM", Network.Main);
-            var colored = address.ToColoredAddress();
+            BitcoinColoredAddress colored = address.ToColoredAddress();
             Assert.Equal("akB4NBW9UuCmHuepksob6yfZs6naHtRCPNy", colored.ToWif());
             Assert.Equal(address.ScriptPubKey, colored.ScriptPubKey);
 
-            var testAddress = address.ToNetwork(Network.TestNet);
-            var testColored = testAddress.ToColoredAddress();
+            BitcoinPubKeyAddress testAddress = address.ToNetwork(Network.TestNet);
+            BitcoinColoredAddress testColored = testAddress.ToColoredAddress();
 
             Assert.Equal(Network.TestNet, testAddress.Network);
             Assert.Equal(address.Hash, testAddress.Hash);
@@ -116,13 +118,13 @@ namespace NBitcoin.Tests
         public void CanColorizeSpecScenario()
         {
             var repo = new NoSqlColoredTransactionRepository();
-            var dust = Money.Parse("0.00005");
+            Money dust = Money.Parse("0.00005");
             var colored = new ColoredTransaction();
             var a1 = new AssetKey();
             var a2 = new AssetKey();
             var h = new AssetKey();
-            var sender = new Key().PubKey.GetAddress(Network.Main);
-            var receiver = new Key().PubKey.GetAddress(Network.Main);
+            BitcoinPubKeyAddress sender = new Key().PubKey.GetAddress(Network.Main);
+            BitcoinPubKeyAddress receiver = new Key().PubKey.GetAddress(Network.Main);
 
             colored.Marker = new ColorMarker(new ulong[] { 0, 10, 6, 0, 7, 3 });
             colored.Inputs.Add(new ColoredEntry(0, new AssetMoney(a1.Id, 3UL)));
@@ -135,7 +137,7 @@ namespace NBitcoin.Tests
             colored.Transfers.Add(new ColoredEntry(3, new AssetMoney(a1.Id, 6UL)));
             colored.Transfers.Add(new ColoredEntry(5, new AssetMoney(a1.Id, 7UL)));
             colored.Transfers.Add(new ColoredEntry(6, new AssetMoney(a2.Id, 3UL)));
-            var destroyed = colored.GetDestroyedAssets();
+            AssetMoney[] destroyed = colored.GetDestroyedAssets();
             Assert.True(destroyed.Length == 1);
             Assert.True(destroyed[0].Quantity == 6);
             Assert.True(destroyed[0].Id == a2.Id);
@@ -166,15 +168,15 @@ namespace NBitcoin.Tests
             issuanceA2.Outputs.Add(new TxOut(dust, new ColorMarker(new ulong[] { 9 }).GetScript()));
             repo.Transactions.Put(issuanceA2.GetHash(), issuanceA2);
 
-            var testedTx = CreateSpecTransaction(repo, dust, receiver, prior, issuanceA1, issuanceA2);
-            var actualColored = testedTx.GetColoredTransaction(repo);
+            Transaction testedTx = CreateSpecTransaction(repo, dust, receiver, prior, issuanceA1, issuanceA2);
+            ColoredTransaction actualColored = testedTx.GetColoredTransaction(repo);
 
             Assert.True(colored.ToBytes().SequenceEqual(actualColored.ToBytes()));
 
 
             //Finally, for each transfer output, if the asset units forming that output all have the same asset address, the output gets assigned that asset address. If any output contains units from more than one distinct asset address, the whole transaction is considered invalid, and all outputs are uncolored.
 
-            var testedBadTx = CreateSpecTransaction(repo, dust, receiver, prior, issuanceA1, issuanceA2);
+            Transaction testedBadTx = CreateSpecTransaction(repo, dust, receiver, prior, issuanceA1, issuanceA2);
             testedBadTx.Outputs[2] = new TxOut(dust, new ColorMarker(new ulong[] { 0, 10, 6, 0, 6, 4 }).GetScript());
             repo.Transactions.Put(testedBadTx.GetHash(), testedBadTx);
             colored = testedBadTx.GetColoredTransaction(repo);
@@ -227,10 +229,10 @@ namespace NBitcoin.Tests
         [Trait("UnitTest", "UnitTest")]
         public void CanParseAndSetUrlInAssetMetadata()
         {
-            var tx = Transaction.Parse("0100000001ed6f645a2d0eccf693692bc6677cd3c5efaba021db1527c91b9b441fe16da2f7020000006c493046022100991a71c15ebbf77032fc65ccd16ed286435fcc5ba48435510f561079e46dbb2a022100f1e477385196f083a779fd3366e074d34db12754330f02693520951081d5ab19012103f82af267c2f60b7ce274e7e8bc065dad3c1b0ca7a694801c814f128e63242a12ffffffff0358020000000000001976a91477e3e6acdeca221685d0d23a12989b96335a463988ac0000000000000000276a254f4101000180ade2041b753d68747470733a2f2f6370722e736d2f3954627276364a435776e89c0c00000000001976a9142d14f700c8b0a9ff95cb6092faad0795bf790dc788ac00000000");
+            Transaction tx = Transaction.Parse("0100000001ed6f645a2d0eccf693692bc6677cd3c5efaba021db1527c91b9b441fe16da2f7020000006c493046022100991a71c15ebbf77032fc65ccd16ed286435fcc5ba48435510f561079e46dbb2a022100f1e477385196f083a779fd3366e074d34db12754330f02693520951081d5ab19012103f82af267c2f60b7ce274e7e8bc065dad3c1b0ca7a694801c814f128e63242a12ffffffff0358020000000000001976a91477e3e6acdeca221685d0d23a12989b96335a463988ac0000000000000000276a254f4101000180ade2041b753d68747470733a2f2f6370722e736d2f3954627276364a435776e89c0c00000000001976a9142d14f700c8b0a9ff95cb6092faad0795bf790dc788ac00000000");
 
-            var marker = tx.GetColoredMarker();
-            var url = marker.GetMetadataUrl();
+            ColorMarker marker = tx.GetColoredMarker();
+            Uri url = marker.GetMetadataUrl();
             Assert.Equal("https://cpr.sm/9Tbrv6JCWv", url.ToString());
 
             marker.SetMetadataUrl(new Uri("http://toto.com/o"));
@@ -257,9 +259,9 @@ namespace NBitcoin.Tests
 
         private void CanFetchTransactionFromCoinprismCore(string test)
         {
-            var tester = CreateTester(test);
-            var expected = ColoredTransaction.FetchColors(tester.TestedTxId, tester.Repository);
-            var actual = new CoinprismColoredTransactionRepository().Get(tester.TestedTxId);
+            ColoredCoinTester tester = CreateTester(test);
+            ColoredTransaction expected = ColoredTransaction.FetchColors(tester.TestedTxId, tester.Repository);
+            ColoredTransaction actual = new CoinprismColoredTransactionRepository().Get(tester.TestedTxId);
             Assert.True(actual.ToBytes().SequenceEqual(expected.ToBytes()));
         }
 #endif
@@ -270,16 +272,16 @@ namespace NBitcoin.Tests
         [Trait("UnitTest", "UnitTest")]
         public void CanColorizeOutputs()
         {
-            var tester = CreateTester("CanColorizeIssuanceTransaction");
+            ColoredCoinTester tester = CreateTester("CanColorizeIssuanceTransaction");
 
-            var colored1 = ColoredTransaction.FetchColors(tester.TestedTxId, tester.Repository);
+            ColoredTransaction colored1 = ColoredTransaction.FetchColors(tester.TestedTxId, tester.Repository);
             Assert.True(colored1.Inputs.Count == 0);
             Assert.True(colored1.Issuances.Count == 1);
             Assert.True(colored1.Transfers.Count == 0);
             Assert.Equal("Af59wop4VJjXk2DAzoX9scAUCcAsghPHFX", colored1.Issuances[0].Asset.Id.GetWif(Network.Main).ToString());
 
             tester = CreateTester("CanColorizeTransferTransaction");
-            var colored2 = ColoredTransaction.FetchColors(tester.TestedTxId, tester.Repository);
+            ColoredTransaction colored2 = ColoredTransaction.FetchColors(tester.TestedTxId, tester.Repository);
             Assert.True(colored2.Inputs.Count == 1);
             Assert.True(colored2.Inputs[0].Asset == colored1.Issuances[0].Asset);
             Assert.True(colored2.Issuances.Count == 0);
@@ -287,7 +289,7 @@ namespace NBitcoin.Tests
             Assert.Equal("Af59wop4VJjXk2DAzoX9scAUCcAsghPHFX", colored2.Transfers[0].Asset.Id.GetWif(Network.Main).ToString());
 
             tester = CreateTester("CanColorizeTransferTransaction");
-            var tx = tester.Repository.Transactions.Get(tester.TestedTxId);
+            Transaction tx = tester.Repository.Transactions.Get(tester.TestedTxId);
             //If there are less items in the  asset quantity list  than the number of colorable outputs (all the outputs except the marker output), the outputs in excess receive an asset quantity of zero.
             tx.Outputs.Add(new TxOut());
             tx.Outputs.Add(new TxOut());
@@ -300,13 +302,13 @@ namespace NBitcoin.Tests
             Assert.True(colored2.Issuances.Count == 0);
             Assert.True(colored2.Transfers.Count == 2);
             Assert.Equal("Af59wop4VJjXk2DAzoX9scAUCcAsghPHFX", colored2.Transfers[0].Asset.Id.GetWif(Network.Main).ToString());
-            var destroyed = colored2.GetDestroyedAssets();
+            AssetMoney[] destroyed = colored2.GetDestroyedAssets();
             Assert.True(destroyed.Length == 0);
 
             tester = CreateTester("CanColorizeTransferTransaction");
             tx = tester.Repository.Transactions.Get(tester.TestedTxId);
             //If there are more items in the  asset quantity list  than the number of colorable outputs, the transaction is deemed invalid, and all outputs are uncolored.
-            var payload = tx.GetColoredMarker();
+            ColorMarker payload = tx.GetColoredMarker();
             payload.Quantities = payload.Quantities.Concat(new ulong[] { 1, 2 }).ToArray();
             tx.Outputs[0].ScriptPubKey = payload.GetScript();
             Assert.False(tx.HasValidColoredMarker());
@@ -406,7 +408,7 @@ namespace NBitcoin.Tests
         public void CanParseColorMarker()
         {
             var script = new Script(Encoders.Hex.DecodeData("6a104f41010003ac0200e58e260412345678"));
-            var marker = ColorMarker.TryParse(script);
+            ColorMarker marker = ColorMarker.TryParse(script);
             Assert.NotNull(marker);
             Assert.Equal(1, marker.Version);
             Assert.Equal(3, marker.Quantities.Length);
@@ -426,9 +428,9 @@ namespace NBitcoin.Tests
                 "6a056a104f41010003ac0200e58e260412345678", //valid push consume a marker
             };
 
-            foreach(var script in invalidMarkers.Select(m => new Script(Encoders.Hex.DecodeData(m))))
+            foreach(Script script in invalidMarkers.Select(m => new Script(Encoders.Hex.DecodeData(m))))
             {
-                var marker = ColorMarker.TryParse(script);
+                ColorMarker marker = ColorMarker.TryParse(script);
                 Assert.Null(marker);
             }
             string[] validMarkers =
@@ -439,16 +441,16 @@ namespace NBitcoin.Tests
                 "6a576e104f41010003ac0200e58e2604123456786811", //Invalid push at the end
             };
 
-            foreach(var script in validMarkers.Select(m => new Script(Encoders.Hex.DecodeData(m))))
+            foreach(Script script in validMarkers.Select(m => new Script(Encoders.Hex.DecodeData(m))))
             {
-                var marker = ColorMarker.TryParse(script);
+                ColorMarker marker = ColorMarker.TryParse(script);
                 Assert.NotNull(marker);
             }
 
-            Transaction tx = new Transaction();
+            var tx = new Transaction();
             tx.Outputs.Add(new TxOut(Money.Zero, new Script(Encoders.Hex.DecodeData("6a114f41010003f00100e58e26041234567800104f41010003f00100e58e260412345678"))));
             tx.Outputs.Add(new TxOut(Money.Zero, new Script(Encoders.Hex.DecodeData("6a104f41010003ac0200e58e260412345678"))));
-            var marker2 = ColorMarker.TryParse(tx);
+            ColorMarker marker2 = ColorMarker.TryParse(tx);
             Assert.Null(marker2); //No input
             tx.Inputs.Add(new TxIn());
             marker2 = ColorMarker.TryParse(tx);
@@ -465,14 +467,14 @@ namespace NBitcoin.Tests
             //The issuer first generates a private key: 18E14A7B6A307F426A94F8114701E7C8E774E7F9A47E2C2035DB29A206321725.
             var key = new Key(TestUtils.ParseHex("18E14A7B6A307F426A94F8114701E7C8E774E7F9A47E2C2035DB29A206321725"));
             //He calculates the corresponding address: 16UwLL9Risc3QfPqBUvKofHmBQ7wMtjvM.
-            var address = key.PubKey.Decompress().GetAddress(Network.Main);
+            BitcoinPubKeyAddress address = key.PubKey.Decompress().GetAddress(Network.Main);
             Assert.Equal("16UwLL9Risc3QfPqBUvKofHmBQ7wMtjvM", address.ToString());
 
             //Next, he builds the Pay-to-PubKey-Hash script associated to that address: OP_DUP OP_HASH160 010966776006953D5567439E5E39F86A0D273BEE OP_EQUALVERIFY OP_CHECKSIG
             Script script = address.ScriptPubKey;
             Assert.Equal("OP_DUP OP_HASH160 010966776006953D5567439E5E39F86A0D273BEE OP_EQUALVERIFY OP_CHECKSIG", script.ToString().ToUpper());
 
-            var oo = script.GetScriptAddress(Network.Main);
+            BitcoinScriptAddress oo = script.GetScriptAddress(Network.Main);
             //The script is hashed: 36e0ea8e93eaa0285d641305f4c81e563aa570a2.
             Assert.Equal("36e0ea8e93eaa0285d641305f4c81e563aa570a2", script.Hash.ToString());
 

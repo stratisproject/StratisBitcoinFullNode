@@ -234,11 +234,11 @@ namespace Stratis.Bitcoin.P2P
 
             try
             {
-                using (var timeoutTokenSource = CancellationTokenSource.CreateLinkedTokenSource(this.nodeLifetime.ApplicationStopping))
+                using (CancellationTokenSource timeoutTokenSource = CancellationTokenSource.CreateLinkedTokenSource(this.nodeLifetime.ApplicationStopping))
                 {
                     this.peerAddressManager.PeerAttempted(peerAddress.Endpoint, this.dateTimeProvider.GetUtcNow());
 
-                    var clonedConnectParamaters = this.CurrentParameters.Clone();
+                    NetworkPeerConnectionParameters clonedConnectParamaters = this.CurrentParameters.Clone();
                     timeoutTokenSource.CancelAfter(5000);
                     clonedConnectParamaters.ConnectCancellation = timeoutTokenSource.Token;
 

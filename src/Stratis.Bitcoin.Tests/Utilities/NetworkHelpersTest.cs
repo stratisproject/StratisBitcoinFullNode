@@ -55,7 +55,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
         [Fact]
         public void WrongNetworkThrowsArgumentException()
         {
-            var exception = Record.Exception(() => NetworkHelpers.GetNetwork("myNetwork"));
+            Exception exception = Record.Exception(() => NetworkHelpers.GetNetwork("myNetwork"));
             Assert.NotNull(exception);
             Assert.IsType<ArgumentException>(exception);
         }

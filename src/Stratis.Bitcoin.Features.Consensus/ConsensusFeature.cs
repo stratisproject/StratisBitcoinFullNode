@@ -21,7 +21,6 @@ using Stratis.Bitcoin.Features.Consensus.Rules;
 using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
-using Stratis.Bitcoin.Utilities;
 
 [assembly: InternalsVisibleTo("Stratis.Bitcoin.Features.Miner.Tests")]
 [assembly: InternalsVisibleTo("Stratis.Bitcoin.Features.Consensus.Tests")]
@@ -125,7 +124,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             this.chainState.ConsensusTip = this.consensusLoop.Tip;
             this.connectionManager.Parameters.TemplateBehaviors.Add(new BlockPullerBehavior(this.blockPuller, this.loggerFactory));
 
-            var flags = this.nodeDeployments.GetFlags(this.consensusLoop.Tip);
+            DeploymentFlags flags = this.nodeDeployments.GetFlags(this.consensusLoop.Tip);
             if (flags.ScriptFlags.HasFlag(ScriptVerify.Witness))
                 this.connectionManager.AddDiscoveredNodesRequirement(NetworkPeerServices.NODE_WITNESS);
 

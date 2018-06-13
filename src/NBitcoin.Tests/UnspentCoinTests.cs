@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 using NBitcoin.RPC;
 using Newtonsoft.Json.Linq;
 using Xunit;
@@ -12,7 +10,7 @@ namespace NBitcoin.Tests
         [Fact]
         public void CanDecodeUnspentCoinWatchOnlyAddress()
         {
-            var testJson =
+            string testJson =
 @"{
     ""txid"" : ""d54994ece1d11b19785c7248868696250ab195605b469632b7bd68130e880c9a"",
     ""vout"" : 1,
@@ -23,7 +21,7 @@ namespace NBitcoin.Tests
     ""confirmations"" : 6210,
     ""spendable"" : false
 }";
-            var testData = JObject.Parse(testJson);
+            JObject testData = JObject.Parse(testJson);
             var unspentCoin = new UnspentCoin(testData, Network.TestNet);
 
             Assert.Equal("test label", unspentCoin.Account);
@@ -34,7 +32,7 @@ namespace NBitcoin.Tests
         [Fact]
         public void CanDecodeUnspentCoinLegacyPre_0_10_0()
         {
-            var testJson =
+            string testJson =
 @"{
     ""txid"" : ""d54994ece1d11b19785c7248868696250ab195605b469632b7bd68130e880c9a"",
     ""vout"" : 1,
@@ -44,7 +42,7 @@ namespace NBitcoin.Tests
     ""amount"" : 0.00010000,
     ""confirmations"" : 6210
 }";
-            var testData = JObject.Parse(testJson);
+            JObject testData = JObject.Parse(testJson);
             var unspentCoin = new UnspentCoin(testData, Network.TestNet);
 
             // Versions prior to 0.10.0 were always spendable (but had no JSON field).
@@ -54,7 +52,7 @@ namespace NBitcoin.Tests
         [Fact]
         public void CanDecodeUnspentCoinWithRedeemScript()
         {
-            var testJson =
+            string testJson =
 @"{
     ""txid"" : ""d54994ece1d11b19785c7248868696250ab195605b469632b7bd68130e880c9a"",
     ""vout"" : 1,
@@ -66,7 +64,7 @@ namespace NBitcoin.Tests
     ""confirmations"" : 6210,
     ""spendable"" : true
 }";
-            var testData = JObject.Parse(testJson);
+            JObject testData = JObject.Parse(testJson);
             var unspentCoin = new UnspentCoin(testData, Network.TestNet);
 
             Console.WriteLine("Redeem Script: {0}", unspentCoin.RedeemScript);
@@ -76,7 +74,7 @@ namespace NBitcoin.Tests
         [Fact]
         public void CanDecodeUnspentTransaction()
         {
-            var testJson =
+            string testJson =
 @"{
     ""bestblock"": ""d54994ece1d11b19785c7248868696250ab195605b469632b7bd68130e880c9a"",
     ""confirmations"": 1,
@@ -92,7 +90,7 @@ namespace NBitcoin.Tests
     },
     ""coinbase"": true
 }";
-            var testData = JObject.Parse(testJson);
+            JObject testData = JObject.Parse(testJson);
             var unspentTransaction = new UnspentTransaction(testData);
             Assert.Equal(1, unspentTransaction.confirmations);
             Assert.Equal(1, unspentTransaction.scriptPubKey.reqSigs);

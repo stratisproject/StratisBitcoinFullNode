@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using System.Collections.Generic;
 using NBitcoin.DataEncoders;
 using NBitcoin.Protocol;
 
@@ -16,6 +14,7 @@ namespace NBitcoin.Networks
             this.Magic = 0xDAB5BFFA;
             this.DefaultPort = 18444;
             this.RPCPort = 18332;
+            this.CoinTicker = "TBTC";
 
             this.Consensus.PowAllowMinDifficultyBlocks = true;
             this.Consensus.PowNoRetargeting = true;

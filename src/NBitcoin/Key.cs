@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Linq;
-using System.Security;
 using System.Text;
+using NBitcoin.BouncyCastle.Asn1.X9;
 using NBitcoin.BouncyCastle.Math;
 using NBitcoin.Crypto;
 
@@ -22,7 +22,7 @@ namespace NBitcoin
             return Network.Parse<BitcoinEncryptedSecret>(wif, network).GetKey(password);
         }
 
-        byte[] vch = new byte[0];
+        private byte[] vch = new byte[0];
         internal ECKey _ECKey;
         public bool IsCompressed
         {
@@ -64,9 +64,9 @@ namespace NBitcoin
 
         private void SetBytes(byte[] data, int count, bool fCompressedIn)
         {
-            vch = data.SafeSubarray(0, count);
-            IsCompressed = fCompressedIn;
-            _ECKey = new ECKey(vch, true);
+            this.vch = data.SafeSubarray(0, count);
+            this.IsCompressed = fCompressedIn;
+            this._ECKey = new ECKey(this.vch, true);
         }
 
         private static bool Check(byte[] vch)
@@ -75,24 +75,24 @@ namespace NBitcoin
             return candidateKey > 0 && candidateKey < N;
         }
 
-        PubKey _PubKey;
+        private PubKey _PubKey;
 
         public PubKey PubKey
         {
             get
             {
-                if(_PubKey == null)
+                if(this._PubKey == null)
                 {
-                    ECKey key = new ECKey(vch, true);
-                    _PubKey = key.GetPubKey(IsCompressed);
+                    var key = new ECKey(this.vch, true);
+                    this._PubKey = key.GetPubKey(this.IsCompressed);
                 }
-                return _PubKey;
+                return this._PubKey;
             }
         }
 
         public ECDSASignature Sign(uint256 hash)
         {
-            return _ECKey.Sign(hash);
+            return this._ECKey.Sign(hash);
         }
 
 
@@ -103,20 +103,20 @@ namespace NBitcoin
         public string SignMessage(byte[] messageBytes)
         {
             byte[] data = Utils.FormatMessageForSigning(messageBytes);
-            var hash = Hashes.Hash256(data);
+            uint256 hash = Hashes.Hash256(data);
             return Convert.ToBase64String(SignCompact(hash));
         }
 
 
         public byte[] SignCompact(uint256 hash)
         {
-            var sig = _ECKey.Sign(hash);
+            ECDSASignature sig = this._ECKey.Sign(hash);
             // Now we have to work backwards to figure out the recId needed to recover the signature.
             int recId = -1;
             for(int i = 0; i < 4; i++)
             {
-                ECKey k = ECKey.RecoverFromSignature(i, sig, hash, IsCompressed);
-                if(k != null && k.GetPubKey(IsCompressed).ToHex() == PubKey.ToHex())
+                ECKey k = ECKey.RecoverFromSignature(i, sig, hash, this.IsCompressed);
+                if(k != null && k.GetPubKey(this.IsCompressed).ToHex() == this.PubKey.ToHex())
                 {
                     recId = i;
                     break;
@@ -126,9 +126,9 @@ namespace NBitcoin
             if(recId == -1)
                 throw new InvalidOperationException("Could not construct a recoverable key. This should never happen.");
 
-            int headerByte = recId + 27 + (IsCompressed ? 4 : 0);
+            int headerByte = recId + 27 + (this.IsCompressed ? 4 : 0);
 
-            byte[] sigData = new byte[65];  // 1 header + 32 bytes for R + 32 bytes for S
+            var sigData = new byte[65];  // 1 header + 32 bytes for R + 32 bytes for S
 
             sigData[0] = (byte)headerByte;
 
@@ -141,10 +141,10 @@ namespace NBitcoin
 
         public void ReadWrite(BitcoinStream stream)
         {
-            stream.ReadWrite(ref vch);
+            stream.ReadWrite(ref this.vch);
             if(!stream.Serializing)
             {
-                _ECKey = new ECKey(vch, true);
+                this._ECKey = new ECKey(this.vch, true);
             }
         }
 
@@ -155,29 +155,29 @@ namespace NBitcoin
             byte[] l = null;
             if((nChild >> 31) == 0)
             {
-                var pubKey = PubKey.ToBytes();
+                byte[] pubKey = this.PubKey.ToBytes();
                 l = Hashes.BIP32Hash(cc, nChild, pubKey[0], pubKey.SafeSubarray(1));
             }
             else
             {
                 l = Hashes.BIP32Hash(cc, nChild, 0, this.ToBytes());
             }
-            var ll = l.SafeSubarray(0, 32);
-            var lr = l.SafeSubarray(32, 32);
+            byte[] ll = l.SafeSubarray(0, 32);
+            byte[] lr = l.SafeSubarray(32, 32);
 
             ccChild = lr;
 
             var parse256LL = new BigInteger(1, ll);
-            var kPar = new BigInteger(1, vch);
-            var N = ECKey.CURVE.N;
+            var kPar = new BigInteger(1, this.vch);
+            BigInteger N = ECKey.CURVE.N;
 
             if(parse256LL.CompareTo(N) >= 0)
                 throw new InvalidOperationException("You won a prize ! this should happen very rarely. Take a screenshot, and roll the dice again.");
-            var key = parse256LL.Add(kPar).Mod(N);
+            BigInteger key = parse256LL.Add(kPar).Mod(N);
             if(key == BigInteger.Zero)
                 throw new InvalidOperationException("You won the big prize ! this has probability lower than 1 in 2^127. Take a screenshot, and roll the dice again.");
 
-            var keyBytes = key.ToByteArrayUnsigned();
+            byte[] keyBytes = key.ToByteArrayUnsigned();
             if(keyBytes.Length < 32)
                 keyBytes = new byte[32 - keyBytes.Length].Concat(keyBytes).ToArray();
             return new Key(keyBytes);
@@ -185,8 +185,8 @@ namespace NBitcoin
 
         public Key Uncover(Key scan, PubKey ephem)
         {
-            var curve = ECKey.Secp256k1;
-            var priv = new BigInteger(1, PubKey.GetStealthSharedSecret(scan, ephem))
+            X9ECParameters curve = ECKey.Secp256k1;
+            byte[] priv = new BigInteger(1, PubKey.GetStealthSharedSecret(scan, ephem))
                             .Add(new BigInteger(1, this.ToBytes()))
                             .Mod(curve.N)
                             .ToByteArrayUnsigned();
@@ -229,7 +229,7 @@ namespace NBitcoin
         {
             get
             {
-                return PubKey.Hash.ScriptPubKey;
+                return this.PubKey.Hash.ScriptPubKey;
             }
         }
 
@@ -243,14 +243,14 @@ namespace NBitcoin
 
         public override bool Equals(object obj)
         {
-            Key item = obj as Key;
+            var item = obj as Key;
             if(item == null)
                 return false;
-            return PubKey.Equals(item.PubKey);
+            return this.PubKey.Equals(item.PubKey);
         }
         public static bool operator ==(Key a, Key b)
         {
-            if(System.Object.ReferenceEquals(a, b))
+            if(ReferenceEquals(a, b))
                 return true;
             if(((object)a == null) || ((object)b == null))
                 return false;
@@ -264,7 +264,7 @@ namespace NBitcoin
 
         public override int GetHashCode()
         {
-            return PubKey.GetHashCode();
+            return this.PubKey.GetHashCode();
         }
     }
 }

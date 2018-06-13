@@ -102,7 +102,7 @@ namespace NBitcoin.BitcoinCore
 
         private void Cleanup()
         {
-            var count = this.Outputs.Count;
+            int count = this.Outputs.Count;
 
             // Remove spent outputs at the end of vout.
             for(int i = count - 1; i >= 0; i--)
@@ -175,7 +175,7 @@ namespace NBitcoin.BitcoinCore
                 stream.ReadWriteAsVarInt(ref nCode);
                 this.CoinBase = (nCode & 1) != 0;
 
-                List<bool> vAvail = new List<bool>() { false, false };
+                var vAvail = new List<bool>() { false, false };
                 vAvail[0] = (nCode & 2) != 0;
                 vAvail[1] = (nCode & 4) != 0;
 
@@ -204,7 +204,7 @@ namespace NBitcoin.BitcoinCore
                 {
                     if (vAvail[(int)i])
                     {
-                        TxOutCompressor compressed = new TxOutCompressor();
+                        var compressed = new TxOutCompressor();
                         stream.ReadWrite(ref compressed);
                         this.Outputs[(int)i] = compressed.TxOut;
                     }
@@ -236,7 +236,7 @@ namespace NBitcoin.BitcoinCore
                 bool fZero = true;
                 for (uint i = 0; i < 8 && 2 + b * 8 + i < this.Outputs.Count; i++)
                 {
-                    if (!this.IsNull(this.Outputs[2 + (int)b * 8 + (int)i]))
+                    if (!IsNull(this.Outputs[2 + (int)b * 8 + (int)i]))
                     {
                         fZero = false;
                         continue;
@@ -256,7 +256,7 @@ namespace NBitcoin.BitcoinCore
         // check whether a particular output is still available
         public bool IsAvailable(uint position)
         {
-            return position <= int.MaxValue && position < this.Outputs.Count && !this.IsNull(this.Outputs[(int)position]);
+            return position <= int.MaxValue && position < this.Outputs.Count && !IsNull(this.Outputs[(int)position]);
         }
 
         public TxOut TryGetOutput(uint position)
@@ -287,7 +287,7 @@ namespace NBitcoin.BitcoinCore
 
         public void MergeFrom(Coins otherCoin)
         {
-            var diff = otherCoin.Outputs.Count - this.Outputs.Count;
+            int diff = otherCoin.Outputs.Count - this.Outputs.Count;
             if (diff > 0)
                 for (int i = 0; i < diff; i++)
                     this.Outputs.Add(NullTxOut);

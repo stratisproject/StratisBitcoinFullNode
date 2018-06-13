@@ -24,7 +24,7 @@
         {
             get
             {
-                return m_beta;
+                return this.m_beta;
             }
         }
 
@@ -32,7 +32,7 @@
         {
             get
             {
-                return m_lambda;
+                return this.m_lambda;
             }
         }
 
@@ -40,7 +40,7 @@
         {
             get
             {
-                return m_v1;
+                return this.m_v1;
             }
         }
 
@@ -48,7 +48,7 @@
         {
             get
             {
-                return m_v2;
+                return this.m_v2;
             }
         }
 
@@ -56,7 +56,7 @@
         {
             get
             {
-                return m_g1;
+                return this.m_g1;
             }
         }
 
@@ -64,7 +64,7 @@
         {
             get
             {
-                return m_g2;
+                return this.m_g2;
             }
         }
 
@@ -72,7 +72,7 @@
         {
             get
             {
-                return m_bits;
+                return this.m_bits;
             }
         }
     }

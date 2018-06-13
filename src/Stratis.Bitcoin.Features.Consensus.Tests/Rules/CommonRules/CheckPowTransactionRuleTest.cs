@@ -1,8 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
+﻿using System.IO;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using NBitcoin;
 using Stratis.Bitcoin.Consensus;
@@ -15,9 +12,12 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
     {
         private PowConsensusOptions options;
 
+        private NBitcoin.Consensus consensus;
+
         public CheckPowTransactionRuleTest()
         {
-            this.options = this.network.Consensus.Option<PowConsensusOptions>();
+            this.consensus = this.network.Consensus;
+            this.options = this.consensus.Option<PowConsensusOptions>();
         }
 
         [Fact]
@@ -25,8 +25,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         {
             var transaction = new Transaction();
             transaction.Inputs.Clear();
-            transaction.Outputs.Add(new TxOut(new Money(this.options.MaxMoney / 2), (IDestination)null));
-            transaction.Outputs.Add(new TxOut(new Money(this.options.MaxMoney / 2), (IDestination)null));
+            transaction.Outputs.Add(new TxOut(new Money(this.consensus.MaxMoney / 2), (IDestination)null));
+            transaction.Outputs.Add(new TxOut(new Money(this.consensus.MaxMoney / 2), (IDestination)null));
 
             var exception = Assert.Throws<ConsensusErrorException>(() => this.consensusRules.RegisterRule<CheckPowTransactionRule>().CheckTransaction(this.network, this.options, transaction));
 
@@ -74,7 +74,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         {
             var transaction = new Transaction();
             transaction.Inputs.Add(new TxIn());
-            transaction.Outputs.Add(new TxOut(new Money(this.options.MaxMoney + 1), (IDestination)null));
+            transaction.Outputs.Add(new TxOut(new Money(this.consensus.MaxMoney + 1), (IDestination)null));
 
             var exception = Assert.Throws<ConsensusErrorException>(() => this.consensusRules.RegisterRule<CheckPowTransactionRule>().CheckTransaction(this.network, this.options, transaction));
 
@@ -86,8 +86,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         {
             var transaction = new Transaction();
             transaction.Inputs.Add(new TxIn());
-            transaction.Outputs.Add(new TxOut(new Money(this.options.MaxMoney / 2), (IDestination)null));
-            transaction.Outputs.Add(new TxOut(new Money((this.options.MaxMoney / 2) + 1), (IDestination)null));
+            transaction.Outputs.Add(new TxOut(new Money(this.consensus.MaxMoney / 2), (IDestination)null));
+            transaction.Outputs.Add(new TxOut(new Money((this.consensus.MaxMoney / 2) + 1), (IDestination)null));
 
             var exception = Assert.Throws<ConsensusErrorException>(() => this.consensusRules.RegisterRule<CheckPowTransactionRule>().CheckTransaction(this.network, this.options, transaction));
 
@@ -100,7 +100,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             var transaction = new Transaction();
             transaction.Inputs.Add(new TxIn(new OutPoint(new uint256(1500), 15)));
             transaction.Inputs.Add(new TxIn(new OutPoint(new uint256(1500), 15)));
-            transaction.Outputs.Add(new TxOut(new Money(this.options.MaxMoney / 2), (IDestination)null));
+            transaction.Outputs.Add(new TxOut(new Money(this.consensus.MaxMoney / 2), (IDestination)null));
 
             var exception = Assert.Throws<ConsensusErrorException>(() => this.consensusRules.RegisterRule<CheckPowTransactionRule>().CheckTransaction(this.network, this.options, transaction));
 
@@ -112,7 +112,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         {
             var transaction = new Transaction();
             transaction.Inputs.Add(new TxIn(new OutPoint(), Script.FromBytesUnsafe(new string('A', 1).Select(c => (byte)c).ToArray())));
-            transaction.Outputs.Add(new TxOut(new Money(this.options.MaxMoney / 2), (IDestination)null));
+            transaction.Outputs.Add(new TxOut(new Money(this.consensus.MaxMoney / 2), (IDestination)null));
             Assert.True(transaction.IsCoinBase);
 
             var exception = Assert.Throws<ConsensusErrorException>(() => this.consensusRules.RegisterRule<CheckPowTransactionRule>().CheckTransaction(this.network, this.options, transaction));
@@ -125,7 +125,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         {
             var transaction = new Transaction();
             transaction.Inputs.Add(new TxIn(new OutPoint(), Script.FromBytesUnsafe(new string('A', 101).Select(c => (byte)c).ToArray())));
-            transaction.Outputs.Add(new TxOut(new Money(this.options.MaxMoney / 2), (IDestination)null));
+            transaction.Outputs.Add(new TxOut(new Money(this.consensus.MaxMoney / 2), (IDestination)null));
             Assert.True(transaction.IsCoinBase);
 
             var exception = Assert.Throws<ConsensusErrorException>(() => this.consensusRules.RegisterRule<CheckPowTransactionRule>().CheckTransaction(this.network, this.options, transaction));
@@ -139,7 +139,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             var transaction = new Transaction();
             transaction.Inputs.Add(new TxIn(new OutPoint(new uint256(15), 1)));
             transaction.Inputs.Add(new TxIn(new OutPoint()));
-            transaction.Outputs.Add(new TxOut(new Money(this.options.MaxMoney / 2), (IDestination)null));
+            transaction.Outputs.Add(new TxOut(new Money(this.consensus.MaxMoney / 2), (IDestination)null));
             Assert.False(transaction.IsCoinBase);
 
             var exception = Assert.Throws<ConsensusErrorException>(() => this.consensusRules.RegisterRule<CheckPowTransactionRule>().CheckTransaction(this.network, this.options, transaction));
@@ -162,7 +162,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         {
             var transaction = new Transaction();
             transaction.Inputs.Add(new TxIn(new OutPoint(), Script.FromBytesUnsafe(new string('A', 50).Select(c => (byte)c).ToArray())));
-            transaction.Outputs.Add(new TxOut(new Money(this.options.MaxMoney), (IDestination)null));
+            transaction.Outputs.Add(new TxOut(new Money(this.consensus.MaxMoney), (IDestination)null));
 
             this.consensusRules.RegisterRule<CheckPowTransactionRule>().CheckTransaction(this.network, this.options, transaction);
         }
@@ -172,8 +172,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         {
             var transaction = new Transaction();
             transaction.Inputs.Add(new TxIn(new OutPoint(), Script.FromBytesUnsafe(new string('A', 50).Select(c => (byte)c).ToArray())));
-            transaction.Outputs.Add(new TxOut(new Money(this.options.MaxMoney / 2), (IDestination)null));
-            transaction.Outputs.Add(new TxOut(new Money(this.options.MaxMoney / 2), (IDestination)null));
+            transaction.Outputs.Add(new TxOut(new Money(this.consensus.MaxMoney / 2), (IDestination)null));
+            transaction.Outputs.Add(new TxOut(new Money(this.consensus.MaxMoney / 2), (IDestination)null));
 
             this.consensusRules.RegisterRule<CheckPowTransactionRule>().CheckTransaction(this.network, this.options, transaction);
         }
@@ -183,7 +183,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         {
             var transaction = new Transaction();
             transaction.Inputs.Add(new TxIn(new OutPoint(), Script.FromBytesUnsafe(new string('A', 2).Select(c => (byte)c).ToArray())));
-            transaction.Outputs.Add(new TxOut(new Money(this.options.MaxMoney / 2), (IDestination)null));
+            transaction.Outputs.Add(new TxOut(new Money(this.consensus.MaxMoney / 2), (IDestination)null));
             Assert.True(transaction.IsCoinBase);
 
             this.consensusRules.RegisterRule<CheckPowTransactionRule>().CheckTransaction(this.network, this.options, transaction);
@@ -194,7 +194,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         {
             var transaction = new Transaction();
             transaction.Inputs.Add(new TxIn(new OutPoint(), Script.FromBytesUnsafe(new string('A', 100).Select(c => (byte)c).ToArray())));
-            transaction.Outputs.Add(new TxOut(new Money(this.options.MaxMoney / 2), (IDestination)null));
+            transaction.Outputs.Add(new TxOut(new Money(this.consensus.MaxMoney / 2), (IDestination)null));
             Assert.True(transaction.IsCoinBase);
 
             this.consensusRules.RegisterRule<CheckPowTransactionRule>().CheckTransaction(this.network, this.options, transaction);
@@ -205,8 +205,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         {
             var transaction = new Transaction();
             transaction.Inputs.Add(new TxIn(new OutPoint(), Script.FromBytesUnsafe(new string('A', 50).Select(c => (byte)c).ToArray())));
-            transaction.Outputs.Add(new TxOut(new Money(this.options.MaxMoney / 2), (IDestination)null));
-            transaction.Outputs.Add(new TxOut(new Money(this.options.MaxMoney / 2), (IDestination)null));
+            transaction.Outputs.Add(new TxOut(new Money(this.consensus.MaxMoney / 2), (IDestination)null));
+            transaction.Outputs.Add(new TxOut(new Money(this.consensus.MaxMoney / 2), (IDestination)null));
 
             this.ruleContext.ValidationContext.Block = new Block();
             this.ruleContext.Consensus = this.network.Consensus;
@@ -223,8 +223,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         {
             var validTransaction = new Transaction();
             validTransaction.Inputs.Add(new TxIn(new OutPoint(), Script.FromBytesUnsafe(new string('A', 50).Select(c => (byte)c).ToArray())));
-            validTransaction.Outputs.Add(new TxOut(new Money(this.options.MaxMoney / 2), (IDestination)null));
-            validTransaction.Outputs.Add(new TxOut(new Money(this.options.MaxMoney / 2), (IDestination)null));
+            validTransaction.Outputs.Add(new TxOut(new Money(this.consensus.MaxMoney / 2), (IDestination)null));
+            validTransaction.Outputs.Add(new TxOut(new Money(this.consensus.MaxMoney / 2), (IDestination)null));
 
             var invalidTransaction = new Transaction();
 
@@ -233,7 +233,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             this.ruleContext.ValidationContext.Block.Transactions.Add(validTransaction);
             this.ruleContext.ValidationContext.Block.Transactions.Add(invalidTransaction);
 
-            var exception = await Assert.ThrowsAsync<ConsensusErrorException>(() => this.consensusRules.RegisterRule<CheckPowTransactionRule>().RunAsync(this.ruleContext));
+            ConsensusErrorException exception = await Assert.ThrowsAsync<ConsensusErrorException>(() => this.consensusRules.RegisterRule<CheckPowTransactionRule>().RunAsync(this.ruleContext));
 
             Assert.Equal(ConsensusErrors.BadTransactionNoInput, exception.ConsensusError);
         }
@@ -244,10 +244,10 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
 
             int transactionWeight = this.CalculateBlockWeight(transaction, options);
 
-            var requiredScriptWeight = weight - transactionWeight - 4;
+            int requiredScriptWeight = weight - transactionWeight - 4;
             transaction.Outputs.RemoveAt(transaction.Outputs.Count - 1);
             // generate nonsense script with required bytes to reach required weight.
-            var script = Script.FromBytesUnsafe(new string('A', requiredScriptWeight).Select(c => (byte)c).ToArray());
+            Script script = Script.FromBytesUnsafe(new string('A', requiredScriptWeight).Select(c => (byte)c).ToArray());
             transaction.Outputs.Add(new TxOut(new Money(10000000000), script));
 
             transactionWeight = this.CalculateBlockWeight(transaction, options);

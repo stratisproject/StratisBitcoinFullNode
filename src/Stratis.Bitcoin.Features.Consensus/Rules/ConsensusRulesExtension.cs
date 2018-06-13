@@ -26,7 +26,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules
         /// <returns>The rule or <c>null</c> if not found in the list.</returns>
         public static T FindRule<T>(this IEnumerable<ConsensusRuleDescriptor> rules) where T : ConsensusRule
         {
-            T rule = rules.TryFindRule<T>();
+            var rule = rules.TryFindRule<T>();
 
             if (rule == null)
             {

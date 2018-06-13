@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Threading.Tasks;
 using NBitcoin;
 using Stratis.Bitcoin.Base.Deployments;
@@ -32,7 +30,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             this.ruleContext.ValidationContext.Block = block;
             this.ruleContext.ConsensusTip = this.concurrentChain.Tip;
             
-            var exception = await Assert.ThrowsAsync<ConsensusErrorException>(() => this.consensusRules.RegisterRule<BlockHeaderRule>().RunAsync(this.ruleContext));
+            ConsensusErrorException exception = await Assert.ThrowsAsync<ConsensusErrorException>(() => this.consensusRules.RegisterRule<BlockHeaderRule>().RunAsync(this.ruleContext));
 
             Assert.Equal(ConsensusErrors.InvalidPrevTip, exception.ConsensusError);
         }
@@ -40,7 +38,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         [Fact]
         public async Task RunAsync_ValidBlock_CreatesChainedBlockInBlockValidationContextAsync()
         {
-            var tip = this.concurrentChain.Tip;
+            ChainedHeader tip = this.concurrentChain.Tip;
             var block = new Block();
             block.AddTransaction(new Transaction());
             block.UpdateMerkleRoot();
@@ -53,7 +51,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             
             await this.consensusRules.RegisterRule<BlockHeaderRule>().RunAsync(this.ruleContext);
 
-            var chainedHeader = this.ruleContext.ValidationContext.ChainedHeader;
+            ChainedHeader chainedHeader = this.ruleContext.ValidationContext.ChainedHeader;
             Assert.IsType<ChainedHeader>(chainedHeader);
 
             Assert.Equal(block.Header.GetHash(), chainedHeader.HashBlock);
@@ -66,7 +64,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         [Fact]
         public async Task RunAsync_ValidBlock_SetsBestBlockAsync()
         {
-            var tip = this.concurrentChain.Tip;
+            ChainedHeader tip = this.concurrentChain.Tip;
             var block = new Block();
             block.AddTransaction(new Transaction());
             block.UpdateMerkleRoot();

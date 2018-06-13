@@ -235,7 +235,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
             this.logger.LogTrace("Last block to announce is '{0}', number of blocks to announce is {1}.", lastBlock, headersCount);
 
-            ChainedHeader[] headersToAnnounce = new ChainedHeader[headersCount];
+            var headersToAnnounce = new ChainedHeader[headersCount];
             for (int i = headersCount - 1; i >= 0; i--)
             {
                 headersToAnnounce[i] = lastBlock;
@@ -268,7 +268,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             int count = inv.Inventory.Count;
             if (count > 0)
             {
-                ChainHeadersBehavior chainBehavior = peer.Behavior<ChainHeadersBehavior>();
+                var chainBehavior = peer.Behavior<ChainHeadersBehavior>();
                 ChainedHeader peerTip = chainBehavior.PendingTip;
 
                 int peersHeight = peerTip != null ? peerTip.Height : 0;
@@ -348,7 +348,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             var queue = new Queue<InventoryVector>(blocks.Select(s => new InventoryVector(InventoryType.MSG_BLOCK, s)));
             while (queue.Count > 0)
             {
-                var items = queue.TakeAndRemove(ConnectionManager.MaxInventorySize).ToArray();
+                InventoryVector[] items = queue.TakeAndRemove(ConnectionManager.MaxInventorySize).ToArray();
                 if (peer.IsConnected)
                 {
                     this.logger.LogTrace("Sending inventory message to peer '{0}'.", peer.RemoteSocketEndpoint);

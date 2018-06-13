@@ -22,9 +22,9 @@ namespace NBitcoin.BouncyCastle.Asn1
             bool isExplicit)
             : base(outStream)
         {
-            _tagged = true;
-            _isExplicit = isExplicit;
-            _tagNo = tagNo;
+            this._tagged = true;
+            this._isExplicit = isExplicit;
+            this._tagNo = tagNo;
         }
 
         private static void WriteLength(
@@ -68,16 +68,16 @@ namespace NBitcoin.BouncyCastle.Asn1
             int tag,
             byte[] bytes)
         {
-            if(_tagged)
+            if(this._tagged)
             {
-                int tagNum = _tagNo | Asn1Tags.Tagged;
+                int tagNum = this._tagNo | Asn1Tags.Tagged;
 
-                if(_isExplicit)
+                if(this._isExplicit)
                 {
-                    int newTag = _tagNo | Asn1Tags.Constructed | Asn1Tags.Tagged;
-                    MemoryStream bOut = new MemoryStream();
+                    int newTag = this._tagNo | Asn1Tags.Constructed | Asn1Tags.Tagged;
+                    var bOut = new MemoryStream();
                     WriteDerEncoded(bOut, tag, bytes);
-                    WriteDerEncoded(Out, newTag, bOut.ToArray());
+                    WriteDerEncoded(this.Out, newTag, bOut.ToArray());
                 }
                 else
                 {
@@ -86,12 +86,12 @@ namespace NBitcoin.BouncyCastle.Asn1
                         tagNum |= Asn1Tags.Constructed;
                     }
 
-                    WriteDerEncoded(Out, tagNum, bytes);
+                    WriteDerEncoded(this.Out, tagNum, bytes);
                 }
             }
             else
             {
-                WriteDerEncoded(Out, tag, bytes);
+                WriteDerEncoded(this.Out, tag, bytes);
             }
         }
 

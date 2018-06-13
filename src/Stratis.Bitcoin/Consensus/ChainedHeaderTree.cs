@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
@@ -10,7 +9,6 @@ using Stratis.Bitcoin.Utilities;
 namespace Stratis.Bitcoin.Consensus
 {
     /// <summary>Validates <see cref="ChainedHeader"/> instances.</summary>
-    /// TODO use local CT instead of chain state?
     public interface IChainedHeaderValidator
     {
         /// <summary>
@@ -52,6 +50,16 @@ namespace Stratis.Bitcoin.Consensus
     /// </remarks>
     public interface IChainedHeaderTree
     {
+        /// <summary>
+        /// Total size of unconsumed blocks data in bytes.
+        /// It represents amount of memory which is occupied by block data that is waiting to be processed.
+        /// </summary>
+        /// <remarks>
+        /// This value is increased every time a new block is downloaded.
+        /// It's decreased when block header is being disconnected or when consensus tip is changed.
+        /// </remarks>
+        long UnconsumedBlocksDataBytes { get; }
+
         /// <summary>
         /// Initialize the tree with consensus tip.
         /// </summary>
@@ -153,12 +161,15 @@ namespace Stratis.Bitcoin.Consensus
         private readonly ConsensusSettings consensusSettings;
         private readonly IFinalizedBlockHeight finalizedBlockHeight;
 
+        /// <inheritdoc />
+        public long UnconsumedBlocksDataBytes { get; private set; }
+
         /// <summary>A special peer identifier that represents our local node.</summary>
         internal const int LocalPeerId = -1;
 
         /// <summary>Specifies for how many blocks from the consensus tip the block data should be kept in the memory.</summary>
         /// <remarks>
-        /// TODO: calculate the actual value based on the max block size. Set threshold in mb.
+        /// TODO: calculate the actual value based on the max block size. Set threshold in bytes. Make it configurable.
         /// </remarks>
         internal const int KeepBlockDataForLastBlocks = 100;
 
@@ -204,6 +215,7 @@ namespace Stratis.Bitcoin.Consensus
             this.peerTipsByPeerId = new Dictionary<int, uint256>();
             this.peerIdsByTipHash = new Dictionary<uint256, HashSet<int>>();
             this.chainedHeadersByHash = new Dictionary<uint256, ChainedHeader>();
+            this.UnconsumedBlocksDataBytes = 0;
         }
 
         /// <inheritdoc />
@@ -286,9 +298,18 @@ namespace Stratis.Bitcoin.Consensus
 
             reorgRequired = false;
 
+            // Can happen in case peer was disconnected during the validation and it was the only peer claiming that header.
             if (!this.chainedHeadersByHash.ContainsKey(chainedHeader.HashBlock))
             {
-                this.logger.LogTrace("(-)[HEADER_NOT_FOUND]");
+                this.logger.LogTrace("(-)[HEADER_NOT_FOUND]:null");
+                return null;
+            }
+
+            // Can happen when peer was disconnected after sending the block but before the validation was completed
+            // and right after that a new peer connected and presented the same header.
+            if (chainedHeader.Block == null)
+            {
+                this.logger.LogTrace("(-)[BLOCK_DATA_NULL]:null");
                 return null;
             }
 
@@ -345,6 +366,13 @@ namespace Stratis.Bitcoin.Consensus
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(chainedHeader), chainedHeader);
 
+            // Can happen in case peer was disconnected during the validation and it was the only peer claiming that header.
+            if (!this.chainedHeadersByHash.ContainsKey(chainedHeader.HashBlock))
+            {
+                this.logger.LogTrace("(-)[NOT_FOUND]");
+                return new List<int>();
+            }
+
             List<int> peersToBan = this.RemoveSubtree(chainedHeader);
 
             this.RemoveUnclaimedBranch(chainedHeader.Previous);
@@ -357,6 +385,40 @@ namespace Stratis.Bitcoin.Consensus
         public List<int> ConsensusTipChanged(ChainedHeader newConsensusTip)
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(newConsensusTip), newConsensusTip);
+
+            ChainedHeader oldConsensusTip = this.GetConsensusTip();
+            ChainedHeader fork = newConsensusTip.FindFork(oldConsensusTip);
+            ChainedHeader currentHeader = newConsensusTip;
+
+            this.logger.LogTrace("Old consensus tip: '{0}', new consensus tip: '{1}', fork point: '{2}'.", oldConsensusTip, newConsensusTip, fork);
+
+            // Consider blocks that became a part of our best chain as consumed.
+            while (currentHeader != fork)
+            {
+                this.UnconsumedBlocksDataBytes -= currentHeader.Block.BlockSize.Value;
+                this.logger.LogTrace("Size of unconsumed block data is decreased by {0}, new value is {1}.", currentHeader.Block.BlockSize.Value, this.UnconsumedBlocksDataBytes);
+
+                currentHeader = currentHeader.Previous;
+            }
+
+            // When we are switching to a different chain remove block data for blocks that are being reorged away.
+            // We are also marking block data availability as header only because we expect block store to reorganize those blocks shortly.
+            // In case chain that we reorged away from gets a prolongation which will make it desirable we will need to redownload all those blocks again.
+            if (fork != oldConsensusTip)
+            {
+                this.logger.LogTrace("Consensus tip is being changed to another chain, removing block data for the old chain.");
+                currentHeader = oldConsensusTip;
+
+                while (currentHeader != fork)
+                {
+                    currentHeader.Block = null;
+                    currentHeader.BlockDataAvailability = BlockDataAvailabilityState.HeaderOnly;
+
+                    this.logger.LogTrace("Block data for '{0}' is removed.", currentHeader);
+
+                    currentHeader = currentHeader.Previous;
+                }
+            }
 
             // Switch consensus tip to the new block header.
             this.AddOrReplacePeerTip(LocalPeerId, newConsensusTip.HashBlock);
@@ -503,8 +565,13 @@ namespace Stratis.Bitcoin.Consensus
             this.logger.LogTrace("({0}:'{1}')", nameof(header), header);
 
             header.Previous.Next.Remove(header);
-
             this.chainedHeadersByHash.Remove(header.HashBlock);
+
+            if (header.Block != null)
+            {
+                this.UnconsumedBlocksDataBytes -= header.Block.BlockSize.Value;
+                this.logger.LogTrace("Size of unconsumed block data is decreased by {0}, new value is {1}.", header.Block.BlockSize.Value, this.UnconsumedBlocksDataBytes);
+            }
 
             this.logger.LogTrace("(-)");
         }
@@ -542,6 +609,9 @@ namespace Stratis.Bitcoin.Consensus
 
             chainedHeader.BlockDataAvailability = BlockDataAvailabilityState.BlockAvailable;
             chainedHeader.Block = block;
+
+            this.UnconsumedBlocksDataBytes += chainedHeader.Block.BlockSize.Value;
+            this.logger.LogTrace("Size of unconsumed block data is increased by {0}, new value is {1}.", chainedHeader.Block.BlockSize.Value, this.UnconsumedBlocksDataBytes);
 
             bool partialValidationRequired = chainedHeader.Previous.BlockValidationState == ValidationState.PartiallyValidated
                                           || chainedHeader.Previous.BlockValidationState == ValidationState.FullyValidated;

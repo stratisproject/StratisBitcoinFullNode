@@ -39,7 +39,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
                     BlockHeader header = this.Network.Consensus.ConsensusFactory.CreateBlockHeader();
                     header.HashPrevBlock = previousHeader.HashBlock;
                     header.Bits = previousHeader.Header.Bits - 1000; // just increase difficulty.
-                    ChainedHeader newHeader = new ChainedHeader(header, header.GetHash(), previousHeader);
+                    var newHeader = new ChainedHeader(header, header.GetHash(), previousHeader);
                     previousHeader = newHeader;
                 }
 
@@ -75,7 +75,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
         [Fact]
         public void ConnectHeaders_HeadersCantConnect_ShouldFail()
         {
-            TestContext testContext = new TestContext();
+            var testContext = new TestContext();
             ChainedHeaderTree chainedHeaderTree = testContext.CreateChainedHeaderTree();
 
             Assert.Throws<ConnectHeaderException>(() => chainedHeaderTree.ConnectNewHeaders(1, new List<BlockHeader>(new [] { testContext.Network.GetGenesis().Header})));
@@ -125,31 +125,110 @@ namespace Stratis.Bitcoin.Tests.Consensus
             Assert.True(testContext.NoDownloadRequested(connectNewHeaders2));
         }
 
+        /// <summary>
+        /// Issue 2 @ Create chained header tree component #1321
+        /// Supply headers that we already have and make sure no new ChainedHeaders were created.
+        /// </summary>
         [Fact]
         public void ConnectHeaders_NewAndExistingHeaders_ShouldCreateNewHeaders()
         {
-            TestContext testContext = new TestContext();
+            var testContext = new TestContext();
             ChainedHeaderTree chainedHeaderTree = testContext.CreateChainedHeaderTree();
 
-            var chainTip = testContext.ExtendAChain(10);
+            ChainedHeader chainTip = testContext.ExtendAChain(10);
             chainedHeaderTree.Initialize(chainTip, true); // initialize the tree with 10 headers
             chainTip.BlockDataAvailability = BlockDataAvailabilityState.BlockAvailable;
             ChainedHeader newChainTip = testContext.ExtendAChain(10, chainTip); // create 10 more headers
 
-            var listOfExistingHeaders = testContext.ChainedHeaderToList(chainTip, 10);
-            var listOfNewHeaders = testContext.ChainedHeaderToList(newChainTip, 10);
+            List<BlockHeader> listOfExistingHeaders = testContext.ChainedHeaderToList(chainTip, 10);
+            List<BlockHeader> listOfNewHeaders = testContext.ChainedHeaderToList(newChainTip, 10);
 
-            testContext.ChainStateMock.Setup(s => s.ConsensusTip).Returns(chainTip);
             chainTip.BlockValidationState = ValidationState.FullyValidated;
 
-            var connectedHeadersOld = chainedHeaderTree.ConnectNewHeaders(2, listOfExistingHeaders);
-            var connectedHeadersNew = chainedHeaderTree.ConnectNewHeaders(1, listOfNewHeaders);
+            ConnectNewHeadersResult connectedHeadersResultOld = chainedHeaderTree.ConnectNewHeaders(2, listOfExistingHeaders);
+            ConnectNewHeadersResult connectedHeadersResultNew = chainedHeaderTree.ConnectNewHeaders(1, listOfNewHeaders);
 
             Assert.Equal(21, chainedHeaderTree.GetChainedHeadersByHash().Count);
             Assert.Equal(10, listOfNewHeaders.Count);
-            Assert.True(testContext.NoDownloadRequested(connectedHeadersOld));
-            Assert.Equal(listOfNewHeaders.Last(), connectedHeadersNew.DownloadTo.Header);
-            Assert.Equal(listOfNewHeaders.First(), connectedHeadersNew.DownloadFrom.Header);
+            Assert.True(testContext.NoDownloadRequested(connectedHeadersResultOld));
+            Assert.Equal(listOfNewHeaders.Last(), connectedHeadersResultNew.DownloadTo.Header);
+            Assert.Equal(listOfNewHeaders.First(), connectedHeadersResultNew.DownloadFrom.Header);
+        }
+
+        /// <summary>
+        /// Issue 3 @ Create chained header tree component #1321
+        /// Supply some headers and then supply some more headers.
+        /// Make sure that PeerTipsByPeerId is updated and the total amount of items remain the same.
+        /// Make sure that PeerIdsByTipHash is updated.
+        /// </summary>
+        [Fact]
+        public void ConnectHeaders_SupplyHeadersThenSupplyMore_Both_Tip_PeerId_Maps_ShouldBeUpdated()
+        {
+            var testContext = new TestContext();
+            ChainedHeaderTree cht = testContext.CreateChainedHeaderTree();
+            ChainedHeader chainTip = testContext.ExtendAChain(10);
+            cht.Initialize(chainTip, true);
+            
+            List<BlockHeader> listOfExistingHeaders = testContext.ChainedHeaderToList(chainTip, 10);
+            
+            cht.ConnectNewHeaders(1, listOfExistingHeaders);
+
+            Dictionary<uint256, HashSet<int>> peerIdsByTipHashBefore = cht.GetPeerIdsByTipHash().ToDictionary(entry => entry.Key, entry => new HashSet<int>(entry.Value));
+            Dictionary<int, uint256> peerTipsByPeerIdBefore = cht.GetPeerTipsByPeerId().ToDictionary(entry => entry.Key, entry => new uint256(entry.Value));
+
+            // (of 25 headers) supply last 5 existing and first 10 new
+            ChainedHeader newChainTip = testContext.ExtendAChain(15, chainTip);
+            List<BlockHeader> listOfNewAndOldHeaders = testContext.ChainedHeaderToList(newChainTip, 25).GetRange(5, 15);
+
+            cht.ConnectNewHeaders(1, listOfNewAndOldHeaders);
+
+            Dictionary<uint256, HashSet<int>> peerIdsByTipHashAfter = cht.GetPeerIdsByTipHash();
+            Dictionary<int, uint256> peerTipsByPeerIdAfter = cht.GetPeerTipsByPeerId();
+
+            // Tip # -> peer id map has changed
+            Assert.True(peerIdsByTipHashBefore.FirstOrDefault(x => x.Value.Contains(1)).Key !=
+                        peerIdsByTipHashAfter.FirstOrDefault(x => x.Value.Contains(1)).Key);
+
+            // Peer id -> tip # map has changed
+            Assert.True(peerTipsByPeerIdBefore[1] != peerTipsByPeerIdAfter[1]);
+
+            // reassigning # so amount of items the same
+            Assert.True(peerTipsByPeerIdBefore.Values.Count == peerTipsByPeerIdAfter.Values.Count);
+        }
+
+        /// <summary>
+        /// Issue 6 @ Create chained header tree component #1321
+        /// Make sure checkpoints are off - supply some headers and CHT should return 
+        /// a ToDownload array of the same size as the amount of headers.
+        /// </summary>
+        [Fact]
+        public void ConnectHeaders_SupplyHeaders_ToDownloadArraySizeSameAsNumberOfHeaders()
+        {
+            // Setup
+            var ctx = new TestContext();
+            ChainedHeaderTree cht = ctx.CreateChainedHeaderTree();
+            ChainedHeader chainTip = ctx.ExtendAChain(5);
+            cht.Initialize(chainTip, true);
+            ctx.ConsensusSettings.UseCheckpoints = false;
+
+            // Checkpoints are off
+            Assert.False(ctx.ConsensusSettings.UseCheckpoints);
+            ChainedHeader newChainTip = ctx.ExtendAChain(7, chainTip);
+            List<BlockHeader> listOfNewBlockHeaders = ctx.ChainedHeaderToList(newChainTip, 7);
+
+            // Peer 1 supplies some headers
+            List<BlockHeader> peer1Headers = listOfNewBlockHeaders.GetRange(0,3);
+            cht.ConnectNewHeaders(1, peer1Headers);
+
+            // Peer 2 supplies some more headers
+            List<BlockHeader> peer2Headers = listOfNewBlockHeaders.GetRange(3, 4);
+            ConnectNewHeadersResult connectNewHeadersResult = cht.ConnectNewHeaders(2, peer2Headers);
+            ChainedHeader chainedHeaderFrom = connectNewHeadersResult.DownloadFrom;
+            ChainedHeader chainedHeaderTo = connectNewHeadersResult.DownloadTo;
+            int headersToDownloadCount = chainedHeaderTo.Height - chainedHeaderFrom.Height + 1; // Inclusive
+            
+            // ToDownload array of the same size as the amount of headers
+            Assert.Equal(headersToDownloadCount, peer2Headers.Count);
         }
     }
 }

@@ -4,7 +4,7 @@ namespace NBitcoin
 {
     internal class ActionDisposable : IDisposable
     {
-        Action onEnter, onLeave;
+        private Action onEnter, onLeave;
         public ActionDisposable(Action onEnter, Action onLeave)
         {
             this.onEnter = onEnter;
@@ -16,7 +16,7 @@ namespace NBitcoin
 
         public void Dispose()
         {
-            onLeave();
+            this.onLeave();
         }
 
         #endregion

@@ -1,23 +1,16 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Moq;
 using NBitcoin;
 using Stratis.Bitcoin.Base.Deployments;
 using Stratis.Bitcoin.BlockPulling;
-using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.Consensus.Interfaces;
-using Stratis.Bitcoin.Features.Consensus.Rules;
-using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
 using Stratis.Bitcoin.Utilities;
-using Xunit;
 
 namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
 {
@@ -67,15 +60,15 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
 
         protected void AddBlocksToChain(ConcurrentChain chain, int blockAmount)
         {
-            var nonce = RandomUtils.GetUInt32();
-            var prevBlockHash = chain.Tip.HashBlock;
+            uint nonce = RandomUtils.GetUInt32();
+            uint256 prevBlockHash = chain.Tip.HashBlock;
 
             (this.ruleContext as UtxoRuleContext).UnspentOutputSet = new UnspentOutputSet();
             (this.ruleContext as UtxoRuleContext).UnspentOutputSet.SetCoins(new UnspentOutputs[0]);
 
-            for (var i = 0; i < blockAmount; i++)
+            for (int i = 0; i < blockAmount; i++)
             {
-                var block = chain.Network.Consensus.ConsensusFactory.CreateBlock();
+                Block block = chain.Network.Consensus.ConsensusFactory.CreateBlock();
                 Transaction transaction = chain.Network.Consensus.ConsensusFactory.CreateTransaction();
                 block.AddTransaction(transaction);
                 block.UpdateMerkleRoot();
@@ -156,11 +149,11 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
         protected static ConcurrentChain GenerateChainWithHeight(int blockAmount, Network network)
         {
             var chain = new ConcurrentChain(network);
-            var nonce = RandomUtils.GetUInt32();
-            var prevBlockHash = chain.Genesis.HashBlock;
-            for (var i = 0; i < blockAmount; i++)
+            uint nonce = RandomUtils.GetUInt32();
+            uint256 prevBlockHash = chain.Genesis.HashBlock;
+            for (int i = 0; i < blockAmount; i++)
             {
-                var block = network.Consensus.ConsensusFactory.CreateBlock();
+                Block block = network.Consensus.ConsensusFactory.CreateBlock();
                 block.AddTransaction(network.Consensus.ConsensusFactory.CreateTransaction());
                 block.UpdateMerkleRoot();
                 block.Header.BlockTime = new DateTimeOffset(new DateTime(2017, 1, 1, 0, 0, 0, DateTimeKind.Utc).AddDays(i));
@@ -176,10 +169,10 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
         protected static ConcurrentChain MineChainWithHeight(int blockAmount, Network network)
         {
             var chain = new ConcurrentChain(network);
-            var prevBlockHash = chain.Genesis.HashBlock;
-            for (var i = 0; i < blockAmount; i++)
+            uint256 prevBlockHash = chain.Genesis.HashBlock;
+            for (int i = 0; i < blockAmount; i++)
             {
-                var block = TestRulesContextFactory.MineBlock(network, chain);
+                Block block = TestRulesContextFactory.MineBlock(network, chain);
                 chain.SetTip(block.Header);
                 prevBlockHash = block.GetHash();
             }

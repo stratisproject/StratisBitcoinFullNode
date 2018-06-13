@@ -9,13 +9,13 @@ namespace NBitcoin.Tests
     {
         public void DownloadFile(string url, string file)
         {
-            HttpClient client = new HttpClient();
+            var client = new HttpClient();
 
             // The default value is 100,000 milliseconds (100 seconds) and
             // that's not long enough to download Bitcoin on slower connections.
             client.Timeout = TimeSpan.FromMinutes(5);
 
-            var bytes = client.GetByteArrayAsync(url).GetAwaiter().GetResult();
+            byte[] bytes = client.GetByteArrayAsync(url).GetAwaiter().GetResult();
             File.WriteAllBytes(file, bytes);
         }
     }

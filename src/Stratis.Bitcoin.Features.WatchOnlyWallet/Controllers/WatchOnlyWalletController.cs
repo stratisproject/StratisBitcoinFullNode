@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Net;
 using Microsoft.AspNetCore.Mvc;
-using Stratis.Bitcoin.Features.RPC.Models;
+using Stratis.Bitcoin.Controllers.Models;
 using Stratis.Bitcoin.Features.WatchOnlyWallet.Models;
 using Stratis.Bitcoin.Utilities.JsonErrors;
 
@@ -63,23 +63,23 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet.Controllers
             try
             {
                 // Map a watch-only wallet to a model object for display in the front end.
-                var watchOnlyWallet = this.watchOnlyWalletManager.GetWatchOnlyWallet();
-                WatchOnlyWalletModel model = new WatchOnlyWalletModel
+                WatchOnlyWallet watchOnlyWallet = this.watchOnlyWalletManager.GetWatchOnlyWallet();
+                var model = new WatchOnlyWalletModel
                 {
                     CoinType = watchOnlyWallet.CoinType,
                     Network = watchOnlyWallet.Network,
                     CreationTime = watchOnlyWallet.CreationTime
                 };
 
-                foreach (var watchAddress in watchOnlyWallet.WatchedAddresses)
+                foreach (KeyValuePair<string, WatchedAddress> watchAddress in watchOnlyWallet.WatchedAddresses)
                 {
-                    WatchedAddressModel watchedAddressModel = new WatchedAddressModel
+                    var watchedAddressModel = new WatchedAddressModel
                     {
                         Address = watchAddress.Value.Address,
                         Transactions = new List<TransactionVerboseModel>()
                     };
 
-                    foreach (var transactionData in watchAddress.Value.Transactions)
+                    foreach (KeyValuePair<string, TransactionData> transactionData in watchAddress.Value.Transactions)
                     {
                         watchedAddressModel.Transactions.Add(new TransactionVerboseModel(transactionData.Value.Transaction, watchOnlyWallet.Network));
                     }
@@ -87,9 +87,9 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet.Controllers
                     model.WatchedAddresses.Add(watchedAddressModel);
                 }
 
-                foreach (var transaction in watchOnlyWallet.WatchedTransactions)
+                foreach (KeyValuePair<string, TransactionData> transaction in watchOnlyWallet.WatchedTransactions)
                 {
-                    WatchedTransactionModel watchedTransactionModel = new WatchedTransactionModel
+                    var watchedTransactionModel = new WatchedTransactionModel
                     {
                         Transaction = new TransactionVerboseModel(transaction.Value.Transaction, watchOnlyWallet.Network)
                     };

@@ -7,6 +7,7 @@ using System.Threading;
 using NBitcoin;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
+using Stratis.Bitcoin.P2P.Peer;
 
 namespace Stratis.Bitcoin.IntegrationTests.Common
 {
@@ -43,7 +44,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
 
         public static void TriggerSync(CoreNode node)
         {
-            foreach (var connectedPeer in node.FullNode.ConnectionManager.ConnectedPeers)
+            foreach (INetworkPeer connectedPeer in node.FullNode.ConnectionManager.ConnectedPeers)
                 connectedPeer.Behavior<ChainHeadersBehavior>().TrySyncAsync().GetAwaiter().GetResult();
         }
 
@@ -62,14 +63,14 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
             int i = 0;
             while (i < ports.Length)
             {
-                var port = RandomUtils.GetUInt32() % 4000;
+                uint port = RandomUtils.GetUInt32() % 4000;
                 port = port + 10000;
                 if (ports.Any(p => p == port))
                     continue;
 
                 try
                 {
-                    TcpListener l = new TcpListener(IPAddress.Loopback, (int)port);
+                    var l = new TcpListener(IPAddress.Loopback, (int)port);
                     l.Start();
                     l.Stop();
                     ports[i] = (int)port;

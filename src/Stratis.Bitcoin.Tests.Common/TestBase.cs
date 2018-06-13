@@ -19,13 +19,13 @@ namespace Stratis.Bitcoin.Tests.Common
         public TestBase(Network network)
         {
             this.Network = network;
-            DBreezeSerializer serializer = new DBreezeSerializer();
+            var serializer = new DBreezeSerializer();
             serializer.Initialize(this.Network); 
         }
         
         public static string AssureEmptyDir(string dir)
         {
-            var deleteAttempts = 0;
+            int deleteAttempts = 0;
             while (deleteAttempts < 50)
             {
                 if (Directory.Exists(dir))
@@ -113,7 +113,7 @@ namespace Stratis.Bitcoin.Tests.Common
 
         public void AppendBlocksToChain(ConcurrentChain chain, IEnumerable<Block> blocks)
         {
-            foreach (var block in blocks)
+            foreach (Block block in blocks)
             {
                 if (chain.Tip != null)
                     block.Header.HashPrevBlock = chain.Tip.HashBlock;

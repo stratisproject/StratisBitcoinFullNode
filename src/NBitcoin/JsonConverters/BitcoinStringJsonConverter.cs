@@ -18,7 +18,7 @@ namespace NBitcoin.JsonConverters
         }
         public BitcoinStringJsonConverter(Network network)
         {
-            Network = network;
+            this.Network = network;
         }
         public override bool CanConvert(Type objectType)
         {
@@ -34,17 +34,17 @@ namespace NBitcoin.JsonConverters
 
             try
             {
-                var result = Network.Parse(reader.Value.ToString(), null);
+                IBitcoinString result = Network.Parse(reader.Value.ToString(), null);
                 if(result == null)
                 {
                     throw new JsonObjectException("Invalid BitcoinString data", reader);
                 }
-                if(Network != null)
+                if(this.Network != null)
                 {
-                    if(result.Network != Network)
+                    if(result.Network != this.Network)
                     {
-                        result = Network.Parse(reader.Value.ToString());
-                        if(result.Network != Network)
+                        result = this.Network.Parse(reader.Value.ToString());
+                        if(result.Network != this.Network)
                         {
                             throw new JsonObjectException("Invalid BitcoinString network", reader);
                         }

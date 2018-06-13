@@ -35,7 +35,7 @@ namespace Stratis.Bitcoin.Features.Api
                     // also copies over singleton instances already defined
                     foreach (ServiceDescriptor service in services)
                     {
-                        var obj = fullNode.Services.ServiceProvider.GetService(service.ServiceType);
+                        object obj = fullNode.Services.ServiceProvider.GetService(service.ServiceType);
                         if (obj != null && service.Lifetime == ServiceLifetime.Singleton && service.ImplementationInstance == null)
                         {
                             collection.AddSingleton(service.ServiceType, obj);

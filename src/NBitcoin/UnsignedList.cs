@@ -14,7 +14,7 @@ namespace NBitcoin
         {
             if(parent == null)
                 throw new ArgumentNullException("parent");
-            Transaction = parent;
+            this.Transaction = parent;
         }
 
         public Transaction Transaction

@@ -3,7 +3,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Stratis.Bitcoin.Consensus.Rules;
-using Stratis.Bitcoin.Features.Consensus.Rules;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules

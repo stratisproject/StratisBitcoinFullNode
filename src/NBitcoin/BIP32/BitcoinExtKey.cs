@@ -51,11 +51,11 @@
         {
             get
             {
-                return vchData.Length == 74;
+                return this.vchData.Length == 74;
             }
         }
 
-        ExtKey _Key;
+        private ExtKey _Key;
 
         /// <summary>
         /// Gets the extended key, converting from the Base58 representation.
@@ -64,12 +64,12 @@
         {
             get
             {
-                if(_Key == null)
+                if(this._Key == null)
                 {
-                    _Key = new ExtKey();
-                    _Key.ReadWrite(vchData);
+                    this._Key = new ExtKey();
+                    this._Key.ReadWrite(this.vchData);
                 }
-                return _Key;
+                return this._Key;
             }
         }
 
@@ -92,7 +92,7 @@
         {
             get
             {
-                return ExtKey.ScriptPubKey;
+                return this.ExtKey.ScriptPubKey;
             }
         }
 
@@ -101,7 +101,7 @@
         /// </summary>
         public BitcoinExtPubKey Neuter()
         {
-            return ExtKey.Neuter().GetWif(Network);
+            return this.ExtKey.Neuter().GetWif(this.Network);
         }
 
         #region ISecret Members
@@ -113,7 +113,7 @@
         {
             get
             {
-                return ExtKey.PrivateKey;
+                return this.ExtKey.PrivateKey;
             }
         }
 
@@ -151,7 +151,7 @@
         {
         }
 
-        ExtPubKey _PubKey;
+        private ExtPubKey _PubKey;
 
         /// <summary>
         /// Gets the extended public key, converting from the Base58 representation.
@@ -160,12 +160,12 @@
         {
             get
             {
-                if(_PubKey == null)
+                if(this._PubKey == null)
                 {
-                    _PubKey = new ExtPubKey();
-                    _PubKey.ReadWrite(vchData);
+                    this._PubKey = new ExtPubKey();
+                    this._PubKey.ReadWrite(this.vchData);
                 }
-                return _PubKey;
+                return this._PubKey;
             }
         }
 
@@ -187,7 +187,7 @@
         {
             get
             {
-                return ExtPubKey.ScriptPubKey;
+                return this.ExtPubKey.ScriptPubKey;
             }
         }
 

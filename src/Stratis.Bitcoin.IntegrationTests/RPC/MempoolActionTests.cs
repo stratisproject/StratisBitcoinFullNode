@@ -14,7 +14,7 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
         {
             string dir = CreateTestDir(this);
             IFullNode fullNode = this.BuildServicedNode(dir);
-            MempoolController controller = fullNode.Services.ServiceProvider.GetService<MempoolController>();
+            var controller = fullNode.Services.ServiceProvider.GetService<MempoolController>();
 
             List<uint256> result = await controller.GetRawMempool();
 

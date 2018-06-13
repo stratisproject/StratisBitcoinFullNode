@@ -57,7 +57,7 @@ namespace NBitcoin.BouncyCastle.Crypto.Parameters
         {
             get
             {
-                return curve;
+                return this.curve;
             }
         }
 
@@ -65,7 +65,7 @@ namespace NBitcoin.BouncyCastle.Crypto.Parameters
         {
             get
             {
-                return g;
+                return this.g;
             }
         }
 
@@ -73,7 +73,7 @@ namespace NBitcoin.BouncyCastle.Crypto.Parameters
         {
             get
             {
-                return n;
+                return this.n;
             }
         }
 
@@ -81,13 +81,13 @@ namespace NBitcoin.BouncyCastle.Crypto.Parameters
         {
             get
             {
-                return h;
+                return this.h;
             }
         }
 
         public byte[] GetSeed()
         {
-            return Arrays.Clone(seed);
+            return Arrays.Clone(this.seed);
         }
 
         public override bool Equals(
@@ -96,7 +96,7 @@ namespace NBitcoin.BouncyCastle.Crypto.Parameters
             if(obj == this)
                 return true;
 
-            ECDomainParameters other = obj as ECDomainParameters;
+            var other = obj as ECDomainParameters;
 
             if(other == null)
                 return false;
@@ -107,20 +107,20 @@ namespace NBitcoin.BouncyCastle.Crypto.Parameters
         protected bool Equals(
             ECDomainParameters other)
         {
-            return curve.Equals(other.curve)
-                && g.Equals(other.g)
-                && n.Equals(other.n)
-                && h.Equals(other.h)
-                && Arrays.AreEqual(seed, other.seed);
+            return this.curve.Equals(other.curve)
+                && this.g.Equals(other.g)
+                && this.n.Equals(other.n)
+                && this.h.Equals(other.h)
+                && Arrays.AreEqual(this.seed, other.seed);
         }
 
         public override int GetHashCode()
         {
-            return curve.GetHashCode()
-                ^ g.GetHashCode()
-                ^ n.GetHashCode()
-                ^ h.GetHashCode()
-                ^ Arrays.GetHashCode(seed);
+            return this.curve.GetHashCode()
+                ^ this.g.GetHashCode()
+                ^ this.n.GetHashCode()
+                ^ this.h.GetHashCode()
+                ^ Arrays.GetHashCode(this.seed);
         }
     }
 

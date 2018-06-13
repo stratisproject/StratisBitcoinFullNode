@@ -6,18 +6,18 @@ namespace NBitcoin
 {
     public class CachedTransactionRepository : ITransactionRepository
     {
-        ITransactionRepository _Inner;
-        Dictionary<uint256, Transaction> _Transactions = new Dictionary<uint256, Transaction>();
-        Queue<uint256> _EvictionQueue = new Queue<uint256>();
-        ReaderWriterLock @lock = new ReaderWriterLock();
+        private ITransactionRepository _Inner;
+        private Dictionary<uint256, Transaction> _Transactions = new Dictionary<uint256, Transaction>();
+        private Queue<uint256> _EvictionQueue = new Queue<uint256>();
+        private ReaderWriterLock @lock = new ReaderWriterLock();
         public CachedTransactionRepository(ITransactionRepository inner)
         {
             if(inner == null)
                 throw new ArgumentNullException("inner");
-            ReadThrough = true;
-            WriteThrough = true;
-            _Inner = inner;
-            MaxCachedTransactions = 100;
+            this.ReadThrough = true;
+            this.WriteThrough = true;
+            this._Inner = inner;
+            this.MaxCachedTransactions = 100;
         }
 
         public int MaxCachedTransactions
@@ -28,9 +28,9 @@ namespace NBitcoin
 
         public Transaction GetFromCache(uint256 txId)
         {
-            using(@lock.LockRead())
+            using(this.@lock.LockRead())
             {
-                return _Transactions.TryGet(txId);
+                return this._Transactions.TryGet(txId);
             }
         }
 
@@ -40,19 +40,18 @@ namespace NBitcoin
         {
             bool found = false;
             Transaction result = null;
-            using(@lock.LockRead())
+            using(this.@lock.LockRead())
             {
-                found = _Transactions.TryGetValue(txId, out result);
+                found = this._Transactions.TryGetValue(txId, out result);
             }
             if(!found)
             {
-                result = await _Inner.GetAsync(txId).ConfigureAwait(false);
-                if(ReadThrough)
+                result = await this._Inner.GetAsync(txId).ConfigureAwait(false);
+                if(this.ReadThrough)
                 {
-                    using(@lock.LockWrite())
+                    using(this.@lock.LockWrite())
                     {
-
-                        _Transactions.AddOrReplace(txId, result);
+                        this._Transactions.AddOrReplace(txId, result);
                         EvictIfNecessary(txId);
                     }
                 }
@@ -63,29 +62,27 @@ namespace NBitcoin
 
         private void EvictIfNecessary(uint256 txId)
         {
-            _EvictionQueue.Enqueue(txId);
-            while(_Transactions.Count > MaxCachedTransactions && _EvictionQueue.Count > 0)
-                _Transactions.Remove(_EvictionQueue.Dequeue());
+            this._EvictionQueue.Enqueue(txId);
+            while(this._Transactions.Count > this.MaxCachedTransactions && this._EvictionQueue.Count > 0) this._Transactions.Remove(this._EvictionQueue.Dequeue());
         }
 
         public Task PutAsync(uint256 txId, Transaction tx)
         {
-            if(WriteThrough)
+            if(this.WriteThrough)
             {
-                using(@lock.LockWrite())
+                using(this.@lock.LockWrite())
                 {
 
-                    if(!_Transactions.ContainsKey(txId))
+                    if(!this._Transactions.ContainsKey(txId))
                     {
-
-                        _Transactions.AddOrReplace(txId, tx);
+                        this._Transactions.AddOrReplace(txId, tx);
                         EvictIfNecessary(txId);
                     }
                     else
-                        _Transactions[txId] = tx;
+                        this._Transactions[txId] = tx;
                 }
             }
-            return _Inner.PutAsync(txId, tx);
+            return this._Inner.PutAsync(txId, tx);
         }
 
         #endregion

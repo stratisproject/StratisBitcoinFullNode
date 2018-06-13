@@ -65,14 +65,14 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
                     ConsensusErrors.BadTransactionNegativeOutput.Throw();
                 }
 
-                if (txout.Value.Satoshi > options.MaxMoney)
+                if (txout.Value.Satoshi > network.Consensus.MaxMoney)
                 {
                     this.Logger.LogTrace("(-)[TX_OUTPUT_TOO_LARGE]");
                     ConsensusErrors.BadTransactionTooLargeOutput.Throw();
                 }
 
                 valueOut += txout.Value;
-                if (!this.MoneyRange(options, valueOut))
+                if (!this.MoneyRange(network.Consensus, valueOut))
                 {
                     this.Logger.LogTrace("(-)[TX_TOTAL_OUTPUT_TOO_LARGE]");
                     ConsensusErrors.BadTransactionTooLargeTotalOutput.Throw();
@@ -80,7 +80,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
             }
 
             // Check for duplicate inputs.
-            HashSet<OutPoint> inOutPoints = new HashSet<OutPoint>();
+            var inOutPoints = new HashSet<OutPoint>();
             foreach (TxIn txin in tx.Inputs)
             {
                 if (inOutPoints.Contains(txin.PrevOut))
@@ -113,9 +113,9 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
             }
         }
 
-        private bool MoneyRange(PowConsensusOptions options, long nValue)
+        private bool MoneyRange(NBitcoin.Consensus consensus, long nValue)
         {
-            return ((nValue >= 0) && (nValue <= options.MaxMoney));
+            return ((nValue >= 0) && (nValue <= consensus.MaxMoney));
         }
     }
 }

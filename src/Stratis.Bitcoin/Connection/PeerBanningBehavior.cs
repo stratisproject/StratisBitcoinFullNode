@@ -2,6 +2,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Configuration;
+using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.P2P.Protocol;
 using Stratis.Bitcoin.P2P.Protocol.Behaviors;
@@ -54,7 +55,7 @@ namespace Stratis.Bitcoin.Connection
         {
             this.logger.LogTrace("()");
 
-            var peer = this.AttachedPeer;
+            INetworkPeer peer = this.AttachedPeer;
             if (peer.State == NetworkPeerState.Connected)
             {
                 if (this.peerBanning.IsBanned(peer.RemoteSocketEndpoint))
@@ -85,7 +86,7 @@ namespace Stratis.Bitcoin.Connection
 
             if (this.chainHeadersBehavior.InvalidHeaderReceived && !this.connectionManagerBehavior.Whitelisted)
             {
-                var connectionSettings = this.connectionManagerBehavior.ConnectionManager.ConnectionSettings;
+                ConnectionManagerSettings connectionSettings = this.connectionManagerBehavior.ConnectionManager.ConnectionSettings;
                 this.peerBanning.BanPeer(peer.RemoteSocketEndpoint, connectionSettings.BanTimeSeconds, "Invalid block header received");
                 this.logger.LogTrace("Invalid block header received from peer '{0}'.", peer.RemoteSocketEndpoint);
                 peer.Disconnect("Invalid block header received");

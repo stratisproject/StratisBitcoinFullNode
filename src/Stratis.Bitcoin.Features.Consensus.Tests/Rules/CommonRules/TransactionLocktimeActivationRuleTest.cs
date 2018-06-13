@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Threading.Tasks;
 using NBitcoin;
 using Stratis.Bitcoin.Consensus;
@@ -28,7 +26,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             this.ruleContext.ValidationContext.Block.AddTransaction(transaction);
             this.ruleContext.ValidationContext.Block.Header.BlockTime = new DateTimeOffset(new DateTime(2018, 1, 1, 0, 0, 0, DateTimeKind.Utc));
 
-            var exception = await Assert.ThrowsAsync<ConsensusErrorException>(() => this.consensusRules.RegisterRule<TransactionLocktimeActivationRule>().RunAsync(this.ruleContext));
+            ConsensusErrorException exception = await Assert.ThrowsAsync<ConsensusErrorException>(() => this.consensusRules.RegisterRule<TransactionLocktimeActivationRule>().RunAsync(this.ruleContext));
 
             Assert.Equal(ConsensusErrors.BadTransactionNonFinal, exception.ConsensusError);
         }
@@ -44,7 +42,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             transaction.Inputs.Add(new TxIn() { Sequence = 15 });
             this.ruleContext.ValidationContext.Block.AddTransaction(transaction);
 
-            var exception = await Assert.ThrowsAsync<ConsensusErrorException>(() => this.consensusRules.RegisterRule<TransactionLocktimeActivationRule>().RunAsync(this.ruleContext));
+            ConsensusErrorException exception = await Assert.ThrowsAsync<ConsensusErrorException>(() => this.consensusRules.RegisterRule<TransactionLocktimeActivationRule>().RunAsync(this.ruleContext));
 
             Assert.Equal(ConsensusErrors.BadTransactionNonFinal, exception.ConsensusError);
         }

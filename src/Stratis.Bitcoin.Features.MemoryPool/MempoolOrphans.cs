@@ -211,15 +211,15 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         public async Task ProcessesOrphansAsync(MempoolBehavior behavior, Transaction tx)
         {
             this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(behavior), behavior.AttachedPeer.RemoteSocketEndpoint, nameof(tx), tx?.GetHash());
-            Queue<OutPoint> workQueue = new Queue<OutPoint>();
-            List<uint256> eraseQueue = new List<uint256>();
+            var workQueue = new Queue<OutPoint>();
+            var eraseQueue = new List<uint256>();
 
             uint256 trxHash = tx.GetHash();
             for (int index = 0; index < tx.Outputs.Count; index++)
                 workQueue.Enqueue(new OutPoint(trxHash, index));
 
             // Recursively process any orphan transactions that depended on this one
-            List<ulong> setMisbehaving = new List<ulong>();
+            var setMisbehaving = new List<ulong>();
             while (workQueue.Any())
             {
                 // mapOrphanTransactionsByPrev.TryGet() does a .ToList() to take a new collection
@@ -245,7 +245,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                     // Use a dummy CValidationState so someone can't setup nodes to counter-DoS based on orphan
                     // resolution (that is, feeding people an invalid transaction based on LegitTxX in order to get
                     // anyone relaying LegitTxX banned)
-                    MempoolValidationState stateDummy = new MempoolValidationState(true);
+                    var stateDummy = new MempoolValidationState(true);
                     if (await this.Validator.AcceptToMemoryPool(stateDummy, orphanTx))
                     {
                         this.logger.LogInformation("accepted orphan tx {0}", orphanHash);
@@ -333,7 +333,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                 return false;
             }
 
-            foreach (var txin in tx.Inputs)
+            foreach (TxIn txin in tx.Inputs)
             {
                 // TODO: this goes in the RelayBehaviour
                 //CInv _inv(MSG_TX | nFetchFlags, txin.prevout.hash);
@@ -342,7 +342,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                 //  from. pfrom->AskFor(_inv);
             }
 
-            var ret = this.AddOrphanTx(from.PeerVersion.Nonce, tx);
+            bool ret = this.AddOrphanTx(from.PeerVersion.Nonce, tx);
 
             // DoS prevention: do not allow mapOrphanTransactions to grow unbounded
             int nMaxOrphanTx = this.mempoolSettings.MaxOrphanTx;
@@ -460,7 +460,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
 
                 if (this.mapOrphanTransactions.TryAdd(hash, orphan))
                 {
-                    foreach (var txin in tx.Inputs)
+                    foreach (TxIn txin in tx.Inputs)
                     {
                         List<OrphanTx> prv = this.mapOrphanTransactionsByPrev.TryGet(txin.PrevOut);
                         if (prv == null)

@@ -1,13 +1,17 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using NBitcoin;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using Stratis.Bitcoin.Features.RPC.Models;
+using Stratis.Bitcoin.Controllers.Models;
+using Stratis.Bitcoin.Features.RPC;
 using Xunit;
 
-namespace Stratis.Bitcoin.Features.RPC.Tests.Models
+namespace Stratis.Bitcoin.Tests.Models
 {
-    public class TransactionModelsTest : BaseRPCModelTest, IDisposable
+    public class TransactionModelsTest : BaseModelTest, IDisposable
     {
         private const string TxBlock10Hex = "01000000010000000000000000000000000000000000000000000000000000000000000000ffffffff0704ffff001d0136ffffffff0100f2052a01000000434104fcc2888ca91cf0103d8c5797c256bf976e81f280205d002d85b9b622ed1a6f820866c7b5fe12285cfa78c035355d752fc94a398b67597dc4fbb5b386816425ddac00000000";
         private const string TxBlock10Hash = "d3ad39fa52a89997ac7381c95eeffeaf40b66af7a57e9eba144be0a175a12b11";
@@ -38,7 +42,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Models
         [Fact]
         public void TransactionModelBriefRenderTest()
         {
-            var model = this.txBlock10CoinbaseModelBrief;
+            TransactionBriefModel model = this.txBlock10CoinbaseModelBrief;
             string json = ModelToJson(model);
 
             string expectedJson = "\"" + TxBlock10Hex + "\"";
@@ -57,9 +61,9 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Models
             string actualHex = obj.Value<string>("hex");
             string actualTxid = obj.Value<string>("txid");
             int? actualSize = obj.Value<int>("size");
-            int? actualVersion = obj.Value<int?>("version");
-            int? actualLocktime = obj.Value<int?>("locktime");
-            var actualPropertyNameOrder = obj.Children().Select(o => (o as JProperty)?.Name);
+            var actualVersion = obj.Value<int?>("version");
+            var actualLocktime = obj.Value<int?>("locktime");
+            IEnumerable<string> actualPropertyNameOrder = obj.Children().Select(o => (o as JProperty)?.Name);
 
             Assert.Equal(7, actualElements);
             Assert.Equal(TxBlock460373CoinbaseHex, actualHex);
@@ -77,14 +81,14 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Models
             string expectedCoinbase = "0355060704eba7e3582f4254432e434f4d2fb6000ddbcbe5000000000000";
             JObject obj = ModelToJObject(this.txBlock460373CoinbaseModelVerbose);
             Assert.True(obj.HasValues);
-            var vin = obj["vin"];
+            JToken vin = obj["vin"];
             Assert.NotNull(vin);
 
             int actualVinCount = vin.Count();
             int? actualVinInnerElements = vin.FirstOrDefault()?.Count();
             string actualCoinbase = vin.FirstOrDefault()?.Value<string>("coinbase");
-            uint? actualSequence = vin.FirstOrDefault()?.Value<uint>("sequence");
-            var actualPropertyNameOrder = vin.FirstOrDefault()?.Select(o => (o as JProperty)?.Name);
+            var actualSequence = vin.FirstOrDefault()?.Value<uint>("sequence");
+            IEnumerable<string> actualPropertyNameOrder = vin.FirstOrDefault()?.Select(o => (o as JProperty)?.Name);
 
             Assert.Equal(1, actualVinCount);
             Assert.Equal(2, actualVinInnerElements);
@@ -99,14 +103,14 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Models
             var expectedPropertyNameOrder = new string[] { "value", "n", "scriptPubKey" };
             JObject obj = ModelToJObject(this.txBlock460373CoinbaseModelVerbose);
             Assert.True(obj.HasValues);
-            var vout = obj["vout"];
+            JToken vout = obj["vout"];
             Assert.NotNull(vout);
 
             int actualVoutCount = vout.Count();
             int? actualVoutInnerElements = vout.FirstOrDefault()?.Count();
             decimal? actualTotalValue = vout.Sum(o => o.Value<decimal?>("value"));
-            int? actualLastVoutN = vout.LastOrDefault().Value<int?>("n");
-            var actualPropertyNameOrder = vout.FirstOrDefault()?.Select(o => (o as JProperty)?.Name);
+            var actualLastVoutN = vout.LastOrDefault().Value<int?>("n");
+            IEnumerable<string> actualPropertyNameOrder = vout.FirstOrDefault()?.Select(o => (o as JProperty)?.Name);
 
             Assert.Equal(2, actualVoutCount);
             Assert.Equal(3, actualVoutInnerElements);
@@ -125,11 +129,11 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Models
             var secondScript = obj["vout"]?.LastOrDefault()?.Value<JToken>("scriptPubKey");
 
             string actualFirstVoutScriptType = firstScript?.Value<string>("type");
-            int? actualReqSigs = firstScript?.Value<int>("reqSigs");
+            var actualReqSigs = firstScript?.Value<int>("reqSigs");
             int? actualAddressCount = firstScript?["addresses"]?.Count();
             string actualSecondVoutScriptType = secondScript?.Value<string>("type");
-            var actualFirstPropertyNameOrder = firstScript?.Select(o => (o as JProperty)?.Name);
-            var actualSecondPropertyNameOrder = secondScript?.Select(o => (o as JProperty)?.Name);
+            IEnumerable<string> actualFirstPropertyNameOrder = firstScript?.Select(o => (o as JProperty)?.Name);
+            IEnumerable<string> actualSecondPropertyNameOrder = secondScript?.Select(o => (o as JProperty)?.Name);
 
             Assert.Equal("scripthash", actualFirstVoutScriptType);
             Assert.Equal(1, actualReqSigs);
@@ -145,18 +149,18 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Models
             var expectedPropertyNameOrder = new string[] { "txid", "vout", "scriptSig", "sequence" };
             JObject obj = ModelToJObject(this.txTwoInTwoOutModelVerbose);
             Assert.True(obj.HasValues);
-            var vin = obj["vin"];
-            var firstIn = vin.FirstOrDefault();
-            var lastIn = vin.LastOrDefault();
+            JToken vin = obj["vin"];
+            JToken firstIn = vin.FirstOrDefault();
+            JToken lastIn = vin.LastOrDefault();
 
             int actualVinCount = vin.Count();
             string actualFirstTxId = firstIn?.Value<string>("txid");
-            int? actualFirstNdx = firstIn?.Value<int?>("vout");
-            uint? actualFirstSequence = firstIn?.Value<uint>("sequence");
+            var actualFirstNdx = firstIn?.Value<int?>("vout");
+            var actualFirstSequence = firstIn?.Value<uint>("sequence");
             string actualLastTxId = lastIn?.Value<string>("txid");
-            int? actualLastNdx = lastIn?.Value<int?>("vout");
-            uint? actualLastSequence = lastIn?.Value<uint>("sequence");
-            var actualPropertyNameOrder = firstIn?.Select(o => (o as JProperty)?.Name);
+            var actualLastNdx = lastIn?.Value<int?>("vout");
+            var actualLastSequence = lastIn?.Value<uint>("sequence");
+            IEnumerable<string> actualPropertyNameOrder = firstIn?.Select(o => (o as JProperty)?.Name);
 
             Assert.Equal(2, actualVinCount);
             Assert.Equal("19d03bf27410e3ee024211b8470c0fb3fb93913d0f8c7a0e96185ead2d58a7b1", actualFirstTxId);
@@ -166,6 +170,25 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Models
             Assert.Equal(0, actualLastNdx);
             Assert.Equal(4294967295, actualLastSequence);
             Assert.Equal(expectedPropertyNameOrder, actualPropertyNameOrder);
+        }
+    }
+
+    public class BaseModelTest
+    {
+        protected static JObject ModelToJObject(object model)
+        {
+            string json = ModelToJson(model);
+            JObject obj = JObject.Parse(json);
+            return obj;
+        }
+
+        protected static string ModelToJson(object model)
+        {
+            var formatter = new RPCJsonOutputFormatter(new JsonSerializerSettings(), System.Buffers.ArrayPool<char>.Create());
+            var sw = new StringWriter();
+            formatter.WriteObject(sw, model);
+            string json = sw.ToString();
+            return json;
         }
     }
 }

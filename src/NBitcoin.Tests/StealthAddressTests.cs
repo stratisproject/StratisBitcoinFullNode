@@ -54,7 +54,7 @@ namespace NBitcoin.Tests
         //https://github.com/libbitcoin/libbitcoin/blob/master/test/stealth.cpp
         public void BitFieldCorrectlyMatchData()
         {
-            var bit = (uint)1358086238;
+            uint bit = (uint)1358086238;
             var o = new BitField(bit, 32);
             var tests = new[]
             {
@@ -76,7 +76,7 @@ namespace NBitcoin.Tests
             };
             foreach(var test in tests)
             {
-                BitField field = new BitField(test.Encoded, test.BitCount);
+                var field = new BitField(test.Encoded, test.BitCount);
                 Assert.Equal(test.Match, field.Match(Utils.ToUInt32(TestUtils.ParseHex(test.Data), true)));
             }
         }
@@ -114,10 +114,10 @@ namespace NBitcoin.Tests
             foreach(var test in tests)
             {
                 var field = new BitField(TestUtils.ParseHex(test.Encoded), test.BitCount);
-                Transaction transaction = new Transaction();
+                var transaction = new Transaction();
                 transaction.FromBytes(TestUtils.ParseHex(test.Transaction));
 
-                var stealthOutput = field.GetPayments(transaction).FirstOrDefault();
+                StealthPayment stealthOutput = field.GetPayments(transaction).FirstOrDefault();
                 Assert.NotNull(stealthOutput);
 
                 Assert.True(field.Match(stealthOutput.Metadata.BitField));
@@ -218,28 +218,28 @@ namespace NBitcoin.Tests
                 }
             };
 
-            foreach(var test in tests)
+            foreach(CanCreatePaymentData test in tests)
             {
-                var scan = AssertKeys(test.ScanSecret, test.ScanPubKey);
-                var spend = AssertKeys(test.SpendSecret, test.SpendPubKey);
-                var ephem = AssertKeys(test.EphemSecret, test.EphemPubKey);
-                var stealth = AssertKeys(test.StealthSecret, test.StealthPubKey);
+                Key scan = AssertKeys(test.ScanSecret, test.ScanPubKey);
+                Key spend = AssertKeys(test.SpendSecret, test.SpendPubKey);
+                Key ephem = AssertKeys(test.EphemSecret, test.EphemPubKey);
+                Key stealth = AssertKeys(test.StealthSecret, test.StealthPubKey);
 
-                var address = spend.PubKey.CreateStealthAddress(scan.PubKey, Network.Main);
+                BitcoinStealthAddress address = spend.PubKey.CreateStealthAddress(scan.PubKey, Network.Main);
                 Assert.Equal(test.StealthAddress, address.ToString());
                 //Try roundtrip
                 address = new BitcoinStealthAddress(address.ToBytes(), Network.Main);
                 Assert.Equal(test.StealthAddress, address.ToString());
 
-                var payment = address.CreatePayment(ephem);
-                var generatedKey = spend.Uncover(scan, payment.Metadata.EphemKey);
+                StealthPayment payment = address.CreatePayment(ephem);
+                Key generatedKey = spend.Uncover(scan, payment.Metadata.EphemKey);
                 if(stealth != null)
                 {
                     Assert.Equal(stealth.PubKey.Hash, payment.StealthKeys[0].ID);
                     Assert.Equal(stealth.ToBytes(), generatedKey.ToBytes());
                 }
-                var uncoveredSender = spend.PubKey.UncoverSender(ephem, scan.PubKey);
-                var uncovertedReceiver = spend.PubKey.UncoverReceiver(scan, ephem.PubKey);
+                PubKey uncoveredSender = spend.PubKey.UncoverSender(ephem, scan.PubKey);
+                PubKey uncovertedReceiver = spend.PubKey.UncoverReceiver(scan, ephem.PubKey);
 
                 AssertEx.CollectionEquals(uncoveredSender.ToBytes(), uncovertedReceiver.ToBytes());
                 AssertEx.CollectionEquals(generatedKey.PubKey.ToBytes(), uncovertedReceiver.ToBytes());
@@ -253,10 +253,10 @@ namespace NBitcoin.Tests
         {
             if(key == null)
                 return null;
-            Key k = new Key(TestUtils.ParseHex(key));
+            var k = new Key(TestUtils.ParseHex(key));
             if(pub != null)
             {
-                PubKey p = new PubKey(TestUtils.ParseHex(pub));
+                var p = new PubKey(TestUtils.ParseHex(pub));
                 AssertEx.Equal(k.PubKey.ToBytes(), p.ToBytes());
             }
             return k;
@@ -324,7 +324,7 @@ namespace NBitcoin.Tests
         {
             for(int i = 0; i < count; i++)
             {
-                CanCreatePaymentData data = new CanCreatePaymentData();
+                var data = new CanCreatePaymentData();
                 var spend = new Key();
                 var scan = new Key();
                 var ephem = new Key();
@@ -347,19 +347,19 @@ namespace NBitcoin.Tests
         public override string ToString()
         {
             return
-                    "StealthAddress = \"" + StealthAddress + "\",\r\n" +
+                    "StealthAddress = \"" + this.StealthAddress + "\",\r\n" +
 
-                    "ScanSecret = \"" + ScanSecret + "\",\r\n" +
-                    "ScanPubKey = \"" + ScanPubKey + "\",\r\n" +
+                    "ScanSecret = \"" + this.ScanSecret + "\",\r\n" +
+                    "ScanPubKey = \"" + this.ScanPubKey + "\",\r\n" +
 
-                    "SpendSecret = \"" + SpendSecret + "\",\r\n" +
-                    "SpendPubKey = \"" + SpendPubKey + "\",\r\n" +
+                    "SpendSecret = \"" + this.SpendSecret + "\",\r\n" +
+                    "SpendPubKey = \"" + this.SpendPubKey + "\",\r\n" +
 
-                    "EphemSecret = \"" + EphemSecret + "\",\r\n" +
-                    "EphemPubKey = \"" + EphemPubKey + "\",\r\n" +
+                    "EphemSecret = \"" + this.EphemSecret + "\",\r\n" +
+                    "EphemPubKey = \"" + this.EphemPubKey + "\",\r\n" +
 
-                    "StealthSecret = \"" + StealthSecret + "\",\r\n" +
-                    "StealthPubKey = \"" + StealthPubKey + "\",\r\n";
+                    "StealthSecret = \"" + this.StealthSecret + "\",\r\n" +
+                    "StealthPubKey = \"" + this.StealthPubKey + "\",\r\n";
         }
     }
 }

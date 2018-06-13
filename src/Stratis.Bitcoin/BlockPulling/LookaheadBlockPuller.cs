@@ -434,7 +434,7 @@ namespace Stratis.Bitcoin.BlockPulling
             int requestsCount = nextLookaheadBlock.Height - fork.Height;
             if (requestsCount > 0)
             {
-                ChainedHeader[] downloadRequests = new ChainedHeader[requestsCount];
+                var downloadRequests = new ChainedHeader[requestsCount];
                 for (int i = 0; i < requestsCount; i++)
                 {
                     downloadRequests[requestsCount - i - 1] = nextLookaheadBlock;
@@ -533,7 +533,7 @@ namespace Stratis.Bitcoin.BlockPulling
         {
             this.logger.LogTrace("()");
 
-            LookaheadResult res = new LookaheadResult();
+            var res = new LookaheadResult();
 
             while (res.Block == null)
             {
