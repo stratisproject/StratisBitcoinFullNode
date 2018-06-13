@@ -1106,15 +1106,9 @@ namespace Stratis.Bitcoin.Consensus
         /// </summary>
         public List<uint256> ToHashList()
         {
-            int size = this.DownloadTo.Height - this.DownloadFrom.Height;
-            List<uint256> blockHashes = new List<uint256>(size);
+            List<uint256> blockHashes = this.DownloadTo.ToConsecutiveList(this.DownloadFrom).Select(header => header.HashBlock).ToList();
 
-            int index = size - 1;
-            foreach (ChainedHeader chainedHeader in this.DownloadTo.ToConsecutiveList(this.DownloadFrom))
-            {
-                blockHashes[index] = chainedHeader.HashBlock;
-                index--;
-            }
+            blockHashes.Reverse();
 
             return blockHashes;
         }
