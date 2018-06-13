@@ -25,7 +25,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Stratis.FederatedPeg\Stratis.FederatedPeg.csproj" />
-    <ProjectReference Include="..\Stratis.Sidechains.Features.BlockchainGeneration\Stratis.Sidechains.Features.BlockchainGeneration.csproj" />
   </ItemGroup>
 
 </Project>
