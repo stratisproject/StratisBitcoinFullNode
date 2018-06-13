@@ -25,18 +25,6 @@ namespace Stratis.Bitcoin.Tests.Consensus
             public Mock<IFinalizedBlockHeight> FinalizedBlockMock = new Mock<IFinalizedBlockHeight>();
             public ConsensusSettings ConsensusSettings = new ConsensusSettings(new NodeSettings(Network.RegTest));
 
-            private const string TestBlockHex =
-                "07000000867ccd8f8b21f48e1423d2217fdfe0ea5108dcd6f3371933d584e8f250f5c6600fdf4ccef23cbdb6d81e6bde" +
-                "a2f0f45aca69a35a9817590c60b5a4ce4a44d1cc30c644592060041a00000000020100000030c6445901000000000000" +
-                "0000000000000000000000000000000000000000000000000000ffffffff03029423ffffffff01000000000000000000" +
-                "000000000100000030c6445901795088bf033121a794ea35a11d39dbcd2495b64756e6de76d86944fdeea4ddbc020000" +
-                "00484730440220096615c8fdec79ecf477cea2104859f7db98ed883f242b08fef316e3abd41a30022070d82dd743eeed" +
-                "324e90cb3c168144031ba8c8b14a6af167b98253614be3d23c01ffffffff0300000000000000000000011f4a8b000000" +
-                "232102e89f4f5ac02d3e5f9114253470838ee73c9ba507262ba4db7f0b3f840cf0e1d3ac40432e4a8b000000232102e8" +
-                "9f4f5ac02d3e5f9114253470838ee73c9ba507262ba4db7f0b3f840cf0e1d3ac00000000463044022002efd3facb7bc9" +
-                "9407d0f7c6b9c8e80898608f63f3141b06371bbd5e762dd4ab02204f1a5e8cca1a70a5b6dee55746f100042e3479c291" +
-                "68dd9970c1b3147cbd6ed8";
-
             internal ChainedHeaderTree ChainedHeaderTree;
 
             internal ChainedHeaderTree CreateChainedHeaderTree()
