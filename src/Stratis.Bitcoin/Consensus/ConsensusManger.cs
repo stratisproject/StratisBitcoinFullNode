@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
@@ -39,11 +40,13 @@ namespace Stratis.Bitcoin.Consensus
         /// <summary>The current tip of the chain that has been validated.</summary>
         public ChainedHeader Tip { get; private set; }
 
-        private readonly Dictionary<uint256, OnBlockDownloadedCallback> blocksRequested;
+        private readonly Dictionary<uint256, List<OnBlockDownloadedCallback>> blocksRequested;
 
         private readonly Queue<BlockDownloadRequest> toDownloadQueue;
 
         private readonly object treeLock;
+
+        private readonly object blockRequestedLock;
 
         public ConsensusManager(
             Network network, 
@@ -70,8 +73,9 @@ namespace Stratis.Bitcoin.Consensus
             this.chainedHeaderTree = new ChainedHeaderTree(network, loggerFactory, blockValidator, checkpoints, chainState, finalizedBlockHeight, consensusSettings);
 
             this.treeLock = new object();
+            this.blockRequestedLock = new object();
 
-            this.blocksRequested = new Dictionary<uint256, OnBlockDownloadedCallback>();
+            this.blocksRequested = new Dictionary<uint256, List<OnBlockDownloadedCallback>>();
             this.toDownloadQueue = new Queue<BlockDownloadRequest>();
         }
 
@@ -191,20 +195,74 @@ namespace Stratis.Bitcoin.Consensus
             this.logger.LogTrace("(-)");
         }
 
-        private void DownloadBlocks(List<uint256> blockHashes, OnBlockDownloadedCallback OnBlockDownloadedCallback)
+        private void DownloadBlocks(List<uint256> blockHashes, OnBlockDownloadedCallback onBlockDownloadedCallback)
         {
             this.logger.LogTrace("({0}.{1}:{2})", nameof(blockHashes), nameof(blockHashes.Count), blockHashes.Count);
 
             BlockDownloadRequest request = new BlockDownloadRequest
             {
                 BlocksToDownload = blockHashes,
-                OnBlockDownloadedCallback = OnBlockDownloadedCallback
+                OnBlockDownloadedCallback = onBlockDownloadedCallback
             };
 
             lock (this.treeLock)
             {
                 this.toDownloadQueue.Enqueue(request);
                 this.ProcessDownloadQueueLocked();
+            }
+
+            this.logger.LogTrace("(-)");
+        }
+
+        private void BlockDownloaded(Block block, uint256 blockHash, int peerId)
+        {
+            this.logger.LogTrace("({0}:'{1}',{2}:{3})", nameof(blockHash), blockHash, nameof(peerId), peerId);
+
+            ChainedHeader chainedHeader = null;
+            if (block != null)
+            {
+                lock (this.treeLock)
+                {
+                    try
+                    {
+                        chainedHeader = this.chainedHeaderTree.FindHeaderAndVerifyBlockIntegrity(block);
+                    }
+                    catch (ConsensusException cex)
+                    {
+                        switch (cex)
+                        {
+                            case BlockDownloadedForMissingChainedHeaderException bcex:
+                                return;
+
+                            // TODO: catch validation exceptions.
+                        }
+                    }
+                }
+            }
+
+            List<OnBlockDownloadedCallback> listOfCallbacks = null;
+
+            lock (this.blockRequestedLock)
+            {
+                if (this.blocksRequested.TryGetValue(blockHash, out listOfCallbacks))
+                {
+                    this.blocksRequested.Remove(blockHash);
+                }
+            }
+
+            if (listOfCallbacks != null)
+            {
+                foreach (var blockDownloadedCallback in listOfCallbacks)
+                {
+                    ChainedHeaderBlock chainedHeaderBlock = null;
+
+                    if (block != null)
+                    {
+                        chainedHeaderBlock = new ChainedHeaderBlock(block, chainedHeader);
+                    }
+
+                    blockDownloadedCallback(chainedHeaderBlock);
+                }
             }
 
             this.logger.LogTrace("(-)");
