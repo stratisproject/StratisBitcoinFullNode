@@ -702,6 +702,9 @@ namespace Stratis.Bitcoin.Consensus
                 connectNewHeadersResult = this.MarkBetterChainAsRequired(latestNewHeader);
             }
 
+            if (connectNewHeadersResult == null)
+                connectNewHeadersResult = new ConnectNewHeadersResult() { Consumed = latestNewHeader };
+
             this.logger.LogTrace("(-):{0}", connectNewHeadersResult);
             return connectNewHeadersResult;
         }
