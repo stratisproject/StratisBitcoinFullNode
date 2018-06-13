@@ -14,12 +14,12 @@ namespace NBitcoin.JsonConverters
         public JsonObjectException(Exception inner, JsonReader reader)
             : base(inner.Message, inner)
         {
-            Path = reader.Path;
+            this.Path = reader.Path;
         }
         public JsonObjectException(string message, JsonReader reader)
             : base(message)
         {
-            Path = reader.Path;
+            this.Path = reader.Path;
         }
 
         public string Path

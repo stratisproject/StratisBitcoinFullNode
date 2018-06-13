@@ -48,7 +48,7 @@ namespace NBitcoin.RPC
             for(int i = 0; i < voutCount; i++)
             {
                 var jsonOut = (JObject)vout[i];
-                var txout = new NBitcoin.TxOut();
+                var txout = new TxOut();
                 tx.Outputs.Add(txout);
 
                 txout.Value = Money.Parse((string)jsonOut.GetValue("value"));

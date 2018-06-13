@@ -44,31 +44,31 @@ namespace NBitcoin.Crypto
             : base(new HMacDsaKCalculator(new Sha256Digest()))
 
         {
-            _digest = new Sha256Digest();
+            this._digest = new Sha256Digest();
         }
         public DeterministicECDSA(Func<IDigest> digest)
             : base(new HMacDsaKCalculator(digest()))
         {
-            _digest = digest();
+            this._digest = digest();
         }
 
 
         public void setPrivateKey(ECPrivateKeyParameters ecKey)
         {
-            base.Init(true, ecKey);
+            Init(true, ecKey);
         }
 
         public void update(byte[] buf)
         {
-            _buffer = _buffer.Concat(buf).ToArray();
+            this._buffer = this._buffer.Concat(buf).ToArray();
         }
 
         public byte[] sign()
         {
-            var hash = new byte[_digest.GetDigestSize()];
-            _digest.BlockUpdate(_buffer, 0, _buffer.Length);
-            _digest.DoFinal(hash, 0);
-            _digest.Reset();
+            var hash = new byte[this._digest.GetDigestSize()];
+            this._digest.BlockUpdate(this._buffer, 0, this._buffer.Length);
+            this._digest.DoFinal(hash, 0);
+            this._digest.Reset();
             return signHash(hash);
         }
 

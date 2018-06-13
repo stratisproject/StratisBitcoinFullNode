@@ -23,7 +23,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             this.checkpoints.Setup(c => c.CheckHardened(2, this.ruleContext.ValidationContext.Block.GetHash()))
                 .Returns(false);
 
-            var exception = await Assert.ThrowsAsync<ConsensusErrorException>(() => this.consensusRules.RegisterRule<CheckpointsRule>().RunAsync(this.ruleContext));
+            ConsensusErrorException exception = await Assert.ThrowsAsync<ConsensusErrorException>(() => this.consensusRules.RegisterRule<CheckpointsRule>().RunAsync(this.ruleContext));
 
             Assert.Equal(ConsensusErrors.CheckpointViolation, exception.ConsensusError);
         }

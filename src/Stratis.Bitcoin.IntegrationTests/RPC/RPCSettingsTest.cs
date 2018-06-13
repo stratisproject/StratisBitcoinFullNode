@@ -1,11 +1,11 @@
 ﻿using NBitcoin;
-using Stratis.Bitcoin.Builder;	
-using Stratis.Bitcoin.Configuration;	
-using Stratis.Bitcoin.Features.Consensus;	
-using Stratis.Bitcoin.Features.RPC;	
-using Stratis.Bitcoin.Tests.Common;	
-using Xunit;	
-	
+using Stratis.Bitcoin.Builder;
+using Stratis.Bitcoin.Configuration;
+using Stratis.Bitcoin.Features.Consensus;
+using Stratis.Bitcoin.Features.RPC;
+using Stratis.Bitcoin.Tests.Common;
+using Xunit;
+
 namespace Stratis.Bitcoin.IntegrationTests.RPC
 {	
     public class RPCSettingsTest : TestBase	
@@ -21,7 +21,7 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
 	
             var nodeSettings = new NodeSettings(args: new string[] { $"-datadir={dir}", "-rpcuser=abc", "-rpcpassword=def", "-rpcport=91" ,"-server=1" });	
 	
-            var node = new FullNodeBuilder()
+            IFullNode node = new FullNodeBuilder()
                 .UseNodeSettings(nodeSettings)
                 .UsePowConsensus()
                 .AddRPC()	

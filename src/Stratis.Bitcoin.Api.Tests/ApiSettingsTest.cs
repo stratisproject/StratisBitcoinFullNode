@@ -25,10 +25,10 @@ namespace Stratis.Bitcoin.Api.Tests
         {
             // Arrange.
             Network network = Network.Main;
-            NodeSettings nodeSettings = new NodeSettings(network);
+            var nodeSettings = new NodeSettings(network);
 
             // Act.
-            ApiSettings settings = new FullNodeBuilder()
+            var settings = new FullNodeBuilder()
                 .UseNodeSettings(nodeSettings)
                 .UseApi()
                 .Build()
@@ -47,10 +47,10 @@ namespace Stratis.Bitcoin.Api.Tests
         {
             // Arrange.
             Network network = Network.StratisMain;
-            NodeSettings nodeSettings = new NodeSettings(network);
+            var nodeSettings = new NodeSettings(network);
 
             // Act.
-            ApiSettings settings = new FullNodeBuilder()
+            var settings = new FullNodeBuilder()
                 .UseNodeSettings(nodeSettings)
                 .UseApi()
                 .Build()
@@ -69,10 +69,10 @@ namespace Stratis.Bitcoin.Api.Tests
         {
             // Arrange.
             int customPort = 55555;
-            NodeSettings nodeSettings = new NodeSettings(args:new[] { $"-apiport={customPort}" });
+            var nodeSettings = new NodeSettings(args:new[] { $"-apiport={customPort}" });
 
             // Act.
-            ApiSettings settings = new FullNodeBuilder()
+            var settings = new FullNodeBuilder()
                 .UseNodeSettings(nodeSettings)
                 .UseApi()
                 .Build()
@@ -92,10 +92,10 @@ namespace Stratis.Bitcoin.Api.Tests
             // Arrange.
             string customApiUri = "http://0.0.0.0";
             Network network = Network.Main;
-            NodeSettings nodeSettings = new NodeSettings(network, args:new[] { $"-apiuri={customApiUri}" });
+            var nodeSettings = new NodeSettings(network, args:new[] { $"-apiuri={customApiUri}" });
 
             // Act.
-            ApiSettings settings = new FullNodeBuilder()
+            var settings = new FullNodeBuilder()
                 .UseNodeSettings(nodeSettings)
                 .UseApi()
                 .Build()
@@ -115,10 +115,10 @@ namespace Stratis.Bitcoin.Api.Tests
             // Arrange.
             string customApiUri = "http://0.0.0.0";
             Network network = Network.StratisMain;
-            NodeSettings nodeSettings = new NodeSettings(network, args:new[] { $"-apiuri={customApiUri}" });
+            var nodeSettings = new NodeSettings(network, args:new[] { $"-apiuri={customApiUri}" });
 
             // Act.
-            ApiSettings settings = new FullNodeBuilder()
+            var settings = new FullNodeBuilder()
                 .UseNodeSettings(nodeSettings)
                 .UseApi()
                 .Build()
@@ -139,10 +139,10 @@ namespace Stratis.Bitcoin.Api.Tests
             string customApiUri = "http://0.0.0.0";
             int customPort = 55555;
             Network network = Network.Main;
-            NodeSettings nodeSettings = new NodeSettings(network, args:new[] { $"-apiuri={customApiUri}", $"-apiport={customPort}" });
+            var nodeSettings = new NodeSettings(network, args:new[] { $"-apiuri={customApiUri}", $"-apiport={customPort}" });
 
             // Act.
-            ApiSettings settings = new FullNodeBuilder()
+            var settings = new FullNodeBuilder()
                 .UseNodeSettings(nodeSettings)
                 .UseApi()
                 .Build()
@@ -163,10 +163,10 @@ namespace Stratis.Bitcoin.Api.Tests
             int customPort = 5522;
             string customApiUri = $"http://0.0.0.0:{customPort}";
             Network network = Network.Main;
-            NodeSettings nodeSettings = new NodeSettings(network, args:new[] { $"-apiuri={customApiUri}" });
+            var nodeSettings = new NodeSettings(network, args:new[] { $"-apiuri={customApiUri}" });
 
             // Act.
-            ApiSettings settings = new FullNodeBuilder()
+            var settings = new FullNodeBuilder()
                 .UseNodeSettings(nodeSettings)
                 .UseApi()
                 .Build()
@@ -187,7 +187,7 @@ namespace Stratis.Bitcoin.Api.Tests
             NodeSettings nodeSettings = NodeSettings.Default(Network.Main);
 
             // Act.
-            ApiSettings settings = new FullNodeBuilder()
+            var settings = new FullNodeBuilder()
                 .UseNodeSettings(nodeSettings)
                 .UseApi()
                 .Build()
@@ -207,7 +207,7 @@ namespace Stratis.Bitcoin.Api.Tests
             NodeSettings nodeSettings = NodeSettings.Default(Network.TestNet);
 
             // Act.
-            ApiSettings settings = new FullNodeBuilder()
+            var settings = new FullNodeBuilder()
                 .UseNodeSettings(nodeSettings)
                 .UseApi()
                 .Build()
@@ -227,7 +227,7 @@ namespace Stratis.Bitcoin.Api.Tests
             NodeSettings nodeSettings = NodeSettings.Default(Network.StratisMain);
 
             // Act.
-            ApiSettings settings = new FullNodeBuilder()
+            var settings = new FullNodeBuilder()
                 .UseNodeSettings(nodeSettings)
                 .UseApi()
                 .Build()
@@ -247,7 +247,7 @@ namespace Stratis.Bitcoin.Api.Tests
             NodeSettings nodeSettings = NodeSettings.Default(Network.StratisTest);
 
             // Act.
-            ApiSettings settings = new FullNodeBuilder()
+            var settings = new FullNodeBuilder()
                 .UseNodeSettings(nodeSettings)
                 .UseApi()
                 .Build()

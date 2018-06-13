@@ -418,7 +418,7 @@ namespace NBitcoin
             ms.Write(bytes, 0, bytes.Length);
         }
 
-        internal static Array BigIntegerToBytes(NBitcoin.BouncyCastle.Math.BigInteger b, int numBytes)
+        internal static Array BigIntegerToBytes(BigInteger b, int numBytes)
         {
             if(b == null)
             {
@@ -581,7 +581,7 @@ namespace NBitcoin
 
 
 #if !NOSOCKET
-        public static void SafeCloseSocket(System.Net.Sockets.Socket socket)
+        public static void SafeCloseSocket(Socket socket)
         {
             try
             {
@@ -599,9 +599,9 @@ namespace NBitcoin
             }
         }
 
-        public static System.Net.IPEndPoint EnsureIPv6(System.Net.IPEndPoint endpoint)
+        public static IPEndPoint EnsureIPv6(IPEndPoint endpoint)
         {
-            if(endpoint.AddressFamily == System.Net.Sockets.AddressFamily.InterNetworkV6)
+            if(endpoint.AddressFamily == AddressFamily.InterNetworkV6)
                 return endpoint;
             return new IPEndPoint(endpoint.Address.MapToIPv6Ex(), endpoint.Port);
         }

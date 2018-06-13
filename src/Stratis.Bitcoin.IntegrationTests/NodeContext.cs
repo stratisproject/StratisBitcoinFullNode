@@ -50,7 +50,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 
         public void Dispose()
         {
-            foreach (var item in this.cleanList)
+            foreach (IDisposable item in this.cleanList)
                 item.Dispose();
         }
 

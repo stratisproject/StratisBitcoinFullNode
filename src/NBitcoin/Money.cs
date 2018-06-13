@@ -119,18 +119,17 @@ namespace NBitcoin
                 return;
             }
 
-            IMoney firstCompatible = _bag.FirstOrDefault(x => x.IsCompatible(money));
+            IMoney firstCompatible = this._bag.FirstOrDefault(x => x.IsCompatible(money));
             if(firstCompatible == null)
             {
-                _bag.Add(money);
+                this._bag.Add(money);
             }
             else
             {
-                _bag.Remove(firstCompatible);
+                this._bag.Remove(firstCompatible);
                 IMoney zero = firstCompatible.Sub(firstCompatible);
                 IMoney total = firstCompatible.Add(money);
-                if(!zero.Equals(total))
-                    _bag.Add(total);
+                if(!zero.Equals(total)) this._bag.Add(total);
             }
         }
 
@@ -152,7 +151,7 @@ namespace NBitcoin
             if(other == null)
                 return false;
             var m = new MoneyBag(other);
-            return m._bag.SequenceEqual(_bag);
+            return m._bag.SequenceEqual(this._bag);
         }
 
         public static MoneyBag operator -(MoneyBag left, IMoney right)
@@ -175,7 +174,7 @@ namespace NBitcoin
 
         IMoney IMoney.Add(IMoney money)
         {
-            var m = new MoneyBag(_bag);
+            var m = new MoneyBag(this._bag);
             m.AppendMoney(money);
             return m;
         }
@@ -187,7 +186,7 @@ namespace NBitcoin
 
         IMoney IMoney.Negate()
         {
-            return new MoneyBag(_bag.Select(x => x.Negate()));
+            return new MoneyBag(this._bag.Select(x => x.Negate()));
         }
 
         bool IMoney.IsCompatible(IMoney money)
@@ -211,7 +210,7 @@ namespace NBitcoin
         public override string ToString()
         {
             var sb = new StringBuilder();
-            foreach(IMoney money in _bag)
+            foreach(IMoney money in this._bag)
             {
                 sb.AppendFormat("{0} ", money);
             }
@@ -220,12 +219,12 @@ namespace NBitcoin
 
         public IEnumerator<IMoney> GetEnumerator()
         {
-            return _bag.GetEnumerator();
+            return this._bag.GetEnumerator();
         }
 
         System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator()
         {
-            return _bag.GetEnumerator();
+            return this._bag.GetEnumerator();
         }
 
         /// <summary>
@@ -321,13 +320,13 @@ namespace NBitcoin
         {
             get
             {
-                return _Satoshis;
+                return this._Satoshis;
             }
             // used as a central point where long.MinValue checking can be enforced 
             private set
             {
                 CheckLongMinValue(value);
-                _Satoshis = value;
+                this._Satoshis = value;
             }
         }
 
@@ -338,24 +337,24 @@ namespace NBitcoin
         public Money Abs()
         {
             Money a = this;
-            if(a < Money.Zero)
+            if(a < Zero)
                 a = -a;
             return a;
         }        
 
         public Money(int satoshis)
         {
-            Satoshi = satoshis;
+            this.Satoshi = satoshis;
         }
 
         public Money(uint satoshis)
         {
-            Satoshi = satoshis;
+            this.Satoshi = satoshis;
         }
 
         public Money(long satoshis)
         {
-            Satoshi = satoshis;
+            this.Satoshi = satoshis;
         }
 
         public Money(ulong satoshis)
@@ -364,7 +363,7 @@ namespace NBitcoin
             // ulong.MaxValue is greater than long.MaxValue
             checked
             {
-                Satoshi = (long)satoshis;
+                this.Satoshi = (long)satoshis;
             }
         }
 
@@ -375,7 +374,7 @@ namespace NBitcoin
             checked
             {
                 decimal satoshi = amount * (int)unit;
-                Satoshi = (long)satoshi;
+                this.Satoshi = (long)satoshi;
             }
         }
 
@@ -390,11 +389,11 @@ namespace NBitcoin
             if(parts <= 0)
                 throw new ArgumentOutOfRangeException("Parts should be more than 0", "parts");
             long remain;
-            long result = DivRem(_Satoshis, parts, out remain);
+            long result = DivRem(this._Satoshis, parts, out remain);
 
             for(int i = 0; i < parts; i++)
             {
-                yield return Money.Satoshis(result + (remain > 0 ? 1 : 0));
+                yield return Satoshis(result + (remain > 0 ? 1 : 0));
                 remain--;
             }
         }
@@ -420,7 +419,7 @@ namespace NBitcoin
             CheckMoneyUnit(unit, "unit");
             // overflow safe because (long / int) always fit in decimal 
             // decimal operations are checked by default
-            return (decimal)Satoshi / (int)unit;
+            return (decimal) this.Satoshi / (int)unit;
         }
         /// <summary>
         /// Convert Money to decimal (same as ToUnit)
@@ -474,14 +473,14 @@ namespace NBitcoin
         {
             if(other == null)
                 return false;
-            return _Satoshis.Equals(other._Satoshis);
+            return this._Satoshis.Equals(other._Satoshis);
         }
 
         public int CompareTo(Money other)
         {
             if(other == null)
                 return 1;
-            return _Satoshis.CompareTo(other._Satoshis);
+            return this._Satoshis.CompareTo(other._Satoshis);
         }
 
         #endregion
@@ -494,11 +493,11 @@ namespace NBitcoin
                 return 1;
             var m = obj as Money;
             if(m != null)
-                return _Satoshis.CompareTo(m._Satoshis);
+                return this._Satoshis.CompareTo(m._Satoshis);
 #if !(PORTABLE || NETCORE)
             return _Satoshis.CompareTo(obj);
 #else
-            return _Satoshis.CompareTo((long)obj);
+            return this._Satoshis.CompareTo((long)obj);
 #endif
         }
 
@@ -530,26 +529,26 @@ namespace NBitcoin
         {
             if(right == null)
                 throw new ArgumentNullException("right");
-            return Money.Satoshis(checked(left * right._Satoshis));
+            return Satoshis(checked(left * right._Satoshis));
         }
 
         public static Money operator *(Money right, int left)
         {
             if(right == null)
                 throw new ArgumentNullException("right");
-            return Money.Satoshis(checked(right._Satoshis * left));
+            return Satoshis(checked(right._Satoshis * left));
         }
         public static Money operator *(long left, Money right)
         {
             if(right == null)
                 throw new ArgumentNullException("right");
-            return Money.Satoshis(checked(left * right._Satoshis));
+            return Satoshis(checked(left * right._Satoshis));
         }
         public static Money operator *(Money right, long left)
         {
             if(right == null)
                 throw new ArgumentNullException("right");
-            return Money.Satoshis(checked(left * right._Satoshis));
+            return Satoshis(checked(left * right._Satoshis));
         }
 
         public static Money operator /(Money left, long right)
@@ -623,7 +622,7 @@ namespace NBitcoin
 
         public static implicit operator Money(string value)
         {
-            return Money.Parse(value);
+            return Parse(value);
         }
 
         public override bool Equals(object obj)
@@ -631,11 +630,11 @@ namespace NBitcoin
             var item = obj as Money;
             if(item == null)
                 return false;
-            return _Satoshis.Equals(item._Satoshis);
+            return this._Satoshis.Equals(item._Satoshis);
         }
         public static bool operator ==(Money a, Money b)
         {
-            if(Object.ReferenceEquals(a, b))
+            if(ReferenceEquals(a, b))
                 return true;
             if(((object)a == null) || ((object)b == null))
                 return false;
@@ -649,7 +648,7 @@ namespace NBitcoin
 
         public override int GetHashCode()
         {
-            return _Satoshis.GetHashCode();
+            return this._Satoshis.GetHashCode();
         }
 
 
@@ -673,7 +672,7 @@ namespace NBitcoin
             string fmt = string.Format("{{0:{0}{1}B}}",
                                     (fplus ? "+" : null),
                                     (trimExcessZero ? "2" : "8"));
-            return string.Format(BitcoinFormatter.Formatter, fmt, _Satoshis);
+            return string.Format(BitcoinFormatter.Formatter, fmt, this._Satoshis);
         }
 
 
@@ -713,7 +712,7 @@ namespace NBitcoin
                 throw new ArgumentNullException("amount");
             if(margin < 0.0m || margin > 1.0m)
                 throw new ArgumentOutOfRangeException("margin", "margin should be between 0 and 1");
-            Money dust = Money.Satoshis((decimal)this.Satoshi * margin);
+            Money dust = Satoshis((decimal)this.Satoshi * margin);
             return Almost(amount, dust);
         }
 
@@ -777,7 +776,7 @@ namespace NBitcoin
 
         int IComparable.CompareTo(object obj)
         {
-            return this.CompareTo(obj);
+            return CompareTo(obj);
         }
 
         #endregion
@@ -786,7 +785,7 @@ namespace NBitcoin
 
         int IComparable<IMoney>.CompareTo(IMoney other)
         {
-            return this.CompareTo(other);
+            return CompareTo(other);
         }
 
         #endregion
@@ -795,7 +794,7 @@ namespace NBitcoin
 
         bool IEquatable<IMoney>.Equals(IMoney other)
         {
-            return this.Equals(other);
+            return Equals(other);
         }
 
         bool IMoney.IsCompatible(IMoney money)
@@ -844,7 +843,7 @@ namespace NBitcoin
 
         public string Format(string format, object arg, IFormatProvider formatProvider)
         {
-            if(!this.Equals(formatProvider))
+            if(!Equals(formatProvider))
             {
                 return null;
             }

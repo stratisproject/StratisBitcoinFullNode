@@ -81,7 +81,7 @@ namespace Stratis.Bitcoin.Tests.Builder.Feature
         [Fact]
         public void EnsureFeatureWithValidDependencies()
         {
-            List<IFullNodeFeature> features = new List<IFullNodeFeature>();
+            var features = new List<IFullNodeFeature>();
             features.Add(new FeatureA());
             features.Add(new FeatureB());
 
@@ -95,7 +95,7 @@ namespace Stratis.Bitcoin.Tests.Builder.Feature
         [Fact]
         public void EnsureFeatureWithInvalidDependenciesThrowsException()
         {
-            List<IFullNodeFeature> features = new List<IFullNodeFeature>();
+            var features = new List<IFullNodeFeature>();
             features.Add(new FeatureA());
 
             features.EnsureFeature<FeatureA>();

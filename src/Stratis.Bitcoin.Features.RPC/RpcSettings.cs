@@ -16,6 +16,9 @@ namespace Stratis.Bitcoin.Features.RPC
     /// </summary>
     public class RpcSettings
     {
+        /// <summary>Instance logger.</summary>
+        private readonly ILogger logger;
+
         /// <summary>Indicates whether the RPC server is being used</summary>
         public bool Server { get; private set; }
 
@@ -38,11 +41,22 @@ namespace Stratis.Bitcoin.Features.RPC
         public List<IPAddress> AllowIp { get; set; }
 
         /// <summary>
-        /// Initializes an instance of the object.
+        /// Initializes an instance of the object from the default node configuration.
         /// </summary>
+        public RpcSettings() : this(NodeSettings.Default())
+        {
+        }
+
+        /// <summary>
+        /// Initializes an instance of the object from the node configuration.
+        /// </summary>
+        /// <param name="nodeSettings">The node configuration.</param>
         public RpcSettings(NodeSettings nodeSettings)
         {
             Guard.NotNull(nodeSettings, nameof(nodeSettings));
+
+            this.logger = nodeSettings.LoggerFactory.CreateLogger(typeof(RpcSettings).FullName);
+            this.logger.LogTrace("({0}:'{1}')", nameof(nodeSettings), nodeSettings.Network.Name);
 
             this.Bind = new List<IPEndPoint>();
             this.DefaultBindings = new List<IPEndPoint>();
@@ -53,6 +67,8 @@ namespace Stratis.Bitcoin.Features.RPC
 
             // Check validity of settings
             this.CheckConfigurationValidity(nodeSettings.Logger);
+
+            this.logger.LogTrace("(-)");
         }
 
         /// <summary>
@@ -63,18 +79,18 @@ namespace Stratis.Bitcoin.Features.RPC
         {
             TextFileConfiguration config = nodeSettings.ConfigReader;
 
-            this.Server = config.GetOrDefault<bool>("server", false);
-            this.RPCPort = config.GetOrDefault<int>("rpcport", nodeSettings.Network.RPCPort);
+            this.Server = config.GetOrDefault<bool>("server", false, this.logger);
+            this.RPCPort = config.GetOrDefault<int>("rpcport", nodeSettings.Network.RPCPort, this.logger);
 
             if (this.Server)
             {
-                this.RpcUser = config.GetOrDefault<string>("rpcuser", null);
-                this.RpcPassword = config.GetOrDefault<string>("rpcpassword", null);
+                this.RpcUser = config.GetOrDefault<string>("rpcuser", null, this.logger);
+                this.RpcPassword = config.GetOrDefault<string>("rpcpassword", null); // No logging!
 
                 try
                 {
                     this.AllowIp = config
-                        .GetAll("rpcallowip")
+                        .GetAll("rpcallowip", this.logger)
                         .Select(p => IPAddress.Parse(p))
                         .ToList();
                 }
@@ -86,7 +102,7 @@ namespace Stratis.Bitcoin.Features.RPC
                 try
                 {
                     this.DefaultBindings = config
-                        .GetAll("rpcbind")
+                        .GetAll("rpcbind", this.logger)
                         .Select(p => p.ToIPEndPoint(this.RPCPort))
                         .ToList();
                 }

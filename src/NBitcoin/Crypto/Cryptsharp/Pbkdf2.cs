@@ -76,17 +76,17 @@ namespace NBitcoin.Crypto
 #if USEBC || WINDOWS_UWP || NETCORE
         public Pbkdf2(IMac hmacAlgorithm, byte[] salt, int iterations)
         {
-            NBitcoin.Crypto.Internal.Check.Null("hmacAlgorithm", hmacAlgorithm);
-            NBitcoin.Crypto.Internal.Check.Null("salt", salt);
-            NBitcoin.Crypto.Internal.Check.Length("salt", salt, 0, int.MaxValue - 4);
-            NBitcoin.Crypto.Internal.Check.Range("iterations", iterations, 1, int.MaxValue);
+            Internal.Check.Null("hmacAlgorithm", hmacAlgorithm);
+            Internal.Check.Null("salt", salt);
+            Internal.Check.Length("salt", salt, 0, int.MaxValue - 4);
+            Internal.Check.Range("iterations", iterations, 1, int.MaxValue);
             int hmacLength = hmacAlgorithm.GetMacSize();
-            _saltBuffer = new byte[salt.Length + 4];
-            Array.Copy(salt, _saltBuffer, salt.Length);
-            _iterations = iterations;
-            _hmacAlgorithm = hmacAlgorithm;
-            _digest = new byte[hmacLength];
-            _digestT1 = new byte[hmacLength];
+            this._saltBuffer = new byte[salt.Length + 4];
+            Array.Copy(salt, this._saltBuffer, salt.Length);
+            this._iterations = iterations;
+            this._hmacAlgorithm = hmacAlgorithm;
+            this._digest = new byte[hmacLength];
+            this._digestT1 = new byte[hmacLength];
         }
 #else
         public Pbkdf2(KeyedHashAlgorithm hmacAlgorithm, byte[] salt, int iterations)
@@ -113,7 +113,7 @@ namespace NBitcoin.Crypto
         /// <returns>Bytes from the derived key stream.</returns>
         public byte[] Read(int count)
         {
-            NBitcoin.Crypto.Internal.Check.Range("count", count, 0, int.MaxValue);
+            Internal.Check.Range("count", count, 0, int.MaxValue);
 
             var buffer = new byte[count];
             int bytes = Read(buffer, 0, count);
@@ -141,7 +141,7 @@ namespace NBitcoin.Crypto
         public static byte[] ComputeDerivedKey(IMac hmacAlgorithm, byte[] salt, int iterations,
                                                int derivedKeyLength)
         {
-            NBitcoin.Crypto.Internal.Check.Range("derivedKeyLength", derivedKeyLength, 0, int.MaxValue);
+            Internal.Check.Range("derivedKeyLength", derivedKeyLength, 0, int.MaxValue);
 
             using(var kdf = new Pbkdf2(hmacAlgorithm, salt, iterations))
             {
@@ -168,10 +168,10 @@ namespace NBitcoin.Crypto
 #if USEBC || WINDOWS_UWP || NETCORE
         protected override void Dispose(bool disposing)
         {
-            Security.Clear(_saltBuffer);
-            Security.Clear(_digest);
-            Security.Clear(_digestT1);
-            _hmacAlgorithm.Reset();
+            Security.Clear(this._saltBuffer);
+            Security.Clear(this._digest);
+            Security.Clear(this._digestT1);
+            this._hmacAlgorithm.Reset();
         }
 #else
         public override void Close()
@@ -186,28 +186,28 @@ namespace NBitcoin.Crypto
 
         private void ComputeBlock(uint pos)
         {
-            BitPacking.BEBytesFromUInt32(pos, _saltBuffer, _saltBuffer.Length - 4);
-            ComputeHmac(_saltBuffer, _digestT1);
-            Array.Copy(_digestT1, _digest, _digestT1.Length);
+            BitPacking.BEBytesFromUInt32(pos, this._saltBuffer, this._saltBuffer.Length - 4);
+            ComputeHmac(this._saltBuffer, this._digestT1);
+            Array.Copy(this._digestT1, this._digest, this._digestT1.Length);
 
-            for(int i = 1; i < _iterations; i++)
+            for(int i = 1; i < this._iterations; i++)
             {
-                ComputeHmac(_digestT1, _digestT1);
-                for(int j = 0; j < _digest.Length; j++)
+                ComputeHmac(this._digestT1, this._digestT1);
+                for(int j = 0; j < this._digest.Length; j++)
                 {
-                    _digest[j] ^= _digestT1[j];
+                    this._digest[j] ^= this._digestT1[j];
                 }
             }
 
-            NBitcoin.Crypto.Internal.Security.Clear(_digestT1);
+            Security.Clear(this._digestT1);
         }
 
 #if USEBC || WINDOWS_UWP || NETCORE
         private void ComputeHmac(byte[] input, byte[] output)
         {
-            var hash = new byte[_hmacAlgorithm.GetMacSize()];
-            _hmacAlgorithm.BlockUpdate(input, 0, input.Length);
-            _hmacAlgorithm.DoFinal(hash, 0);
+            var hash = new byte[this._hmacAlgorithm.GetMacSize()];
+            this._hmacAlgorithm.BlockUpdate(input, 0, input.Length);
+            this._hmacAlgorithm.DoFinal(hash, 0);
             Array.Copy(hash, output, output.Length);
         }
 #else
@@ -234,30 +234,30 @@ namespace NBitcoin.Crypto
         /// <inheritdoc />
         public override int Read(byte[] buffer, int offset, int count)
         {
-            NBitcoin.Crypto.Internal.Check.Bounds("buffer", buffer, offset, count);
+            Internal.Check.Bounds("buffer", buffer, offset, count);
             int bytes = 0;
 
             while(count > 0)
             {
-                if(Position < _blockStart || Position >= _blockEnd)
+                if(this.Position < this._blockStart || this.Position >= this._blockEnd)
                 {
-                    if(Position >= Length)
+                    if(this.Position >= this.Length)
                     {
                         break;
                     }
 
-                    long pos = Position / _digest.Length;
+                    long pos = this.Position / this._digest.Length;
                     ComputeBlock((uint)(pos + 1));
-                    _blockStart = pos * _digest.Length;
-                    _blockEnd = _blockStart + _digest.Length;
+                    this._blockStart = pos * this._digest.Length;
+                    this._blockEnd = this._blockStart + this._digest.Length;
                 }
 
-                int bytesSoFar = (int)(Position - _blockStart);
-                int bytesThisTime = (int)Math.Min(_digest.Length - bytesSoFar, count);
-                Array.Copy(_digest, bytesSoFar, buffer, bytes, bytesThisTime);
+                int bytesSoFar = (int)(this.Position - this._blockStart);
+                int bytesThisTime = (int)Math.Min(this._digest.Length - bytesSoFar, count);
+                Array.Copy(this._digest, bytesSoFar, buffer, bytes, bytesThisTime);
                 count -= bytesThisTime;
                 bytes += bytesThisTime;
-                Position += bytesThisTime;
+                this.Position += bytesThisTime;
             }
 
             return bytes;
@@ -274,10 +274,10 @@ namespace NBitcoin.Crypto
                     pos = offset;
                     break;
                 case SeekOrigin.Current:
-                    pos = Position + offset;
+                    pos = this.Position + offset;
                     break;
                 case SeekOrigin.End:
-                    pos = Length + offset;
+                    pos = this.Length + offset;
                     break;
                 default:
                     throw Exceptions.ArgumentOutOfRange("origin", "Unknown seek type.");
@@ -287,7 +287,8 @@ namespace NBitcoin.Crypto
             {
                 throw Exceptions.Argument("offset", "Can't seek before the stream start.");
             }
-            Position = pos;
+
+            this.Position = pos;
             return pos;
         }
 
@@ -337,7 +338,7 @@ namespace NBitcoin.Crypto
         {
             get
             {
-                return (long)_digest.Length * uint.MaxValue;
+                return (long) this._digest.Length * uint.MaxValue;
             }
         }
 
@@ -348,15 +349,16 @@ namespace NBitcoin.Crypto
         {
             get
             {
-                return _pos;
+                return this._pos;
             }
             set
             {
-                if(_pos < 0)
+                if(this._pos < 0)
                 {
                     throw Exceptions.Argument(null, "Can't seek before the stream start.");
                 }
-                _pos = value;
+
+                this._pos = value;
             }
         }
         #endregion

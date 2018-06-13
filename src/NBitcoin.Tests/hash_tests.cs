@@ -99,16 +99,16 @@ namespace NBitcoin.Tests
 
             // Check test vectors from spec, one byte at a time
             var hasher2 = new Hashes.SipHasher(0x0706050403020100UL, 0x0F0E0D0C0B0A0908UL);
-            for(byte x = 0; x < siphash_4_2_testvec.Length; ++x)
+            for(byte x = 0; x < this.siphash_4_2_testvec.Length; ++x)
             {
-                Assert.Equal(hasher2.Finalize(), siphash_4_2_testvec[x]);
+                Assert.Equal(hasher2.Finalize(), this.siphash_4_2_testvec[x]);
                 hasher2.Write(new byte[] { x });
             }
             // Check test vectors from spec, eight bytes at a time
             var hasher3 = new Hashes.SipHasher(0x0706050403020100UL, 0x0F0E0D0C0B0A0908UL);
-            for(int x = 0; x < siphash_4_2_testvec.Length; x += 8)
+            for(int x = 0; x < this.siphash_4_2_testvec.Length; x += 8)
             {
-                Assert.Equal(hasher3.Finalize(), siphash_4_2_testvec[x]);
+                Assert.Equal(hasher3.Finalize(), this.siphash_4_2_testvec[x]);
                 hasher3.Write(uint64_t(x) | (uint64_t(x + 1) << 8) | (uint64_t(x + 2) << 16) | (uint64_t(x + 3) << 24) |
                              (uint64_t(x + 4) << 32) | (uint64_t(x + 5) << 40) | (uint64_t(x + 6) << 48) | (uint64_t(x + 7) << 56));
             }

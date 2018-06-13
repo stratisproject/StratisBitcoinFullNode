@@ -276,8 +276,10 @@ namespace NBitcoin
                 throw new ArgumentException($"Parameter '{nameof(target)}' cannot be null. Example use: new Target(new uint256(\"0000ffff00000000000000000000000000000000000000000000000000000000\"))");
 
             if (consensusFactory == null)
+            {
                 throw new ArgumentException($"Parameter '{nameof(consensusFactory)}' cannot be null. Use 'new ConsensusFactory()' for Bitcoin-like proof-of-work blockchains" +
                                             "and 'new PosConsensusFactory()' for Stratis-like proof-of-stake blockchains.");
+            }
 
             if (string.IsNullOrEmpty(coinbaseText))
                 throw new ArgumentException($"Parameter '{nameof(coinbaseText)}' cannot be null. Use a news headline or any other appropriate string.");
@@ -358,9 +360,9 @@ namespace NBitcoin
             if (!type.HasValue)
                 throw new FormatException("Invalid Base58 version");
             if (type == Base58Type.PUBKEY_ADDRESS)
-                return this.CreateBitcoinPubKeyAddress(base58);
+                return CreateBitcoinPubKeyAddress(base58);
             if (type == Base58Type.SCRIPT_ADDRESS)
-                return this.CreateBitcoinScriptAddress(base58);
+                return CreateBitcoinScriptAddress(base58);
             throw new FormatException("Invalid Base58 version");
         }
 
@@ -539,29 +541,29 @@ namespace NBitcoin
         private IBase58Data CreateBase58Data(Base58Type type, string base58)
         {
             if (type == Base58Type.EXT_PUBLIC_KEY)
-                return this.CreateBitcoinExtPubKey(base58);
+                return CreateBitcoinExtPubKey(base58);
             if (type == Base58Type.EXT_SECRET_KEY)
-                return this.CreateBitcoinExtKey(base58);
+                return CreateBitcoinExtKey(base58);
             if (type == Base58Type.PUBKEY_ADDRESS)
-                return this.CreateBitcoinPubKeyAddress(base58);
+                return CreateBitcoinPubKeyAddress(base58);
             if (type == Base58Type.SCRIPT_ADDRESS)
-                return this.CreateBitcoinScriptAddress(base58);
+                return CreateBitcoinScriptAddress(base58);
             if (type == Base58Type.SECRET_KEY)
-                return this.CreateBitcoinSecret(base58);
+                return CreateBitcoinSecret(base58);
             if (type == Base58Type.CONFIRMATION_CODE)
-                return this.CreateConfirmationCode(base58);
+                return CreateConfirmationCode(base58);
             if (type == Base58Type.ENCRYPTED_SECRET_KEY_EC)
-                return this.CreateEncryptedKeyEC(base58);
+                return CreateEncryptedKeyEC(base58);
             if (type == Base58Type.ENCRYPTED_SECRET_KEY_NO_EC)
-                return this.CreateEncryptedKeyNoEC(base58);
+                return CreateEncryptedKeyNoEC(base58);
             if (type == Base58Type.PASSPHRASE_CODE)
-                return this.CreatePassphraseCode(base58);
+                return CreatePassphraseCode(base58);
             if (type == Base58Type.STEALTH_ADDRESS)
-                return this.CreateStealthAddress(base58);
+                return CreateStealthAddress(base58);
             if (type == Base58Type.ASSET_ID)
-                return this.CreateAssetId(base58);
+                return CreateAssetId(base58);
             if (type == Base58Type.COLORED_ADDRESS)
-                return this.CreateColoredAddress(base58);
+                return CreateColoredAddress(base58);
             throw new NotSupportedException("Invalid Base58Data type : " + type.ToString());
         }
 
@@ -575,9 +577,9 @@ namespace NBitcoin
             return new BitcoinColoredAddress(base58, this);
         }
 
-        public NBitcoin.OpenAsset.BitcoinAssetId CreateAssetId(string base58)
+        public OpenAsset.BitcoinAssetId CreateAssetId(string base58)
         {
-            return new NBitcoin.OpenAsset.BitcoinAssetId(base58, this);
+            return new OpenAsset.BitcoinAssetId(base58, this);
         }
 
         public BitcoinStealthAddress CreateStealthAddress(string base58)
@@ -711,10 +713,13 @@ namespace NBitcoin
 
                 int read = stream.ReadEx(bytes, 0, bytes.Length, cancellation);
                 if (read == 0)
+                {
                     if (throwIfEOF)
                         throw new EndOfStreamException("No more bytes to read");
                     else
                         return false;
+                }
+
                 if (read != 1)
                     i--;
                 else if (this.MagicBytesArray[i] != bytes[0])
@@ -727,8 +732,11 @@ namespace NBitcoin
         {
             Bech32Encoder encoder = this.Bech32Encoders[(int)type];
             if (encoder == null && throws)
+            {
                 throw new NotImplementedException("The network " + this + " does not have any prefix for bech32 " +
                                                   Enum.GetName(typeof(Bech32Type), type));
+            }
+
             return encoder;
         }
 
@@ -736,8 +744,11 @@ namespace NBitcoin
         {
             byte[] prefix = this.Base58Prefixes[(int)type];
             if (prefix == null && throws)
+            {
                 throw new NotImplementedException("The network " + this + " does not have any prefix for base58 " +
                                                   Enum.GetName(typeof(Base58Type), type));
+            }
+
             return prefix?.ToArray();
         }
 

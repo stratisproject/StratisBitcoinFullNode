@@ -14,7 +14,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         public async Task CheckHeaderBits_ValidationFailAsync()
         {
             TestRulesContext testContext = TestRulesContextFactory.CreateAsync(Network.RegTest);
-            BlockHeaderPowContextualRule rule = testContext.CreateRule<BlockHeaderPowContextualRule>();
+            var rule = testContext.CreateRule<BlockHeaderPowContextualRule>();
 
             RuleContext context = new PowRuleContext(new ValidationContext (), Network.RegTest.Consensus, testContext.Chain.Tip);
             context.ValidationContext.Block = TestRulesContextFactory.MineBlock(Network.RegTest, testContext.Chain);
@@ -25,7 +25,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             context.NextWorkRequired = context.ValidationContext.ChainedHeader.GetNextWorkRequired(Network.RegTest.Consensus);
             context.ValidationContext.Block.Header.Bits += 1;
 
-            var error = await Assert.ThrowsAsync<ConsensusErrorException>(async () => await rule.RunAsync(context));
+            ConsensusErrorException error = await Assert.ThrowsAsync<ConsensusErrorException>(async () => await rule.RunAsync(context));
             Assert.Equal(ConsensusErrors.BadDiffBits, error.ConsensusError);
         }
 
@@ -33,7 +33,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         public async Task ChecBlockPreviousTimestamp_ValidationFailAsync()
         {
             TestRulesContext testContext = TestRulesContextFactory.CreateAsync(Network.RegTest);
-            BlockHeaderPowContextualRule rule = testContext.CreateRule<BlockHeaderPowContextualRule>();
+            var rule = testContext.CreateRule<BlockHeaderPowContextualRule>();
 
             RuleContext context = new PowRuleContext(new ValidationContext(), Network.RegTest.Consensus, testContext.Chain.Tip);
             context.ValidationContext.Block = TestRulesContextFactory.MineBlock(Network.RegTest, testContext.Chain);
@@ -44,7 +44,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             context.NextWorkRequired = context.ValidationContext.ChainedHeader.GetNextWorkRequired(Network.RegTest.Consensus);
             context.ValidationContext.Block.Header.BlockTime = context.ConsensusTip.Header.BlockTime.AddSeconds(-1);
 
-            var error = await Assert.ThrowsAsync<ConsensusErrorException>(async () => await rule.RunAsync(context));
+            ConsensusErrorException error = await Assert.ThrowsAsync<ConsensusErrorException>(async () => await rule.RunAsync(context));
             Assert.Equal(ConsensusErrors.TimeTooOld, error.ConsensusError);
         }
 
@@ -52,7 +52,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         public async Task ChecBlockFutureTimestamp_ValidationFailAsync()
         {
             TestRulesContext testContext = TestRulesContextFactory.CreateAsync(Network.RegTest);
-            BlockHeaderPowContextualRule rule = testContext.CreateRule<BlockHeaderPowContextualRule>();
+            var rule = testContext.CreateRule<BlockHeaderPowContextualRule>();
 
             RuleContext context = new PowRuleContext(new ValidationContext(), Network.RegTest.Consensus, testContext.Chain.Tip);
             context.ValidationContext.Block = TestRulesContextFactory.MineBlock(Network.RegTest, testContext.Chain);
@@ -63,7 +63,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             context.NextWorkRequired = context.ValidationContext.ChainedHeader.GetNextWorkRequired(Network.RegTest.Consensus);
             context.ValidationContext.Block.Header.BlockTime = context.Time.AddHours(3);
 
-            var error = await Assert.ThrowsAsync<ConsensusErrorException>(async () => await rule.RunAsync(context));
+            ConsensusErrorException error = await Assert.ThrowsAsync<ConsensusErrorException>(async () => await rule.RunAsync(context));
             Assert.Equal(ConsensusErrors.TimeTooNew, error.ConsensusError);
         }
     }

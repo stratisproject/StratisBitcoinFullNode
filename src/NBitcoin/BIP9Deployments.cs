@@ -16,9 +16,9 @@ namespace NBitcoin
 
         public BIP9DeploymentsParameters(int bit, DateTimeOffset startTime, DateTimeOffset timeout)
         {
-            Bit = bit;
-            StartTime = startTime;
-            Timeout = timeout;
+            this.Bit = bit;
+            this.StartTime = startTime;
+            this.Timeout = timeout;
         }
 
         public BIP9DeploymentsParameters(int bit, long startTime, long timeout)

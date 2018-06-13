@@ -17,7 +17,7 @@ namespace NBitcoin.JsonConverters
         {
             if(network == null)
                 throw new ArgumentNullException("network");
-            Network = network;
+            this.Network = network;
         }
         public override bool CanConvert(Type objectType)
         {
@@ -32,7 +32,7 @@ namespace NBitcoin.JsonConverters
             try
             {
                 string value = reader.Value.ToString();
-                return new BitcoinAssetId(value, Network).AssetId;
+                return new BitcoinAssetId(value, this.Network).AssetId;
             }
             catch(FormatException)
             {
@@ -45,7 +45,7 @@ namespace NBitcoin.JsonConverters
             var assetId = value as AssetId;
             if(assetId != null)
             {
-                writer.WriteValue(assetId.ToString(Network));
+                writer.WriteValue(assetId.ToString(this.Network));
             }
         }
 

@@ -61,6 +61,7 @@ namespace NBitcoin.Networks
             this.Consensus.ProofOfWorkReward = Money.Coins(4);
             this.Consensus.ProofOfStakeReward = Money.COIN;
             this.Consensus.MaxReorgLength = 500;
+            this.Consensus.MaxMoney = long.MaxValue;
 
             this.Base58Prefixes = new byte[12][];
             this.Base58Prefixes[(int)Base58Type.PUBKEY_ADDRESS] = new byte[] { (63) };
@@ -119,7 +120,7 @@ namespace NBitcoin.Networks
             };
 
             string[] seedNodes = { "101.200.198.155", "103.24.76.21", "104.172.24.79" };
-            this.SeedNodes = this.ConvertToNetworkAddresses(seedNodes, this.DefaultPort).ToList();
+            this.SeedNodes = ConvertToNetworkAddresses(seedNodes, this.DefaultPort).ToList();
 
             // Create the genesis block.
             this.GenesisTime = 1470467000;
@@ -128,10 +129,10 @@ namespace NBitcoin.Networks
             this.GenesisVersion = 1;
             this.GenesisReward = Money.Zero;
 
-            this.Genesis = Network.CreateStratisGenesisBlock(this.Consensus.ConsensusFactory, this.GenesisTime, this.GenesisNonce, this.GenesisBits, this.GenesisVersion, this.GenesisReward);
+            this.Genesis = CreateStratisGenesisBlock(this.Consensus.ConsensusFactory, this.GenesisTime, this.GenesisNonce, this.GenesisBits, this.GenesisVersion, this.GenesisReward);
             this.Consensus.HashGenesisBlock = this.Genesis.GetHash();
-            Network.Assert(this.Consensus.HashGenesisBlock == uint256.Parse("0x0000066e91e46e5a264d42c89e1204963b2ee6be230b443e9159020539d972af"));
-            Network.Assert(this.Genesis.Header.HashMerkleRoot == uint256.Parse("0x65a26bc20b0351aebf05829daefa8f7db2f800623439f3c114257c91447f1518"));
+            Assert(this.Consensus.HashGenesisBlock == uint256.Parse("0x0000066e91e46e5a264d42c89e1204963b2ee6be230b443e9159020539d972af"));
+            Assert(this.Genesis.Header.HashMerkleRoot == uint256.Parse("0x65a26bc20b0351aebf05829daefa8f7db2f800623439f3c114257c91447f1518"));
         }
     }
 }

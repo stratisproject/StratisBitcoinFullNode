@@ -16,13 +16,13 @@ namespace NBitcoin.BouncyCastle.Math.Field
         {
             get
             {
-                return exponents[exponents.Length - 1];
+                return this.exponents[this.exponents.Length - 1];
             }
         }
 
         public virtual int[] GetExponentsPresent()
         {
-            return Arrays.Clone(exponents);
+            return Arrays.Clone(this.exponents);
         }
 
         public override bool Equals(object obj)
@@ -36,12 +36,12 @@ namespace NBitcoin.BouncyCastle.Math.Field
             {
                 return false;
             }
-            return Arrays.AreEqual(exponents, other.exponents);
+            return Arrays.AreEqual(this.exponents, other.exponents);
         }
 
         public override int GetHashCode()
         {
-            return Arrays.GetHashCode(exponents);
+            return Arrays.GetHashCode(this.exponents);
         }
     }
 }

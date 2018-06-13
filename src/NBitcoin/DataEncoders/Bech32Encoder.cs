@@ -10,8 +10,8 @@ namespace NBitcoin.DataEncoders
         {
             if(indexes == null)
                 throw new ArgumentNullException("indexes");
-            ErrorIndexes = indexes;
-            Array.Sort(ErrorIndexes);
+            this.ErrorIndexes = indexes;
+            Array.Sort(this.ErrorIndexes);
         }
         public int[] ErrorIndexes
         {
@@ -212,9 +212,9 @@ namespace NBitcoin.DataEncoders
             uint s0 = syn & 0x3FF;
             uint s1 = (syn >> 10) & 0x3FF;
             uint s2 = syn >> 20;
-            int l_s0 = GF1024_LOG[s0];
-            int l_s1 = GF1024_LOG[s1];
-            int l_s2 = GF1024_LOG[s2];
+            int l_s0 = this.GF1024_LOG[s0];
+            int l_s1 = this.GF1024_LOG[s1];
+            int l_s2 = this.GF1024_LOG[s2];
             if(l_s0 != -1 && l_s1 != -1 && l_s2 != -1 && (2 * l_s1 - l_s2 - l_s0 + 2046) % 1023 == 0)
             {
                 int p1 = (l_s1 - l_s0 + 1023) % 1023;
@@ -227,24 +227,24 @@ namespace NBitcoin.DataEncoders
             }
             for(int p1 = 0; p1 < length; p1++)
             {
-                long s2_s1p1 = s2 ^ (s1 == 0 ? 0 : GF1024_EXP[(l_s1 + p1) % 1023]);
+                long s2_s1p1 = s2 ^ (s1 == 0 ? 0 : this.GF1024_EXP[(l_s1 + p1) % 1023]);
                 if(s2_s1p1 == 0)
                     continue;
-                long s1_s0p1 = s1 ^ (s0 == 0 ? 0 : GF1024_EXP[(l_s0 + p1) % 1023]);
+                long s1_s0p1 = s1 ^ (s0 == 0 ? 0 : this.GF1024_EXP[(l_s0 + p1) % 1023]);
                 if(s1_s0p1 == 0)
                     continue;
-                int l_s1_s0p1 = GF1024_LOG[s1_s0p1];
-                int p2 = (GF1024_LOG[s2_s1p1] - l_s1_s0p1 + 1023) % 1023;
+                int l_s1_s0p1 = this.GF1024_LOG[s1_s0p1];
+                int p2 = (this.GF1024_LOG[s2_s1p1] - l_s1_s0p1 + 1023) % 1023;
                 if(p2 >= length || p1 == p2)
                     continue;
-                long s1_s0p2 = s1 ^ (s0 == 0 ? 0 : GF1024_EXP[(l_s0 + p2) % 1023]);
+                long s1_s0p2 = s1 ^ (s0 == 0 ? 0 : this.GF1024_EXP[(l_s0 + p2) % 1023]);
                 if(s1_s0p2 == 0)
                     continue;
-                int inv_p1_p2 = 1023 - GF1024_LOG[GF1024_EXP[p1] ^ GF1024_EXP[p2]];
+                int inv_p1_p2 = 1023 - this.GF1024_LOG[this.GF1024_EXP[p1] ^ this.GF1024_EXP[p2]];
                 int l_e2 = l_s1_s0p1 + inv_p1_p2 + (1023 - 997) * p2;
                 if((l_e2 % 33) != 0)
                     continue;
-                int l_e1 = GF1024_LOG[s1_s0p2] + inv_p1_p2 + (1023 - 997) * p1;
+                int l_e1 = this.GF1024_LOG[s1_s0p2] + inv_p1_p2 + (1023 - 997) * p1;
                 if((l_e1 % 33) != 0)
                     continue;
                 if(p1 < p2)
@@ -267,13 +267,13 @@ namespace NBitcoin.DataEncoders
             if(hrp == null)
                 throw new ArgumentNullException("hrp");
 
-            _Hrp = hrp;
+            this._Hrp = hrp;
             int len = hrp.Length;
-            _HrpExpand = new byte[(2 * len) + 1];
+            this._HrpExpand = new byte[(2 * len) + 1];
             for(int i = 0; i < len; i++)
             {
-                _HrpExpand[i] = (byte)(hrp[i] >> 5);
-                _HrpExpand[i + len + 1] = (byte)(hrp[i] & 31);
+                this._HrpExpand[i] = (byte)(hrp[i] >> 5);
+                this._HrpExpand[i + len + 1] = (byte)(hrp[i] & 31);
             }
         }
 
@@ -283,7 +283,7 @@ namespace NBitcoin.DataEncoders
         {
             get
             {
-                return _Hrp;
+                return this._Hrp;
             }
         }
 
@@ -305,7 +305,7 @@ namespace NBitcoin.DataEncoders
         private bool VerifyChecksum(byte[] data, int bechStringLen, out int[] errorPosition)
         {
             errorPosition = null;
-            byte[] values = _HrpExpand.Concat(data);
+            byte[] values = this._HrpExpand.Concat(data);
             uint polymod = Polymod(values) ^ 1;
             if(polymod != 0)
             {
@@ -324,10 +324,10 @@ namespace NBitcoin.DataEncoders
 
         private byte[] CreateChecksum(byte[] data, int offset, int count)
         {
-            var values = new byte[_HrpExpand.Length + count + 6];
+            var values = new byte[this._HrpExpand.Length + count + 6];
             int valuesOffset = 0;
-            Array.Copy(_HrpExpand, 0, values, valuesOffset, _HrpExpand.Length);
-            valuesOffset += _HrpExpand.Length;
+            Array.Copy(this._HrpExpand, 0, values, valuesOffset, this._HrpExpand.Length);
+            valuesOffset += this._HrpExpand.Length;
             Array.Copy(data, offset, values, valuesOffset, count);
             valuesOffset += count;
             uint polymod = Polymod(values) ^ 1;
@@ -342,10 +342,10 @@ namespace NBitcoin.DataEncoders
 
         public override string EncodeData(byte[] data, int offset, int count)
         {
-            var combined = new byte[_Hrp.Length + 1 + count + 6];
+            var combined = new byte[this._Hrp.Length + 1 + count + 6];
             int combinedOffset = 0;
-            Array.Copy(_Hrp, 0, combined, 0, _Hrp.Length);
-            combinedOffset += _Hrp.Length;
+            Array.Copy(this._Hrp, 0, combined, 0, this._Hrp.Length);
+            combinedOffset += this._Hrp.Length;
             combined[combinedOffset] = 49;
             combinedOffset++;
             Array.Copy(data, offset, combined, combinedOffset, count);
@@ -355,7 +355,7 @@ namespace NBitcoin.DataEncoders
             combinedOffset += 6;
             for(int i = 0; i < count + 6; i++)
             {
-                combined[_Hrp.Length + 1 + i] = Byteset[combined[_Hrp.Length + 1 + i]];
+                combined[this._Hrp.Length + 1 + i] = Byteset[combined[this._Hrp.Length + 1 + i]];
             }
             return Encoders.ASCII.EncodeData(combined);
         }
@@ -401,7 +401,7 @@ namespace NBitcoin.DataEncoders
 
             buffer = Encoders.ASCII.DecodeData(encoded);
             byte[] hrp = Encoders.ASCII.DecodeData(encoded.Substring(0, pos));
-            if(!hrp.SequenceEqual(_Hrp))
+            if(!hrp.SequenceEqual(this._Hrp))
             {
                 throw new FormatException("Mismatching human readeable part");
             }

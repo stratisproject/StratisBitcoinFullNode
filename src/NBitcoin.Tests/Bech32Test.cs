@@ -74,16 +74,16 @@ namespace NBitcoin.Tests
             {
                 byte witVer;
                 byte[] witProg;
-                Bech32Encoder encoder = bech32;
+                Bech32Encoder encoder = this.bech32;
                 try
                 {
-                    witProg = bech32.Decode(address[0], out witVer);
-                    encoder = bech32;
+                    witProg = this.bech32.Decode(address[0], out witVer);
+                    encoder = this.bech32;
                 }
                 catch
                 {
-                    witProg = tbech32.Decode(address[0], out witVer);
-                    encoder = tbech32;
+                    witProg = this.tbech32.Decode(address[0], out witVer);
+                    encoder = this.tbech32;
                 }
 
                 byte[] scriptPubkey = Scriptpubkey(witVer, witProg);
@@ -103,12 +103,12 @@ namespace NBitcoin.Tests
                 byte witver;
                 try
                 {
-                    bech32.Decode(test, out witver);
+                    this.bech32.Decode(test, out witver);
                 }
                 catch(FormatException) { }
                 try
                 {
-                    tbech32.Decode(test, out witver);
+                    this.tbech32.Decode(test, out witver);
                 }
                 catch(FormatException) { }
             }

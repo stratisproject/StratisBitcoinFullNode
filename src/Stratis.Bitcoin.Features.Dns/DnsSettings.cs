@@ -17,6 +17,9 @@ namespace Stratis.Bitcoin.Features.Dns
         /// <summary>The default value which a peer should have last have been connected before being blacklisted in DNS nodes.</summary>
         public const int DefaultDnsPeerBlacklistThresholdInSeconds = 1800;
 
+        /// <summary>Instance logger.</summary>
+        private readonly ILogger logger;
+
         /// <summary>The value which a peer should have last have been connected before being blacklisted from the DNS nodes.</summary>
         public int DnsPeerBlacklistThresholdInSeconds { get; set; }
 
@@ -35,39 +38,34 @@ namespace Stratis.Bitcoin.Features.Dns
         /// <summary>Defines the e-mail address used as the administrative point of contact for the domain.</summary>
         public string DnsMailBox { get; set; }
 
+        /// <summary>
+        /// Initializes an instance of the object from the default configuration.
+        /// </summary>
         public DnsSettings() : this(NodeSettings.Default())
         {	
         }
 
+        /// <summary>
+        /// Initializes an instance of the object from the node configuration.
+        /// </summary>
+        /// <param name="nodeSettings">The node configuration.</param>
         public DnsSettings(NodeSettings nodeSettings)
         {
             Guard.NotNull(nodeSettings, nameof(nodeSettings));
 
-            ILogger logger = nodeSettings.LoggerFactory.CreateLogger(typeof(DnsSettings).FullName);
-            logger.LogTrace("()");
+            this.logger = nodeSettings.LoggerFactory.CreateLogger(typeof(DnsSettings).FullName);            
+            this.logger.LogTrace("({0}:'{1}')", nameof(nodeSettings), nodeSettings.Network.Name);
 
             TextFileConfiguration config = nodeSettings.ConfigReader;
 
-            this.DnsListenPort = config.GetOrDefault<int>("dnslistenport", DefaultDnsListenPort);
-            logger.LogDebug("DNS Seed Service listen port is {0}, if running as DNS Seed.", this.DnsListenPort);
+            this.DnsListenPort = config.GetOrDefault<int>("dnslistenport", DefaultDnsListenPort, this.logger);
+            this.DnsFullNode = config.GetOrDefault<bool>("dnsfullnode", false, this.logger);
+            this.DnsPeerBlacklistThresholdInSeconds = config.GetOrDefault("dnspeerblacklistthresholdinseconds", DefaultDnsPeerBlacklistThresholdInSeconds, this.logger);
+            this.DnsHostName = config.GetOrDefault<string>("dnshostname", null, this.logger);
+            this.DnsNameServer = config.GetOrDefault<string>("dnsnameserver", null, this.logger);
+            this.DnsMailBox = config.GetOrDefault<string>("dnsmailbox", null, this.logger);
 
-            this.DnsFullNode = config.GetOrDefault<bool>("dnsfullnode", false);
-            if (this.DnsFullNode)
-                logger.LogDebug("DNS Seed Service is set to run as a full node, if running as DNS Seed.", this.DnsListenPort);
-
-            this.DnsPeerBlacklistThresholdInSeconds = config.GetOrDefault("dnspeerblacklistthresholdinseconds", DefaultDnsPeerBlacklistThresholdInSeconds);
-            logger.LogDebug("DnsPeerBlacklistThresholdInSeconds set to {0}.", this.DnsPeerBlacklistThresholdInSeconds);
-
-            this.DnsHostName = config.GetOrDefault<string>("dnshostname", null);
-            logger.LogDebug("DNS Seed Service host name set to {0}.", this.DnsHostName);
-
-            this.DnsNameServer = config.GetOrDefault<string>("dnsnameserver", null);
-            logger.LogDebug("DNS Seed Service nameserver set to {0}.", this.DnsNameServer);
-
-            this.DnsMailBox = config.GetOrDefault<string>("dnsmailbox", null);
-            logger.LogDebug("DNS Seed Service mailbox set to {0}.", this.DnsMailBox);
-
-            logger.LogTrace("(-)");
+            this.logger.LogTrace("(-)");
         }
 
         /// <summary>Prints the help information on how to configure the DNS settings to the logger.</summary>

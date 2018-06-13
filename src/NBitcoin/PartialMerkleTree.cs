@@ -17,11 +17,11 @@ namespace NBitcoin
         {
             get
             {
-                return _TransactionCount;
+                return this._TransactionCount;
             }
             set
             {
-                _TransactionCount = value;
+                this._TransactionCount = value;
             }
         }
 
@@ -30,7 +30,7 @@ namespace NBitcoin
         {
             get
             {
-                return _Hashes;
+                return this._Hashes;
             }
         }
 
@@ -39,11 +39,11 @@ namespace NBitcoin
         {
             get
             {
-                return _Flags;
+                return this._Flags;
             }
             set
             {
-                _Flags = value;
+                this._Flags = value;
             }
         }
 
@@ -52,8 +52,8 @@ namespace NBitcoin
 
         public void ReadWrite(BitcoinStream stream)
         {
-            stream.ReadWrite(ref _TransactionCount);
-            stream.ReadWrite(ref _Hashes);
+            stream.ReadWrite(ref this._TransactionCount);
+            stream.ReadWrite(ref this._Hashes);
             byte[] vBytes = null;
             if(!stream.Serializing)
             {
@@ -61,13 +61,13 @@ namespace NBitcoin
                 var writer = new BitWriter();
                 for(int p = 0; p < vBytes.Length * 8; p++)
                     writer.Write((vBytes[p / 8] & (1 << (p % 8))) != 0);
-                _Flags = writer.ToBitArray();
+                this._Flags = writer.ToBitArray();
             }
             else
             {
-                vBytes = new byte[(_Flags.Length + 7) / 8];
-                for(int p = 0; p < _Flags.Length; p++)
-                    vBytes[p / 8] |= (byte)(ToByte(_Flags.Get(p)) << (p % 8));
+                vBytes = new byte[(this._Flags.Length + 7) / 8];
+                for(int p = 0; p < this._Flags.Length; p++)
+                    vBytes[p / 8] |= (byte)(ToByte(this._Flags.Get(p)) << (p % 8));
                 stream.ReadWriteAsVarString(ref vBytes);
             }
         }
@@ -83,7 +83,7 @@ namespace NBitcoin
         {
             if(vMatch.Length != vTxid.Length)
                 throw new ArgumentException("The size of the array of txid and matches is different");
-            TransactionCount = (uint)vTxid.Length;
+            this.TransactionCount = (uint)vTxid.Length;
 
             MerkleNode root = MerkleNode.GetRoot(vTxid);
             var flags = new BitWriter();
@@ -91,7 +91,7 @@ namespace NBitcoin
             MarkNodes(root, vMatch);
             BuildCore(root, flags);
 
-            Flags = flags.ToBitArray();
+            this.Flags = flags.ToBitArray();
         }
 
         private static void MarkNodes(MerkleNode root, bool[] vMatch)
@@ -117,9 +117,9 @@ namespace NBitcoin
 
         public MerkleNode GetMerkleRoot()
         {
-            MerkleNode node = MerkleNode.GetRoot((int)TransactionCount);
-            var flags = new BitReader(Flags);
-            List<uint256>.Enumerator hashes = Hashes.GetEnumerator();
+            MerkleNode node = MerkleNode.GetRoot((int) this.TransactionCount);
+            var flags = new BitReader(this.Flags);
+            List<uint256>.Enumerator hashes = this.Hashes.GetEnumerator();
             GetMatchedTransactionsCore(node, flags, hashes, true).AsEnumerable();
             return node;
         }
@@ -143,8 +143,7 @@ namespace NBitcoin
             if(node == null)
                 return;
             flags.Write(node.IsMarked);
-            if(node.IsLeaf || !node.IsMarked)
-                Hashes.Add(node.Hash);
+            if(node.IsLeaf || !node.IsMarked) this.Hashes.Add(node.Hash);
 
             if(node.IsMarked)
             {
@@ -155,9 +154,9 @@ namespace NBitcoin
 
         public IEnumerable<uint256> GetMatchedTransactions()
         {
-            var flags = new BitReader(Flags);
-            MerkleNode root = MerkleNode.GetRoot((int)TransactionCount);
-            List<uint256>.Enumerator hashes = Hashes.GetEnumerator();
+            var flags = new BitReader(this.Flags);
+            MerkleNode root = MerkleNode.GetRoot((int) this.TransactionCount);
+            List<uint256>.Enumerator hashes = this.Hashes.GetEnumerator();
             return GetMatchedTransactionsCore(root, flags, hashes, false);
         }
 
@@ -203,7 +202,7 @@ namespace NBitcoin
         public PartialMerkleTree Trim(params uint256[] matchedTransactions)
         {
             var trimmed = new PartialMerkleTree();
-            trimmed.TransactionCount = TransactionCount;
+            trimmed.TransactionCount = this.TransactionCount;
             MerkleNode root = GetMerkleRoot();
             foreach(MerkleNode leaf in root.GetLeafs())
             {

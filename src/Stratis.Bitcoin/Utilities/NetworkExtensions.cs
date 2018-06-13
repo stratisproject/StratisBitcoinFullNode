@@ -19,6 +19,16 @@ namespace Stratis.Bitcoin.Utilities
         {
             return network.Name.ToLowerInvariant().Contains("test");
         }
+        
+        /// <summary>
+        /// Determines whether this network is a regtest network.
+        /// </summary>
+        /// <param name="network">The network.</param>
+        /// <returns><c>true</c> if the specified network is test, <c>false</c> otherwise.</returns>
+        public static bool IsRegTest(this Network network)
+        {
+            return network.Name.ToLowerInvariant().Contains("regtest");
+        }
 
         /// <summary>
         /// Determines whether this network is a bitcoin network.

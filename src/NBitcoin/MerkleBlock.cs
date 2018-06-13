@@ -16,11 +16,11 @@ namespace NBitcoin
         {
             get
             {
-                return header;
+                return this.header;
             }
             set
             {
-                header = value;
+                this.header = value;
             }
         }
 
@@ -30,11 +30,11 @@ namespace NBitcoin
         {
             get
             {
-                return _PartialMerkleTree;
+                return this._PartialMerkleTree;
             }
             set
             {
-                _PartialMerkleTree = value;
+                this._PartialMerkleTree = value;
             }
         }
 
@@ -43,7 +43,7 @@ namespace NBitcoin
         // thus the filter will likely be modified.
         public MerkleBlock(Block block, BloomFilter filter)
         {
-            header = block.Header;
+            this.header = block.Header;
 
             var vMatch = new List<bool>();
             var vHashes = new List<uint256>();
@@ -56,12 +56,12 @@ namespace NBitcoin
                 vHashes.Add(hash);
             }
 
-            _PartialMerkleTree = new PartialMerkleTree(vHashes.ToArray(), vMatch.ToArray());
+            this._PartialMerkleTree = new PartialMerkleTree(vHashes.ToArray(), vMatch.ToArray());
         }
 
         public MerkleBlock(Block block, uint256[] txIds)
         {
-            header = block.Header;
+            this.header = block.Header;
 
             var vMatch = new List<bool>();
             var vHashes = new List<uint256>();
@@ -71,15 +71,16 @@ namespace NBitcoin
                 vHashes.Add(hash);
                 vMatch.Add(txIds.Contains(hash));
             }
-            _PartialMerkleTree = new PartialMerkleTree(vHashes.ToArray(), vMatch.ToArray());
+
+            this._PartialMerkleTree = new PartialMerkleTree(vHashes.ToArray(), vMatch.ToArray());
         }
 
         #region IBitcoinSerializable Members
 
         public void ReadWrite(BitcoinStream stream)
         {
-            stream.ReadWrite(ref header);
-            stream.ReadWrite(ref _PartialMerkleTree);
+            stream.ReadWrite(ref this.header);
+            stream.ReadWrite(ref this._PartialMerkleTree);
         }
 
         #endregion

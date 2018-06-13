@@ -58,7 +58,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 Amount = new Money(15)
             };
 
-            var result = transaction.SpendableAmount(false);
+            Money result = transaction.SpendableAmount(false);
 
             Assert.Equal(new Money(15), result);
         }
@@ -73,7 +73,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 BlockHeight = 15
             };
 
-            var result = transaction.SpendableAmount(false);
+            Money result = transaction.SpendableAmount(false);
 
             Assert.Equal(Money.Zero, result);
         }
@@ -88,7 +88,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 BlockHeight = 15
             };
 
-            var result = transaction.SpendableAmount(false);
+            Money result = transaction.SpendableAmount(false);
 
             Assert.Equal(Money.Zero, result);
         }
@@ -103,7 +103,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 BlockHeight = 15
             };
 
-            var result = transaction.SpendableAmount(true);
+            Money result = transaction.SpendableAmount(true);
 
             Assert.Equal(Money.Zero, result);
         }
@@ -117,7 +117,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 Amount = new Money(15),
             };
 
-            var result = transaction.SpendableAmount(false);
+            Money result = transaction.SpendableAmount(false);
 
             Assert.Equal(Money.Zero, result);
         }
@@ -130,7 +130,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 SpendingDetails = null
             };
 
-            var result = transaction.SpendableAmount(true);
+            Money result = transaction.SpendableAmount(true);
 
             Assert.Equal(Money.Zero, result);
         }
@@ -145,7 +145,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 BlockHeight = 15
             };
 
-            var result = transaction.SpendableAmount(true);
+            Money result = transaction.SpendableAmount(true);
 
             Assert.Equal(Money.Zero, result);
         }
@@ -159,7 +159,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 Amount = new Money(15),
             };
 
-            var result = transaction.SpendableAmount(true);
+            Money result = transaction.SpendableAmount(true);
 
             Assert.Equal(Money.Zero, result);
         }
@@ -174,7 +174,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 BlockHeight = 15
             };
 
-            var result = transaction.SpendableAmount(true);
+            Money result = transaction.SpendableAmount(true);
 
             Assert.Equal(new Money(15), result);
         }

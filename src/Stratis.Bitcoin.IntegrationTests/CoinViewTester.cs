@@ -32,7 +32,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 
         public bool Exists(Coin c)
         {
-            var result = this.coinView.FetchCoinsAsync(new[] { c.Outpoint.Hash }).Result;
+            FetchCoinsResponse result = this.coinView.FetchCoinsAsync(new[] { c.Outpoint.Hash }).Result;
             if (result.BlockHash != this.hash)
                 throw new InvalidOperationException("Unexepected hash");
             if (result.UnspentOutputs[0] == null)
@@ -42,10 +42,10 @@ namespace Stratis.Bitcoin.IntegrationTests
 
         public void Spend(Coin c)
         {
-            var coin = this.pendingCoins.FirstOrDefault(u => u.TransactionId == c.Outpoint.Hash);
+            UnspentOutputs coin = this.pendingCoins.FirstOrDefault(u => u.TransactionId == c.Outpoint.Hash);
             if (coin == null)
             {
-                var result = this.coinView.FetchCoinsAsync(new[] { c.Outpoint.Hash }).Result;
+                FetchCoinsResponse result = this.coinView.FetchCoinsAsync(new[] { c.Outpoint.Hash }).Result;
                 if (result.BlockHash != this.hash)
                     throw new InvalidOperationException("Unexepected hash");
                 if (result.UnspentOutputs[0] == null)
