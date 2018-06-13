@@ -29,6 +29,9 @@ namespace Stratis.Bitcoin.Controllers.Models
         /// <summary>The network the current node is running on.</summary>
         public string Network { get; set; }
 
+        /// <summary>The coin ticker to use with external applications.</summary>
+        public string CoinTicker { get; set; }
+
         /// <summary>System identifier of the node's process.</summary>
         public int ProcessId { get; set; }
 
