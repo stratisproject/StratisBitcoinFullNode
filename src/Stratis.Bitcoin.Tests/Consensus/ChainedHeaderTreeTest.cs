@@ -249,9 +249,9 @@ namespace Stratis.Bitcoin.Tests.Consensus
         }
 
         /// <summary>
-        /// Issue 13 @ Create 2 chains Chain A and Chain B, where Chain A has more chain work than B. Connect both
-        /// chains to chain header tree. Consensus tip should be set to chain A. Now extend / update Chain B to make it have
-        /// more chain work. Attempt to connect B again. Consensus tip should be set to chain B.
+        /// Issue 13 @ Create 2 chains - chain A and chain B, where chain A has more chain work than chain B. Connect both
+        /// chains to chain header tree. Consensus tip should be set to chain A. Now extend / update chain B to make it have
+        /// more chain work. Attempt to connect chain B again. Consensus tip should be set to chain B.
         /// </summary>
         [Fact]
         public void PresentDifferentChains_AlternativeChainWithMoreChainWorkShouldAlwaysBeMarkedForDownload()
@@ -273,15 +273,15 @@ namespace Stratis.Bitcoin.Tests.Consensus
             List<BlockHeader> listOfChainABlockHeaders = ctx.ChainedHeaderToList(chainATip, commonChainSize + chainAExtension);
             List<BlockHeader> listOfChainBBlockHeaders = ctx.ChainedHeaderToList(chainBTip, commonChainSize + chainBExtension);
 
-            // Chain A is presented by peer 1. DownloadTo should be Chain A tip.
+            // Chain A is presented by peer 1. DownloadTo should be chain A tip.
             ConnectNewHeadersResult connectNewHeadersResult = cht.ConnectNewHeaders(1, listOfChainABlockHeaders);
             ChainedHeader chainedHeaderTo = connectNewHeadersResult.DownloadTo;
             chainedHeaderTo.HashBlock.Should().Be(chainATip.HashBlock);
 
-            // Set Chain A tip as a consensus tip
+            // Set chain A tip as a consensus tip
             cht.ConsensusTipChanged(chainATip);
 
-            // Chain B is presented by peer 2. DownloadTo should be not set, as Chain
+            // Chain B is presented by peer 2. DownloadTo should be not set, as chain
             // B has less chain work.
             connectNewHeadersResult = cht.ConnectNewHeaders(2, listOfChainBBlockHeaders);
             connectNewHeadersResult.Should().BeNull();
@@ -293,7 +293,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
             List<BlockHeader> listOfNewChainBBlockHeaders = listOfChainBBlockHeaders.TakeLast(chainBAdditionalBlocks).ToList();
 
             // Chain B is presented by peer 2 again.
-            // DownloadTo should now be Chain B as B has more chain work than chain A.
+            // DownloadTo should now be chain B as B has more chain work than chain A.
             // DownloadFrom should be the block where split occurred.
             // h1=h2=h3=h4=(b5)=b6=b7=b8=b9=(b10) - from b5 to b10.
             connectNewHeadersResult = cht.ConnectNewHeaders(2, listOfNewChainBBlockHeaders);
