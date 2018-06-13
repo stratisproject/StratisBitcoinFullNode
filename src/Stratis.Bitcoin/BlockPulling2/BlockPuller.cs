@@ -161,7 +161,7 @@ namespace Stratis.Bitcoin.BlockPulling2
 
             if (performanceCounter.SpeedBytesPerSecond != bestSpeed)
             {
-                // This is not the best peer. Recalculate it only.
+                // This is not the best peer. Recalculate it's score only.
                 performanceCounter.RecalculateQualityScore(bestSpeed);
             }
             else

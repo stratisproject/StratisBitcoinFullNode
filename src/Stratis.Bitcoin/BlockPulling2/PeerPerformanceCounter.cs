@@ -8,17 +8,19 @@ namespace Stratis.Bitcoin.BlockPulling2
         private const double SamplelessQualityScore = 0.3;
         private const double MaxQualityScore = 1.0;
 
+        private const int MaxSamples = 100;
+
         public double QualityScore { get; private set; }
         public int SpeedBytesPerSecond { get; private set; }
         
-        private CircularArray<SizeDelaySample> blockSizeDelaySecondsSamples;
+        private readonly CircularArray<SizeDelaySample> blockSizeDelaySecondsSamples;
 
         private double averageSizeBytes;
         private double averageDelaySeconds;
         
         public PeerPerformanceCounter()
         {
-            this.blockSizeDelaySecondsSamples = new CircularArray<SizeDelaySample>(100);
+            this.blockSizeDelaySecondsSamples = new CircularArray<SizeDelaySample>(MaxSamples);
             this.QualityScore = SamplelessQualityScore;
 
             this.averageSizeBytes = 0;
@@ -58,10 +60,12 @@ namespace Stratis.Bitcoin.BlockPulling2
             // Equality comparison against 0 is ok here
             // https://stackoverflow.com/questions/6598179/the-right-way-to-compare-a-system-double-to-0-a-number-int
 
-            if (oldSample == 0 && oldAverage == 0)
+            bool sampleWasReplaced = oldSample == 0;
+
+            if (!sampleWasReplaced && oldAverage == 0)
                 return newSample;
 
-            if (oldSample == 0)
+            if (sampleWasReplaced)
                 return (oldAverage * (arrayItemsCount - 1) + newSample) / arrayItemsCount;
 
             return (oldAverage * arrayItemsCount - oldSample + newSample) / arrayItemsCount;
