@@ -187,10 +187,10 @@ namespace NBitcoin.Tests
             PubKey pubkey1C = key1C.PubKey;
             PubKey pubkey2C = key2C.PubKey;
 
-            Assert.True(addr1.Hash == pubkey1.Hash);
-            Assert.True(addr2.Hash == pubkey2.Hash);
-            Assert.True(addr1C.Hash == pubkey1C.Hash);
-            Assert.True(addr2C.Hash == pubkey2C.Hash);
+            Assert.True(this.addr1.Hash == pubkey1.Hash);
+            Assert.True(this.addr2.Hash == pubkey2.Hash);
+            Assert.True(this.addr1C.Hash == pubkey1C.Hash);
+            Assert.True(this.addr2C.Hash == pubkey2C.Hash);
 
 
 
@@ -280,7 +280,7 @@ namespace NBitcoin.Tests
             var privateKey = new Byte[32] { 0xE9, 0x87, 0x3D, 0x79, 0xC6, 0xD8, 0x7D, 0xC0, 0xFB, 0x6A, 0x57, 0x78, 0x63, 0x33, 0x89, 0xF4, 0x45, 0x32, 0x13, 0x30, 0x3D, 0xA6, 0x1F, 0x20, 0xBD, 0x67, 0xFC, 0x23, 0x3A, 0xA3, 0x32, 0x62 };
             var key1 = new Key(privateKey, -1, false);
 
-            ISecret wifKey = key1.GetWif(NBitcoin.Network.Main);
+            ISecret wifKey = key1.GetWif(Network.Main);
 
             //Example wif private key taken from https://en.bitcoin.it/wiki/Private_key
             const String expected = "5Kb8kLf9zgWQnogidDA76MzPL6TsZZY36hWXMssSzNydYXYB9KF";

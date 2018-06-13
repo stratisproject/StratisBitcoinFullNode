@@ -31,7 +31,7 @@ namespace Stratis.Bitcoin.Features.Notifications.Tests
         [Fact]
         public void NullSignalsThrowsArgumentNullException()
         {
-            var exception = Record.Exception(() => new TransactionNotification(null));
+            Exception exception = Record.Exception(() => new TransactionNotification(null));
             Assert.NotNull(exception);
             Assert.IsType<ArgumentNullException>(exception);
         }

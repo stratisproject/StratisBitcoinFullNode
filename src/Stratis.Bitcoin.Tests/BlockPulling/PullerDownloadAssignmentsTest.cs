@@ -38,15 +38,15 @@ namespace Stratis.Bitcoin.Tests.BlockPulling
             int ourBlockCount = 5;
 
             // Create list of numbers ourBlockCount + 1 to 40 and shuffle it.
-            Random rnd = new Random();
-            List<int> requiredBlockHeights = new List<int>();
+            var rnd = new Random();
+            var requiredBlockHeights = new List<int>();
             for (int i = ourBlockCount + 1; i <= 40; i++)
                 requiredBlockHeights.Add(i);
 
             requiredBlockHeights = requiredBlockHeights.OrderBy(a => rnd.Next()).ToList();
 
             // Initialize node's peers.
-            List<PullerDownloadAssignments.PeerInformation> availablePeersInformation = new List<PullerDownloadAssignments.PeerInformation>
+            var availablePeersInformation = new List<PullerDownloadAssignments.PeerInformation>
             {
                 new PullerDownloadAssignments.PeerInformation
                 {
@@ -121,7 +121,7 @@ namespace Stratis.Bitcoin.Tests.BlockPulling
         [Fact]
         public void AssignBlocksToPeersLargeSampleCorrectlyDistributesDownloadTasks()
         {
-            Random rnd = new Random();
+            var rnd = new Random();
 
             int iterationCount = 1000;
             for (int iteration = 0; iteration < iterationCount; iteration++)
@@ -131,7 +131,7 @@ namespace Stratis.Bitcoin.Tests.BlockPulling
                 int bestChainBlockCount = ourBlockCount + rnd.Next(1000);
                 int availablePeerCount = rnd.Next(100) + 1;
 
-                List<int> requiredBlockHeights = new List<int>();
+                var requiredBlockHeights = new List<int>();
                 for (int i = ourBlockCount + 1; i <= bestChainBlockCount; i++)
                     requiredBlockHeights.Add(i);
 
@@ -139,10 +139,10 @@ namespace Stratis.Bitcoin.Tests.BlockPulling
 
                 // Initialize node's peers.
                 int maxPeerChainLength = 0;
-                List<PullerDownloadAssignments.PeerInformation> availablePeersInformation = new List<PullerDownloadAssignments.PeerInformation>();
+                var availablePeersInformation = new List<PullerDownloadAssignments.PeerInformation>();
                 for (int peerIndex = 0; peerIndex < availablePeerCount; peerIndex++)
                 {
-                    PullerDownloadAssignments.PeerInformation peerInfo = new PullerDownloadAssignments.PeerInformation
+                    var peerInfo = new PullerDownloadAssignments.PeerInformation
                     {
                         ChainHeight = rnd.Next(bestChainBlockCount) + 1,
                         PeerId = peerIndex,
@@ -189,12 +189,12 @@ namespace Stratis.Bitcoin.Tests.BlockPulling
         [Fact]
         public void AssignBlocksToPeersWithNodesWithLowQualityProtectsLowerHalfRequestsFromBeingAssignedToPoorQualityNodes()
         {
-            Random rnd = new Random();
+            var rnd = new Random();
             int ourBlockCount = rnd.Next(1000) + 1;
             int bestBlockCount = rnd.Next(1000) + ourBlockCount + 1;
 
             // Create list of numbers ourBlockCount + 1 to bestBlockCount and shuffle it.
-            List<int> requiredBlockHeights = new List<int>();
+            var requiredBlockHeights = new List<int>();
             for (int i = ourBlockCount + 1; i <= bestBlockCount; i++)
                 requiredBlockHeights.Add(i);
 
@@ -203,7 +203,7 @@ namespace Stratis.Bitcoin.Tests.BlockPulling
 
             // Initialize node's peers. We have 5 peers with median quality 100.
             // Thus peers A and E should not receive any work from the lower half of the requests.
-            List<PullerDownloadAssignments.PeerInformation> availablePeersInformation = new List<PullerDownloadAssignments.PeerInformation>
+            var availablePeersInformation = new List<PullerDownloadAssignments.PeerInformation>
             {
                 new PullerDownloadAssignments.PeerInformation
                 {
@@ -284,12 +284,12 @@ namespace Stratis.Bitcoin.Tests.BlockPulling
         [Fact]
         public void AssignBlocksToPeersWithManyNodesWithLowQualityProtectsLowerHalfRequestsFromBeingAssignedToPoorQualityNodes()
         {
-            Random rnd = new Random();
+            var rnd = new Random();
             int ourBlockCount = rnd.Next(1000) + 1;
             int bestBlockCount = rnd.Next(1000) + ourBlockCount + 1;
 
             // Create list of numbers ourBlockCount + 1 to bestBlockCount and shuffle it.
-            List<int> requiredBlockHeights = new List<int>();
+            var requiredBlockHeights = new List<int>();
             for (int i = ourBlockCount + 1; i <= bestBlockCount; i++)
                 requiredBlockHeights.Add(i);
 
@@ -297,9 +297,9 @@ namespace Stratis.Bitcoin.Tests.BlockPulling
             int medianBlockHeight = requiredBlockHeights.Median();
 
             // Randomly generate peers and count median quality.
-            List<PullerDownloadAssignments.PeerInformation> availablePeersInformation = new List<PullerDownloadAssignments.PeerInformation>();
+            var availablePeersInformation = new List<PullerDownloadAssignments.PeerInformation>();
             int peerCount = rnd.Next(1000) + 1;
-            List<double> qualities = new List<double>();
+            var qualities = new List<double>();
             for (int i = 0; i < peerCount; i++)
             {
                 var peerInfo = new PullerDownloadAssignments.PeerInformation

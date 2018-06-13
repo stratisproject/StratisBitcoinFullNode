@@ -1,7 +1,6 @@
 ﻿using System.Threading.Tasks;
 using NBitcoin;
 using Stratis.Bitcoin.Consensus;
-using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
 using Xunit;
 
@@ -12,8 +11,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         [Fact]
         public async Task BlockReceived_IsNextBlock_ValidationSucessAsync()
         {
-            var testContext = TestRulesContextFactory.CreateAsync(Network.RegTest);
-            BlockHeaderRule blockHeaderRule = testContext.CreateRule<BlockHeaderRule>();
+            TestRulesContext testContext = TestRulesContextFactory.CreateAsync(Network.RegTest);
+            var blockHeaderRule = testContext.CreateRule<BlockHeaderRule>();
 
             var context = new PowRuleContext(new ValidationContext(), Network.RegTest.Consensus, testContext.Chain.Tip);
             context.ValidationContext.Block = Network.RegTest.Consensus.ConsensusFactory.CreateBlock();
@@ -29,13 +28,13 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         [Fact]
         public async Task BlockReceived_NotNextBlock_ValidationFailAsync()
         {
-            var testContext = TestRulesContextFactory.CreateAsync(Network.RegTest);
-            BlockHeaderRule blockHeaderRule = testContext.CreateRule<BlockHeaderRule>();
+            TestRulesContext testContext = TestRulesContextFactory.CreateAsync(Network.RegTest);
+            var blockHeaderRule = testContext.CreateRule<BlockHeaderRule>();
 
             var context = new PowRuleContext(new ValidationContext(), Network.RegTest.Consensus, testContext.Chain.Tip);
             context.ValidationContext.Block = Network.RegTest.Consensus.ConsensusFactory.CreateBlock();
             context.ValidationContext.Block.Header.HashPrevBlock = uint256.Zero;
-            var error = await Assert.ThrowsAsync<ConsensusErrorException>(async () => await blockHeaderRule.RunAsync(context));
+            ConsensusErrorException error = await Assert.ThrowsAsync<ConsensusErrorException>(async () => await blockHeaderRule.RunAsync(context));
 
             Assert.Equal(ConsensusErrors.InvalidPrevTip, error.ConsensusError);
         }

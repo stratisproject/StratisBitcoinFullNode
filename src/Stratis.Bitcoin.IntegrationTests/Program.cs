@@ -17,7 +17,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 
         public static void RunAllTestsOf<T>()
         {
-            var assembly = Assembly.GetExecutingAssembly();
+            Assembly assembly = Assembly.GetExecutingAssembly();
 
             var testables = 
             (
@@ -34,7 +34,7 @@ namespace Stratis.Bitcoin.IntegrationTests
             {
                 try
                 {
-                    var classToTest = Activator.CreateInstance(testable.type);
+                    object classToTest = Activator.CreateInstance(testable.type);
 
                     testable.method.Invoke(classToTest, new object[] { });
 
@@ -46,7 +46,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 }
             }
 
-            foreach (var item in executed)
+            foreach (KeyValuePair<MethodInfo, (Type, Exception)> item in executed)
             {
                 Console.WriteLine(item.Value.Item2 == null ? "+" : "-  " +  item.Value.Item1.Name + " " + item.Key.Name);
             }

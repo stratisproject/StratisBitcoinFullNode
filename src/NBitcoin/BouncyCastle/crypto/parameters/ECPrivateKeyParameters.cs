@@ -31,7 +31,7 @@ namespace NBitcoin.BouncyCastle.Crypto.Parameters
         {
             get
             {
-                return d;
+                return this.d;
             }
         }
 
@@ -52,12 +52,12 @@ namespace NBitcoin.BouncyCastle.Crypto.Parameters
         protected bool Equals(
             ECPrivateKeyParameters other)
         {
-            return d.Equals(other.d) && base.Equals(other);
+            return this.d.Equals(other.d) && base.Equals(other);
         }
 
         public override int GetHashCode()
         {
-            return d.GetHashCode() ^ base.GetHashCode();
+            return this.d.GetHashCode() ^ base.GetHashCode();
         }
     }
 }

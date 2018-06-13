@@ -37,14 +37,14 @@ namespace NBitcoin
 
         public MerkleNode(uint256 hash)
         {
-            _Hash = hash;
-            IsLeaf = true;
+            this._Hash = hash;
+            this.IsLeaf = true;
         }
 
         public MerkleNode(MerkleNode left, MerkleNode right)
         {
-            Left = left;
-            Right = right;
+            this.Left = left;
+            this.Right = right;
             if(left != null)
                 left.Parent = this;
             if(right != null)
@@ -56,19 +56,18 @@ namespace NBitcoin
         {
             get
             {
-                return _Hash;
+                return this._Hash;
             }
             set
             {
-                _Hash = value;
+                this._Hash = value;
             }
         }
 
         public void UpdateHash()
         {
-            MerkleNode right = Right ?? Left;
-            if(Left != null && Left.Hash != null && right.Hash != null)
-                _Hash = Hashes.Hash256(Left.Hash.ToBytes().Concat(right.Hash.ToBytes()).ToArray());
+            MerkleNode right = this.Right ?? this.Left;
+            if(this.Left != null && this.Left.Hash != null && right.Hash != null) this._Hash = Hashes.Hash256(this.Left.Hash.ToBytes().Concat(right.Hash.ToBytes()).ToArray());
         }
 
         public bool IsLeaf
@@ -97,10 +96,10 @@ namespace NBitcoin
         public IEnumerable<MerkleNode> EnumerateDescendants()
         {
             IEnumerable<MerkleNode> result = new MerkleNode[] { this };
-            if(Right != null)
-                result = Right.EnumerateDescendants().Concat(result);
-            if(Left != null)
-                result = Left.EnumerateDescendants().Concat(result);
+            if(this.Right != null)
+                result = this.Right.EnumerateDescendants().Concat(result);
+            if(this.Left != null)
+                result = this.Left.EnumerateDescendants().Concat(result);
             return result;
         }
 
@@ -122,7 +121,7 @@ namespace NBitcoin
 
         public IEnumerable<MerkleNode> Ancestors()
         {
-            MerkleNode n = Parent;
+            MerkleNode n = this.Parent;
             while(n != null)
             {
                 yield return n;
@@ -132,7 +131,7 @@ namespace NBitcoin
 
         public override string ToString()
         {
-            return Hash == null ? "???" : Hash.ToString();
+            return this.Hash == null ? "???" : this.Hash.ToString();
         }
 
         public string ToString(bool hierachy)
@@ -149,10 +148,8 @@ namespace NBitcoin
             string tabs = new String(Enumerable.Range(0, indent).Select(_ => '\t').ToArray());
             builder.Append(tabs);
             builder.AppendLine(ToString());
-            if(Left != null)
-                Left.ToString(builder, indent + 1);
-            if(Right != null)
-                Right.ToString(builder, indent + 1);
+            if(this.Left != null) this.Left.ToString(builder, indent + 1);
+            if(this.Right != null) this.Right.ToString(builder, indent + 1);
         }
     }
 }

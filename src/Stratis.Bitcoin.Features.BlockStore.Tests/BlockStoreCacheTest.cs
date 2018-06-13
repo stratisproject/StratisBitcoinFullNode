@@ -40,15 +40,15 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
         [Fact]
         public void GetBlockAsyncBlockNotInCacheQueriesRepositoryStoresBlockInCacheAndReturnsBlock()
         {
-            uint256 blockId = new uint256(2389704);
-            Block repositoryBlock = new Block();
+            var blockId = new uint256(2389704);
+            var repositoryBlock = new Block();
             repositoryBlock.Header.Version = 1451;
             this.blockRepository.Setup(b => b.GetAsync(blockId))
                 .Returns(Task.FromResult(repositoryBlock));
 
             this.blockStoreCache = new BlockStoreCache(this.blockRepository.Object, DateTimeProvider.Default, this.loggerFactory, this.storeSettings);
 
-            var result = this.blockStoreCache.GetBlockAsync(blockId);
+            Task<Block> result = this.blockStoreCache.GetBlockAsync(blockId);
             result.Wait();
 
             Assert.Equal(1451, result.Result.Header.Version);

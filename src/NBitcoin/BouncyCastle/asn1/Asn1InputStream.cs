@@ -98,7 +98,7 @@ namespace NBitcoin.BouncyCastle.Asn1
                 }
             }
 
-            return CreatePrimitiveDerObject(tagNo, defIn, tmpBuffers);
+            return CreatePrimitiveDerObject(tagNo, defIn, this.tmpBuffers);
         }
 
         internal Asn1EncodableVector BuildEncodableVector()
@@ -147,7 +147,7 @@ namespace NBitcoin.BouncyCastle.Asn1
             //
             // calculate length
             //
-            int length = ReadLength(this.s, limit);
+            int length = ReadLength(this.s, this.limit);
 
             if(length < 0) // indefinite length method
             {

@@ -11,7 +11,7 @@ namespace NBitcoin.Stealth
         {
             get
             {
-                return _Payment;
+                return this._Payment;
             }
         }
         private readonly KeyId _ID;
@@ -19,18 +19,18 @@ namespace NBitcoin.Stealth
         {
             get
             {
-                return _ID;
+                return this._ID;
             }
         }
         public StealthSpendKey(KeyId id, StealthPayment payment)
         {
-            _ID = id;
-            _Payment = payment;
+            this._ID = id;
+            this._Payment = payment;
         }
 
         public BitcoinAddress GetAddress(Network network)
         {
-            return new BitcoinPubKeyAddress(ID, network);
+            return new BitcoinPubKeyAddress(this.ID, network);
         }
     }
 
@@ -38,13 +38,13 @@ namespace NBitcoin.Stealth
     {
         public StealthPayment(BitcoinStealthAddress address, Key ephemKey, StealthMetadata metadata)
         {
-            Metadata = metadata;
-            ScriptPubKey = CreatePaymentScript(address.SignatureCount, address.SpendPubKeys, ephemKey, address.ScanPubKey);
+            this.Metadata = metadata;
+            this.ScriptPubKey = CreatePaymentScript(address.SignatureCount, address.SpendPubKeys, ephemKey, address.ScanPubKey);
 
             if(address.SignatureCount > 1)
             {
-                Redeem = ScriptPubKey;
-                ScriptPubKey = ScriptPubKey.Hash.ScriptPubKey;
+                this.Redeem = this.ScriptPubKey;
+                this.ScriptPubKey = this.ScriptPubKey.Hash.ScriptPubKey;
             }
             SetStealthKeys();
         }
@@ -95,20 +95,20 @@ namespace NBitcoin.Stealth
         }
         public BitcoinAddress[] GetAddresses(Network network)
         {
-            return StealthKeys.Select(k => k.GetAddress(network)).ToArray();
+            return this.StealthKeys.Select(k => k.GetAddress(network)).ToArray();
         }
 
         public StealthPayment(Script scriptPubKey, Script redeem, StealthMetadata metadata)
         {
-            Metadata = metadata;
-            ScriptPubKey = scriptPubKey;
-            Redeem = redeem;
+            this.Metadata = metadata;
+            this.ScriptPubKey = scriptPubKey;
+            this.Redeem = redeem;
             SetStealthKeys();
         }
 
         private void SetStealthKeys()
         {
-            StealthKeys = ExtractKeyIDs(Redeem ?? ScriptPubKey).Select(id => new StealthSpendKey(id, this)).ToArray();
+            this.StealthKeys = ExtractKeyIDs(this.Redeem ?? this.ScriptPubKey).Select(id => new StealthSpendKey(id, this)).ToArray();
         }
 
 
@@ -134,8 +134,8 @@ namespace NBitcoin.Stealth
                 throw new ArgumentNullException("transaction");
             if(value == null)
                 throw new ArgumentNullException("value");
-            transaction.Outputs.Add(new TxOut(0, Metadata.Script));
-            transaction.Outputs.Add(new TxOut(value, ScriptPubKey));
+            transaction.Outputs.Add(new TxOut(0, this.Metadata.Script));
+            transaction.Outputs.Add(new TxOut(value, this.ScriptPubKey));
         }
 
         public static StealthPayment[] GetPayments(Transaction transaction, BitcoinStealthAddress address, Key scan)

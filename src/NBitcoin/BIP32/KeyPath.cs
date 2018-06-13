@@ -12,7 +12,7 @@ namespace NBitcoin
     {
         public KeyPath()
         {
-            _Indexes = new uint[0];
+            this._Indexes = new uint[0];
         }
 
         /// <summary>
@@ -32,7 +32,7 @@ namespace NBitcoin
 
         public KeyPath(string path)
         {
-            _Indexes =
+            this._Indexes =
                 path
                 .Split(new[] { '/' }, StringSplitOptions.RemoveEmptyEntries)
                 .Where(p => p != "m")
@@ -50,7 +50,7 @@ namespace NBitcoin
 
         public KeyPath(params uint[] indexes)
         {
-            _Indexes = indexes;
+            this._Indexes = indexes;
         }
 
         private readonly uint[] _Indexes;
@@ -58,7 +58,7 @@ namespace NBitcoin
         {
             get
             {
-                return _Indexes[index];
+                return this._Indexes[index];
             }
         }
 
@@ -66,7 +66,7 @@ namespace NBitcoin
         {
             get
             {
-                return _Indexes.ToArray();
+                return this._Indexes.ToArray();
             }
         }
 
@@ -86,8 +86,7 @@ namespace NBitcoin
 
         public KeyPath Derive(KeyPath derivation)
         {
-            return new KeyPath(
-                _Indexes
+            return new KeyPath(this._Indexes
                 .Concat(derivation._Indexes)
                 .ToArray());
         }
@@ -96,17 +95,17 @@ namespace NBitcoin
         {
             get
             {
-                if(_Indexes.Length == 0)
+                if(this._Indexes.Length == 0)
                     return null;
-                return new KeyPath(_Indexes.Take(_Indexes.Length - 1).ToArray());
+                return new KeyPath(this._Indexes.Take(this._Indexes.Length - 1).ToArray());
             }
         }
 
         public KeyPath Increment()
         {
-            if(_Indexes.Length == 0)
+            if(this._Indexes.Length == 0)
                 return null;
-            uint[] indices = _Indexes.ToArray();
+            uint[] indices = this._Indexes.ToArray();
             indices[indices.Length - 1]++;
             return new KeyPath(indices);
         }
@@ -140,7 +139,7 @@ namespace NBitcoin
         private string _Path;
         public override string ToString()
         {
-            return _Path ?? (_Path = string.Join("/", _Indexes.Select(ToString).ToArray()));
+            return this._Path ?? (this._Path = string.Join("/", this._Indexes.Select(ToString).ToArray()));
         }
 
         private static string ToString(uint i)
@@ -154,9 +153,9 @@ namespace NBitcoin
         {
             get
             {
-                if(_Indexes.Length == 0)
+                if(this._Indexes.Length == 0)
                     throw new InvalidOperationException("No indice found in this KeyPath");
-                return (_Indexes[_Indexes.Length - 1] & 0x80000000u) != 0;
+                return (this._Indexes[this._Indexes.Length - 1] & 0x80000000u) != 0;
             }
         }
     }

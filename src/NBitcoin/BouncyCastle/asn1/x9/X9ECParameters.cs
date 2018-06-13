@@ -99,7 +99,7 @@ namespace NBitcoin.BouncyCastle.Asn1.X9
         {
             get
             {
-                return curve;
+                return this.curve;
             }
         }
 
@@ -107,7 +107,7 @@ namespace NBitcoin.BouncyCastle.Asn1.X9
         {
             get
             {
-                return g.Point;
+                return this.g.Point;
             }
         }
 
@@ -115,7 +115,7 @@ namespace NBitcoin.BouncyCastle.Asn1.X9
         {
             get
             {
-                return n;
+                return this.n;
             }
         }
 
@@ -123,13 +123,13 @@ namespace NBitcoin.BouncyCastle.Asn1.X9
         {
             get
             {
-                return h;
+                return this.h;
             }
         }
 
         public byte[] GetSeed()
         {
-            return seed;
+            return this.seed;
         }
 
         /**
@@ -141,7 +141,7 @@ namespace NBitcoin.BouncyCastle.Asn1.X9
         {
             get
             {
-                return new X9Curve(curve, seed);
+                return new X9Curve(this.curve, this.seed);
             }
         }
 
@@ -154,7 +154,7 @@ namespace NBitcoin.BouncyCastle.Asn1.X9
         {
             get
             {
-                return fieldID;
+                return this.fieldID;
             }
         }
 
@@ -167,7 +167,7 @@ namespace NBitcoin.BouncyCastle.Asn1.X9
         {
             get
             {
-                return g;
+                return this.g;
             }
         }
 
@@ -187,15 +187,13 @@ namespace NBitcoin.BouncyCastle.Asn1.X9
         public override Asn1Object ToAsn1Object()
         {
             var v = new Asn1EncodableVector(
-                new DerInteger(BigInteger.One),
-                fieldID,
-                new X9Curve(curve, seed),
-                g,
-                new DerInteger(n));
+                new DerInteger(BigInteger.One), this.fieldID,
+                new X9Curve(this.curve, this.seed), this.g,
+                new DerInteger(this.n));
 
-            if(h != null)
+            if(this.h != null)
             {
-                v.Add(new DerInteger(h));
+                v.Add(new DerInteger(this.h));
             }
 
             return new DerSequence(v);

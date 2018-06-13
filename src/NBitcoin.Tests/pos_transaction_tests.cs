@@ -329,6 +329,7 @@ namespace NBitcoin.Tests
             //Scenario 1 : Carla knows aliceBobCoins so she can calculate how much coin she need to complete the transaction
             //Carla fills and signs
             txBuilder = new TransactionBuilder(Network.StratisMain);
+            ((DefaultCoinSelector)txBuilder.CoinSelector).GroupByScriptPubKey = false;
             Transaction carlaSigned = txBuilder
                 .AddCoins(aliceBobCoins)
                 .Then()
@@ -355,6 +356,7 @@ namespace NBitcoin.Tests
             //Scenario 2 : Carla is told by Bob to complete 0.05 BTC
             //Carla fills and signs
             txBuilder = new TransactionBuilder(Network.StratisMain);
+            ((DefaultCoinSelector)txBuilder.CoinSelector).GroupByScriptPubKey = false;
             carlaSigned = txBuilder
                 .AddKeys(carlaKey)
                 .AddCoins(carlaCoins)
@@ -1657,12 +1659,12 @@ namespace NBitcoin.Tests
             //the other private keys (note the "hex" result getting longer):
             partiallySigned.Sign(Network.StratisMain, privKeys[1], true);
 
-            AssertCorrectlySigned(partiallySigned, fundingTransaction.Outputs[0].ScriptPubKey, allowHighS);
+            AssertCorrectlySigned(partiallySigned, fundingTransaction.Outputs[0].ScriptPubKey, this.allowHighS);
 
             //Verify the transaction from the gist is also correctly signed
             Transaction gistTransaction = Transaction.Load("010000009d4f1b5801e1f87273f4e266d0f2d08a4a08807dc2c2e8f6e47bcc488201652a03778de19600000000fd5e0100483045022100d62e6327a72ca014778d87ba225ef8fc08610e2345fe1c543bb429777f82052a02207832b67b2f03bd8bfdfd79597a51a269c3f569fcd89a347db370a07146292c7501483045022100eff296780357c91f1b1334011e11150dac30de70be3d428e4799fd66456055ee02205313912c3c17e59533e1aa86c7526a365faef59c2dd55dd3bb5292cbada52eb9014cc952410491bba2510912a5bd37da1fb5b1673010e43d2c6d812c514e91bfa9f2eb129e1c183329db55bd868e209aac2fbc02cb33d98fe74bf23f0c235d6126b1d8334f864104865c40293a680cb9c020e7b1e106d8c1916d3cef99aa431a56d253e69256dac09ef122b1a986818a7cb624532f062c1d1f8722084861c5c3291ccffef4ec687441048d2455d2403e08708fc1f556002f1b6cd83f992d085097f9974ab08a28838f07896fbab08f39495e15fa6fad6edbfb1e754e35fa1c7844c41f322a1863d4621353aeffffffff0140420f00000000001976a914ae56b4db13554d321c402db3961187aed1bbed5b88ac00000000", Network.StratisMain);
 
-            AssertCorrectlySigned(gistTransaction, fundingTransaction.Outputs[0].ScriptPubKey, allowHighS); //One sig in the hard code tx is high
+            AssertCorrectlySigned(gistTransaction, fundingTransaction.Outputs[0].ScriptPubKey, this.allowHighS); //One sig in the hard code tx is high
 
             //Can sign out of order
             partiallySigned = spendTransaction.Clone(network: Network.StratisMain);
@@ -1803,11 +1805,11 @@ namespace NBitcoin.Tests
 
             DuplicateInputPolicyError dup = errors.OfType<DuplicateInputPolicyError>().Single();
             AssertEx.CollectionEquals(new uint[] { 0, 1 }, dup.InputIndices);
-            AssertEx.Equals(new OutPoint(funding, 0), dup.OutPoint);
+            Equals(new OutPoint(funding, 0), dup.OutPoint);
 
             ScriptPolicyError script = errors.OfType<ScriptPolicyError>().Single();
-            AssertEx.Equals(alice.ScriptPubKey, script.ScriptPubKey);
-            AssertEx.Equals(3, script.InputIndex);
+            Equals(alice.ScriptPubKey, script.ScriptPubKey);
+            Equals(3, script.InputIndex);
 
             NotEnoughFundsPolicyError fees = errors.OfType<NotEnoughFundsPolicyError>().Single();
             Assert.Equal(fees.Missing, Money.Coins(0.7m));
@@ -2668,17 +2670,17 @@ namespace NBitcoin.Tests
             internal List<Script> _Scripts = new List<Script>();
             internal void AddKeyPubKey(Key key, PubKey pubkey)
             {
-                _Keys.Add(Tuple.Create(key, pubkey));
+                this._Keys.Add(Tuple.Create(key, pubkey));
             }
 
             internal void RemoveKeyPubKey(Key key)
             {
-                _Keys.Remove(_Keys.First(o => o.Item1 == key));
+                this._Keys.Remove(this._Keys.First(o => o.Item1 == key));
             }
 
             internal void AddCScript(Script scriptPubkey)
             {
-                _Scripts.Add(scriptPubkey);
+                this._Scripts.Add(scriptPubkey);
             }
         }
 

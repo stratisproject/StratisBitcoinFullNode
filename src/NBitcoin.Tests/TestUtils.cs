@@ -42,7 +42,7 @@ namespace NBitcoin.Tests
 
         public static Block CreateFakeBlock()
         {
-            Block block = TestUtils.CreateFakeBlock(new Transaction());
+            Block block = CreateFakeBlock(new Transaction());
             block.Header.HashPrevBlock = new uint256(RandomUtils.GetBytes(32));
             block.Header.Nonce = RandomUtils.GetUInt32();
             return block;

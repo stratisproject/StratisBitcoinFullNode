@@ -24,8 +24,9 @@ namespace NBitcoin.Tests
                     Transaction txObj = Transaction.Parse(tx);
                     repository.Put(txObj.GetHash(), txObj);
                 }
-                TestedTxId = uint256.Parse(testcase.testedtx);
-                Repository = new NullColoredTransactionRepository(repository);
+
+                this.TestedTxId = uint256.Parse(testcase.testedtx);
+                this.Repository = new NullColoredTransactionRepository(repository);
             }
 
 
@@ -65,9 +66,9 @@ namespace NBitcoin.Tests
         {
             public AssetKey()
             {
-                Key = new Key();
-                ScriptPubKey = Key.PubKey.GetAddress(Network.Main).ScriptPubKey;
-                Id = ScriptPubKey.Hash.ToAssetId();
+                this.Key = new Key();
+                this.ScriptPubKey = this.Key.PubKey.GetAddress(Network.Main).ScriptPubKey;
+                this.Id = this.ScriptPubKey.Hash.ToAssetId();
             }
             public Key Key
             {

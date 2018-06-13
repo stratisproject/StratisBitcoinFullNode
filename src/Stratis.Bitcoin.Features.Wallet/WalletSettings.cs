@@ -11,6 +11,9 @@ namespace Stratis.Bitcoin.Features.Wallet
     /// </summary>
     public class WalletSettings
     {
+        /// <summary>Instance logger.</summary>
+        private readonly ILogger logger;
+
         /// <summary>
         /// A value indicating whether the transactions hex representations should be saved in the wallet file.
         /// </summary>
@@ -21,16 +24,30 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// </summary>
         public bool IsLightWallet { get; set; }
 
+        /// <summary>
+        /// Initializes an instance of the object from the default configuration.
+        /// </summary>
         public WalletSettings() : this(NodeSettings.Default())
         {	
         }
 
+        /// <summary>
+        /// Initializes an instance of the object from the node configuration.
+        /// </summary>
+        /// <param name="nodeSettings">The node configuration.</param>
         public WalletSettings(NodeSettings nodeSettings)
         {
             Guard.NotNull(nodeSettings, nameof(nodeSettings));
 
+            this.logger = nodeSettings.LoggerFactory.CreateLogger(typeof(WalletSettings).FullName);
+            this.logger.LogTrace("({0}:'{1}')", nameof(nodeSettings), nodeSettings.Network.Name);
+
             TextFileConfiguration config = nodeSettings.ConfigReader;
+
             this.SaveTransactionHex = config.GetOrDefault<bool>("savetrxhex", false);
+            this.logger.LogDebug("SaveTransactionHex set to {0}.", this.SaveTransactionHex);
+
+            this.logger.LogTrace("(-)");
         }
 
         /// <summary>
@@ -42,7 +59,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             NodeSettings defaults = NodeSettings.Default();
             var builder = new StringBuilder();
 
-            builder.AppendLine("-savetrxhex=<0 or 1>            Save the hex of transactions in the wallet file. Default: false.");
+            builder.AppendLine("-savetrxhex=<0 or 1>            Save the hex of transactions in the wallet file. Default: 0.");
             defaults.Logger.LogInformation(builder.ToString());
         }
 

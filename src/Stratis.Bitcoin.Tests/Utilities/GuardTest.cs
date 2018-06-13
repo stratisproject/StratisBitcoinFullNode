@@ -10,7 +10,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
         public void NullValueThrowsArgumentNullException()
         {
             object obj = null;
-            var exception = Record.Exception(() => Guard.NotNull(obj, "someObjectName"));
+            Exception exception = Record.Exception(() => Guard.NotNull(obj, "someObjectName"));
             Assert.NotNull(exception);
             Assert.IsType<ArgumentNullException>(exception);
         }
@@ -18,7 +18,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
         [Fact]
         public void NullParameterNameThrowsArgumentNullException()
         {
-            var exception = Record.Exception(() => Guard.NotNull(DateTime.UtcNow, null));
+            Exception exception = Record.Exception(() => Guard.NotNull(DateTime.UtcNow, null));
             Assert.NotNull(exception);
             Assert.IsType<ArgumentNullException>(exception);
         }
@@ -26,7 +26,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
         [Fact]
         public void EmptyParameterNameThrowsArgumentNullException()
         {
-            var exception = Record.Exception(() => Guard.NotNull(DateTime.UtcNow, string.Empty));
+            Exception exception = Record.Exception(() => Guard.NotNull(DateTime.UtcNow, string.Empty));
             Assert.NotNull(exception);
             Assert.IsType<ArgumentNullException>(exception);
         }
@@ -34,7 +34,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
         [Fact]
         public void WhiteSpacesParameterNameThrowsArgumentNullException()
         {
-            var exception = Record.Exception(() => Guard.NotNull(DateTime.UtcNow, "   "));
+            Exception exception = Record.Exception(() => Guard.NotNull(DateTime.UtcNow, "   "));
             Assert.NotNull(exception);
             Assert.IsType<ArgumentNullException>(exception);
         }
@@ -42,14 +42,14 @@ namespace Stratis.Bitcoin.Tests.Utilities
         [Fact]
         public void ValueDefinedObjectWithParameterNameDoesntThrow()
         {
-            var exception = Record.Exception(() => Guard.NotNull(DateTime.UtcNow, "someDate"));
+            Exception exception = Record.Exception(() => Guard.NotNull(DateTime.UtcNow, "someDate"));
             Assert.Null(exception);
         }
 
         [Fact]
         public void EmptyStringThrowsArgumentNullException()
         {
-            var exception = Record.Exception(() => Guard.NotEmpty(string.Empty, "someObjectName"));
+            Exception exception = Record.Exception(() => Guard.NotEmpty(string.Empty, "someObjectName"));
             Assert.NotNull(exception);
             Assert.IsType<ArgumentException>(exception);
         }
@@ -57,7 +57,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
         [Fact]
         public void NullStringThrowsArgumentNullException()
         {
-            var exception = Record.Exception(() => Guard.NotEmpty(null, "someObjectName"));
+            Exception exception = Record.Exception(() => Guard.NotEmpty(null, "someObjectName"));
             Assert.NotNull(exception);
             Assert.IsType<ArgumentNullException>(exception);
         }
@@ -65,7 +65,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
         [Fact]
         public void WhiteSpacesStringThrowsArgumentNullException()
         {
-            var exception = Record.Exception(() => Guard.NotEmpty("   ", "someObjectName"));
+            Exception exception = Record.Exception(() => Guard.NotEmpty("   ", "someObjectName"));
             Assert.NotNull(exception);
             Assert.IsType<ArgumentException>(exception);
         }
@@ -73,7 +73,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
         [Fact]
         public void NotEmptyStringReturnsString()
         {
-            var result = Guard.NotEmpty("value", "someObjectName");
+            string result = Guard.NotEmpty("value", "someObjectName");
 
             Assert.Equal("value", result);
         }
@@ -81,7 +81,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
         [Fact]
         public void FalseAssertionThrowsException()
         {
-            var exception = Record.Exception(() => Guard.Assert(false));
+            Exception exception = Record.Exception(() => Guard.Assert(false));
             Assert.NotNull(exception);
             Assert.IsType<Exception>(exception);
         }
@@ -89,7 +89,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
         [Fact]
         public void TrueAssertionDoesntThrowException()
         {
-            var exception = Record.Exception(() => Guard.Assert(true));
+            Exception exception = Record.Exception(() => Guard.Assert(true));
             Assert.Null(exception);
         }
     }
