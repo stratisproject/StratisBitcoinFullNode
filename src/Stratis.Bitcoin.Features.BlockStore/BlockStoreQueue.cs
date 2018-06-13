@@ -6,6 +6,7 @@ using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Interfaces;
+using Stratis.Bitcoin.Primitives;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.BlockStore
@@ -60,7 +61,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         private readonly IBlockRepository blockRepository;
 
         /// <summary>Queue which contains blocks that should be saved to the database.</summary>
-        private readonly AsyncQueue<BlockPair> blocksQueue;
+        private readonly AsyncQueue<ChainedHeaderBlock> blocksQueue;
 
         /// <summary>Task that runs <see cref="DequeueBlocksContinuouslyAsync"/>.</summary>
         private Task dequeueLoopTask;
@@ -86,7 +87,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.chain = chain;
             this.blockRepository = blockRepository;
 
-            this.blocksQueue = new AsyncQueue<BlockPair>();
+            this.blocksQueue = new AsyncQueue<ChainedHeaderBlock>();
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
         }
 
@@ -220,12 +221,12 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// <summary>
         /// Adds a block to the saving queue.
         /// </summary>
-        /// <param name="blockPair">The block and its chained header pair to be added to pending storage.</param>
-        public void AddToPending(BlockPair blockPair)
+        /// <param name="chainedHeaderBlock">The block and its chained header pair to be added to pending storage.</param>
+        public void AddToPending(ChainedHeaderBlock chainedHeaderBlock)
         {
-            this.logger.LogTrace("({0}:'{1}')", nameof(blockPair), blockPair.ChainedHeader);
+            this.logger.LogTrace("({0}:'{1}')", nameof(chainedHeaderBlock), chainedHeaderBlock.ChainedHeader);
 
-            this.blocksQueue.Enqueue(blockPair);
+            this.blocksQueue.Enqueue(chainedHeaderBlock);
 
             this.logger.LogTrace("(-)");
         }
@@ -238,9 +239,9 @@ namespace Stratis.Bitcoin.Features.BlockStore
         {
             this.logger.LogTrace("()");
 
-            var batch = new List<BlockPair>();
+            var batch = new List<ChainedHeaderBlock>();
 
-            Task<BlockPair> dequeueTask = null;
+            Task<ChainedHeaderBlock> dequeueTask = null;
             Task timerTask = null;
 
             while (!this.nodeLifetime.ApplicationStopping.IsCancellationRequested)
@@ -270,7 +271,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 // or the max batch size is reached or the node is shutting down.  
                 if (dequeueTask.Status == TaskStatus.RanToCompletion)
                 {
-                    BlockPair item = dequeueTask.Result;
+                    ChainedHeaderBlock item = dequeueTask.Result;
 
                     // Set the dequeue task to null so it can be assigned on the next iteration.
                     dequeueTask = null;
@@ -314,11 +315,11 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// The last block in the list is considered to be on the current main chain and will be used to determine if a database reorg is required.
         /// </summary>
         /// <param name="batch">List of batched blocks. Cannot be empty.</param>
-        private async Task SaveBatchAsync(List<BlockPair> batch)
+        private async Task SaveBatchAsync(List<ChainedHeaderBlock> batch)
         {
             this.logger.LogTrace("({0}.{1}:{2})", nameof(batch), nameof(batch.Count), batch.Count);
 
-            List<BlockPair> clearedBatch = this.GetBatchWithoutReorgedBlocks(batch);
+            List<ChainedHeaderBlock> clearedBatch = this.GetBatchWithoutReorgedBlocks(batch);
 
             ChainedHeader expectedStoreTip = clearedBatch.First().ChainedHeader.Previous;
 
@@ -345,15 +346,15 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// </summary>
         /// <param name="batch">Uncleaned batch that might contain non-consecutive blocks. Cannot be empty.</param>
         /// <returns>List of consecutive blocks.</returns>
-        private List<BlockPair> GetBatchWithoutReorgedBlocks(List<BlockPair> batch)
+        private List<ChainedHeaderBlock> GetBatchWithoutReorgedBlocks(List<ChainedHeaderBlock> batch)
         {
             this.logger.LogTrace("({0}.{1}:{2})", nameof(batch), nameof(batch.Count), batch.Count);
 
             // Initialize current with highest block from the batch.
-            BlockPair current = batch.Last();
+            ChainedHeaderBlock current = batch.Last();
 
             // List of consecutive blocks. It's a cleaned out version of batch that doesn't have blocks that were reorged.
-            var batchCleared = new List<BlockPair>(batch.Count) { current };
+            var batchCleared = new List<ChainedHeaderBlock>(batch.Count) { current };
             
             // Select only those blocks that were not reorged away.
             for (int i = batch.Count - 2; i >= 0; i--)

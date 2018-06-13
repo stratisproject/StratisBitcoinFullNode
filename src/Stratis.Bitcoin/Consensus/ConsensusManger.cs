@@ -1,16 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Base;
-using Stratis.Bitcoin.BlockPulling;
 using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Interfaces;
-using Stratis.Bitcoin.Utilities;
-using Stratis.Bitcoin.Utilities.Extensions;
+using Stratis.Bitcoin.Primitives;
 
 namespace Stratis.Bitcoin.Consensus
 {
@@ -43,7 +39,7 @@ namespace Stratis.Bitcoin.Consensus
         /// <summary>The current tip of the chain that has been validated.</summary>
         public ChainedHeader Tip { get; private set; }
 
-        private readonly Dictionary<uint256, ProcessDownloadedBlockDelegate> blocksRequested;
+        private readonly Dictionary<uint256, OnBlockDownloadedCallback> blocksRequested;
 
         private readonly Queue<BlockDownloadRequest> toDownloadQueue;
 
@@ -75,7 +71,7 @@ namespace Stratis.Bitcoin.Consensus
 
             this.treeLock = new object();
 
-            this.blocksRequested = new Dictionary<uint256, ProcessDownloadedBlockDelegate>();
+            this.blocksRequested = new Dictionary<uint256, OnBlockDownloadedCallback>();
             this.toDownloadQueue = new Queue<BlockDownloadRequest>();
         }
 
@@ -165,44 +161,44 @@ namespace Stratis.Bitcoin.Consensus
         }
 
         /// <summary>
-        /// A callback that is triggered when a block was downloaded.
+        /// A callback that is triggered when a block that <see cref="ConsensusManager"/> requested was downloaded.
         /// </summary>
-        private void ProcessDownloadedBlock(BlockPair blockPair)
+        private void ProcessDownloadedBlock(ChainedHeaderBlock chainedHeaderBlock)
         {
-            this.logger.LogTrace("({0}:'{1}')", nameof(blockPair), blockPair);
+            this.logger.LogTrace("({0}:'{1}')", nameof(chainedHeaderBlock), chainedHeaderBlock);
 
             bool partialValidationRequired = false;
 
             lock (this.treeLock)
             {
-                partialValidationRequired = this.chainedHeaderTree.BlockDataDownloaded(blockPair.ChainedHeader, blockPair.Block);
+                partialValidationRequired = this.chainedHeaderTree.BlockDataDownloaded(chainedHeaderBlock.ChainedHeader, chainedHeaderBlock.Block);
             }
 
             if (partialValidationRequired)
             {
-                this.blockValidator.StartPartialValidation(blockPair, this.OnPartialValidationCompletedCallback);
+                this.blockValidator.StartPartialValidation(chainedHeaderBlock, this.OnPartialValidationCompletedCallback);
             }
 
             this.logger.LogTrace("(-)");
         }
 
-        private void OnPartialValidationCompletedCallback(BlockPair blockPair, bool success)
+        private void OnPartialValidationCompletedCallback(ChainedHeaderBlock chainedHeaderBlock, bool success)
         {
-            this.logger.LogTrace("({0}:'{1}',{2}.{3}:{4})", nameof(blockPair), blockPair, nameof(success), success);
+            this.logger.LogTrace("({0}:'{1}',{2}.{3}:{4})", nameof(chainedHeaderBlock), chainedHeaderBlock, nameof(success), success);
 
             // TODO
 
             this.logger.LogTrace("(-)");
         }
 
-        private void DownloadBlocks(List<uint256> blockHashes, ProcessDownloadedBlockDelegate processesBlock)
+        private void DownloadBlocks(List<uint256> blockHashes, OnBlockDownloadedCallback OnBlockDownloadedCallback)
         {
             this.logger.LogTrace("({0}.{1}:{2})", nameof(blockHashes), nameof(blockHashes.Count), blockHashes.Count);
 
             BlockDownloadRequest request = new BlockDownloadRequest
             {
                 BlocksToDownload = blockHashes,
-                DownloadedBlockDelegate = processesBlock
+                OnBlockDownloadedCallback = OnBlockDownloadedCallback
             };
 
             lock (this.treeLock)
@@ -215,15 +211,15 @@ namespace Stratis.Bitcoin.Consensus
         }
 
         /// <summary>
-        /// A method that to requests blocks, any block that is found is sent to the callback <see cref="processesBlock"/>.
+        /// A method that to requests blocks, any block that is found is sent to the callback <see cref="onBlockDownloadedCallback"/>.
         /// If the block is not part of the tree (on a known the chain) the a <c>null</c> value will be return in the callback.
         /// If the block is available in memory or on disk it will be immediately return the block on the callback.
         /// The block hashes must be in a consecutive order.
         /// </summary>
         /// <param name="blockHashes">The block hashes to download, the block hashes must be in a consecutive order.</param>
-        /// <param name="processesBlock">The callback that will be called for each downloaded block.</param>
+        /// <param name="onBlockDownloadedCallback">The callback that will be called for each downloaded block.</param>
         /// <returns></returns>
-        public async Task GetOrDownloadBlocksAsync(List<uint256> blockHashes, ProcessDownloadedBlockDelegate processesBlock)
+        public async Task GetOrDownloadBlocksAsync(List<uint256> blockHashes, OnBlockDownloadedCallback onBlockDownloadedCallback)
         {
             this.logger.LogTrace("({0}.{1}:{2})", nameof(blockHashes), nameof(blockHashes.Count), blockHashes.Count);
 
@@ -234,24 +230,24 @@ namespace Stratis.Bitcoin.Consensus
             for (int i = blockHashes.Count - 1; i >= 0; i--)
             {
                 uint256 blockHash = blockHashes[i];
-                BlockPair blockPair = null;
+                ChainedHeaderBlock chainedHeaderBlock = null;
 
                 lock (this.treeLock)
                 {
-                    blockPair = this.chainedHeaderTree.GetBlockPair(blockHash);
+                    chainedHeaderBlock = this.chainedHeaderTree.GetBlockPair(blockHash);
                 }
 
-                if (blockPair == null)
+                if (chainedHeaderBlock == null)
                 {
                     this.logger.LogTrace("Block hash '{0}' is not part of the tree.", blockHash);
-                    processesBlock(null);
+                    onBlockDownloadedCallback(null);
                     continue;
                 }
 
-                if (blockPair.Block != null)
+                if (chainedHeaderBlock.Block != null)
                 {
-                    this.logger.LogTrace("Block pair '{0}' was found in memory.", blockPair);
-                    processesBlock(blockPair);
+                    this.logger.LogTrace("Block pair '{0}' was found in memory.", chainedHeaderBlock);
+                    onBlockDownloadedCallback(chainedHeaderBlock);
                     continue;
                 }
 
@@ -260,9 +256,9 @@ namespace Stratis.Bitcoin.Consensus
                     Block block = await this.blockStore.GetBlockAsync(blockHash);
                     if (block != null)
                     {
-                        var newBlockPair = new BlockPair(block, blockPair.ChainedHeader);
+                        var newBlockPair = new ChainedHeaderBlock(block, chainedHeaderBlock.ChainedHeader);
                         this.logger.LogTrace("Block pair '{0}' was found in store.", newBlockPair);
-                        processesBlock(newBlockPair);
+                        onBlockDownloadedCallback(newBlockPair);
                         continue;
                     }
                 }
@@ -314,7 +310,7 @@ namespace Stratis.Bitcoin.Consensus
 
                     var newRequest = new BlockDownloadRequest()
                     {
-                        DownloadedBlockDelegate = request.DownloadedBlockDelegate,
+                        OnBlockDownloadedCallback = request.OnBlockDownloadedCallback,
                         BlocksToDownload = new List<uint256>()
                     };
 
@@ -336,8 +332,8 @@ namespace Stratis.Bitcoin.Consensus
     /// <summary>
     /// A delegate that is used to send callbacks when a bock is downloaded from the of queued requests to downloading blocks. 
     /// </summary>
-    /// <param name="blockPair">The pair of the block and its chained header.</param>
-    public delegate void ProcessDownloadedBlockDelegate(BlockPair blockPair);
+    /// <param name="chainedHeaderBlock">The pair of the block and its chained header.</param>
+    public delegate void OnBlockDownloadedCallback(ChainedHeaderBlock chainedHeaderBlock);
 
     /// <summary>
     /// A request that holds information of blocks to download.
@@ -348,6 +344,6 @@ namespace Stratis.Bitcoin.Consensus
         public List<uint256> BlocksToDownload { get; set; }
 
         /// <summary>The delegate to send the downloaded blocks to.</summary>
-        public ProcessDownloadedBlockDelegate DownloadedBlockDelegate { get; set; }
+        public OnBlockDownloadedCallback OnBlockDownloadedCallback { get; set; }
     }
 }

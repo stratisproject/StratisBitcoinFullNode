@@ -5,6 +5,7 @@ using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Configuration.Settings;
+using Stratis.Bitcoin.Primitives;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Utilities.Extensions;
 
@@ -133,7 +134,7 @@ namespace Stratis.Bitcoin.Consensus
         /// Get the block and its chained header if it exists.
         /// </summary>
         /// <returns>The block and its chained header.</returns>
-        BlockPair GetBlockPair(uint256 blockHash);
+        ChainedHeaderBlock GetBlockPair(uint256 blockHash);
     }
 
     /// <inheritdoc />
@@ -237,18 +238,18 @@ namespace Stratis.Bitcoin.Consensus
         }
 
         // <inheritdoc />
-        public BlockPair GetBlockPair(uint256 blockHash)
+        public ChainedHeaderBlock GetBlockPair(uint256 blockHash)
         {
             this.logger.LogTrace("({0}:{1})", nameof(blockHash), blockHash);
 
-            BlockPair blockPair = null;
+            ChainedHeaderBlock chainedHeaderBlock = null;
             if (this.chainedHeadersByHash.TryGetValue(blockHash, out ChainedHeader chainedHeader))
             {
-                blockPair = new BlockPair(chainedHeader.Block, chainedHeader);
+                chainedHeaderBlock = new ChainedHeaderBlock(chainedHeader.Block, chainedHeader);
             }
 
-            this.logger.LogTrace("(-):'{0}'", blockPair);
-            return blockPair;
+            this.logger.LogTrace("(-):'{0}'", chainedHeaderBlock);
+            return chainedHeaderBlock;
         }
 
         /// <summary>Gets the consensus tip.</summary>

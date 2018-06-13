@@ -1,5 +1,6 @@
 ﻿using System;
 using NBitcoin;
+using Stratis.Bitcoin.Primitives;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Consensus
@@ -29,8 +30,8 @@ namespace Stratis.Bitcoin.Consensus
         /// <summary>
         /// Partial validation of a block, this will not changes any state in the consensus store when validating a block.
         /// </summary>
-        /// <param name="blockPair">The block to validate.</param>
+        /// <param name="chainedHeaderBlock">The block to validate.</param>
         /// <param name="onPartialValidationCompletedCallback">A callback that is called when validation is complete.</param>
-        void StartPartialValidation(BlockPair blockPair, Action<BlockPair, bool> onPartialValidationCompletedCallback);
+        void StartPartialValidation(ChainedHeaderBlock chainedHeaderBlock, Action<ChainedHeaderBlock, bool> onPartialValidationCompletedCallback);
     }
 }
