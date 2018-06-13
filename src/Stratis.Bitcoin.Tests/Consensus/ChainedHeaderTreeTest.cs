@@ -33,10 +33,10 @@ namespace Stratis.Bitcoin.Tests.Consensus
                 return this.ChainedHeaderTree;
             }
 
-            internal Target ChangeDifficulty(ChainedHeader header, int difficultyAdjustmentScore)
+            internal Target ChangeDifficulty(ChainedHeader header, int difficultyAdjustmentDivisor)
             {
                 BigInteger newTarget = header.Header.Bits.ToBigInteger();
-                newTarget = newTarget.Divide(BigInteger.ValueOf(difficultyAdjustmentScore)); 
+                newTarget = newTarget.Divide(BigInteger.ValueOf(difficultyAdjustmentDivisor)); 
                 return new Target(newTarget);
             }
 
