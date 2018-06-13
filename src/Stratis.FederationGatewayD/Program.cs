@@ -16,7 +16,7 @@ using Stratis.Bitcoin.Features.RPC;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Utilities;
 using Stratis.FederatedPeg.Features.FederationGateway;
-using Stratis.Networks.Apex;
+using Stratis.Sidechains.Networks;
 
 namespace Stratis.FederationGatewayD
 {

@@ -1,16 +1,14 @@
-﻿using System;
-using NBitcoin;
+﻿using NBitcoin;
 using NBitcoin.DataEncoders;
 
-namespace Stratis.Networks.Apex
+namespace Stratis.Sidechains.Networks
 {
     public class ApexNetwork
     {
         public const string ChainName = "Apex";
-
-        public const string MainNetworkName = "ApexMain";
-        public const string TestNetworkName = "ApexTest";
-        public const string RegTestNetworkName = "ApexRegTest";
+        public const string MainNetworkName = ChainName + "Main";
+        public const string TestNetworkName = ChainName + "Test";
+        public const string RegTestNetworkName = ChainName + "RegTest";
 
         public static Network Main => Network.GetNetwork(MainNetworkName) ?? Network.Register(new ApexMain());
 
@@ -18,7 +16,7 @@ namespace Stratis.Networks.Apex
 
         public static Network RegTest => Network.GetNetwork(RegTestNetworkName) ?? Network.Register(new ApexRegTest());
 
-        public static Block CreateApexGenesisBlock(ConsensusFactory consensusFactory, uint nTime, uint nNonce, uint nBits, int nVersion, Money genesisReward)
+        public static Block CreateGenesisBlock(ConsensusFactory consensusFactory, uint nTime, uint nNonce, uint nBits, int nVersion, Money genesisReward)
         {
             string pszTimestamp = "https://www.coindesk.com/apple-co-founder-backs-dorsey-bitcoin-become-webs-currency/";
 
@@ -46,15 +44,6 @@ namespace Stratis.Networks.Apex
             genesis.Header.HashPrevBlock = uint256.Zero;
             genesis.UpdateMerkleRoot();
             return genesis;
-        }
-
-        private static void Assert(bool condition)
-        {
-            // TODO: use Guard when this moves to the FN.
-            if (!condition)
-            {
-                throw new InvalidOperationException("Invalid network");
-            }
         }
     }
 }

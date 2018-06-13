@@ -26,15 +26,13 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.FederationGatewayD"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.Bitcoin.Features.GeneralPurposeWallet", "Stratis.Bitcoin.Features.GeneralPurposeWallet\Stratis.Bitcoin.Features.GeneralPurposeWallet.csproj", "{A1540310-B5B0-4A78-8017-22204B46B7AA}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.Sidechains.Features.BlockchainGeneration", "Stratis.Sidechains.Features.BlockchainGeneration\Stratis.Sidechains.Features.BlockchainGeneration.csproj", "{3DEB5772-3918-483E-8B6B-7BDD9AA6B6B9}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.FederatedSidechains.Initialisation", "Stratis.FederatedSidechains.Initialisation\Stratis.FederatedSidechains.Initialisation.csproj", "{3526B5DB-8E08-445F-9DCE-65566491D94F}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.FederatedSidechains.Initialisation.Tests", "Stratis.FederatedSidechains.Initialisation.Tests\Stratis.FederatedSidechains.Initialisation.Tests.csproj", "{3D106928-3A8E-4EB1-9F9A-45856DBAA16B}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.SidechainD", "Stratis.SidechainD\Stratis.SidechainD.csproj", "{C3FF2EF8-50B6-43D8-AC78-BCFEBF7DE394}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.Networks.Apex", "Stratis.Networks.Apex\Stratis.Networks.Apex.csproj", "{E28F1D74-D3D3-4BF0-A06F-12BACC3C662C}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.Sidechains.Networks", "Stratis.Sidechains.Networks\Stratis.Sidechains.Networks.csproj", "{E28F1D74-D3D3-4BF0-A06F-12BACC3C662C}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -78,10 +76,6 @@ Global
 		{A1540310-B5B0-4A78-8017-22204B46B7AA}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A1540310-B5B0-4A78-8017-22204B46B7AA}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A1540310-B5B0-4A78-8017-22204B46B7AA}.Release|Any CPU.Build.0 = Release|Any CPU
-		{3DEB5772-3918-483E-8B6B-7BDD9AA6B6B9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{3DEB5772-3918-483E-8B6B-7BDD9AA6B6B9}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{3DEB5772-3918-483E-8B6B-7BDD9AA6B6B9}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{3DEB5772-3918-483E-8B6B-7BDD9AA6B6B9}.Release|Any CPU.Build.0 = Release|Any CPU
 		{3526B5DB-8E08-445F-9DCE-65566491D94F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{3526B5DB-8E08-445F-9DCE-65566491D94F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{3526B5DB-8E08-445F-9DCE-65566491D94F}.Release|Any CPU.ActiveCfg = Release|Any CPU

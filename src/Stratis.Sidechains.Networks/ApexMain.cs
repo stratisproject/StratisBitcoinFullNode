@@ -3,7 +3,7 @@ using NBitcoin;
 using NBitcoin.Networks;
 using NBitcoin.Protocol;
 
-namespace Stratis.Networks.Apex
+namespace Stratis.Sidechains.Networks
 {
     public class ApexMain : StratisMain
     {
@@ -39,7 +39,7 @@ namespace Stratis.Networks.Apex
             this.GenesisVersion = 1;
             this.GenesisReward = Money.Coins(50m);
 
-            this.Genesis = ApexNetwork.CreateApexGenesisBlock(this.Consensus.ConsensusFactory, this.GenesisTime, this.GenesisNonce, this.Consensus.PowLimit, this.GenesisVersion, this.GenesisReward);
+            this.Genesis = ApexNetwork.CreateGenesisBlock(this.Consensus.ConsensusFactory, this.GenesisTime, this.GenesisNonce, this.Consensus.PowLimit, this.GenesisVersion, this.GenesisReward);
             this.Consensus.HashGenesisBlock = this.Genesis.GetHash();
             Assert(this.Consensus.HashGenesisBlock.ToString() == "000009a6434326a4851f0e95285351839c287182bd2b62ca8765ce30007605e1");
             Assert(this.Genesis.Header.HashMerkleRoot == uint256.Parse("070b7da316f93439d05240db30a9ca4f6019d550e0b6af9a8ac1b075726c9403"));

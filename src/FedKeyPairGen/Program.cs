@@ -2,7 +2,7 @@
 using System.Linq;
 using NBitcoin;
 using NBitcoin.DataEncoders;
-using Stratis.Networks.Apex;
+using Stratis.Sidechains.Networks;
 
 namespace FedKeyPairGen
 {

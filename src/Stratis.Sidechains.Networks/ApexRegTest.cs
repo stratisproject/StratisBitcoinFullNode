@@ -2,13 +2,12 @@
 using NBitcoin;
 using NBitcoin.Protocol;
 
-namespace Stratis.Networks.Apex
+namespace Stratis.Sidechains.Networks
 {
     public class ApexRegTest : ApexMain
     {
         public ApexRegTest()
         {
-
             this.Name = ApexNetwork.RegTestNetworkName;
             this.RootFolderName = ApexNetwork.ChainName.ToLowerInvariant();
             this.DefaultConfigFilename = $"{ApexNetwork.ChainName.ToLowerInvariant()}.conf";
@@ -42,7 +41,7 @@ namespace Stratis.Networks.Apex
             this.GenesisVersion = 1;
             this.GenesisReward = Money.Coins(50m);
 
-            this.Genesis = ApexNetwork.CreateApexGenesisBlock(this.Consensus.ConsensusFactory, this.GenesisTime, this.GenesisNonce, this.Consensus.PowLimit, this.GenesisVersion, this.GenesisReward);
+            this.Genesis = ApexNetwork.CreateGenesisBlock(this.Consensus.ConsensusFactory, this.GenesisTime, this.GenesisNonce, this.Consensus.PowLimit, this.GenesisVersion, this.GenesisReward);
             this.Consensus.HashGenesisBlock = this.Genesis.GetHash();
             Assert(this.Consensus.HashGenesisBlock.ToString() == "0688f8440feed473792edc56e365bb7ab20ae2d4e2010cfb8af4ccadaa53e611");
             Assert(this.Genesis.Header.HashMerkleRoot == uint256.Parse("a835d145c6011d3731b0ab5a8f2108f635a5197ccd2e69b74cac1dfa9007db4b"));

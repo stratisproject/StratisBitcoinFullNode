@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using NBitcoin;
-using Stratis.Sidechains.Features.BlockchainGeneration;
+using Stratis.Sidechains.Networks;
 
 namespace Stratis.FederatedPeg
 {
@@ -32,12 +32,12 @@ namespace Stratis.FederatedPeg
         /// <returns></returns>
         public static Network ToCounterChainNetwork(this Network network)
         {
-            if (network == Network.StratisMain) return SidechainNetwork.SidechainMain;
-            if (network == Network.StratisTest) return SidechainNetwork.SidechainTest;
-            if (network == Network.StratisRegTest) return SidechainNetwork.SidechainRegTest;
-            if (network == SidechainNetwork.SidechainMain) return Network.StratisMain;
-            if (network == SidechainNetwork.SidechainTest) return Network.StratisTest;
-            if (network == SidechainNetwork.SidechainRegTest) return Network.StratisRegTest;
+            if (network == Network.StratisMain) return ApexNetwork.Main;
+            if (network == Network.StratisTest) return ApexNetwork.Test;
+            if (network == Network.StratisRegTest) return ApexNetwork.RegTest;
+            if (network == ApexNetwork.Main) return Network.StratisMain;
+            if (network == ApexNetwork.Test) return Network.StratisTest;
+            if (network == ApexNetwork.RegTest) return Network.StratisRegTest;
             throw new System.ArgumentException("Unknown network.");
         }
     }

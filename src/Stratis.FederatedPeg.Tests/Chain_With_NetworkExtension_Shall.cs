@@ -1,6 +1,6 @@
 ﻿using FluentAssertions;
 using NBitcoin;
-using Stratis.Sidechains.Features.BlockchainGeneration;
+using Stratis.Sidechains.Networks;
 using Xunit;
 
 namespace Stratis.FederatedPeg.Tests
@@ -34,19 +34,19 @@ namespace Stratis.FederatedPeg.Tests
         public void correctly_identify_sidechain()
         {
             //reg test	
-            var network = SidechainNetwork.SidechainRegTest;
+            var network = ApexNetwork.RegTest;
             var chain = network.ToChain();
             chain.Should().Be(Chain.Sidechain);
             chain.Should().NotBe(Chain.Mainchain);
 
             //testnet	
-            network = SidechainNetwork.SidechainTest;
+            network = ApexNetwork.Test;
             chain = network.ToChain();
             chain.Should().Be(Chain.Sidechain);
             chain.Should().NotBe(Chain.Mainchain);
 
             //mainnet	
-            network = SidechainNetwork.SidechainMain;
+            network = ApexNetwork.Main;
             chain = network.ToChain();
             chain.Should().Be(Chain.Sidechain);
             chain.Should().NotBe(Chain.Mainchain);

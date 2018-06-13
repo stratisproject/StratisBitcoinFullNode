@@ -31,8 +31,7 @@ using GpTransactionBuildContext = Stratis.Bitcoin.Features.GeneralPurposeWallet.
 using WtTransactionBuildContext = Stratis.Bitcoin.Features.Wallet.TransactionBuildContext;
 using System;
 using Stratis.Bitcoin.IntegrationTests.Common;
-using Stratis.Networks.Apex;
-using Stratis.Sidechains.Features.BlockchainGeneration;
+using Stratis.Sidechains.Networks;
 
 //todo: this is pre-refactoring code
 //todo: ensure no duplicate or fake withdrawal or deposit transactions are possible (current work underway)
@@ -57,7 +56,7 @@ namespace Stratis.FederatedPeg.IntegrationTests
     public class SidechainFunder_Can
     {
         private List<FedMember> members;
-        private readonly Network sidechainNetwork = SidechainNetwork.SidechainTest;
+        private readonly Network sidechainNetwork = ApexNetwork.Test;
         private readonly Network mainchainNetwork = Network.StratisRegTest;
 
         public void CreateMembers()
@@ -315,7 +314,7 @@ namespace Stratis.FederatedPeg.IntegrationTests
 
                 // Create a wallet and add our multi-sig.
                 await ApiCalls.CreateGeneralPurposeWallet(sidechainNode_Member1_Wallet.GetApiPort(), "multisig_wallet", "password");
-                var account_member1 = fedFolder.ImportPrivateKeyToWallet(sidechainNode_Member1_Wallet, "multisig_wallet", "password", "member1", "pass1", 2, 3, SidechainNetwork.SidechainRegTest);
+                var account_member1 = fedFolder.ImportPrivateKeyToWallet(sidechainNode_Member1_Wallet, "multisig_wallet", "password", "member1", "pass1", 2, 3, ApexNetwork.RegTest);
 
                 // UCInit:  The actor navigates to an initialize sidechain feature. He enters the multi-sig
                 //          quorum parameters (eg 12 of 20) and enters the folder location (federation folder)
@@ -478,7 +477,7 @@ namespace Stratis.FederatedPeg.IntegrationTests
 
                 // First we'll need to mine more blocks on the multi-sig so we can spend mature funds.
                 var powMinting_Sidechain = sidechainNode_Member1_Wallet.FullNode.NodeService<IPowMining>();
-                bitcoinAddress = new BitcoinPubKeyAddress(addressSidechain, SidechainNetwork.SidechainRegTest);
+                bitcoinAddress = new BitcoinPubKeyAddress(addressSidechain, ApexNetwork.RegTest);
                 powMinting_Sidechain.GenerateBlocks(new ReserveScript(bitcoinAddress.ScriptPubKey), 50UL, int.MaxValue);
 
                 await IntegrationTestUtils.WaitLoop(() => IntegrationTestUtils.AreNodesSynced(sidechainNode_FunderRole, sidechainNode_Member1_Wallet));
@@ -743,15 +742,15 @@ namespace Stratis.FederatedPeg.IntegrationTests
                 //create wallets on the sidechains
                 //sidechain_FederationGateway1
                 await ApiCalls.CreateGeneralPurposeWallet(sidechain_FederationGateway1.GetApiPort(), "multisig_wallet", "password");
-                var account_fed_member1_sidechain = fedFolder.ImportPrivateKeyToWallet(sidechain_FederationGateway1, "multisig_wallet", "password", "member1", "pass1", 2, 3, SidechainNetwork.SidechainRegTest);
+                var account_fed_member1_sidechain = fedFolder.ImportPrivateKeyToWallet(sidechain_FederationGateway1, "multisig_wallet", "password", "member1", "pass1", 2, 3, ApexNetwork.RegTest);
 
                 //sidechain_FederationGateway2
                 await ApiCalls.CreateGeneralPurposeWallet(sidechain_FederationGateway2.GetApiPort(), "multisig_wallet", "password");
-                var account_fed_member2_sidechain = fedFolder.ImportPrivateKeyToWallet(sidechain_FederationGateway2, "multisig_wallet", "password", "member2", "pass2", 2, 3, SidechainNetwork.SidechainRegTest);
+                var account_fed_member2_sidechain = fedFolder.ImportPrivateKeyToWallet(sidechain_FederationGateway2, "multisig_wallet", "password", "member2", "pass2", 2, 3, ApexNetwork.RegTest);
 
                 //sidechain_FederationGateway3
                 await ApiCalls.CreateGeneralPurposeWallet(sidechain_FederationGateway3.GetApiPort(), "multisig_wallet", "password");
-                var account_fed_member3_sidechain = fedFolder.ImportPrivateKeyToWallet(sidechain_FederationGateway3, "multisig_wallet", "password", "member3", "pass3", 2, 3, SidechainNetwork.SidechainRegTest);
+                var account_fed_member3_sidechain = fedFolder.ImportPrivateKeyToWallet(sidechain_FederationGateway3, "multisig_wallet", "password", "member3", "pass3", 2, 3, ApexNetwork.RegTest);
 
                 await Task.Delay(5000);
 
@@ -767,7 +766,7 @@ namespace Stratis.FederatedPeg.IntegrationTests
                 await IntegrationTestUtils.WaitLoop(() => IntegrationTestUtils.IsGeneralWalletSyncedToHeight(sidechain_FederationGateway2, 53));
                 await IntegrationTestUtils.WaitLoop(() => IntegrationTestUtils.IsGeneralWalletSyncedToHeight(sidechain_FederationGateway3, 53));
 
-                bitcoinAddress = new BitcoinPubKeyAddress(addressSidechain, SidechainNetwork.SidechainRegTest);
+                bitcoinAddress = new BitcoinPubKeyAddress(addressSidechain, ApexNetwork.RegTest);
                 powMinting_Sidechain.GenerateBlocks(new ReserveScript(bitcoinAddress.ScriptPubKey), 1UL, int.MaxValue);
 
                 await IntegrationTestUtils.WaitLoop(() => IntegrationTestUtils.AreNodesSynced(sidechain_FederationGateway1, sidechainNode_Member1_Wallet));
@@ -824,7 +823,7 @@ namespace Stratis.FederatedPeg.IntegrationTests
                 await IntegrationTestUtils.WaitLoop(() => IntegrationTestUtils.IsGeneralWalletSyncedToHeight(sidechain_FederationGateway2, 54));
                 await IntegrationTestUtils.WaitLoop(() => IntegrationTestUtils.IsGeneralWalletSyncedToHeight(sidechain_FederationGateway3, 54));
 
-                bitcoinAddress = new BitcoinPubKeyAddress(addressSidechain, SidechainNetwork.SidechainRegTest);
+                bitcoinAddress = new BitcoinPubKeyAddress(addressSidechain, ApexNetwork.RegTest);
                 powMinting_Sidechain.GenerateBlocks(new ReserveScript(bitcoinAddress.ScriptPubKey), 1UL, int.MaxValue);
 
                 await IntegrationTestUtils.WaitLoop(() => IntegrationTestUtils.AreNodesSynced(sidechain_FederationGateway1, sidechainNode_Member1_Wallet));
@@ -863,7 +862,7 @@ namespace Stratis.FederatedPeg.IntegrationTests
 
                 transactionBuildContext = new WtTransactionBuildContext(
                     sendingWalletAccountReference,
-                    new List<WtRecipient>() { new WtRecipient() { Amount = new Money(2500, MoneyUnit.BTC), ScriptPubKey = BitcoinAddress.Create(multiSigAddress_Sidechain, SidechainNetwork.SidechainRegTest).ScriptPubKey } },
+                    new List<WtRecipient>() { new WtRecipient() { Amount = new Money(2500, MoneyUnit.BTC), ScriptPubKey = BitcoinAddress.Create(multiSigAddress_Sidechain, ApexNetwork.RegTest).ScriptPubKey } },
                     "1234", addressMainchain)
                 {
                     MinConfirmations = 1,
@@ -877,7 +876,7 @@ namespace Stratis.FederatedPeg.IntegrationTests
                 await IntegrationTestUtils.WaitLoop(() => IntegrationTestUtils.AreNodesSynced(sidechainNode_FunderRole, sidechainNode_Member1_Wallet));
 
                 //generate a block to include our transaction
-                bitcoinAddress = new BitcoinPubKeyAddress(addressSidechain, SidechainNetwork.SidechainRegTest);
+                bitcoinAddress = new BitcoinPubKeyAddress(addressSidechain, ApexNetwork.RegTest);
                 powMinting_Sidechain.GenerateBlocks(new ReserveScript(bitcoinAddress.ScriptPubKey), 1UL, int.MaxValue);
 
                 await IntegrationTestUtils.WaitLoop(() => IntegrationTestUtils.AreNodesSynced(sidechain_FederationGateway1, sidechainNode_Member1_Wallet));
@@ -960,7 +959,7 @@ namespace Stratis.FederatedPeg.IntegrationTests
                         .UseBlockNotification()
                         .UseApi()
                         .AddRPC();
-                }, SidechainNetwork.SidechainRegTest, agent: "MainchainFederationGateway3v2 ");
+                }, ApexNetwork.RegTest, agent: "MainchainFederationGateway3v2 ");
 
                 publickey = File.ReadAllText(Path.Combine(Directory.GetCurrentDirectory(), "Federations\\deposit_funds_to_sidechain\\member3\\PUBLIC_mainchain_member3.txt"));
                 mainchain_FederationGateway3v2.ConfigParameters.Add("federationfolder", Path.Combine(Directory.GetCurrentDirectory(), "Federations\\deposit_funds_to_sidechain"));

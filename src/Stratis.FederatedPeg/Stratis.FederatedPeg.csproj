@@ -17,7 +17,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Stratis.Sidechains.Features.BlockchainGeneration\Stratis.Sidechains.Features.BlockchainGeneration.csproj" />
+    <ProjectReference Include="..\Stratis.Sidechains.Networks\Stratis.Sidechains.Networks.csproj" />
   </ItemGroup>
 
 </Project>
