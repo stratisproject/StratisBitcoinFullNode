@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Security.Cryptography.X509Certificates;
-using System.Text;
 using System.Threading;
 using NBitcoin;
 using Stratis.Bitcoin.Utilities;
@@ -21,7 +19,7 @@ namespace Stratis.Bitcoin.BlockPulling2
         private Dictionary<uint256, AssignedDownload> AssignedDownloads;
 
         private CircularArray<long> BlockSizeSamples;
-        private Dictionary<int, PeerPerformanceSamples> PeerSamplesByPeerId;
+        private Dictionary<int, PeerPerformanceCounter> PeerPerformanceByPeerId;
 
         private ManualResetEventSlim processQueuesSignal;
         private object lockObject;
@@ -42,7 +40,7 @@ namespace Stratis.Bitcoin.BlockPulling2
 
         private int GetTotalSpeedOfAllPeersBytesPerSec()
         {
-            return this.PeerSamplesByPeerId.Sum(x => x.Value.GetSpeedBytesPerSecond());
+            return this.PeerPerformanceByPeerId.Sum(x => x.Value.SpeedBytesPerSecond);
         }
 
         public BlockPuller()
@@ -54,7 +52,7 @@ namespace Stratis.Bitcoin.BlockPulling2
             this.AssignedDownloads = new Dictionary<uint256, AssignedDownload>();
             this.BlockSizeSamples = new CircularArray<long>(1000);
 
-            this.PeerSamplesByPeerId = new Dictionary<int, PeerPerformanceSamples>();
+            this.PeerPerformanceByPeerId = new Dictionary<int, PeerPerformanceCounter>();
 
             this.processQueuesSignal = new ManualResetEventSlim(false);
             this.lockObject = new object();
@@ -135,9 +133,7 @@ namespace Stratis.Bitcoin.BlockPulling2
                 this.BlockSizeSamples.Add(block.BlockSize.Value, out long oldSample);
 
                 double deliveredInSeconds = (DateTime.UtcNow - assignedDownload.AssignedTime).TotalSeconds;
-                this.AddPeerSampleLocked(peerId, block.BlockSize.Value, deliveredInSeconds);
-
-                this.RecalculateQualityScoresLocked();
+                this.AddPeerSampleAndRecalculateQualityScoreLocked(peerId, block.BlockSize.Value, deliveredInSeconds);
 
                 this.RecalculateMaxBlocksBeingDownloadedLocked();
 
@@ -148,17 +144,32 @@ namespace Stratis.Bitcoin.BlockPulling2
                 callback(blockHash, block, peerId);
         }
 
-        private void AddPeerSampleLocked(int peerId, long blockSizeBytes, double delaySeconds)
+        private void AddPeerSampleAndRecalculateQualityScoreLocked(int peerId, long blockSizeBytes, double delaySeconds)
         {
-            PeerPerformanceSamples samples;
+            PeerPerformanceCounter performanceCounter;
 
-            if (!this.PeerSamplesByPeerId.TryGetValue(peerId, out samples))
+            if (!this.PeerPerformanceByPeerId.TryGetValue(peerId, out performanceCounter))
             {
-                samples = new PeerPerformanceSamples();
-                this.PeerSamplesByPeerId.Add(peerId, samples);
+                performanceCounter = new PeerPerformanceCounter();
+                this.PeerPerformanceByPeerId.Add(peerId, performanceCounter);
             }
 
-            samples.AddSample(blockSizeBytes, delaySeconds);
+            performanceCounter.AddSample(blockSizeBytes, delaySeconds);
+
+            // Now decide if we need to recalculate quality score for all peers or just for this one.
+            int bestSpeed = this.PeerPerformanceByPeerId.Max(x => x.Value.SpeedBytesPerSecond);
+
+            if (performanceCounter.SpeedBytesPerSecond != bestSpeed)
+            {
+                // This is not the best peer. Recalculate it only.
+                performanceCounter.RecalculateQualityScore(bestSpeed);
+            }
+            else
+            {
+                // This is the best peer. Recalculate quality score for everyone.
+                foreach (PeerPerformanceCounter peerPerformanceCounter in this.PeerPerformanceByPeerId.Values)
+                    peerPerformanceCounter.RecalculateQualityScore(bestSpeed);
+            }
         }
 
         private void RecalculateMaxBlocksBeingDownloadedLocked()
@@ -167,16 +178,6 @@ namespace Stratis.Bitcoin.BlockPulling2
 
             if (this.maxBlocksBeingDownloaded < 10)
                 this.maxBlocksBeingDownloaded = 10;
-        }
-
-        private void RecalculateQualityScoresLocked()
-        {
-            //TODO recalculate quality score
-            //recalculate quality score of the peer
-            //when we start recalculating QS check if we are the best peer. if not - update our QS only, otherwise our and everyone's.
-            //if we updated only ours - then check if we are the best peer again. if true - update everyone.
-
-
         }
 
         private void ReassignDownloadsLocked(int peerId)
@@ -206,47 +207,6 @@ namespace Stratis.Bitcoin.BlockPulling2
             public List<OnBlockDownloadedCallback> Callbacks;
 
             public int BlockHeight;
-        }
-
-        private class PeerPerformanceSamples
-        {
-            public double QualityScore;
-
-            public const double MinQualityScore = 0.01;
-            public const double SamplelessQualityScore = 0.3;
-            public const double MaxQualityScore = 1.0;
-
-            private CircularArray<SizeDelaySample> blockSizeDelaySecondsSamples;
-
-            public PeerPerformanceSamples()
-            {
-                this.blockSizeDelaySecondsSamples = new CircularArray<SizeDelaySample>(100);
-                this.QualityScore = SamplelessQualityScore;
-            }
-
-            public void AddSample(long blockSizeBytes, double delaySeconds)
-            {
-                this.blockSizeDelaySecondsSamples.Add(new SizeDelaySample()
-                {
-                    SizeBytes = blockSizeBytes,
-                    DelaySeconds = delaySeconds
-                }, out SizeDelaySample unused);
-            }
-
-            public int GetSpeedBytesPerSecond()
-            {
-                double avgSize = this.blockSizeDelaySecondsSamples.Average(x => x.SizeBytes);
-                double avgDelay = this.blockSizeDelaySecondsSamples.Average(x => x.DelaySeconds);
-
-                double speed = avgSize / avgDelay;
-                return (int)speed;
-            }
-
-            public struct SizeDelaySample
-            {
-                public long SizeBytes;
-                public double DelaySeconds;
-            }
         }
     }
 }
