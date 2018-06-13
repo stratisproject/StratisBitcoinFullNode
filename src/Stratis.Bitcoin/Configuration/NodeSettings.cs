@@ -332,8 +332,8 @@ namespace Stratis.Bitcoin.Configuration
             builder.AppendLine($"-help/--help              Show this help.");
             builder.AppendLine($"-conf=<Path>              Path to the configuration file. Defaults to {defaults.ConfigurationFile}.");
             builder.AppendLine($"-datadir=<Path>           Path to the data directory. Defaults to {defaults.DataDir}.");
-            builder.AppendLine($"-debug                    Set 'Debug' logging level. Specify what to log via e.g. '-debug=Stratis.Bitcoin.Miner'.");
-            builder.AppendLine($"-loglevel                 Direct control over the logging level: '-loglevel=trace/debug/info/warn/error/fatal'.");
+            builder.AppendLine($"-debug[=<string>]         Set 'Debug' logging level. Specify what to log via e.g. '-debug=Stratis.Bitcoin.Miner'.");
+            builder.AppendLine($"-loglevel=<string>        Direct control over the logging level: '-loglevel=trace/debug/info/warn/error/fatal'.");
 
             // Can be overridden in configuration file.
             builder.AppendLine($"-testnet                  Use the testnet chain.");
