@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using FluentAssertions;
 using Moq;
 using NBitcoin;
@@ -25,6 +26,8 @@ namespace Stratis.Bitcoin.Tests.Consensus
             public Mock<IFinalizedBlockHeight> FinalizedBlockMock = new Mock<IFinalizedBlockHeight>();
             public ConsensusSettings ConsensusSettings = new ConsensusSettings(new NodeSettings(Network.RegTest));
 
+            private static int nonceValue = 0;
+
             internal ChainedHeaderTree ChainedHeaderTree;
 
             internal ChainedHeaderTree CreateChainedHeaderTree()
@@ -43,16 +46,18 @@ namespace Stratis.Bitcoin.Tests.Consensus
             public ChainedHeader ExtendAChain(int count, ChainedHeader chainedHeader = null, int difficultyAdjustmentDivisor = 1)
             {
                 if (difficultyAdjustmentDivisor == 0) throw new ArgumentException("Divisor cannot be 0");
+
                 ChainedHeader previousHeader = chainedHeader ?? new ChainedHeader(this.Network.GetGenesis().Header, this.Network.GenesisHash, 0);
 
                 for (int i = 0; i < count; i++)
                 {
+                    Interlocked.Increment(ref nonceValue);
                     BlockHeader header = this.Network.Consensus.ConsensusFactory.CreateBlockHeader();
                     header.HashPrevBlock = previousHeader.HashBlock;
                     header.Bits = difficultyAdjustmentDivisor == 1 
                                         ? previousHeader.Header.Bits 
                                         : this.ChangeDifficulty(previousHeader, difficultyAdjustmentDivisor);
-                    header.Nonce = (uint)new Random().Next(1, 100000);
+                    header.Nonce = (uint) nonceValue;
                     var newHeader = new ChainedHeader(header, header.GetHash(), previousHeader);
                     Block block = this.Network.Consensus.ConsensusFactory.CreateBlock();
                     block.GetSerializedSize();
@@ -278,7 +283,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
             ChainedHeader chainedHeaderTo = connectNewHeadersResult.DownloadTo;
             chainedHeaderTo.HashBlock.Should().Be(chainATip.HashBlock);
 
-            // Set chain A tip as a consensus tip
+            // Set chain A tip as a consensus tip.
             cht.ConsensusTipChanged(chainATip);
 
             // Chain B is presented by peer 2. DownloadTo should be not set, as chain
