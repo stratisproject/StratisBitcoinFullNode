@@ -83,6 +83,12 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
             this.crossChainTransactionMonitor.Initialize(federationGatewaySettings);
             this.monitorChainSessionManager.Initialize();
 
+            // Connect the node to the other federation members.
+            foreach (var federationMemberIp in federationGatewaySettings.FederationNodeIps)
+            {
+                this.connectionManager.AddNodeAddress(federationMemberIp);
+            }
+            
             var networkPeerConnectionParameters = this.connectionManager.Parameters;
             networkPeerConnectionParameters.TemplateBehaviors.Add(new PartialTransactionsBehavior(this.loggerFactory, this.crossChainTransactionMonitor, this.generalPurposeWalletManager, this.counterChainSessionManager, this.network, this.federationGatewaySettings ));
         }

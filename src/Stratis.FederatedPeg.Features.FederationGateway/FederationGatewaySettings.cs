@@ -6,6 +6,7 @@ using NBitcoin;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Utilities;
+using Stratis.Bitcoin.Utilities.Extensions;
 
 namespace Stratis.FederatedPeg.Features.FederationGateway
 {
@@ -32,22 +33,18 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
             this.MultiSigM = configReader.GetOrDefault("multisigM", payToMultisigScriptParams.SignatureCount);
             this.MultiSigN = configReader.GetOrDefault("multisigN", payToMultisigScriptParams.PubKeys.Length);
 
-            var connectionManagerSettings = new ConnectionManagerSettings(nodeSettings);
-            this.MemberName =
-                configReader.GetOrDefault("membername", connectionManagerSettings.ExternalEndpoint.ToString());
+            this.MemberName = configReader.GetOrDefault("membername", "unspecified");
 
             this.MultiSigWalletName = configReader.GetOrDefault("multisigwalletname", "multisig_wallet");
             this.PublicKey = configReader.GetOrDefault<string>("publickey", null);
             this.FederationFolder = configReader.GetOrDefault<string>("federationfolder", null);
             this.MemberPrivateFolder = configReader.GetOrDefault<string>("memberprivatefolder", null);
             this.CounterChainApiPort = configReader.GetOrDefault("counterchainapiport", 0);
-
-            this.FederationNodeIPs = configReader.GetOrDefault<string>("federationips", null)?
-                .Split(',').Select(IPAddress.Parse)
-                .Where(ip => ip.ToString() != connectionManagerSettings.ExternalEndpoint.Address.ToString());
+           
+            this.FederationNodeIps = configReader.GetOrDefault<string>("federationips", null)?.Split(',').Select(a => a.ToIPEndPoint(nodeSettings.Network.DefaultPort));
         }
 
-        public IEnumerable<IPAddress> FederationNodeIPs { get; set; }
+        public IEnumerable<IPEndPoint> FederationNodeIps { get; set; }
 
         /// <summary>
         /// The MemberName is used to distiguish between federation gateways in the debug logs.
