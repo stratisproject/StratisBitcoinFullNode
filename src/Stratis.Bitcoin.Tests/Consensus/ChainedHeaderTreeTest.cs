@@ -65,11 +65,10 @@ namespace Stratis.Bitcoin.Tests.Consensus
                                         ? previousHeader.Header.Bits 
                                         : this.ChangeDifficulty(previousHeader, difficultyAdjustmentDivisor);
                     header.Nonce = (uint)new Random().Next(1, 100000);
-                    var newHeader = new ChainedHeader(header, header.GetHash(), previousHeader)
-                    {
-                        Block = Block.Parse(TestBlockHex, Network.StratisTest)
-                    };
-
+                    var newHeader = new ChainedHeader(header, header.GetHash(), previousHeader);
+                    Block block = this.Network.Consensus.ConsensusFactory.CreateBlock();
+                    block.GetSerializedSize();
+                    newHeader.Block = block;
                     previousHeader = newHeader;
                 }
 
