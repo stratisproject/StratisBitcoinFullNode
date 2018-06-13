@@ -1,6 +1,7 @@
 ﻿using System.IO;
 using NBitcoin;
 using Stratis.Bitcoin.Configuration;
+using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Tests.Common;
 using Xunit;
 
@@ -21,9 +22,9 @@ namespace Stratis.Bitcoin.Tests.NodeConfiguration
             // Arrange
             var nodeSettings = new NodeSettings(args:new[] { "-agentprefix=abc" });
             // Act
-            string result = nodeSettings.Agent;
+            string result = nodeSettings.ConfigReader.GetOrDefault("agentprefix", string.Empty);
             // Assert
-            Assert.Equal("abc-StratisBitcoin", result);
+            Assert.Equal("abc", result);
         }
 
         /// <summary>
@@ -38,9 +39,9 @@ namespace Stratis.Bitcoin.Tests.NodeConfiguration
             File.WriteAllText(configFile, "agentprefix=def");
             var nodeSettings = new NodeSettings(args: new[] { $"-datadir={dataDir}", $"-conf=config.txt" });
             // Act
-            string result = nodeSettings.Agent;
+            string result = nodeSettings.ConfigReader.GetOrDefault("agentprefix", string.Empty);
             // Assert
-            Assert.Equal("def-StratisBitcoin", result);
+            Assert.Equal("def", result);
         }
 
         /// <summary>
@@ -55,9 +56,9 @@ namespace Stratis.Bitcoin.Tests.NodeConfiguration
             File.WriteAllText(configFile, "agentprefix=def");
             var nodeSettings = new NodeSettings(args: new[] { $"-datadir={dataDir}", $"-conf=config.txt", "-agentprefix=abc" });
             // Act
-            string result = nodeSettings.Agent;
+            string result = nodeSettings.ConfigReader.GetOrDefault("agentprefix", string.Empty);
             // Assert
-            Assert.Equal("abc-StratisBitcoin", result);
+            Assert.Equal("abc", result);
         }
 
         /// <summary>
@@ -72,9 +73,9 @@ namespace Stratis.Bitcoin.Tests.NodeConfiguration
             File.WriteAllText(configFile, "");
             var nodeSettings = new NodeSettings(args: new[] { $"-datadir={dataDir}", $"-conf=config.txt" });
             // Act
-            string result = nodeSettings.Agent;
+            string result = nodeSettings.ConfigReader.GetOrDefault("agentprefix", string.Empty);
             // Assert
-            Assert.Equal("StratisBitcoin", result);
+            Assert.Equal(string.Empty, result);
         }
 
 

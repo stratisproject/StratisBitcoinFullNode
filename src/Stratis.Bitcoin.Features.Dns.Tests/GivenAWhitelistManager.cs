@@ -170,8 +170,7 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
             DnsSettings dnsSettings = new Mock<DnsSettings>().Object;
             dnsSettings.DnsPeerBlacklistThresholdInSeconds = inactiveTimePeriod;
             dnsSettings.DnsHostName = "stratis.test.com";
-            var connectionSettings = new ConnectionManagerSettings();
-            connectionSettings.Load(nodeSettings);
+            ConnectionManagerSettings connectionSettings = new ConnectionManagerSettings(nodeSettings);
 
             var whitelistManager = new WhitelistManager(dateTimeProvider, loggerFactory, peerAddressManager, mockDnsServer.Object, connectionSettings, dnsSettings);
 
@@ -275,8 +274,7 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
             dnsSettings.DnsPeerBlacklistThresholdInSeconds = inactiveTimePeriod;
             dnsSettings.DnsHostName = "stratis.test.com";
             dnsSettings.DnsFullNode = false;
-            var connectionSettings = new ConnectionManagerSettings();
-            connectionSettings.Load(nodeSettings);
+            ConnectionManagerSettings connectionSettings = new ConnectionManagerSettings(nodeSettings);
 
             var whitelistManager = new WhitelistManager(dateTimeProvider, loggerFactory, peerAddressManager, mockDnsServer.Object, connectionSettings, dnsSettings);
 
@@ -363,8 +361,7 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
             dnsSettings.DnsFullNode = true;
             dnsSettings.DnsPeerBlacklistThresholdInSeconds = inactiveTimePeriod;
             dnsSettings.DnsHostName = "stratis.test.com";
-            var connectionSettings = new ConnectionManagerSettings();
-            connectionSettings.Load(nodeSettings);
+            ConnectionManagerSettings connectionSettings = new ConnectionManagerSettings(nodeSettings);
 
             var whitelistManager = new WhitelistManager(dateTimeProvider, loggerFactory, peerAddressManager, mockDnsServer.Object, connectionSettings, dnsSettings);
 
@@ -455,8 +452,7 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
             DnsSettings dnsSettings = new Mock<DnsSettings>().Object;
             dnsSettings.DnsPeerBlacklistThresholdInSeconds = inactiveTimePeriod;
             dnsSettings.DnsHostName = "stratis.test.com";
-            var connectionSettings = new ConnectionManagerSettings();
-            connectionSettings.Load(nodeSettings);
+            ConnectionManagerSettings connectionSettings = new ConnectionManagerSettings(nodeSettings);
 
             var whitelistManager = new WhitelistManager(dateTimeProvider, loggerFactory, peerAddressManager, mockDnsServer.Object, connectionSettings, dnsSettings);
 
