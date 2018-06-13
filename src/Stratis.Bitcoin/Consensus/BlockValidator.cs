@@ -31,7 +31,14 @@ namespace Stratis.Bitcoin.Consensus
         /// Partial validation of a block, this will not changes any state in the consensus store when validating a block.
         /// </summary>
         /// <param name="chainedHeaderBlock">The block to validate.</param>
-        /// <param name="onPartialValidationCompletedCallback">A callback that is called when validation is complete.</param>
-        void StartPartialValidation(ChainedHeaderBlock chainedHeaderBlock, Action<ChainedHeaderBlock, bool> onPartialValidationCompletedCallback);
+        /// <param name="onValidationCompletedCallback">A callback that is called when validation is complete.</param>
+        void StartPartialValidation(ChainedHeaderBlock chainedHeaderBlock, OnValidationCompletedCallback onValidationCompletedCallback);
     }
+
+    /// <summary>
+    /// A callback that is invoked when <see cref="IBlockValidator.StartPartialValidation"/> completes to validate a block.
+    /// </summary>
+    /// <param name="chainedHeaderBlock">The block and its chained header.</param>
+    /// <param name="success">An indicator weather validation succeeded.</param>
+    public delegate void OnValidationCompletedCallback(ChainedHeaderBlock chainedHeaderBlock, bool success);
 }

@@ -132,6 +132,7 @@ namespace Stratis.Bitcoin.Consensus
 
         /// <summary>
         /// Get the block and its chained header if it exists.
+        /// If the header is not in the tree returns <c>null</c>, the <see cref="ChainedHeaderBlock.Block"/> may also be null.
         /// </summary>
         /// <returns>The block and its chained header.</returns>
         ChainedHeaderBlock GetChainedHeaderBlock(uint256 blockHash);
@@ -240,7 +241,7 @@ namespace Stratis.Bitcoin.Consensus
         // <inheritdoc />
         public ChainedHeaderBlock GetChainedHeaderBlock(uint256 blockHash)
         {
-            this.logger.LogTrace("({0}:{1})", nameof(blockHash), blockHash);
+            this.logger.LogTrace("({0}:'{1}')", nameof(blockHash), blockHash);
 
             ChainedHeaderBlock chainedHeaderBlock = null;
             if (this.chainedHeadersByHash.TryGetValue(blockHash, out ChainedHeader chainedHeader))

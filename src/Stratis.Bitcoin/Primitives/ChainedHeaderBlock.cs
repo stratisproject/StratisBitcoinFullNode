@@ -17,7 +17,7 @@ namespace Stratis.Bitcoin.Primitives
         /// <summary>
         /// Creates instance of <see cref="ChainedHeaderBlock" />.
         /// </summary>
-        /// <param name="block">The block, the block can be <c>null</c>.</param>
+        /// <param name="block">The block can be <c>null</c>.</param>
         /// <param name="chainedHeader">Chained header of the <paramref name="block"/>.</param>
         public ChainedHeaderBlock(Block block, ChainedHeader chainedHeader)
         {

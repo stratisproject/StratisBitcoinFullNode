@@ -537,6 +537,31 @@ namespace NBitcoin
         }
 
         /// <summary>
+        /// Convert the current and given chained headers  on the same chain to a list of consecutive items. 
+        /// </summary>
+        /// <param name="stopHeader">The header at the bottom.</param>
+        /// <returns>List of consecutive items.</returns>
+        /// <exception cref="InvalidOperationException">Then the items are not on the same chain.</exception>
+        public List<ChainedHeader> ToConsecutiveList(ChainedHeader stopHeader)
+        {
+            if (stopHeader == null)
+                throw new ArgumentNullException("block");
+
+            var downloadList = new List<ChainedHeader>();
+            ChainedHeader current = this;
+            while (current != stopHeader)
+            {
+                if (current == null)
+                    throw new InvalidOperationException("Headers not on the same chain.");
+
+                downloadList.Add(current);
+                current = current.Previous;
+            }
+
+            return downloadList;
+        }
+
+        /// <summary>
         /// Finds the ancestor of this entry in the chain that matches the block height given.
         /// <remarks>Note: This uses a skiplist to improve list navigation performance.</remarks>
         /// </summary>
