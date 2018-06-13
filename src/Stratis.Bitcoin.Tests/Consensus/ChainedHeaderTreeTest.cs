@@ -26,7 +26,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
             public Mock<IFinalizedBlockHeight> FinalizedBlockMock = new Mock<IFinalizedBlockHeight>();
             public ConsensusSettings ConsensusSettings = new ConsensusSettings(new NodeSettings(Network.RegTest));
 
-            private static int nonceValue = 0;
+            private static int nonceValue;
 
             internal ChainedHeaderTree ChainedHeaderTree;
 
