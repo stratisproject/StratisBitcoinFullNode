@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
+using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.BlockPulling;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.P2P.Peer;
@@ -53,6 +54,7 @@ namespace Stratis.Bitcoin.BlockPulling2
         private int maxBlocksBeingDownloaded;
 
         private readonly IInitialBlockDownloadState ibdState;
+        private readonly ChainState chainState;
         private readonly ILogger logger;
 
         private Task assignerLoop;
@@ -63,7 +65,7 @@ namespace Stratis.Bitcoin.BlockPulling2
             return this.PeerPerformanceByPeerId.Sum(x => x.Value.SpeedBytesPerSecond);
         }
 
-        public BlockPuller(OnBlockDownloadedCallback callback, IInitialBlockDownloadState ibdState, LoggerFactory loggerFactory)
+        public BlockPuller(OnBlockDownloadedCallback callback, IInitialBlockDownloadState ibdState, ChainState chainState, LoggerFactory loggerFactory)
         {
             this.peersToTips = new Dictionary<int, ChainedHeader>();
             this.reassignedJobsQueue = new Queue<DownloadJob>();
@@ -87,6 +89,7 @@ namespace Stratis.Bitcoin.BlockPulling2
 
             this.OnDownloadedCallback = callback;
             this.ibdState = ibdState;
+            this.chainState = chainState;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
         }
 
@@ -180,11 +183,8 @@ namespace Stratis.Bitcoin.BlockPulling2
                 {
                     return;
                 }
-
-                lock (this.lockObject)
-                {
-                    this.CheckStallingLocked();
-                }
+                
+                this.CheckStalling();
             }
         }
 
@@ -289,7 +289,7 @@ namespace Stratis.Bitcoin.BlockPulling2
             var failedHashes = new List<uint256>();
 
 
-            //TODO
+            // TODO
             // TODO we will need HeadersByHash here
 
 
@@ -299,9 +299,50 @@ namespace Stratis.Bitcoin.BlockPulling2
             return newAssignments;
         }
 
-        private void CheckStallingLocked()
+        private void CheckStalling()
         {
-            //TODO
+            int lastImportantHeight = this.chainState.ConsensusTip.Height + 10; //TODO move 10 to constant
+
+            int maxSecondsToDeliverBlock = 5; // TODO Move to constant
+
+            var toReassign = new Dictionary<int, uint256>();
+
+            lock (this.lockObject)
+            {
+                bool reassigned = false;
+
+                do
+                {
+                    KeyValuePair<uint256, AssignedDownload> expiredImportantDownload = this.AssignedDownloads.FirstOrDefault(x =>
+                        x.Value.BlockHeight <= lastImportantHeight && (DateTime.UtcNow - x.Value.AssignedTime).TotalSeconds >= maxSecondsToDeliverBlock);
+                    
+                    if (!expiredImportantDownload.Equals(default(KeyValuePair<uint256, AssignedDownload>)))
+                    {
+                        // Peer failed to deliver important block. Reassign all his jobs.
+                        List<KeyValuePair<uint256, AssignedDownload>> downloadsToReassign = this.AssignedDownloads.Where(x => x.Value.PeerId == expiredImportantDownload.Value.PeerId).ToList();
+                        
+                        foreach (KeyValuePair<uint256, AssignedDownload> peerAssignment in downloadsToReassign)
+                        {
+                            this.AssignedDownloads.Remove(peerAssignment.Key);
+                            toReassign.Add(peerAssignment.Value.JobId, peerAssignment.Key);
+                        }
+
+                        int reassignedCount = downloadsToReassign.Count;
+
+                        int tenPercentOfSamples = 10; // 10% of MaxSamples. TODO: calculate it  //TODO Test it and find best samples
+
+                        int penalizeTimes = (reassignedCount < tenPercentOfSamples) ? reassignedCount : tenPercentOfSamples;
+
+                        for (int i = 0; i < penalizeTimes; ++i)
+                            this.AddPeerSampleAndRecalculateQualityScoreLocked(downloadsToReassign.First().Value.PeerId, 0, maxSecondsToDeliverBlock);
+                        
+                        reassigned = true;
+                    }
+
+                } while (reassigned);
+            }
+
+            this.ReassignDownloads(toReassign);
         }
 
         // Callbacks from BlockPullerBehavior
@@ -410,6 +451,23 @@ namespace Stratis.Bitcoin.BlockPulling2
                     this.reassignedJobsQueue.Enqueue(newJob);
                 }
             }
+        }
+
+        // Logs to console
+        private void ShowStats()
+        {
+            //TODO 
+
+            /*
+             just for logging, only IBD)
+	            show: // Show it as a part of nodestats, not separated spammer
+		            avg download speed 
+		            peer quality score (sort by quality score) 
+		            number of assigned blocks
+		            MaxBlocksBeingDownloaded
+		            amount of blocks being downloaded
+		            show actual speed (no 1mb limit)
+             */
         }
 
         public void Dispose()
