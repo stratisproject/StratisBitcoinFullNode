@@ -501,7 +501,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
         {
             var fullNode = (this.runner as StratisSmartContractNode).FullNode;
             BitcoinSecret dest = this.MinerSecret;
-            List<Block> blocks = new List<Block>();
+            var blocks = new List<Block>();
             DateTimeOffset now = this.MockTime == null ? DateTimeOffset.UtcNow : this.MockTime.Value;
             ContractStateRepositoryRoot state = fullNode.NodeService<ContractStateRepositoryRoot>();
 #if !NOSOCKET
@@ -538,7 +538,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
                 {
                     uint256 blockHash = block.GetHash();
                     var newChain = new ChainedHeader(block.Header, blockHash, fullNode.Chain.Tip);
-                    var oldTip = fullNode.Chain.SetTip(newChain);
+                    ChainedHeader oldTip = fullNode.Chain.SetTip(newChain);
                     fullNode.ConsensusLoop().Puller.InjectBlock(blockHash, new DownloadedBlock { Length = block.GetSerializedSize(), Block = block }, CancellationToken.None);
                 }
             }

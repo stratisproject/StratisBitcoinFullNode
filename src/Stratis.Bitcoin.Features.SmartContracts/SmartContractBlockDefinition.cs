@@ -44,9 +44,61 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             this.stateRoot = stateRoot;
         }
 
+        /// <summary>
+        /// Overrides the <see cref="AddToBlock(TxMempoolEntry)"/> behaviour of <see cref="BlockDefinitionProofOfWork"/>.
+        /// <para>
+        /// Determine whether or not the mempool entry contains smart contract execution 
+        /// code. If not, then add to the block as per normal. Else extract and deserialize 
+        /// the smart contract code from the TxOut's ScriptPubKey.
+        /// </para>
+        /// </summary>
+        public override void AddToBlock(TxMempoolEntry mempoolEntry)
+        {
+            this.logger.LogTrace("()");
+
+            TxOut smartContractTxOut = mempoolEntry.TryGetSmartContractTxOut();
+            if (smartContractTxOut == null)
+            {
+                this.logger.LogTrace("Transaction does not contain smart contract information.");
+
+                base.AddTransactionToBlock(mempoolEntry.Transaction);
+                base.UpdateBlockStatistics(mempoolEntry);
+                base.UpdateTotalFees(mempoolEntry.Fee);
+            }
+            else
+            {
+                this.logger.LogTrace("Transaction contains smart contract information.");
+
+                // We HAVE to first execute the smart contract contained in the transaction
+                // to ensure its validity before we can add it to the block.
+                ISmartContractExecutionResult result = this.ExecuteSmartContract(mempoolEntry);
+                this.AddTransactionToBlock(mempoolEntry.Transaction);
+                this.UpdateBlockStatistics(mempoolEntry);
+                this.UpdateTotalFees(result.Fee);
+
+                // If there are refunds, add them to the block.
+                if (result.Refunds.Any())
+                {
+                    this.refundOutputs.AddRange(result.Refunds);
+                    this.logger.LogTrace("{0} refunds were added.", result.Refunds.Count);
+                }
+
+                // Add internal transactions made during execution.
+                if (result.InternalTransaction != null)
+                {
+                    this.AddTransactionToBlock(result.InternalTransaction);
+                    this.logger.LogTrace("Internal {0}:{1} was added.", nameof(result.InternalTransaction), result.InternalTransaction.GetHash());
+                }
+            }
+
+            this.logger.LogTrace("(-)");
+        }
+
         /// <inheritdoc/>
         public override BlockTemplate Build(ChainedHeader chainTip, Script scriptPubKeyIn)
         {
+            this.logger.LogTrace("()");
+
             GetSenderUtil.GetSenderResult getSenderResult = GetSenderUtil.GetAddressFromScript(this.Network, scriptPubKeyIn);
             if (!getSenderResult.Success)
                 throw new ConsensusErrorException(new ConsensusError("sc-block-assembler-createnewblock", getSenderResult.Error));
@@ -60,6 +112,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             base.OnBuild(chainTip, scriptPubKeyIn);
 
             this.coinbase.Outputs.AddRange(this.refundOutputs);
+
+            this.logger.LogTrace("(-)");
 
             return this.BlockTemplate;
         }
@@ -83,67 +137,24 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         }
 
         /// <summary>
-        /// Overrides the <see cref="AddToBlock(TxMempoolEntry)"/> behaviour of <see cref="BlockDefinitionProofOfWork"/>.
-        /// <para>
-        /// Determine whether or not the mempool entry contains smart contract execution 
-        /// code. If not, then add to the block as per normal. Else extract and deserialize 
-        /// the smart contract code from the TxOut's ScriptPubKey.
-        /// </para>
-        /// </summary>
-        public override void AddToBlock(TxMempoolEntry mempoolEntry)
-        {
-            TxOut smartContractTxOut = mempoolEntry.TryGetSmartContractTxOut();
-            if (smartContractTxOut == null)
-                base.AddToBlock(mempoolEntry);
-            else
-                this.AddContractToBlock(mempoolEntry);
-        }
-
-        /// <summary>
         /// Execute the contract and add all relevant fees and refunds to the block.
         /// </summary>
         /// <remarks>TODO: At some point we need to change height to a ulong.</remarks> 
-        private void AddContractToBlock(TxMempoolEntry mempoolEntry)
+        private ISmartContractExecutionResult ExecuteSmartContract(TxMempoolEntry mempoolEntry)
         {
-            GetSenderUtil.GetSenderResult getSenderResult = GetSenderUtil.GetSender(this.Network, mempoolEntry.Transaction, this.coinView, this.inBlock.Select(x => x.Transaction).ToList());
+            this.logger.LogTrace("()");
 
+            GetSenderUtil.GetSenderResult getSenderResult = GetSenderUtil.GetSender(this.Network, mempoolEntry.Transaction, this.coinView, this.inBlock.Select(x => x.Transaction).ToList());
             if (!getSenderResult.Success)
-            {
                 throw new ConsensusErrorException(new ConsensusError("sc-block-assembler-addcontracttoblock", getSenderResult.Error));
-            }
 
             ISmartContractTransactionContext transactionContext = new SmartContractTransactionContext((ulong)this.height, this.coinbaseAddress, mempoolEntry.Fee, getSenderResult.Sender, mempoolEntry.Transaction);
             ISmartContractExecutor executor = this.executorFactory.CreateExecutor(this.stateSnapshot, transactionContext);
-
             ISmartContractExecutionResult result = executor.Execute();
 
-            // Add fee from the execution result to the block.
-            this.fees += result.Fee;
+            this.logger.LogTrace("(-)");
 
-            // If there are refunds, add them to the block
-            if (result.Refunds.Any())
-                this.refundOutputs.AddRange(result.Refunds);
-
-            // Add the mempool entry transaction to the block 
-            // and adjust BlockSize, BlockWeight and SigOpsCost.
-            this.block.AddTransaction(mempoolEntry.Transaction);
-
-            if (this.NeedSizeAccounting)
-                this.BlockSize += mempoolEntry.Transaction.GetSerializedSize();
-
-            this.BlockWeight += mempoolEntry.TxWeight;
-            this.BlockTx++;
-            this.BlockSigOpsCost += mempoolEntry.SigOpCost;
-            this.inBlock.Add(mempoolEntry);
-
-            // Add internal transactions made during execution
-            if (result.InternalTransaction != null)
-            {
-                this.block.AddTransaction(result.InternalTransaction);
-                if (this.NeedSizeAccounting)
-                    this.BlockSize += result.InternalTransaction.GetSerializedSize();
-                this.BlockTx++;
-            }
+            return result;
         }
     }
 }

@@ -418,7 +418,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
             this.nodeSettings = new NodeSettings(protocolVersion: ProtocolVersion.NO_BLOOM_VERSION, args: new[] { "-minrelaytxfeerate=1000" });
             this.controller = new FullNodeController(this.LoggerFactory.Object, this.pooledTransaction.Object, this.pooledGetUnspentTransaction.Object, this.getUnspentTransaction.Object, this.networkDifficulty.Object,
     this.consensusLoop.Object, this.fullNode.Object, this.nodeSettings, this.network, this.chain, this.chainState.Object, this.connectionManager.Object);
-
+          
             this.fullNode.Setup(f => f.Version)
                 .Returns(new Version(15, 0));
             this.networkDifficulty.Setup(n => n.GetNetworkDifficulty())
