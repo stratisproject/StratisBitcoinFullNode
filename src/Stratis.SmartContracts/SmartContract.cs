@@ -111,13 +111,13 @@ namespace Stratis.SmartContracts
             return this.internalHashHelper.Keccak256(toHash);
         }
 
+        /// <summary>
         /// If the input condition is not met, contract execution will be halted by throwing an exception.
         /// </summary>
-        /// <param name="condition"></param>
-        protected void Assert(bool condition)
+        protected void Assert(bool condition, string message = "Assert failed.")
         {
             if (!condition)
-                throw new Exception("Condition inside 'Assert' call was false.");
+                throw new SmartContractAssertException(message);
         }
     }
 }
