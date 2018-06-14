@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using FluentAssertions;
+using FluentAssertions.Common;
 using NBitcoin;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Controllers;
@@ -58,14 +60,26 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
 
         private void node1_builds_undersize_transaction_to_send_to_node2()
         {
-            Node1BuildsTransactionToSendToNode2(2700);
+            Node1BuildsTransactionToSendToNode2(2450);
         }
 
-        private void serialized_size_of_transaction_is_within_1KB_of_upper_limit()
+        private void serialized_size_of_transaction_is_close_to_upper_limit()
         {
-            this.transaction.GetSerializedSize().Should().BeInRange(99000, 100000);
+            this.transaction.GetSerializedSize().Should().BeInRange(95000, 100000);
         }
 
+        private void mempool_of_receiver_node2_is_empty()
+        {
+            this.nodes[NodeTwo].FullNode.MempoolManager().GetMempoolAsync().Result.Should().BeEmpty();
+        }
+
+        private void mempool_of_node2_has_received_transaction()
+        {
+            List<uint256> mempool = this.nodes[NodeOne].FullNode.MempoolManager().GetMempoolAsync().Result;
+            TestHelper.WaitLoop(() => mempool.Any());
+            mempool.Should().Contain(this.transaction.GetHash());
+        }
+        
         private void node1_builds_oversize_tx_to_send_to_node2()
         {
             Node1BuildsTransactionToSendToNode2(2900);
@@ -74,7 +88,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
 
         private void sending_the_transaction()
         {
-            this.nodes[NodeOne].FullNode.NodeService<WalletController>().SendTransaction(new SendTransactionRequest(this.transaction.ToHex()));
+            this.nodes[NodeOne].FullNode.NodeService<WalletController>().SendTransaction(new SendTransactionRequest(this.transaction.ToHex(this.nodes[NodeOne].FullNode.Network)));
         }
 
         private void Node1BuildsTransactionToSendToNode2(int txoutputs)
@@ -109,14 +123,14 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             this.caughtException.Should().BeOfType<WalletException>().Which.Message.Should().Contain("Transaction's size is too high");
         }
 
-        private void node1_succeeds_sending_tx_to_node2()
+        private void node1_wallet_throws_no_exceptions()
         {
             this.caughtException.Should().BeNull();
         }
 
         private void MineBlocks(CoreNode node)
         {
-            this.sharedSteps.MineBlocks(this.CoinBaseMaturity * 2, node, WalletAccountName, WalletName, WalletPassword);
+            this.sharedSteps.MineBlocks(this.CoinBaseMaturity * 2 , node, WalletAccountName, WalletName, WalletPassword);
         }
     }
 }

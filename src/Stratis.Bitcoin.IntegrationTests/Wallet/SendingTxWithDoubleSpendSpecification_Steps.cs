@@ -1,6 +1,8 @@
-﻿using System.Linq;
+﻿using System.Collections.Generic;
+using System.Linq;
 using FluentAssertions;
 using NBitcoin;
+using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Controllers;
 using Stratis.Bitcoin.Features.Wallet.Models;
@@ -96,6 +98,13 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
 
         private void mempool_rejects_doublespending_transaction()
         {
+            this.stratisReceiver.FullNode.MempoolManager().Validator.AcceptToMemoryPool(new MempoolValidationState(true), this.transaction).Result.Should().BeFalse();
+            
+            List<uint256> mempoolTransactions = this.stratisReceiver.FullNode.MempoolManager().GetMempoolAsync().Result;
+            TestHelper.WaitLoop(() => mempoolTransactions.Any());
+            mempoolTransactions.Count.Should().Be(1);
+            mempoolTransactions[0].Should().Be(this.transaction.GetHash()); // Original transaction only
+
             ErrorResponse e = (ErrorResponse)this.errorResult.Value;
             e.Errors[0].Message.Should().BeEquivalentTo("txn-mempool-conflict");  
         }
