@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using NBitcoin;
 using Stratis.Bitcoin.Connection;
@@ -81,9 +82,9 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <inheritdoc />
         protected override void OnNextCore(Block value)
         {
-            var blockHeader = this.chain.GetBlock(value.GetHash());
+            ChainedHeader blockHeader = this.chain.GetBlock(value.GetHash());
 
-            var task = this.RemoveForBlock(value, blockHeader?.Height ?? -1);
+            Task task = this.RemoveForBlock(value, blockHeader?.Height ?? -1);
 
             // wait for the mempool code to complete
             // until the signaler becomes async
@@ -123,8 +124,8 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                     return;
 
                 // announce the blocks on each nodes behaviour
-                var behaviours = peers.Select(s => s.Behavior<MempoolBehavior>());
-                foreach (var behaviour in behaviours)
+                IEnumerable<MempoolBehavior> behaviours = peers.Select(s => s.Behavior<MempoolBehavior>());
+                foreach (MempoolBehavior behaviour in behaviours)
                     await behaviour.SendTrickleAsync().ConfigureAwait(false);
             },
             this.nodeLifetime.ApplicationStopping,

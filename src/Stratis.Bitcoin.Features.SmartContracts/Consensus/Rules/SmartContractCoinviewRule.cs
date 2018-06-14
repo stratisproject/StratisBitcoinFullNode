@@ -12,6 +12,7 @@ using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
 using Stratis.Bitcoin.Utilities;
 using Stratis.SmartContracts.Core;
+using Stratis.SmartContracts.Core.Receipts;
 using Stratis.SmartContracts.Core.State;
 using Stratis.SmartContracts.Core.Util;
 
@@ -27,15 +28,26 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         private NBitcoin.Consensus consensusParams;
         private readonly ISmartContractExecutorFactory executorFactory;
         private Transaction generatedTransaction;
+        /// <summary>Instance logger.</summary>
+        private readonly ILogger logger;
         private readonly ContractStateRepositoryRoot originalStateRoot;
+        private readonly ISmartContractReceiptStorage receiptStorage;
         private uint refundCounter;
 
-        public SmartContractCoinviewRule(CoinView coinview, ISmartContractExecutorFactory executorFactory, ContractStateRepositoryRoot stateRoot)
+
+        public SmartContractCoinviewRule(CoinView coinview,
+            ISmartContractExecutorFactory executorFactory,
+            ILoggerFactory loggerFactory,
+            ContractStateRepositoryRoot stateRoot,
+            ISmartContractReceiptStorage receiptStorage
+            )
         {
             this.coinview = coinview;
             this.executorFactory = executorFactory;
             this.generatedTransaction = null;
+            this.logger = loggerFactory.CreateLogger(this.GetType());
             this.originalStateRoot = stateRoot;
+            this.receiptStorage = receiptStorage;
             this.refundCounter = 1;
         }
 
@@ -278,6 +290,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts
 
             if (result.InternalTransaction != null)
                 this.generatedTransaction = result.InternalTransaction;
+
+            SaveReceipt(txContext, result);
         }
 
         /// <summary>
@@ -307,20 +321,48 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         /// </summary>
         private void ValidateRefunds(List<TxOut> refunds, Transaction coinbaseTransaction)
         {
+            this.Logger.LogTrace("({0}:{1})", nameof(refunds), refunds.Count);
+
             foreach (TxOut refund in refunds)
             {
                 TxOut refundToMatch = coinbaseTransaction.Outputs[this.refundCounter];
                 if (refund.Value != refundToMatch.Value || refund.ScriptPubKey != refundToMatch.ScriptPubKey)
+                {
+                    this.Logger.LogTrace("{0}:{1}, {2}:{3}", nameof(refund.Value), refund.Value, nameof(refundToMatch.Value), refundToMatch.Value);
+                    this.Logger.LogTrace("{0}:{1}, {2}:{3}", nameof(refund.ScriptPubKey), refund.ScriptPubKey, nameof(refundToMatch.ScriptPubKey), refundToMatch.ScriptPubKey);
+
                     SmartContractConsensusErrors.UnequalRefundAmounts.Throw();
+                }
 
                 this.refundCounter++;
             }
+
+            this.Logger.LogTrace("(-){0}:{1}", nameof(this.refundCounter), this.refundCounter);
         }
 
         /// <inheritdoc/>
         protected override bool IsProtocolTransaction(Transaction transaction)
         {
             return transaction.IsCoinBase || transaction.IsCoinStake;
+        }
+
+        /// <summary>
+        /// Saves receipt in a database following execution.
+        /// TODO: When we have a receipt root, ensure that this is deterministic, and validated. i.e. block receipt roots match!
+        /// TODO: Also put it inside the block assembly then.
+        /// </summary>
+        private void SaveReceipt(ISmartContractTransactionContext txContext, ISmartContractExecutionResult result)
+        {
+            // For now we don't want it to interrupt execution so put it in a silly large try catch.
+            try
+            {
+                this.logger.LogTrace("Save Receipt : {0}:{1}", nameof(txContext.TransactionHash), txContext.TransactionHash);
+                this.receiptStorage.SaveReceipt(txContext, result);
+            }
+            catch (Exception e)
+            {
+                this.logger.LogError("Exception occurred saving contract receipt: {0}", e.Message);
+            }
         }
     }
 }

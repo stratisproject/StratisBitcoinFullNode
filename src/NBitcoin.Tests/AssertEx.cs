@@ -34,8 +34,8 @@ namespace NBitcoin.Tests
         [DebuggerHidden]
         internal static void StackEquals(ContextStack<byte[]> stack1, ContextStack<byte[]> stack2)
         {
-            var hash1 = stack1.Select(o => Hashes.Hash256(o)).ToArray();
-            var hash2 = stack2.Select(o => Hashes.Hash256(o)).ToArray();
+            uint256[] hash1 = stack1.Select(o => Hashes.Hash256(o)).ToArray();
+            uint256[] hash2 = stack2.Select(o => Hashes.Hash256(o)).ToArray();
             AssertEx.CollectionEquals(hash1, hash2);
         }
 

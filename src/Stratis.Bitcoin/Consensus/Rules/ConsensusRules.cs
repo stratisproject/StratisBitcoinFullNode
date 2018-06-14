@@ -92,12 +92,12 @@ namespace Stratis.Bitcoin.Consensus.Rules
         {
             Guard.NotNull(ruleRegistration, nameof(ruleRegistration));
 
-            foreach (var consensusRule in ruleRegistration.GetRules())
+            foreach (ConsensusRule consensusRule in ruleRegistration.GetRules())
             {
                 consensusRule.Parent = this;
                 consensusRule.Logger = this.loggerFactory.CreateLogger(consensusRule.GetType().FullName);
                 consensusRule.Initialize();
-                
+
                 this.consensusRules.Add(consensusRule.GetType().FullName, new ConsensusRuleDescriptor(consensusRule));
             }
 

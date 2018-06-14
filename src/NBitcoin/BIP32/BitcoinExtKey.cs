@@ -55,7 +55,7 @@
             }
         }
 
-        ExtKey _Key;
+        private ExtKey _Key;
 
         /// <summary>
         /// Gets the extended key, converting from the Base58 representation.
@@ -151,7 +151,7 @@
         {
         }
 
-        ExtPubKey _PubKey;
+        private ExtPubKey _PubKey;
 
         /// <summary>
         /// Gets the extended public key, converting from the Base58 representation.

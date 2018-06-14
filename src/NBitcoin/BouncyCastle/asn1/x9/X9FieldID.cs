@@ -62,7 +62,7 @@ namespace NBitcoin.BouncyCastle.Asn1.X9
         {
             this.id = X9ObjectIdentifiers.CharacteristicTwoField;
 
-            Asn1EncodableVector fieldIdParams = new Asn1EncodableVector(new DerInteger(m));
+            var fieldIdParams = new Asn1EncodableVector(new DerInteger(m));
 
             if(k2 == 0)
             {

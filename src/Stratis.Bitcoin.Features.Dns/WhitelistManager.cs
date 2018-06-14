@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using DNS.Protocol;
@@ -99,7 +100,7 @@ namespace Stratis.Bitcoin.Features.Dns
 
             DateTimeOffset activePeerLimit = this.dateTimeProvider.GetTimeOffset().AddSeconds(-this.dnsPeerBlacklistThresholdInSeconds);
             
-            var whitelist = this.peerAddressManager.Peers.Where(p => p.LastSeen > activePeerLimit);
+            IEnumerable<PeerAddress> whitelist = this.peerAddressManager.Peers.Where(p => p.LastSeen > activePeerLimit);
             
             if (!this.fullNodeMode)
             {
@@ -110,18 +111,18 @@ namespace Stratis.Bitcoin.Features.Dns
             IMasterFile masterFile = new DnsSeedMasterFile();
             foreach (PeerAddress whitelistEntry in whitelist)
             {
-                Domain domain = new Domain(this.dnsHostName);
+                var domain = new Domain(this.dnsHostName);
 
                 // Is this an IPv4 embedded address? If it is, make sure an 'A' record is added to the DNS master file, rather than an 'AAAA' record.
                 if (whitelistEntry.Endpoint.Address.IsIPv4MappedToIPv6)
                 {
                     IPAddress ipv4Address = whitelistEntry.Endpoint.Address.MapToIPv4();
-                    IPAddressResourceRecord resourceRecord = new IPAddressResourceRecord(domain, ipv4Address);
+                    var resourceRecord = new IPAddressResourceRecord(domain, ipv4Address);
                     masterFile.Add(resourceRecord);
                 }
                 else
                 {
-                    IPAddressResourceRecord resourceRecord = new IPAddressResourceRecord(domain, whitelistEntry.Endpoint.Address);
+                    var resourceRecord = new IPAddressResourceRecord(domain, whitelistEntry.Endpoint.Address);
                     masterFile.Add(resourceRecord);
                 }
             }

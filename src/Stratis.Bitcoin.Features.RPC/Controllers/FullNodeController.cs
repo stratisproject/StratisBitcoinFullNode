@@ -221,7 +221,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
             BlockHeaderModel model = null;
             if (this.Chain != null)
             {
-                var blockHeader = this.Chain.GetBlock(uint256.Parse(hash))?.Header;
+                BlockHeader blockHeader = this.Chain.GetBlock(uint256.Parse(hash))?.Header;
                 if (blockHeader != null)
                     model = new BlockHeaderModel(blockHeader);
             }

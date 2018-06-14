@@ -54,7 +54,7 @@ namespace NBitcoin
             }
 
             byte[] vchTemp = Encoders.Base58Check.DecodeData(psz);
-            var expectedVersion = _Network.GetVersionBytes(Type, true);
+            byte[] expectedVersion = _Network.GetVersionBytes(Type, true);
 
 
             vchVersion = vchTemp.SafeSubarray(0, expectedVersion.Length);
@@ -111,7 +111,7 @@ namespace NBitcoin
 
         public override bool Equals(object obj)
         {
-            Base58Data item = obj as Base58Data;
+            var item = obj as Base58Data;
             if(item == null)
                 return false;
             return ToString().Equals(item.ToString());

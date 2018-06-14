@@ -25,7 +25,7 @@ namespace NBitcoin.OpenAsset
                 throw new ArgumentNullException("network");
         }
 
-        AssetId _AssetId;
+        private AssetId _AssetId;
         public AssetId AssetId
         {
             get

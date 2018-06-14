@@ -12,17 +12,17 @@ namespace NBitcoin.RPC
         {
             this.Network = network;
             OutPoint = new OutPoint(uint256.Parse((string)unspent["txid"]), (uint)unspent["vout"]);
-            var address = (string)unspent["address"];
+            string address = (string)unspent["address"];
             if(address != null)
                 Address = network.Parse<BitcoinAddress>(address);
             Account = (string)unspent["account"];
             ScriptPubKey = new Script(Encoders.Hex.DecodeData((string)unspent["scriptPubKey"]));
-            var redeemScriptHex = (string)unspent["redeemScript"];
+            string redeemScriptHex = (string)unspent["redeemScript"];
             if(redeemScriptHex != null)
             {
                 RedeemScript = new Script(Encoders.Hex.DecodeData(redeemScriptHex));
             }
-            var amount = (decimal)unspent["amount"];
+            decimal amount = (decimal)unspent["amount"];
             Amount = new Money((long)(amount * Money.COIN));
             Confirmations = (uint)unspent["confirmations"];
 

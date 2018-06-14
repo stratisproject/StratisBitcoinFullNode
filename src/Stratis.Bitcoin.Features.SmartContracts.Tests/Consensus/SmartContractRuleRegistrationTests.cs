@@ -1,12 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using Microsoft.Extensions.Logging;
 using Moq;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.SmartContracts.Consensus.Rules;
 using Stratis.SmartContracts.Core;
+using Stratis.SmartContracts.Core.Receipts;
 using Stratis.SmartContracts.Core.State;
 using Xunit;
 
@@ -51,29 +53,23 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus
 
     public sealed class MockServiceProvider : IServiceProvider
     {
-        private readonly CoinView coinView;
-        private readonly ISmartContractExecutorFactory executorFactory;
-        private readonly ContractStateRepositoryRoot originalStateRoot;
+        private readonly Dictionary<Type, object> registered;
 
         public MockServiceProvider()
         {
-            this.coinView = new Mock<CoinView>().Object;
-            this.executorFactory = new Mock<ISmartContractExecutorFactory>().Object;
-            this.originalStateRoot = new Mock<ContractStateRepositoryRoot>().Object;
+            this.registered = new Dictionary<Type, object>
+            {
+                { typeof(CoinView), new Mock<CoinView>().Object },
+                { typeof(ISmartContractExecutorFactory), new Mock<ISmartContractExecutorFactory>().Object },
+                { typeof(ContractStateRepositoryRoot), new Mock<ContractStateRepositoryRoot>().Object },
+                { typeof(ILoggerFactory), new Mock<ILoggerFactory>().Object },
+                { typeof(ISmartContractReceiptStorage), new Mock<ISmartContractReceiptStorage>().Object }
+            };
         }
 
         public object GetService(Type serviceType)
         {
-            if (serviceType == typeof(CoinView))
-                return this.coinView;
-
-            if (serviceType == typeof(ISmartContractExecutorFactory))
-                return this.executorFactory;
-
-            if (serviceType == typeof(ContractStateRepositoryRoot))
-                return this.originalStateRoot;
-
-            return null;
+            return this.registered[serviceType];
         }
     }
 }

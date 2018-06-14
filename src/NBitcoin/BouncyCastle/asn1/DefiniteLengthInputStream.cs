@@ -92,7 +92,7 @@ namespace NBitcoin.BouncyCastle.Asn1
             if(_remaining == 0)
                 return EmptyBytes;
 
-            byte[] bytes = new byte[_remaining];
+            var bytes = new byte[_remaining];
             if((_remaining -= Streams.ReadFully(_in, bytes)) != 0)
                 throw new EndOfStreamException("DEF length " + _originalLength + " object truncated by " + _remaining);
             SetParentEofDetect(true);

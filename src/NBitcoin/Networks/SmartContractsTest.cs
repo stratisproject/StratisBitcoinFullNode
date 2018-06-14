@@ -13,7 +13,6 @@ namespace NBitcoin.Networks
             this.RootFolderName = StratisRootFolderName;
             this.DefaultConfigFilename = StratisDefaultConfigFilename;
             this.Magic = 0x0709110D; //Incremented 28/05
-            this.AlertPubKey = new PubKey(Encoders.Hex.DecodeData("04302390343f91cc401d56d68b123028bf52e5fca1939df127f63c6467cdf9c8e2c14b61104cf817d0b780da337893ecc4aaff1309e536162dabbdb45200ca2b0a"));
             this.DefaultPort = 18333;
             this.RPCPort = 18332;
             this.MaxTipAge = BitcoinDefaultMaxTipAgeInSeconds;

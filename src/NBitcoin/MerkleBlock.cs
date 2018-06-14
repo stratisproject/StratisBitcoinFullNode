@@ -10,7 +10,7 @@ namespace NBitcoin
 
         }
         // Public only for unit testing
-        BlockHeader header;
+        private BlockHeader header;
 
         public BlockHeader Header
         {
@@ -23,7 +23,8 @@ namespace NBitcoin
                 header = value;
             }
         }
-        PartialMerkleTree _PartialMerkleTree;
+
+        private PartialMerkleTree _PartialMerkleTree;
 
         public PartialMerkleTree PartialMerkleTree
         {
@@ -44,8 +45,8 @@ namespace NBitcoin
         {
             header = block.Header;
 
-            List<bool> vMatch = new List<bool>();
-            List<uint256> vHashes = new List<uint256>();
+            var vMatch = new List<bool>();
+            var vHashes = new List<uint256>();
 
 
             for(uint i = 0; i < block.Transactions.Count; i++)
@@ -62,11 +63,11 @@ namespace NBitcoin
         {
             header = block.Header;
 
-            List<bool> vMatch = new List<bool>();
-            List<uint256> vHashes = new List<uint256>();
+            var vMatch = new List<bool>();
+            var vHashes = new List<uint256>();
             for(int i = 0; i < block.Transactions.Count; i++)
             {
-                var hash = block.Transactions[i].GetHash();
+                uint256 hash = block.Transactions[i].GetHash();
                 vHashes.Add(hash);
                 vMatch.Add(txIds.Contains(hash));
             }

@@ -8,9 +8,9 @@ namespace NBitcoin
         public BitcoinWitPubKeyAddress(string bech32, Network expectedNetwork)
                 : base(Validate(bech32, ref expectedNetwork), expectedNetwork)
         {
-            var encoder = expectedNetwork.GetBech32Encoder(Bech32Type.WITNESS_PUBKEY_ADDRESS, true);
+            Bech32Encoder encoder = expectedNetwork.GetBech32Encoder(Bech32Type.WITNESS_PUBKEY_ADDRESS, true);
             byte witVersion;
-            var decoded = encoder.Decode(bech32, out witVersion);
+            byte[] decoded = encoder.Decode(bech32, out witVersion);
             _Hash = new WitKeyId(decoded);
         }
 
@@ -37,14 +37,14 @@ namespace NBitcoin
                 return false;
             }
 
-            var encoder = expectedNetwork.GetBech32Encoder(Bech32Type.WITNESS_PUBKEY_ADDRESS, false);
+            Bech32Encoder encoder = expectedNetwork.GetBech32Encoder(Bech32Type.WITNESS_PUBKEY_ADDRESS, false);
             if (encoder == null)
                 return false;
 
             try
             {
                 byte witVersion;
-                var data = encoder.Decode(bech32, out witVersion);
+                byte[] data = encoder.Decode(bech32, out witVersion);
                 if (data.Length == 20 && witVersion == 0)
                 {
                     return true;
@@ -80,11 +80,11 @@ namespace NBitcoin
 
         public bool VerifyMessage(string message, string signature)
         {
-            var key = PubKey.RecoverFromMessage(message, signature);
+            PubKey key = PubKey.RecoverFromMessage(message, signature);
             return key.WitHash == this.Hash;
         }
 
-        WitKeyId _Hash;
+        private WitKeyId _Hash;
         public WitKeyId Hash
         {
             get
@@ -113,9 +113,9 @@ namespace NBitcoin
         public BitcoinWitScriptAddress(string bech32, Network expectedNetwork = null)
                 : base(Validate(bech32, ref expectedNetwork), expectedNetwork)
         {
-            var encoder = expectedNetwork.GetBech32Encoder(Bech32Type.WITNESS_SCRIPT_ADDRESS, true);
+            Bech32Encoder encoder = expectedNetwork.GetBech32Encoder(Bech32Type.WITNESS_SCRIPT_ADDRESS, true);
             byte witVersion;
-            var decoded = encoder.Decode(bech32, out witVersion);
+            byte[] decoded = encoder.Decode(bech32, out witVersion);
             _Hash = new WitScriptId(decoded);
         }
 
@@ -142,13 +142,13 @@ namespace NBitcoin
                 return false;
             }
 
-            var encoder = expectedNetwork.GetBech32Encoder(Bech32Type.WITNESS_SCRIPT_ADDRESS, false);
+            Bech32Encoder encoder = expectedNetwork.GetBech32Encoder(Bech32Type.WITNESS_SCRIPT_ADDRESS, false);
             if (encoder == null)
                 return false;
             try
             {
                 byte witVersion;
-                var data = encoder.Decode(bech32, out witVersion);
+                byte[] data = encoder.Decode(bech32, out witVersion);
                 if (data.Length == 32 && witVersion == 0)
                 {
                     return true;
@@ -183,7 +183,7 @@ namespace NBitcoin
             return null;
         }
 
-        WitScriptId _Hash;
+        private WitScriptId _Hash;
         public WitScriptId Hash
         {
             get

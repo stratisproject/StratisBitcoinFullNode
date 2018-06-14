@@ -75,7 +75,7 @@ namespace NBitcoin.BouncyCastle.Asn1
                 if(_isExplicit)
                 {
                     int newTag = _tagNo | Asn1Tags.Constructed | Asn1Tags.Tagged;
-                    MemoryStream bOut = new MemoryStream();
+                    var bOut = new MemoryStream();
                     WriteDerEncoded(bOut, tag, bytes);
                     WriteDerEncoded(Out, newTag, bOut.ToArray());
                 }

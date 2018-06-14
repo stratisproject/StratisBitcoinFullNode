@@ -24,9 +24,9 @@ namespace NBitcoin
             }
         }
 
-        bool _Transfered;
+        private bool _Transfered;
 
-        TraceSource _Source;
+        private TraceSource _Source;
         public TraceCorrelationScope(Guid activity, TraceSource source, bool traceTransfer)
         {
             // NETSTDCONV
@@ -63,9 +63,8 @@ namespace NBitcoin
 #endif
  class TraceCorrelation
     {
-
-        TraceSource _Source;
-        string _ActivityName;
+        private TraceSource _Source;
+        private string _ActivityName;
         public TraceCorrelation(TraceSource source, string activityName)
             : this(Guid.NewGuid(), source, activityName)
         {
@@ -78,7 +77,7 @@ namespace NBitcoin
             this.activity = activity;
         }
 
-        Guid activity;
+        private Guid activity;
         public Guid Activity
         {
             get
@@ -91,7 +90,7 @@ namespace NBitcoin
             }
         }
 
-        volatile bool _First = true;
+        private volatile bool _First = true;
         public TraceCorrelationScope Open(bool traceTransfer = true)
         {
             var scope = new TraceCorrelationScope(activity, _Source, traceTransfer);
