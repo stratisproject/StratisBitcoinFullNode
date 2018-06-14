@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Security.Cryptography.X509Certificates;
 using System.Threading;
 using System.Threading.Tasks;
 using NBitcoin;
@@ -42,16 +41,13 @@ namespace Stratis.Bitcoin.BlockPulling2
 
         private Dictionary<int, BlockPullerBehavior> PullerBehaviors;
 
+        public double AverageBlockSizeBytes { get; private set; }
+
         /// <summary>
         /// The maximum blocks that can be downloaded simountanously.
         /// Given that all peers are on the same chain they will deliver that amount of blocks in 1 seconds.
         /// </summary>
         private int maxBlocksBeingDownloaded;
-
-        private long GetAverageBlockSizeBytes() //TODO fix
-        {
-            return (long)this.BlockSizeSamples.Average(x => x);
-        }
 
         private int GetTotalSpeedOfAllPeersBytesPerSec()
         {
@@ -73,6 +69,7 @@ namespace Stratis.Bitcoin.BlockPulling2
             this.processQueuesSignal = new AsyncManualResetEvent(false);
             this.lockObject = new object();
             this.currentJobId = 0;
+            this.AverageBlockSizeBytes = 0;
 
             this.pendingDownloadsCount = 0;
 
@@ -325,6 +322,7 @@ namespace Stratis.Bitcoin.BlockPulling2
                 this.AssignedDownloads.Remove(blockHash);
                 
                 this.BlockSizeSamples.Add(block.BlockSize.Value, out long oldSample);
+                this.AverageBlockSizeBytes = CircularArray<double>.RecalculateAverageForSircularArray(this.BlockSizeSamples.Count, this.AverageBlockSizeBytes, block.BlockSize.Value, oldSample);
 
                 double deliveredInSeconds = (DateTime.UtcNow - assignedDownload.AssignedTime).TotalSeconds;
                 this.AddPeerSampleAndRecalculateQualityScoreLocked(peerId, block.BlockSize.Value, deliveredInSeconds);
@@ -368,7 +366,7 @@ namespace Stratis.Bitcoin.BlockPulling2
 
         private void RecalculateMaxBlocksBeingDownloadedLocked()
         {
-            this.maxBlocksBeingDownloaded = (int)(this.GetTotalSpeedOfAllPeersBytesPerSec() / this.GetAverageBlockSizeBytes());
+            this.maxBlocksBeingDownloaded = (int)(this.GetTotalSpeedOfAllPeersBytesPerSec() / this.AverageBlockSizeBytes);
 
             if (this.maxBlocksBeingDownloaded < 10)
                 this.maxBlocksBeingDownloaded = 10;

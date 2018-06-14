@@ -38,8 +38,8 @@ namespace Stratis.Bitcoin.BlockPulling2
 
             this.blockSizeDelaySecondsSamples.Add(newSample, out SizeDelaySample unused);
 
-            this.averageSizeBytes = this.RecalculateAverageForSircularArray(this.blockSizeDelaySecondsSamples.Count, this.averageSizeBytes, blockSizeBytes, unused.SizeBytes);
-            this.averageDelaySeconds = this.RecalculateAverageForSircularArray(this.blockSizeDelaySecondsSamples.Count, this.averageDelaySeconds, delaySeconds, unused.DelaySeconds);
+            this.averageSizeBytes = CircularArray<double>.RecalculateAverageForSircularArray(this.blockSizeDelaySecondsSamples.Count, this.averageSizeBytes, blockSizeBytes, unused.SizeBytes);
+            this.averageDelaySeconds = CircularArray<double>.RecalculateAverageForSircularArray(this.blockSizeDelaySecondsSamples.Count, this.averageDelaySeconds, delaySeconds, unused.DelaySeconds);
 
             this.SpeedBytesPerSecond = (int)(this.averageSizeBytes / this.averageDelaySeconds);
         }
@@ -53,22 +53,6 @@ namespace Stratis.Bitcoin.BlockPulling2
 
             if (this.QualityScore > MaxQualityScore)
                 this.QualityScore = MaxQualityScore;
-        }
-
-        private double RecalculateAverageForSircularArray(int arrayItemsCount, double oldAverage, double newSample, double oldSample)
-        {
-            // Equality comparison against 0 is ok here
-            // https://stackoverflow.com/questions/6598179/the-right-way-to-compare-a-system-double-to-0-a-number-int
-
-            bool sampleWasReplaced = oldSample == 0;
-
-            if (!sampleWasReplaced && oldAverage == 0)
-                return newSample;
-
-            if (sampleWasReplaced)
-                return (oldAverage * (arrayItemsCount - 1) + newSample) / arrayItemsCount;
-
-            return (oldAverage * arrayItemsCount - oldSample + newSample) / arrayItemsCount;
         }
 
         private struct SizeDelaySample
