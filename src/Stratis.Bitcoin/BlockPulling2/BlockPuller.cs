@@ -239,15 +239,11 @@ namespace Stratis.Bitcoin.BlockPulling2
             // Form batches in order to ask for several blocks from one peer at once.
             foreach (IGrouping<int, KeyValuePair<uint256, AssignedDownload>> downloadsGroupedByPeerId in assignments.GroupBy(x => x.Value.PeerId))
             {
-                var peerAssignments = new List<SingleAssignment>(downloadsGroupedByPeerId.Count());
+                var jobIdToHash = new Dictionary<int, uint256>(downloadsGroupedByPeerId.Count());
 
                 foreach (KeyValuePair<uint256, AssignedDownload> assignedDownload in downloadsGroupedByPeerId)
                 {
-                    peerAssignments.Add(new SingleAssignment()
-                    {
-                        Hash = assignedDownload.Key,
-                        JobId = assignedDownload.Value.JobId
-                    });
+                    jobIdToHash.Add(assignedDownload.Value.JobId, assignedDownload.Key);
                 }
 
                 try
@@ -260,7 +256,7 @@ namespace Stratis.Bitcoin.BlockPulling2
                 catch (Exception)
                 {
                     // Failed to assign downloads to a peer. Put assignments back to the reassign queue and signal processing.
-                    this.ReassignDownloads(peerAssignments);
+                    this.ReassignDownloads(jobIdToHash);
 
                     this.PeerDisconnected(downloadsGroupedByPeerId.First().Value.PeerId);
                     this.processQueuesSignal.Reset();
@@ -361,38 +357,34 @@ namespace Stratis.Bitcoin.BlockPulling2
         // finds all assigned blocks, removes from assigned downloads and adds to reassign queue
         private void ReassignDownloads(int peerId)
         {
-            var assignments = new List<SingleAssignment>();
+            var jobIdToHash = new Dictionary<int, uint256>();
 
             lock (this.lockObject)
             {
                 foreach (KeyValuePair<uint256, AssignedDownload> assignedDownload in this.AssignedDownloads.Where(x => x.Value.PeerId == peerId).ToList())
                 {
-                    assignments.Add(new SingleAssignment()
-                    {
-                        Hash = assignedDownload.Key,
-                        JobId = assignedDownload.Value.JobId
-                    });
+                    jobIdToHash.Add(assignedDownload.Value.JobId, assignedDownload.Key);
 
                     // Remove hash from assigned downloads.
                     this.AssignedDownloads.Remove(assignedDownload.Key);
                 }
             }
 
-            if (assignments.Count != 0)
-                this.ReassignDownloads(assignments);
+            if (jobIdToHash.Count != 0)
+                this.ReassignDownloads(jobIdToHash);
         }
 
         // puts hashesToJobId to reassign queue
-        private void ReassignDownloads(List<SingleAssignment> assignments)
+        private void ReassignDownloads(Dictionary<int, uint256> jobIdToHash)
         {
             lock (this.lockObject)
             {
-                foreach (IGrouping<int, SingleAssignment> jobGroup in assignments.GroupBy(x => x.JobId))
+                foreach (IGrouping<uint256, KeyValuePair<int, uint256>> jobGroup in jobIdToHash.GroupBy(x => x.Value))
                 {
                     var newJob = new DownloadJob()
                     {
-                        Id = jobGroup.First().JobId,
-                        Hashes = jobGroup.Select(x => x.Hash).ToList()
+                        Id = jobGroup.First().Key,
+                        Hashes = jobGroup.Select(x => x.Value).ToList()
                     };
 
                     this.reassignedJobsQueue.Enqueue(newJob);
@@ -411,14 +403,7 @@ namespace Stratis.Bitcoin.BlockPulling2
         }
 
         // ================================
-
-        private struct SingleAssignment
-        {
-            public int JobId;
-
-            public uint256 Hash;
-        }
-
+        
         private struct DownloadJob
         {
             public int Id;
