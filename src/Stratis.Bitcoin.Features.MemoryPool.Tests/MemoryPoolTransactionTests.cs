@@ -337,7 +337,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             // tx1 and tx5 are both 10000
             // Ties are broken by hash, not timestamp, so determine which
             // hash comes first.
-            if (tx1.GetHash() > tx5.GetHash())
+            if (tx1.GetHash() < tx5.GetHash())
             {
                 sortedOrder.Insert(2, tx1.GetHash().ToString());
                 sortedOrder.Insert(3, tx5.GetHash().ToString());
@@ -358,7 +358,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             int tx6Size = tx6.GetVirtualSize();
             Assert.Equal(6, pool.Size);
             // Ties are broken by hash
-            if (tx3.GetHash() > tx6.GetHash())
+            if (tx3.GetHash() < tx6.GetHash())
                 sortedOrder.Add(tx6.GetHash().ToString());
             else
                 sortedOrder.Insert(sortedOrder.Count - 1, tx6.GetHash().ToString());
@@ -380,7 +380,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
 
             sortedOrder.RemoveAt(1);
             // Ties are broken by hash
-            if (tx3.GetHash() > tx6.GetHash())
+            if (tx3.GetHash() < tx6.GetHash())
                 sortedOrder.Remove(sortedOrder.Last());
             else
                 sortedOrder.RemoveAt(sortedOrder.Count - 2);

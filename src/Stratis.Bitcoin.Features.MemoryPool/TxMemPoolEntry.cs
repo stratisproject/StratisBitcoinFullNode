@@ -320,7 +320,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             if (f1 == f2)
                 return a.CompareTo(b);
 
-            return (f1 > f2) ? 1 : -1;
+            return (f1 < f2) ? 1 : -1;
         }
     }
 }

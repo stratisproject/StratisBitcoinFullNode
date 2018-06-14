@@ -1053,7 +1053,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             /// <summary>Gets a collection of memory pool entries ordered by ancestor score.</summary>
             public IEnumerable<TxMempoolEntry> AncestorScore
             {
-                get { return this.Values.OrderByDescending(o => o, new CompareTxMemPoolEntryByAncestorFee()); }
+                get { return this.Values.OrderBy(o => o, new CompareTxMemPoolEntryByAncestorFee()); }
             }
 
             /// <summary>

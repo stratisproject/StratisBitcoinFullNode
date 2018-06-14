@@ -360,7 +360,7 @@ namespace Stratis.Bitcoin.Features.Miner
                 var compare = new CompareModifiedEntry();
                 if (mi == null)
                 {
-                    modit = mapModifiedTx.Values.OrderByDescending(o => o, compare).First();
+                    modit = mapModifiedTx.Values.OrderBy(o => o, compare).First();
                     iter = modit.MempoolEntry;
                     fUsingModified = true;
                 }
@@ -369,8 +369,8 @@ namespace Stratis.Bitcoin.Features.Miner
                     // Try to compare the mapTx entry to the mapModifiedTx entry
                     iter = mi;
 
-                    modit = mapModifiedTx.Values.OrderByDescending(o => o, compare).FirstOrDefault();
-                    if ((modit != null) && (compare.Compare(modit, new TxMemPoolModifiedEntry(iter)) > 0))
+                    modit = mapModifiedTx.Values.OrderBy(o => o, compare).FirstOrDefault();
+                    if ((modit != null) && (compare.Compare(modit, new TxMemPoolModifiedEntry(iter)) < 0))
                     {
                         // The best entry in mapModifiedTx has higher score
                         // than the one from mapTx..
