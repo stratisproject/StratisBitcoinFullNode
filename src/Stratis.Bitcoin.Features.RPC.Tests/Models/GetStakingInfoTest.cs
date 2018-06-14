@@ -66,7 +66,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Models
 
             JObject obj = JObject.Parse(json);
             IOrderedEnumerable<string> actualSortedPropertyNames = obj.Children().Select(o => (o as JProperty)?.Name).OrderBy(name => name);
-            GetStakingInfoModel model = Newtonsoft.Json.JsonConvert.DeserializeObject<GetStakingInfoModel>(json);
+            var model = Newtonsoft.Json.JsonConvert.DeserializeObject<GetStakingInfoModel>(json);
 
             Assert.Equal(expectedSortedPropertyNames, actualSortedPropertyNames);
             Assert.True(model.Enabled);

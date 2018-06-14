@@ -6,8 +6,8 @@ namespace NBitcoin
     {
         public SequenceLock(int minHeight, DateTimeOffset minTime)
         {
-            MinHeight = minHeight;
-            MinTime = minTime;
+            this.MinHeight = minHeight;
+            this.MinTime = minTime;
         }
         public SequenceLock(int minHeight, long minTime)
             : this(minHeight, Utils.UnixTimeToDateTime(minTime))
@@ -26,7 +26,7 @@ namespace NBitcoin
 
         public bool Evaluate(ChainedHeader block)
         {
-            var nBlockTime = block.Previous == null ? Utils.UnixTimeToDateTime(0) : block.Previous.GetMedianTimePast();
+            DateTimeOffset nBlockTime = block.Previous == null ? Utils.UnixTimeToDateTime(0) : block.Previous.GetMedianTimePast();
             return this.MinHeight < block.Height && this.MinTime < nBlockTime;
         }
     }

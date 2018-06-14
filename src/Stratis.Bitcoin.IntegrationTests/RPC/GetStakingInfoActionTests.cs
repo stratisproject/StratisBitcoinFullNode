@@ -1,10 +1,11 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using System.Threading.Tasks;
+using Microsoft.Extensions.DependencyInjection;
 using Stratis.Bitcoin.Features.Miner;
 using Stratis.Bitcoin.Features.Miner.Interfaces;
 using Stratis.Bitcoin.Features.Miner.Models;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
-using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
+using Stratis.Bitcoin.IntegrationTests.Common.Runners;
 using Stratis.Bitcoin.Tests.Common;
 using Stratis.Bitcoin.Utilities;
 using Xunit;
@@ -23,11 +24,11 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
         public void GetStakingInfo_StakingEnabled()
         {
             IFullNode fullNode = StratisBitcoinPosRunner.BuildStakingNode(TestBase.CreateTestDir(this));
-            var fullNodeRunTask = fullNode.RunAsync();
+            Task fullNodeRunTask = fullNode.RunAsync();
 
-            INodeLifetime nodeLifetime = fullNode.NodeService<INodeLifetime>();
+            var nodeLifetime = fullNode.NodeService<INodeLifetime>();
             nodeLifetime.ApplicationStarted.WaitHandle.WaitOne();
-            MiningRPCController controller = fullNode.Services.ServiceProvider.GetService<MiningRPCController>();
+            var controller = fullNode.Services.ServiceProvider.GetService<MiningRPCController>();
 
             Assert.NotNull(fullNode.NodeService<IPosMinting>(true));
 
@@ -53,15 +54,15 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
             IFullNode fullNode = StratisBitcoinPosRunner.BuildStakingNode(TestBase.CreateTestDir(this), false);
             var node = fullNode as FullNode;
 
-            var fullNodeRunTask = fullNode.RunAsync();
+            Task fullNodeRunTask = fullNode.RunAsync();
 
-            INodeLifetime nodeLifetime = fullNode.NodeService<INodeLifetime>();
+            var nodeLifetime = fullNode.NodeService<INodeLifetime>();
             nodeLifetime.ApplicationStarted.WaitHandle.WaitOne();
-            MiningRPCController controller = fullNode.Services.ServiceProvider.GetService<MiningRPCController>();
+            var controller = fullNode.Services.ServiceProvider.GetService<MiningRPCController>();
 
-            WalletManager walletManager = node.NodeService<IWalletManager>() as WalletManager;
+            var walletManager = node.NodeService<IWalletManager>() as WalletManager;
 
-            var password = "test";
+            string password = "test";
 
             // create the wallet
             walletManager.CreateWallet(password, "test");

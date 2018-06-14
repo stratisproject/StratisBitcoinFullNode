@@ -14,7 +14,7 @@ namespace NBitcoin.Networks
             messageStart[1] = 0xf2;
             messageStart[2] = 0xc0;
             messageStart[3] = 0xef;
-            var magic = BitConverter.ToUInt32(messageStart, 0); // 0xefc0f2cd
+            uint magic = BitConverter.ToUInt32(messageStart, 0); // 0xefc0f2cd
 
             this.Name = "StratisRegTest";
             this.Magic = magic;
@@ -23,11 +23,13 @@ namespace NBitcoin.Networks
             this.MinTxFee = 0;
             this.FallbackFee = 0;
             this.MinRelayTxFee = 0;
+            this.CoinTicker = "TSTRAT";
 
             this.Consensus.PowAllowMinDifficultyBlocks = true;
             this.Consensus.PowNoRetargeting = true;
             this.Consensus.PowLimit = new Target(new uint256("7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"));
             this.Consensus.DefaultAssumeValid = null; // turn off assumevalid for regtest.
+            this.Consensus.CoinbaseMaturity = 10;
 
             this.Base58Prefixes[(int)Base58Type.PUBKEY_ADDRESS] = new byte[] { (65) };
             this.Base58Prefixes[(int)Base58Type.SCRIPT_ADDRESS] = new byte[] { (196) };
@@ -44,12 +46,12 @@ namespace NBitcoin.Networks
             this.GenesisVersion = 1;
             this.GenesisReward = Money.Zero;
 
-            this.Genesis = Network.CreateStratisGenesisBlock(this.Consensus.ConsensusFactory, this.GenesisTime, this.GenesisNonce, this.GenesisBits, this.GenesisVersion, this.GenesisReward);
+            this.Genesis = CreateStratisGenesisBlock(this.Consensus.ConsensusFactory, this.GenesisTime, this.GenesisNonce, this.GenesisBits, this.GenesisVersion, this.GenesisReward);
             this.Genesis.Header.Time = 1494909211;
             this.Genesis.Header.Nonce = 2433759;
             this.Genesis.Header.Bits = this.Consensus.PowLimit;
             this.Consensus.HashGenesisBlock = this.Genesis.GetHash();
-            Network.Assert(this.Consensus.HashGenesisBlock == uint256.Parse("0x93925104d664314f581bc7ecb7b4bad07bcfabd1cfce4256dbd2faddcf53bd1f"));
+            Assert(this.Consensus.HashGenesisBlock == uint256.Parse("0x93925104d664314f581bc7ecb7b4bad07bcfabd1cfce4256dbd2faddcf53bd1f"));
         }
     }
 }

@@ -33,75 +33,92 @@ namespace NBitcoin
         {
 
         }
-        Random _Rand = new Random();
+
+        private Random _Rand = new Random();
         public DefaultCoinSelector(int seed)
         {
-            _Rand = new Random(seed);
+            this._Rand = new Random(seed);
         }
+
+        /// <summary>
+        /// Select all coins belonging to same scriptPubKey together to protect privacy. (Default: true)
+        /// </summary>
+        public bool GroupByScriptPubKey
+        {
+            get; set;
+        } = true;
+
         #region ICoinSelector Members
 
         public IEnumerable<ICoin> Select(IEnumerable<ICoin> coins, IMoney target)
         {
-            var zero = target.Sub(target);
-            var targetCoin = coins
-                            .FirstOrDefault(c => c.Amount.CompareTo(target) == 0);
-            //If any of your UTXO² matches the Target¹ it will be used.
-            if(targetCoin != null)
-                return new[] { targetCoin };
+            IMoney zero = target.Sub(target);
 
-            List<ICoin> result = new List<ICoin>();
+            var result = new List<ICoin>();
             IMoney total = zero;
 
-            if(target.CompareTo(zero) == 0)
+            if (target.CompareTo(zero) == 0)
                 return result;
 
-            var orderedCoins = coins.OrderBy(s => s.Amount).ToArray();
+            var orderedCoinGroups = coins.GroupBy(c => this.GroupByScriptPubKey ? c.TxOut.ScriptPubKey : new Key().ScriptPubKey)
+                                    .Select(scriptPubKeyCoins => new
+                                    {
+                                        Amount = scriptPubKeyCoins.Select(c => c.Amount).Sum(zero),
+                                        Coins = scriptPubKeyCoins.ToList()
+                                    }).OrderBy(c => c.Amount);
 
-            foreach(var coin in orderedCoins)
+
+            var targetCoin = orderedCoinGroups
+                            .FirstOrDefault(c => c.Amount.CompareTo(target) == 0);
+            //If any of your UTXO² matches the Target¹ it will be used.
+            if (targetCoin != null)
+                return targetCoin.Coins;
+
+            foreach (var coinGroup in orderedCoinGroups)
             {
-                if(coin.Amount.CompareTo(target) == -1 && total.CompareTo(target) == -1)
+                if (coinGroup.Amount.CompareTo(target) == -1 && total.CompareTo(target) == -1)
                 {
-                    total = total.Add(coin.Amount);
-                    result.Add(coin);
+                    total = total.Add(coinGroup.Amount);
+                    result.AddRange(coinGroup.Coins);
                     //If the "sum of all your UTXO smaller than the Target" happens to match the Target, they will be used. (This is the case if you sweep a complete wallet.)
-                    if(total.CompareTo(target) == 0)
+                    if (total.CompareTo(target) == 0)
                         return result;
 
                 }
                 else
                 {
-                    if(total.CompareTo(target) == -1 && coin.Amount.CompareTo(target) == 1)
+                    if (total.CompareTo(target) == -1 && coinGroup.Amount.CompareTo(target) == 1)
                     {
                         //If the "sum of all your UTXO smaller than the Target" doesn't surpass the target, the smallest UTXO greater than your Target will be used.
-                        return new[] { coin };
+                        return coinGroup.Coins;
                     }
                     else
                     {
-                        //                        Else Bitcoin Core does 1000 rounds of randomly combining unspent transaction outputs until their sum is greater than or equal to the Target. If it happens to find an exact match, it stops early and uses that.
+                        //						Else Bitcoin Core does 1000 rounds of randomly combining unspent transaction outputs until their sum is greater than or equal to the Target. If it happens to find an exact match, it stops early and uses that.
                         //Otherwise it finally settles for the minimum of
                         //the smallest UTXO greater than the Target
                         //the smallest combination of UTXO it discovered in Step 4.
-                        var allCoins = orderedCoins.ToArray();
+                        var allCoins = orderedCoinGroups.ToArray();
                         IMoney minTotal = null;
-                        for(int _ = 0; _ < 1000; _++)
+                        for (int _ = 0; _ < 1000; _++)
                         {
                             var selection = new List<ICoin>();
-                            Utils.Shuffle(allCoins, _Rand);
+                            Utils.Shuffle(allCoins, this._Rand);
                             total = zero;
-                            for(int i = 0; i < allCoins.Length; i++)
+                            for (int i = 0; i < allCoins.Length; i++)
                             {
-                                selection.Add(allCoins[i]);
+                                selection.AddRange(allCoins[i].Coins);
                                 total = total.Add(allCoins[i].Amount);
-                                if(total.CompareTo(target) == 0)
+                                if (total.CompareTo(target) == 0)
                                     return selection;
-                                if(total.CompareTo(target) == 1)
+                                if (total.CompareTo(target) == 1)
                                     break;
                             }
-                            if(total.CompareTo(target) == -1)
+                            if (total.CompareTo(target) == -1)
                             {
                                 return null;
                             }
-                            if(minTotal == null || total.CompareTo(minTotal) == -1)
+                            if (minTotal == null || total.CompareTo(minTotal) == -1)
                             {
                                 minTotal = total;
                             }
@@ -109,7 +126,7 @@ namespace NBitcoin
                     }
                 }
             }
-            if(total.CompareTo(target) == -1)
+            if (total.CompareTo(target) == -1)
                 return null;
             return result;
         }
@@ -125,13 +142,13 @@ namespace NBitcoin
         public NotEnoughFundsException(string message, string group, IMoney missing)
             : base(BuildMessage(message, group, missing))
         {
-            Missing = missing;
-            Group = group;
+            this.Missing = missing;
+            this.Group = group;
         }
 
         private static string BuildMessage(string message, string group, IMoney missing)
         {
-            StringBuilder builder = new StringBuilder();
+            var builder = new StringBuilder();
             builder.Append(message);
             if(group != null)
                 builder.Append(" in group " + group);
@@ -170,10 +187,10 @@ namespace NBitcoin
     {
         internal class TransactionBuilderSigner : ISigner
         {
-            ICoin coin;
-            SigHash sigHash;
-            IndexedTxIn txIn;
-            TransactionBuilder builder;
+            private ICoin coin;
+            private SigHash sigHash;
+            private IndexedTxIn txIn;
+            private TransactionBuilder builder;
             public TransactionBuilderSigner(TransactionBuilder builder, ICoin coin, SigHash sigHash, IndexedTxIn txIn)
             {
                 this.builder = builder;
@@ -185,31 +202,31 @@ namespace NBitcoin
 
             public TransactionSignature Sign(Key key)
             {
-                return txIn.Sign(this.builder.Network, key, coin, sigHash);
+                return this.txIn.Sign(this.builder.Network, key, this.coin, this.sigHash);
             }
 
             #endregion
         }
         internal class TransactionBuilderKeyRepository : IKeyRepository
         {
-            TransactionSigningContext _Ctx;
-            TransactionBuilder _TxBuilder;
+            private TransactionSigningContext _Ctx;
+            private TransactionBuilder _TxBuilder;
             public TransactionBuilderKeyRepository(TransactionBuilder txBuilder, TransactionSigningContext ctx)
             {
-                _Ctx = ctx;
-                _TxBuilder = txBuilder;
+                this._Ctx = ctx;
+                this._TxBuilder = txBuilder;
             }
             #region IKeyRepository Members
 
             public Key FindKey(Script scriptPubkey)
             {
-                return _TxBuilder.FindKey(_Ctx, scriptPubkey);
+                return this._TxBuilder.FindKey(this._Ctx, scriptPubkey);
             }
 
             #endregion
         }
 
-        class KnownSignatureSigner : ISigner, IKeyRepository
+        private class KnownSignatureSigner : ISigner, IKeyRepository
         {
             private ICoin coin;
             private SigHash sigHash;
@@ -217,7 +234,7 @@ namespace NBitcoin
             private List<Tuple<PubKey, ECDSASignature>> _KnownSignatures;
             private Dictionary<KeyId, ECDSASignature> _VerifiedSignatures = new Dictionary<KeyId, ECDSASignature>();
             private Dictionary<uint256, PubKey> _DummyToRealKey = new Dictionary<uint256, PubKey>();
-            TransactionBuilder builder;
+            private TransactionBuilder builder;
 
             public KnownSignatureSigner(TransactionBuilder builder, List<Tuple<PubKey, ECDSASignature>> _KnownSignatures, ICoin coin, SigHash sigHash, IndexedTxIn txIn)
             {
@@ -230,14 +247,14 @@ namespace NBitcoin
 
             public Key FindKey(Script scriptPubKey)
             {
-                foreach(var tv in _KnownSignatures.Where(tv => IsCompatibleKey(tv.Item1, scriptPubKey)))
+                foreach(Tuple<PubKey, ECDSASignature> tv in this._KnownSignatures.Where(tv => IsCompatibleKey(tv.Item1, scriptPubKey)))
                 {
-                    var hash = txIn.GetSignatureHash(this.builder.Network, coin, sigHash);
+                    uint256 hash = this.txIn.GetSignatureHash(this.builder.Network, this.coin, this.sigHash);
                     if(tv.Item1.Verify(hash, tv.Item2))
                     {
                         var key = new Key();
                         this._DummyToRealKey.Add(Hashes.Hash256(key.PubKey.ToBytes()), tv.Item1);
-                        _VerifiedSignatures.AddOrReplace(key.PubKey.Hash, tv.Item2);
+                        this._VerifiedSignatures.AddOrReplace(key.PubKey.Hash, tv.Item2);
                         return key;
                     }
                 }
@@ -246,23 +263,23 @@ namespace NBitcoin
 
             public Script ReplaceDummyKeys(Script script)
             {
-                var ops = script.ToOps().ToList();
-                List<Op> result = new List<Op>();
+                List<Op> ops = script.ToOps().ToList();
+                var result = new List<Op>();
                 foreach(Op op in ops)
                 {
                     uint256 h = Hashes.Hash256(op.PushData);
- 	                PubKey real;
- 	                if(this._DummyToRealKey.TryGetValue(h, out real))
- 		                result.Add(Op.GetPushOp(real.ToBytes()));
- 	                else
- 		                result.Add(op);
+                    PubKey real;
+                    if(this._DummyToRealKey.TryGetValue(h, out real))
+                        result.Add(Op.GetPushOp(real.ToBytes()));
+                    else
+                        result.Add(op);
                 }
                 return new Script(result.ToArray());
             }
 
             public TransactionSignature Sign(Key key)
             {
-                return new TransactionSignature(_VerifiedSignatures[key.PubKey.Hash], sigHash);
+                return new TransactionSignature(this._VerifiedSignatures[key.PubKey.Hash], this.sigHash);
             }
         }
 
@@ -270,8 +287,8 @@ namespace NBitcoin
         {
             public TransactionSigningContext(TransactionBuilder builder, Transaction transaction)
             {
-                Builder = builder;
-                Transaction = transaction;
+                this.Builder = builder;
+                this.Transaction = transaction;
             }
 
             public Transaction Transaction
@@ -290,7 +307,7 @@ namespace NBitcoin
             {
                 get
                 {
-                    return _AdditionalKeys;
+                    return this._AdditionalKeys;
                 }
             }
 
@@ -304,11 +321,11 @@ namespace NBitcoin
         {
             public TransactionBuildingContext(TransactionBuilder builder)
             {
-                Builder = builder;
-                Transaction = builder.Network.Consensus.ConsensusFactory.CreateTransaction();
-                AdditionalFees = Money.Zero;
+                this.Builder = builder;
+                this.Transaction = builder.Network.Consensus.ConsensusFactory.CreateTransaction();
+                this.AdditionalFees = Money.Zero;
             }
-            public TransactionBuilder.BuilderGroup Group
+            public BuilderGroup Group
             {
                 get;
                 set;
@@ -319,7 +336,7 @@ namespace NBitcoin
             {
                 get
                 {
-                    return _ConsumedCoins;
+                    return this._ConsumedCoins;
                 }
             }
             public TransactionBuilder Builder
@@ -344,35 +361,34 @@ namespace NBitcoin
             {
                 get
                 {
-                    return _AdditionalBuilders;
+                    return this._AdditionalBuilders;
                 }
             }
 
-            ColorMarker _Marker;
+            private ColorMarker _Marker;
 
             public ColorMarker GetColorMarker(bool issuance)
             {
-                if(_Marker == null)
-                    _Marker = new ColorMarker();
+                if(this._Marker == null) this._Marker = new ColorMarker();
                 if(!issuance)
                     EnsureMarkerInserted();
-                return _Marker;
+                return this._Marker;
             }
 
             private TxOut EnsureMarkerInserted()
             {
                 uint position;
-                var dummy = Transaction.AddInput(new TxIn(new OutPoint(new uint256(1), 0))); //Since a transaction without input will be considered without marker, insert a dummy
+                TxIn dummy = this.Transaction.AddInput(new TxIn(new OutPoint(new uint256(1), 0))); //Since a transaction without input will be considered without marker, insert a dummy
                 try
                 {
-                    if(ColorMarker.Get(Transaction, out position) != null)
-                        return Transaction.Outputs[position];
+                    if(ColorMarker.Get(this.Transaction, out position) != null)
+                        return this.Transaction.Outputs[position];
                 }
                 finally
                 {
-                    Transaction.Inputs.Remove(dummy);
+                    this.Transaction.Inputs.Remove(dummy);
                 }
-                var txout = Transaction.AddOutput(new TxOut()
+                TxOut txout = this.Transaction.AddOutput(new TxOut()
                 {
                     ScriptPubKey = new ColorMarker().GetScript()
                 });
@@ -382,10 +398,10 @@ namespace NBitcoin
 
             public void Finish()
             {
-                if(_Marker != null)
+                if(this._Marker != null)
                 {
-                    var txout = EnsureMarkerInserted();
-                    txout.ScriptPubKey = _Marker.GetScript();
+                    TxOut txout = EnsureMarkerInserted();
+                    txout.ScriptPubKey = this._Marker.GetScript();
                 }
             }
 
@@ -403,16 +419,16 @@ namespace NBitcoin
 
             public TransactionBuildingContext CreateMemento()
             {
-                var memento = new TransactionBuildingContext(Builder);
+                var memento = new TransactionBuildingContext(this.Builder);
                 memento.RestoreMemento(this);
                 return memento;
             }
 
             public void RestoreMemento(TransactionBuildingContext memento)
             {
-                _Marker = memento._Marker == null ? null : new ColorMarker(memento._Marker.GetScript());
-                Transaction = memento.Transaction.Clone(network: memento.Builder.Network);
-                AdditionalFees = memento.AdditionalFees;
+                this._Marker = memento._Marker == null ? null : new ColorMarker(memento._Marker.GetScript());
+                this.Transaction = memento.Transaction.Clone(network: memento.Builder.Network);
+                this.AdditionalFees = memento.AdditionalFees;
             }
 
             public bool NonFinalSequenceSet
@@ -442,15 +458,15 @@ namespace NBitcoin
 
         internal class BuilderGroup
         {
-            TransactionBuilder _Parent;
+            private TransactionBuilder _Parent;
             public BuilderGroup(TransactionBuilder parent)
             {
-                _Parent = parent;
-                FeeWeight = 1.0m;
-                Builders.Add(SetChange);
+                this._Parent = parent;
+                this.FeeWeight = 1.0m;
+                this.Builders.Add(SetChange);
             }
 
-            IMoney SetChange(TransactionBuildingContext ctx)
+            private IMoney SetChange(TransactionBuildingContext ctx)
             {
                 var changeAmount = (Money)ctx.ChangeAmount;
                 if(changeAmount.Satoshi == 0)
@@ -465,14 +481,14 @@ namespace NBitcoin
             internal Script[] ChangeScript = new Script[3];
             internal void Shuffle()
             {
-                Shuffle(Builders);
-                foreach(var builders in BuildersByAsset)
+                Shuffle(this.Builders);
+                foreach(KeyValuePair<AssetId, List<Builder>> builders in this.BuildersByAsset)
                     Shuffle(builders.Value);
-                Shuffle(IssuanceBuilders);
+                Shuffle(this.IssuanceBuilders);
             }
             private void Shuffle(List<Builder> builders)
             {
-                Utils.Shuffle(builders, _Parent._Rand);
+                Utils.Shuffle(builders, this._Parent._Rand);
             }
 
             public Money CoverOnly
@@ -494,28 +510,28 @@ namespace NBitcoin
             }
         }
 
-        List<BuilderGroup> _BuilderGroups = new List<BuilderGroup>();
-        BuilderGroup _CurrentGroup = null;
+        private List<BuilderGroup> _BuilderGroups = new List<BuilderGroup>();
+        private BuilderGroup _CurrentGroup = null;
         internal BuilderGroup CurrentGroup
         {
             get
             {
-                if(_CurrentGroup == null)
+                if(this._CurrentGroup == null)
                 {
-                    _CurrentGroup = new BuilderGroup(this);
-                    _BuilderGroups.Add(_CurrentGroup);
+                    this._CurrentGroup = new BuilderGroup(this);
+                    this._BuilderGroups.Add(this._CurrentGroup);
                 }
-                return _CurrentGroup;
+                return this._CurrentGroup;
             }
         }
         internal TransactionBuilder()
         {
             this.Network = Network.Main;
 
-            _Rand = new Random();
-            CoinSelector = new DefaultCoinSelector();
-            StandardTransactionPolicy = new StandardTransactionPolicy(this.Network);
-            DustPrevention = true;
+            this._Rand = new Random();
+            this.CoinSelector = new DefaultCoinSelector();
+            this.StandardTransactionPolicy = new StandardTransactionPolicy(this.Network);
+            this.DustPrevention = true;
             InitExtensions();
         }
 
@@ -523,19 +539,19 @@ namespace NBitcoin
         {
             this.Network = network;
 
-            _Rand = new Random();
-            CoinSelector = new DefaultCoinSelector();
-            StandardTransactionPolicy = new StandardTransactionPolicy(this.Network);
-            DustPrevention = true;
+            this._Rand = new Random();
+            this.CoinSelector = new DefaultCoinSelector();
+            this.StandardTransactionPolicy = new StandardTransactionPolicy(this.Network);
+            this.DustPrevention = true;
             InitExtensions();
         }
 
         private void InitExtensions()
         {
-            Extensions.Add(new P2PKHBuilderExtension());
-            Extensions.Add(new P2MultiSigBuilderExtension());
-            Extensions.Add(new P2PKBuilderExtension());
-            Extensions.Add(new OPTrueExtension());
+            this.Extensions.Add(new P2PKHBuilderExtension());
+            this.Extensions.Add(new P2MultiSigBuilderExtension());
+            this.Extensions.Add(new P2PKBuilderExtension());
+            this.Extensions.Add(new OPTrueExtension());
         }
 
         internal Random _Rand;
@@ -543,10 +559,10 @@ namespace NBitcoin
         {
             this.Network = Network.Main;
 
-            _Rand = new Random(seed);
-            CoinSelector = new DefaultCoinSelector(seed);
-            StandardTransactionPolicy = new StandardTransactionPolicy(this.Network);
-            DustPrevention = true;
+            this._Rand = new Random(seed);
+            this.CoinSelector = new DefaultCoinSelector(seed);
+            this.StandardTransactionPolicy = new StandardTransactionPolicy(this.Network);
+            this.DustPrevention = true;
             InitExtensions();
         }
 
@@ -554,10 +570,10 @@ namespace NBitcoin
         {
             this.Network = network;
 
-            _Rand = new Random(seed);
-            CoinSelector = new DefaultCoinSelector(seed);
-            StandardTransactionPolicy = new StandardTransactionPolicy(this.Network);
-            DustPrevention = true;
+            this._Rand = new Random(seed);
+            this.CoinSelector = new DefaultCoinSelector(seed);
+            this.StandardTransactionPolicy = new StandardTransactionPolicy(this.Network);
+            this.DustPrevention = true;
             InitExtensions();
         }
 
@@ -578,11 +594,27 @@ namespace NBitcoin
 
         /// <summary>
         /// Will transform transfers below Dust, so the transaction get correctly relayed by the network.
+        /// If true, it will remove any TxOut below Dust, so the transaction get correctly relayed by the network. (Default: true)
         /// </summary>
         public bool DustPrevention
         {
             get;
             set;
+        }
+
+        /// <summary>
+        /// If true, the TransactionBuilder will not select coins whose fee to spend is higher than its value. (Default: true)
+        /// The cost of spending a coin is based on the <see cref="FilterUneconomicalCoinsRate"/>.
+        /// </summary>
+        public bool FilterUneconomicalCoins { get; set; } = true;
+
+        /// <summary>
+        /// If <see cref="FilterUneconomicalCoins"/> is true, this rate is used to know if an output is economical.
+        /// This property is set automatically when calling <see cref="SendEstimatedFees(FeeRate)"/> or <see cref="SendEstimatedFeesSplit(FeeRate)"/>.
+        /// </summary>
+        public FeeRate FilterUneconomicalCoinsRate
+        {
+            get; set;
         }
 
         /// <summary>
@@ -603,24 +635,24 @@ namespace NBitcoin
             set;
         }
 
-        LockTime? _LockTime;
+        private LockTime? _LockTime;
         public TransactionBuilder SetLockTime(LockTime lockTime)
         {
-            _LockTime = lockTime;
+            this._LockTime = lockTime;
             return this;
         }
 
-        List<Key> _Keys = new List<Key>();
+        private List<Key> _Keys = new List<Key>();
 
         public TransactionBuilder AddKeys(params ISecret[] keys)
         {
-            this.AddKeys(keys.Select(k => k.PrivateKey).ToArray());
+            AddKeys(keys.Select(k => k.PrivateKey).ToArray());
             return this;
         }
 
         public TransactionBuilder AddKeys(params Key[] keys)
         {
-            _Keys.AddRange(keys);
+            this._Keys.AddRange(keys);
             foreach (Key k in keys)
             {
                 AddKnownRedeems(k.PubKey.ScriptPubKey);
@@ -636,7 +668,7 @@ namespace NBitcoin
                 throw new ArgumentNullException("pubKey");
             if(signature == null)
                 throw new ArgumentNullException("signature");
-            _KnownSignatures.Add(Tuple.Create(pubKey, signature.Signature));
+            this._KnownSignatures.Add(Tuple.Create(pubKey, signature.Signature));
             return this;
         }
 
@@ -646,7 +678,7 @@ namespace NBitcoin
                 throw new ArgumentNullException("pubKey");
             if(signature == null)
                 throw new ArgumentNullException("signature");
-            _KnownSignatures.Add(Tuple.Create(pubKey, signature));
+            this._KnownSignatures.Add(Tuple.Create(pubKey, signature));
             return this;
         }
 
@@ -657,9 +689,9 @@ namespace NBitcoin
 
         public TransactionBuilder AddCoins(IEnumerable<ICoin> coins)
         {
-            foreach(var coin in coins)
+            foreach(ICoin coin in coins)
             {
-                CurrentGroup.Coins.AddOrReplace(coin.Outpoint, coin);
+                this.CurrentGroup.Coins.AddOrReplace(coin.Outpoint, coin);
             }
             return this;
         }
@@ -671,7 +703,7 @@ namespace NBitcoin
         /// <returns></returns>
         public TransactionBuilder SetGroupName(string groupName)
         {
-            CurrentGroup.Name = groupName;
+            this.CurrentGroup.Name = groupName;
             return this;
         }
 
@@ -686,7 +718,7 @@ namespace NBitcoin
             return Send(destination.ScriptPubKey, amount);
         }
 
-        readonly static TxNullDataTemplate _OpReturnTemplate = new TxNullDataTemplate(1024 * 1024);
+        private readonly static TxNullDataTemplate _OpReturnTemplate = new TxNullDataTemplate(1024 * 1024);
 
         /// <summary>
         /// Send bitcoins to a destination
@@ -698,35 +730,35 @@ namespace NBitcoin
         {
             if(amount < Money.Zero)
                 throw new ArgumentOutOfRangeException("amount", "amount can't be negative");
-            _LastSendBuilder = null; //If the amount is dust, we don't want the fee to be paid by the previous Send
-            if(DustPrevention && amount < GetDust(scriptPubKey) && !_OpReturnTemplate.CheckScriptPubKey(this.Network, scriptPubKey))
+            this._LastSendBuilder = null; //If the amount is dust, we don't want the fee to be paid by the previous Send
+            if(this.DustPrevention && amount < GetDust(scriptPubKey) && !_OpReturnTemplate.CheckScriptPubKey(this.Network, scriptPubKey))
             {
                 SendFees(amount);
                 return this;
             }
 
             var builder = new SendBuilder(new TxOut(amount, scriptPubKey));
-            CurrentGroup.Builders.Add(builder.Build);
-            _LastSendBuilder = builder;
+            this.CurrentGroup.Builders.Add(builder.Build);
+            this._LastSendBuilder = builder;
             return this;
         }
 
-        SendBuilder _LastSendBuilder;
-        SendBuilder _SubstractFeeBuilder;
+        private SendBuilder _LastSendBuilder;
+        private SendBuilder _SubstractFeeBuilder;
 
-        class SendBuilder
+        private class SendBuilder
         {
             internal TxOut _TxOut;
 
             public SendBuilder(TxOut txout)
             {
-                _TxOut = txout;
+                this._TxOut = txout;
             }
 
             public Money Build(TransactionBuildingContext ctx)
             {
-                ctx.Transaction.Outputs.Add(_TxOut);
-                return _TxOut.Value;
+                ctx.Transaction.Outputs.Add(this._TxOut);
+                return this._TxOut.Value;
             }
         }
 
@@ -736,9 +768,9 @@ namespace NBitcoin
         /// <returns></returns>
         public TransactionBuilder SubtractFees()
         {
-            if(_LastSendBuilder == null)
+            if(this._LastSendBuilder == null)
                 throw new InvalidOperationException("No call to TransactionBuilder.Send has been done which can support the fees");
-            _SubstractFeeBuilder = _LastSendBuilder;
+            this._SubstractFeeBuilder = this._LastSendBuilder;
             return this;
         }
 
@@ -762,17 +794,17 @@ namespace NBitcoin
         /// <exception cref="System.NotSupportedException">The coin type is not supported</exception>
         public TransactionBuilder Send(Script scriptPubKey, IMoney amount)
         {
-            MoneyBag bag = amount as MoneyBag;
+            var bag = amount as MoneyBag;
             if(bag != null)
             {
-                foreach(var money in bag)
+                foreach(IMoney money in bag)
                     Send(scriptPubKey, amount);
                 return this;
             }
-            Money coinAmount = amount as Money;
+            var coinAmount = amount as Money;
             if(coinAmount != null)
                 return Send(scriptPubKey, coinAmount);
-            AssetMoney assetAmount = amount as AssetMoney;
+            var assetAmount = amount as AssetMoney;
             if(assetAmount != null)
                 return SendAsset(scriptPubKey, assetAmount);
             throw new NotSupportedException("Type of Money not supported");
@@ -802,20 +834,20 @@ namespace NBitcoin
 
         public TransactionBuilder Shuffle()
         {
-            Utils.Shuffle(_BuilderGroups, _Rand);
-            foreach(var group in _BuilderGroups)
+            Utils.Shuffle(this._BuilderGroups, this._Rand);
+            foreach(BuilderGroup group in this._BuilderGroups)
                 group.Shuffle();
             return this;
         }
 
-        IMoney SetColoredChange(TransactionBuildingContext ctx)
+        private IMoney SetColoredChange(TransactionBuildingContext ctx)
         {
             var changeAmount = (AssetMoney)ctx.ChangeAmount;
             if(changeAmount.Quantity == 0)
                 return changeAmount;
-            var marker = ctx.GetColorMarker(false);
-            var script = ctx.Group.ChangeScript[(int)ChangeType.Colored];
-            var txout = ctx.Transaction.AddOutput(new TxOut(GetDust(script), script));
+            ColorMarker marker = ctx.GetColorMarker(false);
+            Script script = ctx.Group.ChangeScript[(int)ChangeType.Colored];
+            TxOut txout = ctx.Transaction.AddOutput(new TxOut(GetDust(script), script));
             marker.SetQuantity(ctx.Transaction.Outputs.Count - 2, changeAmount.Quantity);
             ctx.AdditionalFees += txout.Value;
             return changeAmount;
@@ -833,17 +865,17 @@ namespace NBitcoin
             if(asset.Quantity == 0)
                 return this;
             AssertOpReturn("Colored Coin");
-            var builders = CurrentGroup.BuildersByAsset.TryGet(asset.Id);
+            List<Builder> builders = this.CurrentGroup.BuildersByAsset.TryGet(asset.Id);
             if(builders == null)
             {
                 builders = new List<Builder>();
-                CurrentGroup.BuildersByAsset.Add(asset.Id, builders);
+                this.CurrentGroup.BuildersByAsset.Add(asset.Id, builders);
                 builders.Add(SetColoredChange);
             }
             builders.Add(ctx =>
             {
-                var marker = ctx.GetColorMarker(false);
-                var txout = ctx.Transaction.AddOutput(new TxOut(GetDust(scriptPubKey), scriptPubKey));
+                ColorMarker marker = ctx.GetColorMarker(false);
+                TxOut txout = ctx.Transaction.AddOutput(new TxOut(GetDust(scriptPubKey), scriptPubKey));
                 marker.SetQuantity(ctx.Transaction.Outputs.Count - 2, asset.Quantity);
                 ctx.AdditionalFees += txout.Value;
                 return asset;
@@ -851,15 +883,16 @@ namespace NBitcoin
             return this;
         }
 
-        Money GetDust()
+        private Money GetDust()
         {
             return GetDust(new Script(new byte[25]));
         }
-        Money GetDust(Script script)
+
+        private Money GetDust(Script script)
         {
-            if(StandardTransactionPolicy == null || StandardTransactionPolicy.MinRelayTxFee == null)
+            if(this.StandardTransactionPolicy == null || this.StandardTransactionPolicy.MinRelayTxFee == null)
                 return Money.Zero;
-            return new TxOut(Money.Zero, script).GetDustThreshold(StandardTransactionPolicy.MinRelayTxFee);
+            return new TxOut(Money.Zero, script).GetDustThreshold(this.StandardTransactionPolicy.MinRelayTxFee);
         }
 
         /// <summary>
@@ -869,7 +902,7 @@ namespace NBitcoin
         /// <returns>this</returns>
         public TransactionBuilder SetTransactionPolicy(StandardTransactionPolicy policy)
         {
-            StandardTransactionPolicy = policy;
+            this.StandardTransactionPolicy = policy;
             return this;
         }
         public StandardTransactionPolicy StandardTransactionPolicy
@@ -879,17 +912,17 @@ namespace NBitcoin
         }
 
 
-        string _OpReturnUser;
+        private string _OpReturnUser;
         private void AssertOpReturn(string name)
         {
-            if(_OpReturnUser == null)
+            if(this._OpReturnUser == null)
             {
-                _OpReturnUser = name;
+                this._OpReturnUser = name;
             }
             else
             {
-                if(_OpReturnUser != name)
-                    throw new InvalidOperationException("Op return already used for " + _OpReturnUser);
+                if(this._OpReturnUser != name)
+                    throw new InvalidOperationException("Op return already used for " + this._OpReturnUser);
             }
         }
 
@@ -898,14 +931,14 @@ namespace NBitcoin
             if(amount < Money.Zero)
                 throw new ArgumentOutOfRangeException("amount", "amount can't be negative");
 
-            if(_OpReturnUser == null)
-                _OpReturnUser = "Stealth Payment";
+            if(this._OpReturnUser == null)
+                this._OpReturnUser = "Stealth Payment";
             else
-                throw new InvalidOperationException("Op return already used for " + _OpReturnUser);
+                throw new InvalidOperationException("Op return already used for " + this._OpReturnUser);
 
-            CurrentGroup.Builders.Add(ctx =>
+            this.CurrentGroup.Builders.Add(ctx =>
             {
-                var payment = address.CreatePayment(ephemKey);
+                StealthPayment payment = address.CreatePayment(ephemKey);
                 payment.AddToTransaction(ctx.Transaction, amount);
                 return amount;
             });
@@ -917,22 +950,22 @@ namespace NBitcoin
             return IssueAsset(destination.ScriptPubKey, asset);
         }
 
-        AssetId _IssuedAsset;
+        private AssetId _IssuedAsset;
 
         public TransactionBuilder IssueAsset(Script scriptPubKey, AssetMoney asset)
         {
             AssertOpReturn("Colored Coin");
-            if(_IssuedAsset == null)
-                _IssuedAsset = asset.Id;
-            else if(_IssuedAsset != asset.Id)
+            if(this._IssuedAsset == null)
+                this._IssuedAsset = asset.Id;
+            else if(this._IssuedAsset != asset.Id)
                 throw new InvalidOperationException("You can issue only one asset type in a transaction");
 
-            CurrentGroup.IssuanceBuilders.Add(ctx =>
+            this.CurrentGroup.IssuanceBuilders.Add(ctx =>
             {
-                var marker = ctx.GetColorMarker(true);
+                ColorMarker marker = ctx.GetColorMarker(true);
                 if(ctx.IssuanceCoin == null)
                 {
-                    var issuance = ctx.Group.Coins.Values.OfType<IssuanceCoin>().Where(i => i.AssetId == asset.Id).FirstOrDefault();
+                    IssuanceCoin issuance = ctx.Group.Coins.Values.OfType<IssuanceCoin>().Where(i => i.AssetId == asset.Id).FirstOrDefault();
                     if(issuance == null)
                         throw new InvalidOperationException("No issuance coin for emitting asset found");
                     ctx.IssuanceCoin = issuance;
@@ -956,12 +989,12 @@ namespace NBitcoin
         {
             if(fees == null)
                 throw new ArgumentNullException("fees");
-            CurrentGroup.Builders.Add(ctx => fees);
-            _TotalFee += fees;
+            this.CurrentGroup.Builders.Add(ctx => fees);
+            this._TotalFee += fees;
             return this;
         }
 
-        Money _TotalFee = Money.Zero;
+        private Money _TotalFee = Money.Zero;
 
         /// <summary>
         /// Split the estimated fees accross the several groups (separated by Then())
@@ -970,7 +1003,8 @@ namespace NBitcoin
         /// <returns></returns>
         public TransactionBuilder SendEstimatedFees(FeeRate feeRate)
         {
-            var fee = EstimateFees(feeRate);
+            this.FilterUneconomicalCoinsRate = feeRate;
+            Money fee = EstimateFees(feeRate);
             SendFees(fee);
             return this;
         }
@@ -982,7 +1016,8 @@ namespace NBitcoin
         /// <returns></returns>
         public TransactionBuilder SendEstimatedFeesSplit(FeeRate feeRate)
         {
-            var fee = EstimateFees(feeRate);
+            this.FilterUneconomicalCoinsRate = feeRate;
+            Money fee = EstimateFees(feeRate);
             SendFeesSplit(fee);
             return this;
         }
@@ -996,16 +1031,16 @@ namespace NBitcoin
         {
             if(fees == null)
                 throw new ArgumentNullException("fees");
-            var lastGroup = CurrentGroup; //Make sure at least one group exists
-            var totalWeight = _BuilderGroups.Select(b => b.FeeWeight).Sum();
+            BuilderGroup lastGroup = this.CurrentGroup; //Make sure at least one group exists
+            decimal totalWeight = this._BuilderGroups.Select(b => b.FeeWeight).Sum();
             Money totalSent = Money.Zero;
-            foreach(var group in _BuilderGroups)
+            foreach(BuilderGroup group in this._BuilderGroups)
             {
-                var groupFee = Money.Satoshis((group.FeeWeight / totalWeight) * fees.Satoshi);
+                Money groupFee = Money.Satoshis((group.FeeWeight / totalWeight) * fees.Satoshi);
                 totalSent += groupFee;
-                if(_BuilderGroups.Last() == group)
+                if(this._BuilderGroups.Last() == group)
                 {
-                    var leftOver = fees - totalSent;
+                    Money leftOver = fees - totalSent;
                     groupFee += leftOver;
                 }
                 group.Builders.Add(ctx => groupFee);
@@ -1021,7 +1056,7 @@ namespace NBitcoin
         /// <returns></returns>
         public TransactionBuilder SetFeeWeight(decimal feeWeight)
         {
-            CurrentGroup.FeeWeight = feeWeight;
+            this.CurrentGroup.FeeWeight = feeWeight;
             return this;
         }
 
@@ -1034,11 +1069,11 @@ namespace NBitcoin
         {
             if((changeType & ChangeType.Colored) != 0)
             {
-                CurrentGroup.ChangeScript[(int)ChangeType.Colored] = scriptPubKey;
+                this.CurrentGroup.ChangeScript[(int)ChangeType.Colored] = scriptPubKey;
             }
             if((changeType & ChangeType.Uncolored) != 0)
             {
-                CurrentGroup.ChangeScript[(int)ChangeType.Uncolored] = scriptPubKey;
+                this.CurrentGroup.ChangeScript[(int)ChangeType.Uncolored] = scriptPubKey;
             }
             return this;
         }
@@ -1047,7 +1082,7 @@ namespace NBitcoin
         {
             if(selector == null)
                 throw new ArgumentNullException("selector");
-            CoinSelector = selector;
+            this.CoinSelector = selector;
             return this;
         }
         /// <summary>
@@ -1070,30 +1105,30 @@ namespace NBitcoin
         /// <exception cref="NBitcoin.NotEnoughFundsException">Not enough funds are available</exception>
         public Transaction BuildTransaction(bool sign, SigHash sigHash)
         {
-            TransactionBuildingContext ctx = new TransactionBuildingContext(this);
-            if(_CompletedTransaction != null)
-                ctx.Transaction = _CompletedTransaction.Clone(network: this.Network);
-            if(_LockTime != null)
-                ctx.Transaction.LockTime = _LockTime.Value;
-            foreach(var group in _BuilderGroups)
+            var ctx = new TransactionBuildingContext(this);
+            if(this._CompletedTransaction != null)
+                ctx.Transaction = this._CompletedTransaction.Clone(network: this.Network);
+            if(this._LockTime != null)
+                ctx.Transaction.LockTime = this._LockTime.Value;
+            foreach(BuilderGroup group in this._BuilderGroups)
             {
                 ctx.Group = group;
                 ctx.AdditionalBuilders.Clear();
                 ctx.AdditionalFees = Money.Zero;
 
                 ctx.ChangeType = ChangeType.Colored;
-                foreach(var builder in group.IssuanceBuilders)
+                foreach(Builder builder in group.IssuanceBuilders)
                     builder(ctx);
 
-                var buildersByAsset = group.BuildersByAsset.ToList();
-                foreach(var builders in buildersByAsset)
+                List<KeyValuePair<AssetId, List<Builder>>> buildersByAsset = group.BuildersByAsset.ToList();
+                foreach(KeyValuePair<AssetId, List<Builder>> builders in buildersByAsset)
                 {
-                    var coins = group.Coins.Values.OfType<ColoredCoin>().Where(c => c.Amount.Id == builders.Key);
+                    IEnumerable<ColoredCoin> coins = group.Coins.Values.OfType<ColoredCoin>().Where(c => c.Amount.Id == builders.Key);
 
                     ctx.Dust = new AssetMoney(builders.Key);
                     ctx.CoverOnly = null;
                     ctx.ChangeAmount = new AssetMoney(builders.Key);
-                    var btcSpent = BuildTransaction(ctx, group, builders.Value, coins, new AssetMoney(builders.Key))
+                    Money btcSpent = BuildTransaction(ctx, group, builders.Value, coins, new AssetMoney(builders.Key))
                         .OfType<IColoredCoin>().Select(c => c.Bearer.Amount).Sum();
                     ctx.AdditionalFees -= btcSpent;
                 }
@@ -1103,7 +1138,7 @@ namespace NBitcoin
                 ctx.ChangeAmount = Money.Zero;
                 ctx.CoverOnly = group.CoverOnly;
                 ctx.ChangeType = ChangeType.Uncolored;
-                BuildTransaction(ctx, group, group.Builders, group.Coins.Values.OfType<Coin>(), Money.Zero);
+                BuildTransaction(ctx, group, group.Builders, group.Coins.Values.OfType<Coin>().Where(IsEconomical), Money.Zero);
             }
             ctx.Finish();
 
@@ -1114,6 +1149,19 @@ namespace NBitcoin
             return ctx.Transaction;
         }
 
+        private bool IsEconomical(Coin c)
+        {
+            if (!this.FilterUneconomicalCoins || this.FilterUneconomicalCoinsRate == null)
+                return true;
+
+            int witSize = 0;
+            int baseSize = 0;
+            EstimateScriptSigSize(c, ref witSize, ref baseSize);
+            var vSize = witSize / Transaction.WITNESS_SCALE_FACTOR + baseSize;
+
+            return c.Amount >= this.FilterUneconomicalCoinsRate.GetFee(vSize);
+        }
+
         private IEnumerable<ICoin> BuildTransaction(
             TransactionBuildingContext ctx,
             BuilderGroup group,
@@ -1121,46 +1169,52 @@ namespace NBitcoin
             IEnumerable<ICoin> coins,
             IMoney zero)
         {
-            var originalCtx = ctx.CreateMemento();
-            var fees = _TotalFee + ctx.AdditionalFees;
+            TransactionBuildingContext originalCtx = ctx.CreateMemento();
+            Money fees = this._TotalFee + ctx.AdditionalFees;
 
             // Replace the _SubstractFeeBuilder by another one with the fees substracts
-            var builderList = builders.ToList();
+            List<Builder> builderList = builders.ToList();
             for(int i = 0; i < builderList.Count; i++)
             {
-                if(builderList[i].Target == _SubstractFeeBuilder)
+                if(builderList[i].Target == this._SubstractFeeBuilder)
                 {
                     builderList.Remove(builderList[i]);
-                    var newTxOut = _SubstractFeeBuilder._TxOut.Clone(network: this.Network);
+                    TxOut newTxOut = this._SubstractFeeBuilder._TxOut.Clone(network: this.Network);
                     newTxOut.Value -= fees;
                     builderList.Insert(i, new SendBuilder(newTxOut).Build);
                 }
             }
             ////////////////////////////////////////////////////////
 
-            var target = builderList.Concat(ctx.AdditionalBuilders).Select(b => b(ctx)).Sum(zero);
+            IMoney target = builderList.Concat(ctx.AdditionalBuilders).Select(b => b(ctx)).Sum(zero);
             if(ctx.CoverOnly != null)
             {
                 target = ctx.CoverOnly.Add(ctx.ChangeAmount);
             }
 
-            var unconsumed = coins.Where(c => ctx.ConsumedCoins.All(cc => cc.Outpoint != c.Outpoint));
-            var selection = CoinSelector.Select(unconsumed, target);
+            IEnumerable<ICoin> unconsumed = coins.Where(c => ctx.ConsumedCoins.All(cc => cc.Outpoint != c.Outpoint));
+            IEnumerable<ICoin> selection = this.CoinSelector.Select(unconsumed, target);
             if(selection == null)
+            {
                 throw new NotEnoughFundsException("Not enough funds to cover the target",
                     group.Name,
                     target.Sub(unconsumed.Select(u => u.Amount).Sum(zero))
-                    );
-            var total = selection.Select(s => s.Amount).Sum(zero);
-            var change = total.Sub(target);
+                );
+            }
+
+            IMoney total = selection.Select(s => s.Amount).Sum(zero);
+            IMoney change = total.Sub(target);
             if(change.CompareTo(zero) == -1)
+            {
                 throw new NotEnoughFundsException("Not enough funds to cover the target",
                     group.Name,
                     change.Negate()
                 );
+            }
+
             if(change.CompareTo(ctx.Dust) == 1)
             {
-                var changeScript = group.ChangeScript[(int)ctx.ChangeType];
+                Script changeScript = group.ChangeScript[(int)ctx.ChangeType];
                 if(changeScript == null)
                     throw new InvalidOperationException("A change address should be specified (" + ctx.ChangeType + ")");
                 if(!(ctx.Dust is Money) || change.CompareTo(GetDust(changeScript)) == 1)
@@ -1177,13 +1231,13 @@ namespace NBitcoin
                     }
                 }
             }
-            foreach(var coin in selection)
+            foreach(ICoin coin in selection)
             {
                 ctx.ConsumedCoins.Add(coin);
-                var input = ctx.Transaction.Inputs.FirstOrDefault(i => i.PrevOut == coin.Outpoint);
+                TxIn input = ctx.Transaction.Inputs.FirstOrDefault(i => i.PrevOut == coin.Outpoint);
                 if(input == null)
                     input = ctx.Transaction.AddInput(new TxIn(coin.Outpoint));
-                if(_LockTime != null && !ctx.NonFinalSequenceSet)
+                if(this._LockTime != null && !ctx.NonFinalSequenceSet)
                 {
                     input.Sequence = 0;
                     ctx.NonFinalSequenceSet = true;
@@ -1194,7 +1248,7 @@ namespace NBitcoin
 
         public Transaction SignTransaction(Transaction transaction, SigHash sigHash)
         {
-            var tx = transaction.Clone(network: this.Network);
+            Transaction tx = transaction.Clone(network: this.Network);
             SignTransactionInPlace(tx, sigHash);
             return tx;
         }
@@ -1209,11 +1263,11 @@ namespace NBitcoin
         }
         public Transaction SignTransactionInPlace(Transaction transaction, SigHash sigHash)
         {
-            TransactionSigningContext ctx = new TransactionSigningContext(this, transaction);
+            var ctx = new TransactionSigningContext(this, transaction);
             ctx.SigHash = sigHash;
-            foreach(var input in transaction.Inputs.AsIndexedInputs())
+            foreach(IndexedTxIn input in transaction.Inputs.AsIndexedInputs())
             {
-                var coin = FindSignableCoin(input);
+                ICoin coin = FindSignableCoin(input);
                 if(coin != null)
                 {
                     Sign(ctx, coin, input);
@@ -1224,25 +1278,25 @@ namespace NBitcoin
 
         public ICoin FindSignableCoin(IndexedTxIn txIn)
         {
-            var coin = FindCoin(txIn.PrevOut);
+            ICoin coin = FindCoin(txIn.PrevOut);
             if(coin is IColoredCoin)
                 coin = ((IColoredCoin)coin).Bearer;
             if(coin == null || coin is ScriptCoin || coin is StealthCoin)
                 return coin;
 
-            var hash = ScriptCoin.GetRedeemHash(this.Network, coin.TxOut.ScriptPubKey);
+            TxDestination hash = ScriptCoin.GetRedeemHash(this.Network, coin.TxOut.ScriptPubKey);
             if(hash != null)
             {
-                var redeem = _ScriptPubKeyToRedeem.TryGet(coin.TxOut.ScriptPubKey);
+                Script redeem = this._ScriptPubKeyToRedeem.TryGet(coin.TxOut.ScriptPubKey);
                 if(redeem != null && PayToWitScriptHashTemplate.Instance.CheckScriptPubKey(this.Network, redeem))
-                    redeem = _ScriptPubKeyToRedeem.TryGet(redeem);
+                    redeem = this._ScriptPubKeyToRedeem.TryGet(redeem);
                 if(redeem == null)
                 {
                     if(hash is WitScriptId)
                         redeem = PayToWitScriptHashTemplate.Instance.ExtractWitScriptParameters(txIn.WitScript, (WitScriptId)hash);
                     if(hash is ScriptId)
                     {
-                        var parameters = PayToScriptHashTemplate.Instance.ExtractScriptSigParameters(this.Network, txIn.ScriptSig, (ScriptId)hash);
+                        PayToScriptHashSigParameters parameters = PayToScriptHashTemplate.Instance.ExtractScriptSigParameters(this.Network, txIn.ScriptSig, (ScriptId)hash);
                         if(parameters != null)
                             redeem = parameters.RedeemScript;
                     }
@@ -1308,19 +1362,19 @@ namespace NBitcoin
         {
             if(tx == null)
                 throw new ArgumentNullException("tx");
-            var coins = tx.Inputs.Select(i => FindCoin(i.PrevOut)).Where(c => c != null).ToArray();
-            List<TransactionPolicyError> exceptions = new List<TransactionPolicyError>();
-            var policyErrors = MinerTransactionPolicy.Instance.Check(tx, coins);
+            ICoin[] coins = tx.Inputs.Select(i => FindCoin(i.PrevOut)).Where(c => c != null).ToArray();
+            var exceptions = new List<TransactionPolicyError>();
+            TransactionPolicyError[] policyErrors = MinerTransactionPolicy.Instance.Check(tx, coins);
             exceptions.AddRange(policyErrors);
-            policyErrors = StandardTransactionPolicy.Check(tx, coins);
+            policyErrors = this.StandardTransactionPolicy.Check(tx, coins);
             exceptions.AddRange(policyErrors);
             if(expectedFees != null)
             {
-                var fees = tx.GetFee(coins);
+                Money fees = tx.GetFee(coins);
                 if(fees != null)
                 {
                     Money margin = Money.Zero;
-                    if(DustPrevention)
+                    if(this.DustPrevention)
                         margin = GetDust() * 2;
                     if(!fees.Almost(expectedFees, margin))
                         exceptions.Add(new NotEnoughFundsPolicyError("Fees different than expected", expectedFees - fees));
@@ -1382,9 +1436,9 @@ namespace NBitcoin
 
         public ICoin FindCoin(OutPoint outPoint)
         {
-            var result = _BuilderGroups.Select(c => c.Coins.TryGet(outPoint)).FirstOrDefault(r => r != null);
-            if(result == null && CoinFinder != null)
-                result = CoinFinder(outPoint);
+            ICoin result = this._BuilderGroups.Select(c => c.Coins.TryGet(outPoint)).FirstOrDefault(r => r != null);
+            if(result == null && this.CoinFinder != null)
+                result = this.CoinFinder(outPoint);
             return result;
         }
 
@@ -1420,56 +1474,55 @@ namespace NBitcoin
         /// <returns></returns>
         public int EstimateSize(Transaction tx, bool virtualSize)
         {
-            if(tx == null)
+            if (tx == null)
                 throw new ArgumentNullException("tx");
-            var clone = tx.Clone(network:this.Network);
+            Transaction clone = tx.Clone(network:this.Network);
             clone.Inputs.Clear();
-            var baseSize = clone.GetSerializedSize();
+            int baseSize = clone.GetSerializedSize();
 
-            int vSize = 0;
-            int size = baseSize;
-            if(tx.HasWitness)
-                vSize += 2;
-            foreach(var txin in tx.Inputs.AsIndexedInputs())
+            int witSize = 0;
+            if (tx.HasWitness)
+                witSize += 2;
+            foreach (var txin in tx.Inputs.AsIndexedInputs())
             {
-                var coin = FindSignableCoin(txin) ?? FindCoin(txin.PrevOut);
-                if(coin == null)
+                ICoin coin = FindSignableCoin(txin) ?? FindCoin(txin.PrevOut);
+                if (coin == null)
                     throw CoinNotFound(txin);
-                EstimateScriptSigSize(coin, ref vSize, ref size);
-                size += 41;
+                EstimateScriptSigSize(coin, ref witSize, ref baseSize);
+                baseSize += 41;
             }
 
-            return (virtualSize ? vSize / Transaction.WITNESS_SCALE_FACTOR + size : vSize + size);
+            return (virtualSize ? witSize / Transaction.WITNESS_SCALE_FACTOR + baseSize : witSize + baseSize);
         }
 
-        private void EstimateScriptSigSize(ICoin coin, ref int vSize, ref int size)
+        private void EstimateScriptSigSize(ICoin coin, ref int witSize, ref int baseSize)
         {
-            if(coin is IColoredCoin)
+            if (coin is IColoredCoin)
                 coin = ((IColoredCoin)coin).Bearer;
 
-            if(coin is ScriptCoin)
+            if (coin is ScriptCoin)
             {
                 var scriptCoin = (ScriptCoin)coin;
-                var p2sh = scriptCoin.GetP2SHRedeem();
-                if(p2sh != null)
+                Script p2sh = scriptCoin.GetP2SHRedeem();
+                if (p2sh != null)
                 {
                     coin = new Coin(scriptCoin.Outpoint, new TxOut(scriptCoin.Amount, p2sh));
-                    size += new Script(Op.GetPushOp(p2sh.ToBytes(true))).Length;
-                    if(scriptCoin.RedeemType == RedeemType.WitnessV0)
+                    baseSize += new Script(Op.GetPushOp(p2sh.ToBytes(true))).Length;
+                    if (scriptCoin.RedeemType == RedeemType.WitnessV0)
                     {
                         coin = new ScriptCoin(coin, scriptCoin.Redeem);
                     }
                 }
 
-                if(scriptCoin.RedeemType == RedeemType.WitnessV0)
+                if (scriptCoin.RedeemType == RedeemType.WitnessV0)
                 {
-                    vSize += new Script(Op.GetPushOp(scriptCoin.Redeem.ToBytes(true))).Length;
+                    witSize += new Script(Op.GetPushOp(scriptCoin.Redeem.ToBytes(true))).Length;
                 }
             }
 
-            var scriptPubkey = coin.GetScriptCode(this.Network);
-            var scriptSigSize = -1;
-            foreach(var extension in Extensions)
+            Script scriptPubkey = coin.GetScriptCode(this.Network);
+            int scriptSigSize = -1;
+            foreach(BuilderExtension extension in this.Extensions)
             {
                 if(extension.CanEstimateScriptSigSize(this.Network, scriptPubkey))
                 {
@@ -1478,12 +1531,13 @@ namespace NBitcoin
                 }
             }
 
-            if(scriptSigSize == -1)
+            if (scriptSigSize == -1)
                 scriptSigSize += coin.TxOut.ScriptPubKey.Length; //Using heurestic to approximate size of unknown scriptPubKey
+
             if(coin.GetHashVersion(this.Network) == HashVersion.Witness)
-                vSize += scriptSigSize + 1; //Account for the push
+                witSize += scriptSigSize + 1; //Account for the push
             if(coin.GetHashVersion(this.Network) == HashVersion.Original)
-                size += scriptSigSize;
+                baseSize += scriptSigSize;
         }
 
         /// <summary>
@@ -1496,15 +1550,15 @@ namespace NBitcoin
             if(feeRate == null)
                 throw new ArgumentNullException("feeRate");
 
-            int builderCount = CurrentGroup.Builders.Count;
+            int builderCount = this.CurrentGroup.Builders.Count;
             Money feeSent = Money.Zero;
             try
             {
                 while(true)
                 {
-                    var tx = BuildTransaction(false);
-                    var shouldSend = EstimateFees(tx, feeRate);
-                    var delta = shouldSend - feeSent;
+                    Transaction tx = BuildTransaction(false);
+                    Money shouldSend = EstimateFees(tx, feeRate);
+                    Money delta = shouldSend - feeSent;
                     if(delta <= Money.Zero)
                         break;
                     SendFees(delta);
@@ -1513,9 +1567,9 @@ namespace NBitcoin
             }
             finally
             {
-                while(CurrentGroup.Builders.Count != builderCount)
+                while(this.CurrentGroup.Builders.Count != builderCount)
                 {
-                    CurrentGroup.Builders.RemoveAt(CurrentGroup.Builders.Count - 1);
+                    this.CurrentGroup.Builders.RemoveAt(this.CurrentGroup.Builders.Count - 1);
                 }
                 this._TotalFee -= feeSent;
             }
@@ -1535,30 +1589,30 @@ namespace NBitcoin
             if(feeRate == null)
                 throw new ArgumentNullException("feeRate");
 
-            var estimation = EstimateSize(tx, true);
+            int estimation = EstimateSize(tx, true);
             return feeRate.GetFee(estimation);
         }
 
         private void Sign(TransactionSigningContext ctx, ICoin coin, IndexedTxIn txIn)
         {
-            var input = txIn.TxIn;
+            TxIn input = txIn.TxIn;
             if(coin is StealthCoin)
             {
                 var stealthCoin = (StealthCoin)coin;
-                var scanKey = FindKey(ctx, stealthCoin.Address.ScanPubKey.ScriptPubKey);
+                Key scanKey = FindKey(ctx, stealthCoin.Address.ScanPubKey.ScriptPubKey);
                 if(scanKey == null)
                     throw new KeyNotFoundException("Scan key for decrypting StealthCoin not found");
-                var spendKeys = stealthCoin.Address.SpendPubKeys.Select(p => FindKey(ctx, p.ScriptPubKey)).Where(p => p != null).ToArray();
+                Key[] spendKeys = stealthCoin.Address.SpendPubKeys.Select(p => FindKey(ctx, p.ScriptPubKey)).Where(p => p != null).ToArray();
                 ctx.AdditionalKeys.AddRange(stealthCoin.Uncover(spendKeys, scanKey));
                 var normalCoin = new Coin(coin.Outpoint, coin.TxOut);
                 if(stealthCoin.Redeem != null)
                     normalCoin = normalCoin.ToScriptCoin(stealthCoin.Redeem);
                 coin = normalCoin;
             }
-            var scriptSig = CreateScriptSig(ctx, coin, txIn);
+            Script scriptSig = CreateScriptSig(ctx, coin, txIn);
             if(scriptSig == null)
                 return;
-            ScriptCoin scriptCoin = coin as ScriptCoin;
+            var scriptCoin = coin as ScriptCoin;
 
             Script signatures = null;
             if(coin.GetHashVersion(this.Network) == HashVersion.Witness)
@@ -1608,19 +1662,19 @@ namespace NBitcoin
         {
             if(script == Script.Empty)
                 return script;
-            var ops = script.ToOps().ToArray();
+            Op[] ops = script.ToOps().ToArray();
             return new Script(ops.Take(ops.Length - 1));
         }
 
         private Script CombineScriptSigs(ICoin coin, Script a, Script b)
         {
-            var scriptPubkey = coin.GetScriptCode(this.Network);
+            Script scriptPubkey = coin.GetScriptCode(this.Network);
             if(Script.IsNullOrEmpty(a))
                 return b ?? Script.Empty;
             if(Script.IsNullOrEmpty(b))
                 return a ?? Script.Empty;
 
-            foreach(var extension in Extensions)
+            foreach(BuilderExtension extension in this.Extensions)
             {
                 if(extension.CanCombineScriptSig(this.Network, scriptPubkey, a, b))
                 {
@@ -1632,25 +1686,25 @@ namespace NBitcoin
 
         private Script CreateScriptSig(TransactionSigningContext ctx, ICoin coin, IndexedTxIn txIn)
         {
-            var scriptPubKey = coin.GetScriptCode(this.Network);
+            Script scriptPubKey = coin.GetScriptCode(this.Network);
             var keyRepo = new TransactionBuilderKeyRepository(this, ctx);
             var signer = new TransactionBuilderSigner(this, coin, ctx.SigHash, txIn);
 
-            var signer2 = new KnownSignatureSigner(this, _KnownSignatures, coin, ctx.SigHash, txIn);
+            var signer2 = new KnownSignatureSigner(this, this._KnownSignatures, coin, ctx.SigHash, txIn);
 
-            foreach(var extension in Extensions)
+            foreach(BuilderExtension extension in this.Extensions)
             {
                 if(extension.CanGenerateScriptSig(this.Network, scriptPubKey))
                 {
-                    var scriptSig1 = extension.GenerateScriptSig(this.Network, scriptPubKey, keyRepo, signer);
-                    var scriptSig2 = extension.GenerateScriptSig(this.Network, scriptPubKey, signer2, signer2);
+                    Script scriptSig1 = extension.GenerateScriptSig(this.Network, scriptPubKey, keyRepo, signer);
+                    Script scriptSig2 = extension.GenerateScriptSig(this.Network, scriptPubKey, signer2, signer2);
                     if (scriptSig2 != null)
                     {
                         scriptSig2 = signer2.ReplaceDummyKeys(scriptSig2);
                     }
                     if (scriptSig1 != null && scriptSig2 != null && extension.CanCombineScriptSig(this.Network, scriptPubKey, scriptSig1, scriptSig2))
                     {
-                        var combined = extension.CombineScriptSig(this.Network, scriptPubKey, scriptSig1, scriptSig2);
+                        Script combined = extension.CombineScriptSig(this.Network, scriptPubKey, scriptSig1, scriptSig2);
                         return combined;
                     }
                     return scriptSig1 ?? scriptSig2;
@@ -1660,16 +1714,16 @@ namespace NBitcoin
             throw new NotSupportedException("Unsupported scriptPubKey");
         }
 
-        List<Tuple<PubKey, ECDSASignature>> _KnownSignatures = new List<Tuple<PubKey, ECDSASignature>>();
+        private List<Tuple<PubKey, ECDSASignature>> _KnownSignatures = new List<Tuple<PubKey, ECDSASignature>>();
 
         private Key FindKey(TransactionSigningContext ctx, Script scriptPubKey)
         {
-            var key = _Keys
+            Key key = this._Keys
                 .Concat(ctx.AdditionalKeys)
                 .FirstOrDefault(k => IsCompatibleKey(k.PubKey, scriptPubKey));
-            if(key == null && KeyFinder != null)
+            if(key == null && this.KeyFinder != null)
             {
-                key = KeyFinder(scriptPubKey);
+                key = this.KeyFinder(scriptPubKey);
             }
             return key;
         }
@@ -1688,7 +1742,7 @@ namespace NBitcoin
         /// <returns></returns>
         public TransactionBuilder Then()
         {
-            _CurrentGroup = null;
+            this._CurrentGroup = null;
             return this;
         }
 
@@ -1698,14 +1752,15 @@ namespace NBitcoin
         /// <returns></returns>
         public TransactionBuilder Then(string groupName)
         {
-            var group = _BuilderGroups.FirstOrDefault(g => g.Name == groupName);
+            BuilderGroup group = this._BuilderGroups.FirstOrDefault(g => g.Name == groupName);
             if(group == null)
             {
                 group = new BuilderGroup(this);
-                _BuilderGroups.Add(group);
+                this._BuilderGroups.Add(group);
                 group.Name = groupName;
             }
-            _CurrentGroup = group;
+
+            this._CurrentGroup = group;
             return this;
         }
 
@@ -1716,12 +1771,12 @@ namespace NBitcoin
         /// <returns></returns>
         public TransactionBuilder CoverOnly(Money amount)
         {
-            CurrentGroup.CoverOnly = amount;
+            this.CurrentGroup.CoverOnly = amount;
             return this;
         }
 
 
-        Transaction _CompletedTransaction;
+        private Transaction _CompletedTransaction;
 
         /// <summary>
         /// Allows to keep building on the top of a partially built transaction
@@ -1730,9 +1785,9 @@ namespace NBitcoin
         /// <returns></returns>
         public TransactionBuilder ContinueToBuild(Transaction transaction)
         {
-            if(_CompletedTransaction != null)
+            if(this._CompletedTransaction != null)
                 throw new InvalidOperationException("Transaction to complete already set");
-            _CompletedTransaction = transaction.Clone(network:this.Network);
+            this._CompletedTransaction = transaction.Clone(network:this.Network);
             return this;
         }
 
@@ -1742,12 +1797,12 @@ namespace NBitcoin
         /// <returns></returns>
         public TransactionBuilder CoverTheRest()
         {
-            if(_CompletedTransaction == null)
+            if(this._CompletedTransaction == null)
                 throw new InvalidOperationException("A partially built transaction should be specified by calling ContinueToBuild");
 
-            var spent = _CompletedTransaction.Inputs.AsIndexedInputs().Select(txin =>
+            Money spent = this._CompletedTransaction.Inputs.AsIndexedInputs().Select(txin =>
             {
-                var c = FindCoin(txin.PrevOut);
+                ICoin c = FindCoin(txin.PrevOut);
                 if(c == null)
                     throw CoinNotFound(txin);
                 if(!(c is Coin))
@@ -1758,8 +1813,8 @@ namespace NBitcoin
                     .Select(c => c.Amount)
                     .Sum();
 
-            var toComplete = _CompletedTransaction.TotalOut - spent;
-            CurrentGroup.Builders.Add(ctx =>
+            Money toComplete = this._CompletedTransaction.TotalOut - spent;
+            this.CurrentGroup.Builders.Add(ctx =>
             {
                 if(toComplete < Money.Zero)
                     return Money.Zero;
@@ -1770,19 +1825,19 @@ namespace NBitcoin
 
         public TransactionBuilder AddCoins(Transaction transaction)
         {
-            var txId = transaction.GetHash();
+            uint256 txId = transaction.GetHash();
             AddCoins(transaction.Outputs.Select((o, i) => new Coin(txId, (uint)i, o.Value, o.ScriptPubKey)).ToArray());
             return this;
         }
 
-        Dictionary<Script, Script> _ScriptPubKeyToRedeem = new Dictionary<Script, Script>();
+        private Dictionary<Script, Script> _ScriptPubKeyToRedeem = new Dictionary<Script, Script>();
         public TransactionBuilder AddKnownRedeems(params Script[] knownRedeems)
         {
-            foreach(var redeem in knownRedeems)
+            foreach(Script redeem in knownRedeems)
             {
-                _ScriptPubKeyToRedeem.AddOrReplace(redeem.WitHash.ScriptPubKey.Hash.ScriptPubKey, redeem); //Might be P2SH(PWSH)
-                _ScriptPubKeyToRedeem.AddOrReplace(redeem.Hash.ScriptPubKey, redeem); //Might be P2SH
-                _ScriptPubKeyToRedeem.AddOrReplace(redeem.WitHash.ScriptPubKey, redeem); //Might be PWSH
+                this._ScriptPubKeyToRedeem.AddOrReplace(redeem.WitHash.ScriptPubKey.Hash.ScriptPubKey, redeem); //Might be P2SH(PWSH)
+                this._ScriptPubKeyToRedeem.AddOrReplace(redeem.Hash.ScriptPubKey, redeem); //Might be P2SH
+                this._ScriptPubKeyToRedeem.AddOrReplace(redeem.WitHash.ScriptPubKey, redeem); //Might be PWSH
             }
             return this;
         }
@@ -1797,7 +1852,7 @@ namespace NBitcoin
             Transaction tx = transactions[0].Clone(network: this.Network);
             for(int i = 1; i < transactions.Length; i++)
             {
-                var signed = transactions[i];
+                Transaction signed = transactions[i];
                 tx = CombineSignaturesCore(tx, signed);
             }
             return tx;
@@ -1809,7 +1864,7 @@ namespace NBitcoin
         {
             get
             {
-                return _Extensions;
+                return this._Extensions;
             }
         }
 
@@ -1819,29 +1874,29 @@ namespace NBitcoin
                 return signed2;
             if(signed2 == null)
                 return signed1;
-            var tx = signed1.Clone(network: this.Network);
+            Transaction tx = signed1.Clone(network: this.Network);
             for(int i = 0; i < tx.Inputs.Count; i++)
             {
                 if(i >= signed2.Inputs.Count)
                     break;
 
-                var txIn = tx.Inputs[i];
+                TxIn txIn = tx.Inputs[i];
 
-                var coin = FindCoin(txIn.PrevOut);
-                var scriptPubKey = coin == null
+                ICoin coin = FindCoin(txIn.PrevOut);
+                Script scriptPubKey = coin == null
                     ? (DeduceScriptPubKey(txIn.ScriptSig) ?? DeduceScriptPubKey(signed2.Inputs[i].ScriptSig))
                     : coin.TxOut.ScriptPubKey;
 
                 Money amount = null;
                 if(coin != null)
                     amount = coin is IColoredCoin ? ((IColoredCoin)coin).Bearer.Amount : ((Coin)coin).Amount;
-                var result = Script.CombineSignatures(
+                ScriptSigs result = Script.CombineSignatures(
                                     this.Network,
                                     scriptPubKey,
                                     new TransactionChecker(tx, i, amount),
                                      GetScriptSigs(signed1.Inputs.AsIndexedInputs().Skip(i).First()),
                                      GetScriptSigs(signed2.Inputs.AsIndexedInputs().Skip(i).First()));
-                var input = tx.Inputs.AsIndexedInputs().Skip(i).First();
+                IndexedTxIn input = tx.Inputs.AsIndexedInputs().Skip(i).First();
                 input.WitScript = result.WitSig;
                 input.ScriptSig = result.ScriptSig;
             }
@@ -1859,12 +1914,12 @@ namespace NBitcoin
 
         private Script DeduceScriptPubKey(Script scriptSig)
         {
-            var p2sh = PayToScriptHashTemplate.Instance.ExtractScriptSigParameters(this.Network, scriptSig);
+            PayToScriptHashSigParameters p2sh = PayToScriptHashTemplate.Instance.ExtractScriptSigParameters(this.Network, scriptSig);
             if(p2sh != null && p2sh.RedeemScript != null)
             {
                 return p2sh.RedeemScript.Hash.ScriptPubKey;
             }
-            foreach(var extension in Extensions)
+            foreach(BuilderExtension extension in this.Extensions)
             {
                 if(extension.CanDeduceScriptPubKey(this.Network, scriptSig))
                 {
@@ -1880,8 +1935,8 @@ namespace NBitcoin
         public CoinNotFoundException(IndexedTxIn txIn)
             : base("No coin matching " + txIn.PrevOut + " was found")
         {
-            _OutPoint = txIn.PrevOut;
-            _InputIndex = txIn.Index;
+            this._OutPoint = txIn.PrevOut;
+            this._InputIndex = txIn.Index;
         }
 
         private readonly OutPoint _OutPoint;
@@ -1889,7 +1944,7 @@ namespace NBitcoin
         {
             get
             {
-                return _OutPoint;
+                return this._OutPoint;
             }
         }
 
@@ -1898,7 +1953,7 @@ namespace NBitcoin
         {
             get
             {
-                return _InputIndex;
+                return this._InputIndex;
             }
         }
     }

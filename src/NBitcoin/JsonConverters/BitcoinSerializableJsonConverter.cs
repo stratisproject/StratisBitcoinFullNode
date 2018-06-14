@@ -28,7 +28,7 @@ namespace NBitcoin.JsonConverters
             {
 
                 var obj = (IBitcoinSerializable)Activator.CreateInstance(objectType);
-                var bytes = Encoders.Hex.DecodeData((string)reader.Value);
+                byte[] bytes = Encoders.Hex.DecodeData((string)reader.Value);
                 obj.ReadWrite(bytes);
                 return obj;
             }
@@ -43,7 +43,7 @@ namespace NBitcoin.JsonConverters
 
         public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
         {
-            var bytes = ((IBitcoinSerializable)value).ToBytes();
+            byte[] bytes = ((IBitcoinSerializable)value).ToBytes();
             writer.WriteValue(Encoders.Hex.EncodeData(bytes));
         }
     }

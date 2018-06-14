@@ -30,6 +30,43 @@ namespace NBitcoin
         {
         }
 
+        /// <summary>
+        /// How many blocks should be on top of a coinbase transaction until its outputs are considered spendable.
+        /// </summary>
+        public long CoinbaseMaturity { get; set; }
+
+        /// <summary>
+        /// Amount of coins mined when a new network is bootstrapped.
+        /// Set to Money.Zero when there is no premine.
+        /// </summary>
+        public Money PremineReward { get; set; }
+
+        /// <summary>
+        /// The height of the block in which the pre-mined coins should be.
+        /// Set to 0 when there is no premine.
+        /// </summary>
+        public long PremineHeight { get; set; }
+
+        /// <summary>
+        /// The reward that goes to the miner when a block is mined using proof-of-work.
+        /// </summary>
+        public Money ProofOfWorkReward { get; set; }
+
+        /// <summary>
+        /// The reward that goes to the miner when a block is mined using proof-of-stake.
+        /// </summary>
+        public Money ProofOfStakeReward { get; set; }
+
+        /// <summary>
+        /// Maximal length of reorganization that the node is willing to accept, or 0 to disable long reorganization protection.
+        /// </summary>
+        public uint MaxReorgLength { get; set; }
+
+        /// <summary>
+        /// The maximum amount of coins in any transaction.
+        /// </summary>
+        public long MaxMoney { get; set; }
+
         public ConsensusOptions Options { get; set; }
 
         public class BuriedDeploymentsArray

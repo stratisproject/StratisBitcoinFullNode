@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NBitcoin.Crypto;
+using Stratis.Bitcoin.Consensus.Rules;
 
 namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
 {
@@ -31,9 +32,9 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         /// <exception cref="ConsensusErrors.BadTransactionDuplicate">One of the leaf nodes on the merkle tree has a duplicate hash within the subtree.</exception>
         public override Task RunAsync(RuleContext context)
         {
-            if (!context.CheckMerkleRoot) return Task.CompletedTask;
+            if (context.MinedBlock) return Task.CompletedTask;
             
-            var block = context.BlockValidationContext.Block;
+            Block block = context.ValidationContext.Block;
 
             uint256 hashMerkleRoot2 = BlockMerkleRoot(block, out bool mutated);
             if (block.Header.HashMerkleRoot != hashMerkleRoot2)

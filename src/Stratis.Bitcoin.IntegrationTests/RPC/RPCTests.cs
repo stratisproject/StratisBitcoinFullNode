@@ -50,7 +50,7 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
             var connectionManager = this.rpcTestFixture.Node.FullNode.NodeService<IConnectionManager>();
             Assert.Empty(connectionManager.ConnectionSettings.AddNode);
 
-            var ipAddress = IPAddress.Parse("::ffff:192.168.0.1");
+            IPAddress ipAddress = IPAddress.Parse("::ffff:192.168.0.1");
             var endpoint = new IPEndPoint(ipAddress, 80);
             this.rpcTestFixture.RpcClient.AddNode(endpoint);
 
@@ -60,10 +60,10 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
         [Fact]
         public void CheckRPCFailures()
         {
-            var hash = this.rpcTestFixture.RpcClient.GetBestBlockHash();
+            uint256 hash = this.rpcTestFixture.RpcClient.GetBestBlockHash();
 
             Assert.Equal(hash, Network.RegTest.GetGenesis().GetHash());
-            var oldClient = this.rpcTestFixture.RpcClient;
+            RPCClient oldClient = this.rpcTestFixture.RpcClient;
             var client = new RPCClient("abc:def", this.rpcTestFixture.RpcClient.Address, this.rpcTestFixture.RpcClient.Network);
             try
             {
@@ -83,14 +83,14 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
             }
             catch (RPCException ex)
             {
-                Assert.Equal(RPCErrorCode.RPC_MISC_ERROR, ex.RPCCode);
+                Assert.Equal(RPCErrorCode.RPC_INTERNAL_ERROR, ex.RPCCode);
             }
         }
 
         [Fact]
         public void InvalidCommandSendRPCException()
         {
-            RPCException ex = Assert.Throws<RPCException>(() => this.rpcTestFixture.RpcClient.SendCommand("donotexist"));
+            var ex = Assert.Throws<RPCException>(() => this.rpcTestFixture.RpcClient.SendCommand("donotexist"));
             Assert.True(ex.RPCCode == RPCErrorCode.RPC_METHOD_NOT_FOUND);
         }
 
@@ -111,14 +111,14 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
         [Fact]
         public void CanGetBlockCount()
         {
-            var blockCount = this.rpcTestFixture.RpcClient.GetBlockCountAsync().Result;
+            int blockCount = this.rpcTestFixture.RpcClient.GetBlockCountAsync().Result;
             Assert.Equal(0, blockCount);
         }
 
         [Fact]
         public void CanGetStratisPeersInfo()
         {
-            var peers = this.rpcTestFixture.RpcClient.GetStratisPeersInfoAsync().Result;
+            PeerInfo[] peers = this.rpcTestFixture.RpcClient.GetStratisPeersInfoAsync().Result;
             Assert.NotEmpty(peers);
         }
 
@@ -186,7 +186,7 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
         [Fact]
         public void CanGetPeersInfoByStringArgs()
         {
-            var resp = this.rpcTestFixture.RpcClient.SendCommand("getpeerinfo").ResultString;
+            string resp = this.rpcTestFixture.RpcClient.SendCommand("getpeerinfo").ResultString;
             Assert.StartsWith("[" + Environment.NewLine + "  {" + Environment.NewLine + "    \"id\": 0," + Environment.NewLine + "    \"addr\": \"[", resp);
         }
 
@@ -197,7 +197,7 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
         [Fact]
         public void CanGetBlockHashByStringArgs()
         {
-            var resp = this.rpcTestFixture.RpcClient.SendCommand("getblockhash", "0").ResultString;
+            string resp = this.rpcTestFixture.RpcClient.SendCommand("getblockhash", "0").ResultString;
             Assert.Equal("0f9188f13cb7b2c71f2a335e3a4fc328bf5beb436012afca590b1a11466e2206", resp);
         }
 

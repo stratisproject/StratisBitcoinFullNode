@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.IO;
 using System.Runtime.CompilerServices;
+using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Moq;
 using NBitcoin;
@@ -10,6 +11,7 @@ using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Consensus;
+using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.Consensus.Interfaces;
 using Stratis.Bitcoin.Features.Consensus.Rules;
@@ -39,7 +41,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
 
         public T CreateRule<T>() where T : ConsensusRule, new()
         {
-            T rule = new T();
+            var rule = new T();
             rule.Parent = this.Consensus;
             rule.Logger = this.LoggerFactory.CreateLogger(rule.GetType().FullName);
             rule.Initialize();
@@ -62,13 +64,28 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
 
         public T RegisterRule<T>() where T : ConsensusRule, new()
         {
-            T rule = new T();
+            var rule = new T();
             this.ruleRegistration.Setup(r => r.GetRules())
                 .Returns(new List<ConsensusRule>() { rule });
 
             this.Register(this.ruleRegistration.Object);
             return rule;
-        }       
+        }
+
+        public override RuleContext CreateRuleContext(ValidationContext validationContext, ChainedHeader tip)
+        {
+            throw new System.NotImplementedException();
+        }
+
+        public override Task<uint256> GetBlockHashAsync()
+        {
+            throw new System.NotImplementedException();
+        }
+
+        public override Task<uint256> RewindAsync()
+        {
+            throw new System.NotImplementedException();
+        }
     }
 
     /// <summary>
@@ -86,7 +103,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
 
         public T RegisterRule<T>() where T : ConsensusRule, new()
         {
-            T rule = new T();
+            var rule = new T();
             this.ruleRegistration.Setup(r => r.GetRules())
                 .Returns(new List<ConsensusRule>() { rule });
 
@@ -117,11 +134,11 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
             testRulesContext.DateTimeProvider = DateTimeProvider.Default;
             network.Consensus.Options = new PowConsensusOptions();
 
-            ConsensusSettings consensusSettings = new ConsensusSettings(testRulesContext.NodeSettings);
+            var consensusSettings = new ConsensusSettings(testRulesContext.NodeSettings);
             testRulesContext.Checkpoints = new Checkpoints();
             testRulesContext.Chain = new ConcurrentChain(network);
 
-            NodeDeployments deployments = new NodeDeployments(testRulesContext.Network, testRulesContext.Chain);
+            var deployments = new NodeDeployments(testRulesContext.Network, testRulesContext.Chain);
             testRulesContext.Consensus = new PowConsensusRules(testRulesContext.Network, testRulesContext.LoggerFactory, testRulesContext.DateTimeProvider, testRulesContext.Chain, deployments, consensusSettings, testRulesContext.Checkpoints, new InMemoryCoinView(new uint256()), new Mock<ILookaheadBlockPuller>().Object).Register(new FullNodeBuilderConsensusExtension.PowConsensusRulesRegistration());
 
             return testRulesContext;
@@ -142,7 +159,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
             block.Header.Bits = block.Header.GetWorkRequired(network, chain.Tip);
             block.Header.Nonce = 0;
 
-            var maxTries = int.MaxValue;
+            int maxTries = int.MaxValue;
 
             while (maxTries > 0 && !block.CheckProofOfWork())
             {

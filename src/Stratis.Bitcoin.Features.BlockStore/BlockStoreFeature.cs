@@ -1,12 +1,10 @@
-﻿using System;
-using System.Runtime.CompilerServices;
+﻿using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Base;
-using Stratis.Bitcoin.BlockPulling;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Builder.Feature;
 using Stratis.Bitcoin.Configuration;
@@ -98,10 +96,12 @@ namespace Stratis.Bitcoin.Features.BlockStore
             ChainedHeader highestBlock = this.chainState.BlockStoreTip;
 
             if (highestBlock != null)
+            {
                 benchLogs.AppendLine($"{this.name}.Height: ".PadRight(LoggingConfiguration.ColumnLength + 1) +
-                    highestBlock.Height.ToString().PadRight(8) +
-                    $" {this.name}.Hash: ".PadRight(LoggingConfiguration.ColumnLength - 1) +
-                    highestBlock.HashBlock);
+                                     highestBlock.Height.ToString().PadRight(8) +
+                                     $" {this.name}.Hash: ".PadRight(LoggingConfiguration.ColumnLength - 1) +
+                                     highestBlock.HashBlock);
+            }
         }
 
         public Task<Transaction> GetTrxAsync(uint256 trxid)

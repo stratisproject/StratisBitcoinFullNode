@@ -4,7 +4,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using FluentAssertions;
 using NBitcoin;
-using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Controllers;
 using Stratis.Bitcoin.Features.Wallet.Models;
@@ -92,7 +91,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
 
         public void some_real_blocks_with_a_uint256_identifier()
         {
-            this.maturity = (int)this.node.FullNode.Network.Consensus.Option<PowConsensusOptions>().CoinbaseMaturity;
+            this.maturity = (int)this.node.FullNode.Network.Consensus.CoinbaseMaturity;
             this.blockIds = this.node.GenerateStratisWithMiner(this.maturity + 1);
         }
 
@@ -124,12 +123,12 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
         }
 
         public void a_real_transaction()
-        {
+        {           
             var transactionBuildContext = new TransactionBuildContext(
                     this.miningWalletAccountReference,
                     new List<Recipient>() { new Recipient() { Amount = this.transferAmount, ScriptPubKey = this.receiverAddress.ScriptPubKey } },
                     this.password)
-            { MinConfirmations = 2 };
+            { MinConfirmations = this.maturity };
             this.transaction = this.node.FullNode.WalletTransactionHandler().BuildTransaction(transactionBuildContext);
 
             this.node.FullNode.NodeService<WalletController>()

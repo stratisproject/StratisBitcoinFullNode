@@ -6,6 +6,7 @@ using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NBitcoin.Crypto;
 using Stratis.Bitcoin.Base.Deployments;
+using Stratis.Bitcoin.Consensus.Rules;
 
 namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
 {
@@ -21,7 +22,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         public override Task RunAsync(RuleContext context)
         {
             DeploymentFlags deploymentFlags = context.Flags;
-            Block block = context.BlockValidationContext.Block;
+            Block block = context.ValidationContext.Block;
 
             // Validation for witness commitments.
             // * We compute the witness hash (which is the hash including witnesses) of all the block's transactions, except the
@@ -49,7 +50,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
                         ConsensusErrors.BadWitnessNonceSize.Throw();
                     }
 
-                    byte[] hashed = new byte[64];
+                    var hashed = new byte[64];
                     Buffer.BlockCopy(hashWitness.ToBytes(), 0, hashed, 0, 32);
                     Buffer.BlockCopy(witness.Pushes.First(), 0, hashed, 32, 32);
                     hashWitness = Hashes.Hash256(hashed);
@@ -109,7 +110,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
             int commitpos = -1;
             for (int i = 0; i < block.Transactions[0].Outputs.Count; i++)
             {
-                var scriptPubKey = block.Transactions[0].Outputs[i].ScriptPubKey;
+                Script scriptPubKey = block.Transactions[0].Outputs[i].ScriptPubKey;
 
                 if (scriptPubKey.Length >= 38)
                 {

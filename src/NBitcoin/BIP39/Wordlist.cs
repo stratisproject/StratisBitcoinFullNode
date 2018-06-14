@@ -113,7 +113,7 @@ namespace NBitcoin
             return name;
         }
 
-        static Dictionary<string, Wordlist> _LoadedLists = new Dictionary<string, Wordlist>();
+        private static Dictionary<string, Wordlist> _LoadedLists = new Dictionary<string, Wordlist>();
         public static async Task<Wordlist> LoadWordList(string name)
         {
             if(name == null)
@@ -131,10 +131,13 @@ namespace NBitcoin
                 throw new InvalidOperationException("Wordlist.WordlistSource is not set, impossible to fetch word list.");
             result = await WordlistSource.Load(name).ConfigureAwait(false);
             if(result != null)
+            {
                 lock(_LoadedLists)
                 {
                     _LoadedLists.AddOrReplace(name, result);
                 }
+            }
+
             return result;
         }
 
@@ -152,11 +155,11 @@ namespace NBitcoin
         /// <param name="words">The words to be used in the wordlist</param>
         public Wordlist(String[] words, char space, string name)
         {
-            _words = words
+            this._words = words
                         .Select(w => Mnemonic.NormalizeString(w))
                         .ToArray();
-            _Space = space;
-            _Name = name;
+            this._Space = space;
+            this._Name = name;
         }
 
         private readonly string _Name;
@@ -164,7 +167,7 @@ namespace NBitcoin
         {
             get
             {
-                return _Name;
+                return this._Name;
             }
         }
         private readonly char _Space;
@@ -172,7 +175,7 @@ namespace NBitcoin
         {
             get
             {
-                return _Space;
+                return this._Space;
             }
         }
 
@@ -184,9 +187,9 @@ namespace NBitcoin
         public bool WordExists(string word, out int index)
         {
             word = Mnemonic.NormalizeString(word);
-            if(_words.Contains(word))
+            if(this._words.Contains(word))
             {
-                index = Array.IndexOf(_words, word);
+                index = Array.IndexOf(this._words, word);
                 return true;
             }
 
@@ -202,7 +205,7 @@ namespace NBitcoin
         /// <returns>Word</returns>
         public string GetWordAtIndex(int index)
         {
-            return _words[index];
+            return this._words[index];
         }
 
         /// <summary>
@@ -212,7 +215,7 @@ namespace NBitcoin
         {
             get
             {
-                return _words.Length;
+                return this._words.Length;
             }
         }
 
@@ -227,41 +230,41 @@ namespace NBitcoin
         }
         public static Language AutoDetectLanguage(string[] words)
         {
-            List<int> languageCount = new List<int>(new int[] { 0, 0, 0, 0, 0, 0 });
+            var languageCount = new List<int>(new int[] { 0, 0, 0, 0, 0, 0 });
             int index;
 
             foreach(string s in words)
             {
-                if(Wordlist.English.WordExists(s, out index))
+                if(English.WordExists(s, out index))
                 {
                     //english is at 0
                     languageCount[0]++;
                 }
 
-                if(Wordlist.Japanese.WordExists(s, out index))
+                if(Japanese.WordExists(s, out index))
                 {
                     //japanese is at 1
                     languageCount[1]++;
                 }
 
-                if(Wordlist.Spanish.WordExists(s, out index))
+                if(Spanish.WordExists(s, out index))
                 {
                     //spanish is at 2
                     languageCount[2]++;
                 }
 
-                if(Wordlist.ChineseSimplified.WordExists(s, out index))
+                if(ChineseSimplified.WordExists(s, out index))
                 {
                     //chinese simplified is at 3
                     languageCount[3]++;
                 }
 
-                if(Wordlist.ChineseTraditional.WordExists(s, out index) && !Wordlist.ChineseSimplified.WordExists(s, out index))
+                if(ChineseTraditional.WordExists(s, out index) && !ChineseSimplified.WordExists(s, out index))
                 {
                     //chinese traditional is at 4
                     languageCount[4]++;
                 }
-                if(Wordlist.French.WordExists(s, out index))
+                if(French.WordExists(s, out index))
                 {
                     languageCount[5]++;
                 }
@@ -314,12 +317,12 @@ namespace NBitcoin
 
         public string[] Split(string mnemonic)
         {
-            return mnemonic.Split(new char[] { Space }, StringSplitOptions.RemoveEmptyEntries);
+            return mnemonic.Split(new char[] {this.Space }, StringSplitOptions.RemoveEmptyEntries);
         }
 
         public override string ToString()
         {
-            return _Name;
+            return this._Name;
         }
 
         public string[] GetWords(int[] indices)
@@ -332,7 +335,7 @@ namespace NBitcoin
 
         public string GetSentence(int[] indices)
         {
-            return String.Join(Space.ToString(), GetWords(indices));
+            return String.Join(this.Space.ToString(), GetWords(indices));
 
         }
 
@@ -361,13 +364,13 @@ namespace NBitcoin
         {
             if(values.Any(v => v >= 2048))
                 throw new ArgumentException("values should be between 0 and 2048", "values");
-            BitArray result = new BitArray(values.Length * 11);
+            var result = new BitArray(values.Length * 11);
             int i = 0;
-            foreach(var val in values)
+            foreach(int val in values)
             {
                 for(int p = 0; p < 11; p++)
                 {
-                    var v = (val & (1 << (10 - p))) != 0;
+                    bool v = (val & (1 << (10 - p))) != 0;
                     result.Set(i, v);
                     i++;
                 }

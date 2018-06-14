@@ -1,10 +1,10 @@
 ﻿using System.Collections.Generic;
 using Newtonsoft.Json;
-using Stratis.Bitcoin.Features.RPC.Converters;
+using Stratis.Bitcoin.Controllers.Converters;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace Stratis.Bitcoin.Features.RPC.Tests.Converters
+namespace Stratis.Bitcoin.Tests.Converters
 {
     public class BtcDecimalJsonConverterTest
     {
@@ -46,7 +46,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Converters
             {
                 Amount = 1.0m
             };
-            var result = JsonConvert.SerializeObject(input, this.jsonSerializerSettings);
+            string result = JsonConvert.SerializeObject(input, this.jsonSerializerSettings);
             this.console.WriteLine(result);
             Assert.Equal("{\"Amount\":1.00000000}", result);
         }
@@ -58,7 +58,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Converters
             {
                 Amount = 1.123456789m
             };
-            var result = JsonConvert.SerializeObject(input, this.jsonSerializerSettings);
+            string result = JsonConvert.SerializeObject(input, this.jsonSerializerSettings);
             this.console.WriteLine(result);
             Assert.Equal("{\"Amount\":1.123456789}", result);  //is this correct?
         }
@@ -70,7 +70,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Converters
             {
                 Amount = 9m
             };
-            var result = JsonConvert.SerializeObject(input, this.jsonSerializerSettings);
+            string result = JsonConvert.SerializeObject(input, this.jsonSerializerSettings);
             this.console.WriteLine(result);
             Assert.Equal("{\"Amount\":9.00000000}", result);
         }

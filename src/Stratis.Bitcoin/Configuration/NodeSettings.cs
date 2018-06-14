@@ -32,8 +32,6 @@ namespace Stratis.Bitcoin.Configuration
     /// </summary>
     public class NodeSettings
     {
-        const int MaximumAgentPrefixLength = 10;
-
         /// <summary>Version of the protocol the current implementation supports.</summary>
         public const ProtocolVersion SupportedProtocolVersion = ProtocolVersion.SENDHEADERS_VERSION;
 
@@ -58,9 +56,6 @@ namespace Stratis.Bitcoin.Configuration
         /// <summary>Combined command line arguments and configuration file settings.</summary>
         public TextFileConfiguration ConfigReader { get; private set; }
 
-        /// <summary>Option to skip (most) non-standard transaction checks, for testnet/regtest only.</summary>
-        public bool RequireStandard { get; set; }
-
         /// <summary>Supported protocol version.</summary>
         public ProtocolVersion ProtocolVersion { get; private set; }
 
@@ -70,9 +65,6 @@ namespace Stratis.Bitcoin.Configuration
         /// <summary>The node's user agent.</summary>
         public string Agent { get; private set; }
 
-        /// <summary>Maximum tip age in seconds to consider node in initial block download.</summary>
-        public int MaxTipAge { get; private set; }
-
         /// <summary>Minimum transaction fee for network.</summary>
         public FeeRate MinTxFeeRate { get; private set; }
 
@@ -81,9 +73,6 @@ namespace Stratis.Bitcoin.Configuration
 
         /// <summary>Minimum relay transaction fee for network.</summary>
         public FeeRate MinRelayTxFeeRate { get; private set; }
-
-        /// <summary><c>true</c> to sync time with other peers and calculate adjusted time, <c>false</c> to use our system clock only.</summary>
-        public bool SyncTimeEnabled { get; private set; }
 
         /// <summary>
         /// Initializes a new instance of the object.
@@ -125,8 +114,8 @@ namespace Stratis.Bitcoin.Configuration
 
             // By default, we look for a file named '<network>.conf' in the network's data directory,
             // but both the data directory and the configuration file path may be changed using the -datadir and -conf command-line arguments.
-            this.ConfigurationFile = this.ConfigReader.GetOrDefault<string>("conf", null)?.NormalizeDirectorySeparator();
-            this.DataDir = this.ConfigReader.GetOrDefault<string>("datadir",  null)?.NormalizeDirectorySeparator();        
+            this.ConfigurationFile = this.ConfigReader.GetOrDefault<string>("conf", null, this.Logger)?.NormalizeDirectorySeparator();
+            this.DataDir = this.ConfigReader.GetOrDefault<string>("datadir",  null, this.Logger)?.NormalizeDirectorySeparator();        
 
             // If the configuration file is relative then assume it is relative to the data folder and combine the paths.
             if (this.DataDir != null && this.ConfigurationFile != null)
@@ -152,10 +141,8 @@ namespace Stratis.Bitcoin.Configuration
             if (this.Network == null)
             {
                 // Find out if we need to run on testnet or regtest from the config file.
-                var testNet = this.ConfigReader.GetOrDefault<bool>("testnet", false);
-                var regTest = this.ConfigReader.GetOrDefault<bool>("regtest", false);
-
-                this.Logger.LogDebug("Network type: testnet='{0}', regtest='{1}'.", testNet, regTest);
+                bool testNet = this.ConfigReader.GetOrDefault<bool>("testnet", false, this.Logger);
+                bool regTest = this.ConfigReader.GetOrDefault<bool>("regtest", false, this.Logger);
 
                 if (testNet && regTest)
                     throw new ConfigurationException("Invalid combination of regtest and testnet.");
@@ -210,8 +197,8 @@ namespace Stratis.Bitcoin.Configuration
         {
             get
             {
-                return this.ConfigReader.GetOrDefault<bool>("help", false) ||
-                    this.ConfigReader.GetOrDefault<bool>("-help", false);
+                return this.ConfigReader.GetOrDefault<bool>("help", false, this.Logger) ||
+                    this.ConfigReader.GetOrDefault<bool>("-help", false, this.Logger);
             }
         }
 
@@ -237,9 +224,9 @@ namespace Stratis.Bitcoin.Configuration
             {
                 this.Logger.LogDebug("Creating configuration file '{0}'.", this.ConfigurationFile);
 
-                StringBuilder builder = new StringBuilder();
+                var builder = new StringBuilder();
 
-                foreach (var featureRegistration in features)
+                foreach (IFeatureRegistration featureRegistration in features)
                 {
                     MethodInfo getDefaultConfiguration = featureRegistration.FeatureType.GetMethod("BuildDefaultConfigurationFile", BindingFlags.Public | BindingFlags.Static);
                     if (getDefaultConfiguration != null)
@@ -272,36 +259,11 @@ namespace Stratis.Bitcoin.Configuration
         /// </summary>
         private void LoadConfiguration()
         {
-            var config = this.ConfigReader;
+            TextFileConfiguration config = this.ConfigReader;
 
-            this.RequireStandard = config.GetOrDefault("acceptnonstdtxn", !(this.Network.IsTest()));
-            this.Logger.LogDebug("RequireStandard set to {0}.", this.RequireStandard);
-
-            this.MaxTipAge = config.GetOrDefault("maxtipage", this.Network.MaxTipAge);
-            this.Logger.LogDebug("MaxTipAge set to {0}.", this.MaxTipAge);
-
-            this.MinTxFeeRate = new FeeRate(config.GetOrDefault("mintxfee", this.Network.MinTxFee));
-            this.Logger.LogDebug("MinTxFeeRate set to {0}.", this.MinTxFeeRate);
-
-            this.FallbackTxFeeRate = new FeeRate(config.GetOrDefault("fallbackfee", this.Network.FallbackFee));
-            this.Logger.LogDebug("FallbackTxFeeRate set to {0}.", this.FallbackTxFeeRate);
-
-            this.MinRelayTxFeeRate = new FeeRate(config.GetOrDefault("minrelaytxfee", this.Network.MinRelayTxFee));
-            this.Logger.LogDebug("MinRelayTxFeeRate set to {0}.", this.MinRelayTxFeeRate);
-
-            this.SyncTimeEnabled = config.GetOrDefault<bool>("synctime", true);
-            this.Logger.LogDebug("Time synchronization with peers is {0}.", this.SyncTimeEnabled ? "enabled" : "disabled");
-
-            var agentPrefix = config.GetOrDefault("agentprefix", string.Empty).Replace("-","");
-            if (agentPrefix.Length > MaximumAgentPrefixLength)
-                agentPrefix = agentPrefix.Substring(0, MaximumAgentPrefixLength);
-            this.Logger.LogDebug("AgentPrefix set to {0}.", agentPrefix);
-
-            // Since we are relying on the "this.Agent" value that may have been changed by an earlier call to 
-            // this method follow good coding practice and ensure that we always get the same result on subsequent calls.
-            var agent = this.Agent.Substring(this.Agent.IndexOf("-") + 1);
-            this.Agent = string.IsNullOrEmpty(agentPrefix) ? agent : $"{agentPrefix}-{agent}";
-            this.Logger.LogDebug("Agent set to {0}.", this.Agent);
+            this.MinTxFeeRate = new FeeRate(config.GetOrDefault("mintxfee", this.Network.MinTxFee, this.Logger));
+            this.FallbackTxFeeRate = new FeeRate(config.GetOrDefault("fallbackfee", this.Network.FallbackFee, this.Logger));
+            this.MinRelayTxFeeRate = new FeeRate(config.GetOrDefault("minrelaytxfee", this.Network.MinRelayTxFee, this.Logger));
         }
 
         /// <summary>
@@ -317,7 +279,7 @@ namespace Stratis.Bitcoin.Configuration
             // Directory paths are different between Windows or Linux/OSX systems.
             if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
-                var home = Environment.GetEnvironmentVariable("HOME");
+                string home = Environment.GetEnvironmentVariable("HOME");
                 if (!string.IsNullOrEmpty(home))
                 {
                     this.Logger.LogDebug("Using HOME environment variable for initializing application data.");
@@ -330,7 +292,7 @@ namespace Stratis.Bitcoin.Configuration
             }
             else
             {
-                var localAppData = Environment.GetEnvironmentVariable("APPDATA");
+                string localAppData = Environment.GetEnvironmentVariable("APPDATA");
                 if (!string.IsNullOrEmpty(localAppData))
                 {
                     this.Logger.LogDebug("Using APPDATA environment variable for initializing application data.");
@@ -358,8 +320,8 @@ namespace Stratis.Bitcoin.Configuration
         {
             Guard.NotNull(network, nameof(network));
 
-            var defaults = Default(network:network);
-            var daemonName = Path.GetFileName(Assembly.GetEntryAssembly().Location);
+            NodeSettings defaults = Default(network:network);
+            string daemonName = Path.GetFileName(Assembly.GetEntryAssembly().Location);
 
             var builder = new StringBuilder();
             builder.AppendLine("Usage:");
@@ -368,28 +330,21 @@ namespace Stratis.Bitcoin.Configuration
             builder.AppendLine("Command line arguments:");
             builder.AppendLine();
             builder.AppendLine($"-help/--help              Show this help.");
-            builder.AppendLine($"-conf=<Path>              Path to the configuration file. Default {defaults.ConfigurationFile}.");
-            builder.AppendLine($"-datadir=<Path>           Path to the data directory. Default {defaults.DataDir}.");
+            builder.AppendLine($"-conf=<Path>              Path to the configuration file. Defaults to {defaults.ConfigurationFile}.");
+            builder.AppendLine($"-datadir=<Path>           Path to the data directory. Defaults to {defaults.DataDir}.");
+            builder.AppendLine($"-debug[=<string>]         Set 'Debug' logging level. Specify what to log via e.g. '-debug=Stratis.Bitcoin.Miner,Stratis.Bitcoin.Wallet'.");
+            builder.AppendLine($"-loglevel=<string>        Direct control over the logging level: '-loglevel=trace/debug/info/warn/error/fatal'.");
+
+            // Can be overridden in configuration file.
             builder.AppendLine($"-testnet                  Use the testnet chain.");
             builder.AppendLine($"-regtest                  Use the regtestnet chain.");
-            builder.AppendLine($"-agentprefix=<string>     An optional prefix for the node's user agent that will be shared with peers in the version handshake.");
-            builder.AppendLine($"-acceptnonstdtxn=<0 or 1> Accept non-standard transactions. Default {(defaults.RequireStandard?1:0)}.");
-            builder.AppendLine($"-maxtipage=<number>       Max tip age. Default {network.MaxTipAge}.");
-            builder.AppendLine($"-synctime=<0 or 1>        Sync with peers. Default 1.");
-            builder.AppendLine($"-mintxfee=<number>        Minimum fee rate. Defaults to network specific value.");
-            builder.AppendLine($"-fallbackfee=<number>     Fallback fee rate. Defaults to network specific value.");
-            builder.AppendLine($"-minrelaytxfee=<number>   Minimum relay fee rate. Defaults to network specific value.");
-
-            // Connection manager settings
-            builder.AppendLine($"-port=<port>              The default network port to connect to. Default { network.DefaultPort }.");
-            builder.AppendLine($"-connect=<ip:port>        Specified node to connect to. Can be specified multiple times.");
-            builder.AppendLine($"-addnode=<ip:port>        Add a node to connect to and attempt to keep the connection open. Can be specified multiple times.");
-            builder.AppendLine($"-whitebind=<ip:port>      Bind to given address and whitelist peers connecting to it. Use [host]:port notation for IPv6. Can be specified multiple times.");
-            builder.AppendLine($"-externalip=<ip>          Specify your own public address.");
-            builder.AppendLine($"-bantime=<number>         Number of seconds to keep misbehaving peers from reconnecting. Default {ConnectionManagerSettings.DefaultMisbehavingBantimeSeconds}.");
-            builder.AppendLine($"-maxoutboundconnections=<number> The maximum number of outbound connections. Default {ConnectionManagerSettings.DefaultMaxOutboundConnections}.");
+            builder.AppendLine($"-mintxfee=<number>        Minimum fee rate. Defaults to {network.MinTxFee}.");
+            builder.AppendLine($"-fallbackfee=<number>     Fallback fee rate. Defaults to {network.FallbackFee}.");
+            builder.AppendLine($"-minrelaytxfee=<number>   Minimum relay fee rate. Defaults to {network.MinRelayTxFee}.");
 
             defaults.Logger.LogInformation(builder.ToString());
+
+            ConnectionManagerSettings.PrintHelp(network);
         }
         
         /// <summary>
@@ -399,17 +354,13 @@ namespace Stratis.Bitcoin.Configuration
         /// <param name="network">The network to base the defaults off.</param>
         public static void BuildDefaultConfigurationFile(StringBuilder builder, Network network)
         {
-            var defaults = Default(network:network);
+            NodeSettings defaults = Default(network:network);
 
             builder.AppendLine("####Node Settings####");
-            builder.AppendLine($"#An optional prefix for the node's user agent shared with peers. Truncated if over { MaximumAgentPrefixLength } characters.");
-            builder.AppendLine($"#agentprefix=<string>");
-            builder.AppendLine($"#Accept non-standard transactions. Default {(defaults.RequireStandard?1:0)}.");
-            builder.AppendLine($"#acceptnonstdtxn={(defaults.RequireStandard?1:0)}");
-            builder.AppendLine($"#Max tip age. Default {network.MaxTipAge}.");
-            builder.AppendLine($"#maxtipage={network.MaxTipAge}");
-            builder.AppendLine($"#Sync with peers. Default 1.");
-            builder.AppendLine($"#synctime=1");
+            builder.AppendLine($"#Test network. Defaults to 0.");
+            builder.AppendLine($"testnet={((network.IsTest() && !network.IsRegTest())?1:0)}");
+            builder.AppendLine($"#Regression test network. Defaults to 0.");
+            builder.AppendLine($"regtest={(network.IsRegTest()?1:0)}");
             builder.AppendLine($"#Minimum fee rate. Defaults to {network.MinTxFee}.");
             builder.AppendLine($"#mintxfee={network.MinTxFee}");
             builder.AppendLine($"#Fallback fee rate. Defaults to {network.FallbackFee}.");
@@ -417,21 +368,8 @@ namespace Stratis.Bitcoin.Configuration
             builder.AppendLine($"#Minimum relay fee rate. Defaults to {network.MinRelayTxFee}.");
             builder.AppendLine($"#minrelaytxfee={network.MinRelayTxFee}");
             builder.AppendLine();
-            builder.AppendLine("####ConnectionManager Settings####");
-            builder.AppendLine($"#The default network port to connect to. Default { network.DefaultPort }.");
-            builder.AppendLine($"#port={network.DefaultPort}");
-            builder.AppendLine($"#Specified node to connect to. Can be specified multiple times.");
-            builder.AppendLine($"#connect=<ip:port>");
-            builder.AppendLine($"#Add a node to connect to and attempt to keep the connection open. Can be specified multiple times.");
-            builder.AppendLine($"#addnode=<ip:port>");
-            builder.AppendLine($"#Bind to given address and whitelist peers connecting to it. Use [host]:port notation for IPv6. Can be specified multiple times.");
-            builder.AppendLine($"#whitebind=<ip:port>");
-            builder.AppendLine($"#Specify your own public address.");
-            builder.AppendLine($"#externalip=<ip>");
-            builder.AppendLine($"#Number of seconds to keep misbehaving peers from reconnecting. Default {ConnectionManagerSettings.DefaultMisbehavingBantimeSeconds}.");
-            builder.AppendLine($"#bantime=<number>");
-            builder.AppendLine($"#The maximum number of outbound connections. Default {ConnectionManagerSettings.DefaultMaxOutboundConnections}.");
-            builder.AppendLine($"#maxoutboundconnections=<number>");
+
+            ConnectionManagerSettings.BuildDefaultConfigurationFile(builder, network);
         }
     }
 }

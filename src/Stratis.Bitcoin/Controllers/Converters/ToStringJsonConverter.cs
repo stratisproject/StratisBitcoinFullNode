@@ -1,7 +1,7 @@
 ﻿using System;
 using Newtonsoft.Json;
 
-namespace Stratis.Bitcoin.Features.RPC.Converters
+namespace Stratis.Bitcoin.Controllers.Converters
 {
     public class ToStringJsonConverter : JsonConverter
     {

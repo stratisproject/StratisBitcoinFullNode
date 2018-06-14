@@ -36,6 +36,19 @@ namespace Stratis.Bitcoin.Features.Miner
             this.stakeValidator = stakeValidator;
         }
 
+        /// <inheritdoc/>
+        public override void AddToBlock(TxMempoolEntry mempoolEntry)
+        {
+            this.logger.LogTrace("({0}.{1}:'{2}', {3}:{4})", nameof(mempoolEntry), nameof(mempoolEntry.TransactionHash), mempoolEntry.TransactionHash, nameof(mempoolEntry.ModifiedFee), mempoolEntry.ModifiedFee);
+
+            this.AddTransactionToBlock(mempoolEntry.Transaction);
+            this.UpdateBlockStatistics(mempoolEntry);
+            this.UpdateTotalFees(mempoolEntry.Fee);
+
+            this.logger.LogTrace("(-)");
+        }
+
+        /// <inheritdoc/>
         public override BlockTemplate Build(ChainedHeader chainTip, Script scriptPubKey)
         {
             this.logger.LogTrace("({0}:'{1}',{2}.{3}:{4})", nameof(chainTip), chainTip, nameof(scriptPubKey), nameof(scriptPubKey.Length), scriptPubKey.Length);
@@ -50,21 +63,14 @@ namespace Stratis.Bitcoin.Features.Miner
             return this.BlockTemplate;
         }
 
-        public override void OnUpdateHeaders()
+        /// <inheritdoc/>
+        public override void UpdateHeaders()
         {
             this.logger.LogTrace("()");
 
-            this.block.Header.HashPrevBlock = this.ChainTip.HashBlock;
-            this.block.Header.UpdateTime(this.DateTimeProvider.GetTimeOffset(), this.Network, this.ChainTip);
-            this.block.Header.Nonce = 0;
+            base.UpdateBaseHeaders();
+
             this.block.Header.Bits = this.stakeValidator.GetNextTargetRequired(this.stakeChain, this.ChainTip, this.Network.Consensus, this.Options.IsProofOfStake);
-
-            this.logger.LogTrace("(-)");
-        }
-
-        public override void OnTestBlockValidity()
-        {
-            this.logger.LogTrace("()");
 
             this.logger.LogTrace("(-)");
         }

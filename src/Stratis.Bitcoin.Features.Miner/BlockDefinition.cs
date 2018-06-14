@@ -9,9 +9,9 @@ using Stratis.Bitcoin.Features.Consensus.Interfaces;
 using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.MemoryPool.Interfaces;
+using Stratis.Bitcoin.Features.Miner.Comparers;
 using Stratis.Bitcoin.Mining;
 using Stratis.Bitcoin.Utilities;
-using static Stratis.Bitcoin.Features.Miner.PowBlockDefinition;
 
 namespace Stratis.Bitcoin.Features.Miner
 {
@@ -184,8 +184,6 @@ namespace Stratis.Bitcoin.Features.Miner
             this.coinbase.AddOutput(new TxOut(Money.Zero, this.scriptPubKey));
 
             this.block.AddTransaction(this.coinbase);
-            this.BlockTemplate.VTxFees.Add(-1); // Updated at end.
-            this.BlockTemplate.TxSigOpsCost.Add(-1); // Updated at end.
         }
 
         /// <summary>
@@ -209,7 +207,7 @@ namespace Stratis.Bitcoin.Features.Miner
         /// </summary>
         /// <param name="chainTip">Tip of the chain that this instance will work with without touching any shared chain resources.</param>
         /// <param name="scriptPubKey">Script that explains what conditions must be met to claim ownership of a coin.</param>
-        /// <returns>The contructed <see cref="Miner.BlockTemplate"/>.</returns>
+        /// <returns>The contructed <see cref="Mining.BlockTemplate"/>.</returns>
         protected void OnBuild(ChainedHeader chainTip, Script scriptPubKey)
         {
             this.Configure();
@@ -253,49 +251,64 @@ namespace Stratis.Bitcoin.Features.Miner
 
             // TODO: Implement Witness Code
             // pblocktemplate->CoinbaseCommitment = GenerateCoinbaseCommitment(*pblock, pindexPrev, chainparams.GetConsensus());
-            this.BlockTemplate.VTxFees[0] = -this.fees;
 
-            var powCoinviewRule = this.ConsensusLoop.ConsensusRules.GetRule<CoinViewRule>();
-
-            this.coinbase.Outputs[0].Value = this.fees + powCoinviewRule.GetProofOfWorkReward(this.height);
+            var coinviewRule = this.ConsensusLoop.ConsensusRules.GetRule<CoinViewRule>();
+            this.coinbase.Outputs[0].Value = this.fees + coinviewRule.GetProofOfWorkReward(this.height);
             this.BlockTemplate.TotalFee = this.fees;
 
             int nSerializeSize = this.block.GetSerializedSize();
-            this.logger.LogDebug("Serialized size is {0} bytes, block weight is {1}, number of txs is {2}, tx fees are {3}, number of sigops is {4}.", nSerializeSize, powCoinviewRule.GetBlockWeight(this.block), this.BlockTx, this.fees, this.BlockSigOpsCost);
+            this.logger.LogDebug("Serialized size is {0} bytes, block weight is {1}, number of txs is {2}, tx fees are {3}, number of sigops is {4}.", nSerializeSize, coinviewRule.GetBlockWeight(this.block), this.BlockTx, this.fees, this.BlockSigOpsCost);
 
-            this.OnUpdateHeaders();
-
-            //pblocktemplate->TxSigOpsCost[0] = WITNESS_SCALE_FACTOR * GetLegacySigOpCount(*pblock->vtx[0]);
-
-            this.OnTestBlockValidity();
-
-            //int64_t nTime2 = GetTimeMicros();
-
-            //LogPrint(BCLog::BENCH, "CreateNewBlock() packages: %.2fms (%d packages, %d updated descendants), validity: %.2fms (total %.2fms)\n", 0.001 * (nTime1 - nTimeStart), nPackagesSelected, nDescendantsUpdated, 0.001 * (nTime2 - nTime1), 0.001 * (nTime2 - nTimeStart));
+            this.UpdateHeaders();
         }
 
         /// <summary>
-        /// Adds a transaction to the block from the given mempool entry.
+        /// Network specific logic to add a transaction to the block from a given mempool entry.
         /// </summary>
-        private void AddToBlock(TxMempoolEntry mempoolEntry)
+        public abstract void AddToBlock(TxMempoolEntry mempoolEntry);
+
+        /// <summary>
+        /// Adds a transaction to the block and updates the <see cref="BlockSize"/> and <see cref="BlockTx"/> values.
+        /// </summary>
+        protected void AddTransactionToBlock(Transaction transaction)
         {
-            this.logger.LogTrace("({0}.{1}:'{2}', {3}:{4}, txSize:{5})", nameof(mempoolEntry), nameof(mempoolEntry.TransactionHash), mempoolEntry.TransactionHash, nameof(mempoolEntry.ModifiedFee), mempoolEntry.ModifiedFee, mempoolEntry.GetTxSize());
+            this.logger.LogTrace("({0}:{1}, {2}:{3})", nameof(transaction), transaction.GetHash());
 
-            this.block.AddTransaction(mempoolEntry.Transaction);
-
-            this.BlockTemplate.VTxFees.Add(mempoolEntry.Fee);
-            this.BlockTemplate.TxSigOpsCost.Add(mempoolEntry.SigOpCost);
+            this.block.AddTransaction(transaction);
+            this.BlockTx++;
 
             if (this.NeedSizeAccounting)
-                this.BlockSize += mempoolEntry.Transaction.GetSerializedSize();
+                this.BlockSize += transaction.GetSerializedSize();
 
-            this.BlockWeight += mempoolEntry.TxWeight;
-            this.BlockTx++;
+            this.logger.LogTrace("(-){0}:{1}, {2}:{3}", nameof(this.BlockTx), this.BlockTx, nameof(this.BlockSize), this.BlockSize);
+        }
+
+        /// <summary>
+        /// Updates block statistics from the given mempool entry.
+        /// <para>The block's <see cref="BlockSigOpsCost"/> and <see cref="BlockWeight"/> values are adjusted.
+        /// </para>
+        /// </summary>
+        protected void UpdateBlockStatistics(TxMempoolEntry mempoolEntry)
+        {
+            this.logger.LogTrace("({0}.{1}:{2}, {3}.{4}:{5})", nameof(mempoolEntry), nameof(mempoolEntry.SigOpCost), mempoolEntry.SigOpCost, nameof(mempoolEntry), nameof(mempoolEntry.TxWeight), mempoolEntry.TxWeight);
+
             this.BlockSigOpsCost += mempoolEntry.SigOpCost;
-            this.fees += mempoolEntry.Fee;
+            this.BlockWeight += mempoolEntry.TxWeight;
             this.inBlock.Add(mempoolEntry);
 
-            this.logger.LogTrace("(-)");
+            this.logger.LogTrace("(-){0}:{1}, {2}:{3}", nameof(this.BlockWeight), this.BlockWeight, nameof(this.BlockSigOpsCost), this.BlockSigOpsCost);
+        }
+
+        /// <summary>
+        /// Updates the total fee amount for this block.
+        /// </summary>
+        protected void UpdateTotalFees(Money fee)
+        {
+            this.logger.LogTrace("({0}:{1})", nameof(fee), fee);
+
+            this.fees += fee;
+
+            this.logger.LogTrace("(-){0}:{1}", nameof(this.fees), this.fees);
         }
 
         /// <summary>
@@ -328,7 +341,7 @@ namespace Stratis.Bitcoin.Features.Miner
             // mapModifiedTxRes.Select(s => new TxMemPoolModifiedEntry(s)).OrderBy(o => o, new CompareModifiedEntry());
 
             // Keep track of entries that failed inclusion, to avoid duplicate work.
-            TxMempool.SetEntries failedTx = new TxMempool.SetEntries();
+            var failedTx = new TxMempool.SetEntries();
 
             // Start by adding all descendants of previously added txs to mapModifiedTx
             // and modifying them for their already included ancestors.
@@ -370,7 +383,7 @@ namespace Stratis.Bitcoin.Features.Miner
                 if (mi == null)
                 {
                     modit = mapModifiedTx.Values.OrderByDescending(o => o, compare).First();
-                    iter = modit.iter;
+                    iter = modit.MempoolEntry;
                     fUsingModified = true;
                 }
                 else
@@ -385,7 +398,7 @@ namespace Stratis.Bitcoin.Features.Miner
                         // than the one from mapTx..
                         // Switch which transaction (package) to consider.
 
-                        iter = modit.iter;
+                        iter = modit.MempoolEntry;
                         fUsingModified = true;
                     }
                     else
@@ -423,7 +436,7 @@ namespace Stratis.Bitcoin.Features.Miner
                         // Since we always look at the best entry in mapModifiedTx,
                         // we must erase failed entries so that we can consider the
                         // next best entry on the next loop iteration
-                        mapModifiedTx.Remove(modit.iter.TransactionHash);
+                        mapModifiedTx.Remove(modit.MempoolEntry.TransactionHash);
                         failedTx.Add(iter);
                     }
 
@@ -437,7 +450,7 @@ namespace Stratis.Bitcoin.Features.Miner
                     continue;
                 }
 
-                TxMempool.SetEntries ancestors = new TxMempool.SetEntries();
+                var ancestors = new TxMempool.SetEntries();
                 long nNoLimit = long.MaxValue;
                 string dummy;
                 this.Mempool.CalculateMemPoolAncestors(iter, ancestors, nNoLimit, nNoLimit, nNoLimit, nNoLimit, out dummy, false);
@@ -450,7 +463,7 @@ namespace Stratis.Bitcoin.Features.Miner
                 {
                     if (fUsingModified)
                     {
-                        mapModifiedTx.Remove(modit.iter.TransactionHash);
+                        mapModifiedTx.Remove(modit.MempoolEntry.TransactionHash);
                         failedTx.Add(iter);
                     }
                     continue;
@@ -485,7 +498,7 @@ namespace Stratis.Bitcoin.Features.Miner
         /// </summary>
         private void OnlyUnconfirmed(TxMempool.SetEntries testSet)
         {
-            foreach (var setEntry in testSet.ToList())
+            foreach (TxMempoolEntry setEntry in testSet.ToList())
             {
                 // Only test txs not already in the block
                 if (this.inBlock.Contains(setEntry))
@@ -554,9 +567,9 @@ namespace Stratis.Bitcoin.Features.Miner
             int descendantsUpdated = 0;
             foreach (TxMempoolEntry setEntry in alreadyAdded)
             {
-                TxMempool.SetEntries setEntries = new TxMempool.SetEntries();
+                var setEntries = new TxMempool.SetEntries();
                 this.MempoolLock.ReadAsync(() => this.Mempool.CalculateDescendants(setEntry, setEntries)).GetAwaiter().GetResult();
-                foreach (var desc in setEntries)
+                foreach (TxMempoolEntry desc in setEntries)
                 {
                     if (alreadyAdded.Contains(desc))
                         continue;
@@ -568,6 +581,7 @@ namespace Stratis.Bitcoin.Features.Miner
                         modEntry = new TxMemPoolModifiedEntry(desc);
                         mapModifiedTx.Add(desc.TransactionHash, modEntry);
                     }
+
                     modEntry.SizeWithAncestors -= setEntry.GetTxSize();
                     modEntry.ModFeesWithAncestors -= setEntry.ModifiedFee;
                     modEntry.SigOpCostWithAncestors -= setEntry.SigOpCost;
@@ -577,13 +591,18 @@ namespace Stratis.Bitcoin.Features.Miner
             return descendantsUpdated;
         }
 
-        /// <summary>Logic specific as to how the block will be built.</summary>
+        /// <summary>Network specific logic specific as to how the block will be built.</summary>
         public abstract BlockTemplate Build(ChainedHeader chainTip, Script scriptPubKey);
 
-        /// <summary>Logic specific to how the block's header will be set.</summary>
-        public abstract void OnUpdateHeaders();
+        /// <summary>Update the block's header information.</summary>
+        protected void UpdateBaseHeaders()
+        {
+            this.block.Header.HashPrevBlock = this.ChainTip.HashBlock;
+            this.block.Header.UpdateTime(this.DateTimeProvider.GetTimeOffset(), this.Network, this.ChainTip);
+            this.block.Header.Nonce = 0;
+        }
 
-        /// <summary>Logic specific to how the block will be validated.</summary>
-        public abstract void OnTestBlockValidity();
+        /// <summary>Network specific logic specific as to how the block's header will be set.</summary>
+        public abstract void UpdateHeaders();
     }
 }

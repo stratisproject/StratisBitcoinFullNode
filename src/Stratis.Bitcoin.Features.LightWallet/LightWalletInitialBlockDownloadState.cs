@@ -1,5 +1,4 @@
-﻿using System;
-using Stratis.Bitcoin.Interfaces;
+﻿using Stratis.Bitcoin.Interfaces;
 
 namespace Stratis.Bitcoin.Features.LightWallet
 {

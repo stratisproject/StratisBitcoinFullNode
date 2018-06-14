@@ -95,16 +95,16 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             context.AllowOtherInputs = true;
 
-            foreach (var transactionInput in transaction.Inputs)
+            foreach (TxIn transactionInput in transaction.Inputs)
                 context.SelectedInputs.Add(transactionInput.PrevOut);
 
-            var newTransaction = this.BuildTransaction(context);
+            Transaction newTransaction = this.BuildTransaction(context);
 
             if (context.ChangeAddress != null)
             {
                 // find the position of the change and move it over.
-                var index = 0;
-                foreach (var newTransactionOutput in newTransaction.Outputs)
+                int index = 0;
+                foreach (TxOut newTransactionOutput in newTransaction.Outputs)
                 {
                     if (newTransactionOutput.ScriptPubKey == context.ChangeAddress.ScriptPubKey)
                     {
@@ -118,7 +118,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             // TODO: copy the new output amount size (this also includes spreading the fee over all outputs)
 
             // copy all the inputs from the new transaction.
-            foreach (var newTransactionInput in newTransaction.Inputs)
+            foreach (TxIn newTransactionInput in newTransaction.Inputs)
             {
                 if (!context.SelectedInputs.Contains(newTransactionInput.PrevOut))
                 {
@@ -137,7 +137,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             Guard.NotEmpty(accountReference.AccountName, nameof(accountReference.AccountName));
 
             // Get the total value of spendable coins in the account.
-            var maxSpendableAmount = this.walletManager.GetSpendableTransactionsInAccount(accountReference, allowUnconfirmed ? 0 : 1).Sum(x => x.Transaction.Amount);
+            long maxSpendableAmount = this.walletManager.GetSpendableTransactionsInAccount(accountReference, allowUnconfirmed ? 0 : 1).Sum(x => x.Transaction.Amount);
 
             // Return 0 if the user has nothing to spend.
             if (maxSpendableAmount == Money.Zero)
@@ -233,12 +233,12 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             var signingKeys = new HashSet<ISecret>();
             var added = new HashSet<HdAddress>();
-            foreach (var unspentOutputsItem in context.UnspentOutputs)
+            foreach (UnspentOutputReference unspentOutputsItem in context.UnspentOutputs)
             {
                 if (added.Contains(unspentOutputsItem.Address))
                     continue;
 
-                var address = unspentOutputsItem.Address;
+                HdAddress address = unspentOutputsItem.Address;
                 ExtKey addressExtKey = seedExtKey.Derive(new KeyPath(address.HdPath));
                 BitcoinExtKey addressPrivateKey = addressExtKey.GetWif(wallet.Network);
                 signingKeys.Add(addressPrivateKey);
@@ -274,8 +274,8 @@ namespace Stratis.Bitcoin.Features.Wallet
             }
 
             // Get total spendable balance in the account.
-            var balance = context.UnspentOutputs.Sum(t => t.Transaction.Amount);
-            var totalToSend = context.Recipients.Sum(s => s.Amount);
+            long balance = context.UnspentOutputs.Sum(t => t.Transaction.Amount);
+            long totalToSend = context.Recipients.Sum(s => s.Amount);
             if (balance < totalToSend)
                 throw new WalletException("Not enough funds.");
 
@@ -286,23 +286,25 @@ namespace Stratis.Bitcoin.Features.Wallet
                 // input is part of the UTXO set and filter out UTXOs that are not
                 // in the initial list if 'context.AllowOtherInputs' is false.
 
-                var availableHashList = context.UnspentOutputs.ToDictionary(item => item.ToOutPoint(), item => item);
+                Dictionary<OutPoint, UnspentOutputReference> availableHashList = context.UnspentOutputs.ToDictionary(item => item.ToOutPoint(), item => item);
 
                 if (!context.SelectedInputs.All(input => availableHashList.ContainsKey(input)))
                     throw new WalletException("Not all the selected inputs were found on the wallet.");
 
                 if (!context.AllowOtherInputs)
                 {
-                    foreach (var unspentOutputsItem in availableHashList)
+                    foreach (KeyValuePair<OutPoint, UnspentOutputReference> unspentOutputsItem in availableHashList)
+                    {
                         if (!context.SelectedInputs.Contains(unspentOutputsItem.Key))
                             context.UnspentOutputs.Remove(unspentOutputsItem.Value);
+                    }
                 }
             }
 
             Money sum = 0;
             int index = 0;
             var coins = new List<Coin>();
-            foreach (var item in context.UnspentOutputs.OrderByDescending(a => a.Transaction.Amount))
+            foreach (UnspentOutputReference item in context.UnspentOutputs.OrderByDescending(a => a.Transaction.Amount))
             {
                 coins.Add(new Coin(item.Transaction.Id, (uint)item.Transaction.Index, item.Transaction.Amount, item.Transaction.ScriptPubKey));
                 sum += item.Transaction.Amount;
@@ -340,7 +342,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             if (context.Recipients.Any(a => a.SubtractFeeFromAmount))
                 throw new NotImplementedException("Substracting the fee from the recipient is not supported yet.");
 
-            foreach (var recipient in context.Recipients)
+            foreach (Recipient recipient in context.Recipients)
                 context.TransactionBuilder.Send(recipient.ScriptPubKey, recipient.Amount);
         }
 
@@ -376,7 +378,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             if (string.IsNullOrEmpty(context.OpReturnData)) return;
 
             byte[] bytes = Encoding.UTF8.GetBytes(context.OpReturnData);
-            var opReturnScript = TxNullDataTemplate.Instance.GenerateScriptPubKey(bytes);
+            Script opReturnScript = TxNullDataTemplate.Instance.GenerateScriptPubKey(bytes);
             context.TransactionBuilder.Send(opReturnScript, Money.Zero);
         }
 

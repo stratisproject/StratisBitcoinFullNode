@@ -1,9 +1,9 @@
-﻿using NBitcoin;	
-using Stratis.Bitcoin.Builder;	
-using Stratis.Bitcoin.Configuration;	
-using Stratis.Bitcoin.Tests.Common;	
-using Xunit;	
-	
+﻿using NBitcoin;
+using Stratis.Bitcoin.Builder;
+using Stratis.Bitcoin.Configuration;
+using Stratis.Bitcoin.Tests.Common;
+using Xunit;
+
 namespace Stratis.Bitcoin.Features.BlockStore.Tests
 {	
     public class StoreSettingsTest : TestBase	
@@ -19,7 +19,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
 	
             var nodeSettings = new NodeSettings(args: new string[] { $"-datadir={dir}" });	
 	
-            var node1 = new FullNodeBuilder()
+            IFullNode node1 = new FullNodeBuilder()
                 .UseNodeSettings(nodeSettings)
                 .UseBlockStore()
                 .Build();	
@@ -30,7 +30,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             
             nodeSettings = new NodeSettings(args: new string[] { $"-datadir={dir}", "-reindex=1" });
 
-            var node2 = new FullNodeBuilder()
+            IFullNode node2 = new FullNodeBuilder()
                 .UseNodeSettings(nodeSettings)
                 .UseBlockStore()
                 .Build();	

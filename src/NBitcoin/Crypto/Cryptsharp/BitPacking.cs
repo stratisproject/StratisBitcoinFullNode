@@ -19,7 +19,7 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 namespace NBitcoin.Crypto.Internal
 {
-    static class BitPacking
+    internal static class BitPacking
     {
         public static uint UInt24FromLEBytes(byte[] bytes, int offset)
         {

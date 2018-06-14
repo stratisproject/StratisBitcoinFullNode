@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Utilities;
 using Xunit;
@@ -79,14 +77,14 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.CoinViews
             this.performanceCounter.AddInsertTime(3);
             this.performanceCounter.AddQueryTime(1);
 
-            var snapshot1 = this.performanceCounter.Snapshot();
+            BackendPerformanceSnapshot snapshot1 = this.performanceCounter.Snapshot();
 
             this.performanceCounter.AddInsertedEntities(50);
             this.performanceCounter.AddQueriedEntities(9);
             this.performanceCounter.AddInsertTime(6);
             this.performanceCounter.AddQueryTime(67);
 
-            var snapshot2 = this.performanceCounter.Snapshot();
+            BackendPerformanceSnapshot snapshot2 = this.performanceCounter.Snapshot();
 
             Assert.Equal(15, snapshot1.TotalInsertedEntities);
             Assert.Equal(7, snapshot1.TotalQueriedEntities);

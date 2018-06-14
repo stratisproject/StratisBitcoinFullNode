@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Linq;
 using System.Text;
+using NBitcoin.BouncyCastle.Asn1.X9;
 using NBitcoin.BouncyCastle.Math;
+using NBitcoin.BouncyCastle.Math.EC;
 using NBitcoin.Crypto;
 using NBitcoin.DataEncoders;
 
@@ -11,10 +13,10 @@ namespace NBitcoin
     {
         public EncryptedKeyResult(BitcoinEncryptedSecretEC key, BitcoinAddress address, byte[] seed, Func<BitcoinConfirmationCode> calculateConfirmation)
         {
-            _EncryptedKey = key;
-            _GeneratedAddress = address;
-            _CalculateConfirmation = calculateConfirmation;
-            _Seed = seed;
+            this._EncryptedKey = key;
+            this._GeneratedAddress = address;
+            this._CalculateConfirmation = calculateConfirmation;
+            this._Seed = seed;
         }
 
         private readonly BitcoinEncryptedSecretEC _EncryptedKey;
@@ -22,22 +24,22 @@ namespace NBitcoin
         {
             get
             {
-                return _EncryptedKey;
+                return this._EncryptedKey;
             }
         }
 
-        Func<BitcoinConfirmationCode> _CalculateConfirmation;
+        private Func<BitcoinConfirmationCode> _CalculateConfirmation;
         private BitcoinConfirmationCode _ConfirmationCode;
         public BitcoinConfirmationCode ConfirmationCode
         {
             get
             {
-                if(_ConfirmationCode == null)
+                if(this._ConfirmationCode == null)
                 {
-                    _ConfirmationCode = _CalculateConfirmation();
-                    _CalculateConfirmation = null;
+                    this._ConfirmationCode = this._CalculateConfirmation();
+                    this._CalculateConfirmation = null;
                 }
-                return _ConfirmationCode;
+                return this._ConfirmationCode;
             }
         }
         private readonly BitcoinAddress _GeneratedAddress;
@@ -45,7 +47,7 @@ namespace NBitcoin
         {
             get
             {
-                return _GeneratedAddress;
+                return this._GeneratedAddress;
             }
         }
 
@@ -54,7 +56,7 @@ namespace NBitcoin
         {
             get
             {
-                return _Seed;
+                return this._Seed;
             }
         }
     }
@@ -68,10 +70,10 @@ namespace NBitcoin
             if(sequence > 1024 || sequence < 0)
                 throw new ArgumentOutOfRangeException("sequence");
 
-            _Lot = lot;
-            _Sequence = sequence;
+            this._Lot = lot;
+            this._Sequence = sequence;
             uint lotSequence = (uint)lot * 4096 + (uint)sequence;
-            _Bytes =
+            this._Bytes =
                 new[]
                     {
                         (byte)(lotSequence >> 24),
@@ -82,15 +84,15 @@ namespace NBitcoin
         }
         public LotSequence(byte[] bytes)
         {
-            _Bytes = bytes.ToArray();
+            this._Bytes = bytes.ToArray();
             uint lotSequence =
-                ((uint)_Bytes[0] << 24) +
-                ((uint)_Bytes[1] << 16) +
-                ((uint)_Bytes[2] << 8) +
-                ((uint)_Bytes[3] << 0);
+                ((uint) this._Bytes[0] << 24) +
+                ((uint) this._Bytes[1] << 16) +
+                ((uint) this._Bytes[2] << 8) +
+                ((uint) this._Bytes[3] << 0);
 
-            _Lot = (int)(lotSequence / 4096);
-            _Sequence = (int)(lotSequence - _Lot);
+            this._Lot = (int)(lotSequence / 4096);
+            this._Sequence = (int)(lotSequence - this._Lot);
         }
 
         private readonly int _Lot;
@@ -98,7 +100,7 @@ namespace NBitcoin
         {
             get
             {
-                return _Lot;
+                return this._Lot;
             }
         }
         private readonly int _Sequence;
@@ -106,28 +108,28 @@ namespace NBitcoin
         {
             get
             {
-                return _Sequence;
+                return this._Sequence;
             }
         }
 
-        readonly byte[] _Bytes;
+        private readonly byte[] _Bytes;
         public byte[] ToBytes()
         {
-            return _Bytes.ToArray();
+            return this._Bytes.ToArray();
         }
 
         private int Id
         {
             get
             {
-                return Utils.ToInt32(_Bytes, 0, true);
+                return Utils.ToInt32(this._Bytes, 0, true);
             }
         }
 
         public override bool Equals(object obj)
         {
-            LotSequence item = obj as LotSequence;
-            return item != null && Id.Equals(item.Id);
+            var item = obj as LotSequence;
+            return item != null && this.Id.Equals(item.Id);
         }
         public static bool operator ==(LotSequence a, LotSequence b)
         {
@@ -145,7 +147,7 @@ namespace NBitcoin
 
         public override int GetHashCode()
         {
-            return Id.GetHashCode();
+            return this.Id.GetHashCode();
         }
     }
 
@@ -162,7 +164,7 @@ namespace NBitcoin
 
             //ownersalt is 8 random bytes
             ownersalt = ownersalt ?? RandomUtils.GetBytes(8);
-            var ownerEntropy = ownersalt;
+            byte[] ownerEntropy = ownersalt;
 
             if(hasLotSequence)
             {
@@ -171,16 +173,16 @@ namespace NBitcoin
             }
 
 
-            var prefactor = SCrypt.BitcoinComputeDerivedKey(Encoding.UTF8.GetBytes(passphrase), ownersalt, 32);
-            var passfactor = prefactor;
+            byte[] prefactor = SCrypt.BitcoinComputeDerivedKey(Encoding.UTF8.GetBytes(passphrase), ownersalt, 32);
+            byte[] passfactor = prefactor;
             if(hasLotSequence)
             {
                 passfactor = Hashes.Hash256(prefactor.Concat(ownerEntropy).ToArray()).ToBytes();
             }
 
-            var passpoint = new Key(passfactor, fCompressedIn: true).PubKey.ToBytes();
+            byte[] passpoint = new Key(passfactor, fCompressedIn: true).PubKey.ToBytes();
 
-            var bytes =
+            byte[] bytes =
                 network.GetVersionBytes(Base58Type.PASSPHRASE_CODE, true)
                 .Concat(new[] { hasLotSequence ? (byte)0x51 : (byte)0x53 })
                 .Concat(ownerEntropy)
@@ -194,15 +196,15 @@ namespace NBitcoin
         {
         }
 
-        LotSequence _LotSequence;
+        private LotSequence _LotSequence;
         public LotSequence LotSequence
         {
             get
             {
-                var hasLotSequence = (vchData[0]) == 0x51;
+                bool hasLotSequence = (this.vchData[0]) == 0x51;
                 if(!hasLotSequence)
                     return null;
-                return _LotSequence ?? (_LotSequence = new LotSequence(OwnerEntropy.Skip(4).Take(4).ToArray()));
+                return this._LotSequence ?? (this._LotSequence = new LotSequence(this.OwnerEntropy.Skip(4).Take(4).ToArray()));
             }
         }
 
@@ -212,17 +214,17 @@ namespace NBitcoin
             byte flagByte = 0;
             //Turn on bit 0x20 if the Bitcoin address will be formed by hashing the compressed public key
             flagByte |= isCompressed ? (byte)0x20 : (byte)0x00;
-            flagByte |= LotSequence != null ? (byte)0x04 : (byte)0x00;
+            flagByte |= this.LotSequence != null ? (byte)0x04 : (byte)0x00;
 
             //Generate 24 random bytes, call this seedb. Take SHA256(SHA256(seedb)) to yield 32 bytes, call this factorb.
             seedb = seedb ?? RandomUtils.GetBytes(24);
 
-            var factorb = Hashes.Hash256(seedb).ToBytes();
+            byte[] factorb = Hashes.Hash256(seedb).ToBytes();
 
             //ECMultiply passpoint by factorb.
-            var curve = ECKey.Secp256k1;
-            var passpoint = curve.Curve.DecodePoint(Passpoint);
-            var pubPoint = passpoint.Multiply(new BigInteger(1, factorb));
+            X9ECParameters curve = ECKey.Secp256k1;
+            ECPoint passpoint = curve.Curve.DecodePoint(this.Passpoint);
+            ECPoint pubPoint = passpoint.Multiply(new BigInteger(1, factorb));
 
             //Use the resulting EC point as a public key
             var pubKey = new PubKey(pubPoint.GetEncoded());
@@ -232,22 +234,22 @@ namespace NBitcoin
             pubKey = isCompressed ? pubKey.Compress() : pubKey.Decompress();
 
             //call it generatedaddress.
-            var generatedaddress = pubKey.GetAddress(Network);
+            BitcoinPubKeyAddress generatedaddress = pubKey.GetAddress(this.Network);
 
             //Take the first four bytes of SHA256(SHA256(generatedaddress)) and call it addresshash.
-            var addresshash = BitcoinEncryptedSecretEC.HashAddress(generatedaddress);
+            byte[] addresshash = BitcoinEncryptedSecretEC.HashAddress(generatedaddress);
 
             //Derive a second key from passpoint using scrypt
             //salt is addresshash + ownerentropy
-            var derived = BitcoinEncryptedSecretEC.CalculateDecryptionKey(Passpoint, addresshash, OwnerEntropy);
+            byte[] derived = BitcoinEncryptedSecretEC.CalculateDecryptionKey(this.Passpoint, addresshash, this.OwnerEntropy);
 
             //Now we will encrypt seedb.
-            var encrypted = BitcoinEncryptedSecret.EncryptSeed
+            byte[] encrypted = BitcoinEncryptedSecret.EncryptSeed
                             (seedb,
                             derived);
 
             //0x01 0x43 + flagbyte + addresshash + ownerentropy + encryptedpart1[0...7] + encryptedpart2 which totals 39 bytes
-            var bytes =
+            byte[] bytes =
                 new[] { flagByte }
                 .Concat(addresshash)
                 .Concat(this.OwnerEntropy)
@@ -255,44 +257,44 @@ namespace NBitcoin
                 .Concat(encrypted.Skip(16).ToArray())
                 .ToArray();
 
-            var encryptedSecret = new BitcoinEncryptedSecretEC(bytes, Network);
+            var encryptedSecret = new BitcoinEncryptedSecretEC(bytes, this.Network);
 
             return new EncryptedKeyResult(encryptedSecret, generatedaddress, seedb, () =>
             {
                 //ECMultiply factorb by G, call the result pointb. The result is 33 bytes.
-                var pointb = new Key(factorb).PubKey.ToBytes();
+                byte[] pointb = new Key(factorb).PubKey.ToBytes();
                 //The first byte is 0x02 or 0x03. XOR it by (derivedhalf2[31] & 0x01), call the resulting byte pointbprefix.
-                var pointbprefix = (byte)(pointb[0] ^ (byte)(derived[63] & 0x01));
-                var pointbx = BitcoinEncryptedSecret.EncryptKey(pointb.Skip(1).ToArray(), derived);
-                var encryptedpointb = new byte[] { pointbprefix }.Concat(pointbx).ToArray();
+                byte pointbprefix = (byte)(pointb[0] ^ (byte)(derived[63] & 0x01));
+                byte[] pointbx = BitcoinEncryptedSecret.EncryptKey(pointb.Skip(1).ToArray(), derived);
+                byte[] encryptedpointb = new byte[] { pointbprefix }.Concat(pointbx).ToArray();
 
-                var confirmBytes =
-                    Network.GetVersionBytes(Base58Type.CONFIRMATION_CODE, true)
+                byte[] confirmBytes = this.Network.GetVersionBytes(Base58Type.CONFIRMATION_CODE, true)
                     .Concat(new[] { flagByte })
                     .Concat(addresshash)
-                    .Concat(OwnerEntropy)
+                    .Concat(this.OwnerEntropy)
                     .Concat(encryptedpointb)
                     .ToArray();
 
-                return new BitcoinConfirmationCode(Encoders.Base58Check.EncodeData(confirmBytes), Network);
+                return new BitcoinConfirmationCode(Encoders.Base58Check.EncodeData(confirmBytes), this.Network);
             });
         }
 
 
-        byte[] _OwnerEntropy;
+        private byte[] _OwnerEntropy;
         public byte[] OwnerEntropy
         {
             get
             {
-                return _OwnerEntropy ?? (_OwnerEntropy = vchData.Skip(1).Take(8).ToArray());
+                return this._OwnerEntropy ?? (this._OwnerEntropy = this.vchData.Skip(1).Take(8).ToArray());
             }
         }
-        byte[] _Passpoint;
+
+        private byte[] _Passpoint;
         public byte[] Passpoint
         {
             get
             {
-                return _Passpoint ?? (_Passpoint = vchData.Skip(1).Skip(8).ToArray());
+                return this._Passpoint ?? (this._Passpoint = this.vchData.Skip(1).Skip(8).ToArray());
             }
         }
 
@@ -300,7 +302,7 @@ namespace NBitcoin
         {
             get
             {
-                return 1 + 8 + 33 == vchData.Length && (vchData[0] == 0x53 || vchData[0] == 0x51);
+                return 1 + 8 + 33 == this.vchData.Length && (this.vchData[0] == 0x53 || this.vchData[0] == 0x51);
             }
         }
 

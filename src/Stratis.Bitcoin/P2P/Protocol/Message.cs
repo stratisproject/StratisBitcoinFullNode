@@ -126,7 +126,7 @@ namespace Stratis.Bitcoin.P2P.Protocol
                     }
                 }
 
-                BitcoinStream payloadStream = new BitcoinStream(payloadBytes);
+                var payloadStream = new BitcoinStream(payloadBytes);
                 payloadStream.ConsensusFactory = stream.ConsensusFactory;
                 payloadStream.CopyParameters(stream);
 
@@ -152,9 +152,9 @@ namespace Stratis.Bitcoin.P2P.Protocol
         /// <returns>The payload in bytes.</returns>
         private byte[] GetPayloadBytes(ConsensusFactory consensusFactory, out int length)
         {
-            using (MemoryStream ms = new MemoryStream())
+            using (var ms = new MemoryStream())
             {
-                BitcoinStream stream = new BitcoinStream(ms, true);
+                var stream = new BitcoinStream(ms, true);
                 stream.ConsensusFactory = consensusFactory;
                 this.Payload.ReadWrite(stream);
                 length = (int) ms.Position;
@@ -174,7 +174,7 @@ namespace Stratis.Bitcoin.P2P.Protocol
 
         public static Message ReadNext(Stream stream, Network network, ProtocolVersion version, CancellationToken cancellationToken, PayloadProvider payloadProvider, out PerformanceCounter counter)
         {
-            BitcoinStream bitStream = new BitcoinStream(stream, false)
+            var bitStream = new BitcoinStream(stream, false)
             {
                 ProtocolVersion = version,
                 ReadCancellationToken = cancellationToken,
@@ -184,7 +184,7 @@ namespace Stratis.Bitcoin.P2P.Protocol
             if (!network.ReadMagic(stream, cancellationToken, true))
                 throw new FormatException("Magic incorrect, the message comes from another network");
 
-            Message message = new Message(payloadProvider);
+            var message = new Message(payloadProvider);
             using (message.SkipMagicScope(true))
             {
                 message.Magic = network.Magic;

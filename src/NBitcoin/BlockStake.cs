@@ -128,10 +128,10 @@ namespace NBitcoin
                 throw new ArgumentNullException("network");
             if (chainedHeader.Height != 0 && chainedHeader.Previous == null)
                 return false;
-            var heightCorrect = chainedHeader.Height == 0 || chainedHeader.Height == chainedHeader.Previous.Height + 1;
-            var genesisCorrect = chainedHeader.Height != 0 || chainedHeader.HashBlock == network.GetGenesis().GetHash();
-            var hashPrevCorrect = chainedHeader.Height == 0 || chainedHeader.Header.HashPrevBlock == chainedHeader.Previous.HashBlock;
-            var hashCorrect = chainedHeader.HashBlock == chainedHeader.Header.GetHash();
+            bool heightCorrect = chainedHeader.Height == 0 || chainedHeader.Height == chainedHeader.Previous.Height + 1;
+            bool genesisCorrect = chainedHeader.Height != 0 || chainedHeader.HashBlock == network.GetGenesis().GetHash();
+            bool hashPrevCorrect = chainedHeader.Height == 0 || chainedHeader.Header.HashPrevBlock == chainedHeader.Previous.HashBlock;
+            bool hashCorrect = chainedHeader.HashBlock == chainedHeader.Header.GetHash();
 
             return heightCorrect && genesisCorrect && hashPrevCorrect && hashCorrect;
         }
@@ -256,6 +256,8 @@ namespace NBitcoin
         {
             base.ReadWrite(stream);
             stream.ReadWrite(ref this.blockSignature);
+
+            this.BlockSize = stream.Serializing ? stream.Counter.WrittenBytes : stream.Counter.ReadBytes;
         }
     }
 }

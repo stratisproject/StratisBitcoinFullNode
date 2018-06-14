@@ -26,7 +26,7 @@ namespace NBitcoin
 
         public async Task<T> GetAsync<T>(string key) where T : IBitcoinSerializable, new()
         {
-            var data = await GetBytes(key).ConfigureAwait(false);
+            byte[] data = await GetBytes(key).ConfigureAwait(false);
             if(data == null)
                 return default(T);
             if (!this.network.Consensus.ConsensusFactory.TryCreateNew<T>(out T obj))

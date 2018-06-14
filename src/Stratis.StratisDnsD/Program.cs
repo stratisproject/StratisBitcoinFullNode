@@ -1,7 +1,5 @@
 ﻿using System;
-using System.Linq;
 using System.Threading.Tasks;
-using NBitcoin;
 using NBitcoin.Protocol;
 using Stratis.Bitcoin;
 using Stratis.Bitcoin.Builder;
@@ -50,7 +48,7 @@ namespace Stratis.StratisDnsD
                
                 // Run as a full node with DNS or just a DNS service?
                 IFullNode node;
-                if (nodeSettings.ConfigReader.GetOrDefault<bool>("dnsfullnode", false))
+                if (dnsSettings.DnsFullNode)
                 {
                     // Build the Dns full node.
                     node = new FullNodeBuilder()

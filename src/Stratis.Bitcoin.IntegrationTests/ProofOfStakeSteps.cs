@@ -4,7 +4,6 @@ using System.IO;
 using System.Linq;
 using FluentAssertions;
 using NBitcoin;
-using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Miner.Interfaces;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Controllers;
@@ -63,7 +62,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 
         public CoreNode AddAndConnectProofOfStakeNodes(string nodeName)
         {
-            var newProofOfStakeNode = this.nodeGroupBuilder.CreateStratisPosNode(nodeName)
+            IDictionary<string, CoreNode> newProofOfStakeNode = this.nodeGroupBuilder.CreateStratisPosNode(nodeName)
                 .Start()
                 .NotInIBD()
                 .Build();
@@ -83,7 +82,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                     .Build();
 
             this.powSenderAddress = this.nodes[this.PowMiner].FullNode.WalletManager().GetUnusedAddress(new WalletAccountReference(this.PowWallet, this.WalletAccount));
-            var wallet = this.nodes[this.PowMiner].FullNode.WalletManager().GetWalletByName(this.PowWallet);
+            Features.Wallet.Wallet wallet = this.nodes[this.PowMiner].FullNode.WalletManager().GetWalletByName(this.PowWallet);
             this.powSenderPrivateKey = wallet.GetExtendedPrivateKeyForAddress(this.PowWalletPassword, this.powSenderAddress).PrivateKey;
         }
 
@@ -111,7 +110,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         public void SyncWithProofWorkNode()
         {
             this.posReceiverAddress = this.nodes[this.PosStaker].FullNode.WalletManager().GetUnusedAddress(new WalletAccountReference(this.PosWallet, this.WalletAccount));
-            var wallet = this.nodes[this.PosStaker].FullNode.WalletManager().GetWalletByName(this.PosWallet);
+            Features.Wallet.Wallet wallet = this.nodes[this.PosStaker].FullNode.WalletManager().GetWalletByName(this.PosWallet);
             this.posReceiverPrivateKey = wallet.GetExtendedPrivateKeyForAddress(this.PosWalletPassword, this.posReceiverAddress).PrivateKey;
 
             this.nodes[this.PosStaker].SetDummyMinerSecret(new BitcoinSecret(this.posReceiverPrivateKey, this.nodes[this.PosStaker].FullNode.Network));
@@ -120,7 +119,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 
         public void SendOneMillionCoinsFromPowWalletToPosWallet()
         {
-            var context = SharedSteps.CreateTransactionBuildContext(
+            TransactionBuildContext context = SharedSteps.CreateTransactionBuildContext(
                 this.PowWallet,
                 this.WalletAccount,
                 this.PowWalletPassword,
@@ -130,20 +129,20 @@ namespace Stratis.Bitcoin.IntegrationTests
 
             context.OverrideFeeRate = new FeeRate(Money.Satoshis(20000));
 
-            var unspent = this.nodes[this.PowMiner].FullNode.WalletManager().GetSpendableTransactionsInWallet(this.PowWallet);
+            IEnumerable<UnspentOutputReference> unspent = this.nodes[this.PowMiner].FullNode.WalletManager().GetSpendableTransactionsInWallet(this.PowWallet);
             var coins = new List<Coin>();
 
-            var blockTimestamp = unspent.OrderBy(u => u.Transaction.CreationTime).Select(ts => ts.Transaction.CreationTime).First();
-            var transaction = this.nodes[this.PowMiner].FullNode.Network.Consensus.ConsensusFactory.CreateTransaction();
+            DateTimeOffset blockTimestamp = unspent.OrderBy(u => u.Transaction.CreationTime).Select(ts => ts.Transaction.CreationTime).First();
+            Transaction transaction = this.nodes[this.PowMiner].FullNode.Network.Consensus.ConsensusFactory.CreateTransaction();
             transaction.Time = (uint)blockTimestamp.ToUnixTimeSeconds();
 
-            foreach (var item in unspent.OrderByDescending(a => a.Transaction.Amount))
+            foreach (UnspentOutputReference item in unspent.OrderByDescending(a => a.Transaction.Amount))
             {
                 coins.Add(new Coin(item.Transaction.Id, (uint)item.Transaction.Index, item.Transaction.Amount, item.Transaction.ScriptPubKey));
             }
 
-            var coin = coins.First();
-            var txIn = transaction.AddInput(new TxIn(coin.Outpoint, this.powSenderAddress.ScriptPubKey));
+            Coin coin = coins.First();
+            TxIn txIn = transaction.AddInput(new TxIn(coin.Outpoint, this.powSenderAddress.ScriptPubKey));
             transaction.AddOutput(new TxOut(new Money(9699999999995400), this.powSenderAddress.ScriptPubKey));
             transaction.AddOutput(new TxOut(new Money(100000000000000), this.posReceiverAddress.ScriptPubKey));
             transaction.Sign(this.nodes[this.PowMiner].FullNode.Network, this.powSenderPrivateKey, new[] { coin });
@@ -158,13 +157,13 @@ namespace Stratis.Bitcoin.IntegrationTests
 
             this.sharedSteps.WaitForNodeToSync(this.nodes[this.PosStaker]);
 
-            var received = this.nodes[this.PosStaker].FullNode.WalletManager().GetSpendableTransactionsInWallet(this.PosWallet);
+            IEnumerable<UnspentOutputReference> received = this.nodes[this.PosStaker].FullNode.WalletManager().GetSpendableTransactionsInWallet(this.PosWallet);
             received.Sum(s => s.Transaction.Amount).Should().Be(Money.COIN * 1000000);
         }
 
         public void PosNodeMinesTenBlocksMoreEnsuringTheyCanBeStaked()
         {
-            this.nodes[this.PosStaker].GenerateStratisWithMiner(Convert.ToInt32(this.nodes[this.PosStaker].FullNode.Network.Consensus.Option<PosConsensusOptions>().CoinbaseMaturity));
+            this.nodes[this.PosStaker].GenerateStratisWithMiner(Convert.ToInt32(this.nodes[this.PosStaker].FullNode.Network.Consensus.CoinbaseMaturity));
         }
 
         public void PosNodeStartsStaking()
@@ -177,7 +176,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             TestHelper.WaitLoop(() =>
             {
-                var staked = this.nodes[this.PosStaker].FullNode.WalletManager().GetSpendableTransactionsInWallet(this.PosWallet).Sum(s => s.Transaction.Amount);
+                long staked = this.nodes[this.PosStaker].FullNode.WalletManager().GetSpendableTransactionsInWallet(this.PosWallet).Sum(s => s.Transaction.Amount);
                 return staked >= Money.COIN * 1000000;
             });
         }

@@ -143,7 +143,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Fee
         /// <param name="nBlockHeight">Block height.</param>
         public void ClearCurrent(int nBlockHeight)
         {
-            for (var j = 0; j < this.buckets.Count; j++)
+            for (int j = 0; j < this.buckets.Count; j++)
             {
                 this.oldUnconfTxs[j] += this.unconfTxs[nBlockHeight % this.unconfTxs.Count][j];
                 this.unconfTxs[nBlockHeight % this.unconfTxs.Count][j] = 0;
@@ -207,8 +207,10 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Fee
                 if (this.oldUnconfTxs[bucketIndex] > 0)
                     this.oldUnconfTxs[bucketIndex]--;
                 else
+                {
                     this.logger.LogInformation(
                         $"Blockpolicy error, mempool tx removed from >25 blocks,bucketIndex={bucketIndex} already");
+                }
             }
             else
             {
@@ -216,8 +218,10 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Fee
                 if (this.unconfTxs[blockIndex][bucketIndex] > 0)
                     this.unconfTxs[blockIndex][bucketIndex]--;
                 else
+                {
                     this.logger.LogInformation(
                         $"Blockpolicy error, mempool tx removed from blockIndex={blockIndex},bucketIndex={bucketIndex} already");
+                }
             }
             if(!inBlock && (blocksAgo >= this.scale)) // Only counts as a failure if not confirmed for entire period
             {
@@ -236,7 +240,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Fee
         /// </summary>
         public void UpdateMovingAverages()
         {
-            for (var j = 0; j < this.buckets.Count; j++)
+            for (int j = 0; j < this.buckets.Count; j++)
             {
                 for (var i = 0; i < this.confAvg.Count; i++)
                     this.confAvg[i][j] = this.confAvg[i][j] * this.decay;
@@ -390,7 +394,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Fee
                         break;
                     }
                 }
-
                 passBucket.Start = minBucket > 0 ? this.buckets[minBucket - 1] : 0;
                 passBucket.End = this.buckets[maxBucket];
             }

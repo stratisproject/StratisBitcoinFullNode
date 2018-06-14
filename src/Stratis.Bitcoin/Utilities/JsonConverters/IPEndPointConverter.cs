@@ -20,11 +20,11 @@ namespace Stratis.Bitcoin.Utilities.JsonConverters
         /// <inheritdoc />
         public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
         {
-            var json = JToken.Load(reader).ToString();
+            string json = JToken.Load(reader).ToString();
             if (string.IsNullOrWhiteSpace(json))
                 return null;
 
-            var endPointComponents = json.Split('|');
+            string[] endPointComponents = json.Split('|');
             return new IPEndPoint(IPAddress.Parse(endPointComponents[0]), Convert.ToInt32(endPointComponents[1]));
         }
 

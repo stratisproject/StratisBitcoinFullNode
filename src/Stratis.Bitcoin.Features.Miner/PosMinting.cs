@@ -9,6 +9,7 @@ using NBitcoin.Crypto;
 using NBitcoin.Protocol;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Connection;
+using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.Consensus.Interfaces;
@@ -594,7 +595,7 @@ namespace Stratis.Bitcoin.Features.Miner
             }
 
             // Validate the block.
-            var blockValidationContext = new BlockValidationContext { Block = block };
+            var blockValidationContext = new ValidationContext { Block = block };
             this.consensusLoop.AcceptBlockAsync(blockValidationContext).GetAwaiter().GetResult();
 
             if (blockValidationContext.ChainedHeader == null)
@@ -753,7 +754,7 @@ namespace Stratis.Bitcoin.Features.Miner
             var workers = new Task[workerCount];
             var workerContexts = new CoinstakeWorkerContext[workerCount];
 
-            CoinstakeWorkerResult workersResult = new CoinstakeWorkerResult();
+            var workersResult = new CoinstakeWorkerResult();
             for (int workerIndex = 0; workerIndex < workerCount; workerIndex++)
             {
                 var cwc = new CoinstakeWorkerContext
@@ -916,10 +917,7 @@ namespace Stratis.Bitcoin.Features.Miner
                     {
                         var prevoutStake = new OutPoint(utxoStakeInfo.UtxoSet.TransactionId, utxoStakeInfo.OutPoint.N);
 
-                        var contextInformation = new ContextStakeInformation
-                        {
-                            BlockStake = new BlockStake(block)
-                        };
+                        var contextInformation = new PosRuleContext(new BlockStake(block));
 
                         this.stakeValidator.CheckKernel(contextInformation, chainTip, block.Header.Bits, txTime, prevoutStake);
 
@@ -1085,7 +1083,7 @@ namespace Stratis.Bitcoin.Features.Miner
             if (!(utxoStakeDescription.UtxoSet.IsCoinbase || utxoStakeDescription.UtxoSet.IsCoinstake))
                 return 0;
 
-            return Math.Max(0, (int)this.network.Consensus.Option<PosConsensusOptions>().CoinbaseMaturity + 1 - this.GetDepthInMainChain(utxoStakeDescription));
+            return Math.Max(0, (int)this.network.Consensus.CoinbaseMaturity + 1 - this.GetDepthInMainChain(utxoStakeDescription));
         }
 
         /// <summary>
@@ -1210,7 +1208,7 @@ namespace Stratis.Bitcoin.Features.Miner
         {
             this.logger.LogTrace("({0}:{1})", nameof(utxoCount), utxoCount);
 
-            long maturityLimit = this.network.Consensus.Option<PosConsensusOptions>().CoinbaseMaturity;
+            long maturityLimit = this.network.Consensus.CoinbaseMaturity;
             long coinAgeLimit = this.network.Consensus.Option<PosConsensusOptions>().GetStakeMinConfirmations(chainTip.Height + 1, this.network);
             long requiredCoinAgeForStaking = Math.Max(maturityLimit, coinAgeLimit);
             this.logger.LogTrace("Required coin age for staking is {0}.", requiredCoinAgeForStaking);

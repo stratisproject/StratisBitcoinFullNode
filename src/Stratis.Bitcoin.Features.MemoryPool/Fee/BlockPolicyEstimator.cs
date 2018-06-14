@@ -270,7 +270,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Fee
             }
 
             // Feerates are stored and reported as BTC-per-kb:
-            FeeRate feeRate = new FeeRate(entry.Fee, (int)entry.GetTxSize());
+            var feeRate = new FeeRate(entry.Fee, (int)entry.GetTxSize());
 
             this.feeStats.Record(blocksToConfirm, feeRate.FeePerK.Satoshi);
             this.shortStats.Record(blocksToConfirm, feeRate.FeePerK.Satoshi);

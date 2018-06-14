@@ -40,7 +40,7 @@ namespace Stratis.Bitcoin.P2P
             this.MaxOutboundConnections = this.ConnectionSettings.Connect.Count;
 
             // Add the endpoints from the -connect arg to the address manager
-            foreach (var ipEndpoint in this.ConnectionSettings.Connect)
+            foreach (IPEndPoint ipEndpoint in this.ConnectionSettings.Connect)
             {
                 this.peerAddressManager.AddPeer(ipEndpoint.MapToIpv6(), IPAddress.Loopback);
             }
@@ -63,7 +63,7 @@ namespace Stratis.Bitcoin.P2P
         /// </summary>
         public override async Task OnConnectAsync()
         {
-            foreach (var ipEndpoint in this.ConnectionSettings.Connect)
+            foreach (IPEndPoint ipEndpoint in this.ConnectionSettings.Connect)
             {
                 if (this.nodeLifetime.ApplicationStopping.IsCancellationRequested)
                     return;

@@ -8,7 +8,7 @@ using Newtonsoft.Json.Linq;
 
 namespace NBitcoin.RPC
 {
-    class SatoshiFormatter : RawFormatter
+    internal class SatoshiFormatter : RawFormatter
     {
         private readonly Network network;
 
@@ -38,7 +38,7 @@ namespace NBitcoin.RPC
                 }
                 else
                 {
-                    var coinbase = (string)jsonIn.GetValue("coinbase");
+                    string coinbase = (string)jsonIn.GetValue("coinbase");
                     txin.ScriptSig = new Script(Encoders.Hex.DecodeData(coinbase));
                 }
 
@@ -53,8 +53,8 @@ namespace NBitcoin.RPC
                 var txout = new TxOut();
                 tx.Outputs.Add(txout);
 
-                var btc = (decimal)jsonOut.GetValue("value");
-                var satoshis = btc * Money.COIN;
+                decimal btc = (decimal)jsonOut.GetValue("value");
+                decimal satoshis = btc * Money.COIN;
                 txout.Value = new Money((long)(satoshis));
 
                 var script = (JObject)jsonOut.GetValue("scriptPubKey");
@@ -70,7 +70,7 @@ namespace NBitcoin.RPC
 
             writer.WritePropertyName("vin");
             writer.WriteStartArray();
-            foreach(var txin in tx.Inputs)
+            foreach(TxIn txin in tx.Inputs)
             {
                 writer.WriteStartObject();
 
@@ -99,7 +99,7 @@ namespace NBitcoin.RPC
             writer.WriteStartArray();
 
             int i = 0;
-            foreach(var txout in tx.Outputs)
+            foreach(TxOut txout in tx.Outputs)
             {
                 writer.WriteStartObject();
                 writer.WritePropertyName("value");
@@ -125,12 +125,12 @@ namespace NBitcoin.RPC
                     WritePropertyValue(writer, "type", GetScriptType(txout.ScriptPubKey.FindTemplate(this.network)));
                     writer.WritePropertyName("addresses");
                     writer.WriteStartArray();
-                    writer.WriteValue(destinations[0].GetAddress(Network).ToString());
+                    writer.WriteValue(destinations[0].GetAddress(this.Network).ToString());
                     writer.WriteEndArray();
                 }
                 else
                 {
-                    var multi = PayToMultiSigTemplate.Instance.ExtractScriptPubKeyParameters(this.network, txout.ScriptPubKey);
+                    PayToMultiSigTemplateParameters multi = PayToMultiSigTemplate.Instance.ExtractScriptPubKeyParameters(this.network, txout.ScriptPubKey);
                     if (multi != null)
                         WritePropertyValue(writer, "reqSigs", multi.SignatureCount);
                     WritePropertyValue(writer, "type", GetScriptType(txout.ScriptPubKey.FindTemplate(this.network)));
@@ -155,10 +155,10 @@ namespace NBitcoin.RPC
 
         private string ValueFromAmount(Money money)
         {
-            var satoshis = (decimal)money.Satoshi;
-            var btc = satoshis / Money.COIN;
+            decimal satoshis = (decimal)money.Satoshi;
+            decimal btc = satoshis / Money.COIN;
             //return btc.ToString("0.###E+00", CultureInfo.InvariantCulture);
-            var result = ((double)btc).ToString(CultureInfo.InvariantCulture);
+            string result = ((double)btc).ToString(CultureInfo.InvariantCulture);
             if(!result.ToCharArray().Contains('.'))
                 result = result + ".0";
             return result;

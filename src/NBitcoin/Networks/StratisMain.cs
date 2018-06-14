@@ -18,7 +18,7 @@ namespace NBitcoin.Networks
             messageStart[1] = 0x35;
             messageStart[2] = 0x22;
             messageStart[3] = 0x05;
-            var magic = BitConverter.ToUInt32(messageStart, 0); //0x5223570; 
+            uint magic = BitConverter.ToUInt32(messageStart, 0); //0x5223570; 
 
             this.Name = "StratisMain";
             this.Magic = magic;
@@ -31,6 +31,7 @@ namespace NBitcoin.Networks
             this.RootFolderName = StratisRootFolderName;
             this.DefaultConfigFilename = StratisDefaultConfigFilename;
             this.MaxTimeOffsetSeconds = 25 * 60;
+            this.CoinTicker = "STRAT";
 
             this.Consensus.SubsidyHalvingInterval = 210000;
             this.Consensus.MajorityEnforceBlockUpgrade = 750;
@@ -54,6 +55,13 @@ namespace NBitcoin.Networks
             this.Consensus.ProofOfStakeLimitV2 = new BigInteger(uint256.Parse("000000000000ffffffffffffffffffffffffffffffffffffffffffffffffffff").ToBytes(false));
             this.Consensus.CoinType = 105;
             this.Consensus.DefaultAssumeValid = new uint256("0x55a8205ae4bbf18f4d238c43f43005bd66e0b1f679b39e2c5c62cf6903693a5e"); // 795970
+            this.Consensus.CoinbaseMaturity = 50;
+            this.Consensus.PremineReward = Money.Coins(98000000);
+            this.Consensus.PremineHeight = 2;
+            this.Consensus.ProofOfWorkReward = Money.Coins(4);
+            this.Consensus.ProofOfStakeReward = Money.COIN;
+            this.Consensus.MaxReorgLength = 500;
+            this.Consensus.MaxMoney = long.MaxValue;
 
             this.Base58Prefixes = new byte[12][];
             this.Base58Prefixes[(int)Base58Type.PUBKEY_ADDRESS] = new byte[] { (63) };
@@ -112,7 +120,7 @@ namespace NBitcoin.Networks
             };
 
             string[] seedNodes = { "101.200.198.155", "103.24.76.21", "104.172.24.79" };
-            this.SeedNodes = this.ConvertToNetworkAddresses(seedNodes, this.DefaultPort).ToList();
+            this.SeedNodes = ConvertToNetworkAddresses(seedNodes, this.DefaultPort).ToList();
 
             // Create the genesis block.
             this.GenesisTime = 1470467000;
@@ -121,10 +129,10 @@ namespace NBitcoin.Networks
             this.GenesisVersion = 1;
             this.GenesisReward = Money.Zero;
 
-            this.Genesis = Network.CreateStratisGenesisBlock(this.Consensus.ConsensusFactory, this.GenesisTime, this.GenesisNonce, this.GenesisBits, this.GenesisVersion, this.GenesisReward);
+            this.Genesis = CreateStratisGenesisBlock(this.Consensus.ConsensusFactory, this.GenesisTime, this.GenesisNonce, this.GenesisBits, this.GenesisVersion, this.GenesisReward);
             this.Consensus.HashGenesisBlock = this.Genesis.GetHash();
-            Network.Assert(this.Consensus.HashGenesisBlock == uint256.Parse("0x0000066e91e46e5a264d42c89e1204963b2ee6be230b443e9159020539d972af"));
-            Network.Assert(this.Genesis.Header.HashMerkleRoot == uint256.Parse("0x65a26bc20b0351aebf05829daefa8f7db2f800623439f3c114257c91447f1518"));
+            Assert(this.Consensus.HashGenesisBlock == uint256.Parse("0x0000066e91e46e5a264d42c89e1204963b2ee6be230b443e9159020539d972af"));
+            Assert(this.Genesis.Header.HashMerkleRoot == uint256.Parse("0x65a26bc20b0351aebf05829daefa8f7db2f800623439f3c114257c91447f1518"));
         }
     }
 }

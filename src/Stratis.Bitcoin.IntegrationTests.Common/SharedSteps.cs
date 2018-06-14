@@ -2,7 +2,6 @@
 using System.Linq;
 using FluentAssertions;
 using NBitcoin;
-using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
 
@@ -29,26 +28,26 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
         {
             this.WaitForNodeToSync(node);
 
-            var address = node.FullNode.WalletManager().GetUnusedAddress(new WalletAccountReference(toWalletName, accountName));
+            HdAddress address = node.FullNode.WalletManager().GetUnusedAddress(new WalletAccountReference(toWalletName, accountName));
 
-            var balanceBeforeMining = node.FullNode.WalletManager()
+            long balanceBeforeMining = node.FullNode.WalletManager()
                 .GetSpendableTransactionsInWallet(toWalletName)
                 .Where(x => x.Address == address)
                 .Sum(s => s.Transaction.Amount);
 
-            var wallet = node.FullNode.WalletManager().GetWalletByName(toWalletName);
-            var extendedPrivateKey = wallet.GetExtendedPrivateKeyForAddress(withPassword, address).PrivateKey;
+            Wallet wallet = node.FullNode.WalletManager().GetWalletByName(toWalletName);
+            Key extendedPrivateKey = wallet.GetExtendedPrivateKeyForAddress(withPassword, address).PrivateKey;
 
             node.SetDummyMinerSecret(new BitcoinSecret(extendedPrivateKey, node.FullNode.Network));
 
             node.GenerateStratisWithMiner(blockCount);
 
-            var balanceAfterMining = node.FullNode.WalletManager()
+            long balanceAfterMining = node.FullNode.WalletManager()
                 .GetSpendableTransactionsInWallet(toWalletName)
                 .Where(x => x.Address == address)
                 .Sum(s => s.Transaction.Amount);
 
-            var balanceIncrease = balanceAfterMining - balanceBeforeMining;
+            long balanceIncrease = balanceAfterMining - balanceBeforeMining;
 
             this.WaitForNodeToSync(node);
 
@@ -59,17 +58,17 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
         {
             this.WaitForNodeToSync(node);
 
-            var unusedAddress = node.FullNode.WalletManager().GetUnusedAddress(new WalletAccountReference(walletName, walletAccount));
-            var wallet = node.FullNode.WalletManager().GetWalletByName(walletName);
-            var extendedPrivateKey = wallet.GetExtendedPrivateKeyForAddress(walletPassword, unusedAddress).PrivateKey;
+            HdAddress unusedAddress = node.FullNode.WalletManager().GetUnusedAddress(new WalletAccountReference(walletName, walletAccount));
+            Wallet wallet = node.FullNode.WalletManager().GetWalletByName(walletName);
+            Key extendedPrivateKey = wallet.GetExtendedPrivateKeyForAddress(walletPassword, unusedAddress).PrivateKey;
 
             node.SetDummyMinerSecret(new BitcoinSecret(extendedPrivateKey, node.FullNode.Network));
             node.GenerateStratisWithMiner(2);
 
             this.WaitForNodeToSync(node);
 
-            var spendable = node.FullNode.WalletManager().GetSpendableTransactionsInWallet(walletName);
-            var amountShouldBe = node.FullNode.Network.Consensus.Option<PosConsensusOptions>().PremineReward + node.FullNode.Network.Consensus.Option<PosConsensusOptions>().ProofOfWorkReward;
+            IEnumerable<UnspentOutputReference> spendable = node.FullNode.WalletManager().GetSpendableTransactionsInWallet(walletName);
+            Money amountShouldBe = node.FullNode.Network.Consensus.PremineReward + node.FullNode.Network.Consensus.ProofOfWorkReward;
             spendable.Sum(s => s.Transaction.Amount).Should().Be(amountShouldBe);
         }
 

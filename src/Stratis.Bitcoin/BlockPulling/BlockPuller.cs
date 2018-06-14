@@ -192,7 +192,7 @@ namespace Stratis.Bitcoin.BlockPulling
             var vectors = new Dictionary<int, InventoryVector>();
             foreach (ChainedHeader request in downloadRequests)
             {
-                InventoryVector vector = new InventoryVector(InventoryType.MSG_BLOCK, request.HashBlock);
+                var vector = new InventoryVector(InventoryType.MSG_BLOCK, request.HashBlock);
                 vectors.Add(request.Height, vector);
             }
             this.DistributeDownload(vectors, downloadRequests.Min(d => d.Height));
@@ -234,10 +234,10 @@ namespace Stratis.Bitcoin.BlockPulling
             }
 
             int minHeight = int.MaxValue;
-            Dictionary<int, InventoryVector> vectors = new Dictionary<int, InventoryVector>();
+            var vectors = new Dictionary<int, InventoryVector>();
             foreach (uint256 blockHash in pendingVectorsCopy)
             {
-                InventoryVector vector = new InventoryVector(InventoryType.MSG_BLOCK, blockHash);
+                var vector = new InventoryVector(InventoryType.MSG_BLOCK, blockHash);
 
                 ChainedHeader chainedHeader = this.Chain.GetBlock(vector.Hash);
                 if (chainedHeader == null) // Reorg might have happened.
@@ -325,7 +325,7 @@ namespace Stratis.Bitcoin.BlockPulling
 
             // Count number of tasks assigned to each peer.
             BlockPullerBehavior[] nodes = this.GetNodeBehaviors();
-            Dictionary<BlockPullerBehavior, int> assignedTasksCount = new Dictionary<BlockPullerBehavior, int>();
+            var assignedTasksCount = new Dictionary<BlockPullerBehavior, int>();
             lock (this.lockObject)
             {
                 foreach (BlockPullerBehavior behavior in nodes)
@@ -341,14 +341,14 @@ namespace Stratis.Bitcoin.BlockPulling
 
             // Prefilter available peers so that we only work with peers that can be assigned any work.
             // If there is a peer whose chain is so short that it can't provide any blocks we want, it is ignored.
-            List<PullerDownloadAssignments.PeerInformation> peerInformation = new List<PullerDownloadAssignments.PeerInformation>();
+            var peerInformation = new List<PullerDownloadAssignments.PeerInformation>();
 
             foreach (BlockPullerBehavior behavior in nodes)
             {
                 int? peerHeight = behavior.ChainHeadersBehavior?.PendingTip?.Height;
                 if (peerHeight >= minHeight)
                 {
-                    PullerDownloadAssignments.PeerInformation peerInfo = new PullerDownloadAssignments.PeerInformation
+                    var peerInfo = new PullerDownloadAssignments.PeerInformation
                     {
                         QualityScore = behavior.QualityScore,
                         PeerId = behavior,
@@ -382,8 +382,8 @@ namespace Stratis.Bitcoin.BlockPulling
                 PullerDownloadAssignments.PeerInformation peer = kvp.Key;
                 List<int> blockHeightsToDownload = kvp.Value;
 
-                GetDataPayload getDataPayload = new GetDataPayload();
-                BlockPullerBehavior peerBehavior = (BlockPullerBehavior)peer.PeerId;
+                var getDataPayload = new GetDataPayload();
+                var peerBehavior = (BlockPullerBehavior)peer.PeerId;
 
                 // Create GetDataPayload from the list of block heights this peer has been assigned.
                 bool peerDisconnected = false;
@@ -739,7 +739,7 @@ namespace Stratis.Bitcoin.BlockPulling
                 this.peersPendingDownloads.Add(peer, peerPendingDownloads);
             }
 
-            DownloadAssignment downloadTask = new DownloadAssignment(blockHash);
+            var downloadTask = new DownloadAssignment(blockHash);
             peerPendingDownloads.Add(blockHash, downloadTask);
             this.logger.LogTrace("(-)");
         }

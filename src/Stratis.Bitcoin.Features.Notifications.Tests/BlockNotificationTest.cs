@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -63,12 +64,12 @@ namespace Stratis.Bitcoin.Features.Notifications.Tests
         [Fact]
         public void Notify_WithSync_SetPullerLocationToPreviousBlockMatchingStartHash()
         {
-            var blocks = this.CreateBlocks(3);
+            List<Block> blocks = this.CreateBlocks(3);
 
             var chain = new ConcurrentChain(blocks[0].Header);
             this.AppendBlocksToChain(chain, blocks.Skip(1).Take(2));
 
-            var dataFolder = CreateDataFolder(this);
+            DataFolder dataFolder = CreateDataFolder(this);
             var connectionManager = new Mock<IConnectionManager>();
             connectionManager.Setup(c => c.ConnectedPeers).Returns(new NetworkPeerCollection());
             connectionManager.Setup(c => c.NodeSettings).Returns(new NodeSettings(args:new string[] { $"-datadir={dataFolder.RootPath}" }));
@@ -96,7 +97,7 @@ namespace Stratis.Bitcoin.Features.Notifications.Tests
         {
             var lifetime = new NodeLifetime();
 
-            var blocks = this.CreateBlocks(2);
+            List<Block> blocks = this.CreateBlocks(2);
 
             var chain = new ConcurrentChain(blocks[0].Header);
             this.AppendBlocksToChain(chain, blocks.Skip(1).Take(1));
@@ -129,7 +130,7 @@ namespace Stratis.Bitcoin.Features.Notifications.Tests
             var puller = new Mock<ILookaheadBlockPuller>();
             var signals = new Mock<ISignals>();
 
-            var blocks = this.CreateBlocks(3);
+            List<Block> blocks = this.CreateBlocks(3);
 
             var chain = new ConcurrentChain(blocks[0].Header);
             this.AppendBlocksToChain(chain, blocks.Skip(1));
@@ -139,8 +140,8 @@ namespace Stratis.Bitcoin.Features.Notifications.Tests
                 .Returns(new LookaheadResult() { Block = blocks[0] });
 
             
-            CancellationTokenSource source = new CancellationTokenSource();
-            var token = source.Token;
+            var source = new CancellationTokenSource();
+            CancellationToken token = source.Token;
             signals.Setup(s => s.SignalBlock(It.Is<Block>(b => b.GetHash() == blocks[0].GetHash())))
                 .Callback(() => {
                     source.Cancel();
@@ -210,7 +211,7 @@ namespace Stratis.Bitcoin.Features.Notifications.Tests
             var puller = new Mock<ILookaheadBlockPuller>();
             var signals = new Mock<ISignals>();
 
-            var blocks = this.CreateBlocks(3);
+            List<Block> blocks = this.CreateBlocks(3);
 
             var chain = new ConcurrentChain(blocks[0].Header);
             this.AppendBlocksToChain(chain, blocks.Skip(1));

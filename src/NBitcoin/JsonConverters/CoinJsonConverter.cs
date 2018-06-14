@@ -23,35 +23,35 @@ namespace NBitcoin.JsonConverters
             {
                 if (network == null)
                     network = Network.Main;
-                TransactionId = coin.Outpoint.Hash;
-                Index = coin.Outpoint.N;
-                ScriptPubKey = coin.TxOut.ScriptPubKey;
+                this.TransactionId = coin.Outpoint.Hash;
+                this.Index = coin.Outpoint.N;
+                this.ScriptPubKey = coin.TxOut.ScriptPubKey;
                 if (coin is ScriptCoin)
                 {
-                    RedeemScript = ((ScriptCoin)coin).Redeem;
+                    this.RedeemScript = ((ScriptCoin)coin).Redeem;
                 }
                 if(coin is Coin)
                 {
-                    Value = ((Coin)coin).Amount;
+                    this.Value = ((Coin)coin).Amount;
                 }
                 if (coin is ColoredCoin)
                 {
                     var cc = (ColoredCoin)coin;
-                    AssetId = cc.AssetId.GetWif(network);
-                    Quantity = cc.Amount.Quantity;
-                    Value = cc.Bearer.Amount;
+                    this.AssetId = cc.AssetId.GetWif(network);
+                    this.Quantity = cc.Amount.Quantity;
+                    this.Value = cc.Bearer.Amount;
                     var scc = cc.Bearer as ScriptCoin;
                     if (scc != null)
                     {
-                        RedeemScript = scc.Redeem;
+                        this.RedeemScript = scc.Redeem;
                     }
                 }
             }
             public ICoin ToCoin()
             {
-                var coin = RedeemScript == null ? new Coin(new OutPoint(TransactionId, Index), new TxOut(Value, ScriptPubKey)) : new ScriptCoin(new OutPoint(TransactionId, Index), new TxOut(Value, ScriptPubKey), RedeemScript);
-                if (AssetId != null)
-                    return coin.ToColoredCoin(new AssetMoney(AssetId, Quantity));
+                Coin coin = this.RedeemScript == null ? new Coin(new OutPoint(this.TransactionId, this.Index), new TxOut(this.Value, this.ScriptPubKey)) : new ScriptCoin(new OutPoint(this.TransactionId, this.Index), new TxOut(this.Value, this.ScriptPubKey), this.RedeemScript);
+                if (this.AssetId != null)
+                    return coin.ToColoredCoin(new AssetMoney(this.AssetId, this.Quantity));
                 return coin;
             }
 
@@ -98,7 +98,7 @@ namespace NBitcoin.JsonConverters
 
         public CoinJsonConverter(Network network)
         {
-            Network = network;
+            this.Network = network;
         }
 
         public Network Network
@@ -118,7 +118,7 @@ namespace NBitcoin.JsonConverters
 
         public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
         {
-            serializer.Serialize(writer, new CoinJson((ICoin)value, Network));
+            serializer.Serialize(writer, new CoinJson((ICoin)value, this.Network));
         }
     }
 }

@@ -3,8 +3,8 @@ using System.Linq;
 using FluentAssertions;
 using FluentAssertions.Common;
 using NBitcoin;
+using NBitcoin.RPC;
 using Stratis.Bitcoin.Connection;
-using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
 using Xunit.Abstractions;
@@ -46,7 +46,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Mempool
             this.nodeB.NotInIBD();
             this.nodeC.NotInIBD();
 
-            this.coinbaseMaturity = (int)this.nodeA.FullNode.Network.Consensus.Option<PowConsensusOptions>().CoinbaseMaturity;
+            this.coinbaseMaturity = (int)this.nodeA.FullNode.Network.Consensus.CoinbaseMaturity;
         }
 
         protected void nodeA_mines_coins_that_are_spendable()
@@ -78,8 +78,8 @@ namespace Stratis.Bitcoin.IntegrationTests.Mempool
 
         protected void nodeA_creates_a_transaction_and_propagates_to_nodeB()
         {
-            var block = this.nodeA.FullNode.BlockStoreManager().BlockRepository.GetAsync(this.nodeA.FullNode.Chain.GetBlock(1).HashBlock).Result;
-            var prevTrx = block.Transactions.First();
+            Block block = this.nodeA.FullNode.BlockStoreManager().BlockRepository.GetAsync(this.nodeA.FullNode.Chain.GetBlock(1).HashBlock).Result;
+            Transaction prevTrx = block.Transactions.First();
             var dest = new BitcoinSecret(new Key(), this.nodeA.FullNode.Network);
 
             this.transaction = this.nodeA.FullNode.Network.Consensus.ConsensusFactory.CreateTransaction();
@@ -93,7 +93,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Mempool
 
         protected void the_transaction_is_propagated_to_nodeC()
         {
-            var rpc = this.nodeC.CreateRPCClient();
+            RPCClient rpc = this.nodeC.CreateRPCClient();
             TestHelper.WaitLoop(() => rpc.GetRawMempool().Any());
 
             rpc.GetRawMempool()

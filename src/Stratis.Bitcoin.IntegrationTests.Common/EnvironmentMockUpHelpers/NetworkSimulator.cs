@@ -29,9 +29,9 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
                 node.NotInIBD();
 
                 node.FullNode.WalletManager().CreateWallet("dummyPassword", "dummyWallet");
-                var address = node.FullNode.WalletManager().GetUnusedAddress(new WalletAccountReference("dummyWallet", "account 0"));
-                var wallet = node.FullNode.WalletManager().GetWalletByName("dummyWallet");
-                var key = wallet.GetExtendedPrivateKeyForAddress("dummyPassword", address).PrivateKey;
+                HdAddress address = node.FullNode.WalletManager().GetUnusedAddress(new WalletAccountReference("dummyWallet", "account 0"));
+                Wallet wallet = node.FullNode.WalletManager().GetWalletByName("dummyWallet");
+                Key key = wallet.GetExtendedPrivateKeyForAddress("dummyPassword", address).PrivateKey;
                 node.SetDummyMinerSecret(new BitcoinSecret(key, node.FullNode.Network));
 
                 this.Nodes.Add(node);
@@ -55,10 +55,10 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
 
         public void MakeSureEachNodeCanMineAndSync()
         {
-            foreach (var node in this.Nodes)
+            foreach (CoreNode node in this.Nodes)
             {
                 Thread.Sleep(1000);
-                var currentHeight = node.FullNode.Chain.Height;
+                int currentHeight = node.FullNode.Chain.Height;
 
                 node.GenerateStratisWithMiner(1);
                 TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(node));

@@ -11,6 +11,9 @@ namespace Stratis.Bitcoin.Features.Miner
     /// </summary>
     public class MinerSettings
     {
+        /// <summary>Instance logger.</summary>
+        private readonly ILogger logger;
+
         /// <summary>
         /// Enable the node to stake.
         /// </summary>
@@ -36,22 +39,38 @@ namespace Stratis.Bitcoin.Features.Miner
         /// </summary>
         public string WalletName { get; set; }
 
+        /// <summary>
+        /// Initializes an instance of the object from the default configuration.
+        /// </summary>
+        public MinerSettings() : this(NodeSettings.Default())
+        {
+        }
+
+        /// <summary>
+        /// Initializes an instance of the object from the node configuration.
+        /// </summary>
+        /// <param name="nodeSettings">The node configuration.</param>
         public MinerSettings(NodeSettings nodeSettings)
         {
             Guard.NotNull(nodeSettings, nameof(nodeSettings));
 
+            this.logger = nodeSettings.LoggerFactory.CreateLogger(typeof(MinerSettings).FullName);
+            this.logger.LogTrace("({0}:'{1}')", nameof(nodeSettings), nodeSettings.Network.Name);
+
             TextFileConfiguration config = nodeSettings.ConfigReader;
 
-            this.Mine = config.GetOrDefault<bool>("mine", false);
+            this.Mine = config.GetOrDefault<bool>("mine", false, this.logger);
             if (this.Mine)
-                this.MineAddress = config.GetOrDefault<string>("mineaddress", null);
+                this.MineAddress = config.GetOrDefault<string>("mineaddress", null, this.logger);
 
-            this.Stake = config.GetOrDefault<bool>("stake", false);
+            this.Stake = config.GetOrDefault<bool>("stake", false, this.logger);
             if (this.Stake)
             {
-                this.WalletName = config.GetOrDefault<string>("walletname", null);
-                this.WalletPassword = config.GetOrDefault<string>("walletpassword", null);
+                this.WalletName = config.GetOrDefault<string>("walletname", null, this.logger);
+                this.WalletPassword = config.GetOrDefault<string>("walletpassword", null); // No logging!
             }
+
+            this.logger.LogTrace("(-)");
         }
         
         /// <summary>
@@ -60,7 +79,7 @@ namespace Stratis.Bitcoin.Features.Miner
         /// <param name="mainNet">Not used.</param>
         public static void PrintHelp(Network mainNet)
         {
-            var defaults = NodeSettings.Default();
+            NodeSettings defaults = NodeSettings.Default();
             var builder = new StringBuilder();
 
             builder.AppendLine("-mine=<0 or 1>            Enable POW mining.");
