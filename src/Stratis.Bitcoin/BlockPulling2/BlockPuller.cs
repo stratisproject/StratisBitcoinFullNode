@@ -12,6 +12,16 @@ using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
 using Stratis.Bitcoin.Utilities;
 
+//TODO
+/*
+    Peer quality score:
+	    Max samples count = 200 for IBD and 10 when not in IBD.
+
+    Logs
+
+    Comments 
+*/
+
 namespace Stratis.Bitcoin.BlockPulling2
 {
     public class BlockPuller : IDisposable
