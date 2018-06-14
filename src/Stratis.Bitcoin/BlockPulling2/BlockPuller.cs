@@ -3,8 +3,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.BlockPulling;
+using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.Utilities;
 
@@ -12,36 +14,35 @@ namespace Stratis.Bitcoin.BlockPulling2
 {
     public class BlockPuller : IDisposable
     {
+        private const int StallingDelayMs = 500;
+        private const int MinEmptySlotsPercentageToStartProcessingTheQueue = 5;
+        
+        /// <summary>This affects quality score only. If the peer is too fast don't give him all the assignments in the world when not in IBD.</summary>
+        private const int PeerSpeedLimitLimirationWhenNotInIBDBytes = 1024 * 1024;
+
         public delegate void OnBlockDownloadedCallback(uint256 blockHash, Block block);
 
-        private Dictionary<int, ChainedHeader> peersToTips;
+        private OnBlockDownloadedCallback OnDownloadedCallback;
 
         private Queue<DownloadJob> reassignedJobsQueue;
         private Queue<DownloadJob> downloadJobsQueue;
-
         private Dictionary<uint256, AssignedDownload> AssignedDownloads;
+        private Dictionary<int, PeerPerformanceCounter> PeerPerformanceByPeerId;
+
+        private Dictionary<int, ChainedHeader> peersToTips;
+        private Dictionary<int, BlockPullerBehavior> pullerBehaviors;
+
+        private CancellationTokenSource cancellationSource;
 
         private CircularArray<long> BlockSizeSamples;
-        private Dictionary<int, PeerPerformanceCounter> PeerPerformanceByPeerId;
+        public double AverageBlockSizeBytes { get; private set; }
 
         private AsyncManualResetEvent processQueuesSignal;
         private object lockObject;
         private int currentJobId;
 
+        /// <summary>Amount of blocks that are being downloaded.</summary>
         private int pendingDownloadsCount;
-
-        private Task assignerLoop;
-        private Task stallingLoop;
-
-        private CancellationTokenSource cancellationSource;
-
-        private const int StallingDelayMs = 500;
-
-        private const int MinEmptySlotsPercentageToStartProcessingTheQueue = 5;
-
-        private Dictionary<int, BlockPullerBehavior> PullerBehaviors;
-
-        public double AverageBlockSizeBytes { get; private set; }
 
         /// <summary>
         /// The maximum blocks that can be downloaded simountanously.
@@ -49,12 +50,18 @@ namespace Stratis.Bitcoin.BlockPulling2
         /// </summary>
         private int maxBlocksBeingDownloaded;
 
+        private readonly IInitialBlockDownloadState ibdState;
+        private readonly ILogger logger;
+
+        private Task assignerLoop;
+        private Task stallingLoop;
+
         private int GetTotalSpeedOfAllPeersBytesPerSec()
         {
             return this.PeerPerformanceByPeerId.Sum(x => x.Value.SpeedBytesPerSecond);
         }
 
-        public BlockPuller()
+        public BlockPuller(OnBlockDownloadedCallback callback, IInitialBlockDownloadState ibdState, LoggerFactory loggerFactory)
         {
             this.peersToTips = new Dictionary<int, ChainedHeader>();
             this.reassignedJobsQueue = new Queue<DownloadJob>();
@@ -64,7 +71,7 @@ namespace Stratis.Bitcoin.BlockPulling2
             this.BlockSizeSamples = new CircularArray<long>(1000);
 
             this.PeerPerformanceByPeerId = new Dictionary<int, PeerPerformanceCounter>();
-            this.PullerBehaviors = new Dictionary<int, BlockPullerBehavior>();
+            this.pullerBehaviors = new Dictionary<int, BlockPullerBehavior>();
 
             this.processQueuesSignal = new AsyncManualResetEvent(false);
             this.lockObject = new object();
@@ -74,6 +81,10 @@ namespace Stratis.Bitcoin.BlockPulling2
             this.pendingDownloadsCount = 0;
 
             this.cancellationSource = new CancellationTokenSource();
+
+            this.OnDownloadedCallback = callback;
+            this.ibdState = ibdState;
+            this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
         }
 
         public void Initialize()
@@ -95,7 +106,7 @@ namespace Stratis.Bitcoin.BlockPulling2
                 else
                 {
                     this.peersToTips.AddOrReplace(peerId, newTip);
-                    this.PullerBehaviors.Add(peerId, peer.Behavior<BlockPullerBehavior>());
+                    this.pullerBehaviors.Add(peerId, peer.Behavior<BlockPullerBehavior>());
                 }
             }
         }
@@ -105,7 +116,7 @@ namespace Stratis.Bitcoin.BlockPulling2
             lock (this.lockObject)
             {
                 this.peersToTips.Remove(peerId);
-                this.PullerBehaviors.Remove(peerId);
+                this.pullerBehaviors.Remove(peerId);
 
                 this.ReassignDownloads(peerId);
             }
@@ -262,7 +273,7 @@ namespace Stratis.Bitcoin.BlockPulling2
                 {
                     lock (this.lockObject)
                     {
-                        //this.PullerBehaviors[currentPeerId].RequestBlocks(hashesToJobIds.Values); TODO
+                        //this.pullerBehaviors[currentPeerId].RequestBlocks(hashesToJobIds.Values); TODO
                     }
                 }
                 catch (Exception)
@@ -350,17 +361,18 @@ namespace Stratis.Bitcoin.BlockPulling2
 
             // Now decide if we need to recalculate quality score for all peers or just for this one.
             int bestSpeed = this.PeerPerformanceByPeerId.Max(x => x.Value.SpeedBytesPerSecond);
+            int adjustedBestSpeed = bestSpeed > PeerSpeedLimitLimirationWhenNotInIBDBytes ? PeerSpeedLimitLimirationWhenNotInIBDBytes : bestSpeed;
 
             if (performanceCounter.SpeedBytesPerSecond != bestSpeed)
             {
                 // This is not the best peer. Recalculate it's score only.
-                performanceCounter.RecalculateQualityScore(bestSpeed);
+                performanceCounter.RecalculateQualityScore(adjustedBestSpeed);
             }
             else
             {
                 // This is the best peer. Recalculate quality score for everyone.
                 foreach (PeerPerformanceCounter peerPerformanceCounter in this.PeerPerformanceByPeerId.Values)
-                    peerPerformanceCounter.RecalculateQualityScore(bestSpeed);
+                    peerPerformanceCounter.RecalculateQualityScore(adjustedBestSpeed);
             }
         }
 
