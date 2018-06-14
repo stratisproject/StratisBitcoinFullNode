@@ -37,16 +37,22 @@ namespace Stratis.Bitcoin.Features.Wallet
         private readonly FeeRate minRelayTxFee;
 
         /// <summary>
+        /// Fee Estimator
+        /// </summary>
+        private readonly BlockPolicyEstimator blockPolicyEstimator;
+
+        /// <summary>
         /// Constructs a wallet fee policy.
         /// </summary>
         /// <param name="nodeSettings">Settings for the the node.</param>
-        public WalletFeePolicy(NodeSettings nodeSettings)
+        public WalletFeePolicy(NodeSettings nodeSettings, BlockPolicyEstimator blockPolicyEstimator)
         {
             this.minTxFee = nodeSettings.MinTxFeeRate;
             this.fallbackFee = nodeSettings.FallbackTxFeeRate;
             this.payTxFee = new FeeRate(0);
             this.maxTxFee = new Money(0.1M, MoneyUnit.BTC);
             this.minRelayTxFee = nodeSettings.MinRelayTxFeeRate;
+            this.blockPolicyEstimator = blockPolicyEstimator;
         }
 
         /// <inheritdoc />
@@ -81,10 +87,8 @@ namespace Stratis.Bitcoin.Features.Wallet
             // User didn't set: use -txconfirmtarget to estimate...
             if (nFeeNeeded == 0)
             {
-                int estimateFoundTarget = confirmTarget;
-
-                // TODO: the fee estimation is not ready for release for now use the fall back fee
-                //nFeeNeeded = this.blockPolicyEstimator.EstimateSmartFee(confirmTarget, this.mempool, out estimateFoundTarget).GetFee(txBytes);
+                int estimateFoundTarget = confirmTarget;                
+                nFeeNeeded = this.blockPolicyEstimator.EstimateSmartFee(confirmTarget, null, false).GetFee(txBytes);
                 // ... unless we don't have enough mempool data for estimatefee, then use fallbackFee
                 if (nFeeNeeded == 0)
                     nFeeNeeded = this.fallbackFee.GetFee(txBytes);
@@ -100,8 +104,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <inheritdoc />
         public FeeRate GetFeeRate(int confirmTarget)
         {
-            //this.blockPolicyEstimator.EstimateSmartFee(confirmTarget, this.mempool, out estimateFoundTarget).GetFee(txBytes);
-            return this.fallbackFee;
+            return this.blockPolicyEstimator.EstimateSmartFee(confirmTarget, null, false);
         }
     }
 }

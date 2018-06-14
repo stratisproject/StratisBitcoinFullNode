@@ -23,7 +23,9 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
                 var stratisSender = builder.CreateStratisPowNode();
+                InitializeFeeData(stratisSender.DataFolder);
                 var stratisReceiver = builder.CreateStratisPowNode();
+                InitializeFeeData(stratisReceiver.DataFolder);
 
                 builder.StartAll();
                 stratisSender.NotInIBD();
@@ -472,6 +474,19 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             string testWalletPath = Path.Combine(path, "test.wallet.json");
             if (!File.Exists(testWalletPath))
                 File.Copy("Data/test.wallet.json", testWalletPath);
+        }
+
+        private void InitializeFeeData(string path)
+        { 
+            string feePath = Path.Combine(path, "bitcoin/RegTest/fee.json");
+            if (!File.Exists(feePath))
+            {
+                if(!Directory.Exists(path + "/bitcoin/RegTest"))
+                {
+                    Directory.CreateDirectory(path + "/bitcoin/RegTest");
+                }
+                File.Copy("Data/fee.json", feePath);
+            }
         }
     }
 }

@@ -52,6 +52,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Update="Data\fee.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="Data\test.wallet.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

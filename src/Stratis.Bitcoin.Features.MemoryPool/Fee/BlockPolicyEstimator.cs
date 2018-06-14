@@ -97,13 +97,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Fee
         /// <summary>Require an avg of 0.5 tx when using short decay since there are fewer blocks considered</summary>
         private const double SufficientTxsShort = 0.5;
 
-        /// <summary>Minimum and Maximum values for tracking feerates
-        /// The MinBucketFeeRate should just be set to the lowest reasonable feerate we
-        /// might ever want to track.  Historically this has been 1000 since it was
-        /// inheriting DEFAULT_MIN_RELAY_TX_FEE and changing it is disruptive as it
-        /// invalidates old estimates files. So leave it at 1000 unless it becomes
-        /// necessary to lower it, and then lower it substantially.</summary>
-        private const double MinBucketFeeRate = 1000;
+        /// <summary>Minimum and Maximum values for tracking feerates</summary>
         private const double MaxBucketFeeRate = 1e7;
 
         /// <summary>
@@ -167,7 +161,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Fee
         /// <param name="nodeSettings">Full node settings.</param>
         public BlockPolicyEstimator(ILoggerFactory loggerFactory, NodeSettings nodeSettings)
         {
-            Guard.Assert(MinBucketFeeRate > 0);
             this.lockObject = new object();
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.mapMemPoolTxs = new Dictionary<uint256, TxStatsInfo>();
@@ -180,7 +173,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Fee
             this.trackedTxs = 0;
             this.untrackedTxs = 0;
             int bucketIndex = 0;
-            for(double bucketBoundary = MinBucketFeeRate; bucketBoundary <= MaxBucketFeeRate; bucketBoundary *= FeeSpacing, bucketIndex++)
+            for(double bucketBoundary = nodeSettings.MinRelayTxFeeRate.FeePerK.Satoshi; bucketBoundary <= MaxBucketFeeRate; bucketBoundary *= FeeSpacing, bucketIndex++)
             {
                 this.buckets.Add(bucketBoundary);
                 this.bucketMap.Add(bucketBoundary, bucketIndex);
@@ -313,8 +306,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Fee
                     return;
                 }
                 this.trackedTxs++;
-
-                // Feerates are stored and reported as BTC-per-kb:
+                
                 FeeRate feeRate = new FeeRate(entry.Fee, (int)entry.GetTxSize());
 
                 this.mapMemPoolTxs.Add(hash, new TxStatsInfo());
@@ -342,19 +334,16 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Fee
         /// </remarks>
         public bool RemoveTx(uint256 hash, bool inBlock)
         {
-            lock (this.lockObject)
+            TxStatsInfo pos = this.mapMemPoolTxs.TryGet(hash);
+            if (pos != null)
             {
-                TxStatsInfo pos = this.mapMemPoolTxs.TryGet(hash);
-                if (pos != null)
-                {
-                    this.feeStats.RemoveTx(pos.blockHeight, this.nBestSeenHeight, pos.bucketIndex, inBlock);
-                    this.shortStats.RemoveTx(pos.blockHeight, this.nBestSeenHeight, pos.bucketIndex, inBlock);
-                    this.longStats.RemoveTx(pos.blockHeight, this.nBestSeenHeight, pos.bucketIndex, inBlock);
-                    this.mapMemPoolTxs.Remove(hash);
-                    return true;
-                }
-                return false;
+                this.feeStats.RemoveTx(pos.blockHeight, this.nBestSeenHeight, pos.bucketIndex, inBlock);
+                this.shortStats.RemoveTx(pos.blockHeight, this.nBestSeenHeight, pos.bucketIndex, inBlock);
+                this.longStats.RemoveTx(pos.blockHeight, this.nBestSeenHeight, pos.bucketIndex, inBlock);
+                this.mapMemPoolTxs.Remove(hash);
+                return true;
             }
+            return false;
         }
 
         /// <summary>
@@ -539,8 +528,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Fee
         }
 
         /// <summary>
-        /// Ensure that for a conservative estimate, the DOUBLE_SUCCESS_PCT is also met
-        /// at 2 * target for any longer time horizons.
+        /// Returns conservative estimation
         /// </summary>
         private double EstimateConservativeFee(int doubleTarget, EstimationResult result)
         {
@@ -602,7 +590,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Fee
                 }
 
                 int maxUsableEstimate = MaxUsableEstimate();
-                if (confTarget > maxUsableEstimate)
+                if (confTarget > maxUsableEstimate && maxUsableEstimate > 1)
                 {
                     confTarget = maxUsableEstimate;
                 }
@@ -709,8 +697,12 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Fee
             {
                 lock (this.lockObject)
                 {
+                    if(!this.fileStorage.Exists(FileName))
+                    {
+                        return true;
+                    }
                     var data = this.fileStorage.LoadByFileName(FileName);
-                    if (data != null)
+                    if (data == null)
                     {
                         throw new ApplicationException("Corrupt estimates file or file not found");
                     }
