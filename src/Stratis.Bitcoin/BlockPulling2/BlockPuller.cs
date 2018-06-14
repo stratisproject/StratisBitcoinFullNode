@@ -151,7 +151,7 @@ namespace Stratis.Bitcoin.BlockPulling2
         {
             lock (this.lockObject)
             {
-                var hashes = new List<uint256>();
+                var hashes = new HashSet<uint256>();
 
                 foreach (ChainedHeader header in headers)
                 {
@@ -359,10 +359,9 @@ namespace Stratis.Bitcoin.BlockPulling2
 
             if (jobFailed)
             {
-                var failedHashes = new List<uint256>(downloadJob.Hashes);
-                failedJobs.Add(new DownloadJob() {Hashes = failedHashes});
+                failedJobs.Add(new DownloadJob() {Hashes = downloadJob.Hashes });
 
-                downloadJob.Hashes.Clear();
+                downloadJob.Hashes = new HashSet<uint256>();
             }
 
             return newAssignments;
@@ -514,7 +513,7 @@ namespace Stratis.Bitcoin.BlockPulling2
                     var newJob = new DownloadJob()
                     {
                         Id = jobGroup.First().Key,
-                        Hashes = jobGroup.Select(x => x.Value).ToList()
+                        Hashes = new HashSet<uint256>(jobGroup.Select(x => x.Value))
                     };
 
                     this.reassignedJobsQueue.Enqueue(newJob);
@@ -548,14 +547,12 @@ namespace Stratis.Bitcoin.BlockPulling2
 
             this.cancellationSource.Dispose();
         }
-
-        // ================================
         
         private struct DownloadJob
         {
             public int Id;
 
-            public List<uint256> Hashes;
+            public HashSet<uint256> Hashes;
         }
 
         private struct AssignedDownload
