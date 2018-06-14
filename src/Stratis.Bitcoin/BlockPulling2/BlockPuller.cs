@@ -347,7 +347,7 @@ namespace Stratis.Bitcoin.BlockPulling2
 
                         this.pendingDownloadsCount++;
 
-                        downloadJob.Hashes.Remove(hashToAssign); // TODO remove from the start of the list? Maybe use hashset or smth
+                        downloadJob.Hashes.Remove(hashToAssign);
                         break;
                     }
                     else
@@ -404,8 +404,9 @@ namespace Stratis.Bitcoin.BlockPulling2
 
                         int reassignedCount = downloadsToReassign.Count;
 
+                        // TODO: get max samples count from behavior or maybe just move punishing logic to the behavior itself
                         int tenPercentOfSamples = 10; // 10% of MaxSamples. TODO: calculate it  //TODO Test it and find best samples
-
+                        
                         int penalizeTimes = (reassignedCount < tenPercentOfSamples) ? reassignedCount : tenPercentOfSamples;
 
                         for (int i = 0; i < penalizeTimes; ++i)
