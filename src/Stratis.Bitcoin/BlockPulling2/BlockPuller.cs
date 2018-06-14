@@ -5,10 +5,11 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
+using NBitcoin.Protocol;
 using Stratis.Bitcoin.Base;
-using Stratis.Bitcoin.BlockPulling;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.P2P.Peer;
+using Stratis.Bitcoin.P2P.Protocol.Payloads;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.BlockPulling2
@@ -23,25 +24,25 @@ namespace Stratis.Bitcoin.BlockPulling2
 
         public delegate void OnBlockDownloadedCallback(uint256 blockHash, Block block);
 
-        private OnBlockDownloadedCallback OnDownloadedCallback;
+        private readonly OnBlockDownloadedCallback OnDownloadedCallback;
 
-        private Queue<DownloadJob> reassignedJobsQueue;
-        private Queue<DownloadJob> downloadJobsQueue;
-        private Dictionary<uint256, AssignedDownload> AssignedDownloads;
-        private Dictionary<int, PeerPerformanceCounter> PeerPerformanceByPeerId;
+        private readonly Queue<DownloadJob> reassignedJobsQueue;
+        private readonly Queue<DownloadJob> downloadJobsQueue;
+        private readonly Dictionary<uint256, AssignedDownload> AssignedDownloads;
+        private readonly Dictionary<int, PeerPerformanceCounter> PeerPerformanceByPeerId;
 
-        private Dictionary<uint256, ChainedHeader> HeadersByHash;
+        private readonly Dictionary<uint256, ChainedHeader> HeadersByHash;
 
-        private Dictionary<int, ChainedHeader> peerIdsToTips;
-        private Dictionary<int, BlockPullerBehavior> pullerBehaviors;
+        private readonly Dictionary<int, ChainedHeader> peerIdsToTips;
+        private readonly Dictionary<int, BlockPullerBehavior> pullerBehaviors;
 
-        private CancellationTokenSource cancellationSource;
+        private readonly CancellationTokenSource cancellationSource;
 
-        private CircularArray<long> BlockSizeSamples;
+        private readonly CircularArray<long> BlockSizeSamples;
         public double AverageBlockSizeBytes { get; private set; }
 
-        private AsyncManualResetEvent processQueuesSignal;
-        private object lockObject;
+        private readonly AsyncManualResetEvent processQueuesSignal;
+        private readonly object lockObject;
         private int currentJobId;
 
         /// <summary>Amount of blocks that are being downloaded.</summary>
@@ -56,18 +57,19 @@ namespace Stratis.Bitcoin.BlockPulling2
         private readonly IInitialBlockDownloadState ibdState;
         private readonly ChainState chainState;
         private readonly ILogger logger;
+        private readonly NetworkPeerRequirement networkPeerRequirement;
 
         private Task assignerLoop;
         private Task stallingLoop;
 
         private Random random;
 
-        private int GetTotalSpeedOfAllPeersBytesPerSec()
+        private int GetTotalSpeedOfAllPeersBytesPerSecLocked()
         {
             return this.PeerPerformanceByPeerId.Sum(x => x.Value.SpeedBytesPerSecond);
         }
 
-        public BlockPuller(OnBlockDownloadedCallback callback, IInitialBlockDownloadState ibdState, ChainState chainState, LoggerFactory loggerFactory)
+        public BlockPuller(OnBlockDownloadedCallback callback, IInitialBlockDownloadState ibdState, ChainState chainState, ProtocolVersion protocolVersion, LoggerFactory loggerFactory)
         {
             this.peerIdsToTips = new Dictionary<int, ChainedHeader>();
             this.reassignedJobsQueue = new Queue<DownloadJob>();
@@ -86,6 +88,12 @@ namespace Stratis.Bitcoin.BlockPulling2
             this.AverageBlockSizeBytes = 0;
 
             this.pendingDownloadsCount = 0;
+
+            this.networkPeerRequirement = new NetworkPeerRequirement
+            {
+                MinVersion = protocolVersion,
+                RequiredServices = NetworkPeerServices.Network
+            };
 
             this.cancellationSource = new CancellationTokenSource();
             this.random = new Random();
@@ -114,10 +122,13 @@ namespace Stratis.Bitcoin.BlockPulling2
                 }
                 else
                 {
-                    //TODO ignore light wallets all the time and ignore pruned nodes in IBD
+                    bool supportsRequirments = this.networkPeerRequirement.Check(peer.PeerVersion);
 
-                    this.peerIdsToTips.AddOrReplace(peerId, newTip);
-                    this.pullerBehaviors.Add(peerId, peer.Behavior<BlockPullerBehavior>());
+                    if (supportsRequirments)
+                    {
+                        this.peerIdsToTips.AddOrReplace(peerId, newTip);
+                        this.pullerBehaviors.Add(peerId, peer.Behavior<BlockPullerBehavior>());
+                    }
                 }
             }
         }
@@ -128,8 +139,9 @@ namespace Stratis.Bitcoin.BlockPulling2
             {
                 this.peerIdsToTips.Remove(peerId);
                 this.pullerBehaviors.Remove(peerId);
+                this.PeerPerformanceByPeerId.Remove(peerId);
 
-                this.ReassignDownloads(peerId);
+                this.ReleaseAssignments(peerId);
             }
         }
 
@@ -172,7 +184,7 @@ namespace Stratis.Bitcoin.BlockPulling2
                 }
 
                 
-                this.AssignDownloadJobs();
+                await this.AssignDownloadJobsAsync().ConfigureAwait(false);
             }
         }
 
@@ -194,7 +206,7 @@ namespace Stratis.Bitcoin.BlockPulling2
         }
 
         // dequueues the downloadJobsQueue and reassignedDownloadJobsQueue
-        private void AssignDownloadJobs()
+        private async Task AssignDownloadJobsAsync()
         {
             var failedJobs = new List<DownloadJob>();
             var newAssignments = new Dictionary<uint256, AssignedDownload>();
@@ -246,9 +258,9 @@ namespace Stratis.Bitcoin.BlockPulling2
                 this.processQueuesSignal.Reset();
             }
 
-            this.AskPeersForBlocks(newAssignments);
+            await this.AskPeersForBlocksAsync(newAssignments).ConfigureAwait(false);
 
-            // Call callbacks with null since puller failed to deliver requested blocks. //TODO this looks ugly
+            // Call callbacks with null since puller failed to deliver requested blocks.
             foreach (DownloadJob failedJob in failedJobs)
             {
                 foreach (uint256 failedHash in failedJob.Hashes)
@@ -257,29 +269,27 @@ namespace Stratis.Bitcoin.BlockPulling2
         }
 
         // Ask peer behaviors to deliver blocks.
-        private void AskPeersForBlocks(Dictionary<uint256, AssignedDownload> assignments)
+        private async Task AskPeersForBlocksAsync(Dictionary<uint256, AssignedDownload> assignments)
         {
             // Form batches in order to ask for several blocks from one peer at once.
             foreach (IGrouping<int, KeyValuePair<uint256, AssignedDownload>> downloadsGroupedByPeerId in assignments.GroupBy(x => x.Value.PeerId))
             {
-                var jobIdToHash = new Dictionary<int, uint256>(downloadsGroupedByPeerId.Count());
-
-                foreach (KeyValuePair<uint256, AssignedDownload> assignedDownload in downloadsGroupedByPeerId)
-                {
-                    jobIdToHash.Add(assignedDownload.Value.JobId, assignedDownload.Key);
-                }
-
+                List<uint256> hashes = downloadsGroupedByPeerId.Select(x => x.Key).ToList();
+                int peerId = downloadsGroupedByPeerId.First().Value.PeerId;
+                
                 try
                 {
-                    lock (this.lockObject)
-                    {
-                        //this.pullerBehaviors[currentPeerId].RequestBlocks(hashesToJobIds.Values); TODO
-                    }
+                    await this.pullerBehaviors[peerId].RequestBlocksAsync(hashes).ConfigureAwait(false);
                 }
                 catch (Exception)
                 {
                     // Failed to assign downloads to a peer. Put assignments back to the reassign queue and signal processing.
-                    this.ReassignDownloads(jobIdToHash);
+                    var jobIdToHash = new Dictionary<int, uint256>(downloadsGroupedByPeerId.Count());
+
+                    foreach (KeyValuePair<uint256, AssignedDownload> assignedDownload in downloadsGroupedByPeerId)
+                        jobIdToHash.Add(assignedDownload.Value.JobId, assignedDownload.Key);
+                    
+                    this.ReleaseAssignments(jobIdToHash);
 
                     this.PeerDisconnected(downloadsGroupedByPeerId.First().Value.PeerId);
                     this.processQueuesSignal.Reset();
@@ -401,11 +411,11 @@ namespace Stratis.Bitcoin.BlockPulling2
                 } while (reassigned);
             }
 
-            this.ReassignDownloads(toReassign);
+            this.ReleaseAssignments(toReassign);
         }
 
         // Callbacks from BlockPullerBehavior
-        private void PushBlock(uint256 blockHash, Block block, int peerId)
+        public void PushBlock(uint256 blockHash, Block block, int peerId)
         {
             AssignedDownload assignedDownload;
 
@@ -468,14 +478,14 @@ namespace Stratis.Bitcoin.BlockPulling2
 
         private void RecalculateMaxBlocksBeingDownloadedLocked()
         {
-            this.maxBlocksBeingDownloaded = (int)(this.GetTotalSpeedOfAllPeersBytesPerSec() / this.AverageBlockSizeBytes);
+            this.maxBlocksBeingDownloaded = (int)(this.GetTotalSpeedOfAllPeersBytesPerSecLocked() / this.AverageBlockSizeBytes);
 
             if (this.maxBlocksBeingDownloaded < 10)
                 this.maxBlocksBeingDownloaded = 10;
         }
 
         // finds all assigned blocks, removes from assigned downloads and adds to reassign queue
-        private void ReassignDownloads(int peerId)
+        private void ReleaseAssignments(int peerId)
         {
             var jobIdToHash = new Dictionary<int, uint256>();
 
@@ -491,11 +501,11 @@ namespace Stratis.Bitcoin.BlockPulling2
             }
 
             if (jobIdToHash.Count != 0)
-                this.ReassignDownloads(jobIdToHash);
+                this.ReleaseAssignments(jobIdToHash);
         }
 
         // puts hashesToJobId to reassign queue
-        private void ReassignDownloads(Dictionary<int, uint256> jobIdToHash)
+        private void ReleaseAssignments(Dictionary<int, uint256> jobIdToHash)
         {
             lock (this.lockObject)
             {
