@@ -1,16 +1,19 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Cryptography.X509Certificates;
 using System.Threading;
 using System.Threading.Tasks;
 using NBitcoin;
+using Stratis.Bitcoin.BlockPulling;
+using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.BlockPulling2
 {
     public class BlockPuller : IDisposable
     {
-        public delegate void OnBlockDownloadedCallback(uint256 blockHash, Block block, int peerId);
+        public delegate void OnBlockDownloadedCallback(uint256 blockHash, Block block);
 
         private Dictionary<int, ChainedHeader> peersToTips;
 
@@ -35,13 +38,17 @@ namespace Stratis.Bitcoin.BlockPulling2
 
         private const int StallingDelayMs = 500;
 
+        private const int MinEmptySlotsPercentageToStartProcessingTheQueue = 5;
+
+        private Dictionary<int, BlockPullerBehavior> PullerBehaviors;
+
         /// <summary>
         /// The maximum blocks that can be downloaded simountanously.
         /// Given that all peers are on the same chain they will deliver that amount of blocks in 1 seconds.
         /// </summary>
         private int maxBlocksBeingDownloaded;
 
-        private long GetAverageBlockSizeBytes()
+        private long GetAverageBlockSizeBytes() //TODO fix
         {
             return (long)this.BlockSizeSamples.Average(x => x);
         }
@@ -61,6 +68,7 @@ namespace Stratis.Bitcoin.BlockPulling2
             this.BlockSizeSamples = new CircularArray<long>(1000);
 
             this.PeerPerformanceByPeerId = new Dictionary<int, PeerPerformanceCounter>();
+            this.PullerBehaviors = new Dictionary<int, BlockPullerBehavior>();
 
             this.processQueuesSignal = new AsyncManualResetEvent(false);
             this.lockObject = new object();
@@ -77,11 +85,21 @@ namespace Stratis.Bitcoin.BlockPulling2
             this.stallingLoop = this.StallingLoopAsync();
         }
 
-        public void NewPeerTipClaimed(int peerId, ChainedHeader tip)
+        public void NewPeerTipClaimed(INetworkPeer peer, ChainedHeader newTip)
         {
             lock (this.lockObject)
             {
-                this.peersToTips.AddOrReplace(peerId, tip);
+                int peerId = peer.Connection.Id;
+
+                if (this.peersToTips.ContainsKey(peerId))
+                {
+                    this.peersToTips.AddOrReplace(peerId, newTip);
+                }
+                else
+                {
+                    this.peersToTips.AddOrReplace(peerId, newTip);
+                    this.PullerBehaviors.Add(peerId, peer.Behavior<BlockPullerBehavior>());
+                }
             }
         }
 
@@ -90,7 +108,9 @@ namespace Stratis.Bitcoin.BlockPulling2
             lock (this.lockObject)
             {
                 this.peersToTips.Remove(peerId);
-                this.ReassignDownloadsLocked(peerId);
+                this.PullerBehaviors.Remove(peerId);
+
+                this.ReassignDownloads(peerId);
             }
         }
 
@@ -116,7 +136,7 @@ namespace Stratis.Bitcoin.BlockPulling2
                 this.downloadJobsQueue.Enqueue(new DownloadJob()
                 {
                     Hashes = headersToEnqueue.Select(x => x.HashBlock).ToList(),
-                    Callback = callback,
+                    Callbacks = new List<OnBlockDownloadedCallback>() { callback },
                     Id = this.currentJobId++
                 });
 
@@ -137,10 +157,8 @@ namespace Stratis.Bitcoin.BlockPulling2
                     return;
                 }
 
-                lock (this.lockObject)
-                {
-                    this.AssignDownloadJobsLocked();
-                }
+                
+                this.AssignDownloadJobs();
             }
         }
 
@@ -165,35 +183,131 @@ namespace Stratis.Bitcoin.BlockPulling2
         }
 
         // dequueues the downloadJobsQueue and reassignedDownloadJobsQueue
-        private void AssignDownloadJobsLocked()
+        private void AssignDownloadJobs()
         {
-            // First process reassign queue ignoring slots limitations.
-            while (this.reassignedJobsQueue.Count > 0)
-            {
-                DownloadJob jobToReassign = this.reassignedJobsQueue.Dequeue();
+            var failedJobs = new List<DownloadJob>();
+            var newAssignments = new Dictionary<uint256, AssignedDownload>();
 
-                Dictionary<uint256, AssignedDownload> newAssignments = this.DistributeHashesLocked(ref jobToReassign, out List<uint256> failedHashes, int.MaxValue);
+            lock (this.lockObject)
+            {
+                // First process reassign queue ignoring slots limitations.
+                while (this.reassignedJobsQueue.Count > 0)
+                {
+                    DownloadJob jobToReassign = this.reassignedJobsQueue.Dequeue();
+
+                    Dictionary<uint256, AssignedDownload> assignments = this.DistributeHashesLocked(ref jobToReassign, ref failedJobs, int.MaxValue);
+
+                    foreach (KeyValuePair<uint256, AssignedDownload> assignment in assignments)
+                        newAssignments.Add(assignment.Key, assignment.Value);
+                }
+
+                // Process regular queue.
+                int emptySlots = this.maxBlocksBeingDownloaded - this.pendingDownloadsCount;
+
+                if (emptySlots > (this.maxBlocksBeingDownloaded / 100) * MinEmptySlotsPercentageToStartProcessingTheQueue)
+                {
+                    while (this.downloadJobsQueue.Count > 0 && emptySlots > 0)
+                    {
+                        DownloadJob jobToAassign = this.downloadJobsQueue.Peek();
+
+                        Dictionary<uint256, AssignedDownload> assignments = this.DistributeHashesLocked(ref jobToAassign, ref failedJobs, emptySlots);
+                        emptySlots -= assignments.Count;
+
+                        foreach (KeyValuePair<uint256, AssignedDownload> assignment in assignments)
+                            newAssignments.Add(assignment.Key, assignment.Value);
+
+                        // Remove job from the queue if it was fully consumed.
+                        if (jobToAassign.Hashes.Count == 0)
+                            this.downloadJobsQueue.Dequeue();
+                    }
+                }
 
                 foreach (KeyValuePair<uint256, AssignedDownload> assignment in newAssignments)
                     this.AssignedDownloads.Add(assignment.Key, assignment.Value);
-            }
-            
-            int emptySlots = this.maxBlocksBeingDownloaded - this.pendingDownloadsCount;
 
-            //TODO now process normal QUEUE
+                this.processQueuesSignal.Reset();
+            }
+
+            this.AskPeersForBlocks(newAssignments);
+
+            // Call callbacks with null since puller failed to deliver requested blocks. //TODO this looks ugly
+            foreach (DownloadJob failedJob in failedJobs)
+            {
+                foreach (uint256 failedHash in failedJob.Hashes)
+                {
+                    foreach (OnBlockDownloadedCallback callback in failedJob.Callbacks)
+                    {
+                        callback(failedHash, null);
+                    }
+                }
+            }
         }
 
-        private Dictionary<uint256, AssignedDownload> DistributeHashesLocked(ref DownloadJob downloadJob, out List<uint256> failedHashes, int emptySlotes)
+        // Ask peer behaviors to deliver blocks.
+        private void AskPeersForBlocks(Dictionary<uint256, AssignedDownload> assignments)
         {
-            throw new NotImplementedException();
+            // Form batches in order to ask for several blocks from one peer at once.
+            foreach (IGrouping<int, KeyValuePair<uint256, AssignedDownload>> downloadsGroupedByPeerId in assignments.GroupBy(x => x.Value.PeerId))
+            {
+                var peerAssignments = new List<SingleAssignment>(downloadsGroupedByPeerId.Count());
+
+                foreach (KeyValuePair<uint256, AssignedDownload> assignedDownload in downloadsGroupedByPeerId)
+                {
+                    peerAssignments.Add(new SingleAssignment()
+                    {
+                        Hash = assignedDownload.Key,
+                        Callbacks = assignedDownload.Value.Callbacks,
+                        JobId = assignedDownload.Value.JobId
+                    });
+                }
+
+                try
+                {
+                    lock (this.lockObject)
+                    {
+                        //this.PullerBehaviors[currentPeerId].RequestBlocks(hashesToJobIds.Values); TODO
+                    }
+                }
+                catch (Exception)
+                {
+                    // Failed to assign downloads to a peer. Put assignments back to the reassign queue and signal processing.
+                    this.ReassignDownloads(peerAssignments);
+
+                    this.PeerDisconnected(downloadsGroupedByPeerId.First().Value.PeerId);
+                    this.processQueuesSignal.Reset();
+                }
+            }
+        }
+
+        // returns count of new assigned downloads to recalculate empty slots
+        private Dictionary<uint256, AssignedDownload> DistributeHashesLocked(ref DownloadJob downloadJob, ref List<DownloadJob> failedJobs, int emptySlotes)
+        {
+            var newAssignments = new Dictionary<uint256, AssignedDownload>();
+            var failedHashes = new List<uint256>();
+
+
+            //TODO
+
+
+
+            if (failedHashes.Count != 0)
+            {
+                failedJobs.Add(new DownloadJob()
+                {
+                    Hashes = failedHashes,
+                    Callbacks = downloadJob.Callbacks
+                });
+            }
+
+            return newAssignments;
         }
 
         private void CheckStallingLocked()
         {
-
+            //TODO
         }
 
-        // Callback from BlockPullerBehavior
+        // Callbacks from BlockPullerBehavior
         private void PushBlock(uint256 blockHash, Block block, int peerId)
         {
             AssignedDownload assignedDownload;
@@ -221,7 +335,7 @@ namespace Stratis.Bitcoin.BlockPulling2
             }
 
             foreach (OnBlockDownloadedCallback callback in assignedDownload.Callbacks)
-                callback(blockHash, block, peerId);
+                callback(blockHash, block);
         }
 
         private void AddPeerSampleAndRecalculateQualityScoreLocked(int peerId, long blockSizeBytes, double delaySeconds)
@@ -260,9 +374,51 @@ namespace Stratis.Bitcoin.BlockPulling2
                 this.maxBlocksBeingDownloaded = 10;
         }
 
-        private void ReassignDownloadsLocked(int peerId)
+        // finds all assigned blocks, removes from assigned downloads and adds to reassign queue
+        private void ReassignDownloads(int peerId)
         {
+            var assignments = new List<SingleAssignment>();
 
+            lock (this.lockObject)
+            {
+                foreach (KeyValuePair<uint256, AssignedDownload> assignedDownload in this.AssignedDownloads.Where(x => x.Value.PeerId == peerId).ToList())
+                {
+                    assignments.Add(new SingleAssignment()
+                    {
+                        Hash = assignedDownload.Key,
+                        Callbacks = assignedDownload.Value.Callbacks,
+                        JobId = assignedDownload.Value.JobId
+                    });
+
+                    // Remove hash from assigned downloads.
+                    this.AssignedDownloads.Remove(assignedDownload.Key);
+                }
+            }
+
+            if (assignments.Count != 0)
+                this.ReassignDownloads(assignments);
+        }
+
+        // puts hashesToJobId to reassign queue
+        private void ReassignDownloads(List<SingleAssignment> assignments)
+        {
+            lock (this.lockObject)
+            {
+                foreach (IGrouping<int, SingleAssignment> jobGroup in assignments.GroupBy(x => x.JobId))
+                {
+                    // JobId and callbacks for jobs with same Id are the same
+                    SingleAssignment firstAssignment = jobGroup.First();
+
+                    var newJob = new DownloadJob()
+                    {
+                        Callbacks = firstAssignment.Callbacks,
+                        Id = firstAssignment.JobId,
+                        Hashes = jobGroup.Select(x => x.Hash).ToList()
+                    };
+
+                    this.reassignedJobsQueue.Enqueue(newJob);
+                }
+            }
         }
 
         public void Dispose()
@@ -277,11 +433,20 @@ namespace Stratis.Bitcoin.BlockPulling2
 
         // ================================
 
-        private class DownloadJob
+        private struct SingleAssignment
+        {
+            public int JobId;
+
+            public List<OnBlockDownloadedCallback> Callbacks;
+
+            public uint256 Hash;
+        }
+
+        private struct DownloadJob
         {
             public int Id;
 
-            public OnBlockDownloadedCallback Callback;
+            public List<OnBlockDownloadedCallback> Callbacks;
 
             public List<uint256> Hashes;
         }
