@@ -39,24 +39,10 @@ namespace Stratis.Bitcoin.Features.MemoryPool
 
         private readonly Network network;
 
-        /// <summary>
-        /// Constructs an instance of a memory pool manager object.
-        /// </summary>
-        /// <param name="mempoolLock">A lock for managing asynchronous access to memory pool.</param>
-        /// <param name="memPool">Transaction memory pool for managing transactions in the memory pool.</param>
-        /// <param name="validator">Memory pool validator for validating transactions.</param>
-        /// <param name="orphans">Memory pool orphans for managing orphan transactions.</param>
-        /// <param name="dateTimeProvider">Date and time information provider.</param>
-        /// <param name="mempoolSettings">Settings for memory pool.</param>
-        /// <param name="mempoolPersistence">Memory pool persistence methods for loading and saving from storage.</param>
-        /// <param name="coinView">Coin view of the memory pool.</param>
-        /// <param name="loggerFactory">Logger factory for creating instance logger.</param>
-        /// <param name="network">The blockchain network.</param>
         public MempoolManager(
             MempoolSchedulerLock mempoolLock,
             ITxMempool memPool,
             IMempoolValidator validator,
-            MempoolOrphans orphans,
             IDateTimeProvider dateTimeProvider,
             MempoolSettings mempoolSettings,
             IMempoolPersistence mempoolPersistence,
@@ -68,7 +54,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             this.memPool = memPool;
             this.DateTimeProvider = dateTimeProvider;
             this.mempoolSettings = mempoolSettings;
-            this.Orphans = orphans;
             this.Validator = validator;
             this.mempoolPersistence = mempoolPersistence;
             this.coinView = coinView;
@@ -81,9 +66,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
 
         /// <summary>Memory pool validator for validating transactions.</summary>
         public IMempoolValidator Validator { get; }
-
-        /// <summary>Memory pool orphans for managing orphan transactions.</summary>
-        public MempoolOrphans Orphans { get; }
 
         /// <summary>Date and time information provider.</summary>
         public IDateTimeProvider DateTimeProvider { get; }
@@ -124,6 +106,14 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                 FeeRate = new FeeRate(item.Fee, (int)item.GetTxSize()),
                 FeeDelta = item.ModifiedFee - item.Fee
             }).ToList();
+        }
+
+        /// <summary>
+        /// Check whether a transaction exists in the mempool.
+        /// </summary>
+        public Task<bool> ExistsAsync(uint256 trxid)
+        {
+            return this.MempoolLock.ReadAsync(() => this.memPool.Exists(trxid));
         }
 
         /// <summary>
@@ -217,29 +207,10 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             return this.MempoolLock.ReadAsync(() => this.memPool.DynamicMemoryUsage());
         }
 
-        /// <summary>
-        /// Removes transaction from a block in memory pool.
-        /// </summary>
-        /// <param name="block">Block of transactions.</param>
-        /// <param name="blockHeight">Location of the block.</param>
-        public Task RemoveForBlock(Block block, int blockHeight)
-        {
-            //if (this.IsInitialBlockDownload)
-            //  return Task.CompletedTask;
-
-            return this.MempoolLock.WriteAsync(() =>
-            {
-                this.memPool.RemoveForBlock(block.Transactions, blockHeight);
-
-                this.Validator.PerformanceCounter.SetMempoolSize(this.memPool.Size);
-                this.Validator.PerformanceCounter.SetMempoolDynamicSize(this.memPool.DynamicMemoryUsage());
-            });
-        }
-
         /// <inheritdoc />
         public async Task<UnspentOutputs> GetUnspentTransactionAsync(uint256 trxid)
         {
-            var txInfo = await this.InfoAsync(trxid);
+            TxMempoolInfo txInfo = await this.InfoAsync(trxid);
             if (txInfo == null)
             {
                 return null;
@@ -279,7 +250,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                         this.mempoolLogger.LogDebug("...transaction ID '{0}' not accepted to mempool because it already exists.", trxHash);
                         continue;
                     }
-                    MempoolValidationState state = new MempoolValidationState(false) { AcceptTime = entry.Time, OverrideMempoolLimit = true };
+                    var state = new MempoolValidationState(false) { AcceptTime = entry.Time, OverrideMempoolLimit = true };
                     if (await this.Validator.AcceptToMemoryPoolWithTime(state, trx) && this.memPool.MapTx.ContainsKey(trxHash))
                     {
                         i++;

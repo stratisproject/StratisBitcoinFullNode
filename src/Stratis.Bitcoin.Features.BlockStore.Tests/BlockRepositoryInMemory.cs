@@ -14,10 +14,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
         public uint256 BlockHash { get; private set; }
         public bool TxIndex { get; private set; }
         public BlockStoreRepositoryPerformanceCounter PerformanceCounter { get; private set; }
-
-        /// <inheritdoc />
-        public ChainedHeader HighestPersistedBlock { get { throw new NotImplementedException(); } }
-
+        
         public BlockRepositoryInMemory()
         {
             this.InitializeAsync();
@@ -35,7 +32,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
         {
             Block block = null;
 
-            foreach (var hash in hashes)
+            foreach (uint256 hash in hashes)
             {
                 this.store.TryRemove(hash, out block);
             }
@@ -63,7 +60,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
 
         public Task PutAsync(uint256 nextBlockHash, List<Block> blocks)
         {
-            foreach (var block in blocks)
+            foreach (Block block in blocks)
             {
                 this.store.TryAdd(block.Header.GetHash(), block);
             }

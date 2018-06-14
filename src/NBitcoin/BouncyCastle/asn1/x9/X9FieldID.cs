@@ -62,7 +62,7 @@ namespace NBitcoin.BouncyCastle.Asn1.X9
         {
             this.id = X9ObjectIdentifiers.CharacteristicTwoField;
 
-            Asn1EncodableVector fieldIdParams = new Asn1EncodableVector(new DerInteger(m));
+            var fieldIdParams = new Asn1EncodableVector(new DerInteger(m));
 
             if(k2 == 0)
             {
@@ -93,7 +93,7 @@ namespace NBitcoin.BouncyCastle.Asn1.X9
         {
             get
             {
-                return id;
+                return this.id;
             }
         }
 
@@ -101,7 +101,7 @@ namespace NBitcoin.BouncyCastle.Asn1.X9
         {
             get
             {
-                return parameters;
+                return this.parameters;
             }
         }
 
@@ -116,7 +116,7 @@ namespace NBitcoin.BouncyCastle.Asn1.X9
          */
         public override Asn1Object ToAsn1Object()
         {
-            return new DerSequence(id, parameters);
+            return new DerSequence(this.id, this.parameters);
         }
     }
 }

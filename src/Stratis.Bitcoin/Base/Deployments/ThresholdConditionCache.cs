@@ -27,11 +27,11 @@ namespace Stratis.Bitcoin.Base.Deployments
             ArraySize = Enum.GetValues(typeof(BIP9Deployments)).Length;
         }
 
-        private Consensus consensus;
+        private NBitcoin.Consensus consensus;
 
         private Dictionary<uint256, ThresholdState?[]> cache = new Dictionary<uint256, ThresholdState?[]>();
 
-        public ThresholdConditionCache(Consensus consensus)
+        public ThresholdConditionCache(NBitcoin.Consensus consensus)
         {
             Guard.NotNull(consensus, nameof(consensus));
 
@@ -50,8 +50,8 @@ namespace Stratis.Bitcoin.Base.Deployments
         {
             int period = this.consensus.MinerConfirmationWindow;
             int threshold = this.consensus.RuleChangeActivationThreshold;
-            var timeStart = this.consensus.BIP9Deployments[deployment]?.StartTime;
-            var timeTimeout = this.consensus.BIP9Deployments[deployment]?.Timeout;
+            DateTimeOffset? timeStart = this.consensus.BIP9Deployments[deployment]?.StartTime;
+            DateTimeOffset? timeTimeout = this.consensus.BIP9Deployments[deployment]?.Timeout;
 
             // Check if this deployment is always active.
             if (timeStart == Utils.UnixTimeToDateTime(BIP9DeploymentsParameters.AlwaysActive))
@@ -66,7 +66,7 @@ namespace Stratis.Bitcoin.Base.Deployments
             }
 
             // Walk backwards in steps of nPeriod to find a pindexPrev whose information is known
-            List<ChainedHeader> vToCompute = new List<ChainedHeader>();
+            var vToCompute = new List<ChainedHeader>();
             while (!this.ContainsKey(indexPrev?.HashBlock, deployment))
             {
                 if (indexPrev.GetMedianTimePast() < timeStart)

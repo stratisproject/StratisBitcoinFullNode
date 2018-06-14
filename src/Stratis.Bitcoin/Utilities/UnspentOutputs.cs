@@ -146,7 +146,7 @@ namespace Stratis.Bitcoin.Utilities
                 CoinStake = this.IsCoinstake,
                 Time = this.Time
             };
-            foreach (var output in this.Outputs)
+            foreach (TxOut output in this.Outputs)
             {
                 coins.Outputs.Add(output == null ? Coins.NullTxOut : output);
             }
@@ -159,7 +159,7 @@ namespace Stratis.Bitcoin.Utilities
             stream.ReadWrite(ref this.transactionId);
             if (stream.Serializing)
             {
-                var c = this.ToCoins();
+                Coins c = this.ToCoins();
                 stream.ReadWrite(c);
             }
             else

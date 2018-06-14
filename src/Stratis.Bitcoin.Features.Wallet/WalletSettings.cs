@@ -1,5 +1,4 @@
-﻿using System;
-using System.Text;
+﻿using System.Text;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Configuration;
@@ -12,6 +11,9 @@ namespace Stratis.Bitcoin.Features.Wallet
     /// </summary>
     public class WalletSettings
     {
+        /// <summary>Instance logger.</summary>
+        private readonly ILogger logger;
+
         /// <summary>
         /// A value indicating whether the transactions hex representations should be saved in the wallet file.
         /// </summary>
@@ -23,37 +25,28 @@ namespace Stratis.Bitcoin.Features.Wallet
         public bool IsLightWallet { get; set; }
 
         /// <summary>
-        /// A callback allow changing the default settings.
+        /// Initializes an instance of the object from the default configuration.
         /// </summary>
-        private readonly Action<WalletSettings> callback;
-
-        /// <summary>
-        /// Initializes an instance of the object.
-        /// </summary>
-        public WalletSettings()
-        {
+        public WalletSettings() : this(NodeSettings.Default())
+        {	
         }
 
         /// <summary>
-        /// Initializes an instance of the object.
+        /// Initializes an instance of the object from the node configuration.
         /// </summary>
-        /// <param name="callback">Callback routine to be called once the wallet settings are loaded.</param>
-        public WalletSettings(Action<WalletSettings> callback = null)
-        {
-            this.callback = callback;
-        }
-
-        /// <summary>
-        /// Loads the wallet settings from the application configuration.
-        /// </summary>
-        /// <param name="nodeSettings">Application configuration.</param>
-        public void Load(NodeSettings nodeSettings)
+        /// <param name="nodeSettings">The node configuration.</param>
+        public WalletSettings(NodeSettings nodeSettings)
         {
             Guard.NotNull(nodeSettings, nameof(nodeSettings));
 
+            this.logger = nodeSettings.LoggerFactory.CreateLogger(typeof(WalletSettings).FullName);
+            this.logger.LogTrace("({0}:'{1}')", nameof(nodeSettings), nodeSettings.Network.Name);
+
             TextFileConfiguration config = nodeSettings.ConfigReader;
-            this.SaveTransactionHex = config.GetOrDefault<bool>("savetrxhex", false);
-            this.callback?.Invoke(this);
+
+            this.SaveTransactionHex = config.GetOrDefault<bool>("savetrxhex", false, this.logger);
+
+            this.logger.LogTrace("(-)");
         }
 
         /// <summary>
@@ -62,10 +55,10 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <param name="mainNet">Not used.</param>
         public static void PrintHelp(Network mainNet)
         {
-            var defaults = NodeSettings.Default();
+            NodeSettings defaults = NodeSettings.Default();
             var builder = new StringBuilder();
 
-            builder.AppendLine("-savetrxhex=<0 or 1>            Save the hex of transactions in the wallet file. Default: false.");
+            builder.AppendLine("-savetrxhex=<0 or 1>            Save the hex of transactions in the wallet file. Default: 0.");
             defaults.Logger.LogInformation(builder.ToString());
         }
 

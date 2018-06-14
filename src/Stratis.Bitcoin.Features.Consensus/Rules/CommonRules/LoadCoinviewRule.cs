@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Base.Deployments;
+using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Utilities;
 
@@ -15,15 +16,17 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         /// <inheritdoc />
         public override async Task RunAsync(RuleContext context)
         {
+            var utxoRuleContext = context as UtxoRuleContext;
+
             // Load the UTXO set of the current block. UTXO may be loaded from cache or from disk.
             // The UTXO set is stored in the context.
             this.Logger.LogTrace("Loading UTXO set of the new block.");
-            context.Set = new UnspentOutputSet();
+            utxoRuleContext.UnspentOutputSet = new UnspentOutputSet();
             using (new StopwatchDisposable(o => this.Parent.PerformanceCounter.AddUTXOFetchingTime(o)))
             {
-                uint256[] ids = this.GetIdsToFetch(context.BlockValidationContext.Block, context.Flags.EnforceBIP30);
+                uint256[] ids = this.GetIdsToFetch(context.ValidationContext.Block, context.Flags.EnforceBIP30);
                 FetchCoinsResponse coins = await this.PowParent.UtxoSet.FetchCoinsAsync(ids).ConfigureAwait(false);
-                context.Set.SetCoins(coins.UnspentOutputs);
+                utxoRuleContext.UnspentOutputSet.SetCoins(coins.UnspentOutputs);
             }
 
             // Attempt to load into the cache the next set of UTXO to be validated.
@@ -59,7 +62,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         {
             this.Logger.LogTrace("({0}:'{1}',{2}:{3})", nameof(block), block.GetHash(), nameof(enforceBIP30), enforceBIP30);
 
-            HashSet<uint256> ids = new HashSet<uint256>();
+            var ids = new HashSet<uint256>();
             foreach (Transaction tx in block.Transactions)
             {
                 if (enforceBIP30)

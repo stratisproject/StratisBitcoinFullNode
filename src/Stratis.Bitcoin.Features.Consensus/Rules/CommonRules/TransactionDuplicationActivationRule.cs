@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Base.Deployments;
+using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
@@ -21,9 +22,10 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         {
             if (!context.SkipValidation)
             {
-                Block block = context.BlockValidationContext.Block;
+                Block block = context.ValidationContext.Block;
                 DeploymentFlags flags = context.Flags;
-                UnspentOutputSet view = context.Set;
+                var utxoRuleContext = context as UtxoRuleContext;
+                UnspentOutputSet view = utxoRuleContext.UnspentOutputSet;
 
                 if (flags.EnforceBIP30)
                 {
@@ -38,7 +40,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
                     }
                 }
             }
-            else this.Logger.LogTrace("BIP30 validation skipped for checkpointed block at height {0}.", context.BlockValidationContext.ChainedHeader.Height);
+            else this.Logger.LogTrace("BIP30 validation skipped for checkpointed block at height {0}.", context.ValidationContext.ChainedHeader.Height);
 
             return Task.CompletedTask;
         }

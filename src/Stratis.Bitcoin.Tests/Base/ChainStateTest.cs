@@ -33,7 +33,7 @@ namespace Stratis.Bitcoin.Tests.Base
             var chainState = new ChainState(new InvalidBlockHashStore(DateTimeProvider.Default));
 
             // Create some hashes that will be banned forever.
-            uint256[] hashesBannedPermanently = new uint256[]
+            var hashesBannedPermanently = new uint256[]
             {
                 uint256.Parse("0000000000000000000000000000000000000000000000000000000000000001"),
                 uint256.Parse("0000000000000000000000000000000000000000000000000000000000000002"),
@@ -45,7 +45,7 @@ namespace Stratis.Bitcoin.Tests.Base
                 chainState.MarkBlockInvalid(hash);
 
             // Create some hashes that will be banned now, but not in 5 seconds.
-            uint256[] hashesBannedTemporarily1 = new uint256[]
+            var hashesBannedTemporarily1 = new uint256[]
             {
                 uint256.Parse("0000000000000000000000000000000000000000000000000000000000000011"),
                 uint256.Parse("0000000000000000000000000000000000000000000000000000000000000012"),
@@ -57,7 +57,7 @@ namespace Stratis.Bitcoin.Tests.Base
                 chainState.MarkBlockInvalid(hash, DateTime.UtcNow.AddMilliseconds(rng.Next(2000, 5000)));
 
             // Create some hashes that will be banned now and also after 5 seconds.
-            uint256[] hashesBannedTemporarily2 = new uint256[]
+            var hashesBannedTemporarily2 = new uint256[]
             {
                 uint256.Parse("0000000000000000000000000000000000000000000000000000000000000021"),
                 uint256.Parse("0000000000000000000000000000000000000000000000000000000000000022"),
@@ -69,7 +69,7 @@ namespace Stratis.Bitcoin.Tests.Base
                 chainState.MarkBlockInvalid(hash, DateTime.UtcNow.AddMilliseconds(rng.Next(20000, 50000)));
 
             // Check that all hashes we have generated are banned now.
-            List<uint256> allHashes = new List<uint256>(hashesBannedPermanently);
+            var allHashes = new List<uint256>(hashesBannedPermanently);
             allHashes.AddRange(hashesBannedTemporarily1);
             allHashes.AddRange(hashesBannedTemporarily2);
 

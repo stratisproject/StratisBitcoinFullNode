@@ -45,16 +45,16 @@ namespace NBitcoin
 {
     public class RandomNumberGeneratorRandom : IRandom
     {
-        readonly RandomNumberGenerator _Instance;
+        private readonly RandomNumberGenerator _Instance;
         public RandomNumberGeneratorRandom()
         {
-            _Instance = RandomNumberGenerator.Create();
+            this._Instance = RandomNumberGenerator.Create();
         }
 #region IRandom Members
 
         public void GetBytes(byte[] output)
         {
-            _Instance.GetBytes(output);
+            this._Instance.GetBytes(output);
         }
 
 #endregion

@@ -1,10 +1,10 @@
 ﻿using System;
 using System.Text;
 using System.Timers;
-using Stratis.Bitcoin.Configuration;
-using Stratis.Bitcoin.Utilities;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
+using Stratis.Bitcoin.Configuration;
+using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.Api
 {
@@ -28,6 +28,9 @@ namespace Stratis.Bitcoin.Features.Api
         /// <summary>The default port used by the API when the node runs on the Stratis network.</summary>
         public const string DefaultApiHost = "http://localhost";
 
+        /// <summary>Instance logger.</summary>
+        private readonly ILogger logger;
+
         /// <summary>URI to node's API interface.</summary>
         public Uri ApiUri { get; set; }
 
@@ -37,33 +40,32 @@ namespace Stratis.Bitcoin.Features.Api
         /// <summary>URI to node's API interface.</summary>
         public Timer KeepaliveTimer { get; private set; }
 
-        /// <summary>The callback used to override/constrain/extend the settings provided by the Load method.</summary>
-        private Action<ApiSettings> callback;
-
         /// <summary>
-        /// Constructs this object whilst providing a callback to override/constrain/extend 
-        /// the settings provided by the Load method.
+        /// Initializes an instance of the object from the default configuration.
         /// </summary>
-        /// <param name="callback">The callback used to override/constrain/extend the settings provided by the Load method.</param>
-        public ApiSettings(Action<ApiSettings> callback)
+        public ApiSettings() : this(NodeSettings.Default())
         {
-            this.callback = callback;
         }
 
         /// <summary>
-        /// Loads the API related settings from the application configuration.
+        /// Initializes an instance of the object from the node configuration.
         /// </summary>
-        /// <param name="nodeSettings">Application configuration.</param>
-        public void Load(NodeSettings nodeSettings)
+        /// <param name="nodeSettings">The node configuration.</param>
+        public ApiSettings(NodeSettings nodeSettings)
         {
+            Guard.NotNull(nodeSettings, nameof(nodeSettings));
+
+            this.logger = nodeSettings.LoggerFactory.CreateLogger(typeof(ApiSettings).FullName);           
+            this.logger.LogTrace("({0}:'{1}')", nameof(nodeSettings), nodeSettings.Network.Name);
+
             TextFileConfiguration config = nodeSettings.ConfigReader;
 
-            var apiHost = config.GetOrDefault("apiuri", DefaultApiHost);
-            Uri apiUri = new Uri(apiHost);
+            string apiHost = config.GetOrDefault("apiuri", DefaultApiHost, this.logger);
+            var apiUri = new Uri(apiHost);
 
             // Find out which port should be used for the API.
-            var apiPort = config.GetOrDefault("apiport", GetDefaultPort(nodeSettings.Network));
-            
+            int apiPort = config.GetOrDefault("apiport", GetDefaultPort(nodeSettings.Network), this.logger);
+
             // If no port is set in the API URI.
             if (apiUri.IsDefaultPort)
             {
@@ -78,7 +80,7 @@ namespace Stratis.Bitcoin.Features.Api
             }
 
             // Set the keepalive interval (set in seconds).
-            var keepAlive = config.GetOrDefault("keepalive", 0);
+            int keepAlive = config.GetOrDefault("keepalive", 0, this.logger);
             if (keepAlive > 0)
             {
                 this.KeepaliveTimer = new Timer
@@ -88,7 +90,7 @@ namespace Stratis.Bitcoin.Features.Api
                 };
             }
 
-            this.callback?.Invoke(this);
+            this.logger.LogTrace("(-)");
         }
 
         /// <summary>

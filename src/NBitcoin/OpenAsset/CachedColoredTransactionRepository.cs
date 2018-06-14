@@ -6,17 +6,17 @@ namespace NBitcoin.OpenAsset
 {
     public class CachedColoredTransactionRepository : IColoredTransactionRepository
     {
-        IColoredTransactionRepository _Inner;
-        CachedTransactionRepository _InnerTransactionRepository;
-        Dictionary<uint256, ColoredTransaction> _ColoredTransactions = new Dictionary<uint256, ColoredTransaction>();
-        Queue<uint256> _EvictionQueue = new Queue<uint256>();
-        ReaderWriterLock _lock = new ReaderWriterLock();
+        private IColoredTransactionRepository _Inner;
+        private CachedTransactionRepository _InnerTransactionRepository;
+        private Dictionary<uint256, ColoredTransaction> _ColoredTransactions = new Dictionary<uint256, ColoredTransaction>();
+        private Queue<uint256> _EvictionQueue = new Queue<uint256>();
+        private ReaderWriterLock _lock = new ReaderWriterLock();
 
         public ColoredTransaction GetFromCache(uint256 txId)
         {
-            using(_lock.LockRead())
+            using(this._lock.LockRead())
             {
-                return _ColoredTransactions.TryGet(txId);
+                return this._ColoredTransactions.TryGet(txId);
             }
         }
 
@@ -24,11 +24,11 @@ namespace NBitcoin.OpenAsset
         {
             get
             {
-                return _InnerTransactionRepository.MaxCachedTransactions;
+                return this._InnerTransactionRepository.MaxCachedTransactions;
             }
             set
             {
-                _InnerTransactionRepository.MaxCachedTransactions = value;
+                this._InnerTransactionRepository.MaxCachedTransactions = value;
             }
         }
 
@@ -36,11 +36,11 @@ namespace NBitcoin.OpenAsset
         {
             get
             {
-                return _InnerTransactionRepository.WriteThrough;
+                return this._InnerTransactionRepository.WriteThrough;
             }
             set
             {
-                _InnerTransactionRepository.WriteThrough = value;
+                this._InnerTransactionRepository.WriteThrough = value;
             }
         }
 
@@ -48,11 +48,11 @@ namespace NBitcoin.OpenAsset
         {
             get
             {
-                return _InnerTransactionRepository.ReadThrough;
+                return this._InnerTransactionRepository.ReadThrough;
             }
             set
             {
-                _InnerTransactionRepository.ReadThrough = value;
+                this._InnerTransactionRepository.ReadThrough = value;
             }
         }
 
@@ -60,9 +60,9 @@ namespace NBitcoin.OpenAsset
         {
             if(inner == null)
                 throw new ArgumentNullException("inner");
-            _Inner = inner;
-            _InnerTransactionRepository = new CachedTransactionRepository(inner.Transactions);
-            MaxCachedTransactions = 1000;
+            this._Inner = inner;
+            this._InnerTransactionRepository = new CachedTransactionRepository(inner.Transactions);
+            this.MaxCachedTransactions = 1000;
         }
         #region IColoredTransactionRepository Members
 
@@ -70,7 +70,7 @@ namespace NBitcoin.OpenAsset
         {
             get
             {
-                return _InnerTransactionRepository;
+                return this._InnerTransactionRepository;
             }
         }
 
@@ -78,33 +78,32 @@ namespace NBitcoin.OpenAsset
         {
             get
             {
-                return _InnerTransactionRepository;
+                return this._InnerTransactionRepository;
             }
         }
 
         private void EvictIfNecessary(uint256 txId)
         {
-            _EvictionQueue.Enqueue(txId);
-            while(_ColoredTransactions.Count > MaxCachedTransactions && _EvictionQueue.Count > 0)
-                _ColoredTransactions.Remove(_EvictionQueue.Dequeue());
+            this._EvictionQueue.Enqueue(txId);
+            while(this._ColoredTransactions.Count > this.MaxCachedTransactions && this._EvictionQueue.Count > 0) this._ColoredTransactions.Remove(this._EvictionQueue.Dequeue());
         }
 
         public async Task<ColoredTransaction> GetAsync(uint256 txId)
         {
             ColoredTransaction result = null;
             bool found;
-            using(_lock.LockRead())
+            using(this._lock.LockRead())
             {
-                found = _ColoredTransactions.TryGetValue(txId, out result);
+                found = this._ColoredTransactions.TryGetValue(txId, out result);
             }
             if(!found)
             {
-                result = await _Inner.GetAsync(txId).ConfigureAwait(false);
-                if(ReadThrough)
+                result = await this._Inner.GetAsync(txId).ConfigureAwait(false);
+                if(this.ReadThrough)
                 {
-                    using(_lock.LockWrite())
+                    using(this._lock.LockWrite())
                     {
-                        _ColoredTransactions.AddOrReplace(txId, result);
+                        this._ColoredTransactions.AddOrReplace(txId, result);
                         EvictIfNecessary(txId);
                     }
                 }
@@ -115,21 +114,21 @@ namespace NBitcoin.OpenAsset
         public Task PutAsync(uint256 txId, ColoredTransaction tx)
         {
 
-            if(WriteThrough)
+            if(this.WriteThrough)
             {
-                using(_lock.LockWrite())
+                using(this._lock.LockWrite())
                 {
 
-                    if(!_ColoredTransactions.ContainsKey(txId))
+                    if(!this._ColoredTransactions.ContainsKey(txId))
                     {
-                        _ColoredTransactions.AddOrReplace(txId, tx);
+                        this._ColoredTransactions.AddOrReplace(txId, tx);
                         EvictIfNecessary(txId);
                     }
                     else
-                        _ColoredTransactions[txId] = tx;
+                        this._ColoredTransactions[txId] = tx;
                 }
             }
-            return _Inner.PutAsync(txId, tx);
+            return this._Inner.PutAsync(txId, tx);
         }
 
         #endregion

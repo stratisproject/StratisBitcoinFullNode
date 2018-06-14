@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Net;
+using System.Reflection;
 using System.Text;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
@@ -11,13 +11,13 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Abstractions;
 using Microsoft.AspNetCore.Mvc.Controllers;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
-using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.Primitives;
 using Moq;
 using NBitcoin;
 using NBitcoin.RPC;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.RPC.Controllers;
 using Stratis.Bitcoin.Features.RPC.Models;
 using Stratis.Bitcoin.Tests.Common.Logging;
@@ -46,7 +46,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
             this.fullNode.Setup(f => f.Network)
                 .Returns(this.network);
             this.rpcHost = new Mock<IWebHost>();
-            this.rpcSettings = new RpcSettings();
+            this.rpcSettings = new RpcSettings(new NodeSettings(this.network));
             this.serviceProvider = new Mock<IServiceProvider>();
             this.rpcClientFactory = new Mock<IRPCClientFactory>();
             this.actionDescriptorCollectionProvider = new Mock<IActionDescriptorCollectionProvider>();
@@ -83,7 +83,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
                 Parameters = new List<ParameterDescriptor>()
             };
 
-            foreach (var parameter in typeof(FullNodeController).GetMethod("GetBlockHeader").GetParameters())
+            foreach (ParameterInfo parameter in typeof(FullNodeController).GetMethod("GetBlockHeader").GetParameters())
             {
                 descriptor.Parameters.Add(new ControllerParameterDescriptor()
                 {
@@ -94,12 +94,12 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
             }
             this.descriptors.Add(descriptor);
 
-            var controllerResult = this.controller.ListMethods();
+            IActionResult controllerResult = this.controller.ListMethods();
 
             var jsonResult = Assert.IsType<JsonResult>(controllerResult);
             var model = Assert.IsType<List<RpcCommandModel>>(jsonResult.Value);
             Assert.NotEmpty(model);
-            var commandModel = model[0];
+            RpcCommandModel commandModel = model[0];
             Assert.Equal("getblockheader <hash> [<isjsonformat>]", commandModel.Command);
             Assert.Equal("Gets the block header of the block identified by the hash.", commandModel.Description);
         }
@@ -107,7 +107,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
         [Fact]
         public void ListMethods_NoDescriptors_ReturnsEmptyModel()
         {
-            var controllerResult = this.controller.ListMethods();
+            IActionResult controllerResult = this.controller.ListMethods();
 
             var jsonResult = Assert.IsType<JsonResult>(controllerResult);
             var model = Assert.IsType<List<RpcCommandModel>>(jsonResult.Value);
@@ -121,7 +121,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
             this.fullNode.Setup(f => f.RPCHost)
                 .Throws(new InvalidOperationException("Could not find RPCHost"));
 
-            var controllerResult = this.controller.ListMethods();
+            IActionResult controllerResult = this.controller.ListMethods();
 
             var errorResult = Assert.IsType<ErrorResult>(controllerResult);
             Assert.Equal(400, errorResult.StatusCode);
@@ -141,7 +141,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
                 Parameters = new List<ParameterDescriptor>()
             };
 
-            foreach (var parameter in typeof(FullNodeController).GetMethod("GetBlockHeader").GetParameters())
+            foreach (ParameterInfo parameter in typeof(FullNodeController).GetMethod("GetBlockHeader").GetParameters())
             {
                 descriptor.Parameters.Add(new ControllerParameterDescriptor()
                 {
@@ -162,7 +162,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
 
             using (var stream = new MemoryStream(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(new RPCResponseObject()))))
             {
-                var rpcResponse = RPCResponse.Load(stream);
+                RPCResponse rpcResponse = RPCResponse.Load(stream);
                 this.rpcClient.Setup(c => c.SendCommand(It.Is<RPCRequest>(r => r.Method == "getblockheader"
                                                         && ((string)r.Params[0]) == new uint256(1000).ToString()
                                                         && ((string)r.Params[1]) == "true"), true))
@@ -170,7 +170,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
                     .Verifiable();
 
                 // call
-                var controllerResult = this.controller.CallByName("getblockheader");
+                IActionResult controllerResult = this.controller.CallByName("getblockheader");
 
                 //verify
                 this.rpcClient.Verify();
@@ -190,7 +190,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
             this.controller.ControllerContext.HttpContext = new DefaultHttpContext();
             this.controller.ControllerContext.HttpContext.Request.Query = new QueryCollection(values);
 
-            var controllerResult = this.controller.CallByName("getblockheader");
+            IActionResult controllerResult = this.controller.CallByName("getblockheader");
 
             var errorResult = Assert.IsType<ErrorResult>(controllerResult);
             Assert.Equal(400, errorResult.StatusCode);
@@ -205,7 +205,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
             this.fullNode.Setup(f => f.RPCHost)
                .Throws(new InvalidOperationException("Could not find RPCHost"));
 
-            var controllerResult = this.controller.CallByName("getblockheader");
+            IActionResult controllerResult = this.controller.CallByName("getblockheader");
 
             var errorResult = Assert.IsType<ErrorResult>(controllerResult);
             Assert.Equal(400, errorResult.StatusCode);

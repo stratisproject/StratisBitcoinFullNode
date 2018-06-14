@@ -86,7 +86,7 @@ namespace Stratis.Bitcoin.Features.RPC
         {
             Guard.NotNull(writer, nameof(writer));
 
-            JsonTextWriter jsonTextWriter = new JsonTextWriter(writer);
+            var jsonTextWriter = new JsonTextWriter(writer);
             jsonTextWriter.ArrayPool = this.charPool;
             jsonTextWriter.CloseOutput = false;
             return jsonTextWriter;
@@ -112,8 +112,8 @@ namespace Stratis.Bitcoin.Features.RPC
             Guard.NotNull(context, nameof(context));
             Guard.NotNull(selectedEncoding, nameof(selectedEncoding));
 
-            MemoryStream result = new MemoryStream();
-            using (var writer = context.WriterFactory(result, selectedEncoding))
+            var result = new MemoryStream();
+            using (TextWriter writer = context.WriterFactory(result, selectedEncoding))
             {
                 this.WriteObject(writer, context.Object);
 
@@ -123,13 +123,13 @@ namespace Stratis.Bitcoin.Features.RPC
                 await writer.FlushAsync();
             }
             result.Position = 0;
-            var jsonResult = JToken.Load(new JsonTextReader(new StreamReader(result)));
+            JToken jsonResult = JToken.Load(new JsonTextReader(new StreamReader(result)));
             //{"result":null,"error":{"code":-32601,"message":"Method not found"},"id":1}
-            JObject response = new JObject();
+            var response = new JObject();
             response["result"] = jsonResult;
             response["id"] = 1;
             response["error"] = null;
-            using (var writer = context.WriterFactory(context.HttpContext.Response.Body, selectedEncoding))
+            using (TextWriter writer = context.WriterFactory(context.HttpContext.Response.Body, selectedEncoding))
             {
                 this.WriteObject(writer, response);
 

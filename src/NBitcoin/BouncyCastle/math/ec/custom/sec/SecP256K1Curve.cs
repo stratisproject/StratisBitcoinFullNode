@@ -52,7 +52,7 @@ namespace NBitcoin.BouncyCastle.Math.EC.Custom.Sec
         {
             get
             {
-                return m_infinity;
+                return this.m_infinity;
             }
         }
 

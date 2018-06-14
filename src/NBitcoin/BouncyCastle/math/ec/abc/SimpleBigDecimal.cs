@@ -55,13 +55,13 @@ namespace NBitcoin.BouncyCastle.Math.EC.Abc
 
         private SimpleBigDecimal(SimpleBigDecimal limBigDec)
         {
-            bigInt = limBigDec.bigInt;
-            scale = limBigDec.scale;
+            this.bigInt = limBigDec.bigInt;
+            this.scale = limBigDec.scale;
         }
 
         private void CheckScale(SimpleBigDecimal b)
         {
-            if(scale != b.scale)
+            if(this.scale != b.scale)
                 throw new ArgumentException("Only SimpleBigDecimal of same scale allowed in arithmetic operations");
         }
 
@@ -70,26 +70,26 @@ namespace NBitcoin.BouncyCastle.Math.EC.Abc
             if(newScale < 0)
                 throw new ArgumentException("scale may not be negative");
 
-            if(newScale == scale)
+            if(newScale == this.scale)
                 return this;
 
-            return new SimpleBigDecimal(bigInt.ShiftLeft(newScale - scale), newScale);
+            return new SimpleBigDecimal(this.bigInt.ShiftLeft(newScale - this.scale), newScale);
         }
 
         public SimpleBigDecimal Add(SimpleBigDecimal b)
         {
             CheckScale(b);
-            return new SimpleBigDecimal(bigInt.Add(b.bigInt), scale);
+            return new SimpleBigDecimal(this.bigInt.Add(b.bigInt), this.scale);
         }
 
         public SimpleBigDecimal Add(BigInteger b)
         {
-            return new SimpleBigDecimal(bigInt.Add(b.ShiftLeft(scale)), scale);
+            return new SimpleBigDecimal(this.bigInt.Add(b.ShiftLeft(this.scale)), this.scale);
         }
 
         public SimpleBigDecimal Negate()
         {
-            return new SimpleBigDecimal(bigInt.Negate(), scale);
+            return new SimpleBigDecimal(this.bigInt.Negate(), this.scale);
         }
 
         public SimpleBigDecimal Subtract(SimpleBigDecimal b)
@@ -99,57 +99,57 @@ namespace NBitcoin.BouncyCastle.Math.EC.Abc
 
         public SimpleBigDecimal Subtract(BigInteger b)
         {
-            return new SimpleBigDecimal(bigInt.Subtract(b.ShiftLeft(scale)), scale);
+            return new SimpleBigDecimal(this.bigInt.Subtract(b.ShiftLeft(this.scale)), this.scale);
         }
 
         public SimpleBigDecimal Multiply(SimpleBigDecimal b)
         {
             CheckScale(b);
-            return new SimpleBigDecimal(bigInt.Multiply(b.bigInt), scale + scale);
+            return new SimpleBigDecimal(this.bigInt.Multiply(b.bigInt), this.scale + this.scale);
         }
 
         public SimpleBigDecimal Multiply(BigInteger b)
         {
-            return new SimpleBigDecimal(bigInt.Multiply(b), scale);
+            return new SimpleBigDecimal(this.bigInt.Multiply(b), this.scale);
         }
 
         public SimpleBigDecimal Divide(SimpleBigDecimal b)
         {
             CheckScale(b);
-            BigInteger dividend = bigInt.ShiftLeft(scale);
-            return new SimpleBigDecimal(dividend.Divide(b.bigInt), scale);
+            BigInteger dividend = this.bigInt.ShiftLeft(this.scale);
+            return new SimpleBigDecimal(dividend.Divide(b.bigInt), this.scale);
         }
 
         public SimpleBigDecimal Divide(BigInteger b)
         {
-            return new SimpleBigDecimal(bigInt.Divide(b), scale);
+            return new SimpleBigDecimal(this.bigInt.Divide(b), this.scale);
         }
 
         public SimpleBigDecimal ShiftLeft(int n)
         {
-            return new SimpleBigDecimal(bigInt.ShiftLeft(n), scale);
+            return new SimpleBigDecimal(this.bigInt.ShiftLeft(n), this.scale);
         }
 
         public int CompareTo(SimpleBigDecimal val)
         {
             CheckScale(val);
-            return bigInt.CompareTo(val.bigInt);
+            return this.bigInt.CompareTo(val.bigInt);
         }
 
         public int CompareTo(BigInteger val)
         {
-            return bigInt.CompareTo(val.ShiftLeft(scale));
+            return this.bigInt.CompareTo(val.ShiftLeft(this.scale));
         }
 
         public BigInteger Floor()
         {
-            return bigInt.ShiftRight(scale);
+            return this.bigInt.ShiftRight(this.scale);
         }
 
         public BigInteger Round()
         {
-            SimpleBigDecimal oneHalf = new SimpleBigDecimal(BigInteger.One, 1);
-            return Add(oneHalf.AdjustScale(scale)).Floor();
+            var oneHalf = new SimpleBigDecimal(BigInteger.One, 1);
+            return Add(oneHalf.AdjustScale(this.scale)).Floor();
         }
 
         public int IntValue
@@ -182,21 +182,21 @@ namespace NBitcoin.BouncyCastle.Math.EC.Abc
         {
             get
             {
-                return scale;
+                return this.scale;
             }
         }
 
         public override string ToString()
         {
-            if(scale == 0)
-                return bigInt.ToString();
+            if(this.scale == 0)
+                return this.bigInt.ToString();
 
             BigInteger floorBigInt = Floor();
 
-            BigInteger fract = bigInt.Subtract(floorBigInt.ShiftLeft(scale));
-            if(bigInt.SignValue < 0)
+            BigInteger fract = this.bigInt.Subtract(floorBigInt.ShiftLeft(this.scale));
+            if(this.bigInt.SignValue < 0)
             {
-                fract = BigInteger.One.ShiftLeft(scale).Subtract(fract);
+                fract = BigInteger.One.ShiftLeft(this.scale).Subtract(fract);
             }
 
             if((floorBigInt.SignValue == -1) && (!(fract.Equals(BigInteger.Zero))))
@@ -205,10 +205,10 @@ namespace NBitcoin.BouncyCastle.Math.EC.Abc
             }
             string leftOfPoint = floorBigInt.ToString();
 
-            char[] fractCharArr = new char[scale];
+            var fractCharArr = new char[this.scale];
             string fractStr = fract.ToString(2);
             int fractLen = fractStr.Length;
-            int zeroes = scale - fractLen;
+            int zeroes = this.scale - fractLen;
             for(int i = 0; i < zeroes; i++)
             {
                 fractCharArr[i] = '0';
@@ -219,7 +219,7 @@ namespace NBitcoin.BouncyCastle.Math.EC.Abc
             }
             string rightOfPoint = new string(fractCharArr);
 
-            StringBuilder sb = new StringBuilder(leftOfPoint);
+            var sb = new StringBuilder(leftOfPoint);
             sb.Append(".");
             sb.Append(rightOfPoint);
 
@@ -232,18 +232,18 @@ namespace NBitcoin.BouncyCastle.Math.EC.Abc
             if(this == obj)
                 return true;
 
-            SimpleBigDecimal other = obj as SimpleBigDecimal;
+            var other = obj as SimpleBigDecimal;
 
             if(other == null)
                 return false;
 
-            return bigInt.Equals(other.bigInt)
-                && scale == other.scale;
+            return this.bigInt.Equals(other.bigInt)
+                && this.scale == other.scale;
         }
 
         public override int GetHashCode()
         {
-            return bigInt.GetHashCode() ^ scale;
+            return this.bigInt.GetHashCode() ^ this.scale;
         }
 
     }

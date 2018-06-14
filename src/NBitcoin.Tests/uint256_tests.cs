@@ -56,8 +56,8 @@ namespace NBitcoin.Tests
         [Trait("UnitTest", "UnitTest")]
         public void uitnSerializationTests()
         {
-            MemoryStream ms = new MemoryStream();
-            BitcoinStream stream = new BitcoinStream(ms, true);
+            var ms = new MemoryStream();
+            var stream = new BitcoinStream(ms, true);
             stream.ConsensusFactory = Network.Main.Consensus.ConsensusFactory;
             
             var v = new uint256("00000000ffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
@@ -80,7 +80,7 @@ namespace NBitcoin.Tests
             stream.ReadWrite(ref v2);
             Assert.Equal(v, v2);
 
-            List<uint256> vs = new List<uint256>()
+            var vs = new List<uint256>()
             {
                 v,vless,vplus
             };
@@ -94,7 +94,7 @@ namespace NBitcoin.Tests
             ms.Position = 0;
             stream = new BitcoinStream(ms, false);
             stream.ConsensusFactory = Network.Main.Consensus.ConsensusFactory;
-            List<uint256> vs2 = new List<uint256>();
+            var vs2 = new List<uint256>();
             stream.ReadWrite(ref vs2);
             Assert.True(vs2.SequenceEqual(vs));
 

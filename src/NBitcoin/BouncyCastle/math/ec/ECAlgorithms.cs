@@ -47,14 +47,14 @@ namespace NBitcoin.BouncyCastle.Math.EC
             ECPoint p = ps[0];
             ECCurve c = p.Curve;
 
-            ECPoint[] imported = new ECPoint[count];
+            var imported = new ECPoint[count];
             imported[0] = p;
             for(int i = 1; i < count; ++i)
             {
                 imported[i] = ImportPoint(c, ps[i]);
             }
 
-            GlvEndomorphism glvEndomorphism = c.GetEndomorphism() as GlvEndomorphism;
+            var glvEndomorphism = c.GetEndomorphism() as GlvEndomorphism;
             if(glvEndomorphism != null)
             {
                 return ValidatePoint(ImplSumOfMultipliesGlv(imported, ks, glvEndomorphism));
@@ -70,14 +70,14 @@ namespace NBitcoin.BouncyCastle.Math.EC
 
             // Point multiplication for Koblitz curves (using WTNAF) beats Shamir's trick
             {
-                AbstractF2mCurve f2mCurve = cp as AbstractF2mCurve;
+                var f2mCurve = cp as AbstractF2mCurve;
                 if(f2mCurve != null && f2mCurve.IsKoblitz)
                 {
                     return ValidatePoint(P.Multiply(a).Add(Q.Multiply(b)));
                 }
             }
 
-            GlvEndomorphism glvEndomorphism = cp.GetEndomorphism() as GlvEndomorphism;
+            var glvEndomorphism = cp.GetEndomorphism() as GlvEndomorphism;
             if(glvEndomorphism != null)
             {
                 return ValidatePoint(
@@ -136,7 +136,7 @@ namespace NBitcoin.BouncyCastle.Math.EC
              * by Katsuyuki Okeya, Kouichi Sakurai.
              */
 
-            ECFieldElement[] c = new ECFieldElement[len];
+            var c = new ECFieldElement[len];
             c[0] = zs[off];
 
             int i = 0;
@@ -215,10 +215,10 @@ namespace NBitcoin.BouncyCastle.Math.EC
             ECPoint PaddQ = P.Add(Q);
             ECPoint PsubQ = P.Subtract(Q);
 
-            ECPoint[] points = new ECPoint[] { Q, PsubQ, P, PaddQ };
+            var points = new ECPoint[] { Q, PsubQ, P, PaddQ };
             curve.NormalizeAll(points);
 
-            ECPoint[] table = new ECPoint[] {
+            var table = new ECPoint[] {
             points[3].Negate(), points[2].Negate(), points[1].Negate(),
             points[0].Negate(), infinity, points[0],
             points[1], points[2], points[3] };
@@ -347,9 +347,9 @@ namespace NBitcoin.BouncyCastle.Math.EC
         internal static ECPoint ImplSumOfMultiplies(ECPoint[] ps, BigInteger[] ks)
         {
             int count = ps.Length;
-            bool[] negs = new bool[count];
-            WNafPreCompInfo[] infos = new WNafPreCompInfo[count];
-            byte[][] wnafs = new byte[count][];
+            var negs = new bool[count];
+            var infos = new WNafPreCompInfo[count];
+            var wnafs = new byte[count][];
 
             for(int i = 0; i < count; ++i)
             {
@@ -371,7 +371,7 @@ namespace NBitcoin.BouncyCastle.Math.EC
 
             int len = ps.Length;
 
-            BigInteger[] abs = new BigInteger[len << 1];
+            var abs = new BigInteger[len << 1];
             for(int i = 0, j = 0; i < len; ++i)
             {
                 BigInteger[] ab = glvEndomorphism.DecomposeScalar(ks[i].Mod(n));
@@ -382,10 +382,10 @@ namespace NBitcoin.BouncyCastle.Math.EC
             ECPointMap pointMap = glvEndomorphism.PointMap;
             if(glvEndomorphism.HasEfficientPointMap)
             {
-                return ECAlgorithms.ImplSumOfMultiplies(ps, pointMap, abs);
+                return ImplSumOfMultiplies(ps, pointMap, abs);
             }
 
-            ECPoint[] pqs = new ECPoint[len << 1];
+            var pqs = new ECPoint[len << 1];
             for(int i = 0, j = 0; i < len; ++i)
             {
                 ECPoint p = ps[i], q = pointMap.Map(p);
@@ -393,16 +393,16 @@ namespace NBitcoin.BouncyCastle.Math.EC
                 pqs[j++] = q;
             }
 
-            return ECAlgorithms.ImplSumOfMultiplies(pqs, abs);
+            return ImplSumOfMultiplies(pqs, abs);
         }
 
         internal static ECPoint ImplSumOfMultiplies(ECPoint[] ps, ECPointMap pointMap, BigInteger[] ks)
         {
             int halfCount = ps.Length, fullCount = halfCount << 1;
 
-            bool[] negs = new bool[fullCount];
-            WNafPreCompInfo[] infos = new WNafPreCompInfo[fullCount];
-            byte[][] wnafs = new byte[fullCount][];
+            var negs = new bool[fullCount];
+            var infos = new WNafPreCompInfo[fullCount];
+            var wnafs = new byte[fullCount][];
 
             for(int i = 0; i < halfCount; ++i)
             {

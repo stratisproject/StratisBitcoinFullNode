@@ -21,6 +21,7 @@ using Stratis.Bitcoin.P2P.Protocol.Payloads;
 using Stratis.Bitcoin.Signals;
 using Stratis.Bitcoin.Utilities;
 
+[assembly: InternalsVisibleTo("Stratis.Bitcoin.Tests")]
 [assembly: InternalsVisibleTo("Stratis.Bitcoin.Features.Consensus.Tests")]
 [assembly: InternalsVisibleTo("Stratis.Bitcoin.IntegrationTests")]
 
@@ -54,7 +55,7 @@ namespace Stratis.Bitcoin.Base
         private readonly IChainState chainState;
 
         /// <summary>Access to the database of blocks.</summary>
-        private readonly ChainRepository chainRepository;
+        private readonly IChainRepository chainRepository;
 
         /// <summary>User defined node settings.</summary>
         private readonly NodeSettings nodeSettings;
@@ -104,6 +105,9 @@ namespace Stratis.Bitcoin.Base
         /// <summary>Selects the best available chain based on tips provided by the peers and switches to it.</summary>
         private readonly BestChainSelector bestChainSelector;
 
+        /// <inheritdoc cref="IFinalizedBlockHeight"/>
+        private readonly IFinalizedBlockHeight finalizedBlockHeight;
+
         /// <summary>
         /// Initializes a new instance of the object.
         /// </summary>
@@ -113,6 +117,7 @@ namespace Stratis.Bitcoin.Base
         /// <param name="chain">Thread safe access to the best chain of block headers (that the node is aware of) from genesis.</param>
         /// <param name="chainState">Information about node's chain.</param>
         /// <param name="connectionManager">Manager of node's network connections.</param>
+        /// <param name="finalizedBlockHeight"><inheritdoc cref="IFinalizedBlockHeight"/></param>
         /// <param name="chainRepository">Access to the database of blocks.</param>
         /// <param name="dateTimeProvider">Provider of time functions.</param>
         /// <param name="asyncLoopFactory">Factory for creating background async loop tasks.</param>
@@ -128,7 +133,8 @@ namespace Stratis.Bitcoin.Base
             ConcurrentChain chain,
             IChainState chainState,
             IConnectionManager connectionManager,
-            ChainRepository chainRepository,
+            IChainRepository chainRepository,
+            IFinalizedBlockHeight finalizedBlockHeight,
             IDateTimeProvider dateTimeProvider,
             IAsyncLoopFactory asyncLoopFactory,
             ITimeSyncBehaviorState timeSyncBehaviorState,
@@ -141,6 +147,7 @@ namespace Stratis.Bitcoin.Base
         {
             this.chainState = Guard.NotNull(chainState, nameof(chainState));
             this.chainRepository = Guard.NotNull(chainRepository, nameof(chainRepository));
+            this.finalizedBlockHeight = Guard.NotNull(finalizedBlockHeight, nameof(finalizedBlockHeight));
             this.nodeSettings = Guard.NotNull(nodeSettings, nameof(nodeSettings));
             this.dataFolder = Guard.NotNull(dataFolder, nameof(dataFolder));
             this.nodeLifetime = Guard.NotNull(nodeLifetime, nameof(nodeLifetime));
@@ -180,13 +187,13 @@ namespace Stratis.Bitcoin.Base
             this.StartChainAsync().GetAwaiter().GetResult();
 
             var connectionParameters = this.connectionManager.Parameters;
-            connectionParameters.IsRelay = !this.nodeSettings.ConfigReader.GetOrDefault("blocksonly", false);
+            connectionParameters.IsRelay = this.connectionManager.ConnectionSettings.RelayTxes;
             connectionParameters.TemplateBehaviors.Add(new ChainHeadersBehavior(this.chain, this.chainState, this.initialBlockDownloadState, this.bestChainSelector, this.loggerFactory));
             connectionParameters.TemplateBehaviors.Add(new PeerBanningBehavior(this.loggerFactory, this.peerBanning, this.nodeSettings));
 
             this.StartAddressManager(connectionParameters);
 
-            if (this.nodeSettings.SyncTimeEnabled)
+            if (this.connectionManager.ConnectionSettings.SyncTimeEnabled)
             {
                 connectionParameters.TemplateBehaviors.Add(new TimeSyncBehavior(this.timeSyncBehaviorState, this.dateTimeProvider, this.loggerFactory));
             }
@@ -231,6 +238,9 @@ namespace Stratis.Bitcoin.Base
                 this.logger.LogInformation("Creating " + this.dataFolder.ChainPath);
                 Directory.CreateDirectory(this.dataFolder.ChainPath);
             }
+
+            this.logger.LogInformation("Loading finalized block height");
+            await this.finalizedBlockHeight.LoadFinalizedBlockHeightAsync().ConfigureAwait(false);
 
             this.logger.LogInformation("Loading chain");
             await this.chainRepository.LoadAsync(this.chain).ConfigureAwait(false);
@@ -322,7 +332,7 @@ namespace Stratis.Bitcoin.Base
                     services.AddSingleton<IDateTimeProvider>(DateTimeProvider.Default);
                     services.AddSingleton<IInvalidBlockHashStore, InvalidBlockHashStore>();
                     services.AddSingleton<IChainState, ChainState>();
-                    services.AddSingleton<ChainRepository>();
+                    services.AddSingleton<IChainRepository, ChainRepository>().AddSingleton<IFinalizedBlockHeight, ChainRepository>(provider => provider.GetService<IChainRepository>() as ChainRepository);
                     services.AddSingleton<ITimeSyncBehaviorState, TimeSyncBehaviorState>();
                     services.AddSingleton<IAsyncLoopFactory, AsyncLoopFactory>();
                     services.AddSingleton<NodeDeployments>();

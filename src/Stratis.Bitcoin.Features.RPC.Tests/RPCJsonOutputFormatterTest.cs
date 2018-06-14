@@ -1,6 +1,7 @@
 ﻿using System.Buffers;
 using System.IO;
 using System.Text;
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Mvc.Formatters;
@@ -30,9 +31,9 @@ namespace Stratis.Bitcoin.Features.RPC.Tests
             {
                 using (TextWriter writer = new StreamWriter(memoryStream))
                 {
-                    using (StreamReader reader = new StreamReader(memoryStream))
+                    using (var reader = new StreamReader(memoryStream))
                     {
-                        var result = this.formatter.CreateJsonWriter(writer);
+                        JsonWriter result = this.formatter.CreateJsonWriter(writer);
                         result.WriteStartObject();
                         result.WriteEndObject();
 
@@ -50,7 +51,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests
             this.settings.Culture = new System.Globalization.CultureInfo("en-GB");
             this.formatter = new TestRPCJsonOutputFormatter(this.settings, this.charpool);
 
-            var serializer = this.formatter.CreateJsonSerializer();
+            JsonSerializer serializer = this.formatter.CreateJsonSerializer();
 
             Assert.Equal("en-GB", serializer.Culture.Name);
         }
@@ -63,7 +64,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests
                 using (TextWriter writer = new StreamWriter(memoryStream))
                 {
                     this.formatter.WriteObject(writer, new RPCAuthorization());
-                    using (StreamReader reader = new StreamReader(memoryStream))
+                    using (var reader = new StreamReader(memoryStream))
                     {
                         writer.Flush();
                         memoryStream.Position = 0;
@@ -93,20 +94,20 @@ namespace Stratis.Bitcoin.Features.RPC.Tests
                 }, typeof(RPCAuthorization),
                 new RPCAuthorization());
 
-            var task = this.formatter.WriteResponseBodyAsync(context, Encoding.UTF8);
+            Task task = this.formatter.WriteResponseBodyAsync(context, Encoding.UTF8);
             task.Wait();
 
-            using (StreamReader reader = new StreamReader(stream))
+            using (var reader = new StreamReader(stream))
             {
                 stream.Position = 0;
-                var result = reader.ReadToEnd();
+                string result = reader.ReadToEnd();
                 Assert.Equal("{\"Authorized\":[],\"AllowIp\":[]}", result);
             }
 
-            using (StreamReader reader = new StreamReader(bodyStream))
+            using (var reader = new StreamReader(bodyStream))
             {
                 bodyStream.Position = 0;
-                var result = reader.ReadToEnd();
+                string result = reader.ReadToEnd();
                 Assert.Equal("{\"result\":{\"Authorized\":[],\"AllowIp\":[]},\"id\":1,\"error\":null}", result);
             }
         }

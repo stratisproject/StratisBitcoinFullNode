@@ -10,30 +10,31 @@ namespace NBitcoin
 
         }
         // Public only for unit testing
-        BlockHeader header;
+        private BlockHeader header;
 
         public BlockHeader Header
         {
             get
             {
-                return header;
+                return this.header;
             }
             set
             {
-                header = value;
+                this.header = value;
             }
         }
-        PartialMerkleTree _PartialMerkleTree;
+
+        private PartialMerkleTree _PartialMerkleTree;
 
         public PartialMerkleTree PartialMerkleTree
         {
             get
             {
-                return _PartialMerkleTree;
+                return this._PartialMerkleTree;
             }
             set
             {
-                _PartialMerkleTree = value;
+                this._PartialMerkleTree = value;
             }
         }
 
@@ -42,10 +43,10 @@ namespace NBitcoin
         // thus the filter will likely be modified.
         public MerkleBlock(Block block, BloomFilter filter)
         {
-            header = block.Header;
+            this.header = block.Header;
 
-            List<bool> vMatch = new List<bool>();
-            List<uint256> vHashes = new List<uint256>();
+            var vMatch = new List<bool>();
+            var vHashes = new List<uint256>();
 
 
             for(uint i = 0; i < block.Transactions.Count; i++)
@@ -55,30 +56,31 @@ namespace NBitcoin
                 vHashes.Add(hash);
             }
 
-            _PartialMerkleTree = new PartialMerkleTree(vHashes.ToArray(), vMatch.ToArray());
+            this._PartialMerkleTree = new PartialMerkleTree(vHashes.ToArray(), vMatch.ToArray());
         }
 
         public MerkleBlock(Block block, uint256[] txIds)
         {
-            header = block.Header;
+            this.header = block.Header;
 
-            List<bool> vMatch = new List<bool>();
-            List<uint256> vHashes = new List<uint256>();
+            var vMatch = new List<bool>();
+            var vHashes = new List<uint256>();
             for(int i = 0; i < block.Transactions.Count; i++)
             {
-                var hash = block.Transactions[i].GetHash();
+                uint256 hash = block.Transactions[i].GetHash();
                 vHashes.Add(hash);
                 vMatch.Add(txIds.Contains(hash));
             }
-            _PartialMerkleTree = new PartialMerkleTree(vHashes.ToArray(), vMatch.ToArray());
+
+            this._PartialMerkleTree = new PartialMerkleTree(vHashes.ToArray(), vMatch.ToArray());
         }
 
         #region IBitcoinSerializable Members
 
         public void ReadWrite(BitcoinStream stream)
         {
-            stream.ReadWrite(ref header);
-            stream.ReadWrite(ref _PartialMerkleTree);
+            stream.ReadWrite(ref this.header);
+            stream.ReadWrite(ref this._PartialMerkleTree);
         }
 
         #endregion

@@ -5,7 +5,7 @@ using NBitcoin.DataEncoders;
 
 namespace NBitcoin.Tests
 {
-    class TestUtils
+    internal class TestUtils
     {
         public static void Eventually(Func<bool> act)
         {
@@ -19,7 +19,7 @@ namespace NBitcoin.Tests
 
         public static byte[] ToBytes(string str)
         {
-            byte[] result = new byte[str.Length];
+            var result = new byte[str.Length];
             for(int i = 0; i < str.Length; i++)
             {
                 result[i] = (byte)str[i];
@@ -42,7 +42,7 @@ namespace NBitcoin.Tests
 
         public static Block CreateFakeBlock()
         {
-            var block = TestUtils.CreateFakeBlock(new Transaction());
+            Block block = CreateFakeBlock(new Transaction());
             block.Header.HashPrevBlock = new uint256(RandomUtils.GetBytes(32));
             block.Header.Nonce = RandomUtils.GetUInt32();
             return block;

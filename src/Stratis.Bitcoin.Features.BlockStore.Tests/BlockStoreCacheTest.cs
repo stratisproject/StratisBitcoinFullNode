@@ -1,10 +1,7 @@
-﻿using System.Collections.Generic;
-using System.Threading.Tasks;
-using Microsoft.Extensions.Caching.Memory;
+﻿using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Moq;
 using NBitcoin;
-using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Utilities;
 using Xunit;
 
@@ -15,16 +12,16 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
         private BlockStoreCache blockStoreCache;
         private readonly Mock<IBlockRepository> blockRepository;
         private readonly ILoggerFactory loggerFactory;
-        private readonly NodeSettings nodeSettings;
+        private readonly StoreSettings storeSettings;
 
         public BlockStoreCacheTest()
         {
             this.loggerFactory = new LoggerFactory();
             this.blockRepository = new Mock<IBlockRepository>();
 
-            this.nodeSettings = new NodeSettings();
+            this.storeSettings = new StoreSettings();
 
-            this.blockStoreCache = new BlockStoreCache(this.blockRepository.Object, DateTimeProvider.Default, this.loggerFactory, this.nodeSettings);
+            this.blockStoreCache = new BlockStoreCache(this.blockRepository.Object, DateTimeProvider.Default, this.loggerFactory, this.storeSettings);
         }
 
         [Fact]
@@ -43,15 +40,15 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
         [Fact]
         public void GetBlockAsyncBlockNotInCacheQueriesRepositoryStoresBlockInCacheAndReturnsBlock()
         {
-            uint256 blockId = new uint256(2389704);
-            Block repositoryBlock = new Block();
+            var blockId = new uint256(2389704);
+            var repositoryBlock = new Block();
             repositoryBlock.Header.Version = 1451;
             this.blockRepository.Setup(b => b.GetAsync(blockId))
                 .Returns(Task.FromResult(repositoryBlock));
 
-            this.blockStoreCache = new BlockStoreCache(this.blockRepository.Object, DateTimeProvider.Default, this.loggerFactory, this.nodeSettings);
+            this.blockStoreCache = new BlockStoreCache(this.blockRepository.Object, DateTimeProvider.Default, this.loggerFactory, this.storeSettings);
 
-            var result = this.blockStoreCache.GetBlockAsync(blockId);
+            Task<Block> result = this.blockStoreCache.GetBlockAsync(blockId);
             result.Wait();
 
             Assert.Equal(1451, result.Result.Header.Version);

@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Threading.Tasks;
 using NBitcoin;
+using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
 using Xunit;
 
@@ -19,9 +20,9 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             this.concurrentChain = MineChainWithHeight(2, this.network);
             this.consensusRules = this.InitializeConsensusRules();
 
-            this.ruleContext.BlockValidationContext.ChainedHeader = this.concurrentChain.Tip;
-            this.ruleContext.BlockValidationContext.Block = TestRulesContextFactory.MineBlock(this.network, this.concurrentChain);
-            this.ruleContext.CheckPow = false;
+            this.ruleContext.ValidationContext.ChainedHeader = this.concurrentChain.Tip;
+            this.ruleContext.ValidationContext.Block = TestRulesContextFactory.MineBlock(this.network, this.concurrentChain);
+            this.ruleContext.MinedBlock = true;
             this.ruleContext.Consensus = this.network.Consensus;
 
             await this.consensusRules.RegisterRule<CalculateWorkRule>().RunAsync(this.ruleContext);
@@ -36,9 +37,9 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             this.concurrentChain = MineChainWithHeight(2, this.network);
             this.consensusRules = this.InitializeConsensusRules();
 
-            this.ruleContext.BlockValidationContext.ChainedHeader = this.concurrentChain.Tip;
-            this.ruleContext.BlockValidationContext.Block = TestRulesContextFactory.MineBlock(this.network, this.concurrentChain);
-            this.ruleContext.CheckPow = true;
+            this.ruleContext.ValidationContext.ChainedHeader = this.concurrentChain.Tip;
+            this.ruleContext.ValidationContext.Block = TestRulesContextFactory.MineBlock(this.network, this.concurrentChain);
+            this.ruleContext.MinedBlock = false;
             this.ruleContext.Consensus = this.network.Consensus;
 
             await this.consensusRules.RegisterRule<CalculateWorkRule>().RunAsync(this.ruleContext);
@@ -49,7 +50,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         [Fact]
         public async Task RunAsync_ProofOfWorkBlock_CheckPow_InValidPow_ThrowsHighHashConsensusErrorExceptionAsync()
         {
-            this.ruleContext.BlockValidationContext = new BlockValidationContext()
+            this.ruleContext.ValidationContext = new ValidationContext()
             {
                 Block = new Block()
                 {
@@ -60,9 +61,9 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
                 },
                 ChainedHeader = this.concurrentChain.GetBlock(4)
             };
-            this.ruleContext.CheckPow = true;
+            this.ruleContext.MinedBlock = false;
 
-            var exception = await Assert.ThrowsAsync<ConsensusErrorException>(() => this.consensusRules.RegisterRule<CalculateWorkRule>().RunAsync(this.ruleContext));
+            ConsensusErrorException exception = await Assert.ThrowsAsync<ConsensusErrorException>(() => this.consensusRules.RegisterRule<CalculateWorkRule>().RunAsync(this.ruleContext));
 
             Assert.Equal(ConsensusErrors.HighHash, exception.ConsensusError);
         }

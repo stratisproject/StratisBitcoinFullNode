@@ -1,6 +1,7 @@
 ﻿using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
+using Stratis.Bitcoin.Consensus.Rules;
 
 namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
 {
@@ -9,6 +10,10 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
     /// </summary>
     public class BlockHeaderPosContextualRule : StakeStoreConsensusRule
     {
+        /// <summary>PoS block's timestamp mask.</summary>
+        /// <remarks>Used to decrease granularity of timestamp. Supposed to be 2^n-1.</remarks>
+        public const uint StakeTimestampMask = 0x0000000F;
+
         /// <inheritdoc />
         /// <exception cref="ConsensusErrors.TimeTooNew">Thrown if block' timestamp too far in the future.</exception>
         /// <exception cref="ConsensusErrors.BadVersion">Thrown if block's version is outdated.</exception>
@@ -17,8 +22,10 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         /// <exception cref="ConsensusErrors.ProofOfWorkTooHigh">The block's height is higher than the last allowed PoW block.</exception>
         public override Task RunAsync(RuleContext context)
         {
-            ChainedHeader chainedHeader = context.BlockValidationContext.ChainedHeader;
+            ChainedHeader chainedHeader = context.ValidationContext.ChainedHeader;
             this.Logger.LogTrace("Height of block is {0}, block timestamp is {1}, previous block timestamp is {2}, block version is 0x{3:x}.", chainedHeader.Height, chainedHeader.Header.Time, chainedHeader.Previous.Header.Time, chainedHeader.Header.Version);
+
+            var posRuleContext = context as PosRuleContext;
 
             if (chainedHeader.Header.Version < 7)
             {
@@ -26,14 +33,14 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
                 ConsensusErrors.BadVersion.Throw();
             }
 
-            if (context.Stake.BlockStake.IsProofOfWork() && (chainedHeader.Height > this.Parent.ConsensusParams.LastPOWBlock))
+            if (posRuleContext.BlockStake.IsProofOfWork() && (chainedHeader.Height > this.Parent.ConsensusParams.LastPOWBlock))
             {
                 this.Logger.LogTrace("(-)[POW_TOO_HIGH]");
                 ConsensusErrors.ProofOfWorkTooHigh.Throw();
             }
 
             // Check coinbase timestamp.
-            uint coinbaseTime = context.BlockValidationContext.Block.Transactions[0].Time;
+            uint coinbaseTime = context.ValidationContext.Block.Transactions[0].Time;
             if (chainedHeader.Header.Time > coinbaseTime + PosFutureDriftRule.GetFutureDrift(coinbaseTime))
             {
                 this.Logger.LogTrace("(-)[TIME_TOO_NEW]");
@@ -41,8 +48,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
             }
 
             // Check coinstake timestamp.
-            if (context.Stake.BlockStake.IsProofOfStake()
-                && !this.CheckCoinStakeTimestamp(chainedHeader.Header.Time, context.BlockValidationContext.Block.Transactions[1].Time))
+            if (posRuleContext.BlockStake.IsProofOfStake()
+                && !this.CheckCoinStakeTimestamp(chainedHeader.Header.Time, context.ValidationContext.Block.Transactions[1].Time))
             {
                 this.Logger.LogTrace("(-)[BAD_TIME]");
                 ConsensusErrors.StakeTimeViolation.Throw();
@@ -66,7 +73,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         /// <returns><c>true</c> if block timestamp is equal to transaction timestamp, <c>false</c> otherwise.</returns>
         private bool CheckCoinStakeTimestamp(long blockTime, long transactionTime)
         {
-            return (blockTime == transactionTime) && ((transactionTime & PosConsensusValidator.StakeTimestampMask) == 0);
+            return (blockTime == transactionTime) && ((transactionTime & StakeTimestampMask) == 0);
         }
     }
 }

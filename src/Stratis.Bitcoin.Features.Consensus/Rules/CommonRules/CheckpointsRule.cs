@@ -1,6 +1,7 @@
 ﻿using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
+using Stratis.Bitcoin.Consensus.Rules;
 
 namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
 {
@@ -14,8 +15,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         /// <exception cref="ConsensusErrors.CheckpointViolation">The block header hash does not match the expected checkpoint value.</exception>
         public override Task RunAsync(RuleContext context)
         {
-            int height = context.BestBlock.Height + 1;
-            BlockHeader header = context.BlockValidationContext.Block.Header;
+            int height = context.ConsensusTipHeight + 1;
+            BlockHeader header = context.ValidationContext.Block.Header;
 
             // Check that the block header hash matches the known checkpointed value, if any.
             if (!this.Parent.Checkpoints.CheckHardened(height, header.GetHash()))
@@ -29,9 +30,9 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
             if (this.Parent.ConsensusSettings.UseCheckpoints)
             {
                 int lastCheckpointHeight = this.Parent.Checkpoints.GetLastCheckpointHeight();
-                context.SkipValidation = context.BlockValidationContext.ChainedHeader.Height <= lastCheckpointHeight;
+                context.SkipValidation = context.ValidationContext.ChainedHeader.Height <= lastCheckpointHeight;
                 if (context.SkipValidation)
-                    this.Logger.LogTrace("Block validation will be partially skipped due to block height {0} is not greater than last checkpointed block height {1}.", context.BlockValidationContext.ChainedHeader.Height, lastCheckpointHeight);
+                    this.Logger.LogTrace("Block validation will be partially skipped due to block height {0} is not greater than last checkpointed block height {1}.", context.ValidationContext.ChainedHeader.Height, lastCheckpointHeight);
             }
 
             return Task.CompletedTask;

@@ -5,7 +5,7 @@ using Newtonsoft.Json.Linq;
 
 namespace NBitcoin.RPC
 {
-    class BlockExplorerFormatter : RawFormatter
+    internal class BlockExplorerFormatter : RawFormatter
     {
         protected override void BuildTransaction(JObject json, Transaction tx)
         {
@@ -25,18 +25,18 @@ namespace NBitcoin.RPC
                 txin.PrevOut.N = (uint)prevout.GetValue("n");
 
 
-                var script = (string)jsonIn.GetValue("scriptSig");
+                string script = (string)jsonIn.GetValue("scriptSig");
                 if(script != null)
                 {
                     txin.ScriptSig = new Script(script);
                 }
                 else
                 {
-                    var coinbase = (string)jsonIn.GetValue("coinbase");
+                    string coinbase = (string)jsonIn.GetValue("coinbase");
                     txin.ScriptSig = new Script(Encoders.Hex.DecodeData(coinbase));
                 }
 
-                var seq = jsonIn.GetValue("sequence");
+                JToken seq = jsonIn.GetValue("sequence");
                 if(seq != null)
                 {
                     txin.Sequence = (uint)seq;
@@ -48,7 +48,7 @@ namespace NBitcoin.RPC
             for(int i = 0; i < voutCount; i++)
             {
                 var jsonOut = (JObject)vout[i];
-                var txout = new NBitcoin.TxOut();
+                var txout = new TxOut();
                 tx.Outputs.Add(txout);
 
                 txout.Value = Money.Parse((string)jsonOut.GetValue("value"));
@@ -70,9 +70,9 @@ namespace NBitcoin.RPC
 
             writer.WritePropertyName("in");
             writer.WriteStartArray();
-            foreach(var input in tx.Inputs.AsIndexedInputs())
+            foreach(IndexedTxIn input in tx.Inputs.AsIndexedInputs())
             {
-                var txin = input.TxIn;
+                TxIn txin = input.TxIn;
                 writer.WriteStartObject();
                 writer.WritePropertyName("prev_out");
                 writer.WriteStartObject();
@@ -102,7 +102,7 @@ namespace NBitcoin.RPC
             writer.WritePropertyName("out");
             writer.WriteStartArray();
 
-            foreach(var txout in tx.Outputs)
+            foreach(TxOut txout in tx.Outputs)
             {
                 writer.WriteStartObject();
                 WritePropertyValue(writer, "value", txout.Value.ToString(false, false));

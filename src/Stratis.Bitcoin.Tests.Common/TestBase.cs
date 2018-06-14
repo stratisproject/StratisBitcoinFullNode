@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using Microsoft.Extensions.Logging;
+using System.Threading;
 using NBitcoin;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Utilities;
@@ -19,17 +19,36 @@ namespace Stratis.Bitcoin.Tests.Common
         public TestBase(Network network)
         {
             this.Network = network;
-            DBreezeSerializer serializer = new DBreezeSerializer();
+            var serializer = new DBreezeSerializer();
             serializer.Initialize(this.Network); 
         }
         
         public static string AssureEmptyDir(string dir)
         {
-            if (Directory.Exists(dir))
-                Directory.Delete(dir, true);
+            int deleteAttempts = 0;
+            while (deleteAttempts < 50)
+            {
+                if (Directory.Exists(dir))
+                {
+                    try
+                    {
+                        Directory.Delete(dir, true);
+                        break;
+                    }
+                    catch
+                    {
+                        deleteAttempts++;
+                        Thread.Sleep(200);
+                    }
+                }
+                else
+                    break;
+            }
+
+            if (deleteAttempts >= 50)
+                throw new Exception(string.Format("The test folder: {0} could not be deleted.", dir));
 
             Directory.CreateDirectory(dir);
-
             return dir;
         }
 
@@ -59,6 +78,17 @@ namespace Stratis.Bitcoin.Tests.Common
         }
 
         /// <summary>
+        /// Creates a directory for a test.
+        /// </summary>
+        /// <param name="testDirectory">The directory in which the test files are contained.</param>
+        /// <returns>The path of the directory that was created.</returns>
+        public static string CreateTestDir(string testDirectory)
+        {
+            string directoryPath = GetTestDirectoryPath(testDirectory);
+            return AssureEmptyDir(directoryPath);
+        }
+
+        /// <summary>
         /// Gets the path of the directory that <see cref="CreateTestDir(object, string)"/> or <see cref="CreateDataFolder(object, string)"/> would create.
         /// </summary>
         /// <remarks>The path of the directory is of the form TestCase/{testClass}/{testName}.</remarks>
@@ -67,12 +97,23 @@ namespace Stratis.Bitcoin.Tests.Common
         /// <returns>The path of the directory.</returns>
         public static string GetTestDirectoryPath(object caller, [System.Runtime.CompilerServices.CallerMemberName] string callingMethod = "")
         {
-            return Path.Combine("TestCase", caller.GetType().Name, callingMethod);
+            return GetTestDirectoryPath(Path.Combine(caller.GetType().Name, callingMethod));
+        }
+
+        /// <summary>
+        /// Gets the path of the directory that <see cref="CreateTestDir(object, string)"/> or <see cref="CreateDataFolder(object, string)"/> would create.
+        /// </summary>
+        /// <remarks>The path of the directory is of the form TestCase/{testClass}/{testName}.</remarks>
+        /// <param name="testDirectory">The directory in which the test files are contained.</param>
+        /// <returns>The path of the directory.</returns>
+        public static string GetTestDirectoryPath(string testDirectory)
+        {
+            return Path.Combine("TestCase", testDirectory);
         }
 
         public void AppendBlocksToChain(ConcurrentChain chain, IEnumerable<Block> blocks)
         {
-            foreach (var block in blocks)
+            foreach (Block block in blocks)
             {
                 if (chain.Tip != null)
                     block.Header.HashPrevBlock = chain.Tip.HashBlock;

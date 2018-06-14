@@ -25,10 +25,10 @@ namespace Stratis.BreezeD
             try
             {
                 // Get the API uri.
-                var isTestNet = args.Contains("-testnet");
-                var isStratis = args.Contains("stratis");
+                bool isTestNet = args.Contains("-testnet");
+                bool isStratis = args.Contains("stratis");
 
-                var agent = "Breeze";
+                string agent = "Breeze";
 
                 NodeSettings nodeSettings;
 
@@ -38,11 +38,11 @@ namespace Stratis.BreezeD
                     if (isTestNet)
                         args = args.Append("-addnode=51.141.28.47").ToArray(); // TODO: fix this temp hack
 
-                    nodeSettings = new NodeSettings(network, ProtocolVersion.ALT_PROTOCOL_VERSION, agent, args:args, loadConfiguration:false);
+                    nodeSettings = new NodeSettings(network, ProtocolVersion.ALT_PROTOCOL_VERSION, agent, args:args);
                 }
                 else
                 {
-                    nodeSettings = new NodeSettings(agent: agent, args: args, loadConfiguration:false);
+                    nodeSettings = new NodeSettings(agent: agent, args: args);
                 }
 
                 IFullNodeBuilder fullNodeBuilder = new FullNodeBuilder()

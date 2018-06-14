@@ -27,7 +27,7 @@ namespace NBitcoin.RPC
 
             if(str.StartsWith("cookiefile=", StringComparison.OrdinalIgnoreCase))
             {
-                var path = str.Substring("cookiefile=".Length);
+                string path = str.Substring("cookiefile=".Length);
                 connectionString = new RPCCredentialString();
                 connectionString.CookieFile = path;
                 return true;
@@ -35,7 +35,7 @@ namespace NBitcoin.RPC
 
             if(str.IndexOf(':') != -1)
             {
-                var parts = str.Split(new char[] { ':' }, StringSplitOptions.RemoveEmptyEntries);
+                string[] parts = str.Split(new char[] { ':' }, StringSplitOptions.RemoveEmptyEntries);
                 if(parts.Length >= 2)
                 {
                     parts[1] = string.Join(":", parts.Skip(1).ToArray());
@@ -56,7 +56,7 @@ namespace NBitcoin.RPC
         {
             get
             {
-                return CookieFile == null && UserPassword == null;
+                return this.CookieFile == null && this.UserPassword == null;
             }
         }
 
@@ -68,23 +68,23 @@ namespace NBitcoin.RPC
         {
             get
             {
-                return _CookieFile;
+                return this._CookieFile;
             }
             set
             {
                 if(value != null)
                     Reset();
-                _CookieFile = value;
+                this._CookieFile = value;
             }
         }
 
         private void Reset()
         {
-            _CookieFile = null;
-            _UsernamePassword = null;
+            this._CookieFile = null;
+            this._UsernamePassword = null;
         }
 
-        string _CookieFile;
+        private string _CookieFile;
 
         /// <summary>
         /// Username and password
@@ -93,22 +93,23 @@ namespace NBitcoin.RPC
         {
             get
             {
-                return _UsernamePassword;
+                return this._UsernamePassword;
             }
             set
             {
                 if(value != null)
                     Reset();
-                _UsernamePassword = value;
+                this._UsernamePassword = value;
             }
         }
-        NetworkCredential _UsernamePassword;
+
+        private NetworkCredential _UsernamePassword;
 
         public override string ToString()
         {
-            return UseDefault ? "default" :
-                   CookieFile != null ? ("cookiefile=" + CookieFile) :
-                   UserPassword != null ? $"{UserPassword.UserName}:{UserPassword.Password}" :
+            return this.UseDefault ? "default" :
+                this.CookieFile != null ? ("cookiefile=" + this.CookieFile) :
+                this.UserPassword != null ? $"{this.UserPassword.UserName}:{this.UserPassword.Password}" :
                    "default";
         }
     }

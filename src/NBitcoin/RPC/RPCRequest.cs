@@ -16,13 +16,13 @@ namespace NBitcoin.RPC
         public RPCRequest(string method, object[] parameters)
             : this()
         {
-            Method = method;
-            Params = parameters;
+            this.Method = method;
+            this.Params = parameters;
         }
         public RPCRequest()
         {
-            JsonRpc = "1.0";
-            Id = 1;
+            this.JsonRpc = "1.0";
+            this.Id = 1;
         }
         public string JsonRpc
         {
@@ -55,25 +55,25 @@ namespace NBitcoin.RPC
         internal void WriteJSON(JsonTextWriter writer)
         {
             writer.WriteStartObject();
-            WriteProperty(writer, "jsonrpc", JsonRpc);
-            WriteProperty(writer, "id", Id);
-            WriteProperty(writer, "method", Method);
+            WriteProperty(writer, "jsonrpc", this.JsonRpc);
+            WriteProperty(writer, "id", this.Id);
+            WriteProperty(writer, "method", this.Method);
 
             writer.WritePropertyName("params");
             writer.WriteStartArray();
 
-            if(Params != null)
+            if(this.Params != null)
             {
-                for(int i = 0; i < Params.Length; i++)
+                for(int i = 0; i < this.Params.Length; i++)
                 {
-                    if(Params[i] is JToken)
+                    if(this.Params[i] is JToken)
                     {
-                        ((JToken)Params[i]).WriteTo(writer);
+                        ((JToken) this.Params[i]).WriteTo(writer);
                     }
-                    else if(Params[i] is Array)
+                    else if(this.Params[i] is Array)
                     {
                         writer.WriteStartArray();
-                        foreach(var x in (Array)Params[i])
+                        foreach(object x in (Array) this.Params[i])
                         {
                             writer.WriteValue(x);
                         }
@@ -81,7 +81,7 @@ namespace NBitcoin.RPC
                     }
                     else
                     {
-                        writer.WriteValue(Params[i]);
+                        writer.WriteValue(this.Params[i]);
                     }
                 }
             }

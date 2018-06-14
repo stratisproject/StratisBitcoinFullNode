@@ -6,6 +6,8 @@ using System.Text;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Configuration;
+using Stratis.Bitcoin.Utilities;
+using Stratis.Bitcoin.Utilities.Extensions;
 
 namespace Stratis.Bitcoin.Features.RPC
 {
@@ -14,6 +16,9 @@ namespace Stratis.Bitcoin.Features.RPC
     /// </summary>
     public class RpcSettings
     {
+        /// <summary>Instance logger.</summary>
+        private readonly ILogger logger;
+
         /// <summary>Indicates whether the RPC server is being used</summary>
         public bool Server { get; private set; }
 
@@ -35,24 +40,35 @@ namespace Stratis.Bitcoin.Features.RPC
         /// <summary>List of IP addresses that are allowed to connect to RPC interfaces.</summary>
         public List<IPAddress> AllowIp { get; set; }
 
-        private Action<RpcSettings> callback = null;
+        /// <summary>
+        /// Initializes an instance of the object from the default node configuration.
+        /// </summary>
+        public RpcSettings() : this(NodeSettings.Default())
+        {
+        }
 
         /// <summary>
-        /// Initializes an instance of the object.
+        /// Initializes an instance of the object from the node configuration.
         /// </summary>
-        public RpcSettings()
+        /// <param name="nodeSettings">The node configuration.</param>
+        public RpcSettings(NodeSettings nodeSettings)
         {
+            Guard.NotNull(nodeSettings, nameof(nodeSettings));
+
+            this.logger = nodeSettings.LoggerFactory.CreateLogger(typeof(RpcSettings).FullName);
+            this.logger.LogTrace("({0}:'{1}')", nameof(nodeSettings), nodeSettings.Network.Name);
+
             this.Bind = new List<IPEndPoint>();
             this.DefaultBindings = new List<IPEndPoint>();
             this.AllowIp = new List<IPAddress>();
-        }
+            
+            // Get values from config
+            this.LoadSettingsFromConfig(nodeSettings);
 
-        /// <summary> Initializes an instance of the object.</summary>
-        /// <param name="callback">The callback to call after the settings have been loaded.</param>
-        public RpcSettings(Action<RpcSettings> callback)
-            : this()
-        {
-            this.callback = callback;
+            // Check validity of settings
+            this.CheckConfigurationValidity(nodeSettings.Logger);
+
+            this.logger.LogTrace("(-)");
         }
 
         /// <summary>
@@ -61,20 +77,20 @@ namespace Stratis.Bitcoin.Features.RPC
         /// <param name="nodeSettings">Application configuration.</param>
         private void LoadSettingsFromConfig(NodeSettings nodeSettings)
         {
-            var config = nodeSettings.ConfigReader;
+            TextFileConfiguration config = nodeSettings.ConfigReader;
 
-            this.Server = config.GetOrDefault<bool>("server", false);
-            this.RPCPort = config.GetOrDefault<int>("rpcport", nodeSettings.Network.RPCPort);
+            this.Server = config.GetOrDefault<bool>("server", false, this.logger);
+            this.RPCPort = config.GetOrDefault<int>("rpcport", nodeSettings.Network.RPCPort, this.logger);
 
             if (this.Server)
             {
-                this.RpcUser = config.GetOrDefault<string>("rpcuser", null);
-                this.RpcPassword = config.GetOrDefault<string>("rpcpassword", null);
+                this.RpcUser = config.GetOrDefault<string>("rpcuser", null, this.logger);
+                this.RpcPassword = config.GetOrDefault<string>("rpcpassword", null); // No logging!
 
                 try
                 {
                     this.AllowIp = config
-                        .GetAll("rpcallowip")
+                        .GetAll("rpcallowip", this.logger)
                         .Select(p => IPAddress.Parse(p))
                         .ToList();
                 }
@@ -86,8 +102,8 @@ namespace Stratis.Bitcoin.Features.RPC
                 try
                 {
                     this.DefaultBindings = config
-                        .GetAll("rpcbind")
-                        .Select(p => NodeSettings.ConvertIpAddressToEndpoint(p, this.RPCPort))
+                        .GetAll("rpcbind", this.logger)
+                        .Select(p => p.ToIPEndPoint(this.RPCPort))
                         .ToList();
                 }
                 catch (FormatException)
@@ -138,28 +154,11 @@ namespace Stratis.Bitcoin.Features.RPC
             }
         }
 
-        /// <summary>
-        /// Loads the rpc settings from the application configuration.
-        /// Allows the callback to override those settings.
-        /// </summary>
-        /// <param name="nodeSettings">Application configuration.</param>
-        public void Load(NodeSettings nodeSettings)
-        {
-            // Get values from config
-            this.LoadSettingsFromConfig(nodeSettings);
-
-            // Invoke callback
-            this.callback?.Invoke(this);
-
-            // Check validity of settings
-            this.CheckConfigurationValidity(nodeSettings.Logger);
-        }
-
         /// <summary> Prints the help information on how to configure the rpc settings to the logger.</summary>
         /// <param name="network">The network to use.</param>
         public static void PrintHelp(Network network)
         {
-            var defaults = NodeSettings.Default();
+            NodeSettings defaults = NodeSettings.Default();
             var builder = new StringBuilder();
 
             builder.AppendLine($"-server=<0 or 1>          Accept command line and JSON-RPC commands. Default false.");

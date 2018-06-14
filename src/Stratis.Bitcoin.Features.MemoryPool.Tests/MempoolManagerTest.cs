@@ -31,35 +31,35 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             {
                 IDateTimeProvider dateTime = new DateTimeProvider();
 
-                Mock<ILoggerFactory> mockLoggerFactory = new Mock<ILoggerFactory>();
+                var mockLoggerFactory = new Mock<ILoggerFactory>();
                 mockLoggerFactory.Setup(i => i.CreateLogger(It.IsAny<string>())).Returns(new Mock<ILogger>().Object);
                 ILoggerFactory loggerFactory = mockLoggerFactory.Object;
 
-                MempoolSettings settings = new MempoolSettings(i => { })
+                var settings = new MempoolSettings(NodeSettings.Default())
                 {
                     MempoolExpiry = MempoolExpiry
                 };
                 NodeSettings nodeSettings = NodeSettings.Default();
 
-                BlockPolicyEstimator blockPolicyEstimator = new BlockPolicyEstimator(settings, loggerFactory, nodeSettings);
-                TxMempool mempool = new TxMempool(dateTime, blockPolicyEstimator, loggerFactory, nodeSettings);
+                var blockPolicyEstimator = new BlockPolicyEstimator(settings, loggerFactory, nodeSettings);
+                var mempool = new TxMempool(dateTime, blockPolicyEstimator, loggerFactory, nodeSettings);
 
-                Mock<TxMempool> mockTxMempool = new Mock<TxMempool>();
-                Mock<IMempoolValidator> mockValidator = new Mock<IMempoolValidator>();
+                var mockTxMempool = new Mock<TxMempool>();
+                var mockValidator = new Mock<IMempoolValidator>();
                 mockValidator.Setup(i =>
                     i.AcceptToMemoryPoolWithTime(It.IsAny<MempoolValidationState>(), It.IsAny<Transaction>()))
                         .ReturnsAsync((MempoolValidationState state, Transaction tx) =>
                         {
-                            PowConsensusOptions consensusOptions = new PowConsensusOptions();
+                            var consensusOptions = new PowConsensusOptions();
                             mempool.MapTx.Add(new TxMempoolEntry(tx, Money.Zero, 0, 0, 0, Money.Zero, false, 0, null, consensusOptions));
                             return true;
                         }
                         );
 
-                Mock<IMempoolPersistence> mockPersist = new Mock<IMempoolPersistence>();
-                Mock<CoinView> mockCoinView = new Mock<CoinView>();
+                var mockPersist = new Mock<IMempoolPersistence>();
+                var mockCoinView = new Mock<CoinView>();
 
-                return new MempoolManager(new MempoolSchedulerLock(), mempool, mockValidator.Object, null, dateTime, settings, mockPersist.Object, mockCoinView.Object, loggerFactory, nodeSettings.Network);
+                return new MempoolManager(new MempoolSchedulerLock(), mempool, mockValidator.Object, dateTime, settings, mockPersist.Object, mockCoinView.Object, loggerFactory, nodeSettings.Network);
             }
         }
 
@@ -81,7 +81,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             long expiryInSeconds = MempoolValidator.DefaultMempoolExpiry * 60 * 60;
 
             // tx with expiry twice as long as default expiry
-            List<MempoolPersistenceEntry> txs = new List<MempoolPersistenceEntry>
+            var txs = new List<MempoolPersistenceEntry>
             {
                     new MempoolPersistenceEntry
                     {
@@ -105,7 +105,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             long expiryInSeconds = MempoolValidator.DefaultMempoolExpiry * 60 * 60;
 
             // tx with expiry half as long as default expiry
-            List<MempoolPersistenceEntry> txs = new List<MempoolPersistenceEntry>
+            var txs = new List<MempoolPersistenceEntry>
             {
                     new MempoolPersistenceEntry
                     {

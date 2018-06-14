@@ -53,14 +53,14 @@ namespace NBitcoin.BouncyCastle.Crypto.Digests
         {
             Finish();
 
-            Pack.UInt64_To_BE(H1, output, outOff);
-            Pack.UInt64_To_BE(H2, output, outOff + 8);
-            Pack.UInt64_To_BE(H3, output, outOff + 16);
-            Pack.UInt64_To_BE(H4, output, outOff + 24);
-            Pack.UInt64_To_BE(H5, output, outOff + 32);
-            Pack.UInt64_To_BE(H6, output, outOff + 40);
-            Pack.UInt64_To_BE(H7, output, outOff + 48);
-            Pack.UInt64_To_BE(H8, output, outOff + 56);
+            Pack.UInt64_To_BE(this.H1, output, outOff);
+            Pack.UInt64_To_BE(this.H2, output, outOff + 8);
+            Pack.UInt64_To_BE(this.H3, output, outOff + 16);
+            Pack.UInt64_To_BE(this.H4, output, outOff + 24);
+            Pack.UInt64_To_BE(this.H5, output, outOff + 32);
+            Pack.UInt64_To_BE(this.H6, output, outOff + 40);
+            Pack.UInt64_To_BE(this.H7, output, outOff + 48);
+            Pack.UInt64_To_BE(this.H8, output, outOff + 56);
 
             Reset();
 
@@ -79,14 +79,14 @@ namespace NBitcoin.BouncyCastle.Crypto.Digests
              * The first 64 bits of the fractional parts of the square roots
              * of the first eight prime numbers
              */
-            H1 = 0x6a09e667f3bcc908;
-            H2 = 0xbb67ae8584caa73b;
-            H3 = 0x3c6ef372fe94f82b;
-            H4 = 0xa54ff53a5f1d36f1;
-            H5 = 0x510e527fade682d1;
-            H6 = 0x9b05688c2b3e6c1f;
-            H7 = 0x1f83d9abfb41bd6b;
-            H8 = 0x5be0cd19137e2179;
+            this.H1 = 0x6a09e667f3bcc908;
+            this.H2 = 0xbb67ae8584caa73b;
+            this.H3 = 0x3c6ef372fe94f82b;
+            this.H4 = 0xa54ff53a5f1d36f1;
+            this.H5 = 0x510e527fade682d1;
+            this.H6 = 0x9b05688c2b3e6c1f;
+            this.H7 = 0x1f83d9abfb41bd6b;
+            this.H8 = 0x5be0cd19137e2179;
         }
 
         public override IMemoable Copy()
@@ -96,7 +96,7 @@ namespace NBitcoin.BouncyCastle.Crypto.Digests
 
         public override void Reset(IMemoable other)
         {
-            Sha512Digest d = (Sha512Digest)other;
+            var d = (Sha512Digest)other;
 
             CopyIn(d);
         }
