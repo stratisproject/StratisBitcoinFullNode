@@ -548,7 +548,7 @@ namespace Stratis.Bitcoin.BlockPulling2
             public List<uint256> Hashes;
         }
 
-        private class AssignedDownload
+        private struct AssignedDownload
         {
             public int JobId;
 
