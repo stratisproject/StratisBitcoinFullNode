@@ -122,29 +122,16 @@ namespace Stratis.Bitcoin.BlockPulling2
             }
         }
 
-        // Accepts only consequtive headers (but gaps are ok: a1=a2=a3=a4=a8=a9)
-        public void RequestBlocksDownload(List<ChainedHeader> headers, OnBlockDownloadedCallback callback)
+        // Accepts only hashes of consequtive headers (but gaps are ok: a1=a2=a3=a4=a8=a9)
+        // Doesn't support asking for the same hash twice before getting a response
+        public void RequestBlocksDownload(List<uint256> hashes)
         {
-            var headersToEnqueue = new List<ChainedHeader>(headers.Count);
-
             lock (this.lockObject)
             {
-                foreach (ChainedHeader header in headers)
-                {
-                    if (this.AssignedDownloads.TryGetValue(header.HashBlock, out AssignedDownload assignedDownload))
-                    {
-                        // Already assigned, just add one more callback.
-                        assignedDownload.Callbacks.Add(callback);
-                    }
-                    else
-                        headersToEnqueue.Add(header);
-                }
-
                 // Enqueue new download job.
                 this.downloadJobsQueue.Enqueue(new DownloadJob()
                 {
-                    Hashes = headersToEnqueue.Select(x => x.HashBlock).ToList(),
-                    Callbacks = new List<OnBlockDownloadedCallback>() { callback },
+                    Hashes = hashes,
                     Id = this.currentJobId++
                 });
 
@@ -242,12 +229,7 @@ namespace Stratis.Bitcoin.BlockPulling2
             foreach (DownloadJob failedJob in failedJobs)
             {
                 foreach (uint256 failedHash in failedJob.Hashes)
-                {
-                    foreach (OnBlockDownloadedCallback callback in failedJob.Callbacks)
-                    {
-                        callback(failedHash, null);
-                    }
-                }
+                    this.OnDownloadedCallback(failedHash, null);
             }
         }
 
@@ -264,7 +246,6 @@ namespace Stratis.Bitcoin.BlockPulling2
                     peerAssignments.Add(new SingleAssignment()
                     {
                         Hash = assignedDownload.Key,
-                        Callbacks = assignedDownload.Value.Callbacks,
                         JobId = assignedDownload.Value.JobId
                     });
                 }
@@ -299,13 +280,7 @@ namespace Stratis.Bitcoin.BlockPulling2
 
 
             if (failedHashes.Count != 0)
-            {
-                failedJobs.Add(new DownloadJob()
-                {
-                    Hashes = failedHashes,
-                    Callbacks = downloadJob.Callbacks
-                });
-            }
+                failedJobs.Add(new DownloadJob() { Hashes = failedHashes });
 
             return newAssignments;
         }
@@ -343,8 +318,7 @@ namespace Stratis.Bitcoin.BlockPulling2
                 this.processQueuesSignal.Set();
             }
 
-            foreach (OnBlockDownloadedCallback callback in assignedDownload.Callbacks)
-                callback(blockHash, block);
+            this.OnDownloadedCallback(blockHash, block);
         }
 
         private void AddPeerSampleAndRecalculateQualityScoreLocked(int peerId, long blockSizeBytes, double delaySeconds)
@@ -396,7 +370,6 @@ namespace Stratis.Bitcoin.BlockPulling2
                     assignments.Add(new SingleAssignment()
                     {
                         Hash = assignedDownload.Key,
-                        Callbacks = assignedDownload.Value.Callbacks,
                         JobId = assignedDownload.Value.JobId
                     });
 
@@ -416,13 +389,9 @@ namespace Stratis.Bitcoin.BlockPulling2
             {
                 foreach (IGrouping<int, SingleAssignment> jobGroup in assignments.GroupBy(x => x.JobId))
                 {
-                    // JobId and callbacks for jobs with same Id are the same
-                    SingleAssignment firstAssignment = jobGroup.First();
-
                     var newJob = new DownloadJob()
                     {
-                        Callbacks = firstAssignment.Callbacks,
-                        Id = firstAssignment.JobId,
+                        Id = jobGroup.First().JobId,
                         Hashes = jobGroup.Select(x => x.Hash).ToList()
                     };
 
@@ -447,16 +416,12 @@ namespace Stratis.Bitcoin.BlockPulling2
         {
             public int JobId;
 
-            public List<OnBlockDownloadedCallback> Callbacks;
-
             public uint256 Hash;
         }
 
         private struct DownloadJob
         {
             public int Id;
-
-            public List<OnBlockDownloadedCallback> Callbacks;
 
             public List<uint256> Hashes;
         }
@@ -468,8 +433,6 @@ namespace Stratis.Bitcoin.BlockPulling2
             public int PeerId;
 
             public DateTime AssignedTime;
-
-            public List<OnBlockDownloadedCallback> Callbacks;
 
             public int BlockHeight;
         }
