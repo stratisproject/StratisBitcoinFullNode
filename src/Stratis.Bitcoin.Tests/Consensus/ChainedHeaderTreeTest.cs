@@ -312,8 +312,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
 
         /// <summary>
         /// Issue 14 @ Chain exists with checkpoints enabled. There are 2 checkpoints. Peer presents a chain that covers
-        /// first checkpoint. Then it presents a prolongation that doesnt match the 2nd checkpoint. We should discard the chain
-        /// up until the first checkpoint.
+        /// first checkpoint with a prolongation that does not match the 2nd checkpoint. Exception should be thrown.
         /// </summary>
         [Fact]
         public void ChainHasTwoCheckPoints_ChainConveringOnlyFirstCheckPointIsPresented_ChainIsDiscardedUpUntilFirstCheckpoint()
