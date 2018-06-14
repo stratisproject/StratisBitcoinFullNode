@@ -127,7 +127,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
                 // All other cases we need a condensing transaction
                 else
                 {
-                    var transactionCondenser = new TransactionCondenser(contractAddress, this.loggerFactory, this.network, this.transactionContext);
+                    var transactionCondenser = new TransactionCondenser(contractAddress, this.loggerFactory, this.Result.InternalTransfers, this.stateSnapshot, this.network, this.transactionContext);
                     this.Result.InternalTransaction = transactionCondenser.CreateCondensingTransaction();
                 }
 
@@ -327,43 +327,5 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
             return result;
         }
-
-        ///// <summary>
-        ///// Contract execution completed successfully, commit state.
-        ///// <para>
-        ///// We need to append a condensing transaction to the block if funds are moved.
-        ///// </para>
-        ///// </summary>
-        ///// <param name="transfers"></param>
-        //private void CommitExecution(IList<TransferInfo> transfers)
-        //{
-        //    this.logger.LogTrace("()");
-
-        //    if (transfers != null && transfers.Any() || this.carrier.Value > 0)
-        //    {
-        //        this.logger.LogTrace("[CREATE_CONDENSING_TX]:{0}={1},{2}={3}", nameof(transfers), transfers.Count, nameof(this.carrier.Value), this.carrier.Value);
-        //        var condensingTx = new TransactionCondenser(this.carrier.ContractAddress, this.loggerFactory, transfers, this.stateSnapshot, this.network, this.transactionContext);
-        //        this.Result.InternalTransaction = condensingTx.CreateCondensingTransaction();
-        //    }
-
-        //    this.logger.LogTrace("(-)");
-        //}
-
-        ///// <summary>
-        ///// If funds were sent to the contract and execution failed, we need to send it back to the sender.
-        ///// </summary>
-        //private void RevertExecution()
-        //{
-        //    this.logger.LogTrace("()");
-
-        //    if (this.carrier.Value > 0)
-        //    {
-        //        this.logger.LogTrace("[CREATE_REFUND_TX]:{0}={1}", nameof(this.carrier.Value), this.carrier.Value);
-        //        Transaction tx = new TransactionCondenser(this.carrier.ContractAddress, this.loggerFactory, this.network, this.transactionContext).CreateRefundTransaction();
-        //        this.Result.InternalTransaction = tx;
-        //    }
-
-        //    this.logger.LogTrace("(-)");
-        //}
     }
 }
