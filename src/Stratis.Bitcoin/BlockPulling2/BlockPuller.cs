@@ -32,7 +32,7 @@ namespace Stratis.Bitcoin.BlockPulling2
 
         private Dictionary<uint256, ChainedHeader> HeadersByHash;
 
-        private Dictionary<int, ChainedHeader> peersToTips;
+        private Dictionary<int, ChainedHeader> peerIdsToTips;
         private Dictionary<int, BlockPullerBehavior> pullerBehaviors;
 
         private CancellationTokenSource cancellationSource;
@@ -60,6 +60,8 @@ namespace Stratis.Bitcoin.BlockPulling2
         private Task assignerLoop;
         private Task stallingLoop;
 
+        private Random random;
+
         private int GetTotalSpeedOfAllPeersBytesPerSec()
         {
             return this.PeerPerformanceByPeerId.Sum(x => x.Value.SpeedBytesPerSecond);
@@ -67,7 +69,7 @@ namespace Stratis.Bitcoin.BlockPulling2
 
         public BlockPuller(OnBlockDownloadedCallback callback, IInitialBlockDownloadState ibdState, ChainState chainState, LoggerFactory loggerFactory)
         {
-            this.peersToTips = new Dictionary<int, ChainedHeader>();
+            this.peerIdsToTips = new Dictionary<int, ChainedHeader>();
             this.reassignedJobsQueue = new Queue<DownloadJob>();
             this.downloadJobsQueue = new Queue<DownloadJob>();
 
@@ -86,6 +88,7 @@ namespace Stratis.Bitcoin.BlockPulling2
             this.pendingDownloadsCount = 0;
 
             this.cancellationSource = new CancellationTokenSource();
+            this.random = new Random();
 
             this.OnDownloadedCallback = callback;
             this.ibdState = ibdState;
@@ -105,13 +108,15 @@ namespace Stratis.Bitcoin.BlockPulling2
             {
                 int peerId = peer.Connection.Id;
 
-                if (this.peersToTips.ContainsKey(peerId))
+                if (this.peerIdsToTips.ContainsKey(peerId))
                 {
-                    this.peersToTips.AddOrReplace(peerId, newTip);
+                    this.peerIdsToTips.AddOrReplace(peerId, newTip);
                 }
                 else
                 {
-                    this.peersToTips.AddOrReplace(peerId, newTip);
+                    //TODO ignore light wallets all the time and ignore pruned nodes in IBD
+
+                    this.peerIdsToTips.AddOrReplace(peerId, newTip);
                     this.pullerBehaviors.Add(peerId, peer.Behavior<BlockPullerBehavior>());
                 }
             }
@@ -121,7 +126,7 @@ namespace Stratis.Bitcoin.BlockPulling2
         {
             lock (this.lockObject)
             {
-                this.peersToTips.Remove(peerId);
+                this.peerIdsToTips.Remove(peerId);
                 this.pullerBehaviors.Remove(peerId);
 
                 this.ReassignDownloads(peerId);
@@ -286,15 +291,69 @@ namespace Stratis.Bitcoin.BlockPulling2
         private Dictionary<uint256, AssignedDownload> DistributeHashesLocked(ref DownloadJob downloadJob, ref List<DownloadJob> failedJobs, int emptySlotes)
         {
             var newAssignments = new Dictionary<uint256, AssignedDownload>();
-            var failedHashes = new List<uint256>();
+            
+            var peers = new Dictionary<int, ChainedHeader>(this.peerIdsToTips);
+            bool jobFailed = false;
 
+            foreach (uint256 hashToAssign in downloadJob.Hashes.Take(emptySlotes).ToList())
+            {
+                ChainedHeader header = this.HeadersByHash[hashToAssign];
 
-            // TODO
-            // TODO we will need HeadersByHash here
+                while (!jobFailed)
+                {
+                    double sumOfQualityScores = this.PeerPerformanceByPeerId.Values.Sum(x => x.QualityScore);
 
+                    double scoreToReachPeer = this.random.Next(0, (int)(sumOfQualityScores * 1000)) / 1000.0;
 
-            if (failedHashes.Count != 0)
-                failedJobs.Add(new DownloadJob() { Hashes = failedHashes });
+                    int peerId = 0;
+
+                    foreach (KeyValuePair<int, PeerPerformanceCounter> performanceCounter in this.PeerPerformanceByPeerId)
+                    {
+                        if (performanceCounter.Value.QualityScore >= scoreToReachPeer)
+                            peerId = performanceCounter.Key;
+                        else
+                            scoreToReachPeer -= performanceCounter.Value.QualityScore;
+                    }
+
+                    ChainedHeader peerTip = peers[peerId];
+
+                    if (peerTip.GetAncestor(header.Height) == header)
+                    {
+                        // Assign to this peer
+                        newAssignments.Add(hashToAssign, new AssignedDownload()
+                        {
+                            PeerId = peerId,
+                            JobId = downloadJob.Id,
+                            AssignedTime = DateTime.UtcNow,
+                            BlockHeight = header.Height
+                        });
+
+                        this.pendingDownloadsCount++;
+
+                        downloadJob.Hashes.Remove(hashToAssign); // TODO remove from the start of the list? Maybe use hashset or smth
+                        break;
+                    }
+                    else
+                    {
+                        // Peer doesn't claim this hash.
+                        peers.Remove(peerId);
+
+                        if (peers.Count != 0)
+                            continue;
+
+                        // JOB FAILED!
+                        jobFailed = true;
+                    }
+                }
+            }
+
+            if (jobFailed)
+            {
+                var failedHashes = new List<uint256>(downloadJob.Hashes);
+                failedJobs.Add(new DownloadJob() {Hashes = failedHashes});
+
+                downloadJob.Hashes.Clear();
+            }
 
             return newAssignments;
         }
