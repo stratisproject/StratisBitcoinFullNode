@@ -29,6 +29,8 @@ namespace Stratis.Bitcoin.BlockPulling2
         private Dictionary<uint256, AssignedDownload> AssignedDownloads;
         private Dictionary<int, PeerPerformanceCounter> PeerPerformanceByPeerId;
 
+        private Dictionary<uint256, ChainedHeader> HeadersByHash;
+
         private Dictionary<int, ChainedHeader> peersToTips;
         private Dictionary<int, BlockPullerBehavior> pullerBehaviors;
 
@@ -72,6 +74,7 @@ namespace Stratis.Bitcoin.BlockPulling2
 
             this.PeerPerformanceByPeerId = new Dictionary<int, PeerPerformanceCounter>();
             this.pullerBehaviors = new Dictionary<int, BlockPullerBehavior>();
+            this.HeadersByHash = new Dictionary<uint256, ChainedHeader>();
 
             this.processQueuesSignal = new AsyncManualResetEvent(false);
             this.lockObject = new object();
@@ -124,10 +127,18 @@ namespace Stratis.Bitcoin.BlockPulling2
 
         // Accepts only hashes of consequtive headers (but gaps are ok: a1=a2=a3=a4=a8=a9)
         // Doesn't support asking for the same hash twice before getting a response
-        public void RequestBlocksDownload(List<uint256> hashes)
+        public void RequestBlocksDownload(List<ChainedHeader> headers)
         {
             lock (this.lockObject)
             {
+                var hashes = new List<uint256>();
+
+                foreach (ChainedHeader header in headers)
+                {
+                    this.HeadersByHash.Add(header.HashBlock, header);
+                    hashes.Add(header.HashBlock);
+                }
+                
                 // Enqueue new download job.
                 this.downloadJobsQueue.Enqueue(new DownloadJob()
                 {
@@ -220,6 +231,13 @@ namespace Stratis.Bitcoin.BlockPulling2
                 foreach (KeyValuePair<uint256, AssignedDownload> assignment in newAssignments)
                     this.AssignedDownloads.Add(assignment.Key, assignment.Value);
 
+                // Remove failed hashes from HeadersByHash
+                foreach (DownloadJob failedJob in failedJobs)
+                {
+                    foreach (uint256 failedHash in failedJob.Hashes)
+                        this.HeadersByHash.Remove(failedHash);
+                }
+
                 this.processQueuesSignal.Reset();
             }
 
@@ -272,7 +290,7 @@ namespace Stratis.Bitcoin.BlockPulling2
 
 
             //TODO
-
+            // TODO we will need HeadersByHash here
 
 
             if (failedHashes.Count != 0)
@@ -310,6 +328,8 @@ namespace Stratis.Bitcoin.BlockPulling2
                 this.AddPeerSampleAndRecalculateQualityScoreLocked(peerId, block.BlockSize.Value, deliveredInSeconds);
 
                 this.RecalculateMaxBlocksBeingDownloadedLocked();
+
+                this.HeadersByHash.Remove(blockHash);
 
                 this.processQueuesSignal.Set();
             }
