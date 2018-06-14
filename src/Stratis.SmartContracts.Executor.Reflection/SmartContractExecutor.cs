@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using Microsoft.Extensions.Logging;
@@ -87,11 +86,54 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
         public abstract void OnExecute();
 
+
         /// <summary>
         /// Any logic that should happen after contract execution has taken place happens here.
         /// </summary>
         private void PostExecute()
         {
+            if (this.Result.Revert)
+            {
+                // Send back funds
+                if (this.carrier.Value > 0)
+                {
+                    this.Result.InternalTransaction = CreateRefundTransaction();
+                }
+
+                this.stateSnapshot.Rollback();
+            }
+            else
+            {
+                uint160 contractAddress = this.carrier.ContractAddress ?? this.carrier.GetNewContractAddress();
+
+                // If contract received no funds and made no transfers, do nothing.
+                if (this.carrier.Value == 0 
+                    && !this.Result.InternalTransfers.Any())
+                {
+
+                }
+                // If contract had no balance, received funds, but made no transfers, assign the current UTXO.
+                else if (this.stateSnapshot.GetUnspent(this.carrier.ContractAddress ?? this.carrier.GetNewContractAddress()) == null
+                         && this.carrier.Value > 0 
+                         && !this.Result.InternalTransfers.Any())
+                {
+                    this.stateSnapshot.SetUnspent(contractAddress, new ContractUnspentOutput
+                    {
+                        Value = this.carrier.Value,
+                        Hash = this.carrier.TransactionHash,
+                        Nvout = this.carrier.Nvout
+                    });
+                }
+                // All other cases we need a condensing transaction
+                else
+                {
+                    var transactionCondenser = new TransactionCondenser(contractAddress, this.loggerFactory, this.network, this.transactionContext);
+                    this.Result.InternalTransaction = transactionCondenser.CreateCondensingTransaction();
+                }
+
+                this.stateSnapshot.Commit();
+            }
+
             new SmartContractExecutorResultProcessor(this.Result, this.loggerFactory).Process(this.carrier, this.transactionContext.MempoolFee);
 
             try
@@ -103,6 +145,23 @@ namespace Stratis.SmartContracts.Executor.Reflection
             {
                 this.logger.LogError("Exception occurred saving contract receipt: {0}", e.Message);
             }
+        }
+
+        /// <summary>
+        /// Should contract execution fail, we need to send the money, that was
+        /// sent to contract, back to the contract's sender.
+        /// </summary>
+        private Transaction CreateRefundTransaction()
+        {
+            var tx = new Transaction();
+            // Input from contract call
+            var outpoint = new OutPoint(this.transactionContext.TransactionHash, this.transactionContext.Nvout);
+            tx.AddInput(new TxIn(outpoint, new Script(OpcodeType.OP_SPEND)));
+            // Refund output
+            Script script = PayToPubkeyHashTemplate.Instance.GenerateScriptPubKey(new KeyId(this.transactionContext.Sender));
+            var txOut = new TxOut(new Money(this.transactionContext.TxOutValue), script);
+            tx.Outputs.Add(txOut);
+            return tx;
         }
 
         internal void LogExecutionContext(ILogger logger, IBlock block, IMessage message, uint160 contractAddress, SmartContractCarrier carrier)
@@ -194,18 +253,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
             this.Result.NewContractAddress = newContractAddress;
 
-            // To start with, no value transfers on create. Can call other contracts but send 0 only.
             this.stateSnapshot.SetCode(newContractAddress, this.carrier.ContractExecutionCode);
-
-            IList<TransferInfo> transfers = this.Result.InternalTransfers;
-
-            if (transfers != null && transfers.Any() || this.carrier.Value > 0)
-            {
-                var condensingTx = new CondensingTx(this.carrier.ContractAddress, this.loggerFactory, transfers, this.stateSnapshot, this.network, this.transactionContext);
-                this.Result.InternalTransaction = condensingTx.CreateCondensingTransaction();
-            }
-
-            this.stateSnapshot.Commit();
 
             this.logger.LogTrace("(-):{0}={1}", nameof(newContractAddress), newContractAddress);
         }
@@ -242,17 +290,6 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
             // Execute the call to the contract.
             this.Result = this.CreateContextAndExecute(this.carrier.ContractAddress, contractExecutionCode, this.carrier.MethodName);
-
-            if (this.Result.Revert)
-            {
-                this.logger.LogTrace("(-)[CALL_CONTRACT_FAILED]:{0}={1}", nameof(this.carrier.ContractAddress), this.carrier.ContractAddress);
-                this.RevertExecution();
-            }
-            else
-            {
-                this.logger.LogTrace("(-)[CALL_CONTRACT_SUCCEEDED]:{0}={1}", nameof(this.carrier.ContractAddress), this.carrier.ContractAddress);
-                this.CommitExecution(this.Result.InternalTransfers);
-            }
         }
 
         private ISmartContractExecutionResult CreateContextAndExecute(uint160 contractAddress, byte[] contractCode, string methodName)
@@ -291,44 +328,42 @@ namespace Stratis.SmartContracts.Executor.Reflection
             return result;
         }
 
-        /// <summary>
-        /// Contract execution completed successfully, commit state.
-        /// <para>
-        /// We need to append a condensing transaction to the block if funds are moved.
-        /// </para>
-        /// </summary>
-        /// <param name="transfers"></param>
-        private void CommitExecution(IList<TransferInfo> transfers)
-        {
-            this.logger.LogTrace("()");
+        ///// <summary>
+        ///// Contract execution completed successfully, commit state.
+        ///// <para>
+        ///// We need to append a condensing transaction to the block if funds are moved.
+        ///// </para>
+        ///// </summary>
+        ///// <param name="transfers"></param>
+        //private void CommitExecution(IList<TransferInfo> transfers)
+        //{
+        //    this.logger.LogTrace("()");
 
-            if (transfers != null && transfers.Any() || this.carrier.Value > 0)
-            {
-                this.logger.LogTrace("[CREATE_CONDENSING_TX]:{0}={1},{2}={3}", nameof(transfers), transfers.Count, nameof(this.carrier.Value), this.carrier.Value);
-                var condensingTx = new CondensingTx(this.carrier.ContractAddress, this.loggerFactory, transfers, this.stateSnapshot, this.network, this.transactionContext);
-                this.Result.InternalTransaction = condensingTx.CreateCondensingTransaction();
-            }
+        //    if (transfers != null && transfers.Any() || this.carrier.Value > 0)
+        //    {
+        //        this.logger.LogTrace("[CREATE_CONDENSING_TX]:{0}={1},{2}={3}", nameof(transfers), transfers.Count, nameof(this.carrier.Value), this.carrier.Value);
+        //        var condensingTx = new TransactionCondenser(this.carrier.ContractAddress, this.loggerFactory, transfers, this.stateSnapshot, this.network, this.transactionContext);
+        //        this.Result.InternalTransaction = condensingTx.CreateCondensingTransaction();
+        //    }
 
-            this.stateSnapshot.Commit();
+        //    this.logger.LogTrace("(-)");
+        //}
 
-            this.logger.LogTrace("(-)");
-        }
+        ///// <summary>
+        ///// If funds were sent to the contract and execution failed, we need to send it back to the sender.
+        ///// </summary>
+        //private void RevertExecution()
+        //{
+        //    this.logger.LogTrace("()");
 
-        /// <summary>
-        /// If funds were sent to the contract and execution failed, we need to send it back to the sender.
-        /// </summary>
-        private void RevertExecution()
-        {
-            this.logger.LogTrace("()");
+        //    if (this.carrier.Value > 0)
+        //    {
+        //        this.logger.LogTrace("[CREATE_REFUND_TX]:{0}={1}", nameof(this.carrier.Value), this.carrier.Value);
+        //        Transaction tx = new TransactionCondenser(this.carrier.ContractAddress, this.loggerFactory, this.network, this.transactionContext).CreateRefundTransaction();
+        //        this.Result.InternalTransaction = tx;
+        //    }
 
-            if (this.carrier.Value > 0)
-            {
-                this.logger.LogTrace("[CREATE_REFUND_TX]:{0}={1}", nameof(this.carrier.Value), this.carrier.Value);
-                Transaction tx = new CondensingTx(this.carrier.ContractAddress, this.loggerFactory, this.network, this.transactionContext).CreateRefundTransaction();
-                this.Result.InternalTransaction = tx;
-            }
-
-            this.logger.LogTrace("(-)");
-        }
+        //    this.logger.LogTrace("(-)");
+        //}
     }
 }

@@ -25,12 +25,6 @@ namespace Stratis.SmartContracts.Core.State.AccountAbstractionLayer
         /// </summary>
         public ulong Value { get; set; }
 
-        /// <summary>
-        /// TODO: Delete unless we actually use it. I think we can avoid it.
-        /// -Jordan 12/02/2018
-        /// </summary>
-        public byte Alive { get; set; }
-
         public ContractUnspentOutput() { }
 
         public ContractUnspentOutput(byte[] bytes)
@@ -40,7 +34,6 @@ namespace Stratis.SmartContracts.Core.State.AccountAbstractionLayer
             this.Hash = new uint256(innerList[0].RLPData);
             this.Nvout = BitConverter.ToUInt32(innerList[1].RLPData, 0);
             this.Value = BitConverter.ToUInt64(innerList[2].RLPData, 0);
-            this.Alive = innerList[3].RLPData[0];
         }
 
         public byte[] ToBytes()
@@ -48,8 +41,7 @@ namespace Stratis.SmartContracts.Core.State.AccountAbstractionLayer
             return RLP.EncodeList(
                 RLP.EncodeElement(this.Hash.ToBytes()),
                 RLP.EncodeElement(BitConverter.GetBytes(this.Nvout)),
-                RLP.EncodeElement(BitConverter.GetBytes(this.Value)),
-                RLP.EncodeElement(new byte[] { this.Alive })
+                RLP.EncodeElement(BitConverter.GetBytes(this.Value))
                 );
         }
     }
