@@ -1106,7 +1106,9 @@ namespace Stratis.Bitcoin.Consensus
         /// </summary>
         public uint256[] ToHashList()
         {
-            var hashes = new uint256[this.DownloadTo.Height - this.DownloadFrom.Height];
+            int itemsCount = this.DownloadTo.Height == this.DownloadFrom.Height ? 1 : this.DownloadTo.Height - this.DownloadFrom.Height + 1;
+
+            var hashes = new uint256[itemsCount];
 
             ChainedHeader currentHeader = this.DownloadTo;
 
