@@ -82,9 +82,9 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
 
         private void bob_creates_a_transaction_and_broadcasts()
         {
-            var nodeCReceivingAddress = this.GetSecondUnusedAddressToAvoidClashWithMiningAddress(this.nodes[Charlie]);
+            HdAddress nodeCReceivingAddress = this.GetSecondUnusedAddressToAvoidClashWithMiningAddress(this.nodes[Charlie]);
 
-            var transactionBuildContext = SharedSteps.CreateTransactionBuildContext(
+            TransactionBuildContext transactionBuildContext = SharedSteps.CreateTransactionBuildContext(
                 WalletZero,
                 AccountZero,
                 WalletPassword,
@@ -118,7 +118,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
 
         private void dave_confirms_transaction_is_present()
         {
-            var transaction = this.nodes[Dave].FullNode.BlockStoreManager().BlockRepository.GetTrxAsync(this.shorterChainTransaction.GetHash()).Result;
+            Transaction transaction = this.nodes[Dave].FullNode.BlockStoreManager().BlockRepository.GetTrxAsync(this.shorterChainTransaction.GetHash()).Result;
             transaction.Should().NotBeNull();
             transaction.GetHash().Should().Be(this.shorterChainTransaction.GetHash());
         }
@@ -150,7 +150,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
 
         private void mining_continues_to_maturity_to_allow_spend()
         {
-            var coinbaseMaturity = (int)this.nodes[Bob].FullNode
+            int coinbaseMaturity = (int)this.nodes[Bob].FullNode
                 .Network.Consensus.CoinbaseMaturity;
 
             this.sharedSteps.MineBlocks(coinbaseMaturity, this.nodes[Bob], AccountZero, WalletZero, WalletPassword);

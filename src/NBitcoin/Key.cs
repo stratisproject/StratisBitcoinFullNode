@@ -65,9 +65,9 @@ namespace NBitcoin
 
         private void SetBytes(byte[] data, int count, bool fCompressedIn)
         {
-            vch = data.SafeSubarray(0, count);
-            IsCompressed = fCompressedIn;
-            _ECKey = new ECKey(vch, true);
+            this.vch = data.SafeSubarray(0, count);
+            this.IsCompressed = fCompressedIn;
+            this._ECKey = new ECKey(this.vch, true);
         }
 
         private static bool Check(byte[] vch)
@@ -82,18 +82,18 @@ namespace NBitcoin
         {
             get
             {
-                if(_PubKey == null)
+                if(this._PubKey == null)
                 {
-                    var key = new ECKey(vch, true);
-                    _PubKey = key.GetPubKey(IsCompressed);
+                    var key = new ECKey(this.vch, true);
+                    this._PubKey = key.GetPubKey(this.IsCompressed);
                 }
-                return _PubKey;
+                return this._PubKey;
             }
         }
 
         public ECDSASignature Sign(uint256 hash)
         {
-            return _ECKey.Sign(hash);
+            return this._ECKey.Sign(hash);
         }
 
 
@@ -111,13 +111,13 @@ namespace NBitcoin
 
         public byte[] SignCompact(uint256 hash)
         {
-            ECDSASignature sig = _ECKey.Sign(hash);
+            ECDSASignature sig = this._ECKey.Sign(hash);
             // Now we have to work backwards to figure out the recId needed to recover the signature.
             int recId = -1;
             for(int i = 0; i < 4; i++)
             {
-                ECKey k = ECKey.RecoverFromSignature(i, sig, hash, IsCompressed);
-                if(k != null && k.GetPubKey(IsCompressed).ToHex() == PubKey.ToHex())
+                ECKey k = ECKey.RecoverFromSignature(i, sig, hash, this.IsCompressed);
+                if(k != null && k.GetPubKey(this.IsCompressed).ToHex() == this.PubKey.ToHex())
                 {
                     recId = i;
                     break;
@@ -127,7 +127,7 @@ namespace NBitcoin
             if(recId == -1)
                 throw new InvalidOperationException("Could not construct a recoverable key. This should never happen.");
 
-            int headerByte = recId + 27 + (IsCompressed ? 4 : 0);
+            int headerByte = recId + 27 + (this.IsCompressed ? 4 : 0);
 
             var sigData = new byte[65];  // 1 header + 32 bytes for R + 32 bytes for S
 
@@ -142,10 +142,10 @@ namespace NBitcoin
 
         public void ReadWrite(BitcoinStream stream)
         {
-            stream.ReadWrite(ref vch);
+            stream.ReadWrite(ref this.vch);
             if(!stream.Serializing)
             {
-                _ECKey = new ECKey(vch, true);
+                this._ECKey = new ECKey(this.vch, true);
             }
         }
 
@@ -156,7 +156,7 @@ namespace NBitcoin
             byte[] l = null;
             if((nChild >> 31) == 0)
             {
-                byte[] pubKey = PubKey.ToBytes();
+                byte[] pubKey = this.PubKey.ToBytes();
                 l = Hashes.BIP32Hash(cc, nChild, pubKey[0], pubKey.SafeSubarray(1));
             }
             else
@@ -169,7 +169,7 @@ namespace NBitcoin
             ccChild = lr;
 
             var parse256LL = new BigInteger(1, ll);
-            var kPar = new BigInteger(1, vch);
+            var kPar = new BigInteger(1, this.vch);
             BigInteger N = ECKey.CURVE.N;
 
             if(parse256LL.CompareTo(N) >= 0)
@@ -230,7 +230,7 @@ namespace NBitcoin
         {
             get
             {
-                return PubKey.Hash.ScriptPubKey;
+                return this.PubKey.Hash.ScriptPubKey;
             }
         }
 
@@ -247,11 +247,11 @@ namespace NBitcoin
             var item = obj as Key;
             if(item == null)
                 return false;
-            return PubKey.Equals(item.PubKey);
+            return this.PubKey.Equals(item.PubKey);
         }
         public static bool operator ==(Key a, Key b)
         {
-            if(System.Object.ReferenceEquals(a, b))
+            if(ReferenceEquals(a, b))
                 return true;
             if(((object)a == null) || ((object)b == null))
                 return false;
@@ -265,7 +265,7 @@ namespace NBitcoin
 
         public override int GetHashCode()
         {
-            return PubKey.GetHashCode();
+            return this.PubKey.GetHashCode();
         }
     }
 }

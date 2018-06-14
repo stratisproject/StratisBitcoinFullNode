@@ -37,7 +37,7 @@ namespace NBitcoin.BouncyCastle.Asn1
         {
             get
             {
-                return identifier;
+                return this.identifier;
             }
         }
 
@@ -53,7 +53,7 @@ namespace NBitcoin.BouncyCastle.Asn1
          */
         public virtual bool On(DerObjectIdentifier stem)
         {
-            string id = Id, stemId = stem.Id;
+            string id = this.Id, stemId = stem.Id;
             return id.Length > stemId.Length && id[stemId.Length] == '.' && Platform.StartsWith(id, stemId);
         }
 
@@ -103,7 +103,7 @@ namespace NBitcoin.BouncyCastle.Asn1
 
         protected override int Asn1GetHashCode()
         {
-            return identifier.GetHashCode();
+            return this.identifier.GetHashCode();
         }
 
         protected override bool Asn1Equals(
@@ -119,7 +119,7 @@ namespace NBitcoin.BouncyCastle.Asn1
 
         public override string ToString()
         {
-            return identifier;
+            return this.identifier;
         }
 
         private static bool IsValidBranchID(

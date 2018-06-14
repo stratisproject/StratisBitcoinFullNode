@@ -10,7 +10,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
         [Fact]
         public void GetUtcNowReturnsCurrentUtcDateTime()
         {
-            var result = DateTimeProvider.Default.GetUtcNow();
+            DateTime result = DateTimeProvider.Default.GetUtcNow();
 
             Assert.Equal(DateTime.UtcNow.ToString("yyyyMMddhhmmss"), result.ToString("yyyyMMddhhmmss"));
         }
@@ -18,7 +18,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
         [Fact]
         public void GetTimeOffsetReturnsCurrentUtcTimeOffset()
         {
-            var result = DateTimeProvider.Default.GetTimeOffset();
+            DateTimeOffset result = DateTimeProvider.Default.GetTimeOffset();
 
             Assert.Equal(DateTimeOffset.UtcNow.ToString("yyyyMMddhhmmss"), result.ToString("yyyyMMddhhmmss"));
         }
@@ -26,7 +26,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
         [Fact]
         public void GetTimeReturnsUnixTimeStamp()
         {
-            var timeStamp = DateTimeProvider.Default.GetTime();
+            long timeStamp = DateTimeProvider.Default.GetTime();
 
             Assert.Equal(DateTime.UtcNow.ToUnixTimestamp(), timeStamp);
         }

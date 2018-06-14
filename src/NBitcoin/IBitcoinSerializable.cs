@@ -101,7 +101,7 @@ namespace NBitcoin
 
         public static byte[] ToBytes(this IBitcoinSerializable serializable, ConsensusFactory consensusFactory, ProtocolVersion version = ProtocolVersion.PROTOCOL_VERSION)
         {
-            using (MemoryStream ms = new MemoryStream())
+            using (var ms = new MemoryStream())
             {
                 var bms = new BitcoinStream(ms, true)
                 {

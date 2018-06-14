@@ -16,7 +16,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 HdPath = "0/1/2/3/1"
             };
 
-            var result = address.IsChangeAddress();
+            bool result = address.IsChangeAddress();
 
             Assert.True(result);
         }
@@ -29,7 +29,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 HdPath = "0/1/2/3/0"
             };
 
-            var result = address.IsChangeAddress();
+            bool result = address.IsChangeAddress();
 
             Assert.False(result);
         }
@@ -42,7 +42,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 HdPath = "0/1/2/3/A"
             };
 
-            var result = address.IsChangeAddress();
+            bool result = address.IsChangeAddress();
 
             Assert.False(result);
         }
@@ -57,7 +57,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                     HdPath = "0/1/2"
                 };
 
-                var result = address.IsChangeAddress();
+                bool result = address.IsChangeAddress();
             });
         }
 
@@ -71,7 +71,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                    HdPath = string.Empty
                };
 
-               var result = address.IsChangeAddress();
+               bool result = address.IsChangeAddress();
            });
         }
 
@@ -85,7 +85,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                     HdPath = null
                 };
 
-                var result = address.IsChangeAddress();
+                bool result = address.IsChangeAddress();
             });
         }
 
@@ -102,7 +102,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 }
             };
 
-            var result = address.UnspentTransactions();
+            IEnumerable<TransactionData> result = address.UnspentTransactions();
 
             Assert.Equal(2, result.Count());
             Assert.Equal(new uint256(15), result.ElementAt(0).Id);
@@ -120,7 +120,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 }
             };
 
-            var result = address.UnspentTransactions();
+            IEnumerable<TransactionData> result = address.UnspentTransactions();
 
             Assert.Empty(result);
         }
@@ -133,7 +133,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 Transactions = new List<TransactionData>()
             };
 
-            var result = address.UnspentTransactions();
+            IEnumerable<TransactionData> result = address.UnspentTransactions();
 
             Assert.Empty(result);
         }

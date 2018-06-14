@@ -1,7 +1,11 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
+using FluentAssertions;
 using Moq;
 using NBitcoin;
+using NBitcoin.BouncyCastle.Math;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Logging;
@@ -22,6 +26,8 @@ namespace Stratis.Bitcoin.Tests.Consensus
             public Mock<IFinalizedBlockHeight> FinalizedBlockMock = new Mock<IFinalizedBlockHeight>();
             public ConsensusSettings ConsensusSettings = new ConsensusSettings(new NodeSettings(Network.RegTest));
 
+            private static int nonceValue;
+
             internal ChainedHeaderTree ChainedHeaderTree;
 
             internal ChainedHeaderTree CreateChainedHeaderTree()
@@ -30,16 +36,31 @@ namespace Stratis.Bitcoin.Tests.Consensus
                 return this.ChainedHeaderTree;
             }
 
-            public ChainedHeader ExtendAChain(int count, ChainedHeader chainedHeader = null)
+            internal Target ChangeDifficulty(ChainedHeader header, int difficultyAdjustmentDivisor)
             {
+                BigInteger newTarget = header.Header.Bits.ToBigInteger();
+                newTarget = newTarget.Divide(BigInteger.ValueOf(difficultyAdjustmentDivisor)); 
+                return new Target(newTarget);
+            }
+
+            public ChainedHeader ExtendAChain(int count, ChainedHeader chainedHeader = null, int difficultyAdjustmentDivisor = 1)
+            {
+                if (difficultyAdjustmentDivisor == 0) throw new ArgumentException("Divisor cannot be 0");
+
                 ChainedHeader previousHeader = chainedHeader ?? new ChainedHeader(this.Network.GetGenesis().Header, this.Network.GenesisHash, 0);
 
                 for (int i = 0; i < count; i++)
                 {
                     BlockHeader header = this.Network.Consensus.ConsensusFactory.CreateBlockHeader();
                     header.HashPrevBlock = previousHeader.HashBlock;
-                    header.Bits = previousHeader.Header.Bits - 1000; // just increase difficulty.
-                    ChainedHeader newHeader = new ChainedHeader(header, header.GetHash(), previousHeader);
+                    header.Bits = difficultyAdjustmentDivisor == 1 
+                                        ? previousHeader.Header.Bits 
+                                        : this.ChangeDifficulty(previousHeader, difficultyAdjustmentDivisor);
+                    header.Nonce = (uint)Interlocked.Increment(ref nonceValue);
+                    var newHeader = new ChainedHeader(header, header.GetHash(), previousHeader);
+                    Block block = this.Network.Consensus.ConsensusFactory.CreateBlock();
+                    block.GetSerializedSize();
+                    newHeader.Block = block;
                     previousHeader = newHeader;
                 }
 
@@ -229,6 +250,64 @@ namespace Stratis.Bitcoin.Tests.Consensus
             
             // ToDownload array of the same size as the amount of headers
             Assert.Equal(headersToDownloadCount, peer2Headers.Count);
+        }
+
+        /// <summary>
+        /// Issue 13 @ Create 2 chains - chain A and chain B, where chain A has more chain work than chain B. Connect both
+        /// chains to chain header tree. Consensus tip should be set to chain A. Now extend / update chain B to make it have
+        /// more chain work. Attempt to connect chain B again. Consensus tip should be set to chain B.
+        /// </summary>
+        [Fact]
+        public void PresentDifferentChains_AlternativeChainWithMoreChainWorkShouldAlwaysBeMarkedForDownload()
+        {
+            // Chain header tree setup.
+            var ctx = new TestContext();
+            ChainedHeaderTree cht = ctx.CreateChainedHeaderTree();
+            ChainedHeader initialChainTip = ctx.ExtendAChain(5);
+            cht.Initialize(initialChainTip, true);
+            ctx.ConsensusSettings.UseCheckpoints = false;
+
+            // Chains A and B setup.
+            const int commonChainSize = 4;
+            const int chainAExtension = 4;
+            const int chainBExtension = 2;
+            ChainedHeader commonChainTip = ctx.ExtendAChain(commonChainSize, initialChainTip); // ie. h1=h2=h3=h4
+            ChainedHeader chainATip = ctx.ExtendAChain(chainAExtension, commonChainTip); // ie. (h1=h2=h3=h4)=a5=a6=a7=a8
+            ChainedHeader chainBTip = ctx.ExtendAChain(chainBExtension, commonChainTip); // ie. (h1=h2=h3=h4)=b5=b6
+            List<BlockHeader> listOfChainABlockHeaders = ctx.ChainedHeaderToList(chainATip, commonChainSize + chainAExtension);
+            List<BlockHeader> listOfChainBBlockHeaders = ctx.ChainedHeaderToList(chainBTip, commonChainSize + chainBExtension);
+
+            // Chain A is presented by peer 1. DownloadTo should be chain A tip.
+            ConnectNewHeadersResult connectNewHeadersResult = cht.ConnectNewHeaders(1, listOfChainABlockHeaders);
+            ChainedHeader chainedHeaderTo = connectNewHeadersResult.DownloadTo;
+            chainedHeaderTo.HashBlock.Should().Be(chainATip.HashBlock);
+
+            // Set chain A tip as a consensus tip.
+            cht.ConsensusTipChanged(chainATip);
+
+            // Chain B is presented by peer 2. DownloadTo should be not set, as chain
+            // B has less chain work.
+            connectNewHeadersResult = cht.ConnectNewHeaders(2, listOfChainBBlockHeaders);
+            connectNewHeadersResult.DownloadTo.Should().BeNull();
+
+            // Add more chain work and blocks into chain B.
+            const int chainBAdditionalBlocks = 4;
+            chainBTip = ctx.ExtendAChain(chainBAdditionalBlocks, chainBTip); // ie. (h1=h2=h3=h4)=b5=b6=b7=b8=b9=b10
+            listOfChainBBlockHeaders = ctx.ChainedHeaderToList(chainBTip, commonChainSize + chainBExtension + chainBAdditionalBlocks);
+            List<BlockHeader> listOfNewChainBBlockHeaders = listOfChainBBlockHeaders.TakeLast(chainBAdditionalBlocks).ToList();
+
+            // Chain B is presented by peer 2 again.
+            // DownloadTo should now be chain B as B has more chain work than chain A.
+            // DownloadFrom should be the block where split occurred.
+            // h1=h2=h3=h4=(b5)=b6=b7=b8=b9=(b10) - from b5 to b10.
+            connectNewHeadersResult = cht.ConnectNewHeaders(2, listOfNewChainBBlockHeaders);
+
+            ChainedHeader chainedHeaderFrom = connectNewHeadersResult.DownloadFrom;
+            BlockHeader expectedHeaderFrom = listOfChainBBlockHeaders[commonChainSize];
+            chainedHeaderFrom.Header.GetHash().Should().Be(expectedHeaderFrom.GetHash());
+
+            chainedHeaderTo = connectNewHeadersResult.DownloadTo;
+            chainedHeaderTo.HashBlock.Should().Be(chainBTip.HashBlock);
         }
     }
 }

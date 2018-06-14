@@ -306,8 +306,10 @@ namespace Stratis.Bitcoin.Features.Wallet
                 if (!context.AllowOtherInputs)
                 {
                     foreach (KeyValuePair<OutPoint, UnspentOutputReference> unspentOutputsItem in availableHashList)
+                    {
                         if (!context.SelectedInputs.Contains(unspentOutputsItem.Key))
                             context.UnspentOutputs.Remove(unspentOutputsItem.Value);
+                    }
                 }
             }
 

@@ -18,10 +18,10 @@ namespace Stratis.Bitcoin.Tests.BlockPulling
         [Fact]
         public void AddSampleWithFewSamplesCorrectlyCalculatesRecentHistoryAverage()
         {
-            QualityScore qualityScore = new QualityScore(5, new LoggerFactory());
+            var qualityScore = new QualityScore(5, new LoggerFactory());
 
             int peerCount = 3;
-            Mock<IBlockPullerBehavior>[] peers = new Mock<IBlockPullerBehavior>[peerCount];
+            var peers = new Mock<IBlockPullerBehavior>[peerCount];
 
             for (int i = 0; i < peerCount; i++)
             {
@@ -52,10 +52,10 @@ namespace Stratis.Bitcoin.Tests.BlockPulling
         [Fact]
         public void AddSampleWithMoreSamplesThanHistoryCapacityCorrectlyCalculatesRecentHistoryAverage()
         {
-            QualityScore qualityScore = new QualityScore(5, new LoggerFactory());
+            var qualityScore = new QualityScore(5, new LoggerFactory());
 
             int peerCount = 3;
-            Mock<IBlockPullerBehavior>[] peers = new Mock<IBlockPullerBehavior>[peerCount];
+            var peers = new Mock<IBlockPullerBehavior>[peerCount];
 
             for (int i = 0; i < peerCount; i++)
             {
@@ -63,7 +63,7 @@ namespace Stratis.Bitcoin.Tests.BlockPulling
                 peers[i].Setup(b => b.QualityScore).Returns(QualityScore.MaxScore / 3);
             }
 
-            Random rnd = new Random();
+            var rnd = new Random();
             for (int i = 0; i < 1000; i++)
             {
                 int peerIndex = rnd.Next(peerCount);
@@ -90,10 +90,10 @@ namespace Stratis.Bitcoin.Tests.BlockPulling
         [Fact]
         public void CalculateQualityAdjustmentCorrectlyCalculates()
         {
-            QualityScore qualityScore = new QualityScore(5, new LoggerFactory());
+            var qualityScore = new QualityScore(5, new LoggerFactory());
 
             int peerCount = 3;
-            Mock<IBlockPullerBehavior>[] peers = new Mock<IBlockPullerBehavior>[peerCount];
+            var peers = new Mock<IBlockPullerBehavior>[peerCount];
 
             for (int i = 0; i < peerCount; i++)
             {
@@ -110,7 +110,7 @@ namespace Stratis.Bitcoin.Tests.BlockPulling
             // Average of the five samples above is now 26 ms/Kb.
             double avg = 26.0;
 
-            Random rnd = new Random();
+            var rnd = new Random();
 
             // First we test values that should lead to reward adjustments, these are block times with less than 2x the current average.
             long timePerKb = 1;

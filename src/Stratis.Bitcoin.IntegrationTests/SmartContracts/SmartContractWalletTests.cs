@@ -120,7 +120,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
 
                 scSender.SetDummyMinerSecret(new BitcoinSecret(key, scSender.FullNode.Network));
                 var maturity = (int)scSender.FullNode.Network.Consensus.CoinbaseMaturity;
-                scSender.GenerateSmartContractStratisWithMiner(maturity + 5);
+                scSender.GenerateStratisWithMiner(maturity + 5);
 
                 // Wait for block repo for block sync to work.
                 TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(scSender));
@@ -154,7 +154,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 TestHelper.WaitLoop(() => scSender.CreateRPCClient().GetRawMempool().Length > 0);
 
                 // Mine the token transaction and wait for it sync
-                scSender.GenerateSmartContractStratisWithMiner(1);
+                scSender.GenerateStratisWithMiner(1);
                 TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(scSender));
 
                 // Sync to the receiver node 
@@ -186,7 +186,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
 
                 // Wait for the token transaction to be picked up by the mempool
                 TestHelper.WaitLoop(() => scSender.CreateRPCClient().GetRawMempool().Length > 0);
-                scSender.GenerateSmartContractStratisWithMiner(1);
+                scSender.GenerateStratisWithMiner(1);
 
                 // Ensure the node is synced
                 TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(scSender));
@@ -217,7 +217,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 TestHelper.WaitLoop(() => scSender.CreateRPCClient().GetRawMempool().Length > 0);
 
                 // Mine the transaction
-                scSender.GenerateSmartContractStratisWithMiner(1);
+                scSender.GenerateStratisWithMiner(1);
 
                 // Ensure the nodes are synced
                 TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(scSender));
@@ -250,8 +250,9 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 scSender.SetDummyMinerSecret(new BitcoinSecret(key, scSender.FullNode.Network));
                 scReceiver.SetDummyMinerSecret(new BitcoinSecret(key, scReceiver.FullNode.Network));
                 var maturity = (int)scSender.FullNode.Network.Consensus.CoinbaseMaturity;
-                scSender.GenerateSmartContractStratisWithMiner(maturity + 5);
+                scSender.GenerateStratisWithMiner(maturity + 5);
                 TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(scSender));
+
                 var total = scSender.FullNode.WalletManager().GetSpendableTransactionsInWallet(WalletName).Sum(s => s.Transaction.Amount);
                 Assert.Equal(Money.COIN * (maturity + 5) * 50, total);
 
@@ -275,14 +276,8 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 JsonResult result = (JsonResult)senderSmartContractsController.BuildCreateSmartContractTransaction(buildRequest);
                 var response = (BuildCreateContractTransactionResponse)result.Value;
                 scSender.CreateRPCClient().AddNode(scReceiver.Endpoint, true);
-                senderWalletController.SendTransaction(new SendTransactionRequest
-                {
-                    Hex = response.Hex
-                });
 
-                TestHelper.WaitLoop(() => scReceiver.CreateRPCClient().GetRawMempool().Length > 0);
-                scReceiver.GenerateSmartContractStratisWithMiner(2);
-                TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(scReceiver, scSender));
+                SmartContractSharedSteps.MineToMaturityAndSendTransaction(scSender, scReceiver, senderWalletController, response.Hex);
 
                 var receiptStorage = scReceiver.FullNode.NodeService<ISmartContractReceiptStorage>();
                 Assert.NotNull(receiptStorage.GetReceipt(response.TransactionId));
@@ -335,13 +330,8 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 };
                 result = (JsonResult)senderSmartContractsController.BuildCallSmartContractTransaction(callRequest);
                 var callResponse = (BuildCallContractTransactionResponse)result.Value;
-                senderWalletController.SendTransaction(new SendTransactionRequest
-                {
-                    Hex = callResponse.Hex
-                });
-                TestHelper.WaitLoop(() => scReceiver.CreateRPCClient().GetRawMempool().Length > 0);
-                scReceiver.GenerateSmartContractStratisWithMiner(2);
-                TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(scReceiver, scSender));
+
+                SmartContractSharedSteps.MineToMaturityAndSendTransaction(scSender, scReceiver, senderWalletController, callResponse.Hex);
 
                 counterRequestResult = (string)((JsonResult)senderSmartContractsController.GetStorage(new GetStorageRequest
                 {
@@ -398,7 +388,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 scReceiver.SetDummyMinerSecret(new BitcoinSecret(key, scReceiver.FullNode.Network));
 
                 var maturity = (int)scSender.FullNode.Network.Consensus.CoinbaseMaturity;
-                scSender.GenerateSmartContractStratisWithMiner(maturity + 5);
+                scSender.GenerateStratisWithMiner(maturity + 5);
 
                 TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(scSender));
                 var total = scSender.FullNode.WalletManager().GetSpendableTransactionsInWallet(WalletName).Sum(s => s.Transaction.Amount);
@@ -425,14 +415,8 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 JsonResult result = (JsonResult)senderSmartContractsController.BuildCreateSmartContractTransaction(buildRequest);
                 var response = (BuildCreateContractTransactionResponse)result.Value;
                 scSender.CreateRPCClient().AddNode(scReceiver.Endpoint, true);
-                senderWalletController.SendTransaction(new SendTransactionRequest
-                {
-                    Hex = response.Hex
-                });
 
-                TestHelper.WaitLoop(() => scReceiver.CreateRPCClient().GetRawMempool().Length > 0);
-                scReceiver.GenerateSmartContractStratisWithMiner(2);
-                TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(scReceiver, scSender));
+                SmartContractSharedSteps.MineToMaturityAndSendTransaction(scSender, scReceiver, senderWalletController, response.Hex);
 
                 // Contract deployed.
                 ContractStateRepositoryRoot senderState = scSender.FullNode.NodeService<ContractStateRepositoryRoot>();
@@ -455,13 +439,8 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 };
                 result = (JsonResult)senderSmartContractsController.BuildCallSmartContractTransaction(callRequest);
                 var callResponse = (BuildCallContractTransactionResponse)result.Value;
-                senderWalletController.SendTransaction(new SendTransactionRequest
-                {
-                    Hex = callResponse.Hex
-                });
-                TestHelper.WaitLoop(() => scReceiver.CreateRPCClient().GetRawMempool().Length > 0);
-                scReceiver.GenerateSmartContractStratisWithMiner(2);
-                TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(scReceiver, scSender));
+
+                SmartContractSharedSteps.MineToMaturityAndSendTransaction(scSender, scReceiver, senderWalletController, callResponse.Hex);
 
                 // Here, test that Sender and HighestBidder are the same.
                 var ownerBytes = senderState.GetStorageValue(contractAddressUint160, Encoding.UTF8.GetBytes("Owner"));
@@ -473,7 +452,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 ulong endBlock = BitConverter.ToUInt64(endBlockBytes, 0);
 
                 // Wait 20 blocks to end auction
-                scReceiver.GenerateSmartContractStratisWithMiner(20);
+                scReceiver.GenerateStratisWithMiner(20);
                 TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(scReceiver, scSender));
 
                 var endAuctionRequest = new BuildCallContractTransactionRequest
@@ -489,18 +468,12 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                     WalletName = WalletName,
                     Sender = addr.Address
                 };
+
                 var endAuctionResult = (JsonResult)senderSmartContractsController.BuildCallSmartContractTransaction(endAuctionRequest);
                 var endAuctionResponse = (BuildCallContractTransactionResponse)endAuctionResult.Value;
 
-                senderWalletController.SendTransaction(new SendTransactionRequest
-                {
-                    Hex = endAuctionResponse.Hex
-                });
-                TestHelper.WaitLoop(() => scReceiver.CreateRPCClient().GetRawMempool().Length > 0);
-                var heightBeforeMine = scReceiver.FullNode.Chain.Height;
-                scReceiver.GenerateSmartContractStratisWithMiner(2);
-                TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(scReceiver, scSender));
-                Assert.Equal(heightBeforeMine + 2, scReceiver.FullNode.Chain.Height);
+                SmartContractSharedSteps.MineToMaturityAndSendTransaction(scSender, scReceiver, senderWalletController, endAuctionResponse.Hex);
+
                 // Check that transaction did in fact go through with condensing tx as well
                 var blockStoreCache = scSender.FullNode.NodeService<IBlockStoreCache>();
                 var secondLastBlock = blockStoreCache.GetBlockAsync(scSender.FullNode.Chain.Tip.Previous.HashBlock).Result;

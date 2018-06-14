@@ -3,13 +3,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using Moq;
 using NBitcoin;
+using NBitcoin.DataEncoders;
 using Stratis.Bitcoin.Base;
+using Stratis.Bitcoin.Tests.Common;
 using Stratis.Bitcoin.Utilities;
 using Xunit;
-using Moq;
-using NBitcoin.DataEncoders;
-using Stratis.Bitcoin.Tests.Common;
 
 namespace Stratis.Bitcoin.Features.BlockStore.Tests
 {
@@ -195,7 +195,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             for (int i = 1; i < this.chain.Height - 1; i++)
             {
                 lastHeader = this.chain.GetBlock(i);
-                Block block = new Block();
+                var block = new Block();
                 block.GetSerializedSize();
 
                 this.blockStoreQueue.AddToPending(new BlockPair(block, lastHeader));
@@ -224,7 +224,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             for (int i = 1; i <= this.chain.Height; i++)
             {
                 ChainedHeader lastHeader = this.chain.GetBlock(i);
-                Block block = new Block();
+                var block = new Block();
                 block.GetSerializedSize();
 
                 this.blockStoreQueue.AddToPending(new BlockPair(block, lastHeader));
@@ -250,7 +250,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             ConcurrentChain alternativeChain = this.CreateChain(reorgedChainLenght);
             for (int i = 1; i < alternativeChain.Height; i++)
             {
-                Block block = new Block();
+                var block = new Block();
                 block.GetSerializedSize();
 
                 this.blockStoreQueue.AddToPending(new BlockPair(block, alternativeChain.GetBlock(i)));
@@ -259,7 +259,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             // Present second chain which has more work and reorgs blocks from genesis. 
             for (int i = 1; i < realChainLenght; i++)
             {
-                Block block = new Block();
+                var block = new Block();
                 block.GetSerializedSize();
 
                 this.blockStoreQueue.AddToPending(new BlockPair(block, this.chain.GetBlock(i)));
@@ -297,7 +297,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             // Sending 500 blocks to the queue.
             for (int i = 1; i < 500; i++)
             {
-                Block block = new Block();
+                var block = new Block();
                 block.GetSerializedSize();
 
                 this.blockStoreQueue.AddToPending(new BlockPair(block, this.chain.GetBlock(i)));
@@ -328,7 +328,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             // Present alternative chain and trigger save.
             foreach (ChainedHeader header in alternativeBlocks)
             {
-                Block block = new Block();
+                var block = new Block();
                 block.GetSerializedSize();
 
                 this.blockStoreQueue.AddToPending(new BlockPair(block, header));
@@ -346,7 +346,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
 
             for (int i = 451; i <= this.chain.Height; i++)
             {
-                Block block = new Block();
+                var block = new Block();
                 block.GetSerializedSize();
 
                 this.blockStoreQueue.AddToPending(new BlockPair(block, this.chain.GetBlock(i)));

@@ -12,7 +12,7 @@ namespace NBitcoin
         {
             var writer = new BitWriter();
             writer.Write(data, bitCount);
-            array = writer.ToBitArray();
+            this.array = writer.ToBitArray();
         }
 
         public BitReader(BitArray array)
@@ -24,8 +24,8 @@ namespace NBitcoin
 
         public bool Read()
         {
-            bool v = array.Get(Position);
-            Position++;
+            bool v = this.array.Get(this.Position);
+            this.Position++;
             return v;
         }
 
@@ -50,33 +50,33 @@ namespace NBitcoin
         {
             get
             {
-                return array.Length;
+                return this.array.Length;
             }
         }
 
         public BitArray ToBitArray()
         {
-            var result = new BitArray(array.Length);
-            for(int i = 0; i < array.Length; i++)
-                result.Set(i, array.Get(i));
+            var result = new BitArray(this.array.Length);
+            for(int i = 0; i < this.array.Length; i++)
+                result.Set(i, this.array.Get(i));
             return result;
         }
 
         public BitWriter ToWriter()
         {
             var writer = new BitWriter();
-            writer.Write(array);
+            writer.Write(this.array);
             return writer;
         }
 
         public void Consume(int count)
         {
-            Position += count;
+            this.Position += count;
         }
 
         public bool Same(BitReader b)
         {
-            while(Position != Count && b.Position != b.Count)
+            while(this.Position != this.Count && b.Position != b.Count)
             {
                 bool valuea = Read();
                 bool valueb = b.Read();
@@ -88,12 +88,12 @@ namespace NBitcoin
 
         public override string ToString()
         {
-            var builder = new StringBuilder(array.Length);
-            for(int i = 0; i < Count; i++)
+            var builder = new StringBuilder(this.array.Length);
+            for(int i = 0; i < this.Count; i++)
             {
                 if(i != 0 && i % 8 == 0)
                     builder.Append(' ');
-                builder.Append(array.Get(i) ? "1" : "0");
+                builder.Append(this.array.Get(i) ? "1" : "0");
             }
             return builder.ToString();
         }
@@ -106,13 +106,13 @@ namespace NBitcoin
         {
             get
             {
-                return values.Count;
+                return this.values.Count;
             }
         }
         public void Write(bool value)
         {
-            values.Insert(Position, value);
-            _Position++;
+            this.values.Insert(this.Position, value);
+            this._Position++;
         }
 
         internal void Write(byte[] bytes)
@@ -124,8 +124,8 @@ namespace NBitcoin
         {
             bytes = SwapEndianBytes(bytes);
             var array = new BitArray(bytes);
-            values.InsertRange(Position, array.OfType<bool>().Take(bitCount));
-            _Position += bitCount;
+            this.values.InsertRange(this.Position, array.OfType<bool>().Take(bitCount));
+            this._Position += bitCount;
         }
 
         public byte[] ToBytes()
@@ -156,12 +156,12 @@ namespace NBitcoin
 
         public BitArray ToBitArray()
         {
-            return new BitArray(values.ToArray());
+            return new BitArray(this.values.ToArray());
         }
 
         public int[] ToIntegers()
         {
-            var array = new BitArray(values.ToArray());
+            var array = new BitArray(this.values.ToArray());
             return Wordlist.ToIntegers(array);
         }
 
@@ -197,11 +197,11 @@ namespace NBitcoin
         {
             get
             {
-                return _Position;
+                return this._Position;
             }
             set
             {
-                _Position = value;
+                this._Position = value;
             }
         }
 
@@ -237,12 +237,12 @@ namespace NBitcoin
 
         public override string ToString()
         {
-            var builder = new StringBuilder(values.Count);
-            for(int i = 0; i < Count; i++)
+            var builder = new StringBuilder(this.values.Count);
+            for(int i = 0; i < this.Count; i++)
             {
                 if(i != 0 && i % 8 == 0)
                     builder.Append(' ');
-                builder.Append(values[i] ? "1" : "0");
+                builder.Append(this.values[i] ? "1" : "0");
             }
             return builder.ToString();
         }

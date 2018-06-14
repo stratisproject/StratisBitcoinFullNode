@@ -30,9 +30,8 @@ namespace NBitcoin.OpenAsset
         {
             get
             {
-                if(_AssetId == null)
-                    _AssetId = new AssetId(vchData);
-                return _AssetId;
+                if(this._AssetId == null) this._AssetId = new AssetId(this.vchData);
+                return this._AssetId;
             }
         }
 
@@ -40,7 +39,7 @@ namespace NBitcoin.OpenAsset
         {
             get
             {
-                return vchData.Length == 20;
+                return this.vchData.Length == 20;
             }
         }
 

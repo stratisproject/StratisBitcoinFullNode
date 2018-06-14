@@ -19,11 +19,11 @@ namespace NBitcoin.DataEncoders
                 throw new ArgumentNullException("data");
 
             int pos = 0;
-            int spaces = (Space ? Math.Max((count - 1), 0) : 0);
+            int spaces = (this.Space ? Math.Max((count - 1), 0) : 0);
             var s = new char[2 * count + spaces];
             for(int i = offset; i < offset + count; i++)
             {
-                if(Space && i != 0)
+                if(this.Space && i != 0)
                     s[pos++] = ' ';
                 string c = HexTbl[data[i]];
                 s[pos++] = c[0];

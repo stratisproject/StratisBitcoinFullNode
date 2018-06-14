@@ -50,7 +50,7 @@ namespace NBitcoin
                 this.vch = bytes.ToArray();
                 try
                 {
-                    _ECKey = new ECKey(bytes, false);
+                    this._ECKey = new ECKey(bytes, false);
                 }
                 catch(Exception ex)
                 {
@@ -65,23 +65,22 @@ namespace NBitcoin
         {
             get
             {
-                if(_ECKey == null)
-                    _ECKey = new ECKey(vch, false);
-                return _ECKey;
+                if(this._ECKey == null) this._ECKey = new ECKey(this.vch, false);
+                return this._ECKey;
             }
         }
 
         public PubKey Compress()
         {
-            if(IsCompressed)
+            if(this.IsCompressed)
                 return this;
-            return ECKey.GetPubKey(true);
+            return this.ECKey.GetPubKey(true);
         }
         public PubKey Decompress()
         {
-            if(!IsCompressed)
+            if(!this.IsCompressed)
                 return this;
-            return ECKey.GetPubKey(false);
+            return this.ECKey.GetPubKey(false);
         }
 
         /// <summary>
@@ -121,11 +120,11 @@ namespace NBitcoin
         {
             get
             {
-                if(_ID == null)
+                if(this._ID == null)
                 {
-                    _ID = new KeyId(Hashes.Hash160(vch, 0, vch.Length));
+                    this._ID = new KeyId(Hashes.Hash160(this.vch, 0, this.vch.Length));
                 }
-                return _ID;
+                return this._ID;
             }
         }
 
@@ -134,11 +133,11 @@ namespace NBitcoin
         {
             get
             {
-                if(_WitID == null)
+                if(this._WitID == null)
                 {
-                    _WitID = new WitKeyId(Hashes.Hash160(vch, 0, vch.Length));
+                    this._WitID = new WitKeyId(Hashes.Hash160(this.vch, 0, this.vch.Length));
                 }
-                return _WitID;
+                return this._WitID;
             }
         }
 
@@ -168,7 +167,7 @@ namespace NBitcoin
 
         public bool Verify(uint256 hash, ECDSASignature sig)
         {
-            return ECKey.Verify(hash, sig);
+            return this.ECKey.Verify(hash, sig);
         }
         public bool Verify(uint256 hash, byte[] sig)
         {
@@ -177,30 +176,29 @@ namespace NBitcoin
 
         public string ToHex()
         {
-            return Encoders.Hex.EncodeData(vch);
+            return Encoders.Hex.EncodeData(this.vch);
         }
 
         #region IBitcoinSerializable Members
 
         public void ReadWrite(BitcoinStream stream)
         {
-            stream.ReadWrite(ref vch);
-            if(!stream.Serializing)
-                _ECKey = new ECKey(vch, false);
+            stream.ReadWrite(ref this.vch);
+            if(!stream.Serializing) this._ECKey = new ECKey(this.vch, false);
         }
 
         #endregion
 
         public byte[] ToBytes()
         {
-            return vch.ToArray();
+            return this.vch.ToArray();
         }
         public byte[] ToBytes(bool @unsafe)
         {
             if(@unsafe)
-                return vch;
+                return this.vch;
             else
-                return vch.ToArray();
+                return this.vch.ToArray();
         }
         public override string ToString()
         {
@@ -229,7 +227,7 @@ namespace NBitcoin
             ECDSASignature sig = DecodeSigString(signature);
             byte[] messageSigned = Utils.FormatMessageForSigning(messageBytes);
             uint256 hash = Hashes.Hash256(messageSigned);
-            return ECKey.Verify(hash, sig);
+            return this.ECKey.Verify(hash, sig);
         }
 
         /// <summary>
@@ -320,12 +318,12 @@ namespace NBitcoin
             if(parse256LL.CompareTo(N) >= 0)
                 throw new InvalidOperationException("You won a prize ! this should happen very rarely. Take a screenshot, and roll the dice again.");
 
-            ECPoint q = ECKey.CURVE.G.Multiply(parse256LL).Add(ECKey.GetPublicKeyParameters().Q);
+            ECPoint q = ECKey.CURVE.G.Multiply(parse256LL).Add(this.ECKey.GetPublicKeyParameters().Q);
             if(q.IsInfinity)
                 throw new InvalidOperationException("You won the big prize ! this would happen only 1 in 2^127. Take a screenshot, and roll the dice again.");
 
             q = q.Normalize();
-            var p = new NBitcoin.BouncyCastle.Math.EC.FpPoint(ECKey.CURVE.Curve, q.XCoord, q.YCoord, true);
+            var p = new FpPoint(ECKey.CURVE.Curve, q.XCoord, q.YCoord, true);
             return new PubKey(p.GetEncoded());
         }
 
@@ -338,7 +336,7 @@ namespace NBitcoin
         }
         public static bool operator ==(PubKey a, PubKey b)
         {
-            if(System.Object.ReferenceEquals(a, b))
+            if(ReferenceEquals(a, b))
                 return true;
             if(((object)a == null) || ((object)b == null))
                 return false;
@@ -368,7 +366,7 @@ namespace NBitcoin
             X9ECParameters curve = ECKey.Secp256k1;
             byte[] hash = GetStealthSharedSecret(priv, pub);
             //Q' = Q + cG
-            ECPoint qprim = curve.G.Multiply(new BigInteger(1, hash)).Add(curve.Curve.DecodePoint(this.ToBytes()));
+            ECPoint qprim = curve.G.Multiply(new BigInteger(1, hash)).Add(curve.Curve.DecodePoint(ToBytes()));
             return new PubKey(qprim.GetEncoded()).Compress(this.IsCompressed);
         }
 
@@ -384,12 +382,12 @@ namespace NBitcoin
 
         public PubKey Compress(bool compression)
         {
-            if(IsCompressed == compression)
+            if(this.IsCompressed == compression)
                 return this;
             if(compression)
-                return this.Compress();
+                return Compress();
             else
-                return this.Decompress();
+                return Decompress();
         }
 
         public BitcoinStealthAddress CreateStealthAddress(PubKey scanKey, Network network)
@@ -409,11 +407,11 @@ namespace NBitcoin
         {
             get
             {
-                if(_ScriptPubKey == null)
+                if(this._ScriptPubKey == null)
                 {
-                    _ScriptPubKey = PayToPubkeyTemplate.Instance.GenerateScriptPubKey(this);
+                    this._ScriptPubKey = PayToPubkeyTemplate.Instance.GenerateScriptPubKey(this);
                 }
-                return _ScriptPubKey;
+                return this._ScriptPubKey;
             }
         }
 
@@ -454,7 +452,7 @@ namespace NBitcoin
 
         public BitcoinWitPubKeyAddress GetSegwitAddress(Network network)
         {
-            return new BitcoinWitPubKeyAddress(WitHash, network);
+            return new BitcoinWitPubKeyAddress(this.WitHash, network);
         }
 
         #endregion

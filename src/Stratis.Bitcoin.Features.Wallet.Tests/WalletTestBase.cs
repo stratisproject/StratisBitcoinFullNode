@@ -64,7 +64,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
         public static HdAddress CreateAddress(bool changeAddress = false)
         {
-            var hdPath = "1/2/3/4/5";
+            string hdPath = "1/2/3/4/5";
             if (changeAddress)
             {
                 hdPath = "1/2/3/4/1";

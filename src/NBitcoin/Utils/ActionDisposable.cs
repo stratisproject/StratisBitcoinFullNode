@@ -16,7 +16,7 @@ namespace NBitcoin
 
         public void Dispose()
         {
-            onLeave();
+            this.onLeave();
         }
 
         #endregion
