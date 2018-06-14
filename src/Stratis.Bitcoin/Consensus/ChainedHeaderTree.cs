@@ -45,9 +45,9 @@ namespace Stratis.Bitcoin.Consensus
         /// Initialize the tree with consensus tip.
         /// </summary>
         /// <param name="consensusTip">The consensus tip.</param>
-        /// <param name="blockStoreEnabled">Specifies if block store is enabled.</param>
+        /// <param name="blockStoreAvailable">Specifies if block store is enabled.</param>
         /// <exception cref="ConsensusException">Thrown in case given <paramref name="consensusTip"/> is on a wrong network.</exception>
-        void Initialize(ChainedHeader consensusTip, bool blockStoreEnabled);
+        void Initialize(ChainedHeader consensusTip, bool blockStoreAvailable);
 
         /// <summary>
         /// Remove a peer and the entire branch of the tree that it claims unless the
@@ -132,9 +132,12 @@ namespace Stratis.Bitcoin.Consensus
 
         /// <summary>
         /// Get the block and its chained header if it exists.
-        /// If the header is not in the tree returns <c>null</c>, the <see cref="ChainedHeaderBlock.Block"/> may also be null.
+        /// If the header is not in the tree <see cref="ChainedHeaderBlock"/> will be <c>null</c>, the <see cref="ChainedHeaderBlock.Block"/> may also be null.
         /// </summary>
-        /// <returns>The block and its chained header.</returns>
+        /// <remarks>
+        /// The block can be null when the block data has not yet been downloaded or if the block data has been persisted to the database and removed from the memory.
+        /// </remarks>
+        /// <returns>The block and its chained header (both the block and chained header can be null).</returns>
         ChainedHeaderBlock GetChainedHeaderBlock(uint256 blockHash);
     }
 
@@ -207,9 +210,9 @@ namespace Stratis.Bitcoin.Consensus
         }
 
         /// <inheritdoc />
-        public void Initialize(ChainedHeader consensusTip, bool blockStoreEnabled)
+        public void Initialize(ChainedHeader consensusTip, bool blockStoreAvailable)
         {
-            this.logger.LogTrace("({0}:'{1}',{2}:{3})", nameof(consensusTip), consensusTip, nameof(blockStoreEnabled), blockStoreEnabled);
+            this.logger.LogTrace("({0}:'{1}',{2}:{3})", nameof(consensusTip), consensusTip, nameof(blockStoreAvailable), blockStoreAvailable);
 
             ChainedHeader current = consensusTip;
             while (current.Previous != null)
@@ -217,7 +220,7 @@ namespace Stratis.Bitcoin.Consensus
                 current.Previous.Next.Add(current);
                 this.chainedHeadersByHash.Add(current.HashBlock, current);
 
-                current.BlockDataAvailability = blockStoreEnabled ? BlockDataAvailabilityState.BlockAvailable : BlockDataAvailabilityState.HeaderOnly;
+                current.BlockDataAvailability = blockStoreAvailable ? BlockDataAvailabilityState.BlockAvailable : BlockDataAvailabilityState.HeaderOnly;
                 current.BlockValidationState = ValidationState.FullyValidated;
 
                 current = current.Previous;
@@ -1102,19 +1105,19 @@ namespace Stratis.Bitcoin.Consensus
         }
 
         /// <summary>
-        /// Convert the <see cref="DownloadFrom"/> and <see cref="DownloadTo"/> to a list of consecutive hashes where the fist item in the list is the hash of the download from.
+        /// Convert the <see cref="DownloadFrom"/> and <see cref="DownloadTo"/> to a list of consecutive hashes where the first item in the list is the hash of <see cref="DownloadFrom"/>.
         /// </summary>
-        public uint256[] ToHashList()
+        public ChainedHeader[] ToHashArray()
         {
             int itemsCount = this.DownloadTo.Height == this.DownloadFrom.Height ? 1 : this.DownloadTo.Height - this.DownloadFrom.Height + 1;
 
-            var hashes = new uint256[itemsCount];
+            var hashes = new ChainedHeader[itemsCount];
 
             ChainedHeader currentHeader = this.DownloadTo;
 
             for (int i = hashes.Length - 1; i >= 0; --i)
             {
-                hashes[i] = currentHeader.HashBlock;
+                hashes[i] = currentHeader;
                 currentHeader = currentHeader.Previous;
             }
 
