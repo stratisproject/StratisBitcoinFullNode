@@ -354,12 +354,17 @@ namespace Stratis.Bitcoin.Tests.Consensus
             extendedChainTip = extendedChainTip.Previous;
             extendedChainTip = ctx.ExtendAChain(newChainExtension, extendedChainTip); 
             List<BlockHeader> listOfNewChainHeaders = ctx.ChainedHeaderToList(extendedChainTip, extendedChainTip.Height);
-            
-            // New chain is presented by peer 1.
+
+            // First 5 blocks are presented by peer 1.
+            // DownloadTo should be set to a checkpoint 1. 
+            ConnectNewHeadersResult result = cht.ConnectNewHeaders(1, listOfNewChainHeaders.Take(5).ToList());
+            result.DownloadTo.HashBlock.Should().Be(checkpoint1.Hash);
+
+            // Remaining 5 blocks are presented by peer 1 which do not cover checkpoint 2.
             // InvalidHeaderException should be thrown.
             Action connectAction = () =>
             {
-                cht.ConnectNewHeaders(1, listOfNewChainHeaders);
+                cht.ConnectNewHeaders(1, listOfNewChainHeaders.Skip(5).ToList());
             };
 
             connectAction.Should().Throw<InvalidHeaderException>();
