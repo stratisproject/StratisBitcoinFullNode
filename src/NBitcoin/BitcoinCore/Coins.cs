@@ -140,8 +140,10 @@ namespace NBitcoin.BitcoinCore
                 {
                     byte chAvail = 0;
                     for (uint i = 0; i < 8 && 2 + b * 8 + i < this.Outputs.Count; i++)
-                        if (!this.IsNull(this.Outputs[2 + (int)b * 8 + (int)i]))
+                    {
+                        if(!this.IsNull(this.Outputs[2 + (int)b * 8 + (int)i]))
                             chAvail |= (byte)(1 << (int)i);
+                    }
 
                     stream.ReadWrite(ref chAvail);
                 }
@@ -236,7 +238,7 @@ namespace NBitcoin.BitcoinCore
                 bool fZero = true;
                 for (uint i = 0; i < 8 && 2 + b * 8 + i < this.Outputs.Count; i++)
                 {
-                    if (!this.IsNull(this.Outputs[2 + (int)b * 8 + (int)i]))
+                    if (!IsNull(this.Outputs[2 + (int)b * 8 + (int)i]))
                     {
                         fZero = false;
                         continue;
@@ -256,7 +258,7 @@ namespace NBitcoin.BitcoinCore
         // check whether a particular output is still available
         public bool IsAvailable(uint position)
         {
-            return position <= int.MaxValue && position < this.Outputs.Count && !this.IsNull(this.Outputs[(int)position]);
+            return position <= int.MaxValue && position < this.Outputs.Count && !IsNull(this.Outputs[(int)position]);
         }
 
         public TxOut TryGetOutput(uint position)
@@ -289,8 +291,10 @@ namespace NBitcoin.BitcoinCore
         {
             int diff = otherCoin.Outputs.Count - this.Outputs.Count;
             if (diff > 0)
+            {
                 for (int i = 0; i < diff; i++)
                     this.Outputs.Add(NullTxOut);
+            }
 
             for (int i = 0; i < otherCoin.Outputs.Count; i++)
                 this.Outputs[i] = otherCoin.Outputs[i];

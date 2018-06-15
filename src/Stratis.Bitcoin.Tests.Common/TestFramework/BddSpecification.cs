@@ -36,7 +36,7 @@ namespace Stratis.Bitcoin.Tests.Common.TestFramework
         {
             this.AfterTest();
 
-            var endOfTestTime = DateTime.UtcNow;
+            DateTime endOfTestTime = DateTime.UtcNow;
             this.output?.WriteLine($"({DateTime.UtcNow.ToLongTimeString()}) [End of test - {(endOfTestTime - this.startOfTestTime).TotalSeconds} seconds.]");
         }
 
@@ -99,7 +99,7 @@ namespace Stratis.Bitcoin.Tests.Common.TestFramework
             }
             catch (AggregateException ex)
             {
-                foreach (var innerException in ex.InnerExceptions) { throw innerException; }
+                foreach (Exception innerException in ex.InnerExceptions) { throw innerException; }
             };
         }
 

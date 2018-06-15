@@ -18,6 +18,7 @@ namespace NBitcoin
             if(filePath == null)
                 throw new ArgumentNullException("filePath");
             if(!File.Exists(filePath))
+            {
                 try
                 {
                     File.Create(filePath).Dispose();
@@ -25,16 +26,16 @@ namespace NBitcoin
                 catch
                 {
                 }
+            }
+
             var source = new CancellationTokenSource();
             source.CancelAfter(20000);
             while(true)
             {
                 try
                 {
-                    if(lockType == FileLockType.Read)
-                        _Fs = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read);
-                    if(lockType == FileLockType.ReadWrite)
-                        _Fs = new FileStream(filePath, FileMode.Open, FileAccess.ReadWrite, FileShare.None);
+                    if(lockType == FileLockType.Read) this._Fs = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read);
+                    if(lockType == FileLockType.ReadWrite) this._Fs = new FileStream(filePath, FileMode.Open, FileAccess.ReadWrite, FileShare.None);
                     break;
                 }
                 catch(IOException)
@@ -48,7 +49,7 @@ namespace NBitcoin
 
         public void Dispose()
         {
-            _Fs.Dispose();
+            this._Fs.Dispose();
         }
 
 

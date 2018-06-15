@@ -40,7 +40,7 @@ namespace NBitcoin.BouncyCastle.Asn1.X9
         {
             get
             {
-                return f;
+                return this.f;
             }
         }
 
@@ -63,8 +63,8 @@ namespace NBitcoin.BouncyCastle.Asn1.X9
          */
         public override Asn1Object ToAsn1Object()
         {
-            int byteCount = X9IntegerConverter.GetByteLength(f);
-            byte[] paddedBigInteger = X9IntegerConverter.IntegerToBytes(f.ToBigInteger(), byteCount);
+            int byteCount = X9IntegerConverter.GetByteLength(this.f);
+            byte[] paddedBigInteger = X9IntegerConverter.IntegerToBytes(this.f.ToBigInteger(), byteCount);
 
             return new DerOctetString(paddedBigInteger);
         }

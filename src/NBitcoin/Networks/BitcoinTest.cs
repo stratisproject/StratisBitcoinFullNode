@@ -13,6 +13,7 @@ namespace NBitcoin.Networks
             this.Magic = 0x0709110B;
             this.DefaultPort = 18333;
             this.RPCPort = 18332;
+            this.CoinTicker = "TBTC";
 
             this.Consensus.MajorityEnforceBlockUpgrade = 51;
             this.Consensus.MajorityRejectBlockOutdated = 75;

@@ -48,13 +48,13 @@ namespace NBitcoin
             // The ideal size for a bloom filter with a given number of elements and false positive rate is:
             // - nElements * log(fp rate) / ln(2)^2
             // We ignore filter parameters which will create a bloom filter larger than the protocol limits
-            vData = new byte[Math.Min((uint)(-1 / LN2SQUARED * nElements * (decimal)Math.Log(nFPRate)), MAX_BLOOM_FILTER_SIZE) / 8];
+            this.vData = new byte[Math.Min((uint)(-1 / LN2SQUARED * nElements * (decimal)Math.Log(nFPRate)), MAX_BLOOM_FILTER_SIZE) / 8];
             //vData(min((unsigned int)(-1  / LN2SQUARED * nElements * log(nFPRate)), MAX_BLOOM_FILTER_SIZE * 8) / 8),
             // The ideal number of hash functions is filter size * ln(2) / number of elements
             // Again, we ignore filter parameters which will create a bloom filter with more hash functions than the protocol limits
             // See http://en.wikipedia.org/wiki/Bloom_filter for an explanation of these formulas
 
-            this.nHashFuncs = Math.Min((uint)(vData.Length * 8 / nElements * LN2), MAX_HASH_FUNCS);
+            this.nHashFuncs = Math.Min((uint)(this.vData.Length * 8 / nElements * LN2), MAX_HASH_FUNCS);
             this.nTweak = nTweakIn;
             this.nFlags = (byte)nFlagsIn;
 
@@ -64,33 +64,34 @@ namespace NBitcoin
         private uint Hash(uint nHashNum, byte[] vDataToHash)
         {
             // 0xFBA4C795 chosen as it guarantees a reasonable bit difference between nHashNum values.
-            return (uint)(Hashes.MurmurHash3(nHashNum * 0xFBA4C795 + nTweak, vDataToHash) % (vData.Length * 8));
+            return (uint)(Hashes.MurmurHash3(nHashNum * 0xFBA4C795 + this.nTweak, vDataToHash) % (this.vData.Length * 8));
         }
 
         public void Insert(byte[] vKey)
         {
-            if(isFull)
+            if(this.isFull)
                 return;
-            for(uint i = 0; i < nHashFuncs; i++)
+            for(uint i = 0; i < this.nHashFuncs; i++)
             {
                 uint nIndex = Hash(i, vKey);
                 // Sets bit nIndex of vData
-                vData[nIndex >> 3] |= (byte)(1 << (7 & (int)nIndex));
+                this.vData[nIndex >> 3] |= (byte)(1 << (7 & (int)nIndex));
             }
-            isEmpty = false;
+
+            this.isEmpty = false;
         }
 
         public bool Contains(byte[] vKey)
         {
-            if(isFull)
+            if(this.isFull)
                 return true;
-            if(isEmpty)
+            if(this.isEmpty)
                 return false;
-            for(uint i = 0; i < nHashFuncs; i++)
+            for(uint i = 0; i < this.nHashFuncs; i++)
             {
                 uint nIndex = Hash(i, vKey);
                 // Checks bit nIndex of vData
-                if((vData[nIndex >> 3] & (byte)(1 << (7 & (int)nIndex))) == 0)
+                if((this.vData[nIndex >> 3] & (byte)(1 << (7 & (int)nIndex))) == 0)
                     return false;
             }
             return true;
@@ -125,17 +126,17 @@ namespace NBitcoin
 
         public bool IsWithinSizeConstraints()
         {
-            return vData.Length <= MAX_BLOOM_FILTER_SIZE && nHashFuncs <= MAX_HASH_FUNCS;
+            return this.vData.Length <= MAX_BLOOM_FILTER_SIZE && this.nHashFuncs <= MAX_HASH_FUNCS;
         }
 
         #region IBitcoinSerializable Members
 
         public void ReadWrite(BitcoinStream stream)
         {
-            stream.ReadWriteAsVarString(ref vData);
-            stream.ReadWrite(ref nHashFuncs);
-            stream.ReadWrite(ref nTweak);
-            stream.ReadWrite(ref nFlags);
+            stream.ReadWriteAsVarString(ref this.vData);
+            stream.ReadWrite(ref this.nHashFuncs);
+            stream.ReadWrite(ref this.nTweak);
+            stream.ReadWrite(ref this.nFlags);
         }
 
         #endregion
@@ -150,9 +151,9 @@ namespace NBitcoin
             bool fFound = false;
             // Match if the filter contains the hash of tx
             //  for finding tx when they appear in a block
-            if(isFull)
+            if(this.isFull)
                 return true;
-            if(isEmpty)
+            if(this.isEmpty)
                 return false;
             if(Contains(hash))
                 fFound = true;
@@ -169,9 +170,9 @@ namespace NBitcoin
                     if(op.PushData != null && op.PushData.Length != 0 && Contains(op.PushData))
                     {
                         fFound = true;
-                        if((nFlags & (byte)BloomFlags.UPDATE_MASK) == (byte)BloomFlags.UPDATE_ALL)
+                        if((this.nFlags & (byte)BloomFlags.UPDATE_MASK) == (byte)BloomFlags.UPDATE_ALL)
                             Insert(new OutPoint(hash, i));
-                        else if((nFlags & (byte)BloomFlags.UPDATE_MASK) == (byte)BloomFlags.UPDATE_P2PUBKEY_ONLY)
+                        else if((this.nFlags & (byte)BloomFlags.UPDATE_MASK) == (byte)BloomFlags.UPDATE_P2PUBKEY_ONLY)
                         {
                             ScriptTemplate template = StandardScripts.GetTemplateFromScriptPubKey(Network.Main, txout.ScriptPubKey); // this is only valid for Bitcoin.
                             if(template != null &&

@@ -35,7 +35,7 @@ namespace NBitcoin.RPC
         {
             get
             {
-                return network;
+                return this.network;
             }
         }
 

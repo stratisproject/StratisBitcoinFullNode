@@ -806,12 +806,14 @@ namespace NBitcoin.Tests
                     Network.Parse(test.Base58, test.Network);
 
                     if(test.Network != null)
+                    {
                         foreach(Network network in Network.GetNetworks())
                         {
                             if(network == test.Network)
                                 break;
                             Assert.Throws<FormatException>(() => Network.Parse(test.Base58, network));
                         }
+                    }
                 }
             }
         }

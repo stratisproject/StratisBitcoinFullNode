@@ -16,11 +16,11 @@ namespace NBitcoin
         {
             get
             {
-                return old;
+                return this.old;
             }
             private set
             {
-                old = value;
+                this.old = value;
             }
         }
 
@@ -32,10 +32,10 @@ namespace NBitcoin
             // NETSTDCONV
             // this.old = Trace.CorrelationManager.ActivityId;
 
-            _Transfered = old != activity && traceTransfer;
-            if(_Transfered)
+            this._Transfered = this.old != activity && traceTransfer;
+            if(this._Transfered)
             {
-                _Source = source;
+                this._Source = source;
                 // _Source.TraceTransfer(0, "t", activity);
             }
             // Trace.CorrelationManager.ActivityId = activity;
@@ -46,7 +46,7 @@ namespace NBitcoin
 
         public void Dispose()
         {
-            if(_Transfered)
+            if(this._Transfered)
             {
                 // NETSTDCONV
                 //_Source.TraceTransfer(0, "transfer", old);
@@ -72,8 +72,8 @@ namespace NBitcoin
         }
         public TraceCorrelation(Guid activity, TraceSource source, string activityName)
         {
-            _Source = source;
-            _ActivityName = activityName;
+            this._Source = source;
+            this._ActivityName = activityName;
             this.activity = activity;
         }
 
@@ -82,24 +82,24 @@ namespace NBitcoin
         {
             get
             {
-                return activity;
+                return this.activity;
             }
             private set
             {
-                activity = value;
+                this.activity = value;
             }
         }
 
         private volatile bool _First = true;
         public TraceCorrelationScope Open(bool traceTransfer = true)
         {
-            var scope = new TraceCorrelationScope(activity, _Source, traceTransfer);
-            if(_First)
+            var scope = new TraceCorrelationScope(this.activity, this._Source, traceTransfer);
+            if(this._First)
             {
-                _First = false;
+                this._First = false;
                 // NETSTDCONV
                 // _Source.TraceEvent(TraceEventType.Start, 0, _ActivityName);
-                _Source.TraceEvent(TraceEventType.Critical, 0, _ActivityName);
+                this._Source.TraceEvent(TraceEventType.Critical, 0, this._ActivityName);
             }
             return scope;
         }
@@ -121,7 +121,7 @@ namespace NBitcoin
 
         public override string ToString()
         {
-            return _ActivityName;
+            return this._ActivityName;
         }
     }
 }

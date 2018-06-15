@@ -52,7 +52,8 @@ namespace NBitcoin.Networks
             this.Consensus.PremineReward = Money.Zero;
             this.Consensus.ProofOfWorkReward = Money.Coins(50);
             this.Consensus.ProofOfStakeReward = Money.Zero;
-            this.Consensus.MaxReorgLength = 0;
+            this.Consensus.MaxReorgLength = 500;
+            this.Consensus.MaxMoney = long.MaxValue;
 
             this.Genesis = CreateBitcoinGenesisBlock(this.Consensus.ConsensusFactory, 1296688602, 414098458, 0x1d00ffff, 1, Money.Coins(50m));
             ((SmartContractBlockHeader)this.Genesis.Header).HashStateRoot = new uint256("21B463E3B52F6201C0AD6C991BE0485B6EF8C092E64583FFA655CC1B171FE856");

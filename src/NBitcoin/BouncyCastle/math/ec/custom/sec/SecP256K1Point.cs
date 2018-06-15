@@ -53,7 +53,7 @@ namespace NBitcoin.BouncyCastle.Math.EC.Custom.Sec
 
         protected override ECPoint Detach()
         {
-            return new SecP256K1Point(null, AffineXCoord, AffineYCoord);
+            return new SecP256K1Point(null, this.AffineXCoord, this.AffineYCoord);
         }
 
         public override ECPoint Add(ECPoint b)
@@ -129,7 +129,7 @@ namespace NBitcoin.BouncyCastle.Math.EC.Custom.Sec
                 if(Nat256.IsZero(R))
                 {
                     // this == b, i.e. this must be doubled
-                    return this.Twice();
+                    return Twice();
                 }
 
                 // this == -b, i.e. the result is the point at infinity
@@ -172,7 +172,7 @@ namespace NBitcoin.BouncyCastle.Math.EC.Custom.Sec
 
             var zs = new ECFieldElement[] { Z3 };
 
-            return new SecP256K1Point(curve, X3, Y3, zs, IsCompressed);
+            return new SecP256K1Point(curve, X3, Y3, zs, this.IsCompressed);
         }
 
         public override ECPoint Twice()
@@ -227,7 +227,7 @@ namespace NBitcoin.BouncyCastle.Math.EC.Custom.Sec
                 SecP256K1Field.Multiply(Z3.x, Z1.x, Z3.x);
             }
 
-            return new SecP256K1Point(curve, X3, Y3, new ECFieldElement[] { Z3 }, IsCompressed);
+            return new SecP256K1Point(curve, X3, Y3, new ECFieldElement[] { Z3 }, this.IsCompressed);
         }
 
         public override ECPoint TwicePlus(ECPoint b)
@@ -257,10 +257,10 @@ namespace NBitcoin.BouncyCastle.Math.EC.Custom.Sec
 
         public override ECPoint Negate()
         {
-            if(IsInfinity)
+            if(this.IsInfinity)
                 return this;
 
-            return new SecP256K1Point(Curve, RawXCoord, RawYCoord.Negate(), RawZCoords, IsCompressed);
+            return new SecP256K1Point(this.Curve, this.RawXCoord, this.RawYCoord.Negate(), this.RawZCoords, this.IsCompressed);
         }
     }
 }

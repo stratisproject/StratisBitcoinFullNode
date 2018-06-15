@@ -200,13 +200,24 @@ namespace NBitcoin.Tests
                 CreateCoin("3.0"),
                 CreateCoin("3.0")
             }, Money.Parse("10.0")));
+
+            // Should spend all coins belonging to same scriptPubKey
+            var bob = new Key().ScriptPubKey;
+            var alice = new Key().ScriptPubKey;
+            var selected = selector.Select(new ICoin[] { CreateCoin("5", bob), CreateCoin("5", bob) }, Money.Parse("2.0")).ToArray();
+            Assert.Equal(2, selected.Length);
+
+            selected = selector.Select(new ICoin[] { CreateCoin("5", alice), CreateCoin("5", bob) }, Money.Parse("2.0")).ToArray();
+            Assert.Equal(1, selected.Length);
+            ///////
         }
 
-        private Coin CreateCoin(Money amount)
+        private Coin CreateCoin(Money amount, Script scriptPubKey = null)
         {
             return new Coin(new OutPoint(Rand(), 0), new TxOut()
             {
-                Value = amount
+                Value = amount,
+                ScriptPubKey = scriptPubKey
             });
         }
 
@@ -367,6 +378,7 @@ namespace NBitcoin.Tests
             //Scenario 1 : Carla knows aliceBobCoins so she can calculate how much coin she need to complete the transaction
             //Carla fills and signs
             txBuilder = new TransactionBuilder();
+            ((DefaultCoinSelector)txBuilder.CoinSelector).GroupByScriptPubKey = false;
             Transaction carlaSigned = txBuilder
                 .AddCoins(aliceBobCoins)
                 .Then()
@@ -393,6 +405,7 @@ namespace NBitcoin.Tests
             //Scenario 2 : Carla is told by Bob to complete 0.05 BTC
             //Carla fills and signs
             txBuilder = new TransactionBuilder();
+            ((DefaultCoinSelector)txBuilder.CoinSelector).GroupByScriptPubKey = false;
             carlaSigned = txBuilder
                 .AddKeys(carlaKey)
                 .AddCoins(carlaCoins)
@@ -421,6 +434,73 @@ namespace NBitcoin.Tests
             return amounts
                 .Select(a => new Coin(RandOutpoint(), new TxOut(a, destination.PubKey.Hash)))
                 .ToArray();
+        }
+
+        [Fact]
+        [Trait("UnitTest", "UnitTest")]
+        public void CanPrecomputeHashes()
+        {
+            Transaction tx = new Transaction();
+            tx.AddInput(new TxIn(RandomCoin(Money.Coins(1.0m), new Key()).Outpoint, Script.Empty));
+            tx.Inputs[0].WitScript = new WitScript(Op.GetPushOp(3));
+            tx.AddOutput(RandomCoin(Money.Coins(1.0m), new Key()).TxOut);
+            var template = tx.Clone();
+
+            // If lazy is true, then the cache will be calculated later
+            tx = template.Clone();
+            var initialHashes = new uint256[] { tx.GetHash(), tx.GetWitHash() };
+            tx.PrecomputeHash(false, true);
+            tx.Outputs[0].Value = Money.Coins(1.1m);
+            var afterHashes = new uint256[] { tx.GetHash(), tx.GetWitHash() };
+            Assert.NotEqual(initialHashes[0], afterHashes[0]);
+            Assert.NotEqual(initialHashes[1], afterHashes[1]);
+            Assert.NotEqual(afterHashes[1], afterHashes[0]);
+            /////
+
+            // If lazy is false, then the cache is calculated now
+            tx = template.Clone();
+            initialHashes = new uint256[] { tx.GetHash(), tx.GetWitHash() };
+            tx.PrecomputeHash(false, false);
+            tx.Outputs[0].Value = Money.Coins(1.1m);
+            afterHashes = new uint256[] { tx.GetHash(), tx.GetWitHash() };
+            // The hash should be outdated, because they were not calculated during second call to tx.GetHash()
+            Assert.Equal(initialHashes[0], afterHashes[0]);
+            Assert.Equal(initialHashes[1], afterHashes[1]);
+            Assert.NotEqual(afterHashes[1], afterHashes[0]);
+            /////
+
+            // If invalidExisting is false, then the cache is not recalculated
+            tx = template.Clone();
+            initialHashes = new uint256[] { tx.GetHash(), tx.GetWitHash() };
+            tx.PrecomputeHash(false, false);
+            tx.Outputs[0].Value = Money.Coins(1.1m);
+            afterHashes = new uint256[] { tx.GetHash(), tx.GetWitHash() };
+            // Out of date...
+            Assert.Equal(initialHashes[0], afterHashes[0]);
+            Assert.Equal(initialHashes[1], afterHashes[1]);
+            tx.PrecomputeHash(false, false);
+            // Always out of date...
+            var afterHashes2 = new uint256[] { tx.GetHash(), tx.GetWitHash() };
+            Assert.Equal(afterHashes2[0], afterHashes[0]);
+            Assert.Equal(afterHashes2[1], afterHashes[1]);
+            Assert.NotEqual(afterHashes2[1], afterHashes2[0]);
+            ///////
+
+            // If invalidExisting is true, then the cache is recalculated
+            tx = template.Clone();
+            initialHashes = new uint256[] { tx.GetHash(), tx.GetWitHash() };
+            tx.PrecomputeHash(false, false);
+            tx.Outputs[0].Value = Money.Coins(1.1m);
+            afterHashes = new uint256[] { tx.GetHash(), tx.GetWitHash() };
+            // Out of date...
+            Assert.Equal(initialHashes[0], afterHashes[0]);
+            Assert.Equal(initialHashes[1], afterHashes[1]);
+            tx.PrecomputeHash(true, false);
+            // Not out of date anymore...
+            afterHashes2 = new uint256[] { tx.GetHash(), tx.GetWitHash() };
+            Assert.NotEqual(afterHashes2[0], afterHashes[0]);
+            Assert.NotEqual(afterHashes2[1], afterHashes[1]);
+            ///////
         }
 
         [Fact]
@@ -1388,6 +1468,36 @@ namespace NBitcoin.Tests
 
         [Fact]
         [Trait("UnitTest", "UnitTest")]
+        public void CanFilterUneconomicalCoins()
+        {
+            var builder = new TransactionBuilder();
+            var alice = new Key();
+            var bob = new Key();
+            //P2SH(P2WSH)
+            var previousTx = new Transaction();
+            previousTx.Outputs.Add(new TxOut(Money.Coins(1.0m), alice.PubKey.ScriptPubKey.WitHash.ScriptPubKey.Hash));
+            var previousCoin = previousTx.Outputs.AsCoins().First();
+
+            var witnessCoin = new ScriptCoin(previousCoin, alice.PubKey.ScriptPubKey);
+            builder = new TransactionBuilder();
+            builder.AddKeys(alice);
+            builder.AddCoins(witnessCoin);
+            builder.Send(bob, Money.Coins(0.4m));
+            builder.SendFees(Money.Satoshis(30000));
+            builder.SetChange(alice);
+            builder.BuildTransaction(true);
+            builder.FilterUneconomicalCoinsRate = new FeeRate(Money.Coins(1m), 1);
+            Assert.Throws<NotEnoughFundsException>(() => builder.BuildTransaction(true));
+            builder.FilterUneconomicalCoins = false;
+            builder.BuildTransaction(true);
+            builder.FilterUneconomicalCoins = true;
+            Assert.Throws<NotEnoughFundsException>(() => builder.BuildTransaction(true));
+            builder.FilterUneconomicalCoinsRate = new FeeRate(Money.Satoshis(1m), 1);
+            builder.BuildTransaction(true);
+        }
+
+        [Fact]
+        [Trait("UnitTest", "UnitTest")]
         public void CanCheckSegwitPubkey()
         {
             var a = new Script("OP_DUP 033fbe0a2aa8dc28ee3b2e271e3fedc7568529ffa20df179b803bf9073c11b6a8b OP_CHECKSIG OP_IF OP_DROP 0382fdfb0a3898bc6504f63204e7d15a63be82a3b910b5b865690dc96d1249f98c OP_ELSE OP_CODESEPARATOR 033fbe0a2aa8dc28ee3b2e271e3fedc7568529ffa20df179b803bf9073c11b6a8b OP_ENDIF OP_CHECKSIG");
@@ -1784,12 +1894,12 @@ namespace NBitcoin.Tests
             partiallySigned.Sign(Network.Main, privKeys[1], true);
 
 
-            AssertCorrectlySigned(partiallySigned, fundingTransaction.Outputs[0].ScriptPubKey, allowHighS);
+            AssertCorrectlySigned(partiallySigned, fundingTransaction.Outputs[0].ScriptPubKey, this.allowHighS);
 
             //Verify the transaction from the gist is also correctly signed
             Transaction gistTransaction = Transaction.Parse("0100000001aca7f3b45654c230e0886a57fb988c3044ef5e8f7f39726d305c61d5e818903c00000000fd5d010048304502200187af928e9d155c4b1ac9c1c9118153239aba76774f775d7c1f9c3e106ff33c0221008822b0f658edec22274d0b6ae9de10ebf2da06b1bbdaaba4e50eb078f39e3d78014730440220795f0f4f5941a77ae032ecb9e33753788d7eb5cb0c78d805575d6b00a1d9bfed02203e1f4ad9332d1416ae01e27038e945bc9db59c732728a383a6f1ed2fb99da7a4014cc952410491bba2510912a5bd37da1fb5b1673010e43d2c6d812c514e91bfa9f2eb129e1c183329db55bd868e209aac2fbc02cb33d98fe74bf23f0c235d6126b1d8334f864104865c40293a680cb9c020e7b1e106d8c1916d3cef99aa431a56d253e69256dac09ef122b1a986818a7cb624532f062c1d1f8722084861c5c3291ccffef4ec687441048d2455d2403e08708fc1f556002f1b6cd83f992d085097f9974ab08a28838f07896fbab08f39495e15fa6fad6edbfb1e754e35fa1c7844c41f322a1863d4621353aeffffffff0140420f00000000001976a914ae56b4db13554d321c402db3961187aed1bbed5b88ac00000000");
 
-            AssertCorrectlySigned(gistTransaction, fundingTransaction.Outputs[0].ScriptPubKey, allowHighS); //One sig in the hard code tx is high
+            AssertCorrectlySigned(gistTransaction, fundingTransaction.Outputs[0].ScriptPubKey, this.allowHighS); //One sig in the hard code tx is high
 
             //Can sign out of order
             partiallySigned = spendTransaction.Clone();
@@ -1928,11 +2038,11 @@ namespace NBitcoin.Tests
 
             DuplicateInputPolicyError dup = errors.OfType<DuplicateInputPolicyError>().Single();
             AssertEx.CollectionEquals(new uint[] { 0, 1 }, dup.InputIndices);
-            AssertEx.Equals(new OutPoint(funding, 0), dup.OutPoint);
+            Equals(new OutPoint(funding, 0), dup.OutPoint);
 
             ScriptPolicyError script = errors.OfType<ScriptPolicyError>().Single();
-            AssertEx.Equals(alice.ScriptPubKey, script.ScriptPubKey);
-            AssertEx.Equals(3, script.InputIndex);
+            Equals(alice.ScriptPubKey, script.ScriptPubKey);
+            Equals(3, script.InputIndex);
 
             NotEnoughFundsPolicyError fees = errors.OfType<NotEnoughFundsPolicyError>().Single();
             Assert.Equal(fees.Missing, Money.Coins(0.7m));
@@ -2195,7 +2305,7 @@ namespace NBitcoin.Tests
 
             var expected = new Key(Encoders.Hex.DecodeData("c477f9f65c22cce20657faa5b2d1d8122336f851a508a1ed04e479c34985bf96"), fCompressedIn: false);
 
-            var expectedBigInt = new NBitcoin.BouncyCastle.Math.BigInteger(1, Encoders.Hex.DecodeData("c477f9f65c22cce20657faa5b2d1d8122336f851a508a1ed04e479c34985bf96"));
+            var expectedBigInt = new BigInteger(1, Encoders.Hex.DecodeData("c477f9f65c22cce20657faa5b2d1d8122336f851a508a1ed04e479c34985bf96"));
             BigInteger priv = (z1.Multiply(sig2.S).Subtract(z2.Multiply(sig1.S)).Mod(n)).Divide(sig1.R.Multiply(sig1.S.Subtract(sig2.S)).Mod(n));
             Assert.Equal(expectedBigInt.ToString(), priv.ToString());
 
@@ -2216,7 +2326,7 @@ namespace NBitcoin.Tests
 
         private ECDSASignature ToPositive(ECDSASignature sig)
         {
-            return new ECDSASignature(new BouncyCastle.Math.BigInteger(1, sig.R.ToByteArray()), new BouncyCastle.Math.BigInteger(1, sig.S.ToByteArray()));
+            return new ECDSASignature(new BigInteger(1, sig.R.ToByteArray()), new BigInteger(1, sig.S.ToByteArray()));
         }
 
         public enum HashModification
@@ -2947,17 +3057,17 @@ namespace NBitcoin.Tests
             internal List<Script> _Scripts = new List<Script>();
             internal void AddKeyPubKey(Key key, PubKey pubkey)
             {
-                _Keys.Add(Tuple.Create(key, pubkey));
+                this._Keys.Add(Tuple.Create(key, pubkey));
             }
 
             internal void RemoveKeyPubKey(Key key)
             {
-                _Keys.Remove(_Keys.First(o => o.Item1 == key));
+                this._Keys.Remove(this._Keys.First(o => o.Item1 == key));
             }
 
             internal void AddCScript(Script scriptPubkey)
             {
-                _Scripts.Add(scriptPubkey);
+                this._Scripts.Add(scriptPubkey);
             }
         }
 

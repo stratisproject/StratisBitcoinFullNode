@@ -39,7 +39,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
         [Fact]
         public void AsyncManualResetEvent_CanSetAndReset()
         {
-            AsyncManualResetEvent manualResetEvent = new AsyncManualResetEvent(false);
+            var manualResetEvent = new AsyncManualResetEvent(false);
 
             Assert.False(manualResetEvent.IsSet);
 
@@ -90,8 +90,8 @@ namespace Stratis.Bitcoin.Tests.Utilities
         {
             var mre = new AsyncManualResetEvent(true);
 
-            var task1 = mre.WaitAsync();
-            var task2 = mre.WaitAsync();
+            Task task1 = mre.WaitAsync();
+            Task task2 = mre.WaitAsync();
 
             Assert.True(task1.IsCompleted);
             Assert.True(task2.IsCompleted);
@@ -149,7 +149,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
             var tasks = new List<Task>();
 
             // List that the tasks will built.
-            List<int> resultList = new List<int>() { 0 };
+            var resultList = new List<int>() { 0 };
 
             // Run all workers.
             for (int i = 0; i < tasksCount; i++)

@@ -29,17 +29,17 @@ namespace NBitcoin
         /// <summary> The default name used for the Stratis configuration file. </summary>
         public const string StratisDefaultConfigFilename = "stratis.conf";
 
-        public static Network Main => Network.GetNetwork("Main") ?? Register(new BitcoinMain());
+        public static Network Main => GetNetwork("Main") ?? Register(new BitcoinMain());
 
-        public static Network TestNet => Network.GetNetwork("TestNet") ?? Register(new BitcoinTest());
+        public static Network TestNet => GetNetwork("TestNet") ?? Register(new BitcoinTest());
 
-        public static Network RegTest => Network.GetNetwork("RegTest") ?? Register(new BitcoinRegTest());
+        public static Network RegTest => GetNetwork("RegTest") ?? Register(new BitcoinRegTest());
 
-        public static Network StratisMain => Network.GetNetwork("StratisMain") ?? Register(new StratisMain());
+        public static Network StratisMain => GetNetwork("StratisMain") ?? Register(new StratisMain());
 
-        public static Network StratisTest => Network.GetNetwork("StratisTest") ?? Register(new StratisTest());
+        public static Network StratisTest => GetNetwork("StratisTest") ?? Register(new StratisTest());
 
-        public static Network StratisRegTest => Network.GetNetwork("StratisRegTest") ?? Register(new StratisRegTest());
+        public static Network StratisRegTest => GetNetwork("StratisRegTest") ?? Register(new StratisRegTest());
 
         public static Network SmartContractsTest => Network.GetNetwork("SmartContractsTest") ?? Register(new SmartContractsTest());
 
@@ -48,7 +48,7 @@ namespace NBitcoin
         protected static Block CreateBitcoinGenesisBlock(ConsensusFactory consensusFactory, uint nTime, uint nNonce, uint nBits, int nVersion, Money genesisReward)
         {
             string pszTimestamp = "The Times 03/Jan/2009 Chancellor on brink of second bailout for banks";
-            Script genesisOutputScript = new Script(Op.GetPushOp(Encoders.Hex.DecodeData("04678afdb0fe5548271967f1a67130b7105cd6a828e03909a67962e0ea1f61deb649f6bc3f4cef38c4f35504e51ec112de5c384df7ba0b8d578a4c702b6bf11d5f")), OpcodeType.OP_CHECKSIG);
+            var genesisOutputScript = new Script(Op.GetPushOp(Encoders.Hex.DecodeData("04678afdb0fe5548271967f1a67130b7105cd6a828e03909a67962e0ea1f61deb649f6bc3f4cef38c4f35504e51ec112de5c384df7ba0b8d578a4c702b6bf11d5f")), OpcodeType.OP_CHECKSIG);
 
             Transaction txNew = consensusFactory.CreateTransaction();
             txNew.Version = 1;

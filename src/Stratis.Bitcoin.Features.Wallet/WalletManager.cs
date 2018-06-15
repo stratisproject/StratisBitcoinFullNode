@@ -544,7 +544,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                 {
                     accounts.AddRange(wallet.GetAccountsByCoinType(this.coinType));
                 }
-
+                
                 foreach (HdAccount account in accounts)
                 {
                     (Money amountConfirmed, Money amountUnconfirmed) result = account.GetSpendableAmount();

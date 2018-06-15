@@ -20,7 +20,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.CoinViews
         [Fact]
         public async Task GetBlockHashAsync_ReturnsBlockHashFromFetchCoinsAsyncMethodAsync()
         {
-            var result = await this.coinView.GetBlockHashAsync();
+            uint256 result = await this.coinView.GetBlockHashAsync();
 
             Assert.Equal(new uint256(987263876253), result);
         }

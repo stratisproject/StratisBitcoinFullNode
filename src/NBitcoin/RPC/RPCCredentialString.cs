@@ -56,7 +56,7 @@ namespace NBitcoin.RPC
         {
             get
             {
-                return CookieFile == null && UserPassword == null;
+                return this.CookieFile == null && this.UserPassword == null;
             }
         }
 
@@ -68,20 +68,20 @@ namespace NBitcoin.RPC
         {
             get
             {
-                return _CookieFile;
+                return this._CookieFile;
             }
             set
             {
                 if(value != null)
                     Reset();
-                _CookieFile = value;
+                this._CookieFile = value;
             }
         }
 
         private void Reset()
         {
-            _CookieFile = null;
-            _UsernamePassword = null;
+            this._CookieFile = null;
+            this._UsernamePassword = null;
         }
 
         private string _CookieFile;
@@ -93,13 +93,13 @@ namespace NBitcoin.RPC
         {
             get
             {
-                return _UsernamePassword;
+                return this._UsernamePassword;
             }
             set
             {
                 if(value != null)
                     Reset();
-                _UsernamePassword = value;
+                this._UsernamePassword = value;
             }
         }
 
@@ -107,9 +107,9 @@ namespace NBitcoin.RPC
 
         public override string ToString()
         {
-            return UseDefault ? "default" :
-                   CookieFile != null ? ("cookiefile=" + CookieFile) :
-                   UserPassword != null ? $"{UserPassword.UserName}:{UserPassword.Password}" :
+            return this.UseDefault ? "default" :
+                this.CookieFile != null ? ("cookiefile=" + this.CookieFile) :
+                this.UserPassword != null ? $"{this.UserPassword.UserName}:{this.UserPassword.Password}" :
                    "default";
         }
     }

@@ -16,12 +16,12 @@ namespace NBitcoin.Protobuf
         {
             get
             {
-                return _Inner;
+                return this._Inner;
             }
         }
         public ProtobufReaderWriter(Stream stream)
         {
-            _Inner = stream;
+            this._Inner = stream;
         }
 
         public ulong ReadULong()
@@ -39,11 +39,11 @@ namespace NBitcoin.Protobuf
             int i = 0;
             while((b & 0x80) != 0)
             {
-                int v = _Inner.ReadByte();
+                int v = this._Inner.ReadByte();
                 if(v < 0)
                     return false;
                 b = (byte)v;
-                Position++;
+                this.Position++;
                 varInt += (ulong)(b & 0x7f) << 7 * i++;
             }
             value = ((b & 0x80) != 0) ? 0 : varInt;
@@ -61,8 +61,8 @@ namespace NBitcoin.Protobuf
                 count++;
             } while((value >>= 7) != 0);
             ioBuffer[ioIndex - 1] &= 0x7F;
-            _Inner.Write(ioBuffer, 0, ioIndex);
-            Position += ioIndex;
+            this._Inner.Write(ioBuffer, 0, ioIndex);
+            this.Position += ioIndex;
         }
 
         private Encoding Encoding = Encoding.UTF8;
@@ -90,20 +90,20 @@ namespace NBitcoin.Protobuf
             ulong len = ReadULong();
             AssertBounds(len);
             var ioBuffer = new byte[(int)len];
-            _Inner.Read(ioBuffer, 0, ioBuffer.Length);
-            Position += ioBuffer.Length;
-            return Encoding.GetString(ioBuffer, 0, ioBuffer.Length);
+            this._Inner.Read(ioBuffer, 0, ioBuffer.Length);
+            this.Position += ioBuffer.Length;
+            return this.Encoding.GetString(ioBuffer, 0, ioBuffer.Length);
         }
 
         public void WriteString(string value)
         {
-            int predicted = Encoding.GetByteCount(value);
+            int predicted = this.Encoding.GetByteCount(value);
             WriteULong((ulong)predicted);
             AssertBounds((ulong)predicted);
             var ioBuffer = new byte[predicted];
-            Encoding.GetBytes(value, 0, predicted, ioBuffer, 0);
-            _Inner.Write(ioBuffer, 0, predicted);
-            Position += predicted;
+            this.Encoding.GetBytes(value, 0, predicted, ioBuffer, 0);
+            this._Inner.Write(ioBuffer, 0, predicted);
+            this.Position += predicted;
         }
 
         public byte[] ReadBytes()
@@ -111,8 +111,8 @@ namespace NBitcoin.Protobuf
             ulong len = ReadULong();
             AssertBounds(len);
             var ioBuffer = new byte[(int)len];
-            _Inner.Read(ioBuffer, 0, ioBuffer.Length);
-            Position += ioBuffer.Length;
+            this._Inner.Read(ioBuffer, 0, ioBuffer.Length);
+            this.Position += ioBuffer.Length;
             return ioBuffer;
         }
 
@@ -125,8 +125,8 @@ namespace NBitcoin.Protobuf
         public void WriteBytes(byte[] value)
         {
             WriteULong((ulong)value.Length);
-            _Inner.Write(value, 0, value.Length);
-            Position += value.Length;
+            this._Inner.Write(value, 0, value.Length);
+            this.Position += value.Length;
         }
 
         private int _Position;
@@ -134,12 +134,12 @@ namespace NBitcoin.Protobuf
         {
             get
             {
-                return _Position;
+                return this._Position;
             }
             private set
             {
-                _Position = value;
-                if(Position > MaxLength)
+                this._Position = value;
+                if(this.Position > MaxLength)
                     throw new ArgumentOutOfRangeException("The deserialized message is too big");
             }
         }

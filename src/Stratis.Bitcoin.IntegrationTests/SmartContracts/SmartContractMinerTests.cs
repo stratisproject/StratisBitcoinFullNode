@@ -145,7 +145,9 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
             public Money HIGHERFEE = 4 * Money.COIN;
             public int baseheight;
             public CachedCoinView cachedCoinView;
+            public ISmartContractResultRefundProcessor refundProcessor;
             public ContractStateRepositoryRoot stateRoot;
+            public ISmartContractResultTransferProcessor transferProcessor;
             public SmartContractValidator validator;
             public IKeyEncodingStrategy keyEncodingStrategy;
             public ReflectionSmartContractExecutorFactory executorFactory;
@@ -203,14 +205,16 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
 
                 this.receiptStorage = new DBreezeContractReceiptStorage(new DataFolder(folder));
 
-                this.executorFactory = new ReflectionSmartContractExecutorFactory(this.keyEncodingStrategy, loggerFactory, this.network, this.validator);
+                this.refundProcessor = new SmartContractResultRefundProcessor(loggerFactory);
+                this.transferProcessor = new SmartContractResultTransferProcessor(loggerFactory, this.network);
+
+                this.executorFactory = new ReflectionSmartContractExecutorFactory(this.keyEncodingStrategy, loggerFactory, this.network, this.refundProcessor, this.transferProcessor, this.validator);
 
                 var networkPeerFactory = new NetworkPeerFactory(this.network, dateTimeProvider, loggerFactory, new PayloadProvider(), new SelfEndpointTracker());
 
                 var peerAddressManager = new PeerAddressManager(DateTimeProvider.Default, nodeSettings.DataFolder, loggerFactory, new SelfEndpointTracker());
                 var peerDiscovery = new PeerDiscovery(new AsyncLoopFactory(loggerFactory), loggerFactory, Network.Main, networkPeerFactory, new NodeLifetime(), nodeSettings, peerAddressManager);
-                var connectionSettings = new ConnectionManagerSettings();
-                connectionSettings.Load(nodeSettings);
+                var connectionSettings = new ConnectionManagerSettings(nodeSettings);
                 var connectionManager = new ConnectionManager(dateTimeProvider, loggerFactory, this.network, networkPeerFactory, nodeSettings, new NodeLifetime(), new NetworkPeerConnectionParameters(), peerAddressManager, new IPeerConnector[] { }, peerDiscovery, connectionSettings);
 
                 var blockPuller = new LookaheadBlockPuller(this.chain, connectionManager, new LoggerFactory());

@@ -11,29 +11,29 @@ namespace Stratis.Bitcoin.Tests.NodeConfiguration
         [Fact]
         public void LoadConfigWithAssumeValidHexLoads()
         {
-            uint256 validHexBlock = new uint256("00000000229d9fb87182d73870d53f9fdd9b76bfc02c059e6d9a6c7a3507031d");
+            var validHexBlock = new uint256("00000000229d9fb87182d73870d53f9fdd9b76bfc02c059e6d9a6c7a3507031d");
             Network network = Network.TestNet;
-            NodeSettings nodeSettings = new NodeSettings(network, args:new string[] { $"-assumevalid={validHexBlock.ToString()}" });
-            ConsensusSettings settings = new ConsensusSettings(nodeSettings);
+            var nodeSettings = new NodeSettings(network, args:new string[] { $"-assumevalid={validHexBlock.ToString()}" });
+            var settings = new ConsensusSettings(nodeSettings);
             Assert.Equal(validHexBlock, settings.BlockAssumedValid);
         }
 
         [Fact]
         public void LoadConfigWithAssumeValidZeroSetsToNull()
         {
-            LoggerFactory loggerFactory = new LoggerFactory();
+            var loggerFactory = new LoggerFactory();
             Network network = Network.TestNet;
-            NodeSettings nodeSettings = new NodeSettings(network, args:new string[] { "-assumevalid=0" });
-            ConsensusSettings settings = new ConsensusSettings(nodeSettings);
+            var nodeSettings = new NodeSettings(network, args:new string[] { "-assumevalid=0" });
+            var settings = new ConsensusSettings(nodeSettings);
             Assert.Null(settings.BlockAssumedValid);
         }
 
         [Fact]
         public void LoadConfigWithInvalidAssumeValidThrowsConfigException()
         {
-            LoggerFactory loggerFactory = new LoggerFactory();
+            var loggerFactory = new LoggerFactory();
             Network network = Network.TestNet;
-            NodeSettings nodeSettings = new NodeSettings(network, args:new string[] { "-assumevalid=xxx" });
+            var nodeSettings = new NodeSettings(network, args:new string[] { "-assumevalid=xxx" });
             Assert.Throws<ConfigurationException>(() => new ConsensusSettings(nodeSettings));
         }
 
@@ -41,7 +41,7 @@ namespace Stratis.Bitcoin.Tests.NodeConfiguration
         public void LoadConfigWithDefaultsSetsToNetworkDefault()
         {
             Network network = Network.StratisMain;
-            ConsensusSettings settings = new ConsensusSettings(NodeSettings.Default(network));
+            var settings = new ConsensusSettings(NodeSettings.Default(network));
             Assert.Equal(network.Consensus.DefaultAssumeValid, settings.BlockAssumedValid);
 
             network = Network.StratisTest;

@@ -18,6 +18,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
             this.network = network;
         }
 
+        /// <inheritdoc />
         public void Process(
             SmartContractCarrier carrier,
             ISmartContractExecutionResult result,

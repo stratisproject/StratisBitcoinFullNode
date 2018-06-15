@@ -27,7 +27,7 @@ namespace Stratis.Bitcoin.Tests.Signals
 
             var signaler = new Signaler<Block>(subject.Object);
 
-            var result = signaler.Subscribe(observer.Object);
+            IDisposable result = signaler.Subscribe(observer.Object);
 
             observer.Verify(v => v.OnNext(block), Times.Exactly(1));
         }

@@ -347,9 +347,8 @@ namespace NBitcoin
         {
             get
             {
-                if(_Name == null)
-                    _Name = GetOpName(Code);
-                return _Name;
+                if(this._Name == null) this._Name = GetOpName(this.Code);
+                return this._Name;
             }
         }
 
@@ -377,12 +376,12 @@ namespace NBitcoin
         {
             get
             {
-                return _Code;
+                return this._Code;
             }
             set
             {
-                _Code = value;
-                IsInvalid = !_ValidOpCode[(byte)value];
+                this._Code = value;
+                this.IsInvalid = !_ValidOpCode[(byte)value];
             }
         }
         public byte[] PushData
@@ -395,36 +394,36 @@ namespace NBitcoin
         {
             var bitStream = new BitcoinStream(result, true);
 
-            if(Code == OpcodeType.OP_0)
+            if(this.Code == OpcodeType.OP_0)
             {
                 //OP_0 already pushed
                 return;
             }
 
-            if(OpcodeType.OP_1 <= Code && Code <= OpcodeType.OP_16)
+            if(OpcodeType.OP_1 <= this.Code && this.Code <= OpcodeType.OP_16)
             {
                 //OP_1 to OP_16 already pushed
                 return;
             }
-            if(Code == OpcodeType.OP_1NEGATE)
+            if(this.Code == OpcodeType.OP_1NEGATE)
             {
                 //OP_1Negate already pushed
                 return;
             }
 
-            if(0x01 <= (byte)Code && (byte)Code <= 0x4b)
+            if(0x01 <= (byte) this.Code && (byte) this.Code <= 0x4b)
             {
                 //Data length already pushed
             }
-            else if(Code == OpcodeType.OP_PUSHDATA1)
+            else if(this.Code == OpcodeType.OP_PUSHDATA1)
             {
                 bitStream.ReadWrite((byte)data.Length);
             }
-            else if(Code == OpcodeType.OP_PUSHDATA2)
+            else if(this.Code == OpcodeType.OP_PUSHDATA2)
             {
                 bitStream.ReadWrite((ushort)data.Length);
             }
-            else if(Code == OpcodeType.OP_PUSHDATA4)
+            else if(this.Code == OpcodeType.OP_PUSHDATA4)
             {
                 bitStream.ReadWrite((uint)data.Length);
             }
@@ -436,32 +435,32 @@ namespace NBitcoin
         {
             uint len = 0;
             var bitStream = new BitcoinStream(stream, false);
-            if(Code == 0)
+            if(this.Code == 0)
                 return new byte[0];
 
-            if((byte)OpcodeType.OP_1 <= (byte)Code && (byte)Code <= (byte)OpcodeType.OP_16)
+            if((byte)OpcodeType.OP_1 <= (byte) this.Code && (byte) this.Code <= (byte)OpcodeType.OP_16)
             {
-                return new byte[] { (byte)(Code - OpcodeType.OP_1 + 1) };
+                return new byte[] { (byte)(this.Code - OpcodeType.OP_1 + 1) };
             }
 
-            if(Code == OpcodeType.OP_1NEGATE)
+            if(this.Code == OpcodeType.OP_1NEGATE)
             {
                 return new byte[] { 0x81 };
             }
 
             try
             {
-                if(0x01 <= (byte)Code && (byte)Code <= 0x4b)
-                    len = (uint)Code;
-                else if(Code == OpcodeType.OP_PUSHDATA1)
+                if(0x01 <= (byte) this.Code && (byte) this.Code <= 0x4b)
+                    len = (uint) this.Code;
+                else if(this.Code == OpcodeType.OP_PUSHDATA1)
                     len = bitStream.ReadWrite((byte)0);
-                else if(Code == OpcodeType.OP_PUSHDATA2)
+                else if(this.Code == OpcodeType.OP_PUSHDATA2)
                     len = bitStream.ReadWrite((ushort)0);
-                else if(Code == OpcodeType.OP_PUSHDATA4)
+                else if(this.Code == OpcodeType.OP_PUSHDATA4)
                     len = bitStream.ReadWrite((uint)0);
                 else
                 {
-                    IsInvalid = true;
+                    this.IsInvalid = true;
                     return new byte[0];
                 }
 
@@ -474,7 +473,7 @@ namespace NBitcoin
                     int readen = stream.Read(data, 0, data.Length);
                     if(readen != data.Length)
                     {
-                        IsInvalid = true;
+                        this.IsInvalid = true;
                         return new byte[0];
                     }
                 }
@@ -486,7 +485,7 @@ namespace NBitcoin
                         int b = stream.ReadByte();
                         if(b < 0)
                         {
-                            IsInvalid = true;
+                            this.IsInvalid = true;
                             return new byte[0];
                         }
                         bytes.Add((byte)b);
@@ -498,7 +497,7 @@ namespace NBitcoin
             }
             catch(EndOfStreamException)
             {
-                IsInvalid = true;
+                this.IsInvalid = true;
                 return new byte[0];
             }
         }
@@ -512,29 +511,29 @@ namespace NBitcoin
 
         public override string ToString()
         {
-            if(PushData != null)
+            if(this.PushData != null)
             {
-                if(PushData.Length == 0)
+                if(this.PushData.Length == 0)
                     return "0";
-                string result = Encoders.Hex.EncodeData(PushData);
+                string result = Encoders.Hex.EncodeData(this.PushData);
                 return result.Length == 2 && result[0] == '0' ? result.Substring(1) : result;
             }
-            else if(Name == "OP_UNKNOWN")
+            else if(this.Name == "OP_UNKNOWN")
             {
-                return Name + "(" + string.Format("0x{0:x2}", (byte)Code) + ")";
+                return this.Name + "(" + string.Format("0x{0:x2}", (byte) this.Code) + ")";
             }
             else
             {
-                return Name;
+                return this.Name;
             }
         }
 
         public void WriteTo(Stream stream)
         {
-            stream.WriteByte((byte)Code);
-            if(PushData != null)
+            stream.WriteByte((byte) this.Code);
+            if(this.PushData != null)
             {
-                PushDataToStream(PushData, stream);
+                PushDataToStream(this.PushData, stream);
             }
         }
 
@@ -548,7 +547,7 @@ namespace NBitcoin
             bool isOpCode = GetOpCode(opname, out opcode);
 
             if(
-                (!isOpCode || Op.IsPushCode(opcode))
+                (!isOpCode || IsPushCode(opcode))
                 && !opname.StartsWith(unknown))
             {
                 if(isOpCode && opcode == OpcodeType.OP_0)
@@ -584,10 +583,12 @@ namespace NBitcoin
         public static implicit operator Op(OpcodeType codeType)
         {
             if(!IsPushCode(codeType))
+            {
                 return new Op()
                 {
                     Code = codeType,
                 };
+            }
             else
             {
                 if(OpcodeType.OP_1 <= codeType && codeType <= OpcodeType.OP_16)
@@ -649,15 +650,15 @@ namespace NBitcoin
         {
             get
             {
-                return Code == OpcodeType.OP_0 ||
-                        OpcodeType.OP_1 <= Code && Code <= OpcodeType.OP_16;
+                return this.Code == OpcodeType.OP_0 ||
+                        OpcodeType.OP_1 <= this.Code && this.Code <= OpcodeType.OP_16;
             }
         }
         public bool IsSmallInt
         {
             get
             {
-                return IsSmallUInt || Code == OpcodeType.OP_1NEGATE;
+                return this.IsSmallUInt || this.Code == OpcodeType.OP_1NEGATE;
             }
         }
 
@@ -675,9 +676,9 @@ namespace NBitcoin
 
         public long? GetLong()
         {
-            if(PushData == null)
+            if(this.PushData == null)
                 return null;
-            byte[] vch = PushData;
+            byte[] vch = this.PushData;
             if(vch.Length == 0)
                 return 0;
 

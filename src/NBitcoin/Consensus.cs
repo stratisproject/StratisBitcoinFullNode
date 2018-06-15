@@ -36,6 +36,11 @@ namespace NBitcoin
         public long CoinbaseMaturity { get; set; }
 
         /// <summary>
+        /// An indicator whether this is a Smart Contract network.
+        /// </summary>
+        public bool IsSmartContracts { get; set; }
+
+        /// <summary>
         /// Amount of coins mined when a new network is bootstrapped.
         /// Set to Money.Zero when there is no premine.
         /// </summary>
@@ -61,6 +66,11 @@ namespace NBitcoin
         /// Maximal length of reorganization that the node is willing to accept, or 0 to disable long reorganization protection.
         /// </summary>
         public uint MaxReorgLength { get; set; }
+
+        /// <summary>
+        /// The maximum amount of coins in any transaction.
+        /// </summary>
+        public long MaxMoney { get; set; }
 
         public ConsensusOptions Options { get; set; }
 
@@ -161,11 +171,6 @@ namespace NBitcoin
         /// An indicator whether this is a Proof Of Stake network.
         /// </summary>
         public bool IsProofOfStake { get; set; }
-
-        /// <summary>
-        /// An indicator whether this is a Smart Contract network.
-        /// </summary>
-        public bool IsSmartContracts { get; set; }
 
         /// <summary>The default hash to use for assuming valid blocks.</summary>
         public uint256 DefaultAssumeValid { get; set; }

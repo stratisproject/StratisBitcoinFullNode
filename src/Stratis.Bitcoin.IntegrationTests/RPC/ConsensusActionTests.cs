@@ -17,7 +17,7 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
         {
             string dir = CreateTestDir(this);
 
-            var fullNode = this.BuildServicedNode(dir);
+            IFullNode fullNode = this.BuildServicedNode(dir);
             var controller = fullNode.Services.ServiceProvider.GetService<ConsensusController>();
 
             uint256 result = controller.GetBestBlockHashRPC();
@@ -30,7 +30,7 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
         {
             string dir = CreateTestDir(this);
 
-            var fullNode = this.BuildServicedNode(dir);
+            IFullNode fullNode = this.BuildServicedNode(dir);
             var controller = fullNode.Services.ServiceProvider.GetService<ConsensusController>();
 
             uint256 result = controller.GetBlockHashRPC(0);
@@ -43,7 +43,7 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
         {
             string dir = CreateTestDir(this);
 
-            var fullNode = this.BuildServicedNode(dir);
+            IFullNode fullNode = this.BuildServicedNode(dir);
             var isIBDProvider = fullNode.NodeService<IInitialBlockDownloadState>(true);
 
             Assert.NotNull(isIBDProvider);

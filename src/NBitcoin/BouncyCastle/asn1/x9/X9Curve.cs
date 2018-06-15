@@ -57,16 +57,16 @@ namespace NBitcoin.BouncyCastle.Asn1.X9
 
             this.fieldIdentifier = fieldID.Identifier;
 
-            if(fieldIdentifier.Equals(X9ObjectIdentifiers.PrimeField))
+            if(this.fieldIdentifier.Equals(X9ObjectIdentifiers.PrimeField))
             {
                 BigInteger q = ((DerInteger)fieldID.Parameters).Value;
                 var x9A = new X9FieldElement(q, (Asn1OctetString)seq[0]);
                 var x9B = new X9FieldElement(q, (Asn1OctetString)seq[1]);
-                curve = new FpCurve(q, x9A.Value.ToBigInteger(), x9B.Value.ToBigInteger());
+                this.curve = new FpCurve(q, x9A.Value.ToBigInteger(), x9B.Value.ToBigInteger());
             }
             else
             {
-                if(fieldIdentifier.Equals(X9ObjectIdentifiers.CharacteristicTwoField))
+                if(this.fieldIdentifier.Equals(X9ObjectIdentifiers.CharacteristicTwoField))
                 {
                     // Characteristic two field
                     var parameters = (DerSequence)fieldID.Parameters;
@@ -93,7 +93,7 @@ namespace NBitcoin.BouncyCastle.Asn1.X9
                     var x9A = new X9FieldElement(m, k1, k2, k3, (Asn1OctetString)seq[0]);
                     var x9B = new X9FieldElement(m, k1, k2, k3, (Asn1OctetString)seq[1]);
                     // TODO Is it possible to get the order (n) and cofactor(h) too?
-                    curve = new F2mCurve(m, k1, k2, k3, x9A.Value.ToBigInteger(), x9B.Value.ToBigInteger());
+                    this.curve = new F2mCurve(m, k1, k2, k3, x9A.Value.ToBigInteger(), x9B.Value.ToBigInteger());
                 }
             }
         }
@@ -102,13 +102,13 @@ namespace NBitcoin.BouncyCastle.Asn1.X9
         {
             get
             {
-                return curve;
+                return this.curve;
             }
         }
 
         public byte[] GetSeed()
         {
-            return Arrays.Clone(seed);
+            return Arrays.Clone(this.seed);
         }
 
         /**
@@ -125,11 +125,11 @@ namespace NBitcoin.BouncyCastle.Asn1.X9
         {
             var v = new Asn1EncodableVector();
 
-            if(fieldIdentifier.Equals(X9ObjectIdentifiers.PrimeField)
-                || fieldIdentifier.Equals(X9ObjectIdentifiers.CharacteristicTwoField))
+            if(this.fieldIdentifier.Equals(X9ObjectIdentifiers.PrimeField)
+                || this.fieldIdentifier.Equals(X9ObjectIdentifiers.CharacteristicTwoField))
             {
-                v.Add(new X9FieldElement(curve.A).ToAsn1Object());
-                v.Add(new X9FieldElement(curve.B).ToAsn1Object());
+                v.Add(new X9FieldElement(this.curve.A).ToAsn1Object());
+                v.Add(new X9FieldElement(this.curve.B).ToAsn1Object());
             }
 
             return new DerSequence(v);

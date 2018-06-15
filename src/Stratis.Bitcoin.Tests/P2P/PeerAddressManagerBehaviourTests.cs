@@ -1,6 +1,7 @@
 ﻿using System.Net;
 using Moq;
 using NBitcoin;
+using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.P2P;
 using Stratis.Bitcoin.P2P.Peer;
@@ -30,10 +31,10 @@ namespace Stratis.Bitcoin.Tests.P2P
         [Fact]
         public void PeerAddressManagerBehaviour_ReceivedPing_UpdateLastSeen()
         {
-            var ipAddress = IPAddress.Parse("::ffff:192.168.0.1");
+            IPAddress ipAddress = IPAddress.Parse("::ffff:192.168.0.1");
             var endpoint = new IPEndPoint(ipAddress, 80);
 
-            var peerFolder = CreateDataFolder(this);
+            DataFolder peerFolder = CreateDataFolder(this);
             var addressManager = new PeerAddressManager(DateTimeProvider.Default, peerFolder, this.LoggerFactory.Object, new SelfEndpointTracker());
             addressManager.AddPeer(endpoint, IPAddress.Loopback);
 
@@ -60,17 +61,17 @@ namespace Stratis.Bitcoin.Tests.P2P
             //Trigger the event handler
             networkPeer.Object.MessageReceived.ExecuteCallbacksAsync(networkPeer.Object, incomingMessage).GetAwaiter().GetResult();
 
-            var peer = addressManager.FindPeer(endpoint);
+            PeerAddress peer = addressManager.FindPeer(endpoint);
             Assert.Equal(DateTimeProvider.Default.GetUtcNow().Date, peer.LastSeen.Value.Date);
         }
 
         [Fact]
         public void PeerAddressManagerBehaviour_ReceivedPong_UpdateLastSeen()
         {
-            var ipAddress = IPAddress.Parse("::ffff:192.168.0.1");
+            IPAddress ipAddress = IPAddress.Parse("::ffff:192.168.0.1");
             var endpoint = new IPEndPoint(ipAddress, 80);
 
-            var peerFolder = CreateDataFolder(this);
+            DataFolder peerFolder = CreateDataFolder(this);
             var addressManager = new PeerAddressManager(DateTimeProvider.Default, peerFolder, this.LoggerFactory.Object, new SelfEndpointTracker());
             addressManager.AddPeer(endpoint, IPAddress.Loopback);
 
@@ -97,7 +98,7 @@ namespace Stratis.Bitcoin.Tests.P2P
             //Trigger the event handler
             networkPeer.Object.MessageReceived.ExecuteCallbacksAsync(networkPeer.Object, incomingMessage).GetAwaiter().GetResult();
 
-            var peer = addressManager.FindPeer(endpoint);
+            PeerAddress peer = addressManager.FindPeer(endpoint);
             Assert.Equal(DateTimeProvider.Default.GetUtcNow().Date, peer.LastSeen.Value.Date);
         }
     }

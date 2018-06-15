@@ -12,7 +12,7 @@
 
         public virtual ECPoint Map(ECPoint p)
         {
-            return p.ScaleX(scale);
+            return p.ScaleX(this.scale);
         }
     }
 }

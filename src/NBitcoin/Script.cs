@@ -332,7 +332,7 @@ namespace NBitcoin
     {
         public ScriptSigs()
         {
-            WitSig = WitScript.Empty;
+            this.WitSig = WitScript.Empty;
         }
         public Script ScriptSig
         {
@@ -374,12 +374,13 @@ namespace NBitcoin
             {
                 op.WriteTo(ms);
             }
-            _Script = ms.ToArray();
+
+            this._Script = ms.ToArray();
         }
 
         public Script(string script)
         {
-            _Script = Parse(script);
+            this._Script = Parse(script);
         }
 
         private static byte[] Parse(string script)
@@ -406,23 +407,23 @@ namespace NBitcoin
 
         private Script(byte[] data, bool @unsafe, bool unused)
         {
-            _Script = @unsafe ? data : data.ToArray();
+            this._Script = @unsafe ? data : data.ToArray();
         }
 
         public Script(IEnumerable<byte> data)
         {
-            _Script = data.ToArray();
+            this._Script = data.ToArray();
         }
 
         public Script(byte[] data, bool compressed)
         {
             if(!compressed)
-                _Script = data.ToArray();
+                this._Script = data.ToArray();
             else
             {
                 var compressor = new ScriptCompressor();
                 compressor.ReadWrite(data);
-                _Script = compressor.GetScript()._Script;
+                this._Script = compressor.GetScript()._Script;
             }
         }
 
@@ -430,7 +431,7 @@ namespace NBitcoin
         {
             get
             {
-                return _Script.Length;
+                return this._Script.Length;
             }
         }
 
@@ -462,7 +463,7 @@ namespace NBitcoin
 
         public ScriptReader CreateReader()
         {
-            return new ScriptReader(_Script);
+            return new ScriptReader(this._Script);
         }
 
 
@@ -503,13 +504,13 @@ namespace NBitcoin
             }
             if(nFound == 0)
                 return 0;
-            _Script = new Script(operations)._Script;
+            this._Script = new Script(operations)._Script;
             return nFound;
         }
 
         public string ToHex()
         {
-            return Encoders.Hex.EncodeData(_Script);
+            return Encoders.Hex.EncodeData(this._Script);
         }
 
         private Script _PaymentScript;
@@ -521,7 +522,7 @@ namespace NBitcoin
         {
             get
             {
-                return _PaymentScript ?? (_PaymentScript = PayToScriptHashTemplate.Instance.GenerateScriptPubKey(Hash));
+                return this._PaymentScript ?? (this._PaymentScript = PayToScriptHashTemplate.Instance.GenerateScriptPubKey(this.Hash));
             }
         }
 
@@ -539,7 +540,7 @@ namespace NBitcoin
             // by default StringBuilder capacity is 16 (too small)
             // 300 is enough for P2PKH
             var builder = new StringBuilder(300);
-            using (var reader = new ScriptReader(_Script))
+            using (var reader = new ScriptReader(this._Script))
             {
                 Op op;
                 while ((op = reader.Read()) != null)
@@ -881,7 +882,7 @@ namespace NBitcoin
 
         public IEnumerable<Op> ToOps()
         {
-            using (var reader = new ScriptReader(_Script))
+            using (var reader = new ScriptReader(this._Script))
             {
                 return reader.ToEnumerable().ToList();
             }
@@ -912,7 +913,7 @@ namespace NBitcoin
         {
             get
             {
-                return _Hash ?? (_Hash = new ScriptId(this));
+                return this._Hash ?? (this._Hash = new ScriptId(this));
             }
         }
 
@@ -921,13 +922,13 @@ namespace NBitcoin
         {
             get
             {
-                return _WitHash ?? (_WitHash = new WitScriptId(this));
+                return this._WitHash ?? (this._WitHash = new WitScriptId(this));
             }
         }
 
         public BitcoinScriptAddress GetScriptAddress(Network network)
         {
-            return (BitcoinScriptAddress)Hash.GetAddress(network);
+            return (BitcoinScriptAddress) this.Hash.GetAddress(network);
         }
 
         public bool IsPayToScriptHash(Network network)
@@ -937,13 +938,13 @@ namespace NBitcoin
 
         public BitcoinWitScriptAddress GetWitScriptAddress(Network network)
         {
-            return (BitcoinWitScriptAddress)WitHash.GetAddress(network);
+            return (BitcoinWitScriptAddress) this.WitHash.GetAddress(network);
         }
 
         public uint GetSigOpCount(Network network, Script scriptSig)
         {
-            if(!this.IsPayToScriptHash(network))
-                return this.GetSigOpCount(true);
+            if(!IsPayToScriptHash(network))
+                return GetSigOpCount(true);
             // This is a pay-to-script-hash scriptPubKey;
             // get the last item that the scriptSig
             // pushes onto the stack:
@@ -1062,7 +1063,7 @@ namespace NBitcoin
         [Obsolete("Use ToBytes instead")]
         public byte[] ToRawScript(bool @unsafe)
         {
-            return @unsafe ? _Script : _Script.ToArray();
+            return @unsafe ? this._Script : this._Script.ToArray();
         }
 
         /// <summary>
@@ -1072,7 +1073,7 @@ namespace NBitcoin
         /// <returns></returns>
         public byte[] ToBytes(bool @unsafe)
         {
-            return @unsafe ? _Script : _Script.ToArray();
+            return @unsafe ? this._Script : this._Script.ToArray();
         }
 
         public byte[] ToCompressedBytes()
@@ -1180,7 +1181,7 @@ namespace NBitcoin
         {
             get
             {
-                return _Script.Length > 0 && _Script[0] == (byte)OpcodeType.OP_RETURN;
+                return this._Script.Length > 0 && this._Script[0] == (byte)OpcodeType.OP_RETURN;
             }
         }
 
@@ -1192,7 +1193,7 @@ namespace NBitcoin
         public override bool Equals(object obj)
         {
             var item = obj as Script;
-            return item != null && Utils.ArrayEqual(item._Script, _Script);
+            return item != null && Utils.ArrayEqual(item._Script, this._Script);
         }
         public static bool operator ==(Script a, Script b)
         {
@@ -1210,12 +1211,12 @@ namespace NBitcoin
 
         public override int GetHashCode()
         {
-            return Utils.GetHashCode(_Script);
+            return Utils.GetHashCode(this._Script);
         }
 
         public Script Clone()
         {
-            return new Script(_Script);
+            return new Script(this._Script);
         }
 
         public static Script CombineSignatures(Network network, Script scriptPubKey, Transaction transaction, int n, Script scriptSig1, Script scriptSig2)
@@ -1258,11 +1259,13 @@ namespace NBitcoin
             if(result == null)
                 return scriptSig1.Length < scriptSig2.Length ? input2 : input1;
             if(!isWitness)
+            {
                 return new ScriptSigs()
                 {
                     ScriptSig = result,
                     WitSig = WitScript.Empty
                 };
+            }
             else
             {
                 return new ScriptSigs()
@@ -1286,10 +1289,13 @@ namespace NBitcoin
                 return PushAll(Max(sigs1, sigs2));
 
             if(template is PayToPubkeyTemplate || template is PayToPubkeyHashTemplate)
+            {
                 if(sigs1.Length == 0 || sigs1[0].Length == 0)
                     return PushAll(sigs2);
                 else
                     return PushAll(sigs1);
+            }
+
             if(template is PayToScriptHashTemplate || template is PayToWitTemplate)
             {
                 if(sigs1.Length == 0 || sigs1[sigs1.Length - 1].Length == 0)

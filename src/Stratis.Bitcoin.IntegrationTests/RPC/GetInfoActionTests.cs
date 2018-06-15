@@ -14,7 +14,7 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
         {
             string dir = CreateTestDir(this);
             IFullNode fullNode = this.BuildServicedNode(dir);
-            FullNodeController controller = fullNode.Services.ServiceProvider.GetService<FullNodeController>();
+            var controller = fullNode.Services.ServiceProvider.GetService<FullNodeController>();
 
             Assert.NotNull(fullNode.NodeService<INetworkDifficulty>(true));
 
@@ -22,7 +22,7 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
 
             NodeSettings nodeSettings = NodeSettings.Default();
             uint expectedProtocolVersion = (uint)nodeSettings.ProtocolVersion;
-            var expectedRelayFee = nodeSettings.MinRelayTxFeeRate.FeePerK.ToUnit(NBitcoin.MoneyUnit.BTC);
+            decimal expectedRelayFee = nodeSettings.MinRelayTxFeeRate.FeePerK.ToUnit(NBitcoin.MoneyUnit.BTC);
             Assert.NotNull(info);
             Assert.Equal(0, info.Blocks);
             Assert.NotEqual<uint>(0, info.Version);
