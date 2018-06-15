@@ -9,13 +9,13 @@ using Xunit;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 {
-    public sealed class SmartContractExecutorResultProcessorTests
+    public sealed class SmartContractResultRefundProcessorTests
     {
         private readonly ILoggerFactory loggerFactory;
         private readonly Network network;
         private readonly ISmartContractResultRefundProcessor refundProcessor;
 
-        public SmartContractExecutorResultProcessorTests()
+        public SmartContractResultRefundProcessorTests()
         {
             this.loggerFactory = new ExtendedLoggerFactory();
             this.loggerFactory.AddConsoleWithFilters();
