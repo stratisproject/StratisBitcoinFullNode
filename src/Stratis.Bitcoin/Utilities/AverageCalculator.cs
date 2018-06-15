@@ -1,7 +1,6 @@
 ﻿using System;
-using Stratis.Bitcoin.Utilities;
 
-namespace Stratis.Bitcoin.BlockPulling2
+namespace Stratis.Bitcoin.Utilities
 {
     public class AverageCalculator
     {
