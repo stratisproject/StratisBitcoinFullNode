@@ -158,7 +158,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
             // If we are in IBD we do nothing.
             if (this.initialBlockDownloadState.IsInitialBlockDownload())
             {
-                this.logger.LogInformation($"{this.federationGatewaySettings.MemberName}  MonitorChain ({this.network.ToChain()}) in IBD: blockNumber {blockNumber} not processed.");
+                this.logger.LogDebug($"{this.federationGatewaySettings.MemberName}  MonitorChain ({this.network.ToChain()}) in IBD: blockNumber {blockNumber} not processed.");
                 return;
             }
 

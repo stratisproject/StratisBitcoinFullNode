@@ -629,9 +629,12 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Wallet
         {
             this.logger.LogTrace("()");
 
-            lock (this.lockObject)
+            if (this.Wallet != null)
             {
-                this.fileStorage.SaveToFile(this.Wallet, WalletFileName);
+                lock (this.lockObject)
+                {
+                    this.fileStorage.SaveToFile(this.Wallet, WalletFileName);
+                }
             }
 
             this.logger.LogTrace("(-)");
