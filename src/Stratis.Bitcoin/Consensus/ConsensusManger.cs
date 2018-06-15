@@ -306,12 +306,11 @@ namespace Stratis.Bitcoin.Consensus
 
             List<BlockDownloadRequest> downloadRequests = new List<BlockDownloadRequest>();
 
-            BlockDownloadRequest request = new BlockDownloadRequest { BlocksToDownload = new List<ChainedHeader>() };
+            BlockDownloadRequest request = null;
+            ChainedHeader previousHeader = null;
 
             lock (this.blockRequestedLock)
             {
-                ChainedHeader previousHeader = null;
-
                 foreach (ChainedHeader chainedHeader in blockHashes)
                 {
                     bool blockAlreadyAsked = false;
@@ -329,8 +328,10 @@ namespace Stratis.Bitcoin.Consensus
 
                     if (blockIsNotConsecutive || blockAlreadyAsked)
                     {
-                        downloadRequests.Add(request);
-                        request = new BlockDownloadRequest { BlocksToDownload = new List<ChainedHeader>() };
+                        if (request != null)
+                        {
+                            downloadRequests.Add(request);
+                        }
 
                         if (blockAlreadyAsked)
                         {
@@ -339,8 +340,16 @@ namespace Stratis.Bitcoin.Consensus
                         }
                     }
 
+                    if (request == null)
+                        request = new BlockDownloadRequest { BlocksToDownload = new List<ChainedHeader>() };
+
                     previousHeader = chainedHeader;
                     request.BlocksToDownload.Add(chainedHeader);
+                }
+
+                if (request != null)
+                {
+                    downloadRequests.Add(request);
                 }
 
                 lock (this.treeLock)
