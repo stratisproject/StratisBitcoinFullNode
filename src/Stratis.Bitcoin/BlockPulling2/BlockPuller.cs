@@ -24,7 +24,7 @@ namespace Stratis.Bitcoin.BlockPulling2
         private const int MaxSecondsToDeliverBlock = 5;
 
         /// <summary>This affects quality score only. If the peer is too fast don't give him all the assignments in the world when not in IBD.</summary>
-        private const int PeerSpeedLimitLimirationWhenNotInIBDBytes = 1024 * 1024;
+        private const int PeerSpeedLimitWhenNotInIBDBytesPerSec = 1024 * 1024;
 
         public delegate void OnBlockDownloadedCallback(uint256 blockHash, Block block);
 
@@ -41,11 +41,12 @@ namespace Stratis.Bitcoin.BlockPulling2
 
         private readonly CancellationTokenSource cancellationSource;
         
-        private AverageCalculator averageBlockSizeBytes;
+        private readonly AverageCalculator averageBlockSizeBytes;
 
         private readonly AsyncManualResetEvent processQueuesSignal;
-        private readonly object lockObject;
         private int currentJobId;
+        
+        private readonly object lockObject;
 
         /// <summary>Amount of blocks that are being downloaded.</summary>
         private int pendingDownloadsCount;
@@ -56,14 +57,13 @@ namespace Stratis.Bitcoin.BlockPulling2
         /// </summary>
         private int maxBlocksBeingDownloaded;
         
-        private readonly ChainState chainState;
         private readonly ILogger logger;
+        private readonly ChainState chainState;
         private readonly NetworkPeerRequirement networkPeerRequirement;
+        private readonly Random random;
 
         private Task assignerLoop;
         private Task stallingLoop;
-
-        private Random random;
 
         private int GetTotalSpeedOfAllPeersBytesPerSecLocked()
         {
@@ -185,7 +185,6 @@ namespace Stratis.Bitcoin.BlockPulling2
                     return;
                 }
 
-                
                 await this.AssignDownloadJobsAsync().ConfigureAwait(false);
             }
         }
@@ -260,7 +259,6 @@ namespace Stratis.Bitcoin.BlockPulling2
                 this.processQueuesSignal.Reset();
             }
 
-            await this.AskPeersForBlocksAsync(newAssignments).ConfigureAwait(false);
 
             // Call callbacks with null since puller failed to deliver requested blocks.
             foreach (DownloadJob failedJob in failedJobs)
@@ -268,13 +266,18 @@ namespace Stratis.Bitcoin.BlockPulling2
                 foreach (uint256 failedHash in failedJob.Hashes)
                     this.OnDownloadedCallback(failedHash, null);
             }
+
+            if (newAssignments.Count != 0)
+                await this.AskPeersForBlocksAsync(newAssignments).ConfigureAwait(false);
         }
 
         // Ask peer behaviors to deliver blocks.
         private async Task AskPeersForBlocksAsync(Dictionary<uint256, AssignedDownload> assignments)
         {
+            int maxDegreeOfParallelism = 8;
+
             // Form batches in order to ask for several blocks from one peer at once.
-            foreach (IGrouping<int, KeyValuePair<uint256, AssignedDownload>> downloadsGroupedByPeerId in assignments.GroupBy(x => x.Value.PeerId))
+            await assignments.GroupBy(x => x.Value.PeerId).ForEachAsync(maxDegreeOfParallelism, CancellationToken.None, async (downloadsGroupedByPeerId, cancellation) =>
             {
                 List<uint256> hashes = downloadsGroupedByPeerId.Select(x => x.Key).ToList();
                 int peerId = downloadsGroupedByPeerId.First().Value.PeerId;
@@ -313,7 +316,7 @@ namespace Stratis.Bitcoin.BlockPulling2
                     this.PeerDisconnected(downloadsGroupedByPeerId.First().Value.PeerId);
                     this.processQueuesSignal.Reset();
                 }
-            }
+            }).ConfigureAwait(false);
         }
 
         // returns count of new assigned downloads to recalculate empty slots
@@ -472,7 +475,7 @@ namespace Stratis.Bitcoin.BlockPulling2
         {
             // Now decide if we need to recalculate quality score for all peers or just for this one.
             int bestSpeed = this.pullerBehaviorsByPeerId.Max(x => x.Value.SpeedBytesPerSecond);
-            int adjustedBestSpeed = bestSpeed > PeerSpeedLimitLimirationWhenNotInIBDBytes ? PeerSpeedLimitLimirationWhenNotInIBDBytes : bestSpeed;
+            int adjustedBestSpeed = bestSpeed > PeerSpeedLimitWhenNotInIBDBytesPerSec ? PeerSpeedLimitWhenNotInIBDBytesPerSec : bestSpeed;
 
             if (pullerBehavior.SpeedBytesPerSecond != bestSpeed)
             {
