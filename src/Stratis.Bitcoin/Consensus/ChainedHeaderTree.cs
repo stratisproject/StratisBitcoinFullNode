@@ -137,7 +137,7 @@ namespace Stratis.Bitcoin.Consensus
         /// <remarks>
         /// The block can be null when the block data has not yet been downloaded or if the block data has been persisted to the database and removed from the memory.
         /// </remarks>
-        /// <returns>The block and its chained header (both the block and chained header can be null).</returns>
+        /// <returns>The block and its chained header (the <see cref="ChainedHeaderBlock.Block"/> can be <c>null</c> or the <see cref="ChainedHeaderBlock"/> result can be <c>null</c>).</returns>
         ChainedHeaderBlock GetChainedHeaderBlock(uint256 blockHash);
     }
 
@@ -1105,17 +1105,15 @@ namespace Stratis.Bitcoin.Consensus
         }
 
         /// <summary>
-        /// Convert the <see cref="DownloadFrom"/> and <see cref="DownloadTo"/> to a list of consecutive hashes where the first item in the list is the hash of <see cref="DownloadFrom"/>.
+        /// Convert the <see cref="DownloadFrom"/> and <see cref="DownloadTo"/> to a list of consecutive headers, both items are included in the list.
         /// </summary>
         public ChainedHeader[] ToHashArray()
         {
-            int itemsCount = this.DownloadTo.Height == this.DownloadFrom.Height ? 1 : this.DownloadTo.Height - this.DownloadFrom.Height + 1;
-
-            var hashes = new ChainedHeader[itemsCount];
+            var hashes = new ChainedHeader[this.DownloadTo.Height - this.DownloadFrom.Height + 1];
 
             ChainedHeader currentHeader = this.DownloadTo;
 
-            for (int i = hashes.Length - 1; i >= 0; --i)
+            for (int i = hashes.Length - 1; i >= 0; i--)
             {
                 hashes[i] = currentHeader;
                 currentHeader = currentHeader.Previous;
