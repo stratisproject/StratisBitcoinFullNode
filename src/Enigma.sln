@@ -9,11 +9,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.FederatedPeg.Featur
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.FederatedPeg.IntegrationTests", "Stratis.FederatedPeg.IntegrationTests\Stratis.FederatedPeg.IntegrationTests.csproj", "{EB41C31A-FF32-4164-822D-43D1D9AC7FEA}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "assets", "assets", "{B8A62FA9-F073-4614-B78E-A0004BF70484}"
-	ProjectSection(SolutionItems) = preProject
-		..\assets\sidechains.json = ..\assets\sidechains.json
-	EndProjectSection
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.FederatedPeg.Features.MainchainGeneratorServices", "Stratis.FederatedPeg.Features.MainchainGeneratorServices\Stratis.FederatedPeg.Features.MainchainGeneratorServices.csproj", "{55BA22A5-B45B-4520-8328-437F9A1F2D7F}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.FederatedPeg", "Stratis.FederatedPeg\Stratis.FederatedPeg.csproj", "{E53C0EF3-9E1C-443F-9FE2-A81037F74135}"
@@ -32,7 +27,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.FederatedSidechains
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.SidechainD", "Stratis.SidechainD\Stratis.SidechainD.csproj", "{C3FF2EF8-50B6-43D8-AC78-BCFEBF7DE394}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.Sidechains.Networks", "Stratis.Sidechains.Networks\Stratis.Sidechains.Networks.csproj", "{E28F1D74-D3D3-4BF0-A06F-12BACC3C662C}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Stratis.FederatedSidechains.IntegrationTests", "Stratis.FederatedSidechains.IntegrationTests\Stratis.FederatedSidechains.IntegrationTests.csproj", "{0C1E95D8-5048-4660-85F8-58BB303897AE}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.Sidechains.Networks", "Stratis.Sidechains.Networks\Stratis.Sidechains.Networks.csproj", "{C5D390A9-1E08-47DE-BAAB-0AA9FC69CCC2}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -88,10 +85,14 @@ Global
 		{C3FF2EF8-50B6-43D8-AC78-BCFEBF7DE394}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C3FF2EF8-50B6-43D8-AC78-BCFEBF7DE394}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C3FF2EF8-50B6-43D8-AC78-BCFEBF7DE394}.Release|Any CPU.Build.0 = Release|Any CPU
-		{E28F1D74-D3D3-4BF0-A06F-12BACC3C662C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{E28F1D74-D3D3-4BF0-A06F-12BACC3C662C}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{E28F1D74-D3D3-4BF0-A06F-12BACC3C662C}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{E28F1D74-D3D3-4BF0-A06F-12BACC3C662C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0C1E95D8-5048-4660-85F8-58BB303897AE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0C1E95D8-5048-4660-85F8-58BB303897AE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0C1E95D8-5048-4660-85F8-58BB303897AE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0C1E95D8-5048-4660-85F8-58BB303897AE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C5D390A9-1E08-47DE-BAAB-0AA9FC69CCC2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C5D390A9-1E08-47DE-BAAB-0AA9FC69CCC2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C5D390A9-1E08-47DE-BAAB-0AA9FC69CCC2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C5D390A9-1E08-47DE-BAAB-0AA9FC69CCC2}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
