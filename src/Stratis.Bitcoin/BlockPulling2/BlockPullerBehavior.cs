@@ -81,12 +81,16 @@ namespace Stratis.Bitcoin.BlockPulling2
         /// <param name="delaySeconds">Time in seconds it took peer to deliver a block.</param>
         public void AddSample(long blockSizeBytes, double delaySeconds)
         {
+            this.logger.LogTrace("({0}:{1},{2}:{3})", nameof(blockSizeBytes), blockSizeBytes, nameof(delaySeconds), delaySeconds);
+
             this.averageSizeBytes.AddSample(blockSizeBytes);
             this.averageDelaySeconds.AddSample(delaySeconds);
 
             this.AdjustMaxSamples();
 
             this.SpeedBytesPerSecond = (int)(this.averageSizeBytes.Average / this.averageDelaySeconds.Average);
+
+            this.logger.LogTrace("()");
         }
 
         /// <summary>Applies a penalty to a peer for not delivering a block.</summary>
@@ -94,9 +98,11 @@ namespace Stratis.Bitcoin.BlockPulling2
         /// <param name="notDeliveredBlocksCount">Amount of blocks peer failed to deliver.</param>
         public void Penalize(double delaySeconds, int notDeliveredBlocksCount)
         {
+            this.logger.LogTrace("({0}:{1},{2}:{3})", nameof(delaySeconds), delaySeconds, nameof(notDeliveredBlocksCount), notDeliveredBlocksCount);
+
             int maxSamplesToPenalize = (int)(this.averageDelaySeconds.GetMaxSamples() * MaxSamplesPercentageToPenalize);
             int penalizeTimes = (notDeliveredBlocksCount < maxSamplesToPenalize) ? notDeliveredBlocksCount : maxSamplesToPenalize;
-
+            
             for (int i = 0; i < penalizeTimes; ++i)
             {
                 this.averageSizeBytes.AddSample(0);
@@ -106,20 +112,28 @@ namespace Stratis.Bitcoin.BlockPulling2
             this.AdjustMaxSamples();
 
             this.SpeedBytesPerSecond = (int)(this.averageSizeBytes.Average / this.averageDelaySeconds.Average);
+
+            this.logger.LogTrace("(-)");
         }
 
         /// <summary>Recalculates the max samples count that can be used for quality score calculation.</summary>
         private void AdjustMaxSamples()
         {
+            this.logger.LogTrace("()");
+
             int samplesCount = this.ibdState.IsInitialBlockDownload() ? IBDSamplesCount : NormalSamplesCount;
             this.averageSizeBytes.SetMaxSamples(samplesCount);
             this.averageDelaySeconds.SetMaxSamples(samplesCount);
+
+            this.logger.LogTrace("(-)");
         }
 
         /// <summary>Recalculates the quality score for this peer.</summary>
         /// <param name="bestSpeedBytesPerSecond">Speed in bytes per second of the fastest peer that we are connected to.</param>
         public void RecalculateQualityScore(int bestSpeedBytesPerSecond)
         {
+            this.logger.LogTrace("({0}:{1})", nameof(bestSpeedBytesPerSecond), bestSpeedBytesPerSecond);
+
             this.QualityScore = (double)this.SpeedBytesPerSecond / bestSpeedBytesPerSecond;
 
             if (this.QualityScore < MinQualityScore)
@@ -127,6 +141,9 @@ namespace Stratis.Bitcoin.BlockPulling2
 
             if (this.QualityScore > MaxQualityScore)
                 this.QualityScore = MaxQualityScore;
+
+            this.logger.LogDebug("Quality score was set to {0}", this.QualityScore);
+            this.logger.LogTrace("()");
         }
         
         private async Task OnMessageReceivedAsync(INetworkPeer peer, IncomingMessage message)
@@ -135,7 +152,11 @@ namespace Stratis.Bitcoin.BlockPulling2
 
             if (message.Message.Payload is BlockPayload block)
             {
-                this.blockPuller.PushBlock(block.Obj.GetHash(), block.Obj, this.AttachedPeer.Connection.Id);
+                uint256 blockHash = block.Obj.GetHash();
+
+                this.logger.LogDebug("Block '{0}' delivered.", blockHash);
+
+                this.blockPuller.PushBlock(blockHash, block.Obj, this.AttachedPeer.Connection.Id);
             }
 
             this.logger.LogTrace("(-)");
@@ -146,6 +167,8 @@ namespace Stratis.Bitcoin.BlockPulling2
         /// <exception cref="OperationCanceledException">Thrown in case peer is in the wrong state or TCP connection was closed during sending a message.</exception>
         public async Task RequestBlocksAsync(List<uint256> hashes)
         {
+            this.logger.LogTrace("({0}:{1})", nameof(hashes), hashes.Count);
+
             var getDataPayload = new GetDataPayload();
 
             foreach (uint256 uint256 in hashes)
