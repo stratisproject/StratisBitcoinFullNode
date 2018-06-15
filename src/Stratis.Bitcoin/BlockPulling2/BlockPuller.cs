@@ -13,6 +13,9 @@ using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.BlockPulling2
 {
+    /// <summary>
+    /// TODO
+    /// </summary>
     public class BlockPuller : IDisposable
     {
         private const int StallingDelayMs = 500;
@@ -537,10 +540,10 @@ namespace Stratis.Bitcoin.BlockPulling2
             }
         }
 
-        // Logs to console
+        /// <summary>Logs statistics to the console.</summary>
         private void ShowStats()
         {
-            //TODO 
+            //TODO: do that when component is activated.
 
             /*
              just for logging, only IBD)
@@ -553,7 +556,8 @@ namespace Stratis.Bitcoin.BlockPulling2
 		            show actual speed (no 1mb limit)
              */
         }
-
+        
+        /// <inheritdoc />
         public void Dispose()
         {
             this.cancellationSource.Cancel();
@@ -563,22 +567,30 @@ namespace Stratis.Bitcoin.BlockPulling2
 
             this.cancellationSource.Dispose();
         }
-        
+
+        /// <summary>Represents consequtive collection of hashes that are to be downloaded.</summary>
         private struct DownloadJob
         {
+            /// <summary>Unicue identifier if this job.</summary>
             public int Id;
 
+            /// <summary>Hashes of blocks that are to be downloaded.</summary>
             public HashSet<uint256> Hashes;
         }
 
+        /// <summary>Represents a single download assignment to a peer.</summary>
         private struct AssignedDownload
         {
+            /// <summary>Unicue identifier of a job to which this assignment belogs.</summary>
             public int JobId;
 
+            /// <summary>Id of a peer that was assigned to deliver a block.</summary>
             public int PeerId;
-
+            
+            /// <summary>Time when download was assigned to a peer.</summary>
             public DateTime AssignedTime;
 
+            /// <summary>Height of a block associated with this assignment.</summary>
             public int BlockHeight;
         }
     }

@@ -4,12 +4,22 @@ using System.Linq;
 
 namespace Stratis.Bitcoin.Utilities
 {
+    /// <summary>Calculates average value of last N added samples every time new sample is added.</summary>
+    /// <remarks>
+    /// Implementation doesn't iterate through the whole collection of samples when average value is being calculated which makes this component more optimal
+    /// in terms of performance when frequent calculation of an average value on a set of items is required.
+    /// </remarks>
     public class AverageCalculator
     {
+        /// <summary>Average value of supplied samples.</summary>
         public double Average { get; private set; }
 
+        /// <summary>Samples used in calculation of the average value.</summary>
         private CircularArray<double> samples;
 
+        /// <summary>Initializes a new instance of the <see cref="AverageCalculator"/> class.</summary>
+        /// <param name="maxSamples">Maximum amount of samples that can be used in the calculation of the average value.</param>
+        /// <exception cref="ArgumentException">Thrown if <paramref name="maxSamples"/> is less than 2.</exception>
         public AverageCalculator(int maxSamples)
         {
             if (maxSamples < 2)
@@ -19,12 +29,14 @@ namespace Stratis.Bitcoin.Utilities
             this.samples = new CircularArray<double>(maxSamples);
         }
 
+        /// <summary>Gets the maximum amount of samples that can be used in the calculation of the average value.</summary>
         public int GetMaxSamples()
         {
             return this.samples.Capacity;
         }
-
-        // Expensive operation
+        
+        /// <summary>Sets the maximum amount of samples that can be used in the calculation of the average value.</summary>
+        /// <remarks>This is an expensive operation since it will require recreating an array of samples.</remarks>
         public void SetMaxSamples(int maxSamples)
         {
             if (this.samples.Capacity == maxSamples)
@@ -40,6 +52,8 @@ namespace Stratis.Bitcoin.Utilities
             this.Average = items.Average();
         }
 
+        /// <summary>Adds a new sample and recalculates <see cref="Average"/> value.</summary>
+        /// <param name="sample">New sample.</param>
         public void AddSample(double sample)
         {
             bool oldSampleExisted = this.samples.Add(sample, out double removedSample);
