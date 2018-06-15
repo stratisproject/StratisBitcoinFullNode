@@ -87,12 +87,6 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Interfaces
         void UpdateLastBlockSyncedHeight(ChainedHeader chainedBlock);
 
 		/// <summary>
-		/// Updates all the loaded wallets with the height of the last block synced.
-		/// </summary>
-		/// <param name="chainedBlock">The height of the last block synced.</param>
-		void UpdateBlockLocator(ChainedHeader chainedBlock);
-
-		/// <summary>
 		/// Gets whether there are any wallet files loaded or not.
 		/// </summary>
 		/// <returns>Whether any wallet files are loaded.</returns>
