@@ -22,6 +22,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
     public class PowCoinViewRuleTests
     {
         private Exception caughtExecption;
+        private readonly Network network;
         private Mock<ILogger> logger;
         private const int HeightOfBlockchain = 1;
         private RuleContext ruleContext;
@@ -31,6 +32,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
 
         public PowCoinViewRuleTests()
         {
+            this.network = Network.RegTest;
             this.rule = new PowCoinviewRule();
         }
 
@@ -69,7 +71,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         {
             this.ruleContext = new PowRuleContext { };
             this.ruleContext.ValidationContext = new ValidationContext();
-            this.ruleContext.ValidationContext.ChainedHeader = new ChainedHeader(new BlockHeader(), new uint256("bcd7d5de8d3bcc7b15e7c8e5fe77c0227cdfa6c682ca13dcf4910616f10fdd06"), HeightOfBlockchain);
+            BlockHeader blockHeader = this.network.Consensus.ConsensusFactory.CreateBlockHeader();
+            this.ruleContext.ValidationContext.ChainedHeader = new ChainedHeader(blockHeader, new uint256("bcd7d5de8d3bcc7b15e7c8e5fe77c0227cdfa6c682ca13dcf4910616f10fdd06"), HeightOfBlockchain);
             this.ruleContext.ValidationContext.Block = new Block() { Transactions = new List<Transaction>() };
         }
 

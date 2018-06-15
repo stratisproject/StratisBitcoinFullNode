@@ -16,7 +16,7 @@ using Xunit;
 
 namespace NBitcoin.Tests
 {
-    public class pos_transaction_tests
+    public class Pos_Transaction_Tests
     {
         [Fact]
         [Trait("UnitTest", "UnitTest")]
@@ -36,43 +36,44 @@ namespace NBitcoin.Tests
         [Trait("UnitTest", "UnitTest")]
         public void CanGetMedianBlock()
         {
+            Network network = Network.StratisMain;
+
             var chain = new ConcurrentChain(Network.StratisMain);
             DateTimeOffset now = DateTimeOffset.UtcNow;
-            chain.SetTip(CreateBlock(now, 0, chain));
-            chain.SetTip(CreateBlock(now, -1, chain));
-            chain.SetTip(CreateBlock(now, 1, chain));
-            Assert.Equal(CreateBlock(now, 0).Header.BlockTime, chain.Tip.GetMedianTimePast()); // x -1 0 1
-            chain.SetTip(CreateBlock(now, 2, chain));
-            Assert.Equal(CreateBlock(now, 0).Header.BlockTime, chain.Tip.GetMedianTimePast()); // x -1 0 1 2
-            chain.SetTip(CreateBlock(now, 3, chain));
-            Assert.Equal(CreateBlock(now, 1).Header.BlockTime, chain.Tip.GetMedianTimePast()); // x -1 0 1 2 3
-            chain.SetTip(CreateBlock(now, 4, chain));
-            chain.SetTip(CreateBlock(now, 5, chain));
-            chain.SetTip(CreateBlock(now, 6, chain));
-            chain.SetTip(CreateBlock(now, 7, chain));
-            chain.SetTip(CreateBlock(now, 8, chain));
+            chain.SetTip(CreateBlock(network, now, 0, chain));
+            chain.SetTip(CreateBlock(network, now, -1, chain));
+            chain.SetTip(CreateBlock(network, now, 1, chain));
+            Assert.Equal(CreateBlock(network, now, 0).Header.BlockTime, chain.Tip.GetMedianTimePast()); // x -1 0 1
+            chain.SetTip(CreateBlock(network, now, 2, chain));
+            Assert.Equal(CreateBlock(network, now, 0).Header.BlockTime, chain.Tip.GetMedianTimePast()); // x -1 0 1 2
+            chain.SetTip(CreateBlock(network, now, 3, chain));
+            Assert.Equal(CreateBlock(network, now, 1).Header.BlockTime, chain.Tip.GetMedianTimePast()); // x -1 0 1 2 3
+            chain.SetTip(CreateBlock(network, now, 4, chain));
+            chain.SetTip(CreateBlock(network, now, 5, chain));
+            chain.SetTip(CreateBlock(network, now, 6, chain));
+            chain.SetTip(CreateBlock(network, now, 7, chain));
+            chain.SetTip(CreateBlock(network, now, 8, chain));
 
-            Assert.Equal(CreateBlock(now, 3).Header.BlockTime, chain.Tip.GetMedianTimePast()); // x -1 0 1 2 3 4 5 6 7 8
+            Assert.Equal(CreateBlock(network, now, 3).Header.BlockTime, chain.Tip.GetMedianTimePast()); // x -1 0 1 2 3 4 5 6 7 8
 
-            chain.SetTip(CreateBlock(now, 9, chain));
-            Assert.Equal(CreateBlock(now, 4).Header.BlockTime, chain.Tip.GetMedianTimePast()); // x -1 0 1 2 3 4 5 6 7 8 9
-            chain.SetTip(CreateBlock(now, 10, chain));
-            Assert.Equal(CreateBlock(now, 5).Header.BlockTime, chain.Tip.GetMedianTimePast()); // x -1 0 1 2 3 4 5 6 7 8 9 10
+            chain.SetTip(CreateBlock(network, now, 9, chain));
+            Assert.Equal(CreateBlock(network, now, 4).Header.BlockTime, chain.Tip.GetMedianTimePast()); // x -1 0 1 2 3 4 5 6 7 8 9
+            chain.SetTip(CreateBlock(network, now, 10, chain));
+            Assert.Equal(CreateBlock(network, now, 5).Header.BlockTime, chain.Tip.GetMedianTimePast()); // x -1 0 1 2 3 4 5 6 7 8 9 10
         }
 
-        private ChainedHeader CreateBlock(DateTimeOffset now, int offset, ChainBase chain = null)
+        private ChainedHeader CreateBlock(Network network, DateTimeOffset now, int offset, ChainBase chain = null)
         {
-            var b = new Block(new BlockHeader()
-            {
-                BlockTime = now + TimeSpan.FromMinutes(offset)
-            });
+            Block block = network.Consensus.ConsensusFactory.CreateBlock();
+            block.Header.BlockTime = now + TimeSpan.FromMinutes(offset);
+
             if (chain != null)
             {
-                b.Header.HashPrevBlock = chain.Tip.HashBlock;
-                return new ChainedHeader(b.Header, b.Header.GetHash(), chain.Tip);
+                block.Header.HashPrevBlock = chain.Tip.HashBlock;
+                return new ChainedHeader(block.Header, block.Header.GetHash(), chain.Tip);
             }
             else
-                return new ChainedHeader(b.Header, b.Header.GetHash(), 0);
+                return new ChainedHeader(block.Header, block.Header.GetHash(), 0);
         }
 
         [Fact]
@@ -138,7 +139,7 @@ namespace NBitcoin.Tests
         [Trait("UnitTest", "UnitTest")]
         public void CanExtractTxOutDestinationEasily()
         {
-            
+
             var secret = new BitcoinSecret("VHqBm5xVQvosc7u4dDwMmzbr8mL4KzZBn5VgqjunovgURtXBo5cV", Network.StratisMain);
 
             Transaction tx = Network.StratisMain.Consensus.ConsensusFactory.CreateTransaction();
@@ -402,14 +403,14 @@ namespace NBitcoin.Tests
             var repo = new NoSqlColoredTransactionRepository(new NoSqlTransactionRepository(Network.StratisMain), new InMemoryNoSqlRepository(Network.StratisMain));
 
             Transaction init = Network.StratisMain.Consensus.ConsensusFactory.CreateTransaction();
-            
+
             init.Outputs.AddRange(new[]
             {
                 new TxOut("1.0", gold.PubKey),
                 new TxOut("1.0", silver.PubKey),
                 new TxOut("1.0", satoshi.PubKey)
             });
-            
+
             repo.Transactions.Put(init.GetHash(), init);
 
             ICoin[] issuanceCoins =
@@ -496,7 +497,7 @@ namespace NBitcoin.Tests
                 new TxOut("1.0", silver.PubKey),
                 new TxOut("1.0", satoshi.PubKey)
             });
-            
+
 
             repo.Transactions.Put(init);
 
@@ -983,21 +984,25 @@ namespace NBitcoin.Tests
 
         private void CanVerifySequenceLockCore(Sequence[] sequences, int[] prevHeights, int currentHeight, DateTimeOffset first, bool expected, SequenceLock expectedLock)
         {
-            var chain = new ConcurrentChain(new BlockHeader()
-            {
-                BlockTime = first
-            }, Network.StratisMain);
+            Network network = Network.StratisMain;
+
+            BlockHeader blockHeader = network.Consensus.ConsensusFactory.CreateBlockHeader();
+            blockHeader.BlockTime = first;
+
+            var chain = new ConcurrentChain(blockHeader);
             first = first + TimeSpan.FromMinutes(10);
+
             while (currentHeight != chain.Height)
             {
-                chain.SetTip(new BlockHeader()
-                {
-                    BlockTime = first,
-                    HashPrevBlock = chain.Tip.HashBlock
-                });
+                BlockHeader header = network.Consensus.ConsensusFactory.CreateBlockHeader();
+                blockHeader.BlockTime = first;
+                blockHeader.HashPrevBlock = chain.Tip.HashBlock;
+
+                chain.SetTip(header);
                 first = first + TimeSpan.FromMinutes(10);
             }
-            Transaction tx = Network.StratisMain.Consensus.ConsensusFactory.CreateTransaction();
+
+            Transaction tx = network.Consensus.ConsensusFactory.CreateTransaction();
             tx.Version = 2;
             for (int i = 0; i < sequences.Length; i++)
             {

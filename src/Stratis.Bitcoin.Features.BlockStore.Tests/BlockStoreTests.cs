@@ -20,7 +20,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
         private readonly IChainState chainState;
         private readonly NodeLifetime nodeLifetime;
         private ConcurrentChain chain;
-
+        private readonly Network network;
         private uint256 repositoryBlockHash;
         private int repositorySavesCount = 0;
         private int repositoryTotalBlocksSaved = 0;
@@ -41,6 +41,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
 
             this.chain = this.CreateChain(10);
             this.consensusTip = null;
+            this.network = Network.StratisMain;
             this.nodeLifetime = new NodeLifetime();
 
             var blockRepositoryMock = new Mock<IBlockRepository>();
@@ -89,19 +90,15 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
 
         private ConcurrentChain CreateChain(int blocksCount)
         {
-            var chain = new ConcurrentChain(Network.StratisMain);
-
+            var chain = new ConcurrentChain(this.network);
             for (int i = 0; i < blocksCount; i++)
             {
-                var header = new BlockHeader()
-                {
-                    Nonce = RandomUtils.GetUInt32(),
-                    HashPrevBlock = chain.Tip.HashBlock,
-                    Bits = Target.Difficulty1
-                };
-                
-                var chainedHeader = new ChainedHeader(header, header.GetHash(), chain.Tip);
+                BlockHeader header = this.network.Consensus.ConsensusFactory.CreateBlockHeader();
+                header.Nonce = RandomUtils.GetUInt32();
+                header.HashPrevBlock = chain.Tip.HashBlock;
+                header.Bits = Target.Difficulty1;
 
+                var chainedHeader = new ChainedHeader(header, header.GetHash(), chain.Tip);
                 chain.SetTip(chainedHeader);
             }
 
@@ -113,7 +110,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             int iterations = 0;
 
             var queue = this.blockStoreQueue.GetMemberValue("blocksQueue") as AsyncQueue<BlockPair>;
-            
+
             while (true)
             {
                 int itemsCount = ((Queue<BlockPair>)queue.GetMemberValue("items")).Count;
@@ -128,11 +125,11 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
                 if (iterations > 500)
                     throw new Exception("Unexpected queue processing delay!");
             }
-            
+
             // For very slow environments.
             await Task.Delay(500).ConfigureAwait(false);
         }
-        
+
         [Fact]
         public async Task BlockStoreInitializesTipAtHashOfLastSavedBlockAsync()
         {
@@ -149,7 +146,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             this.repositoryBlockHash = uint256.One;
 
             await this.blockStoreQueue.InitializeAsync().ConfigureAwait(false);
-            
+
             Assert.Equal(this.chain.Genesis, this.chainState.BlockStoreTip);
         }
 
@@ -177,7 +174,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
 
                 this.blockStoreQueue.AddToPending(new BlockPair(block, header));
             }
-            
+
             await this.WaitUntilQueueIsEmptyAsync().ConfigureAwait(false);
             Assert.Equal(longChain.GetBlock(count - 1), this.chainState.BlockStoreTip);
             Assert.Equal(1, this.repositorySavesCount);
@@ -195,7 +192,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             for (int i = 1; i < this.chain.Height - 1; i++)
             {
                 lastHeader = this.chain.GetBlock(i);
-                var block = new Block();
+                Block block = this.network.Consensus.ConsensusFactory.CreateBlock();
                 block.GetSerializedSize();
 
                 this.blockStoreQueue.AddToPending(new BlockPair(block, lastHeader));
@@ -205,7 +202,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
 
             Assert.Equal(this.chainState.BlockStoreTip, this.chain.Genesis);
             Assert.Equal(0, this.repositorySavesCount);
-            
+
             this.nodeLifetime.StopApplication();
             this.blockStoreQueue.Dispose();
 
@@ -224,14 +221,14 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             for (int i = 1; i <= this.chain.Height; i++)
             {
                 ChainedHeader lastHeader = this.chain.GetBlock(i);
-                var block = new Block();
+                Block block = this.network.Consensus.ConsensusFactory.CreateBlock();
                 block.GetSerializedSize();
 
                 this.blockStoreQueue.AddToPending(new BlockPair(block, lastHeader));
             }
 
             await this.WaitUntilQueueIsEmptyAsync().ConfigureAwait(false);
-            
+
             Assert.Equal(this.chainState.BlockStoreTip, this.chain.Tip);
             Assert.Equal(1, this.repositorySavesCount);
         }
@@ -245,12 +242,12 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
 
             int reorgedChainLenght = 3;
             int realChainLenght = 6;
-            
+
             // First present a short chain.
             ConcurrentChain alternativeChain = this.CreateChain(reorgedChainLenght);
             for (int i = 1; i < alternativeChain.Height; i++)
             {
-                var block = new Block();
+                Block block = this.network.Consensus.ConsensusFactory.CreateBlock();
                 block.GetSerializedSize();
 
                 this.blockStoreQueue.AddToPending(new BlockPair(block, alternativeChain.GetBlock(i)));
@@ -259,7 +256,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             // Present second chain which has more work and reorgs blocks from genesis. 
             for (int i = 1; i < realChainLenght; i++)
             {
-                var block = new Block();
+                Block block = this.network.Consensus.ConsensusFactory.CreateBlock();
                 block.GetSerializedSize();
 
                 this.blockStoreQueue.AddToPending(new BlockPair(block, this.chain.GetBlock(i)));
@@ -273,7 +270,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             // Dispose block store to trigger save.
             this.nodeLifetime.StopApplication();
             this.blockStoreQueue.Dispose();
-            
+
             // Make sure that blocks only from 2nd chain were saved.
             Assert.Equal(this.chain.GetBlock(realChainLenght - 1), this.chainState.BlockStoreTip);
             Assert.Equal(1, this.repositorySavesCount);
@@ -297,7 +294,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             // Sending 500 blocks to the queue.
             for (int i = 1; i < 500; i++)
             {
-                var block = new Block();
+                Block block = this.network.Consensus.ConsensusFactory.CreateBlock();
                 block.GetSerializedSize();
 
                 this.blockStoreQueue.AddToPending(new BlockPair(block, this.chain.GetBlock(i)));
@@ -306,14 +303,13 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             // Create alternative chain with fork point at 450.
             ChainedHeader prevBlock = this.chain.GetBlock(450);
             var alternativeBlocks = new List<ChainedHeader>();
+            BlockHeader blockHeader = this.network.Consensus.ConsensusFactory.CreateBlockHeader();
             for (int i = 0; i < 100; i++)
             {
-                var header = new BlockHeader()
-                {
-                    Nonce = RandomUtils.GetUInt32(),
-                    HashPrevBlock = prevBlock.HashBlock,
-                    Bits = Target.Difficulty1
-                };
+                BlockHeader header = this.network.Consensus.ConsensusFactory.CreateBlockHeader();
+                header.Nonce = RandomUtils.GetUInt32();
+                header.HashPrevBlock = prevBlock.HashBlock;
+                header.Bits = Target.Difficulty1;
 
                 var chainedHeader = new ChainedHeader(header, header.GetHash(), prevBlock);
                 alternativeBlocks.Add(chainedHeader);
@@ -328,7 +324,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             // Present alternative chain and trigger save.
             foreach (ChainedHeader header in alternativeBlocks)
             {
-                var block = new Block();
+                Block block = this.network.Consensus.ConsensusFactory.CreateBlock();
                 block.GetSerializedSize();
 
                 this.blockStoreQueue.AddToPending(new BlockPair(block, header));
@@ -346,14 +342,14 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
 
             for (int i = 451; i <= this.chain.Height; i++)
             {
-                var block = new Block();
+                Block block = this.network.Consensus.ConsensusFactory.CreateBlock();
                 block.GetSerializedSize();
 
                 this.blockStoreQueue.AddToPending(new BlockPair(block, this.chain.GetBlock(i)));
             }
 
             await this.WaitUntilQueueIsEmptyAsync().ConfigureAwait(false);
-            
+
             // Make sure chain is saved.
             Assert.Equal(2, this.repositorySavesCount);
             Assert.Equal(this.chain.Tip.Height + alternativeBlocks.Count, this.repositoryTotalBlocksSaved);
