@@ -7,15 +7,13 @@ using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NBitcoin.Protocol;
 using Stratis.Bitcoin.Base;
-using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
 using Stratis.Bitcoin.Utilities;
 
 //TODO
 /*
-    Peer quality score:
-	    Max samples count = 200 for IBD and 10 when not in IBD.
+    Optimize structures and review component
 
     Logs
 
@@ -61,8 +59,7 @@ namespace Stratis.Bitcoin.BlockPulling2
         /// Given that all peers are on the same chain they will deliver that amount of blocks in 1 seconds.
         /// </summary>
         private int maxBlocksBeingDownloaded;
-
-        private readonly IInitialBlockDownloadState ibdState;
+        
         private readonly ChainState chainState;
         private readonly ILogger logger;
         private readonly NetworkPeerRequirement networkPeerRequirement;
@@ -77,7 +74,7 @@ namespace Stratis.Bitcoin.BlockPulling2
             return this.pullerBehaviorsByPeerId.Sum(x => x.Value.SpeedBytesPerSecond);
         }
 
-        public BlockPuller(OnBlockDownloadedCallback callback, IInitialBlockDownloadState ibdState, ChainState chainState, ProtocolVersion protocolVersion, LoggerFactory loggerFactory)
+        public BlockPuller(OnBlockDownloadedCallback callback, ChainState chainState, ProtocolVersion protocolVersion, LoggerFactory loggerFactory)
         {
             this.peerIdsToTips = new Dictionary<int, ChainedHeader>();
             this.reassignedJobsQueue = new Queue<DownloadJob>();
@@ -105,7 +102,6 @@ namespace Stratis.Bitcoin.BlockPulling2
             this.random = new Random();
 
             this.OnDownloadedCallback = callback;
-            this.ibdState = ibdState;
             this.chainState = chainState;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
         }

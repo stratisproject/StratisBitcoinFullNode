@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
+using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.P2P.Protocol;
 using Stratis.Bitcoin.P2P.Protocol.Behaviors;
@@ -17,14 +18,15 @@ namespace Stratis.Bitcoin.BlockPulling2
         private const double SamplelessQualityScore = 0.3;
         private const double MaxQualityScore = 1.0;
 
-        private const int MaxSamples = 100;
+        private const int IBDSamplesCount = 200;
+        private const int NormalSamplesCount = 10;
 
         public double QualityScore { get; private set; }
         public int SpeedBytesPerSecond { get; private set; }
         
-        private AverageCalculator averageSizeBytes;
-        private AverageCalculator averageDelaySeconds;
-
+        private readonly AverageCalculator averageSizeBytes;
+        private readonly AverageCalculator averageDelaySeconds;
+        
         /// <summary>Logger factory to create loggers.</summary>
         private readonly ILoggerFactory loggerFactory;
 
@@ -33,13 +35,16 @@ namespace Stratis.Bitcoin.BlockPulling2
 
         private readonly BlockPuller blockPuller;
 
-        public BlockPullerBehavior(BlockPuller blockPuller, ILoggerFactory loggerFactory)
+        private readonly IInitialBlockDownloadState ibdState;
+
+        public BlockPullerBehavior(BlockPuller blockPuller, IInitialBlockDownloadState ibdState, ILoggerFactory loggerFactory)
         {
             this.QualityScore = SamplelessQualityScore;
 
-            this.averageSizeBytes = new AverageCalculator(MaxSamples);
-            this.averageDelaySeconds = new AverageCalculator(MaxSamples);
+            this.averageSizeBytes = new AverageCalculator(IBDSamplesCount);
+            this.averageDelaySeconds = new AverageCalculator(IBDSamplesCount);
             this.SpeedBytesPerSecond = 0;
+            this.ibdState = ibdState;
 
             this.blockPuller = blockPuller;
 
@@ -51,6 +56,10 @@ namespace Stratis.Bitcoin.BlockPulling2
         {
             this.averageSizeBytes.AddSample(blockSizeBytes);
             this.averageDelaySeconds.AddSample(delaySeconds);
+
+            int samplesCount = this.ibdState.IsInitialBlockDownload() ? IBDSamplesCount : NormalSamplesCount;
+            this.averageSizeBytes.SetMaxSamples(samplesCount);
+            this.averageDelaySeconds.SetMaxSamples(samplesCount);
 
             this.SpeedBytesPerSecond = (int)(this.averageSizeBytes.Average / this.averageDelaySeconds.Average);
         }
@@ -104,7 +113,7 @@ namespace Stratis.Bitcoin.BlockPulling2
         /// <inheritdoc />
         public override object Clone()
         {
-            return new BlockPullerBehavior(this.blockPuller, this.loggerFactory);
+            return new BlockPullerBehavior(this.blockPuller, this.ibdState, this.loggerFactory);
         }
 
         protected override void AttachCore()

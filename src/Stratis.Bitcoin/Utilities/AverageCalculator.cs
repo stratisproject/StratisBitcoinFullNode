@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace Stratis.Bitcoin.Utilities
 {
@@ -17,12 +19,20 @@ namespace Stratis.Bitcoin.Utilities
             this.samples = new CircularArray<double>(maxSamples);
         }
 
+        // Expensive operation
         public void SetMaxSamples(int maxSamples)
         {
             if (this.samples.Capacity == maxSamples)
                 return;
 
-            //TODO resize
+            List<double> items = this.samples.Reverse().Take(maxSamples).ToList();
+
+            this.samples = new CircularArray<double>(maxSamples);
+
+            foreach (double item in items)
+                this.samples.Add(item, out double unused);
+
+            this.Average = items.Average();
         }
 
         public void AddSample(double sample)
