@@ -11,22 +11,18 @@ using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
 using Stratis.Bitcoin.Utilities;
 
-//TODO
-/*
-    Optimize structures and review component
-
-    Logs
-
-    Comments 
-*/
-
 namespace Stratis.Bitcoin.BlockPulling2
 {
     public class BlockPuller : IDisposable
     {
         private const int StallingDelayMs = 500;
         private const int MinEmptySlotsPercentageToStartProcessingTheQueue = 5;
-        
+
+        private const int ImportantHeightMargin = 10;
+
+        // we will reassign if not delivered in that time
+        private const int MaxSecondsToDeliverBlock = 5;
+
         /// <summary>This affects quality score only. If the peer is too fast don't give him all the assignments in the world when not in IBD.</summary>
         private const int PeerSpeedLimitLimirationWhenNotInIBDBytes = 1024 * 1024;
 
@@ -299,7 +295,7 @@ namespace Stratis.Bitcoin.BlockPulling2
                         await peerBehavior.RequestBlocksAsync(hashes).ConfigureAwait(false);
                         success = true;
                     }
-                    catch (Exception) //TODO specify particular exception
+                    catch (OperationCanceledException)
                     {
                     }
                 }
@@ -392,9 +388,7 @@ namespace Stratis.Bitcoin.BlockPulling2
 
         private void CheckStalling()
         {
-            int lastImportantHeight = this.chainState.ConsensusTip.Height + 10; //TODO move 10 to constant
-
-            int maxSecondsToDeliverBlock = 5; // TODO Move to constant
+            int lastImportantHeight = this.chainState.ConsensusTip.Height + ImportantHeightMargin;
 
             var toReassign = new Dictionary<int, uint256>();
 
@@ -405,7 +399,7 @@ namespace Stratis.Bitcoin.BlockPulling2
                 do
                 {
                     KeyValuePair<uint256, AssignedDownload> expiredImportantDownload = this.AssignedDownloads.FirstOrDefault(x =>
-                        x.Value.BlockHeight <= lastImportantHeight && (DateTime.UtcNow - x.Value.AssignedTime).TotalSeconds >= maxSecondsToDeliverBlock);
+                        x.Value.BlockHeight <= lastImportantHeight && (DateTime.UtcNow - x.Value.AssignedTime).TotalSeconds >= MaxSecondsToDeliverBlock);
                     
                     if (!expiredImportantDownload.Equals(default(KeyValuePair<uint256, AssignedDownload>)))
                     {
@@ -422,7 +416,7 @@ namespace Stratis.Bitcoin.BlockPulling2
 
                         BlockPullerBehavior pullerBehavior = this.pullerBehaviorsByPeerId[downloadsToReassign.First().Value.PeerId];
 
-                        pullerBehavior.Penalize(maxSecondsToDeliverBlock, reassignedCount);
+                        pullerBehavior.Penalize(MaxSecondsToDeliverBlock, reassignedCount);
 
                         this.RecalculateQuealityScoreLocked(pullerBehavior);
 
@@ -495,6 +489,7 @@ namespace Stratis.Bitcoin.BlockPulling2
 
         private void RecalculateMaxBlocksBeingDownloadedLocked()
         {
+            // How many blocks we can download in 1 second.
             this.maxBlocksBeingDownloaded = (int)(this.GetTotalSpeedOfAllPeersBytesPerSecLocked() / this.averageBlockSizeBytes.Average);
 
             if (this.maxBlocksBeingDownloaded < 10)

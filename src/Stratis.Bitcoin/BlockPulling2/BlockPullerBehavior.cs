@@ -21,6 +21,9 @@ namespace Stratis.Bitcoin.BlockPulling2
         private const int IBDSamplesCount = 200;
         private const int NormalSamplesCount = 10;
 
+        // 10%
+        private const double MaxSamplesPercentageToPenalize = 0.1; //TODO test it and find best value
+
         public double QualityScore { get; private set; }
         public int SpeedBytesPerSecond { get; private set; }
         
@@ -64,8 +67,8 @@ namespace Stratis.Bitcoin.BlockPulling2
 
         public void Penalize(double delay, int notDeliveredBlocksCount)
         {
-            int tenPercentOfSamples = (int)(this.averageDelaySeconds.GetMaxSamples() * 0.1); //TODO Move to constant, test it and find best value
-            int penalizeTimes = (notDeliveredBlocksCount < tenPercentOfSamples) ? notDeliveredBlocksCount : tenPercentOfSamples;
+            int maxSamplesToPenalize = (int)(this.averageDelaySeconds.GetMaxSamples() * MaxSamplesPercentageToPenalize);
+            int penalizeTimes = (notDeliveredBlocksCount < maxSamplesToPenalize) ? notDeliveredBlocksCount : maxSamplesToPenalize;
 
             for (int i = 0; i < penalizeTimes; ++i)
             {
@@ -123,7 +126,7 @@ namespace Stratis.Bitcoin.BlockPulling2
             if ((this.AttachedPeer == null) || (this.AttachedPeer.State != NetworkPeerState.HandShaked))
             {
                 this.logger.LogTrace("(-)[ATTACHED_PEER]");
-                throw new Exception("Peer is in the wrong state!");
+                throw new OperationCanceledException("Peer is in the wrong state!");
             }
 
             await this.AttachedPeer.SendMessageAsync(getDataPayload).ConfigureAwait(false);
