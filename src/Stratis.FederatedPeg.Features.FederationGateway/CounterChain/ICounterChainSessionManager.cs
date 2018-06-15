@@ -54,12 +54,5 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.CounterChain
         /// </summary>
         /// <param name="session">The session.</param>
         void MarkSessionAsSigned(CounterChainSession session);
-
-        /// <summary>
-        /// Imports the federation member's mnemonic key.
-        /// </summary>
-        /// <param name="password">The user's password.</param>
-        /// <param name="mnemonic">The user's mnemonic.</param>
-        void ImportMemberKey(string password, string mnemonic);
     }
 }

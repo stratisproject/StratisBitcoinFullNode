@@ -102,35 +102,6 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Controllers
         }
 
         /// <summary>
-        /// Imports the federation member's mnemonic key.
-        /// </summary>
-        /// <param name="request">The object containing the parameters used to recover a wallet.</param>
-        /// <returns></returns>
-        [Route("import-key")]
-        [HttpPost]
-        public IActionResult ImportMemberKey([FromBody]ImportMemberKeyRequest request)
-        {
-            Guard.NotNull(request, nameof(request));
-
-            // checks the request is valid
-            if (!this.ModelState.IsValid)
-            {
-                return BuildErrorResponse(this.ModelState);
-            }
-
-            try
-            {
-                this.counterChainSessionManager.ImportMemberKey(request.Password, request.Mnemonic);
-                return this.Ok();
-            }
-            catch (Exception e)
-            {
-                this.logger.LogError("Exception occurred: {0}", e.ToString());
-                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
-            }
-        }
-
-        /// <summary>
         /// Builds an <see cref="IActionResult"/> containing errors contained in the <see cref="ControllerBase.ModelState"/>.
         /// </summary>
         /// <returns>A result containing the errors.</returns>
