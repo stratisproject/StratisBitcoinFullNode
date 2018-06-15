@@ -9,36 +9,34 @@ namespace Stratis.SmartContracts.Executor.Reflection
     /// This class processes the result from the <see cref="SmartContractExecutor"/> by calculating the fee
     /// and if applicable ,adding any refunds due.
     /// </summary>
-    public sealed class SmartContractExecutorResultProcessor
+    public sealed class SmartContractResultRefundProcessor : ISmartContractResultRefundProcessor
     {
-        private readonly ISmartContractExecutionResult executionResult;
         private readonly ILogger logger;
 
-        public SmartContractExecutorResultProcessor(ISmartContractExecutionResult executionResult, ILoggerFactory loggerFactory)
+        public SmartContractResultRefundProcessor(ILoggerFactory loggerFactory)
         {
-            this.executionResult = executionResult;
             this.logger = loggerFactory.CreateLogger(this.GetType());
         }
 
-        public void Process(SmartContractCarrier carrier, Money mempoolFee)
+        public void Process(ISmartContractExecutionResult result, SmartContractCarrier carrier, Money mempoolFee)
         {
             this.logger.LogTrace("(){0}:{1}", nameof(mempoolFee), mempoolFee);
 
-            this.executionResult.Fee = mempoolFee;
+            result.Fee = mempoolFee;
 
-            if (this.executionResult.Exception is OutOfGasException)
+            if (result.Exception is OutOfGasException)
             {
                 this.logger.LogTrace("(-)[OUTOFGAS_EXCEPTION]");
                 return;
             }
 
-            var refund = new Money(carrier.GasCostBudget - (this.executionResult.GasConsumed * carrier.GasPrice));
-            this.logger.LogTrace("{0}:{1},{2}:{3},{4}:{5},{6}:{7}", nameof(carrier.GasCostBudget), carrier.GasCostBudget, nameof(this.executionResult.GasConsumed), this.executionResult.GasConsumed, nameof(carrier.GasPrice), carrier.GasPrice, nameof(refund), refund);
+            var refund = new Money(carrier.GasCostBudget - (result.GasConsumed * carrier.GasPrice));
+            this.logger.LogTrace("{0}:{1},{2}:{3},{4}:{5},{6}:{7}", nameof(carrier.GasCostBudget), carrier.GasCostBudget, nameof(result.GasConsumed), result.GasConsumed, nameof(carrier.GasPrice), carrier.GasPrice, nameof(refund), refund);
 
             if (refund > 0)
             {
-                this.executionResult.Fee -= refund;
-                this.executionResult.Refunds.Add(CreateRefund(carrier.Sender, refund));
+                result.Fee -= refund;
+                result.Refunds.Add(CreateRefund(carrier.Sender, refund));
             }
 
             this.logger.LogTrace("(-)");

@@ -34,7 +34,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 GasConsumed = (Gas)950
             };
 
-            new SmartContractExecutorResultProcessor(result, this.loggerFactory).Process(carrier, new Money(10500));
+            new SmartContractResultRefundProcessor(result, this.loggerFactory).Process(carrier, new Money(10500));
 
             Assert.Equal((ulong)6450, result.Fee);
             Assert.Single(result.Refunds);
@@ -55,7 +55,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 GasConsumed = (Gas)5000
             };
 
-            new SmartContractExecutorResultProcessor(result, this.loggerFactory).Process(carrier, new Money(10500));
+            new SmartContractResultRefundProcessor(result, this.loggerFactory).Process(carrier, new Money(10500));
 
             Assert.Equal((ulong)10500, result.Fee);
             Assert.Empty(result.Refunds);
@@ -75,7 +75,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 GasConsumed = (Gas)5000
             };
 
-            new SmartContractExecutorResultProcessor(result, this.loggerFactory).Process(carrier, new Money(10500));
+            new SmartContractResultRefundProcessor(result, this.loggerFactory).Process(carrier, new Money(10500));
 
             Assert.Equal((ulong)10500, result.Fee);
             Assert.Empty(result.Refunds);

@@ -28,19 +28,22 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                     .AddFeature<ReflectionVirtualMachineFeature>()
                     .FeatureServices(services =>
                     {
+                        // Validator
                         SmartContractValidator validator = new SmartContractValidator(new List<ISmartContractValidator>
                         {
                             new SmartContractFormatValidator(ReferencedAssemblyResolver.AllowedAssemblies),
                             new SmartContractDeterminismValidator()
                         });
                         services.AddSingleton<SmartContractValidator>(validator);
-
+                        // Executor et al.
+                        services.AddSingleton<ISmartContractResultRefundProcessor, SmartContractResultRefundProcessor>();
+                        services.AddSingleton<ISmartContractResultTransferProcessor, SmartContractResultTransferProcessor>();
                         services.AddSingleton<IKeyEncodingStrategy, BasicKeyEncodingStrategy>();
                         services.AddSingleton<ISmartContractExecutorFactory, ReflectionSmartContractExecutorFactory>();
                         services.AddSingleton<IMethodParameterSerializer, MethodParameterSerializer>();
-                        // Add controller
+                        // Controllers
                         services.AddSingleton<SmartContractsController>();
-                        // Add rules
+                        // Rules
                         services.AddConsensusRules(new ReflectionRuleRegistration());
                     });
             });

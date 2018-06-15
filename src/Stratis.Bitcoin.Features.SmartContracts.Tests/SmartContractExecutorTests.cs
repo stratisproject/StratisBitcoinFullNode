@@ -22,7 +22,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         private readonly IKeyEncodingStrategy keyEncodingStrategy;
         private readonly ILoggerFactory loggerFactory;
         private readonly Network network;
+        private readonly ISmartContractResultRefundProcessor refundProcessor;
         private readonly IContractStateRepository state;
+        private readonly ISmartContractResultTransferProcessor transferProcessor;
         private readonly SmartContractValidator validator;
 
         public SmartContractExecutorTests()
@@ -31,7 +33,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             this.loggerFactory = new ExtendedLoggerFactory();
             this.loggerFactory.AddConsoleWithFilters();
             this.network = Network.SmartContractsRegTest;
+            this.refundProcessor = new SmartContractResultRefundProcessor(this.loggerFactory);
             this.state = new ContractStateRepositoryRoot(new NoDeleteSource<byte[], byte[]>(new MemoryDictionarySource()));
+            this.transferProcessor = new SmartContractResultTransferProcessor(this.loggerFactory, this.network);
             this.validator = new SmartContractValidator(new ISmartContractValidator[] { });
         }
 
@@ -68,8 +72,10 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 this.keyEncodingStrategy,
                 this.loggerFactory,
                 this.network,
+                this.refundProcessor,
                 this.state,
                 transactionContext,
+                this.transferProcessor,
                 this.validator);
             ISmartContractExecutionResult result = executor.Execute();
 
@@ -117,8 +123,10 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 this.keyEncodingStrategy,
                 this.loggerFactory,
                 this.network,
+                this.refundProcessor,
                 this.state,
                 txContext,
+                this.transferProcessor,
                 this.validator
             );
             ISmartContractExecutionResult result = executor.Execute();
@@ -146,8 +154,10 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 this.keyEncodingStrategy,
                 this.loggerFactory,
                 this.network,
+                this.refundProcessor,
                 this.state,
                 transactionContext,
+                this.transferProcessor,
                 this.validator
                 );
             ISmartContractExecutionResult result = executor.Execute();
@@ -172,8 +182,10 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 this.keyEncodingStrategy,
                 this.loggerFactory,
                 this.network,
+                this.refundProcessor,
                 this.state,
                 transactionContext,
+                this.transferProcessor,
                 this.validator
                 );
 
@@ -207,8 +219,10 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 this.keyEncodingStrategy,
                 this.loggerFactory,
                 this.network,
+                this.refundProcessor,
                 this.state,
                 transactionContext,
+                this.transferProcessor,
                 this.validator
             );
             ISmartContractExecutionResult result = executor.Execute();
@@ -240,8 +254,10 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 this.keyEncodingStrategy,
                 this.loggerFactory,
                 this.network,
+                this.refundProcessor,
                 this.state,
                 transactionContext,
+                this.transferProcessor,
                 this.validator
                 );
             ISmartContractExecutionResult result = executor.Execute();
