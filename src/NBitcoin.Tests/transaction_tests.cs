@@ -1181,12 +1181,10 @@ namespace NBitcoin.Tests
                 return new Coin(outpoint, new TxOut(amount, scriptPubKey));
             return new ScriptCoin(outpoint, new TxOut(amount, scriptPubKey.Hash), scriptPubKey);
         }
-
         private Coin RandomCoin(Money amount, Key receiver)
         {
             return RandomCoin(amount, receiver.PubKey.GetAddress(Network.Main));
         }
-
         private Coin RandomCoin(Money amount, IDestination receiver)
         {
             OutPoint outpoint = RandOutpoint();
@@ -1234,7 +1232,6 @@ namespace NBitcoin.Tests
             AssertEx.CollectionEquals(Encoders.Hex.DecodeData("0102030405060708090102030405060708090102030405060708090102030405"), bytes.ToArray());
             Assert.True(new uint256("0102030405060708090102030405060708090102030405060708090102030405") == new uint256(new uint256("0102030405060708090102030405060708090102030405060708090102030405")));
         }
-
 #if !NOSOCKET
         [Fact]
         [Trait("UnitTest", "UnitTest")]
@@ -1245,7 +1242,6 @@ namespace NBitcoin.Tests
             Assert.True(Utils.IsIPv4MappedToIPv6(Utils.MapToIPv6(System.Net.IPAddress.Parse("127.0.0.1"))));
         }
 #endif
-
         [Fact]
         [Trait("UnitTest", "UnitTest")]
         public void BitcoinStreamCoverage()
@@ -1267,9 +1263,9 @@ namespace NBitcoin.Tests
                 bs.ReadWrite(ref items);
             });
             BitcoinStreamCoverageCore(new long[] { -1, 1, 2, 3, 4 }, (BitcoinStream bs, ref long[] items) =>
-             {
-                 bs.ReadWrite(ref items);
-             });
+            {
+                bs.ReadWrite(ref items);
+            });
             BitcoinStreamCoverageCore(new byte[] { 1, 2, 3, 4 }, (BitcoinStream bs, ref byte[] items) =>
             {
                 bs.ReadWrite(ref items);
@@ -1967,16 +1963,16 @@ namespace NBitcoin.Tests
             {
                 Op[] ops = input.TxIn.ScriptSig.ToOps().ToArray();
                 foreach (var sig in ops.Select(o =>
-                     {
-                         try
-                         {
-                             return new TransactionSignature(o.PushData);
-                         }
-                         catch
-                         {
-                             return null;
-                         }
-                     })
+                {
+                    try
+                    {
+                        return new TransactionSignature(o.PushData);
+                    }
+                    catch
+                    {
+                        return null;
+                    }
+                })
                     .Select((sig, i) => new
                     {
                         sig,
