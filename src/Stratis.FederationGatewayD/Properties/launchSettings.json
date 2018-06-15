@@ -2,11 +2,11 @@
   "profiles": {
     "Stratis.FederationGatewayD Sidechain": {
       "commandName": "Project",
-      "commandLineArgs": "-sidechain -conf=\"apex.gateway.conf\""
+      "commandLineArgs": "-sidechain -conf=apex.gateway.conf"
     },
     "Stratis.FederationGatewayD Mainchain": {
       "commandName": "Project",
-      "commandLineArgs": "-mainchain -conf=\"stratis.gateway.conf\""
+      "commandLineArgs": "-mainchain -conf=stratis.gateway.conf"
     }
   }
 }

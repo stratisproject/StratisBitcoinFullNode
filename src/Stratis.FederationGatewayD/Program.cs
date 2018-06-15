@@ -8,7 +8,6 @@ using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.Api;
 using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.Features.Consensus;
-using Stratis.Bitcoin.Features.GeneralPurposeWallet;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.Miner;
 using Stratis.Bitcoin.Features.Notifications;
@@ -34,9 +33,11 @@ namespace Stratis.FederationGatewayD
         {
             try
             {
+                
                 var isMainchainNode = args.FirstOrDefault(a => a.ToLower() == MainchainArgument) != null;
                 var isSidechainNode = args.FirstOrDefault(a => a.ToLower() == SidechainArgument) != null;
-                if(isSidechainNode == isMainchainNode) throw new ArgumentException(
+
+                if (isSidechainNode == isMainchainNode) throw new ArgumentException(
                     $"Gateway node needs to be started specifiying either a {SidechainArgument} or a {MainchainArgument} argument");
 
                 var network = isMainchainNode ? Network.StratisTest : ApexNetwork.Test; 
@@ -49,7 +50,6 @@ namespace Stratis.FederationGatewayD
                         .UsePosConsensus()
                         .UseMempool()
                         .UseWallet()
-                        .UseGeneralPurposeWallet()
                         .UseTransactionNotification()
                         .UseBlockNotification()
                         .AddPowPosMining()
@@ -63,7 +63,6 @@ namespace Stratis.FederationGatewayD
                         .UsePowConsensus()
                         .UseMempool()
                         .UseWallet()
-                        .UseGeneralPurposeWallet()
                         .UseTransactionNotification()
                         .UseBlockNotification()
                         .AddMining()

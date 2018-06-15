@@ -8,16 +8,14 @@ using NBitcoin;
 using Stratis.Bitcoin;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Connection;
-using Stratis.Bitcoin.Features.GeneralPurposeWallet;
-using Stratis.Bitcoin.Features.GeneralPurposeWallet.Interfaces;
 using Stratis.Bitcoin.Features.Wallet;
+using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.Utilities;
-using Stratis.FederatedPeg.Features.FederationGateway.Models;
-using CoinType = Stratis.Bitcoin.Features.GeneralPurposeWallet.CoinType;
-using Recipient = Stratis.Bitcoin.Features.GeneralPurposeWallet.Recipient;
-using TransactionBuildContext = Stratis.Bitcoin.Features.GeneralPurposeWallet.TransactionBuildContext;
+using Stratis.FederatedPeg.Features.FederationGateway.Interfaces;
+using Recipient = Stratis.FederatedPeg.Features.FederationGateway.Wallet;
+using TransactionBuildContext = Stratis.FederatedPeg.Features.FederationGateway.Wallet.TransactionBuildContext;
 
 namespace Stratis.FederatedPeg.Features.FederationGateway.CounterChain
 {
@@ -25,10 +23,10 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.CounterChain
     internal class CounterChainSessionManager : ICounterChainSessionManager
     {
         // The wallet that contains the multisig capabilities.
-        private IGeneralPurposeWalletManager generalPurposeWalletManager;
+        private IFederationWalletManager federationWalletManager;
 
         // Transaction handler used to build the final transaction.
-        private IGeneralPurposeWalletTransactionHandler generalPurposeWalletTransactionHandler;
+        private IFederationWalletTransactionHandler federationWalletTransactionHandler;
 
         // Peer connector for broadcasting the payloads.
         private IConnectionManager connectionManager;
@@ -40,7 +38,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.CounterChain
         private FederationGatewaySettings federationGatewaySettings;
 
         // Broadcaster we use to pass our payload to peers.
-        private IGeneralPurposeWalletBroadcasterManager broadcastManager;
+        private IBroadcasterManager broadcastManager;
 
         // The IBD status.
         private IInitialBlockDownloadState initialBlockDownloadState;
@@ -57,15 +55,10 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.CounterChain
         // The shoulders we stand on.
         private IFullNode fullnode;
 
-        /// <summary>An object capable of storing <see cref="MemberDetails"/>s to the file system.</summary>
-        private readonly FileStorage<MemberDetails> fileStorage;
-
         /// <summary>
         /// The name of the member details file.
         /// </summary>
         private const string MemberDetailsFileName = "member_details.json";
-
-        public MemberDetails MemberDetails { get; }
 
         // The sessions are stored here.
         private ConcurrentDictionary<uint256, CounterChainSession> sessions = new ConcurrentDictionary<uint256, CounterChainSession>();
@@ -73,14 +66,14 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.CounterChain
         // Get everything together before we get going.
         public CounterChainSessionManager(
             ILoggerFactory loggerFactory, 
-            IGeneralPurposeWalletManager generalPurposeWalletManager,
-            IGeneralPurposeWalletTransactionHandler generalPurposeWalletTransactionHandler, 
+            IFederationWalletManager federationWalletManager,
+            IFederationWalletTransactionHandler federationWalletTransactionHandler, 
             IConnectionManager connectionManager, 
             Network network,
             FederationGatewaySettings federationGatewaySettings, 
             IInitialBlockDownloadState initialBlockDownloadState, 
             IFullNode fullnode,
-            IGeneralPurposeWalletBroadcasterManager broadcastManager, 
+            IBroadcasterManager broadcastManager, 
             ConcurrentChain concurrentChain,
             DataFolder dataFolder,
             IDateTimeProvider dateTimeProvider,
@@ -97,15 +90,10 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.CounterChain
             this.concurrentChain = concurrentChain;
             this.fullnode = fullnode;
             this.broadcastManager = broadcastManager;
-            this.generalPurposeWalletManager = generalPurposeWalletManager;
-            this.generalPurposeWalletTransactionHandler = generalPurposeWalletTransactionHandler;
+            this.federationWalletManager = federationWalletManager;
+            this.federationWalletTransactionHandler = federationWalletTransactionHandler;
             this.federationGatewaySettings = federationGatewaySettings;
             this.dateTimeProvider = dateTimeProvider;
-            this.fileStorage = new FileStorage<MemberDetails>(dataFolder.RootPath);
-
-            if (this.fileStorage.Exists(MemberDetailsFileName))
-                this.MemberDetails = this.fileStorage.LoadByFileName(MemberDetailsFileName);
-            
         }
 
         ///<inheritdoc/>
@@ -168,13 +156,6 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.CounterChain
             this.logger.LogInformation("()");
             this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} Combining and Broadcasting transaction.");
 
-            var account = this.generalPurposeWalletManager.GetAccounts(this.federationGatewaySettings.MultiSigWalletName).First();
-            if (account == null)
-            {
-                this.logger.LogInformation("InvalidAccount from GPWallet.");
-                return;
-            }
-
             this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} Combine Partials");
             this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} {counterChainSession}");
             this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} {counterChainSession.PartialTransactions[0]}");
@@ -183,7 +164,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.CounterChain
 
             var partials = from t in counterChainSession.PartialTransactions where t != null select t;
 
-            var combinedTransaction = account.CombinePartialTransactions(partials.ToArray(), network);
+            var combinedTransaction = this.federationWalletManager.GetWallet().CombinePartialTransactions(partials.ToArray());
             this.broadcastManager.BroadcastTransactionAsync(combinedTransaction).GetAwaiter().GetResult();
             this.logger.LogInformation("(-)");
         }
@@ -203,9 +184,8 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.CounterChain
             //todo: then we just return the transctionId
 
             //create the partial transaction template
-            var wallet = this.generalPurposeWalletManager.GetWallet(this.federationGatewaySettings.MultiSigWalletName);
-            var account = wallet.GetAccountsByCoinType((CoinType)this.network.Consensus.CoinType).First();
-            var multiSigAddress = account.MultiSigAddresses.First();
+            var wallet = this.federationWalletManager.GetWallet();
+            var multiSigAddress = wallet.MultiSigAddress;
 
             var destination = BitcoinAddress.Create(destinationAddress, this.network).ScriptPubKey;
 
@@ -215,9 +195,9 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.CounterChain
             // We are the Boss so first I build the multisig transaction template.
             // TODO: The password is currently hardcoded here
             var multiSigContext = new TransactionBuildContext(
-                new GeneralPurposeWalletAccountReference(this.federationGatewaySettings.MultiSigWalletName, "account 0"),
-                new[] { new Recipient { Amount = amount, ScriptPubKey = destination } }.ToList(),
-                "password", sessionId.ToBytes())
+                new WalletAccountReference(this.federationGatewaySettings.MultiSigWalletName, "account 0"),
+                (new[] { new Recipient.Recipient { Amount = amount, ScriptPubKey = destination } }).ToList(),
+                "password", sessionId.ToString())
             {
                 TransactionFee = Money.Coins(0.01m),
                 MinConfirmations = 1,
@@ -228,7 +208,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.CounterChain
             };
 
             this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} ProcessCounterChainSession: Building Transaction.");
-            var templateTransaction = this.generalPurposeWalletTransactionHandler.BuildTransaction(multiSigContext);
+            var templateTransaction = this.federationWalletTransactionHandler.BuildTransaction(multiSigContext);
 
             //add my own partial
             this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} ProcessCounterChainSession: Signing own partial.");
@@ -236,7 +216,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.CounterChain
 
             if (counterChainSession == null) return uint256.One;
             this.MarkSessionAsSigned(counterChainSession);
-            var partialTransaction = account.SignPartialTransaction(templateTransaction, wallet, "password", network);
+            var partialTransaction = wallet.SignPartialTransaction(templateTransaction, "password");
 
             uint256 bossCard = BossTable.MakeBossTableEntry(sessionId, this.federationGatewaySettings.PublicKey);
             this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} ProcessCounterChainSession: My bossCard: {bossCard}.");
@@ -330,54 +310,5 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.CounterChain
             this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} has signed session {session.SessionId}.");
             session.HaveISigned = true;
         }
-
-        /// <inheritdoc />
-        public void ImportMemberKey(string password, string mnemonic)
-        {
-            Guard.NotEmpty(password, nameof(password));
-            Guard.NotEmpty(mnemonic, nameof(mnemonic));
-            
-            // Get the extended key.
-            ExtKey extendedKey;
-            try
-            {
-                extendedKey = HdOperations.GetExtendedKey(mnemonic, password);
-            }
-            catch (NotSupportedException ex)
-            {
-                this.logger.LogTrace("Exception occurred: {0}", ex.ToString());
-                this.logger.LogTrace("(-)[EXCEPTION]");
-
-                if (ex.Message == "Unknown")
-                    throw new WalletException("Please make sure you enter valid mnemonic words.");
-
-                throw;
-            }
-
-            // Create a wallet file.
-            string encryptedSeed = extendedKey.PrivateKey.GetEncryptedBitcoinSecret(password, this.network).ToWif();
-
-            MemberDetails memberDetails = new MemberDetails
-            {
-                EncryptedSeed = encryptedSeed,
-                CreationTime = this.dateTimeProvider.GetTimeOffset()
-            };
-
-            // Save the changes to the file and add addresses to be tracked.
-            this.SaveMemberDetails(memberDetails);
-
-            this.logger.LogTrace("(-)");
-        }
-
-        public void SaveMemberDetails(MemberDetails memberDetails)
-        {
-            Guard.NotNull(memberDetails, nameof(memberDetails));
-            this.logger.LogTrace("({0}:'{1}')", nameof(memberDetails), memberDetails);
-
-            this.fileStorage.SaveToFile(memberDetails, MemberDetailsFileName);
-
-            this.logger.LogTrace("(-)");
-        }
-
     }
 }

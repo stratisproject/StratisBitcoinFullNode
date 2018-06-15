@@ -3,7 +3,6 @@ using NBitcoin;
 using Stratis.Bitcoin.Features.Api;
 using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.Features.Consensus;
-using Stratis.Bitcoin.Features.GeneralPurposeWallet;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.Miner;
 using Stratis.Bitcoin.Features.Notifications;
@@ -27,7 +26,7 @@ namespace Stratis.FederatedSidechains.IntegrationTests
         public IList<FederationMemberKey> FederationMemberKeys { get; private set; }
         public IDictionary<FederationMemberKey, Mnemonic> FederationMembersMnemonics { get; private set; }
         public Script RedeemScript { get; private set; }
-        public IDictionary<NodeKey, GeneralPurposeAccount> GpAccountsByKey { get; }
+        public IDictionary<NodeKey, string> GpAccountsByKey { get; }
         public IDictionary<NodeKey, CoreNode> NodesByKey { get; }
 
         private readonly NodeBuilder nodeBuilder;
@@ -40,7 +39,7 @@ namespace Stratis.FederatedSidechains.IntegrationTests
             FederationMembersMnemonics = new Dictionary<FederationMemberKey, Mnemonic>();
             ChainMnemonics = new Dictionary<Chain, Mnemonic>();
             NodesByKey = new Dictionary<NodeKey, CoreNode>();
-            GpAccountsByKey = new Dictionary<NodeKey, GeneralPurposeAccount>();
+            GpAccountsByKey = new Dictionary<NodeKey, string>();
             Networks = new Dictionary<Chain, Network>
             {
                 {Chain.Mainchain, mainchainNetwork},
@@ -53,7 +52,7 @@ namespace Stratis.FederatedSidechains.IntegrationTests
             BuildMnemonics();
             BuildRedeemScript();
             BuildFederationNodes();
-            BuildGeneralPurposeWallets();
+            BuildFederationWallets();
         }
 
         private void BuildFederationMembersNodeKeys()
@@ -115,7 +114,6 @@ namespace Stratis.FederatedSidechains.IntegrationTests
                         .UseWallet()
                         .AddMining()
                         .AddFederationGateway()
-                        .UseGeneralPurposeWallet()
                         .UseBlockNotification()
                         .UseApi()
                         .AddRPC()
@@ -126,12 +124,12 @@ namespace Stratis.FederatedSidechains.IntegrationTests
             }
         }
 
-        private void BuildGeneralPurposeWallets()
+        private void BuildFederationWallets()
         {
             foreach (var key in FederationNodeKeys)
             {
-                //todo: change that when GeneralPurposeWallets are ready again
-                //var generalWalletManager = nodesByKey[key].FullNode.NodeService<IGeneralPurposeWalletManager>();
+                //todo: change that when FederationWallets are ready again
+                //var generalWalletManager = nodesByKey[key].FullNode.NodeService<IFederationWalletManager>();
                 //generalWalletManager.CreateWallet(NamingConstants.MultisigPassword, NamingConstants.MultisigWallet)
                 GpAccountsByKey.Add(key, null);
             }

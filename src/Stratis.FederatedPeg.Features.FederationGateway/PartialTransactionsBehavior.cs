@@ -1,13 +1,11 @@
-﻿using System.Linq;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
-using Stratis.Bitcoin.Features.GeneralPurposeWallet.Interfaces;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.P2P.Protocol;
 using Stratis.Bitcoin.P2P.Protocol.Behaviors;
 using Stratis.FederatedPeg.Features.FederationGateway.CounterChain;
-using GpCoinType = Stratis.Bitcoin.Features.GeneralPurposeWallet.CoinType;
+using Stratis.FederatedPeg.Features.FederationGateway.Interfaces;
 
 //todo: this is pre-refactoring code
 //todo: ensure no duplicate or fake withdrawal or deposit transactions are possible (current work underway)
@@ -24,7 +22,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
 
         private readonly ICrossChainTransactionMonitor crossChainTransactionMonitor;
 
-        private IGeneralPurposeWalletManager generalPurposeWalletManager;
+        private IFederationWalletManager federationWalletManager;
 
         private ICounterChainSessionManager counterChainSessionManager;
 
@@ -33,12 +31,12 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
         private FederationGatewaySettings federationGatewaySettings;
 
         public PartialTransactionsBehavior(ILoggerFactory loggerFactory, ICrossChainTransactionMonitor crossChainTransactionMonitor,
-            IGeneralPurposeWalletManager generalPurposeWalletManager, ICounterChainSessionManager counterChainSessionManager, Network network, FederationGatewaySettings federationGatewaySettings)
+            IFederationWalletManager federationWalletManager, ICounterChainSessionManager counterChainSessionManager, Network network, FederationGatewaySettings federationGatewaySettings)
         {
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.loggerFactory = loggerFactory;
             this.crossChainTransactionMonitor = crossChainTransactionMonitor;
-            this.generalPurposeWalletManager = generalPurposeWalletManager;
+            this.federationWalletManager = federationWalletManager;
             this.counterChainSessionManager = counterChainSessionManager;
             this.network = network;
             this.federationGatewaySettings = federationGatewaySettings;
@@ -46,7 +44,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
 
         public override object Clone()
         {
-            return new PartialTransactionsBehavior(this.loggerFactory, this.crossChainTransactionMonitor, this.generalPurposeWalletManager, this.counterChainSessionManager, this.network, this.federationGatewaySettings);
+            return new PartialTransactionsBehavior(this.loggerFactory, this.crossChainTransactionMonitor, this.federationWalletManager, this.counterChainSessionManager, this.network, this.federationGatewaySettings);
         }
 
         protected override void AttachCore()
@@ -98,10 +96,10 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
                     if (partialTransactionSession == null) return;
                     this.counterChainSessionManager.MarkSessionAsSigned(partialTransactionSession);
 
-                    var wallet = this.generalPurposeWalletManager.GetWallet(this.federationGatewaySettings.MultiSigWalletName);
-                    var account = wallet.GetAccountsByCoinType((GpCoinType) this.network.Consensus.CoinType).First();
+                    var wallet = this.federationWalletManager.GetWallet();
+                    
                     // TODO: The wallet password is hardcoded here
-                    var signedTransaction = account.SignPartialTransaction(template, wallet, "password", this.network);
+                    var signedTransaction = wallet.SignPartialTransaction(template, "password");
                     payload.AddPartial(signedTransaction, BossTable.MakeBossTableEntry(payload.SessionId, this.federationGatewaySettings.PublicKey));
 
                     this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} OnMessageReceivedAsync: PartialTransaction signed.");

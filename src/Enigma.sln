@@ -19,17 +19,17 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.FederatedPeg.Featur
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.FederationGatewayD", "Stratis.FederationGatewayD\Stratis.FederationGatewayD.csproj", "{147DE180-A113-4E52-B542-B56B1F0276FB}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.Bitcoin.Features.GeneralPurposeWallet", "Stratis.Bitcoin.Features.GeneralPurposeWallet\Stratis.Bitcoin.Features.GeneralPurposeWallet.csproj", "{A1540310-B5B0-4A78-8017-22204B46B7AA}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.FederatedSidechains.Initialisation", "Stratis.FederatedSidechains.Initialisation\Stratis.FederatedSidechains.Initialisation.csproj", "{3526B5DB-8E08-445F-9DCE-65566491D94F}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.FederatedSidechains.Initialisation.Tests", "Stratis.FederatedSidechains.Initialisation.Tests\Stratis.FederatedSidechains.Initialisation.Tests.csproj", "{3D106928-3A8E-4EB1-9F9A-45856DBAA16B}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.SidechainD", "Stratis.SidechainD\Stratis.SidechainD.csproj", "{C3FF2EF8-50B6-43D8-AC78-BCFEBF7DE394}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Stratis.FederatedSidechains.IntegrationTests", "Stratis.FederatedSidechains.IntegrationTests\Stratis.FederatedSidechains.IntegrationTests.csproj", "{0C1E95D8-5048-4660-85F8-58BB303897AE}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.FederatedSidechains.IntegrationTests", "Stratis.FederatedSidechains.IntegrationTests\Stratis.FederatedSidechains.IntegrationTests.csproj", "{0C1E95D8-5048-4660-85F8-58BB303897AE}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.Sidechains.Networks", "Stratis.Sidechains.Networks\Stratis.Sidechains.Networks.csproj", "{C5D390A9-1E08-47DE-BAAB-0AA9FC69CCC2}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.Bitcoin.Features.FederationWallet.Tests", "Stratis.Bitcoin.Features.FederationWallet.Tests\Stratis.Bitcoin.Features.FederationWallet.Tests.csproj", "{53318670-ED6A-4551-82D9-C0D5053AE6F6}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -69,10 +69,6 @@ Global
 		{147DE180-A113-4E52-B542-B56B1F0276FB}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{147DE180-A113-4E52-B542-B56B1F0276FB}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{147DE180-A113-4E52-B542-B56B1F0276FB}.Release|Any CPU.Build.0 = Release|Any CPU
-		{A1540310-B5B0-4A78-8017-22204B46B7AA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{A1540310-B5B0-4A78-8017-22204B46B7AA}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{A1540310-B5B0-4A78-8017-22204B46B7AA}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{A1540310-B5B0-4A78-8017-22204B46B7AA}.Release|Any CPU.Build.0 = Release|Any CPU
 		{3526B5DB-8E08-445F-9DCE-65566491D94F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{3526B5DB-8E08-445F-9DCE-65566491D94F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{3526B5DB-8E08-445F-9DCE-65566491D94F}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -93,6 +89,10 @@ Global
 		{C5D390A9-1E08-47DE-BAAB-0AA9FC69CCC2}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C5D390A9-1E08-47DE-BAAB-0AA9FC69CCC2}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C5D390A9-1E08-47DE-BAAB-0AA9FC69CCC2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{53318670-ED6A-4551-82D9-C0D5053AE6F6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{53318670-ED6A-4551-82D9-C0D5053AE6F6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{53318670-ED6A-4551-82D9-C0D5053AE6F6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{53318670-ED6A-4551-82D9-C0D5053AE6F6}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
