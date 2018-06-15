@@ -57,11 +57,32 @@ namespace Stratis.Bitcoin.BlockPulling2
             this.averageSizeBytes.AddSample(blockSizeBytes);
             this.averageDelaySeconds.AddSample(delaySeconds);
 
+            this.AdjustMaxSamples();
+
+            this.SpeedBytesPerSecond = (int)(this.averageSizeBytes.Average / this.averageDelaySeconds.Average);
+        }
+
+        public void Penalize(double delay, int notDeliveredBlocksCount)
+        {
+            int tenPercentOfSamples = (int)(this.averageDelaySeconds.GetMaxSamples() * 0.1); //TODO Move to constant, test it and find best value
+            int penalizeTimes = (notDeliveredBlocksCount < tenPercentOfSamples) ? notDeliveredBlocksCount : tenPercentOfSamples;
+
+            for (int i = 0; i < penalizeTimes; ++i)
+            {
+                this.averageSizeBytes.AddSample(0);
+                this.averageDelaySeconds.AddSample(delay);
+            }
+
+            this.AdjustMaxSamples();
+
+            this.SpeedBytesPerSecond = (int)(this.averageSizeBytes.Average / this.averageDelaySeconds.Average);
+        }
+
+        private void AdjustMaxSamples()
+        {
             int samplesCount = this.ibdState.IsInitialBlockDownload() ? IBDSamplesCount : NormalSamplesCount;
             this.averageSizeBytes.SetMaxSamples(samplesCount);
             this.averageDelaySeconds.SetMaxSamples(samplesCount);
-
-            this.SpeedBytesPerSecond = (int)(this.averageSizeBytes.Average / this.averageDelaySeconds.Average);
         }
 
         public void RecalculateQualityScore(int bestSpeedBytesPerSecond)

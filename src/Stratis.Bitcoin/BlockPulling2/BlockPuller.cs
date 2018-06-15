@@ -420,14 +420,12 @@ namespace Stratis.Bitcoin.BlockPulling2
 
                         int reassignedCount = downloadsToReassign.Count;
 
-                        // TODO: get max samples count from behavior or maybe just move punishing logic to the behavior itself
-                        int tenPercentOfSamples = 10; // 10% of MaxSamples. TODO: calculate it  //TODO Test it and find best samples
-                        
-                        int penalizeTimes = (reassignedCount < tenPercentOfSamples) ? reassignedCount : tenPercentOfSamples;
+                        BlockPullerBehavior pullerBehavior = this.pullerBehaviorsByPeerId[downloadsToReassign.First().Value.PeerId];
 
-                        for (int i = 0; i < penalizeTimes; ++i)
-                            this.AddPeerSampleAndRecalculateQualityScoreLocked(downloadsToReassign.First().Value.PeerId, 0, maxSecondsToDeliverBlock);
-                        
+                        pullerBehavior.Penalize(maxSecondsToDeliverBlock, reassignedCount);
+
+                        this.RecalculateQuealityScoreLocked(pullerBehavior);
+
                         reassigned = true;
                     }
 
@@ -457,7 +455,13 @@ namespace Stratis.Bitcoin.BlockPulling2
                 this.averageBlockSizeBytes.AddSample(block.BlockSize.Value);
 
                 double deliveredInSeconds = (DateTime.UtcNow - assignedDownload.AssignedTime).TotalSeconds;
-                this.AddPeerSampleAndRecalculateQualityScoreLocked(peerId, block.BlockSize.Value, deliveredInSeconds);
+                
+                // Add peer sample.
+                BlockPullerBehavior pullerBehavior = this.pullerBehaviorsByPeerId[peerId];
+                pullerBehavior.AddSample(block.BlockSize.Value, deliveredInSeconds);
+
+                // Recalculate quality score.
+                this.RecalculateQuealityScoreLocked(pullerBehavior);
 
                 this.RecalculateMaxBlocksBeingDownloadedLocked();
 
@@ -468,13 +472,10 @@ namespace Stratis.Bitcoin.BlockPulling2
 
             this.OnDownloadedCallback(blockHash, block);
         }
-
-        private void AddPeerSampleAndRecalculateQualityScoreLocked(int peerId, long blockSizeBytes, double delaySeconds)
+        
+        // peer id that triggered recalculation
+        private void RecalculateQuealityScoreLocked(BlockPullerBehavior pullerBehavior)
         {
-            BlockPullerBehavior pullerBehavior = this.pullerBehaviorsByPeerId[peerId];
-
-            pullerBehavior.AddSample(blockSizeBytes, delaySeconds);
-
             // Now decide if we need to recalculate quality score for all peers or just for this one.
             int bestSpeed = this.pullerBehaviorsByPeerId.Max(x => x.Value.SpeedBytesPerSecond);
             int adjustedBestSpeed = bestSpeed > PeerSpeedLimitLimirationWhenNotInIBDBytes ? PeerSpeedLimitLimirationWhenNotInIBDBytes : bestSpeed;

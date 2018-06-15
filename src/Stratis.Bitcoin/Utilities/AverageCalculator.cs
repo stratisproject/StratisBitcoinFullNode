@@ -19,6 +19,11 @@ namespace Stratis.Bitcoin.Utilities
             this.samples = new CircularArray<double>(maxSamples);
         }
 
+        public int GetMaxSamples()
+        {
+            return this.samples.Capacity;
+        }
+
         // Expensive operation
         public void SetMaxSamples(int maxSamples)
         {
