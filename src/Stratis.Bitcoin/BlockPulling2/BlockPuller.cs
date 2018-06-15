@@ -18,37 +18,61 @@ namespace Stratis.Bitcoin.BlockPulling2
     /// </summary>
     public class BlockPuller : IDisposable
     {
+        /// <summary>Interval between checking if peers that were assigned important blocks didn't deliver the block.</summary>
         private const int StallingLoopIntervalMs = 500;
+
+        /// <summary>The minimum empty slots percentage to start processing <see cref="downloadJobsQueue"/>.</summary>
         private const int MinEmptySlotsPercentageToStartProcessingTheQueue = 5;
 
+        /// <summary>
+        /// Defines which blocks are considered to be important.
+        /// If requested block height is less than out consensus tip height plus this value then the block is considered to be important.
+        /// </summary>
         private const int ImportantHeightMargin = 10;
 
-        // we will reassign if not delivered in that time
+        /// <summary>The maximum time in seconds in which peer should deliver an assigned block.</summary>
+        /// <remarks>If peer failes to deliver in that time his assignments will be released and the peer penalized.</remarks>
         private const int MaxSecondsToDeliverBlock = 5;
 
         /// <summary>This affects quality score only. If the peer is too fast don't give him all the assignments in the world when not in IBD.</summary>
         private const int PeerSpeedLimitWhenNotInIBDBytesPerSec = 1024 * 1024;
 
+        /// <summary>Callback which is called when puller received a block which it was asked for.</summary>
+        /// <param name="blockHash">Hash of the delivered block.</param>
+        /// <param name="block">The block.</param>
         public delegate void OnBlockDownloadedCallback(uint256 blockHash, Block block);
 
         private readonly OnBlockDownloadedCallback OnDownloadedCallback;
 
+        /// <summary>Queue of download jobs which were released from the peers that failed to deliver in time or were disconnected.</summary>
         private readonly Queue<DownloadJob> reassignedJobsQueue;
+
+        /// <summary>Queue of download jobs which should be assigned to peers.</summary>
         private readonly Queue<DownloadJob> downloadJobsQueue;
+
+        /// <summary>Collection of all download assignments to the peers.</summary>
         private readonly Dictionary<uint256, AssignedDownload> AssignedDownloads;
 
+        /// <summary>Headers of requested blocks mapped by hash.</summary>
         private readonly Dictionary<uint256, ChainedHeader> HeadersByHash;
 
+        /// <summary>Peer tips mapped by peers id.</summary>
         private readonly Dictionary<int, ChainedHeader> peerIdsToTips;
+
+        /// <summary>Block puller behaviors mapped by peer id.</summary>
         private readonly Dictionary<int, BlockPullerBehavior> pullerBehaviorsByPeerId;
 
         private readonly CancellationTokenSource cancellationSource;
         
         private readonly AverageCalculator averageBlockSizeBytes;
 
+        /// <summary>Signaler that triggers <see cref="reassignedJobsQueue"/> and <see cref="downloadJobsQueue"/> processign when set.</summary>
         private readonly AsyncManualResetEvent processQueuesSignal;
-        private int currentJobId;
-        
+
+        /// <summary>Unique identifier which will be set to the next created download job.</summary>
+        private int nextJobId;
+
+        /// <summary>Locks access to <see cref="processQueuesSignal"/> and all collections in this class.</summary>
         private readonly object lockObject;
 
         /// <summary>Amount of blocks that are being downloaded.</summary>
@@ -59,19 +83,24 @@ namespace Stratis.Bitcoin.BlockPulling2
         /// Given that all peers are on the same chain they will deliver that amount of blocks in 1 seconds.
         /// </summary>
         private int maxBlocksBeingDownloaded;
-        
+
+        /// <inheritdoc cref="ILogger"/>
         private readonly ILogger logger;
+
+        /// <inheritdoc cref="ChainState"/>
         private readonly ChainState chainState;
+
+        /// <inheritdoc cref="NetworkPeerRequirement"/>
         private readonly NetworkPeerRequirement networkPeerRequirement;
+
+        /// <inheritdoc cref="random"/>
         private readonly Random random;
 
+        /// <summary>Loop that assigns download jobs to the peers.</summary>
         private Task assignerLoop;
-        private Task stallingLoop;
 
-        private int GetTotalSpeedOfAllPeersBytesPerSecLocked()
-        {
-            return this.pullerBehaviorsByPeerId.Sum(x => x.Value.SpeedBytesPerSecond);
-        }
+        /// <summary>Loop that checks if peers failed to deliver important blocks in given time and penalizes them if they did.</summary>
+        private Task stallingLoop;
 
         public BlockPuller(OnBlockDownloadedCallback callback, ChainState chainState, ProtocolVersion protocolVersion, LoggerFactory loggerFactory)
         {
@@ -87,7 +116,7 @@ namespace Stratis.Bitcoin.BlockPulling2
 
             this.processQueuesSignal = new AsyncManualResetEvent(false);
             this.lockObject = new object();
-            this.currentJobId = 0;
+            this.nextJobId = 0;
 
             this.pendingDownloadsCount = 0;
 
@@ -116,6 +145,14 @@ namespace Stratis.Bitcoin.BlockPulling2
             return this.averageBlockSizeBytes.Average;
         }
 
+        private int GetTotalSpeedOfAllPeersBytesPerSecLocked()
+        {
+            return this.pullerBehaviorsByPeerId.Sum(x => x.Value.SpeedBytesPerSecond);
+        }
+
+        /// <summary>Should be called when a peer claims a new tip.</summary>
+        /// <param name="peer">The peer.</param>
+        /// <param name="newTip">New tip.</param>
         public void NewPeerTipClaimed(INetworkPeer peer, ChainedHeader newTip)
         {
             lock (this.lockObject)
@@ -139,6 +176,8 @@ namespace Stratis.Bitcoin.BlockPulling2
             }
         }
 
+        /// <summary>Should be called when peer is disconnected.</summary>
+        /// <param name="peerId">Unique peer identifier.</param>
         public void PeerDisconnected(int peerId)
         {
             lock (this.lockObject)
@@ -150,8 +189,9 @@ namespace Stratis.Bitcoin.BlockPulling2
             }
         }
 
-        // Accepts only hashes of consequtive headers (but gaps are ok: a1=a2=a3=a4=a8=a9)
-        // Doesn't support asking for the same hash twice before getting a response
+        /// <summary>Requests the blocks for download.</summary>
+        /// <remarks>Doesn't support asking for the same hash twice before getting a response.</remarks>
+        /// <param name="headers">Collection of consequtive headers (but gaps are ok: a1=a2=a3=a4=a8=a9).</param>
         public void RequestBlocksDownload(List<ChainedHeader> headers)
         {
             lock (this.lockObject)
@@ -168,13 +208,14 @@ namespace Stratis.Bitcoin.BlockPulling2
                 this.downloadJobsQueue.Enqueue(new DownloadJob()
                 {
                     Hashes = hashes,
-                    Id = this.currentJobId++
+                    Id = this.nextJobId++
                 });
 
                 this.processQueuesSignal.Set();
             }
         }
 
+        /// <summary>Loop that assigns download jobs to the peers.</summary>
         private async Task AssignerLoopAsync()
         {
             while (!this.cancellationSource.IsCancellationRequested)
@@ -192,6 +233,7 @@ namespace Stratis.Bitcoin.BlockPulling2
             }
         }
 
+        /// <summary>Loop that continously checks if peers failed to deliver important blocks in given time and penalizes them if they did.</summary>
         private async Task StallingLoopAsync()
         {
             while (!this.cancellationSource.IsCancellationRequested)
@@ -209,7 +251,6 @@ namespace Stratis.Bitcoin.BlockPulling2
             }
         }
 
-        // dequueues the downloadJobsQueue and reassignedDownloadJobsQueue
         private async Task AssignDownloadJobsAsync()
         {
             var failedJobs = new List<DownloadJob>();
@@ -261,8 +302,7 @@ namespace Stratis.Bitcoin.BlockPulling2
 
                 this.processQueuesSignal.Reset();
             }
-
-
+            
             // Call callbacks with null since puller failed to deliver requested blocks.
             foreach (DownloadJob failedJob in failedJobs)
             {
@@ -274,7 +314,9 @@ namespace Stratis.Bitcoin.BlockPulling2
                 await this.AskPeersForBlocksAsync(newAssignments).ConfigureAwait(false);
         }
 
-        // Ask peer behaviors to deliver blocks.
+
+        /// <summary>Asks peer behaviors in parallel to deliver blocks.</summary>
+        /// <param name="assignments">Assignments given to peers.</param>
         private async Task AskPeersForBlocksAsync(Dictionary<uint256, AssignedDownload> assignments)
         {
             int maxDegreeOfParallelism = 8;
@@ -322,7 +364,13 @@ namespace Stratis.Bitcoin.BlockPulling2
             }).ConfigureAwait(false);
         }
 
-        // returns count of new assigned downloads to recalculate empty slots
+        /// <summary>
+        /// //TODO
+        /// </summary>
+        /// <param name="downloadJob">The download job.</param>
+        /// <param name="failedJobs">The failed jobs.</param>
+        /// <param name="emptySlotes">The empty slotes.</param>
+        /// <returns></returns>
         private Dictionary<uint256, AssignedDownload> DistributeHashesLocked(ref DownloadJob downloadJob, ref List<DownloadJob> failedJobs, int emptySlotes)
         {
             var newAssignments = new Dictionary<uint256, AssignedDownload>();
@@ -392,6 +440,7 @@ namespace Stratis.Bitcoin.BlockPulling2
             return newAssignments;
         }
 
+        /// <summary>Checks if peers failed to deliver important blocks and penalizes them if they did.</summary>
         private void CheckStalling()
         {
             int lastImportantHeight = this.chainState.ConsensusTip.Height + ImportantHeightMargin;
@@ -435,7 +484,11 @@ namespace Stratis.Bitcoin.BlockPulling2
             this.ReleaseAssignments(toReassign);
         }
 
-        // Callbacks from BlockPullerBehavior
+        /// <summary>
+        /// Method which is called when <see cref="BlockPullerBehavior"/> receives a block.</summary>
+        /// <param name="blockHash">The block hash.</param>
+        /// <param name="block">The block.</param>
+        /// <param name="peerId">Id of a peer that delivered a block.</param>
         public void PushBlock(uint256 blockHash, Block block, int peerId)
         {
             AssignedDownload assignedDownload;
@@ -473,7 +526,8 @@ namespace Stratis.Bitcoin.BlockPulling2
             this.OnDownloadedCallback(blockHash, block);
         }
         
-        // peer id that triggered recalculation
+        /// <summary>Recalculates queality score of a peer or all peers if given peer has the best upload speed.</summary>
+        /// <param name="pullerBehavior">The puller behavior of a peer which quality score should be recalculated.</param>
         private void RecalculateQuealityScoreLocked(BlockPullerBehavior pullerBehavior)
         {
             // Now decide if we need to recalculate quality score for all peers or just for this one.
@@ -501,33 +555,38 @@ namespace Stratis.Bitcoin.BlockPulling2
             if (this.maxBlocksBeingDownloaded < 10)
                 this.maxBlocksBeingDownloaded = 10;
         }
-
-        // finds all assigned blocks, removes from assigned downloads and adds to reassign queue
+        
+        /// <summary>
+        /// Finds all blocks assigned to a given peer, removes assignments
+        /// from <see cref="AssignedDownloads"/> and adds to <see cref="reassignedJobsQueue"/>.
+        /// </summary>
+        /// <param name="peerId">The peer identifier.</param>
         private void ReleaseAssignments(int peerId)
         {
-            var jobIdToHash = new Dictionary<int, uint256>();
+            var hashesToJobIds = new Dictionary<int, uint256>();
 
             lock (this.lockObject)
             {
                 foreach (KeyValuePair<uint256, AssignedDownload> assignedDownload in this.AssignedDownloads.Where(x => x.Value.PeerId == peerId).ToList())
                 {
-                    jobIdToHash.Add(assignedDownload.Value.JobId, assignedDownload.Key);
+                    hashesToJobIds.Add(assignedDownload.Value.JobId, assignedDownload.Key);
 
                     // Remove hash from assigned downloads.
                     this.AssignedDownloads.Remove(assignedDownload.Key);
                 }
             }
 
-            if (jobIdToHash.Count != 0)
-                this.ReleaseAssignments(jobIdToHash);
+            if (hashesToJobIds.Count != 0)
+                this.ReleaseAssignments(hashesToJobIds);
         }
 
-        // puts hashesToJobId to reassign queue
-        private void ReleaseAssignments(Dictionary<int, uint256> jobIdToHash)
+        /// <summary>Adds items from <paramref name="hashesToJobIds"/> to the <see cref="reassignedJobsQueue"/>.</summary>
+        /// <param name="hashesToJobIds">Block hashes mapped to job ids.</param>
+        private void ReleaseAssignments(Dictionary<int, uint256> hashesToJobIds)
         {
             lock (this.lockObject)
             {
-                foreach (IGrouping<uint256, KeyValuePair<int, uint256>> jobGroup in jobIdToHash.GroupBy(x => x.Value))
+                foreach (IGrouping<uint256, KeyValuePair<int, uint256>> jobGroup in hashesToJobIds.GroupBy(x => x.Value))
                 {
                     var newJob = new DownloadJob()
                     {
