@@ -39,9 +39,11 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             this.listOfSavedBlocks = new Dictionary<uint256, Block>();
             this.listOfSavedBlocks.Add(uint256.One, Block.Parse(this.testBlockHex, Network.StratisMain));
 
+            this.network = Network.StratisMain;
+
             this.chain = this.CreateChain(10);
             this.consensusTip = null;
-            this.network = Network.StratisMain;
+
             this.nodeLifetime = new NodeLifetime();
 
             var blockRepositoryMock = new Mock<IBlockRepository>();
