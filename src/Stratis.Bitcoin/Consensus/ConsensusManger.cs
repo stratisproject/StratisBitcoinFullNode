@@ -424,7 +424,6 @@ namespace Stratis.Bitcoin.Consensus
             this.logger.LogTrace("({0}.{1}:{2})", nameof(blockHashes), nameof(blockHashes.Count), blockHashes.Count);
 
             List<ChainedHeader> downloadRequests = new List<ChainedHeader>();
-            ChainedHeaderBlock previousBlock = null;
 
             for (int i = blockHashes.Count - 1; i >= 0; i--)
             {
@@ -462,15 +461,6 @@ namespace Stratis.Bitcoin.Consensus
                     }
                 }
 
-                // If the list of blocks hashes requested for download are not consecutive we batch them
-                if (previousBlock != null && chainedHeaderBlock.ChainedHeader.Previous.HashBlock != previousBlock.ChainedHeader.HashBlock)
-                {
-                    this.logger.LogTrace("Block header '{0}' is not consecutive to previous block header '{1}'.", chainedHeaderBlock, previousBlock);
-                    this.DownloadBlocks(downloadRequests, this.ProcessDownloadedBlock);
-                    downloadRequests = new List<ChainedHeader>();
-                }
-
-                previousBlock = chainedHeaderBlock;
                 downloadRequests.Add(chainedHeaderBlock.ChainedHeader);
                 this.logger.LogTrace("Block hash '{0}' is queued for download.", blockHash);
             }
