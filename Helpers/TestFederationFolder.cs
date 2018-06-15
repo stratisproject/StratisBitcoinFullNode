@@ -2,12 +2,11 @@
 using System.Linq;
 using System.Runtime.CompilerServices;
 using NBitcoin;
-using NBitcoin.DataEncoders;using Stratis.Bitcoin.Features.GeneralPurposeWallet;
-using Stratis.Bitcoin.Features.GeneralPurposeWallet.Interfaces;
-
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Tests.Common;using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
+using Stratis.FederatedPeg.Features.FederationGateway.Interfaces;
+using Stratis.FederatedPeg.Features.FederationGateway.Wallet;
 
 namespace Stratis.FederatedPeg.IntegrationTests.Helpers
 {
@@ -61,15 +60,12 @@ namespace Stratis.FederatedPeg.IntegrationTests.Helpers
             }
         }
 
-        public GeneralPurposeAccount ImportPrivateKeyToWallet(CoreNode node, string walletName, string walletPassword, string memberName,
+        public void ImportPrivateKeyToWallet(CoreNode node, string walletName, string walletPassword, string memberName,
             string memberPassword, int m, int n, Network network)
         {
             // Use the GeneralWalletManager and get the API created wallet.
-            var generalWalletManager = node.FullNode.NodeService<IGeneralPurposeWalletManager>() as GeneralPurposeWalletManager;
-            var wallet = generalWalletManager.GetWallet(walletName);
-
-            // Use the first account.
-            var account = wallet.GetAccountsByCoinType((Stratis.Bitcoin.Features.GeneralPurposeWallet.CoinType)node.FullNode.Network.Consensus.CoinType).First();
+            var generalWalletManager = node.FullNode.NodeService<IFederationWalletManager>() as FederationWalletManager;
+            var wallet = generalWalletManager.GetWallet();
 
             //Decrypt the private key
             var chain = network.ToChain();
@@ -91,16 +87,16 @@ namespace Stratis.FederatedPeg.IntegrationTests.Helpers
 
             //account.ImportMultiSigAddress(multiSigAddress);
 
-            generalWalletManager.SaveWallet(wallet);
+            generalWalletManager.SaveWallet();
 
-            return account;
+          //  return account;
         }
 
         public void SaveGeneralWallet(CoreNode node, string walletName)
         {
-            var generalWalletManager = node.FullNode.NodeService<IGeneralPurposeWalletManager>() as GeneralPurposeWalletManager;
-            var wallet = generalWalletManager.GetWallet(walletName);
-            generalWalletManager.SaveWallet(wallet);
+            var generalWalletManager = node.FullNode.NodeService<IFederationWalletManager>() as FederationWalletManager;
+            var wallet = generalWalletManager.GetWallet();
+            generalWalletManager.SaveWallet();
         }
     }
 }
