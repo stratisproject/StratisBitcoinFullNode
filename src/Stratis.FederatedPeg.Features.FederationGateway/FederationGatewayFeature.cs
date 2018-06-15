@@ -94,7 +94,6 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
 
         public override void Initialize()
         {
-            // subscribe to receiving transactions
             // subscribe to receiving blocks and transactions
             this.blockSubscriberDisposable = this.signals.SubscribeForBlocks(new BlockObserver(this.walletSyncManager));
             this.transactionSubscriberDisposable = this.signals.SubscribeForTransactions(new Notifications.TransactionObserver(this.walletSyncManager));

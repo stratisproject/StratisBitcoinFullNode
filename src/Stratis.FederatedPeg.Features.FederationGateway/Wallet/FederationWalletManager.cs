@@ -123,7 +123,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Wallet
             this.lockObject = new object();
 
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
-            
+
             this.network = network;
             this.coinType = (CoinType)network.Consensus.CoinType;
             this.chain = chain;
@@ -154,6 +154,12 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Wallet
             // Find the wallet and load it in memory.
             if (this.fileStorage.Exists(WalletFileName))
                 this.Wallet = this.fileStorage.LoadByFileName(WalletFileName);
+            else
+            {
+                // Create the multisig wallet file if it doesn't exist
+                this.Wallet = GenerateWallet();
+                this.SaveWallet();
+            }
 
             // find the last chain block received by the wallet manager.
             this.WalletTipHash = this.LastReceivedBlockHash();
@@ -189,7 +195,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Wallet
 
             this.logger.LogTrace("(-)");
         }
-        
+
         /// <inheritdoc />
         public IEnumerable<FlatHistory> GetHistory()
         {
@@ -203,7 +209,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Wallet
             this.logger.LogTrace("(-):*.Count={0}", items.Count());
             return items;
         }
-        
+
         /// <inheritdoc />
         public int LastBlockHeight()
         {
@@ -284,7 +290,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Wallet
                 IEnumerable<TransactionData> makeSpendable = this.Wallet.MultiSigAddress.Transactions.Where(w => (w.SpendingDetails != null) && (w.SpendingDetails.BlockHeight > fork.Height));
                 foreach (TransactionData transactionData in makeSpendable)
                     transactionData.SpendingDetails = null;
-                
+
                 this.UpdateLastBlockSyncedHeight(fork);
             }
 
@@ -453,7 +459,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Wallet
 
             // Get the collection of transactions to add to.
             Script script = utxo.ScriptPubKey;
-            
+
             // Check if a similar UTXO exists or not (same transaction ID and same index).
             // New UTXOs are added, existing ones are updated.
             int index = transaction.Outputs.IndexOf(utxo);
@@ -623,7 +629,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Wallet
             this.SaveWallet();
             this.logger.LogTrace("()");
         }
-        
+
         /// <inheritdoc />
         public void SaveWallet()
         {
@@ -646,49 +652,42 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Wallet
             Guard.NotNull(chainedHeader, nameof(chainedHeader));
             this.logger.LogTrace("({0}:'{1}')", nameof(chainedHeader), chainedHeader);
 
-            // Update the wallets with the last processed block height.
-            this.UpdateBlockLocator(chainedHeader);
-            
-            this.WalletTipHash = chainedHeader.HashBlock;
+            lock (this.lockObject)
+            {
+                // The block locator will help when the wallet
+                // needs to rewind this will be used to find the fork.
+                this.Wallet.BlockLocator = chainedHeader.GetLocator().Blocks;
+
+                // Update the wallets with the last processed block height.
+                this.Wallet.LastBlockSyncedHeight = chainedHeader.Height;
+                this.Wallet.LastBlockSyncedHash = chainedHeader.HashBlock;
+            }
+
             this.logger.LogTrace("(-)");
-        }
 
-        /// <inheritdoc />
-        public void UpdateBlockLocator(ChainedHeader chainedHeader)
-        {
-            Guard.NotNull(chainedHeader, nameof(chainedHeader));
-            this.logger.LogTrace("({0}:'{1}')", nameof(chainedHeader), chainedHeader);
-
-            // The block locator will help when the wallet needs to rewind this will be used to find the fork
-            this.Wallet.BlockLocator = chainedHeader.GetLocator().Blocks;
-
+            this.WalletTipHash = chainedHeader.HashBlock;
             this.logger.LogTrace("(-)");
         }
 
         /// <summary>
         /// Generates the wallet file.
         /// </summary>
-        /// <param name="name">The name of the wallet.</param>
-        /// <param name="encryptedSeed">The seed for this wallet, password encrypted.</param>
-        /// <param name="creationTime">The time this wallet was created.</param>
         /// <returns>The wallet object that was saved into the file system.</returns>
         /// <exception cref="WalletException">Thrown if wallet cannot be created.</exception>
-        private FederationWallet GenerateWalletFile(string encryptedSeed, DateTimeOffset? creationTime = null)
+        private FederationWallet GenerateWallet()
         {
-            Guard.NotEmpty(encryptedSeed, nameof(encryptedSeed));
-            this.logger.LogTrace("Generating the wallet file.");
+            this.logger.LogTrace("Generating the federation wallet file.");
 
             // Check if any wallet file already exists, with case insensitive comparison.
             if (this.fileStorage.Exists(WalletFileName))
             {
                 this.logger.LogTrace("(-)[WALLET_ALREADY_EXISTS]");
-                throw new WalletException($"A wallet already exists.");
+                throw new WalletException("A federation wallet already exists.");
             }
 
-            FederationWallet walletFile = new FederationWallet
+            FederationWallet wallet = new FederationWallet
             {
-                EncryptedSeed = encryptedSeed,
-                CreationTime = creationTime ?? this.dateTimeProvider.GetTimeOffset(),
+                CreationTime = this.dateTimeProvider.GetTimeOffset(),
                 Network = this.network,
                 CoinType = this.coinType,
                 LastBlockSyncedHeight = 0,
@@ -703,11 +702,8 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Wallet
                 }
             };
 
-            // Create a folder if none exists and persist the file
-            this.fileStorage.SaveToFile(walletFile, WalletFileName);
-
             this.logger.LogTrace("(-)");
-            return walletFile;
+            return wallet;
         }
 
         /// <summary>
@@ -770,7 +766,8 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Wallet
             // Create a wallet file.
             string encryptedSeed = extendedKey.PrivateKey.GetEncryptedBitcoinSecret(password, this.network).ToWif();
 
-            this.GenerateWalletFile(encryptedSeed, this.dateTimeProvider.GetTimeOffset());
+            this.Wallet.EncryptedSeed = encryptedSeed;
+            this.SaveWallet();
 
             this.logger.LogTrace("(-)");
         }
