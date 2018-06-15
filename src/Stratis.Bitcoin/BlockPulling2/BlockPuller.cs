@@ -18,7 +18,7 @@ namespace Stratis.Bitcoin.BlockPulling2
     /// </summary>
     public class BlockPuller : IDisposable
     {
-        private const int StallingDelayMs = 500;
+        private const int StallingLoopIntervalMs = 500;
         private const int MinEmptySlotsPercentageToStartProcessingTheQueue = 5;
 
         private const int ImportantHeightMargin = 10;
@@ -198,7 +198,7 @@ namespace Stratis.Bitcoin.BlockPulling2
             {
                 try
                 {
-                    await Task.Delay(StallingDelayMs, this.cancellationSource.Token).ConfigureAwait(false);
+                    await Task.Delay(StallingLoopIntervalMs, this.cancellationSource.Token).ConfigureAwait(false);
                 }
                 catch (OperationCanceledException)
                 {
