@@ -46,9 +46,8 @@ namespace Stratis.Bitcoin.BlockPulling2
         private readonly Dictionary<int, BlockPullerBehavior> pullerBehaviorsByPeerId;
 
         private readonly CancellationTokenSource cancellationSource;
-
-        private readonly CircularArray<long> BlockSizeSamples;
-        public double AverageBlockSizeBytes { get; private set; }
+        
+        private AverageCalculator averageBlockSizeBytes;
 
         private readonly AsyncManualResetEvent processQueuesSignal;
         private readonly object lockObject;
@@ -85,7 +84,7 @@ namespace Stratis.Bitcoin.BlockPulling2
             this.downloadJobsQueue = new Queue<DownloadJob>();
 
             this.AssignedDownloads = new Dictionary<uint256, AssignedDownload>();
-            this.BlockSizeSamples = new CircularArray<long>(1000);
+            this.averageBlockSizeBytes = new AverageCalculator(1000);
             
             this.pullerBehaviorsByPeerId = new Dictionary<int, BlockPullerBehavior>();
             this.HeadersByHash = new Dictionary<uint256, ChainedHeader>();
@@ -93,7 +92,6 @@ namespace Stratis.Bitcoin.BlockPulling2
             this.processQueuesSignal = new AsyncManualResetEvent(false);
             this.lockObject = new object();
             this.currentJobId = 0;
-            this.AverageBlockSizeBytes = 0;
 
             this.pendingDownloadsCount = 0;
 
@@ -116,6 +114,11 @@ namespace Stratis.Bitcoin.BlockPulling2
         {
             this.assignerLoop = this.AssignerLoopAsync();
             this.stallingLoop = this.StallingLoopAsync();
+        }
+
+        public double GetAverageBlockSizeBytes()
+        {
+            return this.averageBlockSizeBytes.Average;
         }
 
         public void NewPeerTipClaimed(INetworkPeer peer, ChainedHeader newTip)
@@ -283,19 +286,36 @@ namespace Stratis.Bitcoin.BlockPulling2
             {
                 List<uint256> hashes = downloadsGroupedByPeerId.Select(x => x.Key).ToList();
                 int peerId = downloadsGroupedByPeerId.First().Value.PeerId;
-                
-                try
+
+                BlockPullerBehavior peerBehavior;
+
+                lock (this.lockObject)
                 {
-                    await this.pullerBehaviorsByPeerId[peerId].RequestBlocksAsync(hashes).ConfigureAwait(false);
+                    peerBehavior = this.pullerBehaviorsByPeerId[peerId];
                 }
-                catch (Exception)
+
+                bool success = false;
+
+                if (peerBehavior != null)
+                {
+                    try
+                    {
+                        await peerBehavior.RequestBlocksAsync(hashes).ConfigureAwait(false);
+                        success = true;
+                    }
+                    catch (Exception) //TODO specify particular exception
+                    {
+                    }
+                }
+
+                if (!success)
                 {
                     // Failed to assign downloads to a peer. Put assignments back to the reassign queue and signal processing.
                     var jobIdToHash = new Dictionary<int, uint256>(downloadsGroupedByPeerId.Count());
 
                     foreach (KeyValuePair<uint256, AssignedDownload> assignedDownload in downloadsGroupedByPeerId)
                         jobIdToHash.Add(assignedDownload.Value.JobId, assignedDownload.Key);
-                    
+
                     this.ReleaseAssignments(jobIdToHash);
 
                     this.PeerDisconnected(downloadsGroupedByPeerId.First().Value.PeerId);
@@ -438,8 +458,7 @@ namespace Stratis.Bitcoin.BlockPulling2
 
                 this.AssignedDownloads.Remove(blockHash);
                 
-                this.BlockSizeSamples.Add(block.BlockSize.Value, out long oldSample);
-                this.AverageBlockSizeBytes = CircularArray<double>.RecalculateAverageForSircularArray(this.BlockSizeSamples.Count, this.AverageBlockSizeBytes, block.BlockSize.Value, oldSample);
+                this.averageBlockSizeBytes.AddSample(block.BlockSize.Value);
 
                 double deliveredInSeconds = (DateTime.UtcNow - assignedDownload.AssignedTime).TotalSeconds;
                 this.AddPeerSampleAndRecalculateQualityScoreLocked(peerId, block.BlockSize.Value, deliveredInSeconds);
@@ -479,7 +498,7 @@ namespace Stratis.Bitcoin.BlockPulling2
 
         private void RecalculateMaxBlocksBeingDownloadedLocked()
         {
-            this.maxBlocksBeingDownloaded = (int)(this.GetTotalSpeedOfAllPeersBytesPerSecLocked() / this.AverageBlockSizeBytes);
+            this.maxBlocksBeingDownloaded = (int)(this.GetTotalSpeedOfAllPeersBytesPerSecLocked() / this.averageBlockSizeBytes.Average);
 
             if (this.maxBlocksBeingDownloaded < 10)
                 this.maxBlocksBeingDownloaded = 10;

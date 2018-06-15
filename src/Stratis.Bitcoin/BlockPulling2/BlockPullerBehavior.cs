@@ -21,11 +21,9 @@ namespace Stratis.Bitcoin.BlockPulling2
 
         public double QualityScore { get; private set; }
         public int SpeedBytesPerSecond { get; private set; }
-
-        private readonly CircularArray<SizeDelaySample> blockSizeDelaySecondsSamples;
-
-        private double averageSizeBytes;
-        private double averageDelaySeconds;
+        
+        private AverageCalculator averageSizeBytes;
+        private AverageCalculator averageDelaySeconds;
 
         /// <summary>Logger factory to create loggers.</summary>
         private readonly ILoggerFactory loggerFactory;
@@ -37,11 +35,10 @@ namespace Stratis.Bitcoin.BlockPulling2
 
         public BlockPullerBehavior(BlockPuller blockPuller, ILoggerFactory loggerFactory)
         {
-            this.blockSizeDelaySecondsSamples = new CircularArray<SizeDelaySample>(MaxSamples);
             this.QualityScore = SamplelessQualityScore;
 
-            this.averageSizeBytes = 0;
-            this.averageDelaySeconds = 0;
+            this.averageSizeBytes = new AverageCalculator(MaxSamples);
+            this.averageDelaySeconds = new AverageCalculator(MaxSamples);
             this.SpeedBytesPerSecond = 0;
 
             this.blockPuller = blockPuller;
@@ -52,18 +49,10 @@ namespace Stratis.Bitcoin.BlockPulling2
 
         public void AddSample(long blockSizeBytes, double delaySeconds)
         {
-            var newSample = new SizeDelaySample()
-            {
-                SizeBytes = blockSizeBytes,
-                DelaySeconds = delaySeconds
-            };
+            this.averageSizeBytes.AddSample(blockSizeBytes);
+            this.averageDelaySeconds.AddSample(delaySeconds);
 
-            this.blockSizeDelaySecondsSamples.Add(newSample, out SizeDelaySample unused);
-
-            this.averageSizeBytes = CircularArray<double>.RecalculateAverageForSircularArray(this.blockSizeDelaySecondsSamples.Count, this.averageSizeBytes, blockSizeBytes, unused.SizeBytes);
-            this.averageDelaySeconds = CircularArray<double>.RecalculateAverageForSircularArray(this.blockSizeDelaySecondsSamples.Count, this.averageDelaySeconds, delaySeconds, unused.DelaySeconds);
-
-            this.SpeedBytesPerSecond = (int)(this.averageSizeBytes / this.averageDelaySeconds);
+            this.SpeedBytesPerSecond = (int)(this.averageSizeBytes.Average / this.averageDelaySeconds.Average);
         }
 
         public void RecalculateQualityScore(int bestSpeedBytesPerSecond)
@@ -134,12 +123,6 @@ namespace Stratis.Bitcoin.BlockPulling2
             this.AttachedPeer.MessageReceived.Unregister(this.OnMessageReceivedAsync);
             
             this.logger.LogTrace("(-)");
-        }
-
-        private struct SizeDelaySample
-        {
-            public long SizeBytes;
-            public double DelaySeconds;
         }
     }
 }

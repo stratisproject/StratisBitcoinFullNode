@@ -112,22 +112,6 @@ namespace Stratis.Bitcoin.Utilities
             return this.GetEnumerator();
         }
 
-        public static double RecalculateAverageForSircularArray(int arrayItemsCount, double oldAverage, double newSample, double oldSample)
-        {
-            // Equality comparison against 0 is ok here
-            // https://stackoverflow.com/questions/6598179/the-right-way-to-compare-a-system-double-to-0-a-number-int
-
-            bool sampleWasReplaced = oldSample == 0;
-
-            if (!sampleWasReplaced && oldAverage == 0)
-                return newSample;
-
-            if (sampleWasReplaced)
-                return (oldAverage * (arrayItemsCount - 1) + newSample) / arrayItemsCount;
-
-            return (oldAverage * arrayItemsCount - oldSample + newSample) / arrayItemsCount;
-        }
-
         /// <inheritdoc />
         /// <remarks>Items are enumerated in order of their addition starting with the oldest item.</remarks>
         public IEnumerator<T> GetEnumerator()
