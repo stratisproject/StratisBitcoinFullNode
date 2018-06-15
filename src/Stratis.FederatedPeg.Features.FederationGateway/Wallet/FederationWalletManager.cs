@@ -332,7 +332,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Wallet
             lock (this.lockObject)
             {
                 bool walletUpdated = false;
-                foreach (Transaction transaction in block.Transactions)
+                foreach (Transaction transaction in block.Transactions.Where(t => !(t.IsCoinBase && t.TotalOut == Money.Zero)))
                 {
                     bool trxFound = this.ProcessTransaction(transaction, chainedHeader.Height, block, true);
                     if (trxFound)
@@ -697,6 +697,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Wallet
                 {
                     Address = this.federationGatewaySettings.MultiSigAddress.ToString(),
                     M = this.federationGatewaySettings.MultiSigM,
+                    ScriptPubKey = this.federationGatewaySettings.MultiSigAddress.ScriptPubKey,
                     RedeemScript = this.federationGatewaySettings.RedeemScript,
                     Transactions = new List<TransactionData>()
                 }
