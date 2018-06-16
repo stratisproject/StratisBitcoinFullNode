@@ -17,13 +17,6 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Wallet
     public class FederationWallet
     {
         /// <summary>
-        /// Initializes a new instance of the general purpose wallet.
-        /// </summary>
-        public FederationWallet()
-        {
-        }
-
-        /// <summary>
         /// The seed for this wallet's multisig addresses, password encrypted.
         /// </summary>
         [JsonProperty(PropertyName = "encryptedSeed")]

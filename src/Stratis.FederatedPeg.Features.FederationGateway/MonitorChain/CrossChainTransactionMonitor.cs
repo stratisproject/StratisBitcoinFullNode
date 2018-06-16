@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using System;
+using Microsoft.Extensions.Logging;
 
 using NBitcoin;
 using NBitcoin.JsonConverters;
@@ -60,7 +61,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
         private readonly ILogger logger;
 
         // Our session manager.
-        private IMonitorChainSessionManager monitorChainSessionManager;
+        private readonly IMonitorChainSessionManager monitorChainSessionManager;
 
         // The redeem Script we are monitoring.
         private Script script;
@@ -71,11 +72,11 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
         // The network we are running on. Will be a Stratis chain for mainchain or a sidechain.
         private readonly Network network;
 
-        private ConcurrentChain concurrentChain;
+        private readonly ConcurrentChain concurrentChain;
 
-        private IInitialBlockDownloadState initialBlockDownloadState;
+        private readonly IInitialBlockDownloadState initialBlockDownloadState;
 
-        private ICrossChainTransactionAuditor crossChainTransactionAuditor;
+        private readonly ICrossChainTransactionAuditor crossChainTransactionAuditor;
 
         public CrossChainTransactionMonitor(ILoggerFactory loggerFactory, 
             Network network,
@@ -94,6 +95,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
             this.crossChainTransactionAuditor = crossChainTransactionAuditor;
         }
 
+        /// <inheritdoc />
         /// <summary>
         /// Saves the store during shutdown.
         /// </summary>
@@ -119,25 +121,23 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
             foreach (var txOut in transaction.Outputs)
             {
                 // Does the ScriptPubKey match the script that we are interested in?
-                if (txOut.ScriptPubKey == this.script)
+                if (txOut.ScriptPubKey != this.script) continue;
+                // Ok we found the script in this transaction. Does it also have an OP_RETURN?
+                var stringResult = OpReturnDataReader.GetStringFromOpReturn(this.logger, network, transaction, out var opReturnDataType);
+                switch (opReturnDataType)
                 {
-                    // Ok we found the script in this transaction. Does it also have an OP_RETURN?
-                    var stringResult = OpReturnDataReader.GetStringFromOpReturn(this.logger, network, transaction, out var opReturnDataType);
-                    if (opReturnDataType == OpReturnDataType.Unknown) continue;
-
-                    if (opReturnDataType == OpReturnDataType.Address)
-                    {
+                    case OpReturnDataType.Unknown:
+                        continue;
+                    case OpReturnDataType.Address:
                         this.ProcessAddress(transaction.GetHash(), stringResult, txOut.Value, blockNumber, block.GetHash());
                         continue;
-                    }
-
-                    if (opReturnDataType == OpReturnDataType.Hash)
-                    {
+                    case OpReturnDataType.Hash:
                         this.crossChainTransactionAuditor?.AddCounterChainTransactionId(transaction.GetHash(), uint256.Parse(stringResult));
                         this.crossChainTransactionAuditor?.Commit();
                         this.logger.LogInformation($"AddCounterChainTransactionId: {stringResult} for transaction {transaction.GetHash()}.");
                         continue;
-                    }
+                    default:
+                        throw new ArgumentOutOfRangeException();
                 }
             }
         }

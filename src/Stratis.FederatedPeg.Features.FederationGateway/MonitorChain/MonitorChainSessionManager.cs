@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Concurrent;
+using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Threading;
@@ -120,7 +121,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.MonitorChain
                 crossChainTransactionInfo.DestinationAddress,
                 crossChainTransactionInfo.BlockNumber,
                 this.network.ToChain(),
-                this.federationGatewaySettings.FederationFolder,
+                this.federationGatewaySettings.FederationPublicKeys.Select(f => f.ToString(network)).ToArray(),
                 this.federationGatewaySettings.PublicKey,
                 this.federationGatewaySettings.MultiSigM,
                 this.federationGatewaySettings.MultiSigN

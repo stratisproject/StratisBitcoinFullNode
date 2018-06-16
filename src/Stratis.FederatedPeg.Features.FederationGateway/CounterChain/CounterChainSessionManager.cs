@@ -48,17 +48,9 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.CounterChain
 
         // The logger. It's the logger.
         private readonly ILogger logger;
-
-        /// <summary>Provider of time functions.</summary>
-        private readonly IDateTimeProvider dateTimeProvider;
-
+        
         // The shoulders we stand on.
         private IFullNode fullnode;
-
-        /// <summary>
-        /// The name of the member details file.
-        /// </summary>
-        private const string MemberDetailsFileName = "member_details.json";
 
         // The sessions are stored here.
         private ConcurrentDictionary<uint256, CounterChainSession> sessions = new ConcurrentDictionary<uint256, CounterChainSession>();
@@ -93,7 +85,6 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.CounterChain
             this.federationWalletManager = federationWalletManager;
             this.federationWalletTransactionHandler = federationWalletTransactionHandler;
             this.federationGatewaySettings = federationGatewaySettings;
-            this.dateTimeProvider = dateTimeProvider;
         }
 
         ///<inheritdoc/>
@@ -112,14 +103,15 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.CounterChain
         // Add the session to its collection.
         private CounterChainSession RegisterSession(uint256 transactionId, Money amount, string destination)
         {
-            var memberFolderManager = new MemberFolderManager(this.federationGatewaySettings.FederationFolder);
-            var federation = memberFolderManager.LoadFederation(this.federationGatewaySettings.MultiSigM, this.federationGatewaySettings.MultiSigN);
-
             this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} RegisterSession transactionId:{transactionId}");
             this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} RegisterSession amount:{amount}");
             this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} RegisterSession destination:{destination}");
 
-            var counterChainSession = new CounterChainSession(this.logger, this.federationGatewaySettings.MultiSigN, transactionId, federation.GetPublicKeys(this.network.ToChain()), amount, destination);
+            var counterChainSession = new CounterChainSession(this.logger, this.federationGatewaySettings.MultiSigN, 
+                transactionId, 
+                federationGatewaySettings.FederationPublicKeys.Select(k => k.GetAddress(network).ToString()).ToArray(),
+                amount,
+                destination);
             this.sessions.AddOrReplace(transactionId, counterChainSession);
             return counterChainSession;
         }

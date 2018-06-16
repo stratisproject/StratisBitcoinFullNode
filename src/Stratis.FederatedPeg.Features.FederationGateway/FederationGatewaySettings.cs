@@ -32,7 +32,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
                 nodeSettings.Network, this.RedeemScript);
             this.MultiSigM = configReader.GetOrDefault("multisigM", payToMultisigScriptParams.SignatureCount);
             this.MultiSigN = configReader.GetOrDefault("multisigN", payToMultisigScriptParams.PubKeys.Length);
-
+            this.FederationPublicKeys = payToMultisigScriptParams.PubKeys;
             this.MemberName = configReader.GetOrDefault("membername", "unspecified");
 
             this.MultiSigWalletName = configReader.GetOrDefault("multisigwalletname", "multisig_wallet");
@@ -55,6 +55,11 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
         /// A string representation of the PublicKey used for determining turns in the round robin.
         /// </summary>
         public string PublicKey { get; set; }
+
+        /// <summary>
+        /// Public keys of all the federation members
+        /// </summary>
+        public PubKey[] FederationPublicKeys { get; set; }
 
         /// <summary>
         /// Path to the public keys of the federation members.
