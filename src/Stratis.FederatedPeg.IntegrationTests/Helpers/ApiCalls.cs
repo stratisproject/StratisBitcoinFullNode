@@ -7,7 +7,6 @@ using NBitcoin.JsonConverters;
 using Newtonsoft.Json;
 using Stratis.Bitcoin.Features.Wallet.Models;
 using Stratis.Bitcoin.Utilities.JsonErrors;
-using Stratis.FederatedPeg.Features.MainchainGeneratorServices.Models;
 
 namespace Stratis.FederatedPeg.IntegrationTests
 {
@@ -22,33 +21,33 @@ namespace Stratis.FederatedPeg.IntegrationTests
             }
         }
 
-        public static async Task InitSidechain(string sidechainName, int apiPortForMainchain, int apiPortForSidechain, int multiSigN, int multiSigM, string folderFedMemberKey)
-        {
-            using (var client = new HttpClient())
-            {
-                client.DefaultRequestHeaders.Accept.Clear();
-                client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+        //public static async Task InitSidechain(string sidechainName, int apiPortForMainchain, int apiPortForSidechain, int multiSigN, int multiSigM, string folderFedMemberKey)
+        //{
+        //    using (var client = new HttpClient())
+        //    {
+        //        client.DefaultRequestHeaders.Accept.Clear();
+        //        client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
 
-                var initSidechainRequest = new InitSidechainRequest();
-                initSidechainRequest.SidechainName = sidechainName;
-                initSidechainRequest.ApiPortForSidechain = apiPortForSidechain;
-                initSidechainRequest.MultiSigN = multiSigN;
-                initSidechainRequest.MultiSigM = multiSigM;
-                initSidechainRequest.FolderFedMemberKeys = folderFedMemberKey;
+        //        var initSidechainRequest = new InitSidechainRequest();
+        //        initSidechainRequest.SidechainName = sidechainName;
+        //        initSidechainRequest.ApiPortForSidechain = apiPortForSidechain;
+        //        initSidechainRequest.MultiSigN = multiSigN;
+        //        initSidechainRequest.MultiSigM = multiSigM;
+        //        initSidechainRequest.FolderFedMemberKeys = folderFedMemberKey;
 
-                var uri = new Uri($"http://localhost:{apiPortForMainchain}/api/MainchainGeneratorServices/init-sidechain");
-                var request = new JsonContent(initSidechainRequest);
-                var httpResponseMessage = await client.PostAsync(uri, request);
+        //        var uri = new Uri($"http://localhost:{apiPortForMainchain}/api/MainchainGeneratorServices/init-sidechain");
+        //        var request = new JsonContent(initSidechainRequest);
+        //        var httpResponseMessage = await client.PostAsync(uri, request);
 
-                if (!httpResponseMessage.IsSuccessStatusCode)
-                {
-                    string content = await httpResponseMessage.Content.ReadAsStringAsync();
-                    var result = JsonConvert.DeserializeObject<ErrorResponse>(content);
-                    string message = result.Errors[0].Message;
-                    throw new Exception(message);
-                }
-            }
-        }
+        //        if (!httpResponseMessage.IsSuccessStatusCode)
+        //        {
+        //            string content = await httpResponseMessage.Content.ReadAsStringAsync();
+        //            var result = JsonConvert.DeserializeObject<ErrorResponse>(content);
+        //            string message = result.Errors[0].Message;
+        //            throw new Exception(message);
+        //        }
+        //    }
+        //}
 
         public static async Task<string> Mnemonic(int apiPortForSidechain)
         {

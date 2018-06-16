@@ -5,11 +5,7 @@ VisualStudioVersion = 15.0.27004.2009
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FedKeyPairGen", "FedKeyPairGen\FedKeyPairGen.csproj", "{E72E7605-B499-4078-ACD9-13BD6B052321}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.FederatedPeg.Features.SidechainGeneratorServices", "Stratis.FederatedPeg.Features.SidechainGeneratorServices\Stratis.FederatedPeg.Features.SidechainGeneratorServices.csproj", "{86FDCC68-1F36-4D0B-A618-E286B054D283}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.FederatedPeg.IntegrationTests", "Stratis.FederatedPeg.IntegrationTests\Stratis.FederatedPeg.IntegrationTests.csproj", "{EB41C31A-FF32-4164-822D-43D1D9AC7FEA}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.FederatedPeg.Features.MainchainGeneratorServices", "Stratis.FederatedPeg.Features.MainchainGeneratorServices\Stratis.FederatedPeg.Features.MainchainGeneratorServices.csproj", "{55BA22A5-B45B-4520-8328-437F9A1F2D7F}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.FederatedPeg", "Stratis.FederatedPeg\Stratis.FederatedPeg.csproj", "{E53C0EF3-9E1C-443F-9FE2-A81037F74135}"
 EndProject
@@ -29,8 +25,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.FederatedSidechains
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.Sidechains.Networks", "Stratis.Sidechains.Networks\Stratis.Sidechains.Networks.csproj", "{C5D390A9-1E08-47DE-BAAB-0AA9FC69CCC2}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.Bitcoin.Features.FederationWallet.Tests", "Stratis.Bitcoin.Features.FederationWallet.Tests\Stratis.Bitcoin.Features.FederationWallet.Tests.csproj", "{53318670-ED6A-4551-82D9-C0D5053AE6F6}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -41,18 +35,10 @@ Global
 		{E72E7605-B499-4078-ACD9-13BD6B052321}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{E72E7605-B499-4078-ACD9-13BD6B052321}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{E72E7605-B499-4078-ACD9-13BD6B052321}.Release|Any CPU.Build.0 = Release|Any CPU
-		{86FDCC68-1F36-4D0B-A618-E286B054D283}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{86FDCC68-1F36-4D0B-A618-E286B054D283}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{86FDCC68-1F36-4D0B-A618-E286B054D283}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{86FDCC68-1F36-4D0B-A618-E286B054D283}.Release|Any CPU.Build.0 = Release|Any CPU
 		{EB41C31A-FF32-4164-822D-43D1D9AC7FEA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{EB41C31A-FF32-4164-822D-43D1D9AC7FEA}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{EB41C31A-FF32-4164-822D-43D1D9AC7FEA}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{EB41C31A-FF32-4164-822D-43D1D9AC7FEA}.Release|Any CPU.Build.0 = Release|Any CPU
-		{55BA22A5-B45B-4520-8328-437F9A1F2D7F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{55BA22A5-B45B-4520-8328-437F9A1F2D7F}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{55BA22A5-B45B-4520-8328-437F9A1F2D7F}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{55BA22A5-B45B-4520-8328-437F9A1F2D7F}.Release|Any CPU.Build.0 = Release|Any CPU
 		{E53C0EF3-9E1C-443F-9FE2-A81037F74135}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{E53C0EF3-9E1C-443F-9FE2-A81037F74135}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{E53C0EF3-9E1C-443F-9FE2-A81037F74135}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -89,10 +75,6 @@ Global
 		{C5D390A9-1E08-47DE-BAAB-0AA9FC69CCC2}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C5D390A9-1E08-47DE-BAAB-0AA9FC69CCC2}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C5D390A9-1E08-47DE-BAAB-0AA9FC69CCC2}.Release|Any CPU.Build.0 = Release|Any CPU
-		{53318670-ED6A-4551-82D9-C0D5053AE6F6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{53318670-ED6A-4551-82D9-C0D5053AE6F6}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{53318670-ED6A-4551-82D9-C0D5053AE6F6}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{53318670-ED6A-4551-82D9-C0D5053AE6F6}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

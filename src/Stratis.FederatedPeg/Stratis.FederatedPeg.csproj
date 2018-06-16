@@ -20,4 +20,8 @@
     <ProjectReference Include="..\Stratis.Sidechains.Networks\Stratis.Sidechains.Networks.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="MemberFolderManagers\" />
+  </ItemGroup>
+
 </Project>

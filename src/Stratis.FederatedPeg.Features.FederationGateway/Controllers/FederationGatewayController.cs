@@ -21,26 +21,14 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Controllers
     [Route("api/[controller]")]
     public class FederationGatewayController : Controller
     {
-        /// <summary>Instance logger.</summary>
-        private readonly ILogger logger;
-
-        private ICounterChainSessionManager counterChainSessionManager;
-
-        private IMonitorChainSessionManager monitorChainSessionManager;
-
-        /// <summary>Specification of the network the node runs on.</summary>
-        private readonly Network network;
+        private readonly ICounterChainSessionManager counterChainSessionManager;
 
         public FederationGatewayController(
             ILoggerFactory loggerFactory, 
-            ICounterChainSessionManager counterChainSessionManager,
-            IMonitorChainSessionManager monitorChainSessionManager, 
-            Network network)
+            ICounterChainSessionManager counterChainSessionManager)
         {
-            this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
-            this.monitorChainSessionManager = monitorChainSessionManager;
+            loggerFactory.CreateLogger(this.GetType().FullName);
             this.counterChainSessionManager = counterChainSessionManager;
-            this.network = network;
         }
 
         [Route("create-session-oncounterchain")]

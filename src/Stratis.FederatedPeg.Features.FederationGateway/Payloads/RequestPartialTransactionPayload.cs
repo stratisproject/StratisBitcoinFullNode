@@ -19,11 +19,6 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
 
         public uint256 BossCard => this.bossCard;
 
-        public RequestPartialTransactionPayload()
-        {
-
-        }
-
         public RequestPartialTransactionPayload(uint256 sessionId, Transaction template)
         {
             this.sessionId = sessionId;
