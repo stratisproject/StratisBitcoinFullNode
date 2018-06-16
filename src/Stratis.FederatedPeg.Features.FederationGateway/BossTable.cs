@@ -81,7 +81,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
             if (now < startTime)
                 throw new ArgumentOutOfRangeException("The now time must be greater than the start time.");
 
-            var secondsPassed = (now - startTime).Seconds;
+            var secondsPassed = (int)(now - startTime).TotalSeconds;
             var cardPasses = secondsPassed / this.bossCardHoldTime;
 
             // If each federation has had a turn we are in free for all mode and anyone can build and broadcast.
