@@ -543,7 +543,7 @@ namespace Stratis.Bitcoin.BlockPulling2
 
                         pullerBehavior.Penalize(MaxSecondsToDeliverBlock, reassignedCount);
 
-                        this.RecalculateQuealityScoreLocked(pullerBehavior);
+                        this.RecalculateQuealityScoreLocked(pullerBehavior, peerId);
 
                         reassigned = true;
                         
@@ -598,7 +598,7 @@ namespace Stratis.Bitcoin.BlockPulling2
                 pullerBehavior.AddSample(block.BlockSize.Value, deliveredInSeconds);
 
                 // Recalculate quality score.
-                this.RecalculateQuealityScoreLocked(pullerBehavior);
+                this.RecalculateQuealityScoreLocked(pullerBehavior, peerId);
 
                 this.RecalculateMaxBlocksBeingDownloadedLocked();
 
@@ -611,12 +611,13 @@ namespace Stratis.Bitcoin.BlockPulling2
 
             this.logger.LogTrace("(-)");
         }
-        
+
         /// <summary>Recalculates queality score of a peer or all peers if given peer has the best upload speed.</summary>
         /// <param name="pullerBehavior">The puller behavior of a peer which quality score should be recalculated.</param>
-        private void RecalculateQuealityScoreLocked(BlockPullerBehavior pullerBehavior)
+        /// <param name="peerId">Id of a peer which behavior is passed.</param>
+        private void RecalculateQuealityScoreLocked(BlockPullerBehavior pullerBehavior, int peerId)
         {
-            this.logger.LogTrace("({0}:{1})", nameof(pullerBehavior.AttachedPeer.Connection.Id), pullerBehavior.AttachedPeer.Connection.Id);
+            this.logger.LogTrace("({0}:{1})", nameof(peerId), peerId);
 
             // Now decide if we need to recalculate quality score for all peers or just for this one.
             int bestSpeed = this.pullerBehaviorsByPeerId.Max(x => x.Value.SpeedBytesPerSecond);
@@ -629,7 +630,7 @@ namespace Stratis.Bitcoin.BlockPulling2
             }
             else
             {
-                this.logger.LogTrace("Peer {0} is the fastest peer. Recalculating quality score of all peers.", pullerBehavior.AttachedPeer.Connection.Id);
+                this.logger.LogTrace("Peer {0} is the fastest peer. Recalculating quality score of all peers.", peerId);
 
                 // This is the best peer. Recalculate quality score for everyone.
                 foreach (BlockPullerBehavior peerPullerBehavior in this.pullerBehaviorsByPeerId.Values)
