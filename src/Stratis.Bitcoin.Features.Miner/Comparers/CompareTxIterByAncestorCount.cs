@@ -17,7 +17,7 @@ namespace Stratis.Bitcoin.Features.Miner.Comparers
             if (a.CountWithAncestors != b.CountWithAncestors)
                 return a.CountWithAncestors < b.CountWithAncestors ? -1 : 1;
 
-            return TxMempool.CompareIteratorByHash.InnerCompare(a, b);
+            return a.CompareTo(b);
         }
     }
 }
