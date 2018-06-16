@@ -221,7 +221,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.MonitorChain
             this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} IsBeyondBlockSecurityDelay() BlockDelay: {BlockSecurityDelay}");
             this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} IsBeyondBlockSecurityDelay() Height: {this.concurrentChain.Tip.Height}");
 
-            return monitorChainSession.BlockNumber >= BlockSecurityDelay + this.concurrentChain.Tip.Height;
+            return this.concurrentChain.Tip.Height >= (monitorChainSession.BlockNumber + BlockSecurityDelay);
         }
 
         // Calls into the counter chain and sets off the process to build the multi-sig transaction.
