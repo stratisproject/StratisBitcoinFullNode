@@ -196,6 +196,7 @@ namespace Stratis.Bitcoin.BlockPulling2
             return new BlockPullerBehavior(this.blockPuller, this.ibdState, this.loggerFactory);
         }
 
+        /// <inheritdoc />
         protected override void AttachCore()
         {
             this.logger.LogTrace("()");
@@ -204,7 +205,8 @@ namespace Stratis.Bitcoin.BlockPulling2
 
             this.logger.LogTrace("(-)");
         }
-        
+
+        /// <inheritdoc />
         protected override void DetachCore()
         {
             this.logger.LogTrace("()");
