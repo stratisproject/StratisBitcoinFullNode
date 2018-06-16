@@ -30,7 +30,11 @@ namespace Stratis.Bitcoin.Consensus
 
     public class ConsensusManager
     {
-        const long MaxUnconsumedBlocksDataBytes = 1048576 * 500; // 500 mb
+        /// <summary>
+        /// Maximum memory in bytes that can be taken by the blocks that were downloaded but
+        /// not yet validated or included to the consensus chain.
+        /// </summary>
+        private const long MaxUnconsumedBlocksDataBytes = 1024 * 1024 * 200;
 
         private readonly Network network;
         private readonly ILogger logger;

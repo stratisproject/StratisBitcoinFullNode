@@ -212,7 +212,9 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 await this.blockRepository.DeleteAsync(newTip.HashBlock, blockStoreResetList).ConfigureAwait(false);
 
             this.SetStoreTip(newTip);
-            this.chain.SetTip(newTip);// we have to set chain store to be same as the store tip.
+
+            //TODO this thing should remove stuff from chain database. Otherwise we are leaving redundant data.
+            this.chain.SetTip(newTip); // we have to set chain store to be same as the store tip.
 
             this.logger.LogWarning("Block store tip recovered to block '{0}'.", newTip);
 

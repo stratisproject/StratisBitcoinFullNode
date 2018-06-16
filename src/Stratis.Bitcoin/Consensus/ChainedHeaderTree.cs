@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
@@ -7,7 +6,6 @@ using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Primitives;
 using Stratis.Bitcoin.Utilities;
-using Stratis.Bitcoin.Utilities.Extensions;
 
 namespace Stratis.Bitcoin.Consensus
 {
@@ -1105,8 +1103,10 @@ namespace Stratis.Bitcoin.Consensus
         }
 
         /// <summary>
-        /// Convert the <see cref="DownloadFrom"/> and <see cref="DownloadTo"/> to a list of consecutive headers, both items are included in the list.
+        /// Convert the <see cref="DownloadFrom" /> and <see cref="DownloadTo" /> to an array
+        /// of consecutive headers, both items are included in the array.
         /// </summary>
+        /// <returns>Array of consecutive headers.</returns>
         public ChainedHeader[] ToHashArray()
         {
             var hashes = new ChainedHeader[this.DownloadTo.Height - this.DownloadFrom.Height + 1];

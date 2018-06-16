@@ -1,5 +1,4 @@
 ﻿using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 using Moq;
 using NBitcoin;
@@ -15,7 +14,7 @@ using Xunit;
 
 namespace Stratis.Bitcoin.Tests.Consensus
 {
-    public class ConsensusManagerTest
+    public class ConsensusManagerTests
     {
         public class TestContext
         {
