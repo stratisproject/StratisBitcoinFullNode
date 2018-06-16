@@ -311,60 +311,48 @@ namespace Stratis.Bitcoin.Tests.Consensus
         }
 
         /// <summary>
-        /// Issue 15 @ Checkpoint are disabled. Assume valid is enabled. Headers that pass assume valid and meet it is presented.
-        /// Chain is marked for download. Alternative chain that is of the same lenght is presented but it doesnt meet
-        /// the assume valid- also marked as to download.
+        /// Issue 15 @ Create two chains A and B. Checkpoint are disabled. Assume valid is enabled.
+        /// Chain A is presented with headers that pass assume valid and meet it.
+        /// Chain A is marked for a download.
+        /// Alternative chain B with the same length as A is presened with headers that do not meet
+        /// the assume valid.
+        /// Chain B is also marked for a download.
         /// </summary>
         [Fact]
         public void ChainHasTwoCheckPoints_ChainConveringOnlyFirstCheckPointIsPresented_ChainIsDiscardedUpUntilFirstCheckpoint()
         {
-            // Chain header tree setup.
-            const int initialChainSize = 2;
-            const int currentChainExtension = 6;
+            // Chain header tree setup with disabled checkpoints.
+            // Initial chain has 2 blocks.
+            // Example: h1=h2.
             var ctx = new TestContext();
+            const int initialChainSize = 2;
             ChainedHeaderTree cht = ctx.CreateChainedHeaderTree();
-            ChainedHeader initialChainTip = ctx.ExtendAChain(initialChainSize); // ie. h1=h2
+            ChainedHeader initialChainTip = ctx.ExtendAChain(initialChainSize);
             cht.Initialize(initialChainTip, true);
-            ChainedHeader extendedChainTip = ctx.ExtendAChain(currentChainExtension, initialChainTip); // ie. h1=h2=h3=h4=h5=h6=h7=h8
             ctx.ConsensusSettings.UseCheckpoints = false;
-            ctx.ConsensusSettings.BlockAssumedValid = uint256.One;
-            List<BlockHeader> listOfCurrentChainHeaders = ctx.ChainedHeaderToList(extendedChainTip, initialChainSize + currentChainExtension);
 
-            // Setup two known checkpoints at header 4 and 7.
-            // Example: h1=h2=h3=(h4)=h5=h6=(h7)=h8.
-            const int firstCheckpointHeight = 4;
-            const int secondCheckpointHeight = 7;
-            var checkpoint1 = new CheckpointInfo(listOfCurrentChainHeaders[firstCheckpointHeight - 1].GetHash());
-            var checkpoint2 = new CheckpointInfo(listOfCurrentChainHeaders[secondCheckpointHeight - 1].GetHash());
-            ctx.CheckpointsMock
-               .Setup(c => c.GetCheckpoint(firstCheckpointHeight))
-               .Returns(checkpoint1);
-            ctx.CheckpointsMock
-               .Setup(c => c.GetCheckpoint(secondCheckpointHeight))
-               .Returns(checkpoint2);
-            ctx.CheckpointsMock
-               .Setup(c => c.GetCheckpoint(It.IsNotIn(firstCheckpointHeight, secondCheckpointHeight)))
-               .Returns((CheckpointInfo)null);
-            ctx.CheckpointsMock
-                .Setup(c => c.GetLastCheckpointHeight())
-                .Returns(secondCheckpointHeight);
+            // Setup two alternative chains A and B of the same length.
+            const int presentedChainSize = 4;
+            ChainedHeader chainATip = ctx.ExtendAChain(presentedChainSize, initialChainTip); // ie. h1=h2=a1=a2=a3=a4
+            ChainedHeader chainBTip = ctx.ExtendAChain(presentedChainSize, initialChainTip); // ie. h1=h2=b1=b2=b3=b4
+            List<BlockHeader> listOfChainABlockHeaders = ctx.ChainedHeaderToList(chainATip, initialChainSize + presentedChainSize);
+            List<BlockHeader> listOfChainBBlockHeaders = ctx.ChainedHeaderToList(chainBTip, initialChainSize + presentedChainSize);
 
-            // Setup new chain that only covers first checkpoint but doesn't cover second checkpoint.
-            // Example: h1=h2=h3=(h4)=h5=h6=x7=x8=x9=x10.
-            const int newChainExtension = 4;
-            extendedChainTip = extendedChainTip.Previous; // walk back to block 6
-            extendedChainTip = extendedChainTip.Previous;
-            extendedChainTip = ctx.ExtendAChain(newChainExtension, extendedChainTip);
-            List<BlockHeader> listOfNewChainHeaders = ctx.ChainedHeaderToList(extendedChainTip, extendedChainTip.Height);
+            // Set "Assume Valid" to the 4th block of the chain A.
+            // Example h1=h2=a1=(a2)=a3=a4.
+            ctx.ConsensusSettings.BlockAssumedValid = listOfChainABlockHeaders[3].GetHash();
 
-            // New chain is presented by peer 1.
-            // InvalidHeaderException should be thrown.
-            Action connectAction = () =>
-            {
-                cht.ConnectNewHeaders(1, listOfNewChainHeaders);
-            };
-
-            connectAction.Should().Throw<InvalidHeaderException>();
+            // Chain A is presented by peer 1. It meets "assume valid" hash and should
+            // be marked for a download.
+            ConnectNewHeadersResult connectNewHeadersResult = cht.ConnectNewHeaders(1, listOfChainABlockHeaders);
+            ChainedHeader chainedHeaderDownloadTo = connectNewHeadersResult.DownloadTo;
+            chainedHeaderDownloadTo.HashBlock.Should().Be(chainATip.HashBlock);
+            
+            // Chain B is presented by peer 2. It doesn't meet "assume valid" hash but should still
+            // be marked for a download.
+            connectNewHeadersResult = cht.ConnectNewHeaders(2, listOfChainBBlockHeaders);
+            chainedHeaderDownloadTo = connectNewHeadersResult.DownloadTo;
+            chainedHeaderDownloadTo.HashBlock.Should().Be(chainBTip.HashBlock);
         }
     }
 }
