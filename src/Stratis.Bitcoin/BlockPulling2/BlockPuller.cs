@@ -22,7 +22,7 @@ namespace Stratis.Bitcoin.BlockPulling2
         private const int StallingLoopIntervalMs = 500;
 
         /// <summary>The minimum empty slots percentage to start processing <see cref="downloadJobsQueue"/>.</summary>
-        private const int MinEmptySlotsPercentageToStartProcessingTheQueue = 5;
+        private const int MinEmptySlotsPercentageToStartProcessingTheQueue = 10;
 
         /// <summary>
         /// Defines which blocks are considered to be important.
@@ -50,8 +50,8 @@ namespace Stratis.Bitcoin.BlockPulling2
         /// <summary>Queue of download jobs which should be assigned to peers.</summary>
         private readonly Queue<DownloadJob> downloadJobsQueue;
 
-        /// <summary>Collection of all download assignments to the peers.</summary>
-        private readonly Dictionary<uint256, AssignedDownload> AssignedDownloads;
+        /// <summary>Collection of all download assignments to the peers sorted by block height.</summary>
+        private Dictionary<uint256, AssignedDownload> AssignedDownloads;
 
         /// <summary>Headers of requested blocks mapped by hash.</summary>
         private readonly Dictionary<uint256, ChainedHeader> HeadersByHash;
@@ -332,9 +332,9 @@ namespace Stratis.Bitcoin.BlockPulling2
                     }
                 }
 
-                foreach (KeyValuePair<uint256, AssignedDownload> assignment in newAssignments)
-                    this.AssignedDownloads.Add(assignment.Key, assignment.Value);
-
+                // Add newly assigned downloads and sort all assignments by block height.
+                this.AssignedDownloads = this.AssignedDownloads.Concat(newAssignments).OrderBy(x => x.Value.BlockHeight).ToDictionary(k => k.Key, v => v.Value);
+                
                 // Remove failed hashes from HeadersByHash
                 foreach (DownloadJob failedJob in failedJobs)
                 {
@@ -514,14 +514,20 @@ namespace Stratis.Bitcoin.BlockPulling2
 
                 do
                 {
-                    KeyValuePair<uint256, AssignedDownload> expiredImportantDownload = this.AssignedDownloads.FirstOrDefault(x =>
-                        x.Value.BlockHeight <= lastImportantHeight && (DateTime.UtcNow - x.Value.AssignedTime).TotalSeconds >= MaxSecondsToDeliverBlock);
-                    
-                    if (!expiredImportantDownload.Equals(default(KeyValuePair<uint256, AssignedDownload>)))
+                    foreach (KeyValuePair<uint256, AssignedDownload> assignedDownload in this.AssignedDownloads)
                     {
+                        // Since the dictionary is sorted by height after we found first not important block we can assume that the rest of them are not important.
+                        if (assignedDownload.Value.BlockHeight > lastImportantHeight)
+                            break;
+
+                        double secondsPassed = (DateTime.UtcNow - assignedDownload.Value.AssignedTime).TotalSeconds;
+
+                        if (secondsPassed < MaxSecondsToDeliverBlock)
+                            continue;
+
                         // Peer failed to deliver important block. Reassign all his jobs.
-                        List<KeyValuePair<uint256, AssignedDownload>> downloadsToReassign = this.AssignedDownloads.Where(x => x.Value.PeerId == expiredImportantDownload.Value.PeerId).ToList();
-                        
+                        List<KeyValuePair<uint256, AssignedDownload>> downloadsToReassign = this.AssignedDownloads.Where(x => x.Value.PeerId == assignedDownload.Value.PeerId).ToList();
+
                         foreach (KeyValuePair<uint256, AssignedDownload> peerAssignment in downloadsToReassign)
                         {
                             this.AssignedDownloads.Remove(peerAssignment.Key);
@@ -540,8 +546,9 @@ namespace Stratis.Bitcoin.BlockPulling2
                         this.RecalculateQuealityScoreLocked(pullerBehavior);
 
                         reassigned = true;
+                        
+                        break; 
                     }
-
                 } while (reassigned);
             }
 
