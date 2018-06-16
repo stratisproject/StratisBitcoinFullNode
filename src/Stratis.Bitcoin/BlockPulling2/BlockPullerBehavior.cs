@@ -103,6 +103,8 @@ namespace Stratis.Bitcoin.BlockPulling2
             int maxSamplesToPenalize = (int)(this.averageDelaySeconds.GetMaxSamples() * MaxSamplesPercentageToPenalize);
             int penalizeTimes = (notDeliveredBlocksCount < maxSamplesToPenalize) ? notDeliveredBlocksCount : maxSamplesToPenalize;
             
+            this.logger.LogDebug("Peer will be penalized {0} times.", penalizeTimes);
+
             for (int i = 0; i < penalizeTimes; ++i)
             {
                 this.averageSizeBytes.AddSample(0);

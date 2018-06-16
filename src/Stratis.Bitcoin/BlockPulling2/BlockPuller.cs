@@ -168,6 +168,8 @@ namespace Stratis.Bitcoin.BlockPulling2
                 if (this.peerIdsToTips.ContainsKey(peerId))
                 {
                     this.peerIdsToTips.AddOrReplace(peerId, newTip);
+
+                    this.logger.LogDebug("Tip for peer with id {0} was changed to '{1}'.", peerId, newTip);
                 }
                 else
                 {
@@ -177,11 +179,13 @@ namespace Stratis.Bitcoin.BlockPulling2
                     {
                         this.peerIdsToTips.AddOrReplace(peerId, newTip);
                         this.pullerBehaviorsByPeerId.Add(peerId, peer.Behavior<BlockPullerBehavior>());
+
+                        this.logger.LogDebug("New peer with id {0} was added.", peerId);
                     }
                 }
             }
 
-            this.logger.LogTrace("()");
+            this.logger.LogTrace("(-)");
         }
 
         /// <summary>Should be called when peer is disconnected.</summary>
@@ -198,7 +202,7 @@ namespace Stratis.Bitcoin.BlockPulling2
                 this.ReleaseAssignments(peerId);
             }
 
-            this.logger.LogTrace("()");
+            this.logger.LogTrace("(-)");
         }
 
         /// <summary>Requests the blocks for download.</summary>
@@ -226,9 +230,11 @@ namespace Stratis.Bitcoin.BlockPulling2
                 });
 
                 this.processQueuesSignal.Set();
+
+                this.logger.LogDebug("{0} blocks were requested from puller.", headers.Count);
             }
 
-            this.logger.LogTrace("()");
+            this.logger.LogTrace("(-)");
         }
 
         /// <summary>Loop that assigns download jobs to the peers.</summary>
@@ -244,6 +250,7 @@ namespace Stratis.Bitcoin.BlockPulling2
                 }
                 catch (OperationCanceledException)
                 {
+                    this.logger.LogTrace("(-)[CANCELLED]");
                     return;
                 }
 
@@ -266,6 +273,7 @@ namespace Stratis.Bitcoin.BlockPulling2
                 }
                 catch (OperationCanceledException)
                 {
+                    this.logger.LogTrace("(-)[CANCELLED]");
                     return;
                 }
                 
@@ -288,6 +296,7 @@ namespace Stratis.Bitcoin.BlockPulling2
                 while (this.reassignedJobsQueue.Count > 0)
                 {
                     DownloadJob jobToReassign = this.reassignedJobsQueue.Dequeue();
+                    this.logger.LogDebug("Reassigning job {0} with {1} hashes.", jobToReassign.Id, jobToReassign.Hashes.Count);
 
                     Dictionary<uint256, AssignedDownload> assignments = this.DistributeHashesLocked(ref jobToReassign, ref failedJobs, int.MaxValue);
 
@@ -298,21 +307,28 @@ namespace Stratis.Bitcoin.BlockPulling2
                 // Process regular queue.
                 int emptySlots = this.maxBlocksBeingDownloaded - this.pendingDownloadsCount;
 
+                this.logger.LogDebug("There are {0} empty slots.", emptySlots);
+
                 if (emptySlots > (this.maxBlocksBeingDownloaded / 100) * MinEmptySlotsPercentageToStartProcessingTheQueue)
                 {
                     while (this.downloadJobsQueue.Count > 0 && emptySlots > 0)
                     {
                         DownloadJob jobToAassign = this.downloadJobsQueue.Peek();
+                        this.logger.LogDebug("Reassigning job {0} with {1} hashes.", jobToAassign.Id, jobToAassign.Hashes.Count);
 
                         Dictionary<uint256, AssignedDownload> assignments = this.DistributeHashesLocked(ref jobToAassign, ref failedJobs, emptySlots);
                         emptySlots -= assignments.Count;
+                        this.logger.LogDebug("Reassigned {0} hashes.", assignments.Count);
 
                         foreach (KeyValuePair<uint256, AssignedDownload> assignment in assignments)
                             newAssignments.Add(assignment.Key, assignment.Value);
 
                         // Remove job from the queue if it was fully consumed.
                         if (jobToAassign.Hashes.Count == 0)
+                        {
                             this.downloadJobsQueue.Dequeue();
+                            this.logger.LogDebug("Job {0} was fully assigned.", jobToAassign.Id);
+                        }
                     }
                 }
 
@@ -327,6 +343,8 @@ namespace Stratis.Bitcoin.BlockPulling2
                 }
 
                 this.processQueuesSignal.Reset();
+
+                this.logger.LogDebug("Total amount of downloads assigned in this iteration is {0}", newAssignments.Count);
             }
             
             // Call callbacks with null since puller failed to deliver requested blocks.
@@ -380,6 +398,8 @@ namespace Stratis.Bitcoin.BlockPulling2
 
                 if (!success)
                 {
+                    this.logger.LogDebug("Failed to ask peer {0} for some blocks.", peerId);
+
                     // Failed to assign downloads to a peer. Put assignments back to the reassign queue and signal processing.
                     var jobIdToHash = new Dictionary<int, uint256>(downloadsGroupedByPeerId.Count());
 
@@ -444,7 +464,7 @@ namespace Stratis.Bitcoin.BlockPulling2
                             BlockHeight = header.Height
                         });
 
-                        this.pendingDownloadsCount++;
+                        this.logger.LogTrace("Block '{0}' was assigned to peer {1}", hashToAssign, peerTip);
 
                         downloadJob.Hashes.Remove(hashToAssign);
                         break;
@@ -458,8 +478,12 @@ namespace Stratis.Bitcoin.BlockPulling2
                             continue;
 
                         jobFailed = true;
+
+                        this.logger.LogDebug("Job {0} failed because there is no peer claiming {1} of it's hashes.", downloadJob.Id, downloadJob.Hashes.Count);
                     }
                 }
+
+                this.pendingDownloadsCount += newAssignments.Count;
             }
 
             if (jobFailed)
@@ -479,6 +503,8 @@ namespace Stratis.Bitcoin.BlockPulling2
             this.logger.LogTrace("()");
 
             int lastImportantHeight = this.chainState.ConsensusTip.Height + ImportantHeightMargin;
+
+            this.logger.LogTrace("Blocks up to height {0} are considered to be important.", lastImportantHeight);
 
             var toReassign = new Dictionary<int, uint256>();
 
@@ -503,8 +529,11 @@ namespace Stratis.Bitcoin.BlockPulling2
                         }
 
                         int reassignedCount = downloadsToReassign.Count;
+                        int peerId = downloadsToReassign.First().Value.PeerId;
 
-                        BlockPullerBehavior pullerBehavior = this.pullerBehaviorsByPeerId[downloadsToReassign.First().Value.PeerId];
+                        this.logger.LogDebug("Peer {0} failed to deliver {1} blocks from which some were important.", peerId, reassignedCount);
+
+                        BlockPullerBehavior pullerBehavior = this.pullerBehaviorsByPeerId[peerId];
 
                         pullerBehavior.Penalize(MaxSecondsToDeliverBlock, reassignedCount);
 
@@ -516,7 +545,8 @@ namespace Stratis.Bitcoin.BlockPulling2
                 } while (reassigned);
             }
 
-            this.ReleaseAssignments(toReassign);
+            if (toReassign.Count != 0)
+                this.ReleaseAssignments(toReassign);
 
             this.logger.LogTrace("(-)");
         }
@@ -535,10 +565,16 @@ namespace Stratis.Bitcoin.BlockPulling2
             lock (this.lockObject)
             {
                 if (!this.AssignedDownloads.TryGetValue(blockHash, out assignedDownload))
+                {
+                    this.logger.LogTrace("(-)[WASNT_REQUESTED]");
                     return;
+                }
 
                 if (assignedDownload.PeerId != peerId)
+                {
+                    this.logger.LogTrace("(-)[WRONG_PEER_DELIVERED]");
                     return;
+                }
 
                 this.pendingDownloadsCount--;
 
@@ -547,6 +583,8 @@ namespace Stratis.Bitcoin.BlockPulling2
                 this.averageBlockSizeBytes.AddSample(block.BlockSize.Value);
 
                 double deliveredInSeconds = (DateTime.UtcNow - assignedDownload.AssignedTime).TotalSeconds;
+
+                this.logger.LogTrace("Peer {0} delivered block '{1}' in {2} seconds.", assignedDownload.PeerId, blockHash, deliveredInSeconds);
                 
                 // Add peer sample.
                 BlockPullerBehavior pullerBehavior = this.pullerBehaviorsByPeerId[peerId];
@@ -584,6 +622,8 @@ namespace Stratis.Bitcoin.BlockPulling2
             }
             else
             {
+                this.logger.LogTrace("Peer {0} is the fastest peer. Recalculating quality score of all peers.", pullerBehavior.AttachedPeer.Connection.Id);
+
                 // This is the best peer. Recalculate quality score for everyone.
                 foreach (BlockPullerBehavior peerPullerBehavior in this.pullerBehaviorsByPeerId.Values)
                     peerPullerBehavior.RecalculateQualityScore(adjustedBestSpeed);
@@ -602,7 +642,7 @@ namespace Stratis.Bitcoin.BlockPulling2
             if (this.maxBlocksBeingDownloaded < 10)
                 this.maxBlocksBeingDownloaded = 10;
 
-            this.logger.LogDebug("Max amount of blocks that can be downloaded at the same time is set to {0}", this.maxBlocksBeingDownloaded);
+            this.logger.LogTrace("Max amount of blocks that can be downloaded at the same time is set to {0}", this.maxBlocksBeingDownloaded);
 
             this.logger.LogTrace("(-)");
         }
