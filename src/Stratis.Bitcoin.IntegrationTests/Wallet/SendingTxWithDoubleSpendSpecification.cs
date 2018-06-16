@@ -9,8 +9,8 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         {
             Given(wallets_with_coins);
             And(coins_first_sent_to_receiving_wallet);
-            When(two_transactions_attempt_to_spend_same_unspent_outputs);
-            Then(mempool_rejects_doublespending_transaction);
+            And(trx_is_consumed_from_mempool_and_mined_into_a_block);
+            Then(receiving_node_attempts_to_double_spend_mempool_doesnotaccept);
         }
     }
 }

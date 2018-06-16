@@ -75,9 +75,8 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
 
         private void mempool_of_node2_has_received_transaction()
         {
-            List<uint256> mempool = this.nodes[NodeOne].FullNode.MempoolManager().GetMempoolAsync().Result;
-            TestHelper.WaitLoop(() => mempool.Any());
-            mempool.Should().Contain(this.transaction.GetHash());
+            TestHelper.WaitLoop(() => this.nodes[NodeOne].FullNode.MempoolManager().GetMempoolAsync().Result.Any());
+            this.nodes[NodeOne].FullNode.MempoolManager().GetMempoolAsync().Result.Should().Contain(this.transaction.GetHash());
         }
         
         private void node1_builds_oversize_tx_to_send_to_node2()

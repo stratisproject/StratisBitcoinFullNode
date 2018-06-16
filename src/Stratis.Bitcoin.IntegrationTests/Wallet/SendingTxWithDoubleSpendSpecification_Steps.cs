@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using FluentAssertions;
 using NBitcoin;
@@ -84,29 +85,26 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             this.stratisReceiver.FullNode.WalletManager().GetSpendableTransactionsInWallet("mywallet").First().Transaction.BlockHeight.Should().BeNull();
         }
 
-        private void two_transactions_attempt_to_spend_same_unspent_outputs()
+        private void receiving_node_attempts_to_double_spend_mempool_doesnotaccept()
         {
             //create double spend transaction
             var unusedAddress = this.stratisReceiver.FullNode.WalletManager().GetUnusedAddress(new WalletAccountReference("mywallet", "account 0"));
-
             var transactionCloned = this.transaction.Clone();
             transactionCloned.Outputs[1].ScriptPubKey = unusedAddress.ScriptPubKey;
-
-            // broadcast to the other node
-            this.errorResult = (ErrorResult)this.stratisSender.FullNode.NodeService<WalletController>().SendTransaction(new SendTransactionRequest(transactionCloned.ToHex()));
+            this.stratisReceiver.FullNode.MempoolManager().Validator.AcceptToMemoryPool(new MempoolValidationState(true), transactionCloned).Result.Should().BeFalse();
         }
 
-        private void mempool_rejects_doublespending_transaction()
+        private void trx_is_consumed_from_mempool_and_mined_into_a_block()
         {
-            this.stratisReceiver.FullNode.MempoolManager().Validator.AcceptToMemoryPool(new MempoolValidationState(true), this.transaction).Result.Should().BeFalse();
-            
-            List<uint256> mempoolTransactions = this.stratisReceiver.FullNode.MempoolManager().GetMempoolAsync().Result;
-            TestHelper.WaitLoop(() => mempoolTransactions.Any());
-            mempoolTransactions.Count.Should().Be(1);
-            mempoolTransactions[0].Should().Be(this.transaction.GetHash()); // Original transaction only
+            List<uint256> mempoolTransactions = this.stratisSender.FullNode.MempoolManager().GetMempoolAsync().Result;
+            mempoolTransactions.Should().Contain(this.transaction.GetHash());
 
-            ErrorResponse e = (ErrorResponse)this.errorResult.Value;
-            e.Errors[0].Message.Should().BeEquivalentTo("txn-mempool-conflict");  
+            SharedSteps sharedSteps = new SharedSteps();
+            new SharedSteps().MineBlocks(1, this.stratisSender, "account 0", "mywallet", "123456", 16360L);
+            
+            TestHelper.WaitLoop(() => this.stratisSender.FullNode.MempoolManager().GetMempoolAsync().Result.Count==0);
+            sharedSteps.WaitForNodeToSync(this.stratisSender, this.stratisReceiver);
+            this.stratisReceiver.FullNode.MempoolManager().GetMempoolAsync().Result.Should().NotContain(this.transaction.GetHash());
         }
     }
 }
