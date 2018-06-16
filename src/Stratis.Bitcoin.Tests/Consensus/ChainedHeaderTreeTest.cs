@@ -315,7 +315,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
         /// first checkpoint with a prolongation that does not match the 2nd checkpoint. Exception should be thrown.
         /// </summary>
         [Fact]
-        public void ChainHasTwoCheckPoints_ChainConveringOnlyFirstCheckPointIsPresented_ChainIsDiscardedUpUntilFirstCheckpoint()
+        public void ChainHasTwoCheckPoints_ChainCoveringOnlyFirstCheckPointIsPresented_ChainIsDiscardedUpUntilFirstCheckpoint()
         {
             // Chain header tree setup.
             const int initialChainSize = 2;
@@ -368,18 +368,16 @@ namespace Stratis.Bitcoin.Tests.Consensus
             };
 
             connectAction.Should().Throw<InvalidHeaderException>();
-        }      
-      
+        }
+
         /// <summary>
-        /// Issue 15 @ Create two chains A and B. Checkpoint are disabled. Assume valid is enabled.
-        /// Chain A is presented with headers that pass assume valid and meet it.
-        /// Chain A is marked for a download.
-        /// Alternative chain B with the same length as A is presened with headers that do not meet
-        /// the assume valid.
-        /// Chain B is also marked for a download.
+        /// Issue 15 @ Checkpoint are disabled. Assume valid is enabled.
+        /// Headers that pass assume valid and meet it is presented.
+        /// Chain is marked for download.
+        /// Alternative chain that is of the same lenght is presented but it doesnt meet the assume valid- also marked as to download.
         /// </summary>
         [Fact]
-        public void ChainHasTwoCheckPoints_ChainConveringOnlyFirstCheckPointIsPresented_ChainIsDiscardedUpUntilFirstCheckpoint()
+        public void ChainHasAssumeValidHeaderAndMarkedForDownloadWhenPresented_SecondChainWithoutAssumeValidAlsoMarkedForDownload()
         {
             // Chain header tree setup with disabled checkpoints.
             // Initial chain has 2 blocks.
