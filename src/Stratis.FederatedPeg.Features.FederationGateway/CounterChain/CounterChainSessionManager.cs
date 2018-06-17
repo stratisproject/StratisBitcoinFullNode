@@ -186,7 +186,6 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.CounterChain
             // We are the Boss so first I build the multisig transaction template.
             // TODO: The password is currently hardcoded here
             var multiSigContext = new TransactionBuildContext(
-                new WalletAccountReference(this.federationGatewaySettings.MultiSigWalletName, "account 0"),
                 (new[] { new Recipient.Recipient { Amount = amount, ScriptPubKey = destination } }).ToList(),
                 "password", sessionId.ToString())
             {
