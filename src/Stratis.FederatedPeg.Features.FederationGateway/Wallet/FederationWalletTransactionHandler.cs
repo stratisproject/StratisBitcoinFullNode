@@ -1,13 +1,16 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security;
 using System.Text;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NBitcoin.Policy;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Utilities;
+using Stratis.Bitcoin.Utilities.Extensions;
 using Stratis.FederatedPeg.Features.FederationGateway.Interfaces;
 
 namespace Stratis.FederatedPeg.Features.FederationGateway.Wallet
@@ -38,7 +41,9 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Wallet
 
         private readonly ILogger logger;
 
-	    private readonly Network network;
+        private readonly Network network;
+
+        private readonly MemoryCache privateKeyCache;
 
         public FederationWalletTransactionHandler(
             ILoggerFactory loggerFactory,
@@ -48,9 +53,10 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Wallet
         {
             this.walletManager = walletManager;
             this.walletFeePolicy = walletFeePolicy;
-	        this.network = network;
+            this.network = network;
             this.coinType = (CoinType)network.Consensus.CoinType;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
+            this.privateKeyCache = new MemoryCache(new MemoryCacheOptions() { ExpirationScanFrequency = new TimeSpan(0, 1, 0) });
         }
 
         /// <inheritdoc />
@@ -66,19 +72,19 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Wallet
             // build transaction
             context.Transaction = context.TransactionBuilder.BuildTransaction(context.Sign);
 
-			// If this is a multisig transaction, then by definition we only (usually) possess one of the keys
-			// and can therefore not immediately construct a transaction that passes verification
-	        if (!context.IgnoreVerify)
-	        {
-		        if (!context.TransactionBuilder.Verify(context.Transaction, out TransactionPolicyError[] errors))
-		        {
-			        string errorsMessage = string.Join(" - ", errors.Select(s => s.ToString()));
-			        this.logger.LogError($"Build transaction failed: {errorsMessage}");
-			        throw new WalletException($"Could not build the transaction. Details: {errorsMessage}");
-		        }
-	        }
+            // If this is a multisig transaction, then by definition we only (usually) possess one of the keys
+            // and can therefore not immediately construct a transaction that passes verification
+            if (!context.IgnoreVerify)
+            {
+                if (!context.TransactionBuilder.Verify(context.Transaction, out TransactionPolicyError[] errors))
+                {
+                    string errorsMessage = string.Join(" - ", errors.Select(s => s.ToString()));
+                    this.logger.LogError($"Build transaction failed: {errorsMessage}");
+                    throw new WalletException($"Could not build the transaction. Details: {errorsMessage}");
+                }
+            }
 
-	        return context.Transaction;
+            return context.Transaction;
         }
 
         /// <inheritdoc />
@@ -170,17 +176,26 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Wallet
                 return;
 
             FederationWallet wallet = this.walletManager.GetWallet();
-	        var signingKeys = new HashSet<ISecret>();
 
-			//foreach (var unspentOutputsItem in context.UnspentOutputs)
-			//{
-			//	var privKey = address.GetPrivateKey(wallet.EncryptedSeed, context.WalletPassword, wallet.Network);
-			//	var secret = new BitcoinSecret(privKey, wallet.Network);
-			//	signingKeys.Add(secret);
-			//	added.Add(unspentOutputsItem.Address);
-			//}
-			
-	        context.TransactionBuilder.AddKeys(signingKeys.ToArray());
+            // Get the encrypted private key.
+            string cacheKey = wallet.EncryptedSeed;
+
+            Key privateKey;
+
+            // Check if the private key is in the cache.
+            if (this.privateKeyCache.TryGetValue(cacheKey, out SecureString secretValue))
+            {
+                privateKey = wallet.Network.CreateBitcoinSecret(secretValue.FromSecureString()).PrivateKey;
+                this.privateKeyCache.Set(cacheKey, secretValue, new TimeSpan(0, 5, 0));
+            }
+            else
+            {
+                privateKey = Key.Parse(wallet.EncryptedSeed, context.WalletPassword, wallet.Network);
+                this.privateKeyCache.Set(cacheKey, privateKey.ToString(wallet.Network).ToSecureString(), new TimeSpan(0, 5, 0));
+            }
+
+            // Add the key used to sign the output.
+            context.TransactionBuilder.AddKeys(new[] { privateKey.GetBitcoinSecret(this.network) });
         }
 
         /// <summary>
@@ -189,76 +204,76 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Wallet
         /// <param name="context">The context associated with the current transaction being built.</param>
         private void FindChangeAddress(TransactionBuildContext context)
         {
-            // get address to send the change to
+            // Change address should be the multisig address.
             context.ChangeAddress = this.walletManager.GetWallet().MultiSigAddress;
             context.TransactionBuilder.SetChange(context.ChangeAddress.ScriptPubKey);
         }
 
-		/// <summary>
-		/// Find all available outputs (UTXO's) that belong to <see cref="WalletAccountReference.AccountName"/>.
-		/// Then add them to the <see cref="TransactionBuildContext.UnspentOutputs"/> or <see cref="TransactionBuildContext.UnspentMultiSigOutputs"/>.
-		/// </summary>
-		/// <param name="context">The context associated with the current transaction being built.</param>
-		private void AddCoins(TransactionBuildContext context)
+        /// <summary>
+        /// Find all available outputs (UTXO's) that belong to <see cref="WalletAccountReference.AccountName"/>.
+        /// Then add them to the <see cref="TransactionBuildContext.UnspentOutputs"/> or <see cref="TransactionBuildContext.UnspentMultiSigOutputs"/>.
+        /// </summary>
+        /// <param name="context">The context associated with the current transaction being built.</param>
+        private void AddCoins(TransactionBuildContext context)
         {
-		    context.UnspentOutputs = this.walletManager.GetSpendableTransactionsInWallet(context.MinConfirmations).ToList();
+            context.UnspentOutputs = this.walletManager.GetSpendableTransactionsInWallet(context.MinConfirmations).ToList();
 
-		    if (context.UnspentOutputs.Count == 0)
-		    {
-			    throw new WalletException("No spendable transactions found.");
-		    }
+            if (context.UnspentOutputs.Count == 0)
+            {
+                throw new WalletException("No spendable transactions found.");
+            }
 
-		    // Get total spendable balance in the account.
-		    var balance = context.UnspentOutputs.Sum(t => t.Transaction.Amount);
-		    var totalToSend = context.Recipients.Sum(s => s.Amount);
-		    if (balance < totalToSend)
-			    throw new WalletException("Not enough funds.");
+            // Get total spendable balance in the account.
+            var balance = context.UnspentOutputs.Sum(t => t.Transaction.Amount);
+            var totalToSend = context.Recipients.Sum(s => s.Amount);
+            if (balance < totalToSend)
+                throw new WalletException("Not enough funds.");
 
-		    if (context.SelectedInputs.Any())
-		    {
-			    // 'SelectedInputs' are inputs that must be included in the
-			    // current transaction. At this point we check the given
-			    // input is part of the UTXO set and filter out UTXOs that are not
-			    // in the initial list if 'context.AllowOtherInputs' is false.
+            if (context.SelectedInputs.Any())
+            {
+                // 'SelectedInputs' are inputs that must be included in the
+                // current transaction. At this point we check the given
+                // input is part of the UTXO set and filter out UTXOs that are not
+                // in the initial list if 'context.AllowOtherInputs' is false.
 
-			    var availableHashList = context.UnspentOutputs.ToDictionary(item => item.ToOutPoint(), item => item);
+                var availableHashList = context.UnspentOutputs.ToDictionary(item => item.ToOutPoint(), item => item);
 
-			    if (!context.SelectedInputs.All(input => availableHashList.ContainsKey(input)))
-				    throw new WalletException("Not all the selected inputs were found on the wallet.");
+                if (!context.SelectedInputs.All(input => availableHashList.ContainsKey(input)))
+                    throw new WalletException("Not all the selected inputs were found on the wallet.");
 
-			    if (!context.AllowOtherInputs)
-			    {
-				    foreach (var unspentOutputsItem in availableHashList)
-					    if (!context.SelectedInputs.Contains(unspentOutputsItem.Key))
-						    context.UnspentOutputs.Remove(unspentOutputsItem.Value);
-			    }
-		    }
+                if (!context.AllowOtherInputs)
+                {
+                    foreach (var unspentOutputsItem in availableHashList)
+                        if (!context.SelectedInputs.Contains(unspentOutputsItem.Key))
+                            context.UnspentOutputs.Remove(unspentOutputsItem.Value);
+                }
+            }
 
-		    Money sum = 0;
-		    int index = 0;
-		    var coins = new List<Coin>();
-		    foreach (var item in context.UnspentOutputs.OrderByDescending(a => a.Transaction.Amount))
-		    {
+            Money sum = 0;
+            int index = 0;
+            var coins = new List<Coin>();
+            foreach (var item in context.UnspentOutputs.OrderByDescending(a => a.Transaction.Amount))
+            {
                 // TODO 
-				//coins.Add(ScriptCoin.Create(this.network, item.Transaction.Id, (uint)item.Transaction.Index, item.Transaction.Amount, item.Transaction.ScriptPubKey, item.Address.RedeemScript));
-			    sum += item.Transaction.Amount;
-			    index++;
+                //coins.Add(ScriptCoin.Create(this.network, item.Transaction.Id, (uint)item.Transaction.Index, item.Transaction.Amount, item.Transaction.ScriptPubKey, item.Address.RedeemScript));
+                sum += item.Transaction.Amount;
+                index++;
 
-			    // If threshold is reached and the total value is above the target
-			    // then its safe to stop adding UTXOs to the coin list.
-			    // The primary goal is to reduce the time it takes to build a trx
-			    // when the wallet is bloated with UTXOs.
-			    if (index > SendCountThresholdLimit && sum > totalToSend)
-				    break;
-		    }
+                // If threshold is reached and the total value is above the target
+                // then its safe to stop adding UTXOs to the coin list.
+                // The primary goal is to reduce the time it takes to build a trx
+                // when the wallet is bloated with UTXOs.
+                if (index > SendCountThresholdLimit && sum > totalToSend)
+                    break;
+            }
 
-		    // All the UTXOs are added to the builder without filtering.
-		    // The builder then has its own coin selection mechanism
-		    // to select the best UTXO set for the corresponding amount.
-		    // To add a custom implementation of a coin selection override
-		    // the builder using builder.SetCoinSelection().
+            // All the UTXOs are added to the builder without filtering.
+            // The builder then has its own coin selection mechanism
+            // to select the best UTXO set for the corresponding amount.
+            // To add a custom implementation of a coin selection override
+            // the builder using builder.SetCoinSelection().
 
-		    context.TransactionBuilder.AddCoins(coins);
+            context.TransactionBuilder.AddCoins(coins);
         }
 
         /// <summary>
@@ -347,8 +362,8 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Wallet
             this.AllowOtherInputs = false;
             this.Sign = !string.IsNullOrEmpty(walletPassword);
             this.OpReturnData = opReturnData;
-	        this.MultiSig = null;
-	        this.IgnoreVerify = false;
+            this.MultiSig = null;
+            this.IgnoreVerify = false;
         }
 
         /// <summary>
@@ -379,12 +394,12 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Wallet
         /// </summary>
         public List<Wallet.UnspentOutputReference> UnspentOutputs { get; set; }
 
-		public Network Network { get; set; }
+        public Network Network { get; set; }
 
-		/// <summary>
-		/// The builder used to build the current transaction.
-		/// </summary>
-		public TransactionBuilder TransactionBuilder { get; set; }
+        /// <summary>
+        /// The builder used to build the current transaction.
+        /// </summary>
+        public TransactionBuilder TransactionBuilder { get; set; }
 
         /// <summary>
         /// The change address, where any remaining funds will be sent to.
@@ -452,11 +467,11 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Wallet
         /// </summary>
         public MultiSigAddress MultiSig { get; set; }
 
-	    /// <summary>
-	    /// If true, do not perform verification on the built transaction (e.g. it is partially signed)
-	    /// </summary>
-	    public bool IgnoreVerify { get; set; }
-	}
+        /// <summary>
+        /// If true, do not perform verification on the built transaction (e.g. it is partially signed)
+        /// </summary>
+        public bool IgnoreVerify { get; set; }
+    }
 
     /// <summary>
     /// Represents recipients of a payment, used in <see cref="FederationWalletTransactionHandler.BuildTransaction"/>
