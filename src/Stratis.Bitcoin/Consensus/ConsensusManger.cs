@@ -35,7 +35,14 @@ namespace Stratis.Bitcoin.Consensus
         /// Maximum memory in bytes that can be taken by the blocks that were downloaded but
         /// not yet validated or included to the consensus chain.
         /// </summary>
-        private const long MaxUnconsumedBlocksDataBytes = 1024 * 1024 * 200;
+        private const long MaxUnconsumedBlocksDataBytes = 200 * 1024 * 1024;
+
+        /// <summary>Queue consumption threshold in bytes.</summary>
+        /// <remarks><see cref="toDownloadQueue"/> consumption will start if only we have more than this value of free memory.</remarks>
+        private const long ConsumptionThresholdBytes = MaxUnconsumedBlocksDataBytes / 10;
+
+        /// <summary>The default number of blocks to ask when there is no historic data to estimate average block size.</summary>
+        private const int DefaultNumberOfBlocksToAsk = 10;
 
         private readonly Network network;
         private readonly ILogger logger;
@@ -400,6 +407,8 @@ namespace Stratis.Bitcoin.Consensus
                 this.expectedBlockDataBytes -= this.expectedBlockSizes[blockHash];
                 this.expectedBlockSizes.Remove(blockHash);
 
+                this.logger.LogTrace("Expected block data bytes was set to {0} and we are expecting {1} blocks to be delivered.", this.expectedBlockDataBytes, this.expectedBlockSizes.Count);
+
                 if (block != null)
                 {
                     try
@@ -507,11 +516,12 @@ namespace Stratis.Bitcoin.Consensus
         }
 
         /// <summary>
-        /// Processes items in <see cref="toDownloadQueue"/> and ask the block puller for blocks to download.
-        /// If the tree has too many unconsumed blocks or the download will wait, the amount of blocks to downloaded depends on the avg value in <see cref="IBlockPuller.AverageBlockSize"/>.
+        /// Processes items in the <see cref="toDownloadQueue"/> and ask the block puller for blocks to download.
+        /// If the tree has too many unconsumed blocks we will not ask block puller for more until some blocks are consumed.
         /// </summary>
         /// <remarks>
         /// Requests that have too many blocks will be split in batches.
+        /// The amount of blocks in 1 batch to downloaded depends on the average value in <see cref="IBlockPuller.AverageBlockSize"/>.
         /// </remarks>
         private void ProcessDownloadQueueLocked()
         {
@@ -524,17 +534,14 @@ namespace Stratis.Bitcoin.Consensus
                 long freeBytes = MaxUnconsumedBlocksDataBytes - this.chainedHeaderTree.UnconsumedBlocksDataBytes - this.expectedBlockDataBytes;
                 this.logger.LogTrace("{0} bytes worth of blocks is available for download.", freeBytes);
 
-                if (freeBytes <= 32 * 1024 * 1024) //TODO move to constant
+                if (freeBytes <= ConsumptionThresholdBytes)
                 {
                     this.logger.LogTrace("(-)[THRESHOLD_NOT_MET]");
                     return;
                 }
 
                 long avgSize = this.blockPuller.AverageBlockSize;
-                long blocksToAsk = 10; //TODO ,ove to constant
-
-                if (avgSize != 0)
-                   blocksToAsk = freeBytes / avgSize;
+                int blocksToAsk = avgSize != 0 ? (int)(freeBytes / avgSize) : DefaultNumberOfBlocksToAsk;
 
                 this.logger.LogTrace("With {0} average block size, we have {1} download slots available.", avgSize, blocksToAsk);
 
@@ -544,21 +551,17 @@ namespace Stratis.Bitcoin.Consensus
                 }
                 else
                 {
-                    // split queue item in 2 pieces - one if size blocksToAsk and second is rest.Ask BP for first part, leave 2nd part in queue
+                    this.logger.LogTrace("Splitting enqueued job of size {0} into 2 pieces of sizes {1} and {2}.", request.BlocksToDownload.Count, blocksToAsk, request.BlocksToDownload.Count - blocksToAsk);
 
-                    var newRequest = new BlockDownloadRequest()
+                    // Split queue item in 2 pieces: one of size blocksToAsk and second is the rest. Ask BP for first part, leave 2nd part in the queue.
+                    var blockPullerRequest = new BlockDownloadRequest()
                     {
-                        BlocksToDownload = new List<ChainedHeader>()
+                        BlocksToDownload = new List<ChainedHeader>(request.BlocksToDownload.GetRange(0, blocksToAsk))
                     };
 
-                    for (int i = 0; i < blocksToAsk; i++)
-                    {
-                        ChainedHeader chainedHeader = request.BlocksToDownload[0];
-                        request.BlocksToDownload.Remove(chainedHeader);
-                        newRequest.BlocksToDownload.Add(chainedHeader);
-                    }
+                    request.BlocksToDownload.RemoveRange(0, blocksToAsk);
 
-                    request = newRequest;
+                    request = blockPullerRequest;
                 }
 
                 this.blockPuller.RequestNewData(request);
@@ -567,6 +570,8 @@ namespace Stratis.Bitcoin.Consensus
                     this.expectedBlockSizes.Add(chainedHeader.HashBlock, avgSize);
 
                 this.expectedBlockDataBytes += request.BlocksToDownload.Count * avgSize;
+
+                this.logger.LogTrace("Expected block data bytes was set to {0} and we are expecting {1} blocks to be delivered.", this.expectedBlockDataBytes, this.expectedBlockSizes.Count);
             }
 
             this.logger.LogTrace("(-)");
