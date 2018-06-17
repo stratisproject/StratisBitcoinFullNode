@@ -4,6 +4,8 @@ using FluentAssertions;
 using Xunit;
 
 using NBitcoin;
+using Stratis.FederatedPeg.Features.FederationGateway.NetworkHelpers;
+using Stratis.FederatedPeg.Features.FederationGateway.Federation;
 
 namespace Stratis.FederatedPeg.Tests
 {

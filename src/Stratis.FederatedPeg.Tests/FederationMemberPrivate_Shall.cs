@@ -1,6 +1,7 @@
 ﻿using FluentAssertions;
 using NBitcoin;
 using NBitcoin.DataEncoders;
+using Stratis.FederatedPeg.Features.FederationGateway.Federation;
 using Xunit;
 
 namespace Stratis.FederatedPeg.Tests
@@ -27,19 +28,6 @@ namespace Stratis.FederatedPeg.Tests
             var federationMemberPrivate = FederationMemberPrivate.CreateNew("Alice", "password");
             federationMemberPrivate.ToFederationMember().GetType().Should().Be(typeof(FederationMember));
             federationMemberPrivate.ToFederationMember().Name.Should().Be("Alice");
-        }
-
-        [Fact]
-        public void fail_validation_for_invalid_name()
-        {
-            FederationMemberPrivate.IsValidName(null).Should().BeFalse();
-            FederationMemberPrivate.IsValidName(string.Empty).Should().BeFalse();
-            FederationMemberPrivate.IsValidName("   ").Should().BeFalse();
-            FederationMemberPrivate.IsValidName("B").Should().BeFalse();
-            FederationMemberPrivate.IsValidName("Bo").Should().BeFalse();
-            FederationMemberPrivate.IsValidName("Bo_Bo").Should().BeFalse();
-
-            FederationMemberPrivate.IsValidName("Bob").Should().BeTrue();
         }
     }
 }

@@ -1,6 +1,7 @@
 ﻿using System;
 using NBitcoin;
 using Newtonsoft.Json;
+using Stratis.FederatedPeg.Features.FederationGateway.NetworkHelpers;
 
 namespace Stratis.FederatedPeg.Features.FederationGateway
 {

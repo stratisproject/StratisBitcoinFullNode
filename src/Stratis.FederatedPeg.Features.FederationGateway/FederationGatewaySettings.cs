@@ -28,19 +28,16 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
 
             this.RedeemScript = new Script(redeemScriptRaw);
             this.MultiSigAddress = RedeemScript.Hash.GetAddress(nodeSettings.Network);
-            var payToMultisigScriptParams = PayToMultiSigTemplate.Instance.ExtractScriptPubKeyParameters(
-                nodeSettings.Network, this.RedeemScript);
+            var payToMultisigScriptParams = PayToMultiSigTemplate.Instance.ExtractScriptPubKeyParameters(nodeSettings.Network, this.RedeemScript);
             this.MultiSigM = configReader.GetOrDefault("multisigM", payToMultisigScriptParams.SignatureCount);
             this.MultiSigN = configReader.GetOrDefault("multisigN", payToMultisigScriptParams.PubKeys.Length);
             this.FederationPublicKeys = payToMultisigScriptParams.PubKeys;
             this.MemberName = configReader.GetOrDefault("membername", "unspecified");
-
             this.MultiSigWalletName = configReader.GetOrDefault("multisigwalletname", "multisig_wallet");
             this.PublicKey = configReader.GetOrDefault<string>("publickey", null);
             this.FederationFolder = configReader.GetOrDefault<string>("federationfolder", null);
             this.MemberPrivateFolder = configReader.GetOrDefault<string>("memberprivatefolder", null);
             this.CounterChainApiPort = configReader.GetOrDefault("counterchainapiport", 0);
-           
             this.FederationNodeIps = configReader.GetOrDefault<string>("federationips", null)?.Split(',').Select(a => a.ToIPEndPoint(nodeSettings.Network.DefaultPort));
         }
 
