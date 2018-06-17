@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System.Collections;
+using System.Collections.Generic;
 using System.Linq;
 using FluentAssertions;
 using Moq;
@@ -210,42 +211,63 @@ namespace Stratis.Bitcoin.Tests.Consensus
 
         /// <summary>
         /// Issue 5 @ Create chained header tree component #1321
-        /// 2 peers should supply headers - one of the peers creates a fork.
+        /// 3 peers should supply headers - one of the peers creates a fork.
         /// Make sure that ChainedBlock is not created more than once for the same header.
         /// Check that next pointers were created correctly.
         /// </summary>
         [Fact]
         public void ConnectHeaders_HeadersFromTwoPeersWithFork_ShouldCreateBlocksForNewHeaders()
         {
-            // Setup
-            var ctx = new TestContext();
-            ChainedHeaderTree cht = ctx.CreateChainedHeaderTree();
-            ChainedHeader chainTip = ctx.ExtendAChain(10);
-            cht.Initialize(chainTip, true);
-            ctx.ChainStateMock.Setup(s => s.ConsensusTip).Returns(chainTip);
+            var testContext = new TestContext();
+            ChainedHeaderTree chainedHeaderTree = testContext.CreateChainedHeaderTree();
+            ChainedHeader chainTip = testContext.ExtendAChain(7);
+            chainedHeaderTree.Initialize(chainTip, true);
+            testContext.ChainStateMock.Setup(s => s.ConsensusTip).Returns(chainTip);
 
-            // Default peer is on tip
-            Assert.True(cht.GetPeerTipsByPeerId()[ChainedHeaderTree.LocalPeerId].Equals(chainTip.HashBlock));
+            // PEER 1: 1a - 2a - 3a - 4a - 5a - 6a - 7a - 8a
+            Assert.True(chainedHeaderTree.GetChainedHeadersByHash().Count == 8);
 
-            // Peer 1 forks two blocks back
-            BlockHeader forkedBlock = ctx.GetNewBlock(chainTip.Previous.Previous).Header;
+            // PEER 2: 1a - 2a - 3a - 4a - 5a - 6a - 7a - 8a
+            List<BlockHeader> listOfExistingHeaders = testContext.ChainedHeaderToList(chainTip, 7);
+            chainedHeaderTree.ConnectNewHeaders(2, listOfExistingHeaders);
+            Assert.True(chainedHeaderTree.GetChainedHeadersByHash().Count == 8);
 
-            cht.ConnectNewHeaders(1, new List<BlockHeader>() { forkedBlock });
+            // PEER 3: 1a - 2a - 3a - 4a - 5b - 6b - 7b - 8b
+            BlockHeader forkedBlockHeader = testContext.GetNewBlock(chainTip.Previous.Previous.Previous.Previous).Header;
+            chainedHeaderTree.ConnectNewHeaders(3, new List<BlockHeader>() { forkedBlockHeader });
+            ChainedHeader peerThreeChainedHeader = chainedHeaderTree.GetChainedHeaderByPeerId(3);
+            ChainedHeader peerThreeTip = testContext.ExtendAChain(3, peerThreeChainedHeader);
+            List<BlockHeader> listOfNewAndExistingHeaders = testContext.ChainedHeaderToList(peerThreeTip, 4);
+            chainedHeaderTree.ConnectNewHeaders(3, listOfNewAndExistingHeaders );
 
-            uint256 peerOneTipHash = cht.GetPeerTipsByPeerId()[1];
-            uint256 hashOfForkedBlock = forkedBlock.GetHash();
+            // CHT should contain 12 headers
+            Assert.True(chainedHeaderTree.GetChainedHeadersByHash().Count == 12);
+             
+            Dictionary<uint256, ChainedHeader> chainedHeadersByHash = chainedHeaderTree.GetChainedHeadersByHash();
+            List<ChainedHeader> chainedHeadersByHashList = chainedHeadersByHash.Values.ToList();
 
-            ChainedHeader chainedHeaderOfForkedBlock = cht.GetChainedHeadersByHash()[hashOfForkedBlock];
-            ChainedHeader fork = chainTip.FindFork(chainedHeaderOfForkedBlock);
+            var blocksAtEachHeight = from chainedHeader in chainedHeadersByHashList
+                group chainedHeader by chainedHeader.Height
+                into heightGroup
+                select heightGroup;
+            
+            foreach (var blockGroup in blocksAtEachHeight)
+            {
+                // 1a - 2a - 3a - 4a - 5a - 6a - 7a - 8a
+                //                   - 5b - 6b - 7b - 8b
+                var height = blockGroup.Key;
+                if (height < 4) Assert.True(blockGroup.Count() == 1);
+                if (height > 4) Assert.True(blockGroup.Count() == 2);
 
-            fork.Should().NotBeNull();
+                // Each should have 1 Next pointer
+                if (height < 3 || (height > 3 && height < 7)) Assert.True(blockGroup.All(x => x.Next.Count == 1));
 
-            peerOneTipHash.Should().Be(hashOfForkedBlock, "Peer should be on the fork but wasn't");
+                // Except for 8a and 8b which contain none
+                if (height == 7) Assert.True(blockGroup.All(x => x.Next.Count == 0));
 
-            // Next pointers were created correctly
-            Assert.Equal(2, fork.Next.Count);   // main chain + 1 branch
-            Assert.Contains(chainTip.Previous, fork.Next);  // next points -> main chain
-            Assert.Contains(chainedHeaderOfForkedBlock, fork.Next);  // next points -> fork
+                // And 4a which contains 2
+                if (height == 3) Assert.True(blockGroup.All(x => x.Next.Count == 2));
+            }
         }
 
         /// <summary>
@@ -256,7 +278,6 @@ namespace Stratis.Bitcoin.Tests.Consensus
         [Fact]
         public void ConnectHeaders_SupplyHeaders_ToDownloadArraySizeSameAsNumberOfHeaders()
         {
-            // Setup
             var ctx = new TestContext();
             ChainedHeaderTree cht = ctx.CreateChainedHeaderTree();
             ChainedHeader chainTip = ctx.ExtendAChain(5);
@@ -293,31 +314,30 @@ namespace Stratis.Bitcoin.Tests.Consensus
         [Fact]
         public void ConnectHeaders_MultiplePeersWithForks_CorrectTip()
         {
-            // Setup
-            var ctx = new TestContext();
-            ChainedHeaderTree cht = ctx.CreateChainedHeaderTree();
-            ChainedHeader chainTip = ctx.ExtendAChain(10);
-            cht.Initialize(chainTip, true);
+            var testContext = new TestContext();
+            ChainedHeaderTree chainedHeaderTree = testContext.CreateChainedHeaderTree();
+            ChainedHeader chainTip = testContext.ExtendAChain(10);
+            chainedHeaderTree.Initialize(chainTip, true);
 
-            List<BlockHeader> listOfExistingHeaders = ctx.ChainedHeaderToList(chainTip, 10);
-            cht.ConnectNewHeaders(2, listOfExistingHeaders);
-            ChainedHeader peerTwoTip = cht.GetChainedHeaderByPeerId(2);
+            List<BlockHeader> listOfExistingHeaders = testContext.ChainedHeaderToList(chainTip, 10);
+            chainedHeaderTree.ConnectNewHeaders(2, listOfExistingHeaders);
+            ChainedHeader peerTwoTip = chainedHeaderTree.GetChainedHeaderByPeerId(2);
 
             // Peer B / Peer 2 is on the best chain.
             peerTwoTip.HashBlock.Should().BeEquivalentTo(chainTip.HashBlock);
             peerTwoTip.ChainWork.Should().BeEquivalentTo(chainTip.ChainWork);
 
-            // After that peer C / Peer 3 presents an alternative chain with a forkpoint below B's Tip.
-            BlockHeader forkedBlock = ctx.GetNewBlock(chainTip.Previous.Previous).Header;
-            cht.ConnectNewHeaders(3, new List<BlockHeader>() { forkedBlock });
-            ChainedHeader peerThreeTip = cht.GetChainedHeaderByPeerId(3);
+            // Peer C / Peer 3 presents an alternative chain with a forkpoint below B's Tip.
+            BlockHeader forkedBlock = testContext.GetNewBlock(chainTip.Previous.Previous).Header;
+            chainedHeaderTree.ConnectNewHeaders(3, new List<BlockHeader>() { forkedBlock });
+            ChainedHeader peerThreeTip = chainedHeaderTree.GetChainedHeaderByPeerId(3);
             ChainedHeader fork = chainTip.FindFork(peerThreeTip);
             fork.Height.Should().BeLessThan(peerTwoTip.Height);
 
             // After that peer A / PEER_ONE prolongs C's chain.
             const int numberOfBlocksToExtend = 7;
-            ChainedHeader peerOneTip = ctx.ExtendAChain(numberOfBlocksToExtend, peerThreeTip);
-            List<BlockHeader> listOfPeerOnesHeaders = ctx.ChainedHeaderToList(peerOneTip, numberOfBlocksToExtend + 2 /* (forked 2 back) */);
+            ChainedHeader peerOneTip = testContext.ExtendAChain(numberOfBlocksToExtend, peerThreeTip);
+            List<BlockHeader> listOfPeerOnesHeaders = testContext.ChainedHeaderToList(peerOneTip, numberOfBlocksToExtend + 2 /* (forked 2 back) */);
 
             // Sends all headers from the fork point
             fork.HashBlock.Should().BeEquivalentTo(listOfPeerOnesHeaders[0].GetHash());
@@ -325,10 +345,10 @@ namespace Stratis.Bitcoin.Tests.Consensus
             // With few valid and one invalid.
             foreach (var header in listOfPeerOnesHeaders.GetRange(3, 6))
             {
-                ctx.ChainStateMock.Setup(x => x.MarkBlockInvalid(header.GetHash(), null));
+                testContext.ChainStateMock.Setup(x => x.MarkBlockInvalid(header.GetHash(), null));
             }
 
-            cht.ConnectNewHeaders(1, listOfPeerOnesHeaders);
+            chainedHeaderTree.ConnectNewHeaders(1, listOfPeerOnesHeaders);
 
             // Peer A / PEER_ONE's fork should now have the longest chain
             peerOneTip.Height.Should().BeGreaterThan(peerThreeTip.Height);
@@ -341,20 +361,21 @@ namespace Stratis.Bitcoin.Tests.Consensus
         [Fact]
         public void ConnectHeaders_MultiplePeers_CheckEverythingIsConsumed()
         {
-            var ctx = new TestContext();
-            ChainedHeaderTree cht = ctx.CreateChainedHeaderTree();
-            ChainedHeader chainTip = ctx.ExtendAChain(11);
-            cht.Initialize(chainTip, true);
-            List<BlockHeader> listOfNewHeaders = ctx.ChainedHeaderToList(chainTip, 11);
+            var testContext = new TestContext();
+            ChainedHeaderTree chainedHeaderTree = testContext.CreateChainedHeaderTree();
+            ChainedHeader chainTip = testContext.ExtendAChain(11);
+            chainedHeaderTree.Initialize(chainTip, true);
+            List<BlockHeader> listOfNewHeaders = testContext.ChainedHeaderToList(chainTip, 11);
 
             List<BlockHeader> peer1Headers = listOfNewHeaders.GetRange(0, 6);
-            ConnectNewHeadersResult connectedNewHeadersPeer1 = cht.ConnectNewHeaders(1, peer1Headers);
+            ConnectNewHeadersResult connectedNewHeadersPeer1 = chainedHeaderTree.ConnectNewHeaders(1, peer1Headers);
 
             // 5 unprocessed headers
-            Assert.True(chainTip.Height - connectedNewHeadersPeer1.Consumed.Height == 5);
+            var unprocessedHeaderCount = chainTip.Height - connectedNewHeadersPeer1.Consumed.Height;
+            unprocessedHeaderCount.Should().Be(5);
 
             List<BlockHeader> peer2Headers = listOfNewHeaders.GetRange(6, 5);
-            ConnectNewHeadersResult connectedNewHeadersPeer2 = cht.ConnectNewHeaders(2, peer2Headers);
+            ConnectNewHeadersResult connectedNewHeadersPeer2 = chainedHeaderTree.ConnectNewHeaders(2, peer2Headers);
 
             // All headers consumed
             Assert.True(connectedNewHeadersPeer2.Consumed.Height == chainTip.Height);
