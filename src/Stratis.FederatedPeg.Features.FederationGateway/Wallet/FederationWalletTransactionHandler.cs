@@ -51,6 +51,11 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Wallet
             IWalletFeePolicy walletFeePolicy,
             Network network)
         {
+            Guard.NotNull(loggerFactory, nameof(loggerFactory));
+            Guard.NotNull(walletManager, nameof(walletManager));
+            Guard.NotNull(walletFeePolicy, nameof(walletFeePolicy));
+            Guard.NotNull(network, nameof(network));
+
             this.walletManager = walletManager;
             this.walletFeePolicy = walletFeePolicy;
             this.network = network;
@@ -154,8 +159,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Wallet
         {
             Guard.NotNull(context, nameof(context));
             Guard.NotNull(context.Recipients, nameof(context.Recipients));
-            Guard.NotNull(context.AccountReference, nameof(context.AccountReference));
-
+         
             context.TransactionBuilder = new TransactionBuilder(this.network);
 
             this.AddRecipients(context);
@@ -210,7 +214,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Wallet
         }
 
         /// <summary>
-        /// Find all available outputs (UTXO's) that belong to <see cref="WalletAccountReference.AccountName"/>.
+        /// Find all available outputs (UTXO's) that belong to the multisig address.
         /// Then add them to the <see cref="TransactionBuildContext.UnspentOutputs"/> or <see cref="TransactionBuildContext.UnspentMultiSigOutputs"/>.
         /// </summary>
         /// <param name="context">The context associated with the current transaction being built.</param>
@@ -254,8 +258,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Wallet
             var coins = new List<Coin>();
             foreach (var item in context.UnspentOutputs.OrderByDescending(a => a.Transaction.Amount))
             {
-                // TODO 
-                //coins.Add(ScriptCoin.Create(this.network, item.Transaction.Id, (uint)item.Transaction.Index, item.Transaction.Amount, item.Transaction.ScriptPubKey, item.Address.RedeemScript));
+                coins.Add(ScriptCoin.Create(this.network, item.Transaction.Id, (uint)item.Transaction.Index, item.Transaction.Amount, item.Transaction.ScriptPubKey, this.walletManager.GetWallet().MultiSigAddress.RedeemScript));
                 sum += item.Transaction.Amount;
                 index++;
 
@@ -336,24 +339,20 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Wallet
         /// <summary>
         /// Initialize a new instance of a <see cref="TransactionBuildContext"/>
         /// </summary>
-        /// <param name="accountReference">The wallet and account from which to build this transaction</param>
         /// <param name="recipients">The target recipients to send coins to.</param>
-        public TransactionBuildContext(WalletAccountReference accountReference, List<Recipient> recipients)
-            : this(accountReference, recipients, string.Empty)
+        public TransactionBuildContext(List<Recipient> recipients) : this(recipients, string.Empty)
         {
         }
 
         /// <summary>
         /// Initialize a new instance of a <see cref="TransactionBuildContext"/>
         /// </summary>
-        /// <param name="accountReference">The wallet and account from which to build this transaction</param>
         /// <param name="recipients">The target recipients to send coins to.</param>
-        /// <param name="walletPassword">The password that protects the wallet in <see cref="accountReference"/></param>
-        public TransactionBuildContext(WalletAccountReference accountReference, List<Recipient> recipients, string walletPassword = "", string opReturnData = null)
+        /// <param name="walletPassword">The password that protects the member's seed.</param>
+        public TransactionBuildContext(List<Recipient> recipients, string walletPassword = "", string opReturnData = null)
         {
             Guard.NotNull(recipients, nameof(recipients));
-
-            this.AccountReference = accountReference;
+         
             this.Recipients = recipients;
             this.WalletPassword = walletPassword;
             this.FeeType = FeeType.Medium;
@@ -365,12 +364,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Wallet
             this.MultiSig = null;
             this.IgnoreVerify = false;
         }
-
-        /// <summary>
-        /// The wallet account to use for building a transaction
-        /// </summary>
-        public WalletAccountReference AccountReference { get; set; }
-
+        
         /// <summary>
         /// The recipients to send Bitcoin to.
         /// </summary>
@@ -421,7 +415,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Wallet
         public Transaction Transaction { get; set; }
 
         /// <summary>
-        /// The password that protects the wallet in <see cref="WalletAccountReference"/>.
+        /// The password that protects the member's seed.
         /// </summary>
         /// <remarks>
         /// TODO: replace this with System.Security.SecureString (https://github.com/dotnet/corefx/tree/master/src/System.Security.SecureString)

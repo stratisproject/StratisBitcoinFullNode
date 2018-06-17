@@ -8,7 +8,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.CounterChain
 {
     /// <summary>
     /// The CounterChainSessionManager receives session data from the MonitorChainSessionManager and takes a number of precautionary steps
-    /// before signing the transaction. It also builds and broadcasts the transaction once a quorum of is received from the payload
+    /// before signing the transaction. It also builds and broadcasts the transaction once a quorum of is received from the payload.
     /// </summary>
     public interface ICounterChainSessionManager
     {

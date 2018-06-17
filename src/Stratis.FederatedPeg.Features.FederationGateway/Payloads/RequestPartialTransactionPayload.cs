@@ -8,11 +8,11 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
     {
         private uint256 sessionId = uint256.Zero;
         private Transaction template;
-
-        private Transaction transactionPartial = null;
+        private Transaction transactionPartial;
         private uint256 bossCard = uint256.Zero;
 
         public Transaction PartialTransaction => this.transactionPartial;
+
         public Transaction TemplateTransaction => this.template;
 
         public uint256 SessionId => this.sessionId;
