@@ -123,7 +123,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.MonitorChain
                 crossChainTransactionInfo.DestinationAddress,
                 crossChainTransactionInfo.BlockNumber,
                 this.network.ToChain(),
-                this.federationGatewaySettings.FederationPublicKeys.Select(f => f.ToString(network)).ToArray(),
+                this.federationGatewaySettings.FederationPublicKeys.Select(f => f.ToHex()).ToArray(),
                 this.federationGatewaySettings.PublicKey,
                 this.federationGatewaySettings.MultiSigM,
                 this.federationGatewaySettings.MultiSigN
