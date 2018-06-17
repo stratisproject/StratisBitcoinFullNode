@@ -267,7 +267,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
             ulong totalFee = (gasPrice * gasLimit) + Money.Parse(request.FeeAmount);
             var context = new TransactionBuildContext(
                 new WalletAccountReference(request.WalletName, request.AccountName),
-                new[] { new Recipient { Amount = 0, ScriptPubKey = new Script(carrier.Serialize()) } }.ToList(),
+                new[] { new Recipient { Amount = request.Amount ?? "0", ScriptPubKey = new Script(carrier.Serialize()) } }.ToList(),
                 request.Password)
             {
                 TransactionFee = totalFee,
@@ -275,7 +275,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
                 SelectedInputs = selectedInputs,
                 MinConfirmations = MinConfirmationsAllChecks
             };
-
+            
             try
             {
                 Transaction transaction = this.walletTransactionHandler.BuildTransaction(context);
