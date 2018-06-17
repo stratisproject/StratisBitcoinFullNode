@@ -58,12 +58,7 @@ namespace Stratis.Bitcoin.Utilities
         {
             bool oldSampleExisted = this.samples.Add(sample, out double removedSample);
 
-            if (!oldSampleExisted && this.samples.Count == 1)
-            {
-                // We have only one sample - it's the average.
-                this.Average = sample;
-            }
-            else if (!oldSampleExisted)
+            if (!oldSampleExisted)
             {
                 // Old sample wasn't replaced.
                 this.Average = (this.Average * (this.samples.Count - 1) + sample) / this.samples.Count;

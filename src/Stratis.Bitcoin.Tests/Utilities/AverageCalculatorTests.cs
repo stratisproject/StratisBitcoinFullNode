@@ -70,7 +70,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
 
         private bool DoubleEqual(double a, double b)
         {
-            return Math.Abs(a - b) < 0.001;
+            return Math.Abs(a - b) < 0.00001;
         }
     }
 }

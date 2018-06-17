@@ -66,7 +66,7 @@ namespace Stratis.Bitcoin.BlockPulling2
         
         private readonly AverageCalculator averageBlockSizeBytes;
 
-        /// <summary>Signaler that triggers <see cref="reassignedJobsQueue"/> and <see cref="downloadJobsQueue"/> processign when set.</summary>
+        /// <summary>Signaler that triggers <see cref="reassignedJobsQueue"/> and <see cref="downloadJobsQueue"/> processing when set.</summary>
         private readonly AsyncManualResetEvent processQueuesSignal;
 
         /// <summary>Unique identifier which will be set to the next created download job.</summary>
@@ -79,7 +79,7 @@ namespace Stratis.Bitcoin.BlockPulling2
         private int pendingDownloadsCount;
 
         /// <summary>
-        /// The maximum blocks that can be downloaded simountanously.
+        /// The maximum blocks that can be downloaded simultaneously.
         /// Given that all peers are on the same chain they will deliver that amount of blocks in 1 seconds.
         /// </summary>
         private int maxBlocksBeingDownloaded;
@@ -180,7 +180,7 @@ namespace Stratis.Bitcoin.BlockPulling2
                         this.peerIdsToTips.AddOrReplace(peerId, newTip);
                         this.pullerBehaviorsByPeerId.Add(peerId, peer.Behavior<BlockPullerBehavior>());
 
-                        this.logger.LogDebug("New peer with id {0} was added.", peerId);
+                        this.logger.LogDebug("New peer with id {0} and tip '{1}' was added.", peerId, newTip);
                     }
                 }
             }
@@ -198,16 +198,16 @@ namespace Stratis.Bitcoin.BlockPulling2
             {
                 this.peerIdsToTips.Remove(peerId);
                 this.pullerBehaviorsByPeerId.Remove(peerId);
-
-                this.ReleaseAssignments(peerId);
             }
+
+            this.ReleaseAssignments(peerId);
 
             this.logger.LogTrace("(-)");
         }
 
         /// <summary>Requests the blocks for download.</summary>
         /// <remarks>Doesn't support asking for the same hash twice before getting a response.</remarks>
-        /// <param name="headers">Collection of consequtive headers (but gaps are ok: a1=a2=a3=a4=a8=a9).</param>
+        /// <param name="headers">Collection of consecutive headers (but gaps are ok: a1=a2=a3=a4=a8=a9).</param>
         public void RequestBlocksDownload(List<ChainedHeader> headers)
         {
             this.logger.LogTrace("({0}:{1})", nameof(headers.Count), headers.Count);
@@ -260,7 +260,7 @@ namespace Stratis.Bitcoin.BlockPulling2
             this.logger.LogTrace("(-)");
         }
 
-        /// <summary>Loop that continously checks if peers failed to deliver important blocks in given time and penalizes them if they did.</summary>
+        /// <summary>Loop that continuously checks if peers failed to deliver important blocks in given time and penalizes them if they did.</summary>
         private async Task StallingLoopAsync()
         {
             this.logger.LogTrace("()");
@@ -344,7 +344,7 @@ namespace Stratis.Bitcoin.BlockPulling2
 
                 this.processQueuesSignal.Reset();
 
-                this.logger.LogDebug("Total amount of downloads assigned in this iteration is {0}", newAssignments.Count);
+                this.logger.LogDebug("Total amount of downloads assigned in this iteration is {0}.", newAssignments.Count);
             }
             
             // Call callbacks with null since puller failed to deliver requested blocks.
@@ -420,7 +420,7 @@ namespace Stratis.Bitcoin.BlockPulling2
         /// <remarks>If some of the blocks from the job can't be provided by any peer those hashes will be added to a <param name="failedJobs"> as a new item.</param></remarks>
         /// <param name="downloadJob">Download job to be partially of fully consumed.</param>
         /// <param name="failedJobs">Failed assignments.</param>
-        /// <param name="emptySlotes">Amount of empty slotes. This is the maximum amount of assignments that can be created.</param>
+        /// <param name="emptySlotes">Amount of empty slots. This is the maximum amount of assignments that can be created.</param>
         /// <returns></returns>
         private Dictionary<uint256, AssignedDownload> DistributeHashesLocked(ref DownloadJob downloadJob, ref List<DownloadJob> failedJobs, int emptySlotes)
         {
@@ -464,7 +464,7 @@ namespace Stratis.Bitcoin.BlockPulling2
                             BlockHeight = header.Height
                         });
 
-                        this.logger.LogTrace("Block '{0}' was assigned to peer {1}", hashToAssign, peerTip);
+                        this.logger.LogTrace("Block '{0}' was assigned to peer {1}.", hashToAssign, peerTip);
 
                         downloadJob.Hashes.Remove(hashToAssign);
                         break;
@@ -488,12 +488,12 @@ namespace Stratis.Bitcoin.BlockPulling2
 
             if (jobFailed)
             {
-                failedJobs.Add(new DownloadJob() {Hashes = downloadJob.Hashes });
+                failedJobs.Add(new DownloadJob() { Hashes = downloadJob.Hashes });
 
                 downloadJob.Hashes = new HashSet<uint256>();
             }
 
-            this.logger.LogTrace("(-).*:{0}", newAssignments.Count);
+            this.logger.LogTrace("(-):*.{0}:{1}", nameof(newAssignments.Count), newAssignments.Count);
             return newAssignments;
         }
 
@@ -612,7 +612,7 @@ namespace Stratis.Bitcoin.BlockPulling2
             this.logger.LogTrace("(-)");
         }
 
-        /// <summary>Recalculates queality score of a peer or all peers if given peer has the best upload speed.</summary>
+        /// <summary>Recalculates quality score of a peer or all peers if given peer has the best upload speed.</summary>
         /// <param name="pullerBehavior">The puller behavior of a peer which quality score should be recalculated.</param>
         /// <param name="peerId">Id of a peer which behavior is passed.</param>
         private void RecalculateQuealityScoreLocked(BlockPullerBehavior pullerBehavior, int peerId)
@@ -645,7 +645,8 @@ namespace Stratis.Bitcoin.BlockPulling2
             this.logger.LogTrace("()");
 
             // How many blocks we can download in 1 second.
-            this.maxBlocksBeingDownloaded = (int)(this.GetTotalSpeedOfAllPeersBytesPerSecLocked() / this.averageBlockSizeBytes.Average);
+            if (this.averageBlockSizeBytes.Average > 0)
+                this.maxBlocksBeingDownloaded = (int)(this.GetTotalSpeedOfAllPeersBytesPerSecLocked() / this.averageBlockSizeBytes.Average);
 
             if (this.maxBlocksBeingDownloaded < 10)
                 this.maxBlocksBeingDownloaded = 10;
@@ -742,10 +743,10 @@ namespace Stratis.Bitcoin.BlockPulling2
             this.logger.LogTrace("(-)");
         }
 
-        /// <summary>Represents consequtive collection of hashes that are to be downloaded.</summary>
+        /// <summary>Represents consecutive collection of hashes that are to be downloaded.</summary>
         private struct DownloadJob
         {
-            /// <summary>Unicue identifier if this job.</summary>
+            /// <summary>Unique identifier of this job.</summary>
             public int Id;
 
             /// <summary>Hashes of blocks that are to be downloaded.</summary>
@@ -755,7 +756,7 @@ namespace Stratis.Bitcoin.BlockPulling2
         /// <summary>Represents a single download assignment to a peer.</summary>
         private struct AssignedDownload
         {
-            /// <summary>Unicue identifier of a job to which this assignment belogs.</summary>
+            /// <summary>Unique identifier of a job to which this assignment belongs.</summary>
             public int JobId;
 
             /// <summary>Id of a peer that was assigned to deliver a block.</summary>
