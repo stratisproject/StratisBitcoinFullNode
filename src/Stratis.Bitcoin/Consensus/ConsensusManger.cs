@@ -404,10 +404,12 @@ namespace Stratis.Bitcoin.Consensus
             
             lock (this.peerLock)
             {
-                this.expectedBlockDataBytes -= this.expectedBlockSizes[blockHash];
-                this.expectedBlockSizes.Remove(blockHash);
-
-                this.logger.LogTrace("Expected block data bytes was set to {0} and we are expecting {1} blocks to be delivered.", this.expectedBlockDataBytes, this.expectedBlockSizes.Count);
+                if (this.expectedBlockSizes.TryGetValue(blockHash, out long expectedSize))
+                {
+                    this.expectedBlockDataBytes -= expectedSize;
+                    this.expectedBlockSizes.Remove(blockHash);
+                    this.logger.LogTrace("Expected block data bytes was set to {0} and we are expecting {1} blocks to be delivered.", this.expectedBlockDataBytes, this.expectedBlockSizes.Count);
+                }
 
                 if (block != null)
                 {
@@ -427,6 +429,10 @@ namespace Stratis.Bitcoin.Consensus
                     //    // this.logger.LogTrace("(-)[INTEGRITY_VERIFICATION_FAILED]");
                     //    return;
                     //}
+                }
+                else
+                {
+                    this.logger.LogDebug("Block '{0}' failed to be delivered.", blockHash);
                 }
             }
 
