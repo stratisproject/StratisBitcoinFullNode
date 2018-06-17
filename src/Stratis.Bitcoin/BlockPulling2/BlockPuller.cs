@@ -214,7 +214,7 @@ namespace Stratis.Bitcoin.BlockPulling2
 
             lock (this.lockObject)
             {
-                var hashes = new HashSet<uint256>();
+                var hashes = new List<uint256>();
 
                 foreach (ChainedHeader header in headers)
                 {
@@ -333,6 +333,7 @@ namespace Stratis.Bitcoin.BlockPulling2
                 }
 
                 // Add newly assigned downloads and sort all assignments by block height.
+                // TODO list is not sorted. Replace with appropriate structure instead.
                 this.AssignedDownloads = this.AssignedDownloads.Concat(newAssignments).OrderBy(x => x.Value.BlockHeight).ToDictionary(k => k.Key, v => v.Value);
                 
                 // Remove failed hashes from HeadersByHash
@@ -370,6 +371,7 @@ namespace Stratis.Bitcoin.BlockPulling2
             int maxDegreeOfParallelism = 8;
 
             // Form batches in order to ask for several blocks from one peer at once.
+            // TODO avoid groupings
             await assignments.GroupBy(x => x.Value.PeerId).ForEachAsync(maxDegreeOfParallelism, CancellationToken.None, async (downloadsGroupedByPeerId, cancellation) =>
             {
                 List<uint256> hashes = downloadsGroupedByPeerId.Select(x => x.Key).ToList();
@@ -490,7 +492,7 @@ namespace Stratis.Bitcoin.BlockPulling2
             {
                 failedJobs.Add(new DownloadJob() { Hashes = downloadJob.Hashes });
 
-                downloadJob.Hashes = new HashSet<uint256>();
+                downloadJob.Hashes = new List<uint256>();
             }
 
             this.logger.LogTrace("(-):*.{0}:{1}", nameof(newAssignments.Count), newAssignments.Count);
@@ -697,7 +699,7 @@ namespace Stratis.Bitcoin.BlockPulling2
                     var newJob = new DownloadJob()
                     {
                         Id = jobGroup.First().Key,
-                        Hashes = new HashSet<uint256>(jobGroup.Select(x => x.Value))
+                        Hashes = new List<uint256>(jobGroup.Select(x => x.Value))
                     };
 
                     this.reassignedJobsQueue.Enqueue(newJob);
@@ -750,7 +752,7 @@ namespace Stratis.Bitcoin.BlockPulling2
             public int Id;
 
             /// <summary>Hashes of blocks that are to be downloaded.</summary>
-            public HashSet<uint256> Hashes;
+            public List<uint256> Hashes;
         }
 
         /// <summary>Represents a single download assignment to a peer.</summary>
