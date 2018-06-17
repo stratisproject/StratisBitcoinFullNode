@@ -102,33 +102,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         }
         
         /// <summary>Time of last memory pool request in unix time.</summary>
-        public long LastMempoolReq { get; private set; }
-
-        /// <summary>Time of next inventory send in unix time.</summary>
-        public long NextInvSend { get; set; }
-
-        /// <summary>Whether memory pool is in state where it is ready to send it's inventory.</summary>
-        public bool CanSend
-        {
-            get
-            {
-                if (!this.AttachedPeer?.PeerVersion?.Relay ?? true)
-                    return false;
-
-                // Check whether periodic sends should happen
-                bool sendTrickle = this.AttachedPeer.Behavior<ConnectionManagerBehavior>().Whitelisted;
-
-                if (this.NextInvSend < this.mempoolManager.DateTimeProvider.GetTime())
-                {
-                    sendTrickle = true;
-                    // Use half the delay for outbound peers, as there is less privacy concern for them.
-                    this.NextInvSend = this.mempoolManager.DateTimeProvider.GetTime() + 10;
-                    // TODO: PoissonNextSend(nNow, InventoryBroadcastInterval >> !pto->fInbound);
-                }
-
-                return sendTrickle;
-            }
-        }
+        public long LastMempoolReq { get; private set; } 
 
         /// <inheritdoc />
         protected override void AttachCore()
@@ -243,9 +217,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                 return;
             }
 
-            if (!this.CanSend)
-                return;
-
             //if (!(pfrom->GetLocalServices() & NODE_BLOOM) && !pfrom->fWhitelisted)
             //{
             //  LogPrint("net", "mempool request with bloom filters disabled, disconnect peer=%d\n", pfrom->GetId());
@@ -322,7 +293,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                 return;
             }
 
-            bool blocksOnly = !this.mempoolManager.mempoolSettings.RelayTxes;
+            bool blocksOnly = !this.connectionManager.ConnectionSettings.RelayTxes;
             // Allow whitelisted peers to send data other than blocks in blocks only mode if whitelistrelay is true
             if (peer.Behavior<ConnectionManagerBehavior>().Whitelisted && this.mempoolManager.mempoolSettings.WhiteListRelay)
                 blocksOnly = false;
@@ -533,12 +504,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         public async Task SendTrickleAsync()
         {
             this.logger.LogTrace("()");
-
-            if (!this.CanSend)
-            {
-                this.logger.LogTrace("(-)[NO_SEND]");
-                return;
-            }
 
             INetworkPeer peer = this.AttachedPeer;
             if (peer == null)

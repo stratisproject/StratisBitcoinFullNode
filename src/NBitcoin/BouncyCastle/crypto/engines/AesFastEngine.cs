@@ -847,8 +847,10 @@ namespace NBitcoin.BouncyCastle.Crypto.Engines
             var keyParameter = parameters as KeyParameter;
 
             if(keyParameter == null)
+            {
                 throw new ArgumentException("invalid parameter passed to AES init - "
-                    + Platform.GetTypeName(parameters));
+                                            + Platform.GetTypeName(parameters));
+            }
 
             this.WorkingKey = GenerateWorkingKey(keyParameter.GetKey(), forEncryption);
 

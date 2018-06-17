@@ -1,9 +1,12 @@
 ﻿using System.Collections;
+using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using FluentAssertions;
 using Moq;
 using NBitcoin;
+using NBitcoin.BouncyCastle.Math;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Logging;
@@ -24,6 +27,8 @@ namespace Stratis.Bitcoin.Tests.Consensus
             public Mock<IFinalizedBlockHeight> FinalizedBlockMock = new Mock<IFinalizedBlockHeight>();
             public ConsensusSettings ConsensusSettings = new ConsensusSettings(new NodeSettings(Network.RegTest));
 
+            private static int nonceValue;
+
             internal ChainedHeaderTree ChainedHeaderTree;
 
             internal ChainedHeaderTree CreateChainedHeaderTree()
@@ -32,16 +37,31 @@ namespace Stratis.Bitcoin.Tests.Consensus
                 return this.ChainedHeaderTree;
             }
 
-            public ChainedHeader ExtendAChain(int count, ChainedHeader chainedHeader = null)
+            internal Target ChangeDifficulty(ChainedHeader header, int difficultyAdjustmentDivisor)
             {
+                BigInteger newTarget = header.Header.Bits.ToBigInteger();
+                newTarget = newTarget.Divide(BigInteger.ValueOf(difficultyAdjustmentDivisor));
+                return new Target(newTarget);
+            }
+
+            public ChainedHeader ExtendAChain(int count, ChainedHeader chainedHeader = null, int difficultyAdjustmentDivisor = 1)
+            {
+                if (difficultyAdjustmentDivisor == 0) throw new ArgumentException("Divisor cannot be 0");
+
                 ChainedHeader previousHeader = chainedHeader ?? new ChainedHeader(this.Network.GetGenesis().Header, this.Network.GenesisHash, 0);
 
                 for (int i = 0; i < count; i++)
                 {
                     BlockHeader header = this.Network.Consensus.ConsensusFactory.CreateBlockHeader();
                     header.HashPrevBlock = previousHeader.HashBlock;
-                    header.Bits = previousHeader.Header.Bits - 1000; // just increase difficulty.
+                    header.Bits = difficultyAdjustmentDivisor == 1
+                                        ? previousHeader.Header.Bits
+                                        : this.ChangeDifficulty(previousHeader, difficultyAdjustmentDivisor);
+                    header.Nonce = (uint)Interlocked.Increment(ref nonceValue);
                     var newHeader = new ChainedHeader(header, header.GetHash(), previousHeader);
+                    Block block = this.Network.Consensus.ConsensusFactory.CreateBlock();
+                    block.GetSerializedSize();
+                    newHeader.Block = block;
                     previousHeader = newHeader;
                 }
 
@@ -91,7 +111,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
             var testContext = new TestContext();
             ChainedHeaderTree chainedHeaderTree = testContext.CreateChainedHeaderTree();
 
-            Assert.Throws<ConnectHeaderException>(() => chainedHeaderTree.ConnectNewHeaders(1, new List<BlockHeader>(new [] { testContext.Network.GetGenesis().Header})));
+            Assert.Throws<ConnectHeaderException>(() => chainedHeaderTree.ConnectNewHeaders(1, new List<BlockHeader>(new[] { testContext.Network.GetGenesis().Header })));
         }
 
         [Fact]
@@ -181,9 +201,9 @@ namespace Stratis.Bitcoin.Tests.Consensus
             ChainedHeaderTree cht = testContext.CreateChainedHeaderTree();
             ChainedHeader chainTip = testContext.ExtendAChain(10);
             cht.Initialize(chainTip, true);
-            
+
             List<BlockHeader> listOfExistingHeaders = testContext.ChainedHeaderToList(chainTip, 10);
-            
+
             cht.ConnectNewHeaders(1, listOfExistingHeaders);
 
             Dictionary<uint256, HashSet<int>> peerIdsByTipHashBefore = cht.GetPeerIdsByTipHash().ToDictionary(entry => entry.Key, entry => new HashSet<int>(entry.Value));
@@ -290,7 +310,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
             List<BlockHeader> listOfNewBlockHeaders = ctx.ChainedHeaderToList(newChainTip, 7);
 
             // Peer 1 supplies some headers
-            List<BlockHeader> peer1Headers = listOfNewBlockHeaders.GetRange(0,3);
+            List<BlockHeader> peer1Headers = listOfNewBlockHeaders.GetRange(0, 3);
             cht.ConnectNewHeaders(1, peer1Headers);
 
             // Peer 2 supplies some more headers
@@ -299,86 +319,170 @@ namespace Stratis.Bitcoin.Tests.Consensus
             ChainedHeader chainedHeaderFrom = connectNewHeadersResult.DownloadFrom;
             ChainedHeader chainedHeaderTo = connectNewHeadersResult.DownloadTo;
             int headersToDownloadCount = chainedHeaderTo.Height - chainedHeaderFrom.Height + 1; // Inclusive
-            
+
             // ToDownload array of the same size as the amount of headers
             Assert.Equal(headersToDownloadCount, peer2Headers.Count);
         }
 
         /// <summary>
-        /// Issue 8 @ Create chained header tree component #1321
-        /// We have a chain and peer B is on the best chain.
-        /// After that peer C presents an alternative chain with a forkpoint below B's Tip.
-        /// After that peer A prolongs C's chain (but sends all headers from the fork point) with a few valid and one invalid.
-        /// Make sure that C's chain is not removed - only headers after that.
+        /// Issue 13 @ Create 2 chains - chain A and chain B, where chain A has more chain work than chain B. Connect both
+        /// chains to chain header tree. Consensus tip should be set to chain A. Now extend / update chain B to make it have
+        /// more chain work. Attempt to connect chain B again. Consensus tip should be set to chain B.
         /// </summary>
         [Fact]
-        public void ConnectHeaders_MultiplePeersWithForks_CorrectTip()
+        public void PresentDifferentChains_AlternativeChainWithMoreChainWorkShouldAlwaysBeMarkedForDownload()
         {
-            var testContext = new TestContext();
-            ChainedHeaderTree chainedHeaderTree = testContext.CreateChainedHeaderTree();
-            ChainedHeader chainTip = testContext.ExtendAChain(10);
-            chainedHeaderTree.Initialize(chainTip, true);
+            // Chain header tree setup.
+            var ctx = new TestContext();
+            ChainedHeaderTree cht = ctx.CreateChainedHeaderTree();
+            ChainedHeader initialChainTip = ctx.ExtendAChain(5);
+            cht.Initialize(initialChainTip, true);
+            ctx.ConsensusSettings.UseCheckpoints = false;
 
-            List<BlockHeader> listOfExistingHeaders = testContext.ChainedHeaderToList(chainTip, 10);
-            chainedHeaderTree.ConnectNewHeaders(2, listOfExistingHeaders);
-            ChainedHeader peerTwoTip = chainedHeaderTree.GetChainedHeaderByPeerId(2);
+            // Chains A and B setup.
+            const int commonChainSize = 4;
+            const int chainAExtension = 4;
+            const int chainBExtension = 2;
+            ChainedHeader commonChainTip = ctx.ExtendAChain(commonChainSize, initialChainTip); // ie. h1=h2=h3=h4
+            ChainedHeader chainATip = ctx.ExtendAChain(chainAExtension, commonChainTip); // ie. (h1=h2=h3=h4)=a5=a6=a7=a8
+            ChainedHeader chainBTip = ctx.ExtendAChain(chainBExtension, commonChainTip); // ie. (h1=h2=h3=h4)=b5=b6
+            List<BlockHeader> listOfChainABlockHeaders = ctx.ChainedHeaderToList(chainATip, commonChainSize + chainAExtension);
+            List<BlockHeader> listOfChainBBlockHeaders = ctx.ChainedHeaderToList(chainBTip, commonChainSize + chainBExtension);
 
-            // Peer B / Peer 2 is on the best chain.
-            peerTwoTip.HashBlock.Should().BeEquivalentTo(chainTip.HashBlock);
-            peerTwoTip.ChainWork.Should().BeEquivalentTo(chainTip.ChainWork);
+            // Chain A is presented by peer 1. DownloadTo should be chain A tip.
+            ConnectNewHeadersResult connectNewHeadersResult = cht.ConnectNewHeaders(1, listOfChainABlockHeaders);
+            ChainedHeader chainedHeaderTo = connectNewHeadersResult.DownloadTo;
+            chainedHeaderTo.HashBlock.Should().Be(chainATip.HashBlock);
 
-            // Peer C / Peer 3 presents an alternative chain with a forkpoint below B's Tip.
-            BlockHeader forkedBlock = testContext.GetNewBlock(chainTip.Previous.Previous).Header;
-            chainedHeaderTree.ConnectNewHeaders(3, new List<BlockHeader>() { forkedBlock });
-            ChainedHeader peerThreeTip = chainedHeaderTree.GetChainedHeaderByPeerId(3);
-            ChainedHeader fork = chainTip.FindFork(peerThreeTip);
-            fork.Height.Should().BeLessThan(peerTwoTip.Height);
+            // Set chain A tip as a consensus tip.
+            cht.ConsensusTipChanged(chainATip);
 
-            // After that peer A / PEER_ONE prolongs C's chain.
-            const int numberOfBlocksToExtend = 7;
-            ChainedHeader peerOneTip = testContext.ExtendAChain(numberOfBlocksToExtend, peerThreeTip);
-            List<BlockHeader> listOfPeerOnesHeaders = testContext.ChainedHeaderToList(peerOneTip, numberOfBlocksToExtend + 2 /* (forked 2 back) */);
+            // Chain B is presented by peer 2. DownloadTo should be not set, as chain
+            // B has less chain work.
+            connectNewHeadersResult = cht.ConnectNewHeaders(2, listOfChainBBlockHeaders);
+            connectNewHeadersResult.DownloadTo.Should().BeNull();
 
-            // Sends all headers from the fork point
-            fork.HashBlock.Should().BeEquivalentTo(listOfPeerOnesHeaders[0].GetHash());
+            // Add more chain work and blocks into chain B.
+            const int chainBAdditionalBlocks = 4;
+            chainBTip = ctx.ExtendAChain(chainBAdditionalBlocks, chainBTip); // ie. (h1=h2=h3=h4)=b5=b6=b7=b8=b9=b10
+            listOfChainBBlockHeaders = ctx.ChainedHeaderToList(chainBTip, commonChainSize + chainBExtension + chainBAdditionalBlocks);
+            List<BlockHeader> listOfNewChainBBlockHeaders = listOfChainBBlockHeaders.TakeLast(chainBAdditionalBlocks).ToList();
 
-            // With few valid and one invalid.
-            foreach (var header in listOfPeerOnesHeaders.GetRange(3, 6))
-            {
-                testContext.ChainStateMock.Setup(x => x.MarkBlockInvalid(header.GetHash(), null));
-            }
+            // Chain B is presented by peer 2 again.
+            // DownloadTo should now be chain B as B has more chain work than chain A.
+            // DownloadFrom should be the block where split occurred.
+            // h1=h2=h3=h4=(b5)=b6=b7=b8=b9=(b10) - from b5 to b10.
+            connectNewHeadersResult = cht.ConnectNewHeaders(2, listOfNewChainBBlockHeaders);
 
-            chainedHeaderTree.ConnectNewHeaders(1, listOfPeerOnesHeaders);
+            ChainedHeader chainedHeaderFrom = connectNewHeadersResult.DownloadFrom;
+            BlockHeader expectedHeaderFrom = listOfChainBBlockHeaders[commonChainSize];
+            chainedHeaderFrom.Header.GetHash().Should().Be(expectedHeaderFrom.GetHash());
 
-            // Peer A / PEER_ONE's fork should now have the longest chain
-            peerOneTip.Height.Should().BeGreaterThan(peerThreeTip.Height);
+            chainedHeaderTo = connectNewHeadersResult.DownloadTo;
+            chainedHeaderTo.HashBlock.Should().Be(chainBTip.HashBlock);
         }
 
         /// <summary>
-        /// Issue 9 @ Create chained header tree component #1321
-        /// Check that everything is always consumed.
+        /// Issue 14 @ Chain exists with checkpoints enabled. There are 2 checkpoints. Peer presents a chain that covers
+        /// first checkpoint with a prolongation that does not match the 2nd checkpoint. Exception should be thrown.
         /// </summary>
         [Fact]
-        public void ConnectHeaders_MultiplePeers_CheckEverythingIsConsumed()
+        public void ChainHasTwoCheckPoints_ChainCoveringOnlyFirstCheckPointIsPresented_ChainIsDiscardedUpUntilFirstCheckpoint()
         {
-            var testContext = new TestContext();
-            ChainedHeaderTree chainedHeaderTree = testContext.CreateChainedHeaderTree();
-            ChainedHeader chainTip = testContext.ExtendAChain(11);
-            chainedHeaderTree.Initialize(chainTip, true);
-            List<BlockHeader> listOfNewHeaders = testContext.ChainedHeaderToList(chainTip, 11);
+            // Chain header tree setup.
+            const int initialChainSize = 2;
+            const int currentChainExtension = 6;
+            var ctx = new TestContext();
+            ChainedHeaderTree cht = ctx.CreateChainedHeaderTree();
+            ChainedHeader initialChainTip = ctx.ExtendAChain(initialChainSize); // ie. h1=h2
+            cht.Initialize(initialChainTip, true); 
+            ChainedHeader extendedChainTip = ctx.ExtendAChain(currentChainExtension, initialChainTip); // ie. h1=h2=h3=h4=h5=h6=h7=h8
+            ctx.ConsensusSettings.UseCheckpoints = true;
+            List<BlockHeader> listOfCurrentChainHeaders = ctx.ChainedHeaderToList(extendedChainTip, initialChainSize + currentChainExtension);
 
-            List<BlockHeader> peer1Headers = listOfNewHeaders.GetRange(0, 6);
-            ConnectNewHeadersResult connectedNewHeadersPeer1 = chainedHeaderTree.ConnectNewHeaders(1, peer1Headers);
+            // Setup two known checkpoints at header 4 and 7.
+            // Example: h1=h2=h3=(h4)=h5=h6=(h7)=h8.
+            const int firstCheckpointHeight = 4;
+            const int secondCheckpointHeight = 7;
+            var checkpoint1 = new CheckpointInfo(listOfCurrentChainHeaders[firstCheckpointHeight - 1].GetHash());
+            var checkpoint2 = new CheckpointInfo(listOfCurrentChainHeaders[secondCheckpointHeight - 1].GetHash());
+            ctx.CheckpointsMock
+               .Setup(c => c.GetCheckpoint(firstCheckpointHeight))
+               .Returns(checkpoint1);
+            ctx.CheckpointsMock
+               .Setup(c => c.GetCheckpoint(secondCheckpointHeight))
+               .Returns(checkpoint2);
+            ctx.CheckpointsMock
+               .Setup(c => c.GetCheckpoint(It.IsNotIn(firstCheckpointHeight, secondCheckpointHeight)))
+               .Returns((CheckpointInfo)null);
+            ctx.CheckpointsMock
+                .Setup(c => c.GetLastCheckpointHeight())
+                .Returns(secondCheckpointHeight);
 
-            // 5 unprocessed headers
-            var unprocessedHeaderCount = chainTip.Height - connectedNewHeadersPeer1.Consumed.Height;
-            unprocessedHeaderCount.Should().Be(5);
+            // Setup new chain that only covers first checkpoint but doesn't cover second checkpoint.
+            // Example: h1=h2=h3=(h4)=h5=h6=x7=x8=x9=x10.
+            const int newChainExtension = 4;
+            extendedChainTip = extendedChainTip.Previous; // walk back to block 6
+            extendedChainTip = extendedChainTip.Previous;
+            extendedChainTip = ctx.ExtendAChain(newChainExtension, extendedChainTip); 
+            List<BlockHeader> listOfNewChainHeaders = ctx.ChainedHeaderToList(extendedChainTip, extendedChainTip.Height);
 
-            List<BlockHeader> peer2Headers = listOfNewHeaders.GetRange(6, 5);
-            ConnectNewHeadersResult connectedNewHeadersPeer2 = chainedHeaderTree.ConnectNewHeaders(2, peer2Headers);
+            // First 5 blocks are presented by peer 1.
+            // DownloadTo should be set to a checkpoint 1. 
+            ConnectNewHeadersResult result = cht.ConnectNewHeaders(1, listOfNewChainHeaders.Take(5).ToList());
+            result.DownloadTo.HashBlock.Should().Be(checkpoint1.Hash);
 
-            // All headers consumed
-            Assert.True(connectedNewHeadersPeer2.Consumed.Height == chainTip.Height);
+            // Remaining 5 blocks are presented by peer 1 which do not cover checkpoint 2.
+            // InvalidHeaderException should be thrown.
+            Action connectAction = () =>
+            {
+                cht.ConnectNewHeaders(1, listOfNewChainHeaders.Skip(5).ToList());
+            };
+
+            connectAction.Should().Throw<InvalidHeaderException>();
+        }
+
+        /// <summary>
+        /// Issue 15 @ Checkpoint are disabled. Assume valid is enabled.
+        /// Headers that pass assume valid and meet it is presented.
+        /// Chain is marked for download.
+        /// Alternative chain that is of the same lenght is presented but it doesnt meet the assume valid- also marked as to download.
+        /// </summary>
+        [Fact]
+        public void ChainHasAssumeValidHeaderAndMarkedForDownloadWhenPresented_SecondChainWithoutAssumeValidAlsoMarkedForDownload()
+        {
+            // Chain header tree setup with disabled checkpoints.
+            // Initial chain has 2 blocks.
+            // Example: h1=h2.
+            var ctx = new TestContext();
+            const int initialChainSize = 2;
+            ChainedHeaderTree cht = ctx.CreateChainedHeaderTree();
+            ChainedHeader initialChainTip = ctx.ExtendAChain(initialChainSize);
+            cht.Initialize(initialChainTip, true);
+            ctx.ConsensusSettings.UseCheckpoints = false;
+
+            // Setup two alternative chains A and B of the same length.
+            const int presentedChainSize = 4;
+            ChainedHeader chainATip = ctx.ExtendAChain(presentedChainSize, initialChainTip); // ie. h1=h2=a1=a2=a3=a4
+            ChainedHeader chainBTip = ctx.ExtendAChain(presentedChainSize, initialChainTip); // ie. h1=h2=b1=b2=b3=b4
+            List<BlockHeader> listOfChainABlockHeaders = ctx.ChainedHeaderToList(chainATip, initialChainSize + presentedChainSize);
+            List<BlockHeader> listOfChainBBlockHeaders = ctx.ChainedHeaderToList(chainBTip, initialChainSize + presentedChainSize);
+
+            // Set "Assume Valid" to the 4th block of the chain A.
+            // Example h1=h2=a1=(a2)=a3=a4.
+            ctx.ConsensusSettings.BlockAssumedValid = listOfChainABlockHeaders[3].GetHash();
+
+            // Chain A is presented by peer 1. It meets "assume valid" hash and should
+            // be marked for a download.
+            ConnectNewHeadersResult connectNewHeadersResult = cht.ConnectNewHeaders(1, listOfChainABlockHeaders);
+            ChainedHeader chainedHeaderDownloadTo = connectNewHeadersResult.DownloadTo;
+            chainedHeaderDownloadTo.HashBlock.Should().Be(chainATip.HashBlock);
+            
+            // Chain B is presented by peer 2. It doesn't meet "assume valid" hash but should still
+            // be marked for a download.
+            connectNewHeadersResult = cht.ConnectNewHeaders(2, listOfChainBBlockHeaders);
+            chainedHeaderDownloadTo = connectNewHeadersResult.DownloadTo;
+            chainedHeaderDownloadTo.HashBlock.Should().Be(chainBTip.HashBlock);
         }
     }
 }

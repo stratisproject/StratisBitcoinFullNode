@@ -190,8 +190,10 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Fee
                 if (this.oldUnconfTxs[bucketIndex] > 0)
                     this.oldUnconfTxs[bucketIndex]--;
                 else
+                {
                     this.logger.LogInformation(
                         $"Blockpolicy error, mempool tx removed from >25 blocks,bucketIndex={bucketIndex} already");
+                }
             }
             else
             {
@@ -199,8 +201,10 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Fee
                 if (this.unconfTxs[blockIndex][bucketIndex] > 0)
                     this.unconfTxs[blockIndex][bucketIndex]--;
                 else
+                {
                     this.logger.LogInformation(
                         $"Blockpolicy error, mempool tx removed from blockIndex={blockIndex},bucketIndex={bucketIndex} already");
+                }
             }
         }
 
@@ -311,6 +315,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Fee
             {
                 txSum = txSum / 2;
                 for (int j = minBucket; j <= maxBucket; j++)
+                {
                     if (this.txCtAvg[j] < txSum)
                     {
                         txSum -= this.txCtAvg[j];
@@ -321,6 +326,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Fee
                         median = this.avg[j] / this.txCtAvg[j];
                         break;
                     }
+                }
             }
 
             this.logger.LogInformation(
