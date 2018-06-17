@@ -325,6 +325,83 @@ namespace Stratis.Bitcoin.Tests.Consensus
         }
 
         /// <summary>
+        /// Issue 8 @ Create chained header tree component #1321
+        /// We have a chain and peer B is on the best chain.
+        /// After that peer C presents an alternative chain with a forkpoint below B's Tip.
+        /// After that peer A prolongs C's chain (but sends all headers from the fork point) with a few valid and one invalid.
+        /// Make sure that C's chain is not removed - only headers after that.
+        /// </summary>
+        [Fact]
+        public void ConnectHeaders_MultiplePeersWithForks_CorrectTip()
+        {
+            var testContext = new TestContext();
+            ChainedHeaderTree chainedHeaderTree = testContext.CreateChainedHeaderTree();
+            ChainedHeader chainTip = testContext.ExtendAChain(10);
+            chainedHeaderTree.Initialize(chainTip, true);
+
+            List<BlockHeader> listOfExistingHeaders = testContext.ChainedHeaderToList(chainTip, 10);
+            chainedHeaderTree.ConnectNewHeaders(2, listOfExistingHeaders);
+            ChainedHeader peerTwoTip = chainedHeaderTree.GetChainedHeaderByPeerId(2);
+
+            // Peer B / Peer 2 is on the best chain.
+            peerTwoTip.HashBlock.Should().BeEquivalentTo(chainTip.HashBlock);
+            peerTwoTip.ChainWork.Should().BeEquivalentTo(chainTip.ChainWork);
+
+            // Peer C / Peer 3 presents an alternative chain with a forkpoint below B's Tip.
+            BlockHeader forkedBlock = testContext.GetNewBlock(chainTip.Previous.Previous).Header;
+            chainedHeaderTree.ConnectNewHeaders(3, new List<BlockHeader>() { forkedBlock });
+            ChainedHeader peerThreeTip = chainedHeaderTree.GetChainedHeaderByPeerId(3);
+
+            ChainedHeader fork = chainTip.FindFork(peerThreeTip);
+            fork.Height.Should().BeLessThan(peerTwoTip.Height);
+            
+            // Peer A / PEER_ONE prolongs C's chain.
+            const int numberOfBlocksToExtend = 7;
+            ChainedHeader peerOneTip = testContext.ExtendAChain(numberOfBlocksToExtend, peerThreeTip);
+            List < BlockHeader > listOfPeerOnesHeaders = testContext.ChainedHeaderToList(peerOneTip, numberOfBlocksToExtend + 2 /* (forked 2 back) */);
+            
+            // Sends all headers from the fork point
+            fork.HashBlock.Should().BeEquivalentTo(listOfPeerOnesHeaders[0].GetHash());
+
+            // With few valid and one invalid.
+            foreach (var header in listOfPeerOnesHeaders.GetRange(3, 6))
+            {
+                testContext.ChainStateMock.Setup(x => x.MarkBlockInvalid(header.GetHash(), null));
+            }
+
+            chainedHeaderTree.ConnectNewHeaders(1, listOfPeerOnesHeaders);
+
+            // Peer A / PEER_ONE's fork should now have the longest chain
+            peerOneTip.Height.Should().BeGreaterThan(peerThreeTip.Height);
+        }
+
+        /// <summary>
+        /// Issue 9 @ Create chained header tree component #1321
+        /// Check that everything is always consumed.
+        /// </summary>
+        [Fact]
+        public void ConnectHeaders_MultiplePeers_CheckEverythingIsConsumed()
+        {
+            var testContext = new TestContext();
+            ChainedHeaderTree chainedHeaderTree = testContext.CreateChainedHeaderTree();
+            ChainedHeader chainTip = testContext.ExtendAChain(11);
+            chainedHeaderTree.Initialize(chainTip, true);
+            List < BlockHeader > listOfNewHeaders = testContext.ChainedHeaderToList(chainTip, 11);
+
+            List<BlockHeader> peer1Headers = listOfNewHeaders.GetRange(0, 6);
+            ConnectNewHeadersResult connectedNewHeadersPeer1 = chainedHeaderTree.ConnectNewHeaders(1, peer1Headers);
+
+            // 5 unprocessed headers
+            Assert.True(chainTip.Height - connectedNewHeadersPeer1.Consumed.Height == 5);
+
+            List<BlockHeader> peer2Headers = listOfNewHeaders.GetRange(6, 5);
+            ConnectNewHeadersResult connectedNewHeadersPeer2 = chainedHeaderTree.ConnectNewHeaders(2, peer2Headers);
+
+            // All headers consumed
+            Assert.True(connectedNewHeadersPeer2.Consumed.Height == chainTip.Height);
+        }
+
+        /// <summary>
         /// Issue 13 @ Create 2 chains - chain A and chain B, where chain A has more chain work than chain B. Connect both
         /// chains to chain header tree. Consensus tip should be set to chain A. Now extend / update chain B to make it have
         /// more chain work. Attempt to connect chain B again. Consensus tip should be set to chain B.
