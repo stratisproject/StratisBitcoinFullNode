@@ -94,11 +94,10 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
 
         public override void Initialize()
         {
-            // subscribe to receiving blocks and transactions
-            this.blockSubscriberDisposable = this.signals.SubscribeForBlocks(new BlockObserver(this.walletSyncManager));
+            // Subscribe to receiving blocks and transactions.
+            this.blockSubscriberDisposable = this.signals.SubscribeForBlocks(new BlockObserver(this.walletSyncManager, this.crossChainTransactionMonitor));
             this.transactionSubscriberDisposable = this.signals.SubscribeForTransactions(new Notifications.TransactionObserver(this.walletSyncManager));
-            this.blockSubscriberDisposable = this.signals.SubscribeForBlocks(new BlockObserver(this.crossChainTransactionMonitor));
-
+            
             this.crossChainTransactionMonitor.Initialize(federationGatewaySettings);
             this.monitorChainSessionManager.Initialize();
 
@@ -160,6 +159,8 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
     {
         public static IFullNodeBuilder AddFederationGateway(this IFullNodeBuilder fullNodeBuilder)
         {
+            LoggingConfiguration.RegisterFeatureNamespace<FederationGatewayFeature>("federationgateway");
+
             fullNodeBuilder.ConfigureFeature(features =>
             {
                 features

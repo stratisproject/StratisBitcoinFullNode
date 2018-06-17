@@ -35,7 +35,7 @@ public class CounterChainSession
 
         internal bool AddPartial(string memberName, Transaction partialTransaction, string bossCard)
         {
-            this.logger.LogInformation("()");
+            this.logger.LogTrace("()");
             this.logger.LogInformation($"{memberName} Adding Partial to MonitorChainSession.");
             
             // Insert the partial transaction in the session.
@@ -61,7 +61,7 @@ public class CounterChainSession
 
             this.logger.LogInformation($"{memberName} ---------");
             this.logger.LogInformation($"{memberName} HasQuorum: {this.HasReachedQuorum}");
-            this.logger.LogInformation("(-)");
+            this.logger.LogTrace("(-)");
             
             // End output. 
             return this.HasReachedQuorum;

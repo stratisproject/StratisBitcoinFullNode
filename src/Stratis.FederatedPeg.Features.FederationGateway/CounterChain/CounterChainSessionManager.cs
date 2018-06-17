@@ -119,7 +119,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.CounterChain
         ///<inheritdoc/>
         public void ReceivePartial(uint256 sessionId, Transaction partialTransaction, uint256 bossCard)
         {
-            this.logger.LogInformation("()");
+            this.logger.LogTrace("()");
             this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} Receive Partial: {this.network.ToChain()}");
             this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} Receive Partial: BossCard - {bossCard}");
 
@@ -132,7 +132,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.CounterChain
                 this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} Receive Partial: Reached Quorum.");
                 BroadcastTransaction(counterChainSession);
             }
-            this.logger.LogInformation("(-)");
+            this.logger.LogTrace("(-)");
         }
 
         // If we have reached the quorum we can combine and broadcast the transaction. 
@@ -145,9 +145,8 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.CounterChain
                 return;
             }
 
-            this.logger.LogInformation("()");
+            this.logger.LogTrace("()");
             this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} Combining and Broadcasting transaction.");
-
             this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} Combine Partials");
             this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} {counterChainSession}");
             this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} {counterChainSession.PartialTransactions[0]}");
@@ -158,14 +157,14 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.CounterChain
 
             var combinedTransaction = this.federationWalletManager.GetWallet().CombinePartialTransactions(partials.ToArray());
             this.broadcastManager.BroadcastTransactionAsync(combinedTransaction).GetAwaiter().GetResult();
-            this.logger.LogInformation("(-)");
+            this.logger.LogTrace("(-)");
         }
 
         ///<inheritdoc/>
         public async Task<uint256> ProcessCounterChainSession(uint256 sessionId, Money amount, string destinationAddress)
         {
             //todo this method is doing too much. factor some of this into private methods after we added the counterchainid.
-            this.logger.LogInformation("()");
+            this.logger.LogTrace("()");
             this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} ProcessCounterChainSession: Amount        - {amount}");
             this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} ProcessCounterChainSession: TransactionId - {sessionId}");
             this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} ProcessCounterChainSession: Destination   - {destinationAddress}");
@@ -232,7 +231,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.CounterChain
                 {
                 }
             }
-            this.logger.LogInformation("(-)");
+            this.logger.LogTrace("(-)");
             return uint256.One;
         }
 
@@ -244,7 +243,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.CounterChain
 
             var exists = this.sessions.TryGetValue(sessionId, out var counterChainSession);
 
-            this.logger.LogInformation("()");
+            this.logger.LogTrace("()");
             this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} CounterChainSession exists: {exists} sessionId: {sessionId}");
 
             // We do not have this session.

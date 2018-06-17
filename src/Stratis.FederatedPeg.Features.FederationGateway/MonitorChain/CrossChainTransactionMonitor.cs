@@ -5,6 +5,7 @@ using NBitcoin;
 using NBitcoin.JsonConverters;
 using Newtonsoft.Json;
 using Stratis.Bitcoin.Interfaces;
+using Stratis.Bitcoin.Utilities;
 using Stratis.FederatedPeg.Features.FederationGateway.MonitorChain;
 
 namespace Stratis.FederatedPeg.Features.FederationGateway
@@ -86,6 +87,14 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
             IInitialBlockDownloadState initialBlockDownloadState,
             ICrossChainTransactionAuditor crossChainTransactionAuditor = null)
         {
+            Guard.NotNull(loggerFactory, nameof(loggerFactory));
+            Guard.NotNull(network, nameof(network));
+            Guard.NotNull(monitorChainSessionManager, nameof(monitorChainSessionManager));
+            Guard.NotNull(federationGatewaySettings, nameof(federationGatewaySettings));
+            Guard.NotNull(concurrentChain, nameof(concurrentChain));
+            Guard.NotNull(initialBlockDownloadState, nameof(initialBlockDownloadState));
+            Guard.NotNull(crossChainTransactionAuditor, nameof(crossChainTransactionAuditor));
+           
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.network = network;
             this.monitorChainSessionManager = monitorChainSessionManager;
@@ -101,7 +110,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
         /// </summary>
         public void Dispose()
         {
-            this.crossChainTransactionAuditor?.Dispose();
+            this.crossChainTransactionAuditor.Dispose();
         }
         
         /// <inheritdoc/>>
@@ -111,7 +120,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
             this.script = this.federationGatewaySettings.MultiSigAddress.ScriptPubKey;
 
             // Load the auditor if present.
-            this.crossChainTransactionAuditor?.Initialize();
+            this.crossChainTransactionAuditor.Initialize();
         }
 
         /// <inheritdoc/>>
@@ -127,13 +136,15 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
                 switch (opReturnDataType)
                 {
                     case OpReturnDataType.Unknown:
+                        this.logger.LogInformation($"Received transaction with unknown OP_RETURN data: {stringResult}. Transaction hash: {transaction.GetHash()}.");
                         continue;
                     case OpReturnDataType.Address:
+                        this.logger.LogInformation($"Processing received transaction with address: {stringResult}. Transaction hash: {transaction.GetHash()}.");
                         this.ProcessAddress(transaction.GetHash(), stringResult, txOut.Value, blockNumber, block.GetHash());
                         continue;
                     case OpReturnDataType.Hash:
-                        this.crossChainTransactionAuditor?.AddCounterChainTransactionId(transaction.GetHash(), uint256.Parse(stringResult));
-                        this.crossChainTransactionAuditor?.Commit();
+                        this.crossChainTransactionAuditor.AddCounterChainTransactionId(transaction.GetHash(), uint256.Parse(stringResult));
+                        this.crossChainTransactionAuditor.Commit();
                         this.logger.LogInformation($"AddCounterChainTransactionId: {stringResult} for transaction {transaction.GetHash()}.");
                         continue;
                     default:
@@ -162,8 +173,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
                 return;
             }
 
-            this.logger.LogDebug(
-                $"{this.federationGatewaySettings.MemberName} Monitor Processing Block: {blockNumber} on {this.network.ToChain()}");
+            this.logger.LogDebug($"{this.federationGatewaySettings.MemberName} Monitor Processing Block: {blockNumber} on {this.network.ToChain()}");
 
             foreach (var transaction in block.Transactions)
                 this.ProcessTransaction(transaction, block, blockNumber);
@@ -171,6 +181,8 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
 
         private void ProcessAddress(uint256 transactionHash, string destinationAddress, Money amount, int blockNumber, uint256 blockHash)
         {
+            this.logger.LogTrace("()");
+
             // This looks like a deposit or withdrawal transaction. Record the info.
             var crossChainTransactionInfo = new CrossChainTransactionInfo
             {
@@ -181,21 +193,18 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
                 TransactionHash = transactionHash
             };
 
-            this.crossChainTransactionAuditor?.AddCrossChainTransactionInfo(crossChainTransactionInfo);
+            this.crossChainTransactionAuditor.AddCrossChainTransactionInfo(crossChainTransactionInfo);
 
             // Commit audit as we know we have a new record. 
-            this.crossChainTransactionAuditor?.Commit();
+            this.crossChainTransactionAuditor.Commit();
 
             // Create a session to process the transaction.
             this.CreateSession(crossChainTransactionInfo);
 
             // Log Info for info/diagnostics.
-            this.logger.LogInformation("()");
-            this.logger.LogInformation(
-                $"{this.federationGatewaySettings.MemberName} Crosschain Transaction Found on : {this.network.ToChain()}");
-            this.logger.LogInformation(
-                $"{this.federationGatewaySettings.MemberName} CrosschainTransactionInfo: {crossChainTransactionInfo}");
-            this.logger.LogInformation("(-)");
+            this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} Crosschain Transaction Found on : {this.network.ToChain()}");
+            this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} CrosschainTransactionInfo: {crossChainTransactionInfo}");
+            this.logger.LogTrace("(-)");
         }
     }
 }

@@ -114,6 +114,8 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.MonitorChain
         // A session is added when the CrossChainTransactionMonitor identifies a transaction that needs to be completed cross chain.
         public void CreateMonitorSession(CrossChainTransactionInfo crossChainTransactionInfo)
         {
+            this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(crossChainTransactionInfo.CrossChainTransactionId), crossChainTransactionInfo.CrossChainTransactionId, nameof(crossChainTransactionInfo.DestinationAddress), crossChainTransactionInfo.DestinationAddress);
+
             var monitorChainSession = new MonitorChainSession(
                 DateTime.Now,
                 crossChainTransactionInfo.TransactionHash,
@@ -128,21 +130,22 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.MonitorChain
             );
 
             this.monitorSessions.TryAdd(monitorChainSession.SessionId, monitorChainSession);
-
-            this.logger.LogInformation("()");
             this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} MonitorChainSession  added: {monitorChainSession}");
-            this.logger.LogInformation("(-)");
-
+            
             // Call to the counter chain and tell it to also create a session.
             this.CreateSessionOnCounterChain(this.federationGatewaySettings.CounterChainApiPort,
                 crossChainTransactionInfo.TransactionHash,
                 crossChainTransactionInfo.Amount,
                 crossChainTransactionInfo.DestinationAddress);
+
+            this.logger.LogTrace("(-)");
         }
 
         // Calls into the counter chain and registers the session there.
         private void CreateSessionOnCounterChain(int apiPortForSidechain, uint256 transactionId, Money amount, string destination)
         {
+            this.logger.LogTrace("({0}:'{1}',{2}:'{3}',{4}:'{5}',{6}:'{7}')", nameof(apiPortForSidechain), apiPortForSidechain, nameof(transactionId), transactionId, nameof(amount), amount, nameof(destination), destination);
+
             var createCounterChainSessionRequest = new CreateCounterChainSessionRequest
             {
                 SessionId = transactionId,
@@ -155,18 +158,19 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.MonitorChain
                 client.DefaultRequestHeaders.Accept.Clear();
                 client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
 
-                var uri = new Uri(
-                    $"http://localhost:{apiPortForSidechain}/api/FederationGateway/create-session-oncounterchain");
+                var uri = new Uri($"http://localhost:{apiPortForSidechain}/api/FederationGateway/create-session-oncounterchain");
                 var request = new JsonContent(createCounterChainSessionRequest);
                 var httpResponseMessage = client.PostAsync(uri, request).Result;
                 string json = httpResponseMessage.Content.ReadAsStringAsync().Result;
                 //todo: handler error
             }
+
+            this.logger.LogTrace("(-)");
         }
 
         private async Task RunSessionAsync()
         {
-            this.logger.LogInformation("()");
+            this.logger.LogTrace("()");
             this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} RunSessionAsync()");
 
             // We don't process sessions if our chain is not past IBD.
@@ -184,10 +188,8 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.MonitorChain
 
                 var time = DateTime.Now;
 
-                this.logger.LogInformation(
-                    $"{this.federationGatewaySettings.MemberName} RunSessionAsync() MyBossCard:{monitorChainSession.BossCard}");
-                this.logger.LogInformation(
-                    $"{this.federationGatewaySettings.MemberName} At {time} AmITheBoss: {monitorChainSession.AmITheBoss(time)} WhoHoldsTheBossCard: {monitorChainSession.WhoHoldsTheBossCard(time)}");
+                this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} RunSessionAsync() MyBossCard:{monitorChainSession.BossCard}");
+                this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} At {time} AmITheBoss: {monitorChainSession.AmITheBoss(time)} WhoHoldsTheBossCard: {monitorChainSession.WhoHoldsTheBossCard(time)}");
 
                 if (monitorChainSession.Status == SessionStatus.Created && monitorChainSession.AmITheBoss(time))
                 {
@@ -227,6 +229,8 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.MonitorChain
         // Calls into the counter chain and sets off the process to build the multi-sig transaction.
         private async Task<uint256> CreateCounterChainSession(int apiPortForSidechain, Money amount, string destination, uint256 transactionId)
         {
+            this.logger.LogTrace("({0}:'{1}',{2}:'{3}',{4}:'{5}',{6}:'{7}')", nameof(apiPortForSidechain), apiPortForSidechain, nameof(transactionId), transactionId, nameof(amount), amount, nameof(destination), destination);
+
             var createPartialTransactionSessionRequest = new CreateCounterChainSessionRequest
             {
                 SessionId = transactionId,
@@ -239,13 +243,14 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.MonitorChain
                 client.DefaultRequestHeaders.Accept.Clear();
                 client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
 
-                var uri = new Uri(
-                    $"http://localhost:{apiPortForSidechain}/api/FederationGateway/request-counter-completion");
+                var uri = new Uri($"http://localhost:{apiPortForSidechain}/api/FederationGateway/request-counter-completion");
                 var request = new JsonContent(createPartialTransactionSessionRequest);
                 var httpResponseMessage = await client.PostAsync(uri, request);
                 string json = await httpResponseMessage.Content.ReadAsStringAsync();
                 return JsonConvert.DeserializeObject<uint256>(json, new UInt256JsonConverter());
             }
+
+            this.logger.LogTrace("(-)");
         }
     }
 }
