@@ -166,7 +166,6 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Controllers
             {
                 var destination = BitcoinAddress.Create(request.DestinationAddress, this.network).ScriptPubKey;
                 var context = new Wallet.TransactionBuildContext(
-                    new WalletAccountReference(request.WalletName, request.AccountName),
                     new[] { new Wallet.Recipient { Amount = request.Amount, ScriptPubKey = destination } }.ToList())
                 {
                     FeeType = FeeParser.Parse(request.FeeType),
@@ -203,7 +202,6 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Controllers
             {
                 var destination = BitcoinAddress.Create(request.DestinationAddress, this.network).ScriptPubKey;
                 var context = new Wallet.TransactionBuildContext(
-                    new WalletAccountReference(request.WalletName, request.AccountName),
                     new[] { new Wallet.Recipient { Amount = request.Amount, ScriptPubKey = destination } }.ToList(),
                     request.Password, request.OpReturnData)
                 {
