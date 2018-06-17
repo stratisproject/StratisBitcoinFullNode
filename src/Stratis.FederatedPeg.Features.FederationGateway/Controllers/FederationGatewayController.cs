@@ -58,7 +58,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Controllers
             }
             catch (Exception e)
             {
-                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, $"Could not initialize sidechain:{e.Message}", e.ToString());
+                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, $"Could not create session on counter chain: {e.Message}", e.ToString());
             }
         }
 
@@ -70,9 +70,11 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Controllers
         /// <returns>An ActionResult.</returns>
         [Route("request-counter-completion")]
         [HttpPost]
-        public async Task<IActionResult> CreatePartialTransactionSession([FromBody] CreateCounterChainSessionRequest createCounterChainSessionRequest)
+        public IActionResult CreatePartialTransactionSession([FromBody] CreateCounterChainSessionRequest createCounterChainSessionRequest)
         {
             Guard.NotNull(createCounterChainSessionRequest, nameof(createCounterChainSessionRequest));
+
+            this.logger.LogTrace("({0}:'{1}',{2}:'{3}',{4}:'{5}')", nameof(createCounterChainSessionRequest.SessionId), createCounterChainSessionRequest.SessionId, nameof(createCounterChainSessionRequest.DestinationAddress), createCounterChainSessionRequest.DestinationAddress, nameof(createCounterChainSessionRequest.Amount), createCounterChainSessionRequest.Amount);
 
             // checks the request is valid
             if (!this.ModelState.IsValid)
@@ -90,7 +92,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Controllers
             }
             catch (Exception e)
             {
-                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, $"Could not initialize sidechain:{e.Message}", e.ToString());
+                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, $"Could not create partial transaction session: {e.Message}", e.ToString());
             }
         }
 

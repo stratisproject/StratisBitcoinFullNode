@@ -144,7 +144,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
             var wallet = this.federationWalletManager.GetWallet();
 
             benchLog.AppendLine();
-            benchLog.AppendLine("====== Federation Wallets======");
+            benchLog.AppendLine("====== Federation Wallet ======");
 
             var items = this.federationWalletManager.GetSpendableTransactionsInWallet(1);
             benchLog.AppendLine("Federation Wallet: ".PadRight(LoggingConfiguration.ColumnLength) + " Confirmed balance: " + new Money(items.Sum(s => s.Transaction.Amount)).ToString());
