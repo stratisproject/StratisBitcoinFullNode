@@ -18,19 +18,16 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Notifications
         private readonly IFederationWalletSyncManager walletSyncManager;
 
         /// <summary>
-        /// Initialize the block observer with the monitor.
+        /// Initialize the block observer with the wallet manager and the cross chain monitor.
         /// </summary>
         /// <param name="crossChainTransactionMonitor"></param>
-        public BlockObserver(ICrossChainTransactionMonitor crossChainTransactionMonitor)
-        {
-            this.crossChainTransactionMonitor = crossChainTransactionMonitor;
-        }
-
-        public BlockObserver(IFederationWalletSyncManager walletSyncManager)
+        public BlockObserver(IFederationWalletSyncManager walletSyncManager, ICrossChainTransactionMonitor crossChainTransactionMonitor)
         {
             Guard.NotNull(walletSyncManager, nameof(walletSyncManager));
+            Guard.NotNull(crossChainTransactionMonitor, nameof(crossChainTransactionMonitor));
 
             this.walletSyncManager = walletSyncManager;
+            this.crossChainTransactionMonitor = crossChainTransactionMonitor;
         }
 
         /// <summary>
