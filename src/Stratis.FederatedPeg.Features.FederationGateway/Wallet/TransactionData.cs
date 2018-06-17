@@ -82,12 +82,6 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Wallet
         public bool? IsPropagated { get; set; }
 
         /// <summary>
-        /// Gets or sets the full transaction object.
-        /// </summary>
-        [JsonIgnore]
-        public Transaction Transaction => Transaction.Parse(this.Hex);
-
-        /// <summary>
         /// The details of the transaction in which the output referenced in this transaction is spent.
         /// </summary>
         [JsonProperty(PropertyName = "spendingDetails", NullValueHandling = NullValueHandling.Ignore)]
@@ -99,6 +93,11 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Wallet
         public bool IsConfirmed()
         {
             return this.BlockHeight != null;
+        }
+
+        public Transaction GetFullTransaction(Network network)
+        {
+            return Transaction.Load(this.Hex, network);
         }
 
         /// <summary>

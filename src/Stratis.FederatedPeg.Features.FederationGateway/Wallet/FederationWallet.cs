@@ -128,12 +128,14 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Wallet
 
             foreach (TransactionData tx in this.MultiSigAddress.Transactions)
             {
-                foreach (var output in tx.Transaction.Outputs.AsIndexedOutputs())
+                Transaction trx = tx.GetFullTransaction(this.Network);
+
+                foreach (var output in trx.Outputs.AsIndexedOutputs())
                 {
                     foreach (var input in partial.Inputs)
                     {
                         if (input.PrevOut.Hash == tx.Id && input.PrevOut.N == output.N)
-                            fundingTransactions.Add(tx.Transaction);
+                            fundingTransactions.Add(trx);
                     }
                 }
             }
@@ -183,12 +185,13 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Wallet
 
             foreach (TransactionData tx in this.MultiSigAddress.Transactions)
             {
-                foreach (var output in tx.Transaction.Outputs.AsIndexedOutputs())
+                Transaction trx = tx.GetFullTransaction(this.Network);
+                foreach (var output in trx.Outputs.AsIndexedOutputs())
                 {
                     foreach (var input in firstPartial.Inputs)
                     {
                         if (input.PrevOut.Hash == tx.Id && input.PrevOut.N == output.N)
-                            fundingTransactions.Add(tx.Transaction);
+                            fundingTransactions.Add(trx);
                     }
                 }
             }
