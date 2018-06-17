@@ -477,7 +477,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Wallet
                     CreationTime = DateTimeOffset.FromUnixTimeSeconds(block?.Header.Time ?? transaction.Time),
                     Index = index,
                     ScriptPubKey = script,
-                    Hex = null,
+                    Hex = transaction.ToHex(),
                     IsPropagated = isPropagated
                 };
 
@@ -594,7 +594,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Wallet
                     Payments = payments,
                     CreationTime = DateTimeOffset.FromUnixTimeSeconds(block?.Header.Time ?? transaction.Time),
                     BlockHeight = blockHeight,
-                    Hex = null,
+                    Hex = transaction.ToHex(),
                     IsCoinStake = transaction.IsCoinStake == false ? (bool?)null : true
                 };
 
