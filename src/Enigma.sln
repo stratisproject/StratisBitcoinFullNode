@@ -7,8 +7,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FedKeyPairGen", "FedKeyPair
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.FederatedPeg.IntegrationTests", "Stratis.FederatedPeg.IntegrationTests\Stratis.FederatedPeg.IntegrationTests.csproj", "{EB41C31A-FF32-4164-822D-43D1D9AC7FEA}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.FederatedPeg", "Stratis.FederatedPeg\Stratis.FederatedPeg.csproj", "{E53C0EF3-9E1C-443F-9FE2-A81037F74135}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.FederatedPeg.Tests", "Stratis.FederatedPeg.Tests\Stratis.FederatedPeg.Tests.csproj", "{C08CA036-D47D-40CF-83E3-F09EF5EC7515}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.FederatedPeg.Features.FederationGateway", "Stratis.FederatedPeg.Features.FederationGateway\Stratis.FederatedPeg.Features.FederationGateway.csproj", "{2B5A4BFC-1894-47E6-B66B-529A1E796ADF}"
@@ -25,6 +23,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.FederatedSidechains
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.Sidechains.Networks", "Stratis.Sidechains.Networks\Stratis.Sidechains.Networks.csproj", "{C5D390A9-1E08-47DE-BAAB-0AA9FC69CCC2}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{EEF9F276-23FB-4CC2-AF47-0E646EB2F6F1}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -39,10 +39,6 @@ Global
 		{EB41C31A-FF32-4164-822D-43D1D9AC7FEA}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{EB41C31A-FF32-4164-822D-43D1D9AC7FEA}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{EB41C31A-FF32-4164-822D-43D1D9AC7FEA}.Release|Any CPU.Build.0 = Release|Any CPU
-		{E53C0EF3-9E1C-443F-9FE2-A81037F74135}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{E53C0EF3-9E1C-443F-9FE2-A81037F74135}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{E53C0EF3-9E1C-443F-9FE2-A81037F74135}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{E53C0EF3-9E1C-443F-9FE2-A81037F74135}.Release|Any CPU.Build.0 = Release|Any CPU
 		{C08CA036-D47D-40CF-83E3-F09EF5EC7515}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{C08CA036-D47D-40CF-83E3-F09EF5EC7515}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C08CA036-D47D-40CF-83E3-F09EF5EC7515}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -78,6 +74,12 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{EB41C31A-FF32-4164-822D-43D1D9AC7FEA} = {EEF9F276-23FB-4CC2-AF47-0E646EB2F6F1}
+		{C08CA036-D47D-40CF-83E3-F09EF5EC7515} = {EEF9F276-23FB-4CC2-AF47-0E646EB2F6F1}
+		{3D106928-3A8E-4EB1-9F9A-45856DBAA16B} = {EEF9F276-23FB-4CC2-AF47-0E646EB2F6F1}
+		{0C1E95D8-5048-4660-85F8-58BB303897AE} = {EEF9F276-23FB-4CC2-AF47-0E646EB2F6F1}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {034BDA2C-1CEE-4128-B444-CE1D425CB11C}

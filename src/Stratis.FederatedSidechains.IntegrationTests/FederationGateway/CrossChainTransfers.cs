@@ -24,6 +24,7 @@ using Stratis.Bitcoin.IntegrationTests.Common.Runners;
 using Stratis.Bitcoin.Tests.Common.TestFramework;
 using Xunit;
 using Xunit.Abstractions;
+using Stratis.FederatedPeg.Features.FederationGateway.NetworkHelpers;
 // Disable warnings about "this" qualifier to make the Specification more readable
 // ReSharper disable ArrangeThisQualifier
 

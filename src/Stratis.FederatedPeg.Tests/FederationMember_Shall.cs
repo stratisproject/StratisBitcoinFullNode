@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using FluentAssertions;
 using NBitcoin;
+using Stratis.FederatedPeg.Features.FederationGateway.Federation;
 using Xunit;
 
 namespace Stratis.FederatedPeg.Tests

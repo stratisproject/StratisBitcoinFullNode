@@ -1,5 +1,6 @@
 ﻿using FluentAssertions;
 using NBitcoin;
+using Stratis.FederatedPeg.Features.FederationGateway.NetworkHelpers;
 using Stratis.Sidechains.Networks;
 using Xunit;
 

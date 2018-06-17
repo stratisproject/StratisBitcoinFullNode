@@ -21,13 +21,16 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Controllers
     [Route("api/[controller]")]
     public class FederationGatewayController : Controller
     {
+        /// <summary>Instance logger.</summary>
+        private readonly ILogger logger;
+
         private readonly ICounterChainSessionManager counterChainSessionManager;
 
         public FederationGatewayController(
             ILoggerFactory loggerFactory, 
             ICounterChainSessionManager counterChainSessionManager)
         {
-            loggerFactory.CreateLogger(this.GetType().FullName);
+            this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.counterChainSessionManager = counterChainSessionManager;
         }
 
@@ -36,6 +39,8 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Controllers
         public IActionResult CreateSessionOnCounterChain([FromBody] CreateCounterChainSessionRequest createCounterChainSessionRequest)
         {
             Guard.NotNull(createCounterChainSessionRequest, nameof(createCounterChainSessionRequest));
+
+            this.logger.LogTrace("({0}:'{1}',{2}:'{3}',{4}:'{5}')", nameof(createCounterChainSessionRequest.SessionId), createCounterChainSessionRequest.SessionId, nameof(createCounterChainSessionRequest.DestinationAddress), createCounterChainSessionRequest.DestinationAddress, nameof(createCounterChainSessionRequest.Amount), createCounterChainSessionRequest.Amount);
 
             // checks the request is valid
             if (!this.ModelState.IsValid)

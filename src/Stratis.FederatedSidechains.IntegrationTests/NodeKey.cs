@@ -1,5 +1,6 @@
 ﻿using System.IO;
 using Stratis.FederatedPeg;
+using Stratis.FederatedPeg.Features.FederationGateway.NetworkHelpers;
 
 namespace Stratis.FederatedSidechains.IntegrationTests
 {
