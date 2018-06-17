@@ -145,7 +145,9 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
             public Money HIGHERFEE = 4 * Money.COIN;
             public int baseheight;
             public CachedCoinView cachedCoinView;
+            public ISmartContractResultRefundProcessor refundProcessor;
             public ContractStateRepositoryRoot stateRoot;
+            public ISmartContractResultTransferProcessor transferProcessor;
             public SmartContractValidator validator;
             public IKeyEncodingStrategy keyEncodingStrategy;
             public ReflectionSmartContractExecutorFactory executorFactory;
@@ -203,7 +205,10 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
 
                 this.receiptStorage = new DBreezeContractReceiptStorage(new DataFolder(folder));
 
-                this.executorFactory = new ReflectionSmartContractExecutorFactory(this.keyEncodingStrategy, loggerFactory, this.network, this.validator);
+                this.refundProcessor = new SmartContractResultRefundProcessor(loggerFactory);
+                this.transferProcessor = new SmartContractResultTransferProcessor(loggerFactory, this.network);
+
+                this.executorFactory = new ReflectionSmartContractExecutorFactory(this.keyEncodingStrategy, loggerFactory, this.network, this.refundProcessor, this.transferProcessor, this.validator);
 
                 var networkPeerFactory = new NetworkPeerFactory(this.network, dateTimeProvider, loggerFactory, new PayloadProvider(), new SelfEndpointTracker());
 
@@ -420,6 +425,32 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
         }
 
         /// <summary>
+        /// Send funds with create
+        /// </summary>
+        [Fact]
+        public async Task SmartContracts_CreateWithFunds_Success_Async()
+        {
+            TestContext context = new TestContext();
+            await context.InitializeAsync();
+
+            ulong gasPrice = 1;
+            Gas gasLimit = (Gas)1000000;
+            var gasBudget = gasPrice * gasLimit;
+
+            SmartContractCompilationResult compilationResult = SmartContractCompiler.CompileFile("SmartContracts/StorageDemo.cs");
+            Assert.True(compilationResult.Success);
+
+            var contractCarrier = SmartContractCarrier.CreateContract(1, compilationResult.Compilation, gasPrice, gasLimit);
+            Transaction tx = this.AddTransactionToMempool(context, contractCarrier, context.txFirst[0].GetHash(), 100_000_000, gasBudget);
+            BlockTemplate pblocktemplate = await this.BuildBlockAsync(context);
+            uint160 newContractAddress = tx.GetNewContractAddress();
+            Assert.NotNull(context.stateRoot.GetCode(newContractAddress));
+            Assert.True(pblocktemplate.Block.Transactions[0].Outputs[1].Value > 0); // gas refund
+            var unspent = context.stateRoot.GetUnspent(newContractAddress);
+            context.mempool.Clear();
+        }
+
+        /// <summary>
         /// Test that contract correctly send funds to 2 people inside one contract call
         /// </summary>
         [Fact]
@@ -471,6 +502,36 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
             Assert.Equal(fundsToSend * 2 - 400, (ulong)pblocktemplate3.Block.Transactions[2].Outputs[0].Value); // First txout should be the change to the contract, with a value of the value given twice, - 400 (100 for each transfer)
             Assert.Equal(100, pblocktemplate3.Block.Transactions[2].Outputs[1].Value); // Second txout should be the transfer to a new person, with a value of 100
             Assert.Equal(100, pblocktemplate3.Block.Transactions[2].Outputs[2].Value); // Third txout should be the transfer to a new person, with a value of 100
+        }
+
+        /// <summary>
+        /// Tests that contracts manage their UTXOs correctly when not sending funds or receiving funds.
+        /// </summary>
+        [Fact]
+        public async Task SmartContracts_SendValue_NoTransfers_Async()
+        {
+            var context = new TestContext();
+            await context.InitializeAsync();
+
+            ulong gasPrice = 1;
+            Gas gasLimit = (Gas)1000000;
+            var gasBudget = gasPrice * gasLimit;
+
+            SmartContractCompilationResult compilationResult = SmartContractCompiler.CompileFile("SmartContracts/TransferTest.cs");
+            Assert.True(compilationResult.Success);
+
+            SmartContractCarrier contractTransaction = SmartContractCarrier.CreateContract(1, compilationResult.Compilation, gasPrice, gasLimit);
+            Transaction tx = this.AddTransactionToMempool(context, contractTransaction, context.txFirst[0].GetHash(), 0, gasBudget);
+            BlockTemplate pblocktemplate = await this.BuildBlockAsync(context);
+            uint160 newContractAddress = tx.GetNewContractAddress();
+            Assert.NotNull(context.stateRoot.GetCode(newContractAddress));
+            Assert.True(pblocktemplate.Block.Transactions[0].Outputs[1].Value > 0); // gas refund
+
+            context.mempool.Clear();
+
+            var transferTransaction = SmartContractCarrier.CallContract(1, newContractAddress, "DoNothing", gasPrice, gasLimit);
+            BlockTemplate pblocktemplate3 = await this.AddTransactionToMemPoolAndBuildBlockAsync(context, transferTransaction, context.txFirst[2].GetHash(), 100_000, gasBudget);
+            Assert.Equal(2, pblocktemplate3.Block.Transactions.Count); // In this case we are sending 0, and doing no transfers, so we don't need a condensing transaction
         }
 
         /// <summary>

@@ -10,7 +10,7 @@ namespace Stratis.SmartContracts.Core.State.AccountAbstractionLayer
     /// When a contract sends or receives funds, we need to rearrange the UTXOs addressed to it and to others so everyone ends up with the correct balances.
     /// The condensing transaction aids this process.
     /// </summary>
-    public class CondensingTx
+    public class TransactionCondenser
     {
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
@@ -53,46 +53,17 @@ namespace Stratis.SmartContracts.Core.State.AccountAbstractionLayer
 
         private readonly Network network;
 
-        public CondensingTx(uint160 contractAddress, ILoggerFactory loggerFactory, Network network, ISmartContractTransactionContext transactionContext)
+        public TransactionCondenser(uint160 contractAddress, ILoggerFactory loggerFactory, IList<TransferInfo> transfers, IContractStateRepository stateRepository, Network network, ISmartContractTransactionContext transactionContext)
         {
             this.contractAddress = contractAddress;
             this.logger = loggerFactory.CreateLogger(this.GetType());
-
             this.network = network;
             this.transactionContext = transactionContext;
-
+            this.stateRepository = stateRepository;
+            this.transfers = transfers;
             this.nVouts = new Dictionary<uint160, uint>();
             this.txBalances = new Dictionary<uint160, ulong>();
             this.unspents = new List<ContractUnspentOutput>();
-        }
-
-        public CondensingTx(uint160 contractAddress, ILoggerFactory loggerFactory, IList<TransferInfo> transfers, IContractStateRepository stateRepository, Network network, ISmartContractTransactionContext transactionContext)
-            : this(contractAddress, loggerFactory, network, transactionContext)
-        {
-            this.stateRepository = stateRepository;
-            this.transfers = transfers;
-        }
-
-        /// <summary>
-        /// Should contract execution fail, we need to send the money, that was
-        /// sent to contract, back to the contract's sender.
-        /// </summary>
-        public Transaction CreateRefundTransaction()
-        {
-            var tx = new Transaction();
-
-            //Spend the input on the contract----------------------------------
-            var outpoint = new OutPoint(this.transactionContext.TransactionHash, this.transactionContext.Nvout);
-            tx.AddInput(new TxIn(outpoint, new Script(OpcodeType.OP_SPEND)));
-            //-----------------------------------------------------------------
-
-            //Create refund unspent TxOut--------------------------------------
-            Script script = this.CreateScript(this.transactionContext.Sender);
-            var txOut = new TxOut(new Money(this.transactionContext.TxOutValue), script);
-            tx.Outputs.Add(txOut);
-            //-----------------------------------------------------------------
-
-            return tx;
         }
 
         /// <summary>
@@ -207,8 +178,7 @@ namespace Stratis.SmartContracts.Core.State.AccountAbstractionLayer
         /// <param name="address">The address of the receiver.</param>
         private Script CreateScript(uint160 address)
         {
-            Script script = PayToPubkeyHashTemplate.Instance.GenerateScriptPubKey(new KeyId(address));
-            return script;
+            return PayToPubkeyHashTemplate.Instance.GenerateScriptPubKey(new KeyId(address));
         }
 
         private void SetupBalances()

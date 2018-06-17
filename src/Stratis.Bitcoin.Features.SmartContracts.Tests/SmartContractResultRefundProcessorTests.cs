@@ -9,16 +9,18 @@ using Xunit;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 {
-    public sealed class SmartContractExecutorResultProcessorTests
+    public sealed class SmartContractResultRefundProcessorTests
     {
         private readonly ILoggerFactory loggerFactory;
         private readonly Network network;
+        private readonly ISmartContractResultRefundProcessor refundProcessor;
 
-        public SmartContractExecutorResultProcessorTests()
+        public SmartContractResultRefundProcessorTests()
         {
             this.loggerFactory = new ExtendedLoggerFactory();
             this.loggerFactory.AddConsoleWithFilters();
             this.network = Network.SmartContractsRegTest;
+            this.refundProcessor = new SmartContractResultRefundProcessor(this.loggerFactory);
         }
 
         [Fact]
@@ -34,7 +36,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 GasConsumed = (Gas)950
             };
 
-            new SmartContractExecutorResultProcessor(result, this.loggerFactory).Process(carrier, new Money(10500));
+            this.refundProcessor.Process(result, carrier, new Money(10500));
 
             Assert.Equal((ulong)6450, result.Fee);
             Assert.Single(result.Refunds);
@@ -55,7 +57,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 GasConsumed = (Gas)5000
             };
 
-            new SmartContractExecutorResultProcessor(result, this.loggerFactory).Process(carrier, new Money(10500));
+            this.refundProcessor.Process(result, carrier, new Money(10500));
 
             Assert.Equal((ulong)10500, result.Fee);
             Assert.Empty(result.Refunds);
@@ -75,7 +77,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 GasConsumed = (Gas)5000
             };
 
-            new SmartContractExecutorResultProcessor(result, this.loggerFactory).Process(carrier, new Money(10500));
+            this.refundProcessor.Process(result, carrier, new Money(10500));
 
             Assert.Equal((ulong)10500, result.Fee);
             Assert.Empty(result.Refunds);

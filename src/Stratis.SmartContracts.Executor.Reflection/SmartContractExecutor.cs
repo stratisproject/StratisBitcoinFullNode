@@ -1,12 +1,9 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Text;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.State;
-using Stratis.SmartContracts.Core.State.AccountAbstractionLayer;
 using Stratis.SmartContracts.Core.Validation;
 using Stratis.SmartContracts.Executor.Reflection.Compilation;
 using Block = Stratis.SmartContracts.Core.Block;
@@ -22,7 +19,9 @@ namespace Stratis.SmartContracts.Executor.Reflection
         protected readonly SmartContractCarrier carrier;
         protected readonly IGasMeter gasMeter;
         protected readonly Network network;
+        protected readonly ISmartContractResultRefundProcessor refundProcessor;
         protected readonly IContractStateRepository stateSnapshot;
+        protected readonly ISmartContractResultTransferProcessor transferProcessor;
         protected readonly SmartContractValidator validator;
         protected readonly IKeyEncodingStrategy keyEncodingStrategy;
         private readonly ILogger logger;
@@ -35,8 +34,10 @@ namespace Stratis.SmartContracts.Executor.Reflection
             IKeyEncodingStrategy keyEncodingStrategy,
             ILoggerFactory loggerFactory,
             Network network,
+            ISmartContractResultRefundProcessor refundProcessor,
             IContractStateRepository stateSnapshot,
             ISmartContractTransactionContext transactionContext,
+            ISmartContractResultTransferProcessor transferProcessor,
             SmartContractValidator validator)
         {
             this.carrier = SmartContractCarrier.Deserialize(transactionContext);
@@ -45,8 +46,10 @@ namespace Stratis.SmartContracts.Executor.Reflection
             this.loggerFactory = loggerFactory;
             this.logger = loggerFactory.CreateLogger(this.GetType());
             this.network = network;
+            this.refundProcessor = refundProcessor;
             this.stateSnapshot = stateSnapshot.StartTracking();
             this.transactionContext = transactionContext;
+            this.transferProcessor = transferProcessor;
             this.validator = validator;
         }
 
@@ -82,12 +85,23 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
         public abstract void OnExecute();
 
+
         /// <summary>
         /// Any logic that should happen after contract execution has taken place happens here.
         /// </summary>
         private void PostExecute()
         {
-            new SmartContractExecutorResultProcessor(this.Result, this.loggerFactory).Process(this.carrier, this.transactionContext.MempoolFee);
+            this.transferProcessor.Process(this.carrier, this.Result, this.stateSnapshot, this.transactionContext);
+            this.refundProcessor.Process(this.Result, this.carrier, this.transactionContext.MempoolFee);
+
+            if (this.Result.Revert)
+            {
+                this.stateSnapshot.Rollback();
+            }
+            else
+            {
+                this.stateSnapshot.Commit();
+            }
         }
 
         internal void LogExecutionContext(ILogger logger, IBlock block, IMessage message, uint160 contractAddress, SmartContractCarrier carrier)
@@ -114,10 +128,12 @@ namespace Stratis.SmartContracts.Executor.Reflection
             IKeyEncodingStrategy keyEncodingStrategy,
             ILoggerFactory loggerFactory,
             Network network,
+            ISmartContractResultRefundProcessor refundProcessor,
             IContractStateRepository stateSnapshot,
             ISmartContractTransactionContext transactionContext,
+            ISmartContractResultTransferProcessor transferProcessor,
             SmartContractValidator validator)
-            : base(keyEncodingStrategy, loggerFactory, network, stateSnapshot, transactionContext, validator)
+            : base(keyEncodingStrategy, loggerFactory, network, refundProcessor, stateSnapshot, transactionContext, transferProcessor, validator)
         {
             this.logger = loggerFactory.CreateLogger(this.GetType());
         }
@@ -178,9 +194,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
             this.Result.NewContractAddress = newContractAddress;
 
-            // To start with, no value transfers on create. Can call other contracts but send 0 only.
             this.stateSnapshot.SetCode(newContractAddress, this.carrier.ContractExecutionCode);
-            this.stateSnapshot.Commit();
 
             this.logger.LogTrace("(-):{0}={1}", nameof(newContractAddress), newContractAddress);
         }
@@ -194,10 +208,12 @@ namespace Stratis.SmartContracts.Executor.Reflection
             IKeyEncodingStrategy keyEncodingStrategy,
             ILoggerFactory loggerFactory,
             Network network,
+            ISmartContractResultRefundProcessor refundProcessor,
             IContractStateRepository stateSnapshot,
             ISmartContractTransactionContext transactionContext,
+            ISmartContractResultTransferProcessor transferProcessor,
             SmartContractValidator validator)
-            : base(keyEncodingStrategy, loggerFactory, network, stateSnapshot, transactionContext, validator)
+            : base(keyEncodingStrategy, loggerFactory, network, refundProcessor, stateSnapshot, transactionContext, transferProcessor, validator)
         {
             this.logger = loggerFactory.CreateLogger(this.GetType());
         }
@@ -216,17 +232,6 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
             // Execute the call to the contract.
             this.Result = this.CreateContextAndExecute(this.carrier.ContractAddress, contractExecutionCode, this.carrier.MethodName);
-
-            if (this.Result.Revert)
-            {
-                this.logger.LogTrace("(-)[CALL_CONTRACT_FAILED]:{0}={1}", nameof(this.carrier.ContractAddress), this.carrier.ContractAddress);
-                this.RevertExecution();
-            }
-            else
-            {
-                this.logger.LogTrace("(-)[CALL_CONTRACT_SUCCEEDED]:{0}={1}", nameof(this.carrier.ContractAddress), this.carrier.ContractAddress);
-                this.CommitExecution(this.Result.InternalTransfers);
-            }
         }
 
         private ISmartContractExecutionResult CreateContextAndExecute(uint160 contractAddress, byte[] contractCode, string methodName)
@@ -263,47 +268,6 @@ namespace Stratis.SmartContracts.Executor.Reflection
             this.logger.LogTrace("(-)");
 
             return result;
-        }
-
-        /// <summary>
-        /// Contract execution completed successfully, commit state.
-        /// <para>
-        /// We need to append a condensing transaction to the block if funds are moved.
-        /// </para>
-        /// </summary>
-        /// <param name="transfers"></param>
-        private void CommitExecution(IList<TransferInfo> transfers)
-        {
-            this.logger.LogTrace("()");
-
-            if (transfers != null && transfers.Any() || this.carrier.Value > 0)
-            {
-                this.logger.LogTrace("[CREATE_CONDENSING_TX]:{0}={1},{2}={3}", nameof(transfers), transfers.Count, nameof(this.carrier.Value), this.carrier.Value);
-                var condensingTx = new CondensingTx(this.carrier.ContractAddress, this.loggerFactory, transfers, this.stateSnapshot, this.network, this.transactionContext);
-                this.Result.InternalTransaction = condensingTx.CreateCondensingTransaction();
-            }
-
-            this.stateSnapshot.Commit();
-
-            this.logger.LogTrace("(-)");
-
-        }
-
-        /// <summary>
-        /// If funds were sent to the contract and execution failed, we need to send it back to the sender.
-        /// </summary>
-        private void RevertExecution()
-        {
-            this.logger.LogTrace("()");
-
-            if (this.carrier.Value > 0)
-            {
-                this.logger.LogTrace("[CREATE_REFUND_TX]:{0}={1}", nameof(this.carrier.Value), this.carrier.Value);
-                Transaction tx = new CondensingTx(this.carrier.ContractAddress, this.loggerFactory, this.network, this.transactionContext).CreateRefundTransaction();
-                this.Result.InternalTransaction = tx;
-            }
-
-            this.logger.LogTrace("(-)");
         }
     }
 }
