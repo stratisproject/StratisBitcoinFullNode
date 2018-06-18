@@ -170,11 +170,11 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
             // If we are in IBD we do nothing.
             if (this.initialBlockDownloadState.IsInitialBlockDownload())
             {
-                this.logger.LogDebug($"{this.federationGatewaySettings.MemberName}  MonitorChain ({this.network.ToChain()}) in IBD: blockNumber {blockNumber} not processed.");
+                this.logger.LogDebug($"MonitorChain ({this.network.ToChain()}) in IBD: blockNumber {blockNumber} not processed.");
                 return;
             }
 
-            this.logger.LogDebug($"{this.federationGatewaySettings.MemberName} Monitor Processing Block: {blockNumber} on {this.network.ToChain()}");
+            this.logger.LogDebug($"Monitor Processing Block: {blockNumber} on {this.network.ToChain()}");
 
             foreach (var transaction in block.Transactions)
                 this.ProcessTransaction(transaction, block, blockNumber);
@@ -182,7 +182,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
 
         private void ProcessAddress(uint256 transactionHash, string destinationAddress, Money amount, int blockNumber, uint256 blockHash)
         {
-            this.logger.LogTrace("()");
+            this.logger.LogTrace("({0}:'{1}',{2}:'{3}',{4}:'{5}')", nameof(transactionHash), transactionHash, nameof(amount), amount, nameof(destinationAddress), destinationAddress, nameof(blockNumber), blockNumber, nameof(blockHash), blockHash);
 
             // This looks like a deposit or withdrawal transaction. Record the info.
             var crossChainTransactionInfo = new CrossChainTransactionInfo
@@ -203,8 +203,8 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
             this.CreateSession(crossChainTransactionInfo);
 
             // Log Info for info/diagnostics.
-            this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} Crosschain Transaction Found on : {this.network.ToChain()}");
-            this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} CrosschainTransactionInfo: {crossChainTransactionInfo}");
+            this.logger.LogInformation($"Crosschain Transaction Found on : {this.network.ToChain()}");
+            this.logger.LogInformation($"CrosschainTransactionInfo: {crossChainTransactionInfo}");
             this.logger.LogTrace("(-)");
         }
     }

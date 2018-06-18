@@ -131,7 +131,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.MonitorChain
             );
 
             this.monitorSessions.TryAdd(monitorChainSession.SessionId, monitorChainSession);
-            this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} MonitorChainSession  added: {monitorChainSession}");
+            this.logger.LogInformation($"MonitorChainSession added: {monitorChainSession}");
             
             // Call to the counter chain and tell it to also create a session.
             this.CreateSessionOnCounterChain(this.federationGatewaySettings.CounterChainApiPort,
@@ -172,13 +172,12 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.MonitorChain
         private async Task RunSessionAsync()
         {
             this.logger.LogTrace("()");
-            this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} RunSessionAsync()");
+            this.logger.LogInformation("RunSessionAsync()");
 
             // We don't process sessions if our chain is not past IBD.
             if (this.initialBlockDownloadState.IsInitialBlockDownload())
             {
-                this.logger.LogInformation(
-                    $"{this.federationGatewaySettings.MemberName} RunSessionAsync() Monitor chain is in IBD exiting. Height:{this.concurrentChain.Height}.");
+                this.logger.LogInformation($"RunSessionAsync() Monitor chain is in IBD exiting. Height:{this.concurrentChain.Height}.");
                 return;
             }
 
@@ -189,15 +188,15 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.MonitorChain
 
                 var time = DateTime.Now;
 
-                this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} RunSessionAsync() MyBossCard:{monitorChainSession.BossCard}");
-                this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} At {time} AmITheBoss: {monitorChainSession.AmITheBoss(time)} WhoHoldsTheBossCard: {monitorChainSession.WhoHoldsTheBossCard(time)}");
+                this.logger.LogInformation($"RunSessionAsync() MyBossCard:{monitorChainSession.BossCard}");
+                this.logger.LogInformation($"At {time} AmITheBoss: {monitorChainSession.AmITheBoss(time)} WhoHoldsTheBossCard: {monitorChainSession.WhoHoldsTheBossCard(time)}");
 
                 if (monitorChainSession.Status == SessionStatus.Created && monitorChainSession.AmITheBoss(time))
                 {
                     monitorChainSession.Status = SessionStatus.Requesting;
 
-                    this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} RunSessionAsync() MyBossCard:{monitorChainSession.BossCard}");
-                    this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} At {time} AmITheBoss: {monitorChainSession.AmITheBoss(time)} WhoHoldsTheBossCard: {monitorChainSession.WhoHoldsTheBossCard(time)}");
+                    this.logger.LogInformation($"RunSessionAsync() MyBossCard:{monitorChainSession.BossCard}");
+                    this.logger.LogInformation($"At {time} AmITheBoss: {monitorChainSession.AmITheBoss(time)} WhoHoldsTheBossCard: {monitorChainSession.WhoHoldsTheBossCard(time)}");
 
                     // We can keep sending this session until we get a result.
                     var result = await CreateCounterChainSession(
@@ -211,7 +210,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.MonitorChain
                     if (result != uint256.Zero)
                     {
                         monitorChainSession.Complete(result);
-                        this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} RunSessionAsync() - Completing Session {result}.");
+                        this.logger.LogInformation($"RunSessionAsync() - Completing Session {result}.");
                     }
                 }
             }
@@ -219,10 +218,10 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.MonitorChain
 
         private bool IsBeyondBlockSecurityDelay(MonitorChainSession monitorChainSession)
         {
-            this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} IsBeyondBlockSecurityDelay() ");
-            this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} IsBeyondBlockSecurityDelay() SessionBlock: {monitorChainSession.BlockNumber}");
-            this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} IsBeyondBlockSecurityDelay() BlockDelay: {BlockSecurityDelay}");
-            this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} IsBeyondBlockSecurityDelay() Height: {this.concurrentChain.Tip.Height}");
+            this.logger.LogInformation("IsBeyondBlockSecurityDelay()");
+            this.logger.LogInformation($"IsBeyondBlockSecurityDelay() SessionBlock: {monitorChainSession.BlockNumber}");
+            this.logger.LogInformation($"IsBeyondBlockSecurityDelay() BlockDelay: {BlockSecurityDelay}");
+            this.logger.LogInformation($"IsBeyondBlockSecurityDelay() Height: {this.concurrentChain.Tip.Height}");
 
             return this.concurrentChain.Tip.Height >= (monitorChainSession.BlockNumber + BlockSecurityDelay);
         }

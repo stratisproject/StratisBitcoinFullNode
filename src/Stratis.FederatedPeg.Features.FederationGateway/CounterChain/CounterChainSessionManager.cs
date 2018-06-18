@@ -95,7 +95,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.CounterChain
             // We don't process sessions if our chain is not past IBD.
             if (this.initialBlockDownloadState.IsInitialBlockDownload())
             {
-                this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} RunSessionsAsync() CounterChain is in IBD exiting. Height:{this.concurrentChain.Height}.");
+                this.logger.LogInformation($"RunSessionsAsync() CounterChain is in IBD exiting. Height:{this.concurrentChain.Height}.");
                 return;
             }
             this.RegisterSession(sessionId, amount, destinationAddress);
@@ -104,9 +104,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.CounterChain
         // Add the session to its collection.
         private CounterChainSession RegisterSession(uint256 transactionId, Money amount, string destination)
         {
-            this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} RegisterSession transactionId:{transactionId}");
-            this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} RegisterSession amount:{amount}");
-            this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} RegisterSession destination:{destination}");
+            this.logger.LogTrace("({0}:'{1}',{2}:'{3}',{4}:'{5}')", nameof(transactionId), transactionId, nameof(amount), amount, nameof(destination), destination);
 
             var counterChainSession = new CounterChainSession(this.logger, this.federationGatewaySettings.MultiSigN, 
                 transactionId, 
@@ -121,16 +119,16 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.CounterChain
         public void ReceivePartial(uint256 sessionId, Transaction partialTransaction, uint256 bossCard)
         {
             this.logger.LogTrace("()");
-            this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} Receive Partial: {this.network.ToChain()}");
-            this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} Receive Partial: BossCard - {bossCard}");
+            this.logger.LogInformation($"Receive Partial: {this.network.ToChain()}");
+            this.logger.LogInformation($"Receive Partial: BossCard - {bossCard}");
 
             string bc = bossCard.ToString();
             var counterChainSession = sessions[sessionId];
-            bool hasQuorum = counterChainSession.AddPartial(this.federationGatewaySettings.MemberName, partialTransaction, bc);
+            bool hasQuorum = counterChainSession.AddPartial(partialTransaction, bc);
 
             if (hasQuorum)
             {
-                this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} Receive Partial: Reached Quorum.");
+                this.logger.LogInformation("Receive Partial: Reached Quorum.");
                 BroadcastTransaction(counterChainSession);
             }
             this.logger.LogTrace("(-)");
@@ -142,17 +140,17 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.CounterChain
             //TODO: we can remove this.
             if (this.fullnode.State == FullNodeState.Disposed || this.fullnode.State == FullNodeState.Disposing)
             {
-                this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} Full node disposing during broadcast. Do nothing.");
+                this.logger.LogInformation("Full node disposing during broadcast. Do nothing.");
                 return;
             }
 
             this.logger.LogTrace("()");
-            this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} Combining and Broadcasting transaction.");
-            this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} Combine Partials");
-            this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} {counterChainSession}");
-            this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} {counterChainSession.PartialTransactions[0]}");
-            this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} {counterChainSession.PartialTransactions[1]}");
-            this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} {counterChainSession.PartialTransactions[2]}");
+            this.logger.LogInformation("Combining and Broadcasting transaction.");
+            this.logger.LogInformation("Combine Partials");
+            this.logger.LogInformation($"{counterChainSession}");
+            this.logger.LogInformation($"{counterChainSession.PartialTransactions[0]}");
+            this.logger.LogInformation($"{counterChainSession.PartialTransactions[1]}");
+            this.logger.LogInformation($"{counterChainSession.PartialTransactions[2]}");
 
             var partials = from t in counterChainSession.PartialTransactions where t != null select t;
 
@@ -165,11 +163,8 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.CounterChain
         public async Task<uint256> ProcessCounterChainSession(uint256 sessionId, Money amount, string destinationAddress)
         {
             //todo this method is doing too much. factor some of this into private methods after we added the counterchainid.
-            this.logger.LogTrace("()");
-            this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} ProcessCounterChainSession: Amount        - {amount}");
-            this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} ProcessCounterChainSession: TransactionId - {sessionId}");
-            this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} ProcessCounterChainSession: Destination   - {destinationAddress}");
-                        this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} ProcessCounterChainSession: Session Registered.");
+            this.logger.LogTrace("({0}:'{1}',{2}:'{3}',{4}:'{5}')", nameof(sessionId), sessionId, nameof(amount), amount, nameof(destinationAddress), destinationAddress);            
+            this.logger.LogInformation("ProcessCounterChainSession: Session Registered.");
 
             //Todo: check if this has already been done
             //todo: then we just return the transctionId
@@ -181,7 +176,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.CounterChain
             var destination = BitcoinAddress.Create(destinationAddress, this.network).ScriptPubKey;
 
             // Encode the sessionId into a string.
-            this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} SessionId encoded bytes length = {sessionId.ToBytes().Length}.");
+            this.logger.LogInformation($"SessionId encoded bytes length = {sessionId.ToBytes().Length}.");
 
             // We are the Boss so first I build the multisig transaction template.
             // TODO: The password is currently hardcoded here
@@ -197,11 +192,11 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.CounterChain
                 Sign = false
             };
 
-            this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} ProcessCounterChainSession: Building Transaction.");
+            this.logger.LogInformation("ProcessCounterChainSession: Building Transaction.");
             var templateTransaction = this.federationWalletTransactionHandler.BuildTransaction(multiSigContext);
 
             //add my own partial
-            this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} ProcessCounterChainSession: Signing own partial.");
+            this.logger.LogInformation("ProcessCounterChainSession: Signing own partial.");
             var counterChainSession = this.VerifySession(sessionId, templateTransaction);
 
             if (counterChainSession == null) return uint256.One;
@@ -209,7 +204,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.CounterChain
             var partialTransaction = wallet.SignPartialTransaction(templateTransaction, "password");
 
             uint256 bossCard = BossTable.MakeBossTableEntry(sessionId, this.federationGatewaySettings.PublicKey);
-            this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} ProcessCounterChainSession: My bossCard: {bossCard}.");
+            this.logger.LogInformation($"ProcessCounterChainSession: My bossCard: {bossCard}.");
             this.ReceivePartial(sessionId, partialTransaction, bossCard);
 
             //now build the requests for the partials
@@ -223,7 +218,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.CounterChain
                 try
                 {
                     if (peer.Inbound) continue;
-                    this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} Broadcasting Partial Transaction Request: SendMessageAsync.");
+                    this.logger.LogInformation("Broadcasting Partial Transaction Request: SendMessageAsync.");
                     await peer.SendMessageAsync(requestPartialTransactionPayload).ConfigureAwait(false);
                 }
                 catch (OperationCanceledException)
@@ -243,16 +238,16 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.CounterChain
             var exists = this.sessions.TryGetValue(sessionId, out var counterChainSession);
 
             this.logger.LogTrace("()");
-            this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} CounterChainSession exists: {exists} sessionId: {sessionId}");
+            this.logger.LogInformation($"CounterChainSession exists: {exists} sessionId: {sessionId}");
 
             // We do not have this session.
             if (!exists) return null;
 
             // Have I already signed this session?
-            this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} HaveISigned:{counterChainSession.HaveISigned}");
+            this.logger.LogInformation($"HaveISigned:{counterChainSession.HaveISigned}");
             if (counterChainSession.HaveISigned)
             {
-                this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} Fatal: the session {sessionId} has already signed a partial transaction.");
+                this.logger.LogInformation($"Fatal: the session {sessionId} has already signed a partial transaction.");
                 return null;
             }
 
@@ -267,11 +262,11 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.CounterChain
                 if (output.ScriptPubKey == scriptPubKeyFromSession)
                 {
                     addressMatches = true;
-                    this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} Session {sessionId} found the matching destination address.");
+                    this.logger.LogInformation($"Session {sessionId} found the matching destination address.");
                     if (output.Value == amountFromSession)
                     {
                         amountMatches = true;
-                        this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} Session {sessionId} found the matching amount.");
+                        this.logger.LogInformation($"Session {sessionId} found the matching amount.");
                     }
                 }
             }
@@ -279,14 +274,14 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.CounterChain
             // The addess does not match. exit.
             if (!addressMatches)
             {
-                this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} Fatal: The destination address did not match in session {sessionId}.");
+                this.logger.LogInformation($"Fatal: The destination address did not match in session {sessionId}.");
                 return null;
             }
 
             // The amount does not match. exit.
             if (!amountMatches)
             {
-                this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} Fatal: The amount did not match in session {sessionId}.");
+                this.logger.LogInformation($"Fatal: The amount did not match in session {sessionId}.");
                 return null;
             }
 
@@ -297,7 +292,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.CounterChain
         public void MarkSessionAsSigned(CounterChainSession session)
         {
             //TODO: this should be locked. the sessions are 30 seconds apart but network conditions could cause a collision.
-            this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} has signed session {session.SessionId}.");
+            this.logger.LogInformation($"has signed session {session.SessionId}.");
             session.HaveISigned = true;
         }
     }
