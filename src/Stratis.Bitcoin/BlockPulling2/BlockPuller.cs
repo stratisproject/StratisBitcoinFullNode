@@ -482,7 +482,7 @@ namespace Stratis.Bitcoin.BlockPulling2
                     var hashesToJobId = new Dictionary<uint256, int>(downloadsGroupedByPeerId.Count());
 
                     foreach (KeyValuePair<uint256, AssignedDownload> assignedDownload in downloadsGroupedByPeerId)
-                        hashesToJobId.Add(assignedDownload.Key, peerId);
+                        hashesToJobId.Add(assignedDownload.Key, assignedDownload.Value.JobId);
 
                     this.ReleaseAssignments(hashesToJobId);
 
