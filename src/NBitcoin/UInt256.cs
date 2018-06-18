@@ -322,7 +322,7 @@ namespace NBitcoin
             return Comparison(a, b) >= 0;
         }
 
-        private static int Comparison(uint256 a, uint256 b)
+        public static int Comparison(uint256 a, uint256 b)
         {
             if (a == null)
                 throw new ArgumentNullException("a");

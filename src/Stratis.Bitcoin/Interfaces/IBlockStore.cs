@@ -8,5 +8,7 @@ namespace Stratis.Bitcoin.Interfaces
         Task<Transaction> GetTrxAsync(uint256 trxid);
 
         Task<uint256> GetTrxBlockIdAsync(uint256 trxid);
+
+        Task<Block> GetBlockAsync(uint256 blockHash);
     }
 }

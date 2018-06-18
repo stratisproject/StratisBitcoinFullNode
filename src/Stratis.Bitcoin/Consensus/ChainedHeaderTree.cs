@@ -4,32 +4,11 @@ using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Configuration.Settings;
+using Stratis.Bitcoin.Primitives;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Consensus
 {
-    /// <summary>Validates <see cref="ChainedHeader"/> instances.</summary>
-    public interface IChainedHeaderValidator
-    {
-        /// <summary>
-        /// Validation of a header that was seen for the first time.
-        /// </summary>
-        /// <param name="chainedHeader">The chained header to be validated.</param>
-        void ValidateHeader(ChainedHeader chainedHeader);
-
-        /// <summary>
-        /// Verifies that the block data corresponds to the chain header.
-        /// </summary>
-        /// <remarks>  
-        /// This validation represents minimal required validation for every block that we download.
-        /// It should be performed even if the block is behind last checkpoint or part of assume valid chain.
-        /// TODO specify what exceptions are thrown (add throws xmldoc)
-        /// </remarks>
-        /// <param name="block">The block that is going to be validated.</param>
-        /// <param name="chainedHeader">The chained header of the block that will be validated.</param>
-        void VerifyBlockIntegrity(Block block, ChainedHeader chainedHeader);
-    }
-
     /// <summary>
     /// Tree of chained block headers that are being claimed by the connected peers and the node itself.
     /// It represents all chains we potentially can sync with.
@@ -64,9 +43,9 @@ namespace Stratis.Bitcoin.Consensus
         /// Initialize the tree with consensus tip.
         /// </summary>
         /// <param name="consensusTip">The consensus tip.</param>
-        /// <param name="blockStoreEnabled">Specifies if block store is enabled.</param>
+        /// <param name="blockStoreAvailable">Specifies if block store is enabled.</param>
         /// <exception cref="ConsensusException">Thrown in case given <paramref name="consensusTip"/> is on a wrong network.</exception>
-        void Initialize(ChainedHeader consensusTip, bool blockStoreEnabled);
+        void Initialize(ChainedHeader consensusTip, bool blockStoreAvailable);
 
         /// <summary>
         /// Remove a peer and the entire branch of the tree that it claims unless the
@@ -119,7 +98,7 @@ namespace Stratis.Bitcoin.Consensus
         ChainedHeader FindHeaderAndVerifyBlockIntegrity(Block block);
 
         /// <summary>
-        /// Handles situation when blocks the data is downloaded for a given chained header.
+        /// Handles situation when the blocks data is downloaded for a given chained header.
         /// </summary>
         /// <param name="chainedHeader">Chained header that represents <paramref name="block"/>.</param>
         /// <param name="block">Block data.</param>
@@ -140,6 +119,8 @@ namespace Stratis.Bitcoin.Consensus
         /// Information about which blocks need to be downloaded together with information about which input headers were processed.
         /// Only headers that we can validate will be processed. The rest of the headers will be submitted later again for processing.
         /// </returns>
+        /// <exception cref="ConnectHeaderException">Thrown when first presented header can't be connected to any known chain in the tree.</exception>
+        /// <exception cref="CheckpointMismatchException">Thrown if checkpointed header doesn't match the checkpoint hash.</exception>
         ConnectNewHeadersResult ConnectNewHeaders(int networkPeerId, List<BlockHeader> headers);
 
         /// <summary>
@@ -148,13 +129,23 @@ namespace Stratis.Bitcoin.Consensus
         /// <param name="block">The block.</param>
         /// <returns>Newly created and connected chained header for the specified block.</returns>
         ChainedHeader CreateChainedHeaderWithBlock(Block block);
+
+        /// <summary>
+        /// Get the block and its chained header if it exists.
+        /// If the header is not in the tree <see cref="ChainedHeaderBlock"/> will be <c>null</c>, the <see cref="ChainedHeaderBlock.Block"/> may also be null.
+        /// </summary>
+        /// <remarks>
+        /// The block can be null when the block data has not yet been downloaded or if the block data has been persisted to the database and removed from the memory.
+        /// </remarks>
+        /// <returns>The block and its chained header (the <see cref="ChainedHeaderBlock.Block"/> can be <c>null</c> or the <see cref="ChainedHeaderBlock"/> result can be <c>null</c>).</returns>
+        ChainedHeaderBlock GetChainedHeaderBlock(uint256 blockHash);
     }
 
     /// <inheritdoc />
     internal sealed class ChainedHeaderTree : IChainedHeaderTree
     {
         private readonly Network network;
-        private readonly IChainedHeaderValidator chainedHeaderValidator;
+        private readonly IBlockValidator blockValidator;
         private readonly ILogger logger;
         private readonly ICheckpoints checkpoints;
         private readonly IChainState chainState;
@@ -198,14 +189,14 @@ namespace Stratis.Bitcoin.Consensus
         public ChainedHeaderTree(
             Network network,
             ILoggerFactory loggerFactory,
-            IChainedHeaderValidator chainedHeaderValidator,
+            IBlockValidator blockValidator,
             ICheckpoints checkpoints,
             IChainState chainState,
             IFinalizedBlockHeight finalizedBlockHeight,
             ConsensusSettings consensusSettings)
         {
             this.network = network;
-            this.chainedHeaderValidator = chainedHeaderValidator;
+            this.blockValidator = blockValidator;
             this.checkpoints = checkpoints;
             this.chainState = chainState;
             this.finalizedBlockHeight = finalizedBlockHeight;
@@ -219,9 +210,9 @@ namespace Stratis.Bitcoin.Consensus
         }
 
         /// <inheritdoc />
-        public void Initialize(ChainedHeader consensusTip, bool blockStoreEnabled)
+        public void Initialize(ChainedHeader consensusTip, bool blockStoreAvailable)
         {
-            this.logger.LogTrace("({0}:'{1}',{2}:{3})", nameof(consensusTip), consensusTip, nameof(blockStoreEnabled), blockStoreEnabled);
+            this.logger.LogTrace("({0}:'{1}',{2}:{3})", nameof(consensusTip), consensusTip, nameof(blockStoreAvailable), blockStoreAvailable);
 
             ChainedHeader current = consensusTip;
             while (current.Previous != null)
@@ -229,7 +220,7 @@ namespace Stratis.Bitcoin.Consensus
                 current.Previous.Next.Add(current);
                 this.chainedHeadersByHash.Add(current.HashBlock, current);
 
-                current.BlockDataAvailability = blockStoreEnabled ? BlockDataAvailabilityState.BlockAvailable : BlockDataAvailabilityState.HeaderOnly;
+                current.BlockDataAvailability = blockStoreAvailable ? BlockDataAvailabilityState.BlockAvailable : BlockDataAvailabilityState.HeaderOnly;
                 current.BlockValidationState = ValidationState.FullyValidated;
 
                 current = current.Previous;
@@ -248,6 +239,21 @@ namespace Stratis.Bitcoin.Consensus
             this.AddOrReplacePeerTip(LocalPeerId, consensusTip.HashBlock);
             
             this.logger.LogTrace("(-)");
+        }
+
+        // <inheritdoc />
+        public ChainedHeaderBlock GetChainedHeaderBlock(uint256 blockHash)
+        {
+            this.logger.LogTrace("({0}:'{1}')", nameof(blockHash), blockHash);
+
+            ChainedHeaderBlock chainedHeaderBlock = null;
+            if (this.chainedHeadersByHash.TryGetValue(blockHash, out ChainedHeader chainedHeader))
+            {
+                chainedHeaderBlock = new ChainedHeaderBlock(chainedHeader.Block, chainedHeader);
+            }
+
+            this.logger.LogTrace("(-):'{0}'", chainedHeaderBlock);
+            return chainedHeaderBlock;
         }
 
         /// <summary>Gets the consensus tip.</summary>
@@ -590,7 +596,7 @@ namespace Stratis.Bitcoin.Consensus
                 throw new BlockDownloadedForMissingChainedHeaderException();
             }
 
-            this.chainedHeaderValidator.VerifyBlockIntegrity(block, chainedHeader);
+            this.blockValidator.VerifyBlockIntegrity(block, chainedHeader);
 
             this.logger.LogTrace("(-):'{0}'", chainedHeader);
             return chainedHeader;
@@ -793,6 +799,7 @@ namespace Stratis.Bitcoin.Consensus
         /// <param name="chainedHeader">Checkpointed header.</param>
         /// <param name="latestNewHeader">The latest new header that was presented by the peer.</param>
         /// <param name="checkpoint">Information about the checkpoint at the height of the <paramref name="chainedHeader"/>.</param>
+        /// <exception cref="CheckpointMismatchException">Thrown if checkpointed header doesn't match the checkpoint hash.</exception>
         private ConnectNewHeadersResult HandleCheckpointsHeader(ChainedHeader chainedHeader, ChainedHeader latestNewHeader, CheckpointInfo checkpoint)
         {
             this.logger.LogTrace("({0}:'{1}',{2}:'{3}',{4}.{5}:'{6}')", nameof(chainedHeader), chainedHeader, nameof(latestNewHeader), latestNewHeader, nameof(checkpoint), nameof(checkpoint.Hash), checkpoint.Hash);
@@ -801,7 +808,7 @@ namespace Stratis.Bitcoin.Consensus
             {
                 this.logger.LogDebug("Chained header '{0}' does not match checkpoint '{1}'.", chainedHeader, checkpoint.Hash);
                 this.logger.LogTrace("(-)[INVALID_HEADER_NOT_MATCHING_CHECKPOINT]");
-                throw new InvalidHeaderException();
+                throw new CheckpointMismatchException();
             }
 
             ChainedHeader subchainTip = chainedHeader;
@@ -1012,7 +1019,7 @@ namespace Stratis.Bitcoin.Consensus
         {
             var newChainedHeader = new ChainedHeader(currentBlockHeader, currentBlockHeader.GetHash(), previousChainedHeader);
 
-            this.chainedHeaderValidator.ValidateHeader(newChainedHeader);
+            this.blockValidator.ValidateHeader(newChainedHeader);
 
             previousChainedHeader.Next.Add(newChainedHeader);
             this.chainedHeadersByHash.Add(newChainedHeader.HashBlock, newChainedHeader);
@@ -1096,6 +1103,26 @@ namespace Stratis.Bitcoin.Consensus
         public override string ToString()
         {
             return $"{nameof(this.DownloadFrom)}='{this.DownloadFrom}',{nameof(this.DownloadTo)}='{this.DownloadTo}',{nameof(this.Consumed)}='{this.Consumed}'";
+        }
+
+        /// <summary>
+        /// Convert the <see cref="DownloadFrom" /> and <see cref="DownloadTo" /> to an array
+        /// of consecutive headers, both items are included in the array.
+        /// </summary>
+        /// <returns>Array of consecutive headers.</returns>
+        public ChainedHeader[] ToHashArray()
+        {
+            var hashes = new ChainedHeader[this.DownloadTo.Height - this.DownloadFrom.Height + 1];
+
+            ChainedHeader currentHeader = this.DownloadTo;
+
+            for (int i = hashes.Length - 1; i >= 0; i--)
+            {
+                hashes[i] = currentHeader;
+                currentHeader = currentHeader.Previous;
+            }
+
+            return hashes;
         }
     }
 }
