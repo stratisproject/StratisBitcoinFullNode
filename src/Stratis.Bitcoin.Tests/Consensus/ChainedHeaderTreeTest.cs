@@ -412,5 +412,67 @@ namespace Stratis.Bitcoin.Tests.Consensus
             chainedHeaderDownloadTo = connectNewHeadersResult.DownloadTo;
             chainedHeaderDownloadTo.HashBlock.Should().Be(chainBTip.HashBlock);
         }
+
+        /// <summary>
+        /// Issue 16 @ Checkpoints are enabled. After last checkpoint there is an assume valid. Chain that covers
+        /// them all is presented - marked for download. After that chain that covers last checkpoint but doesnt
+        /// cover assume valid and is longer is presented - marked for download.
+        /// </summary>
+        [Fact]
+        public void ChainHasOneCheckPointAndAssumeValid_TwoAlternativeChainsArePresented_BothChainsAreMarkedForDownload()
+        {
+            // Chain header tree setup.
+            const int initialChainSize = 4;
+            var ctx = new TestContext();
+            ChainedHeaderTree cht = ctx.CreateChainedHeaderTree();
+            ChainedHeader initialChainTip = ctx.ExtendAChain(initialChainSize); // ie. h1=h2=h3=h4
+            cht.Initialize(initialChainTip, true);
+            ctx.ConsensusSettings.UseCheckpoints = true;
+            List<BlockHeader> listOfCurrentChainHeaders = ctx.ChainedHeaderToList(initialChainTip, initialChainSize);
+
+            // Setup a known checkpoint at header 4.
+            // Example: h1=h2=h3=(h4).
+            const int checkpointHeight = 4;
+            var checkpoint = new CheckpointInfo(listOfCurrentChainHeaders.Last().GetHash());
+            ctx.CheckpointsMock
+               .Setup(c => c.GetCheckpoint(checkpointHeight))
+               .Returns(checkpoint);
+            ctx.CheckpointsMock
+               .Setup(c => c.GetCheckpoint(It.IsNotIn(checkpointHeight)))
+               .Returns((CheckpointInfo)null);
+            ctx.CheckpointsMock
+                .Setup(c => c.GetLastCheckpointHeight())
+                .Returns(checkpointHeight);
+
+            // Extend chain and add "Assume valid" at block 6.
+            // Example: h1=h2=h3=(h4)=h5=[h6].
+            const int chainExtension = 2;
+            ChainedHeader extendedChainTip = ctx.ExtendAChain(chainExtension, initialChainTip);
+            listOfCurrentChainHeaders = ctx.ChainedHeaderToList(extendedChainTip, extendedChainTip.Height);
+            ctx.ConsensusSettings.BlockAssumedValid = listOfCurrentChainHeaders.Last().GetHash();
+
+            // Setup two alternative chains A and B. Chain A covers the last checkpoint (4) and "assume valid" (6).
+            // Chain B only covers the last checkpoint (4), but is onger that chain A.
+            const int chainAExtensionSize = 2;
+            const int chainBExtensionSize = 6;
+            ChainedHeader chainATip = ctx.ExtendAChain(chainAExtensionSize, extendedChainTip); // ie. h1=h2=h3=(h4)=h5=[h6]=a7=a8
+            ChainedHeader chainBTip = ctx.ExtendAChain(chainBExtensionSize, initialChainTip); // ie. h1=h2=h3=(h4)=b5=b6=b7=b8=b9=b10
+            List<BlockHeader> listOfChainABlockHeaders = ctx.ChainedHeaderToList(chainATip, initialChainSize + chainExtension + chainAExtensionSize);
+            List<BlockHeader> listOfChainBBlockHeaders = ctx.ChainedHeaderToList(chainBTip, initialChainSize + chainBExtensionSize);
+
+            // Chain A is presented by peer 1.
+            // DownloadFrom should be set to header 5. 
+            // DownloadTo should be set to header 8. 
+            ConnectNewHeadersResult result = cht.ConnectNewHeaders(1, listOfChainABlockHeaders);
+            result.DownloadFrom.HashBlock.Should().Be(listOfChainABlockHeaders[checkpointHeight].GetHash());
+            result.DownloadTo.HashBlock.Should().Be(listOfChainABlockHeaders.Last().GetHash());
+
+            // Chain B is presented by peer 2.
+            // DownloadFrom should be set to header 5. 
+            // DownloadTo should be set to header 10. 
+            result = cht.ConnectNewHeaders(1, listOfChainBBlockHeaders);
+            result.DownloadFrom.HashBlock.Should().Be(listOfChainBBlockHeaders[checkpointHeight].GetHash());
+            result.DownloadTo.HashBlock.Should().Be(listOfChainBBlockHeaders.Last().GetHash());
+        }
     }
 }
