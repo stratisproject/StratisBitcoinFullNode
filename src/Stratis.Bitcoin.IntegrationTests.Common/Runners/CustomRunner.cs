@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using NBitcoin;
 using NBitcoin.Protocol;
 using Stratis.Bitcoin.Builder;
@@ -13,20 +15,21 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.Runners
         private readonly string configFileName;
         private readonly Network network;
         private readonly ProtocolVersion protocolVersion;
+        private List<string> args;
 
-        public CustomNodeRunner(string dataDir, Action<IFullNodeBuilder> callback, Network network, ProtocolVersion protocolVersion = ProtocolVersion.PROTOCOL_VERSION, string configFileName = "custom.conf", string agent = "Custom")
+        public CustomNodeRunner(string dataDir, Action<IFullNodeBuilder> callback, Network network, ProtocolVersion protocolVersion = ProtocolVersion.PROTOCOL_VERSION, List<string> args = null, string agent = "Custom")
             : base(dataDir)
         {
             this.callback = callback;
             this.network = network;
             this.protocolVersion = protocolVersion;
-            this.configFileName = configFileName;
             this.agent = agent;
+            this.args = args;
         }
 
         public override void BuildNode()
         {
-            var settings = new NodeSettings(this.network, this.protocolVersion, this.agent, new string[] { "-conf=" + this.configFileName, "-datadir=" + this.DataFolder });
+            var settings = new NodeSettings(this.network, this.protocolVersion, this.agent, this.args.ToArray());
             IFullNodeBuilder builder = new FullNodeBuilder().UseNodeSettings(settings);
 
             this.callback(builder);
