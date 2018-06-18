@@ -470,7 +470,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
             // Chain B is presented by peer 2.
             // DownloadFrom should be set to header 5. 
             // DownloadTo should be set to header 10. 
-            result = cht.ConnectNewHeaders(1, listOfChainBBlockHeaders);
+            result = cht.ConnectNewHeaders(2, listOfChainBBlockHeaders);
             result.DownloadFrom.HashBlock.Should().Be(listOfChainBBlockHeaders[checkpointHeight].GetHash());
             result.DownloadTo.HashBlock.Should().Be(listOfChainBBlockHeaders.Last().GetHash());
         }
