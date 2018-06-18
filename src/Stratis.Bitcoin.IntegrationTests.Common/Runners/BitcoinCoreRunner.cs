@@ -6,16 +6,15 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.Runners
 {
     public sealed class BitcoinCoreRunner : NodeRunner
     {
-        private readonly string bitcoinD;
+        private readonly string bitcoinDPath;
+        private Process process;
 
-        public BitcoinCoreRunner(string dataDir, string bitcoinD)
+        public BitcoinCoreRunner(string dataDir, string bitcoinDPath)
             : base(dataDir)
         {
-            this.bitcoinD = bitcoinD;
+            this.bitcoinDPath = bitcoinDPath;
             this.Network = Network.RegTest;
         }
-
-        private Process process;
 
         public new bool IsDisposed
         {
@@ -33,7 +32,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.Runners
 
         public override void OnStart()
         {
-            this.process = Process.Start(new FileInfo(this.bitcoinD).FullName, $"-conf=bitcoin.conf -datadir={this.DataFolder} -debug=net");
+            this.process = Process.Start(new FileInfo(this.bitcoinDPath).FullName, $"-conf=bitcoin.conf -datadir={this.DataFolder} -debug=net");
         }
 
         public override void BuildNode()

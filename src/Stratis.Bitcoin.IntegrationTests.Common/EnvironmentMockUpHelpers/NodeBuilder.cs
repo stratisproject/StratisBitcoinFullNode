@@ -147,10 +147,10 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
             return node;
         }
 
-        public CoreNode CreateBitcoinCoreNode(bool start = false, string version = "0.13.1")
+        public CoreNode CreateBitcoinCoreNode(string version = "0.13.1")
         {
             string bitcoinDPath = GetBitcoinCorePath(version);
-            return CreateNode(new BitcoinCoreRunner(this.GetNextDataFolderName(), bitcoinDPath), start);
+            return CreateNode(new BitcoinCoreRunner(this.GetNextDataFolderName(), bitcoinDPath), false);
         }
 
         public CoreNode CreateStratisPowNode(bool start = false)
@@ -158,19 +158,14 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
             return CreateNode(new StratisBitcoinPowRunner(this.GetNextDataFolderName()), start);
         }
 
-        public CoreNode CreateStratisPowMiningNode(bool start = false)
+        public CoreNode CreateStratisPosNode()
         {
-            return CreateNode(new StratisProofOfWorkMiningNode(this.GetNextDataFolderName()), start, "stratis.conf");
+            return CreateNode(new StratisBitcoinPosRunner(this.GetNextDataFolderName()), false, "stratis.conf");
         }
 
-        public CoreNode CreateStratisPosNode(bool start = false)
+        public CoreNode CreateStratisPosApiNode()
         {
-            return CreateNode(new StratisBitcoinPosRunner(this.GetNextDataFolderName()), start, "stratis.conf");
-        }
-
-        public CoreNode CreateStratisPosApiNode(bool start = false)
-        {
-            return CreateNode(new StratisPosApiRunner(this.GetNextDataFolderName()), start, "stratis.conf");
+            return CreateNode(new StratisPosApiRunner(this.GetNextDataFolderName()), false, "stratis.conf");
         }
 
         public CoreNode CloneStratisNode(CoreNode cloneNode)

@@ -175,7 +175,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
             }
         }
 
-        public void Broadcast(Network network, Transaction transaction)
+        public void Broadcast(Transaction transaction)
         {
             using (INetworkPeer peer = this.CreateNetworkPeerClient())
             {

@@ -38,7 +38,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 
         public readonly string WalletAccount = "account 0";
 
-        public ProofOfStakeSteps(string displayName) 
+        public ProofOfStakeSteps(string displayName)
         {
             this.sharedSteps = new SharedSteps();
             this.nodeGroupBuilder = new NodeGroupBuilder(Path.Combine(this.GetType().Name, displayName));
@@ -75,7 +75,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         public void ProofOfWorkNodeWithWallet()
         {
             this.nodes = this.nodeGroupBuilder
-                    .CreateStratisPowMiningNode(this.PowMiner)
+                    .CreateStratisPosNode(this.PowMiner)
                     .Start()
                     .NotInIBD()
                     .WithWallet(this.PowWallet, this.PowWalletPassword)
