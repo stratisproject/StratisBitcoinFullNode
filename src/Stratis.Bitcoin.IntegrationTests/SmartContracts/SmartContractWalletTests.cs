@@ -231,6 +231,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
         /*
          * Due to changes in the transactionbuilder, the smart contract controllers are appending all owned UTXOs as inputs to all smart contract transactions.
          * This is problematic for a few reasons:
+         *
          * 1. If you mine a block, you can't send any transactions for N blocks where N is the coinbase maturity setting
          * 2. In the time when your transaction is in the mempool to potentially be mined, it looks as if you have 0 balance, and you cannot send any more smart contract transactions.
          *
