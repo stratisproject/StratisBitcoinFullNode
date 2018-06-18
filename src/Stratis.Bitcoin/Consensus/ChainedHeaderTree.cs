@@ -798,7 +798,6 @@ namespace Stratis.Bitcoin.Consensus
         /// </summary>
         /// <param name="chainedHeader">Checkpointed header.</param>
         /// <param name="latestNewHeader">The latest new header that was presented by the peer.</param>
-
         /// <param name="checkpoint">Information about the checkpoint at the height of the <paramref name="chainedHeader" />.</param>
         /// <param name="peerId">Peer Id that presented chain which contains checkpointed header.</param>
         /// <exception cref="CheckpointMismatchException">Thrown if checkpointed header doesn't match the checkpoint hash.</exception>

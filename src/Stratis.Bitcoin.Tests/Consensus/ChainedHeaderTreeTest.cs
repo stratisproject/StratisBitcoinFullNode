@@ -367,7 +367,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
                 cht.ConnectNewHeaders(1, violatingHeaders);
             };
 
-            connectAction.Should().Throw<InvalidHeaderException>();
+            connectAction.Should().Throw<CheckpointMismatchException>();
 
             // Make sure headers for violating chain don't exist.
             foreach (BlockHeader header in violatingHeaders)
