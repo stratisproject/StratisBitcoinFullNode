@@ -58,24 +58,12 @@ namespace Stratis.Bitcoin.Features.Dns
 
             TextFileConfiguration config = nodeSettings.ConfigReader;
 
-            this.DnsListenPort = config.GetOrDefault<int>("dnslistenport", DefaultDnsListenPort);
-            this.logger.LogDebug("DNS Seed Service listen port is {0}, if running as DNS Seed.", this.DnsListenPort);
-
-            this.DnsFullNode = config.GetOrDefault<bool>("dnsfullnode", false);
-            if (this.DnsFullNode)
-                this.logger.LogDebug("DNS Seed Service is set to run as a full node, if running as DNS Seed.", this.DnsListenPort);
-
-            this.DnsPeerBlacklistThresholdInSeconds = config.GetOrDefault("dnspeerblacklistthresholdinseconds", DefaultDnsPeerBlacklistThresholdInSeconds);
-            this.logger.LogDebug("DnsPeerBlacklistThresholdInSeconds set to {0}.", this.DnsPeerBlacklistThresholdInSeconds);
-
-            this.DnsHostName = config.GetOrDefault<string>("dnshostname", null);
-            this.logger.LogDebug("DNS Seed Service host name set to '{0}'.", this.DnsHostName);
-
-            this.DnsNameServer = config.GetOrDefault<string>("dnsnameserver", null);
-            this.logger.LogDebug("DNS Seed Service nameserver set to '{0}'.", this.DnsNameServer);
-
-            this.DnsMailBox = config.GetOrDefault<string>("dnsmailbox", null);
-            this.logger.LogDebug("DNS Seed Service mailbox set to '{0}'.", this.DnsMailBox);
+            this.DnsListenPort = config.GetOrDefault<int>("dnslistenport", DefaultDnsListenPort, this.logger);
+            this.DnsFullNode = config.GetOrDefault<bool>("dnsfullnode", false, this.logger);
+            this.DnsPeerBlacklistThresholdInSeconds = config.GetOrDefault("dnspeerblacklistthresholdinseconds", DefaultDnsPeerBlacklistThresholdInSeconds, this.logger);
+            this.DnsHostName = config.GetOrDefault<string>("dnshostname", null, this.logger);
+            this.DnsNameServer = config.GetOrDefault<string>("dnsnameserver", null, this.logger);
+            this.DnsMailBox = config.GetOrDefault<string>("dnsmailbox", null, this.logger);
 
             this.logger.LogTrace("(-)");
         }

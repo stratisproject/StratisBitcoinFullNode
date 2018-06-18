@@ -880,8 +880,10 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                         // it's cheaper to just check if the new input refers to a
                         // tx that's in the mempool.
                         if (this.memPool.MapTx.ContainsKey(context.Transaction.Inputs[j].PrevOut.Hash))
+                        {
                             context.State.Fail(MempoolErrors.ReplacementAddsUnconfirmed,
                                 $"replacement {context.TransactionHash} adds unconfirmed input, idx {j}").Throw();
+                        }
                     }
                 }
 

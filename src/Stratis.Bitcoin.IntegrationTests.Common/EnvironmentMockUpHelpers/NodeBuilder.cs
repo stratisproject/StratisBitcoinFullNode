@@ -188,14 +188,25 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
         /// <param name="protocolVersion">Use <see cref="ProtocolVersion.PROTOCOL_VERSION"/> for BTC PoW-like networks and <see cref="ProtocolVersion.ALT_PROTOCOL_VERSION"/> for Stratis PoS-like networks.</param>
         /// <param name="configFileName">The name for the node's configuration file.</param>
         /// <param name="agent">A user agent string to distinguish different node versions from each other.</param>
-        public CoreNode CreateCustomNode(bool start, Action<IFullNodeBuilder> callback, Network network, ProtocolVersion protocolVersion = ProtocolVersion.PROTOCOL_VERSION, string configFileName = "custom.conf", string agent = "Custom")
+        public CoreNode CreateCustomNode(bool start, Action<IFullNodeBuilder> callback, Network network, ProtocolVersion protocolVersion = ProtocolVersion.PROTOCOL_VERSION, IEnumerable<string> args = null, string agent = "Custom")
         {
-            return CreateNode(new CustomNodeRunner(this.GetNextDataFolderName(), callback, network, protocolVersion, configFileName, agent), network, start, configFileName);
+            var argsList = args as List<string> ?? args?.ToList() ?? new List<string>();
+
+            string configFileName = "custom.conf";
+            if (!argsList.Any(a => a.StartsWith("-conf="))) argsList.Add($"-conf={configFileName}");
+            else configFileName = argsList.First(a => a.StartsWith("-conf=")).Replace("-conf=", "");
+
+            string dataDir = this.GetNextDataFolderName(agent);
+            if (!argsList.Any(a => a.StartsWith("-datadir="))) argsList.Add($"-datadir={dataDir}");
+            
+            return CreateNode(new CustomNodeRunner(dataDir, callback, network, protocolVersion, argsList, agent), network, start, configFileName);
         }
 
-        private string GetNextDataFolderName()
+        private string GetNextDataFolderName(string folderName = null)
         {
-            string dataFolderName = Path.Combine(this.rootFolder, this.lastDataFolderIndex.ToString());
+            var numberedFolderName = string.Join(".",
+                new[] {this.lastDataFolderIndex.ToString(), folderName}.Where(s => s != null));
+            string dataFolderName = Path.Combine(this.rootFolder, numberedFolderName);
             this.lastDataFolderIndex++;
             return dataFolderName;
         }

@@ -59,22 +59,16 @@ namespace Stratis.Bitcoin.Features.Miner
 
             TextFileConfiguration config = nodeSettings.ConfigReader;
 
-            this.Mine = config.GetOrDefault<bool>("mine", false);
-            this.logger.LogDebug("Mine set to {0}.", this.Mine);
-
+            this.Mine = config.GetOrDefault<bool>("mine", false, this.logger);
             if (this.Mine)
-                this.MineAddress = config.GetOrDefault<string>("mineaddress", null);
-            this.logger.LogDebug("MineAddress set to '{0}'.", this.MineAddress);
+                this.MineAddress = config.GetOrDefault<string>("mineaddress", null, this.logger);
 
-            this.Stake = config.GetOrDefault<bool>("stake", false);
-            this.logger.LogDebug("Stake set to {0}.", this.Stake);
-
+            this.Stake = config.GetOrDefault<bool>("stake", false, this.logger);
             if (this.Stake)
             {
-                this.WalletName = config.GetOrDefault<string>("walletname", null);
-                this.WalletPassword = config.GetOrDefault<string>("walletpassword", null);
+                this.WalletName = config.GetOrDefault<string>("walletname", null, this.logger);
+                this.WalletPassword = config.GetOrDefault<string>("walletpassword", null); // No logging!
             }
-            this.logger.LogDebug("WalletName set to '{0}'.", this.WalletName);
 
             this.logger.LogTrace("(-)");
         }

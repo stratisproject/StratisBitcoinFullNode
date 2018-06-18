@@ -583,10 +583,12 @@ namespace NBitcoin
         public static implicit operator Op(OpcodeType codeType)
         {
             if(!IsPushCode(codeType))
+            {
                 return new Op()
                 {
                     Code = codeType,
                 };
+            }
             else
             {
                 if(OpcodeType.OP_1 <= codeType && codeType <= OpcodeType.OP_16)

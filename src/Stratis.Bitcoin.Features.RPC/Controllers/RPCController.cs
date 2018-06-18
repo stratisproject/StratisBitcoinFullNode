@@ -146,6 +146,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
 
                     var parameters = new List<string>();
                     foreach (ControllerParameterDescriptor param in descriptor.Parameters.OfType<ControllerParameterDescriptor>())
+                    {
                         if (!param.ParameterInfo.IsRetval)
                         {
                             string value = $"<{param.ParameterInfo.Name.ToLower()}>";
@@ -155,6 +156,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
 
                             parameters.Add(value);
                         }
+                    }
 
                     string method = $"{descriptor.ActionName} {string.Join(" ", parameters.ToArray())}";
 
