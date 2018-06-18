@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using NBitcoin;
 
@@ -23,20 +24,16 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
         /// <param name="sessionId">The hash of the source transaction is used as the sessionId.</param>
         /// <param name="keys">An array of the public keys of each federation member.</param>
         /// <returns></returns>
-        public BossTable Build(uint256 sessionId, string[] keys)
+        public BossTable Build(uint256 sessionId, IEnumerable<string> keys)
         {
             // BossTableEntries are strings.
-            var bossCards = new List<string>();
-
             // Hash the concatination of the sessionId and the key to get each entry in the table.
-            for (int i = 1; i <= keys.Length; ++i)
-                bossCards.Add(BossTable.MakeBossTableEntry(sessionId, keys[i - 1]).ToString());
-
-            // Sort the results.
-            bossCards.Sort();
+            var bossCards = keys
+                .Select(key => BossTable.MakeBossTableEntry(sessionId, key).ToString())
+                .OrderBy(k => k);
 
             // We now have a table that is reproducable on every federation node on the network.
-            return new BossTable(bossCards.ToArray());
+            return new BossTable(bossCards.ToList());
         }
     }
 
@@ -48,15 +45,15 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
         /// <summary>
         /// Each entry in the BossTable.
         /// </summary>
-        public string[] BossTableEntries { get; }
+        public List<string> BossTableEntries { get; }
 
-        public BossTable(string[] bossTableEntries)
+        public BossTable(List<string> bossTableEntries)
         {
             this.BossTableEntries = bossTableEntries;
         }
 
         // The interval before the boss card changes hands.
-        private readonly int bossCardHoldTime = (int) new TimeSpan(hours: 0, minutes: 5, seconds: 0).TotalSeconds;
+        private readonly int bossCardHoldTime = (int) new TimeSpan(hours: 0, minutes: 1, seconds: 0).TotalSeconds;
 
         /// <summary>
         /// Hashes the SessionId with the key.
@@ -85,7 +82,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
             var cardPasses = secondsPassed / this.bossCardHoldTime;
 
             // If each federation has had a turn we are in free for all mode and anyone can build and broadcast.
-            if (cardPasses >= BossTableEntries.Length) return null;
+            if (cardPasses >= BossTableEntries.Count) return null;
 
             return this.BossTableEntries[cardPasses];
         }

@@ -106,9 +106,10 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.CounterChain
         {
             this.logger.LogTrace("({0}:'{1}',{2}:'{3}',{4}:'{5}')", nameof(transactionId), transactionId, nameof(amount), amount, nameof(destination), destination);
 
-            var counterChainSession = new CounterChainSession(this.logger, this.federationGatewaySettings.MultiSigN, 
+            var counterChainSession = new CounterChainSession(
+                this.logger, 
+                this.federationGatewaySettings, 
                 transactionId, 
-                federationGatewaySettings.FederationPublicKeys.Select(k => k.GetAddress(network).ToString()).ToArray(),
                 amount,
                 destination);
             this.sessions.AddOrReplace(transactionId, counterChainSession);
@@ -147,12 +148,13 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.CounterChain
             this.logger.LogTrace("()");
             this.logger.LogInformation("Combining and Broadcasting transaction.");
             this.logger.LogInformation("Combine Partials");
-            this.logger.LogInformation($"{counterChainSession}");
-            this.logger.LogInformation($"{counterChainSession.PartialTransactions[0]}");
-            this.logger.LogInformation($"{counterChainSession.PartialTransactions[1]}");
-            this.logger.LogInformation($"{counterChainSession.PartialTransactions[2]}");
+            this.logger.LogInformation(counterChainSession.ToString());
+            counterChainSession.PartialTransactions.ToList()
+                .ForEach(t => this.logger.LogInformation(t.ToString()));
 
-            var partials = from t in counterChainSession.PartialTransactions where t != null select t;
+            var partials = 
+                from t in counterChainSession.PartialTransactions
+                where t != null select t;
 
             var combinedTransaction = this.federationWalletManager.GetWallet().CombinePartialTransactions(partials.ToArray());
             this.broadcastManager.BroadcastTransactionAsync(combinedTransaction).GetAwaiter().GetResult();
