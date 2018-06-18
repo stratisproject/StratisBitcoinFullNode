@@ -414,9 +414,9 @@ namespace Stratis.Bitcoin.Tests.Consensus
         }
 
         /// <summary>
-        /// Issue 16 @ Checkpoints are enabled. After last checkpoint there is an assume valid. Chain that covers
-        /// them all is presented - marked for download. After that chain that covers last checkpoint but doesnt
-        /// cover assume valid and is longer is presented - marked for download.
+        /// Issue 16 @ Checkpoints are enabled. After the last checkpoint, there is an assumed valid. The chain
+        /// that covers them all is presented - marked for download. After that chain that covers the last checkpoint
+        /// but doesn't cover assume valid and is longer is presented - marked for download.
         /// </summary>
         [Fact]
         public void ChainHasOneCheckPointAndAssumeValid_TwoAlternativeChainsArePresented_BothChainsAreMarkedForDownload()
