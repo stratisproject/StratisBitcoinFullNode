@@ -57,18 +57,10 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 var prevTrx = block.Transactions.First();
                 var dest = new BitcoinSecret(new Key(), stratisNodeSync.FullNode.Network);
 
-                // OP_CREATE with value > 0
+                // Gas higher than allowed limit
                 Transaction tx = new Transaction();
                 tx.AddInput(new TxIn(new OutPoint(prevTrx.GetHash(), 0), PayToPubkeyHashTemplate.Instance.GenerateScriptPubKey(stratisNodeSync.MinerSecret.PubKey)));
-                SmartContractCarrier smartContractCarrier = SmartContractCarrier.CreateContract(1, new byte[0], 1, new Gas(100_000));
-                tx.AddOutput(new TxOut(1, new Script(smartContractCarrier.Serialize())));
-                tx.Sign(stratisNodeSync.FullNode.Network, stratisNodeSync.MinerSecret, false);
-                stratisNodeSync.Broadcast(tx);
-
-                // Gas higher than allowed limit
-                tx = new Transaction();
-                tx.AddInput(new TxIn(new OutPoint(prevTrx.GetHash(), 0), PayToPubkeyHashTemplate.Instance.GenerateScriptPubKey(stratisNodeSync.MinerSecret.PubKey)));
-                smartContractCarrier = SmartContractCarrier.CallContract(1, new uint160(0), "Test", 1, new Gas(10_000_000));
+                SmartContractCarrier smartContractCarrier = SmartContractCarrier.CallContract(1, new uint160(0), "Test", 1, new Gas(10_000_000));
                 tx.AddOutput(new TxOut(1, new Script(smartContractCarrier.Serialize())));
                 tx.Sign(stratisNodeSync.FullNode.Network, stratisNodeSync.MinerSecret, false);
                 stratisNodeSync.Broadcast(tx);
