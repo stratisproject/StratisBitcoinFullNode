@@ -46,6 +46,9 @@ namespace Stratis.SmartContracts.Tools.Sct.Deployment
         [Required]
         public string Password { get; }
 
+        [Option("-amount|--amount", CommandOptionType.SingleValue, Description = "Amount")]
+        public string Amount { get; }
+
         [Option("-gasprice|--gasprice", CommandOptionType.SingleValue, Description = "Gas price")]
         public string GasPrice { get; }
 
@@ -109,6 +112,7 @@ namespace Stratis.SmartContracts.Tools.Sct.Deployment
             model.ContractCode = compilation.ToHexString();
             model.AccountName = this.AccountName;
             model.FeeAmount = this.FeeAmount;
+            model.Amount = this.Amount;
             model.GasPrice = this.GasPrice;
             model.GasLimit = this.GasLimit;
             model.Password = this.Password;

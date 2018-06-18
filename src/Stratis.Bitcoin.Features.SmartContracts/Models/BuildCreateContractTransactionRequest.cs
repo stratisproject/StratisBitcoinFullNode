@@ -19,6 +19,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Models
 
         public string AccountName { get; set; }
 
+        public string Amount { get; set; }
+
         [MoneyFormat(isRequired: false, ErrorMessage = "The fee is not in the correct format.")]
         public string FeeAmount { get; set; }
 
