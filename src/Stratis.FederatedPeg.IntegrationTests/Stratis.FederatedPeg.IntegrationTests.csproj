@@ -15,17 +15,17 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.7.2" />
-    <PackageReference Include="NStratis" Version="4.0.0.60" />
-    <PackageReference Include="Stratis.Bitcoin" Version="1.1.11-beta" />
-    <PackageReference Include="Stratis.Bitcoin.Api" Version="1.1.11-beta" />
-    <PackageReference Include="Stratis.Bitcoin.Features.BlockStore" Version="1.1.11-beta" />
-    <PackageReference Include="Stratis.Bitcoin.Features.Consensus" Version="1.1.11-beta" />
-    <PackageReference Include="Stratis.Bitcoin.Features.MemoryPool" Version="1.1.11-beta" />
-    <PackageReference Include="Stratis.Bitcoin.Features.Miner" Version="1.1.11-beta" />
-    <PackageReference Include="Stratis.Bitcoin.Features.Notifications" Version="1.1.11-beta" />
-    <PackageReference Include="Stratis.Bitcoin.Features.RPC" Version="1.1.11-beta" />
-    <PackageReference Include="Stratis.Bitcoin.Features.Wallet" Version="1.1.11-beta" />
-    <PackageReference Include="Stratis.Bitcoin.IntegrationTests.Common" Version="1.1.11-beta" />
+    <PackageReference Include="NStratis" Version="4.0.0.61" />
+    <PackageReference Include="Stratis.Bitcoin" Version="1.1.12-beta" />
+    <PackageReference Include="Stratis.Bitcoin.Api" Version="1.1.12-beta" />
+    <PackageReference Include="Stratis.Bitcoin.Features.BlockStore" Version="1.1.12-beta" />
+    <PackageReference Include="Stratis.Bitcoin.Features.Consensus" Version="1.1.12-beta" />
+    <PackageReference Include="Stratis.Bitcoin.Features.MemoryPool" Version="1.1.12-beta" />
+    <PackageReference Include="Stratis.Bitcoin.Features.Miner" Version="1.1.12-beta" />
+    <PackageReference Include="Stratis.Bitcoin.Features.Notifications" Version="1.1.12-beta" />
+    <PackageReference Include="Stratis.Bitcoin.Features.RPC" Version="1.1.12-beta" />
+    <PackageReference Include="Stratis.Bitcoin.Features.Wallet" Version="1.1.12-beta" />
+    <PackageReference Include="Stratis.Bitcoin.IntegrationTests.Common" Version="1.1.12-beta" />
     <PackageReference Include="xunit" Version="2.3.1" />
     <PackageReference Include="xunit.runner.console" Version="2.3.1" />
     <PackageReference Include="xunit.runner.visualstudio" Version="2.3.1" />
