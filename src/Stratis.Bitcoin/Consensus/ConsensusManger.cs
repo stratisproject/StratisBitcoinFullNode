@@ -353,7 +353,9 @@ namespace Stratis.Bitcoin.Consensus
                         this.callbacksByBlocksRequestedHash.Add(chainedHeader.HashBlock, callbacks);
                     }
                     else
+                    {
                         this.logger.LogTrace("Registered additional callback for the block '{0}'.", chainedHeader);
+                    }
                     
                     callbacks.Add(onBlockDownloadedCallback);
                     
@@ -409,6 +411,12 @@ namespace Stratis.Bitcoin.Consensus
                     this.expectedBlockDataBytes -= expectedSize;
                     this.expectedBlockSizes.Remove(blockHash);
                     this.logger.LogTrace("Expected block data bytes was set to {0} and we are expecting {1} blocks to be delivered.", this.expectedBlockDataBytes, this.expectedBlockSizes.Count);
+                }
+                else
+                {
+                    // This means the puller has not filtered blockes correctly.
+                    this.logger.LogError("Unsolicited block `{0}`.", blockHash);
+                    throw new InvalidOperationException("Unsolicited block");
                 }
 
                 if (block != null)
