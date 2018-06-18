@@ -15,7 +15,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
 
     internal class MonitorChainSession
     {
-        public SessionStatus Status { get; set; } = SessionStatus.Created;
+        public SessionStatus Status { get; set; }
 
         // Time when the session started.
         private readonly DateTime startTime;
@@ -33,11 +33,12 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
         public BossTable BossTable { get; }
 
         // My boss card. I only get to build and broadcast the transaction when my boss card is in play.
-        public string BossCard { get; }       
+        public string BossCard { get; }
 
         public MonitorChainSession(DateTime startTime, uint256 transactionHash, Money amount, string destinationAddress,
             int blockNumber, Chain chain,  string[] federationPubKeys, string myPublicKey, int m, int n)
         {
+            this.Status = SessionStatus.Created;
             this.startTime = startTime;
             this.SessionId = transactionHash;
             this.Amount = amount;

@@ -94,18 +94,17 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
 
             if (message.Message.Payload is RequestPartialTransactionPayload payload)
             {
-                this.logger.LogTrace("()");
-                this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} RequestPartialTransactionPayload received.");
-                this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} OnMessageReceivedAsync: {this.network.ToChain()}");
-                this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} RequestPartialTransactionPayload: SessionId           - {payload.SessionId}.");
-                this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} RequestPartialTransactionPayload: BossCard            - {payload.BossCard}.");
-                this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} RequestPartialTransactionPayload: PartialTransaction  - {payload.PartialTransaction}.");
-                this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} RequestPartialTransactionPayload: TemplateTransaction - {payload.TemplateTransaction}.");
+                this.logger.LogInformation("RequestPartialTransactionPayload received.");
+                this.logger.LogInformation($"OnMessageReceivedAsync: {this.network.ToChain()}");
+                this.logger.LogInformation($"RequestPartialTransactionPayload: SessionId           - {payload.SessionId}.");
+                this.logger.LogInformation($"RequestPartialTransactionPayload: BossCard            - {payload.BossCard}.");
+                this.logger.LogInformation($"RequestPartialTransactionPayload: PartialTransaction  - {payload.PartialTransaction}.");
+                this.logger.LogInformation($"RequestPartialTransactionPayload: TemplateTransaction - {payload.TemplateTransaction}.");
 
                 if (payload.BossCard == uint256.Zero)
                 {
                     //get the template from the payload
-                    this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} OnMessageReceivedAsync: Payload has no bossCard -> signing partial.");
+                    this.logger.LogInformation("OnMessageReceivedAsync: Payload has no bossCard -> signing partial.");
 
                     var template = payload.TemplateTransaction;
 
@@ -119,21 +118,21 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
                     var signedTransaction = wallet.SignPartialTransaction(template, "password");
                     payload.AddPartial(signedTransaction, BossTable.MakeBossTableEntry(payload.SessionId, this.federationGatewaySettings.PublicKey));
 
-                    this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} OnMessageReceivedAsync: PartialTransaction signed.");
-                    this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} RequestPartialTransactionPayload: BossCard            - {payload.BossCard}.");
-                    this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} RequestPartialTransactionPayload: PartialTransaction  - {payload.PartialTransaction}.");
-                    this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} Broadcasting Payload....");
+                    this.logger.LogInformation("OnMessageReceivedAsync: PartialTransaction signed.");
+                    this.logger.LogInformation($"RequestPartialTransactionPayload: BossCard            - {payload.BossCard}.");
+                    this.logger.LogInformation($"RequestPartialTransactionPayload: PartialTransaction  - {payload.PartialTransaction}.");
+                    this.logger.LogInformation("Broadcasting Payload....");
 
                     await this.Broadcast(payload);
 
-                    this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} Broadcasted.");
+                    this.logger.LogInformation("Broadcasted.");
                 }
                 else
                 {
-                    this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} RequestPartialTransactionPayload: SessionId           - {payload.SessionId}.");
-                    this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} RequestPartialTransactionPayload: BossCard            - {payload.BossCard}.");
-                    this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} RequestPartialTransactionPayload: PartialTransaction  - {payload.PartialTransaction}.");
-                    this.logger.LogInformation($"{this.federationGatewaySettings.MemberName} RequestPartialTransactionPayload: TemplateTransaction - {payload.TemplateTransaction}.");
+                    this.logger.LogInformation($"RequestPartialTransactionPayload: SessionId           - {payload.SessionId}.");
+                    this.logger.LogInformation($"RequestPartialTransactionPayload: BossCard            - {payload.BossCard}.");
+                    this.logger.LogInformation($"RequestPartialTransactionPayload: PartialTransaction  - {payload.PartialTransaction}.");
+                    this.logger.LogInformation($"RequestPartialTransactionPayload: TemplateTransaction - {payload.TemplateTransaction}.");
 
                     //we got a partial back
                     this.counterChainSessionManager.ReceivePartial(payload.SessionId, payload.PartialTransaction, payload.BossCard);

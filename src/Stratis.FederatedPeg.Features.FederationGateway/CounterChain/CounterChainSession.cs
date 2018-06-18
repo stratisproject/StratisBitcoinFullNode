@@ -33,10 +33,10 @@ public class CounterChainSession
             this.bossTable = new BossTableBuilder().Build(sessionId, addresses);
         }
 
-        internal bool AddPartial(string memberName, Transaction partialTransaction, string bossCard)
+        internal bool AddPartial(Transaction partialTransaction, string bossCard)
         {
             this.logger.LogTrace("()");
-            this.logger.LogInformation($"{memberName} Adding Partial to MonitorChainSession.");
+            this.logger.LogInformation("Adding Partial to MonitorChainSession.");
             
             // Insert the partial transaction in the session.
             int positionInTable = 0;
@@ -49,18 +49,18 @@ public class CounterChainSession
             this.HasReachedQuorum = this.CountPartials() >= 2;
             
             // Output parts info.
-            this.logger.LogInformation($"{memberName} New Partials");
-            this.logger.LogInformation($"{memberName} ---------");
+            this.logger.LogInformation("New Partials");
+            this.logger.LogInformation(" ---------");
             foreach (var p in partialTransactions)
             {
                 if (p == null)
-                    this.logger.LogInformation($"{memberName} null");
+                    this.logger.LogInformation("null");
                 else
-                    this.logger.LogInformation($"{memberName} {p?.ToHex()}");
+                    this.logger.LogInformation($"{p?.ToHex()}");
             }
 
-            this.logger.LogInformation($"{memberName} ---------");
-            this.logger.LogInformation($"{memberName} HasQuorum: {this.HasReachedQuorum}");
+            this.logger.LogInformation($"---------");
+            this.logger.LogInformation($"HasQuorum: {this.HasReachedQuorum}");
             this.logger.LogTrace("(-)");
             
             // End output. 

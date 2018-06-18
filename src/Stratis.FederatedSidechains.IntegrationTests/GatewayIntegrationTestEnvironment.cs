@@ -97,7 +97,6 @@ namespace Stratis.FederatedSidechains.IntegrationTests
             {
                 var addParametersAction = new Action<CoreNode>(n =>
                 {
-                    n.ConfigParameters.Add("membername", key.AsFederationMemberKey().Name);
                     n.ConfigParameters.Add("apiport", key.SelfApiPort.ToString());
                     n.ConfigParameters.Add("counterchainapiport", key.CounterChainApiPort.ToString());
                     n.ConfigParameters.Add("redeemscript", this.RedeemScript.ToString());

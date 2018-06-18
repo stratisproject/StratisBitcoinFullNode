@@ -32,7 +32,6 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
             this.MultiSigM = configReader.GetOrDefault("multisigM", payToMultisigScriptParams.SignatureCount);
             this.MultiSigN = configReader.GetOrDefault("multisigN", payToMultisigScriptParams.PubKeys.Length);
             this.FederationPublicKeys = payToMultisigScriptParams.PubKeys;
-            this.MemberName = configReader.GetOrDefault("membername", "unspecified");
             this.MultiSigWalletName = configReader.GetOrDefault("multisigwalletname", "multisig_wallet");
             this.PublicKey = configReader.GetOrDefault<string>("publickey", null);
             this.FederationFolder = configReader.GetOrDefault<string>("federationfolder", null);
@@ -42,11 +41,6 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
         }
 
         public IEnumerable<IPEndPoint> FederationNodeIps { get; set; }
-
-        /// <summary>
-        /// The MemberName is used to distiguish between federation gateways in the debug logs.
-        /// </summary>
-        public string MemberName { get; set; }
 
         /// <summary>
         /// A string representation of the PublicKey used for determining turns in the round robin.
