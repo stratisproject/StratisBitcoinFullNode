@@ -1,16 +1,18 @@
 ﻿using System.Diagnostics;
 using System.IO;
+using NBitcoin;
 
 namespace Stratis.Bitcoin.IntegrationTests.Common.Runners
 {
     public sealed class BitcoinCoreRunner : NodeRunner
     {
-        private string bitcoinD;
+        private readonly string bitcoinD;
 
         public BitcoinCoreRunner(string dataDir, string bitcoinD)
             : base(dataDir)
         {
             this.bitcoinD = bitcoinD;
+            this.Network = Network.RegTest;
         }
 
         private Process process;

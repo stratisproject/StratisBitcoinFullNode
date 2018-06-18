@@ -17,11 +17,12 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.Runners
         public StratisPosApiRunner(string dataDir)
             : base(dataDir)
         {
+            this.Network = Network.StratisRegTest;
         }
 
         public override void BuildNode()
         {
-            var settings = new NodeSettings(Network.StratisRegTest, ProtocolVersion.ALT_PROTOCOL_VERSION, args: new string[] { "-conf=stratis.conf", "-datadir=" + this.DataFolder });
+            var settings = new NodeSettings(this.Network, ProtocolVersion.ALT_PROTOCOL_VERSION, args: new string[] { "-conf=stratis.conf", "-datadir=" + this.DataFolder });
 
             this.FullNode = (FullNode)new FullNodeBuilder()
                             .UseNodeSettings(settings)
