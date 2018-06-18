@@ -1,79 +1,65 @@
+using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
-using Stratis.FederatedPeg.Features.FederationGateway;
 
-public class CounterChainSession
+namespace Stratis.FederatedPeg.Features.FederationGateway.CounterChain
+{
+    public class CounterChainSession
     {
-        private Transaction[] partialTransactions;
-
+        public List<Transaction> PartialTransactions { get; private set; }
         public uint256 SessionId { get; }
-
         public Money Amount { get; }
-
         public string Destination { get; }
-    
-        // todo: we can remove this if we just use a list for the partials
-        private BossTable bossTable;
-
-        public bool HasReachedQuorum { get; private set; }
-
-        public Transaction[] PartialTransactions => this.partialTransactions;
-
-        private ILogger logger;
-
+        public bool HasReachedQuorum => 
+            this.PartialTransactions.Count >= federationGatewaySettings.MultiSigM;
         public bool HaveISigned { get; set; } = false;
+        public FederationGatewaySettings federationGatewaySettings { get; }
 
-        public CounterChainSession(ILogger logger, int federationSize, uint256 sessionId, string[] addresses, Money amount, string destination)
+        private readonly ILogger logger;
+
+        public CounterChainSession(ILogger logger,
+            FederationGatewaySettings federationGatewaySettings,
+            uint256 sessionId,
+            Money amount, 
+            string destination)
         {
             this.logger = logger;
-            this.partialTransactions = new Transaction[federationSize];
+            this.federationGatewaySettings = federationGatewaySettings;
+            this.PartialTransactions = new List<Transaction>();
             this.SessionId = sessionId;
             this.Amount = amount;
             this.Destination = destination;
-            this.bossTable = new BossTableBuilder().Build(sessionId, addresses);
         }
 
         internal bool AddPartial(Transaction partialTransaction, string bossCard)
         {
             this.logger.LogTrace("()");
-            this.logger.LogInformation("Adding Partial to MonitorChainSession.");
+            if (partialTransaction == null)
+            {
+                this.logger.LogDebug("Skipped adding a null partial transaction");
+                return false;
+            }
+            
+            this.logger.LogDebug("Adding Partial to CounterChainSession.");
             
             // Insert the partial transaction in the session.
-            int positionInTable = 0;
-            for (; positionInTable < 3; ++positionInTable )
-                if (bossCard == bossTable.BossTableEntries[positionInTable])
-                    break;
-            this.partialTransactions[positionInTable] = partialTransaction;
-            
-            // Have we reached Quorum?
-            this.HasReachedQuorum = this.CountPartials() >= 2;
+            this.PartialTransactions.Add(partialTransaction);
             
             // Output parts info.
-            this.logger.LogInformation("New Partials");
-            this.logger.LogInformation(" ---------");
-            foreach (var p in partialTransactions)
+            this.logger.LogDebug("New Partials");
+            this.logger.LogDebug(" ---------");
+            foreach (var p in PartialTransactions)
             {
-                if (p == null)
-                    this.logger.LogInformation("null");
-                else
-                    this.logger.LogInformation($"{p?.ToHex()}");
+                this.logger.LogDebug(p.ToHex());
             }
-
-            this.logger.LogInformation($"---------");
-            this.logger.LogInformation($"HasQuorum: {this.HasReachedQuorum}");
+                
+            // Have we reached Quorum?
+            this.logger.LogDebug("---------");
+            this.logger.LogDebug(string.Format("HasQuorum: {0}", this.HasReachedQuorum));
             this.logger.LogTrace("(-)");
             
             // End output. 
             return this.HasReachedQuorum;
         }
-
-        private int CountPartials()
-        {
-            int positionInTable = 0;
-            int count = 0;
-            for (; positionInTable < 3; ++positionInTable)
-                if (partialTransactions[positionInTable] != null)
-                    ++count;
-            return count;
-        }
     }
+}
