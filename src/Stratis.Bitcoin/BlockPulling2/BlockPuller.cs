@@ -492,8 +492,7 @@ namespace Stratis.Bitcoin.BlockPulling2
             this.logger.LogTrace("(-):{0}", exists);
             return exists;
         }
-
-
+        
         /// <summary>Asks peer behaviors in parallel to deliver blocks.</summary>
         /// <param name="assignments">Assignments given to peers.</param>
         private async Task AskPeersForBlocksAsync(Dictionary<uint256, AssignedDownload> assignments)
@@ -672,13 +671,10 @@ namespace Stratis.Bitcoin.BlockPulling2
                         int peerId = current.Value.PeerId;
                         HashSet<uint256> hashesAssignedToPeer = this.assignedHashesByPeerId[peerId];
 
-                        lock (this.assignedLock)
+                        foreach (uint256 assignedHash in hashesAssignedToPeer)
                         {
-                            foreach (uint256 assignedHash in hashesAssignedToPeer)
-                            {
-                                this.TryRemoveAssignedDownloadLocked(assignedHash, out AssignedDownload removedAssignment);
-                                toReassign.Add(assignedHash, removedAssignment.JobId);
-                            }
+                            this.TryRemoveAssignedDownloadLocked(assignedHash, out AssignedDownload removedAssignment);
+                            toReassign.Add(assignedHash, removedAssignment.JobId);
                         }
                         
                         int reassignedCount = hashesAssignedToPeer.Count;
