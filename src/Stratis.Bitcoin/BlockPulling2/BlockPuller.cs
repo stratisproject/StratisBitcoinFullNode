@@ -54,8 +54,8 @@ namespace Stratis.Bitcoin.BlockPulling2
         /// <summary>Collection of all download assignments to the peers sorted by block height.</summary>
         private readonly Dictionary<uint256, AssignedDownload> assignedDownloads;
 
-        /// <summary>Assigned hashes mapped by block height.</summary>
-        private readonly SortedDictionary<int, HashSet<uint256>> assignedHashesByHeights; //TODO linked list instead
+        /// <summary>Assigned downloads sorted by block height.</summary>
+        private readonly LinkedList<AssignedDownload> assignedDownloadsByHeights;
 
         /// <summary>Assigned hashes mapped by peer Id.</summary>
         private readonly Dictionary<int, HashSet<uint256>> assignedHashesByPeerId;
@@ -119,7 +119,7 @@ namespace Stratis.Bitcoin.BlockPulling2
             this.downloadJobsQueue = new Queue<DownloadJob>();
 
             this.assignedDownloads = new Dictionary<uint256, AssignedDownload>();
-            this.assignedHashesByHeights = new SortedDictionary<int, HashSet<uint256>>();
+            this.assignedDownloadsByHeights = new LinkedList<AssignedDownload>();
             this.assignedHashesByPeerId = new Dictionary<int, HashSet<uint256>>();
 
             this.averageBlockSizeBytes = new AverageCalculator(1000);
@@ -376,7 +376,7 @@ namespace Stratis.Bitcoin.BlockPulling2
         }
 
         /// <summary>
-        /// Adds assigned download to <see cref="assignedDownloads"/> and helper structures <see cref="assignedHashesByHeights"/> and <see cref="assignedHashesByPeerId"/>.
+        /// Adds assigned download to <see cref="assignedDownloads"/> and helper structures <see cref="assignedDownloadsByHeights"/> and <see cref="assignedHashesByPeerId"/>.
         /// </summary>
         /// <param name="hash">Hash of a block that is associated with <paramref name="assignment"/>.</param>
         /// <param name="assignment">The assignment.</param>
@@ -385,15 +385,6 @@ namespace Stratis.Bitcoin.BlockPulling2
             this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(hash), hash, nameof(assignment), assignment);
 
             this.assignedDownloads.Add(hash, assignment);
-            
-            // Add to assignedHashesByHeights
-            if (!this.assignedHashesByHeights.TryGetValue(assignment.BlockHeight, out HashSet<uint256> hashesForHeights))
-            {
-                hashesForHeights = new HashSet<uint256>();
-                this.assignedHashesByHeights.Add(assignment.BlockHeight, hashesForHeights);
-            }
-
-            hashesForHeights.Add(hash);
 
             // Add to assignedHashesByPeerId
             if (!this.assignedHashesByPeerId.TryGetValue(assignment.PeerId, out HashSet<uint256> hashesForIds))
@@ -403,11 +394,34 @@ namespace Stratis.Bitcoin.BlockPulling2
             }
             hashesForIds.Add(hash);
 
+            // Add to assignedDownloadsByHeights
+            LinkedListNode<AssignedDownload> lastDownload = this.assignedDownloadsByHeights.Last;
+
+            if ((lastDownload == null) || (lastDownload.Value.BlockHeight <= assignment.BlockHeight))
+            {
+                this.assignedDownloadsByHeights.AddLast(assignment);
+            }
+            else
+            {
+                LinkedListNode<AssignedDownload> current = lastDownload;
+
+                while (true)
+                {
+                    current = current.Previous;
+
+                    if (current.Value.BlockHeight <= assignment.BlockHeight)
+                    {
+                        this.assignedDownloadsByHeights.AddAfter(current, assignment);
+                        break;
+                    }
+                }
+            }
+            
             this.logger.LogTrace("(-)");
         }
 
         /// <summary>
-        /// Removed assigned download from <see cref="assignedDownloads"/> and helper structures <see cref="assignedHashesByHeights"/> and <see cref="assignedHashesByPeerId"/>.
+        /// Removed assigned download from <see cref="assignedDownloads"/> and helper structures <see cref="assignedDownloadsByHeights"/> and <see cref="assignedHashesByPeerId"/>.
         /// </summary>
         /// <param name="hash">Hash of a block that is associated with <paramref name="assignment"/>.</param>
         /// <param name="assignment">The assignment.</param>
@@ -421,18 +435,23 @@ namespace Stratis.Bitcoin.BlockPulling2
             {
                 this.assignedDownloads.Remove(hash);
 
-                if (this.assignedHashesByHeights.TryGetValue(assignment.BlockHeight, out HashSet<uint256> hashesForHeights))
-                {
-                    hashesForHeights.Remove(hash);
-                    if (hashesForHeights.Count == 0)
-                        this.assignedHashesByHeights.Remove(assignment.BlockHeight);
-                }
-
                 if (this.assignedHashesByPeerId.TryGetValue(assignment.PeerId, out HashSet<uint256> hashesForIds))
                 {
                     hashesForIds.Remove(hash);
                     if (hashesForIds.Count == 0)
                         this.assignedHashesByPeerId.Remove(assignment.PeerId);
+                }
+
+                LinkedListNode<AssignedDownload> current = this.assignedDownloadsByHeights.First;
+                while (true)
+                {
+                    if (current.Value.BlockHash == assignment.BlockHash)
+                    {
+                        this.assignedDownloadsByHeights.Remove(current);
+                        break;
+                    }
+
+                    current = current.Next;
                 }
             }
 
@@ -541,7 +560,8 @@ namespace Stratis.Bitcoin.BlockPulling2
                             PeerId = peerId,
                             JobId = downloadJob.Id,
                             AssignedTime = DateTime.UtcNow,
-                            BlockHeight = header.Height
+                            BlockHeight = header.Height,
+                            BlockHash = hashToAssign
                         });
 
                         this.logger.LogTrace("Block '{0}' was assigned to peer {1}.", hashToAssign, peerTip);
@@ -594,46 +614,43 @@ namespace Stratis.Bitcoin.BlockPulling2
                 {
                     reassigned = false;
 
-                    foreach (KeyValuePair<int, HashSet<uint256>> hashesByHeight in this.assignedHashesByHeights)
+                    LinkedListNode<AssignedDownload> current = this.assignedDownloadsByHeights.First;
+
+                    while (current != null)
                     {
                         // Since the dictionary is sorted by height after we found first not important block we can assume that the rest of them are not important.
-                        if (hashesByHeight.Key > lastImportantHeight)
+                        if (current.Value.BlockHeight > lastImportantHeight)
                             break;
+                        
+                        double secondsPassed = (DateTime.UtcNow - current.Value.AssignedTime).TotalSeconds;
 
-                        foreach (uint256 hash in hashesByHeight.Value)
+                        if (secondsPassed < MaxSecondsToDeliverBlock)
                         {
-                            AssignedDownload assignedDownload = this.assignedDownloads[hash];
-
-                            double secondsPassed = (DateTime.UtcNow - assignedDownload.AssignedTime).TotalSeconds;
-
-                            if (secondsPassed < MaxSecondsToDeliverBlock)
-                                continue;
-
-                            // Peer failed to deliver important block. Reassign all his jobs.
-                            int peerId = assignedDownload.PeerId;
-                            HashSet<uint256> hashesAssignedToPeer = this.assignedHashesByPeerId[peerId];
-
-                            foreach (uint256 assignedHash in hashesAssignedToPeer)
-                            {
-                                this.TryRemoveAssignedDownloadLocked(assignedHash, out AssignedDownload removedAssignment);
-                                toReassign.Add(assignedHash, removedAssignment.JobId);
-                            }
-                            
-                            int reassignedCount = hashesAssignedToPeer.Count;
-
-                            this.logger.LogDebug("Peer {0} failed to deliver {1} blocks from which some were important.", peerId, reassignedCount);
-
-                            BlockPullerBehavior pullerBehavior = this.pullerBehaviorsByPeerId[peerId];
-                            pullerBehavior.Penalize(MaxSecondsToDeliverBlock, reassignedCount);
-
-                            this.RecalculateQuealityScoreLocked(pullerBehavior, peerId);
-
-                            reassigned = true;
-                            break;
+                            current = current.Next;
+                            continue;
                         }
 
-                        if (reassigned)
-                            break;
+                        // Peer failed to deliver important block. Reassign all his jobs.
+                        int peerId = current.Value.PeerId;
+                        HashSet<uint256> hashesAssignedToPeer = this.assignedHashesByPeerId[peerId];
+
+                        foreach (uint256 assignedHash in hashesAssignedToPeer)
+                        {
+                            this.TryRemoveAssignedDownloadLocked(assignedHash, out AssignedDownload removedAssignment);
+                            toReassign.Add(assignedHash, removedAssignment.JobId);
+                        }
+                        
+                        int reassignedCount = hashesAssignedToPeer.Count;
+
+                        this.logger.LogDebug("Peer {0} failed to deliver {1} blocks from which some were important.", peerId, reassignedCount);
+
+                        BlockPullerBehavior pullerBehavior = this.pullerBehaviorsByPeerId[peerId];
+                        pullerBehavior.Penalize(MaxSecondsToDeliverBlock, reassignedCount);
+
+                        this.RecalculateQuealityScoreLocked(pullerBehavior, peerId);
+
+                        reassigned = true;
+                        break;
                     }
                 } while (reassigned);
             }
@@ -852,6 +869,9 @@ namespace Stratis.Bitcoin.BlockPulling2
 
             /// <summary>Height of a block associated with this assignment.</summary>
             public int BlockHeight;
+            
+            /// <summary>Hash or the requested block.</summary>
+            public uint256 BlockHash;
 
             public override string ToString()
             {
