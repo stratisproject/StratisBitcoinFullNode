@@ -18,6 +18,11 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
         public uint256 SessionId => this.sessionId;
 
         public uint256 BossCard => this.bossCard;
+        
+        // Needed for deserialization.
+        public RequestPartialTransactionPayload()
+        {
+        }
 
         public RequestPartialTransactionPayload(uint256 sessionId, Transaction template)
         {
