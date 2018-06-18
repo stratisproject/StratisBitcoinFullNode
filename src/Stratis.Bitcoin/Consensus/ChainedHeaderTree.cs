@@ -848,7 +848,7 @@ namespace Stratis.Bitcoin.Consensus
             this.logger.LogTrace("({0}:'{1}')", nameof(chainedHeader), chainedHeader);
 
             ChainedHeader currentHeader = chainedHeader;
-            while (true)
+            while (currentHeader.Previous != null)
             {
                 // If current header is an ancestor of some other tip claimed by a peer, do nothing.
                 bool headerHasDecendents = currentHeader.Next.Count > 0;
@@ -865,7 +865,7 @@ namespace Stratis.Bitcoin.Consensus
                     break;
                 }
 
-                this.DisconnectChainHeader(chainedHeader);
+                this.DisconnectChainHeader(currentHeader);
 
                 this.logger.LogTrace("Header '{0}' was removed from the tree.", currentHeader);
 

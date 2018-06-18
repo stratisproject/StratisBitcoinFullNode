@@ -350,8 +350,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
             // Setup new chain that only covers first checkpoint but doesn't cover second checkpoint.
             // Example: h1=h2=h3=(h4)=h5=h6=x7=x8=x9=x10.
             const int newChainExtension = 4;
-            extendedChainTip = extendedChainTip.Previous; // walk back to block 6
-            extendedChainTip = extendedChainTip.Previous;
+            extendedChainTip = extendedChainTip.GetAncestor(6); // walk back to block 6
             extendedChainTip = ctx.ExtendAChain(newChainExtension, extendedChainTip); 
             List<BlockHeader> listOfNewChainHeaders = ctx.ChainedHeaderToList(extendedChainTip, extendedChainTip.Height);
 
@@ -368,11 +367,11 @@ namespace Stratis.Bitcoin.Tests.Consensus
                 cht.ConnectNewHeaders(1, violatingHeaders);
             };
 
+            connectAction.Should().Throw<InvalidHeaderException>();
+
             // Make sure headers for violating chain don't exist.
             foreach (BlockHeader header in violatingHeaders)
                 Assert.False(cht.GetChainedHeadersByHash().ContainsKey(header.GetHash()));
-
-            connectAction.Should().Throw<InvalidHeaderException>();
         }
 
         /// <summary>
