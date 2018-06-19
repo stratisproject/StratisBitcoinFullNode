@@ -271,9 +271,9 @@ namespace Stratis.Bitcoin.Tests.Consensus
             const int commonChainSize = 4;
             const int chainAExtension = 4;
             const int chainBExtension = 2;
-            ChainedHeader commonChainTip = ctx.ExtendAChain(commonChainSize, initialChainTip); // ie. h1=h2=h3=h4
-            ChainedHeader chainATip = ctx.ExtendAChain(chainAExtension, commonChainTip); // ie. (h1=h2=h3=h4)=a5=a6=a7=a8
-            ChainedHeader chainBTip = ctx.ExtendAChain(chainBExtension, commonChainTip); // ie. (h1=h2=h3=h4)=b5=b6
+            ChainedHeader commonChainTip = ctx.ExtendAChain(commonChainSize, initialChainTip); // i.e. h1=h2=h3=h4
+            ChainedHeader chainATip = ctx.ExtendAChain(chainAExtension, commonChainTip); // i.e. (h1=h2=h3=h4)=a5=a6=a7=a8
+            ChainedHeader chainBTip = ctx.ExtendAChain(chainBExtension, commonChainTip); // i.e. (h1=h2=h3=h4)=b5=b6
             List<BlockHeader> listOfChainABlockHeaders = ctx.ChainedHeaderToList(chainATip, commonChainSize + chainAExtension);
             List<BlockHeader> listOfChainBBlockHeaders = ctx.ChainedHeaderToList(chainBTip, commonChainSize + chainBExtension);
 
@@ -292,7 +292,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
 
             // Add more chain work and blocks into chain B.
             const int chainBAdditionalBlocks = 4;
-            chainBTip = ctx.ExtendAChain(chainBAdditionalBlocks, chainBTip); // ie. (h1=h2=h3=h4)=b5=b6=b7=b8=b9=b10
+            chainBTip = ctx.ExtendAChain(chainBAdditionalBlocks, chainBTip); // i.e. (h1=h2=h3=h4)=b5=b6=b7=b8=b9=b10
             listOfChainBBlockHeaders = ctx.ChainedHeaderToList(chainBTip, commonChainSize + chainBExtension + chainBAdditionalBlocks);
             List<BlockHeader> listOfNewChainBBlockHeaders = listOfChainBBlockHeaders.TakeLast(chainBAdditionalBlocks).ToList();
 
@@ -322,9 +322,9 @@ namespace Stratis.Bitcoin.Tests.Consensus
             const int currentChainExtension = 6;
             var ctx = new TestContext();
             ChainedHeaderTree cht = ctx.CreateChainedHeaderTree();
-            ChainedHeader initialChainTip = ctx.ExtendAChain(initialChainSize); // ie. h1=h2
+            ChainedHeader initialChainTip = ctx.ExtendAChain(initialChainSize); // i.e. h1=h2
             cht.Initialize(initialChainTip, true); 
-            ChainedHeader extendedChainTip = ctx.ExtendAChain(currentChainExtension, initialChainTip); // ie. h1=h2=h3=h4=h5=h6=h7=h8
+            ChainedHeader extendedChainTip = ctx.ExtendAChain(currentChainExtension, initialChainTip); // i.e. h1=h2=h3=h4=h5=h6=h7=h8
             ctx.ConsensusSettings.UseCheckpoints = true;
             List<BlockHeader> listOfCurrentChainHeaders = ctx.ChainedHeaderToList(extendedChainTip, initialChainSize + currentChainExtension);
 
@@ -391,8 +391,8 @@ namespace Stratis.Bitcoin.Tests.Consensus
 
             // Setup two alternative chains A and B of the same length.
             const int presentedChainSize = 4;
-            ChainedHeader chainATip = ctx.ExtendAChain(presentedChainSize, initialChainTip); // ie. h1=h2=a1=a2=a3=a4
-            ChainedHeader chainBTip = ctx.ExtendAChain(presentedChainSize, initialChainTip); // ie. h1=h2=b1=b2=b3=b4
+            ChainedHeader chainATip = ctx.ExtendAChain(presentedChainSize, initialChainTip); // i.e. h1=h2=a1=a2=a3=a4
+            ChainedHeader chainBTip = ctx.ExtendAChain(presentedChainSize, initialChainTip); // i.e. h1=h2=b1=b2=b3=b4
             List<BlockHeader> listOfChainABlockHeaders = ctx.ChainedHeaderToList(chainATip, initialChainSize + presentedChainSize);
             List<BlockHeader> listOfChainBBlockHeaders = ctx.ChainedHeaderToList(chainBTip, initialChainSize + presentedChainSize);
 
@@ -426,12 +426,12 @@ namespace Stratis.Bitcoin.Tests.Consensus
             const int extensionChainSize = 2;
             var ctx = new TestContext();
             ChainedHeaderTree cht = ctx.CreateChainedHeaderTree();
-            ChainedHeader initialChainTip = ctx.ExtendAChain(initialChainSize); // ie. h1=h2
+            ChainedHeader initialChainTip = ctx.ExtendAChain(initialChainSize); // i.e. h1=h2
             ctx.ConsensusSettings.UseCheckpoints = true;
             cht.Initialize(initialChainTip, true);
 
             // Extend chain with 2 more headers.
-            initialChainTip = ctx.ExtendAChain(extensionChainSize, initialChainTip); // ie. h1=h2=h3=h4
+            initialChainTip = ctx.ExtendAChain(extensionChainSize, initialChainTip); // i.e. h1=h2=h3=h4
             List<BlockHeader> listOfCurrentChainHeaders = ctx.ChainedHeaderToList(initialChainTip, initialChainSize + extensionChainSize);
 
             // Setup a known checkpoint at header 4.
@@ -459,8 +459,8 @@ namespace Stratis.Bitcoin.Tests.Consensus
             // Chain B only covers the last checkpoint (4), but is longer that chain A.
             const int chainAExtensionSize = 2;
             const int chainBExtensionSize = 6;
-            ChainedHeader chainATip = ctx.ExtendAChain(chainAExtensionSize, extendedChainTip); // ie. h1=h2=h3=(h4)=h5=[h6]=a7=a8
-            ChainedHeader chainBTip = ctx.ExtendAChain(chainBExtensionSize, initialChainTip); // ie. h1=h2=h3=(h4)=b5=b6=b7=b8=b9=b10
+            ChainedHeader chainATip = ctx.ExtendAChain(chainAExtensionSize, extendedChainTip); // i.e. h1=h2=h3=(h4)=h5=[h6]=a7=a8
+            ChainedHeader chainBTip = ctx.ExtendAChain(chainBExtensionSize, initialChainTip); // i.e. h1=h2=h3=(h4)=b5=b6=b7=b8=b9=b10
             List<BlockHeader> listOfChainABlockHeaders = ctx.ChainedHeaderToList(chainATip, initialChainSize + extensionChainSize + chainExtension + chainAExtensionSize);
             List<BlockHeader> listOfChainBBlockHeaders = ctx.ChainedHeaderToList(chainBTip, initialChainSize + extensionChainSize + chainBExtensionSize);
 
