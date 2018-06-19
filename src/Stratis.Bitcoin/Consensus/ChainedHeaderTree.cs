@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
@@ -1070,7 +1071,14 @@ namespace Stratis.Bitcoin.Consensus
             {
                 ChainedHeader fork = chainedHeader.FindFork(consensusTip);
 
-                if ((fork != null) && (fork != consensusTip))
+                if (fork == null)
+                {
+                    this.logger.LogError("Header '{0}' is from a different network.", chainedHeader);
+                    this.logger.LogTrace("(-)[HEADER_IS_INVALID_NETWORK]");
+                    throw new InvalidOperationException("Header is from a different network");
+                }
+
+                if ((fork != chainedHeader) && (fork != consensusTip))
                 {
                     int reorgLength = consensusTip.Height - fork.Height;
 
