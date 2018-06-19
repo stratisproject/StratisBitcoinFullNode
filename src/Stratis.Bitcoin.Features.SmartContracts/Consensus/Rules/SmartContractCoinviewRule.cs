@@ -205,18 +205,10 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         /// <inheritdoc />
         public override Money GetProofOfWorkReward(int height)
         {
-            int halvings = height / this.consensusParams.SubsidyHalvingInterval;
+            if (height == this.Parent.Network.Consensus.PremineHeight)
+                return this.Parent.Network.Consensus.PremineReward;
 
-            // Force block reward to zero when right shift is undefined.
-            if (halvings >= 64)
-                return 0;
-
-            Money subsidy = this.Parent.Network.Consensus.ProofOfWorkReward;
-
-            // Subsidy is cut in half every 210,000 blocks which will occur approximately every 4 years.
-            subsidy >>= halvings;
-
-            return subsidy;
+            return this.Parent.Network.Consensus.ProofOfWorkReward;
         }
 
         /// <summary>

@@ -49,7 +49,8 @@ namespace NBitcoin.Networks
 
             this.Consensus.IsSmartContracts = true;
             this.Consensus.CoinbaseMaturity = 5;
-            this.Consensus.PremineReward = Money.Zero;
+            this.Consensus.PremineHeight = 2;
+            this.Consensus.PremineReward = Money.Coins(1000000);
             this.Consensus.ProofOfWorkReward = Money.Coins(50);
             this.Consensus.ProofOfStakeReward = Money.Zero;
             this.Consensus.MaxReorgLength = 500;
