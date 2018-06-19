@@ -12,7 +12,7 @@ namespace NBitcoin.Networks
             this.Name = "SmartContractsTestNet";
             this.RootFolderName = StratisRootFolderName;
             this.DefaultConfigFilename = StratisDefaultConfigFilename;
-            this.Magic = 0x0709110D; //Incremented 28/05
+            this.Magic = 0x0709110E; // Incremented 19/06
             this.DefaultPort = 18333;
             this.RPCPort = 18332;
             this.MaxTipAge = BitcoinDefaultMaxTipAgeInSeconds;
@@ -57,7 +57,7 @@ namespace NBitcoin.Networks
 
             this.Genesis = CreateBitcoinGenesisBlock(this.Consensus.ConsensusFactory, 1296688602, 414098458, 0x1d00ffff, 1, Money.Coins(50m));
             ((SmartContractBlockHeader)this.Genesis.Header).HashStateRoot = new uint256("21B463E3B52F6201C0AD6C991BE0485B6EF8C092E64583FFA655CC1B171FE856");
-            this.Genesis.Header.Nonce = 2; // Incremented 28/05
+            this.Genesis.Header.Nonce = 3; // Incremented 19/06
             this.Consensus.HashGenesisBlock = this.Genesis.Header.GetHash();
 
             this.Base58Prefixes = new byte[12][];
