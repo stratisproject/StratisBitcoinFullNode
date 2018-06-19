@@ -203,6 +203,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         }
 
         /// <inheritdoc />
+        /// <remarks>Should someone wish to use POW only we'll need to implement subsidy halving.</remarks>
         public override Money GetProofOfWorkReward(int height)
         {
             if (height == this.Parent.Network.Consensus.PremineHeight)
