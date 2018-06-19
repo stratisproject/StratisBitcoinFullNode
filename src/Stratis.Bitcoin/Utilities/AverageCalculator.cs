@@ -66,7 +66,7 @@ namespace Stratis.Bitcoin.Utilities
             else
             {
                 // Old sample was replaced.
-                this.Average = (this.Average * this.samples.Count - removedSample + sample) / this.samples.Count;
+                this.Average = this.Average + (sample - removedSample) / this.samples.Count;
             }
         }
     }
