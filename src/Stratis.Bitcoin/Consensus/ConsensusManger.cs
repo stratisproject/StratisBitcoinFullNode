@@ -262,7 +262,7 @@ namespace Stratis.Bitcoin.Consensus
                 }
 
                 if (reorgRequired)
-                    reorged = await this.FullyValidateAndReorgAsyncLocked().ConfigureAwait(false);
+                    reorged = await this.FullyValidateAndReorgLockedAsync(chainedHeaderBlock).ConfigureAwait(false);
             }
 
             if (reorged)
@@ -319,8 +319,32 @@ namespace Stratis.Bitcoin.Consensus
             this.logger.LogTrace("(-)");
         }
 
-        private async Task<bool> FullyValidateAndReorgAsyncLocked()
+        private async Task<bool> FullyValidateAndReorgLockedAsync(ChainedHeaderBlock chainedHeaderBlock)
         {
+            this.logger.LogTrace("({0}:'{1}')", nameof(chainedHeaderBlock), chainedHeaderBlock);
+
+            ChainedHeader oldTip = this.Tip;
+            ChainedHeader chainedHeader = chainedHeaderBlock.ChainedHeader;
+
+
+            ChainedHeader fork = oldTip.FindFork(chainedHeader);
+            ChainedHeader newTip = oldTip;
+
+            // If the new block is not on the current chain as our current consensus tip
+            // then we first rewind consensus tip to the common fork (or earlier because rewind might jump a few blocks back)
+            // then 
+            if (fork != oldTip && fork != chainedHeader)
+            {
+                while (fork.Height < newTip.Height)
+                {
+                    uint256 hash = await this.consensusRules.RewindAsync().ConfigureAwait(false);
+                    newTip = this.chainedHeaderTree.GetChainedHeaderBlock(hash).ChainedHeader;
+                }
+            }
+
+
+
+            this.logger.LogTrace("(-):false");
             return false;
         }
 
