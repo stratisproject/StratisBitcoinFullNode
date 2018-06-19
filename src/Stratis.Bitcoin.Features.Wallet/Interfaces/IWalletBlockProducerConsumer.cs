@@ -14,7 +14,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Interfaces
         /// Processes a block received from the network.
         /// </summary>
         /// <param name="block">The block.</param>
-        void ProducerConsumerProcessBlock(Block block);
+        void QueueBlock(Block block);
 
         /// <summary>
         /// Writes a list of NBitcoin Blocks to the System.Threading.Task.Dataflow.ITargetBlock object.

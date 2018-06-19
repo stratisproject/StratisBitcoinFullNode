@@ -157,7 +157,7 @@ namespace Stratis.Bitcoin.Features.LightWallet
         }
 
         /// <inheritdoc />
-        public void ProcessBlock(Block block, bool useProducerConsumer = false)
+        public void ProcessBlock(Block block)
         {
             Guard.NotNull(block, nameof(block));
             this.logger.LogTrace("({0}:'{1}')", nameof(block), block.GetHash());

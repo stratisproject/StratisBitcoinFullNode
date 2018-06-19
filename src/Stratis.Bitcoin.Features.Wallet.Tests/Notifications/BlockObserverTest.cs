@@ -17,7 +17,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests.Notifications
 
             observer.OnNext(block);
 
-            walletSyncManager.Verify(w => w.ProcessBlock(block, false), Times.Exactly(1));
+            walletSyncManager.Verify(w => w.ProcessBlock(block), Times.Exactly(1));
         }
     }
 }
