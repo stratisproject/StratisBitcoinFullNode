@@ -175,7 +175,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
         [Fact]
         public void ConnectHeaders_HeadersCantConnect_ShouldFail()
         {
-            var testContext = new TestContext();
+            TestContext testContext = new TestContextBuilder().Build();
             ChainedHeaderTree chainedHeaderTree = testContext.ChainedHeaderTree;
 
             Assert.Throws<ConnectHeaderException>(() => chainedHeaderTree.ConnectNewHeaders(1, new List<BlockHeader>(new[] { testContext.Network.GetGenesis().Header })));
