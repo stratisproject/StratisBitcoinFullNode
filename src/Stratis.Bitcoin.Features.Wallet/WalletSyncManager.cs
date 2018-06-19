@@ -122,7 +122,9 @@ namespace Stratis.Bitcoin.Features.Wallet
             while (await source.OutputAvailableAsync())
             {
                 Block block = source.Receive();
-                
+
+                this.blocksQueue.Enqueue(source.Receive());
+
                 this.ProcessBlock(block);
             }
         }
@@ -204,17 +206,19 @@ namespace Stratis.Bitcoin.Features.Wallet
 
                         this.hashBlocks.Enqueue(next.HashBlock);
 
-                        if (newTip.Height - next.Height  >= 100)
-                        {
+                        //if (newTip.Height - next.Height  >= 100)
+                        //{
                             // build up the queue to 50 items before processing the blocks
                             // in batches - this is quicker then processing each block one by one.
-                            if (this.hashBlocks.Count >= 50)
+                            if (this.hashBlocks.Count >= 100)
                                 this.ProcessBlockInBatches(token);
-                        }
-                        else
-                        {
-                            // figure out how to process one by one.
-                        }
+                        //}
+                        //else
+                        //{
+                        //    Block nextBlock = this.blockStoreCache.GetBlockAsync(next.HashBlock).GetAwaiter().GetResult();
+                        //    this.walletTip = next;
+                        //    this.walletManager.ProcessBlock(nextBlock, next);
+                        //}
                     }
                 }
                 else
@@ -234,6 +238,12 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             this.walletTip = newTip;
             this.walletManager.ProcessBlock(block, newTip);
+
+            while (this.blocksQueue.Count > 0)
+            {
+                if (this.blocksQueue.TryDequeue(out Block blockfromQueue))
+                    this.ProcessBlock(blockfromQueue);
+            }
 
             this.logger.LogTrace("(-)");
         }
@@ -280,15 +290,15 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <param name="token"></param>
         private void ProcessBlockInBatches(CancellationToken token)
         {
-            var blocks = new ConcurrentHashSet<uint256>();
-
-            while (this.hashBlocks.TryDequeue(out uint256 block))
-            {
-                blocks.Add(block);
-            }
-
             lock (this.queueLock)
             {
+                var blocks = new ConcurrentHashSet<uint256>();
+
+                while (this.hashBlocks.TryDequeue(out uint256 block))
+                {
+                    blocks.Add(block);
+                }
+
                 List<Block> processedBlocks = this.blockStoreCache.GetBlockAsync(blocks.ToList()).GetAwaiter().GetResult();
 
                 foreach (Block processedBlock in processedBlocks)
