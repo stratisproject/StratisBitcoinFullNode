@@ -11,12 +11,30 @@ using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Consensus;
+using Stratis.Bitcoin.Utilities;
 using Xunit;
 
 namespace Stratis.Bitcoin.Tests.Consensus
 {
     public class ChainedHeaderTreeTest
     {
+        public class CheckpointFixture
+        {
+            public CheckpointFixture(int height, BlockHeader header)
+            {
+                if (height < 1) throw new ArgumentException("Height must be greater or equal to 1.");
+
+                Guard.NotNull(header, nameof(header));
+
+                this.Height = height;
+                this.Header = header;
+            }
+
+            public int Height { get; }
+
+            public BlockHeader Header { get; }
+        }
+
         public class TestContext
         {
             public Network Network = Network.RegTest;
@@ -41,6 +59,30 @@ namespace Stratis.Bitcoin.Tests.Consensus
                 BigInteger newTarget = header.Header.Bits.ToBigInteger();
                 newTarget = newTarget.Divide(BigInteger.ValueOf(difficultyAdjustmentDivisor));
                 return new Target(newTarget);
+            }
+
+            public void SetupCheckpoints(params CheckpointFixture[] checkpoints)
+            {
+                if (checkpoints.GroupBy(h => h.Height).Any(g => g.Count() > 1))
+                    throw new ArgumentException("Checkpoint heights must be unique.");
+
+                if (checkpoints.Any(h => h.Height < 0))
+                    throw new ArgumentException("Checkpoint heights cannot be negative.");
+
+                foreach (CheckpointFixture checkpoint in checkpoints.OrderBy(h => h.Height))
+                {
+                    var checkpointInfo = new CheckpointInfo(checkpoint.Header.GetHash());
+                    this.CheckpointsMock
+                        .Setup(c => c.GetCheckpoint(checkpoint.Height))
+                        .Returns(checkpointInfo);
+                }
+
+                this.CheckpointsMock
+                    .Setup(c => c.GetCheckpoint(It.IsNotIn(checkpoints.Select(h => h.Height))))
+                    .Returns((CheckpointInfo)null);
+                this.CheckpointsMock
+                    .Setup(c => c.GetLastCheckpointHeight())
+                    .Returns(checkpoints.OrderBy(h => h.Height).Last().Height);
             }
 
             public ChainedHeader ExtendAChain(int count, ChainedHeader chainedHeader = null, int difficultyAdjustmentDivisor = 1)
@@ -332,20 +374,9 @@ namespace Stratis.Bitcoin.Tests.Consensus
             // Example: h1=h2=h3=(h4)=h5=h6=(h7)=h8.
             const int firstCheckpointHeight = 4;
             const int secondCheckpointHeight = 7;
-            var checkpoint1 = new CheckpointInfo(listOfCurrentChainHeaders[firstCheckpointHeight - 1].GetHash());
-            var checkpoint2 = new CheckpointInfo(listOfCurrentChainHeaders[secondCheckpointHeight - 1].GetHash());
-            ctx.CheckpointsMock
-               .Setup(c => c.GetCheckpoint(firstCheckpointHeight))
-               .Returns(checkpoint1);
-            ctx.CheckpointsMock
-               .Setup(c => c.GetCheckpoint(secondCheckpointHeight))
-               .Returns(checkpoint2);
-            ctx.CheckpointsMock
-               .Setup(c => c.GetCheckpoint(It.IsNotIn(firstCheckpointHeight, secondCheckpointHeight)))
-               .Returns((CheckpointInfo)null);
-            ctx.CheckpointsMock
-                .Setup(c => c.GetLastCheckpointHeight())
-                .Returns(secondCheckpointHeight);
+            var checkpoint1 = new CheckpointFixture(firstCheckpointHeight, listOfCurrentChainHeaders[firstCheckpointHeight - 1]);
+            var checkpoint2 = new CheckpointFixture(secondCheckpointHeight, listOfCurrentChainHeaders[secondCheckpointHeight - 1]);
+            ctx.SetupCheckpoints(checkpoint1, checkpoint2);
 
             // Setup new chain that only covers first checkpoint but doesn't cover second checkpoint.
             // Example: h1=h2=h3=(h4)=h5=h6=x7=x8=x9=x10.
@@ -358,7 +389,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
             // First 5 blocks are presented by peer 1.
             // DownloadTo should be set to a checkpoint 1. 
             ConnectNewHeadersResult result = cht.ConnectNewHeaders(1, listOfNewChainHeaders.Take(5).ToList());
-            result.DownloadTo.HashBlock.Should().Be(checkpoint1.Hash);
+            result.DownloadTo.HashBlock.Should().Be(checkpoint1.Header.GetHash());
 
             // Remaining 5 blocks are presented by peer 1 which do not cover checkpoint 2.
             // InvalidHeaderException should be thrown.
@@ -437,16 +468,8 @@ namespace Stratis.Bitcoin.Tests.Consensus
             // Setup a known checkpoint at header 4.
             // Example: h1=h2=h3=(h4).
             const int checkpointHeight = 4;
-            var checkpoint = new CheckpointInfo(listOfCurrentChainHeaders.Last().GetHash());
-            ctx.CheckpointsMock
-               .Setup(c => c.GetCheckpoint(checkpointHeight))
-               .Returns(checkpoint);
-            ctx.CheckpointsMock
-               .Setup(c => c.GetCheckpoint(It.IsNotIn(checkpointHeight)))
-               .Returns((CheckpointInfo)null);
-            ctx.CheckpointsMock
-                .Setup(c => c.GetLastCheckpointHeight())
-                .Returns(checkpointHeight);
+            var checkpoint = new CheckpointFixture(checkpointHeight, listOfCurrentChainHeaders.Last());
+            ctx.SetupCheckpoints(checkpoint);
 
             // Extend chain and add "Assume valid" at block 6.
             // Example: h1=h2=h3=(h4)=h5=[h6].
@@ -502,16 +525,8 @@ namespace Stratis.Bitcoin.Tests.Consensus
             // Setup a known checkpoint at header 4.
             // Example: h1=h2=h3=(h4).
             const int checkpointHeight = 4;
-            var checkpoint = new CheckpointInfo(listOfCurrentChainHeaders.Last().GetHash());
-            ctx.CheckpointsMock
-               .Setup(c => c.GetCheckpoint(checkpointHeight))
-               .Returns(checkpoint);
-            ctx.CheckpointsMock
-               .Setup(c => c.GetCheckpoint(It.IsNotIn(checkpointHeight)))
-               .Returns((CheckpointInfo)null);
-            ctx.CheckpointsMock
-                .Setup(c => c.GetLastCheckpointHeight())
-                .Returns(checkpointHeight);
+            var checkpoint = new CheckpointFixture(checkpointHeight, listOfCurrentChainHeaders.Last());
+            ctx.SetupCheckpoints(checkpoint);
 
             // Extend chain and add "Assume valid" at block 6.
             // Example: h1=h2=h3=(h4)=h5=[h6].
