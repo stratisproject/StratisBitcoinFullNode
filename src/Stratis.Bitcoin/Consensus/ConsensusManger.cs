@@ -414,8 +414,9 @@ namespace Stratis.Bitcoin.Consensus
                 }
                 else
                 {
-                    // This means the puller has not filtered blockes correctly.
-                    this.logger.LogError("Unsolicited block `{0}`.", blockHash);
+                    // This means the puller has not filtered blocks correctly.
+                    this.logger.LogError("Unsolicited block '{0}'.", blockHash);
+                    this.logger.LogTrace("(-)[UNSOLICITED_BLOCK]");
                     throw new InvalidOperationException("Unsolicited block");
                 }
 
