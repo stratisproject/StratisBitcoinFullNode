@@ -127,13 +127,16 @@ namespace Stratis.Bitcoin.Features.Wallet
 
                             ChainedHeader next = this.walletTip;
 
-                            while (next != tip)
+                            while (next.Height < tip.Height)
                             {
                                 token.ThrowIfCancellationRequested();
 
                                 next = tip.GetAncestor(next.Height + 1);
 
                                 Block nextBlock = this.blockStoreCache.GetBlockAsync(next.HashBlock).GetAwaiter().GetResult();
+
+                                if (nextBlock == null) continue;
+
                                 this.walletTip = next;
                                 this.walletManager.ProcessBlock(nextBlock, next);
                             }
@@ -150,7 +153,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                     }
                 }
                 , this.nodeLifetime.ApplicationStopping
-                , repeatEvery: TimeSpans.TenSeconds
+                , repeatEvery: TimeSpans.Second
                 , startAfter: TimeSpans.TenSeconds);
             }
 
