@@ -211,14 +211,13 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.CounterChain
             //now build the requests for the partials
             var requestPartialTransactionPayload = new RequestPartialTransactionPayload(sessionId, templateTransaction);
 
-            //broacast the requests
-            var peers = this.connectionManager.ConnectedPeers.ToList();
-
-            foreach (INetworkPeer peer in peers)
+            var federationNetworkPeers = this.connectionManager.ConnectedPeers
+                .Where(p => !p.Inbound &&
+                    federationGatewaySettings.FederationNodeIpEndPoints.Any(e => e.ToString() == p.PeerEndPoint.ToString()));
+            foreach (INetworkPeer peer in federationNetworkPeers)
             {
                 try
                 {
-                    if (peer.Inbound) continue;
                     this.logger.LogInformation("Broadcasting Partial Transaction Request to {0}.", peer.PeerEndPoint);
                     await peer.SendMessageAsync(requestPartialTransactionPayload).ConfigureAwait(false);
                 }
