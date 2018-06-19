@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -8,7 +7,6 @@ using NBitcoin;
 using Stratis.Bitcoin;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Connection;
-using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.P2P.Peer;
@@ -183,7 +181,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.CounterChain
             // TODO: The password is currently hardcoded here
             var multiSigContext = new TransactionBuildContext(
                 (new[] { new Recipient.Recipient { Amount = amount, ScriptPubKey = destination } }).ToList(),
-                "password", sessionId.ToBytes())
+                this.federationWalletManager.Secret.WalletPassword, sessionId.ToBytes())
             {
                 TransactionFee = Money.Coins(0.01m),
                 MinConfirmations = 1,
@@ -202,7 +200,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.CounterChain
 
             if (counterChainSession == null) return uint256.One;
             this.MarkSessionAsSigned(counterChainSession);
-            var partialTransaction = wallet.SignPartialTransaction(templateTransaction, "password");
+            var partialTransaction = wallet.SignPartialTransaction(templateTransaction, this.federationWalletManager.Secret.WalletPassword);
 
             uint256 bossCard = BossTable.MakeBossTableEntry(sessionId, this.federationGatewaySettings.PublicKey);
             this.logger.LogInformation("ProcessCounterChainSession: My bossCard: {0}.", bossCard);

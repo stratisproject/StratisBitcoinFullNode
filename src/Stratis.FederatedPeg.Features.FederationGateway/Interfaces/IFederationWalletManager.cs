@@ -6,57 +6,57 @@ using UnspentOutputReference = Stratis.Bitcoin.Features.Wallet.UnspentOutputRefe
 
 namespace Stratis.FederatedPeg.Features.FederationGateway.Interfaces
 {
-	/// <summary>
-	/// Interface for a manager providing operations on wallets.
-	/// </summary>
-	public interface IFederationWalletManager
-	{
-		/// <summary>
-		/// Starts this wallet manager.
-		/// </summary>
-		void Start();
+    /// <summary>
+    /// Interface for a manager providing operations on wallets.
+    /// </summary>
+    public interface IFederationWalletManager
+    {
+        /// <summary>
+        /// Starts this wallet manager.
+        /// </summary>
+        void Start();
 
-		/// <summary>
-		/// Stops the wallet manager.
-		/// <para>Internally it waits for async loops to complete before saving the wallets to disk.</para>
-		/// </summary>
-		void Stop();
+        /// <summary>
+        /// Stops the wallet manager.
+        /// <para>Internally it waits for async loops to complete before saving the wallets to disk.</para>
+        /// </summary>
+        void Stop();
 
-		/// <summary>
-		/// The last processed block.
-		/// </summary>
-		uint256 WalletTipHash { get; set; }
+        /// <summary>
+        /// The last processed block.
+        /// </summary>
+        uint256 WalletTipHash { get; set; }
 
-		/// <summary>
-		/// Lists all spendable transactions from all accounts in the wallet.
-		/// </summary>
-		/// <returns>A collection of spendable outputs</returns>
-		IEnumerable<Wallet.UnspentOutputReference> GetSpendableTransactionsInWallet(int confirmations = 0);
+        /// <summary>
+        /// Lists all spendable transactions from all accounts in the wallet.
+        /// </summary>
+        /// <returns>A collection of spendable outputs</returns>
+        IEnumerable<Wallet.UnspentOutputReference> GetSpendableTransactionsInWallet(int confirmations = 0);
 
-		/// <summary>
-		/// Gets a collection of addresses containing transactions for this coin.
-		/// </summary>
-		/// <param name="wallet">The wallet to get history from.</param>
-		/// <returns></returns>
-	//	IEnumerable<FlatHistory> GetHistory();
+        /// <summary>
+        /// Gets a collection of addresses containing transactions for this coin.
+        /// </summary>
+        /// <param name="wallet">The wallet to get history from.</param>
+        /// <returns></returns>
+    //	IEnumerable<FlatHistory> GetHistory();
 
-		/// <summary>
-		/// Gets the last block height.
-		/// </summary>
-		/// <returns></returns>
-		int LastBlockHeight();
+        /// <summary>
+        /// Gets the last block height.
+        /// </summary>
+        /// <returns></returns>
+        int LastBlockHeight();
 
-		/// <summary>
-		/// Remove all the transactions in the wallet that are above this block height
-		/// </summary>
-		void RemoveBlocks(ChainedHeader fork);
+        /// <summary>
+        /// Remove all the transactions in the wallet that are above this block height
+        /// </summary>
+        void RemoveBlocks(ChainedHeader fork);
 
-		/// <summary>
-		/// Processes a block received from the network.
-		/// </summary>
-		/// <param name="block">The block.</param>
-		/// <param name="chainedBlock">The blocks chain of headers.</param>
-		void ProcessBlock(Block block, ChainedHeader chainedBlock);
+        /// <summary>
+        /// Processes a block received from the network.
+        /// </summary>
+        /// <param name="block">The block.</param>
+        /// <param name="chainedBlock">The blocks chain of headers.</param>
+        void ProcessBlock(Block block, ChainedHeader chainedBlock);
 
         /// <summary>
         /// Processes a transaction received from the network.
@@ -86,11 +86,13 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Interfaces
         /// <param name="chainedBlock">The height of the last block synced.</param>
         void UpdateLastBlockSyncedHeight(ChainedHeader chainedBlock);
 
-		/// <summary>
-		/// Gets whether there are any wallet files loaded or not.
-		/// </summary>
-		/// <returns>Whether any wallet files are loaded.</returns>
-		bool ContainsWallets { get; }
+        /// <summary>
+        /// Gets whether there are any wallet files loaded or not.
+        /// </summary>
+        /// <returns>Whether any wallet files are loaded.</returns>
+        bool ContainsWallets { get; }
+
+        WalletSecret Secret { get; set; }
 
         /// <summary>
         /// Imports the federation member's mnemonic key.

@@ -113,8 +113,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
 
                     var wallet = this.federationWalletManager.GetWallet();
 
-                    // TODO: The wallet password is hardcoded here
-                    var signedTransaction = wallet.SignPartialTransaction(template, "password");
+                    var signedTransaction = wallet.SignPartialTransaction(template, this.federationWalletManager.Secret.WalletPassword);
                     payload.AddPartial(signedTransaction, BossTable.MakeBossTableEntry(payload.SessionId, this.federationGatewaySettings.PublicKey));
 
                     this.logger.LogInformation("OnMessageReceivedAsync: PartialTransaction signed.");
