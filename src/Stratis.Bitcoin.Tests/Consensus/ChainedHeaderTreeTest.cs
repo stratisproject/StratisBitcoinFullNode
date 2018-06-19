@@ -35,6 +35,34 @@ namespace Stratis.Bitcoin.Tests.Consensus
             public BlockHeader Header { get; }
         }
 
+        public class TestContextBuilder
+        {
+            private readonly TestContext testContext;
+
+            public TestContextBuilder()
+            {
+                this.testContext = new TestContext();
+            }
+
+            internal TestContextBuilder WithInitialChain(int initialChainSize)
+            {
+                this.testContext.InitialChainTip = this.testContext.ExtendAChain(initialChainSize);
+                return this;
+            }
+
+            internal TestContextBuilder UseCheckpoints(bool useCheckpoints = true)
+            {
+                this.testContext.ConsensusSettings.UseCheckpoints = useCheckpoints;
+                return this;
+            }
+
+            internal TestContext Build()
+            {
+                this.testContext.ChainedHeaderTree.Initialize(this.testContext.InitialChainTip, true);
+                return this.testContext;
+            }
+        }
+
         public class TestContext
         {
             public Network Network = Network.RegTest;
@@ -48,10 +76,17 @@ namespace Stratis.Bitcoin.Tests.Consensus
 
             internal ChainedHeaderTree ChainedHeaderTree;
 
-            internal ChainedHeaderTree CreateChainedHeaderTree()
+            internal ChainedHeader InitialChainTip;
+
+            public TestContext()
             {
-                this.ChainedHeaderTree = new ChainedHeaderTree(this.Network, new ExtendedLoggerFactory(), this.ChainedHeaderValidatorMock.Object, this.CheckpointsMock.Object, this.ChainStateMock.Object, this.FinalizedBlockMock.Object, this.ConsensusSettings);
-                return this.ChainedHeaderTree;
+                this.ChainedHeaderTree = new ChainedHeaderTree(
+                    this.Network, new ExtendedLoggerFactory(), 
+                    this.ChainedHeaderValidatorMock.Object, 
+                    this.CheckpointsMock.Object, 
+                    this.ChainStateMock.Object, 
+                    this.FinalizedBlockMock.Object, 
+                    this.ConsensusSettings);
             }
 
             internal Target ChangeDifficulty(ChainedHeader header, int difficultyAdjustmentDivisor)
@@ -139,7 +174,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
         public void ConnectHeaders_HeadersCantConnect_ShouldFail()
         {
             var testContext = new TestContext();
-            ChainedHeaderTree chainedHeaderTree = testContext.CreateChainedHeaderTree();
+            ChainedHeaderTree chainedHeaderTree = testContext.ChainedHeaderTree;
 
             Assert.Throws<ConnectHeaderException>(() => chainedHeaderTree.ConnectNewHeaders(1, new List<BlockHeader>(new[] { testContext.Network.GetGenesis().Header })));
         }
@@ -147,11 +182,9 @@ namespace Stratis.Bitcoin.Tests.Consensus
         [Fact]
         public void ConnectHeaders_NoNewHeadersToConnect_ShouldReturnNothingToDownload()
         {
-            var testContext = new TestContext();
-            ChainedHeaderTree chainedHeaderTree = testContext.CreateChainedHeaderTree();
-
-            ChainedHeader chainTip = testContext.ExtendAChain(10);
-            chainedHeaderTree.Initialize(chainTip, true);
+            TestContext testContext = new TestContextBuilder().WithInitialChain(10).Build();
+            ChainedHeaderTree chainedHeaderTree = testContext.ChainedHeaderTree;
+            ChainedHeader chainTip = testContext.InitialChainTip;
 
             List<BlockHeader> listOfExistingHeaders = testContext.ChainedHeaderToList(chainTip, 4);
 
@@ -164,11 +197,9 @@ namespace Stratis.Bitcoin.Tests.Consensus
         [Fact]
         public void ConnectHeaders_HeadersFromTwoPeers_ShouldCreateTwoPeerTips()
         {
-            var testContext = new TestContext();
-            ChainedHeaderTree chainedHeaderTree = testContext.CreateChainedHeaderTree();
-
-            ChainedHeader chainTip = testContext.ExtendAChain(10);
-            chainedHeaderTree.Initialize(chainTip, true);
+            TestContext testContext = new TestContextBuilder().WithInitialChain(10).Build();
+            ChainedHeaderTree chainedHeaderTree = testContext.ChainedHeaderTree;
+            ChainedHeader chainTip = testContext.InitialChainTip;
 
             List<BlockHeader> listOfExistingHeaders = testContext.ChainedHeaderToList(chainTip, 4);
 
@@ -195,11 +226,10 @@ namespace Stratis.Bitcoin.Tests.Consensus
         [Fact]
         public void ConnectHeaders_NewAndExistingHeaders_ShouldCreateNewHeaders()
         {
-            var testContext = new TestContext();
-            ChainedHeaderTree chainedHeaderTree = testContext.CreateChainedHeaderTree();
+            TestContext testContext = new TestContextBuilder().WithInitialChain(10).Build();
+            ChainedHeaderTree chainedHeaderTree = testContext.ChainedHeaderTree;
+            ChainedHeader chainTip = testContext.InitialChainTip;
 
-            ChainedHeader chainTip = testContext.ExtendAChain(10);
-            chainedHeaderTree.Initialize(chainTip, true); // initialize the tree with 10 headers
             chainTip.BlockDataAvailability = BlockDataAvailabilityState.BlockAvailable;
             ChainedHeader newChainTip = testContext.ExtendAChain(10, chainTip); // create 10 more headers
 
@@ -227,10 +257,9 @@ namespace Stratis.Bitcoin.Tests.Consensus
         [Fact]
         public void ConnectHeaders_SupplyHeadersThenSupplyMore_Both_Tip_PeerId_Maps_ShouldBeUpdated()
         {
-            var testContext = new TestContext();
-            ChainedHeaderTree cht = testContext.CreateChainedHeaderTree();
-            ChainedHeader chainTip = testContext.ExtendAChain(10);
-            cht.Initialize(chainTip, true);
+            TestContext testContext = new TestContextBuilder().WithInitialChain(10).Build();
+            ChainedHeaderTree cht = testContext.ChainedHeaderTree;
+            ChainedHeader chainTip = testContext.InitialChainTip;
 
             List<BlockHeader> listOfExistingHeaders = testContext.ChainedHeaderToList(chainTip, 10);
 
@@ -268,11 +297,9 @@ namespace Stratis.Bitcoin.Tests.Consensus
         public void ConnectHeaders_SupplyHeaders_ToDownloadArraySizeSameAsNumberOfHeaders()
         {
             // Setup
-            var ctx = new TestContext();
-            ChainedHeaderTree cht = ctx.CreateChainedHeaderTree();
-            ChainedHeader chainTip = ctx.ExtendAChain(5);
-            cht.Initialize(chainTip, true);
-            ctx.ConsensusSettings.UseCheckpoints = false;
+            TestContext ctx = new TestContextBuilder().WithInitialChain(10).UseCheckpoints(false).Build();
+            ChainedHeaderTree cht = ctx.ChainedHeaderTree;
+            ChainedHeader chainTip = ctx.InitialChainTip;
 
             // Checkpoints are off
             Assert.False(ctx.ConsensusSettings.UseCheckpoints);
@@ -303,11 +330,9 @@ namespace Stratis.Bitcoin.Tests.Consensus
         public void PresentDifferentChains_AlternativeChainWithMoreChainWorkShouldAlwaysBeMarkedForDownload()
         {
             // Chain header tree setup.
-            var ctx = new TestContext();
-            ChainedHeaderTree cht = ctx.CreateChainedHeaderTree();
-            ChainedHeader initialChainTip = ctx.ExtendAChain(5);
-            cht.Initialize(initialChainTip, true);
-            ctx.ConsensusSettings.UseCheckpoints = false;
+            TestContext ctx = new TestContextBuilder().WithInitialChain(5).UseCheckpoints(false).Build();
+            ChainedHeaderTree cht = ctx.ChainedHeaderTree;
+            ChainedHeader initialChainTip = ctx.InitialChainTip;
 
             // Chains A and B setup.
             const int commonChainSize = 4;
@@ -360,14 +385,15 @@ namespace Stratis.Bitcoin.Tests.Consensus
         public void ChainHasTwoCheckPoints_ChainCoveringOnlyFirstCheckPointIsPresented_ChainIsDiscardedUpUntilFirstCheckpoint()
         {
             // Chain header tree setup.
+            // Initial chain has 2 blocks.
+            // Example: h1=h2.
             const int initialChainSize = 2;
             const int currentChainExtension = 6;
-            var ctx = new TestContext();
-            ChainedHeaderTree cht = ctx.CreateChainedHeaderTree();
-            ChainedHeader initialChainTip = ctx.ExtendAChain(initialChainSize); // i.e. h1=h2
-            cht.Initialize(initialChainTip, true); 
+            TestContext ctx = new TestContextBuilder().WithInitialChain(initialChainSize).UseCheckpoints().Build();
+            ChainedHeaderTree cht = ctx.ChainedHeaderTree;
+            ChainedHeader initialChainTip = ctx.InitialChainTip; 
+
             ChainedHeader extendedChainTip = ctx.ExtendAChain(currentChainExtension, initialChainTip); // i.e. h1=h2=h3=h4=h5=h6=h7=h8
-            ctx.ConsensusSettings.UseCheckpoints = true;
             List<BlockHeader> listOfCurrentChainHeaders = ctx.ChainedHeaderToList(extendedChainTip, initialChainSize + currentChainExtension);
 
             // Setup two known checkpoints at header 4 and 7.
@@ -413,12 +439,10 @@ namespace Stratis.Bitcoin.Tests.Consensus
             // Chain header tree setup with disabled checkpoints.
             // Initial chain has 2 blocks.
             // Example: h1=h2.
-            var ctx = new TestContext();
             const int initialChainSize = 2;
-            ChainedHeaderTree cht = ctx.CreateChainedHeaderTree();
-            ChainedHeader initialChainTip = ctx.ExtendAChain(initialChainSize);
-            cht.Initialize(initialChainTip, true);
-            ctx.ConsensusSettings.UseCheckpoints = false;
+            TestContext ctx = new TestContextBuilder().WithInitialChain(initialChainSize).UseCheckpoints(false).Build();
+            ChainedHeaderTree cht = ctx.ChainedHeaderTree;
+            ChainedHeader initialChainTip = ctx.InitialChainTip; 
 
             // Setup two alternative chains A and B of the same length.
             const int presentedChainSize = 4;
@@ -452,14 +476,14 @@ namespace Stratis.Bitcoin.Tests.Consensus
         [Fact]
         public void ChainHasOneCheckPointAndAssumeValid_TwoAlternativeChainsArePresented_BothChainsAreMarkedForDownload()
         {
-            // Chain header tree setup.
+            // Chain header tree setup with disabled checkpoints.
+            // Initial chain has 2 blocks.
+            // Example: h1=h2.
             const int initialChainSize = 2;
             const int extensionChainSize = 2;
-            var ctx = new TestContext();
-            ChainedHeaderTree cht = ctx.CreateChainedHeaderTree();
-            ChainedHeader initialChainTip = ctx.ExtendAChain(initialChainSize); // i.e. h1=h2
-            ctx.ConsensusSettings.UseCheckpoints = true;
-            cht.Initialize(initialChainTip, true);
+            TestContext ctx = new TestContextBuilder().WithInitialChain(initialChainSize).UseCheckpoints().Build();
+            ChainedHeaderTree cht = ctx.ChainedHeaderTree;
+            ChainedHeader initialChainTip = ctx.InitialChainTip;
 
             // Extend chain with 2 more headers.
             initialChainTip = ctx.ExtendAChain(extensionChainSize, initialChainTip); // i.e. h1=h2=h3=h4
@@ -509,14 +533,14 @@ namespace Stratis.Bitcoin.Tests.Consensus
         [Fact]
         public void ChainHasOneCheckPointAndAssumeValid_ChainsWithCheckpointButMissedAssumeValidIsPresented_BothChainsAreMarkedForDownload()
         {
-            // Chain header tree setup.
+            // Chain header tree setup with disabled checkpoints.
+            // Initial chain has 2 blocks.
+            // Example: h1=h2.
             const int initialChainSize = 2;
             const int extensionChainSize = 2;
-            var ctx = new TestContext();
-            ChainedHeaderTree cht = ctx.CreateChainedHeaderTree();
-            ChainedHeader initialChainTip = ctx.ExtendAChain(initialChainSize); // i.e. h1=h2
-            ctx.ConsensusSettings.UseCheckpoints = true;
-            cht.Initialize(initialChainTip, true);
+            TestContext ctx = new TestContextBuilder().WithInitialChain(initialChainSize).UseCheckpoints().Build();
+            ChainedHeaderTree cht = ctx.ChainedHeaderTree;
+            ChainedHeader initialChainTip = ctx.InitialChainTip;
 
             // Extend chain with 2 more headers.
             initialChainTip = ctx.ExtendAChain(extensionChainSize, initialChainTip); // i.e. h1=h2=h3=h4
