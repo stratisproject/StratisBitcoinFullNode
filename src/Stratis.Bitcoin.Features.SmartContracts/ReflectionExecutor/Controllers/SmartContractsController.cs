@@ -273,7 +273,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
                 TransactionFee = totalFee,
                 ChangeAddress = senderAddress,
                 SelectedInputs = selectedInputs,
-                MinConfirmations = MinConfirmationsAllChecks
+                MinConfirmations = MinConfirmationsAllChecks,
+                UseAllInputs = false
             };
             
             try
@@ -325,7 +326,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
                 TransactionFee = totalFee,
                 ChangeAddress = senderAddress,
                 SelectedInputs = selectedInputs,
-                MinConfirmations = MinConfirmationsAllChecks
+                MinConfirmations = MinConfirmationsAllChecks,
+                UseAllInputs = false
             };
 
             try

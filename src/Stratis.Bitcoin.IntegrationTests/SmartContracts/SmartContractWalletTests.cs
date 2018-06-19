@@ -228,6 +228,60 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
             }
         }
 
+        /*
+         * We need to be careful that the transactions built by the TransactionBuilder don't try to include all UTXOs as inputs,
+         * as this leads to issues with coinbase-immaturity.
+         *
+         * Until we update the SmartContractsController to retrieve only mature transactions, we need this test.
+         */
+
+        [Fact]
+        public void SmartContractsController_Builds_Transaction_With_Minimum_Inputs()
+        {
+            using (NodeBuilder builder = NodeBuilder.Create(this))
+            {
+                CoreNode scSender = builder.CreateSmartContractNode();
+                builder.StartAll();
+
+                scSender.NotInIBD();
+
+                scSender.FullNode.WalletManager().CreateWallet(Password, WalletName);
+                HdAddress addr = scSender.FullNode.WalletManager().GetUnusedAddress(new WalletAccountReference(WalletName, AccountName));
+                Features.Wallet.Wallet wallet = scSender.FullNode.WalletManager().GetWalletByName(WalletName);
+                Key key = wallet.GetExtendedPrivateKeyForAddress(Password, addr).PrivateKey;
+                scSender.SetDummyMinerSecret(new BitcoinSecret(key, scSender.FullNode.Network));
+                var maturity = (int)scSender.FullNode.Network.Consensus.CoinbaseMaturity;
+                scSender.GenerateStratisWithMiner(maturity + 5);
+                TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(scSender));
+
+                var total = scSender.FullNode.WalletManager().GetSpendableTransactionsInWallet(WalletName).Sum(s => s.Transaction.Amount);
+                Assert.Equal(Money.COIN * (maturity + 5) * 50, total);
+
+                SmartContractsController senderSmartContractsController = scSender.FullNode.NodeService<SmartContractsController>();
+
+                WalletController senderWalletController = scSender.FullNode.NodeService<WalletController>();
+                SmartContractCompilationResult compilationResult = SmartContractCompiler.CompileFile("SmartContracts/StorageDemo.cs");
+                Assert.True(compilationResult.Success);
+
+                var buildRequest = new BuildCreateContractTransactionRequest
+                {
+                    AccountName = AccountName,
+                    GasLimit = "10000",
+                    GasPrice = "1",
+                    ContractCode = compilationResult.Compilation.ToHexString(),
+                    FeeAmount = "0.001",
+                    Password = Password,
+                    WalletName = WalletName,
+                    Sender = addr.Address
+                };
+
+                JsonResult result = (JsonResult)senderSmartContractsController.BuildCreateSmartContractTransaction(buildRequest);
+                var response = (BuildCreateContractTransactionResponse)result.Value;
+                var transaction = Transaction.Load(response.Hex, Network.SmartContractsRegTest);
+                Assert.Single(transaction.Inputs);
+            }
+        }
+
         [Fact]
         public void SendAndReceiveSmartContractTransactionsUsingController()
         {
@@ -257,6 +311,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 Assert.Equal(Money.COIN * (maturity + 5) * 50, total);
 
                 SmartContractsController senderSmartContractsController = scSender.FullNode.NodeService<SmartContractsController>();
+
                 WalletController senderWalletController = scSender.FullNode.NodeService<WalletController>();
                 SmartContractCompilationResult compilationResult = SmartContractCompiler.CompileFile("SmartContracts/StorageDemo.cs");
                 Assert.True(compilationResult.Success);
@@ -277,7 +332,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 var response = (BuildCreateContractTransactionResponse)result.Value;
                 scSender.CreateRPCClient().AddNode(scReceiver.Endpoint, true);
 
-                SmartContractSharedSteps.MineToMaturityAndSendTransaction(scSender, scReceiver, senderWalletController, response.Hex);
+                SmartContractSharedSteps.SendTransactionAndMine(scSender, scReceiver, senderWalletController, response.Hex);
 
                 var receiptStorage = scReceiver.FullNode.NodeService<ISmartContractReceiptStorage>();
                 Assert.NotNull(receiptStorage.GetReceipt(response.TransactionId));
@@ -331,7 +386,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 result = (JsonResult)senderSmartContractsController.BuildCallSmartContractTransaction(callRequest);
                 var callResponse = (BuildCallContractTransactionResponse)result.Value;
 
-                SmartContractSharedSteps.MineToMaturityAndSendTransaction(scSender, scReceiver, senderWalletController, callResponse.Hex);
+                SmartContractSharedSteps.SendTransactionAndMine(scSender, scReceiver, senderWalletController, callResponse.Hex);
 
                 counterRequestResult = (string)((JsonResult)senderSmartContractsController.GetStorage(new GetStorageRequest
                 {
@@ -416,7 +471,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 var response = (BuildCreateContractTransactionResponse)result.Value;
                 scSender.CreateRPCClient().AddNode(scReceiver.Endpoint, true);
 
-                SmartContractSharedSteps.MineToMaturityAndSendTransaction(scSender, scReceiver, senderWalletController, response.Hex);
+                SmartContractSharedSteps.SendTransactionAndMine(scSender, scReceiver, senderWalletController, response.Hex);
 
                 // Contract deployed.
                 ContractStateRepositoryRoot senderState = scSender.FullNode.NodeService<ContractStateRepositoryRoot>();
@@ -440,7 +495,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 result = (JsonResult)senderSmartContractsController.BuildCallSmartContractTransaction(callRequest);
                 var callResponse = (BuildCallContractTransactionResponse)result.Value;
 
-                SmartContractSharedSteps.MineToMaturityAndSendTransaction(scSender, scReceiver, senderWalletController, callResponse.Hex);
+                SmartContractSharedSteps.SendTransactionAndMine(scSender, scReceiver, senderWalletController, callResponse.Hex);
 
                 // Here, test that Sender and HighestBidder are the same.
                 var ownerBytes = senderState.GetStorageValue(contractAddressUint160, Encoding.UTF8.GetBytes("Owner"));
@@ -472,7 +527,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 var endAuctionResult = (JsonResult)senderSmartContractsController.BuildCallSmartContractTransaction(endAuctionRequest);
                 var endAuctionResponse = (BuildCallContractTransactionResponse)endAuctionResult.Value;
 
-                SmartContractSharedSteps.MineToMaturityAndSendTransaction(scSender, scReceiver, senderWalletController, endAuctionResponse.Hex);
+                SmartContractSharedSteps.SendTransactionAndMine(scSender, scReceiver, senderWalletController, endAuctionResponse.Hex);
 
                 // Check that transaction did in fact go through with condensing tx as well
                 var blockStoreCache = scSender.FullNode.NodeService<IBlockStoreCache>();
@@ -532,7 +587,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 var response = (BuildCreateContractTransactionResponse)result.Value;
                 scSender.CreateRPCClient().AddNode(scReceiver.Endpoint, true);
 
-                SmartContractSharedSteps.MineToMaturityAndSendTransaction(scSender, scReceiver, senderWalletController, response.Hex);
+                SmartContractSharedSteps.SendTransactionAndMine(scSender, scReceiver, senderWalletController, response.Hex);
 
                 ContractStateRepositoryRoot senderState = scSender.FullNode.NodeService<ContractStateRepositoryRoot>();
                 Assert.Equal((ulong) 30 * 100_000_000, senderState.GetCurrentBalance(new Address(response.NewContractAddress).ToUint160(Network.SmartContractsRegTest)));
