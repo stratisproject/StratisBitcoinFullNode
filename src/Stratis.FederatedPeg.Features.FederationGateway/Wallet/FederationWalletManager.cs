@@ -161,6 +161,9 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Wallet
                 this.SaveWallet();
             }
 
+            // Load data in memory for faster lookups.
+            this.LoadKeysLookupLock();
+
             // find the last chain block received by the wallet manager.
             this.WalletTipHash = this.LastReceivedBlockHash();
 
@@ -488,6 +491,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Wallet
                 }
 
                 this.Wallet.MultiSigAddress.Transactions.Add(newTransaction);
+                this.AddInputKeysLookupLock(newTransaction);
             }
             else
             {
@@ -621,6 +625,33 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Wallet
             this.logger.LogTrace("(-)");
         }
 
+        /// <summary>
+        /// Loads the keys and transactions we're tracking in memory for faster lookups.
+        /// </summary>
+        public void LoadKeysLookupLock()
+        {
+            lock (this.lockObject)
+            {
+                foreach (TransactionData transaction in this.Wallet.MultiSigAddress.Transactions)
+                {
+                    this.outpointLookup[new OutPoint(transaction.Id, transaction.Index)] = transaction;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Add to the list of unspent outputs kept in memory for faster lookups.
+        /// </summary>
+        private void AddInputKeysLookupLock(TransactionData transactionData)
+        {
+            Guard.NotNull(transactionData, nameof(transactionData));
+
+            lock (this.lockObject)
+            {
+                this.outpointLookup[new OutPoint(transactionData.Id, transactionData.Index)] = transactionData;
+            }
+        }
+
         public void TransactionFoundInternal(Script script)
         {
             this.logger.LogTrace("()");
@@ -750,7 +781,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Wallet
             ExtKey extendedKey;
             try
             {
-                extendedKey = HdOperations.GetExtendedKey(mnemonic, password);
+                extendedKey = HdOperations.GetExtendedKey(mnemonic);
             }
             catch (NotSupportedException ex)
             {
