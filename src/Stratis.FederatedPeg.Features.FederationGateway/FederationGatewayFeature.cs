@@ -105,7 +105,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
             this.walletSyncManager.Start();
 
             // Connect the node to the other federation members.
-            foreach (var federationMemberIp in federationGatewaySettings.FederationNodeIps)
+            foreach (var federationMemberIp in federationGatewaySettings.FederationNodeIpEndPoints)
             {
                 this.connectionManager.AddNodeAddress(federationMemberIp);
             }

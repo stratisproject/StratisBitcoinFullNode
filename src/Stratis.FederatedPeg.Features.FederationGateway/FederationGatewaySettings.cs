@@ -36,10 +36,10 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
 
             this.PublicKey = configReader.GetOrDefault<string>("publickey", null);
             this.CounterChainApiPort = configReader.GetOrDefault("counterchainapiport", 0);
-            this.FederationNodeIps = configReader.GetOrDefault<string>("federationips", null)?.Split(',').Select(a => a.ToIPEndPoint(nodeSettings.Network.DefaultPort));
+            this.FederationNodeIpEndPoints = configReader.GetOrDefault<string>("federationips", null)?.Split(',').Select(a => a.ToIPEndPoint(nodeSettings.Network.DefaultPort));
         }
 
-        public IEnumerable<IPEndPoint> FederationNodeIps { get; set; }
+        public IEnumerable<IPEndPoint> FederationNodeIpEndPoints { get; set; }
 
         /// <summary>
         /// A string representation of the PublicKey used for determining turns in the round robin.

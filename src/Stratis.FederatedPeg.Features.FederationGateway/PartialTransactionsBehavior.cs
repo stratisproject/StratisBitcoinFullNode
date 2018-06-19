@@ -1,4 +1,6 @@
-﻿using System.Threading.Tasks;
+﻿using System.Linq;
+using System.Net;
+using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.P2P.Peer;
@@ -64,27 +66,24 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
         protected override void AttachCore()
         {
             this.logger.LogTrace("()");
-
-            this.AttachedPeer.MessageReceived.Register(this.OnMessageReceivedAsync, true);
-
+            if(federationGatewaySettings.FederationNodeIpEndPoints.Any(e => e.ToString() == AttachedPeer.PeerEndPoint.ToString()))
+                this.AttachedPeer.MessageReceived.Register(this.OnMessageReceivedAsync, true);
             this.logger.LogTrace("(-)");
         }
 
         protected override void DetachCore()
         {
             this.logger.LogTrace("()");
-
-            this.AttachedPeer.MessageReceived.Unregister(this.OnMessageReceivedAsync);
-
+            if (federationGatewaySettings.FederationNodeIpEndPoints.Any(e => e.ToString() == AttachedPeer.PeerEndPoint.ToString()))
+                this.AttachedPeer.MessageReceived.Unregister(this.OnMessageReceivedAsync);
             this.logger.LogTrace("(-)");
         }
 
         async Task Broadcast(RequestPartialTransactionPayload payload)
         {
             this.logger.LogTrace("({0}:'{1}',{2}:'{3}',{4}:'{5}')", nameof(payload.BossCard), payload.BossCard, nameof(payload.Command), payload.Command, nameof(payload.SessionId), payload.SessionId);
-
-            await this.AttachedPeer.SendMessageAsync(payload);
-
+            if (federationGatewaySettings.FederationNodeIpEndPoints.Any(e => e.ToString() == AttachedPeer.PeerEndPoint.ToString()))
+                await this.AttachedPeer.SendMessageAsync(payload);
             this.logger.LogTrace("(-)");
         }
 
