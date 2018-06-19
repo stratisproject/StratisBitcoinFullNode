@@ -22,20 +22,19 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
             Guard.NotNull(nodeSettings, nameof(nodeSettings));
 
             var configReader = nodeSettings.ConfigReader;
+
             var redeemScriptRaw = configReader.GetOrDefault<string>(RedeemScriptParam, null);
+            Console.WriteLine(redeemScriptRaw);
             if (redeemScriptRaw == null)
                 throw new ConfigurationException($"could not find {RedeemScriptParam} configuration parameter");
-
             this.RedeemScript = new Script(redeemScriptRaw);
             this.MultiSigAddress = RedeemScript.Hash.GetAddress(nodeSettings.Network);
             var payToMultisigScriptParams = PayToMultiSigTemplate.Instance.ExtractScriptPubKeyParameters(nodeSettings.Network, this.RedeemScript);
-            this.MultiSigM = configReader.GetOrDefault("multisigM", payToMultisigScriptParams.SignatureCount);
-            this.MultiSigN = configReader.GetOrDefault("multisigN", payToMultisigScriptParams.PubKeys.Length);
+            this.MultiSigM = payToMultisigScriptParams.SignatureCount;
+            this.MultiSigN = payToMultisigScriptParams.PubKeys.Length;
             this.FederationPublicKeys = payToMultisigScriptParams.PubKeys;
-            this.MultiSigWalletName = configReader.GetOrDefault("multisigwalletname", "multisig_wallet");
+
             this.PublicKey = configReader.GetOrDefault<string>("publickey", null);
-            this.FederationFolder = configReader.GetOrDefault<string>("federationfolder", null);
-            this.MemberPrivateFolder = configReader.GetOrDefault<string>("memberprivatefolder", null);
             this.CounterChainApiPort = configReader.GetOrDefault("counterchainapiport", 0);
             this.FederationNodeIps = configReader.GetOrDefault<string>("federationips", null)?.Split(',').Select(a => a.ToIPEndPoint(nodeSettings.Network.DefaultPort));
         }
@@ -53,16 +52,6 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
         public PubKey[] FederationPublicKeys { get; set; }
 
         /// <summary>
-        /// Path to the public keys of the federation members.
-        /// </summary>
-        public string FederationFolder { get; set; }
-
-        /// <summary>
-        /// Path to the folder containing the private key this node uses.  Used for signing multi-sig transactions.
-        /// </summary>
-        public string MemberPrivateFolder { get; set; }
-
-        /// <summary>
         /// The API port of the counterchain.  <example>The federation members are required to run full nodes for both the
         /// sidechain and the mainchain.  If this is the mainchain then the CounterChainApiPort is the api port of the sidechain node.</example>
         /// </summary>
@@ -77,11 +66,6 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
         /// For the M of N multisig, this is the number of members in the federation.
         /// </summary>
         public int MultiSigN { get; set; }
-
-        /// <summary>
-        /// The name of the multisig wallet used for the multisig transactions.
-        /// </summary>
-        public string MultiSigWalletName { get; set; }
 
         /// <summary>
         /// Mutlisig bitcoin address.

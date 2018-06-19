@@ -137,16 +137,16 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
                 switch (opReturnDataType)
                 {
                     case OpReturnDataType.Unknown:
-                        this.logger.LogInformation($"Received transaction with unknown OP_RETURN data: {stringResult}. Transaction hash: {transaction.GetHash()}.");
+                        this.logger.LogTrace("Received transaction with unknown OP_RETURN data: {0}. Transaction hash: {1}.", stringResult, transaction.GetHash());
                         continue;
                     case OpReturnDataType.Address:
-                        this.logger.LogInformation($"Processing received transaction with address: {stringResult}. Transaction hash: {transaction.GetHash()}.");
+                        this.logger.LogInformation("Processing received transaction with address: {0}. Transaction hash: {1}.", stringResult, transaction.GetHash());
                         this.ProcessAddress(transaction.GetHash(), stringResult, txOut.Value, blockNumber, block.GetHash());
                         continue;
                     case OpReturnDataType.Hash:
                         this.crossChainTransactionAuditor.AddCounterChainTransactionId(transaction.GetHash(), uint256.Parse(stringResult));
                         this.crossChainTransactionAuditor.Commit();
-                        this.logger.LogInformation($"AddCounterChainTransactionId: {stringResult} for transaction {transaction.GetHash()}.");
+                        this.logger.LogInformation("AddCounterChainTransactionId: {0} for transaction {1}.", stringResult, transaction.GetHash());
                         continue;
                     default:
                         throw new ArgumentOutOfRangeException();
@@ -170,11 +170,11 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
             // If we are in IBD we do nothing.
             if (this.initialBlockDownloadState.IsInitialBlockDownload())
             {
-                this.logger.LogDebug($"MonitorChain ({this.network.ToChain()}) in IBD: blockNumber {blockNumber} not processed.");
+                this.logger.LogTrace("MonitorChain ({0}) in IBD: blockNumber {1} not processed.", this.network.ToChain(), blockNumber);
                 return;
             }
 
-            this.logger.LogDebug($"Monitor Processing Block: {blockNumber} on {this.network.ToChain()}");
+            this.logger.LogTrace("Monitor Processing Block: {0} on {1}", blockNumber, this.network.ToChain());
 
             foreach (var transaction in block.Transactions)
                 this.ProcessTransaction(transaction, block, blockNumber);
@@ -203,8 +203,8 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
             this.CreateSession(crossChainTransactionInfo);
 
             // Log Info for info/diagnostics.
-            this.logger.LogInformation($"Crosschain Transaction Found on : {this.network.ToChain()}");
-            this.logger.LogInformation($"CrosschainTransactionInfo: {crossChainTransactionInfo}");
+            this.logger.LogInformation("Crosschain Transaction Found on : {0}", this.network.ToChain());
+            this.logger.LogInformation("CrosschainTransactionInfo: {0}", crossChainTransactionInfo);
             this.logger.LogTrace("(-)");
         }
     }

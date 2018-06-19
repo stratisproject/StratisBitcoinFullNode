@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 
@@ -10,8 +11,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.CounterChain
         public uint256 SessionId { get; }
         public Money Amount { get; }
         public string Destination { get; }
-        public bool HasReachedQuorum => 
-            this.PartialTransactions.Count >= federationGatewaySettings.MultiSigM;
+        public bool HasReachedQuorum => this.PartialTransactions.Count >= federationGatewaySettings.MultiSigM;
         public bool HaveISigned { get; set; } = false;
         public FederationGatewaySettings federationGatewaySettings { get; }
 
@@ -40,13 +40,19 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.CounterChain
                 return false;
             }
             
-            this.logger.LogDebug("Adding Partial to CounterChainSession.");
-            
-            // Insert the partial transaction in the session.
-            this.PartialTransactions.Add(partialTransaction);
+            // Insert the partial transaction in the session if has not been added yet.
+            if (!this.PartialTransactions.Any(pt => pt.GetHash() == partialTransaction.GetHash() && pt.Inputs.First().ScriptSig == partialTransaction.Inputs.First().ScriptSig))
+            {
+                this.logger.LogDebug("Adding Partial to CounterChainSession.");
+                this.PartialTransactions.Add(partialTransaction);
+            }
+            else
+            {
+                this.logger.LogDebug("Partial already added to CounterChainSession.");
+            }
             
             // Output parts info.
-            this.logger.LogDebug("New Partials");
+            this.logger.LogDebug("List of partials transactions");
             this.logger.LogDebug(" ---------");
             foreach (var p in PartialTransactions)
             {
