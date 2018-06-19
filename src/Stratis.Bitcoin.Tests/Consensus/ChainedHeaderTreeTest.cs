@@ -430,7 +430,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
             ctx.ConsensusSettings.UseCheckpoints = true;
             cht.Initialize(initialChainTip, true);
 
-            // Extend chain with 2 more headers
+            // Extend chain with 2 more headers.
             initialChainTip = ctx.ExtendAChain(extensionChainSize, initialChainTip); // ie. h1=h2=h3=h4
             List<BlockHeader> listOfCurrentChainHeaders = ctx.ChainedHeaderToList(initialChainTip, initialChainSize + extensionChainSize);
 
