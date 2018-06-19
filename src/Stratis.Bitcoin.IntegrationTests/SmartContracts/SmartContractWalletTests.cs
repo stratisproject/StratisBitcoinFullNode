@@ -229,14 +229,10 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
         }
 
         /*
-         * Due to changes in the transactionbuilder, the smart contract controllers are appending all owned UTXOs as inputs to all smart contract transactions.
-         * This is problematic for a few reasons:
+         * We need to be careful that the transactions built by the TransactionBuilder don't try to include all UTXOs as inputs,
+         * as this leads to issues with coinbase-immaturity.
          *
-         * 1. If you mine a block, you can't send any transactions for N blocks where N is the coinbase maturity setting
-         * 2. In the time when your transaction is in the mempool to potentially be mined, it looks as if you have 0 balance, and you cannot send any more smart contract transactions.
-         *
-         * The below test fails at the last assert. The fix should make this test pass at the least.
-         *
+         * Until we update the SmartContractsController to retrieve only mature transactions, we need this test.
          */
 
         [Fact]
@@ -336,7 +332,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 var response = (BuildCreateContractTransactionResponse)result.Value;
                 scSender.CreateRPCClient().AddNode(scReceiver.Endpoint, true);
 
-                SmartContractSharedSteps.MineToMaturityAndSendTransaction(scSender, scReceiver, senderWalletController, response.Hex);
+                SmartContractSharedSteps.SendTransactionAndMine(scSender, scReceiver, senderWalletController, response.Hex);
 
                 var receiptStorage = scReceiver.FullNode.NodeService<ISmartContractReceiptStorage>();
                 Assert.NotNull(receiptStorage.GetReceipt(response.TransactionId));
@@ -390,7 +386,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 result = (JsonResult)senderSmartContractsController.BuildCallSmartContractTransaction(callRequest);
                 var callResponse = (BuildCallContractTransactionResponse)result.Value;
 
-                SmartContractSharedSteps.MineToMaturityAndSendTransaction(scSender, scReceiver, senderWalletController, callResponse.Hex);
+                SmartContractSharedSteps.SendTransactionAndMine(scSender, scReceiver, senderWalletController, callResponse.Hex);
 
                 counterRequestResult = (string)((JsonResult)senderSmartContractsController.GetStorage(new GetStorageRequest
                 {
@@ -475,7 +471,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 var response = (BuildCreateContractTransactionResponse)result.Value;
                 scSender.CreateRPCClient().AddNode(scReceiver.Endpoint, true);
 
-                SmartContractSharedSteps.MineToMaturityAndSendTransaction(scSender, scReceiver, senderWalletController, response.Hex);
+                SmartContractSharedSteps.SendTransactionAndMine(scSender, scReceiver, senderWalletController, response.Hex);
 
                 // Contract deployed.
                 ContractStateRepositoryRoot senderState = scSender.FullNode.NodeService<ContractStateRepositoryRoot>();
@@ -499,7 +495,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 result = (JsonResult)senderSmartContractsController.BuildCallSmartContractTransaction(callRequest);
                 var callResponse = (BuildCallContractTransactionResponse)result.Value;
 
-                SmartContractSharedSteps.MineToMaturityAndSendTransaction(scSender, scReceiver, senderWalletController, callResponse.Hex);
+                SmartContractSharedSteps.SendTransactionAndMine(scSender, scReceiver, senderWalletController, callResponse.Hex);
 
                 // Here, test that Sender and HighestBidder are the same.
                 var ownerBytes = senderState.GetStorageValue(contractAddressUint160, Encoding.UTF8.GetBytes("Owner"));
@@ -531,7 +527,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 var endAuctionResult = (JsonResult)senderSmartContractsController.BuildCallSmartContractTransaction(endAuctionRequest);
                 var endAuctionResponse = (BuildCallContractTransactionResponse)endAuctionResult.Value;
 
-                SmartContractSharedSteps.MineToMaturityAndSendTransaction(scSender, scReceiver, senderWalletController, endAuctionResponse.Hex);
+                SmartContractSharedSteps.SendTransactionAndMine(scSender, scReceiver, senderWalletController, endAuctionResponse.Hex);
 
                 // Check that transaction did in fact go through with condensing tx as well
                 var blockStoreCache = scSender.FullNode.NodeService<IBlockStoreCache>();
@@ -591,7 +587,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 var response = (BuildCreateContractTransactionResponse)result.Value;
                 scSender.CreateRPCClient().AddNode(scReceiver.Endpoint, true);
 
-                SmartContractSharedSteps.MineToMaturityAndSendTransaction(scSender, scReceiver, senderWalletController, response.Hex);
+                SmartContractSharedSteps.SendTransactionAndMine(scSender, scReceiver, senderWalletController, response.Hex);
 
                 ContractStateRepositoryRoot senderState = scSender.FullNode.NodeService<ContractStateRepositoryRoot>();
                 Assert.Equal((ulong) 30 * 100_000_000, senderState.GetCurrentBalance(new Address(response.NewContractAddress).ToUint160(Network.SmartContractsRegTest)));
