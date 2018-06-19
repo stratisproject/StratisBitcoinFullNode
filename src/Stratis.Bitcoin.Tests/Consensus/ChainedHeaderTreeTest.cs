@@ -499,8 +499,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
             // Example: h1=h2=h3=(h4)=h5=[h6].
             const int chainExtension = 2;
             ChainedHeader extendedChainTip = ctx.ExtendAChain(chainExtension, initialChainTip);
-            listOfCurrentChainHeaders = ctx.ChainedHeaderToList(extendedChainTip, extendedChainTip.Height);
-            ctx.ConsensusSettings.BlockAssumedValid = listOfCurrentChainHeaders.Last().GetHash();
+            ctx.ConsensusSettings.BlockAssumedValid = extendedChainTip.HashBlock;
 
             // Setup two alternative chains A and B. Chain A covers the last checkpoint (4) and "assume valid" (6).
             // Chain B only covers the last checkpoint (4), but is longer that chain A.
@@ -556,8 +555,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
             // Example: h1=h2=h3=(h4)=h5=[h6].
             const int chainExtension = 2;
             ChainedHeader extendedChainTip = ctx.ExtendAChain(chainExtension, initialChainTip);
-            listOfCurrentChainHeaders = ctx.ChainedHeaderToList(extendedChainTip, extendedChainTip.Height);
-            ctx.ConsensusSettings.BlockAssumedValid = listOfCurrentChainHeaders.Last().GetHash();
+            ctx.ConsensusSettings.BlockAssumedValid = extendedChainTip.HashBlock;
 
             // Setup new chain, which covers the last checkpoint (4), but misses "assumed vaid".
             const int newChainExtensionSize = 6;
