@@ -44,6 +44,7 @@ using Xunit;
 using static Stratis.Bitcoin.Features.Consensus.FullNodeBuilderConsensusExtension;
 using Key = NBitcoin.Key;
 
+
 namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
 {
     /// <summary>
