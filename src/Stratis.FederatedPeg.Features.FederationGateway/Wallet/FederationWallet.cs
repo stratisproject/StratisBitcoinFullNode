@@ -161,11 +161,10 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Wallet
 
             TransactionBuilder builder = new TransactionBuilder(this.Network);
 
-            Transaction signed =
-                builder
-                    .AddCoins(scriptCoins)
-                    .AddKeys(this.MultiSigAddress.GetPrivateKey(this.EncryptedSeed, password, this.Network))
-                    .SignTransaction(partial);
+            Transaction signed = builder
+                .AddCoins(scriptCoins)
+                .AddKeys(this.MultiSigAddress.GetPrivateKey(this.EncryptedSeed, password, this.Network))
+                .SignTransaction(partial);
 
             return signed;
         }
