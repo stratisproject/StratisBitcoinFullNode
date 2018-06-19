@@ -11,6 +11,14 @@ https://Discord
 
 # Release Notes
 
+v0.10.0
+- Contracts can now be created with a value - the amount sent no longer has to be 0.
+- A significant premine reward was built into the network to fill up the faucet.
+- Structs are serialized more efficiently. Takes up ~1/3 of the storage they used to on disk when stored via PersistentState.
+- Assert now accepts a message as a second parameter, to give feedback about the exact condition that failed validation.
+- Fixed a bug where a NullReferenceException occured when trying to store a receipt.
+- A range of architecture improvements that bring the codebase more in line with the full node.
+
 v0.9.0
 - Long (UInt64) is now a supported type.
 - Receipts are now generated when smart contracts are executed. The Sct tool also returns the transaction hash that the contract should be deployed inside. With all of this developers can now receive feedback about the outcome of contract creations or calls via the API.
