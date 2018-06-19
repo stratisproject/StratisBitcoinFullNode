@@ -58,7 +58,9 @@ namespace Stratis.Bitcoin.Tests.Consensus
 
             internal TestContext Build()
             {
-                this.testContext.ChainedHeaderTree.Initialize(this.testContext.InitialChainTip, true);
+                if (this.testContext.InitialChainTip != null)
+                    this.testContext.ChainedHeaderTree.Initialize(this.testContext.InitialChainTip, true);
+
                 return this.testContext;
             }
         }
