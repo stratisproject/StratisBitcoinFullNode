@@ -56,4 +56,16 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Models
         [Required(ErrorMessage = "A password is required.")]
         public string Password { get; set; }
     }
+
+    /// <summary>
+    /// Model for the "enablefederation" request.
+    /// </summary>
+    public class EnableFederationRequest : RequestModel
+    {
+        /// <summary>
+        /// The federation wallet password.
+        /// </summary>
+        [Required(ErrorMessage = "A password is required.")]
+        public string Password { get; set; }
+    }
 }
