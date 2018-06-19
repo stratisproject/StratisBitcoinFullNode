@@ -22,7 +22,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
         {
             public CheckpointFixture(int height, BlockHeader header)
             {
-                if (height < 1) throw new ArgumentException("Height must be greater or equal to 1.");
+                if (height < 1) throw new ArgumentOutOfRangeException(nameof(height), "Height must be greater or equal to 1.");
 
                 Guard.NotNull(header, nameof(header));
 
@@ -46,6 +46,9 @@ namespace Stratis.Bitcoin.Tests.Consensus
 
             internal TestContextBuilder WithInitialChain(int initialChainSize)
             {
+                if (initialChainSize < 0)
+                    throw new ArgumentOutOfRangeException(nameof(initialChainSize), "Size cannot be less than 0.");
+
                 this.testContext.InitialChainTip = this.testContext.ExtendAChain(initialChainSize);
                 return this;
             }
@@ -83,7 +86,8 @@ namespace Stratis.Bitcoin.Tests.Consensus
             public TestContext()
             {
                 this.ChainedHeaderTree = new ChainedHeaderTree(
-                    this.Network, new ExtendedLoggerFactory(), 
+                    this.Network, 
+                    new ExtendedLoggerFactory(), 
                     this.ChainedHeaderValidatorMock.Object, 
                     this.CheckpointsMock.Object, 
                     this.ChainStateMock.Object, 
@@ -299,7 +303,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
         public void ConnectHeaders_SupplyHeaders_ToDownloadArraySizeSameAsNumberOfHeaders()
         {
             // Setup
-            TestContext ctx = new TestContextBuilder().WithInitialChain(10).UseCheckpoints(false).Build();
+            TestContext ctx = new TestContextBuilder().WithInitialChain(5).UseCheckpoints(false).Build();
             ChainedHeaderTree cht = ctx.ChainedHeaderTree;
             ChainedHeader chainTip = ctx.InitialChainTip;
 
