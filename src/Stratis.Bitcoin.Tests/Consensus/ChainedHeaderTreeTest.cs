@@ -422,13 +422,17 @@ namespace Stratis.Bitcoin.Tests.Consensus
         public void ChainHasOneCheckPointAndAssumeValid_TwoAlternativeChainsArePresented_BothChainsAreMarkedForDownload()
         {
             // Chain header tree setup.
-            const int initialChainSize = 4;
+            const int initialChainSize = 2;
+            const int extensionChainSize = 2;
             var ctx = new TestContext();
             ChainedHeaderTree cht = ctx.CreateChainedHeaderTree();
-            ChainedHeader initialChainTip = ctx.ExtendAChain(initialChainSize); // ie. h1=h2=h3=h4
-            cht.Initialize(initialChainTip, true);
+            ChainedHeader initialChainTip = ctx.ExtendAChain(initialChainSize); // ie. h1=h2
             ctx.ConsensusSettings.UseCheckpoints = true;
-            List<BlockHeader> listOfCurrentChainHeaders = ctx.ChainedHeaderToList(initialChainTip, initialChainSize);
+            cht.Initialize(initialChainTip, true);
+
+            // Extend chain with 2 more headers
+            initialChainTip = ctx.ExtendAChain(extensionChainSize, initialChainTip); // ie. h1=h2=h3=h4
+            List<BlockHeader> listOfCurrentChainHeaders = ctx.ChainedHeaderToList(initialChainTip, initialChainSize + extensionChainSize);
 
             // Setup a known checkpoint at header 4.
             // Example: h1=h2=h3=(h4).
@@ -457,21 +461,21 @@ namespace Stratis.Bitcoin.Tests.Consensus
             const int chainBExtensionSize = 6;
             ChainedHeader chainATip = ctx.ExtendAChain(chainAExtensionSize, extendedChainTip); // ie. h1=h2=h3=(h4)=h5=[h6]=a7=a8
             ChainedHeader chainBTip = ctx.ExtendAChain(chainBExtensionSize, initialChainTip); // ie. h1=h2=h3=(h4)=b5=b6=b7=b8=b9=b10
-            List<BlockHeader> listOfChainABlockHeaders = ctx.ChainedHeaderToList(chainATip, initialChainSize + chainExtension + chainAExtensionSize);
-            List<BlockHeader> listOfChainBBlockHeaders = ctx.ChainedHeaderToList(chainBTip, initialChainSize + chainBExtensionSize);
+            List<BlockHeader> listOfChainABlockHeaders = ctx.ChainedHeaderToList(chainATip, initialChainSize + extensionChainSize + chainExtension + chainAExtensionSize);
+            List<BlockHeader> listOfChainBBlockHeaders = ctx.ChainedHeaderToList(chainBTip, initialChainSize + extensionChainSize + chainBExtensionSize);
 
             // Chain A is presented by peer 1.
-            // DownloadFrom should be set to header 5. 
+            // DownloadFrom should be set to header 3. 
             // DownloadTo should be set to header 8. 
             ConnectNewHeadersResult result = cht.ConnectNewHeaders(1, listOfChainABlockHeaders);
-            result.DownloadFrom.HashBlock.Should().Be(listOfChainABlockHeaders[checkpointHeight].GetHash());
+            result.DownloadFrom.HashBlock.Should().Be(listOfChainABlockHeaders.Skip(2).First().GetHash());
             result.DownloadTo.HashBlock.Should().Be(listOfChainABlockHeaders.Last().GetHash());
 
             // Chain B is presented by peer 2.
-            // DownloadFrom should be set to header 5. 
+            // DownloadFrom should be set to header 3. 
             // DownloadTo should be set to header 10. 
             result = cht.ConnectNewHeaders(2, listOfChainBBlockHeaders);
-            result.DownloadFrom.HashBlock.Should().Be(listOfChainBBlockHeaders[checkpointHeight].GetHash());
+            result.DownloadFrom.HashBlock.Should().Be(listOfChainBBlockHeaders.Skip(2).First().GetHash());
             result.DownloadTo.HashBlock.Should().Be(listOfChainBBlockHeaders.Last().GetHash());
         }
     }
