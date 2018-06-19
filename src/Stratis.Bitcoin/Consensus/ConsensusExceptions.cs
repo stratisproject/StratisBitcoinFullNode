@@ -27,9 +27,9 @@ namespace Stratis.Bitcoin.Consensus
         }
     }
 
-    public class InvalidHeaderException : ConsensusException
+    public class CheckpointMismatchException : ConsensusException
     {
-        public InvalidHeaderException() : base()
+        public CheckpointMismatchException() : base()
         {
         }
     }
