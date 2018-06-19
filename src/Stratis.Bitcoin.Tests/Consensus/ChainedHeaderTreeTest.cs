@@ -508,7 +508,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
             ctx.ConsensusSettings.BlockAssumedValid = extendedChainTip.HashBlock;
 
             // Setup two alternative chains A and B. Chain A covers the last checkpoint (4) and "assume valid" (6).
-            // Chain B only covers the last checkpoint (4), but is longer that chain A.
+            // Chain B only covers the last checkpoint (4).
             const int chainAExtensionSize = 2;
             const int chainBExtensionSize = 6;
             ChainedHeader chainATip = ctx.ExtendAChain(chainAExtensionSize, extendedChainTip); // i.e. h1=h2=h3=(h4)=h5=[h6]=a7=a8
