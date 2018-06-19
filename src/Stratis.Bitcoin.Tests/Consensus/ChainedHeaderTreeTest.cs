@@ -472,11 +472,65 @@ namespace Stratis.Bitcoin.Tests.Consensus
             result.DownloadTo.HashBlock.Should().Be(listOfChainABlockHeaders.Last().GetHash());
 
             // Chain B is presented by peer 2.
-            // DownloadFrom should be set to header 3. 
+            // DownloadFrom should be set to header 5. 
             // DownloadTo should be set to header 10. 
             result = cht.ConnectNewHeaders(2, listOfChainBBlockHeaders);
-            result.DownloadFrom.HashBlock.Should().Be(listOfChainBBlockHeaders.Skip(2).First().GetHash());
+            result.DownloadFrom.HashBlock.Should().Be(listOfChainBBlockHeaders[checkpointHeight].GetHash());
             result.DownloadTo.HashBlock.Should().Be(listOfChainBBlockHeaders.Last().GetHash());
+        }
+
+        /// <summary>
+        /// Issue 16 @ Checkpoints are enabled. After the last checkpoint, there is an assumed valid. The chain that covers
+        /// the last checkpoint but doesn't cover assume valid is presented - marked for download.
+        /// </summary>
+        [Fact]
+        public void ChainHasOneCheckPointAndAssumeValid_ChainsWithCheckpointButMissedAssumeValidIsPresented_BothChainsAreMarkedForDownload()
+        {
+            // Chain header tree setup.
+            const int initialChainSize = 2;
+            const int extensionChainSize = 2;
+            var ctx = new TestContext();
+            ChainedHeaderTree cht = ctx.CreateChainedHeaderTree();
+            ChainedHeader initialChainTip = ctx.ExtendAChain(initialChainSize); // i.e. h1=h2
+            ctx.ConsensusSettings.UseCheckpoints = true;
+            cht.Initialize(initialChainTip, true);
+
+            // Extend chain with 2 more headers.
+            initialChainTip = ctx.ExtendAChain(extensionChainSize, initialChainTip); // i.e. h1=h2=h3=h4
+            List<BlockHeader> listOfCurrentChainHeaders = ctx.ChainedHeaderToList(initialChainTip, initialChainSize + extensionChainSize);
+
+            // Setup a known checkpoint at header 4.
+            // Example: h1=h2=h3=(h4).
+            const int checkpointHeight = 4;
+            var checkpoint = new CheckpointInfo(listOfCurrentChainHeaders.Last().GetHash());
+            ctx.CheckpointsMock
+               .Setup(c => c.GetCheckpoint(checkpointHeight))
+               .Returns(checkpoint);
+            ctx.CheckpointsMock
+               .Setup(c => c.GetCheckpoint(It.IsNotIn(checkpointHeight)))
+               .Returns((CheckpointInfo)null);
+            ctx.CheckpointsMock
+                .Setup(c => c.GetLastCheckpointHeight())
+                .Returns(checkpointHeight);
+
+            // Extend chain and add "Assume valid" at block 6.
+            // Example: h1=h2=h3=(h4)=h5=[h6].
+            const int chainExtension = 2;
+            ChainedHeader extendedChainTip = ctx.ExtendAChain(chainExtension, initialChainTip);
+            listOfCurrentChainHeaders = ctx.ChainedHeaderToList(extendedChainTip, extendedChainTip.Height);
+            ctx.ConsensusSettings.BlockAssumedValid = listOfCurrentChainHeaders.Last().GetHash();
+
+            // Setup new chain, which covers the last checkpoint (4), but misses "assumed vaid".
+            const int newChainExtensionSize = 6;
+            ChainedHeader newChainTip = ctx.ExtendAChain(newChainExtensionSize, initialChainTip); // i.e. h1=h2=h3=(h4)=b5=b6=b7=b8=b9=b10
+            listOfCurrentChainHeaders = ctx.ChainedHeaderToList(newChainTip, initialChainSize + extensionChainSize  + newChainExtensionSize);
+
+            // Chain is presented by peer 2.
+            // DownloadFrom should be set to header 3. 
+            // DownloadTo should be set to header 10. 
+            ConnectNewHeadersResult result = cht.ConnectNewHeaders(2, listOfCurrentChainHeaders);
+            result.DownloadFrom.HashBlock.Should().Be(listOfCurrentChainHeaders.Skip(2).First().GetHash());
+            result.DownloadTo.HashBlock.Should().Be(listOfCurrentChainHeaders.Last().GetHash());
         }
     }
 }
