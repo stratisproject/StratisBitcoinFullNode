@@ -194,10 +194,15 @@ namespace Stratis.Bitcoin.Features.Wallet
             Guard.NotNull(context.Recipients, nameof(context.Recipients));
             Guard.NotNull(context.AccountReference, nameof(context.AccountReference));
 
-            context.TransactionBuilder = new TransactionBuilder(this.Network);
-
-            // Smart contract calls allow dust
-            context.TransactionBuilder.DustPrevention = false;
+            context.TransactionBuilder = new TransactionBuilder(this.Network)
+            {
+                CoinSelector = new DefaultCoinSelector
+                {
+                    GroupByScriptPubKey = context.UseAllInputs
+                },
+                // Smart contract calls allow dust. Should be an option on TransactionBuildContext in future.
+                DustPrevention = false
+            };
 
             this.AddRecipients(context);
             this.AddOpReturnOutput(context);
@@ -420,6 +425,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             this.AllowOtherInputs = false;
             this.Sign = !string.IsNullOrEmpty(walletPassword);
             this.OpReturnData = opReturnData;
+            this.UseAllInputs = true;
         }
 
         /// <summary>
@@ -523,6 +529,11 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// Optional data to be added as an extra OP_RETURN transaction output with Money.Zero value.
         /// </summary>
         public string OpReturnData { get; set; }
+
+        /// <summary>
+        /// Whether to use all inputs, to preserve privacy, or use only enough to meet the required amount.
+        /// </summary>
+        public bool UseAllInputs { get; set; } 
     }
 
     /// <summary>
