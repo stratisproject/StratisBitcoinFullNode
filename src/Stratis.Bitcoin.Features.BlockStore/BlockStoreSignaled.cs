@@ -8,6 +8,7 @@ using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.P2P.Peer;
+using Stratis.Bitcoin.Primitives;
 using Stratis.Bitcoin.Signals;
 using Stratis.Bitcoin.Utilities;
 
@@ -88,7 +89,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
             this.logger.LogTrace("Block hash is '{0}'.", chainedHeader.HashBlock);
 
-            var blockPair = new BlockPair(block, chainedHeader);
+            var blockPair = new ChainedHeaderBlock(block, chainedHeader);
 
             // Ensure the block is written to disk before relaying.
             this.blockStoreQueue.AddToPending(blockPair);

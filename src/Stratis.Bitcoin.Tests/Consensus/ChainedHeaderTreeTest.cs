@@ -71,7 +71,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
         public class TestContext
         {
             public Network Network = Network.RegTest;
-            public Mock<IChainedHeaderValidator> ChainedHeaderValidatorMock = new Mock<IChainedHeaderValidator>();
+            public Mock<IBlockValidator> ChainedHeaderValidatorMock = new Mock<IBlockValidator>();
             public Mock<ICheckpoints> CheckpointsMock = new Mock<ICheckpoints>();
             public Mock<IChainState> ChainStateMock = new Mock<IChainState>();
             public Mock<IFinalizedBlockHeight> FinalizedBlockMock = new Mock<IFinalizedBlockHeight>();
@@ -385,7 +385,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
 
         /// <summary>
         /// Issue 14 @ Chain exists with checkpoints enabled. There are 2 checkpoints. Peer presents a chain that covers
-        /// first checkpoint with a prolongation that does not match the 2nd checkpoint. Exception should be thrown.
+        /// first checkpoint with a prolongation that does not match the 2nd checkpoint. Exception should be thrown and violating headers should be disconnected.
         /// </summary>
         [Fact]
         public void ChainHasTwoCheckPoints_ChainCoveringOnlyFirstCheckPointIsPresented_ChainIsDiscardedUpUntilFirstCheckpoint()
@@ -413,8 +413,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
             // Setup new chain that only covers first checkpoint but doesn't cover second checkpoint.
             // Example: h1=h2=h3=(h4)=h5=h6=x7=x8=x9=x10.
             const int newChainExtension = 4;
-            extendedChainTip = extendedChainTip.Previous; // walk back to block 6
-            extendedChainTip = extendedChainTip.Previous;
+            extendedChainTip = extendedChainTip.GetAncestor(6); // walk back to block 6
             extendedChainTip = ctx.ExtendAChain(newChainExtension, extendedChainTip); 
             List<BlockHeader> listOfNewChainHeaders = ctx.ChainedHeaderToList(extendedChainTip, extendedChainTip.Height);
 
@@ -425,12 +424,17 @@ namespace Stratis.Bitcoin.Tests.Consensus
 
             // Remaining 5 blocks are presented by peer 1 which do not cover checkpoint 2.
             // InvalidHeaderException should be thrown.
+            List<BlockHeader> violatingHeaders = listOfNewChainHeaders.Skip(5).ToList();
             Action connectAction = () =>
             {
-                cht.ConnectNewHeaders(1, listOfNewChainHeaders.Skip(5).ToList());
+                cht.ConnectNewHeaders(1, violatingHeaders);
             };
 
-            connectAction.Should().Throw<InvalidHeaderException>();
+            connectAction.Should().Throw<CheckpointMismatchException>();
+
+            // Make sure headers for violating chain don't exist.
+            foreach (BlockHeader header in violatingHeaders)
+                Assert.False(cht.GetChainedHeadersByHash().ContainsKey(header.GetHash()));
         }
 
         /// <summary>
