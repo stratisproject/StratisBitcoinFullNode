@@ -1,36 +1,39 @@
-﻿using System.Threading.Tasks;
+﻿using System.Collections.Concurrent;
+using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
 using NBitcoin;
+using Stratis.Bitcoin.Features.Consensus;
 
 namespace Stratis.Bitcoin.Features.Wallet.Interfaces
 {
     /// <summary>
-    /// Interface for a manager providing producer and consumer operation
-    /// blocks processed within wallets.
+    /// This interface provides the System.Threading.Tasks.Dataflow producer and consumer implementation
+    /// to queue up <see cref="Block"/>s, which are broadcast from the <see cref="ConsensusLoop"/>, and then synchronised within <see cref="WalletManager"/>.
     /// </summary>
     public interface IWalletBlockProducerConsumer
     {
         /// <summary>
-        /// Processes a block received from the network.
+        /// Queue a <see cref="Block"/> that is broadcast from the <see cref="ConsensusLoop"/>.
         /// </summary>
-        /// <param name="block">The block.</param>
+        /// <param name="block">The block that was broadcast out from Consensus</param>.
         void QueueBlock(Block block);
 
         /// <summary>
-        /// Writes a list of NBitcoin Blocks to the System.Threading.Task.Dataflow.ITargetBlock object.
+        /// Produce the Dataflow block that is a target for the data (NBitcoin <see cref="Block"/>).
         /// </summary>
-        /// <param name="target"></param>
-        /// <param name="block">The <see cref="Block>"/>.</param>
+        /// <param name="target">Dataflow Task TargetBlock</param>
+        /// <param name="block">NBitcoin <see cref="Block"/></param>
         void Produce(ITargetBlock<Block> target, Block block);
 
         /// <summary>
-        /// Reads the list of NBitcoin Blocks against the System.Threading.Task.Dataflow.ISourceBlock object
+        /// Consumes the Dataflow block which receives NBitcoin <see cref="Block"/>s.
         /// </summary>
         /// <param name="source"></param>
-        Task ConsumeAsync(ISourceBlock<Block> source);
+        /// <param name="queue"></param>
+        Task ConsumeAsync(ISourceBlock<Block> source, ConcurrentQueue<Block> queue);
 
         /// <summary>
-        /// Provides a Buffer that is a list NBitCoin Blocks. 
+        /// Provides a Buffer for storing NBitcoin <see cref="Block"/>s. 
         /// This serves as the target buffer for the producer and the source buffer for the consumer.
         /// </summary>
         BufferBlock<Block> BlockBuffer { get; }

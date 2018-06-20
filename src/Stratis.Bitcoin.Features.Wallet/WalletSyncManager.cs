@@ -133,18 +133,46 @@ namespace Stratis.Bitcoin.Features.Wallet
 
                                 next = tip.GetAncestor(next.Height + 1);
 
-                                Block nextBlock = this.blockStoreCache.GetBlockAsync(next.HashBlock).GetAwaiter().GetResult();
+                                Block nextBlock;
+                                int index = 0;
 
-                                if (nextBlock == null) continue;
+                                while (true)
+                                {
+                                    token.ThrowIfCancellationRequested();
 
-                                this.walletTip = next;
-                                this.walletManager.ProcessBlock(nextBlock, next);
+                                    nextBlock = this.blockStoreCache.GetBlockAsync(next.HashBlock).GetAwaiter().GetResult();
+                                    if (nextBlock == null)
+                                    {
+                                        // Check if any Blocks are queued up.
+                                        while (this.blocksQueue.TryDequeue(out Block block))
+                                        {
+                                            await this.ProcessAsync(block).ConfigureAwait(false);
+                                        }
+
+                                        // The idea in this abandoning of the loop is to release consensus to push the block.
+                                        // That will make the block available in the next push from consensus.
+                                        index++;
+
+                                        if (index > 10)
+                                        {
+                                            this.logger.LogTrace("(-)[WALLET_CATCHUP_INDEX_MAX]");
+                                            return;
+                                        }
+
+                                        // Really ugly hack to let store catch up.
+                                        // This will block the entire consensus pulling.
+                                        this.logger.LogWarning("Wallet is behind the best chain and the next block is not found in store.");
+                                        Thread.Sleep(100);
+
+                                        continue;
+                                    }
+
+                                    break;
+                                }
+
+                                await this.ProcessAsync(nextBlock).ConfigureAwait(false);
+
                             }
-                        }
-
-                        while (this.blocksQueue.TryDequeue(out Block block))
-                        {
-                            await this.ProcessAsync(block);
                         }
                     }
                     catch (OperationCanceledException)
@@ -153,8 +181,8 @@ namespace Stratis.Bitcoin.Features.Wallet
                     }
                 }
                 , this.nodeLifetime.ApplicationStopping
-                , repeatEvery: TimeSpans.Second
-                , startAfter: TimeSpans.TenSeconds);
+                , TimeSpans.Second
+                , TimeSpans.TenSeconds);
             }
 
             this.logger.LogTrace("(-)");
@@ -174,20 +202,21 @@ namespace Stratis.Bitcoin.Features.Wallet
         }
 
         /// <inheritdoc />
-        public async Task ConsumeAsync(ISourceBlock<Block> source)
+        public async Task ConsumeAsync(ISourceBlock<Block> source, ConcurrentQueue<Block> queue)
         {
             while (await source.OutputAvailableAsync())
             {
                 Block block = source.Receive();
 
-                this.blocksQueue.Enqueue(block);
+                queue.Enqueue(block);
             }
         }
 
         /// <inheritdoc />
         public void QueueBlock(Block block)
         {
-            Task.Run(() => this.ConsumeAsync(this.BlockBuffer));
+            Task.Run(() => this.ConsumeAsync(this.BlockBuffer, this.blocksQueue));
+
             this.Produce(this.BlockBuffer, block);
         }
 
@@ -234,22 +263,6 @@ namespace Stratis.Bitcoin.Features.Wallet
                         this.walletTip = fork;
 
                         this.logger.LogTrace("Wallet tip set to '{0}'.", this.walletTip);
-                    }
-
-                    // The new tip can be ahead or behind the wallet.
-                    // If the new tip is ahead we try to bring the wallet up to the new tip.
-                    // If the new tip is behind we just check the wallet and the tip are in the same chain.
-
-                    if (newTip.Height < this.walletTip.Height)
-                    {
-                        ChainedHeader findTip = this.walletTip.FindAncestorOrSelf(newTip);
-                        if (findTip == null)
-                        {
-                            this.logger.LogTrace("(-)[NEW_TIP_BEHIND_NOT_IN_WALLET]");
-                            return;
-                        }
-
-                        this.logger.LogTrace("Wallet tip '{0}' is ahead or equal to the new tip '{1}'.", this.walletTip, newTip);
                     }
                 }
 
