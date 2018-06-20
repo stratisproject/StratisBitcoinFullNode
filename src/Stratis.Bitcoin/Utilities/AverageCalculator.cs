@@ -42,14 +42,17 @@ namespace Stratis.Bitcoin.Utilities
             if (this.samples.Capacity == maxSamples)
                 return;
 
-            List<double> items = this.samples.Reverse().Take(maxSamples).ToList();
+            var resized = new CircularArray<double>(maxSamples);
 
-            this.samples = new CircularArray<double>(maxSamples);
+            int skip = 0;
+            if (maxSamples < this.samples.Count)
+                skip = this.samples.Count - maxSamples;
 
-            foreach (double item in items)
-                this.samples.Add(item, out double unused);
+            foreach (double item in this.samples.Skip(skip))
+                resized.Add(item, out double unused);
 
-            this.Average = items.Average();
+            this.samples = resized;
+            this.Average = this.samples.Average();
         }
 
         /// <summary>Adds a new sample and recalculates <see cref="Average"/> value.</summary>
