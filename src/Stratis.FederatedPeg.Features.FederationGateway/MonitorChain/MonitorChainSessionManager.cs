@@ -161,9 +161,16 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.MonitorChain
 
                 var uri = new Uri($"http://localhost:{apiPortForSidechain}/api/FederationGateway/create-session-oncounterchain");
                 var request = new JsonContent(createCounterChainSessionRequest);
-                var httpResponseMessage = client.PostAsync(uri, request).Result;
-                string json = httpResponseMessage.Content.ReadAsStringAsync().Result;
-                //todo: handler error
+                
+                try
+                {
+                    var httpResponseMessage = client.PostAsync(uri, request).ConfigureAwait(false).GetAwaiter().GetResult();
+                    string json = httpResponseMessage.Content.ReadAsStringAsync().ConfigureAwait(false).GetAwaiter().GetResult();
+                }
+                catch (Exception e)
+                {
+                    this.logger.LogError(e, "Error occurred when calling /api/FederationGateway/create-session-oncounterchain: {0}", e.Message);
+                }
             }
 
             this.logger.LogTrace("(-)");
@@ -246,12 +253,19 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.MonitorChain
 
                 var uri = new Uri($"http://localhost:{apiPortForSidechain}/api/FederationGateway/process-session-oncounterchain");
                 var request = new JsonContent(createPartialTransactionSessionRequest);
-                var httpResponseMessage = await client.PostAsync(uri, request);
-                string json = await httpResponseMessage.Content.ReadAsStringAsync();
-                return JsonConvert.DeserializeObject<uint256>(json, new UInt256JsonConverter());
+                
+                try
+                {
+                    var httpResponseMessage = await client.PostAsync(uri, request);
+                    string json = await httpResponseMessage.Content.ReadAsStringAsync();
+                    return JsonConvert.DeserializeObject<uint256>(json, new UInt256JsonConverter());
+                }
+                catch (Exception e)
+                {
+                    this.logger.LogError(e, "Error occurred when calling /api/FederationGateway/process-session-oncounterchain: {0}", e.Message);
+                    return uint256.Zero;
+                }
             }
-
-            this.logger.LogTrace("(-)");
         }
     }
 }

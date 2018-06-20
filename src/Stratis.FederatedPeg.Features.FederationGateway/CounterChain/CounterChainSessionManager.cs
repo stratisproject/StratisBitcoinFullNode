@@ -168,7 +168,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.CounterChain
             this.logger.LogTrace("({0}:'{1}',{2}:'{3}',{4}:'{5}')", nameof(sessionId), sessionId, nameof(amount), amount, nameof(destinationAddress), destinationAddress);            
             this.logger.LogInformation("ProcessCounterChainSession: Session Registered.");
 
-            // Check if this has already been done then we just return the transctionId
+            // Check if this has already been done then we just return the transactionId
             if (this.sessions.TryGetValue(sessionId, out var counterchainSession))
             {
                 // This is the mechanism that tells the round robin not to continue and also
@@ -209,19 +209,23 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.CounterChain
                 Sign = false
             };
 
-            this.logger.LogInformation("ProcessCounterChainSession: Building Transaction.");
+            this.logger.LogInformation("Building template Transaction.");
             var templateTransaction = this.federationWalletTransactionHandler.BuildTransaction(multiSigContext);
 
             //add my own partial
-            this.logger.LogInformation("ProcessCounterChainSession: Signing own partial.");
+            this.logger.LogInformation("Signing own partial.");
             var counterChainSession = this.VerifySession(sessionId, templateTransaction);
 
-            if (counterChainSession == null) return uint256.One;
+            if (counterChainSession == null)
+            {
+                this.logger.LogInformation("CounterChainSession is null, returning.");
+                return uint256.One;
+            }
             this.MarkSessionAsSigned(counterChainSession);
             var partialTransaction = wallet.SignPartialTransaction(templateTransaction, this.federationWalletManager.Secret.WalletPassword);
 
             uint256 bossCard = BossTable.MakeBossTableEntry(sessionId, this.federationGatewaySettings.PublicKey);
-            this.logger.LogInformation("ProcessCounterChainSession: My bossCard: {0}.", bossCard);
+            this.logger.LogInformation("My bossCard: {0}.", bossCard);
             this.ReceivePartial(sessionId, partialTransaction, bossCard);
 
             //now build the requests for the partials
