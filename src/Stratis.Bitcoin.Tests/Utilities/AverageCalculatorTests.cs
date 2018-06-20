@@ -53,6 +53,28 @@ namespace Stratis.Bitcoin.Tests.Utilities
         }
 
         [Fact]
+        public void ResizeToSmallerSamplesCountKeepsTheRightSamples()
+        {
+            // Initialize with limit of 200.
+            var calculator = new AverageCalculator(200);
+            Assert.Equal(200, calculator.GetMaxSamples());
+
+            // Add 10,20,30
+            for (int i = 0; i < 3; i++)
+                calculator.AddSample(this.samples[i]);
+
+            // After that only 20,30 should be there
+            calculator.SetMaxSamples(2);
+
+            calculator.AddSample(40);
+
+            // There are 2 samples: 30 and 40
+
+            Assert.Equal(2, calculator.GetMaxSamples());
+            Assert.True(this.DoubleEqual(35, calculator.Average));
+        }
+
+        [Fact]
         public void CanResizeCapacityWithRemovingSamples()
         {
             // Initialize with limit of 200.
