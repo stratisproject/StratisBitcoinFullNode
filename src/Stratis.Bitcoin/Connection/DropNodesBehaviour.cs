@@ -61,8 +61,10 @@ namespace Stratis.Bitcoin.Connection
                 decimal thresholdCount = Math.Round(peerConnector.MaxOutboundConnections * this.dropThreshold, MidpointRounding.ToEven);
 
                 if (thresholdCount < this.connection.ConnectedPeers.Count())
+                {
                     if (version.StartHeight < this.chain.Height)
                         peer.Disconnect($"Node at height = {version.StartHeight} too far behind current height");
+                }
             }
 
             this.logger.LogTrace("(-)");

@@ -131,10 +131,13 @@ namespace NBitcoin
                 throw new InvalidOperationException("Wordlist.WordlistSource is not set, impossible to fetch word list.");
             result = await WordlistSource.Load(name).ConfigureAwait(false);
             if(result != null)
+            {
                 lock(_LoadedLists)
                 {
                     _LoadedLists.AddOrReplace(name, result);
                 }
+            }
+
             return result;
         }
 
