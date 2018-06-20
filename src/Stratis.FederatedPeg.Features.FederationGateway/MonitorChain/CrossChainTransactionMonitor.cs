@@ -6,6 +6,7 @@ using NBitcoin.JsonConverters;
 using Newtonsoft.Json;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Utilities;
+using Stratis.FederatedPeg.Features.FederationGateway.CounterChain;
 using Stratis.FederatedPeg.Features.FederationGateway.MonitorChain;
 using Stratis.FederatedPeg.Features.FederationGateway.NetworkHelpers;
 
@@ -65,6 +66,8 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
         // Our session manager.
         private readonly IMonitorChainSessionManager monitorChainSessionManager;
 
+        private readonly ICounterChainSessionManager counterChainSessionManager;
+
         // The redeem Script we are monitoring.
         private Script script;
 
@@ -85,12 +88,14 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
             ConcurrentChain concurrentChain,
             FederationGatewaySettings federationGatewaySettings,
             IMonitorChainSessionManager monitorChainSessionManager,
+            ICounterChainSessionManager counterChainSessionManager,
             IInitialBlockDownloadState initialBlockDownloadState,
             ICrossChainTransactionAuditor crossChainTransactionAuditor = null)
         {
             Guard.NotNull(loggerFactory, nameof(loggerFactory));
             Guard.NotNull(network, nameof(network));
             Guard.NotNull(monitorChainSessionManager, nameof(monitorChainSessionManager));
+            Guard.NotNull(counterChainSessionManager, nameof(counterChainSessionManager));
             Guard.NotNull(federationGatewaySettings, nameof(federationGatewaySettings));
             Guard.NotNull(concurrentChain, nameof(concurrentChain));
             Guard.NotNull(initialBlockDownloadState, nameof(initialBlockDownloadState));
@@ -144,9 +149,12 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
                         this.ProcessAddress(transaction.GetHash(), stringResult, txOut.Value, blockNumber, block.GetHash());
                         continue;
                     case OpReturnDataType.Hash:
-                        this.crossChainTransactionAuditor.AddCounterChainTransactionId(transaction.GetHash(), uint256.Parse(stringResult));
+                        var hash = uint256.Parse(stringResult);
+                        this.crossChainTransactionAuditor.AddCounterChainTransactionId(transaction.GetHash(), hash);
                         this.crossChainTransactionAuditor.Commit();
+
                         this.logger.LogInformation("AddCounterChainTransactionId: {0} for transaction {1}.", stringResult, transaction.GetHash());
+                        this.counterChainSessionManager.AddCounterChainTransactionId(transaction.GetHash(), hash);
                         continue;
                     default:
                         throw new ArgumentOutOfRangeException();

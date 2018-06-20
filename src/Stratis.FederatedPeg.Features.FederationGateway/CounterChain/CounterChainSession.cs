@@ -17,10 +17,13 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.CounterChain
 
         private readonly ILogger logger;
 
+        // The transactionId of the completed transaction.
+        public uint256 CounterChainTransactionId { get; internal set; } = uint256.Zero;
+
         public CounterChainSession(ILogger logger,
             FederationGatewaySettings federationGatewaySettings,
             uint256 sessionId,
-            Money amount, 
+            Money amount,
             string destination)
         {
             this.logger = logger;

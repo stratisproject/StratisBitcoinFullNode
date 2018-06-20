@@ -199,7 +199,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.MonitorChain
                     this.logger.LogInformation($"At {time} AmITheBoss: {monitorChainSession.AmITheBoss(time)} WhoHoldsTheBossCard: {monitorChainSession.WhoHoldsTheBossCard(time)}");
 
                     // We can keep sending this session until we get a result.
-                    var result = await CreateCounterChainSession(
+                    var result = await ProcessSessionOnCounterChain(
                         this.federationGatewaySettings.CounterChainApiPort,
                         monitorChainSession.Amount,
                         monitorChainSession.DestinationAddress,
@@ -211,6 +211,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.MonitorChain
                     {
                         monitorChainSession.Complete(result);
                         this.logger.LogInformation($"RunSessionAsync() - Completing Session {result}.");
+                        this.crossChainTransactionAuditor.AddCounterChainTransactionId(monitorChainSession.SessionId, result);
                     }
                 }
             }
@@ -227,7 +228,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.MonitorChain
         }
 
         // Calls into the counter chain and sets off the process to build the multi-sig transaction.
-        private async Task<uint256> CreateCounterChainSession(int apiPortForSidechain, Money amount, string destination, uint256 transactionId)
+        private async Task<uint256> ProcessSessionOnCounterChain(int apiPortForSidechain, Money amount, string destination, uint256 transactionId)
         {
             this.logger.LogTrace("({0}:'{1}',{2}:'{3}',{4}:'{5}',{6}:'{7}')", nameof(apiPortForSidechain), apiPortForSidechain, nameof(transactionId), transactionId, nameof(amount), amount, nameof(destination), destination);
 
@@ -243,7 +244,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.MonitorChain
                 client.DefaultRequestHeaders.Accept.Clear();
                 client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
 
-                var uri = new Uri($"http://localhost:{apiPortForSidechain}/api/FederationGateway/request-counter-completion");
+                var uri = new Uri($"http://localhost:{apiPortForSidechain}/api/FederationGateway/process-session-oncounterchain");
                 var request = new JsonContent(createPartialTransactionSessionRequest);
                 var httpResponseMessage = await client.PostAsync(uri, request);
                 string json = await httpResponseMessage.Content.ReadAsStringAsync();
