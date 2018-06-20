@@ -145,7 +145,14 @@ namespace Stratis.Bitcoin.Base
             {
                 ChainedHeader fork = tip.FindFork(consensusTip);
 
-                if ((fork != null) && (fork != consensusTip))
+                if (fork == null)
+                {
+                    this.logger.LogError("Header '{0}' is from a different network.", tip);
+                    this.logger.LogTrace("(-)[HEADER_IS_INVALID_NETWORK]");
+                    throw new InvalidOperationException("Header is from a different network");
+                }
+
+                if ((fork != tip) && (fork != consensusTip))
                 {
                     int reorgLength = consensusTip.Height - fork.Height;
 

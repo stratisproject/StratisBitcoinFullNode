@@ -11,16 +11,67 @@ using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Consensus;
+using Stratis.Bitcoin.Utilities;
 using Xunit;
 
 namespace Stratis.Bitcoin.Tests.Consensus
 {
     public class ChainedHeaderTreeTest
     {
+        public class CheckpointFixture
+        {
+            public CheckpointFixture(int height, BlockHeader header)
+            {
+                if (height < 1) throw new ArgumentOutOfRangeException(nameof(height), "Height must be greater or equal to 1.");
+
+                Guard.NotNull(header, nameof(header));
+
+                this.Height = height;
+                this.Header = header;
+            }
+
+            public int Height { get; }
+
+            public BlockHeader Header { get; }
+        }
+
+        public class TestContextBuilder
+        {
+            private readonly TestContext testContext;
+
+            public TestContextBuilder()
+            {
+                this.testContext = new TestContext();
+            }
+
+            internal TestContextBuilder WithInitialChain(int initialChainSize)
+            {
+                if (initialChainSize < 0)
+                    throw new ArgumentOutOfRangeException(nameof(initialChainSize), "Size cannot be less than 0.");
+
+                this.testContext.InitialChainTip = this.testContext.ExtendAChain(initialChainSize);
+                return this;
+            }
+
+            internal TestContextBuilder UseCheckpoints(bool useCheckpoints = true)
+            {
+                this.testContext.ConsensusSettings.UseCheckpoints = useCheckpoints;
+                return this;
+            }
+
+            internal TestContext Build()
+            {
+                if (this.testContext.InitialChainTip != null)
+                    this.testContext.ChainedHeaderTree.Initialize(this.testContext.InitialChainTip, true);
+
+                return this.testContext;
+            }
+        }
+
         public class TestContext
         {
             public Network Network = Network.RegTest;
-            public Mock<IChainedHeaderValidator> ChainedHeaderValidatorMock = new Mock<IChainedHeaderValidator>();
+            public Mock<IBlockValidator> ChainedHeaderValidatorMock = new Mock<IBlockValidator>();
             public Mock<ICheckpoints> CheckpointsMock = new Mock<ICheckpoints>();
             public Mock<IChainState> ChainStateMock = new Mock<IChainState>();
             public Mock<IFinalizedBlockHeight> FinalizedBlockMock = new Mock<IFinalizedBlockHeight>();
@@ -30,10 +81,18 @@ namespace Stratis.Bitcoin.Tests.Consensus
 
             internal ChainedHeaderTree ChainedHeaderTree;
 
-            internal ChainedHeaderTree CreateChainedHeaderTree()
+            internal ChainedHeader InitialChainTip;
+
+            public TestContext()
             {
-                this.ChainedHeaderTree = new ChainedHeaderTree(this.Network, new ExtendedLoggerFactory(), this.ChainedHeaderValidatorMock.Object, this.CheckpointsMock.Object, this.ChainStateMock.Object, this.FinalizedBlockMock.Object, this.ConsensusSettings);
-                return this.ChainedHeaderTree;
+                this.ChainedHeaderTree = new ChainedHeaderTree(
+                    this.Network, 
+                    new ExtendedLoggerFactory(), 
+                    this.ChainedHeaderValidatorMock.Object, 
+                    this.CheckpointsMock.Object, 
+                    this.ChainStateMock.Object, 
+                    this.FinalizedBlockMock.Object, 
+                    this.ConsensusSettings);
             }
 
             internal Target ChangeDifficulty(ChainedHeader header, int difficultyAdjustmentDivisor)
@@ -41,6 +100,30 @@ namespace Stratis.Bitcoin.Tests.Consensus
                 BigInteger newTarget = header.Header.Bits.ToBigInteger();
                 newTarget = newTarget.Divide(BigInteger.ValueOf(difficultyAdjustmentDivisor));
                 return new Target(newTarget);
+            }
+
+            public void SetupCheckpoints(params CheckpointFixture[] checkpoints)
+            {
+                if (checkpoints.GroupBy(h => h.Height).Any(g => g.Count() > 1))
+                    throw new ArgumentException("Checkpoint heights must be unique.");
+
+                if (checkpoints.Any(h => h.Height < 0))
+                    throw new ArgumentException("Checkpoint heights cannot be negative.");
+
+                foreach (CheckpointFixture checkpoint in checkpoints.OrderBy(h => h.Height))
+                {
+                    var checkpointInfo = new CheckpointInfo(checkpoint.Header.GetHash());
+                    this.CheckpointsMock
+                        .Setup(c => c.GetCheckpoint(checkpoint.Height))
+                        .Returns(checkpointInfo);
+                }
+
+                this.CheckpointsMock
+                    .Setup(c => c.GetCheckpoint(It.IsNotIn(checkpoints.Select(h => h.Height))))
+                    .Returns((CheckpointInfo)null);
+                this.CheckpointsMock
+                    .Setup(c => c.GetLastCheckpointHeight())
+                    .Returns(checkpoints.OrderBy(h => h.Height).Last().Height);
             }
 
             public ChainedHeader ExtendAChain(int count, ChainedHeader chainedHeader = null, int difficultyAdjustmentDivisor = 1)
@@ -96,8 +179,8 @@ namespace Stratis.Bitcoin.Tests.Consensus
         [Fact]
         public void ConnectHeaders_HeadersCantConnect_ShouldFail()
         {
-            var testContext = new TestContext();
-            ChainedHeaderTree chainedHeaderTree = testContext.CreateChainedHeaderTree();
+            TestContext testContext = new TestContextBuilder().Build();
+            ChainedHeaderTree chainedHeaderTree = testContext.ChainedHeaderTree;
 
             Assert.Throws<ConnectHeaderException>(() => chainedHeaderTree.ConnectNewHeaders(1, new List<BlockHeader>(new[] { testContext.Network.GetGenesis().Header })));
         }
@@ -105,11 +188,9 @@ namespace Stratis.Bitcoin.Tests.Consensus
         [Fact]
         public void ConnectHeaders_NoNewHeadersToConnect_ShouldReturnNothingToDownload()
         {
-            var testContext = new TestContext();
-            ChainedHeaderTree chainedHeaderTree = testContext.CreateChainedHeaderTree();
-
-            ChainedHeader chainTip = testContext.ExtendAChain(10);
-            chainedHeaderTree.Initialize(chainTip, true);
+            TestContext testContext = new TestContextBuilder().WithInitialChain(10).Build();
+            ChainedHeaderTree chainedHeaderTree = testContext.ChainedHeaderTree;
+            ChainedHeader chainTip = testContext.InitialChainTip;
 
             List<BlockHeader> listOfExistingHeaders = testContext.ChainedHeaderToList(chainTip, 4);
 
@@ -122,11 +203,9 @@ namespace Stratis.Bitcoin.Tests.Consensus
         [Fact]
         public void ConnectHeaders_HeadersFromTwoPeers_ShouldCreateTwoPeerTips()
         {
-            var testContext = new TestContext();
-            ChainedHeaderTree chainedHeaderTree = testContext.CreateChainedHeaderTree();
-
-            ChainedHeader chainTip = testContext.ExtendAChain(10);
-            chainedHeaderTree.Initialize(chainTip, true);
+            TestContext testContext = new TestContextBuilder().WithInitialChain(10).Build();
+            ChainedHeaderTree chainedHeaderTree = testContext.ChainedHeaderTree;
+            ChainedHeader chainTip = testContext.InitialChainTip;
 
             List<BlockHeader> listOfExistingHeaders = testContext.ChainedHeaderToList(chainTip, 4);
 
@@ -153,11 +232,10 @@ namespace Stratis.Bitcoin.Tests.Consensus
         [Fact]
         public void ConnectHeaders_NewAndExistingHeaders_ShouldCreateNewHeaders()
         {
-            var testContext = new TestContext();
-            ChainedHeaderTree chainedHeaderTree = testContext.CreateChainedHeaderTree();
+            TestContext testContext = new TestContextBuilder().WithInitialChain(10).Build();
+            ChainedHeaderTree chainedHeaderTree = testContext.ChainedHeaderTree;
+            ChainedHeader chainTip = testContext.InitialChainTip;
 
-            ChainedHeader chainTip = testContext.ExtendAChain(10);
-            chainedHeaderTree.Initialize(chainTip, true); // initialize the tree with 10 headers
             chainTip.BlockDataAvailability = BlockDataAvailabilityState.BlockAvailable;
             ChainedHeader newChainTip = testContext.ExtendAChain(10, chainTip); // create 10 more headers
 
@@ -185,10 +263,9 @@ namespace Stratis.Bitcoin.Tests.Consensus
         [Fact]
         public void ConnectHeaders_SupplyHeadersThenSupplyMore_Both_Tip_PeerId_Maps_ShouldBeUpdated()
         {
-            var testContext = new TestContext();
-            ChainedHeaderTree cht = testContext.CreateChainedHeaderTree();
-            ChainedHeader chainTip = testContext.ExtendAChain(10);
-            cht.Initialize(chainTip, true);
+            TestContext testContext = new TestContextBuilder().WithInitialChain(10).Build();
+            ChainedHeaderTree cht = testContext.ChainedHeaderTree;
+            ChainedHeader chainTip = testContext.InitialChainTip;
 
             List<BlockHeader> listOfExistingHeaders = testContext.ChainedHeaderToList(chainTip, 10);
 
@@ -282,11 +359,10 @@ namespace Stratis.Bitcoin.Tests.Consensus
         [Fact]
         public void ConnectHeaders_SupplyHeaders_ToDownloadArraySizeSameAsNumberOfHeaders()
         {
-            var ctx = new TestContext();
-            ChainedHeaderTree cht = ctx.CreateChainedHeaderTree();
-            ChainedHeader chainTip = ctx.ExtendAChain(5);
-            cht.Initialize(chainTip, true);
-            ctx.ConsensusSettings.UseCheckpoints = false;
+            // Setup
+            TestContext ctx = new TestContextBuilder().WithInitialChain(5).UseCheckpoints(false).Build();
+            ChainedHeaderTree cht = ctx.ChainedHeaderTree;
+            ChainedHeader chainTip = ctx.InitialChainTip;
 
             // Checkpoints are off
             Assert.False(ctx.ConsensusSettings.UseCheckpoints);
@@ -472,19 +548,17 @@ namespace Stratis.Bitcoin.Tests.Consensus
         public void PresentDifferentChains_AlternativeChainWithMoreChainWorkShouldAlwaysBeMarkedForDownload()
         {
             // Chain header tree setup.
-            var ctx = new TestContext();
-            ChainedHeaderTree cht = ctx.CreateChainedHeaderTree();
-            ChainedHeader initialChainTip = ctx.ExtendAChain(5);
-            cht.Initialize(initialChainTip, true);
-            ctx.ConsensusSettings.UseCheckpoints = false;
+            TestContext ctx = new TestContextBuilder().WithInitialChain(5).UseCheckpoints(false).Build();
+            ChainedHeaderTree cht = ctx.ChainedHeaderTree;
+            ChainedHeader initialChainTip = ctx.InitialChainTip;
 
             // Chains A and B setup.
             const int commonChainSize = 4;
             const int chainAExtension = 4;
             const int chainBExtension = 2;
-            ChainedHeader commonChainTip = ctx.ExtendAChain(commonChainSize, initialChainTip); // ie. h1=h2=h3=h4
-            ChainedHeader chainATip = ctx.ExtendAChain(chainAExtension, commonChainTip); // ie. (h1=h2=h3=h4)=a5=a6=a7=a8
-            ChainedHeader chainBTip = ctx.ExtendAChain(chainBExtension, commonChainTip); // ie. (h1=h2=h3=h4)=b5=b6
+            ChainedHeader commonChainTip = ctx.ExtendAChain(commonChainSize, initialChainTip); // i.e. h1=h2=h3=h4
+            ChainedHeader chainATip = ctx.ExtendAChain(chainAExtension, commonChainTip); // i.e. (h1=h2=h3=h4)=a5=a6=a7=a8
+            ChainedHeader chainBTip = ctx.ExtendAChain(chainBExtension, commonChainTip); // i.e. (h1=h2=h3=h4)=b5=b6
             List<BlockHeader> listOfChainABlockHeaders = ctx.ChainedHeaderToList(chainATip, commonChainSize + chainAExtension);
             List<BlockHeader> listOfChainBBlockHeaders = ctx.ChainedHeaderToList(chainBTip, commonChainSize + chainBExtension);
 
@@ -503,7 +577,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
 
             // Add more chain work and blocks into chain B.
             const int chainBAdditionalBlocks = 4;
-            chainBTip = ctx.ExtendAChain(chainBAdditionalBlocks, chainBTip); // ie. (h1=h2=h3=h4)=b5=b6=b7=b8=b9=b10
+            chainBTip = ctx.ExtendAChain(chainBAdditionalBlocks, chainBTip); // i.e. (h1=h2=h3=h4)=b5=b6=b7=b8=b9=b10
             listOfChainBBlockHeaders = ctx.ChainedHeaderToList(chainBTip, commonChainSize + chainBExtension + chainBAdditionalBlocks);
             List<BlockHeader> listOfNewChainBBlockHeaders = listOfChainBBlockHeaders.TakeLast(chainBAdditionalBlocks).ToList();
 
@@ -523,62 +597,56 @@ namespace Stratis.Bitcoin.Tests.Consensus
 
         /// <summary>
         /// Issue 14 @ Chain exists with checkpoints enabled. There are 2 checkpoints. Peer presents a chain that covers
-        /// first checkpoint with a prolongation that does not match the 2nd checkpoint. Exception should be thrown.
+        /// first checkpoint with a prolongation that does not match the 2nd checkpoint. Exception should be thrown and violating headers should be disconnected.
         /// </summary>
         [Fact]
         public void ChainHasTwoCheckPoints_ChainCoveringOnlyFirstCheckPointIsPresented_ChainIsDiscardedUpUntilFirstCheckpoint()
         {
             // Chain header tree setup.
+            // Initial chain has 2 blocks.
+            // Example: h1=h2.
             const int initialChainSize = 2;
             const int currentChainExtension = 6;
-            var ctx = new TestContext();
-            ChainedHeaderTree cht = ctx.CreateChainedHeaderTree();
-            ChainedHeader initialChainTip = ctx.ExtendAChain(initialChainSize); // ie. h1=h2
-            cht.Initialize(initialChainTip, true); 
-            ChainedHeader extendedChainTip = ctx.ExtendAChain(currentChainExtension, initialChainTip); // ie. h1=h2=h3=h4=h5=h6=h7=h8
-            ctx.ConsensusSettings.UseCheckpoints = true;
+            TestContext ctx = new TestContextBuilder().WithInitialChain(initialChainSize).UseCheckpoints().Build();
+            ChainedHeaderTree cht = ctx.ChainedHeaderTree;
+            ChainedHeader initialChainTip = ctx.InitialChainTip; 
+
+            ChainedHeader extendedChainTip = ctx.ExtendAChain(currentChainExtension, initialChainTip); // i.e. h1=h2=h3=h4=h5=h6=h7=h8
             List<BlockHeader> listOfCurrentChainHeaders = ctx.ChainedHeaderToList(extendedChainTip, initialChainSize + currentChainExtension);
 
             // Setup two known checkpoints at header 4 and 7.
             // Example: h1=h2=h3=(h4)=h5=h6=(h7)=h8.
             const int firstCheckpointHeight = 4;
             const int secondCheckpointHeight = 7;
-            var checkpoint1 = new CheckpointInfo(listOfCurrentChainHeaders[firstCheckpointHeight - 1].GetHash());
-            var checkpoint2 = new CheckpointInfo(listOfCurrentChainHeaders[secondCheckpointHeight - 1].GetHash());
-            ctx.CheckpointsMock
-               .Setup(c => c.GetCheckpoint(firstCheckpointHeight))
-               .Returns(checkpoint1);
-            ctx.CheckpointsMock
-               .Setup(c => c.GetCheckpoint(secondCheckpointHeight))
-               .Returns(checkpoint2);
-            ctx.CheckpointsMock
-               .Setup(c => c.GetCheckpoint(It.IsNotIn(firstCheckpointHeight, secondCheckpointHeight)))
-               .Returns((CheckpointInfo)null);
-            ctx.CheckpointsMock
-                .Setup(c => c.GetLastCheckpointHeight())
-                .Returns(secondCheckpointHeight);
+            var checkpoint1 = new CheckpointFixture(firstCheckpointHeight, listOfCurrentChainHeaders[firstCheckpointHeight - 1]);
+            var checkpoint2 = new CheckpointFixture(secondCheckpointHeight, listOfCurrentChainHeaders[secondCheckpointHeight - 1]);
+            ctx.SetupCheckpoints(checkpoint1, checkpoint2);
 
             // Setup new chain that only covers first checkpoint but doesn't cover second checkpoint.
             // Example: h1=h2=h3=(h4)=h5=h6=x7=x8=x9=x10.
             const int newChainExtension = 4;
-            extendedChainTip = extendedChainTip.Previous; // walk back to block 6
-            extendedChainTip = extendedChainTip.Previous;
+            extendedChainTip = extendedChainTip.GetAncestor(6); // walk back to block 6
             extendedChainTip = ctx.ExtendAChain(newChainExtension, extendedChainTip); 
             List<BlockHeader> listOfNewChainHeaders = ctx.ChainedHeaderToList(extendedChainTip, extendedChainTip.Height);
 
             // First 5 blocks are presented by peer 1.
             // DownloadTo should be set to a checkpoint 1. 
             ConnectNewHeadersResult result = cht.ConnectNewHeaders(1, listOfNewChainHeaders.Take(5).ToList());
-            result.DownloadTo.HashBlock.Should().Be(checkpoint1.Hash);
+            result.DownloadTo.HashBlock.Should().Be(checkpoint1.Header.GetHash());
 
             // Remaining 5 blocks are presented by peer 1 which do not cover checkpoint 2.
             // InvalidHeaderException should be thrown.
+            List<BlockHeader> violatingHeaders = listOfNewChainHeaders.Skip(5).ToList();
             Action connectAction = () =>
             {
-                cht.ConnectNewHeaders(1, listOfNewChainHeaders.Skip(5).ToList());
+                cht.ConnectNewHeaders(1, violatingHeaders);
             };
 
-            connectAction.Should().Throw<InvalidHeaderException>();
+            connectAction.Should().Throw<CheckpointMismatchException>();
+
+            // Make sure headers for violating chain don't exist.
+            foreach (BlockHeader header in violatingHeaders)
+                Assert.False(cht.GetChainedHeadersByHash().ContainsKey(header.GetHash()));
         }
 
         /// <summary>
@@ -593,17 +661,15 @@ namespace Stratis.Bitcoin.Tests.Consensus
             // Chain header tree setup with disabled checkpoints.
             // Initial chain has 2 blocks.
             // Example: h1=h2.
-            var ctx = new TestContext();
             const int initialChainSize = 2;
-            ChainedHeaderTree cht = ctx.CreateChainedHeaderTree();
-            ChainedHeader initialChainTip = ctx.ExtendAChain(initialChainSize);
-            cht.Initialize(initialChainTip, true);
-            ctx.ConsensusSettings.UseCheckpoints = false;
+            TestContext ctx = new TestContextBuilder().WithInitialChain(initialChainSize).UseCheckpoints(false).Build();
+            ChainedHeaderTree cht = ctx.ChainedHeaderTree;
+            ChainedHeader initialChainTip = ctx.InitialChainTip; 
 
             // Setup two alternative chains A and B of the same length.
             const int presentedChainSize = 4;
-            ChainedHeader chainATip = ctx.ExtendAChain(presentedChainSize, initialChainTip); // ie. h1=h2=a1=a2=a3=a4
-            ChainedHeader chainBTip = ctx.ExtendAChain(presentedChainSize, initialChainTip); // ie. h1=h2=b1=b2=b3=b4
+            ChainedHeader chainATip = ctx.ExtendAChain(presentedChainSize, initialChainTip); // i.e. h1=h2=a1=a2=a3=a4
+            ChainedHeader chainBTip = ctx.ExtendAChain(presentedChainSize, initialChainTip); // i.e. h1=h2=b1=b2=b3=b4
             List<BlockHeader> listOfChainABlockHeaders = ctx.ChainedHeaderToList(chainATip, initialChainSize + presentedChainSize);
             List<BlockHeader> listOfChainBBlockHeaders = ctx.ChainedHeaderToList(chainBTip, initialChainSize + presentedChainSize);
 
@@ -622,6 +688,108 @@ namespace Stratis.Bitcoin.Tests.Consensus
             connectNewHeadersResult = cht.ConnectNewHeaders(2, listOfChainBBlockHeaders);
             chainedHeaderDownloadTo = connectNewHeadersResult.DownloadTo;
             chainedHeaderDownloadTo.HashBlock.Should().Be(chainBTip.HashBlock);
+        }
+
+        /// <summary>
+        /// Issue 16 @ Checkpoints are enabled. After the last checkpoint, there is an assumed valid. The chain
+        /// that covers them all is presented - marked for download. After that chain that covers the last checkpoint
+        /// but doesn't cover assume valid and is longer is presented - marked for download.
+        /// </summary>
+        [Fact]
+        public void ChainHasOneCheckPointAndAssumeValid_TwoAlternativeChainsArePresented_BothChainsAreMarkedForDownload()
+        {
+            // Chain header tree setup with disabled checkpoints.
+            // Initial chain has 2 blocks.
+            // Example: h1=h2.
+            const int initialChainSize = 2;
+            const int extensionChainSize = 2;
+            TestContext ctx = new TestContextBuilder().WithInitialChain(initialChainSize).UseCheckpoints().Build();
+            ChainedHeaderTree cht = ctx.ChainedHeaderTree;
+            ChainedHeader initialChainTip = ctx.InitialChainTip;
+
+            // Extend chain with 2 more headers.
+            initialChainTip = ctx.ExtendAChain(extensionChainSize, initialChainTip); // i.e. h1=h2=h3=h4
+            List<BlockHeader> listOfCurrentChainHeaders = ctx.ChainedHeaderToList(initialChainTip, initialChainSize + extensionChainSize);
+
+            // Setup a known checkpoint at header 4.
+            // Example: h1=h2=h3=(h4).
+            const int checkpointHeight = 4;
+            var checkpoint = new CheckpointFixture(checkpointHeight, listOfCurrentChainHeaders.Last());
+            ctx.SetupCheckpoints(checkpoint);
+
+            // Extend chain and add "Assume valid" at block 6.
+            // Example: h1=h2=h3=(h4)=h5=[h6].
+            const int chainExtension = 2;
+            ChainedHeader extendedChainTip = ctx.ExtendAChain(chainExtension, initialChainTip);
+            ctx.ConsensusSettings.BlockAssumedValid = extendedChainTip.HashBlock;
+
+            // Setup two alternative chains A and B. Chain A covers the last checkpoint (4) and "assume valid" (6).
+            // Chain B only covers the last checkpoint (4).
+            const int chainAExtensionSize = 2;
+            const int chainBExtensionSize = 6;
+            ChainedHeader chainATip = ctx.ExtendAChain(chainAExtensionSize, extendedChainTip); // i.e. h1=h2=h3=(h4)=h5=[h6]=a7=a8
+            ChainedHeader chainBTip = ctx.ExtendAChain(chainBExtensionSize, initialChainTip); // i.e. h1=h2=h3=(h4)=b5=b6=b7=b8=b9=b10
+            List<BlockHeader> listOfChainABlockHeaders = ctx.ChainedHeaderToList(chainATip, initialChainSize + extensionChainSize + chainExtension + chainAExtensionSize);
+            List<BlockHeader> listOfChainBBlockHeaders = ctx.ChainedHeaderToList(chainBTip, initialChainSize + extensionChainSize + chainBExtensionSize);
+
+            // Chain A is presented by peer 1.
+            // DownloadFrom should be set to header 3. 
+            // DownloadTo should be set to header 8. 
+            ConnectNewHeadersResult result = cht.ConnectNewHeaders(1, listOfChainABlockHeaders);
+            result.DownloadFrom.HashBlock.Should().Be(listOfChainABlockHeaders.Skip(2).First().GetHash());
+            result.DownloadTo.HashBlock.Should().Be(listOfChainABlockHeaders.Last().GetHash());
+
+            // Chain B is presented by peer 2.
+            // DownloadFrom should be set to header 5. 
+            // DownloadTo should be set to header 10. 
+            result = cht.ConnectNewHeaders(2, listOfChainBBlockHeaders);
+            result.DownloadFrom.HashBlock.Should().Be(listOfChainBBlockHeaders[checkpointHeight].GetHash());
+            result.DownloadTo.HashBlock.Should().Be(listOfChainBBlockHeaders.Last().GetHash());
+        }
+
+        /// <summary>
+        /// Issue 16 @ Checkpoints are enabled. After the last checkpoint, there is an assumed valid. The chain that covers
+        /// the last checkpoint but doesn't cover assume valid is presented - marked for download.
+        /// </summary>
+        [Fact]
+        public void ChainHasOneCheckPointAndAssumeValid_ChainsWithCheckpointButMissedAssumeValidIsPresented_BothChainsAreMarkedForDownload()
+        {
+            // Chain header tree setup with disabled checkpoints.
+            // Initial chain has 2 blocks.
+            // Example: h1=h2.
+            const int initialChainSize = 2;
+            const int extensionChainSize = 2;
+            TestContext ctx = new TestContextBuilder().WithInitialChain(initialChainSize).UseCheckpoints().Build();
+            ChainedHeaderTree cht = ctx.ChainedHeaderTree;
+            ChainedHeader initialChainTip = ctx.InitialChainTip;
+
+            // Extend chain with 2 more headers.
+            initialChainTip = ctx.ExtendAChain(extensionChainSize, initialChainTip); // i.e. h1=h2=h3=h4
+            List<BlockHeader> listOfCurrentChainHeaders = ctx.ChainedHeaderToList(initialChainTip, initialChainSize + extensionChainSize);
+
+            // Setup a known checkpoint at header 4.
+            // Example: h1=h2=h3=(h4).
+            const int checkpointHeight = 4;
+            var checkpoint = new CheckpointFixture(checkpointHeight, listOfCurrentChainHeaders.Last());
+            ctx.SetupCheckpoints(checkpoint);
+
+            // Extend chain and add "Assume valid" at block 6.
+            // Example: h1=h2=h3=(h4)=h5=[h6].
+            const int chainExtension = 2;
+            ChainedHeader extendedChainTip = ctx.ExtendAChain(chainExtension, initialChainTip);
+            ctx.ConsensusSettings.BlockAssumedValid = extendedChainTip.HashBlock;
+
+            // Setup new chain, which covers the last checkpoint (4), but misses "assumed valid".
+            const int newChainExtensionSize = 6;
+            ChainedHeader newChainTip = ctx.ExtendAChain(newChainExtensionSize, initialChainTip); // i.e. h1=h2=h3=(h4)=b5=b6=b7=b8=b9=b10
+            listOfCurrentChainHeaders = ctx.ChainedHeaderToList(newChainTip, initialChainSize + extensionChainSize  + newChainExtensionSize);
+
+            // Chain is presented by peer 2.
+            // DownloadFrom should be set to header 3. 
+            // DownloadTo should be set to header 10. 
+            ConnectNewHeadersResult result = cht.ConnectNewHeaders(2, listOfCurrentChainHeaders);
+            result.DownloadFrom.HashBlock.Should().Be(listOfCurrentChainHeaders.Skip(2).First().GetHash());
+            result.DownloadTo.HashBlock.Should().Be(listOfCurrentChainHeaders.Last().GetHash());
         }
     }
 }
