@@ -79,7 +79,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Controllers
         /// <returns>An ActionResult.</returns>
         [Route("process-session-oncounterchain")]
         [HttpPost]
-        public IActionResult ProcessSessionOnCounterChain([FromBody] CreateCounterChainSessionRequest createCounterChainSessionRequest)
+        public async Task<IActionResult> ProcessSessionOnCounterChain([FromBody] CreateCounterChainSessionRequest createCounterChainSessionRequest)
         {
             Guard.NotNull(createCounterChainSessionRequest, nameof(createCounterChainSessionRequest));
 
@@ -93,7 +93,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Controllers
 
             try
             {
-                var result = this.counterChainSessionManager.ProcessCounterChainSession(
+                var result = await this.counterChainSessionManager.ProcessCounterChainSession(
                     createCounterChainSessionRequest.SessionId,
                     createCounterChainSessionRequest.Amount,
                     createCounterChainSessionRequest.DestinationAddress);
