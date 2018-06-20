@@ -54,6 +54,7 @@ namespace Stratis.Bitcoin.Consensus
         private readonly IConsensusRules consensusRules;
         private readonly IConnectionManager connectionManager;
         private readonly IBlockStore blockStore;
+        private readonly IFinalizedBlockHeight finalizedBlockHeight;
 
         /// <summary>The current tip of the chain that has been validated.</summary>
         public ChainedHeader Tip { get; private set; }
@@ -94,6 +95,7 @@ namespace Stratis.Bitcoin.Consensus
             this.consensusRules = consensusRules;
             this.connectionManager = connectionManager;
             this.blockStore = blockStore;
+            this.finalizedBlockHeight = finalizedBlockHeight;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
 
             this.chainedHeaderTree = new ChainedHeaderTree(network, loggerFactory, blockValidator, checkpoints, chainState, finalizedBlockHeight, consensusSettings);
@@ -139,7 +141,8 @@ namespace Stratis.Bitcoin.Consensus
 
                 // In case block store initialized behind, rewind until or before the block store tip.
                 // The node will complete loading before connecting to peers so the chain will never know if a reorg happened.
-                consensusTipHash = await this.consensusRules.RewindAsync().ConfigureAwait(false);
+                ConsensusStoreTransitionState transitionState = await this.consensusRules.RewindAsync().ConfigureAwait(false);
+                consensusTipHash = transitionState.BlockHash;
             }
             
             this.chainedHeaderTree.Initialize(this.Tip, this.blockStore != null);
@@ -324,25 +327,100 @@ namespace Stratis.Bitcoin.Consensus
             this.logger.LogTrace("({0}:'{1}')", nameof(chainedHeaderBlock), chainedHeaderBlock);
 
             ChainedHeader oldTip = this.Tip;
-            ChainedHeader chainedHeader = chainedHeaderBlock.ChainedHeader;
+            ChainedHeader newTip = chainedHeaderBlock.ChainedHeader;
 
 
-            ChainedHeader fork = oldTip.FindFork(chainedHeader);
-            ChainedHeader newTip = oldTip;
+            ChainedHeader fork = oldTip.FindFork(newTip);
+
+            if (fork == newTip)
+            {
+                // New header is behind current tip this is a bug
+                throw new Exception(); // TODO: what do we do.
+            }
 
             // If the new block is not on the current chain as our current consensus tip
-            // then we first rewind consensus tip to the common fork (or earlier because rewind might jump a few blocks back)
-            // then 
-            if (fork != oldTip && fork != chainedHeader)
+            // then rewind consensus tip to the common fork (or earlier because rewind might jump a few blocks back)
+            if (fork != oldTip)
             {
-                while (fork.Height < newTip.Height)
+                ChainedHeader current = oldTip;
+
+                while (fork.Height < current.Height)
                 {
-                    uint256 hash = await this.consensusRules.RewindAsync().ConfigureAwait(false);
-                    newTip = this.chainedHeaderTree.GetChainedHeaderBlock(hash).ChainedHeader;
+                    ConsensusStoreTransitionState transitionState = await this.consensusRules.RewindAsync().ConfigureAwait(false);
+                    current = this.chainedHeaderTree.GetChainedHeaderBlock(transitionState.BlockHash).ChainedHeader;
+                }
+
+                fork = current;
+            }
+
+            ChainedHeader[] newChain = newTip.ToChainedHeaderArray(fork);
+
+            ChainedHeader lastValidatedHeader = null;
+            ValidationContext validationContext = null;
+            List<int> badPeers = null;
+
+            foreach (ChainedHeader nextChainedHeader in newChain)
+            {
+                if (nextChainedHeader.BlockValidationState != ValidationState.PartiallyValidated)
+                {
+                    throw new Exception(); // TODO: what do we do.
+                }
+
+                ChainedHeaderBlock nextChainedHeaderBlock = this.chainedHeaderTree.GetChainedHeaderBlock(nextChainedHeader.HashBlock);
+
+                validationContext = new ValidationContext() { Block = nextChainedHeaderBlock.Block };
+
+                // Call the validation engine.
+                await this.consensusRules.AcceptBlockAsync(validationContext, this.Tip);
+
+                if (validationContext.Error != null)
+                {
+                    lock (this.peerLock)
+                    {
+                        this.chainedHeaderTree.FullValidationSucceeded(nextChainedHeader);
+                    }
+
+                    lastValidatedHeader = nextChainedHeader;
+                }
+                else
+                {
+                    lock (this.peerLock)
+                    {
+                        badPeers = this.chainedHeaderTree.PartialOrFullValidationFailed(nextChainedHeader);
+                    }
+
+                    lastValidatedHeader = null;
+
+                    break;
                 }
             }
 
+            if (lastValidatedHeader != null)
+            {
+                List<int> reorgViolated;
+                lock (this.peerLock)
+                {
+                    reorgViolated = this.chainedHeaderTree.ConsensusTipChanged(lastValidatedHeader);
+                }
 
+                if (badPeers == null)
+                    badPeers = new List<int>();
+
+                badPeers.AddRange(reorgViolated);
+
+                if (this.network.Consensus.MaxReorgLength != 0)
+                {
+                    int newFinalizedHeight = lastValidatedHeader.Height - (int)this.network.Consensus.MaxReorgLength;
+
+                    await this.finalizedBlockHeight.SaveFinalizedBlockHeightAsync(newFinalizedHeight);
+                }
+            }
+
+            if (lastValidatedHeader == null)
+            {
+                
+
+            }
 
             this.logger.LogTrace("(-):false");
             return false;

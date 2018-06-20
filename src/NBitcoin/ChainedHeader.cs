@@ -579,6 +579,29 @@ namespace NBitcoin
         }
 
         /// <summary>
+        /// Convert the current <see cref="ChainedHeader" /> and <paramref name="chainedHeader"/> to an array
+        /// of consecutive headers, both items are included in the array.
+        /// </summary>
+        /// <returns>Array of consecutive headers.</returns>
+        public ChainedHeader[] ToChainedHeaderArray(ChainedHeader chainedHeader)
+        {
+            var hashes = new ChainedHeader[this.Height - chainedHeader.Height + 1];
+
+            ChainedHeader currentHeader = this;
+
+            for (int i = hashes.Length - 1; i >= 0; i--)
+            {
+                hashes[i] = currentHeader;
+                currentHeader = currentHeader.Previous;
+            }
+
+            if(currentHeader != chainedHeader)
+                throw new NotSupportedException("Header must be on the same chain.");
+
+            return hashes;
+        }
+
+        /// <summary>
         /// Compute what height to jump back to for the skip block given this height.
         /// <seealso cref="https://github.com/bitcoin/bitcoin/blob/master/src/chain.cpp#L72-L81"/>
         /// </summary>

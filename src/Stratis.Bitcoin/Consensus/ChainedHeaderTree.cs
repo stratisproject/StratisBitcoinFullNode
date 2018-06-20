@@ -1112,17 +1112,7 @@ namespace Stratis.Bitcoin.Consensus
         /// <returns>Array of consecutive headers.</returns>
         public ChainedHeader[] ToHashArray()
         {
-            var hashes = new ChainedHeader[this.DownloadTo.Height - this.DownloadFrom.Height + 1];
-
-            ChainedHeader currentHeader = this.DownloadTo;
-
-            for (int i = hashes.Length - 1; i >= 0; i--)
-            {
-                hashes[i] = currentHeader;
-                currentHeader = currentHeader.Previous;
-            }
-
-            return hashes;
+            return this.DownloadTo.ToChainedHeaderArray(this.DownloadFrom);
         }
     }
 }
