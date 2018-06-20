@@ -613,13 +613,13 @@ namespace Stratis.Bitcoin.Tests.Consensus
 
             // Extend the chain with 6 normal headers, where header at the height 9 is an "assumed valid" header.
             // Example: fv1=fv2=fv3=(fv4)=pv5=pv6=h7=h8=(av9)=h10=h11=h12 (av - assumed valid).
-            const int extensionheadersCount = 6;
-            initialChainTip = ctx.ExtendAChain(extensionheadersCount, initialChainTip);
+            const int extensionHeadersCount = 6;
+            initialChainTip = ctx.ExtendAChain(extensionHeadersCount, initialChainTip);
             ChainedHeader assumedValidHeader = initialChainTip.GetAncestor(9);
             assumedValidHeader.BlockValidationState = ValidationState.AssumedValid; 
             ctx.ConsensusSettings.BlockAssumedValid = assumedValidHeader.HashBlock;
             listOfCurrentChainHeaders = 
-                    ctx.ChainedHeaderToList(initialChainTip, extensionheadersCount);
+                    ctx.ChainedHeaderToList(initialChainTip, extensionHeadersCount);
             
             // Chain is presented by peer 1.
             ConnectNewHeadersResult result = cht.ConnectNewHeaders(1, listOfCurrentChainHeaders);
