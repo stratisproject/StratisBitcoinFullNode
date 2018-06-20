@@ -331,6 +331,8 @@ namespace Stratis.Bitcoin.Consensus
 
 
             ChainedHeader fork = oldTip.FindFork(newTip);
+            Queue<ConsensusStoreTransitionState> consensusStoreTransitionQueue = null;
+
 
             if (fork == newTip)
             {
@@ -343,11 +345,13 @@ namespace Stratis.Bitcoin.Consensus
             if (fork != oldTip)
             {
                 ChainedHeader current = oldTip;
+                consensusStoreTransitionQueue = new Queue<ConsensusStoreTransitionState>();
 
                 while (fork.Height < current.Height)
                 {
                     ConsensusStoreTransitionState transitionState = await this.consensusRules.RewindAsync().ConfigureAwait(false);
                     current = this.chainedHeaderTree.GetChainedHeaderBlock(transitionState.BlockHash).ChainedHeader;
+                    consensusStoreTransitionQueue.Enqueue(transitionState);
                 }
 
                 fork = current;
@@ -414,12 +418,22 @@ namespace Stratis.Bitcoin.Consensus
 
                     await this.finalizedBlockHeight.SaveFinalizedBlockHeightAsync(newFinalizedHeight);
                 }
+
+                // signal
+
+                lock (this.peerLock)
+                {
+                    this.ProcessDownloadQueueLocked();
+                }
+
+                this.logger.LogTrace("(-):true");
+                return true;
             }
 
-            if (lastValidatedHeader == null)
+            if (consensusStoreTransitionQueue != null)
             {
-                
-
+                // New header was on a different chain, a reorg has happened and we need to revert back to the previous tip.
+                throw new NotImplementedException();
             }
 
             this.logger.LogTrace("(-):false");
