@@ -26,13 +26,15 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
 
         private readonly ICrossChainTransactionMonitor crossChainTransactionMonitor;
 
-        private IFederationWalletManager federationWalletManager;
+        private readonly IFederationWalletManager federationWalletManager;
 
-        private ICounterChainSessionManager counterChainSessionManager;
+        private readonly ICounterChainSessionManager counterChainSessionManager;
 
-        private Network network;
+        private readonly Network network;
 
-        private FederationGatewaySettings federationGatewaySettings;
+        private readonly FederationGatewaySettings federationGatewaySettings;
+
+        private readonly IPEndPointComparer ipEndPointComparer;
 
         public PartialTransactionsBehavior(
             ILoggerFactory loggerFactory, 
@@ -56,6 +58,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
             this.counterChainSessionManager = counterChainSessionManager;
             this.network = network;
             this.federationGatewaySettings = federationGatewaySettings;
+            this.ipEndPointComparer = new IPEndPointComparer();
         }
 
         public override object Clone()
@@ -66,7 +69,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
         protected override void AttachCore()
         {
             this.logger.LogTrace("()");
-            if(federationGatewaySettings.FederationNodeIpEndPoints.Any(e => e.ToString() == AttachedPeer.PeerEndPoint.ToString()))
+            if(federationGatewaySettings.FederationNodeIpEndPoints.Any(e => ipEndPointComparer.Equals(e, AttachedPeer.PeerEndPoint)))
                 this.AttachedPeer.MessageReceived.Register(this.OnMessageReceivedAsync, true);
             this.logger.LogTrace("(-)");
         }
@@ -74,7 +77,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
         protected override void DetachCore()
         {
             this.logger.LogTrace("()");
-            if (federationGatewaySettings.FederationNodeIpEndPoints.Any(e => e.ToString() == AttachedPeer.PeerEndPoint.ToString()))
+            if (federationGatewaySettings.FederationNodeIpEndPoints.Any(e => ipEndPointComparer.Equals(e, AttachedPeer.PeerEndPoint)))
                 this.AttachedPeer.MessageReceived.Unregister(this.OnMessageReceivedAsync);
             this.logger.LogTrace("(-)");
         }
@@ -82,7 +85,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
         async Task Broadcast(RequestPartialTransactionPayload payload)
         {
             this.logger.LogTrace("({0}:'{1}',{2}:'{3}',{4}:'{5}')", nameof(payload.BossCard), payload.BossCard, nameof(payload.Command), payload.Command, nameof(payload.SessionId), payload.SessionId);
-            if (federationGatewaySettings.FederationNodeIpEndPoints.Any(e => e.ToString() == AttachedPeer.PeerEndPoint.ToString()))
+            if (federationGatewaySettings.FederationNodeIpEndPoints.Any(e => ipEndPointComparer.Equals(e, AttachedPeer.PeerEndPoint)))
                 await this.AttachedPeer.SendMessageAsync(payload);
             this.logger.LogTrace("(-)");
         }

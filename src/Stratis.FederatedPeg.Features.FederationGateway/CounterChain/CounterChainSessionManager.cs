@@ -22,37 +22,39 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.CounterChain
     internal class CounterChainSessionManager : ICounterChainSessionManager
     {
         // The wallet that contains the multisig capabilities.
-        private IFederationWalletManager federationWalletManager;
+        private readonly IFederationWalletManager federationWalletManager;
 
         // Transaction handler used to build the final transaction.
-        private IFederationWalletTransactionHandler federationWalletTransactionHandler;
+        private readonly IFederationWalletTransactionHandler federationWalletTransactionHandler;
 
         // Peer connector for broadcasting the payloads.
-        private IConnectionManager connectionManager;
+        private readonly IConnectionManager connectionManager;
 
         // The network we are running.
-        private Network network;
+        private readonly Network network;
 
         // Gateway settings picked up from the node config.
-        private FederationGatewaySettings federationGatewaySettings;
+        private readonly FederationGatewaySettings federationGatewaySettings;
 
         // Broadcaster we use to pass our payload to peers.
-        private IBroadcasterManager broadcastManager;
+        private readonly IBroadcasterManager broadcastManager;
 
         // The IBD status.
-        private IInitialBlockDownloadState initialBlockDownloadState;
+        private readonly IInitialBlockDownloadState initialBlockDownloadState;
 
         // This is used only in the log file to tell us the block height.
-        private ConcurrentChain concurrentChain;
+        private readonly ConcurrentChain concurrentChain;
 
         // The logger. It's the logger.
         private readonly ILogger logger;
         
         // The shoulders we stand on.
-        private IFullNode fullnode;
+        private readonly IFullNode fullnode;
 
         // The sessions are stored here.
-        private ConcurrentDictionary<uint256, CounterChainSession> sessions = new ConcurrentDictionary<uint256, CounterChainSession>();
+        private readonly ConcurrentDictionary<uint256, CounterChainSession> sessions = new ConcurrentDictionary<uint256, CounterChainSession>();
+
+        private readonly IPEndPointComparer ipEndPointComparer;
 
         // Get everything together before we get going.
         public CounterChainSessionManager(
@@ -84,6 +86,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.CounterChain
             this.federationWalletManager = federationWalletManager;
             this.federationWalletTransactionHandler = federationWalletTransactionHandler;
             this.federationGatewaySettings = federationGatewaySettings;
+            this.ipEndPointComparer = new IPEndPointComparer();
         }
 
         ///<inheritdoc/>
@@ -211,7 +214,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.CounterChain
 
             var federationNetworkPeers = this.connectionManager.ConnectedPeers
                 .Where(p => !p.Inbound &&
-                    federationGatewaySettings.FederationNodeIpEndPoints.Any(e => e.ToString() == p.PeerEndPoint.ToString()));
+                    federationGatewaySettings.FederationNodeIpEndPoints.Any(e => this.ipEndPointComparer.Equals(e, p.PeerEndPoint)));
             foreach (INetworkPeer peer in federationNetworkPeers)
             {
                 try
