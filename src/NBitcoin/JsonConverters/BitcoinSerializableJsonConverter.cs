@@ -14,6 +14,13 @@ namespace NBitcoin.JsonConverters
 #endif
     class BitcoinSerializableJsonConverter : JsonConverter
     {
+        private readonly Network network;
+
+        public BitcoinSerializableJsonConverter(Network network)
+        {
+            this.network = network;
+        }
+
         public override bool CanConvert(Type objectType)
         {
             return typeof(IBitcoinSerializable).GetTypeInfo().IsAssignableFrom(objectType.GetTypeInfo());
@@ -29,7 +36,7 @@ namespace NBitcoin.JsonConverters
 
                 var obj = (IBitcoinSerializable)Activator.CreateInstance(objectType);
                 byte[] bytes = Encoders.Hex.DecodeData((string)reader.Value);
-                obj.ReadWrite(bytes);
+                obj.ReadWrite(bytes, network: this.network);
                 return obj;
             }
             catch (EndOfStreamException)
@@ -38,6 +45,7 @@ namespace NBitcoin.JsonConverters
             catch (FormatException)
             {
             }
+
             throw new JsonObjectException("Invalid bitcoin object of type " + objectType.Name, reader);
         }
 

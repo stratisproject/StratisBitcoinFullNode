@@ -34,9 +34,9 @@ namespace NBitcoin
         {
         }
 
-        public BlockStake(byte[] bytes)
+        public BlockStake(Network network, byte[] bytes)
         {
-            this.ReadWrite(bytes);
+            this.ReadWrite(bytes, network);
         }
 
         public BlockStake(Block block)

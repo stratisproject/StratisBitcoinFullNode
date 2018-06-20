@@ -117,7 +117,7 @@ namespace Stratis.Bitcoin.Utilities
                 return Block.Load(bytes, this.Network);
 
             if (type == typeof(BlockStake))
-                return new BlockStake(bytes);
+                return new BlockStake(this.Network, bytes);
 
             throw new NotSupportedException();
         }

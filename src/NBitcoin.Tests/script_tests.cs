@@ -152,8 +152,6 @@ namespace NBitcoin.Tests
             Assert.False(spending.Inputs.AsIndexedInputs().First().VerifyScript(Network.Main, tx.Outputs[0].ScriptPubKey));
         }
 
-
-
         [Fact]
         [Trait("UnitTest", "UnitTest")]
         public void CanUseCompactVarInt()
@@ -171,6 +169,7 @@ namespace NBitcoin.Tests
                 //new object[]{65535UL, new byte[]{0x82, 0xFD, 0x7F}},
                 new object[]{(ulong)1 << 32, new byte[]{0x8E, 0xFE, 0xFE, 0xFF, 0x00}},
             };
+
             foreach(object[] test in tests)
             {
                 ulong val = (ulong)test[0];
@@ -180,11 +179,11 @@ namespace NBitcoin.Tests
                 AssertEx.CollectionEquals(new CompactVarInt(val, sizeof(uint)).ToBytes(), expectedBytes);
 
                 var compact = new CompactVarInt(sizeof(ulong));
-                compact.ReadWrite(expectedBytes);
+                compact.ReadWrite(expectedBytes, network: Network.Main);
                 Assert.Equal(val, compact.ToLong());
 
                 compact = new CompactVarInt(sizeof(uint));
-                compact.ReadWrite(expectedBytes);
+                compact.ReadWrite(expectedBytes, network: Network.Main);
                 Assert.Equal(val, compact.ToLong());
             }
 
@@ -193,7 +192,7 @@ namespace NBitcoin.Tests
                 var compact = new CompactVarInt((ulong)i, sizeof(ulong));
                 byte[] bytes = compact.ToBytes();
                 compact = new CompactVarInt(sizeof(ulong));
-                compact.ReadWrite(bytes);
+                compact.ReadWrite(bytes, network: Network.Main);
                 Assert.Equal((ulong)i, compact.ToLong());
             }
         }
@@ -221,7 +220,7 @@ namespace NBitcoin.Tests
             byte[] compressed = script.ToCompressedBytes();
             Assert.Equal(21, compressed.Length);
 
-            Assert.Equal(script.ToString(), new Script(compressed, true).ToString());
+            Assert.Equal(script.ToString(), new Script(Network.Main, compressed, true).ToString());
         }
 
         [Fact]
@@ -293,11 +292,11 @@ namespace NBitcoin.Tests
         private Script AssertCompressed(Script script, int expectedSize)
         {
             var compressor = new ScriptCompressor(script);
-            byte[] compressed = compressor.ToBytes();
+            byte[] compressed = compressor.ToBytes(); 
             Assert.Equal(expectedSize, compressed.Length);
 
             compressor = new ScriptCompressor();
-            compressor.ReadWrite(compressed);
+            compressor.ReadWrite(compressed, network: Network.Main);
             AssertEx.CollectionEquals(compressor.GetScript().ToBytes(), script.ToBytes());
 
             byte[] compressed2 = compressor.ToBytes();

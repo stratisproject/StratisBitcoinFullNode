@@ -55,7 +55,7 @@ namespace NBitcoin
             return GetSerializedSize(serializable, version, SerializationType.Disk);
         }
 
-        public static void ReadWrite(this IBitcoinSerializable serializable, byte[] bytes, ProtocolVersion version = ProtocolVersion.PROTOCOL_VERSION, Network network = null)
+        public static void ReadWrite(this IBitcoinSerializable serializable, byte[] bytes, Network network, ProtocolVersion version = ProtocolVersion.PROTOCOL_VERSION)
         {
             ReadWrite(serializable, new MemoryStream(bytes), false, network.Consensus.ConsensusFactory, version);
         }

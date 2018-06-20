@@ -1154,7 +1154,7 @@ namespace NBitcoin.RPC
             response.ThrowIfError();
 
             var tx = new Transaction();
-            tx.ReadWrite(Encoders.Hex.DecodeData(response.Result.ToString()));
+            tx.ReadWrite(Encoders.Hex.DecodeData(response.Result.ToString()), this.Network);
             return tx;
         }
 
