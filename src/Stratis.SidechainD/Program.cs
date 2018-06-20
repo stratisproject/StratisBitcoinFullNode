@@ -8,6 +8,7 @@ using Stratis.Bitcoin.Features.Api;
 using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.MemoryPool;
+using Stratis.Bitcoin.Features.Miner;
 using Stratis.Bitcoin.Features.RPC;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Utilities;
@@ -29,7 +30,12 @@ namespace Stratis.SidechainD
         {
             try
             {
-                args = args.Concat(new[] { "apiport=38225" }).ToArray();
+                if (!args.Any(a => a.Contains("apiport")))
+                {
+                    // TEMP set the default port to 38225 if it isn't set.
+                    args = args.Concat(new[] { "apiport=38225" }).ToArray();
+                }
+
                 NodeSettings nodeSettings = new NodeSettings(ApexNetwork.Test, protocolVersion: ProtocolVersion.ALT_PROTOCOL_VERSION, args: args);
 
                 var node = new FullNodeBuilder()

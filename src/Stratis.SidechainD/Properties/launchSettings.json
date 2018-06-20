@@ -1,0 +1,11 @@
+{
+  "profiles": {
+    "Stratis.SidechainD": {
+      "commandName": "Project"
+    },
+    "SidechainD with apiport": {
+      "commandName": "Project",
+      "commandLineArgs": "-apiport=39000"
+    }
+  }
+}
