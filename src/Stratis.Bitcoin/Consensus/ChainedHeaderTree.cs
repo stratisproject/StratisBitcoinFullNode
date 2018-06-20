@@ -840,11 +840,12 @@ namespace Stratis.Bitcoin.Consensus
         }
 
         /// <summary>
-        /// Check whether a header is in one of the following states
+        /// Check whether a header is in one of the following states.
         /// <see cref="ValidationState.AssumedValid"/>, <see cref="ValidationState.PartiallyValidated"/>, <see cref="ValidationState.FullyValidated"/>.
         /// </summary>
         private bool HeaderWasMarkedAsValidated(ChainedHeader chainedHeader)
         {
+            // TODO: Should we stop marking chain AV when we hit first PV?
             return (chainedHeader.BlockValidationState == ValidationState.AssumedValid)
                   || (chainedHeader.BlockValidationState == ValidationState.PartiallyValidated)
                   || (chainedHeader.BlockValidationState == ValidationState.FullyValidated);
