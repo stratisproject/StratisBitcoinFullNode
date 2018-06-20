@@ -515,10 +515,22 @@ namespace Stratis.Bitcoin.BlockPulling2
             int maxDegreeOfParallelism = 8;
 
             // Form batches in order to ask for several blocks from one peer at once.
-            await assignments.GroupBy(x => x.Value.PeerId).ForEachAsync(maxDegreeOfParallelism, CancellationToken.None, async (downloadsGroupedByPeerId, cancellation) =>
+            var hashesToPeerId = new Dictionary<int, List<uint256>>();
+            foreach (KeyValuePair<uint256, AssignedDownload> assignedDownload in assignments)
             {
-                List<uint256> hashes = downloadsGroupedByPeerId.Select(x => x.Key).ToList();
-                int peerId = downloadsGroupedByPeerId.First().Value.PeerId;
+                if (!hashesToPeerId.TryGetValue(assignedDownload.Value.PeerId, out List<uint256> hashes))
+                {
+                    hashes = new List<uint256>();
+                    hashesToPeerId.Add(assignedDownload.Value.PeerId, hashes);
+                }
+
+                hashes.Add(assignedDownload.Key);
+            }
+            
+            await hashesToPeerId.ForEachAsync(maxDegreeOfParallelism, CancellationToken.None, async (peerIdToHashes, cancellation) =>
+            {
+                List<uint256> hashes = peerIdToHashes.Value;
+                int peerId = peerIdToHashes.Key;
 
                 BlockPullerBehavior peerBehavior;
 
@@ -543,14 +555,13 @@ namespace Stratis.Bitcoin.BlockPulling2
 
                 if (!success)
                 {
-                    int peersHashesCount = downloadsGroupedByPeerId.Count();
-                    this.logger.LogDebug("Failed to ask peer {0} for {1} blocks.", peerId, peersHashesCount);
+                    this.logger.LogDebug("Failed to ask peer {0} for {1} blocks.", peerId, hashes.Count);
 
                     // Failed to assign downloads to a peer. Put assignments back to the reassign queue and signal processing.
-                    var hashesToJobId = new Dictionary<uint256, int>(peersHashesCount);
+                    var hashesToJobId = new Dictionary<uint256, int>(hashes.Count);
 
-                    foreach (KeyValuePair<uint256, AssignedDownload> assignedDownload in downloadsGroupedByPeerId)
-                        hashesToJobId.Add(assignedDownload.Key, assignedDownload.Value.JobId);
+                    foreach (uint256 hashToReassign in hashes)
+                        hashesToJobId.Add(hashToReassign, assignments[hashToReassign].JobId);
 
                     this.ReleaseAssignments(hashesToJobId);
 
