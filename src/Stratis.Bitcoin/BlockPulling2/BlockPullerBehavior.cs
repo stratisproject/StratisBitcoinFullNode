@@ -41,6 +41,9 @@ namespace Stratis.Bitcoin.BlockPulling2
         /// <summary>Upload speed of a peer in bytes per second.</summary>
         public int SpeedBytesPerSecond { get; private set; }
 
+        /// <summary>Tip claimed by peer.</summary>
+        public ChainedHeader Tip { get; set; }
+
         /// <summary>The average size in bytes of blocks delivered by that peer.</summary>
         private readonly AverageCalculator averageSizeBytes;
 
@@ -100,12 +103,7 @@ namespace Stratis.Bitcoin.BlockPulling2
             this.logger.LogDebug("Peer will be penalized {0} times.", penalizeTimes);
 
             for (int i = 0; i < penalizeTimes; i++)
-            {
-                this.averageSizeBytes.AddSample(0);
-                this.averageDelaySeconds.AddSample(delaySeconds);
-            }
-            
-            this.SpeedBytesPerSecond = (int)(this.averageSizeBytes.Average / this.averageDelaySeconds.Average);
+                this.AddSample(0, delaySeconds);
 
             this.logger.LogTrace("(-)");
         }

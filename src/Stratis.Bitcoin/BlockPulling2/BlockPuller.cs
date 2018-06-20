@@ -15,7 +15,18 @@ using Stratis.Bitcoin.Utilities;
 namespace Stratis.Bitcoin.BlockPulling2
 {
     /// <summary>
-    /// TODO write big nice comment
+    /// Thread-safe block puller which allows downloading blocks from all chains that the node is aware of.
+    /// <remarks>
+    /// It implements relative quality scoring for peers that are used for delivering requested blocks.
+    /// <para>
+    /// If peer that was assigned an important download fails to deliver in maximum allowed time, all his assignments will be reassigned.
+    /// Reassigned downloads are processed with high priority comparing to regular requests.
+    /// Blocks that are close to the node's consensus tip or behind it are considered to be important.
+    /// </para>
+    /// <para>
+    /// Maximum amount of blocks that can be simultaneously downloaded depends on total speed of all peers that are capable of delivering blocks.
+    /// </para>
+    /// </remarks>
     /// </summary>
     public class BlockPuller : IDisposable
     {
@@ -46,40 +57,47 @@ namespace Stratis.Bitcoin.BlockPulling2
         private readonly OnBlockDownloadedCallback OnDownloadedCallback;
 
         /// <summary>Queue of download jobs which were released from the peers that failed to deliver in time or were disconnected.</summary>
+        /// <remarks>Should be protected by <see cref="queueLock"/>.</remarks>
         private readonly Queue<DownloadJob> reassignedJobsQueue;
 
         /// <summary>Queue of download jobs which should be assigned to peers.</summary>
+        /// <remarks>Should be protected by <see cref="queueLock"/>.</remarks>
         private readonly Queue<DownloadJob> downloadJobsQueue;
 
         /// <summary>Collection of all download assignments to the peers sorted by block height.</summary>
+        /// <remarks>Should be protected by <see cref="assignedLock"/>.</remarks>
         private readonly Dictionary<uint256, AssignedDownload> assignedDownloads;
 
         /// <summary>Assigned downloads sorted by block height.</summary>
+        /// <remarks>Should be protected by <see cref="assignedLock"/>.</remarks>
         private readonly LinkedList<AssignedDownload> assignedDownloadsByHeights;
 
         /// <summary>Assigned hashes mapped by peer Id.</summary>
+        /// <remarks>Should be protected by <see cref="assignedLock"/>.</remarks>
         private readonly Dictionary<int, HashSet<uint256>> assignedHashesByPeerId;
 
         /// <summary>Headers of requested blocks mapped by hash.</summary>
+        /// <remarks>Should be protected by <see cref="queueLock"/>.</remarks>
         private readonly Dictionary<uint256, ChainedHeader> headersByHash;
 
-        /// <summary>Peer tips mapped by peers id.</summary>
-        private readonly Dictionary<int, ChainedHeader> peerIdsToTips;
-
         /// <summary>Block puller behaviors mapped by peer id.</summary>
+        /// <remarks>Should be protected by <see cref="peerLock"/>.</remarks>
         private readonly Dictionary<int, BlockPullerBehavior> pullerBehaviorsByPeerId;
 
         private readonly CancellationTokenSource cancellationSource;
         
+        /// <remarks>Should be protected by<see cref="queueLock"/>.</remarks>
         private readonly AverageCalculator averageBlockSizeBytes;
 
         /// <summary>Signaler that triggers <see cref="reassignedJobsQueue"/> and <see cref="downloadJobsQueue"/> processing when set.</summary>
+        /// <remarks>Should be protected by <see cref="queueLock"/>.</remarks>
         private readonly AsyncManualResetEvent processQueuesSignal;
 
         /// <summary>Unique identifier which will be set to the next created download job.</summary>
+        /// <remarks>Should be protected by <see cref="queueLock"/>.</remarks>
         private int nextJobId;
 
-        /// <summary>Locks access to <see cref="peerIdsToTips"/>, <see cref="pullerBehaviorsByPeerId"/>.</summary>
+        /// <summary>Locks access to <see cref="pullerBehaviorsByPeerId"/>.</summary>
         private readonly object peerLock;
 
         /// <summary>
@@ -93,12 +111,14 @@ namespace Stratis.Bitcoin.BlockPulling2
         private readonly object assignedLock;
 
         /// <summary>Amount of blocks that are being downloaded.</summary>
+        /// <remarks>Should be protected by <see cref="queueLock"/>.</remarks>
         private int pendingDownloadsCount;
-
+        
         /// <summary>
         /// The maximum blocks that can be downloaded simultaneously.
         /// Given that all peers are on the same chain they will deliver that amount of blocks in 1 seconds.
         /// </summary>
+        /// <remarks>Should be protected by <see cref="queueLock"/>.</remarks>
         private int maxBlocksBeingDownloaded;
 
         /// <inheritdoc cref="ILogger"/>
@@ -124,7 +144,6 @@ namespace Stratis.Bitcoin.BlockPulling2
 
         public BlockPuller(OnBlockDownloadedCallback callback, ChainState chainState, IInitialBlockDownloadState ibdState, ProtocolVersion protocolVersion, LoggerFactory loggerFactory)
         {
-            this.peerIdsToTips = new Dictionary<int, ChainedHeader>();
             this.reassignedJobsQueue = new Queue<DownloadJob>();
             this.downloadJobsQueue = new Queue<DownloadJob>();
 
@@ -186,7 +205,7 @@ namespace Stratis.Bitcoin.BlockPulling2
             }
         }
 
-        /// <summary>Should be called when IBD state was changed.</summary>
+        /// <summary>Should be called when IBD state was changed or first calculated.</summary>
         public void OnIbdStateChanged(bool isIbd)
         {
             lock (this.peerLock)
@@ -207,9 +226,9 @@ namespace Stratis.Bitcoin.BlockPulling2
             {
                 int peerId = peer.Connection.Id;
 
-                if (this.peerIdsToTips.ContainsKey(peerId))
+                if (this.pullerBehaviorsByPeerId.ContainsKey(peerId))
                 {
-                    this.peerIdsToTips.AddOrReplace(peerId, newTip);
+                    this.pullerBehaviorsByPeerId[peerId].Tip = newTip;
                     this.logger.LogTrace("Tip for peer with id {0} was changed to '{1}'.", peerId, newTip);
                 }
                 else
@@ -218,8 +237,9 @@ namespace Stratis.Bitcoin.BlockPulling2
 
                     if (supportsRequirments)
                     {
-                        this.peerIdsToTips.AddOrReplace(peerId, newTip);
-                        this.pullerBehaviorsByPeerId.Add(peerId, peer.Behavior<BlockPullerBehavior>());
+                        var behavior = peer.Behavior<BlockPullerBehavior>();
+                        behavior.Tip = newTip;
+                        this.pullerBehaviorsByPeerId.Add(peerId, behavior);
 
                         this.logger.LogDebug("New peer with id {0} and tip '{1}' was added.", peerId, newTip);
                     }
@@ -239,7 +259,6 @@ namespace Stratis.Bitcoin.BlockPulling2
 
             lock (this.peerLock)
             {
-                this.peerIdsToTips.Remove(peerId);
                 this.pullerBehaviorsByPeerId.Remove(peerId);
             }
 
@@ -589,7 +608,10 @@ namespace Stratis.Bitcoin.BlockPulling2
 
             var newAssignments = new Dictionary<uint256, AssignedDownload>();
             
-            var peers = new Dictionary<int, ChainedHeader>(this.peerIdsToTips);
+            var peerIdsToTips = new Dictionary<int, ChainedHeader>(this.pullerBehaviorsByPeerId.Count);
+            foreach (KeyValuePair<int, BlockPullerBehavior> peerIdToBehavior in this.pullerBehaviorsByPeerId)
+                peerIdsToTips.Add(peerIdToBehavior.Key, peerIdToBehavior.Value.Tip);
+
             bool jobFailed = false;
             
             foreach (uint256 hashToAssign in downloadJob.Hashes.Take(emptySlotes).ToList())
@@ -611,7 +633,7 @@ namespace Stratis.Bitcoin.BlockPulling2
                             scoreToReachPeer -= pullerBehavior.QualityScore;
                     }
 
-                    ChainedHeader peerTip = peers[peerId];
+                    ChainedHeader peerTip = peerIdsToTips[peerId];
 
                     if (peerTip.GetAncestor(header.Height) == header)
                     {
@@ -633,9 +655,9 @@ namespace Stratis.Bitcoin.BlockPulling2
                     else
                     {
                         // Peer doesn't claim this hash.
-                        peers.Remove(peerId);
+                        peerIdsToTips.Remove(peerId);
 
-                        if (peers.Count != 0)
+                        if (peerIdsToTips.Count != 0)
                             continue;
 
                         jobFailed = true;
