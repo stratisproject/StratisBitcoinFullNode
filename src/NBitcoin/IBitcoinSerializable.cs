@@ -10,14 +10,12 @@ namespace NBitcoin
 
     public static class BitcoinSerializableExtensions
     {
-        public static void ReadWrite(this IBitcoinSerializable serializable, Stream stream, bool serializing, ProtocolVersion version = ProtocolVersion.PROTOCOL_VERSION, Network network = null)
+        public static void ReadWrite(this IBitcoinSerializable serializable, Stream stream, bool serializing, ConsensusFactory consensusFactory, ProtocolVersion version = ProtocolVersion.PROTOCOL_VERSION)
         {
-            network = network ?? Network.Main;
-
             serializable.ReadWrite(new BitcoinStream(stream, serializing)
             {
                 ProtocolVersion = version,
-                ConsensusFactory = network.Consensus.ConsensusFactory
+                ConsensusFactory = consensusFactory
             });
         }
 
@@ -59,7 +57,7 @@ namespace NBitcoin
 
         public static void ReadWrite(this IBitcoinSerializable serializable, byte[] bytes, ProtocolVersion version = ProtocolVersion.PROTOCOL_VERSION, Network network = null)
         {
-            ReadWrite(serializable, new MemoryStream(bytes), false, version, network);
+            ReadWrite(serializable, new MemoryStream(bytes), false, network.Consensus.ConsensusFactory, version);
         }
 
         public static void FromBytes(this IBitcoinSerializable serializable, byte[] bytes, ProtocolVersion version = ProtocolVersion.PROTOCOL_VERSION, Network network = null)
