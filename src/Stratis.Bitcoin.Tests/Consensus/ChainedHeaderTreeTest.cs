@@ -586,8 +586,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
         [Fact]
         public void FindHeaderAndVerifyBlockIntegrityCalledForBogusBlock_ExceptionShouldBeThrown()
         {
-            // Chain header tree setup with disabled checkpoints.
-            // Initial chain has 4 headers.
+            // Chain header tree setup. Initial chain has 4 headers.
             // Example: h1=h2=h3=h4.
             const int initialChainSize = 4;
             const int extensionChainSize = 2;
