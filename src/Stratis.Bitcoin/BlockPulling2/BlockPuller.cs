@@ -101,19 +101,14 @@ namespace Stratis.Bitcoin.BlockPulling2
         private readonly object peerLock;
 
         /// <summary>
-        /// Locks access to <see cref="headersByHash"/>, <see cref="processQueuesSignal"/>, <see cref="downloadJobsQueue"/>,
-        /// <see cref="reassignedJobsQueue"/>, <see cref="maxBlocksBeingDownloaded"/>, <see cref="pendingDownloadsCount"/>,
-        /// <see cref="nextJobId"/>, <see cref="averageBlockSizeBytes"/>.
+        /// Locks access to <see cref="headersByHash"/>, <see cref="processQueuesSignal"/>, <see cref="downloadJobsQueue"/>, <see cref="reassignedJobsQueue"/>,
+        /// <see cref="maxBlocksBeingDownloaded"/>, <see cref="nextJobId"/>, <see cref="averageBlockSizeBytes"/>.
         /// </summary>
         private readonly object queueLock;
 
         /// <summary>Locks access to <see cref="assignedDownloads"/>, <see cref="assignedHashesByPeerId"/>, <see cref="assignedDownloadsByHeights"/>.</summary>
         private readonly object assignedLock;
 
-        /// <summary>Amount of blocks that are being downloaded.</summary>
-        /// <remarks>Should be protected by <see cref="queueLock"/>.</remarks>
-        private int pendingDownloadsCount;
-        
         /// <summary>
         /// The maximum blocks that can be downloaded simultaneously.
         /// Given that all peers are on the same chain they will deliver that amount of blocks in 1 seconds.
@@ -161,9 +156,7 @@ namespace Stratis.Bitcoin.BlockPulling2
             this.peerLock = new object();
             this.assignedLock = new object();
             this.nextJobId = 0;
-
-            this.pendingDownloadsCount = 0;
-
+            
             this.networkPeerRequirement = new NetworkPeerRequirement
             {
                 MinVersion = protocolVersion,
@@ -378,7 +371,11 @@ namespace Stratis.Bitcoin.BlockPulling2
                 }
 
                 // Process regular queue.
-                int emptySlots = this.maxBlocksBeingDownloaded - this.pendingDownloadsCount;
+                int emptySlots = 0;
+                lock (this.assignedLock)
+                {
+                    emptySlots = this.maxBlocksBeingDownloaded - this.assignedDownloads.Count;
+                }
 
                 this.logger.LogTrace("There are {0} empty slots.", emptySlots);
 
@@ -664,8 +661,6 @@ namespace Stratis.Bitcoin.BlockPulling2
                         this.logger.LogDebug("Job {0} failed because there is no peer claiming {1} of it's hashes.", downloadJob.Id, downloadJob.Hashes.Count);
                     }
                 }
-                
-                this.pendingDownloadsCount += newAssignments.Count;
             }
 
             if (jobFailed)
@@ -775,8 +770,6 @@ namespace Stratis.Bitcoin.BlockPulling2
 
             lock (this.queueLock)
             {
-                this.pendingDownloadsCount--;
-
                 lock (this.assignedLock)
                 {
                     this.TryRemoveAssignedDownloadLocked(blockHash, out AssignedDownload unused);
