@@ -85,7 +85,7 @@ namespace Stratis.Bitcoin.BlockPulling2
         /// <summary>
         /// Locks access to <see cref="headersByHash"/>, <see cref="processQueuesSignal"/>, <see cref="downloadJobsQueue"/>,
         /// <see cref="reassignedJobsQueue"/>, <see cref="maxBlocksBeingDownloaded"/>, <see cref="pendingDownloadsCount"/>,
-        /// <see cref="nextJobId"/>.
+        /// <see cref="nextJobId"/>, <see cref="averageBlockSizeBytes"/>.
         /// </summary>
         private readonly object queueLock;
 
@@ -172,7 +172,10 @@ namespace Stratis.Bitcoin.BlockPulling2
 
         public double GetAverageBlockSizeBytes()
         {
-            return this.averageBlockSizeBytes.Average;
+            lock (this.queueLock)
+            {
+                return this.averageBlockSizeBytes.Average;
+            }
         }
 
         private int GetTotalSpeedOfAllPeersBytesPerSec()
@@ -180,6 +183,16 @@ namespace Stratis.Bitcoin.BlockPulling2
             lock (this.peerLock)
             {
                 return this.pullerBehaviorsByPeerId.Sum(x => x.Value.SpeedBytesPerSecond);
+            }
+        }
+
+        /// <summary>Should be called when IBD state was changed.</summary>
+        public void OnIbdStateChanged(bool isIbd)
+        {
+            lock (this.peerLock)
+            {
+                foreach (BlockPullerBehavior blockPullerBehavior in this.pullerBehaviorsByPeerId.Values)
+                    blockPullerBehavior.OnIbdStateChanged(isIbd);
             }
         }
 
@@ -844,7 +857,7 @@ namespace Stratis.Bitcoin.BlockPulling2
         /// <param name="hashesToJobIds">Block hashes mapped to job ids.</param>
         private void ReleaseAssignments(Dictionary<uint256, int> hashesToJobIds)
         {
-            this.logger.LogTrace("({0}:{1})", nameof(hashesToJobIds), hashesToJobIds.Count);
+            this.logger.LogTrace("({0}.{1}:{2})", nameof(hashesToJobIds), nameof(hashesToJobIds.Count), hashesToJobIds.Count);
 
             lock (this.queueLock)
             {
@@ -927,9 +940,10 @@ namespace Stratis.Bitcoin.BlockPulling2
             /// <summary>Hash or the requested block.</summary>
             public uint256 BlockHash;
 
+            /// <inheritdoc />
             public override string ToString()
             {
-                return string.Format("{0}:{1}, {2}:{3}, {4}:{5}", nameof(this.JobId), this.JobId, nameof(this.PeerId), this.PeerId, nameof(this.BlockHeight), this.BlockHeight);
+                return string.Format("{0}:{1},{2}:{3},{4}:{5}", nameof(this.JobId), this.JobId, nameof(this.PeerId), this.PeerId, nameof(this.BlockHeight), this.BlockHeight);
             }
         }
     }
