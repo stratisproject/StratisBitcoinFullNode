@@ -264,6 +264,21 @@ namespace Stratis.Bitcoin.Features.Wallet
 
                         this.logger.LogTrace("Wallet tip set to '{0}'.", this.walletTip);
                     }
+
+                    // The new tip can be ahead or behind the wallet.
+                    // If the new tip is ahead we try to bring the wallet up to the new tip.
+                    // If the new tip is behind we just check the wallet and the tip are in the same chain.
+                    if (newTip.Height < this.walletTip.Height)
+                    {
+                        ChainedHeader findTip = this.walletTip.FindAncestorOrSelf(newTip);
+                        if (findTip == null)
+                        {
+                            this.logger.LogTrace("(-)[NEW_TIP_BEHIND_NOT_IN_WALLET]");
+                            return;
+                        }
+
+                        this.logger.LogTrace("Wallet tip '{0}' is ahead or equal to the new tip '{1}'.", this.walletTip, newTip);
+                    }
                 }
 
                 this.logger.LogTrace("New block follows the previously known block '{0}'.", this.walletTip);
