@@ -303,8 +303,8 @@ namespace Stratis.Bitcoin.Tests.Consensus
         [Fact]
         public void ConnectHeaders_HeadersFromTwoPeersWithFork_ShouldCreateBlocksForNewHeaders()
         {
-            var testContext = new TestContext();
-            ChainedHeaderTree chainedHeaderTree = testContext.CreateChainedHeaderTree();
+            TestContext testContext = new TestContextBuilder().Build();
+            ChainedHeaderTree chainedHeaderTree = testContext.ChainedHeaderTree;
             ChainedHeader chainTip = testContext.ExtendAChain(7);
             chainedHeaderTree.Initialize(chainTip, true);
             testContext.ChainStateMock.Setup(s => s.ConsensusTip).Returns(chainTip);
@@ -394,8 +394,8 @@ namespace Stratis.Bitcoin.Tests.Consensus
         [Fact]
         public void ConnectHeaders_MultiplePeersWithForks_CorrectTip()
         {
-            var testContext = new TestContext();
-            ChainedHeaderTree chainedHeaderTree = testContext.CreateChainedHeaderTree();
+            TestContext testContext = new TestContextBuilder().Build();
+            ChainedHeaderTree chainedHeaderTree = testContext.ChainedHeaderTree;
             ChainedHeader chainTip = testContext.ExtendAChain(5);
             chainedHeaderTree.Initialize(chainTip, true);
             List<BlockHeader> listOfExistingHeaders = testContext.ChainedHeaderToList(chainTip, 5);
@@ -428,18 +428,17 @@ namespace Stratis.Bitcoin.Tests.Consensus
             BlockHeader invalidBlockHeader = listOfPeerOnesHeaders[depthOfInvalidHeader];
             testContext.ChainStateMock.Setup(x => x.MarkBlockInvalid(invalidBlockHeader.GetHash(), null));
             testContext.ChainedHeaderValidatorMock.Setup(x => 
-                x.ValidateHeader(It.Is<ChainedHeader>(y => y.HashBlock == invalidBlockHeader.GetHash()))).Throws(new InvalidHeaderException());
+                x.ValidateHeader(It.Is<ChainedHeader>(y => y.HashBlock == invalidBlockHeader.GetHash()))).Throws(new ConnectHeaderException());
 
             int oldChainHeaderTreeCount = chainedHeaderTree.GetChainedHeadersByHash().Count;
 
-            Assert.Throws<InvalidHeaderException>(() => chainedHeaderTree.ConnectNewHeaders(1, listOfPeerOnesHeaders));
+            Assert.Throws<ConnectHeaderException>(() => chainedHeaderTree.ConnectNewHeaders(1, listOfPeerOnesHeaders));
 
             // Whole chain presented by peer A is not part of the tree (can't extend beyond invalid header).
-            int countOfBlocksUpToInvalidHeader = numberOfBlocksToExtend - depthOfInvalidHeader;
-            int chainHeaderTreeCountChange = chainedHeaderTree.GetChainedHeadersByHash().Count - oldChainHeaderTreeCount;
+            int chainHeaderTreeCountChange = oldChainHeaderTreeCount - chainedHeaderTree.GetChainedHeadersByHash().Count;
 
             // The two headers beyond the invalid header are removed from CHT
-            Assert.True(chainHeaderTreeCountChange == countOfBlocksUpToInvalidHeader);
+            Assert.True(chainHeaderTreeCountChange == depthOfInvalidHeader + 1);
 
             // C's chain remains at same height after A presents the invalid header
             Assert.True(chainedHeaderTree.GetChainedHeaderByPeerId(2).Height == peerThreeTip.Height);
@@ -452,11 +451,10 @@ namespace Stratis.Bitcoin.Tests.Consensus
         [Fact]
         public void ConnectHeaders_MultiplePeers_CheckEverythingIsConsumed()
         {
-            var testContext = new TestContext();
-
             // Chain A is presented by default peer:
             // 1a - 2a - 3a - 4a - 5a - 6a - 7a - 8a
-            ChainedHeaderTree chainedHeaderTree = testContext.CreateChainedHeaderTree();
+            TestContext testContext = new TestContextBuilder().Build();
+            ChainedHeaderTree chainedHeaderTree = testContext.ChainedHeaderTree;
             ChainedHeader chainTip = testContext.ExtendAChain(7);
             chainedHeaderTree.Initialize(chainTip, true);
 
@@ -505,13 +503,10 @@ namespace Stratis.Bitcoin.Tests.Consensus
             listOfNewAndExistingHeaders.AddRange(testContext.ChainedHeaderToList(peer2Fork, 3));
             connectedNewHeadersResult = chainedHeaderTree.ConnectNewHeaders(2, listOfNewAndExistingHeaders);
 
-            ChainedHeader peerOneTip = chainedHeaderTree.GetChainedHeaderByPeerId(1);
-            ChainedHeader peerTwoTip = chainedHeaderTree.GetChainedHeaderByPeerId(2);
-
-            Assert.True(connectedNewHeadersResult.Consumed.Height == peerTwoTip.Height);
+            Assert.True(connectedNewHeadersResult.Consumed.Height == peer2ChainTip.Height);
             
-            List<BlockHeader> peerOneChainedHeaderList = testContext.ChainedHeaderToList(peerOneTip, 7);
-            List<BlockHeader> peerTwoChainedHeaderList = testContext.ChainedHeaderToList(peerTwoTip, 7);
+            List<BlockHeader> peerOneChainedHeaderList = testContext.ChainedHeaderToList(peer1ChainTip, 7);
+            List<BlockHeader> peerTwoChainedHeaderList = testContext.ChainedHeaderToList(peer2ChainTip, 7);
             
             // Submit headers that are all already in the tree:
             // Peer 3 supplies all headers from Peer 1.
@@ -523,7 +518,8 @@ namespace Stratis.Bitcoin.Tests.Consensus
             Assert.True(connectedNewHeadersResult.Consumed.Height == chainedHeaderTree.GetChainedHeaderByPeerId(3).Height);
 
             // Submit a list of headers in which nothing is already in the tree.
-            chainedHeaderTree = testContext.CreateChainedHeaderTree();
+            testContext = new TestContextBuilder().Build();
+            chainedHeaderTree = testContext.ChainedHeaderTree;
             ChainedHeader chainedHeader = testContext.ExtendAChain(5);
             chainedHeaderTree.Initialize(chainedHeader, true);
 
