@@ -845,7 +845,6 @@ namespace Stratis.Bitcoin.Consensus
         /// </summary>
         private bool HeaderWasMarkedAsValidated(ChainedHeader chainedHeader)
         {
-            // TODO: Should we stop marking chain AV when we hit first PV?
             return (chainedHeader.BlockValidationState == ValidationState.AssumedValid)
                   || (chainedHeader.BlockValidationState == ValidationState.PartiallyValidated)
                   || (chainedHeader.BlockValidationState == ValidationState.FullyValidated);
