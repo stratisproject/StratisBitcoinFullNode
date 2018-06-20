@@ -567,7 +567,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
             ChainedHeader extendedChainTip = ctx.ExtendAChain(chainExtension, initialChainTip);
             ctx.ConsensusSettings.BlockAssumedValid = extendedChainTip.HashBlock;
 
-            // Setup new chain, which covers the last checkpoint (4), but misses "assumed vaid".
+            // Setup new chain, which covers the last checkpoint (4), but misses "assumed valid".
             const int newChainExtensionSize = 6;
             ChainedHeader newChainTip = ctx.ExtendAChain(newChainExtensionSize, initialChainTip); // i.e. h1=h2=h3=(h4)=b5=b6=b7=b8=b9=b10
             listOfCurrentChainHeaders = ctx.ChainedHeaderToList(newChainTip, initialChainSize + extensionChainSize  + newChainExtensionSize);
