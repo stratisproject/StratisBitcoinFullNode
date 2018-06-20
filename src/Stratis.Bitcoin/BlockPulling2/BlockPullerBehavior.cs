@@ -99,7 +99,7 @@ namespace Stratis.Bitcoin.BlockPulling2
             
             this.logger.LogDebug("Peer will be penalized {0} times.", penalizeTimes);
 
-            for (int i = 0; i < penalizeTimes; ++i)
+            for (int i = 0; i < penalizeTimes; i++)
             {
                 this.averageSizeBytes.AddSample(0);
                 this.averageDelaySeconds.AddSample(delaySeconds);
@@ -137,8 +137,8 @@ namespace Stratis.Bitcoin.BlockPulling2
             if (this.QualityScore > MaxQualityScore)
                 this.QualityScore = MaxQualityScore;
 
-            this.logger.LogDebug("Quality score was set to {0}", this.QualityScore);
-            this.logger.LogTrace("()");
+            this.logger.LogDebug("Quality score was set to {0}.", this.QualityScore);
+            this.logger.LogTrace("(-)");
         }
         
         private async Task OnMessageReceivedAsync(INetworkPeer peer, IncomingMessage message)
