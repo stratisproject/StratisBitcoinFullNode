@@ -625,6 +625,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
             while (consumed.Height > initialChainSize)
             {
                 if (consumed.Height == 9) expectedState = ValidationState.AssumedValid;
+                if (consumed.Height == 6) expectedState = ValidationState.PartiallyValidated;
                 consumed.BlockValidationState.Should().Be(expectedState);
                 consumed = consumed.Previous;
             }
