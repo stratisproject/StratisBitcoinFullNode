@@ -607,7 +607,8 @@ namespace Stratis.Bitcoin.Tests.Consensus
             // Mark pv5 and pv6 as partially validated.
             List<BlockHeader> listOfCurrentChainHeaders =
                 ctx.ChainedHeaderToList(initialChainTip, partiallyValidatedHeadersCount);
-            cht.ConnectNewHeaders(1, listOfCurrentChainHeaders);
+            ConnectNewHeadersResult result = cht.ConnectNewHeaders(1, listOfCurrentChainHeaders);
+            initialChainTip = result.Consumed;
             initialChainTip.BlockValidationState = ValidationState.PartiallyValidated;
             initialChainTip.Previous.BlockValidationState = ValidationState.PartiallyValidated;
 
@@ -622,7 +623,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
                     ctx.ChainedHeaderToList(initialChainTip, extensionHeadersCount);
             
             // Chain is presented by peer 1.
-            ConnectNewHeadersResult result = cht.ConnectNewHeaders(1, listOfCurrentChainHeaders);
+            result = cht.ConnectNewHeaders(1, listOfCurrentChainHeaders);
 
             // Headers h5-h9 are marked as "assumed valid".
             ChainedHeader consumed = result.Consumed;
