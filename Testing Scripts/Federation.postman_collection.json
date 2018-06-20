@@ -1,0 +1,771 @@
+{
+	"info": {
+		"name": "Federation",
+		"_postman_id": "8cfc6373-206d-e6fa-d3f9-518c1a23e0ba",
+		"description": "",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Shutdown",
+			"item": [
+				{
+					"name": "Shutdown gateway1 main",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "http://localhost:38011/api/node/shutdown",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "38011",
+							"path": [
+								"api",
+								"node",
+								"shutdown"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Shutdown gateway1 side",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "http://localhost:38012/api/node/shutdown",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "38012",
+							"path": [
+								"api",
+								"node",
+								"shutdown"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Shutdown gateway2 main",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "http://localhost:38021/api/node/shutdown",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "38021",
+							"path": [
+								"api",
+								"node",
+								"shutdown"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Shutdown gateway2 side",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "http://localhost:38022/api/node/shutdown",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "38022",
+							"path": [
+								"api",
+								"node",
+								"shutdown"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Shutdown gateway3 main",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "http://localhost:38031/api/node/shutdown",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "38031",
+							"path": [
+								"api",
+								"node",
+								"shutdown"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Shutdown gateway3 side",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "http://localhost:38032/api/node/shutdown",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "38032",
+							"path": [
+								"api",
+								"node",
+								"shutdown"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Shutdown miner",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "http://localhost:39000/api/node/shutdown",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "39000",
+							"path": [
+								"api",
+								"node",
+								"shutdown"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Shutdown side user",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "http://localhost:39001/api/node/shutdown",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "39001",
+							"path": [
+								"api",
+								"node",
+								"shutdown"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Shutdown main user",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "http://localhost:40000/api/node/shutdown",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "40000",
+							"path": [
+								"api",
+								"node",
+								"shutdown"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Set up",
+			"item": [
+				{
+					"name": "Create wallet - side user",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{ \n\t\"password\": \"password\",\n\t\"network\": \"testnet\",\n\t\"name\": \"sideuserwallet\"\n}"
+						},
+						"url": {
+							"raw": "http://localhost:39001/api/wallet/create",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "39001",
+							"path": [
+								"api",
+								"wallet",
+								"create"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "import key to gateway1 main",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"mnemonic\": \"dilemma sponsor simple sheriff people own what table style typical grain isolate\",\n\t\"password\": \"password\"\n}"
+						},
+						"url": {
+							"raw": "http://localhost:38011/api/federationWallet/import-key",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "38011",
+							"path": [
+								"api",
+								"federationWallet",
+								"import-key"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "import key to gateway1 side",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"mnemonic\": \"dilemma sponsor simple sheriff people own what table style typical grain isolate\",\n\t\"password\": \"password\"\n}"
+						},
+						"url": {
+							"raw": "http://localhost:38012/api/federationWallet/import-key",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "38012",
+							"path": [
+								"api",
+								"federationWallet",
+								"import-key"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "import key to gateway2 main",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"mnemonic\": \"lens swing super peanut magnet liquid clump wolf nurse critic song dog\",\n\t\"password\": \"password\"\n}"
+						},
+						"url": {
+							"raw": "http://localhost:38021/api/federationWallet/import-key",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "38021",
+							"path": [
+								"api",
+								"federationWallet",
+								"import-key"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "import key to gateway2 side",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"mnemonic\": \"lens swing super peanut magnet liquid clump wolf nurse critic song dog\",\n\t\"password\": \"password\"\n}"
+						},
+						"url": {
+							"raw": "http://localhost:38022/api/federationWallet/import-key",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "38022",
+							"path": [
+								"api",
+								"federationWallet",
+								"import-key"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "import key to gateway3 main",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"mnemonic\": \"ice scrub crawl goose bus affair end tail teach motion lion ostrich\",\n\t\"password\": \"password\"\n}"
+						},
+						"url": {
+							"raw": "http://localhost:38031/api/federationWallet/import-key",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "38031",
+							"path": [
+								"api",
+								"federationWallet",
+								"import-key"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "import key to gateway3 side",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"mnemonic\": \"ice scrub crawl goose bus affair end tail teach motion lion ostrich\",\n\t\"password\": \"password\"\n}"
+						},
+						"url": {
+							"raw": "http://localhost:38032/api/federationWallet/import-key",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "38032",
+							"path": [
+								"api",
+								"federationWallet",
+								"import-key"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "enable gateway1 main",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"password\": \"password\"\n}"
+						},
+						"url": {
+							"raw": "http://localhost:38011/api/federationWallet/enablefederation",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "38011",
+							"path": [
+								"api",
+								"federationWallet",
+								"enablefederation"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "enable gateway1 side",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"password\": \"password\"\n}"
+						},
+						"url": {
+							"raw": "http://localhost:38012/api/federationWallet/enablefederation",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "38012",
+							"path": [
+								"api",
+								"federationWallet",
+								"enablefederation"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "enable gateway2 main",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"password\": \"password\"\n}"
+						},
+						"url": {
+							"raw": "http://localhost:38021/api/federationWallet/enablefederation",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "38021",
+							"path": [
+								"api",
+								"federationWallet",
+								"enablefederation"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "enable gateway2 side",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"mnemonic\": \"lens swing super peanut magnet liquid clump wolf nurse critic song dog\",\n\t\"password\": \"password\"\n}"
+						},
+						"url": {
+							"raw": "http://localhost:38022/api/federationWallet/enablefederation",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "38022",
+							"path": [
+								"api",
+								"federationWallet",
+								"enablefederation"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "enable gateway3 main",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"password\": \"password\"\n}"
+						},
+						"url": {
+							"raw": "http://localhost:38031/api/federationWallet/enablefederation",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "38031",
+							"path": [
+								"api",
+								"federationWallet",
+								"enablefederation"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "enable gateway3 side",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"password\": \"password\"\n}"
+						},
+						"url": {
+							"raw": "http://localhost:38032/api/federationWallet/enablefederation",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "38032",
+							"path": [
+								"api",
+								"federationWallet",
+								"enablefederation"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Build transaction",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n\t\"walletName\": \"myRecoveredWallet\",\r\n\t\"accountName\": \"account 0\",\r\n\t\"password\": \"123456\",\r\n\t\"destinationAddress\": \"2N3UFTMd9ywUSqd12FkBPmYwEebxbGA8rQy\",\r\n\t\"amount\": \"13\",\r\n\t\"feeType\": \"low\",\r\n\t\"allowUnconfirmed\": \"true\",\r\n\t\"opReturnData\": \"P8umohvRbZf9jhf6W4XuNsa7SfSgRkZyzL\"\r\n}"
+				},
+				"url": {
+					"raw": "http://localhost:40000/api/wallet/build-transaction",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "40000",
+					"path": [
+						"api",
+						"wallet",
+						"build-transaction"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Send transaction",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n\t\"hex\": \"010000002786265b01ae5689d154332a6f0a29c1212a89ee2482bbb21875f0635aa84ede9c693a0c2d000000006b483045022100ad430a4a135884d995a6b60bc1affaf24c1ea47c6fdfdad01ea4b27cf94843cd02206b33d0bb2f48bf760e358d949529190bdd5b030042e75b372df074f24d0603200121030809bb68448028d81a70239367a0142a84930a8e9c25277c2051273a7b3da58bffffffff03dca0e934000000001976a91489fc386e213151156727e46d712e2734568b6ddd88ac006d7c4d0000000017a9147027e3c5b9afeba9313cc06504140c9c7724d6e5870000000000000000246a225045396e46597a32435146346d583341424c516359427945674c567a61357932615300000000\"\n}"
+				},
+				"url": {
+					"raw": "http://localhost:40000/api/wallet/send-transaction",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "40000",
+					"path": [
+						"api",
+						"wallet",
+						"send-transaction"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Sync from block 400000 on Stratis Test",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n\t\"hash\": \"b6abcb933d3e3590345ca5d3abb697461093313f8886568ac8ae740d223e56f6\"\n}"
+				},
+				"url": {
+					"raw": "http://localhost:38031/api/federationwallet/sync",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "38031",
+					"path": [
+						"api",
+						"federationwallet",
+						"sync"
+					]
+				},
+				"description": ""
+			},
+			"response": []
+		}
+	]
+}
