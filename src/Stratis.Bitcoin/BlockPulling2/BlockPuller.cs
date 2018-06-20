@@ -26,6 +26,10 @@ namespace Stratis.Bitcoin.BlockPulling2
     /// <para>
     /// Maximum amount of blocks that can be simultaneously downloaded depends on total speed of all peers that are capable of delivering blocks.
     /// </para>
+    /// <para>
+    /// We never wait for the same block to be delivered from more than 1 peer at once, so in case peer was removed from the assignment
+    /// and delivered after that we will discard delivered block from this peer.
+    /// </para>
     /// </remarks>
     /// </summary>
     public class BlockPuller : IDisposable
@@ -57,44 +61,44 @@ namespace Stratis.Bitcoin.BlockPulling2
         private readonly OnBlockDownloadedCallback OnDownloadedCallback;
 
         /// <summary>Queue of download jobs which were released from the peers that failed to deliver in time or were disconnected.</summary>
-        /// <remarks>Should be protected by <see cref="queueLock"/>.</remarks>
+        /// <remarks>This object has to be protected by <see cref="queueLock"/>.</remarks>
         private readonly Queue<DownloadJob> reassignedJobsQueue;
 
         /// <summary>Queue of download jobs which should be assigned to peers.</summary>
-        /// <remarks>Should be protected by <see cref="queueLock"/>.</remarks>
+        /// <remarks>This object has to be protected by <see cref="queueLock"/>.</remarks>
         private readonly Queue<DownloadJob> downloadJobsQueue;
 
         /// <summary>Collection of all download assignments to the peers sorted by block height.</summary>
-        /// <remarks>Should be protected by <see cref="assignedLock"/>.</remarks>
+        /// <remarks>This object has to be protected by <see cref="assignedLock"/>.</remarks>
         private readonly Dictionary<uint256, AssignedDownload> assignedDownloads;
 
         /// <summary>Assigned downloads sorted by block height.</summary>
-        /// <remarks>Should be protected by <see cref="assignedLock"/>.</remarks>
+        /// <remarks>This object has to be protected by <see cref="assignedLock"/>.</remarks>
         private readonly LinkedList<AssignedDownload> assignedDownloadsByHeights;
 
         /// <summary>Assigned hashes mapped by peer Id.</summary>
-        /// <remarks>Should be protected by <see cref="assignedLock"/>.</remarks>
-        private readonly Dictionary<int, HashSet<uint256>> assignedHashesByPeerId;
+        /// <remarks>This object has to be protected by <see cref="assignedLock"/>.</remarks>
+        private readonly Dictionary<int, List<uint256>> assignedHashesByPeerId;
 
         /// <summary>Headers of requested blocks mapped by hash.</summary>
-        /// <remarks>Should be protected by <see cref="queueLock"/>.</remarks>
+        /// <remarks>This object has to be protected by <see cref="queueLock"/>.</remarks>
         private readonly Dictionary<uint256, ChainedHeader> headersByHash;
 
         /// <summary>Block puller behaviors mapped by peer id.</summary>
-        /// <remarks>Should be protected by <see cref="peerLock"/>.</remarks>
+        /// <remarks>This object has to be protected by <see cref="peerLock"/>.</remarks>
         private readonly Dictionary<int, BlockPullerBehavior> pullerBehaviorsByPeerId;
 
         private readonly CancellationTokenSource cancellationSource;
         
-        /// <remarks>Should be protected by<see cref="queueLock"/>.</remarks>
+        /// <remarks>This object has to be protected by<see cref="queueLock"/>.</remarks>
         private readonly AverageCalculator averageBlockSizeBytes;
 
         /// <summary>Signaler that triggers <see cref="reassignedJobsQueue"/> and <see cref="downloadJobsQueue"/> processing when set.</summary>
-        /// <remarks>Should be protected by <see cref="queueLock"/>.</remarks>
+        /// <remarks>This object has to be protected by <see cref="queueLock"/>.</remarks>
         private readonly AsyncManualResetEvent processQueuesSignal;
 
         /// <summary>Unique identifier which will be set to the next created download job.</summary>
-        /// <remarks>Should be protected by <see cref="queueLock"/>.</remarks>
+        /// <remarks>This object has to be protected by <see cref="queueLock"/>.</remarks>
         private int nextJobId;
 
         /// <summary>Locks access to <see cref="pullerBehaviorsByPeerId"/>.</summary>
@@ -113,7 +117,7 @@ namespace Stratis.Bitcoin.BlockPulling2
         /// The maximum blocks that can be downloaded simultaneously.
         /// Given that all peers are on the same chain they will deliver that amount of blocks in 1 seconds.
         /// </summary>
-        /// <remarks>Should be protected by <see cref="queueLock"/>.</remarks>
+        /// <remarks>This object has to be protected by <see cref="queueLock"/>.</remarks>
         private int maxBlocksBeingDownloaded;
 
         /// <inheritdoc cref="ILogger"/>
@@ -144,7 +148,7 @@ namespace Stratis.Bitcoin.BlockPulling2
 
             this.assignedDownloads = new Dictionary<uint256, AssignedDownload>();
             this.assignedDownloadsByHeights = new LinkedList<AssignedDownload>();
-            this.assignedHashesByPeerId = new Dictionary<int, HashSet<uint256>>();
+            this.assignedHashesByPeerId = new Dictionary<int, List<uint256>>();
 
             this.averageBlockSizeBytes = new AverageCalculator(1000);
             
@@ -198,17 +202,23 @@ namespace Stratis.Bitcoin.BlockPulling2
             }
         }
 
-        /// <summary>Should be called when IBD state was changed or first calculated.</summary>
+        /// <summary>Updates puller behaviors when IDB state is changed.</summary>
+        /// <remarks>Should be called when IBD state was changed or first calculated.</remarks>
         public void OnIbdStateChanged(bool isIbd)
         {
+            this.logger.LogTrace("({0}:{1})", nameof(isIbd), isIbd);
+
             lock (this.peerLock)
             {
                 foreach (BlockPullerBehavior blockPullerBehavior in this.pullerBehaviorsByPeerId.Values)
                     blockPullerBehavior.OnIbdStateChanged(isIbd);
             }
+
+            this.logger.LogTrace("(-)");
         }
 
-        /// <summary>Should be called when a peer claims a new tip.</summary>
+        /// <summary>Updates puller's view of peer's tip.</summary>
+        /// <remarks>Should be called when a peer claims a new tip.</remarks>
         /// <param name="peer">The peer.</param>
         /// <param name="newTip">New tip.</param>
         public void NewPeerTipClaimed(INetworkPeer peer, ChainedHeader newTip)
@@ -222,7 +232,7 @@ namespace Stratis.Bitcoin.BlockPulling2
                 if (this.pullerBehaviorsByPeerId.ContainsKey(peerId))
                 {
                     this.pullerBehaviorsByPeerId[peerId].Tip = newTip;
-                    this.logger.LogTrace("Tip for peer with id {0} was changed to '{1}'.", peerId, newTip);
+                    this.logger.LogTrace("Tip for peer with ID {0} was changed to '{1}'.", peerId, newTip);
                 }
                 else
                 {
@@ -234,17 +244,18 @@ namespace Stratis.Bitcoin.BlockPulling2
                         behavior.Tip = newTip;
                         this.pullerBehaviorsByPeerId.Add(peerId, behavior);
 
-                        this.logger.LogDebug("New peer with id {0} and tip '{1}' was added.", peerId, newTip);
+                        this.logger.LogTrace("New peer with ID {0} and tip '{1}' was added.", peerId, newTip);
                     }
                     else
-                        this.logger.LogTrace("Peer {0} was discarded since he doesn't support the requirements.", peerId);
+                        this.logger.LogTrace("Peer ID {0} was discarded since he doesn't support the requirements.", peerId);
                 }
             }
 
             this.logger.LogTrace("(-)");
         }
 
-        /// <summary>Should be called when peer is disconnected.</summary>
+        /// <summary>Removes information about the peer from the inner structures.</summary>
+        /// <remarks>Adds download jobs that were assigned to this peer to reassign queue.</remarks>
         /// <param name="peerId">Unique peer identifier.</param>
         public void PeerDisconnected(int peerId)
         {
@@ -439,7 +450,7 @@ namespace Stratis.Bitcoin.BlockPulling2
         /// <summary>
         /// Adds assigned download to <see cref="assignedDownloads"/> and helper structures <see cref="assignedDownloadsByHeights"/> and <see cref="assignedHashesByPeerId"/>.
         /// </summary>
-        /// <remarks>Should be locked by <see cref="assignedLock"/>.</remarks>
+        /// <remarks>Have to be locked by <see cref="assignedLock"/>.</remarks>
         /// <param name="hash">Hash of a block that is associated with <paramref name="assignment"/>.</param>
         /// <param name="assignment">The assignment.</param>
         private void AddAssignedDownloadLocked(uint256 hash, AssignedDownload assignment)
@@ -449,9 +460,9 @@ namespace Stratis.Bitcoin.BlockPulling2
             this.assignedDownloads.Add(hash, assignment);
 
             // Add to assignedHashesByPeerId
-            if (!this.assignedHashesByPeerId.TryGetValue(assignment.PeerId, out HashSet<uint256> hashesForIds))
+            if (!this.assignedHashesByPeerId.TryGetValue(assignment.PeerId, out List<uint256> hashesForIds))
             {
-                hashesForIds = new HashSet<uint256>();
+                hashesForIds = new List<uint256>();
                 this.assignedHashesByPeerId.Add(assignment.PeerId, hashesForIds);
             }
             hashesForIds.Add(hash);
@@ -461,7 +472,7 @@ namespace Stratis.Bitcoin.BlockPulling2
 
             if ((lastDownload == null) || (lastDownload.Value.BlockHeight <= assignment.BlockHeight))
             {
-                this.assignedDownloadsByHeights.AddLast(assignment);
+                assignment.LinkedListNode = this.assignedDownloadsByHeights.AddLast(assignment);
             }
             else
             {
@@ -473,7 +484,7 @@ namespace Stratis.Bitcoin.BlockPulling2
 
                     if (current.Value.BlockHeight <= assignment.BlockHeight)
                     {
-                        this.assignedDownloadsByHeights.AddAfter(current, assignment);
+                        assignment.LinkedListNode = this.assignedDownloadsByHeights.AddAfter(current, assignment);
                         break;
                     }
                 }
@@ -483,43 +494,31 @@ namespace Stratis.Bitcoin.BlockPulling2
         }
 
         /// <summary>
-        /// Removed assigned download from <see cref="assignedDownloads"/> and helper structures <see cref="assignedDownloadsByHeights"/> and <see cref="assignedHashesByPeerId"/>.
+        /// Removes assigned download from <see cref="assignedDownloads"/> and helper structures <see cref="assignedDownloadsByHeights"/> and <see cref="assignedHashesByPeerId"/>.
         /// </summary>
-        /// <remarks>Should be locked by <see cref="assignedLock"/>.</remarks>
-        /// <param name="hash">Hash of a block that is associated with <paramref name="assignment"/>.</param>
-        /// <param name="assignment">The assignment.</param>
-        private bool TryRemoveAssignedDownloadLocked(uint256 hash, out AssignedDownload assignment)
+        /// <remarks>Have to be locked by <see cref="assignedLock"/>.</remarks>
+        /// <param name="hash">Hash of a block for which assignment should be removed.</param>
+        /// <param name="assignment">The assignment that corresponds to the provided hash or <c>null</c> if assignment wasn't found.</param>
+        private void RemoveAssignedDownloadLocked(uint256 hash, out AssignedDownload assignment)
         {
-            this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(hash), hash);
+            this.logger.LogTrace("({0}:'{1}')", nameof(hash), hash);
 
-            bool exists = this.assignedDownloads.TryGetValue(hash, out assignment);
+            assignment = this.assignedDownloads[hash];
 
-            if (exists)
+            this.assignedDownloads.Remove(hash);
+
+            if (this.assignedHashesByPeerId.TryGetValue(assignment.PeerId, out List<uint256> hashesForId))
             {
-                this.assignedDownloads.Remove(hash);
-
-                if (this.assignedHashesByPeerId.TryGetValue(assignment.PeerId, out HashSet<uint256> hashesForIds))
-                {
-                    hashesForIds.Remove(hash);
-                    if (hashesForIds.Count == 0)
-                        this.assignedHashesByPeerId.Remove(assignment.PeerId);
-                }
-
-                LinkedListNode<AssignedDownload> current = this.assignedDownloadsByHeights.First;
-                while (true)
-                {
-                    if (current.Value.BlockHash == assignment.BlockHash)
-                    {
-                        this.assignedDownloadsByHeights.Remove(current);
-                        break;
-                    }
-
-                    current = current.Next;
-                }
+                hashesForId.Remove(hash);
+                if (hashesForId.Count == 0)
+                    this.assignedHashesByPeerId.Remove(assignment.PeerId);
             }
+            else
+                this.logger.LogError("Hash '{0}' wasn't found among assignments for peer Id {1}, internal structures are corrupted!", hash, assignment.PeerId);
 
-            this.logger.LogTrace("(-):{0}", exists);
-            return exists;
+            this.assignedDownloadsByHeights.Remove(assignment.LinkedListNode);
+
+            this.logger.LogTrace("(-)");
         }
         
         /// <summary>Asks peer behaviors in parallel to deliver blocks.</summary>
@@ -593,7 +592,7 @@ namespace Stratis.Bitcoin.BlockPulling2
         /// <remarks>
         /// If some of the blocks from the job can't be provided by any peer those hashes will be added to a <param name="failedJobs"> as a new item.</param>
         /// <para>
-        /// Should be locked by <see cref="peerLock"/> and <see cref="queueLock"/>.
+        /// Have to be locked by <see cref="peerLock"/> and <see cref="queueLock"/>.
         /// </para>
         /// </remarks>
         /// <param name="downloadJob">Download job to be partially of fully consumed.</param>
@@ -710,11 +709,11 @@ namespace Stratis.Bitcoin.BlockPulling2
 
                         // Peer failed to deliver important block. Reassign all his jobs.
                         int peerId = current.Value.PeerId;
-                        HashSet<uint256> hashesAssignedToPeer = this.assignedHashesByPeerId[peerId];
+                        List<uint256> hashesAssignedToPeer = this.assignedHashesByPeerId[peerId];
 
                         foreach (uint256 assignedHash in hashesAssignedToPeer)
                         {
-                            this.TryRemoveAssignedDownloadLocked(assignedHash, out AssignedDownload removedAssignment);
+                            this.RemoveAssignedDownloadLocked(assignedHash, out AssignedDownload removedAssignment);
                             toReassign.Add(assignedHash, removedAssignment.JobId);
                         }
                         
@@ -772,7 +771,7 @@ namespace Stratis.Bitcoin.BlockPulling2
             {
                 lock (this.assignedLock)
                 {
-                    this.TryRemoveAssignedDownloadLocked(blockHash, out AssignedDownload unused);
+                    this.RemoveAssignedDownloadLocked(blockHash, out AssignedDownload unused);
                 }
 
                 this.averageBlockSizeBytes.AddSample(block.BlockSize.Value);
@@ -805,7 +804,7 @@ namespace Stratis.Bitcoin.BlockPulling2
         }
 
         /// <summary>Recalculates quality score of a peer or all peers if given peer has the best upload speed.</summary>
-        /// <remarks>Should be protected by <see cref="peerLock"/>.</remarks>
+        /// <remarks>This object has to be protected by <see cref="peerLock"/>.</remarks>
         /// <param name="pullerBehavior">The puller behavior of a peer which quality score should be recalculated.</param>
         /// <param name="peerId">Id of a peer which behavior is passed.</param>
         private void RecalculateQuealityScoreLocked(BlockPullerBehavior pullerBehavior, int peerId)
@@ -836,7 +835,7 @@ namespace Stratis.Bitcoin.BlockPulling2
             this.logger.LogTrace("(-)");
         }
 
-        /// <remarks>Should be protected by <see cref="queueLock"/>.</remarks>
+        /// <remarks>This object has to be protected by <see cref="queueLock"/>.</remarks>
         private void RecalculateMaxBlocksBeingDownloadedLocked()
         {
             this.logger.LogTrace("()");
@@ -866,10 +865,13 @@ namespace Stratis.Bitcoin.BlockPulling2
 
             lock (this.assignedLock)
             {
-                foreach (uint256 assignedHash in this.assignedHashesByPeerId[peerId].ToList())
+                if (this.assignedHashesByPeerId.TryGetValue(peerId, out List<uint256> hashes))
                 {
-                    hashesToJobIds.Add(assignedHash, this.assignedDownloads[assignedHash].JobId);
-                    this.TryRemoveAssignedDownloadLocked(assignedHash, out AssignedDownload removedAssignment);
+                    foreach (uint256 assignedHash in hashes.ToList())
+                    {
+                        hashesToJobIds.Add(assignedHash, this.assignedDownloads[assignedHash].JobId);
+                        this.RemoveAssignedDownloadLocked(assignedHash, out AssignedDownload removedAssignment);
+                    }
                 }
             }
 
@@ -965,6 +967,8 @@ namespace Stratis.Bitcoin.BlockPulling2
             
             /// <summary>Hash or the requested block.</summary>
             public uint256 BlockHash;
+
+            public LinkedListNode<AssignedDownload> LinkedListNode;
 
             /// <inheritdoc />
             public override string ToString()

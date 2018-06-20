@@ -59,12 +59,17 @@ namespace Stratis.Bitcoin.BlockPulling2
         /// <inheritdoc cref="BlockPuller"/>
         private readonly BlockPuller blockPuller;
 
-        public BlockPullerBehavior(BlockPuller blockPuller, ILoggerFactory loggerFactory)
+        /// <inheritdoc cref="IInitialBlockDownloadState"/>
+        private readonly IInitialBlockDownloadState ibdState;
+
+        public BlockPullerBehavior(BlockPuller blockPuller, IInitialBlockDownloadState ibdState, ILoggerFactory loggerFactory)
         {
+            this.ibdState = ibdState;
             this.QualityScore = SamplelessQualityScore;
 
-            this.averageSizeBytes = new AverageCalculator(IbdSamplesCount);
-            this.averageDelaySeconds = new AverageCalculator(IbdSamplesCount);
+            int samplesCount = ibdState.IsInitialBlockDownload() ? IbdSamplesCount : NormalSamplesCount;
+            this.averageSizeBytes = new AverageCalculator(samplesCount);
+            this.averageDelaySeconds = new AverageCalculator(samplesCount);
             this.SpeedBytesPerSecond = 0;
 
             this.blockPuller = blockPuller;
@@ -113,7 +118,7 @@ namespace Stratis.Bitcoin.BlockPulling2
         {
             this.logger.LogTrace("()");
 
-            // Recalculates the max samples count that can be used for quality score calculation
+            // Recalculates the max samples count that can be used for quality score calculation.
             int samplesCount = isIbd ? IbdSamplesCount : NormalSamplesCount;
             this.averageSizeBytes.SetMaxSamples(samplesCount);
             this.averageDelaySeconds.SetMaxSamples(samplesCount);
@@ -186,7 +191,7 @@ namespace Stratis.Bitcoin.BlockPulling2
         /// <inheritdoc />
         public override object Clone()
         {
-            return new BlockPullerBehavior(this.blockPuller, this.loggerFactory);
+            return new BlockPullerBehavior(this.blockPuller, this.ibdState, this.loggerFactory);
         }
 
         /// <inheritdoc />
