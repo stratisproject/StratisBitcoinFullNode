@@ -166,6 +166,11 @@ namespace NBitcoin
     /// </summary>
     public class PosConsensusFactory : ConsensusFactory
     {
+        public PosConsensusFactory(Network network)
+            : base(network)
+        {
+        }
+
         /// <inheritdoc />
         public override Block CreateBlock()
         {
@@ -218,7 +223,7 @@ namespace NBitcoin
 
             return hash;
         }
-        
+
         /// /// <inheritdoc />
         public override uint256 GetPoWHash()
         {

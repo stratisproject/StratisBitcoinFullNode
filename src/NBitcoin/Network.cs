@@ -41,9 +41,9 @@ namespace NBitcoin
 
         protected Network()
         {
-            this.Consensus = new Consensus();
+            this.Consensus = new Consensus(this);
         }
-        
+
         /// <summary>
         /// Maximal value for the calculated time offset.
         /// If the value is over this limit, the time syncing feature will be switched off.
@@ -221,7 +221,7 @@ namespace NBitcoin
                     throw new InvalidOperationException("A genesis block needs to be provided.");
 
                 if (network.Consensus == null)
-                    throw new InvalidOperationException("A consensus needs to be provided.");
+                    throw new InvalidOperationException("Consensus is required by the network.");
 
                 NetworksContainer.TryAdd(networkName.ToLowerInvariant(), network);
             }
@@ -377,7 +377,7 @@ namespace NBitcoin
                 if (bytes.Length < prefix.Length)
                     continue;
                 if (Utils.ArrayEqual(bytes, 0, prefix, 0, prefix.Length))
-                    return (Base58Type) i;
+                    return (Base58Type)i;
             }
             return null;
         }

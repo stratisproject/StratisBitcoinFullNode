@@ -39,6 +39,13 @@ namespace NBitcoin
         /// </summary>
         private readonly TypeInfo transactionType = typeof(Transaction).GetTypeInfo();
 
+        private readonly Network network;
+
+        public ConsensusFactory(Network network)
+        {
+            this.network = network;
+        }
+
         /// <summary>
         /// Check if the generic type is assignable from <see cref="BlockHeader"/>.
         /// </summary>

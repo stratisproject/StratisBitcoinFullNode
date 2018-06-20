@@ -27,7 +27,6 @@ namespace NBitcoin.Networks
             this.MinRelayTxFee = 1000;
             this.CoinTicker = "BTC";
 
-            this.Consensus = new Consensus();
             this.Consensus.SubsidyHalvingInterval = 210000;
             this.Consensus.MajorityEnforceBlockUpgrade = 750;
             this.Consensus.MajorityRejectBlockOutdated = 950;
