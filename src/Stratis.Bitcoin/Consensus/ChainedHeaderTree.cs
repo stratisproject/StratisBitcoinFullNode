@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
@@ -666,13 +667,14 @@ namespace Stratis.Bitcoin.Consensus
                 // and an assume valid header inside of the presented list of headers, we would only be interested in the last
                 // one as it would cover all previous headers. Reversing the order of processing guarantees that we only need
                 // to deal with one special header, which simplifies the implementation.
-                while (currentChainedHeader != earliestNewHeader)
+                while (currentChainedHeader != earliestNewHeader.Previous)
                 {
                     if (currentChainedHeader.HashBlock == this.consensusSettings.BlockAssumedValid)
                     {
                         this.logger.LogDebug("Chained header '{0}' represents an assumed valid block.", currentChainedHeader);
 
-                        connectNewHeadersResult = this.HandleAssumedValidHeader(currentChainedHeader, latestNewHeader, isBelowLastCheckpoint);
+                        bool assumeValidBelowLastCheckpoint = this.consensusSettings.UseCheckpoints && (currentChainedHeader.Height <= this.checkpoints.GetLastCheckpointHeight());
+                        connectNewHeadersResult = this.HandleAssumedValidHeader(currentChainedHeader, latestNewHeader, assumeValidBelowLastCheckpoint);
                         break;
                     }
 
@@ -681,7 +683,7 @@ namespace Stratis.Bitcoin.Consensus
                     {
                         this.logger.LogDebug("Chained header '{0}' is a checkpoint.", currentChainedHeader);
 
-                        connectNewHeadersResult = this.HandleCheckpointsHeader(currentChainedHeader, latestNewHeader, checkpoint);
+                        connectNewHeadersResult = this.HandleCheckpointsHeader(currentChainedHeader, latestNewHeader, checkpoint, networkPeerId);
                         break;
                     }
 
@@ -798,14 +800,19 @@ namespace Stratis.Bitcoin.Consensus
         /// </summary>
         /// <param name="chainedHeader">Checkpointed header.</param>
         /// <param name="latestNewHeader">The latest new header that was presented by the peer.</param>
-        /// <param name="checkpoint">Information about the checkpoint at the height of the <paramref name="chainedHeader"/>.</param>
+        /// <param name="checkpoint">Information about the checkpoint at the height of the <paramref name="chainedHeader" />.</param>
+        /// <param name="peerId">Peer Id that presented chain which contains checkpointed header.</param>
         /// <exception cref="CheckpointMismatchException">Thrown if checkpointed header doesn't match the checkpoint hash.</exception>
-        private ConnectNewHeadersResult HandleCheckpointsHeader(ChainedHeader chainedHeader, ChainedHeader latestNewHeader, CheckpointInfo checkpoint)
+        private ConnectNewHeadersResult HandleCheckpointsHeader(ChainedHeader chainedHeader, ChainedHeader latestNewHeader, CheckpointInfo checkpoint, int peerId)
         {
             this.logger.LogTrace("({0}:'{1}',{2}:'{3}',{4}.{5}:'{6}')", nameof(chainedHeader), chainedHeader, nameof(latestNewHeader), latestNewHeader, nameof(checkpoint), nameof(checkpoint.Hash), checkpoint.Hash);
 
             if (checkpoint.Hash != chainedHeader.HashBlock)
             {
+                // Make sure that chain with invalid checkpoint in it is removed from the tree.
+                // Otherwise a new peer may connect and present headers on top of invalid chain and we wouldn't recognize it.
+                this.RemovePeerClaim(peerId, latestNewHeader);
+
                 this.logger.LogDebug("Chained header '{0}' does not match checkpoint '{1}'.", chainedHeader, checkpoint.Hash);
                 this.logger.LogTrace("(-)[INVALID_HEADER_NOT_MATCHING_CHECKPOINT]");
                 throw new CheckpointMismatchException();
@@ -852,7 +859,7 @@ namespace Stratis.Bitcoin.Consensus
             this.logger.LogTrace("({0}:'{1}')", nameof(chainedHeader), chainedHeader);
 
             ChainedHeader currentHeader = chainedHeader;
-            while (true)
+            while (currentHeader.Previous != null)
             {
                 // If current header is an ancestor of some other tip claimed by a peer, do nothing.
                 bool headerHasDecendents = currentHeader.Next.Count > 0;
@@ -869,7 +876,7 @@ namespace Stratis.Bitcoin.Consensus
                     break;
                 }
 
-                this.DisconnectChainHeader(chainedHeader);
+                this.DisconnectChainHeader(currentHeader);
 
                 this.logger.LogTrace("Header '{0}' was removed from the tree.", currentHeader);
 
@@ -973,7 +980,7 @@ namespace Stratis.Bitcoin.Consensus
             ChainedHeader previousChainedHeader;
             if (!this.chainedHeadersByHash.TryGetValue(headers[newHeaderIndex].HashPrevBlock, out previousChainedHeader))
             {
-                this.logger.LogTrace("Previous hash `{0}` of block hash `{1}` was not found.", headers[newHeaderIndex].GetHash(), headers[newHeaderIndex].HashPrevBlock);
+                this.logger.LogTrace("Previous hash '{0}' of block hash '{1}' was not found.", headers[newHeaderIndex].GetHash(), headers[newHeaderIndex].HashPrevBlock);
                 this.logger.LogTrace("(-)[PREVIOUS_HEADER_NOT_FOUND]");
                 throw new ConnectHeaderException();
             }
@@ -1005,6 +1012,7 @@ namespace Stratis.Bitcoin.Consensus
             {
                 // Undo changes to the tree. This is necessary because the peer claim wasn't set to the last header yet.
                 // So in case of peer disconnection this branch wouldn't be removed.
+                // Also not removing this unclaimed branch will allow other peers to present headers on top of invalid chain without us recognizing it.
                 this.RemoveUnclaimedBranch(newChainedHeader);
 
                 this.logger.LogTrace("(-)[VALIDATION_FAILED]");
@@ -1064,7 +1072,14 @@ namespace Stratis.Bitcoin.Consensus
             {
                 ChainedHeader fork = chainedHeader.FindFork(consensusTip);
 
-                if ((fork != null) && (fork != consensusTip))
+                if (fork == null)
+                {
+                    this.logger.LogError("Header '{0}' is from a different network.", chainedHeader);
+                    this.logger.LogTrace("(-)[HEADER_IS_INVALID_NETWORK]");
+                    throw new InvalidOperationException("Header is from a different network");
+                }
+
+                if ((fork != chainedHeader) && (fork != consensusTip))
                 {
                     int reorgLength = consensusTip.Height - fork.Height;
 
