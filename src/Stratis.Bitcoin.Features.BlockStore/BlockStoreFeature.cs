@@ -1,6 +1,5 @@
 ﻿using System.Runtime.CompilerServices;
 using System.Text;
-using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
@@ -19,7 +18,7 @@ using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.BlockStore
 {
-    public class BlockStoreFeature : FullNodeFeature, INodeStats
+    public class BlockStoreFeature : FullNodeFeature, INodeStats, IFeatureStats
     {
         private readonly ConcurrentChain chain;
 
@@ -91,6 +90,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             return new BlockStoreBehavior(this.chain, this.blockRepository, this.blockStoreCache, this.loggerFactory);
         }
 
+        /// <inheritdoc />
         public void AddNodeStats(StringBuilder benchLogs)
         {
             ChainedHeader highestBlock = this.chainState.BlockStoreTip;
@@ -102,6 +102,12 @@ namespace Stratis.Bitcoin.Features.BlockStore
                                      $" {this.name}.Hash: ".PadRight(LoggingConfiguration.ColumnLength - 1) +
                                      highestBlock.HashBlock);
             }
+        }
+
+        /// <inheritdoc />
+        public void AddFeatureStats(StringBuilder benchLog)
+        {
+            this.blockStoreQueue.ShowStats(benchLog);
         }
 
         public override void Initialize()
