@@ -667,13 +667,14 @@ namespace Stratis.Bitcoin.Consensus
                 // and an assume valid header inside of the presented list of headers, we would only be interested in the last
                 // one as it would cover all previous headers. Reversing the order of processing guarantees that we only need
                 // to deal with one special header, which simplifies the implementation.
-                while (currentChainedHeader != earliestNewHeader)
+                while (currentChainedHeader != earliestNewHeader.Previous)
                 {
                     if (currentChainedHeader.HashBlock == this.consensusSettings.BlockAssumedValid)
                     {
                         this.logger.LogDebug("Chained header '{0}' represents an assumed valid block.", currentChainedHeader);
 
-                        connectNewHeadersResult = this.HandleAssumedValidHeader(currentChainedHeader, latestNewHeader, isBelowLastCheckpoint);
+                        bool assumeValidBelowLastCheckpoint = this.consensusSettings.UseCheckpoints && (currentChainedHeader.Height <= this.checkpoints.GetLastCheckpointHeight());
+                        connectNewHeadersResult = this.HandleAssumedValidHeader(currentChainedHeader, latestNewHeader, assumeValidBelowLastCheckpoint);
                         break;
                     }
 
