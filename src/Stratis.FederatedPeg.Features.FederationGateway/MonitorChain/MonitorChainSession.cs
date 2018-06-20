@@ -1,6 +1,7 @@
 ﻿using System;
 using NBitcoin;
 using Newtonsoft.Json;
+using Stratis.Bitcoin.Features.Consensus;
 using Stratis.FederatedPeg.Features.FederationGateway.NetworkHelpers;
 
 namespace Stratis.FederatedPeg.Features.FederationGateway
@@ -35,6 +36,8 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
         // My boss card. I only get to build and broadcast the transaction when my boss card is in play.
         public string BossCard { get; }
 
+        public uint256 CounterChainTransactionId { get; private set; } = uint256.Zero;
+
         public MonitorChainSession(DateTime startTime, uint256 transactionHash, Money amount, string destinationAddress,
             int blockNumber, Chain chain,  string[] federationPubKeys, string myPublicKey, int m, int n)
         {
@@ -53,6 +56,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
         public void Complete(uint256 counterChainTransactionId)
         {
             this.Status = SessionStatus.Completed;
+            this.CounterChainTransactionId = counterChainTransactionId;
         }
 
         private bool WeAreInFreeForAll(DateTime now) => this.BossTable.WhoHoldsTheBossCard(this.startTime, now) == null;
