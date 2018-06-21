@@ -1,5 +1,4 @@
-﻿using System;
-using System.IO;
+﻿using System.IO;
 using NBitcoin.Protocol;
 
 namespace NBitcoin
@@ -73,13 +72,13 @@ namespace NBitcoin
             serializable.ReadWrite(bms);
         }
 
-        public static T Clone<T>(this T serializable, ProtocolVersion version = ProtocolVersion.PROTOCOL_VERSION, Network network = null) where T : IBitcoinSerializable
+        public static T Clone<T>(this T serializable, ProtocolVersion version = ProtocolVersion.PROTOCOL_VERSION, Network network = null) where T : IBitcoinSerializable, new()
         {
             network = network ?? Network.Main;
 
             T instance = network.Consensus.ConsensusFactory.TryCreateNew<T>();
             if (instance == null)
-                instance = Activator.CreateInstance<T>();
+                instance = new T();
 
             instance.FromBytes(serializable.ToBytes(version, network), version, network);
 
