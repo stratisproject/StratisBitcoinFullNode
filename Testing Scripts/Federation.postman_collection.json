@@ -1,13 +1,13 @@
 {
 	"info": {
+		"_postman_id": "6733820d-e008-49cb-bfcc-0ea643ea9f7f",
 		"name": "Federation",
-		"_postman_id": "8cfc6373-206d-e6fa-d3f9-518c1a23e0ba",
-		"description": "",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
 	"item": [
 		{
 			"name": "Shutdown",
+			"description": null,
 			"item": [
 				{
 					"name": "Shutdown gateway1 main",
@@ -283,6 +283,7 @@
 		},
 		{
 			"name": "Set up",
+			"description": null,
 			"item": [
 				{
 					"name": "Create wallet - side user",
@@ -296,10 +297,10 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{ \n\t\"password\": \"password\",\n\t\"network\": \"testnet\",\n\t\"name\": \"sideuserwallet\"\n}"
+							"raw": "{ \n\t\"password\": \"password\",\n\t\"network\": \"testnet\",\n\t\"name\": \"sideuserwallet\",\n\t\"mnemonic\": \"elbow scale error joke labor page beyond curve indicate exit brass laundry\",\n\t\"creationDate\": \"2018-02-25 16:20:33\"\n}"
 						},
 						"url": {
-							"raw": "http://localhost:39001/api/wallet/create",
+							"raw": "http://localhost:39001/api/wallet/recover",
 							"protocol": "http",
 							"host": [
 								"localhost"
@@ -308,7 +309,7 @@
 							"path": [
 								"api",
 								"wallet",
-								"create"
+								"recover"
 							]
 						}
 					},
@@ -677,7 +678,7 @@
 			]
 		},
 		{
-			"name": "Build transaction",
+			"name": "Build transaction Deposit",
 			"request": {
 				"method": "POST",
 				"header": [
@@ -688,7 +689,7 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\r\n\t\"walletName\": \"myRecoveredWallet\",\r\n\t\"accountName\": \"account 0\",\r\n\t\"password\": \"123456\",\r\n\t\"destinationAddress\": \"2N3UFTMd9ywUSqd12FkBPmYwEebxbGA8rQy\",\r\n\t\"amount\": \"13\",\r\n\t\"feeType\": \"low\",\r\n\t\"allowUnconfirmed\": \"true\",\r\n\t\"opReturnData\": \"P8umohvRbZf9jhf6W4XuNsa7SfSgRkZyzL\"\r\n}"
+					"raw": "{\r\n\t\"walletName\": \"myRecoveredWallet\",\r\n\t\"accountName\": \"account 0\",\r\n\t\"password\": \"123456\",\r\n\t\"destinationAddress\": \"2NEvqJiM8qLt219gc3DQADAPjuXauwiFjRm\",\r\n\t\"amount\": \"5\",\r\n\t\"feeType\": \"low\",\r\n\t\"allowUnconfirmed\": \"true\",\r\n\t\"opReturnData\": \"PB5p7Wasy66mG4zZWJ6CZ1hqpACCzq5a7g\"\r\n}"
 				},
 				"url": {
 					"raw": "http://localhost:40000/api/wallet/build-transaction",
@@ -707,7 +708,7 @@
 			"response": []
 		},
 		{
-			"name": "Send transaction",
+			"name": "Build transaction Withdrawal",
 			"request": {
 				"method": "POST",
 				"header": [
@@ -718,7 +719,37 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n\t\"hex\": \"010000002786265b01ae5689d154332a6f0a29c1212a89ee2482bbb21875f0635aa84ede9c693a0c2d000000006b483045022100ad430a4a135884d995a6b60bc1affaf24c1ea47c6fdfdad01ea4b27cf94843cd02206b33d0bb2f48bf760e358d949529190bdd5b030042e75b372df074f24d0603200121030809bb68448028d81a70239367a0142a84930a8e9c25277c2051273a7b3da58bffffffff03dca0e934000000001976a91489fc386e213151156727e46d712e2734568b6ddd88ac006d7c4d0000000017a9147027e3c5b9afeba9313cc06504140c9c7724d6e5870000000000000000246a225045396e46597a32435146346d583341424c516359427945674c567a61357932615300000000\"\n}"
+					"raw": "{\r\n\t\"walletName\": \"sideuserwallet\",\r\n\t\"accountName\": \"account 0\",\r\n\t\"password\": \"password\",\r\n\t\"destinationAddress\": \"pTEBX8oNk6GoPufm755yuFtbBgEPmjPvdK\",\r\n\t\"amount\": \"6\",\r\n\t\"feeType\": \"low\",\r\n\t\"allowUnconfirmed\": \"true\",\r\n\t\"opReturnData\": \"TFw7hsQ84sKuTh8mA66CfvupmC95vJhXq6\"\r\n}"
+				},
+				"url": {
+					"raw": "http://localhost:39001/api/wallet/build-transaction",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "39001",
+					"path": [
+						"api",
+						"wallet",
+						"build-transaction"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Send transaction Deposit",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n\t\"hex\": \"01000000f5ea2a5b0127b4b8144eb71eb557ceaf6e5fa5b7e788a26247f056d92dbbe2fc739529a4bd010000006a4730440220215d6d250af2c5e663a5de6f464a99d3dcd045862fb9df5a890925c04fd10f8b022073e63c41bb95931a5e548a1e4ac6b076812a5c37ef780380f745561e17826c840121039904d592aa194539ea0899dd4ce3ee5abd85bdeaca7872f08a23f214fa9422a7ffffffff0320566f54fc8200001976a914601afac2780fdd49607ae0ebb6a1a06cb14d602a88ac0065cd1d0000000017a914edd85882c9b64ee2511f6135c670033662bed7af870000000000000000246a2250423570375761737936366d47347a5a574a36435a316871704143437a713561376700000000\"\n}"
 				},
 				"url": {
 					"raw": "http://localhost:40000/api/wallet/send-transaction",
@@ -727,6 +758,36 @@
 						"localhost"
 					],
 					"port": "40000",
+					"path": [
+						"api",
+						"wallet",
+						"send-transaction"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Send transaction Withdrawal",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n\t\"hex\": \"0100000000ec2a5b02bc4d7a6572b7b42e07c58b3a4fb439fe43336851d58a180e0840ae24d935b9e2020000006a47304402204c185118d7290795d6732dd97ff9d8d2c337265d835ce489e7d5e1341e2be2b502203eccaab8ba3dc8b73f791b6f6f5b9bf9d63b36254d75198d410b1e3530979f89012103577c4e15f05e3e0ef0b276dcfea48cf1afb78f58a021964fdcfee8aee8204cc1ffffffffe7e752fd58223de5873aa1c449ebf4e3291d1fcd1e946cf34d6963fb42aebee8000000006b483045022100f6c7c80258a67a8dda9f7cbb2c6e2562b285ad93191f4894552725b70ea2221f02200f516d142c77dc171a01a4650c2966c178c1ee5df7ade1648a9cb98ebe4ab37a012103577c4e15f05e3e0ef0b276dcfea48cf1afb78f58a021964fdcfee8aee8204cc1ffffffff030000000000000000246a22544677376873513834734b755468386d41363643667675706d433935764a685871360046c3230000000017a914edd85882c9b64ee2511f6135c670033662bed7af875402cd1d000000001976a9143818bc6db83e0fec1cfe73412930bf14238d13c688ac00000000\"\n}"
+				},
+				"url": {
+					"raw": "http://localhost:39001/api/wallet/send-transaction",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "39001",
 					"path": [
 						"api",
 						"wallet",
@@ -762,8 +823,7 @@
 						"federationwallet",
 						"sync"
 					]
-				},
-				"description": ""
+				}
 			},
 			"response": []
 		}
