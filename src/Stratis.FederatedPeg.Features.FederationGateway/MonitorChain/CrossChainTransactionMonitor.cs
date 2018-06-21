@@ -154,7 +154,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
                         this.crossChainTransactionAuditor.Commit();
 
                         this.logger.LogInformation("AddCounterChainTransactionId: {0} for transaction {1}.", stringResult, transaction.GetHash());
-                        this.counterChainSessionManager.AddCounterChainTransactionId(transaction.GetHash(), hash);
+                        //this.counterChainSessionManager.AddCounterChainTransactionId(transaction.GetHash(), hash);
                         continue;
                     default:
                         throw new ArgumentOutOfRangeException();

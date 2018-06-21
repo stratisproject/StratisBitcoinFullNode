@@ -218,7 +218,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.MonitorChain
                     {
                         monitorChainSession.Complete(result);
                         this.logger.LogInformation($"RunSessionAsync() - Completing Session {result}.");
-                        this.crossChainTransactionAuditor.AddCounterChainTransactionId(monitorChainSession.SessionId, result);
+                        //this.crossChainTransactionAuditor.AddCounterChainTransactionId(monitorChainSession.SessionId, result);
                     }
                 }
             }
