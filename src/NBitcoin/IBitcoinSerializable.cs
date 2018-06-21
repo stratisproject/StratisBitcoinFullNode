@@ -76,10 +76,12 @@ namespace NBitcoin
         {
             network = network ?? Network.Main;
 
-            if (!network.Consensus.ConsensusFactory.TryCreateNew<T>(out T instance))
+            T instance = network.Consensus.ConsensusFactory.TryCreateNew<T>();
+            if (instance == null)
                 instance = new T();
 
             instance.FromBytes(serializable.ToBytes(version, network), version, network);
+
             return instance;
         }
 

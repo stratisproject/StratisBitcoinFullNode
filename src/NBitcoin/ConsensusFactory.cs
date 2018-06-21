@@ -106,25 +106,22 @@ namespace NBitcoin
         /// <typeparam name="T">The generic type to resolve.</typeparam>
         /// <param name="result">If the type is known it will be initialized.</param>
         /// <returns><c>true</c> if it is known.</returns>
-        public virtual bool TryCreateNew<T>(out T result) where T : IBitcoinSerializable
+        public virtual T TryCreateNew<T>() where T : IBitcoinSerializable
         {
-            result = default(T);
+            object result = null;
             if (IsBlock<T>())
             {
                 result = (T)(object)CreateBlock();
-                return true;
             }
             if (IsBlockHeader<T>())
             {
                 result = (T)(object)CreateBlockHeader();
-                return true;
             }
             if (IsTransaction<T>())
             {
                 result = (T)(object)CreateTransaction();
-                return true;
             }
-            return false;
+            return (T)result;
         }
 
         /// <summary>
