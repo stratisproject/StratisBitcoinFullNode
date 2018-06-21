@@ -12,25 +12,25 @@ namespace Stratis.Bitcoin.Tests.Base
     {
         private readonly Mock<IChainState> chainState;
         private readonly List<ChainedHeader> chainedHeaders;
+        private readonly Network network;
 
         public BestChainSelectorTest()
         {
             this.chainedHeaders = new List<ChainedHeader>();
             var chain = new ConcurrentChain(Network.StratisMain);
+            this.network = Network.StratisMain;
 
             for (int i = 0; i < 20; ++i)
             {
-                var header = new BlockHeader()
-                {
-                    Nonce = RandomUtils.GetUInt32(),
-                    HashPrevBlock = chain.Tip.HashBlock,
-                    Bits = Target.Difficulty1
-                };
+                BlockHeader header = this.network.Consensus.ConsensusFactory.CreateBlockHeader();
+                header.Nonce = RandomUtils.GetUInt32();
+                header.HashPrevBlock = chain.Tip.HashBlock;
+                header.Bits = Target.Difficulty1;
 
                 var chainedHeader = new ChainedHeader(header, header.GetHash(), chain.Tip);
 
                 chain.SetTip(chainedHeader);
-                
+
                 this.chainedHeaders.Add(chainedHeader);
             }
 
@@ -44,7 +44,7 @@ namespace Stratis.Bitcoin.Tests.Base
         [Fact]
         public async Task NewTipIsSelectedWhenBestTipProviderDisconnectsAsync()
         {
-            var chain = new ConcurrentChain(Network.StratisMain);
+            var chain = new ConcurrentChain(this.network);
             var chainSelector = new BestChainSelector(chain, this.chainState.Object, new LoggerFactory());
 
             chain.SetTip(this.chainedHeaders[10]);
@@ -61,7 +61,7 @@ namespace Stratis.Bitcoin.Tests.Base
             chainSelector.RemoveAvailableTip(1);
 
             await Task.Delay(100).ConfigureAwait(false);
-            
+
             Assert.Equal(chain.Tip, tipFromFirstPeer);
 
             //Disconnect first peer
@@ -78,16 +78,16 @@ namespace Stratis.Bitcoin.Tests.Base
         [Fact]
         public async Task CantSwitchToTipBelowConsensusAsync()
         {
-            var chain = new ConcurrentChain(Network.StratisMain);
+            var chain = new ConcurrentChain(this.network);
             var chainSelector = new BestChainSelector(chain, this.chainState.Object, new LoggerFactory());
 
             chain.SetTip(this.chainedHeaders[10]);
-            
+
             chainSelector.TrySetAvailableTip(0, this.chainedHeaders[15]);
             chainSelector.TrySetAvailableTip(1, this.chainedHeaders[2]);
             chainSelector.TrySetAvailableTip(2, this.chainedHeaders[3]);
             chainSelector.TrySetAvailableTip(3, this.chainedHeaders[4]);
-            
+
             await Task.Delay(100).ConfigureAwait(false);
 
             Assert.Equal(chain.Tip, this.chainedHeaders[15]);
@@ -105,7 +105,7 @@ namespace Stratis.Bitcoin.Tests.Base
         [Fact]
         public async Task OneOfManyBestChainProvidersDisconnectsAsync()
         {
-            var chain = new ConcurrentChain(Network.StratisMain);
+            var chain = new ConcurrentChain(this.network);
             var chainSelector = new BestChainSelector(chain, this.chainState.Object, new LoggerFactory());
 
             chain.SetTip(this.chainedHeaders[10]);

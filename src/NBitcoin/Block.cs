@@ -30,14 +30,13 @@ namespace NBitcoin
         public Block()
         {
             this.header = new BlockHeader();
-            this.SetNull();
+            this.transactions.Clear();
+            this.BlockSize = null;
         }
 
         [Obsolete("Should use Block.Load outside of ConsensusFactories")]
-        internal Block(BlockHeader blockHeader)
+        internal Block(BlockHeader blockHeader) : this()
         {
-            this.header = new BlockHeader();
-            this.SetNull();
             this.header = blockHeader;
         }
 
@@ -73,18 +72,13 @@ namespace NBitcoin
             }
         }
 
-        private void SetNull()
-        {
-            this.header.SetNull();
-            this.transactions.Clear();
-            this.BlockSize = null;
-        }
-
         public BlockHeader Header => this.header;
 
+        /// <summary>
+        /// A block's hash is it's header's hash.
+        /// </summary>
         public uint256 GetHash()
         {
-            // A Block's hash is it's header's hash.
             return this.header.GetHash();
         }
 
