@@ -50,7 +50,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules
         {
             return new ConsensusStoreTransitionState()
             {
-                BlockHash = await this.UtxoSet.Rewind()
+                BlockHash = await this.UtxoSet.Rewind().ConfigureAwait(false)
             };
         }
     }
