@@ -175,7 +175,7 @@ namespace Stratis.Bitcoin.Consensus.Rules
         public abstract Task<uint256> GetBlockHashAsync();
 
         /// <inheritdoc />
-        public abstract Task<ConsensusStoreTransitionState> RewindAsync();
+        public abstract Task<RewindState> RewindAsync();
 
         /// <inheritdoc />
         public T GetRule<T>() where T : ConsensusRule
@@ -191,7 +191,7 @@ namespace Stratis.Bitcoin.Consensus.Rules
     /// A transition state can have transition information of several consecutive block,
     /// The <see cref="BlockHash"/> parameter represents the tip of the consecutive list of blocks.
     /// </remarks>
-    public class ConsensusStoreTransitionState
+    public class RewindState
     {
         /// <summary>
         /// The block hash that represents the tip of the transition.

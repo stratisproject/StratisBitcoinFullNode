@@ -82,7 +82,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
             throw new System.NotImplementedException();
         }
 
-        public override Task<ConsensusStoreTransitionState> RewindAsync()
+        public override Task<RewindState> RewindAsync()
         {
             throw new System.NotImplementedException();
         }

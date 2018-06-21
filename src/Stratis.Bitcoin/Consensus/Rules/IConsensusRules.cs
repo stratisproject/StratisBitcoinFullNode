@@ -80,7 +80,7 @@ namespace Stratis.Bitcoin.Consensus.Rules
         /// </para>
         /// </summary>
         /// <returns>Hash of the block header which is now the tip of the chain.</returns>
-        Task<ConsensusStoreTransitionState> RewindAsync();
+        Task<RewindState> RewindAsync();
     }
 
     /// <summary>

@@ -46,9 +46,9 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules
         }
 
         /// <inheritdoc />
-        public override async Task<ConsensusStoreTransitionState> RewindAsync()
+        public override async Task<RewindState> RewindAsync()
         {
-            return new ConsensusStoreTransitionState()
+            return new RewindState()
             {
                 BlockHash = await this.UtxoSet.Rewind().ConfigureAwait(false)
             };

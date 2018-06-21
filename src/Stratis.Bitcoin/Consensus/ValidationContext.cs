@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Net;
 using NBitcoin;
 using Stratis.Bitcoin.Configuration.Settings;
@@ -47,6 +48,11 @@ namespace Stratis.Bitcoin.Consensus
         /// Setting this value to be <see cref="BanDurationDefaultBan"/> will default to <see cref="ConnectionManagerSettings.BanTimeSeconds"/>.
         /// </remarks>
         public int BanDurationSeconds { get; set; }
+
+        /// <summary>
+        /// Peers that are misbehaving and need to be disconnected and banned, it will be set when <see cref="Error"/> is not null.
+        /// </summary>
+        public List<int> BadPeers { get; set; }
 
         /// <summary>The context of the validation processes.</summary>
         public RuleContext RuleContext { get; set; }
