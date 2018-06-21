@@ -16,6 +16,9 @@ namespace NBitcoin.JsonConverters
     {
         private readonly Network network;
 
+        public BitcoinSerializableJsonConverter()
+        { }
+
         public BitcoinSerializableJsonConverter(Network network)
         {
             this.network = network;
