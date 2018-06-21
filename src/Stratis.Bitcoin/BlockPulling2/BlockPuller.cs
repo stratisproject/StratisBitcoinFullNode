@@ -52,12 +52,13 @@ namespace Stratis.Bitcoin.BlockPulling2
 
         /// <summary>This affects quality score only. If the peer is too fast don't give him all the assignments in the world when not in IBD.</summary>
         private const int PeerSpeedLimitWhenNotInIBDBytesPerSec = 1024 * 1024;
-
-        /// <summary>Callback which is called when puller received a block which it was asked for.</summary>
+        
         /// <param name="blockHash">Hash of the delivered block.</param>
         /// <param name="block">The block.</param>
         public delegate void OnBlockDownloadedCallback(uint256 blockHash, Block block);
 
+        /// <summary>Callback which is called when puller received a block which it was asked for.</summary>
+        /// <remarks>Provided by the component that creates the block puller.</remarks>
         private readonly OnBlockDownloadedCallback OnDownloadedCallback;
 
         /// <summary>Queue of download jobs which were released from the peers that failed to deliver in time or were disconnected.</summary>
@@ -74,7 +75,7 @@ namespace Stratis.Bitcoin.BlockPulling2
 
         /// <summary>Assigned downloads sorted by block height.</summary>
         /// <remarks>This object has to be protected by <see cref="assignedLock"/>.</remarks>
-        private readonly LinkedList<AssignedDownload> assignedDownloadsByHeights;
+        private readonly LinkedList<AssignedDownload> sortedAssignedDownloads;
 
         /// <summary>Assigned hashes mapped by peer ID.</summary>
         /// <remarks>This object has to be protected by <see cref="assignedLock"/>.</remarks>
@@ -110,7 +111,7 @@ namespace Stratis.Bitcoin.BlockPulling2
         /// </summary>
         private readonly object queueLock;
 
-        /// <summary>Locks access to <see cref="assignedDownloads"/>, <see cref="assignedHashesByPeerId"/>, <see cref="assignedDownloadsByHeights"/>.</summary>
+        /// <summary>Locks access to <see cref="assignedDownloads"/>, <see cref="assignedHashesByPeerId"/>, <see cref="sortedAssignedDownloads"/>.</summary>
         private readonly object assignedLock;
 
         /// <summary>
@@ -147,7 +148,7 @@ namespace Stratis.Bitcoin.BlockPulling2
             this.downloadJobsQueue = new Queue<DownloadJob>();
 
             this.assignedDownloads = new Dictionary<uint256, AssignedDownload>();
-            this.assignedDownloadsByHeights = new LinkedList<AssignedDownload>();
+            this.sortedAssignedDownloads = new LinkedList<AssignedDownload>();
             this.assignedHashesByPeerId = new Dictionary<int, List<uint256>>();
 
             this.averageBlockSizeBytes = new AverageCalculator(1000);
@@ -280,7 +281,7 @@ namespace Stratis.Bitcoin.BlockPulling2
 
             lock (this.queueLock)
             {
-                var hashes = new List<uint256>();
+                var hashes = new List<uint256>(headers.Count);
 
                 foreach (ChainedHeader header in headers)
                 {
@@ -289,15 +290,16 @@ namespace Stratis.Bitcoin.BlockPulling2
                 }
                 
                 // Enqueue new download job.
+                int jobId = this.nextJobId++;
+
                 this.downloadJobsQueue.Enqueue(new DownloadJob()
                 {
                     Hashes = hashes,
-                    Id = this.nextJobId++
+                    Id = jobId
                 });
 
                 this.processQueuesSignal.Set();
-
-                this.logger.LogDebug("{0} blocks were requested from puller.", headers.Count);
+                this.logger.LogDebug("{0} blocks were requested from puller. Job ID {1} was created.", headers.Count, jobId);
             }
 
             this.logger.LogTrace("(-)");
@@ -448,7 +450,7 @@ namespace Stratis.Bitcoin.BlockPulling2
         }
 
         /// <summary>
-        /// Adds assigned download to <see cref="assignedDownloads"/> and helper structures <see cref="assignedDownloadsByHeights"/> and <see cref="assignedHashesByPeerId"/>.
+        /// Adds assigned download to <see cref="assignedDownloads"/> and helper structures <see cref="sortedAssignedDownloads"/> and <see cref="assignedHashesByPeerId"/>.
         /// </summary>
         /// <remarks>Have to be locked by <see cref="assignedLock"/>.</remarks>
         /// <param name="hash">Hash of a block that is associated with <paramref name="assignment"/>.</param>
@@ -459,42 +461,37 @@ namespace Stratis.Bitcoin.BlockPulling2
 
             this.assignedDownloads.Add(hash, assignment);
 
-            // Add to assignedHashesByPeerId
+            // Add to assignedHashesByPeerId.
             if (!this.assignedHashesByPeerId.TryGetValue(assignment.PeerId, out List<uint256> hashesForIds))
             {
                 hashesForIds = new List<uint256>();
                 this.assignedHashesByPeerId.Add(assignment.PeerId, hashesForIds);
             }
+
             hashesForIds.Add(hash);
 
-            // Add to assignedDownloadsByHeights
-            LinkedListNode<AssignedDownload> lastDownload = this.assignedDownloadsByHeights.Last;
+            // Add to sortedAssignedDownloads.
+            LinkedListNode<AssignedDownload> lastDownload = this.sortedAssignedDownloads.Last;
 
             if ((lastDownload == null) || (lastDownload.Value.BlockHeight <= assignment.BlockHeight))
             {
-                assignment.LinkedListNode = this.assignedDownloadsByHeights.AddLast(assignment);
+                assignment.LinkedListNode = this.sortedAssignedDownloads.AddLast(assignment);
             }
             else
             {
-                LinkedListNode<AssignedDownload> current = lastDownload;
+                LinkedListNode<AssignedDownload> current = lastDownload.Previous;
 
-                while (true)
-                {
+                while (current.Value.BlockHeight > assignment.BlockHeight)
                     current = current.Previous;
 
-                    if (current.Value.BlockHeight <= assignment.BlockHeight)
-                    {
-                        assignment.LinkedListNode = this.assignedDownloadsByHeights.AddAfter(current, assignment);
-                        break;
-                    }
-                }
+                assignment.LinkedListNode = this.sortedAssignedDownloads.AddAfter(current, assignment);
             }
-            
+
             this.logger.LogTrace("(-)");
         }
 
         /// <summary>
-        /// Removes assigned download from <see cref="assignedDownloads"/> and helper structures <see cref="assignedDownloadsByHeights"/> and <see cref="assignedHashesByPeerId"/>.
+        /// Removes assigned download from <see cref="assignedDownloads"/> and helper structures <see cref="sortedAssignedDownloads"/> and <see cref="assignedHashesByPeerId"/>.
         /// </summary>
         /// <remarks>Have to be locked by <see cref="assignedLock"/>.</remarks>
         /// <param name="hash">Hash of a block for which assignment should be removed.</param>
@@ -512,9 +509,9 @@ namespace Stratis.Bitcoin.BlockPulling2
             if (hashesForId.Count == 0)
                 this.assignedHashesByPeerId.Remove(assignment.PeerId);
           
-            this.assignedDownloadsByHeights.Remove(assignment.LinkedListNode);
+            this.sortedAssignedDownloads.Remove(assignment.LinkedListNode);
             
-            this.logger.LogTrace("(-)");
+            this.logger.LogTrace("(-):'{0}'", assignment);
             return assignment;
         }
         
@@ -523,8 +520,6 @@ namespace Stratis.Bitcoin.BlockPulling2
         private async Task AskPeersForBlocksAsync(Dictionary<uint256, AssignedDownload> assignments)
         {
             this.logger.LogTrace("({0}:{1})", nameof(assignments.Count), assignments.Count);
-
-            int maxDegreeOfParallelism = 8;
 
             // Form batches in order to ask for several blocks from one peer at once.
             var hashesToPeerId = new Dictionary<int, List<uint256>>();
@@ -538,11 +533,11 @@ namespace Stratis.Bitcoin.BlockPulling2
 
                 hashes.Add(assignedDownload.Key);
             }
-            
-            await hashesToPeerId.ForEachAsync(maxDegreeOfParallelism, CancellationToken.None, async (peerIdToHashes, cancellation) =>
+
+            foreach (KeyValuePair<int, List<uint256>> hashesPair in hashesToPeerId)
             {
-                List<uint256> hashes = peerIdToHashes.Value;
-                int peerId = peerIdToHashes.Key;
+                List<uint256> hashes = hashesPair.Value;
+                int peerId = hashesPair.Key;
 
                 BlockPullerBehavior peerBehavior;
 
@@ -590,8 +585,8 @@ namespace Stratis.Bitcoin.BlockPulling2
                     this.PeerDisconnected(peerId);
                     this.processQueuesSignal.Reset();
                 }
-            }).ConfigureAwait(false);
-
+            }
+            
             this.logger.LogTrace("(-)");
         }
 
@@ -650,7 +645,7 @@ namespace Stratis.Bitcoin.BlockPulling2
                             BlockHash = hashToAssign
                         });
 
-                        this.logger.LogTrace("Block '{0}' was assigned to peer {1}.", hashToAssign, peerTip);
+                        this.logger.LogTrace("Block '{0}' was assigned to peer ID {1}.", hashToAssign, peerId);
 
                         downloadJob.Hashes.Remove(hashToAssign);
                         break;
@@ -698,7 +693,7 @@ namespace Stratis.Bitcoin.BlockPulling2
                 {
                     reassigned = false;
 
-                    LinkedListNode<AssignedDownload> current = this.assignedDownloadsByHeights.First;
+                    LinkedListNode<AssignedDownload> current = this.sortedAssignedDownloads.First;
 
                     while (current != null)
                     {
@@ -898,6 +893,8 @@ namespace Stratis.Bitcoin.BlockPulling2
                         hashesToReassign.Add(assignedHash);
 
                         this.RemoveAssignedDownloadLocked(assignedHash);
+
+                        this.logger.LogTrace("Hash '{0}' for job ID {1} was released from peer ID {2}.", assignedHash, jobId, peerId);
                     }
                 }
             }
@@ -909,7 +906,7 @@ namespace Stratis.Bitcoin.BlockPulling2
         }
 
         /// <summary>Adds items from <paramref name="hashesByJobId"/> to the <see cref="reassignedJobsQueue"/>.</summary>
-        /// <param name="hashesByJobId">Block hashes mapped to job IDs.</param>
+        /// <param name="hashesByJobId">Block hashes mapped by job IDs.</param>
         private void ReassignAssignments(Dictionary<int, List<uint256>> hashesByJobId)
         {
             this.logger.LogTrace("({0}.{1}:{2})", nameof(hashesByJobId), nameof(hashesByJobId.Count), hashesByJobId.Count);
