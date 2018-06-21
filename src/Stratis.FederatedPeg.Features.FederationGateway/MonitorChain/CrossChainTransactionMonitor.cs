@@ -172,6 +172,16 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
         /// <inheritdoc/>>
         public void ProcessBlock(Block block)
         {
+            Guard.NotNull(block, nameof(block));
+            this.logger.LogTrace("({0}:'{1}')", nameof(block.GetHash), block.GetHash());
+
+            ChainedHeader newTip = this.concurrentChain.GetBlock(block.GetHash());
+            if (newTip == null)
+            {
+                this.logger.LogTrace("(-)[NEW_TIP_REORG]");
+                return;
+            }
+
             var chainBlockTip = this.concurrentChain.GetBlock(block.GetHash());
             int blockNumber = chainBlockTip.Height;
 

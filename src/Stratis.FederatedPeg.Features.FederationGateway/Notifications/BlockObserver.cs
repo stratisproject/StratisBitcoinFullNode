@@ -20,7 +20,8 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Notifications
         /// <summary>
         /// Initialize the block observer with the wallet manager and the cross chain monitor.
         /// </summary>
-        /// <param name="crossChainTransactionMonitor"></param>
+        /// <param name="walletSyncManager">The wallet sync manager to pass new incoming blocks to.</param>
+        /// <param name="crossChainTransactionMonitor">The crosschain transaction monitor to pass new incoming blocks to.</param>
         public BlockObserver(IFederationWalletSyncManager walletSyncManager, ICrossChainTransactionMonitor crossChainTransactionMonitor)
         {
             Guard.NotNull(walletSyncManager, nameof(walletSyncManager));
@@ -36,8 +37,8 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Notifications
         /// <param name="block">The new block.</param>
         protected override void OnNextCore(Block block)
         {
-            crossChainTransactionMonitor?.ProcessBlock(block);
-            walletSyncManager?.ProcessBlock(block);
+            crossChainTransactionMonitor.ProcessBlock(block);
+            walletSyncManager.ProcessBlock(block);
         }
     }
 }

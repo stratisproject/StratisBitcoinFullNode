@@ -64,32 +64,21 @@ cd $path_to_federationgatewayd
 # Federation member 1 main and side
 start-process cmd -ArgumentList "/k color $color_gateway1 && dotnet run -mainchain -agentprefix=fed1main -datadir=$root_datadir\gateway1 -port=36011 -apiport=38011 -counterchainapiport=38012 -federationips=$mainchain_federationips -redeemscript=""$redeemscript"" -publickey=$gateway1_public_key"
 timeout $long_interval_time
-start-process cmd -ArgumentList "/k color $color_gateway1 && dotnet run -sidechain -agentprefix=fed1side -datadir=$root_datadir\gateway1 -port=36012 -apiport=38012 -counterchainapiport=38011 -txindex=1 -federationips=$sidechain_federationips -redeemscript=""$redeemscript"" -addnode=127.0.0.1:26178 -publickey=$gateway1_public_key"
+start-process cmd -ArgumentList "/k color $color_gateway1 && dotnet run -sidechain -agentprefix=fed1side -datadir=$root_datadir\gateway1 mine=1 mineaddress=$sidechain_multisig_address -port=36012 -apiport=38012 -counterchainapiport=38011 -txindex=1 -federationips=$sidechain_federationips -redeemscript=""$redeemscript"" -publickey=$gateway1_public_key"
 timeout $interval_time
 
 
 # Federation member 2 main and side
 start-process cmd -ArgumentList "/k color $color_gateway2 && dotnet run -mainchain -agentprefix=fed2main -datadir=$root_datadir\gateway2 -port=36021 -apiport=38021 -counterchainapiport=38022 -federationips=$mainchain_federationips -redeemscript=""$redeemscript"" -publickey=$gateway2_public_key"
 timeout $long_interval_time
-start-process cmd -ArgumentList "/k color $color_gateway2 && dotnet run -sidechain -agentprefix=fed2side -datadir=$root_datadir\gateway2 -port=36022 -apiport=38022 -counterchainapiport=38021 -txindex=1 -federationips=$sidechain_federationips -redeemscript=""$redeemscript"" -addnode=127.0.0.1:26178 -publickey=$gateway2_public_key"
+start-process cmd -ArgumentList "/k color $color_gateway2 && dotnet run -sidechain -agentprefix=fed2side -datadir=$root_datadir\gateway2 mine=1 mineaddress=$sidechain_multisig_address -port=36022 -apiport=38022 -counterchainapiport=38021 -txindex=1 -federationips=$sidechain_federationips -redeemscript=""$redeemscript"" -publickey=$gateway2_public_key"
 timeout $interval_time
 
 
 # Federation member 3 main and side
 start-process cmd -ArgumentList "/k color $color_gateway3 && dotnet run -mainchain -agentprefix=fed3main -datadir=$root_datadir\gateway3 -port=36031 -apiport=38031 -counterchainapiport=38032 -federationips=$mainchain_federationips -redeemscript=""$redeemscript"" -publickey=$gateway3_public_key"
 timeout $long_interval_time
-start-process cmd -ArgumentList "/k color $color_gateway3 && dotnet run -sidechain -agentprefix=fed3side -datadir=$root_datadir\gateway3 -port=36032 -apiport=38032 -counterchainapiport=38031 -txindex=1 -federationips=$sidechain_federationips -redeemscript=""$redeemscript"" -addnode=127.0.0.1:26178 -publickey=$gateway3_public_key"
-timeout $interval_time
-
-
-cd $path_to_sidechaind
-
-# MiningNode
-start-process cmd -ArgumentList "/k color $color_miner && dotnet run mine=1 txindex=1 mineaddress=$sidechain_multisig_address -agentprefix=miner -port=26178 -apiport=39000 -datadir=$root_datadir\MiningNode"
-timeout $interval_time
-
-# SidechainUserNode
-start-process cmd -ArgumentList "/k color $color_wallets && dotnet run -port=26179 -apiport=39001 -agentprefix=sideuser -datadir=$root_datadir\SidechainUserNode agentprefix=sc_user -addnode=127.0.0.1:26178"
+start-process cmd -ArgumentList "/k color $color_gateway3 && dotnet run -sidechain -agentprefix=fed3side -datadir=$root_datadir\gateway3 mine=1 mineaddress=$sidechain_multisig_address -port=36032 -apiport=38032 -counterchainapiport=38031 -txindex=1 -federationips=$sidechain_federationips -redeemscript=""$redeemscript"" -publickey=$gateway3_public_key"
 timeout $interval_time
 
 
@@ -97,4 +86,11 @@ cd $path_to_stratisd
 
 # MainchainUser
 start-process cmd -ArgumentList "/k color $color_wallets && dotnet run -testnet -port=36178 -apiport=40000 -agentprefix=mainuser -datadir=$root_datadir\MainchainUser"
+timeout $interval_time
+
+
+cd $path_to_sidechaind
+
+# SidechainUserNode
+start-process cmd -ArgumentList "/k color $color_wallets && dotnet run -port=26179 -apiport=39001 -agentprefix=sideuser -datadir=$root_datadir\SidechainUserNode agentprefix=sc_user -addnode=127.0.0.1:36012 -addnode=127.0.0.1:36022 -addnode=127.0.0.1:36032"
 timeout $interval_time
