@@ -1,7 +1,4 @@
-﻿using System.IO;
-using System.Linq;
-using Microsoft.AspNetCore.Mvc;
-using Stratis.Bitcoin.Configuration;
+﻿using Stratis.Bitcoin.Configuration;
 
 namespace Stratis.Bitcoin.Controllers
 {
@@ -12,7 +9,7 @@ namespace Stratis.Bitcoin.Controllers
     [Route("[controller]")]
     public class DashboardController : Controller
     {
-        
+
         private readonly IFullNode fullNode;
         private NodeSettings nodeSettings;
 
@@ -27,7 +24,7 @@ namespace Stratis.Bitcoin.Controllers
         /// </summary>
         /// <returns>text/html content</returns>
         [HttpGet]
-        [Route("")] 
+        [Route("")]
         [Route("Stats")]
         public IActionResult Stats()
         {
@@ -40,14 +37,14 @@ namespace Stratis.Bitcoin.Controllers
         /// </summary>
         /// <returns>text/html content</returns>
         [HttpGet]
-        [Route("SmartContracts/{numberOfLogEntriesToShow?}")] 
+        [Route("SmartContracts/{numberOfLogEntriesToShow?}")]
         public IActionResult SmartContractLogs(int numberOfLogEntriesToShow = 30)
         {
             string logPath = Path.Combine(this.nodeSettings.DataDir, @"Logs\smartcontracts.txt");
 
             if (!System.IO.File.Exists(logPath))
             {
-                return this.Content($"There is no log file at: {logPath}. An nlog.config is needed in the daemon directory.");
+                return this.Content($"There is no log file at: {logPath}. An nlog.config file is needed in the daemon directory.");
             }
 
             string[] logLines = System.IO.File.ReadAllLines(logPath);
