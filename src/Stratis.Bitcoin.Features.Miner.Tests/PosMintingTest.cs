@@ -205,7 +205,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
         [Fact]
         public void GetDifficulty_VeryLowTarget_ReturnsDifficulty()
         {
-            ChainedHeader chainedHeader = CreateChainedBlockWithNBits(0x1f111111);
+            ChainedHeader chainedHeader = CreateChainedBlockWithNBits(this.network, 0x1f111111);
 
             double result = this.posMinting.GetDifficulty(chainedHeader);
 
@@ -215,7 +215,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
         [Fact]
         public void GetDifficulty_LowTarget_ReturnsDifficulty()
         {
-            ChainedHeader chainedHeader = CreateChainedBlockWithNBits(0x1ef88f6f);
+            ChainedHeader chainedHeader = CreateChainedBlockWithNBits(this.network, 0x1ef88f6f);
 
             double result = this.posMinting.GetDifficulty(chainedHeader);
 
@@ -225,7 +225,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
         [Fact]
         public void GetDifficulty_MidTarget_ReturnsDifficulty()
         {
-            ChainedHeader chainedHeader = CreateChainedBlockWithNBits(0x1df88f6f);
+            ChainedHeader chainedHeader = CreateChainedBlockWithNBits(this.network, 0x1df88f6f);
 
             double result = this.posMinting.GetDifficulty(chainedHeader);
 
@@ -235,7 +235,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
         [Fact]
         public void GetDifficulty_HighTarget_ReturnsDifficulty()
         {
-            ChainedHeader chainedHeader = CreateChainedBlockWithNBits(0x1cf88f6f);
+            ChainedHeader chainedHeader = CreateChainedBlockWithNBits(this.network, 0x1cf88f6f);
 
             double result = this.posMinting.GetDifficulty(chainedHeader);
 
@@ -245,7 +245,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
         [Fact]
         public void GetDifficulty_VeryHighTarget_ReturnsDifficulty()
         {
-            ChainedHeader chainedHeader = CreateChainedBlockWithNBits(0x12345678);
+            ChainedHeader chainedHeader = CreateChainedBlockWithNBits(this.network, 0x12345678);
 
             double result = this.posMinting.GetDifficulty(chainedHeader);
 
@@ -259,7 +259,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
             this.consensusLoop.Setup(c => c.Tip)
                 .Returns(this.chain.Tip);
 
-            ChainedHeader chainedHeader = CreateChainedBlockWithNBits(0x12345678);
+            ChainedHeader chainedHeader = CreateChainedBlockWithNBits(this.network, 0x12345678);
             this.stakeValidator.Setup(s => s.GetLastPowPosChainedBlock(this.stakeChain.Object, It.Is<ChainedHeader>(c => c.HashBlock == this.chain.Tip.HashBlock), false))
                 .Returns(chainedHeader);
 
@@ -354,12 +354,12 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
 
             Assert.Equal(4607763.9659653762, weight);
         }
-       
+
         [Fact]
         public void CoinstakeAge_BeforeActivation_Testnet()
         {
             Assert.True(this.WasUtxoSelectedForStaking(Network.StratisTest, 1000, 1000 - 8)); // utxo depth is 9, mining block at 10
-            
+
             Assert.False(this.WasUtxoSelectedForStaking(Network.StratisTest, 1000, 1000 - 7)); // utxo depth is 8, mining block at 9
         }
 
@@ -372,7 +372,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
             int afterActivationHeight = activationHeight + 1000;
 
             Assert.True(this.WasUtxoSelectedForStaking(Network.StratisTest, afterActivationHeight, afterActivationHeight - 18));
-            
+
             Assert.False(this.WasUtxoSelectedForStaking(Network.StratisTest, afterActivationHeight, afterActivationHeight - 17));
         }
 
@@ -384,9 +384,9 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
             int activationHeight = PosConsensusOptions.CoinstakeMinConfirmationActivationHeightTestnet;
 
             Assert.True(this.WasUtxoSelectedForStaking(Network.StratisTest, activationHeight - 2, activationHeight - 10)); // mining block before activation
-            
+
             Assert.True(this.WasUtxoSelectedForStaking(Network.StratisTest, activationHeight - 1, activationHeight - 19)); // mining activation block
-            
+
             Assert.False(this.WasUtxoSelectedForStaking(Network.StratisTest, activationHeight - 1, activationHeight - 18)); // mining activation block
         }
 
@@ -396,7 +396,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
         public void CoinstakeAge_BeforeActivation_Mainnet()
         {
             Assert.True(this.WasUtxoSelectedForStaking(Network.StratisMain, 1000, 1000 - 48)); // utxo depth is 49, mining block at 50
-            
+
             Assert.False(this.WasUtxoSelectedForStaking(Network.StratisMain, 1000, 1000 - 47)); // utxo depth is 48, mining block at 49
         }
 
@@ -409,7 +409,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
             int afterActivationHeight = activationHeight + 1000;
 
             Assert.True(this.WasUtxoSelectedForStaking(Network.StratisMain, afterActivationHeight, afterActivationHeight - 498));
-            
+
             Assert.False(this.WasUtxoSelectedForStaking(Network.StratisMain, afterActivationHeight, afterActivationHeight - 497));
         }
 
@@ -421,9 +421,9 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
             int activationHeight = PosConsensusOptions.CoinstakeMinConfirmationActivationHeightMainnet;
 
             Assert.True(this.WasUtxoSelectedForStaking(Network.StratisMain, activationHeight - 2, activationHeight - 50)); // mining block before activation
-            
+
             Assert.True(this.WasUtxoSelectedForStaking(Network.StratisMain, activationHeight - 1, activationHeight - 499)); // mining activation block
-            
+
             Assert.False(this.WasUtxoSelectedForStaking(Network.StratisMain, activationHeight - 1, activationHeight - 498)); // mining activation block
         }
 
@@ -550,9 +550,9 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
                 this.LoggerFactory.Object);
         }
 
-        private static ChainedHeader CreateChainedBlockWithNBits(uint bits)
+        private static ChainedHeader CreateChainedBlockWithNBits(Network network, uint bits)
         {
-            var blockHeader = new BlockHeader();
+            BlockHeader blockHeader = network.Consensus.ConsensusFactory.CreateBlockHeader();
             blockHeader.Time = 1269211443;
             blockHeader.Bits = new Target(bits);
             var chainedHeader = new ChainedHeader(blockHeader, blockHeader.GetHash(), 46367);

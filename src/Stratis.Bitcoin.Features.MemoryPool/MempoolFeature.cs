@@ -83,7 +83,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             if (this.mempoolManager != null)
             {
                 benchLogs.AppendLine();
-                benchLogs.AppendLine("======Mempool======");
+                benchLogs.AppendLine("=======Mempool=======");
                 benchLogs.AppendLine(this.mempoolManager.PerformanceCounter.ToString());
             }
         }

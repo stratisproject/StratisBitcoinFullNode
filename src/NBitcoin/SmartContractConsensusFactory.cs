@@ -9,26 +9,20 @@
         }
 
         /// <inheritdoc />
-        public override bool TryCreateNew<T>(out T result)
+        public override T TryCreateNew<T>()
         {
-            result = default(T);
-            if (this.IsBlock<T>())
-            {
-                result = (T)(object)this.CreateBlock();
-                return true;
-            }
-            if (this.IsBlockHeader<T>())
-            {
-                result = (T)(object)this.CreateBlockHeader();
-                return true;
-            }
-            if (this.IsTransaction<T>())
-            {
-                result = (T)(object)this.CreateTransaction();
-                return true;
-            }
+            object result = null;
 
-            return false;
+            if (IsBlock<T>())
+                result = (T)(object)CreateBlock();
+
+            if (IsBlockHeader<T>())
+                result = (T)(object)CreateBlockHeader();
+
+            if (IsTransaction<T>())
+                result = (T)(object)CreateTransaction();
+
+            return (T)result;
         }
     }
 }

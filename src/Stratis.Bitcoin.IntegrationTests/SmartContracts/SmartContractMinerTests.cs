@@ -106,12 +106,6 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
             {2, 0xbbbeb305}, {2, 0xfe1c810a}
         };
 
-        public ChainedHeader CreateBlockIndex(ChainedHeader prev)
-        {
-            var index = new ChainedHeader(new BlockHeader(), new BlockHeader().GetHash(), prev);
-            return index;
-        }
-
         public bool TestSequenceLocks(TestContext testContext, ChainedHeader chainedBlock, Transaction tx, Transaction.LockTimeFlags flags, LockPoints uselock = null)
         {
             var context = new MempoolValidationContext(tx, new MempoolValidationState(false))
