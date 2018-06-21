@@ -196,9 +196,11 @@ namespace NBitcoin
             T obj = data;
             if (obj == null)
             {
-                if (!this.ConsensusFactory.TryCreateNew<T>(out obj))
+                obj = this.ConsensusFactory.TryCreateNew<T>();
+                if (obj == null)
                     obj = Activator.CreateInstance<T>();
             }
+
             obj.ReadWrite(this);
             if (!this.Serializing)
                 data = obj;
@@ -265,7 +267,7 @@ namespace NBitcoin
         {
             var bytes = new byte[size];
 
-            for(int i = 0; i < size; i++)
+            for (int i = 0; i < size; i++)
             {
                 bytes[i] = (byte)(value >> i * 8);
             }

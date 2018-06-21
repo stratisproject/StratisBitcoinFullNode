@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
@@ -666,13 +667,14 @@ namespace Stratis.Bitcoin.Consensus
                 // and an assume valid header inside of the presented list of headers, we would only be interested in the last
                 // one as it would cover all previous headers. Reversing the order of processing guarantees that we only need
                 // to deal with one special header, which simplifies the implementation.
-                while (currentChainedHeader != earliestNewHeader)
+                while (currentChainedHeader != earliestNewHeader.Previous)
                 {
                     if (currentChainedHeader.HashBlock == this.consensusSettings.BlockAssumedValid)
                     {
                         this.logger.LogDebug("Chained header '{0}' represents an assumed valid block.", currentChainedHeader);
 
-                        connectNewHeadersResult = this.HandleAssumedValidHeader(currentChainedHeader, latestNewHeader, isBelowLastCheckpoint);
+                        bool assumeValidBelowLastCheckpoint = this.consensusSettings.UseCheckpoints && (currentChainedHeader.Height <= this.checkpoints.GetLastCheckpointHeight());
+                        connectNewHeadersResult = this.HandleAssumedValidHeader(currentChainedHeader, latestNewHeader, assumeValidBelowLastCheckpoint);
                         break;
                     }
 
@@ -1070,7 +1072,14 @@ namespace Stratis.Bitcoin.Consensus
             {
                 ChainedHeader fork = chainedHeader.FindFork(consensusTip);
 
-                if ((fork != null) && (fork != consensusTip))
+                if (fork == null)
+                {
+                    this.logger.LogError("Header '{0}' is from a different network.", chainedHeader);
+                    this.logger.LogTrace("(-)[HEADER_IS_INVALID_NETWORK]");
+                    throw new InvalidOperationException("Header is from a different network");
+                }
+
+                if ((fork != chainedHeader) && (fork != consensusTip))
                 {
                     int reorgLength = consensusTip.Height - fork.Height;
 
