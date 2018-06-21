@@ -34,14 +34,14 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
 
         private readonly FederationGatewaySettings federationGatewaySettings;
 
-        private readonly IPEndPointComparer ipEndPointComparer;
+        private readonly IPAddressComparer ipAddressComparer;
 
         public PartialTransactionsBehavior(
-            ILoggerFactory loggerFactory, 
+            ILoggerFactory loggerFactory,
             ICrossChainTransactionMonitor crossChainTransactionMonitor,
-            IFederationWalletManager federationWalletManager, 
-            ICounterChainSessionManager counterChainSessionManager, 
-            Network network, 
+            IFederationWalletManager federationWalletManager,
+            ICounterChainSessionManager counterChainSessionManager,
+            Network network,
             FederationGatewaySettings federationGatewaySettings)
         {
             Guard.NotNull(loggerFactory, nameof(loggerFactory));
@@ -50,7 +50,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
             Guard.NotNull(counterChainSessionManager, nameof(counterChainSessionManager));
             Guard.NotNull(network, nameof(network));
             Guard.NotNull(federationGatewaySettings, nameof(federationGatewaySettings));
-            
+
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.loggerFactory = loggerFactory;
             this.crossChainTransactionMonitor = crossChainTransactionMonitor;
@@ -58,7 +58,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
             this.counterChainSessionManager = counterChainSessionManager;
             this.network = network;
             this.federationGatewaySettings = federationGatewaySettings;
-            this.ipEndPointComparer = new IPEndPointComparer();
+            this.ipAddressComparer = new IPAddressComparer();
         }
 
         public override object Clone()
@@ -69,24 +69,36 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
         protected override void AttachCore()
         {
             this.logger.LogTrace("()");
-            if(federationGatewaySettings.FederationNodeIpEndPoints.Any(e => ipEndPointComparer.Equals(e, AttachedPeer.PeerEndPoint)))
+
+            if (federationGatewaySettings.FederationNodeIpEndPoints.Any(e => ipAddressComparer.Equals(e.Address, AttachedPeer.PeerEndPoint.Address)))
+            {
                 this.AttachedPeer.MessageReceived.Register(this.OnMessageReceivedAsync, true);
+            }
+
             this.logger.LogTrace("(-)");
         }
 
         protected override void DetachCore()
         {
             this.logger.LogTrace("()");
-            if (federationGatewaySettings.FederationNodeIpEndPoints.Any(e => ipEndPointComparer.Equals(e, AttachedPeer.PeerEndPoint)))
+
+            if (federationGatewaySettings.FederationNodeIpEndPoints.Any(e => ipAddressComparer.Equals(e.Address, AttachedPeer.PeerEndPoint.Address)))
+            {
                 this.AttachedPeer.MessageReceived.Unregister(this.OnMessageReceivedAsync);
+            }
+
             this.logger.LogTrace("(-)");
         }
 
         async Task Broadcast(RequestPartialTransactionPayload payload)
         {
             this.logger.LogTrace("({0}:'{1}',{2}:'{3}',{4}:'{5}')", nameof(payload.BossCard), payload.BossCard, nameof(payload.Command), payload.Command, nameof(payload.SessionId), payload.SessionId);
-            if (federationGatewaySettings.FederationNodeIpEndPoints.Any(e => ipEndPointComparer.Equals(e, AttachedPeer.PeerEndPoint)))
+
+            if (federationGatewaySettings.FederationNodeIpEndPoints.Any(e => ipAddressComparer.Equals(e.Address, AttachedPeer.PeerEndPoint.Address)))
+            {
                 await this.AttachedPeer.SendMessageAsync(payload);
+            }
+
             this.logger.LogTrace("(-)");
         }
 

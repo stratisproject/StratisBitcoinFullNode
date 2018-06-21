@@ -97,7 +97,8 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Controllers
                     createCounterChainSessionRequest.SessionId,
                     createCounterChainSessionRequest.Amount,
                     createCounterChainSessionRequest.DestinationAddress);
-                return this.Json(result);
+                return this.Json(uint256.Zero); //todo: this is temp.
+                //return this.Json(result);
             }
             catch (Exception e)
             {
