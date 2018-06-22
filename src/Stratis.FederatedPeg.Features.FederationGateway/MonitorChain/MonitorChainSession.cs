@@ -39,7 +39,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
         public uint256 CounterChainTransactionId { get; private set; } = uint256.Zero;
 
         public MonitorChainSession(DateTime startTime, uint256 transactionHash, Money amount, string destinationAddress,
-            int blockNumber, Chain chain,  string[] federationPubKeys, string myPublicKey, int m, int n)
+            int blockNumber, string[] federationPubKeys, string myPublicKey)
         {
             this.Status = SessionStatus.Created;
             this.startTime = startTime;

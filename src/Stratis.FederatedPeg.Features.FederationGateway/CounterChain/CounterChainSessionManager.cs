@@ -93,7 +93,6 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.CounterChain
         ///<inheritdoc/>
         public void CreateSessionOnCounterChain(uint256 sessionId, Money amount, string destinationAddress)
         {
-            // TODO: This is inadequate.
             // We don't process sessions if our chain is not past IBD.
             if (this.initialBlockDownloadState.IsInitialBlockDownload())
             {
@@ -169,23 +168,23 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.CounterChain
             this.logger.LogTrace("({0}:'{1}',{2}:'{3}',{4}:'{5}')", nameof(sessionId), sessionId, nameof(amount), amount, nameof(destinationAddress), destinationAddress);
             this.logger.LogInformation("Session Registered.");
 
-            //// Check if this has already been done then we just return the transactionId
-            //if (this.sessions.TryGetValue(sessionId, out var counterchainSession))
-            //{
-            //    // This is the mechanism that tells the round robin not to continue and also
-            //    // notifies the monitorChain of the completed transactionId from the counterChain transaction.
-            //    if (counterchainSession.CounterChainTransactionId != uint256.Zero)
-            //    {
-            //        // If we get here:
-            //        // 1. One of the nodes became the boss and successfully broadcast a completed transaction.
-            //        // 2. The monitor in this node received the block with the transaction (identified by the sessionId in the op_return).
-            //        // 3. The monitor wrote the CounterChainTransactionId into the counterChainSession to indicate all was done.
-            //        // This method then does not try to process the transaction and instead signals to the monitorChain that this
-            //        // transaction already completed by passing back the transactionId.
-            //        this.logger.LogInformation($"Counterchain Session: {sessionId} was already completed. Doing nothing.");
-            //        return counterchainSession.CounterChainTransactionId;
-            //    }
-            //}
+            // Check if this has already been done then we just return the transactionId
+            if (this.sessions.TryGetValue(sessionId, out var counterchainSession))
+            {
+                // This is the mechanism that tells the round robin not to continue and also
+                // notifies the monitorChain of the completed transactionId from the counterChain transaction.
+                if (counterchainSession.CounterChainTransactionId != uint256.Zero)
+                {
+                    // If we get here:
+                    // 1. One of the nodes became the boss and successfully broadcast a completed transaction.
+                    // 2. The monitor in this node received the block with the transaction (identified by the sessionId in the op_return).
+                    // 3. The monitor wrote the CounterChainTransactionId into the counterChainSession to indicate all was done.
+                    // This method then does not try to process the transaction and instead signals to the monitorChain that this
+                    // transaction already completed by passing back the transactionId.
+                    this.logger.LogInformation($"Counterchain Session: {sessionId} was already completed. Doing nothing.");
+                    return counterchainSession.CounterChainTransactionId;
+                }
+            }
 
             // Check if the password has been added. If not, no need to go further.
             if (this.federationWalletManager.Secret == null || string.IsNullOrEmpty(this.federationWalletManager.Secret.WalletPassword))
@@ -205,7 +204,6 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.CounterChain
             this.logger.LogInformation("SessionId encoded bytes length = {0}.", sessionId.ToBytes().Length);
 
             // We are the Boss so first I build the multisig transaction template.
-            // TODO: The password is currently hardcoded here
             var multiSigContext = new TransactionBuildContext(
                 (new[] { new Recipient.Recipient { Amount = amount, ScriptPubKey = destination } }).ToList(),
                 this.federationWalletManager.Secret.WalletPassword, sessionId.ToBytes())
@@ -227,8 +225,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.CounterChain
 
             if (counterChainSession == null)
             {
-                this.logger.LogInformation("CounterChainSession is null, returning.");
-                return uint256.One;
+                throw new InvalidOperationException($"No CounterChainSession found in the counter chain for session id {sessionId}.");
             }
             this.MarkSessionAsSigned(counterChainSession);
             var partialTransaction = wallet.SignPartialTransaction(templateTransaction, this.federationWalletManager.Secret.WalletPassword);
@@ -256,7 +253,8 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.CounterChain
                 }
             }
             this.logger.LogTrace("(-)");
-            return uint256.One;
+            // We don't want to say this is complete yet.  We wait until we get the transaction back in a block.
+            return uint256.Zero;
         }
 
         ///<inheritdoc/>

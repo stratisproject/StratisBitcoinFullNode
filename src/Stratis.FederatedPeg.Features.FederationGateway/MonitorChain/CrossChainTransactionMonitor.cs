@@ -108,6 +108,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
             this.concurrentChain = concurrentChain;
             this.initialBlockDownloadState = initialBlockDownloadState;
             this.crossChainTransactionAuditor = crossChainTransactionAuditor;
+            this.counterChainSessionManager = counterChainSessionManager;
         }
 
         /// <inheritdoc />
@@ -150,11 +151,8 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
                         continue;
                     case OpReturnDataType.Hash:
                         var hash = uint256.Parse(stringResult);
-                        this.crossChainTransactionAuditor.AddCounterChainTransactionId(transaction.GetHash(), hash);
-                        this.crossChainTransactionAuditor.Commit();
-
-                        this.logger.LogInformation("AddCounterChainTransactionId: {0} for transaction {1}.", stringResult, transaction.GetHash());
-                        //this.counterChainSessionManager.AddCounterChainTransactionId(transaction.GetHash(), hash);
+                        this.logger.LogInformation("AddCounterChainTransactionId: {0} for transaction {1}.", transaction.GetHash(), hash);
+                        this.counterChainSessionManager.AddCounterChainTransactionId(hash, transaction.GetHash());
                         continue;
                     default:
                         throw new ArgumentOutOfRangeException();

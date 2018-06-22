@@ -1,4 +1,5 @@
 ﻿using System.Collections.Concurrent;
+using System.Linq;
 using NBitcoin;
 
 namespace Stratis.FederatedPeg.Features.FederationGateway
@@ -13,7 +14,6 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
         /// </summary>
         public int Count => this.CrossChainTransactionInfos.Count;
 
-        /// <summary>
         /// Construct the store.
         /// </summary>
         public JsonCrossChainTransactionStore()
@@ -38,16 +38,11 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
 
         public void AddCrossChainTransactionId(uint256 sessionId, uint256 crossChainTransactionId)
         {
-            //var crossChainTransactionInfo = this.GetCrossChainTransactionInfo(sessionId);
-            //crossChainTransactionInfo.CrossChainTransactionId = crossChainTransactionId;
-        }
-
-        private CrossChainTransactionInfo GetCrossChainTransactionInfo(uint256 sessionId)
-        {
-            foreach (var crossChainTransactionInfo in this.CrossChainTransactionInfos)
-                if (crossChainTransactionInfo.TransactionHash == sessionId)
-                    return crossChainTransactionInfo;
-            return null;
+            var crossChainTransactionInfo = this.CrossChainTransactionInfos.FirstOrDefault(c => c.TransactionHash == sessionId);
+            if (crossChainTransactionInfo != null)
+            {
+                crossChainTransactionInfo.CrossChainTransactionId = crossChainTransactionId;
+            }
         }
     }
 }
