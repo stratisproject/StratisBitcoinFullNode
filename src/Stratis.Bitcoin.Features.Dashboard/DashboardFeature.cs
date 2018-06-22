@@ -26,13 +26,10 @@ namespace Stratis.Bitcoin.Features.Dashboard
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName); 
         }
 
-        public override void LoadConfiguration()
-        {
-            this.apiSettings.Load(this.fullNode.Settings);
-        }
-
         public override void Initialize()
         {
+            this.apiSettings.Load(this.fullNode.Settings);
+
             Uri apiUri = this.apiSettings.ApiUri;
 
             this.host = new WebHostBuilder()
