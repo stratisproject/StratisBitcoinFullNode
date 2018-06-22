@@ -35,6 +35,12 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
             this.FederationPublicKeys = payToMultisigScriptParams.PubKeys;
 
             this.PublicKey = configReader.GetOrDefault<string>("publickey", null);
+
+            if (this.FederationPublicKeys.All(p => p != new PubKey(this.PublicKey)))
+            {
+                throw new ConfigurationException("Please make sure the public key passed as parameter was used to generate the multisig redeem script.");
+            }
+
             this.CounterChainApiPort = configReader.GetOrDefault("counterchainapiport", 0);
             this.FederationNodeIpEndPoints = configReader.GetOrDefault<string>("federationips", null)?.Split(',').Select(a => a.ToIPEndPoint(nodeSettings.Network.DefaultPort));
         }
