@@ -43,11 +43,14 @@ namespace Stratis.Bitcoin.Features.Wallet
 
         private readonly MemoryCache privateKeyCache;
 
+        private readonly StandardTransactionPolicy transactionPolicy;
+
         public WalletTransactionHandler(
             ILoggerFactory loggerFactory,
             IWalletManager walletManager,
             IWalletFeePolicy walletFeePolicy,
-            Network network)
+            Network network,
+            StandardTransactionPolicy transactionPolicy)
         {
             this.Network = network;
             this.walletManager = walletManager;
@@ -55,6 +58,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             this.coinType = (CoinType)network.Consensus.CoinType;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.privateKeyCache = new MemoryCache(new MemoryCacheOptions() { ExpirationScanFrequency = new TimeSpan(0, 1, 0) });
+            this.transactionPolicy = transactionPolicy;
         }
 
         /// <inheritdoc />
@@ -202,7 +206,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                 },
                 // Smart contract calls allow dust. Should be an option on TransactionBuildContext in future.
                 DustPrevention = false
-            };
+            }.SetTransactionPolicy(this.transactionPolicy);
 
             this.AddRecipients(context);
             this.AddOpReturnOutput(context);

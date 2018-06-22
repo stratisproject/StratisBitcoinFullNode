@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using Microsoft.Extensions.DependencyInjection;
 using NBitcoin;
+using NBitcoin.Policy;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Builder.Feature;
 using Stratis.Bitcoin.Configuration;
@@ -183,6 +184,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                         services.AddSingleton<IBroadcasterManager, FullNodeBroadcasterManager>();
                         services.AddSingleton<BroadcasterBehavior>();
                         services.AddSingleton<WalletSettings>();
+                        services.AddSingleton<StandardTransactionPolicy>();
                     });
             });
 
