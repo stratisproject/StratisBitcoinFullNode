@@ -253,7 +253,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 
         private ChainedHeader MakeNext(ChainedHeader previous, Network network)
         {
-            BlockHeader header = previous.Header.Clone();
+            BlockHeader header = BlockHeader.Load(previous.Header.ToBytes(network.Consensus.ConsensusFactory), network);
             header.HashPrevBlock = previous.HashBlock;
             return new ChainedHeader(header, header.GetHash(), previous);
         }

@@ -649,7 +649,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
         public void ChainHasTwoCheckPoints_ChainCoveringOnlyFirstCheckPointIsPresented_ChainIsDiscardedUpUntilFirstCheckpoint()
         {
             // Chain header tree setup.
-            // Initial chain has 2 blocks.
+            // Initial chain has 2 headers.
             // Example: h1=h2.
             const int initialChainSize = 2;
             const int currentChainExtension = 6;
@@ -705,7 +705,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
         public void ChainHasAssumeValidHeaderAndMarkedForDownloadWhenPresented_SecondChainWithoutAssumeValidAlsoMarkedForDownload()
         {
             // Chain header tree setup with disabled checkpoints.
-            // Initial chain has 2 blocks.
+            // Initial chain has 2 headers.
             // Example: h1=h2.
             const int initialChainSize = 2;
             TestContext ctx = new TestContextBuilder().WithInitialChain(initialChainSize).UseCheckpoints(false).Build();
@@ -745,7 +745,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
         public void ChainHasOneCheckPointAndAssumeValid_TwoAlternativeChainsArePresented_BothChainsAreMarkedForDownload()
         {
             // Chain header tree setup with disabled checkpoints.
-            // Initial chain has 2 blocks.
+            // Initial chain has 2 headers.
             // Example: h1=h2.
             const int initialChainSize = 2;
             const int extensionChainSize = 2;
@@ -801,7 +801,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
         public void ChainHasOneCheckPointAndAssumeValid_ChainsWithCheckpointButMissedAssumeValidIsPresented_BothChainsAreMarkedForDownload()
         {
             // Chain header tree setup with disabled checkpoints.
-            // Initial chain has 2 blocks.
+            // Initial chain has 2 headers.
             // Example: h1=h2.
             const int initialChainSize = 2;
             const int extensionChainSize = 2;
@@ -836,6 +836,30 @@ namespace Stratis.Bitcoin.Tests.Consensus
             ConnectNewHeadersResult result = cht.ConnectNewHeaders(2, listOfCurrentChainHeaders);
             result.DownloadFrom.HashBlock.Should().Be(listOfCurrentChainHeaders.Skip(2).First().GetHash());
             result.DownloadTo.HashBlock.Should().Be(listOfCurrentChainHeaders.Last().GetHash());
+        }
+
+        /// <summary>
+        /// Issue 21 @ FindHeaderAndVerifyBlockIntegrity called for some bogus block. Should throw because not connected.
+        /// </summary>
+        [Fact]
+        public void FindHeaderAndVerifyBlockIntegrityCalledForBogusBlock_ExceptionShouldBeThrown()
+        {
+            // Chain header tree setup. Initial chain has 4 headers.
+            // Example: h1=h2=h3=h4.
+            const int initialChainSize = 4;
+            const int extensionChainSize = 2;
+            TestContext ctx = new TestContextBuilder().WithInitialChain(initialChainSize).UseCheckpoints().Build();
+            ChainedHeaderTree cht = ctx.ChainedHeaderTree;
+            ChainedHeader initialChainTip = ctx.InitialChainTip;
+
+            // Extend chain with 2 more headers.
+            // Example: h1=h2=h3=h4=h5=h6.
+            initialChainTip = ctx.ExtendAChain(extensionChainSize, initialChainTip); 
+
+            // Call FindHeaderAndVerifyBlockIntegrity on the block from header 6.
+            // BlockDownloadedForMissingChainedHeaderException should be thrown.
+            Action verificationAction = () => cht.FindHeaderAndVerifyBlockIntegrity(initialChainTip.Block);
+            verificationAction.Should().Throw<BlockDownloadedForMissingChainedHeaderException>();
         }
     }
 }
