@@ -53,6 +53,10 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.MonitorChain
         // The time between sessions.
         private TimeSpan sessionRunInterval = new TimeSpan(hours: 0, minutes: 0, seconds: 30);
 
+        // The minimum transfer amount permissible.
+        // (Prevents spamming of network.)
+        private readonly Money MinimumTransferAmount = new Money(1.0m, MoneyUnit.BTC);
+
         // The logger.
         private readonly ILogger logger;
 
@@ -116,6 +120,13 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.MonitorChain
         public void CreateMonitorSession(CrossChainTransactionInfo crossChainTransactionInfo)
         {
             this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(crossChainTransactionInfo.CrossChainTransactionId), crossChainTransactionInfo.CrossChainTransactionId, nameof(crossChainTransactionInfo.DestinationAddress), crossChainTransactionInfo.DestinationAddress);
+
+            // Ignore sessions below the MinimumTransferAmount
+            if (crossChainTransactionInfo.Amount < MinimumTransferAmount)
+            {
+                this.logger.LogInformation($"Session {crossChainTransactionInfo.TransactionHash} is less than the MinimumTransferAmount.  Ignoring. ");
+                return;
+            }
 
             var monitorChainSession = new MonitorChainSession(
                 DateTime.Now,
@@ -277,3 +288,4 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.MonitorChain
         }
     }
 }
+
