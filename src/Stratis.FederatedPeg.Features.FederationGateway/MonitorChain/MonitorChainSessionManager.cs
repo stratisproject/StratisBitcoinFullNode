@@ -51,7 +51,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.MonitorChain
         private const int BlockSecurityDelay = 0;
 
         // The time between sessions.
-        private TimeSpan sessionRunInterval = new TimeSpan(hours: 0, minutes: 0, seconds: 30);
+        private readonly TimeSpan sessionRunInterval = new TimeSpan(hours: 0, minutes: 0, seconds: 30);
 
         // The minimum transfer amount permissible.
         // (Prevents spamming of network.)
@@ -67,22 +67,19 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.MonitorChain
         private Network network;
 
         // Settings from the config files. 
-        private FederationGatewaySettings federationGatewaySettings;
+        private readonly FederationGatewaySettings federationGatewaySettings;
 
         // Our monitor sessions.
-        private ConcurrentDictionary<uint256, MonitorChainSession> monitorSessions = new ConcurrentDictionary<uint256, MonitorChainSession>();
+        private readonly ConcurrentDictionary<uint256, MonitorChainSession> monitorSessions = new ConcurrentDictionary<uint256, MonitorChainSession>();
 
         // The IBD state.
-        private IInitialBlockDownloadState initialBlockDownloadState;
-
-        // A locker object.
-        private object locker = new object();
+        private readonly IInitialBlockDownloadState initialBlockDownloadState;
 
         // The blockchain.
-        private ConcurrentChain concurrentChain;
+        private readonly ConcurrentChain concurrentChain;
 
         // The auditor can capture the details of the transactions that the monitor discovers.
-        private ICrossChainTransactionAuditor crossChainTransactionAuditor;
+        private readonly ICrossChainTransactionAuditor crossChainTransactionAuditor;
 
         public MonitorChainSessionManager(
             ILoggerFactory loggerFactory,
@@ -134,15 +131,12 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.MonitorChain
                 crossChainTransactionInfo.Amount,
                 crossChainTransactionInfo.DestinationAddress,
                 crossChainTransactionInfo.BlockNumber,
-                this.network.ToChain(),
                 this.federationGatewaySettings.FederationPublicKeys.Select(f => f.ToHex()).ToArray(),
-                this.federationGatewaySettings.PublicKey,
-                this.federationGatewaySettings.MultiSigM,
-                this.federationGatewaySettings.MultiSigN
+                this.federationGatewaySettings.PublicKey
             );
 
             this.monitorSessions.TryAdd(monitorChainSession.SessionId, monitorChainSession);
-            this.logger.LogInformation($"MonitorChainSession added: {monitorChainSession}");
+            this.logger.LogInformation("MonitorChainSession added: {0}", monitorChainSession);
             
             // Call to the counter chain and tell it to also create a session.
             this.CreateSessionOnCounterChain(this.federationGatewaySettings.CounterChainApiPort,
@@ -195,7 +189,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.MonitorChain
             // We don't process sessions if our chain is not past IBD.
             if (this.initialBlockDownloadState.IsInitialBlockDownload())
             {
-                this.logger.LogInformation($"RunSessionAsync() Monitor chain is in IBD exiting. Height:{this.concurrentChain.Height}.");
+                this.logger.LogInformation("RunSessionAsync() Monitor chain is in IBD exiting. Height:{0}.", this.concurrentChain.Height);
                 return;
             }
 
@@ -206,42 +200,60 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.MonitorChain
 
                 var time = DateTime.Now;
 
-                this.logger.LogInformation($"RunSessionAsync() MyBossCard:{monitorChainSession.BossCard}");
-                this.logger.LogInformation($"At {time} AmITheBoss: {monitorChainSession.AmITheBoss(time)} WhoHoldsTheBossCard: {monitorChainSession.WhoHoldsTheBossCard(time)}");
+                this.logger.LogInformation($"Session status: {0} with CounterChainTransactionId: {1}.", 
+                    monitorChainSession.Status, monitorChainSession.CounterChainTransactionId);
 
-                if (monitorChainSession.Status == SessionStatus.Created && monitorChainSession.AmITheBoss(time))
-                {
+                if (monitorChainSession.Status == SessionStatus.Completed) continue;
+                this.logger.LogInformation("RunSessionAsync() MyBossCard: {0}", monitorChainSession.BossCard);
+                this.logger.LogInformation("At {0} AmITheBoss: {1} WhoHoldsTheBossCard: {2}", 
+                    time, monitorChainSession.AmITheBoss(time), monitorChainSession.WhoHoldsTheBossCard(time));
+                    
+                if (!monitorChainSession.AmITheBoss(time) &&
+                    monitorChainSession.Status != SessionStatus.Requested) continue;
+
+                if (monitorChainSession.Status == SessionStatus.Created)
+                    // Session was newly created and I'm the boss so I start the process.
                     monitorChainSession.Status = SessionStatus.Requesting;
 
-                    this.logger.LogInformation($"RunSessionAsync() MyBossCard:{monitorChainSession.BossCard}");
-                    this.logger.LogInformation($"At {time} AmITheBoss: {monitorChainSession.AmITheBoss(time)} WhoHoldsTheBossCard: {monitorChainSession.WhoHoldsTheBossCard(time)}");
+                // We call this for an incomplete session whenever we become the boss.
+                // On the counterchain this will either start the process or just inform us
+                // the the session completed already (and give us the CounterChainTransactionId).
+                // We we were already the boss the status will bre Requested and we will Process
+                // to get the CounterChainTransactionId.
+                var result = await ProcessSessionOnCounterChain(
+                    this.federationGatewaySettings.CounterChainApiPort,
+                    monitorChainSession.Amount,
+                    monitorChainSession.DestinationAddress,
+                    monitorChainSession.SessionId).ConfigureAwait(false);
 
-                    // We can keep sending this session until we get a result.
-                    var result = await ProcessSessionOnCounterChain(
-                        this.federationGatewaySettings.CounterChainApiPort,
-                        monitorChainSession.Amount,
-                        monitorChainSession.DestinationAddress,
-                        monitorChainSession.SessionId).ConfigureAwait(false);
-
+                if (monitorChainSession.Status == SessionStatus.Requesting)
                     monitorChainSession.Status = SessionStatus.Requested;
 
-                    if (result != uint256.Zero)
-                    {
-                        monitorChainSession.Complete(result);
-                        this.logger.LogInformation($"RunSessionAsync() - Completing Session {result}.");
-                        //this.crossChainTransactionAuditor.AddCounterChainTransactionId(monitorChainSession.SessionId, result);
-                    }
+                if (result == uint256.One)
+                {
+                    monitorChainSession.Complete(result);
+                    this.logger.LogInformation("Session {0} failed.", monitorChainSession.SessionId);
+                    this.crossChainTransactionAuditor.AddCounterChainTransactionId(monitorChainSession.SessionId, result);
+                    this.crossChainTransactionAuditor.Commit();
                 }
+                else if (result != uint256.Zero)
+                {
+                    monitorChainSession.Complete(result);
+                    this.logger.LogInformation("RunSessionAsync() - Completing Session {0}.", result);
+                    this.crossChainTransactionAuditor.AddCounterChainTransactionId(monitorChainSession.SessionId, result);
+                    this.crossChainTransactionAuditor.Commit();
+                }
+
+                this.logger.LogInformation("Status: {0} with result: {1}.", monitorChainSession.Status, result);
             }
         }
 
         private bool IsBeyondBlockSecurityDelay(MonitorChainSession monitorChainSession)
         {
-            this.logger.LogInformation("IsBeyondBlockSecurityDelay()");
-            this.logger.LogInformation($"IsBeyondBlockSecurityDelay() SessionBlock: {monitorChainSession.BlockNumber}");
-            this.logger.LogInformation($"IsBeyondBlockSecurityDelay() BlockDelay: {BlockSecurityDelay}");
-            this.logger.LogInformation($"IsBeyondBlockSecurityDelay() Height: {this.concurrentChain.Tip.Height}");
-
+            this.logger.LogInformation("() Session started at block {0}, block security delay {1}, current block height{2}, waiting for {3} more blocks",
+                monitorChainSession.BlockNumber, BlockSecurityDelay, this.concurrentChain.Tip.Height, 
+                monitorChainSession.BlockNumber + BlockSecurityDelay - this.concurrentChain.Tip.Height );
+           
             return this.concurrentChain.Tip.Height >= (monitorChainSession.BlockNumber + BlockSecurityDelay);
         }
 
@@ -269,6 +281,11 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.MonitorChain
                 {
                     var httpResponseMessage = await client.PostAsync(uri, request);
                     this.logger.LogInformation("Response: {0}", await httpResponseMessage.Content.ReadAsStringAsync());
+
+                    if (httpResponseMessage.StatusCode == System.Net.HttpStatusCode.NotFound)
+                    {
+                        return uint256.One;
+                    }
 
                     if (httpResponseMessage.StatusCode != System.Net.HttpStatusCode.OK)
                     {

@@ -98,8 +98,13 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Controllers
                     createCounterChainSessionRequest.SessionId,
                     createCounterChainSessionRequest.Amount,
                     createCounterChainSessionRequest.DestinationAddress);
-                return this.Json(uint256.Zero); //todo: this is temp.
-                //return this.Json(result);
+                
+                return this.Json(result);
+            }
+            catch (InvalidOperationException e)
+            {
+                this.logger.LogError("Exception thrown calling /api/FederationGateway/process-session-oncounterchain: {0}.", e.Message);
+                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.NotFound, $"Could not create partial transaction session: {e.Message}", e.ToString());
             }
             catch (Exception e)
             {

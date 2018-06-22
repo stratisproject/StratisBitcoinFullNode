@@ -65,9 +65,9 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
             this.SaveCrossChainTransactionStore();
         }
 
-        public void AddCounterChainTransactionId(uint256 monitorTransactionHash, uint256 counterChainTransactionHash)
+        public void AddCounterChainTransactionId(uint256 sessionId, uint256 counterChainTransactionId)
         {
-            this.crossChainTransactionStore.AddCrossChainTransactionId(monitorTransactionHash, counterChainTransactionHash);
+            this.crossChainTransactionStore.AddCrossChainTransactionId(sessionId, counterChainTransactionId);
         }
 
         public void Dispose()
