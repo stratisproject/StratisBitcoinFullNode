@@ -187,6 +187,9 @@ namespace Stratis.Bitcoin.Consensus
         /// </summary>
         private readonly Dictionary<uint256, ChainedHeader> chainedHeadersByHash;
 
+        /// <summary><c>true</c> if block store feature is enabled.</summary>
+        private bool blockStoreAvailable;
+
         public ChainedHeaderTree(
             Network network,
             ILoggerFactory loggerFactory,
@@ -216,6 +219,8 @@ namespace Stratis.Bitcoin.Consensus
             this.logger.LogTrace("({0}:'{1}',{2}:{3})", nameof(consensusTip), consensusTip, nameof(blockStoreAvailable), blockStoreAvailable);
 
             ChainedHeader current = consensusTip;
+            this.blockStoreAvailable = blockStoreAvailable;
+
             while (current.Previous != null)
             {
                 current.Previous.Next.Add(current);
@@ -512,7 +517,10 @@ namespace Stratis.Bitcoin.Consensus
             while ((currentBlockToDeleteData.Block == null) || (currentBlockToDeleteData.Previous == null))
             {
                 currentBlockToDeleteData.Block = null;
-                this.logger.LogTrace("Block data for '{0}' was removed from memory.", currentBlockToDeleteData);
+                if (!this.blockStoreAvailable)
+                    currentBlockToDeleteData.BlockDataAvailability = BlockDataAvailabilityState.HeaderOnly;
+
+                this.logger.LogTrace("Block data for '{0}' was removed from memory, block data availability is {1}.", currentBlockToDeleteData, currentBlockToDeleteData.BlockDataAvailability);
 
                 currentBlockToDeleteData = currentBlockToDeleteData.Previous;
             }
@@ -869,7 +877,7 @@ namespace Stratis.Bitcoin.Consensus
                     break;
                 }
 
-                bool headerIsClaimedByPeer = this.peerIdsByTipHash.ContainsKey(chainedHeader.HashBlock);
+                bool headerIsClaimedByPeer = this.peerIdsByTipHash.ContainsKey(currentHeader.HashBlock);
                 if (headerIsClaimedByPeer)
                 {
                     this.logger.LogTrace("Header '{0}' is claimed by a peer and won't be removed.", currentHeader);
@@ -1028,6 +1036,7 @@ namespace Stratis.Bitcoin.Consensus
             var newChainedHeader = new ChainedHeader(currentBlockHeader, currentBlockHeader.GetHash(), previousChainedHeader);
 
             this.blockValidator.ValidateHeader(newChainedHeader);
+            newChainedHeader.BlockValidationState = ValidationState.HeaderValidated;
 
             previousChainedHeader.Next.Add(newChainedHeader);
             this.chainedHeadersByHash.Add(newChainedHeader.HashBlock, newChainedHeader);
