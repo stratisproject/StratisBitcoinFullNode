@@ -877,7 +877,7 @@ namespace Stratis.Bitcoin.Consensus
                     break;
                 }
 
-                bool headerIsClaimedByPeer = this.peerIdsByTipHash.ContainsKey(chainedHeader.HashBlock);
+                bool headerIsClaimedByPeer = this.peerIdsByTipHash.ContainsKey(currentHeader.HashBlock);
                 if (headerIsClaimedByPeer)
                 {
                     this.logger.LogTrace("Header '{0}' is claimed by a peer and won't be removed.", currentHeader);
@@ -1036,6 +1036,7 @@ namespace Stratis.Bitcoin.Consensus
             var newChainedHeader = new ChainedHeader(currentBlockHeader, currentBlockHeader.GetHash(), previousChainedHeader);
 
             this.blockValidator.ValidateHeader(newChainedHeader);
+            newChainedHeader.BlockValidationState = ValidationState.HeaderValidated;
 
             previousChainedHeader.Next.Add(newChainedHeader);
             this.chainedHeadersByHash.Add(newChainedHeader.HashBlock, newChainedHeader);
