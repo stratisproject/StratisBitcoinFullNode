@@ -16,6 +16,7 @@ namespace Stratis.Bitcoin.BlockPulling2
 {
     /// <summary>
     /// Thread-safe block puller which allows downloading blocks from all chains that the node is aware of.
+    /// </summary>
     /// <remarks>
     /// It implements relative quality scoring for peers that are used for delivering requested blocks.
     /// <para>
@@ -31,7 +32,6 @@ namespace Stratis.Bitcoin.BlockPulling2
     /// and delivered after that we will discard delivered block from this peer.
     /// </para>
     /// </remarks>
-    /// </summary>
     public class BlockPuller : IDisposable
     {
         /// <summary>Interval between checking if peers that were assigned important blocks didn't deliver the block.</summary>
@@ -48,7 +48,7 @@ namespace Stratis.Bitcoin.BlockPulling2
 
         /// <summary>The maximum time in seconds in which peer should deliver an assigned block.</summary>
         /// <remarks>If peer fails to deliver in that time his assignments will be released and the peer penalized.</remarks>
-        private const int MaxSecondsToDeliverBlock = 5;
+        private const int MaxSecondsToDeliverBlock = 30; //TODO change to target spacing / 3
 
         /// <summary>This affects quality score only. If the peer is too fast don't give him all the assignments in the world when not in IBD.</summary>
         private const int PeerSpeedLimitWhenNotInIBDBytesPerSec = 1024 * 1024;
@@ -133,6 +133,9 @@ namespace Stratis.Bitcoin.BlockPulling2
         /// <inheritdoc cref="IInitialBlockDownloadState"/>
         private readonly IInitialBlockDownloadState ibdState;
 
+        /// <inheritdoc cref="IDateTimeProvider"/>
+        private readonly IDateTimeProvider dateTimeProvider;
+
         /// <inheritdoc cref="random"/>
         private readonly Random random;
 
@@ -142,7 +145,7 @@ namespace Stratis.Bitcoin.BlockPulling2
         /// <summary>Loop that checks if peers failed to deliver important blocks in given time and penalizes them if they did.</summary>
         private Task stallingLoop;
 
-        public BlockPuller(OnBlockDownloadedCallback callback, ChainState chainState, IInitialBlockDownloadState ibdState, ProtocolVersion protocolVersion, LoggerFactory loggerFactory)
+        public BlockPuller(OnBlockDownloadedCallback callback, ChainState chainState, IInitialBlockDownloadState ibdState, ProtocolVersion protocolVersion, IDateTimeProvider dateTimeProvider, LoggerFactory loggerFactory)
         {
             this.reassignedJobsQueue = new Queue<DownloadJob>();
             this.downloadJobsQueue = new Queue<DownloadJob>();
@@ -173,6 +176,7 @@ namespace Stratis.Bitcoin.BlockPulling2
 
             this.OnDownloadedCallback = callback;
             this.chainState = chainState;
+            this.dateTimeProvider = dateTimeProvider;
             this.ibdState = ibdState;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
         }
@@ -640,7 +644,7 @@ namespace Stratis.Bitcoin.BlockPulling2
                         {
                             PeerId = peerId,
                             JobId = downloadJob.Id,
-                            AssignedTime = DateTime.UtcNow,
+                            AssignedTime = this.dateTimeProvider.GetUtcNow(),
                             BlockHeight = header.Height,
                             BlockHash = hashToAssign
                         });
@@ -701,7 +705,7 @@ namespace Stratis.Bitcoin.BlockPulling2
                         if (current.Value.BlockHeight > lastImportantHeight)
                             break;
                         
-                        double secondsPassed = (DateTime.UtcNow - current.Value.AssignedTime).TotalSeconds;
+                        double secondsPassed = (this.dateTimeProvider.GetUtcNow() - current.Value.AssignedTime).TotalSeconds;
 
                         if (secondsPassed < MaxSecondsToDeliverBlock)
                         {
@@ -754,9 +758,14 @@ namespace Stratis.Bitcoin.BlockPulling2
 
         /// <summary>
         /// Method which is called when <see cref="BlockPullerBehavior"/> receives a block.</summary>
+        /// <remarks>
+        /// This method is called for all blocks that were delivered. It is possible that block that wasn't requested
+        /// from that peer or from any peer at all is delivered, in that case the block will be ignored.
+        /// It is possible that block was reassigned from a peer who delivered it later, in that case it will be ignored from this peer.
+        /// </remarks>
         /// <param name="blockHash">The block hash.</param>
         /// <param name="block">The block.</param>
-        /// <param name="peerId">Id of a peer that delivered a block.</param>
+        /// <param name="peerId">ID of a peer that delivered a block.</param>
         public void PushBlock(uint256 blockHash, Block block, int peerId)
         {
             this.logger.LogTrace("({0}:'{1}',{2}:{3})", nameof(blockHash), blockHash, nameof(peerId), peerId);
@@ -770,24 +779,21 @@ namespace Stratis.Bitcoin.BlockPulling2
                     this.logger.LogTrace("(-)[WASNT_REQUESTED]");
                     return;
                 }
-            }
+                
+                if (assignedDownload.PeerId != peerId)
+                {
+                    this.logger.LogTrace("(-)[WRONG_PEER_DELIVERED]");
+                    return;
+                }
 
-            if (assignedDownload.PeerId != peerId)
-            {
-                this.logger.LogTrace("(-)[WRONG_PEER_DELIVERED]");
-                return;
+                this.RemoveAssignedDownloadLocked(blockHash);
             }
 
             lock (this.queueLock)
             {
-                lock (this.assignedLock)
-                {
-                    this.RemoveAssignedDownloadLocked(blockHash);
-                }
-
                 this.averageBlockSizeBytes.AddSample(block.BlockSize.Value);
 
-                double deliveredInSeconds = (DateTime.UtcNow - assignedDownload.AssignedTime).TotalSeconds;
+                double deliveredInSeconds = (this.dateTimeProvider.GetUtcNow() - assignedDownload.AssignedTime).TotalSeconds;
 
                 this.logger.LogTrace("Peer {0} delivered block '{1}' in {2} seconds.", assignedDownload.PeerId, blockHash, deliveredInSeconds);
 

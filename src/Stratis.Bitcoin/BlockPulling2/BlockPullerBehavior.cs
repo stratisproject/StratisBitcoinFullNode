@@ -144,7 +144,7 @@ namespace Stratis.Bitcoin.BlockPulling2
             this.logger.LogTrace("(-)");
         }
         
-        private async Task OnMessageReceivedAsync(INetworkPeer peer, IncomingMessage message)
+        private Task OnMessageReceivedAsync(INetworkPeer peer, IncomingMessage message)
         {
             this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(peer), peer.RemoteSocketEndpoint, nameof(message), message.Message.Command);
 
@@ -154,10 +154,11 @@ namespace Stratis.Bitcoin.BlockPulling2
 
                 this.logger.LogDebug("Block '{0}' delivered.", blockHash);
 
-                this.blockPuller.PushBlock(blockHash, block.Obj, this.AttachedPeer.Connection.Id);
+                this.blockPuller.PushBlock(blockHash, block.Obj, peer.Connection.Id);
             }
 
             this.logger.LogTrace("(-)");
+            return Task.CompletedTask;
         }
 
         /// <summary>Requests blocks from this peer.</summary>
