@@ -205,8 +205,9 @@ namespace Stratis.Bitcoin.Features.Wallet
                     GroupByScriptPubKey = context.UseAllInputs
                 },
                 // Smart contract calls allow dust. Should be an option on TransactionBuildContext in future.
-                DustPrevention = false
-            }.SetTransactionPolicy(this.transactionPolicy);
+                DustPrevention = context.DustPrevention,
+                StandardTransactionPolicy = this.transactionPolicy
+            };
 
             this.AddRecipients(context);
             this.AddOpReturnOutput(context);
@@ -430,6 +431,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             this.Sign = !string.IsNullOrEmpty(walletPassword);
             this.OpReturnData = opReturnData;
             this.UseAllInputs = true;
+            this.DustPrevention = true;
         }
 
         /// <summary>
@@ -538,6 +540,11 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// Whether to use all inputs, to preserve privacy, or use only enough to meet the required amount.
         /// </summary>
         public bool UseAllInputs { get; set; } 
+
+        /// <summary>
+        /// Used to discern whether the transaction builder should use dust prevention or not.
+        /// </summary>
+        public bool DustPrevention { get; set; }
     }
 
     /// <summary>

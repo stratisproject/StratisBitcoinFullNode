@@ -274,7 +274,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
                 ChangeAddress = senderAddress,
                 SelectedInputs = selectedInputs,
                 MinConfirmations = MinConfirmationsAllChecks,
-                UseAllInputs = false
+                UseAllInputs = false,
+                DustPrevention = false
             };
             
             try
@@ -327,7 +328,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
                 ChangeAddress = senderAddress,
                 SelectedInputs = selectedInputs,
                 MinConfirmations = MinConfirmationsAllChecks,
-                UseAllInputs = false
+                UseAllInputs = false,
+                DustPrevention = false
             };
 
             try
