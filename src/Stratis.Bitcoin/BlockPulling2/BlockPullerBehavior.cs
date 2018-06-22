@@ -91,8 +91,8 @@ namespace Stratis.Bitcoin.BlockPulling2
             this.averageDelaySeconds.AddSample(delaySeconds);
             
             this.SpeedBytesPerSecond = (int)(this.averageSizeBytes.Average / this.averageDelaySeconds.Average);
-
-            this.logger.LogTrace("()");
+            
+            this.logger.LogTrace("(-):{0}={1}", nameof(this.SpeedBytesPerSecond), this.SpeedBytesPerSecond);
         }
 
         /// <summary>Applies a penalty to a peer for not delivering a block.</summary>

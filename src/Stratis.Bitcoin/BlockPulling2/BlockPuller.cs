@@ -51,7 +51,7 @@ namespace Stratis.Bitcoin.BlockPulling2
         private const int MaxSecondsToDeliverBlock = 30; //TODO change to target spacing / 3
 
         /// <summary>This affects quality score only. If the peer is too fast don't give him all the assignments in the world when not in IBD.</summary>
-        private const int PeerSpeedLimitWhenNotInIBDBytesPerSec = 1024 * 1024;
+        private const int PeerSpeedLimitWhenNotInIbdBytesPerSec = 1024 * 1024;
         
         /// <param name="blockHash">Hash of the delivered block.</param>
         /// <param name="block">The block.</param>
@@ -90,9 +90,13 @@ namespace Stratis.Bitcoin.BlockPulling2
         private readonly Dictionary<int, BlockPullerBehavior> pullerBehaviorsByPeerId;
 
         private readonly CancellationTokenSource cancellationSource;
-        
-        /// <remarks>This object has to be protected by<see cref="queueLock"/>.</remarks>
+
+        /// <summary>The average block size in bytes calculated used up to <see cref="AverageBlockSizeSamplesCount"/> most recent samples.</summary>
+        /// <remarks>This object has to be protected by <see cref="queueLock" />.</remarks>
         private readonly AverageCalculator averageBlockSizeBytes;
+
+        /// <summary>Amount of samples that should be used for average block size calculation.</summary>
+        private const int AverageBlockSizeSamplesCount = 1000;
 
         /// <summary>Signaler that triggers <see cref="reassignedJobsQueue"/> and <see cref="downloadJobsQueue"/> processing when set.</summary>
         /// <remarks>This object has to be protected by <see cref="queueLock"/>.</remarks>
@@ -121,6 +125,10 @@ namespace Stratis.Bitcoin.BlockPulling2
         /// <remarks>This object has to be protected by <see cref="queueLock"/>.</remarks>
         private int maxBlocksBeingDownloaded;
 
+        /// <summary><c>true</c> if node is in IBD.</summary>
+        /// <remarks>This object has to be protected by <see cref="peerLock"/>.</remarks>
+        private bool isIbd;
+
         /// <inheritdoc cref="ILogger"/>
         private readonly ILogger logger;
 
@@ -129,10 +137,7 @@ namespace Stratis.Bitcoin.BlockPulling2
 
         /// <inheritdoc cref="NetworkPeerRequirement"/>
         private readonly NetworkPeerRequirement networkPeerRequirement;
-
-        /// <inheritdoc cref="IInitialBlockDownloadState"/>
-        private readonly IInitialBlockDownloadState ibdState;
-
+        
         /// <inheritdoc cref="IDateTimeProvider"/>
         private readonly IDateTimeProvider dateTimeProvider;
 
@@ -145,7 +150,7 @@ namespace Stratis.Bitcoin.BlockPulling2
         /// <summary>Loop that checks if peers failed to deliver important blocks in given time and penalizes them if they did.</summary>
         private Task stallingLoop;
 
-        public BlockPuller(OnBlockDownloadedCallback callback, ChainState chainState, IInitialBlockDownloadState ibdState, ProtocolVersion protocolVersion, IDateTimeProvider dateTimeProvider, LoggerFactory loggerFactory)
+        public BlockPuller(OnBlockDownloadedCallback callback, ChainState chainState, ProtocolVersion protocolVersion, IDateTimeProvider dateTimeProvider, LoggerFactory loggerFactory)
         {
             this.reassignedJobsQueue = new Queue<DownloadJob>();
             this.downloadJobsQueue = new Queue<DownloadJob>();
@@ -154,7 +159,7 @@ namespace Stratis.Bitcoin.BlockPulling2
             this.sortedAssignedDownloads = new LinkedList<AssignedDownload>();
             this.assignedHashesByPeerId = new Dictionary<int, List<uint256>>();
 
-            this.averageBlockSizeBytes = new AverageCalculator(1000);
+            this.averageBlockSizeBytes = new AverageCalculator(AverageBlockSizeSamplesCount);
             
             this.pullerBehaviorsByPeerId = new Dictionary<int, BlockPullerBehavior>();
             this.headersByHash = new Dictionary<uint256, ChainedHeader>();
@@ -177,7 +182,6 @@ namespace Stratis.Bitcoin.BlockPulling2
             this.OnDownloadedCallback = callback;
             this.chainState = chainState;
             this.dateTimeProvider = dateTimeProvider;
-            this.ibdState = ibdState;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
         }
 
@@ -217,6 +221,8 @@ namespace Stratis.Bitcoin.BlockPulling2
             {
                 foreach (BlockPullerBehavior blockPullerBehavior in this.pullerBehaviorsByPeerId.Values)
                     blockPullerBehavior.OnIbdStateChanged(isIbd);
+
+                this.isIbd = isIbd;
             }
 
             this.logger.LogTrace("(-)");
@@ -775,9 +781,11 @@ namespace Stratis.Bitcoin.BlockPulling2
             {
                 if (!this.assignedDownloads.TryGetValue(blockHash, out assignedDownload))
                 {
-                    this.logger.LogTrace("(-)[WASNT_REQUESTED]");
+                    this.logger.LogTrace("(-)[BLOCK_NOT_REQUESTED]");
                     return;
                 }
+
+                this.logger.LogTrace("Assignment '{0}' for peer ID {1} was delivered by peer ID {2}.", blockHash, assignedDownload.PeerId, peerId);
                 
                 if (assignedDownload.PeerId != peerId)
                 {
@@ -788,23 +796,22 @@ namespace Stratis.Bitcoin.BlockPulling2
                 this.RemoveAssignedDownloadLocked(blockHash);
             }
 
+            double deliveredInSeconds = (this.dateTimeProvider.GetUtcNow() - assignedDownload.AssignedTime).TotalSeconds;
+            this.logger.LogTrace("Peer {0} delivered block '{1}' in {2} seconds.", assignedDownload.PeerId, blockHash, deliveredInSeconds);
+
+            lock (this.peerLock)
+            {
+                // Add peer sample.
+                BlockPullerBehavior pullerBehavior = this.pullerBehaviorsByPeerId[peerId];
+                pullerBehavior.AddSample(block.BlockSize.Value, deliveredInSeconds);
+
+                // Recalculate quality score.
+                this.RecalculateQuealityScoreLocked(pullerBehavior, peerId);
+            }
+
             lock (this.queueLock)
             {
                 this.averageBlockSizeBytes.AddSample(block.BlockSize.Value);
-
-                double deliveredInSeconds = (this.dateTimeProvider.GetUtcNow() - assignedDownload.AssignedTime).TotalSeconds;
-
-                this.logger.LogTrace("Peer {0} delivered block '{1}' in {2} seconds.", assignedDownload.PeerId, blockHash, deliveredInSeconds);
-
-                lock (this.peerLock)
-                {
-                    // Add peer sample.
-                    BlockPullerBehavior pullerBehavior = this.pullerBehaviorsByPeerId[peerId];
-                    pullerBehavior.AddSample(block.BlockSize.Value, deliveredInSeconds);
-
-                    // Recalculate quality score.
-                    this.RecalculateQuealityScoreLocked(pullerBehavior, peerId);
-                }
 
                 this.RecalculateMaxBlocksBeingDownloadedLocked();
 
@@ -812,7 +819,6 @@ namespace Stratis.Bitcoin.BlockPulling2
 
                 this.processQueuesSignal.Set();
             }
-        
 
             this.OnDownloadedCallback(blockHash, block);
 
@@ -831,8 +837,8 @@ namespace Stratis.Bitcoin.BlockPulling2
             int bestSpeed = this.pullerBehaviorsByPeerId.Max(x => x.Value.SpeedBytesPerSecond);
 
             int adjustedBestSpeed = bestSpeed;
-            if (this.ibdState.IsInitialBlockDownload() && (adjustedBestSpeed > PeerSpeedLimitWhenNotInIBDBytesPerSec))
-                adjustedBestSpeed = PeerSpeedLimitWhenNotInIBDBytesPerSec;
+            if (!this.isIbd && (adjustedBestSpeed > PeerSpeedLimitWhenNotInIbdBytesPerSec))
+                adjustedBestSpeed = PeerSpeedLimitWhenNotInIbdBytesPerSec;
 
             if (pullerBehavior.SpeedBytesPerSecond != bestSpeed)
             {
@@ -941,16 +947,16 @@ namespace Stratis.Bitcoin.BlockPulling2
             //TODO: do that when component is activated.
 
             /*
-             just for logging, only IBD)
-	            show: // Show it as a part of nodestats, not separated spammer
-		            avg download speed 
-		            peer quality score (sort by quality score) 
-		            number of assigned blocks
-		            MaxBlocksBeingDownloaded
-		            amount of blocks being downloaded
-		            show actual speed (no 1mb limit)
-             */
-
+            just for logging
+	        show it as a part of nodestats, not separated spammer:
+		        avg download speed 
+		        peer quality score (sort by quality score) 
+		        number of assigned blocks
+		        MaxBlocksBeingDownloaded
+		        amount of blocks being downloaded
+		        show actual speed (no 1mb limit)
+            */
+            
             this.logger.LogTrace("(-)");
         }
         
