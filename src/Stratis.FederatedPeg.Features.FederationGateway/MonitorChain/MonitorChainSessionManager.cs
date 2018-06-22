@@ -257,6 +257,14 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.MonitorChain
                 try
                 {
                     var httpResponseMessage = await client.PostAsync(uri, request);
+                    this.logger.LogInformation("Response: {0}", await httpResponseMessage.Content.ReadAsStringAsync());
+
+                    if (httpResponseMessage.StatusCode != System.Net.HttpStatusCode.OK)
+                    {
+                        this.logger.LogError("Error occurred when calling /api/FederationGateway/process-session-oncounterchain: {0}-{1}", httpResponseMessage.StatusCode, httpResponseMessage.ToString());
+                        return uint256.Zero;
+                    }
+
                     string json = await httpResponseMessage.Content.ReadAsStringAsync();
                     return JsonConvert.DeserializeObject<uint256>(json, new UInt256JsonConverter());
                 }

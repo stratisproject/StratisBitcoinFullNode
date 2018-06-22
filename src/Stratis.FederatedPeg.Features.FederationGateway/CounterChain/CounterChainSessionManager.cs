@@ -7,6 +7,7 @@ using NBitcoin;
 using Stratis.Bitcoin;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Connection;
+using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.P2P.Peer;
@@ -165,8 +166,8 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.CounterChain
         public async Task<uint256> ProcessCounterChainSession(uint256 sessionId, Money amount, string destinationAddress)
         {
             //todo this method is doing too much. factor some of this into private methods after we added the counterchainid.
-            this.logger.LogTrace("({0}:'{1}',{2}:'{3}',{4}:'{5}')", nameof(sessionId), sessionId, nameof(amount), amount, nameof(destinationAddress), destinationAddress);            
-            this.logger.LogInformation("ProcessCounterChainSession: Session Registered.");
+            this.logger.LogTrace("({0}:'{1}',{2}:'{3}',{4}:'{5}')", nameof(sessionId), sessionId, nameof(amount), amount, nameof(destinationAddress), destinationAddress);
+            this.logger.LogInformation("Session Registered.");
 
             //// Check if this has already been done then we just return the transactionId
             //if (this.sessions.TryGetValue(sessionId, out var counterchainSession))
@@ -185,6 +186,14 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.CounterChain
             //        return counterchainSession.CounterChainTransactionId;
             //    }
             //}
+
+            // Check if the password has been added. If not, no need to go further.
+            if (this.federationWalletManager.Secret == null || string.IsNullOrEmpty(this.federationWalletManager.Secret.WalletPassword))
+            {
+                string errorMessage = "The password needed for signing multisig transactions is missing.";
+                this.logger.LogError(errorMessage);
+                throw new WalletException(errorMessage);
+            }
 
             //create the partial transaction template
             var wallet = this.federationWalletManager.GetWallet();
