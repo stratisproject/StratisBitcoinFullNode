@@ -1,23 +1,21 @@
 ﻿using System;
-using System.Globalization;
-using System.IO;
 using System.Linq;
-using System.Net.Http;
+using DBreeze.DataTypes;
 using Microsoft.Extensions.Logging;
-using Moq;
 using NBitcoin;
 using NBitcoin.BitcoinCore;
 using NBitcoin.Crypto;
 using NBitcoin.DataEncoders;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Base.Deployments;
-using Stratis.Bitcoin.BlockPulling;
-using Stratis.Bitcoin.Configuration;
+using Stratis.Bitcoin.Consensus;
+using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
-using Stratis.Bitcoin.Features.Consensus.Rules;
 using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
-using Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers;
+using Stratis.Bitcoin.IntegrationTests.Common;
+using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
+using Stratis.Bitcoin.Tests.Common;
 using Stratis.Bitcoin.Utilities;
 using Xunit;
 using static NBitcoin.Transaction;
@@ -45,16 +43,16 @@ namespace Stratis.Bitcoin.IntegrationTests
         [Fact]
         public void TestDBreezeSerialization()
         {
-            using (NodeContext ctx = NodeContext.Create())
+            using (NodeContext ctx = NodeContext.Create(this))
             {
-                var genesis = ctx.Network.GetGenesis();
+                Block genesis = ctx.Network.GetGenesis();
                 var genesisChainedHeader = new ChainedHeader(genesis.Header, ctx.Network.GenesisHash ,0);
-                var chained = this.MakeNext(genesisChainedHeader, ctx.Network);
+                ChainedHeader chained = this.MakeNext(genesisChainedHeader, ctx.Network);
                 ctx.PersistentCoinView.SaveChangesAsync(new UnspentOutputs[] { new UnspentOutputs(genesis.Transactions[0].GetHash(), new Coins(genesis.Transactions[0], 0)) }, null, genesisChainedHeader.HashBlock, chained.HashBlock).Wait();
                 Assert.NotNull(ctx.PersistentCoinView.FetchCoinsAsync(new[] { genesis.Transactions[0].GetHash() }).Result.UnspentOutputs[0]);
                 Assert.Null(ctx.PersistentCoinView.FetchCoinsAsync(new[] { new uint256() }).Result.UnspentOutputs[0]);
 
-                var previous = chained;
+                ChainedHeader previous = chained;
                 chained = this.MakeNext(this.MakeNext(genesisChainedHeader, ctx.Network), ctx.Network);
                 chained = this.MakeNext(this.MakeNext(genesisChainedHeader, ctx.Network), ctx.Network);
                 ctx.PersistentCoinView.SaveChangesAsync(new UnspentOutputs[0], null, previous.HashBlock, chained.HashBlock).Wait();
@@ -69,11 +67,11 @@ namespace Stratis.Bitcoin.IntegrationTests
         [Fact]
         public void TestCacheCoinView()
         {
-            using (NodeContext ctx = NodeContext.Create())
+            using (NodeContext ctx = NodeContext.Create(this))
             {
-                var genesis = ctx.Network.GetGenesis();
+                Block genesis = ctx.Network.GetGenesis();
                 var genesisChainedHeader = new ChainedHeader(genesis.Header, ctx.Network.GenesisHash, 0);
-                var chained = this.MakeNext(genesisChainedHeader, ctx.Network);
+                ChainedHeader chained = this.MakeNext(genesisChainedHeader, ctx.Network);
                 var cacheCoinView = new CachedCoinView(ctx.PersistentCoinView, DateTimeProvider.Default, this.loggerFactory);
 
                 cacheCoinView.SaveChangesAsync(new UnspentOutputs[] { new UnspentOutputs(genesis.Transactions[0].GetHash(), new Coins(genesis.Transactions[0], 0)) }, null, genesisChainedHeader.HashBlock, chained.HashBlock).Wait();
@@ -103,16 +101,16 @@ namespace Stratis.Bitcoin.IntegrationTests
         [Fact]
         public void CanRewind()
         {
-            using (NodeContext ctx = NodeContext.Create())
+            using (NodeContext ctx = NodeContext.Create(this))
             {
                 var cacheCoinView = new CachedCoinView(ctx.PersistentCoinView, DateTimeProvider.Default, this.loggerFactory);
                 var tester = new CoinViewTester(cacheCoinView);
 
-                var coins = tester.CreateCoins(5);
-                var coin = tester.CreateCoins(1);
+                Coin[] coins = tester.CreateCoins(5);
+                Coin[] coin = tester.CreateCoins(1);
 
                 // 1
-                var h1 = tester.NewBlock();
+                uint256 h1 = tester.NewBlock();
                 cacheCoinView.FlushAsync().Wait();
                 Assert.True(tester.Exists(coins[2]));
                 Assert.True(tester.Exists(coin[0]));
@@ -124,7 +122,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 //3
                 tester.NewBlock();
                 //4
-                var coin2 = tester.CreateCoins(1);
+                Coin[] coin2 = tester.CreateCoins(1);
                 tester.NewBlock();
                 Assert.True(tester.Exists(coins[0]));
                 Assert.True(tester.Exists(coin2[0]));
@@ -139,7 +137,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 tester.Spend(coins[2]);
                 tester.Spend(coin[0]);
                 //2
-                var h2 = tester.NewBlock();
+                uint256 h2 = tester.NewBlock();
                 cacheCoinView.FlushAsync().Wait();
                 Assert.False(tester.Exists(coins[2]));
                 Assert.False(tester.Exists(coin[0]));
@@ -149,7 +147,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 Assert.True(tester.Exists(coins[2]));
                 Assert.True(tester.Exists(coin[0]));
 
-                var coins2 = tester.CreateCoins(7);
+                Coin[] coins2 = tester.CreateCoins(7);
                 tester.Spend(coins2[0]);
                 coin2 = tester.CreateCoins(1);
                 tester.Spend(coin2[0]);
@@ -173,15 +171,15 @@ namespace Stratis.Bitcoin.IntegrationTests
         [Fact]
         public void CanHandleReorgs()
         {
-            using (NodeBuilder builder = NodeBuilder.Create())
+            using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                var stratisNode = builder.CreateStratisPowNode();
-                var coreNode1 = builder.CreateBitcoinCoreNode();
-                var coreNode2 = builder.CreateBitcoinCoreNode();
+                CoreNode stratisNode = builder.CreateStratisPowNode();
+                CoreNode coreNode1 = builder.CreateBitcoinCoreNode();
+                CoreNode coreNode2 = builder.CreateBitcoinCoreNode();
                 builder.StartAll();
 
                 //Core1 discovers 10 blocks, sends to stratis
-                var tip = coreNode1.FindBlock(10).Last();
+                Block tip = coreNode1.FindBlock(10).Last();
                 stratisNode.CreateRPCClient().AddNode(coreNode1.Endpoint, true);
                 TestHelper.WaitLoop(() => stratisNode.CreateRPCClient().GetBestBlockHash() == coreNode1.CreateRPCClient().GetBestBlockHash());
                 stratisNode.CreateRPCClient().RemoveNode(coreNode1.Endpoint);
@@ -213,7 +211,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         [Fact]
         public void TestDBreezeInsertOrder()
         {
-            using (NodeContext ctx = NodeContext.Create())
+            using (NodeContext ctx = NodeContext.Create(this))
             {
                 using (var engine = new DBreeze.DBreezeEngine(ctx.FolderName + "/2"))
                 {
@@ -231,18 +229,18 @@ namespace Stratis.Bitcoin.IntegrationTests
                     };
                     Array.Sort(data, new UInt256Comparer());
 
-                    using (var tx = engine.GetTransaction())
+                    using (DBreeze.Transactions.Transaction tx = engine.GetTransaction())
                     {
-                        foreach (var d in data)
+                        foreach (uint256 d in data)
                             tx.Insert("Table", d.ToBytes(false), d.ToBytes());
                         tx.Commit();
                     }
 
                     var data2 = new uint256[data.Length];
-                    using (var tx = engine.GetTransaction())
+                    using (DBreeze.Transactions.Transaction tx = engine.GetTransaction())
                     {
                         int i = 0;
-                        foreach (var row in tx.SelectForward<byte[], byte[]>("Table"))
+                        foreach (Row<byte[], byte[]> row in tx.SelectForward<byte[], byte[]>("Table"))
                         {
                             data2[i++] = new uint256(row.Key, false);
                         }
@@ -255,7 +253,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 
         private ChainedHeader MakeNext(ChainedHeader previous, Network network)
         {
-            var header = previous.Header.Clone();
+            BlockHeader header = BlockHeader.Load(previous.Header.ToBytes(network.Consensus.ConsensusFactory), network);
             header.HashPrevBlock = previous.HashBlock;
             return new ChainedHeader(header, header.GetHash(), previous);
         }
@@ -263,15 +261,13 @@ namespace Stratis.Bitcoin.IntegrationTests
         [Fact]
         public void CanSaveChainIncrementally()
         {
-            using (var dir = TestDirectory.Create())
-            {
-                using (var repo = new ChainRepository(dir.FolderName))
+                using (var repo = new ChainRepository(TestBase.CreateTestDir(this), this.loggerFactory))
                 {
                     var chain = new ConcurrentChain(Network.RegTest);
                     repo.LoadAsync(chain).GetAwaiter().GetResult();
                     Assert.True(chain.Tip == chain.Genesis);
                     chain = new ConcurrentChain(Network.RegTest);
-                    var tip = this.AppendBlock(chain);
+                    ChainedHeader tip = this.AppendBlock(chain);
                     repo.SaveAsync(chain).GetAwaiter().GetResult();
                     var newChain = new ConcurrentChain(Network.RegTest);
                     repo.LoadAsync(newChain).GetAwaiter().GetResult();
@@ -282,14 +278,13 @@ namespace Stratis.Bitcoin.IntegrationTests
                     repo.LoadAsync(newChain).GetAwaiter().GetResult();
                     Assert.Equal(tip, newChain.Tip);
                 }
-            }
         }
 
         public ChainedHeader AppendBlock(ChainedHeader previous, params ConcurrentChain[] chains)
         {
             ChainedHeader last = null;
-            var nonce = RandomUtils.GetUInt32();
-            foreach (var chain in chains)
+            uint nonce = RandomUtils.GetUInt32();
+            foreach (ConcurrentChain chain in chains)
             {
                 var block = new Block();
                 block.AddTransaction(new Transaction());
@@ -308,23 +303,10 @@ namespace Stratis.Bitcoin.IntegrationTests
             return this.AppendBlock(index, chains);
         }
 
-        private byte[] GetFile(string fileName, string url)
-        {
-            fileName = Path.Combine("TestData", fileName);
-            if (File.Exists(fileName))
-                return File.ReadAllBytes(fileName);
-
-            HttpClient client = new HttpClient();
-            client.Timeout = TimeSpan.FromMinutes(10);
-            var data = client.GetByteArrayAsync(url).Result;
-            File.WriteAllBytes(fileName, data);
-            return data;
-        }
-
         [Fact]
         public void CanCheckBlockWithWitness()
         {
-            var block = Block.Load(Encoders.Hex.DecodeData("000000202f6f6a130549473222411b5c6f54150d63b32aadf10e57f7d563cfc7010000001e28204471ef9ef11acd73543894a96a3044932b85e99889e731322a8ec28a9f9ae9fc56ffff011d0011b40202010000000001010000000000000000000000000000000000000000000000000000000000000000ffffffff2c028027266a24aa21a9ed09154465f26a2a4144739eba3e83b3e9ae6a1f69566eae7dc3747d48f1183779010effffffff0250b5062a0100000023210263ed47e995cbbf1bc560101e3b76c6bdb1b094a185450cea533781ce598ff2b6ac0000000000000000266a24aa21a9ed09154465f26a2a4144739eba3e83b3e9ae6a1f69566eae7dc3747d48f1183779012000000000000000000000000000000000000000000000000000000000000000000000000001000000000101cecd90cd38ac6858c47f2fe9f28145d6e18f9c5abc7ef1a41e2f19e6fe0362580100000000ffffffff0130b48d06000000001976a91405481b7f1d90c5a167a15b00e8af76eb6984ea5988ac0247304402206104c335e4adbb920184957f9f710b09de17d015329fde6807b9d321fd2142db02200b24ad996b4aa4ff103000348b5ad690abfd9fddae546af9e568394ed4a83113012103a65786c1a48d4167aca08cf6eb8eed081e13f45c02dc6000fd8f3bb16242579a00000000"), Network.Main);
+            Block block = Block.Load(Encoders.Hex.DecodeData("000000202f6f6a130549473222411b5c6f54150d63b32aadf10e57f7d563cfc7010000001e28204471ef9ef11acd73543894a96a3044932b85e99889e731322a8ec28a9f9ae9fc56ffff011d0011b40202010000000001010000000000000000000000000000000000000000000000000000000000000000ffffffff2c028027266a24aa21a9ed09154465f26a2a4144739eba3e83b3e9ae6a1f69566eae7dc3747d48f1183779010effffffff0250b5062a0100000023210263ed47e995cbbf1bc560101e3b76c6bdb1b094a185450cea533781ce598ff2b6ac0000000000000000266a24aa21a9ed09154465f26a2a4144739eba3e83b3e9ae6a1f69566eae7dc3747d48f1183779012000000000000000000000000000000000000000000000000000000000000000000000000001000000000101cecd90cd38ac6858c47f2fe9f28145d6e18f9c5abc7ef1a41e2f19e6fe0362580100000000ffffffff0130b48d06000000001976a91405481b7f1d90c5a167a15b00e8af76eb6984ea5988ac0247304402206104c335e4adbb920184957f9f710b09de17d015329fde6807b9d321fd2142db02200b24ad996b4aa4ff103000348b5ad690abfd9fddae546af9e568394ed4a83113012103a65786c1a48d4167aca08cf6eb8eed081e13f45c02dc6000fd8f3bb16242579a00000000"), Network.Main);
 
             var consensusFlags = new DeploymentFlags
             {
@@ -335,24 +317,18 @@ namespace Stratis.Bitcoin.IntegrationTests
 
             var context = new RuleContext
             {
-                BestBlock = new ContextBlockInformation
-                {
-                    MedianTimePast = DateTimeOffset.Parse("2016-03-31T09:02:19+00:00", CultureInfo.InvariantCulture),
-                    Height = 10111
-                },
+                ConsensusTipHeight = 10111,
                 NextWorkRequired = block.Header.Bits,
                 Time = DateTimeOffset.UtcNow,
-                BlockValidationContext = new BlockValidationContext { Block = block },
+                ValidationContext = new ValidationContext { Block = block },
                 Flags = consensusFlags,
             };
 
             Network.Main.Consensus.Options = new PowConsensusOptions();
             context.Consensus = Network.Main.Consensus;
-            ConsensusSettings consensusSettings = new ConsensusSettings().Load(NodeSettings.Default());
-            var validator = new PowConsensusValidator(Network.Main, new Checkpoints(Network.Main, consensusSettings), DateTimeProvider.Default, this.loggerFactory);
             new WitnessCommitmentsRule().RunAsync(context).GetAwaiter().GetResult();
 
-            CheckPowTransactionRule rule = new CheckPowTransactionRule();
+            var rule = new CheckPowTransactionRule();
             var options = Network.Main.Consensus.Option<PowConsensusOptions>();
             foreach (Transaction tx in block.Transactions)
                 rule.CheckTransaction(Network.Main, options, tx);

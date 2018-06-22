@@ -64,7 +64,7 @@ namespace NBitcoin.BouncyCastle.Crypto.Signers
                 this.key = (ECPublicKeyParameters)parameters;
             }
 
-            this.random = InitSecureRandom(forSigning && !kCalculator.IsDeterministic, providedRandom);
+            this.random = InitSecureRandom(forSigning && !this.kCalculator.IsDeterministic, providedRandom);
         }
 
         // 5.3 pg 28
@@ -77,18 +77,18 @@ namespace NBitcoin.BouncyCastle.Crypto.Signers
          */
         public virtual BigInteger[] GenerateSignature(byte[] message)
         {
-            ECDomainParameters ec = key.Parameters;
+            ECDomainParameters ec = this.key.Parameters;
             BigInteger n = ec.N;
             BigInteger e = CalculateE(n, message);
-            BigInteger d = ((ECPrivateKeyParameters)key).D;
+            BigInteger d = ((ECPrivateKeyParameters) this.key).D;
 
-            if(kCalculator.IsDeterministic)
+            if(this.kCalculator.IsDeterministic)
             {
-                kCalculator.Init(n, d, message);
+                this.kCalculator.Init(n, d, message);
             }
             else
             {
-                kCalculator.Init(n, random);
+                this.kCalculator.Init(n, this.random);
             }
 
             BigInteger r, s;
@@ -101,7 +101,7 @@ namespace NBitcoin.BouncyCastle.Crypto.Signers
                 BigInteger k;
                 do // Generate r
                 {
-                    k = kCalculator.NextK();
+                    k = this.kCalculator.NextK();
 
                     ECPoint p = basePointMultiplier.Multiply(ec.G, k).Normalize();
 
@@ -125,7 +125,7 @@ namespace NBitcoin.BouncyCastle.Crypto.Signers
          */
         public virtual bool VerifySignature(byte[] message, BigInteger r, BigInteger s)
         {
-            BigInteger n = key.Parameters.N;
+            BigInteger n = this.key.Parameters.N;
 
             // r and s should both in the range [1,n-1]
             if(r.SignValue < 1 || s.SignValue < 1
@@ -140,8 +140,8 @@ namespace NBitcoin.BouncyCastle.Crypto.Signers
             BigInteger u1 = e.Multiply(c).Mod(n);
             BigInteger u2 = r.Multiply(c).Mod(n);
 
-            ECPoint G = key.Parameters.G;
-            ECPoint Q = ((ECPublicKeyParameters)key).Q;
+            ECPoint G = this.key.Parameters.G;
+            ECPoint Q = ((ECPublicKeyParameters) this.key).Q;
 
             ECPoint point = ECAlgorithms.SumOfTwoMultiplies(G, u1, Q, u2);
 
@@ -192,7 +192,7 @@ namespace NBitcoin.BouncyCastle.Crypto.Signers
         protected virtual BigInteger CalculateE(BigInteger n, byte[] message)
         {
             int messageBitLength = message.Length * 8;
-            BigInteger trunc = new BigInteger(1, message);
+            var trunc = new BigInteger(1, message);
 
             if(n.BitLength < messageBitLength)
             {

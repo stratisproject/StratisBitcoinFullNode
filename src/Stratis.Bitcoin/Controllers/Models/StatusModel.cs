@@ -1,10 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
+using Newtonsoft.Json;
+using Stratis.Bitcoin.Controllers.Converters;
 
 namespace Stratis.Bitcoin.Controllers.Models
 {
     /// <summary>
-    /// Clas representing the status of the currently running node.
+    /// Class representing the status of the currently running node.
     /// </summary>
     public class StatusModel
     {
@@ -27,8 +29,18 @@ namespace Stratis.Bitcoin.Controllers.Models
         /// <summary>The network the current node is running on.</summary>
         public string Network { get; set; }
 
+        /// <summary>The coin ticker to use with external applications.</summary>
+        public string CoinTicker { get; set; }
+
+        /// <summary>System identifier of the node's process.</summary>
+        public int ProcessId { get; set; }
+
         /// <summary>The height of the consensus.</summary>
         public int ConsensusHeight { get; set; }
+
+        /// <summary>Height of the most recent block in persistent storage.</summary>
+        /// <seealso cref="Stratis.Bitcoin.Features.BlockRepository.HighestPersistedBlock.Height"/>
+        public int BlockStoreHeight { get; set; }
 
         /// <summary>A collection of inbound peers.</summary>
         public List<ConnectedPeerModel> InboundPeers { get; set; }
@@ -44,5 +56,18 @@ namespace Stratis.Bitcoin.Controllers.Models
 
         /// <summary>Time this node has been running.</summary>
         public TimeSpan RunningTime { get; set; }
+
+        /// <summary>The current network difficulty target.</summary>
+        public double Difficulty { get; set; }
+
+        /// <summary>The node's protocol version</summary>
+        public uint ProtocolVersion { get; set; }
+
+        /// <summary>Is the node on the testnet.</summary>
+        public bool Testnet { get; set; }
+
+        /// <summary>The current transaction relay fee.</summary>
+        [JsonConverter(typeof(BtcDecimalJsonConverter))]
+        public decimal RelayFee { get; set; }
     }
 }

@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Transactions;
-using NBitcoin;
 
 namespace Stratis.Bitcoin.Features.Wallet.Broadcasting
 {

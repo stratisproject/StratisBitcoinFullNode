@@ -85,9 +85,6 @@ namespace Stratis.Bitcoin.Features.BlockStore
         BlockStoreRepositoryPerformanceCounter PerformanceCounter { get; }
 
         bool TxIndex { get; }
-
-        /// <summary>Represents the last block stored to disk.</summary>
-        ChainedHeader HighestPersistedBlock { get; }
     }
 
     public class BlockRepository : IBlockRepository
@@ -112,9 +109,6 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
         /// <summary>Provider of time functions.</summary>
         protected readonly IDateTimeProvider dateTimeProvider;
-
-        /// <inheritdoc />
-        public ChainedHeader HighestPersistedBlock { get; internal set; }
 
         public BlockRepository(Network network, DataFolder dataFolder, IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory)
             : this(network, dataFolder.BlockPath, dateTimeProvider, loggerFactory)
@@ -628,11 +622,11 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
             // Access hash keys in sorted order.
             var byteListComparer = new ByteListComparer();
-            var keys = hashes.Select(hash => (hash, hash.ToBytes())).ToList();
+            List<(uint256, byte[])> keys = hashes.Select(hash => (hash, hash.ToBytes())).ToList();
 
             keys.Sort((key1, key2) => byteListComparer.Compare(key1.Item2, key2.Item2));
 
-            foreach (var key in keys)
+            foreach ((uint256, byte[]) key in keys)
             {
                 Row<byte[], Block> blockRow = dbreezeTransaction.Select<byte[], Block>("Block", key.Item2);
                 if (blockRow.Exists)
@@ -660,8 +654,8 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// <summary>
         /// Wipe our blocks and their transactions then replace with a new block.
         /// </summary>
-        /// <param name="newBlockHash">Hash of the new block</param>
-        /// <param name="hashes">List of all block hashes to be deleted</param>
+        /// <param name="newBlockHash">Hash of the new block.</param>
+        /// <param name="hashes">List of all block hashes to be deleted.</param>
         public Task DeleteAsync(uint256 newBlockHash, List<uint256> hashes)
         {
             this.logger.LogTrace("({0}:'{1}',{2}.{3}:{4})", nameof(newBlockHash), newBlockHash, nameof(hashes), nameof(hashes.Count), hashes?.Count);

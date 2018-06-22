@@ -171,8 +171,10 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Fee
             int countedTxs = 0;
             // Repopulate the current block states
             for (int i = 0; i < entries.Count; i++)
+            {
                 if (this.ProcessBlockTx(nBlockHeight, entries[i]))
                     countedTxs++;
+            }
 
             // Update all exponential averages with the current block state
             this.feeStats.UpdateMovingAverages();
@@ -209,7 +211,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Fee
             }
 
             // Feerates are stored and reported as BTC-per-kb:
-            FeeRate feeRate = new FeeRate(entry.Fee, (int)entry.GetTxSize());
+            var feeRate = new FeeRate(entry.Fee, (int)entry.GetTxSize());
 
             this.feeStats.Record(blocksToConfirm, feeRate.FeePerK.Satoshi);
             return true;
@@ -243,7 +245,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Fee
             this.trackedTxs++;
 
             // Feerates are stored and reported as BTC-per-kb:
-            FeeRate feeRate = new FeeRate(entry.Fee, (int)entry.GetTxSize());
+            var feeRate = new FeeRate(entry.Fee, (int)entry.GetTxSize());
 
             this.mapMemPoolTxs.Add(hash, new TxStatsInfo());
             this.mapMemPoolTxs[hash].blockHeight = txHeight;
@@ -313,8 +315,10 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Fee
 
             double median = -1;
             while (median < 0 && confTarget <= this.feeStats.GetMaxConfirms())
+            {
                 median = this.feeStats.EstimateMedianVal(confTarget++, SufficientFeeTxs, MinSuccessPct, true,
                     this.nBestSeenHeight);
+            }
 
             answerFoundAtTarget = confTarget - 1;
 

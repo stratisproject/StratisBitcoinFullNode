@@ -11,6 +11,9 @@ namespace Stratis.Bitcoin.Base
         /// <summary>ChainBehaviors sharing this state will not broadcast headers which are above <see cref="ConsensusTip"/>.</summary>
         ChainedHeader ConsensusTip { get; set; }
 
+        /// <summary>The highest stored block in the repository or <c>null</c> if block store feature is not enabled.</summary>
+        ChainedHeader BlockStoreTip { get; set; }
+
         /// <summary>Maximal length of reorganization that the node is willing to accept, or 0 to disable long reorganization protection.</summary>
         /// <remarks>TODO: This should be removed once consensus options are part of network.</remarks>
         uint MaxReorgLength { get; set; }
@@ -40,8 +43,11 @@ namespace Stratis.Bitcoin.Base
         /// <summary>Store of block header hashes that are to be considered invalid.</summary>
         private readonly IInvalidBlockHashStore invalidBlockHashStore;
 
-        /// <summary>ChainBehaviors sharing this state will not broadcast headers which are above <see cref="ConsensusTip"/>.</summary>
+        /// <inheritdoc />
         public ChainedHeader ConsensusTip { get; set; }
+
+        /// <inheritdoc />
+        public ChainedHeader BlockStoreTip { get; set; }
 
         /// <summary>Maximal length of reorganization that the node is willing to accept, or 0 to disable long reorganization protection.</summary>
         /// <remarks>TODO: This should be removed once consensus options are part of network.</remarks>

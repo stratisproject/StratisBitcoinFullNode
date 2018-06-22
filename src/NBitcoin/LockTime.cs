@@ -5,7 +5,7 @@ namespace NBitcoin
     public struct LockTime : IBitcoinSerializable
     {
         internal const uint LOCKTIME_THRESHOLD = 500000000; // Tue Nov  5 00:53:20 1985 UTC
-        uint _value;
+        private uint _value;
 
         public static LockTime Zero
         {
@@ -16,17 +16,17 @@ namespace NBitcoin
         }
         public LockTime(DateTimeOffset dateTime)
         {
-            _value = Utils.DateTimeToUnixTime(dateTime);
-            if(_value < LOCKTIME_THRESHOLD)
+            this._value = Utils.DateTimeToUnixTime(dateTime);
+            if(this._value < LOCKTIME_THRESHOLD)
                 throw new ArgumentOutOfRangeException("dateTime", "The minimum possible date is be Tue Nov  5 00:53:20 1985 UTC");
         }
         public LockTime(int valueOrHeight)
         {
-            _value = (uint)valueOrHeight;
+            this._value = (uint)valueOrHeight;
         }
         public LockTime(uint valueOrHeight)
         {
-            _value = valueOrHeight;
+            this._value = valueOrHeight;
         }
 
 
@@ -34,9 +34,9 @@ namespace NBitcoin
         {
             get
             {
-                if(!IsTimeLock)
+                if(!this.IsTimeLock)
                     throw new InvalidOperationException("This is not a time based lock");
-                return Utils.UnixTimeToDateTime(_value);
+                return Utils.UnixTimeToDateTime(this._value);
             }
         }
 
@@ -44,9 +44,9 @@ namespace NBitcoin
         {
             get
             {
-                if(!IsHeightLock)
+                if(!this.IsHeightLock)
                     throw new InvalidOperationException("This is not a height based lock");
-                return (int)_value;
+                return (int) this._value;
             }
         }
 
@@ -54,7 +54,7 @@ namespace NBitcoin
         {
             get
             {
-                return _value;
+                return this._value;
             }
         }
 
@@ -63,7 +63,7 @@ namespace NBitcoin
         {
             get
             {
-                return _value < LOCKTIME_THRESHOLD; // Tue Nov  5 00:53:20 1985 UTC
+                return this._value < LOCKTIME_THRESHOLD; // Tue Nov  5 00:53:20 1985 UTC
             }
         }
 
@@ -71,7 +71,7 @@ namespace NBitcoin
         {
             get
             {
-                return !IsHeightLock;
+                return !this.IsHeightLock;
             }
         }
 
@@ -80,14 +80,14 @@ namespace NBitcoin
 
         public void ReadWrite(BitcoinStream stream)
         {
-            stream.ReadWrite(ref _value);
+            stream.ReadWrite(ref this._value);
         }
 
         #endregion
 
         public override string ToString()
         {
-            return IsHeightLock ? "Height : " + Height : "Date : " + Date;
+            return this.IsHeightLock ? "Height : " + this.Height : "Date : " + this.Date;
         }
 
         public static implicit operator LockTime(int valueOrHeight)
@@ -129,7 +129,7 @@ namespace NBitcoin
             if(!(obj is LockTime))
                 return false;
             var item = (LockTime)obj;
-            return _value.Equals(item._value);
+            return this._value.Equals(item._value);
         }
         public static bool operator ==(LockTime a, LockTime b)
         {
@@ -143,7 +143,7 @@ namespace NBitcoin
 
         public override int GetHashCode()
         {
-            return _value.GetHashCode();
+            return this._value.GetHashCode();
         }
     }
 }

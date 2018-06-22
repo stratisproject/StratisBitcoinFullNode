@@ -1,6 +1,9 @@
-﻿using System.Linq;
+﻿using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 using NBitcoin;
 using Stratis.Bitcoin.Connection;
+using Stratis.Bitcoin.Features.MemoryPool.Interfaces;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.Signals;
 using Stratis.Bitcoin.Utilities;
@@ -17,6 +20,11 @@ namespace Stratis.Bitcoin.Features.MemoryPool
 
         /// <summary>Factory for creating background async loop tasks.</summary>
         private readonly IAsyncLoopFactory asyncLoopFactory;
+
+        private readonly MempoolSchedulerLock mempoolLock;
+        private readonly ITxMempool memPool;
+        private readonly IMempoolValidator validator;
+        private readonly MempoolOrphans mempoolOrphans;
 
         /// <summary>
         /// Memory pool manager injected dependency.
@@ -45,22 +53,38 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <param name="connection">Connection manager injected dependency.</param>
         /// <param name="nodeLifetime">Node lifetime injected dependency.</param>
         /// <param name="asyncLoopFactory">Asynchronous loop factory injected dependency.</param>
-        public MempoolSignaled(MempoolManager manager, ConcurrentChain chain, IConnectionManager connection,
-            INodeLifetime nodeLifetime, IAsyncLoopFactory asyncLoopFactory)
+        /// <param name="mempoolLock">The mempool lock.</param>
+        /// <param name="memPool">the mempool.</param>
+        /// <param name="validator">The mempool validator.</param>
+        /// <param name="mempoolOrphans">The mempool orphan list.</param>
+        public MempoolSignaled(
+            MempoolManager manager, 
+            ConcurrentChain chain, 
+            IConnectionManager connection,
+            INodeLifetime nodeLifetime, 
+            IAsyncLoopFactory asyncLoopFactory,
+            MempoolSchedulerLock mempoolLock,
+            ITxMempool memPool,
+            IMempoolValidator validator,
+            MempoolOrphans mempoolOrphans)
         {
             this.manager = manager;
             this.chain = chain;
             this.connection = connection;
             this.nodeLifetime = nodeLifetime;
             this.asyncLoopFactory = asyncLoopFactory;
+            this.mempoolLock = mempoolLock;
+            this.memPool = memPool;
+            this.validator = validator;
+            this.mempoolOrphans = mempoolOrphans;
         }
 
         /// <inheritdoc />
         protected override void OnNextCore(Block value)
         {
-            var blockHeader = this.chain.GetBlock(value.GetHash());
+            ChainedHeader blockHeader = this.chain.GetBlock(value.GetHash());
 
-            var task = this.manager.RemoveForBlock(value, blockHeader?.Height ?? -1);
+            Task task = this.RemoveForBlock(value, blockHeader?.Height ?? -1);
 
             // wait for the mempool code to complete
             // until the signaler becomes async
@@ -68,7 +92,28 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         }
 
         /// <summary>
-        /// Announces blocks on all connected nodes memory pool behaviours every ten seconds.
+        /// Removes transaction from a block in memory pool.
+        /// </summary>
+        /// <param name="block">Block of transactions.</param>
+        /// <param name="blockHeight">Location of the block.</param>
+        public Task RemoveForBlock(Block block, int blockHeight)
+        {
+            //if (this.IsInitialBlockDownload)
+            //  return Task.CompletedTask;
+
+            return this.mempoolLock.WriteAsync(() =>
+            {
+                this.memPool.RemoveForBlock(block.Transactions, blockHeight);
+                this.mempoolOrphans.RemoveForBlock(block.Transactions);
+
+                this.validator.PerformanceCounter.SetMempoolSize(this.memPool.Size);
+                this.validator.PerformanceCounter.SetMempoolOrphanSize(this.mempoolOrphans.OrphansCount());
+                this.validator.PerformanceCounter.SetMempoolDynamicSize(this.memPool.DynamicMemoryUsage());
+            });
+        }
+
+        /// <summary>
+        /// Announces blocks on all connected nodes memory pool behaviors every five seconds.
         /// </summary>
         public void Start()
         {
@@ -78,20 +123,19 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                 if (!peers.Any())
                     return;
 
-                // announce the blocks on each nodes behaviour
-                var behaviours = peers.Select(s => s.Behavior<MempoolBehavior>());
-                foreach (var behaviour in behaviours)
-                    await behaviour.SendTrickleAsync().ConfigureAwait(false);
+                // Announce the blocks on each nodes behavior which supports relaying.
+                IEnumerable<MempoolBehavior> behaviors = peers.Where(x => x.PeerVersion?.Relay ?? false).Select(x => x.Behavior<MempoolBehavior>());               
+                foreach (MempoolBehavior behavior in behaviors)
+                    await behavior.SendTrickleAsync().ConfigureAwait(false);
             },
             this.nodeLifetime.ApplicationStopping,
-            repeatEvery: TimeSpans.TenSeconds,
+            repeatEvery: TimeSpans.FiveSeconds,
             startAfter: TimeSpans.TenSeconds);
         }
 
         public void Stop()
         {
-            if (this.asyncLoop != null)
-                this.asyncLoop.Dispose();
+            this.asyncLoop?.Dispose();
         }
     }
 }

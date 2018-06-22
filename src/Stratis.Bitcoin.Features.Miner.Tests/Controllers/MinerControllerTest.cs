@@ -39,7 +39,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests.Controllers
         {
             this.controller = new MinerController(this.fullNode.Object, this.LoggerFactory.Object, null);
 
-            var response = this.controller.GetStakingInfo();
+            IActionResult response = this.controller.GetStakingInfo();
 
             var jsonResult = Assert.IsType<JsonResult>(response);
             var result = Assert.IsType<GetStakingInfoModel>(jsonResult.Value);
@@ -56,7 +56,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests.Controllers
                     CurrentBlockSize = 150000
                 }).Verifiable();
 
-            var response = this.controller.GetStakingInfo();
+            IActionResult response = this.controller.GetStakingInfo();
 
             var jsonResult = Assert.IsType<JsonResult>(response);
             var result = Assert.IsType<GetStakingInfoModel>(jsonResult.Value);
@@ -71,10 +71,10 @@ namespace Stratis.Bitcoin.Features.Miner.Tests.Controllers
             this.posMinting.Setup(p => p.GetGetStakingInfoModel())
               .Throws(new InvalidOperationException("Unable to get model"));
 
-            var result = this.controller.GetStakingInfo();
+            IActionResult result = this.controller.GetStakingInfo();
 
-            ErrorResult errorResult = Assert.IsType<ErrorResult>(result);
-            ErrorResponse errorResponse = Assert.IsType<ErrorResponse>(errorResult.Value);
+            var errorResult = Assert.IsType<ErrorResult>(result);
+            var errorResponse = Assert.IsType<ErrorResponse>(errorResult.Value);
             Assert.Single(errorResponse.Errors);
 
             ErrorModel error = errorResponse.Errors[0];
@@ -87,10 +87,10 @@ namespace Stratis.Bitcoin.Features.Miner.Tests.Controllers
         {
             this.controller.ModelState.AddModelError("Password", "A password is required.");
 
-            var result = this.controller.StartStaking(new StartStakingRequest());
+            IActionResult result = this.controller.StartStaking(new StartStakingRequest());
 
-            ErrorResult errorResult = Assert.IsType<ErrorResult>(result);
-            ErrorResponse errorResponse = Assert.IsType<ErrorResponse>(errorResult.Value);
+            var errorResult = Assert.IsType<ErrorResult>(result);
+            var errorResponse = Assert.IsType<ErrorResponse>(errorResult.Value);
             Assert.Single(errorResponse.Errors);
 
             ErrorModel error = errorResponse.Errors[0];
@@ -107,10 +107,10 @@ namespace Stratis.Bitcoin.Features.Miner.Tests.Controllers
             this.fullNode.Setup(f => f.NodeService<IWalletManager>(false))
                 .Returns(this.walletManager.Object);
 
-            var result = this.controller.StartStaking(new StartStakingRequest() { Name = "myWallet" });
+            IActionResult result = this.controller.StartStaking(new StartStakingRequest() { Name = "myWallet" });
 
-            ErrorResult errorResult = Assert.IsType<ErrorResult>(result);
-            ErrorResponse errorResponse = Assert.IsType<ErrorResponse>(errorResult.Value);
+            var errorResult = Assert.IsType<ErrorResult>(result);
+            var errorResponse = Assert.IsType<ErrorResponse>(errorResult.Value);
             Assert.Single(errorResponse.Errors);
 
             ErrorModel error = errorResponse.Errors[0];
@@ -121,17 +121,17 @@ namespace Stratis.Bitcoin.Features.Miner.Tests.Controllers
         [Fact]
         public void StartStaking_InvalidWalletPassword_ReturnsBadRequest()
         {
-            var wallet = WalletTestsHelpers.GenerateBlankWallet("myWallet", "password1");
+            Wallet.Wallet wallet = WalletTestsHelpers.GenerateBlankWallet("myWallet", "password1");
             this.walletManager.Setup(w => w.GetWallet("myWallet"))
               .Returns(wallet);
 
             this.fullNode.Setup(f => f.NodeService<IWalletManager>(false))
                 .Returns(this.walletManager.Object);
 
-            var result = this.controller.StartStaking(new StartStakingRequest() { Name = "myWallet", Password = "password2" });
+            IActionResult result = this.controller.StartStaking(new StartStakingRequest() { Name = "myWallet", Password = "password2" });
 
-            ErrorResult errorResult = Assert.IsType<ErrorResult>(result);
-            ErrorResponse errorResponse = Assert.IsType<ErrorResponse>(errorResult.Value);
+            var errorResult = Assert.IsType<ErrorResult>(result);
+            var errorResponse = Assert.IsType<ErrorResponse>(errorResult.Value);
             Assert.Single(errorResponse.Errors);
 
             ErrorModel error = errorResponse.Errors[0];
@@ -148,10 +148,10 @@ namespace Stratis.Bitcoin.Features.Miner.Tests.Controllers
             this.fullNode.Setup(f => f.NodeService<IWalletManager>(false))
                 .Returns(this.walletManager.Object);
 
-            var result = this.controller.StartStaking(new StartStakingRequest() { Name = "myWallet" });
+            IActionResult result = this.controller.StartStaking(new StartStakingRequest() { Name = "myWallet" });
 
-            ErrorResult errorResult = Assert.IsType<ErrorResult>(result);
-            ErrorResponse errorResponse = Assert.IsType<ErrorResponse>(errorResult.Value);
+            var errorResult = Assert.IsType<ErrorResult>(result);
+            var errorResponse = Assert.IsType<ErrorResponse>(errorResult.Value);
             Assert.Single(errorResponse.Errors);
 
             ErrorModel error = errorResponse.Errors[0];
@@ -162,7 +162,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests.Controllers
         [Fact]
         public void StartStaking_ValidWalletAndPassword_StartsStaking_ReturnsOk()
         {
-            var wallet = WalletTestsHelpers.GenerateBlankWallet("myWallet", "password1");
+            Wallet.Wallet wallet = WalletTestsHelpers.GenerateBlankWallet("myWallet", "password1");
             this.walletManager.Setup(w => w.GetWallet("myWallet"))
               .Returns(wallet);
 
@@ -170,9 +170,9 @@ namespace Stratis.Bitcoin.Features.Miner.Tests.Controllers
                 .Returns(this.walletManager.Object);
 
             this.fullNode.Setup(f => f.NodeFeature<MiningFeature>(true))
-                .Returns(new MiningFeature(Network.Main, new MinerSettings(), Configuration.NodeSettings.Default(), this.LoggerFactory.Object, this.timeSyncBehaviorState.Object, null, this.posMinting.Object));
+                .Returns(new MiningFeature(Network.Main, new MinerSettings(Configuration.NodeSettings.Default()), Configuration.NodeSettings.Default(), this.LoggerFactory.Object, this.timeSyncBehaviorState.Object, null, this.posMinting.Object));
 
-            var result = this.controller.StartStaking(new StartStakingRequest() { Name = "myWallet", Password = "password1" });
+            IActionResult result = this.controller.StartStaking(new StartStakingRequest() { Name = "myWallet", Password = "password1" });
 
             Assert.IsType<OkResult>(result);
             this.posMinting.Verify(p => p.Stake(It.Is<PosMinting.WalletSecret>(s => s.WalletName == "myWallet" && s.WalletPassword == "password1")), Times.Exactly(1));
@@ -184,7 +184,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests.Controllers
         [Fact]
         public void StartStaking_InvalidTimeSyncState_ReturnsBadRequest()
         {
-            var wallet = WalletTestsHelpers.GenerateBlankWallet("myWallet", "password1");
+            Wallet.Wallet wallet = WalletTestsHelpers.GenerateBlankWallet("myWallet", "password1");
             this.walletManager.Setup(w => w.GetWallet("myWallet"))
                 .Returns(wallet);
 
@@ -194,12 +194,12 @@ namespace Stratis.Bitcoin.Features.Miner.Tests.Controllers
             this.timeSyncBehaviorState.Setup(ts => ts.IsSystemTimeOutOfSync).Returns(true);
 
             this.fullNode.Setup(f => f.NodeFeature<MiningFeature>(true))
-                .Returns(new MiningFeature(Network.Main, new MinerSettings(), Configuration.NodeSettings.Default(), this.LoggerFactory.Object, this.timeSyncBehaviorState.Object, null, this.posMinting.Object));
+                .Returns(new MiningFeature(Network.Main, new MinerSettings(Configuration.NodeSettings.Default()), Configuration.NodeSettings.Default(), this.LoggerFactory.Object, this.timeSyncBehaviorState.Object, null, this.posMinting.Object));
 
-            var result = this.controller.StartStaking(new StartStakingRequest() { Name = "myWallet", Password = "password1" });
+            IActionResult result = this.controller.StartStaking(new StartStakingRequest() { Name = "myWallet", Password = "password1" });
 
-            ErrorResult errorResult = Assert.IsType<ErrorResult>(result);
-            ErrorResponse errorResponse = Assert.IsType<ErrorResponse>(errorResult.Value);
+            var errorResult = Assert.IsType<ErrorResult>(result);
+            var errorResponse = Assert.IsType<ErrorResponse>(errorResult.Value);
             Assert.Single(errorResponse.Errors);
 
             ErrorModel error = errorResponse.Errors[0];

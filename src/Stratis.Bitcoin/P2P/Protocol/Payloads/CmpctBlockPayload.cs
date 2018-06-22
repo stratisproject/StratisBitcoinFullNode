@@ -156,11 +156,11 @@ namespace Stratis.Bitcoin.P2P.Protocol.Payloads
 
         private void UpdateShortTxIDSelector()
         {
-            MemoryStream ms = new MemoryStream();
-            BitcoinStream stream = new BitcoinStream(ms, true);
+            var ms = new MemoryStream();
+            var stream = new BitcoinStream(ms, true);
             stream.ReadWrite(ref this.header);
             stream.ReadWrite(ref this.nonce);
-            uint256 shorttxidhash = new uint256(Hashes.SHA256(ms.ToArrayEfficient()));
+            var shorttxidhash = new uint256(Hashes.SHA256(ms.ToArrayEfficient()));
             this.shortTxidk0 = Hashes.SipHasher.GetULong(shorttxidhash, 0);
             this.shortTxidk1 = Hashes.SipHasher.GetULong(shorttxidhash, 1);
         }

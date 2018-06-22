@@ -43,8 +43,7 @@ namespace Stratis.Bitcoin.P2P
         /// <inheritdoc/>
         public override void OnInitialize()
         {
-            // TODO: make sure that this is moved to a new config implementation when it's ready.
-            this.MaxOutboundConnections = this.NodeSettings.ConfigReader.GetOrDefault("maxOutboundConnections", 8);
+            this.MaxOutboundConnections = this.ConnectionSettings.MaxOutboundConnections;
         }
 
         /// <summary>This connector is only started if there are NO peers in the -connect args.</summary>
@@ -102,7 +101,7 @@ namespace Stratis.Bitcoin.P2P
 
                 // If the peer exists in the -addnode collection don't
                 // try and connect to it.
-                var peerExistsInAddNode = this.ConnectionSettings.AddNode.Any(p => p.MapToIpv6().Match(peer.Endpoint));
+                bool peerExistsInAddNode = this.ConnectionSettings.AddNode.Any(p => p.MapToIpv6().Match(peer.Endpoint));
                 if (peerExistsInAddNode)
                 {
                     this.logger.LogTrace("Peer selection failed, peer exists in -addnode args '{0}'.", peer.Endpoint);
@@ -112,7 +111,7 @@ namespace Stratis.Bitcoin.P2P
 
                 // If the peer exists in the -connect collection don't
                 // try and connect to it.
-                var peerExistsInConnectNode = this.ConnectionSettings.Connect.Any(p => p.MapToIpv6().Match(peer.Endpoint));
+                bool peerExistsInConnectNode = this.ConnectionSettings.Connect.Any(p => p.MapToIpv6().Match(peer.Endpoint));
                 if (peerExistsInConnectNode)
                 {
                     this.logger.LogTrace("Peer selection failed, peer exists in -connect args '{0}'.", peer.Endpoint);

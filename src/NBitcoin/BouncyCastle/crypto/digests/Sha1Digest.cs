@@ -40,14 +40,14 @@ namespace NBitcoin.BouncyCastle.Crypto.Digests
         {
             base.CopyIn(t);
 
-            H1 = t.H1;
-            H2 = t.H2;
-            H3 = t.H3;
-            H4 = t.H4;
-            H5 = t.H5;
+            this.H1 = t.H1;
+            this.H2 = t.H2;
+            this.H3 = t.H3;
+            this.H4 = t.H4;
+            this.H5 = t.H5;
 
-            Array.Copy(t.X, 0, X, 0, t.X.Length);
-            xOff = t.xOff;
+            Array.Copy(t.X, 0, this.X, 0, t.X.Length);
+            this.xOff = t.xOff;
         }
 
         public override string AlgorithmName
@@ -67,9 +67,9 @@ namespace NBitcoin.BouncyCastle.Crypto.Digests
             byte[] input,
             int inOff)
         {
-            X[xOff] = Pack.BE_To_UInt32(input, inOff);
+            this.X[this.xOff] = Pack.BE_To_UInt32(input, inOff);
 
-            if(++xOff == 16)
+            if(++this.xOff == 16)
             {
                 ProcessBlock();
             }
@@ -77,13 +77,13 @@ namespace NBitcoin.BouncyCastle.Crypto.Digests
 
         internal override void ProcessLength(long bitLength)
         {
-            if(xOff > 14)
+            if(this.xOff > 14)
             {
                 ProcessBlock();
             }
 
-            X[14] = (uint)((ulong)bitLength >> 32);
-            X[15] = (uint)((ulong)bitLength);
+            this.X[14] = (uint)((ulong)bitLength >> 32);
+            this.X[15] = (uint)((ulong)bitLength);
         }
 
         public override int DoFinal(
@@ -92,11 +92,11 @@ namespace NBitcoin.BouncyCastle.Crypto.Digests
         {
             Finish();
 
-            Pack.UInt32_To_BE(H1, output, outOff);
-            Pack.UInt32_To_BE(H2, output, outOff + 4);
-            Pack.UInt32_To_BE(H3, output, outOff + 8);
-            Pack.UInt32_To_BE(H4, output, outOff + 12);
-            Pack.UInt32_To_BE(H5, output, outOff + 16);
+            Pack.UInt32_To_BE(this.H1, output, outOff);
+            Pack.UInt32_To_BE(this.H2, output, outOff + 4);
+            Pack.UInt32_To_BE(this.H3, output, outOff + 8);
+            Pack.UInt32_To_BE(this.H4, output, outOff + 12);
+            Pack.UInt32_To_BE(this.H5, output, outOff + 16);
 
             Reset();
 
@@ -110,14 +110,14 @@ namespace NBitcoin.BouncyCastle.Crypto.Digests
         {
             base.Reset();
 
-            H1 = 0x67452301;
-            H2 = 0xefcdab89;
-            H3 = 0x98badcfe;
-            H4 = 0x10325476;
-            H5 = 0xc3d2e1f0;
+            this.H1 = 0x67452301;
+            this.H2 = 0xefcdab89;
+            this.H3 = 0x98badcfe;
+            this.H4 = 0x10325476;
+            this.H5 = 0xc3d2e1f0;
 
-            xOff = 0;
-            Array.Clear(X, 0, X.Length);
+            this.xOff = 0;
+            Array.Clear(this.X, 0, this.X.Length);
         }
 
         //
@@ -150,18 +150,18 @@ namespace NBitcoin.BouncyCastle.Crypto.Digests
             //
             for(int i = 16; i < 80; i++)
             {
-                uint t = X[i - 3] ^ X[i - 8] ^ X[i - 14] ^ X[i - 16];
-                X[i] = t << 1 | t >> 31;
+                uint t = this.X[i - 3] ^ this.X[i - 8] ^ this.X[i - 14] ^ this.X[i - 16];
+                this.X[i] = t << 1 | t >> 31;
             }
 
             //
             // set up working variables.
             //
-            uint A = H1;
-            uint B = H2;
-            uint C = H3;
-            uint D = H4;
-            uint E = H5;
+            uint A = this.H1;
+            uint B = this.H2;
+            uint C = this.H3;
+            uint D = this.H4;
+            uint E = this.H5;
 
             //
             // round 1
@@ -172,19 +172,19 @@ namespace NBitcoin.BouncyCastle.Crypto.Digests
             {
                 // E = rotateLeft(A, 5) + F(B, C, D) + E + X[idx++] + Y1
                 // B = rotateLeft(B, 30)
-                E += (A << 5 | (A >> 27)) + F(B, C, D) + X[idx++] + Y1;
+                E += (A << 5 | (A >> 27)) + F(B, C, D) + this.X[idx++] + Y1;
                 B = B << 30 | (B >> 2);
 
-                D += (E << 5 | (E >> 27)) + F(A, B, C) + X[idx++] + Y1;
+                D += (E << 5 | (E >> 27)) + F(A, B, C) + this.X[idx++] + Y1;
                 A = A << 30 | (A >> 2);
 
-                C += (D << 5 | (D >> 27)) + F(E, A, B) + X[idx++] + Y1;
+                C += (D << 5 | (D >> 27)) + F(E, A, B) + this.X[idx++] + Y1;
                 E = E << 30 | (E >> 2);
 
-                B += (C << 5 | (C >> 27)) + F(D, E, A) + X[idx++] + Y1;
+                B += (C << 5 | (C >> 27)) + F(D, E, A) + this.X[idx++] + Y1;
                 D = D << 30 | (D >> 2);
 
-                A += (B << 5 | (B >> 27)) + F(C, D, E) + X[idx++] + Y1;
+                A += (B << 5 | (B >> 27)) + F(C, D, E) + this.X[idx++] + Y1;
                 C = C << 30 | (C >> 2);
             }
 
@@ -195,19 +195,19 @@ namespace NBitcoin.BouncyCastle.Crypto.Digests
             {
                 // E = rotateLeft(A, 5) + H(B, C, D) + E + X[idx++] + Y2
                 // B = rotateLeft(B, 30)
-                E += (A << 5 | (A >> 27)) + H(B, C, D) + X[idx++] + Y2;
+                E += (A << 5 | (A >> 27)) + H(B, C, D) + this.X[idx++] + Y2;
                 B = B << 30 | (B >> 2);
 
-                D += (E << 5 | (E >> 27)) + H(A, B, C) + X[idx++] + Y2;
+                D += (E << 5 | (E >> 27)) + H(A, B, C) + this.X[idx++] + Y2;
                 A = A << 30 | (A >> 2);
 
-                C += (D << 5 | (D >> 27)) + H(E, A, B) + X[idx++] + Y2;
+                C += (D << 5 | (D >> 27)) + H(E, A, B) + this.X[idx++] + Y2;
                 E = E << 30 | (E >> 2);
 
-                B += (C << 5 | (C >> 27)) + H(D, E, A) + X[idx++] + Y2;
+                B += (C << 5 | (C >> 27)) + H(D, E, A) + this.X[idx++] + Y2;
                 D = D << 30 | (D >> 2);
 
-                A += (B << 5 | (B >> 27)) + H(C, D, E) + X[idx++] + Y2;
+                A += (B << 5 | (B >> 27)) + H(C, D, E) + this.X[idx++] + Y2;
                 C = C << 30 | (C >> 2);
             }
 
@@ -218,19 +218,19 @@ namespace NBitcoin.BouncyCastle.Crypto.Digests
             {
                 // E = rotateLeft(A, 5) + G(B, C, D) + E + X[idx++] + Y3
                 // B = rotateLeft(B, 30)
-                E += (A << 5 | (A >> 27)) + G(B, C, D) + X[idx++] + Y3;
+                E += (A << 5 | (A >> 27)) + G(B, C, D) + this.X[idx++] + Y3;
                 B = B << 30 | (B >> 2);
 
-                D += (E << 5 | (E >> 27)) + G(A, B, C) + X[idx++] + Y3;
+                D += (E << 5 | (E >> 27)) + G(A, B, C) + this.X[idx++] + Y3;
                 A = A << 30 | (A >> 2);
 
-                C += (D << 5 | (D >> 27)) + G(E, A, B) + X[idx++] + Y3;
+                C += (D << 5 | (D >> 27)) + G(E, A, B) + this.X[idx++] + Y3;
                 E = E << 30 | (E >> 2);
 
-                B += (C << 5 | (C >> 27)) + G(D, E, A) + X[idx++] + Y3;
+                B += (C << 5 | (C >> 27)) + G(D, E, A) + this.X[idx++] + Y3;
                 D = D << 30 | (D >> 2);
 
-                A += (B << 5 | (B >> 27)) + G(C, D, E) + X[idx++] + Y3;
+                A += (B << 5 | (B >> 27)) + G(C, D, E) + this.X[idx++] + Y3;
                 C = C << 30 | (C >> 2);
             }
 
@@ -241,33 +241,33 @@ namespace NBitcoin.BouncyCastle.Crypto.Digests
             {
                 // E = rotateLeft(A, 5) + H(B, C, D) + E + X[idx++] + Y4
                 // B = rotateLeft(B, 30)
-                E += (A << 5 | (A >> 27)) + H(B, C, D) + X[idx++] + Y4;
+                E += (A << 5 | (A >> 27)) + H(B, C, D) + this.X[idx++] + Y4;
                 B = B << 30 | (B >> 2);
 
-                D += (E << 5 | (E >> 27)) + H(A, B, C) + X[idx++] + Y4;
+                D += (E << 5 | (E >> 27)) + H(A, B, C) + this.X[idx++] + Y4;
                 A = A << 30 | (A >> 2);
 
-                C += (D << 5 | (D >> 27)) + H(E, A, B) + X[idx++] + Y4;
+                C += (D << 5 | (D >> 27)) + H(E, A, B) + this.X[idx++] + Y4;
                 E = E << 30 | (E >> 2);
 
-                B += (C << 5 | (C >> 27)) + H(D, E, A) + X[idx++] + Y4;
+                B += (C << 5 | (C >> 27)) + H(D, E, A) + this.X[idx++] + Y4;
                 D = D << 30 | (D >> 2);
 
-                A += (B << 5 | (B >> 27)) + H(C, D, E) + X[idx++] + Y4;
+                A += (B << 5 | (B >> 27)) + H(C, D, E) + this.X[idx++] + Y4;
                 C = C << 30 | (C >> 2);
             }
 
-            H1 += A;
-            H2 += B;
-            H3 += C;
-            H4 += D;
-            H5 += E;
+            this.H1 += A;
+            this.H2 += B;
+            this.H3 += C;
+            this.H4 += D;
+            this.H5 += E;
 
             //
             // reset start of the buffer.
             //
-            xOff = 0;
-            Array.Clear(X, 0, 16);
+            this.xOff = 0;
+            Array.Clear(this.X, 0, 16);
         }
 
         public override IMemoable Copy()
@@ -277,7 +277,7 @@ namespace NBitcoin.BouncyCastle.Crypto.Digests
 
         public override void Reset(IMemoable other)
         {
-            Sha1Digest d = (Sha1Digest)other;
+            var d = (Sha1Digest)other;
 
             CopyIn(d);
         }

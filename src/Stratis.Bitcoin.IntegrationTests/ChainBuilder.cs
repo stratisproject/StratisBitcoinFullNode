@@ -36,13 +36,13 @@ namespace Stratis.Bitcoin.IntegrationTests
 
         public Transaction Spend(ICoin[] coins, Money amount)
         {
-            TransactionBuilder builder = new TransactionBuilder(this.network);
+            var builder = new TransactionBuilder(this.network);
             builder.AddCoins(coins);
             builder.AddKeys(this.MinerKey);
             builder.Send(this.MinerScriptPubKey, amount);
             builder.SendFees(Money.Coins(0.01m));
             builder.SetChange(this.MinerScriptPubKey);
-            var tx = builder.BuildTransaction(true);
+            Transaction tx = builder.BuildTransaction(true);
             return tx;
         }
 
@@ -65,12 +65,12 @@ namespace Stratis.Bitcoin.IntegrationTests
 
         public void Mine(int blockCount)
         {
-            List<Block> blocks = new List<Block>();
+            var blocks = new List<Block>();
             DateTimeOffset now = DateTimeOffset.UtcNow;
             for (int i = 0; i < blockCount; i++)
             {
                 uint nonce = 0;
-                Block block = new Block();
+                var block = new Block();
                 block.Header.HashPrevBlock = this.Chain.Tip.HashBlock;
                 block.Header.Bits = block.Header.GetWorkRequired(this.network, this.Chain.Tip);
                 block.Header.UpdateTime(now, this.network, this.Chain.Tip);
@@ -78,12 +78,12 @@ namespace Stratis.Bitcoin.IntegrationTests
                 coinbase.AddInput(TxIn.CreateCoinbase(this.Chain.Height + 1));
                 coinbase.AddOutput(new TxOut(this.network.GetReward(this.Chain.Height + 1), this.MinerScriptPubKey));
                 block.AddTransaction(coinbase);
-                foreach (var tx in this.transactions)
+                foreach (Transaction tx in this.transactions)
                 {
                     block.AddTransaction(tx);
                 }
                 block.UpdateMerkleRoot();
-                while (!block.CheckProofOfWork(this.network.Consensus))
+                while (!block.CheckProofOfWork())
                     block.Header.Nonce = ++nonce;
                 block.Header.PrecomputeHash();
                 blocks.Add(block);
@@ -91,7 +91,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 this.Chain.SetTip(block.Header);
             }
 
-            foreach (var b in blocks)
+            foreach (Block b in blocks)
             {
                 this.Blocks.Add(b.GetHash(), b);
             }

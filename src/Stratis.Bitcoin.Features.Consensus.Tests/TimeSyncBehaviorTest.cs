@@ -164,7 +164,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
             // Add max outbound.
             for (int i = 0; i < TimeSyncBehaviorState.MaxOutboundSamples; i++)
             {
-                IPAddress peerAddress = new IPAddress(i);
+                var peerAddress = new IPAddress(i);
                 bool used = state.AddTimeData(peerAddress, TimeSpan.FromSeconds(400), false);
                 Assert.True(used);
             }
@@ -175,7 +175,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
             // Add another batch of outbounds with a different offset.
             for (int i = TimeSyncBehaviorState.MaxOutboundSamples; i < TimeSyncBehaviorState.MaxOutboundSamples * 2; i++)
             {
-                IPAddress peerAddress = new IPAddress(i * 2);
+                var peerAddress = new IPAddress(i * 2);
                 bool used = state.AddTimeData(peerAddress, TimeSpan.FromSeconds(800), false);
                 Assert.True(used, $"index: {i}");
             }

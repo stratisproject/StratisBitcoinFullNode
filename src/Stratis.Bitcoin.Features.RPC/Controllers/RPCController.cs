@@ -2,10 +2,12 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Reflection;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Controllers;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Primitives;
 using NBitcoin.RPC;
 using Stratis.Bitcoin.Controllers;
 using Stratis.Bitcoin.Utilities;
@@ -64,7 +66,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
                 var actionDescriptorProvider = this.fullNode?.RPCHost.Services.GetService(typeof(IActionDescriptorCollectionProvider)) as IActionDescriptorCollectionProvider;
                 // This approach is similar to the one used by RPCRouteHandler so should only give us the descriptors
                 // that RPC would normally act on subject to the method name matching the "ActionName".
-                foreach (var actionDescriptor in actionDescriptorProvider?.ActionDescriptors.Items.OfType<ControllerActionDescriptor>())
+                foreach (ControllerActionDescriptor actionDescriptor in actionDescriptorProvider?.ActionDescriptors.Items.OfType<ControllerActionDescriptor>())
                     this.ActionDescriptors[actionDescriptor.ActionName] = actionDescriptor;
             }
 
@@ -80,7 +82,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
         {
             // Find the binding to 127.0.0.1 or the first available. The logic in RPC settings ensures there will be at least 1.
             IPEndPoint nodeEndPoint = this.rpcSettings.Bind.Where(b => b.Address.ToString() == "127.0.0.1").FirstOrDefault() ?? this.rpcSettings.Bind[0];
-            var rpcClient = this.rpcClientFactory.Create($"{this.rpcSettings.RpcUser}:{this.rpcSettings.RpcPassword}", new Uri($"http://{nodeEndPoint}"), this.fullNode.Network);            
+            IRPCClient rpcClient = this.rpcClientFactory.Create($"{this.rpcSettings.RpcUser}:{this.rpcSettings.RpcPassword}", new Uri($"http://{nodeEndPoint}"), this.fullNode.Network);            
 
             return rpcClient.SendCommand(request);
         }
@@ -100,12 +102,12 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
                     throw new Exception($"RPC method '{ methodName }' not found.");
 
                 // Prepare the named parameters that were passed via the query string in the order that they are expected by SendCommand.
-                var paramInfo = actionDescriptor.Parameters.OfType<ControllerParameterDescriptor>().ToList();
-                object[] param = new object[paramInfo.Count];
+                List<ControllerParameterDescriptor> paramInfo = actionDescriptor.Parameters.OfType<ControllerParameterDescriptor>().ToList();
+                var param = new object[paramInfo.Count];
                 for (int i = 0; i < paramInfo.Count; i++)
                 {
-                    var pInfo = paramInfo[i];
-                    var stringValues = this.Request.Query.FirstOrDefault(p => p.Key.ToLower() == pInfo.Name.ToLower());
+                    ControllerParameterDescriptor pInfo = paramInfo[i];
+                    KeyValuePair<string, StringValues> stringValues = this.Request.Query.FirstOrDefault(p => p.Key.ToLower() == pInfo.Name.ToLower());
                     param[i] = (stringValues.Key == null) ? pInfo.ParameterInfo.HasDefaultValue ? pInfo.ParameterInfo.DefaultValue.ToString() : null : stringValues.Value[0];
                 }
 
@@ -137,13 +139,14 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
             try
             {
                 var listMethods = new List<Models.RpcCommandModel>();
-                foreach (var descriptor in this.GetActionDescriptors().Values.Where(desc => desc.ActionName == desc.ActionName.ToLower()))
+                foreach (ControllerActionDescriptor descriptor in this.GetActionDescriptors().Values.Where(desc => desc.ActionName == desc.ActionName.ToLower()))
                 {
-                    var attr = descriptor.MethodInfo.CustomAttributes.Where(x => x.AttributeType == typeof(ActionDescription)).FirstOrDefault();
-                    var description = attr?.ConstructorArguments.FirstOrDefault().Value as string ?? "";
+                    CustomAttributeData attr = descriptor.MethodInfo.CustomAttributes.Where(x => x.AttributeType == typeof(ActionDescription)).FirstOrDefault();
+                    string description = attr?.ConstructorArguments.FirstOrDefault().Value as string ?? "";
 
                     var parameters = new List<string>();
-                    foreach (var param in descriptor.Parameters.OfType<ControllerParameterDescriptor>())
+                    foreach (ControllerParameterDescriptor param in descriptor.Parameters.OfType<ControllerParameterDescriptor>())
+                    {
                         if (!param.ParameterInfo.IsRetval)
                         {
                             string value = $"<{param.ParameterInfo.Name.ToLower()}>";
@@ -153,6 +156,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
 
                             parameters.Add(value);
                         }
+                    }
 
                     string method = $"{descriptor.ActionName} {string.Join(" ", parameters.ToArray())}";
 

@@ -6,11 +6,11 @@ namespace NBitcoin.RPC
     {
         public UnspentTransaction(JObject unspent)
         {
-            this.bestblock = uint256.Parse((string)unspent[nameof(bestblock)]);
-            this.confirmations = (int)unspent[(nameof(confirmations))];
-            this.value = (decimal)unspent[(nameof(value))];
-            this.scriptPubKey = unspent[nameof(scriptPubKey)].ToObject<RPCScriptPubKey>();
-            this.coinbase = (bool)unspent[(nameof(coinbase))];
+            this.bestblock = uint256.Parse((string)unspent[nameof(this.bestblock)]);
+            this.confirmations = (int)unspent[(nameof(this.confirmations))];
+            this.value = (decimal)unspent[(nameof(this.value))];
+            this.scriptPubKey = unspent[nameof(this.scriptPubKey)].ToObject<RPCScriptPubKey>();
+            this.coinbase = (bool)unspent[(nameof(this.coinbase))];
         }
 
         public uint256 bestblock { get; set; }

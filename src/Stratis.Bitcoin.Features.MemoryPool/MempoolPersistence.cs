@@ -127,7 +127,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <returns>Whether the objects are equal.</returns>
         public override bool Equals(object obj)
         {
-            MempoolPersistenceEntry toCompare = obj as MempoolPersistenceEntry;
+            var toCompare = obj as MempoolPersistenceEntry;
             if (toCompare == null) return false;
 
             if ((this.tx == null) != (toCompare.tx == null))
@@ -210,7 +210,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                     }
                     else
                     {
-                        using (FileStream fs = new FileStream(tempFilePath, FileMode.Create))
+                        using (var fs = new FileStream(tempFilePath, FileMode.Create))
                         {
                             this.DumpToStream(network, toSave, fs);
                         }
@@ -261,8 +261,10 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                 return null;
             try
             {
-                using (FileStream fs = new FileStream(filePath, FileMode.Open))
+                using (var fs = new FileStream(filePath, FileMode.Open))
+                {
                     return this.LoadFromStream(network, fs);
+                }
             }
             catch (Exception ex)
             {

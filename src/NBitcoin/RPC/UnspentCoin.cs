@@ -11,30 +11,29 @@ namespace NBitcoin.RPC
         internal UnspentCoin(JObject unspent, Network network)
         {
             this.Network = network;
-            OutPoint = new OutPoint(uint256.Parse((string)unspent["txid"]), (uint)unspent["vout"]);
-            var address = (string)unspent["address"];
-            if(address != null)
-                Address = network.Parse<BitcoinAddress>(address);
-            Account = (string)unspent["account"];
-            ScriptPubKey = new Script(Encoders.Hex.DecodeData((string)unspent["scriptPubKey"]));
-            var redeemScriptHex = (string)unspent["redeemScript"];
+            this.OutPoint = new OutPoint(uint256.Parse((string)unspent["txid"]), (uint)unspent["vout"]);
+            string address = (string)unspent["address"];
+            if(address != null) this.Address = network.Parse<BitcoinAddress>(address);
+            this.Account = (string)unspent["account"];
+            this.ScriptPubKey = new Script(Encoders.Hex.DecodeData((string)unspent["scriptPubKey"]));
+            string redeemScriptHex = (string)unspent["redeemScript"];
             if(redeemScriptHex != null)
             {
-                RedeemScript = new Script(Encoders.Hex.DecodeData(redeemScriptHex));
+                this.RedeemScript = new Script(Encoders.Hex.DecodeData(redeemScriptHex));
             }
-            var amount = (decimal)unspent["amount"];
-            Amount = new Money((long)(amount * Money.COIN));
-            Confirmations = (uint)unspent["confirmations"];
+            decimal amount = (decimal)unspent["amount"];
+            this.Amount = new Money((long)(amount * Money.COIN));
+            this.Confirmations = (uint)unspent["confirmations"];
 
             // Added in Bitcoin Core 0.10.0
             if(unspent["spendable"] != null)
             {
-                IsSpendable = (bool)unspent["spendable"];
+                this.IsSpendable = (bool)unspent["spendable"];
             }
             else
             {
                 // Default to True for earlier versions, i.e. if not present
-                IsSpendable = true;
+                this.IsSpendable = true;
             }
         }
 
@@ -80,9 +79,9 @@ namespace NBitcoin.RPC
 
         public Coin AsCoin()
         {
-            var coin = new Coin(OutPoint, new TxOut(Amount, ScriptPubKey));
-            if(RedeemScript != null)
-                coin = coin.ToScriptCoin(RedeemScript).AssertCoherent(this.Network);
+            var coin = new Coin(this.OutPoint, new TxOut(this.Amount, this.ScriptPubKey));
+            if(this.RedeemScript != null)
+                coin = coin.ToScriptCoin(this.RedeemScript).AssertCoherent(this.Network);
             return coin;
         }
 

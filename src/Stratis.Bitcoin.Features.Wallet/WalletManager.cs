@@ -216,7 +216,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             Mnemonic mnemonic = string.IsNullOrEmpty(mnemonicList)
                 ? new Mnemonic(Wordlist.English, WordCount.Twelve)
                 : new Mnemonic(mnemonicList);
-            ExtKey extendedKey = HdOperations.GetHdPrivateKey(mnemonic, passphrase);
+            ExtKey extendedKey = HdOperations.GetExtendedKey(mnemonic, passphrase);
 
             // Create a wallet file.
             string encryptedSeed = extendedKey.PrivateKey.GetEncryptedBitcoinSecret(password, this.network).ToWif();
@@ -295,7 +295,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             ExtKey extendedKey;
             try
             {
-                extendedKey = HdOperations.GetHdPrivateKey(mnemonic, passphrase);
+                extendedKey = HdOperations.GetExtendedKey(mnemonic, passphrase);
             }
             catch (NotSupportedException ex)
             {
@@ -449,7 +449,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                     account.ExternalAddresses.Where(acc => !acc.Transactions.Any()).ToList();
                 
                 int diff = unusedAddresses.Count - count;
-                List<HdAddress> newAddresses = new List<HdAddress>();
+                var newAddresses = new List<HdAddress>();
                 if (diff < 0)
                 {
                     newAddresses = account.CreateAddresses(this.network, Math.Abs(diff), isChange: isChange).ToList();
@@ -485,11 +485,11 @@ namespace Stratis.Bitcoin.Features.Wallet
             // In order to calculate the fee properly we need to retrieve all the transactions with spending details.
             Wallet wallet = this.GetWalletByName(walletName);
 
-            List<AccountHistory> accountsHistory = new List<AccountHistory>();
+            var accountsHistory = new List<AccountHistory>();
 
             lock (this.lockObject)
             {
-                List<HdAccount> accounts = new List<HdAccount>();
+                var accounts = new List<HdAccount>();
                 if (!string.IsNullOrEmpty(accountName))
                 {
                     accounts.Add(wallet.GetAccountByCoinType(accountName, this.coinType));
@@ -499,7 +499,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                     accounts.AddRange(wallet.GetAccountsByCoinType(this.coinType));
                 }
 
-                foreach (var account in accounts)
+                foreach (HdAccount account in accounts)
                 {
                     accountsHistory.Add(this.GetHistory(account));
                 }
@@ -529,13 +529,13 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <inheritdoc />
         public IEnumerable<AccountBalance> GetBalances(string walletName, string accountName = null)
         {
-            List<AccountBalance> balances = new List<AccountBalance>();
+            var balances = new List<AccountBalance>();
 
             lock (this.lockObject)
             {
                 Wallet wallet = this.GetWalletByName(walletName);
 
-                List<HdAccount> accounts = new List<HdAccount>();
+                var accounts = new List<HdAccount>();
                 if (!string.IsNullOrEmpty(accountName))
                 {
                     accounts.Add(wallet.GetAccountByCoinType(accountName, this.coinType));
@@ -545,7 +545,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                     accounts.AddRange(wallet.GetAccountsByCoinType(this.coinType));
                 }
                 
-                foreach (var account in accounts)
+                foreach (HdAccount account in accounts)
                 {
                     (Money amountConfirmed, Money amountUnconfirmed) result = account.GetSpendableAmount();
 
@@ -567,7 +567,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             Guard.NotEmpty(address, nameof(address));
             this.logger.LogTrace("({0}:'{1}')", nameof(address), address);
 
-            AddressBalance balance = new AddressBalance
+            var balance = new AddressBalance
             {
                 Address = address,
                 CoinType = this.coinType
@@ -1007,7 +1007,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             {
                 this.logger.LogTrace("Spending UTXO '{0}-{1}' is new.", spendingTransactionId, spendingTransactionIndex);
 
-                List<PaymentDetails> payments = new List<PaymentDetails>();
+                var payments = new List<PaymentDetails>();
                 foreach (TxOut paidToOutput in paidToOutputs)
                 {
                     // Figure out how to retrieve the destination address.
@@ -1040,7 +1040,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                     });
                 }
 
-                SpendingDetails spendingDetails = new SpendingDetails
+                var spendingDetails = new SpendingDetails
                 {
                     TransactionId = transaction.GetHash(),
                     Payments = payments,
@@ -1100,7 +1100,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                     int addressesCount = isChange ? account.InternalAddresses.Count() : account.ExternalAddresses.Count();
                     int emptyAddressesCount = addressesCount - lastUsedAddressIndex - 1;
                     int accountsToAdd = UnusedAddressesBuffer - emptyAddressesCount;
-                    var newAddresses = account.CreateAddresses(this.network, accountsToAdd, isChange);
+                    IEnumerable<HdAddress> newAddresses = account.CreateAddresses(this.network, accountsToAdd, isChange);
 
                     this.UpdateKeysLookupLock(newAddresses);
                 }
@@ -1216,7 +1216,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                                                     "Make sure you have your mnemonic and your password handy!");
             }
 
-            Wallet walletFile = new Wallet
+            var walletFile = new Wallet
             {
                 Name = name,
                 EncryptedSeed = encryptedSeed,
@@ -1268,7 +1268,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                         if (address.Pubkey != null)
                             this.keysLookup[address.Pubkey] = address;
 
-                        foreach (var transaction in address.Transactions)
+                        foreach (TransactionData transaction in address.Transactions)
                         {
                             this.outpointLookup[new OutPoint(transaction.Id, transaction.Index)] = transaction;
                         }
@@ -1360,7 +1360,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             List<uint256> idsToRemove = transactionsIds.ToList();
             Wallet wallet = this.GetWallet(walletName);
 
-            HashSet<(uint256, DateTimeOffset)> result = new HashSet<(uint256, DateTimeOffset)>();
+            var result = new HashSet<(uint256, DateTimeOffset)>();
 
             lock (this.lockObject)
             {
@@ -1407,7 +1407,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             Guard.NotEmpty(walletName, nameof(walletName));
             Wallet wallet = this.GetWallet(walletName);
 
-            HashSet<(uint256, DateTimeOffset)> removedTransactions = new HashSet<(uint256, DateTimeOffset)>();
+            var removedTransactions = new HashSet<(uint256, DateTimeOffset)>();
 
             lock (this.lockObject)
             {
@@ -1443,7 +1443,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                 {
                     int heightAtDate = this.chain.GetHeightAtTime(date);
 
-                    foreach (var wallet in wallets)
+                    foreach (Wallet wallet in wallets)
                     {
                         this.logger.LogTrace("The chain of headers has finished downloading, updating wallet '{0}' with height {1}", wallet.Name, heightAtDate);
                         this.UpdateLastBlockSyncedHeight(wallet, this.chain.GetBlock(heightAtDate));
@@ -1456,7 +1456,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                     // sync from the current height.
                     this.logger.LogError($"Exception occurred while waiting for chain to download: {ex.Message}");
 
-                    foreach (var wallet in wallets)
+                    foreach (Wallet wallet in wallets)
                     {
                         this.UpdateLastBlockSyncedHeight(wallet, this.chain.Tip);
                     }

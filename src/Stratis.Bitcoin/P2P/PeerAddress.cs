@@ -282,7 +282,7 @@ namespace Stratis.Bitcoin.P2P
         /// <param name="loopback">The loopback (source) of the peer.</param>
         public static PeerAddress Create(IPEndPoint endPoint, IPAddress loopback)
         {
-            var peer = Create(endPoint);
+            PeerAddress peer = Create(endPoint);
             peer.loopback = loopback.ToString();
             return peer;
         }

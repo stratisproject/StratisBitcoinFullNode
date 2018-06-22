@@ -1,8 +1,6 @@
-﻿using System;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
-using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.BlockStore
@@ -35,23 +33,15 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// <summary>Provider of time functions.</summary>
         protected readonly IDateTimeProvider dateTimeProvider;
 
-        /// <summary>The maximum amount of blocks the cache can contain.</summary>
-        public readonly int MaxCacheBlocksCount;
-
         public BlockStoreCache(
             IBlockRepository blockRepository,
             IDateTimeProvider dateTimeProvider,
             ILoggerFactory loggerFactory,
-            NodeSettings nodeSettings)
+            StoreSettings storeSettings)
         {
             Guard.NotNull(blockRepository, nameof(blockRepository));
 
-            // Initialize 'MaxCacheBlocksCount' with default value of maximum 300 blocks or with user defined value.
-            // Value of 300 is chosen because it covers most of the cases when not synced node is connected and trying to sync from us.
-            this.MaxCacheBlocksCount = nodeSettings.ConfigReader.GetOrDefault("maxCacheBlocksCount", 300);
-
-            this.cache = new MemoryCache<uint256, Block>(this.MaxCacheBlocksCount);
-
+            this.cache = new MemoryCache<uint256, Block>(storeSettings.MaxCacheBlocksCount);
             this.blockRepository = blockRepository;
             this.dateTimeProvider = dateTimeProvider;
             this.PerformanceCounter = this.BlockStoreCachePerformanceCounterFactory();

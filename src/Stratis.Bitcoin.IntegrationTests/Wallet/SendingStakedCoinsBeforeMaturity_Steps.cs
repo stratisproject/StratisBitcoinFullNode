@@ -1,16 +1,17 @@
-﻿using System.Linq;
-using NBitcoin;
+﻿using System.IO;
+using System.Linq;
 using FluentAssertions;
+using Microsoft.AspNetCore.Mvc;
+using NBitcoin;
+using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Controllers;
 using Stratis.Bitcoin.Features.Wallet.Models;
-using Stratis.Bitcoin.IntegrationTests.Builders;
-using Stratis.Bitcoin.IntegrationTests.EnvironmentMockUpHelpers;
-using Stratis.Bitcoin.IntegrationTests.TestFramework;
-using Xunit.Abstractions;
-using Microsoft.AspNetCore.Mvc;
+using Stratis.Bitcoin.IntegrationTests.Common.Builders;
+using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
+using Stratis.Bitcoin.Tests.Common.TestFramework;
 using Stratis.Bitcoin.Utilities.JsonErrors;
-using Stratis.Bitcoin.Features.Consensus;
+using Xunit.Abstractions;
 
 namespace Stratis.Bitcoin.IntegrationTests.Wallet
 {
@@ -33,7 +34,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         protected override void BeforeTest()
         {
             this.proofOfStakeSteps = new ProofOfStakeSteps(this.CurrentTest.DisplayName);
-            this.nodeGroupBuilder = new NodeGroupBuilder(this.CurrentTest.DisplayName);
+            this.nodeGroupBuilder = new NodeGroupBuilder(Path.Combine(this.GetType().Name, this.CurrentTest.DisplayName));
         }
 
         protected override void AfterTest()
@@ -81,7 +82,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
 
         private IActionResult BuildTransaction()
         {
-            var transactionResult = this.proofOfStakeSteps.ProofOfStakeNodeWithCoins.FullNode.NodeService<WalletController>()
+            IActionResult transactionResult = this.proofOfStakeSteps.ProofOfStakeNodeWithCoins.FullNode.NodeService<WalletController>()
                 .BuildTransaction(new BuildTransactionRequest
                 {
                     AccountName = this.proofOfStakeSteps.WalletAccount,
@@ -99,9 +100,9 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
 
         private void the_wallet_history_does_not_include_the_transaction()
         {
-            var walletHistory = this.GetWalletHistory(this.proofOfStakeSteps.ProofOfStakeNodeWithCoins,this.proofOfStakeSteps.PosWallet);
+            WalletHistoryModel walletHistory = this.GetWalletHistory(this.proofOfStakeSteps.ProofOfStakeNodeWithCoins,this.proofOfStakeSteps.PosWallet);
 
-            var accountHistory = walletHistory.AccountsHistoryModel.FirstOrDefault();
+            AccountHistoryModel accountHistory = walletHistory.AccountsHistoryModel.FirstOrDefault();
 
             accountHistory?.TransactionsHistory?.Where(txn => txn.Type == TransactionItemType.Send).Count().Should().Be(0);
         }

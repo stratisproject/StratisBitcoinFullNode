@@ -46,7 +46,7 @@ namespace NBitcoin
         /// <returns><c>true</c> if it is assignable.</returns>
         protected bool IsBlockHeader<T>()
         {
-            return this.IsAssignable<T>(this.blockHeaderType, this.isAssignableFromBlockHeader);
+            return IsAssignable<T>(this.blockHeaderType, this.isAssignableFromBlockHeader);
         }
 
         /// <summary>
@@ -56,7 +56,7 @@ namespace NBitcoin
         /// <returns><c>true</c> if it is assignable.</returns>
         protected bool IsBlock<T>()
         {
-            return this.IsAssignable<T>(this.blockType, this.isAssignableFromBlock);
+            return IsAssignable<T>(this.blockType, this.isAssignableFromBlock);
         }
 
         /// <summary>
@@ -66,7 +66,7 @@ namespace NBitcoin
         /// <returns><c>true</c> if it is assignable.</returns>
         protected bool IsTransaction<T>()
         {
-            return this.IsAssignable<T>(this.transactionType, this.isAssignableFromTransaction);
+            return IsAssignable<T>(this.transactionType, this.isAssignableFromTransaction);
         }
 
         /// <summary>
@@ -99,25 +99,22 @@ namespace NBitcoin
         /// <typeparam name="T">The generic type to resolve.</typeparam>
         /// <param name="result">If the type is known it will be initialized.</param>
         /// <returns><c>true</c> if it is known.</returns>
-        public virtual bool TryCreateNew<T>(out T result) where T : IBitcoinSerializable
+        public virtual T TryCreateNew<T>() where T : IBitcoinSerializable
         {
-            result = default(T);
-            if (this.IsBlock<T>())
+            object result = null;
+            if (IsBlock<T>())
             {
-                result = (T)(object)this.CreateBlock();
-                return true;
+                result = (T)(object)CreateBlock();
             }
-            if (this.IsBlockHeader<T>())
+            if (IsBlockHeader<T>())
             {
-                result = (T)(object)this.CreateBlockHeader();
-                return true;
+                result = (T)(object)CreateBlockHeader();
             }
-            if (this.IsTransaction<T>())
+            if (IsTransaction<T>())
             {
-                result = (T)(object)this.CreateTransaction();
-                return true;
+                result = (T)(object)CreateTransaction();
             }
-            return false;
+            return (T)result;
         }
 
         /// <summary>
@@ -150,7 +147,7 @@ namespace NBitcoin
         public virtual Block CreateBlock()
         {
 #pragma warning disable CS0618 // Type or member is obsolete
-            return new Block(this.CreateBlockHeader());
+            return new Block(CreateBlockHeader());
 #pragma warning restore CS0618 // Type or member is obsolete
         }
 

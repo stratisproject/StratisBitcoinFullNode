@@ -14,6 +14,13 @@ namespace Stratis.Bitcoin.Features.Notifications.Tests
 {
     public class NotificationsControllerTest : LogsTestBase
     {
+        private readonly Network network;
+
+        public NotificationsControllerTest()
+        {
+            this.network = Network.StratisMain;
+        }
+
         [Theory]
         [InlineData(null)]
         [InlineData("")]
@@ -26,8 +33,8 @@ namespace Stratis.Bitcoin.Features.Notifications.Tests
             var notificationController = new NotificationsController(blockNotification.Object, chain.Object);
             IActionResult result = notificationController.SyncFrom(from);
 
-            ErrorResult errorResult = Assert.IsType<ErrorResult>(result);
-            ErrorResponse errorResponse = Assert.IsType<ErrorResponse>(errorResult.Value);
+            var errorResult = Assert.IsType<ErrorResult>(result);
+            var errorResponse = Assert.IsType<ErrorResponse>(errorResult.Value);
             Assert.Single(errorResponse.Errors);
 
             ErrorModel error = errorResponse.Errors[0];
@@ -42,7 +49,7 @@ namespace Stratis.Bitcoin.Features.Notifications.Tests
             string hashLocation = "000000000000000000c03dbe6ee5fedb25877a12e32aa95bc1d3bd480d7a93f9";
             uint256 hash = uint256.Parse(hashLocation);
 
-            ChainedHeader chainedHeader = new ChainedHeader(new BlockHeader(), hash, null);
+            var chainedHeader = new ChainedHeader(this.network.Consensus.ConsensusFactory.CreateBlockHeader(), hash, null);
             var chain = new Mock<ConcurrentChain>();
             chain.Setup(c => c.GetBlock(heightLocation)).Returns(chainedHeader);
             var blockNotification = new Mock<BlockNotification>(this.LoggerFactory.Object, chain.Object, new Mock<ILookaheadBlockPuller>().Object, new Signals.Signals(), new AsyncLoopFactory(new LoggerFactory()), new NodeLifetime());
@@ -64,7 +71,7 @@ namespace Stratis.Bitcoin.Features.Notifications.Tests
             string hashLocation = "000000000000000000c03dbe6ee5fedb25877a12e32aa95bc1d3bd480d7a93f9";
             uint256 hash = uint256.Parse(hashLocation);
 
-            ChainedHeader chainedHeader = new ChainedHeader(new BlockHeader(), hash, null);
+            var chainedHeader = new ChainedHeader(this.network.Consensus.ConsensusFactory.CreateBlockHeader(), hash, null);
             var chain = new Mock<ConcurrentChain>();
             chain.Setup(c => c.GetBlock(uint256.Parse(hashLocation))).Returns(chainedHeader);
             var blockNotification = new Mock<BlockNotification>(this.LoggerFactory.Object, chain.Object, new Mock<ILookaheadBlockPuller>().Object, new Signals.Signals(), new AsyncLoopFactory(new LoggerFactory()), new NodeLifetime());
@@ -83,7 +90,7 @@ namespace Stratis.Bitcoin.Features.Notifications.Tests
         {
             // Set up
             string hashLocation = "000000000000000000c03dbe6ee5fedb25877a12e32aa95bc1d3bd480d7a93f9";
-            
+
             var chain = new Mock<ConcurrentChain>();
             chain.Setup(c => c.GetBlock(uint256.Parse(hashLocation))).Returns((ChainedHeader)null);
             var blockNotification = new Mock<BlockNotification>(this.LoggerFactory.Object, chain.Object, new Mock<ILookaheadBlockPuller>().Object, new Signals.Signals(), new AsyncLoopFactory(new LoggerFactory()), new NodeLifetime());
@@ -94,8 +101,8 @@ namespace Stratis.Bitcoin.Features.Notifications.Tests
             // Assert
             IActionResult result = notificationController.SyncFrom(hashLocation);
 
-            ErrorResult errorResult = Assert.IsType<ErrorResult>(result);
-            ErrorResponse errorResponse = Assert.IsType<ErrorResponse>(errorResult.Value);
+            var errorResult = Assert.IsType<ErrorResult>(result);
+            var errorResponse = Assert.IsType<ErrorResponse>(errorResult.Value);
             Assert.Single(errorResponse.Errors);
 
             ErrorModel error = errorResponse.Errors[0];
@@ -131,8 +138,8 @@ namespace Stratis.Bitcoin.Features.Notifications.Tests
             // Assert
             IActionResult result = notificationController.SyncFrom("15");
 
-            ErrorResult errorResult = Assert.IsType<ErrorResult>(result);
-            ErrorResponse errorResponse = Assert.IsType<ErrorResponse>(errorResult.Value);
+            var errorResult = Assert.IsType<ErrorResult>(result);
+            var errorResponse = Assert.IsType<ErrorResponse>(errorResult.Value);
             Assert.Single(errorResponse.Errors);
 
             ErrorModel error = errorResponse.Errors[0];

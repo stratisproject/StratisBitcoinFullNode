@@ -2,6 +2,8 @@
 using NBitcoin;
 using Stratis.Bitcoin.Base.Deployments;
 using Stratis.Bitcoin.BlockPulling;
+using Stratis.Bitcoin.Consensus;
+using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 
 namespace Stratis.Bitcoin.Features.Consensus.Interfaces
@@ -30,16 +32,16 @@ namespace Stratis.Bitcoin.Features.Consensus.Interfaces
         /// <summary>The consensus db, containing all unspent UTXO in the chain.</summary>
         CoinView UTXOSet { get; }
 
-        /// <summary>The validation logic for the consensus rules.</summary>
-        IPowConsensusValidator Validator { get; }
+        /// <summary>The rules engine for validation logic for the consensus rules.</summary>
+        IConsensusRules ConsensusRules { get; }
 
         /// <summary>
         /// A method that will accept a new block to the node.
         /// The block will be validated and the <see cref="CoinView"/> db will be updated.
         /// If it's a new block that was mined or staked it will extend the chain and the new block will set <see cref="ConcurrentChain.Tip"/>.
         /// </summary>
-        /// <param name="blockValidationContext">Information about the block to validate.</param>
-        Task AcceptBlockAsync(BlockValidationContext blockValidationContext);
+        /// <param name="validationContext">Information about the block to validate.</param>
+        Task AcceptBlockAsync(ValidationContext validationContext);
 
         /// <summary>
         /// Flushes changes in the cached coinview to the disk.

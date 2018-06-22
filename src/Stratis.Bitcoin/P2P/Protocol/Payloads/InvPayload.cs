@@ -39,7 +39,7 @@ namespace Stratis.Bitcoin.P2P.Protocol.Payloads
 
         public override void ReadWriteCore(BitcoinStream stream)
         {
-            var old = stream.MaxArraySize;
+            int old = stream.MaxArraySize;
             stream.MaxArraySize = MaxInventorySize;
             stream.ReadWrite(ref this.inventory);
             stream.MaxArraySize = old;

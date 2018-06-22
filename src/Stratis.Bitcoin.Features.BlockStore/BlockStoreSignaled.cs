@@ -6,16 +6,17 @@ using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Connection;
+using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.P2P.Peer;
+using Stratis.Bitcoin.Primitives;
 using Stratis.Bitcoin.Signals;
 using Stratis.Bitcoin.Utilities;
-using System.Timers;
 
 namespace Stratis.Bitcoin.Features.BlockStore
 {
     public class BlockStoreSignaled : SignalObserver<Block>
     {
-        private readonly BlockStoreLoop blockStoreLoop;
+        private readonly BlockStoreQueue blockStoreQueue;
 
         private readonly ConcurrentChain chain;
 
@@ -36,23 +37,27 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// <summary>Queue of chained blocks that will be announced to the peers.</summary>
         private readonly AsyncQueue<ChainedHeader> blocksToAnnounce;
 
+        /// <summary>Provider of IBD state.</summary>
+        private readonly IInitialBlockDownloadState initialBlockDownloadState;
+
         /// <summary>Interval between batches in milliseconds.</summary>
         private const int BatchIntervalMs = 5000;
 
         /// <summary>Task that runs <see cref="DequeueContinuouslyAsync"/>.</summary>
-        private Task dequeueLoopTask;
+        private readonly Task dequeueLoopTask;
 
         public BlockStoreSignaled(
-            BlockStoreLoop blockStoreLoop,
+            BlockStoreQueue blockStoreQueue,
             ConcurrentChain chain,
             StoreSettings storeSettings,
             IChainState chainState,
             IConnectionManager connection,
             INodeLifetime nodeLifetime,
             ILoggerFactory loggerFactory,
-            IBlockStoreCache blockStoreCache)
+            IBlockStoreCache blockStoreCache,
+            IInitialBlockDownloadState initialBlockDownloadState)
         {
-            this.blockStoreLoop = blockStoreLoop;
+            this.blockStoreQueue = blockStoreQueue;
             this.chain = chain;
             this.chainState = chainState;
             this.connection = connection;
@@ -60,6 +65,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.storeSettings = storeSettings;
             this.blockStoreCache = blockStoreCache;
+            this.initialBlockDownloadState = initialBlockDownloadState;
 
             this.blocksToAnnounce = new AsyncQueue<ChainedHeader>();
             this.dequeueLoopTask = this.DequeueContinuouslyAsync();
@@ -83,12 +89,12 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
             this.logger.LogTrace("Block hash is '{0}'.", chainedHeader.HashBlock);
 
-            var blockPair = new BlockPair(block, chainedHeader);
+            var blockPair = new ChainedHeaderBlock(block, chainedHeader);
 
             // Ensure the block is written to disk before relaying.
-            this.blockStoreLoop.AddToPending(blockPair);
+            this.blockStoreQueue.AddToPending(blockPair);
 
-            if (this.blockStoreLoop.InitialBlockDownloadState.IsInitialBlockDownload())
+            if (this.initialBlockDownloadState.IsInitialBlockDownload())
             {
                 this.logger.LogTrace("(-)[IBD]");
                 return;
@@ -146,8 +152,11 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
                         timerTask = null;
                     }
-                    // Start timer if it is not started already.
-                    else timerTask = timerTask ?? Task.Delay(BatchIntervalMs, this.nodeLifetime.ApplicationStopping);
+                    else
+                    {
+                        // Start timer if it is not started already.
+                        timerTask = timerTask ?? Task.Delay(BatchIntervalMs, this.nodeLifetime.ApplicationStopping);
+                    }
                 }
             }
             catch (OperationCanceledException)

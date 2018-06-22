@@ -43,12 +43,6 @@ namespace Stratis.Bitcoin.Features.Api
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
         }
 
-        /// <inheritdoc />
-        public override void LoadConfiguration()
-        {
-            this.apiSettings.Load(this.fullNode.Settings);
-        }
-
         public override void Initialize()
         {
             this.logger.LogInformation("API starting on URL '{0}'.", this.apiSettings.ApiUri);
@@ -120,7 +114,7 @@ namespace Stratis.Bitcoin.Features.Api
     /// </summary>
     public static class ApiFeatureExtension
     {
-        public static IFullNodeBuilder UseApi(this IFullNodeBuilder fullNodeBuilder, Action<ApiSettings> setup = null, Action<ApiFeatureOptions> optionsAction = null)
+        public static IFullNodeBuilder UseApi(this IFullNodeBuilder fullNodeBuilder, Action<ApiFeatureOptions> optionsAction = null)
         {
             // TODO: move the options in to the feature builder
             var options = new ApiFeatureOptions();
@@ -134,7 +128,7 @@ namespace Stratis.Bitcoin.Features.Api
                     {
                         services.AddSingleton(fullNodeBuilder);
                         services.AddSingleton(options);
-                        services.AddSingleton<ApiSettings>(new ApiSettings(setup));
+                        services.AddSingleton<ApiSettings>();
                     });
             });
 

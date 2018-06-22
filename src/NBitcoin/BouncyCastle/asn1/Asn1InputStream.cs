@@ -25,7 +25,7 @@ namespace NBitcoin.BouncyCastle.Asn1
             }
             else if(input is MemoryStream)
             {
-                MemoryStream mem = (MemoryStream)input;
+                var mem = (MemoryStream)input;
                 return (int)(mem.Length - mem.Position);
             }
 
@@ -75,7 +75,7 @@ namespace NBitcoin.BouncyCastle.Asn1
         {
             bool isConstructed = (tag & Asn1Tags.Constructed) != 0;
 
-            DefiniteLengthInputStream defIn = new DefiniteLengthInputStream(this.s, length);
+            var defIn = new DefiniteLengthInputStream(this.s, length);
 
             if((tag & Asn1Tags.Application) != 0)
             {
@@ -98,12 +98,12 @@ namespace NBitcoin.BouncyCastle.Asn1
                 }
             }
 
-            return CreatePrimitiveDerObject(tagNo, defIn, tmpBuffers);
+            return CreatePrimitiveDerObject(tagNo, defIn, this.tmpBuffers);
         }
 
         internal Asn1EncodableVector BuildEncodableVector()
         {
-            Asn1EncodableVector v = new Asn1EncodableVector();
+            var v = new Asn1EncodableVector();
 
             Asn1Object o;
             while((o = ReadObject()) != null)
@@ -147,7 +147,7 @@ namespace NBitcoin.BouncyCastle.Asn1
             //
             // calculate length
             //
-            int length = ReadLength(this.s, limit);
+            int length = ReadLength(this.s, this.limit);
 
             if(length < 0) // indefinite length method
             {

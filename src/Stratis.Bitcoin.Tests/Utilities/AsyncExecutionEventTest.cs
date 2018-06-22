@@ -7,7 +7,7 @@ using Xunit;
 namespace Stratis.Bitcoin.Tests.Utilities
 {
     /// <summary>
-    /// Tests of <see cref="AsyncExecutionEvent{TSender, TArg}"/> class.
+    /// Tests of <see cref="AsyncExecutionEvent{TSender,TArg}"/> class.
     /// </summary>
     public class AsyncExecutionEventTest
     {
@@ -52,7 +52,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
         [Fact]
         public void AsyncExecutionEvent_UnregisterGuarantee()
         {
-            Random rnd = new Random();
+            var rnd = new Random();
             using (var executionEvent = new AsyncExecutionEvent<object, bool>())
             {
                 for (int i = 0; i < 100; i++)

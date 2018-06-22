@@ -11,7 +11,7 @@ namespace NBitcoin.BouncyCastle.Utilities.IO
         {
             get
             {
-                return !closed;
+                return !this.closed;
             }
         }
         public sealed override bool CanSeek
@@ -34,7 +34,7 @@ namespace NBitcoin.BouncyCastle.Utilities.IO
         {
             if (disposing)
             {
-                closed = true;
+                this.closed = true;
             }
             base.Dispose(disposing);
         }

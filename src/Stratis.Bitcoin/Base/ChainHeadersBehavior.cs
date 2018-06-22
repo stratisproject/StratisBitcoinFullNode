@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -81,6 +82,11 @@ namespace Stratis.Bitcoin.Base
                 this.AssertNotAttached();
                 this.chain = value;
             }
+        }
+
+        public List<ChainedHeader> ConsensusAdvanced(ChainedHeader chainedHeader)
+        {
+            throw new NotImplementedException();
         }
 
         public bool InvalidHeaderReceived { get; private set; }
@@ -243,7 +249,7 @@ namespace Stratis.Bitcoin.Base
                 return;
             }
 
-            HeadersPayload headers = new HeadersPayload();
+            var headers = new HeadersPayload();
             ChainedHeader consensusTip = this.chainState.ConsensusTip;
             consensusTip = this.Chain.GetBlock(consensusTip.HashBlock);
 

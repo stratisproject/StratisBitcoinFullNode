@@ -1,4 +1,4 @@
-﻿using System;
+﻿using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -107,13 +107,6 @@ namespace Stratis.Bitcoin.Features.LightWallet
             this.walletSettings = walletSettings;
         }
 
-        /// <inheritdoc />
-        public override void LoadConfiguration()
-        {
-            this.walletSettings.Load(this.nodeSettings);
-            this.walletSettings.IsLightWallet = true;
-        }
-
         /// <summary>
         /// Prints command-line help.
         /// </summary>
@@ -127,6 +120,7 @@ namespace Stratis.Bitcoin.Features.LightWallet
         public override void Initialize()
         {
             this.connectionManager.Parameters.TemplateBehaviors.Add(new DropNodesBehaviour(this.chain, this.connectionManager, this.loggerFactory));
+            this.walletSettings.IsLightWallet = true;
 
             this.walletManager.Start();
             this.walletSyncManager.Start();
@@ -140,7 +134,7 @@ namespace Stratis.Bitcoin.Features.LightWallet
 
         public IAsyncLoop StartDeploymentsChecksLoop()
         {
-            var loopToken = CancellationTokenSource.CreateLinkedTokenSource(this.nodeLifetime.ApplicationStopping);
+            CancellationTokenSource loopToken = CancellationTokenSource.CreateLinkedTokenSource(this.nodeLifetime.ApplicationStopping);
             return this.asyncLoopFactory.Run("LightWalletFeature.CheckDeployments", token =>
             {
                 if (!this.chain.IsDownloaded())
@@ -175,7 +169,7 @@ namespace Stratis.Bitcoin.Features.LightWallet
         /// <inheritdoc />
         public void AddNodeStats(StringBuilder benchLog)
         {
-            WalletManager manager = this.walletManager as WalletManager;
+            var manager = this.walletManager as WalletManager;
 
             if (manager != null)
             {
@@ -192,16 +186,16 @@ namespace Stratis.Bitcoin.Features.LightWallet
         /// <inheritdoc />
         public void AddFeatureStats(StringBuilder benchLog)
         {
-            var walletNames = this.walletManager.GetWalletsNames();
+            IEnumerable<string> walletNames = this.walletManager.GetWalletsNames();
 
             if (walletNames.Any())
             {
                 benchLog.AppendLine();
                 benchLog.AppendLine("======Wallets======");
 
-                foreach (var walletName in walletNames)
+                foreach (string walletName in walletNames)
                 {
-                    var items = this.walletManager.GetSpendableTransactionsInWallet(walletName, 1);
+                    IEnumerable<UnspentOutputReference> items = this.walletManager.GetSpendableTransactionsInWallet(walletName, 1);
                     benchLog.AppendLine("Wallet: " + (walletName + ",").PadRight(LoggingConfiguration.ColumnLength) + " Confirmed balance: " + new Money(items.Sum(s => s.Transaction.Amount)).ToString());
                 }
             }
@@ -213,7 +207,7 @@ namespace Stratis.Bitcoin.Features.LightWallet
     /// </summary>
     public static class FullNodeBuilderLightWalletExtension
     {
-        public static IFullNodeBuilder UseLightWallet(this IFullNodeBuilder fullNodeBuilder, Action<WalletSettings> setup = null)
+        public static IFullNodeBuilder UseLightWallet(this IFullNodeBuilder fullNodeBuilder)
         {
             fullNodeBuilder.ConfigureFeature(features =>
             {
@@ -234,7 +228,7 @@ namespace Stratis.Bitcoin.Features.LightWallet
                         services.AddSingleton<IBroadcasterManager, LightWalletBroadcasterManager>();
                         services.AddSingleton<BroadcasterBehavior>();
                         services.AddSingleton<IInitialBlockDownloadState, LightWalletInitialBlockDownloadState>();
-                        services.AddSingleton<WalletSettings>(new WalletSettings(setup));
+                        services.AddSingleton<WalletSettings>();
                     });
             });
 
