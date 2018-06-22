@@ -143,6 +143,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 {
                     MinConfirmations = maturity,
                     FeeType = FeeType.High,
+                    DustPrevention = false
                 };
 
                 Transaction transferContractTransaction = scSender.FullNode.WalletTransactionHandler().BuildTransaction(txBuildContext);
