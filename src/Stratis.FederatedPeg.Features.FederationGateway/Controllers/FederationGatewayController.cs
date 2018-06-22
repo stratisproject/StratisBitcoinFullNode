@@ -67,6 +67,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Controllers
             }
             catch (Exception e)
             {
+                this.logger.LogError("Exception thrown calling /api/FederationGateway/create-session-oncounterchain: {0}.", e.Message);
                 return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, $"Could not create session on counter chain: {e.Message}", e.ToString());
             }
         }
@@ -102,6 +103,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Controllers
             }
             catch (Exception e)
             {
+                this.logger.LogError("Exception thrown calling /api/FederationGateway/process-session-oncounterchain: {0}.", e.Message);
                 return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, $"Could not create partial transaction session: {e.Message}", e.ToString());
             }
         }
