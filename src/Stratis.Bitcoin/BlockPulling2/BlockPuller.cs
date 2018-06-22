@@ -7,10 +7,11 @@ using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NBitcoin.Protocol;
 using Stratis.Bitcoin.Base;
-using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
 using Stratis.Bitcoin.Utilities;
+
+//TODO check that hashes are consequtive everywhere where we need the to be
 
 namespace Stratis.Bitcoin.BlockPulling2
 {
@@ -598,7 +599,7 @@ namespace Stratis.Bitcoin.BlockPulling2
         /// <param name="downloadJob">Download job to be partially of fully consumed.</param>
         /// <param name="failedJobs">Failed assignments.</param>
         /// <param name="emptySlotes">Amount of empty slots. This is the maximum amount of assignments that can be created.</param>
-        private Dictionary<uint256, AssignedDownload> DistributeHashesLocked(ref DownloadJob downloadJob, ref List<DownloadJob> failedJobs, int emptySlotes)
+        private Dictionary<uint256, AssignedDownload> DistributeHashesLocked(ref DownloadJob downloadJob, ref List<DownloadJob> failedJobs, int emptySlotes) //TODO dont return dictionary because the order will be lost
         {
             this.logger.LogTrace("({0}:{1},{2}:{3},{4}:{5})", nameof(downloadJob.Hashes.Count), downloadJob.Hashes.Count, nameof(failedJobs.Count), failedJobs.Count, nameof(emptySlotes), emptySlotes);
 
@@ -679,8 +680,6 @@ namespace Stratis.Bitcoin.BlockPulling2
 
             int lastImportantHeight = this.chainState.ConsensusTip.Height + ImportantHeightMargin;
             this.logger.LogTrace("Blocks up to height {0} are considered to be important.", lastImportantHeight);
-
-            var hashesByJobIdsToReassign = new Dictionary<int, List<uint256>>();
 
             bool reassigned = false;
 
@@ -909,13 +908,14 @@ namespace Stratis.Bitcoin.BlockPulling2
 
                     int jobId = this.assignedDownloads[assignedHash].JobId;
 
-                    if (!hashesByJobId.TryGetValue(jobId, out List<uint256> hashesToReassign))
+                    if (!hashesByJobId.TryGetValue(jobId, out List<uint256> jobHashes))
                     {
-                        hashesToReassign = new List<uint256>();
-                        hashesByJobId.Add(jobId, hashesToReassign);
+                        jobHashes = new List<uint256>();
+                        hashesByJobId.Add(jobId, jobHashes);
                     }
 
-                    hashesToReassign.Add(assignedHash);
+                    // Add in reverse order. Fix the order later.
+                    jobHashes.Add(assignedHash);
 
                     this.RemoveAssignedDownloadLocked(assignedHash);
 
@@ -923,7 +923,11 @@ namespace Stratis.Bitcoin.BlockPulling2
                 }
             }
 
-            this.logger.LogTrace("(-):.*{0}.{1}={2}", nameof(hashesByJobId), nameof(hashesByJobId.Count), hashesByJobId.Count);
+            // Make sure that hashes are consecutive.
+            foreach (KeyValuePair<int, List<uint256>> hashesById in hashesByJobId)
+                hashesById.Value.Reverse();
+
+            this.logger.LogTrace("(-):*.{0}={1}", nameof(hashesByJobId.Count), hashesByJobId.Count);
             return hashesByJobId;
         }
 
