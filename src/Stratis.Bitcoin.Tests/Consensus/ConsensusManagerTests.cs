@@ -9,6 +9,7 @@ using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Consensus.Rules;
+using Stratis.Bitcoin.Consensus.Validators;
 using Stratis.Bitcoin.Tests.Common;
 using Xunit;
 
