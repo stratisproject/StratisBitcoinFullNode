@@ -127,7 +127,7 @@ namespace Stratis.Bitcoin.BlockPulling2
         }
         
         /// <summary>Recalculates the quality score for this peer.</summary>
-        /// <param name="bestSpeedBytesPerSecond">Speed in bytes per second of the fastest peer that we are connected to.</param>
+        /// <param name="bestSpeedBytesPerSecond">Speed in bytes per second that is considered to be the maximum speed.</param>
         public void RecalculateQualityScore(int bestSpeedBytesPerSecond)
         {
             this.logger.LogTrace("({0}:{1})", nameof(bestSpeedBytesPerSecond), bestSpeedBytesPerSecond);
@@ -140,7 +140,7 @@ namespace Stratis.Bitcoin.BlockPulling2
             if (this.QualityScore > MaxQualityScore)
                 this.QualityScore = MaxQualityScore;
 
-            this.logger.LogDebug("Quality score was set to {0}.", this.QualityScore);
+            this.logger.LogTrace("Quality score was set to {0}.", this.QualityScore);
             this.logger.LogTrace("(-)");
         }
         
@@ -152,8 +152,7 @@ namespace Stratis.Bitcoin.BlockPulling2
             {
                 uint256 blockHash = block.Obj.GetHash();
 
-                this.logger.LogDebug("Block '{0}' delivered.", blockHash);
-
+                this.logger.LogTrace("Block '{0}' delivered.", blockHash);
                 this.blockPuller.PushBlock(blockHash, block.Obj, peer.Connection.Id);
             }
 
