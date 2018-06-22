@@ -4,10 +4,31 @@
 <head>
     <link rel="stylesheet" href="assets/css/style.css" />
     <meta charset="UTF-8">
-    <title>Hello Stratis World</title>
+    <title>Stratis Dashboard</title>
 </head>
 <body>
-    Hello Stratis World
+    <div class="row">
+        <div data-bind="if : status" class="col-xs-12">
+            <table class="table">
+                <tbody data-bind="foreach:Object.keys(status())">
+                    <!--ko if :  $parent.status()[$data]-->
+                    <tr>
+                        <td>
+                            <b data-bind="text : $data"></b>
+                        </td>
+                        <td>
+                            <span data-bind="text : JSON.stringify($parent.status()[$data])">
+
+                            </span>
+                        </td>
+                    </tr>
+                    <!--/ko-->
+                </tbody>
+            </table>
+        </div>
+    </div>
 </body>
 </html>
+<script src='assets/js/vendor/axios.min.js'></script>
+<script src='assets/js/vendor/knockout.min.js'></script>
 <script src='assets/js/index.js'></script>
