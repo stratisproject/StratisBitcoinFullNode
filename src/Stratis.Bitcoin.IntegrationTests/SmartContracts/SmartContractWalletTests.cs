@@ -179,6 +179,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 {
                     MinConfirmations = maturity,
                     FeeType = FeeType.High,
+                    DustPrevention = false
                 };
 
                 // Broadcast the token transaction to the network
@@ -210,6 +211,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 {
                     MinConfirmations = maturity,
                     FeeType = FeeType.High,
+                    DustPrevention = false
                 };
 
                 // Broadcast the token transaction to the network
