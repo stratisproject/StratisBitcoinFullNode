@@ -11,8 +11,6 @@ using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
 using Stratis.Bitcoin.Utilities;
 
-//TODO check where we remove from the list (is it from the start of the list?)
-
 namespace Stratis.Bitcoin.BlockPulling2
 {
     /// <summary>
@@ -352,6 +350,7 @@ namespace Stratis.Bitcoin.BlockPulling2
             this.logger.LogTrace("(-)");
         }
 
+        //TODO comment
         private async Task AssignDownloadJobsAsync()
         {
             this.logger.LogTrace("()");
@@ -570,35 +569,33 @@ namespace Stratis.Bitcoin.BlockPulling2
 
             var newAssignments = new List<AssignedDownload>();
             
-            var peerIdsToTips = new Dictionary<int, ChainedHeader>(this.pullerBehaviorsByPeerId.Count);
-            foreach (KeyValuePair<int, BlockPullerBehavior> peerIdToBehavior in this.pullerBehaviorsByPeerId)
-                peerIdsToTips.Add(peerIdToBehavior.Key, peerIdToBehavior.Value.Tip);
+            var peers = new HashSet<BlockPullerBehavior>(this.pullerBehaviorsByPeerId.Values);
 
             bool jobFailed = false;
 
             int index;
-            for (index = 0; (index < downloadJob.Headers.Count) && (index <= emptySlots); index++)
+            for (index = 0; (index < downloadJob.Headers.Count) && (index < emptySlots); index++)
             {
                 ChainedHeader header = downloadJob.Headers[index];
 
                 while (!jobFailed)
                 {
-                    double sumOfQualityScores = this.pullerBehaviorsByPeerId.Values.Sum(x => x.QualityScore);
-                    double scoreToReachPeer = this.random.Next(0, (int)(sumOfQualityScores * 1000)) / 1000.0;
+                    double sumOfQualityScores = peers.Sum(x => x.QualityScore);
+                    double scoreToReachPeer = this.random.NextDouble() * sumOfQualityScores;
 
-                    int peerId = 0;
+                    BlockPullerBehavior selectedPeer = null;
 
-                    foreach (BlockPullerBehavior pullerBehavior in this.pullerBehaviorsByPeerId.Values)
+                    foreach (BlockPullerBehavior peer in peers)
                     {
-                        if (pullerBehavior.QualityScore >= scoreToReachPeer)
-                            peerId = pullerBehavior.AttachedPeer.Connection.Id;
+                        if (peer.QualityScore >= scoreToReachPeer)
+                            selectedPeer = peer;
                         else
-                            scoreToReachPeer -= pullerBehavior.QualityScore;
+                            scoreToReachPeer -= peer.QualityScore;
                     }
 
-                    ChainedHeader peerTip = peerIdsToTips[peerId];
+                    int peerId = selectedPeer.AttachedPeer.Connection.Id;
 
-                    if (peerTip.GetAncestor(header.Height) == header)
+                    if (selectedPeer.Tip.GetAncestor(header.Height) == header)
                     {
                         // Assign to this peer
                         newAssignments.Add(new AssignedDownload()
@@ -615,9 +612,9 @@ namespace Stratis.Bitcoin.BlockPulling2
                     else
                     {
                         // Peer doesn't claim this header.
-                        peerIdsToTips.Remove(peerId);
+                        peers.Remove(selectedPeer);
 
-                        if (peerIdsToTips.Count != 0)
+                        if (peers.Count != 0)
                             continue;
 
                         jobFailed = true;
