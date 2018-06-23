@@ -225,6 +225,8 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.CounterChain
 
             if (counterChainSession == null)
             {
+                var exists = this.sessions.TryGetValue(sessionId, out counterChainSession);
+                if (exists) return counterChainSession.CounterChainTransactionId;
                 throw new InvalidOperationException($"No CounterChainSession found in the counter chain for session id {sessionId}.");
             }
             this.MarkSessionAsSigned(counterChainSession);
