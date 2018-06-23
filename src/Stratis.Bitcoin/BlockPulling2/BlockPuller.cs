@@ -395,6 +395,7 @@ namespace Stratis.Bitcoin.BlockPulling2
             this.logger.LogTrace("(-)");
         }
 
+        //TODO add summary and paramref comments
         /// <summary>Processes the queue of download jobs.</summary>
         /// <remarks>Have to be locked by <see cref="queueLock"/>.</remarks>
         private void ProcessQueueLocked(Queue<DownloadJob> jobsQueue, List<AssignedDownload> newAssignments, List<DownloadJob> failedJobs, int emptySlots = int.MaxValue)
@@ -551,20 +552,21 @@ namespace Stratis.Bitcoin.BlockPulling2
             this.logger.LogTrace("(-)");
         }
 
-        /// <summary>Distributes headers from a provided download jobs between peers that can provide blocks represented by those headers.</summary>
+        /// <summary>Distributes download job's headers to peers that can provide blocks represented by those headers.</summary>
         /// <remarks>
-        /// If some of the blocks from the job can't be provided by any peer those headers will be added to a <param name="failedJobs"> as a new item.</param>
+        /// If some of the blocks from the job can't be provided by any peer those headers will be added to a <param name="failedJobs">.</param>
         /// <para>
         /// Have to be locked by <see cref="peerLock"/> and <see cref="queueLock"/>.
         /// </para>
         /// </remarks>
         /// <param name="downloadJob">Download job to be partially of fully consumed.</param>
-        /// <param name="failedJobs">Failed assignments.</param>
-        /// <param name="emptySlotes">Amount of empty slots. This is the maximum amount of assignments that can be created.</param>
-        private List<AssignedDownload> DistributeHeadersLocked(DownloadJob downloadJob, List<DownloadJob> failedJobs, int emptySlotes)
+        /// <param name="failedJobs">List of failed jobs which will be extended in case there is no peer to claim required header.</param>
+        /// <param name="emptySlots">Number of empty slots. This is the maximum number of assignments that can be created.</param>
+        /// <returns>List of downloads that were distributed between the peers.</returns>
+        private List<AssignedDownload> DistributeHeadersLocked(DownloadJob downloadJob, List<DownloadJob> failedJobs, int emptySlots)
         {
             this.logger.LogTrace("({0}.{1}:{2},{3}.{4}:{5},{6}:{7})", nameof(downloadJob.Headers), nameof(downloadJob.Headers.Count), downloadJob.Headers.Count,
-                nameof(failedJobs), nameof(failedJobs.Count), failedJobs.Count, nameof(emptySlotes), emptySlotes);
+                nameof(failedJobs), nameof(failedJobs.Count), failedJobs.Count, nameof(emptySlots), emptySlots);
 
             var newAssignments = new List<AssignedDownload>();
             
@@ -575,7 +577,7 @@ namespace Stratis.Bitcoin.BlockPulling2
             bool jobFailed = false;
 
             int index;
-            for (index = 0; (index < downloadJob.Headers.Count) && (index <= emptySlotes); index++)
+            for (index = 0; (index < downloadJob.Headers.Count) && (index <= emptySlots); index++)
             {
                 ChainedHeader header = downloadJob.Headers[index];
 
