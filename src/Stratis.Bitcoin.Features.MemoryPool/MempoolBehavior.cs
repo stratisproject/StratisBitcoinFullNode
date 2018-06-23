@@ -394,7 +394,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             // Stop processing the transaction early if we are in blocks only mode.
             if (this.IsBlocksOnly(peer))
             {
-                this.logger.LogInformation("Transaction sent in violation of protocol, peer:'{0}'.", peer.RemoteSocketEndpoint);
+                this.logger.LogInformation("Transaction sent in violation of protocol from peer'{0}'.", peer.RemoteSocketEndpoint);
                 this.logger.LogTrace("(-)[BLOCKSONLY]");
                 return;
             }
@@ -427,6 +427,29 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             else if (state.MissingInputs)
             {
                 this.orphans.ProcessesOrphansMissingInputs(peer, trx);
+            }
+            else
+            {
+                // Always relay transactions received from whitelisted peers, even
+                // if they were already in the mempool or rejected from it due
+                // to policy, allowing the node to function as a gateway for
+                // nodes hidden behind it.
+                //
+                // Never relay transactions that we would assign a non-zero DoS
+                // score for, as we expect peers to do the same with us in that
+                // case.
+                if (peer.Behavior<ConnectionManagerBehavior>().Whitelisted && this.mempoolManager.mempoolSettings.WhiteListRelay)
+                {
+                    if (!state.IsInvalid)
+                    {
+                        this.logger.LogInformation("Force relaying transaction ID '{0}' from whitelisted peer '{1}'.", trxHash, peer.RemoteSocketEndpoint);
+                        this.RelayTransaction(trxHash);
+                    }
+                    else
+                    {
+                        this.logger.LogInformation("Not relaying invalid transaction ID '{0}' from whitelisted peer '{1}' ({2}).", trxHash, peer.RemoteSocketEndpoint, state);
+                    }
+                }
             }
 
             if (state.IsInvalid)
