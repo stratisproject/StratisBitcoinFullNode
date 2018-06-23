@@ -11,7 +11,6 @@ using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
 using Stratis.Bitcoin.Utilities;
 
-// TODO check cases where we use peers- what happens if there are no peers. Can we fail? 
 namespace Stratis.Bitcoin.BlockPulling2
 {
     /// <summary>
@@ -350,8 +349,8 @@ namespace Stratis.Bitcoin.BlockPulling2
 
             this.logger.LogTrace("(-)");
         }
-
-        //TODO comment
+        
+        /// <summary>Assigns downloads from <see cref="reassignedJobsQueue"/> and <see cref="downloadJobsQueue"/> to the peers that are capable of delivering blocks.</summary>
         private async Task AssignDownloadJobsAsync()
         {
             this.logger.LogTrace("()");
@@ -392,8 +391,11 @@ namespace Stratis.Bitcoin.BlockPulling2
             this.logger.LogTrace("(-)");
         }
 
-        //TODO add summary and paramref comments
-        /// <summary>Processes the queue of download jobs.</summary>
+        /// <summary>Processes specified queue of download jobs.</summary>
+        /// <param name="jobsQueue">Queue of download jobs to be processed.</param>
+        /// <param name="newAssignments">Collection of new assignments to be populated.</param>
+        /// <param name="failedHashes">List of failed hashes to be populated if some of jobs hashes can't be assigned to any peer.</param>
+        /// <param name="emptySlots">Max number of assignments that can be made.</param>
         /// <remarks>Have to be locked by <see cref="queueLock"/>.</remarks>
         private void ProcessQueueLocked(Queue<DownloadJob> jobsQueue, List<AssignedDownload> newAssignments, List<uint256> failedHashes, int emptySlots = int.MaxValue)
         {
@@ -405,13 +407,8 @@ namespace Stratis.Bitcoin.BlockPulling2
                 DownloadJob jobToAassign = jobsQueue.Peek();
                 int jobHeadersCount = jobToAassign.Headers.Count;
 
-                List<AssignedDownload> assignments;
-
-                lock (this.peerLock)
-                {
-                    assignments = this.DistributeHeadersLocked(jobToAassign, failedHashes, emptySlots);
-                }
-
+                List<AssignedDownload> assignments = this.DistributeHeadersLocked(jobToAassign, failedHashes, emptySlots);
+                
                 emptySlots -= assignments.Count;
 
                 this.logger.LogTrace("Assigned {0} headers out of {1} for job {2}.", assignments.Count, jobHeadersCount, jobToAassign.Id);
@@ -553,7 +550,10 @@ namespace Stratis.Bitcoin.BlockPulling2
         /// <remarks>
         /// If some of the blocks from the job can't be provided by any peer those headers will be added to a <param name="failedHashes">.</param>
         /// <para>
-        /// Have to be locked by <see cref="peerLock"/> and <see cref="queueLock"/>.
+        /// Have to be locked by <see cref="queueLock"/>.
+        /// </para>
+        /// <para>
+        /// Node's quality score is being considered as a weight during the random distribution of the hashes to download among the nodes.
         /// </para>
         /// </remarks>
         /// <param name="downloadJob">Download job to be partially of fully consumed.</param>
@@ -566,8 +566,13 @@ namespace Stratis.Bitcoin.BlockPulling2
                 nameof(failedHashes), nameof(failedHashes.Count), failedHashes.Count, nameof(emptySlots), emptySlots);
 
             var newAssignments = new List<AssignedDownload>();
-            
-            var peerBehaviors = new HashSet<BlockPullerBehavior>(this.pullerBehaviorsByPeerId.Values);
+
+            HashSet<BlockPullerBehavior> peerBehaviors;
+
+            lock (this.peerLock)
+            {
+                peerBehaviors = new HashSet<BlockPullerBehavior>(this.pullerBehaviorsByPeerId.Values);
+            }
 
             bool jobFailed = false;
 
@@ -671,8 +676,7 @@ namespace Stratis.Bitcoin.BlockPulling2
                     if (current.Value.Header.Height > lastImportantHeight)
                         break;
 
-                    double secondsPassed =
-                        (this.dateTimeProvider.GetUtcNow() - current.Value.AssignedTime).TotalSeconds;
+                    double secondsPassed = (this.dateTimeProvider.GetUtcNow() - current.Value.AssignedTime).TotalSeconds;
 
                     // Peer failed to deliver important block.
                     int peerId = current.Value.PeerId;
@@ -725,8 +729,7 @@ namespace Stratis.Bitcoin.BlockPulling2
             this.logger.LogTrace("(-)");
         }
 
-        /// <summary>
-        /// Method which is called when <see cref="BlockPullerBehavior"/> receives a block.</summary>
+        /// <summary>Removes assignments for the block which has been delivered by the peer assigned to it and calls the callback.</summary>
         /// <remarks>
         /// This method is called for all blocks that were delivered. It is possible that block that wasn't requested
         /// from that peer or from any peer at all is delivered, in that case the block will be ignored.
