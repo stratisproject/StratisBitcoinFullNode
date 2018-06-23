@@ -430,6 +430,14 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             }
             else
             {
+                // Do not use rejection cache for witness transactions or
+                // witness-stripped transactions, as they can have been malleated.
+                // See https://github.com/bitcoin/bitcoin/issues/8279 for details.
+                if (!trx.HasWitness && !state.CorruptionPossible)
+                {
+                    this.orphans.AddToRecentRejects(trxHash);
+                }
+
                 // Always relay transactions received from whitelisted peers, even
                 // if they were already in the mempool or rejected from it due
                 // to policy, allowing the node to function as a gateway for
