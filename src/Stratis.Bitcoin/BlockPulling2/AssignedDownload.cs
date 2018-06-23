@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using NBitcoin;
 
 namespace Stratis.Bitcoin.BlockPulling2
 {
@@ -15,15 +16,15 @@ namespace Stratis.Bitcoin.BlockPulling2
         /// <summary>Time when download was assigned to a peer.</summary>
         public DateTime AssignedTime;
 
-        /// <summary>Height of a block associated with this assignment.</summary>
-        public int BlockHeight;
+        /// <summary>Header of a block associated with this assignment.</summary>
+        public ChainedHeader Header;
 
         public LinkedListNode<AssignedDownload> LinkedListNode;
 
         /// <inheritdoc />
         public override string ToString()
         {
-            return string.Format("{0}:{1},{2}:{3},{4}:{5}", nameof(this.JobId), this.JobId, nameof(this.PeerId), this.PeerId, nameof(this.BlockHeight), this.BlockHeight);
+            return string.Format("{0}:{1},{2}:{3},{4}:'{5}'", nameof(this.JobId), this.JobId, nameof(this.PeerId), this.PeerId, nameof(this.Header), this.Header);
         }
     }
 }
