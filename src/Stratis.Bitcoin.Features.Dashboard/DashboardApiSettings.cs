@@ -42,6 +42,8 @@ namespace Stratis.Bitcoin.Features.Api
         /// <summary>The callback used to override/constrain/extend the settings provided by the Load method.</summary>
         private Action<DashboardApiSettings> callback;
 
+        public static NodeSettings NodeSettings {get; set;}
+
         /// <summary>
         /// Constructs this object whilst providing a callback to override/constrain/extend 
         /// the settings provided by the Load method.
@@ -59,6 +61,8 @@ namespace Stratis.Bitcoin.Features.Api
         public void Load(NodeSettings nodeSettings)
         {
             TextFileConfiguration config = nodeSettings.ConfigReader;
+
+            NodeSettings = nodeSettings;
 
             var apiHost = config.GetOrDefault("apiuri", DefaultApiHost);
             Uri apiUri = new Uri(apiHost);

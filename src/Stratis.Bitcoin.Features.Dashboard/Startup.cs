@@ -32,11 +32,14 @@ namespace Stratis.Bitcoin.Features.Dashboard
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IHostingEnvironment env)
         {
+
+            var pluginPath = Path.Combine(DashboardApiSettings.NodeSettings.DataDir, "wwwroot") ;
+
             app.UseStaticFiles();
 
             app.UseStaticFiles(new StaticFileOptions
             {
-                FileProvider = new PhysicalFileProvider(Path.Combine(DashboardApiSettings.GetRootDirectory(), "wwwroot")),
+                FileProvider = new PhysicalFileProvider(Path.Combine(DashboardApiSettings.NodeSettings.DataDir, "wwwroot")),
                 RequestPath = "/assets"
             });
 
