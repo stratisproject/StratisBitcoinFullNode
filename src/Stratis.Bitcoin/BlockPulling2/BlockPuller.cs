@@ -11,7 +11,8 @@ using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
 using Stratis.Bitcoin.Utilities;
 
-//TODO check everywhere where we use reverse order
+//TODO check where we remove from the list (is it from the start of the list?)
+
 namespace Stratis.Bitcoin.BlockPulling2
 {
     /// <summary>
@@ -584,9 +585,12 @@ namespace Stratis.Bitcoin.BlockPulling2
                 peerIdsToTips.Add(peerIdToBehavior.Key, peerIdToBehavior.Value.Tip);
 
             bool jobFailed = false;
-            
-            foreach (ChainedHeader header in downloadJob.Headers.Take(emptySlotes).ToList()) // TODO remove ToList and remove headers not from the start of the list
+
+            int index;
+            for (index = 0; index < downloadJob.Headers.Count && (index <= emptySlotes); index++) // ChainedHeader header in downloadJob.Headers.Take(emptySlotes).ToList()) 
             {
+                ChainedHeader header = downloadJob.Headers[index];
+
                 while (!jobFailed)
                 {
                     double sumOfQualityScores = this.pullerBehaviorsByPeerId.Values.Sum(x => x.QualityScore);
@@ -616,8 +620,6 @@ namespace Stratis.Bitcoin.BlockPulling2
                         });
 
                         this.logger.LogTrace("Block '{0}' was assigned to peer ID {1}.", header.HashBlock, peerId);
-
-                        downloadJob.Headers.Remove(header);
                         break;
                     }
                     else
@@ -632,13 +634,19 @@ namespace Stratis.Bitcoin.BlockPulling2
                         this.logger.LogDebug("Job {0} failed because there is no peer claiming {1} of it's headers.", downloadJob.Id, downloadJob.Headers.Count);
                     }
                 }
+
+                if (jobFailed)
+                    break;
             }
 
-            //TODO remove successfully assigned jobs here
-
-            if (jobFailed)
+            if (!jobFailed)
             {
-                failedJobs.Add(new DownloadJob() { Headers = downloadJob.Headers });
+                downloadJob.Headers.RemoveRange(0, index + 1);
+            }
+            else
+            {
+                // Index here will be the index of first failed header.
+                failedJobs.Add(new DownloadJob() { Headers = downloadJob.Headers.GetRange(index, downloadJob.Headers.Count - index) });
                 downloadJob.Headers = new List<ChainedHeader>();
             }
 
