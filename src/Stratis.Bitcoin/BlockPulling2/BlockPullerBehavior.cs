@@ -30,7 +30,7 @@ namespace Stratis.Bitcoin.BlockPulling2
         /// <summary>Maximum number of samples that can be used for quality score calculation when node is not in IBD.</summary>
         private const int NormalSamplesCount = 10;
         
-        /// <summary>The maximum percentage of samples that can be used when peer is being penalized for not delivering the block.</summary>
+        /// <summary>The maximum percentage of samples that can be used when peer is being penalized for not delivering blocks.</summary>
         /// <remarks><c>1</c> is 100%, <c>0</c> is 0%.</remarks>
         private const double MaxSamplesPercentageToPenalize = 0.1; //TODO test it and find best value
 
@@ -97,13 +97,13 @@ namespace Stratis.Bitcoin.BlockPulling2
 
         /// <summary>Applies a penalty to a peer for not delivering a block.</summary>
         /// <param name="delaySeconds">Time in which peer didn't deliver assigned blocks.</param>
-        /// <param name="notDeliveredBlocksCount">Amount of blocks peer failed to deliver.</param>
+        /// <param name="notDeliveredBlocksCount">Number of blocks peer failed to deliver.</param>
         public void Penalize(double delaySeconds, int notDeliveredBlocksCount)
         {
             this.logger.LogTrace("({0}:{1},{2}:{3})", nameof(delaySeconds), delaySeconds, nameof(notDeliveredBlocksCount), notDeliveredBlocksCount);
 
             int maxSamplesToPenalize = (int)(this.averageDelaySeconds.GetMaxSamples() * MaxSamplesPercentageToPenalize);
-            int penalizeTimes = (notDeliveredBlocksCount < maxSamplesToPenalize) ? notDeliveredBlocksCount : maxSamplesToPenalize;
+            int penalizeTimes = notDeliveredBlocksCount < maxSamplesToPenalize ? notDeliveredBlocksCount : maxSamplesToPenalize;
             
             this.logger.LogDebug("Peer will be penalized {0} times.", penalizeTimes);
 
