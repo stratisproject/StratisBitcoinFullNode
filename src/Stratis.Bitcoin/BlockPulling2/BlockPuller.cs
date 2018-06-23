@@ -11,6 +11,7 @@ using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
 using Stratis.Bitcoin.Utilities;
 
+// TODO check cases where we use peers- what happens if there are no peers. Can we fail? 
 namespace Stratis.Bitcoin.BlockPulling2
 {
     /// <summary>
@@ -355,13 +356,13 @@ namespace Stratis.Bitcoin.BlockPulling2
         {
             this.logger.LogTrace("()");
 
-            var failedJobs = new List<DownloadJob>();
+            var failedHashes = new List<uint256>();
             var newAssignments = new List<AssignedDownload>();
 
             lock (this.queueLock)
             {
                 // First process reassign queue ignoring slots limitations.
-                this.ProcessQueueLocked(this.reassignedJobsQueue, newAssignments, failedJobs);
+                this.ProcessQueueLocked(this.reassignedJobsQueue, newAssignments, failedHashes);
 
                 // Process regular queue.
                 int emptySlots;
@@ -373,18 +374,15 @@ namespace Stratis.Bitcoin.BlockPulling2
                 this.logger.LogTrace("There are {0} empty slots.", emptySlots);
 
                 if (emptySlots > this.maxBlocksBeingDownloaded * MinEmptySlotsPercentageToStartProcessingTheQueue)
-                    this.ProcessQueueLocked(this.downloadJobsQueue, newAssignments, failedJobs, emptySlots);
+                    this.ProcessQueueLocked(this.downloadJobsQueue, newAssignments, failedHashes, emptySlots);
                 
                 this.processQueuesSignal.Reset();
             }
             
             // Call callbacks with null since puller failed to deliver requested blocks.
-            this.logger.LogTrace("{0} jobs partially or fully failed.", failedJobs.Count);
-            foreach (DownloadJob failedJob in failedJobs)
-            {
-                foreach (ChainedHeader failedHeader in failedJob.Headers)
-                    this.OnDownloadedCallback(failedHeader.HashBlock, null);
-            }
+            this.logger.LogTrace("{0} jobs partially or fully failed.", failedHashes.Count);
+            foreach (uint256 failedJob in failedHashes)
+                this.OnDownloadedCallback(failedJob, null);
 
             this.logger.LogTrace("Total amount of downloads assigned in this iteration is {0}.", newAssignments.Count);
 
@@ -397,10 +395,10 @@ namespace Stratis.Bitcoin.BlockPulling2
         //TODO add summary and paramref comments
         /// <summary>Processes the queue of download jobs.</summary>
         /// <remarks>Have to be locked by <see cref="queueLock"/>.</remarks>
-        private void ProcessQueueLocked(Queue<DownloadJob> jobsQueue, List<AssignedDownload> newAssignments, List<DownloadJob> failedJobs, int emptySlots = int.MaxValue)
+        private void ProcessQueueLocked(Queue<DownloadJob> jobsQueue, List<AssignedDownload> newAssignments, List<uint256> failedHashes, int emptySlots = int.MaxValue)
         {
             this.logger.LogTrace("({0}.{1}:{2},{3}.{4}:{5},{6}.{7}:{8},{9}:{10})", nameof(jobsQueue), nameof(jobsQueue.Count), jobsQueue.Count, nameof(newAssignments), nameof(newAssignments.Count), newAssignments.Count,
-                nameof(failedJobs), nameof(failedJobs.Count), failedJobs.Count, nameof(emptySlots), emptySlots);
+                nameof(failedHashes), nameof(failedHashes.Count), failedHashes.Count, nameof(emptySlots), emptySlots);
 
             while ((jobsQueue.Count > 0) && (emptySlots > 0))
             {
@@ -411,7 +409,7 @@ namespace Stratis.Bitcoin.BlockPulling2
 
                 lock (this.peerLock)
                 {
-                    assignments = this.DistributeHeadersLocked(jobToAassign, failedJobs, emptySlots);
+                    assignments = this.DistributeHeadersLocked(jobToAassign, failedHashes, emptySlots);
                 }
 
                 emptySlots -= assignments.Count;
@@ -432,7 +430,7 @@ namespace Stratis.Bitcoin.BlockPulling2
                     jobsQueue.Dequeue();
             }
 
-            this.logger.LogTrace("(-):{0}.{1}={2},{3}.{4}={5}", nameof(newAssignments), nameof(newAssignments.Count), newAssignments.Count, nameof(failedJobs), nameof(failedJobs.Count), failedJobs.Count);
+            this.logger.LogTrace("(-):{0}.{1}={2},{3}.{4}={5}", nameof(newAssignments), nameof(newAssignments.Count), newAssignments.Count, nameof(failedHashes), nameof(failedHashes.Count), failedHashes.Count);
         }
 
         /// <summary>
@@ -553,51 +551,61 @@ namespace Stratis.Bitcoin.BlockPulling2
 
         /// <summary>Distributes download job's headers to peers that can provide blocks represented by those headers.</summary>
         /// <remarks>
-        /// If some of the blocks from the job can't be provided by any peer those headers will be added to a <param name="failedJobs">.</param>
+        /// If some of the blocks from the job can't be provided by any peer those headers will be added to a <param name="failedHashes">.</param>
         /// <para>
         /// Have to be locked by <see cref="peerLock"/> and <see cref="queueLock"/>.
         /// </para>
         /// </remarks>
         /// <param name="downloadJob">Download job to be partially of fully consumed.</param>
-        /// <param name="failedJobs">List of failed jobs which will be extended in case there is no peer to claim required header.</param>
+        /// <param name="failedHashes">List of failed hashes which will be extended in case there is no peer to claim required hash.</param>
         /// <param name="emptySlots">Number of empty slots. This is the maximum number of assignments that can be created.</param>
         /// <returns>List of downloads that were distributed between the peers.</returns>
-        private List<AssignedDownload> DistributeHeadersLocked(DownloadJob downloadJob, List<DownloadJob> failedJobs, int emptySlots)
+        private List<AssignedDownload> DistributeHeadersLocked(DownloadJob downloadJob, List<uint256> failedHashes, int emptySlots)
         {
             this.logger.LogTrace("({0}.{1}:{2},{3}.{4}:{5},{6}:{7})", nameof(downloadJob.Headers), nameof(downloadJob.Headers.Count), downloadJob.Headers.Count,
-                nameof(failedJobs), nameof(failedJobs.Count), failedJobs.Count, nameof(emptySlots), emptySlots);
+                nameof(failedHashes), nameof(failedHashes.Count), failedHashes.Count, nameof(emptySlots), emptySlots);
 
             var newAssignments = new List<AssignedDownload>();
             
-            var peers = new HashSet<BlockPullerBehavior>(this.pullerBehaviorsByPeerId.Values);
+            var peerBehaviors = new HashSet<BlockPullerBehavior>(this.pullerBehaviorsByPeerId.Values);
 
             bool jobFailed = false;
 
+            if (peerBehaviors.Count == 0)
+            {
+                this.logger.LogDebug("There are no peers that can participate in download job distribution! Job ID {0} failed.", downloadJob.Id);
+                jobFailed = true;
+            }
+
             int index;
-            for (index = 0; (index < downloadJob.Headers.Count) && (index < emptySlots); index++)
+            for (index = 0; (index < downloadJob.Headers.Count) && (index < emptySlots) && !jobFailed; index++)
             {
                 ChainedHeader header = downloadJob.Headers[index];
 
                 while (!jobFailed)
                 {
-                    double sumOfQualityScores = peers.Sum(x => x.QualityScore);
+                    // Weighted random selection based on the peer's quality score.
+                    double sumOfQualityScores = peerBehaviors.Sum(x => x.QualityScore);
                     double scoreToReachPeer = this.random.NextDouble() * sumOfQualityScores;
 
-                    BlockPullerBehavior selectedPeer = null;
-
-                    foreach (BlockPullerBehavior peer in peers)
+                    BlockPullerBehavior selectedBehavior = peerBehaviors.First();
+                    
+                    foreach (BlockPullerBehavior peerBehavior in peerBehaviors)
                     {
-                        if (peer.QualityScore >= scoreToReachPeer)
-                            selectedPeer = peer;
-                        else
-                            scoreToReachPeer -= peer.QualityScore;
+                        if (peerBehavior.QualityScore >= scoreToReachPeer)
+                        {
+                            selectedBehavior = peerBehavior;
+                            break;
+                        }
+                        
+                        scoreToReachPeer -= peerBehavior.QualityScore;
                     }
+                    
+                    int peerId = selectedBehavior.AttachedPeer.Connection.Id;
 
-                    int peerId = selectedPeer.AttachedPeer.Connection.Id;
-
-                    if (selectedPeer.Tip.GetAncestor(header.Height) == header)
+                    if (selectedBehavior.Tip.FindAncestorOrSelf(header) != null)
                     {
-                        // Assign to this peer
+                        // Assign to this peer.
                         newAssignments.Add(new AssignedDownload()
                         {
                             PeerId = peerId,
@@ -612,32 +620,31 @@ namespace Stratis.Bitcoin.BlockPulling2
                     else
                     {
                         // Peer doesn't claim this header.
-                        peers.Remove(selectedPeer);
+                        peerBehaviors.Remove(selectedBehavior);
 
-                        if (peers.Count != 0)
+                        if (peerBehaviors.Count != 0)
                             continue;
 
                         jobFailed = true;
-                        this.logger.LogDebug("Job {0} failed because there is no peer claiming {1} of it's headers.", downloadJob.Id, downloadJob.Headers.Count);
+                        this.logger.LogDebug("Job {0} failed because there is no peer claiming header '{1}'.", downloadJob.Id, header);
                     }
                 }
-
-                if (jobFailed)
-                    break;
             }
 
             if (!jobFailed)
             {
-                downloadJob.Headers.RemoveRange(0, index + 1);
+                downloadJob.Headers.RemoveRange(0, index);
             }
             else
             {
                 // Index here will be the index of first failed header.
-                failedJobs.Add(new DownloadJob() { Headers = downloadJob.Headers.GetRange(index, downloadJob.Headers.Count - index) });
-                downloadJob.Headers = new List<ChainedHeader>();
+                IEnumerable<uint256> failed = downloadJob.Headers.GetRange(index, downloadJob.Headers.Count - index).Select(x => x.HashBlock);
+                failedHashes.AddRange(failed);
+
+                downloadJob.Headers.Clear();
             }
 
-            this.logger.LogTrace("(-):*.{0}:{1}", nameof(newAssignments.Count), newAssignments.Count);
+            this.logger.LogTrace("(-):*.{0}={1},{2}.{3}={4}", nameof(newAssignments.Count), newAssignments.Count, nameof(failedHashes), nameof(failedHashes.Count), failedHashes.Count);
             return newAssignments;
         }
 
