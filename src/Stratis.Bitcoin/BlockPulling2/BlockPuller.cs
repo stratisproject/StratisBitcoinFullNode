@@ -362,27 +362,7 @@ namespace Stratis.Bitcoin.BlockPulling2
             lock (this.queueLock)
             {
                 // First process reassign queue ignoring slots limitations.
-                while (this.reassignedJobsQueue.Count > 0)
-                {
-                    DownloadJob jobToReassign = this.reassignedJobsQueue.Dequeue();
-                    this.logger.LogTrace("Reassigning job {0} with {1} headers.", jobToReassign.Id, jobToReassign.Headers.Count);
-
-                    List<AssignedDownload> assignments;
-
-                    lock (this.peerLock)
-                    {
-                        assignments = this.DistributeHeadersLocked(jobToReassign, failedJobs, int.MaxValue);
-                    }
-
-                    lock (this.assignedLock)
-                    {
-                        foreach (AssignedDownload assignment in assignments)
-                        {
-                            newAssignments.Add(assignment);
-                            this.AddAssignedDownloadLocked(assignment);
-                        }
-                    }
-                }
+                this.ProcessQueueLocked(this.reassignedJobsQueue, newAssignments, failedJobs);
 
                 // Process regular queue.
                 int emptySlots;
@@ -394,53 +374,65 @@ namespace Stratis.Bitcoin.BlockPulling2
                 this.logger.LogTrace("There are {0} empty slots.", emptySlots);
 
                 if (emptySlots > this.maxBlocksBeingDownloaded * MinEmptySlotsPercentageToStartProcessingTheQueue)
-                {
-                    while ((this.downloadJobsQueue.Count > 0) && (emptySlots > 0))
-                    {
-                        DownloadJob jobToAassign = this.downloadJobsQueue.Peek();
-                        int jobHeadersCount = jobToAassign.Headers.Count;
-
-                        List<AssignedDownload> assignments;
-
-                        lock (this.peerLock)
-                        {
-                            assignments = this.DistributeHeadersLocked(jobToAassign, failedJobs, emptySlots);
-                        }
-
-                        emptySlots -= assignments.Count;
-                        this.logger.LogTrace("Assigned {0} headers out of {1} for job {2}.", assignments.Count, jobHeadersCount, jobToAassign.Id);
-
-                        lock (this.assignedLock)
-                        {
-                            foreach (AssignedDownload assignment in assignments)
-                            {
-                                newAssignments.Add(assignment);
-                                this.AddAssignedDownloadLocked(assignment);
-                            }
-                        }
-
-                        // Remove job from the queue if it was fully consumed.
-                        if (jobToAassign.Headers.Count == 0)
-                            this.downloadJobsQueue.Dequeue();
-                    }
-                }
+                    this.ProcessQueueLocked(this.downloadJobsQueue, newAssignments, failedJobs, emptySlots);
                 
                 this.processQueuesSignal.Reset();
-
-                this.logger.LogTrace("Total amount of downloads assigned in this iteration is {0}.", newAssignments.Count);
             }
             
             // Call callbacks with null since puller failed to deliver requested blocks.
+            this.logger.LogTrace("{0} jobs partially or fully failed.", failedJobs.Count);
             foreach (DownloadJob failedJob in failedJobs)
             {
                 foreach (ChainedHeader failedHeader in failedJob.Headers)
                     this.OnDownloadedCallback(failedHeader.HashBlock, null);
             }
 
+            this.logger.LogTrace("Total amount of downloads assigned in this iteration is {0}.", newAssignments.Count);
+
             if (newAssignments.Count != 0)
                 await this.AskPeersForBlocksAsync(newAssignments).ConfigureAwait(false);
 
             this.logger.LogTrace("(-)");
+        }
+
+        /// <summary>Processes the queue of download jobs.</summary>
+        /// <remarks>Have to be locked by <see cref="queueLock"/>.</remarks>
+        private void ProcessQueueLocked(Queue<DownloadJob> jobsQueue, List<AssignedDownload> newAssignments, List<DownloadJob> failedJobs, int emptySlots = int.MaxValue)
+        {
+            this.logger.LogTrace("({0}.{1}:{2},{3}.{4}:{5},{6}.{7}:{8},{9}:{10})", nameof(jobsQueue), nameof(jobsQueue.Count), jobsQueue.Count, nameof(newAssignments), nameof(newAssignments.Count), newAssignments.Count,
+                nameof(failedJobs), nameof(failedJobs.Count), failedJobs.Count, nameof(emptySlots), emptySlots);
+
+            while ((jobsQueue.Count > 0) && (emptySlots > 0))
+            {
+                DownloadJob jobToAassign = jobsQueue.Peek();
+                int jobHeadersCount = jobToAassign.Headers.Count;
+
+                List<AssignedDownload> assignments;
+
+                lock (this.peerLock)
+                {
+                    assignments = this.DistributeHeadersLocked(jobToAassign, failedJobs, emptySlots);
+                }
+
+                emptySlots -= assignments.Count;
+
+                this.logger.LogTrace("Assigned {0} headers out of {1} for job {2}.", assignments.Count, jobHeadersCount, jobToAassign.Id);
+
+                lock (this.assignedLock)
+                {
+                    foreach (AssignedDownload assignment in assignments)
+                    {
+                        newAssignments.Add(assignment);
+                        this.AddAssignedDownloadLocked(assignment);
+                    }
+                }
+
+                // Remove job from the queue if it was fully consumed.
+                if (jobToAassign.Headers.Count == 0)
+                    jobsQueue.Dequeue();
+            }
+
+            this.logger.LogTrace("(-):{0}.{1}={2},{3}.{4}={5}", nameof(newAssignments), nameof(newAssignments.Count), newAssignments.Count, nameof(failedJobs), nameof(failedJobs.Count), failedJobs.Count);
         }
 
         /// <summary>
