@@ -116,7 +116,7 @@ namespace Stratis.Bitcoin.BlockPulling2
         /// <summary>Called when IBD state changed.</summary>
         public void OnIbdStateChanged(bool isIbd)
         {
-            this.logger.LogTrace("()");
+            this.logger.LogTrace("({0}:{1})", nameof(isIbd), isIbd);
 
             // Recalculates the max samples count that can be used for quality score calculation.
             int samplesCount = isIbd ? IbdSamplesCount : NormalSamplesCount;
@@ -165,7 +165,7 @@ namespace Stratis.Bitcoin.BlockPulling2
         /// <exception cref="OperationCanceledException">Thrown in case peer is in the wrong state or TCP connection was closed during sending a message.</exception>
         public async Task RequestBlocksAsync(List<uint256> hashes)
         {
-            this.logger.LogTrace("({0}:{1})", nameof(hashes), hashes.Count);
+            this.logger.LogTrace("({0}.{1}:{2})", nameof(hashes), nameof(hashes.Count), hashes.Count);
 
             var getDataPayload = new GetDataPayload();
 
@@ -177,7 +177,7 @@ namespace Stratis.Bitcoin.BlockPulling2
                 getDataPayload.Inventory.Add(vector);
             }
 
-            if ((this.AttachedPeer == null) || (this.AttachedPeer.State != NetworkPeerState.HandShaked))
+            if (this.AttachedPeer.State != NetworkPeerState.HandShaked)
             {
                 this.logger.LogTrace("(-)[ATTACHED_PEER]");
                 throw new OperationCanceledException("Peer is in the wrong state!");
