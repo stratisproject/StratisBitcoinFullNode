@@ -328,6 +328,35 @@ namespace Stratis.Bitcoin.Tests.Consensus
         }
 
         /// <summary>
+        /// Issue 7 @ Create chained header tree component #1321
+        /// We have a chain and someone presents an invalid header.
+        /// After that our chain's last block shouldn't change, it shouldn't have a valid .Next
+        /// and it should throw an exception.
+        /// </summary>
+        [Fact]
+        public void ConnectHeaders_SupplyInvalidHeader_ExistingChainTipShouldNotChange()
+        {
+            TestContext testContext = new TestContextBuilder().WithInitialChain(5).UseCheckpoints(false).Build();
+            ChainedHeaderTree chainedHeaderTree = testContext.ChainedHeaderTree;
+            uint256 peerTipHashBeforeInvalidBlockPresented = testContext.InitialChainTip.HashBlock;
+
+            ChainedHeader invalidChainedHeader = testContext.ExtendAChain(1, testContext.InitialChainTip);
+            List<BlockHeader> listContainingInvalidHeader = testContext.ChainedHeaderToList(invalidChainedHeader, 1);
+            BlockHeader invalidBlockHeader = listContainingInvalidHeader[0];
+
+            testContext.ChainedHeaderValidatorMock.Setup(x => x.ValidateHeader(It.Is<ChainedHeader>(y => y.HashBlock == invalidBlockHeader.GetHash()))).Throws(new InvalidHeaderTestException());
+
+            Assert.Throws<InvalidHeaderTestException>(() => chainedHeaderTree.ConnectNewHeaders(1, listContainingInvalidHeader));
+
+            // Chain's last block shouldn't change.
+            ChainedHeader peerTipAfterInvalidHeaderPresented = chainedHeaderTree.GetPeerTipChainedHeaderByPeerId(-1);
+            Assert.Equal(peerTipHashBeforeInvalidBlockPresented, peerTipAfterInvalidHeaderPresented.HashBlock);
+
+            // Last block shouldn't have a Next.
+            Assert.Empty(peerTipAfterInvalidHeaderPresented.Next);
+        }
+
+        /// <summary>
         /// Issue 13 @ Create 2 chains - chain A and chain B, where chain A has more chain work than chain B. Connect both
         /// chains to chain header tree. Consensus tip should be set to chain A. Now extend / update chain B to make it have
         /// more chain work. Attempt to connect chain B again. Consensus tip should be set to chain B.
