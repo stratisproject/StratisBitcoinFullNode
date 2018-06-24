@@ -16,7 +16,35 @@ namespace Stratis.Bitcoin.BlockPulling2
     /// Relation of the node's puller to a network peer node.
     /// Keeps all peer-related values that <see cref="BlockPuller"/> needs to know about a peer.
     /// </summary>
-    public class BlockPullerBehavior : NetworkPeerBehavior
+    public interface IBlockPullerBehavior
+    {
+        /// <summary>
+        /// Adds peer performance sample that is used to estimate peer's qualities.
+        /// </summary>
+        /// <param name="blockSizeBytes">Block size in bytes.</param>
+        /// <param name="delaySeconds">Time in seconds it took peer to deliver a block.</param>
+        void AddSample(long blockSizeBytes, double delaySeconds);
+
+        /// <summary>Applies a penalty to a peer for not delivering a block.</summary>
+        /// <param name="delaySeconds">Time in which peer didn't deliver assigned blocks.</param>
+        /// <param name="notDeliveredBlocksCount">Number of blocks peer failed to deliver.</param>
+        void Penalize(double delaySeconds, int notDeliveredBlocksCount);
+
+        /// <summary>Called when IBD state changed.</summary>
+        void OnIbdStateChanged(bool isIbd);
+
+        /// <summary>Recalculates the quality score for this peer.</summary>
+        /// <param name="bestSpeedBytesPerSecond">Speed in bytes per second that is considered to be the maximum speed.</param>
+        void RecalculateQualityScore(int bestSpeedBytesPerSecond);
+
+        /// <summary>Requests blocks from this peer.</summary>
+        /// <param name="hashes">Hashes of blocks that should be asked to be delivered.</param>
+        /// <exception cref="OperationCanceledException">Thrown in case peer is in the wrong state or TCP connection was closed during sending a message.</exception>
+        Task RequestBlocksAsync(List<uint256> hashes);
+    }
+
+    /// <inheritdoc cref="IBlockPullerBehavior"/>
+    public class BlockPullerBehavior : NetworkPeerBehavior, IBlockPullerBehavior
     {
         private const double MinQualityScore = 0.01;
         private const double MaxQualityScore = 1.0;
@@ -78,11 +106,7 @@ namespace Stratis.Bitcoin.BlockPulling2
             this.loggerFactory = loggerFactory;
         }
 
-        /// <summary>
-        /// Adds peer performance sample that is used to estimate peer's qualities.
-        /// </summary>
-        /// <param name="blockSizeBytes">Block size in bytes.</param>
-        /// <param name="delaySeconds">Time in seconds it took peer to deliver a block.</param>
+        /// <inheritdoc/>
         public void AddSample(long blockSizeBytes, double delaySeconds)
         {
             this.logger.LogTrace("({0}:{1},{2}:{3})", nameof(blockSizeBytes), blockSizeBytes, nameof(delaySeconds), delaySeconds);
@@ -95,9 +119,7 @@ namespace Stratis.Bitcoin.BlockPulling2
             this.logger.LogTrace("(-):{0}={1}", nameof(this.SpeedBytesPerSecond), this.SpeedBytesPerSecond);
         }
 
-        /// <summary>Applies a penalty to a peer for not delivering a block.</summary>
-        /// <param name="delaySeconds">Time in which peer didn't deliver assigned blocks.</param>
-        /// <param name="notDeliveredBlocksCount">Number of blocks peer failed to deliver.</param>
+        /// <inheritdoc/>
         public void Penalize(double delaySeconds, int notDeliveredBlocksCount)
         {
             this.logger.LogTrace("({0}:{1},{2}:{3})", nameof(delaySeconds), delaySeconds, nameof(notDeliveredBlocksCount), notDeliveredBlocksCount);
@@ -113,7 +135,7 @@ namespace Stratis.Bitcoin.BlockPulling2
             this.logger.LogTrace("(-)");
         }
 
-        /// <summary>Called when IBD state changed.</summary>
+        /// <inheritdoc/>
         public void OnIbdStateChanged(bool isIbd)
         {
             this.logger.LogTrace("({0}:{1})", nameof(isIbd), isIbd);
@@ -125,9 +147,8 @@ namespace Stratis.Bitcoin.BlockPulling2
 
             this.logger.LogTrace("(-)");
         }
-        
-        /// <summary>Recalculates the quality score for this peer.</summary>
-        /// <param name="bestSpeedBytesPerSecond">Speed in bytes per second that is considered to be the maximum speed.</param>
+
+        /// <inheritdoc/>
         public void RecalculateQualityScore(int bestSpeedBytesPerSecond)
         {
             this.logger.LogTrace("({0}:{1})", nameof(bestSpeedBytesPerSecond), bestSpeedBytesPerSecond);
@@ -160,9 +181,7 @@ namespace Stratis.Bitcoin.BlockPulling2
             return Task.CompletedTask;
         }
 
-        /// <summary>Requests blocks from this peer.</summary>
-        /// <param name="hashes">Hashes of blocks that should be asked to be delivered.</param>
-        /// <exception cref="OperationCanceledException">Thrown in case peer is in the wrong state or TCP connection was closed during sending a message.</exception>
+        /// <inheritdoc/>
         public async Task RequestBlocksAsync(List<uint256> hashes)
         {
             this.logger.LogTrace("({0}.{1}:{2})", nameof(hashes), nameof(hashes.Count), hashes.Count);
