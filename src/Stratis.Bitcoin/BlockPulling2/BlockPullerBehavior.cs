@@ -84,13 +84,13 @@ namespace Stratis.Bitcoin.BlockPulling2
         /// <inheritdoc cref="ILogger"/>
         private readonly ILogger logger;
 
-        /// <inheritdoc cref="BlockPuller"/>
-        private readonly BlockPuller blockPuller;
+        /// <inheritdoc cref="IBlockPuller"/>
+        private readonly IBlockPuller blockPuller;
 
         /// <inheritdoc cref="IInitialBlockDownloadState"/>
         private readonly IInitialBlockDownloadState ibdState;
 
-        public BlockPullerBehavior(BlockPuller blockPuller, IInitialBlockDownloadState ibdState, ILoggerFactory loggerFactory)
+        public BlockPullerBehavior(IBlockPuller blockPuller, IInitialBlockDownloadState ibdState, ILoggerFactory loggerFactory)
         {
             this.ibdState = ibdState;
             this.QualityScore = SamplelessQualityScore;

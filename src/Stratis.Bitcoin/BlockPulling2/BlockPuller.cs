@@ -57,6 +57,17 @@ namespace Stratis.Bitcoin.BlockPulling2
         /// <remarks>Doesn't support asking for the same hash twice before getting a response.</remarks>
         /// <param name="headers">Collection of consecutive headers (but gaps are ok: a1=a2=a3=a4=a8=a9).</param>
         void RequestBlocksDownload(List<ChainedHeader> headers);
+
+        /// <summary>Removes assignments for the block which has been delivered by the peer assigned to it and calls the callback.</summary>
+        /// <remarks>
+        /// This method is called for all blocks that were delivered. It is possible that block that wasn't requested
+        /// from that peer or from any peer at all is delivered, in that case the block will be ignored.
+        /// It is possible that block was reassigned from a peer who delivered it later, in that case it will be ignored from this peer.
+        /// </remarks>
+        /// <param name="blockHash">The block hash.</param>
+        /// <param name="block">The block.</param>
+        /// <param name="peerId">ID of a peer that delivered a block.</param>
+        void PushBlock(uint256 blockHash, Block block, int peerId);
     }
 
     /// <inheritdoc cref="IBlockPuller"/>
@@ -752,15 +763,7 @@ namespace Stratis.Bitcoin.BlockPulling2
             this.logger.LogTrace("(-)");
         }
 
-        /// <summary>Removes assignments for the block which has been delivered by the peer assigned to it and calls the callback.</summary>
-        /// <remarks>
-        /// This method is called for all blocks that were delivered. It is possible that block that wasn't requested
-        /// from that peer or from any peer at all is delivered, in that case the block will be ignored.
-        /// It is possible that block was reassigned from a peer who delivered it later, in that case it will be ignored from this peer.
-        /// </remarks>
-        /// <param name="blockHash">The block hash.</param>
-        /// <param name="block">The block.</param>
-        /// <param name="peerId">ID of a peer that delivered a block.</param>
+        /// <inheritdoc />
         public void PushBlock(uint256 blockHash, Block block, int peerId)
         {
             this.logger.LogTrace("({0}:'{1}',{2}:{3})", nameof(blockHash), blockHash, nameof(peerId), peerId);
