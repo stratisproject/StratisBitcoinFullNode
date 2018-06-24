@@ -31,7 +31,36 @@ namespace Stratis.Bitcoin.BlockPulling2
     /// and delivered after that we will discard delivered block from this peer.
     /// </para>
     /// </remarks>
-    public class BlockPuller : IDisposable
+    public interface IBlockPuller
+    {
+        void Initialize();
+
+        /// <summary>Gets the average size of a block based on sizes of flocks that were previously downloaded.</summary>
+        double GetAverageBlockSizeBytes();
+        
+        /// <summary>Updates puller behaviors when IDB state is changed.</summary>
+        /// <remarks>Should be called when IBD state was changed or first calculated.</remarks>
+        void OnIbdStateChanged(bool isIbd);
+
+        /// <summary>Updates puller's view of peer's tip.</summary>
+        /// <remarks>Should be called when a peer claims a new tip.</remarks>
+        /// <param name="peer">The peer.</param>
+        /// <param name="newTip">New tip.</param>
+        void NewPeerTipClaimed(INetworkPeer peer, ChainedHeader newTip);
+
+        /// <summary>Removes information about the peer from the inner structures.</summary>
+        /// <remarks>Adds download jobs that were assigned to this peer to reassign queue.</remarks>
+        /// <param name="peerId">Unique peer identifier.</param>
+        void PeerDisconnected(int peerId);
+
+        /// <summary>Requests the blocks for download.</summary>
+        /// <remarks>Doesn't support asking for the same hash twice before getting a response.</remarks>
+        /// <param name="headers">Collection of consecutive headers (but gaps are ok: a1=a2=a3=a4=a8=a9).</param>
+        void RequestBlocksDownload(List<ChainedHeader> headers);
+    }
+
+    /// <inheritdoc cref="IBlockPuller"/>
+    public class BlockPuller : IBlockPuller, IDisposable
     {
         /// <summary>Interval between checking if peers that were assigned important blocks didn't deliver the block.</summary>
         private const int StallingLoopIntervalMs = 500;
@@ -182,6 +211,7 @@ namespace Stratis.Bitcoin.BlockPulling2
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
         }
 
+        /// <inheritdoc/>
         public void Initialize()
         {
             this.logger.LogTrace("()");
@@ -192,6 +222,7 @@ namespace Stratis.Bitcoin.BlockPulling2
             this.logger.LogTrace("(-)");
         }
 
+        /// <inheritdoc/>
         public double GetAverageBlockSizeBytes()
         {
             lock (this.queueLock)
@@ -208,8 +239,7 @@ namespace Stratis.Bitcoin.BlockPulling2
             }
         }
 
-        /// <summary>Updates puller behaviors when IDB state is changed.</summary>
-        /// <remarks>Should be called when IBD state was changed or first calculated.</remarks>
+        /// <inheritdoc/>
         public void OnIbdStateChanged(bool isIbd)
         {
             this.logger.LogTrace("({0}:{1})", nameof(isIbd), isIbd);
@@ -225,10 +255,7 @@ namespace Stratis.Bitcoin.BlockPulling2
             this.logger.LogTrace("(-)");
         }
 
-        /// <summary>Updates puller's view of peer's tip.</summary>
-        /// <remarks>Should be called when a peer claims a new tip.</remarks>
-        /// <param name="peer">The peer.</param>
-        /// <param name="newTip">New tip.</param>
+        /// <inheritdoc/>
         public void NewPeerTipClaimed(INetworkPeer peer, ChainedHeader newTip)
         {
             this.logger.LogTrace("({0}:{1},{2}:'{3}')", nameof(peer.Connection.Id), peer.Connection.Id, nameof(newTip), newTip);
@@ -262,9 +289,7 @@ namespace Stratis.Bitcoin.BlockPulling2
             this.logger.LogTrace("(-)");
         }
 
-        /// <summary>Removes information about the peer from the inner structures.</summary>
-        /// <remarks>Adds download jobs that were assigned to this peer to reassign queue.</remarks>
-        /// <param name="peerId">Unique peer identifier.</param>
+        /// <inheritdoc/>
         public void PeerDisconnected(int peerId)
         {
             this.logger.LogTrace("({0}:{1})", nameof(peerId), peerId);
@@ -279,9 +304,7 @@ namespace Stratis.Bitcoin.BlockPulling2
             this.logger.LogTrace("(-)");
         }
 
-        /// <summary>Requests the blocks for download.</summary>
-        /// <remarks>Doesn't support asking for the same hash twice before getting a response.</remarks>
-        /// <param name="headers">Collection of consecutive headers (but gaps are ok: a1=a2=a3=a4=a8=a9).</param>
+        /// <inheritdoc/>
         public void RequestBlocksDownload(List<ChainedHeader> headers)
         {
             this.logger.LogTrace("({0}:{1})", nameof(headers.Count), headers.Count);
