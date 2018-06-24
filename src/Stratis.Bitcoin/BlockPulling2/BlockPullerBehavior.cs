@@ -18,6 +18,16 @@ namespace Stratis.Bitcoin.BlockPulling2
     /// </summary>
     public interface IBlockPullerBehavior
     {
+        /// <summary>Relative quality score of a peer.</summary>
+        /// <remarks>It's a value from <see cref="MinQualityScore"/> to <see cref="MaxQualityScore"/>.</remarks>
+        double QualityScore { get; }
+
+        /// <summary>Upload speed of a peer in bytes per second.</summary>
+        int SpeedBytesPerSecond { get; }
+
+        /// <summary>Tip claimed by peer.</summary>
+        ChainedHeader Tip { get; set; }
+
         /// <summary>
         /// Adds peer performance sample that is used to estimate peer's qualities.
         /// </summary>
@@ -46,37 +56,36 @@ namespace Stratis.Bitcoin.BlockPulling2
     /// <inheritdoc cref="IBlockPullerBehavior"/>
     public class BlockPullerBehavior : NetworkPeerBehavior, IBlockPullerBehavior
     {
-        private const double MinQualityScore = 0.01;
-        private const double MaxQualityScore = 1.0;
+        internal const double MinQualityScore = 0.01;
+        internal const double MaxQualityScore = 1.0;
 
         /// <summary>Default quality score used when there are no samples to calculate the quality score.</summary>
-        private const double SamplelessQualityScore = 0.3;
+        internal const double SamplelessQualityScore = 0.3;
 
         /// <summary>Maximum number of samples that can be used for quality score calculation when node is in IBD.</summary>
-        private const int IbdSamplesCount = 200;
+        internal const int IbdSamplesCount = 200;
 
         /// <summary>Maximum number of samples that can be used for quality score calculation when node is not in IBD.</summary>
-        private const int NormalSamplesCount = 10;
-        
+        internal const int NormalSamplesCount = 10;
+
         /// <summary>The maximum percentage of samples that can be used when peer is being penalized for not delivering blocks.</summary>
         /// <remarks><c>1</c> is 100%, <c>0</c> is 0%.</remarks>
-        private const double MaxSamplesPercentageToPenalize = 0.1; //TODO test it and find best value
+        internal const double MaxSamplesPercentageToPenalize = 0.1; //TODO test it and find best value
 
-        /// <summary>Relative quality score of a peer.</summary>
-        /// <remarks>It's a value from <see cref="MinQualityScore"/> to <see cref="MaxQualityScore"/>.</remarks>
+        /// <inheritdoc />
         public double QualityScore { get; private set; }
 
-        /// <summary>Upload speed of a peer in bytes per second.</summary>
+        /// <inheritdoc />
         public int SpeedBytesPerSecond { get; private set; }
 
-        /// <summary>Tip claimed by peer.</summary>
+        /// <inheritdoc />
         public ChainedHeader Tip { get; set; }
 
         /// <summary>The average size in bytes of blocks delivered by that peer.</summary>
-        private readonly AverageCalculator averageSizeBytes;
+        internal readonly AverageCalculator averageSizeBytes;
 
         /// <summary>The average delay in seconds between asking this peer for a block and it being downloaded.</summary>
-        private readonly AverageCalculator averageDelaySeconds;
+        internal readonly AverageCalculator averageDelaySeconds;
 
         /// <inheritdoc cref="ILoggerFactory"/>
         private readonly ILoggerFactory loggerFactory;

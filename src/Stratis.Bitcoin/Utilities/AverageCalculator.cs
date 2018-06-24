@@ -52,7 +52,7 @@ namespace Stratis.Bitcoin.Utilities
                 resized.Add(item, out double unused);
 
             this.samples = resized;
-            this.Average = this.samples.Average();
+            this.Average = this.samples.Count > 0 ? this.samples.Average() : 0;
         }
 
         /// <summary>Adds a new sample and recalculates <see cref="Average"/> value.</summary>
