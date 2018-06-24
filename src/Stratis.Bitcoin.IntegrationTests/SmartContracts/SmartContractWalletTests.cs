@@ -143,6 +143,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 {
                     MinConfirmations = maturity,
                     FeeType = FeeType.High,
+                    DustPrevention = false
                 };
 
                 Transaction transferContractTransaction = scSender.FullNode.WalletTransactionHandler().BuildTransaction(txBuildContext);
@@ -178,6 +179,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 {
                     MinConfirmations = maturity,
                     FeeType = FeeType.High,
+                    DustPrevention = false
                 };
 
                 // Broadcast the token transaction to the network
@@ -209,6 +211,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 {
                     MinConfirmations = maturity,
                     FeeType = FeeType.High,
+                    DustPrevention = false
                 };
 
                 // Broadcast the token transaction to the network

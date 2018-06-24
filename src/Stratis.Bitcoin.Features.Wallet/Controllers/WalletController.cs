@@ -707,13 +707,13 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                     Outputs = new List<TransactionOutputModel>()
                 };
 
-                //TODO: SmartContract HACK
-                foreach (var output in transaction.Outputs.Where(x => !x.ScriptPubKey.IsSmartContractExec))
+                foreach (var output in transaction.Outputs)
                 {
                     bool isUnspendable = output.ScriptPubKey.IsUnspendable;
+
                     model.Outputs.Add(new TransactionOutputModel
                     {
-                        Address = isUnspendable ? null : output.ScriptPubKey.GetDestinationAddress(this.network).ToString(),
+                        Address = GetAddressFromScriptPubKey(output),
                         Amount = output.Value,
                         OpReturnData = isUnspendable ? Encoding.UTF8.GetString(output.ScriptPubKey.ToOps().Last().PushData) : null
                     });
@@ -1026,6 +1026,25 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
 
             this.walletSyncManager.SyncFromHeight(block.Height);
             return this.Ok();
+        }
+
+        /// <summary>
+        /// Retrieves a string that represents the receiving address for an output. For smart contract transactions,
+        /// returns the opcode that was sent i.e. OP_CALL or OP_CREATE
+        /// </summary>
+        private string GetAddressFromScriptPubKey(TxOut output)
+        {
+            if (output.ScriptPubKey.IsSmartContractExec)
+            {
+                return output.ScriptPubKey.ToOps().First().Code.ToString();
+            }
+
+            if (!output.ScriptPubKey.IsUnspendable)
+            {
+                return output.ScriptPubKey.GetDestinationAddress(this.network).ToString();
+            }
+
+            return null;
         }
 
         /// <summary>

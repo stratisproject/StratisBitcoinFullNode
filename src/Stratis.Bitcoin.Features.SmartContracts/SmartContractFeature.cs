@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
+using NBitcoin.Policy;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Builder.Feature;
 using Stratis.Bitcoin.Configuration.Logging;
@@ -82,6 +83,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                         // CONSENSUS ------------------------------------------------------------------------
                         services.AddSingleton<IMempoolValidator, SmartContractMempoolValidator>();
                         services.AddConsensusRules(new SmartContractRuleRegistration(fullNodeBuilder));
+                        services.AddSingleton<StandardTransactionPolicy, SmartContractTransactionPolicy>();
                     });
             });
             return new SmartContractVmBuilder(fullNodeBuilder);

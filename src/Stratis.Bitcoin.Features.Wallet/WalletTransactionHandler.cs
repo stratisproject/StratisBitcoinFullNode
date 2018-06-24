@@ -43,11 +43,14 @@ namespace Stratis.Bitcoin.Features.Wallet
 
         private readonly MemoryCache privateKeyCache;
 
+        private readonly StandardTransactionPolicy transactionPolicy;
+
         public WalletTransactionHandler(
             ILoggerFactory loggerFactory,
             IWalletManager walletManager,
             IWalletFeePolicy walletFeePolicy,
-            Network network)
+            Network network,
+            StandardTransactionPolicy transactionPolicy)
         {
             this.Network = network;
             this.walletManager = walletManager;
@@ -55,6 +58,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             this.coinType = (CoinType)network.Consensus.CoinType;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.privateKeyCache = new MemoryCache(new MemoryCacheOptions() { ExpirationScanFrequency = new TimeSpan(0, 1, 0) });
+            this.transactionPolicy = transactionPolicy;
         }
 
         /// <inheritdoc />
@@ -201,7 +205,8 @@ namespace Stratis.Bitcoin.Features.Wallet
                     GroupByScriptPubKey = context.UseAllInputs
                 },
                 // Smart contract calls allow dust. Should be an option on TransactionBuildContext in future.
-                DustPrevention = false
+                DustPrevention = context.DustPrevention,
+                StandardTransactionPolicy = this.transactionPolicy
             };
 
             this.AddRecipients(context);
@@ -426,6 +431,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             this.Sign = !string.IsNullOrEmpty(walletPassword);
             this.OpReturnData = opReturnData;
             this.UseAllInputs = true;
+            this.DustPrevention = true;
         }
 
         /// <summary>
@@ -534,6 +540,11 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// Whether to use all inputs, to preserve privacy, or use only enough to meet the required amount.
         /// </summary>
         public bool UseAllInputs { get; set; } 
+
+        /// <summary>
+        /// Used to discern whether the transaction builder should use dust prevention or not.
+        /// </summary>
+        public bool DustPrevention { get; set; }
     }
 
     /// <summary>

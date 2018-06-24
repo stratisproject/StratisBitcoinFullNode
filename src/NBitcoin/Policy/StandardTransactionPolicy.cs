@@ -6,7 +6,7 @@ namespace NBitcoin.Policy
 {
     public class StandardTransactionPolicy : ITransactionPolicy
     {
-        private readonly Network network;
+        protected readonly Network network;
 
         public StandardTransactionPolicy(Network network)
         {
@@ -117,16 +117,7 @@ namespace NBitcoin.Policy
                 }
             }
 
-            if(this.CheckScriptPubKey)
-            {
-                foreach(Coin txout in transaction.Outputs.AsCoins())
-                {
-                    ScriptTemplate template = StandardScripts.GetTemplateFromScriptPubKey(this.network, txout.ScriptPubKey);
-                    //TODO: SmartContract HACK
-                    if (template == null && !txout.ScriptPubKey.IsSmartContractExec)
-                        errors.Add(new OutputPolicyError("Non-Standard scriptPubKey", (int)txout.Outpoint.N));
-                }
-            }
+            CheckPubKey(transaction, errors);
 
             int txSize = transaction.GetSerializedSize();
             if(this.MaxTransactionSize != null)
@@ -158,17 +149,9 @@ namespace NBitcoin.Policy
                     }
                 }
             }
-            if(this.MinRelayTxFee != null)
-            {
-                foreach(TxOut output in transaction.Outputs)
-                {
-                    byte[] bytes = output.ScriptPubKey.ToBytes(true);
 
-                    //TODO: SmartContract HACK
-                    if (output.IsDust(this.MinRelayTxFee) && !IsOpReturn(bytes) && !output.ScriptPubKey.IsSmartContractExec)
-                        errors.Add(new DustPolicyError(output.Value, output.GetDustThreshold(this.MinRelayTxFee)));
-                }
-            }
+            CheckMinRelayTxFee(transaction, errors);
+
             int opReturnCount = transaction.Outputs.Select(o => o.ScriptPubKey.ToBytes(true)).Count(b => IsOpReturn(b));
             if(opReturnCount > 1)
                 errors.Add(new TransactionPolicyError("More than one op return detected"));
@@ -176,7 +159,35 @@ namespace NBitcoin.Policy
             return errors.ToArray();
         }
 
-        private static bool IsOpReturn(byte[] bytes)
+        protected virtual void CheckPubKey(Transaction transaction, List<TransactionPolicyError> errors)
+        {
+            if (this.CheckScriptPubKey)
+            {
+                foreach (Coin txout in transaction.Outputs.AsCoins())
+                {
+                    ScriptTemplate template = StandardScripts.GetTemplateFromScriptPubKey(this.network, txout.ScriptPubKey);
+
+                    if (template == null)
+                        errors.Add(new OutputPolicyError("Non-Standard scriptPubKey", (int)txout.Outpoint.N));
+                }
+            }
+        }
+
+        protected virtual void CheckMinRelayTxFee(Transaction transaction, List<TransactionPolicyError> errors)
+        {
+            if (this.MinRelayTxFee != null)
+            {
+                foreach (TxOut output in transaction.Outputs)
+                {
+                    byte[] bytes = output.ScriptPubKey.ToBytes(true);
+
+                    if (output.IsDust(this.MinRelayTxFee) && !IsOpReturn(bytes))
+                        errors.Add(new DustPolicyError(output.Value, output.GetDustThreshold(this.MinRelayTxFee)));
+                }
+            }
+        }
+
+        protected static bool IsOpReturn(byte[] bytes)
         {
             return bytes.Length > 0 && bytes[0] == (byte)OpcodeType.OP_RETURN;
         }
