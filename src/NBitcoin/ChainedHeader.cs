@@ -563,7 +563,7 @@ namespace NBitcoin
 
                 // Only follow skip if Previous.skip isn't better than skip.Previous.
                 int heightSkip = walk.Skip.Height;
-                int heightSkipPrev = GetSkipHeight(walk.Height - 1);
+                int heightSkipPrev = this.GetSkipHeight(walk.Height - 1);
                 bool skipAboveTarget = heightSkip > ancestorHeight;
                 bool skipPreviousBetterThanPreviousSkip = !((heightSkipPrev < (heightSkip - 2)) && (heightSkipPrev >= ancestorHeight));
                 if (skipAboveTarget && skipPreviousBetterThanPreviousSkip)
@@ -579,7 +579,7 @@ namespace NBitcoin
         }
 
         /// <summary>
-        /// Convert the current <see cref="ChainedHeader" /> and <paramref name="chainedHeader"/> to an array
+        /// Select all headers between current header and <paramref name="chainedHeader"/> and add them to an array
         /// of consecutive headers, both items are included in the array.
         /// </summary>
         /// <returns>Array of consecutive headers.</returns>
@@ -595,7 +595,7 @@ namespace NBitcoin
                 currentHeader = currentHeader.Previous;
             }
 
-            if(currentHeader != chainedHeader)
+            if (currentHeader != chainedHeader)
                 throw new NotSupportedException("Header must be on the same chain.");
 
             return hashes;

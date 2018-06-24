@@ -256,7 +256,7 @@ namespace Stratis.Bitcoin.Consensus
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(chainedHeaderBlock), chainedHeaderBlock);
 
-            bool consensusTipChaneged = false;
+            bool consensusTipChanged = false;
             List<ChainedHeader> nextHeadersToValidate = null;
 
             using (await this.reorgLock.LockAsync().ConfigureAwait(false))
@@ -270,23 +270,26 @@ namespace Stratis.Bitcoin.Consensus
 
                 if (reorgRequired)
                 {
-                   var result = await this.FullyValidateAndReorgLockedAsync(chainedHeaderBlock).ConfigureAwait(false);
+                    var result = await this.FullyValidateAndReorgLockedAsync(chainedHeaderBlock).ConfigureAwait(false);
 
-                    consensusTipChaneged = result.ConsensusTipChaneged;
+                    consensusTipChanged = result.ConsensusTipChanged;
                 }
             }
 
-            if (consensusTipChaneged)
+            if (consensusTipChanged)
                 this.NotifyChainedHeaderBehaviorsOnReorg();
 
-            this.logger.LogTrace("Partial validation of {0} block will be started.", nextHeadersToValidate.Count);
-
-            // Start validating all next blocks that come after the current block,
-            // all headers in this list have the blocks present in the header.
-            foreach (ChainedHeader chainedHeader in nextHeadersToValidate)
+            if (nextHeadersToValidate != null)
             {
-                var newChainedHeaderBlock = new ChainedHeaderBlock(chainedHeader.Block, chainedHeader);
-                this.blockValidator.StartPartialValidation(newChainedHeaderBlock, this.OnPartialValidationCompletedCallbackAsync);
+                this.logger.LogTrace("Partial validation of {0} block will be started.", nextHeadersToValidate.Count);
+
+                // Start validating all next blocks that come after the current block,
+                // all headers in this list have the blocks present in the header.
+                foreach (ChainedHeader chainedHeader in nextHeadersToValidate)
+                {
+                    var newChainedHeaderBlock = new ChainedHeaderBlock(chainedHeader.Block, chainedHeader);
+                    this.blockValidator.StartPartialValidation(newChainedHeaderBlock, this.OnPartialValidationCompletedCallbackAsync);
+                }
             }
 
             this.logger.LogTrace("(-)");
@@ -330,7 +333,7 @@ namespace Stratis.Bitcoin.Consensus
             this.logger.LogTrace("(-)");
         }
 
-        private async Task<(ValidationContext ValidationContext, bool ConsensusTipChaneged, List<int> BadPeers)> FullyValidateAndReorgLockedAsync(ChainedHeaderBlock chainedHeaderBlock)
+        private async Task<(ValidationContext ValidationContext, bool ConsensusTipChanged, List<int> BadPeers)> FullyValidateAndReorgLockedAsync(ChainedHeaderBlock chainedHeaderBlock)
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(chainedHeaderBlock), chainedHeaderBlock);
 
@@ -353,8 +356,8 @@ namespace Stratis.Bitcoin.Consensus
             if (fork == newTip)
             {
                 // The new header is behind the current tip this is a bug.
-                this.logger.LogError("New header '{0}' is behind the current tip '{1}'", newTip, oldTip);
-                this.logger.LogError("INVALID_NEW_TIP");
+                this.logger.LogError("New header '{0}' is behind the current tip '{1}'.", newTip, oldTip);
+                this.logger.LogTrace("(-)[INVALID_NEW_TIP]");
                 throw new ConsensusException("New tip must be ahead of old tip.");
             }
 
@@ -379,8 +382,9 @@ namespace Stratis.Bitcoin.Consensus
                 // In that case we try to load the blocks from store, if store is not present
                 // we mark the blocks for download and do not proceed.
 
-                if (oldTip.Height - current.Height > 1)
+                if (current != fork)
                 {
+                    //TODO first detect if we have a gap, after that try get block from CHT or BS, if not- DISCONNECT
                     bool newTipSet = await this.SetNewTipIfBlocksMissingAsync(oldTip, newTip, current).ConfigureAwait(false);
 
                     if (newTipSet)
@@ -399,10 +403,10 @@ namespace Stratis.Bitcoin.Consensus
             ChainedHeader[] newChain = newTip.ToChainedHeaderArray(currentTip);
 
             var connectBlockResult = await this.ConnectBlocksAsync(currentTip, newChain).ConfigureAwait(false);
-
-            // Blocks connected successfully.
-            if (connectBlockResult.ValidationContext.Error != null)
+            
+            if (connectBlockResult.ValidationContext.Error == null)
             {
+                // Blocks connected successfully.
                 List<int> badPeers =  this.SetConsensusTip(newTip);
 
                 if (this.network.Consensus.MaxReorgLength != 0)
@@ -428,11 +432,10 @@ namespace Stratis.Bitcoin.Consensus
             }
 
             // Block validation failed we need to rewind any
-            // blocks that where added to the chain.
-
-            if (connectBlockResult.ValidatedBlocks.Any())
+            // blocks that were added to the chain.
+            if (connectBlockResult.ValidatedBlocks.Count != 0)
             {
-                ChainedHeader current = newTip;
+                ChainedHeader current = connectBlockResult.ValidatedBlocks.Last().ChainedHeader;
 
                 while (currentTip.Height < current.Height)
                 {
@@ -442,10 +445,12 @@ namespace Stratis.Bitcoin.Consensus
 
                 if (currentTip.Height != current.Height)
                 {
-                    // The rewind operation must return to the same point fork.
-                    this.logger.LogError("The rewind operation must return to the same point fork");
-                    this.logger.LogError("INVALID_REWIND");
-                    throw new ConsensusException("The rewind operation must return to the same point fork.");
+                    //TODO DISCONNECT 
+
+                    //// The rewind operation must return to the same point fork.
+                    //this.logger.LogError("The rewind operation must return to the same point fork");
+                    //this.logger.LogError("INVALID_REWIND");
+                    //throw new ConsensusException("The rewind operation must return to the same point fork.");
                 }
             }
 
@@ -503,8 +508,8 @@ namespace Stratis.Bitcoin.Consensus
 
             foreach (ChainedHeader nextChainedHeader in newChain)
             {
-                if (nextChainedHeader.BlockValidationState != ValidationState.PartiallyValidated
-                    && nextChainedHeader.BlockValidationState != ValidationState.FullyValidated)
+                if ((nextChainedHeader.BlockValidationState != ValidationState.PartiallyValidated) && 
+                    (nextChainedHeader.BlockValidationState != ValidationState.FullyValidated))
                 {
                     this.logger.LogTrace("Block '{0}' must be partially or fully validated", nextChainedHeader);
                     this.logger.LogTrace("BLOCK_INVALID_STATE");
@@ -794,41 +799,23 @@ namespace Stratis.Bitcoin.Consensus
             for (int i = 0; i < blockHashes.Count; i++)
             {
                 uint256 blockHash = blockHashes[i];
-                ChainedHeaderBlock chainedHeaderBlock = null;
 
-                lock (this.peerLock)
-                {
-                    chainedHeaderBlock = this.chainedHeaderTree.GetChainedHeaderBlock(blockHash);
-                }
+                ChainedHeaderBlock chainedHeaderBlock = await this.LoadBlockDataAsync(blockHash).ConfigureAwait(false);
 
-                if (chainedHeaderBlock == null)
+                if ((chainedHeaderBlock == null) || (chainedHeaderBlock.Block != null))
                 {
-                    this.logger.LogTrace("Block hash '{0}' is not part of the tree.", blockHash);
-                    onBlockDownloadedCallback(null);
-                    continue;
-                }
+                    if (chainedHeaderBlock != null)
+                        this.logger.LogTrace("Block data loaded for hash '{0}', calling the callback.", blockHash);
+                    else
+                        this.logger.LogTrace("Chained header not found for hash '{0}'.", blockHash);
 
-                if (chainedHeaderBlock.Block != null)
-                {
-                    this.logger.LogTrace("Block pair '{0}' was found in memory.", chainedHeaderBlock);
                     onBlockDownloadedCallback(chainedHeaderBlock);
-                    continue;
                 }
-
-                if (this.blockStore != null)
+                else
                 {
-                    Block block = await this.blockStore.GetBlockAsync(blockHash).ConfigureAwait(false);
-                    if (block != null)
-                    {
-                        var newBlockPair = new ChainedHeaderBlock(block, chainedHeaderBlock.ChainedHeader);
-                        this.logger.LogTrace("Chained header block '{0}' was found in store.", newBlockPair);
-                        onBlockDownloadedCallback(newBlockPair);
-                        continue;
-                    }
+                    blocksToDownload.Add(chainedHeaderBlock.ChainedHeader);
+                    this.logger.LogTrace("Block hash '{0}' is queued for download.", blockHash);
                 }
-
-                blocksToDownload.Add(chainedHeaderBlock.ChainedHeader);
-                this.logger.LogTrace("Block hash '{0}' is queued for download.", blockHash);
             }
 
             if (blocksToDownload.Count != 0)
@@ -838,6 +825,50 @@ namespace Stratis.Bitcoin.Consensus
             }
 
             this.logger.LogTrace("(-)");
+        }
+
+        /// <summary>Loads the block data from <see cref="chainedHeaderTree"/> or block store if it's enabled.</summary>
+        /// <param name="blockHash">The block hash.</param>
+        private async Task<ChainedHeaderBlock> LoadBlockDataAsync(uint256 blockHash)
+        {
+            this.logger.LogTrace("({0}:{1})", nameof(blockHash), blockHash);
+
+            ChainedHeaderBlock chainedHeaderBlock;
+
+            lock (this.peerLock)
+            {
+                chainedHeaderBlock = this.chainedHeaderTree.GetChainedHeaderBlock(blockHash);
+            }
+
+            if (chainedHeaderBlock == null)
+            {
+                this.logger.LogTrace("Block hash '{0}' is not part of the tree.", blockHash);
+                this.logger.LogTrace("(-)[INVALID_HASH]:null");
+                return null;
+            }
+
+            if (chainedHeaderBlock.Block != null)
+            {
+                this.logger.LogTrace("Block pair '{0}' was found in memory.", chainedHeaderBlock);
+                
+                this.logger.LogTrace("(-)[FOUND_IN_CHT]:'{0}'", chainedHeaderBlock);
+                return chainedHeaderBlock;
+            }
+
+            if (this.blockStore != null)
+            {
+                Block block = await this.blockStore.GetBlockAsync(blockHash).ConfigureAwait(false);
+                if (block != null)
+                {
+                    var newBlockPair = new ChainedHeaderBlock(block, chainedHeaderBlock.ChainedHeader);
+                    this.logger.LogTrace("Chained header block '{0}' was found in store.", newBlockPair);
+                    this.logger.LogTrace("(-)[FOUND_IN_BLOCK_STORE]:'{0}'", newBlockPair);
+                    return newBlockPair;
+                }
+            }
+
+            this.logger.LogTrace("(-)[NOT_FOUND]:'{0}'", chainedHeaderBlock);
+            return chainedHeaderBlock;
         }
 
         /// <summary>

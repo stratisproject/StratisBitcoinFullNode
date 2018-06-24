@@ -141,13 +141,6 @@ namespace Stratis.Bitcoin.Consensus
         /// </remarks>
         /// <returns>The block and its chained header (the <see cref="ChainedHeaderBlock.Block"/> can be <c>null</c> or the <see cref="ChainedHeaderBlock"/> result can be <c>null</c>).</returns>
         ChainedHeaderBlock GetChainedHeaderBlock(uint256 blockHash);
-
-        /// <summary>
-        /// TODO:
-        /// </summary>
-        /// <param name="proposedTip"></param>
-        /// <param name="actualTip"></param>
-        void ResetTip(ChainedHeader proposedTip, ChainedHeader actualTip);
     }
 
     /// <inheritdoc />
@@ -263,12 +256,6 @@ namespace Stratis.Bitcoin.Consensus
 
             this.logger.LogTrace("(-):'{0}'", chainedHeaderBlock);
             return chainedHeaderBlock;
-        }
-
-        // <inheritdoc />
-        public void ResetTip(ChainedHeader proposedTip, ChainedHeader actualTip)
-        {
-            throw new NotImplementedException();
         }
 
         /// <summary>Gets the consensus tip.</summary>
