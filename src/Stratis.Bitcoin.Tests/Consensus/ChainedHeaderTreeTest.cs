@@ -591,43 +591,42 @@ namespace Stratis.Bitcoin.Tests.Consensus
         public void ChainHasPartiallyValidatedAfterConsensusTip_NewHeadersWithAssumeValidPresented_CorrectHeadersAreMarkedAsAssumedValid()
         {
             // Chain header tree setup.
-            // Initial chain has 4 header with the consensus tip at header 4.
+            // Initial chain has 4 headers with the consensus tip at header 4.
             // Example: fv1=fv2=fv3=fv4 (fv - fully validated).
             const int initialChainSize = 4;
             TestContext ctx = new TestContextBuilder().WithInitialChain(initialChainSize).Build();
             ChainedHeaderTree cht = ctx.ChainedHeaderTree;
-            ChainedHeader initialChainTip = ctx.InitialChainTip;
+            ChainedHeader chainTip = ctx.InitialChainTip;
 
             // Extend the chain with 2 partially validated headers.
             // Example: fv1=fv2=fv3=(fv4)=pv5=pv6 (pv - partially validated).
             const int partiallyValidatedHeadersCount = 2;
-            initialChainTip = ctx.ExtendAChain(partiallyValidatedHeadersCount, initialChainTip);
+            chainTip = ctx.ExtendAChain(partiallyValidatedHeadersCount, chainTip);
             
             // Chain is presented by peer 1.
             // Mark pv5 and pv6 as partially validated.
             List<BlockHeader> listOfCurrentChainHeaders =
-                ctx.ChainedHeaderToList(initialChainTip, partiallyValidatedHeadersCount);
+                ctx.ChainedHeaderToList(chainTip, partiallyValidatedHeadersCount);
             ConnectNewHeadersResult result = cht.ConnectNewHeaders(1, listOfCurrentChainHeaders);
-            initialChainTip = result.Consumed;
-            initialChainTip.BlockValidationState = ValidationState.PartiallyValidated;
-            initialChainTip.Previous.BlockValidationState = ValidationState.PartiallyValidated;
+            chainTip = result.Consumed;
+            chainTip.BlockValidationState = ValidationState.PartiallyValidated;
+            chainTip.Previous.BlockValidationState = ValidationState.PartiallyValidated;
 
             // Extend the chain with 6 normal headers, where header at the height 9 is an "assumed valid" header.
             // Example: fv1=fv2=fv3=(fv4)=pv5=pv6=h7=h8=(av9)=h10=h11=h12 (av - assumed valid).
             const int extensionHeadersCount = 6;
-            initialChainTip = ctx.ExtendAChain(extensionHeadersCount, initialChainTip);
-            ChainedHeader assumedValidHeader = initialChainTip.GetAncestor(9);
-            assumedValidHeader.BlockValidationState = ValidationState.AssumedValid; 
+            chainTip = ctx.ExtendAChain(extensionHeadersCount, chainTip);
+            ChainedHeader assumedValidHeader = chainTip.GetAncestor(9);
             ctx.ConsensusSettings.BlockAssumedValid = assumedValidHeader.HashBlock;
             listOfCurrentChainHeaders = 
-                    ctx.ChainedHeaderToList(initialChainTip, extensionHeadersCount);
+                    ctx.ChainedHeaderToList(chainTip, extensionHeadersCount);
             
             // Chain is presented by peer 1.
             result = cht.ConnectNewHeaders(1, listOfCurrentChainHeaders);
 
             // Headers h5-h9 are marked as "assumed valid".
             ChainedHeader consumed = result.Consumed;
-            var expectedState = ValidationState.Unknown;
+            var expectedState = ValidationState.HeaderValidated;
             while (consumed.Height > initialChainSize)
             {
                 if (consumed.Height == 9) expectedState = ValidationState.AssumedValid;
