@@ -421,46 +421,6 @@ namespace Stratis.Bitcoin.Tests.Consensus
         }
 
         /// <summary>
-        /// Issue 11 @ Create chained header tree component #1321
-        /// When checkpoints are enabled and the first is at block X,
-        /// when we present headers before that- none marked for download.
-        /// When we first present checkpointed header and some after- only
-        /// headers before the first checkpoint(including it) are marked for download
-        /// </summary>
-        [Fact]
-        public void PresentChain_CheckpointsDisabled_DownloadBehaviourIsCorrectB()
-        {
-            throw new System.NotImplementedException();
-        }
-
-        /// <summary>
-        /// Issue 12 @ Create chained header tree component #1321
-        /// Checkpoints are disabled, assumevalid at block X, blocks up to X -
-        /// 10 are marked for download, blocks before x -20 are FV,
-        /// headers up to block X + some more are presented, all from X-10
-        /// are marked for download. Make sure that all blocks before assumevalid block
-        /// that are not FV or PV are marked assumevalid.
-        /// </summary>
-        [Fact]
-        public void PresentChain_CheckpointsDisabled_CheckDownloadBehaviourAndHeaderValidity()
-        {
-            /// setup
-            /// Checkpoints are disabled, assumevalid at block X, blocks up to X -
-            /// 10 are marked for download, blocks before x -20 are FV
-
-
-            //action
-            /// headers up to block X + some more are presented,
-
-
-
-            /// all from X-10  are marked for download.
-            /// Make sure that all blocks before assumevalid block
-            /// that are not FV or PV are marked assumevalid.
-        }
-
-
-        /// <summary>
         /// Issue 13 @ Create 2 chains - chain A and chain B, where chain A has more chain work than chain B. Connect both
         /// chains to chain header tree. Consensus tip should be set to chain A. Now extend / update chain B to make it have
         /// more chain work. Attempt to connect chain B again. Consensus tip should be set to chain B.
