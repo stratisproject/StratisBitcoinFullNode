@@ -35,7 +35,7 @@ namespace Stratis.Bitcoin.BlockPulling2
     {
         void Initialize();
 
-        /// <summary>Gets the average size of a block based on sizes of flocks that were previously downloaded.</summary>
+        /// <summary>Gets the average size of a block based on sizes of blocks that were previously downloaded.</summary>
         double GetAverageBlockSizeBytes();
         
         /// <summary>Updates puller behaviors when IDB state is changed.</summary>

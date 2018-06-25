@@ -35,7 +35,9 @@ namespace Stratis.Bitcoin.Tests.BlockPulling2
         [Fact]
         public void QualityScoreCanGoToMinimum()
         {
+            // Add a lot of bad samples to push quality score down. After that peer will have only bad samples.
             this.behavior.Penalize(10, 10);
+
             this.behavior.RecalculateQualityScore(1000);
 
             Assert.Equal(BlockPullerBehavior.MinQualityScore, this.behavior.QualityScore);
@@ -67,12 +69,12 @@ namespace Stratis.Bitcoin.Tests.BlockPulling2
             this.behavior.AddSample(1000, 10);
             this.behavior.AddSample(500, 2);
 
-            // (500+1000+2000+1000) / (1+ 1 + 10 + 2) == 321.428
+            // (500 + 1000 + 2000 + 1000) / (1 + 1 + 10 + 2) == 321.428
             Assert.Equal(321, this.behavior.SpeedBytesPerSecond);
         }
 
         [Fact]
-        public void WhenIBDStateChangesMaxSamplesNuberIsRecalculated()
+        public void WhenIBDStateChangesMaxSamplesNumberIsRecalculated()
         {
             Assert.Equal(BlockPullerBehavior.IbdSamplesCount, this.behavior.averageDelaySeconds.GetMaxSamples());
             Assert.Equal(BlockPullerBehavior.IbdSamplesCount, this.behavior.averageSizeBytes.GetMaxSamples());
@@ -93,7 +95,7 @@ namespace Stratis.Bitcoin.Tests.BlockPulling2
 
             Assert.Equal(1000, this.behavior.SpeedBytesPerSecond);
 
-            int maxSamplesToPenalize = (int) (BlockPullerBehavior.MaxSamplesPercentageToPenalize * 100);
+            int maxSamplesToPenalize = (int)(BlockPullerBehavior.MaxSamplesPercentageToPenalize * 100);
 
             // Try to penalize more than we can.
             this.behavior.Penalize(10, maxSamplesToPenalize * 1000);
@@ -103,9 +105,7 @@ namespace Stratis.Bitcoin.Tests.BlockPulling2
 
             // Penalize several times to eventually replace samples with zeros.
             for (int i = 0; i < 100 / maxSamplesToPenalize + 1; i++)
-            {
                 this.behavior.Penalize(10, maxSamplesToPenalize * 2);
-            }
 
             Assert.Equal(0, this.behavior.SpeedBytesPerSecond);
         }
