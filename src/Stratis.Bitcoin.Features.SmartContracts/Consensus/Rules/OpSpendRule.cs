@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using NBitcoin;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Consensus.Rules;
+using SmartContractScript = Stratis.SmartContracts.Core.SmartContractScript;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Consensus.Rules
 {
@@ -33,7 +34,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Consensus.Rules
 
                 // This previously would only check that the contract was a call. However we also have to check for create as inside the constructor
                 // we could make a call to another contract and that could send funds!
-                var previousWasOpCall = previousTransaction.Outputs.Any(o => o.ScriptPubKey.IsSmartContractExec);
+                var previousWasOpCall = previousTransaction.Outputs.Any(o => SmartContractScript.IsSmartContractExec(o.ScriptPubKey));
 
                 if (!previousWasOpCall)
                 {

@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using NBitcoin;
 using NBitcoin.Policy;
+using Stratis.SmartContracts.Core;
 
 namespace Stratis.Bitcoin.Features.SmartContracts
 {
@@ -18,7 +19,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                 {
                     ScriptTemplate template = StandardScripts.GetTemplateFromScriptPubKey(this.network, txout.ScriptPubKey);
 
-                    if (template == null && !txout.ScriptPubKey.IsSmartContractExec)
+                    if (template == null && !txout.ScriptPubKey.IsSmartContractExec())
                         errors.Add(new OutputPolicyError("Non-Standard scriptPubKey", (int)txout.Outpoint.N));
                 }
             }
@@ -32,7 +33,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                 {
                     byte[] bytes = output.ScriptPubKey.ToBytes(true);
 
-                    if (output.IsDust(this.MinRelayTxFee) && !IsOpReturn(bytes) && !output.ScriptPubKey.IsSmartContractExec)
+                    if (output.IsDust(this.MinRelayTxFee) && !IsOpReturn(bytes) && !output.ScriptPubKey.IsSmartContractExec())
                         errors.Add(new DustPolicyError(output.Value, output.GetDustThreshold(this.MinRelayTxFee)));
                 }
             }

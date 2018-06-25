@@ -87,7 +87,7 @@ namespace Stratis.SmartContracts.Core.State.AccountAbstractionLayer
             foreach (ContractUnspentOutput vin in this.unspents)
             {
                 var outpoint = new OutPoint(vin.Hash, vin.Nvout);
-                tx.AddInput(new TxIn(outpoint, new Script(OpcodeType.OP_SPEND)));
+                tx.AddInput(new TxIn(outpoint, new Script(new [] { (byte) ScOpcodeType.OP_SPEND})));
             }
 
             foreach (TxOut txOut in this.GetOutputs())
@@ -166,7 +166,14 @@ namespace Stratis.SmartContracts.Core.State.AccountAbstractionLayer
             AccountState accountState = this.stateRepository.GetAccountState(address);
             if (accountState != null)
             {
-                return new Script(OpcodeType.OP_INTERNALCONTRACTTRANSFER, Op.GetPushOp(address.ToBytes()));
+                byte[] pushOp = Op.GetPushOp(address.ToBytes()).ToBytes();
+                var s = new List<byte>
+                {
+                    (byte) ScOpcodeType.OP_INTERNALCONTRACTTRANSFER
+                };
+                s.AddRange(pushOp);
+
+                return new Script(s);
             }
 
             return this.CreateScript(address);

@@ -4,6 +4,7 @@ using NBitcoin;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Features.SmartContracts.Consensus.Rules;
+using Stratis.SmartContracts.Core;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
@@ -26,14 +27,14 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
                 {
                     Outputs =
                     {
-                        new TxOut(Money.Zero, new Script(OpcodeType.OP_CALLCONTRACT))
+                        new TxOut(Money.Zero, new Script(new [] { (byte) ScOpcodeType.OP_CALLCONTRACT }))
                     }
                 },
                 new Transaction()
                 {
                     Outputs =
                     {
-                        new TxOut(new Money(1000), new Script(OpcodeType.OP_SPEND))
+                        new TxOut(new Money(1000), new Script(new [] { (byte) ScOpcodeType.OP_SPEND}))
                     }
                 }
             };
@@ -56,7 +57,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
                 {
                     Outputs =
                     {
-                        new TxOut(new Money(1000), new Script(OpcodeType.OP_SPEND))
+                        new TxOut(new Money(1000), new Script(new [] { (byte) ScOpcodeType.OP_SPEND}))
                     }
                 }
             };
@@ -100,7 +101,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
                 {
                     Outputs =
                     {
-                        new TxOut(new Money(1000), new Script(OpcodeType.OP_SPEND))
+                        new TxOut(new Money(1000), new Script(new [] { (byte) ScOpcodeType.OP_SPEND}))
                     }
                 }
             };

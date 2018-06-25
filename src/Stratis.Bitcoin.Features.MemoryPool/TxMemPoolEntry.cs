@@ -232,18 +232,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         }
 
         /// <summary>
-        /// Return the <see cref="TxOut"/> of the transaction that contains smart contract.
-        /// <para>
-        /// There is only allowed to be 1 per transaction .
-        /// </para>
-        /// </summary>
-        public TxOut TryGetSmartContractTxOut()
-        {
-            TxOut smartContractTxOut = this.Transaction.Outputs.FirstOrDefault(txOut => txOut.ScriptPubKey.IsSmartContractExec);
-            return smartContractTxOut;
-        }
-
-        /// <summary>
         /// Adjusts the descendant state, if this entry is not dirty.
         /// </summary>
         /// <param name="modifySize">Amount to add to the decendant size of this entry.</param>

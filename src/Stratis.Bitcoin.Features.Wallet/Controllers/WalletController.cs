@@ -1034,7 +1034,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         /// </summary>
         private string GetAddressFromScriptPubKey(TxOut output)
         {
-            if (output.ScriptPubKey.IsSmartContractExec)
+            if (output.ScriptPubKey.IsSmartContractExec())
             {
                 return output.ScriptPubKey.ToOps().First().Code.ToString();
             }

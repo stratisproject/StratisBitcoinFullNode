@@ -4,6 +4,7 @@ using NBitcoin;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
 using Stratis.SmartContracts;
+using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Executor.Reflection;
 using Xunit;
 
@@ -67,7 +68,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
 
                 // OP_SPEND in user's tx - we can't sign this because the TransactionBuilder recognises the ScriptPubKey is invalid.
                 tx = new Transaction();
-                tx.AddInput(new TxIn(new OutPoint(prevTrx.GetHash(), 0), new Script(OpcodeType.OP_SPEND)));
+                tx.AddInput(new TxIn(new OutPoint(prevTrx.GetHash(), 0), new Script(new[] { (byte)ScOpcodeType.OP_SPEND })));
                 smartContractCarrier = SmartContractCarrier.CallContract(1, new uint160(0), "Test", 1, new Gas(100_000));
                 tx.AddOutput(new TxOut(1, new Script(smartContractCarrier.Serialize())));
                 stratisNodeSync.Broadcast(tx);

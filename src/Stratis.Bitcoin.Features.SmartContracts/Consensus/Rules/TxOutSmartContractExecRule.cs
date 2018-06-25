@@ -4,6 +4,7 @@ using NBitcoin;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Features.MemoryPool;
+using SmartContractScript = Stratis.SmartContracts.Core.SmartContractScript;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Consensus.Rules
 {
@@ -32,7 +33,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Consensus.Rules
 
         private void CheckTransaction(Transaction transaction)
         {
-            var smartContractExecCount = transaction.Outputs.Count(o => o.ScriptPubKey.IsSmartContractExec);
+            var smartContractExecCount = transaction.Outputs.Count(o => SmartContractScript.IsSmartContractExec(o.ScriptPubKey));
             if (smartContractExecCount > 1)
                 new ConsensusError("multiple-smartcontractexec-outputs", "transaction contains multiple smartcontractexec outputs").Throw();
         }

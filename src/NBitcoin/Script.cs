@@ -313,13 +313,7 @@ namespace NBitcoin
         OP_NOP7 = 0xb6,
         OP_NOP8 = 0xb7,
         OP_NOP9 = 0xb8,
-        OP_NOP10 = 0xb9,
-
-        // smart contracts
-        OP_CREATECONTRACT = 0xc0,
-        OP_CALLCONTRACT = 0xc1,
-        OP_SPEND = 0xc2,
-        OP_INTERNALCONTRACTTRANSFER = 0xc3
+        OP_NOP10 = 0xb9        
     };
 
     public enum HashVersion
@@ -566,69 +560,6 @@ namespace NBitcoin
                     }
                     return true;
                 }
-            }
-        }
-
-        public bool IsSmartContractExec
-        {
-            get
-            {
-                Op firstOp = ToOps().FirstOrDefault();
-
-                if (firstOp == null)
-                    return false;
-
-                return firstOp.Code == OpcodeType.OP_CALLCONTRACT || firstOp.Code == OpcodeType.OP_CREATECONTRACT;
-            }
-        }
-
-        public bool IsSmartContractCall
-        {
-            get
-            {
-                Op firstOp = ToOps().FirstOrDefault();
-
-                if (firstOp == null)
-                    return false;
-
-                return firstOp.Code == OpcodeType.OP_CALLCONTRACT;
-            }
-        }
-
-        public bool IsSmartContractCreate
-        {
-            get
-            {
-                Op firstOp = ToOps().FirstOrDefault();
-
-                if (firstOp == null)
-                    return false;
-
-                return firstOp.Code == OpcodeType.OP_CREATECONTRACT;
-            }
-        }
-
-        public bool IsSmartContractSpend
-        {
-            get
-            {
-                Op op = ToOps().FirstOrDefault();
-                if (op == null)
-                    return false;
-
-                return op.Code == OpcodeType.OP_SPEND;
-            }
-        }
-
-        public bool IsSmartContractInternalCall
-        {
-            get
-            {
-                var op = ToOps().FirstOrDefault();
-                if (op == null)
-                    return false;
-
-                return op.Code == OpcodeType.OP_INTERNALCONTRACTTRANSFER;
             }
         }
 

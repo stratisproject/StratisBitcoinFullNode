@@ -56,7 +56,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         {
             this.logger.LogTrace("()");
 
-            TxOut smartContractTxOut = mempoolEntry.TryGetSmartContractTxOut();
+            TxOut smartContractTxOut = mempoolEntry.Transaction.TryGetSmartContractTxOut();
             if (smartContractTxOut == null)
             {
                 this.logger.LogTrace("Transaction does not contain smart contract information.");

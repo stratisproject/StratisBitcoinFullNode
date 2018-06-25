@@ -4,6 +4,7 @@ using NBitcoin;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Features.SmartContracts.Consensus.Rules;
+using Stratis.SmartContracts.Core;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
@@ -32,7 +33,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
                 {
                     Outputs =
                     {
-                        new TxOut(Money.Zero, new Script(OpcodeType.OP_CREATECONTRACT))
+                        new TxOut(Money.Zero, new Script(new [] { (byte)ScOpcodeType.OP_CREATECONTRACT }))
                     }
                 }
             };
@@ -56,8 +57,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
                 {
                     Outputs =
                     {
-                        new TxOut(Money.Zero, new Script(OpcodeType.OP_CALLCONTRACT)),
-                        new TxOut(Money.Zero, new Script(OpcodeType.OP_CREATECONTRACT))
+                        new TxOut(Money.Zero, new Script(new [] { (byte)ScOpcodeType.OP_CALLCONTRACT })),
+                        new TxOut(Money.Zero, new Script(new [] { (byte)ScOpcodeType.OP_CREATECONTRACT }))
                     }
                 }
             };
@@ -71,8 +72,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
                 {
                     Outputs =
                     {
-                        new TxOut(Money.Zero, new Script(OpcodeType.OP_CALLCONTRACT)),
-                        new TxOut(Money.Zero, new Script(OpcodeType.OP_CALLCONTRACT))
+                        new TxOut(Money.Zero, new Script(new [] { (byte)ScOpcodeType.OP_CALLCONTRACT })),
+                        new TxOut(Money.Zero, new Script(new [] { (byte)ScOpcodeType.OP_CALLCONTRACT }))
                     }
                 }
             };
@@ -86,8 +87,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
                 {
                     Outputs =
                     {
-                        new TxOut(Money.Zero, new Script(OpcodeType.OP_CREATECONTRACT)),
-                        new TxOut(Money.Zero, new Script(OpcodeType.OP_CREATECONTRACT))
+                        new TxOut(Money.Zero, new Script(new [] { (byte)ScOpcodeType.OP_CREATECONTRACT })),
+                        new TxOut(Money.Zero, new Script(new [] { (byte)ScOpcodeType.OP_CREATECONTRACT }))
                     }
                 }
             };

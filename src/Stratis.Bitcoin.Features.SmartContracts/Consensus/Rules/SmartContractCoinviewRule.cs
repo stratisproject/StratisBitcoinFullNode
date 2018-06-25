@@ -136,9 +136,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                             TxOut txout = view.GetOutputFor(input);
                             var checkInput = new Task<bool>(() =>
                             {
-                                if (txout.ScriptPubKey.IsSmartContractExec || txout.ScriptPubKey.IsSmartContractInternalCall)
+                                if (txout.ScriptPubKey.IsSmartContractExec() || txout.ScriptPubKey.IsSmartContractInternalCall())
                                 {
-                                    return input.ScriptSig.IsSmartContractSpend;
+                                    return input.ScriptSig.IsSmartContractSpend();
                                 }
 
                                 var checker = new TransactionChecker(tx, inputIndexCopy, txout.Value, txData);
@@ -228,7 +228,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             // If we are here, was definitely submitted by someone
             ValidateSubmittedTransaction(transaction);
 
-            TxOut smartContractTxOut = transaction.Outputs.FirstOrDefault(txOut => txOut.ScriptPubKey.IsSmartContractExec);
+            TxOut smartContractTxOut = transaction.Outputs.FirstOrDefault(txOut => txOut.ScriptPubKey.IsSmartContractExec());
             if (smartContractTxOut == null)
             {
                 // Someone submitted a standard transaction - no smart contract opcodes.
@@ -262,10 +262,10 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         /// <param name="transaction"></param>
         private void ValidateSubmittedTransaction(Transaction transaction)
         {
-            if (transaction.Inputs.Any(x => x.ScriptSig.IsSmartContractSpend))
+            if (transaction.Inputs.Any(x => x.ScriptSig.IsSmartContractSpend()))
                 SmartContractConsensusErrors.UserOpSpend.Throw();
 
-            if (transaction.Outputs.Any(x => x.ScriptPubKey.IsSmartContractInternalCall))
+            if (transaction.Outputs.Any(x => x.ScriptPubKey.IsSmartContractInternalCall()))
                 SmartContractConsensusErrors.UserInternalCall.Throw();
         }
 

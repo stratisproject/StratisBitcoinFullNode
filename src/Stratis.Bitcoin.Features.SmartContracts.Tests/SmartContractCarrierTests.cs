@@ -2,6 +2,7 @@
 using System.Text;
 using NBitcoin;
 using Stratis.SmartContracts;
+using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Executor.Reflection;
 using Xunit;
 
@@ -35,12 +36,12 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             SmartContractCarrier deserialized = SmartContractCarrier.Deserialize(tx);
             Assert.Equal(1, deserialized.VmVersion);
-            Assert.Equal(OpcodeType.OP_CREATECONTRACT, deserialized.OpCodeType);
+            Assert.Equal((byte)ScOpcodeType.OP_CREATECONTRACT, deserialized.OpCodeType);
             Assert.Equal(contractExecutionCode, deserialized.ContractExecutionCode);
             Assert.Equal((Gas)1, deserialized.GasPrice);
             Assert.Equal((Gas)5000, deserialized.GasLimit);
 
-            Assert.True(tx.Outputs[0].ScriptPubKey.IsSmartContractExec);
+            Assert.True(tx.Outputs[0].ScriptPubKey.IsSmartContractExec());
         }
 
         [Fact]

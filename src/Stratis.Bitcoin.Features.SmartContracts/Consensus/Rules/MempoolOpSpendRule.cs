@@ -2,6 +2,7 @@
 using NBitcoin;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Features.MemoryPool;
+using Stratis.SmartContracts.Core;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Consensus.Rules
 {
@@ -18,7 +19,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Consensus.Rules
 
         private static bool ContainsOpSpend(Script script)
         {
-            return script.ToOps().Any(x => x.Code == OpcodeType.OP_SPEND);
+            return script.ToOps().Any(x => (byte)x.Code == (byte)ScOpcodeType.OP_SPEND);
         }
 
         private void Throw()

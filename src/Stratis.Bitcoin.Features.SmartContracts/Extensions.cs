@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using NBitcoin;
+using Stratis.SmartContracts.Core;
 
 namespace Stratis.Bitcoin.Features.SmartContracts
 {
@@ -28,7 +29,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         /// </summary>
         public static bool IsSmartContractExecTransaction(this Transaction tx)
         {
-            return tx.Outputs.Any(s => s.ScriptPubKey.IsSmartContractExec);
+            return tx.Outputs.Any(s => s.ScriptPubKey.IsSmartContractExec());
         }
 
         /// <summary>
@@ -36,7 +37,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         /// </summary>
         public static bool IsSmartContractCreateTransaction(this Transaction tx)
         {
-            return tx.Outputs.Any(x => x.ScriptPubKey.IsSmartContractCreate);
+            return tx.Outputs.Any(x => x.ScriptPubKey.IsSmartContractCreate());
         }
 
         /// <summary>
@@ -44,7 +45,19 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         /// </summary>
         public static bool IsSmartContractSpendTransaction(this Transaction tx)
         {
-            return tx.Inputs.Any(s => s.ScriptSig.IsSmartContractSpend);
+            return tx.Inputs.Any(s => s.ScriptSig.IsSmartContractSpend());
+        }
+
+        /// <summary>
+        /// Return the <see cref="TxOut"/> of the transaction that contains smart contract.
+        /// <para>
+        /// There is only allowed to be 1 per transaction .
+        /// </para>
+        /// </summary>
+        public static TxOut TryGetSmartContractTxOut(this Transaction transaction)
+        {
+            TxOut smartContractTxOut = transaction.Outputs.FirstOrDefault(txOut => txOut.ScriptPubKey.IsSmartContractExec());
+            return smartContractTxOut;
         }
     }
 }

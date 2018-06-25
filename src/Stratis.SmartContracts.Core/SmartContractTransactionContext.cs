@@ -22,13 +22,13 @@ namespace Stratis.SmartContracts.Core
         /// <inheritdoc />
         public bool IsCreate
         {
-            get { return this.contractTxOut.ScriptPubKey.IsSmartContractCreate; }
+            get { return this.contractTxOut.ScriptPubKey.IsSmartContractCreate(); }
         }
 
         /// <inheritdoc />
         public bool IsCall
         {
-            get { return this.contractTxOut.ScriptPubKey.IsSmartContractCall; }
+            get { return this.contractTxOut.ScriptPubKey.IsSmartContractCall(); }
         }
 
         /// <inheritdoc />
@@ -89,7 +89,7 @@ namespace Stratis.SmartContracts.Core
             this.blockHeight = blockHeight;
             this.coinbaseAddress = coinbaseAddress;
             this.transaction = transaction;
-            this.contractTxOut = transaction.Outputs.FirstOrDefault(x => x.ScriptPubKey.IsSmartContractExec);
+            this.contractTxOut = transaction.Outputs.FirstOrDefault(x => x.ScriptPubKey.IsSmartContractExec());
             Guard.NotNull(this.contractTxOut, nameof(this.contractTxOut));
 
             this.sender = sender;

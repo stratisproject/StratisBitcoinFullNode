@@ -69,7 +69,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
         public uint Nvout { get; private set; }
 
         /// <summary>Specifies the smart contract operation to be done.</summary>
-        public OpcodeType OpCodeType { get; private set; }
+        public byte OpCodeType { get; private set; }
 
         /// <summary>The serializer we use to serialize the method parameters.</summary>
         private readonly IMethodParameterSerializer serializer;
@@ -94,13 +94,13 @@ namespace Stratis.SmartContracts.Executor.Reflection
         }
 
         /// <summary>
-        /// Instantiates a <see cref="OpcodeType.OP_CREATECONTRACT"/> smart contract carrier.
+        /// Instantiates a <see cref="ScOpcodeType.OP_CREATECONTRACT"/> smart contract carrier.
         /// </summary>
         public static SmartContractCarrier CreateContract(int vmVersion, byte[] contractExecutionCode, ulong gasPrice, Gas gasLimit)
         {
             var carrier = new SmartContractCarrier(new MethodParameterSerializer());
             carrier.VmVersion = vmVersion;
-            carrier.OpCodeType = OpcodeType.OP_CREATECONTRACT;
+            carrier.OpCodeType = (byte) ScOpcodeType.OP_CREATECONTRACT;
             carrier.ContractExecutionCode = contractExecutionCode ?? throw new SmartContractCarrierException(nameof(contractExecutionCode) + " is null");
             carrier.GasPrice = gasPrice;
             carrier.GasLimit = gasLimit;
@@ -108,7 +108,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
         }
 
         /// <summary>
-        /// Instantiates a <see cref="OpcodeType.OP_CREATECONTRACT"/> smart contract carrier with parameters.
+        /// Instantiates a <see cref="ScOpcodeType.OP_CREATECONTRACT"/> smart contract carrier with parameters.
         /// </summary>
         public static SmartContractCarrier CreateContract(int vmVersion, byte[] contractExecutionCode, ulong gasPrice, Gas gasLimit, string[] methodParameters)
         {
@@ -118,7 +118,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
         }
 
         /// <summary>
-        /// Instantiates a <see cref="OpcodeType.OP_CALLCONTRACT"/> smart contract carrier with parameters.
+        /// Instantiates a <see cref="ScOpcodeType.OP_CALLCONTRACT"/> smart contract carrier with parameters.
         /// </summary>
         public static SmartContractCarrier CallContract(int vmVersion, uint160 contractAddress, string methodName, ulong gasPrice, Gas gasLimit, string[] methodParameters)
         {
@@ -128,13 +128,13 @@ namespace Stratis.SmartContracts.Executor.Reflection
         }
 
         /// <summary>
-        /// Instantiates a <see cref="OpcodeType.OP_CALLCONTRACT"/> smart contract carrier.
+        /// Instantiates a <see cref="ScOpcodeType.OP_CALLCONTRACT"/> smart contract carrier.
         /// </summary>
         public static SmartContractCarrier CallContract(int vmVersion, uint160 contractAddress, string methodName, ulong gasPrice, Gas gasLimit)
         {
             var carrier = new SmartContractCarrier(new MethodParameterSerializer());
             carrier.VmVersion = vmVersion;
-            carrier.OpCodeType = OpcodeType.OP_CALLCONTRACT;
+            carrier.OpCodeType = (byte) ScOpcodeType.OP_CALLCONTRACT;
             carrier.ContractAddress = contractAddress;
             carrier.MethodName = methodName ?? throw new SmartContractCarrierException(nameof(methodName) + " is null");
             carrier.GasPrice = gasPrice;
@@ -148,7 +148,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
         /// <param name="methodParameters">A string array representation of the method parameters.</param>
         private void WithParameters(string[] methodParameters)
         {
-            if (this.OpCodeType == OpcodeType.OP_CALLCONTRACT && string.IsNullOrEmpty(this.MethodName))
+            if (this.OpCodeType == (byte) ScOpcodeType.OP_CALLCONTRACT && string.IsNullOrEmpty(this.MethodName))
                 throw new SmartContractCarrierException(nameof(this.MethodName) + " must be supplied before specifying method parameters.");
 
             if (methodParameters == null)
@@ -170,13 +170,13 @@ namespace Stratis.SmartContracts.Executor.Reflection
             bytes.Add((byte) this.OpCodeType);
             bytes.AddRange(this.PrefixLength(BitConverter.GetBytes(this.VmVersion)));
 
-            if (this.OpCodeType == OpcodeType.OP_CALLCONTRACT)
+            if (this.OpCodeType == (byte) ScOpcodeType.OP_CALLCONTRACT)
             {
                 bytes.AddRange(this.PrefixLength(this.ContractAddress.ToBytes()));
                 bytes.AddRange(this.PrefixLength(Encoding.UTF8.GetBytes(this.MethodName)));
             }
 
-            if (this.OpCodeType == OpcodeType.OP_CREATECONTRACT)
+            if (this.OpCodeType == (byte) ScOpcodeType.OP_CREATECONTRACT)
                 bytes.AddRange(this.PrefixLength(this.ContractExecutionCode));
 
             if (!string.IsNullOrEmpty(this.methodParametersRaw) && this.MethodParameters.Length > 0)
@@ -222,17 +222,17 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
             var carrier = new SmartContractCarrier(new MethodParameterSerializer())
             {
-                OpCodeType =  transactionContext.IsCreate ? OpcodeType.OP_CREATECONTRACT : OpcodeType.OP_CALLCONTRACT,
+                OpCodeType =  transactionContext.IsCreate ? (byte) ScOpcodeType.OP_CREATECONTRACT : (byte) ScOpcodeType.OP_CALLCONTRACT,
                 VmVersion = Deserialize<int>(smartContractBytes, ref byteCursor, ref takeLength)
             };
 
-            if (carrier.OpCodeType == OpcodeType.OP_CALLCONTRACT)
+            if (carrier.OpCodeType == (byte) ScOpcodeType.OP_CALLCONTRACT)
             {
                 carrier.ContractAddress = Deserialize<uint160>(smartContractBytes, ref byteCursor, ref takeLength);
                 carrier.MethodName = Deserialize<string>(smartContractBytes, ref byteCursor, ref takeLength);
             }
 
-            if (carrier.OpCodeType == OpcodeType.OP_CREATECONTRACT)
+            if (carrier.OpCodeType == (byte) ScOpcodeType.OP_CREATECONTRACT)
                 carrier.ContractExecutionCode = Deserialize<byte[]>(smartContractBytes, ref byteCursor, ref takeLength);
 
             var methodParameters = Deserialize<string>(smartContractBytes, ref byteCursor, ref takeLength);
