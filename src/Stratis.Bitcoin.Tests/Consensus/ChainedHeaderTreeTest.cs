@@ -622,7 +622,10 @@ namespace Stratis.Bitcoin.Tests.Consensus
             // Chain header tree setup. Initial chain has 4 headers with no blocks.
             // Example: h1=h2=h3=h4.
             const int initialChainSize = 4;
-            TestContext ctx = new TestContextBuilder().WithInitialChain(initialChainSize, false).UseCheckpoints().Build();
+            TestContext ctx = new TestContextBuilder()
+                                    .WithInitialChain(initialChainSize, assignBlocks: false)
+                                    .UseCheckpoints()
+                                    .Build();
             ChainedHeaderTree cht = ctx.ChainedHeaderTree;
             ChainedHeader initialChainTip = ctx.InitialChainTip;
 
