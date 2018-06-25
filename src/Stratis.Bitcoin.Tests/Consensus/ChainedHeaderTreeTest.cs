@@ -624,7 +624,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
             // Chain is presented by peer 1.
             result = cht.ConnectNewHeaders(1, listOfCurrentChainHeaders);
 
-            // Headers h5-h9 are marked as "assumed valid".
+            // Headers h7-h9 are marked as "assumed valid".
             ChainedHeader consumed = result.Consumed;
             var expectedState = ValidationState.HeaderValidated;
             while (consumed.Height > initialChainSize)
