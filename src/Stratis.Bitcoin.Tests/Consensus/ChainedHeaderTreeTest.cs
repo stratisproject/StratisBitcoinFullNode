@@ -44,12 +44,12 @@ namespace Stratis.Bitcoin.Tests.Consensus
                 this.testContext = new TestContext();
             }
 
-            internal TestContextBuilder WithInitialChain(int initialChainSize)
+            internal TestContextBuilder WithInitialChain(int initialChainSize, bool assignBlocks = true)
             {
                 if (initialChainSize < 0)
                     throw new ArgumentOutOfRangeException(nameof(initialChainSize), "Size cannot be less than 0.");
 
-                this.testContext.InitialChainTip = this.testContext.ExtendAChain(initialChainSize);
+                this.testContext.InitialChainTip = this.testContext.ExtendAChain(initialChainSize, assignBlocks: assignBlocks);
                 return this;
             }
 
@@ -126,7 +126,11 @@ namespace Stratis.Bitcoin.Tests.Consensus
                     .Returns(checkpoints.OrderBy(h => h.Height).Last().Height);
             }
 
-            public ChainedHeader ExtendAChain(int count, ChainedHeader chainedHeader = null, int difficultyAdjustmentDivisor = 1)
+            public ChainedHeader ExtendAChain(
+                int count, 
+                ChainedHeader chainedHeader = null, 
+                int difficultyAdjustmentDivisor = 1, 
+                bool assignBlocks = true)
             {
                 if (difficultyAdjustmentDivisor == 0) throw new ArgumentException("Divisor cannot be 0");
 
@@ -141,9 +145,13 @@ namespace Stratis.Bitcoin.Tests.Consensus
                                         : this.ChangeDifficulty(previousHeader, difficultyAdjustmentDivisor);
                     header.Nonce = (uint)Interlocked.Increment(ref nonceValue);
                     var newHeader = new ChainedHeader(header, header.GetHash(), previousHeader);
-                    Block block = this.Network.Consensus.ConsensusFactory.CreateBlock();
-                    block.GetSerializedSize();
-                    newHeader.Block = block;
+                    if (assignBlocks)
+                    {
+                        Block block = this.Network.Consensus.ConsensusFactory.CreateBlock();
+                        block.GetSerializedSize();
+                        newHeader.Block = block;
+                    }
+
                     previousHeader = newHeader;
                 }
 
@@ -602,6 +610,27 @@ namespace Stratis.Bitcoin.Tests.Consensus
             // BlockDownloadedForMissingChainedHeaderException should be thrown.
             Action verificationAction = () => cht.FindHeaderAndVerifyBlockIntegrity(initialChainTip.Block);
             verificationAction.Should().Throw<BlockDownloadedForMissingChainedHeaderException>();
+        }
+
+        /// <summary>
+        /// Issue 23 @ Block data received (BlockDataDownloaded is called) for already FV block with null pointer.
+        /// Nothing should be chained, pointer shouldn't be assigned and result should be false.
+        /// </summary>
+        [Fact]
+        public void BlockDataDownloadedIsCalled_ForFvBlockWithNullPointer_ResultShouldBeFalse()
+        {
+            // Chain header tree setup. Initial chain has 4 headers with no blocks.
+            // Example: h1=h2=h3=h4.
+            const int initialChainSize = 4;
+            TestContext ctx = new TestContextBuilder().WithInitialChain(initialChainSize, false).UseCheckpoints().Build();
+            ChainedHeaderTree cht = ctx.ChainedHeaderTree;
+            ChainedHeader initialChainTip = ctx.InitialChainTip;
+
+            // Call BlockDataDownloaded and make sure that result is false and nothing is chained.
+            Block fakeBlock = ctx.Network.Consensus.ConsensusFactory.CreateBlock();
+            bool result = cht.BlockDataDownloaded(initialChainTip, fakeBlock);
+            result.Should().BeFalse();
+            initialChainTip.Block.Should().BeNull();
         }
     }
 }
