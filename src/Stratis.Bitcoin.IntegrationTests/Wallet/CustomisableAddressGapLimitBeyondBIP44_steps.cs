@@ -27,6 +27,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         private const string ReceivingWalletName = "receivingwallet";
         private const string WalletPassword = "password";
         public const string AccountZero = "account 0";
+        private const string ReceivingNodeName = "receiving";
 
 
         protected override void BeforeTest()
@@ -48,15 +49,15 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             this.nodeGroup = this.nodeGroupBuilder
                 .StratisPowNode("sending").Start().NotInIBD()
                 .WithWallet(SendingWalletName, WalletPassword)
-                .StratisPowNode("receiving").Start().NotInIBD()
+                .StratisPowNode(ReceivingNodeName).Start().NotInIBD()
                 .WithWallet(ReceivingWalletName, WalletPassword)
                 .WithConnections()
-                .Connect("sending", "receiving")
+                .Connect("sending", ReceivingNodeName)
                 .AndNoMoreConnections()
                 .Build();
 
             this.sendingStratisBitcoinNode = this.nodeGroup["sending"];
-            this.receivingStratisBitcoinNode = this.nodeGroup["receiving"];
+            this.receivingStratisBitcoinNode = this.nodeGroup[ReceivingNodeName];
 
             this.sendingStratisBitcoinNode.FullNode
                 .Network.Consensus.CoinbaseMaturity = 1;
@@ -72,10 +73,10 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             
         }
 
-        private void a_wallet_with_funds_at_index_21()
+        private void a_wallet_with_funds_at_index_20()
         {
-            HdAddress recipientAddress = this.receivingStratisBitcoinNode.FullNode.WalletManager()
-                .GetUnusedAddresses(new WalletAccountReference(ReceivingWalletName, AccountZero), 1000).Last();
+            ExtPubKey xPublicKey = this.GetExtendedPublicKey(ReceivingNodeName);
+            var recipientAddressBeyondGapLimit = xPublicKey.Derive(new KeyPath($"0/{20}")).PubKey.GetAddress(Network.RegTest);
 
             TransactionBuildContext transactionBuildContext = SharedSteps.CreateTransactionBuildContext(
                 SendingWalletName,
@@ -84,7 +85,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                 new[] {
                         new Recipient {
                             Amount = Money.COIN * 1,
-                            ScriptPubKey = recipientAddress.ScriptPubKey
+                            ScriptPubKey = recipientAddressBeyondGapLimit.ScriptPubKey
                         }
                 },
                 FeeType.Medium, 0);
@@ -95,10 +96,15 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             this.sendingStratisBitcoinNode.FullNode.NodeService<WalletController>()
                 .SendTransaction(new SendTransactionRequest(transaction.ToHex()));
 
-            Transaction tx = this.sendingStratisBitcoinNode.FullNode.MempoolManager().GetTransaction(transaction.GetHash()).GetAwaiter().GetResult();
-            tx.GetHash().Should().Be(transaction.GetHash());
-
             this.sharedSteps.MineBlocks(1, this.sendingStratisBitcoinNode, AccountZero, SendingWalletName, WalletPassword, 7480);
+        }
+
+        private ExtPubKey GetExtendedPublicKey(string nodeName)
+        {
+            ExtKey xPrivKey = this.nodeGroupBuilder.NodeMnemonics[nodeName].DeriveExtKey(WalletPassword);
+            Key privateKey = xPrivKey.PrivateKey;
+            ExtPubKey xPublicKey = HdOperations.GetExtendedPublicKey(privateKey, xPrivKey.ChainCode, (int) CoinType.Bitcoin, 0);
+            return xPublicKey;
         }
 
         private void getting_wallet_balance()
@@ -113,6 +119,17 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         private void the_balance_is_zero()
         {
             this.walletBalance.Should().Be(0);
+        }
+
+        private void _21_new_addresses_are_requested()
+        {
+            this.receivingStratisBitcoinNode.FullNode.WalletManager()
+                .GetUnusedAddresses(new WalletAccountReference(ReceivingWalletName, AccountZero), 21);
+        }
+
+        private void the_balance_is_no_longer_zero()
+        {
+            this.walletBalance.Should().Be(1 * Money.COIN);
         }
     }
 }
