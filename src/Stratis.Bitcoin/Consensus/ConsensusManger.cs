@@ -392,9 +392,10 @@ namespace Stratis.Bitcoin.Consensus
                         this.logger.LogTrace("(-)");
                         return (null, true, null);
                     }
+
+                    fork = current;
                 }
 
-                fork = current;
                 reorged = true;
             }
 
