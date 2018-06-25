@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Net;
 using NBitcoin;
 using Stratis.Bitcoin.Configuration.Settings;

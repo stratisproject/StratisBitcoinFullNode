@@ -87,6 +87,9 @@ namespace Stratis.Bitcoin.Consensus
         /// <summary>
         /// Handles situation when consensuses tip was changed.
         /// </summary>
+        /// <remarks>
+        /// All peers are checked against max reorg violation and if they violate their chain will be reset.
+        /// </remarks>
         /// <param name="newConsensusTip">The new consensus tip.</param>
         /// <returns>List of peer Ids that violate max reorg rule.</returns>
         List<int> ConsensusTipChanged(ChainedHeader newConsensusTip);
