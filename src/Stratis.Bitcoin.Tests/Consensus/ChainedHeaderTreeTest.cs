@@ -345,7 +345,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
         {
             TestContext testContext = new TestContextBuilder().WithInitialChain(5).UseCheckpoints(false).Build();
             ChainedHeaderTree chainedHeaderTree = testContext.ChainedHeaderTree;
-            uint256 peerTipHashBeforeInvalidBlockPresented = testContext.InitialChainTip.HashBlock;
+            ChainedHeader consensusTip = testContext.InitialChainTip;
 
             ChainedHeader invalidChainedHeader = testContext.ExtendAChain(1, testContext.InitialChainTip);
             List<BlockHeader> listContainingInvalidHeader = testContext.ChainedHeaderToList(invalidChainedHeader, 1);
@@ -356,11 +356,11 @@ namespace Stratis.Bitcoin.Tests.Consensus
             Assert.Throws<InvalidHeaderTestException>(() => chainedHeaderTree.ConnectNewHeaders(1, listContainingInvalidHeader));
 
             // Chain's last block shouldn't change.
-            ChainedHeader peerTipAfterInvalidHeaderPresented = chainedHeaderTree.GetPeerTipChainedHeaderByPeerId(-1);
-            Assert.Equal(peerTipHashBeforeInvalidBlockPresented, peerTipAfterInvalidHeaderPresented.HashBlock);
+            ChainedHeader consensusTipAfterInvalidHeaderPresented = chainedHeaderTree.GetPeerTipChainedHeaderByPeerId(-1);
+            Assert.Equal(consensusTip, consensusTipAfterInvalidHeaderPresented);
 
             // Last block shouldn't have a Next.
-            Assert.Empty(peerTipAfterInvalidHeaderPresented.Next);
+            Assert.Empty(consensusTipAfterInvalidHeaderPresented.Next);
         }
 
         /// <summary>
@@ -424,7 +424,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
             ChainedHeader chainedHeader = chainedHeaderTree.GetChainedHeadersByHash()
                 .SingleOrDefault(x => (x.Value.HashBlock == checkpoint.Header.GetHash())).Value;
 
-            // Checking from the checkpoint back to the initialised chain.
+            // Checking from the checkpoint back to the initialized chain.
             while (chainedHeader.Height > initialChainSize)
             {
                 chainedHeader.BlockValidationState.Should().Be(ValidationState.AssumedValid);
