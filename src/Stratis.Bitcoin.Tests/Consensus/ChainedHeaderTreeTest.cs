@@ -624,7 +624,6 @@ namespace Stratis.Bitcoin.Tests.Consensus
             const int initialChainSize = 4;
             TestContext ctx = new TestContextBuilder()
                                     .WithInitialChain(initialChainSize, assignBlocks: false)
-                                    .UseCheckpoints()
                                     .Build();
             ChainedHeaderTree cht = ctx.ChainedHeaderTree;
             ChainedHeader initialChainTip = ctx.InitialChainTip;
