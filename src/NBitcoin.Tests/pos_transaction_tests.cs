@@ -16,7 +16,7 @@ using Xunit;
 
 namespace NBitcoin.Tests
 {
-    public class pos_transaction_tests
+    public class Pos_Transaction_Tests
     {
         [Fact]
         [Trait("UnitTest", "UnitTest")]
@@ -62,17 +62,16 @@ namespace NBitcoin.Tests
 
         private ChainedHeader CreateBlock(DateTimeOffset now, int offset, ChainBase chain = null)
         {
-            var b = new Block(new BlockHeader()
-            {
-                BlockTime = now + TimeSpan.FromMinutes(offset)
-            });
+            Block block = Network.StratisMain.Consensus.ConsensusFactory.CreateBlock();
+            block.Header.BlockTime = now + TimeSpan.FromMinutes(offset);
+
             if (chain != null)
             {
-                b.Header.HashPrevBlock = chain.Tip.HashBlock;
-                return new ChainedHeader(b.Header, b.Header.GetHash(), chain.Tip);
+                block.Header.HashPrevBlock = chain.Tip.HashBlock;
+                return new ChainedHeader(block.Header, block.Header.GetHash(), chain.Tip);
             }
             else
-                return new ChainedHeader(b.Header, b.Header.GetHash(), 0);
+                return new ChainedHeader(block.Header, block.Header.GetHash(), 0);
         }
 
         [Fact]
@@ -138,7 +137,7 @@ namespace NBitcoin.Tests
         [Trait("UnitTest", "UnitTest")]
         public void CanExtractTxOutDestinationEasily()
         {
-            
+
             var secret = new BitcoinSecret("VHqBm5xVQvosc7u4dDwMmzbr8mL4KzZBn5VgqjunovgURtXBo5cV", Network.StratisMain);
 
             Transaction tx = Network.StratisMain.Consensus.ConsensusFactory.CreateTransaction();
@@ -402,14 +401,14 @@ namespace NBitcoin.Tests
             var repo = new NoSqlColoredTransactionRepository(new NoSqlTransactionRepository(Network.StratisMain), new InMemoryNoSqlRepository(Network.StratisMain));
 
             Transaction init = Network.StratisMain.Consensus.ConsensusFactory.CreateTransaction();
-            
+
             init.Outputs.AddRange(new[]
             {
                 new TxOut("1.0", gold.PubKey),
                 new TxOut("1.0", silver.PubKey),
                 new TxOut("1.0", satoshi.PubKey)
             });
-            
+
             repo.Transactions.Put(init.GetHash(), init);
 
             ICoin[] issuanceCoins =
@@ -496,7 +495,7 @@ namespace NBitcoin.Tests
                 new TxOut("1.0", silver.PubKey),
                 new TxOut("1.0", satoshi.PubKey)
             });
-            
+
 
             repo.Transactions.Put(init);
 
@@ -983,21 +982,23 @@ namespace NBitcoin.Tests
 
         private void CanVerifySequenceLockCore(Sequence[] sequences, int[] prevHeights, int currentHeight, DateTimeOffset first, bool expected, SequenceLock expectedLock)
         {
-            var chain = new ConcurrentChain(new BlockHeader()
-            {
-                BlockTime = first
-            }, Network.StratisMain);
+            Network network = Network.StratisMain;
+            BlockHeader blockHeader = network.Consensus.ConsensusFactory.CreateBlockHeader();
+            blockHeader.BlockTime = first;
+
+            var chain = new ConcurrentChain(blockHeader, network);
             first = first + TimeSpan.FromMinutes(10);
+
             while (currentHeight != chain.Height)
             {
-                chain.SetTip(new BlockHeader()
-                {
-                    BlockTime = first,
-                    HashPrevBlock = chain.Tip.HashBlock
-                });
+                BlockHeader header = network.Consensus.ConsensusFactory.CreateBlockHeader();
+                header.BlockTime = first;
+                header.HashPrevBlock = chain.Tip.HashBlock;
+                chain.SetTip(header);
                 first = first + TimeSpan.FromMinutes(10);
             }
-            Transaction tx = Network.StratisMain.Consensus.ConsensusFactory.CreateTransaction();
+
+            Transaction tx = network.Consensus.ConsensusFactory.CreateTransaction();
             tx.Version = 2;
             for (int i = 0; i < sequences.Length; i++)
             {

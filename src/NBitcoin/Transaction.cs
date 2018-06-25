@@ -1395,7 +1395,7 @@ namespace NBitcoin
 
         public Transaction Clone(bool cloneCache, Network network = null)
         {
-            Transaction clone = BitcoinSerializableExtensions.Clone(this, network: network);
+            Transaction clone = Load(this.ToHex(), network: network);
             if(cloneCache)
                 clone._Hashes = this._Hashes.ToArray();
             return clone;
