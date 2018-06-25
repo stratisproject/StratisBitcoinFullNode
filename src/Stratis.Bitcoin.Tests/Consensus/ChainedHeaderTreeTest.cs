@@ -647,7 +647,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
         /// first block true is returned and false for others.
         /// </summary>
         [Fact]
-        public void BlockDataDownloadedIsCalled_ForBlocksAfterFv_ResultShouldBeTrueForTHeFirstAndFalseForTheRest()
+        public void BlockDataDownloadedIsCalled_ForValidBlocksAfterFv_ResultShouldBeTrueForTHeFirstAndFalseForTheRest()
         {
             // Chain header tree setup. Initial chain has 4 headers with no blocks.
             // Example: fv1=fv2=fv3=fv4.
