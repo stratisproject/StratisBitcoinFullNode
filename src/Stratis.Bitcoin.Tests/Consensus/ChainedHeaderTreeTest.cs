@@ -176,6 +176,13 @@ namespace Stratis.Bitcoin.Tests.Consensus
             }
         }
 
+        public class InvalidHeaderTestException : ConsensusException
+        {
+            public InvalidHeaderTestException() : base()
+            {
+            }
+        }
+
         [Fact]
         public void ConnectHeaders_HeadersCantConnect_ShouldFail()
         {
@@ -354,6 +361,50 @@ namespace Stratis.Bitcoin.Tests.Consensus
 
             // Last block shouldn't have a Next.
             Assert.Empty(peerTipAfterInvalidHeaderPresented.Next);
+        }
+
+        /// <summary>
+        /// Issue 10 @ Create chained header tree component #1321
+        /// When checkpoints are enabled and the only checkpoint is at block X,
+        /// when we present headers before that none are marked for download.
+        /// When we first present checkpointed header and some after
+        /// all previous are also marked for download & those that are up
+        /// to the last checkpoint are marked as assumevalid.
+        /// </summary>
+        [Fact]
+        public void PresentChain_CheckpointsEnabled_MarkToDownloadWhenCheckpointPresented()
+        {
+            const int initialChainSize = 2;
+            const int currentChainExtension = 7;
+
+            TestContext testContext = new TestContextBuilder().WithInitialChain(initialChainSize).UseCheckpoints().Build();
+            ChainedHeaderTree chainedHeaderTree = testContext.ChainedHeaderTree;
+            ChainedHeader initialChainTip = testContext.InitialChainTip;
+
+            ChainedHeader extendedChainTip = testContext.ExtendAChain(currentChainExtension, initialChainTip);
+            List<BlockHeader> listOfCurrentChainHeaders = testContext.ChainedHeaderToList(extendedChainTip, initialChainSize + currentChainExtension);
+            
+            // Checkpoints are enabled and the only checkpoint is at block 6
+            const int firstCheckpointHeight = 6;
+            var checkpoint = new CheckpointFixture(firstCheckpointHeight, listOfCurrentChainHeaders[firstCheckpointHeight - 1]);
+            testContext.SetupCheckpoints(checkpoint);
+            
+            // When we present headers before that none are marked for download
+            int numberOfHeadersBeforeCheckpoint = firstCheckpointHeight - initialChainSize;
+            var listOfHeadersBeforeCheckpoint = listOfCurrentChainHeaders.GetRange(initialChainSize, numberOfHeadersBeforeCheckpoint - 1);
+            ConnectNewHeadersResult connectNewHeadersResult = chainedHeaderTree.ConnectNewHeaders(1, listOfHeadersBeforeCheckpoint.ToList());
+            connectNewHeadersResult.DownloadFrom.Should().Be(null);
+            connectNewHeadersResult.DownloadTo.Should().Be(null);
+
+            // Headers up to the last checkpoint are marked as assumevalid.
+            testContext.ConsensusSettings.BlockAssumedValid = listOfCurrentChainHeaders[firstCheckpointHeight - 1].GetHash();
+
+            // When we present the checkpointed header and those beyond all previous are a marked for download
+            List<BlockHeader> listOfHeadersIncludingAndAfterCheckpoint = listOfCurrentChainHeaders.TakeLast(4).ToList();
+            connectNewHeadersResult = chainedHeaderTree.ConnectNewHeaders(1, listOfHeadersIncludingAndAfterCheckpoint.ToList());
+            
+            connectNewHeadersResult.DownloadFrom.HashBlock.Should().Be(listOfHeadersBeforeCheckpoint.First().GetHash());
+            connectNewHeadersResult.DownloadTo.HashBlock.Should().Be(checkpoint.Header.GetHash());
         }
 
         /// <summary>
