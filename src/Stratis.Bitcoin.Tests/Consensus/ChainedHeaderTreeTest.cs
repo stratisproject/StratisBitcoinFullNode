@@ -11,6 +11,7 @@ using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Consensus;
+using Stratis.Bitcoin.Tests.Common;
 using Stratis.Bitcoin.Utilities;
 using Xunit;
 
@@ -428,6 +429,14 @@ namespace Stratis.Bitcoin.Tests.Consensus
             while (chainedHeader.Height > initialChainSize)
             {
                 chainedHeader.BlockValidationState.Should().Be(ValidationState.AssumedValid);
+                chainedHeader = chainedHeader.Previous;
+            }
+
+            // Checking from the checkpoint forward to the end of the chain.
+            chainedHeader = chainedHeaderTree.GetPeerTipChainedHeaderByPeerId(1);
+            while (chainedHeader.Height > checkpoint.Height)
+            {
+                chainedHeader.BlockValidationState.Should().Be(ValidationState.HeaderValidated);
                 chainedHeader = chainedHeader.Previous;
             }
         }
