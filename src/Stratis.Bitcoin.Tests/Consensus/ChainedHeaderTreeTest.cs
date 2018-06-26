@@ -707,12 +707,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
         [Fact]
         public void BlockDataDownloadedIsCalled_ForValidBlocksAfterFv_ResultShouldBeTrueForTHeFirstAndFalseForTheRest()
         {
-            // Chain header tree setup. Initial chain has 4 headers with no blocks.
-            // Example: fv1=fv2=fv3=fv4.
-            const int initialChainSize = 4;
-            TestContext ctx = new TestContextBuilder()
-                                    .WithInitialChain(initialChainSize, assignBlocks: false)
-                                    .Build();
+            TestContext ctx = new TestContextBuilder().Build();
             ChainedHeaderTree cht = ctx.ChainedHeaderTree;
             ChainedHeader chainTip = ctx.InitialChainTip;
 
