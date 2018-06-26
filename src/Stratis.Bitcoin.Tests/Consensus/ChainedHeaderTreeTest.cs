@@ -11,6 +11,7 @@ using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Consensus;
+using Stratis.Bitcoin.Tests.Common;
 using Stratis.Bitcoin.Utilities;
 using Xunit;
 
@@ -195,6 +196,13 @@ namespace Stratis.Bitcoin.Tests.Consensus
             }
         }
 
+        public class InvalidHeaderTestException : ConsensusException
+        {
+            public InvalidHeaderTestException() : base()
+            {
+            }
+        }
+
         [Fact]
         public void ConnectHeaders_HeadersCantConnect_ShouldFail()
         {
@@ -344,6 +352,112 @@ namespace Stratis.Bitcoin.Tests.Consensus
 
             // ToDownload array of the same size as the amount of headers
             Assert.Equal(headersToDownloadCount, peer2Headers.Count);
+        }
+
+        /// <summary>
+        /// Issue 7 @ Create chained header tree component #1321
+        /// We have a chain and someone presents an invalid header.
+        /// After that our chain's last block shouldn't change, it shouldn't have a valid .Next
+        /// and it should throw an exception.
+        /// </summary>
+        [Fact]
+        public void ConnectHeaders_SupplyInvalidHeader_ExistingChainTipShouldNotChange()
+        {
+            TestContext testContext = new TestContextBuilder().WithInitialChain(5).UseCheckpoints(false).Build();
+            ChainedHeaderTree chainedHeaderTree = testContext.ChainedHeaderTree;
+            ChainedHeader consensusTip = testContext.InitialChainTip;
+
+            ChainedHeader invalidChainedHeader = testContext.ExtendAChain(1, testContext.InitialChainTip);
+            List<BlockHeader> listContainingInvalidHeader = testContext.ChainedHeaderToList(invalidChainedHeader, 1);
+            BlockHeader invalidBlockHeader = listContainingInvalidHeader[0];
+
+            testContext.ChainedHeaderValidatorMock.Setup(x => x.ValidateHeader(It.Is<ChainedHeader>(y => y.HashBlock == invalidBlockHeader.GetHash()))).Throws(new InvalidHeaderTestException());
+
+            Assert.Throws<InvalidHeaderTestException>(() => chainedHeaderTree.ConnectNewHeaders(1, listContainingInvalidHeader));
+
+            // Chain's last block shouldn't change.
+            ChainedHeader consensusTipAfterInvalidHeaderPresented = chainedHeaderTree.GetPeerTipChainedHeaderByPeerId(-1);
+            Assert.Equal(consensusTip, consensusTipAfterInvalidHeaderPresented);
+
+            // Last block shouldn't have a Next.
+            Assert.Empty(consensusTipAfterInvalidHeaderPresented.Next);
+        }
+
+        /// <summary>
+        /// Issue 10 @ Create chained header tree component #1321
+        /// When checkpoints are enabled and the only checkpoint is at block X,
+        /// when we present headers before that none are marked for download.
+        /// When we first present checkpointed header and some after
+        /// all previous are also marked for download & those that are up
+        /// to the last checkpoint are marked as assumevalid.
+        /// </summary>
+        [Fact]
+        public void PresentChain_CheckpointsEnabled_MarkToDownloadWhenCheckpointPresented()
+        {
+            const int initialChainSize = 5;
+            const int currentChainExtension = 20;
+
+            TestContext testContext = new TestContextBuilder().WithInitialChain(initialChainSize).UseCheckpoints().Build();
+            ChainedHeaderTree chainedHeaderTree = testContext.ChainedHeaderTree;
+            ChainedHeader initialChainTip = testContext.InitialChainTip;
+
+            ChainedHeader extendedChainTip = testContext.ExtendAChain(currentChainExtension, initialChainTip);
+
+            // Total chain length is h1 -> h25.
+            List<BlockHeader> listOfCurrentChainHeaders =
+                testContext.ChainedHeaderToList(extendedChainTip, initialChainSize + currentChainExtension);
+
+            // Checkpoints are enabled and the only checkpoint is at h(20).
+            const int checkpointHeight = 20;
+            var checkpoint = new CheckpointFixture(checkpointHeight, listOfCurrentChainHeaders[checkpointHeight - 1]);
+            testContext.SetupCheckpoints(checkpoint);
+
+            // When we present headers before the checkpoint h6 -> h15 none are marked for download.
+            int numberOfHeadersBeforeCheckpoint = checkpointHeight - initialChainSize;
+            List<BlockHeader> listOfHeadersBeforeCheckpoint = 
+                listOfCurrentChainHeaders.GetRange(initialChainSize, numberOfHeadersBeforeCheckpoint - 5);
+            ConnectNewHeadersResult connectNewHeadersResult = 
+                chainedHeaderTree.ConnectNewHeaders(1, listOfHeadersBeforeCheckpoint);
+
+            // None are marked for download.
+            connectNewHeadersResult.DownloadFrom.Should().Be(null);
+            connectNewHeadersResult.DownloadTo.Should().Be(null);
+
+            // Check all headers beyond the initial chain (h6 -> h25) have foundation state of header only.
+            ValidationState expectedState = ValidationState.HeaderValidated;
+            IEnumerable<ChainedHeader> headersBeyondInitialChain =
+                chainedHeaderTree.GetChainedHeadersByHash().Where(x => x.Value.Height > initialChainSize).Select(y => y.Value);
+            foreach(ChainedHeader header in headersBeyondInitialChain)
+            {
+                header.BlockValidationState.Should().Be(expectedState);
+            }
+
+            // Present remaining headers checkpoint inclusive h16 -> h25.
+            // All are marked for download.
+            List<BlockHeader> unconsumedHeaders = listOfCurrentChainHeaders.Skip(connectNewHeadersResult.Consumed.Height).ToList();
+
+            connectNewHeadersResult = chainedHeaderTree.ConnectNewHeaders(1, unconsumedHeaders);
+
+            connectNewHeadersResult.DownloadFrom.HashBlock.Should().Be(listOfHeadersBeforeCheckpoint.First().GetHash());
+            connectNewHeadersResult.DownloadTo.HashBlock.Should().Be(unconsumedHeaders.Last().GetHash());
+            
+            ChainedHeader chainedHeader = chainedHeaderTree.GetChainedHeadersByHash()
+                .SingleOrDefault(x => (x.Value.HashBlock == checkpoint.Header.GetHash())).Value;
+
+            // Checking from the checkpoint back to the initialized chain.
+            while (chainedHeader.Height > initialChainSize)
+            {
+                chainedHeader.BlockValidationState.Should().Be(ValidationState.AssumedValid);
+                chainedHeader = chainedHeader.Previous;
+            }
+
+            // Checking from the checkpoint forward to the end of the chain.
+            chainedHeader = chainedHeaderTree.GetPeerTipChainedHeaderByPeerId(1);
+            while (chainedHeader.Height > checkpoint.Height)
+            {
+                chainedHeader.BlockValidationState.Should().Be(ValidationState.HeaderValidated);
+                chainedHeader = chainedHeader.Previous;
+            }
         }
 
         /// <summary>
