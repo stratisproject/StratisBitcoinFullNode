@@ -906,7 +906,6 @@ namespace Stratis.Bitcoin.Tests.Consensus
             reorgRequired.Should().BeTrue();
 
             // Call ConsensusTipChanged on chaintip at header 6.
-            // TODO: revise use of reflection to test internal code.
             cht.ConsensusTipChanged(chainTip);
             cht.GetPeerTipsByPeerId().Should().ContainKey(1);
             cht.GetChainedHeadersByHash().Should().ContainKey(chainTip.HashBlock);
