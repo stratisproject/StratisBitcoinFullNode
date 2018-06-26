@@ -15,7 +15,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         }
 
         [Fact]
-        public void Coins_are_visible_when_addresses_have_been_requested_prior_to_receiving_funds()
+        public void Coins_are_visible_when_addresses_have_been_requested_prior_to_syncing_blocks()
         {
             Given(a_default_gap_limit_of_20);
             And(_21_new_addresses_are_requested);
