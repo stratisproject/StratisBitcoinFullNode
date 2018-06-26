@@ -424,6 +424,13 @@ namespace Stratis.Bitcoin.Base
             this.logger.LogTrace("(-)");
         }
 
+        public Task ResetPendingTipAndSync()
+        {
+            this.pendingTip = null;
+
+            return this.TrySyncAsync();
+        }
+
         /// <summary>
         /// Tries to sync the chain with the peer by sending it "headers" message.
         /// </summary>

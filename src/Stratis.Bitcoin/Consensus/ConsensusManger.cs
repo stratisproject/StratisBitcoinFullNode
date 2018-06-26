@@ -77,6 +77,8 @@ namespace Stratis.Bitcoin.Consensus
 
         private readonly Dictionary<uint256, long> expectedBlockSizes;
 
+        private readonly Dictionary<int, INetworkPeer> peerIdsToEndpoints;
+
         public ConsensusManager(
             Network network, 
             ILoggerFactory loggerFactory, 
@@ -112,6 +114,7 @@ namespace Stratis.Bitcoin.Consensus
             this.blockRequestedLock = new object();
             this.expectedBlockDataBytes = 0;
             this.expectedBlockSizes = new Dictionary<uint256, long>();
+            this.peerIdsToEndpoints = new Dictionary<int, INetworkPeer>();
 
             this.callbacksByBlocksRequestedHash = new Dictionary<uint256, List<OnBlockDownloadedCallback>>();
             this.toDownloadQueue = new Queue<BlockDownloadRequest>();
@@ -161,21 +164,22 @@ namespace Stratis.Bitcoin.Consensus
         /// A list of headers are presented from a given peer,
         /// we'll attempt to connect the headers to the tree and if new headers are found they will be queued for download.
         /// </summary>
-        /// <param name="peerId">The peer that is providing the headers.</param>
+        /// <param name="networkPeer">The peer that is providing the headers.</param>
         /// <param name="headers">The list of new headers.</param>
         /// <returns>The last chained header that is connected to the tree.</returns>
         /// <exception cref="ConnectHeaderException">Thrown when first presented header can't be connected to any known chain in the tree.</exception>
         /// <exception cref="CheckpointMismatchException">Thrown if checkpointed header doesn't match the checkpoint hash.</exception>
-        public ChainedHeader HeadersPresented(int peerId, List<BlockHeader> headers)
+        public ChainedHeader HeadersPresented(INetworkPeer networkPeer, List<BlockHeader> headers)
         {
-            this.logger.LogTrace("({0}:{1},{2}.{3}:{4})", nameof(peerId), peerId, nameof(headers), nameof(headers.Count), headers.Count);
+            this.logger.LogTrace("({0}:{1},{2}.{3}:{4})", nameof(networkPeer), networkPeer.Connection.Id, nameof(headers), nameof(headers.Count), headers.Count);
 
             ConnectNewHeadersResult newHeaders = null;
 
             lock (this.peerLock)
             {
-                newHeaders = this.chainedHeaderTree.ConnectNewHeaders(peerId, headers);
-                this.blockPuller.NewTipClaimed(peerId, newHeaders.Consumed);
+                newHeaders = this.chainedHeaderTree.ConnectNewHeaders(networkPeer.Connection.Id, headers);
+                this.blockPuller.NewTipClaimed(networkPeer.Connection.Id, newHeaders.Consumed);
+                this.peerIdsToEndpoints.Add(networkPeer.Connection.Id, networkPeer);
             }
 
             if (newHeaders.DownloadTo != null)
@@ -201,6 +205,7 @@ namespace Stratis.Bitcoin.Consensus
             {
                 this.chainedHeaderTree.PeerDisconnected(peerId);
                 this.blockPuller.PeerDisconnected(peerId);
+                this.peerIdsToEndpoints.Remove(peerId);
                 this.ProcessDownloadQueueLocked();
             }
 
@@ -259,7 +264,6 @@ namespace Stratis.Bitcoin.Consensus
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(chainedHeaderBlock), chainedHeaderBlock);
 
-            bool consensusTipChanged = false;
             List<ChainedHeader> nextHeadersToValidate;
             ConnectBlocksResult connectBlocksResult = null;
 
@@ -353,13 +357,14 @@ namespace Stratis.Bitcoin.Consensus
         /// 
         /// </summary>
         /// <remarks>
+        /// 
         /// fork == oldTip
         /// 1a-2a-3b-4a(oldtip/fork)-5a-6a-7a(newtip)
-
+        ///
         /// fork != oldTip
         ///                  -5b-6b-7b-8b(newtip)
         /// 1a-2a-3b-4a(fork)-5a-6a-7a(oldtip)
-
+        ///
         /// fork == newTip
         /// 1a-2a-3b-4a(newtip/fork)-5a-6a-7a(oldtip)
         /// </remarks>
@@ -413,10 +418,12 @@ namespace Stratis.Bitcoin.Consensus
                 // In a situation where the rewind operation ended up behind old tip
                 // we may end up with a gap with missing blocks (if the reorg is big enough) 
                 // In that case we try to load the blocks from store, if store is not present
-                // we mark the blocks for download and do not proceed.
+                // we mark disconnect all peers.
 
-                this.HandleGap();
-                return new ConnectBlocksResult(false, true);
+                this.HandleMissingBlocksGap(currentTip);
+
+                var result = new ConnectBlocksResult(false, true);
+                this.logger.LogTrace("(-):'{0}'", result);
             }
 
             ConnectBlocksResult connectBlockResult = await this.ConnectBlocksAsync(currentTip, chainToConnect).ConfigureAwait(false);
@@ -485,8 +492,10 @@ namespace Stratis.Bitcoin.Consensus
 
             if (chainToReconnect == null)
             {
-                this.HandleGap(currentTip);
-                return new ConnectBlocksResult(false, true);
+                this.HandleMissingBlocksGap(currentTip);
+
+                var result =  new ConnectBlocksResult(false, true);
+                this.logger.LogTrace("(-):'{0}'", result);
             }
 
             // Connect back the old blocks.
@@ -509,18 +518,18 @@ namespace Stratis.Bitcoin.Consensus
             throw new ConsensusException("A critical error has prevented reconnecting blocks.");
         }
 
-        private void HandleGap(ChainedHeader newTip)
+        private void HandleMissingBlocksGap(ChainedHeader newTip)
         {
-            foreach (INetworkPeer connectedPeer in this.connectionManager.ConnectedPeers)
-            {
-                
-            }
+            this.logger.LogTrace("({0}:'{1}')", nameof(newTip), newTip);
 
-            this.connectionManager.ConnectedPeers
+            foreach (INetworkPeer connectedPeer in this.peerIdsToEndpoints.Values)
+            {
+                connectedPeer.Disconnect("Consensus out of sync");
+            }
 
             this.SetConsensusTip(newTip);
 
-            
+            this.logger.LogTrace("(-)");
         }
 
         private void ResyncPeers(List<int> peerIds)
@@ -529,8 +538,7 @@ namespace Stratis.Bitcoin.Consensus
             {
                 this.PeerDisconnected(peerId);
 
-                // TODO ChainedHeaderBehaviors[peerId].Tip = null.
-                // TODO Call TRYSYNC
+                this.peerIdsToEndpoints[peerId].Behavior<ChainHeadersBehavior>().ResetPendingTipAndSync();
             }
         }
 
