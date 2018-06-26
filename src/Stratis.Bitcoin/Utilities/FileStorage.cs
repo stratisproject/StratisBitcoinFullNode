@@ -121,9 +121,10 @@ namespace Stratis.Bitcoin.Utilities
         /// Loads an object from the file in which it is persisted.
         /// </summary>
         /// <param name="fileName">The name of the file to load.</param>
+        /// <param name="settings">Optional Json serialization settings.</param>
         /// <returns>An object of type <see cref="T"/>.</returns>
         /// <exception cref="FileNotFoundException">Indicates that no file with this name was found.</exception>
-        public T LoadByFileName(string fileName)
+        public T LoadByFileName(string fileName, JsonSerializerSettings settings = null)
         {
             Guard.NotEmpty(fileName, nameof(fileName));
 
@@ -132,7 +133,7 @@ namespace Stratis.Bitcoin.Utilities
             if (!File.Exists(filePath))
                 throw new FileNotFoundException($"No wallet file found at {filePath}");
 
-            return JsonConvert.DeserializeObject<T>(File.ReadAllText(filePath));
+            return JsonConvert.DeserializeObject<T>(File.ReadAllText(filePath), settings);
         }
 
         /// <summary>
