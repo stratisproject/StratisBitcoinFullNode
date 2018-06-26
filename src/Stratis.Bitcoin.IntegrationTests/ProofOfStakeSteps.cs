@@ -2,12 +2,8 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using FluentAssertions;
 using NBitcoin;
 using Stratis.Bitcoin.Features.Miner.Interfaces;
-using Stratis.Bitcoin.Features.Wallet;
-using Stratis.Bitcoin.Features.Wallet.Controllers;
-using Stratis.Bitcoin.Features.Wallet.Models;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.Builders;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
@@ -18,166 +14,70 @@ namespace Stratis.Bitcoin.IntegrationTests
     public class ProofOfStakeSteps
     {
         private IDictionary<string, CoreNode> nodes;
-        private NodeGroupBuilder nodeGroupBuilder;
-        private SharedSteps sharedSteps;
+        public readonly NodeGroupBuilder NodeGroupBuilder;
+        private readonly SharedSteps sharedSteps;
 
-        private HdAddress powSenderAddress;
-        private Key powSenderPrivateKey;
+        public readonly string PremineNode = "PremineNode";
+        public readonly string PremineWallet = "preminewallet";
+        public readonly string PremineWalletAccount = "account 0";
+        public readonly string PremineWalletPassword = "preminewalletpassword";
 
-        private HdAddress posReceiverAddress;
-        private Key posReceiverPrivateKey;
-
-        public readonly string PowMiner = "ProofOfWorkNode";
-        public readonly string PosStaker = "ProofOfStakeNode";
-
-        public readonly string PowWallet = "powwallet";
-        public readonly string PowWalletPassword = "password";
-
-        public readonly string PosWallet = "poswallet";
-        public readonly string PosWalletPassword = "password";
-
-        public readonly string WalletAccount = "account 0";
-
-        public ProofOfStakeSteps(string displayName) 
+        public ProofOfStakeSteps(string displayName)
         {
             this.sharedSteps = new SharedSteps();
-            this.nodeGroupBuilder = new NodeGroupBuilder(Path.Combine(this.GetType().Name, displayName));
+            this.NodeGroupBuilder = new NodeGroupBuilder(Path.Combine(this.GetType().Name, displayName));
         }
 
         public void GenerateCoins()
         {
-            ProofOfWorkNodeWithWallet();
+            PremineNodeWithWallet();
             MineGenesisAndPremineBlocks();
             MineCoinsToMaturity();
-            ProofOfStakeNodeWithWallet();
-            SyncWithProofWorkNode();
-            SendOneMillionCoinsFromPowWalletToPosWallet();
-            PowWalletBroadcastsTransactionOfOneMillionCoinsAndPosWalletReceives();
-            PosNodeMinesTenBlocksMoreEnsuringTheyCanBeStaked();
-            PosNodeStartsStaking();
-            PosNodeWalletHasEarnedCoinsThroughStaking();
+            PremineNodeMinesTenBlocksMoreEnsuringTheyCanBeStaked();
+            PremineNodeStartsStaking();
+            PremineNodeWalletHasEarnedCoinsThroughStaking();
         }
 
-        public CoreNode ProofOfStakeNodeWithCoins => this.nodes?[this.PosStaker];
+        public CoreNode PremineNodeWithCoins => this.nodes?[this.PremineNode];
 
-        public CoreNode AddAndConnectProofOfStakeNodes(string nodeName)
+        public void PremineNodeWithWallet()
         {
-            IDictionary<string, CoreNode> newProofOfStakeNode = this.nodeGroupBuilder.CreateStratisPosNode(nodeName)
-                .Start()
-                .NotInIBD()
-                .Build();
-
-            this.nodeGroupBuilder.WithConnections().Connect(this.PosStaker, nodeName);
-
-            return newProofOfStakeNode[nodeName];
-        }
-
-        public void ProofOfWorkNodeWithWallet()
-        {
-            this.nodes = this.nodeGroupBuilder
-                    .CreateStratisPowMiningNode(this.PowMiner)
+            this.nodes = this.NodeGroupBuilder
+                    .CreateStratisPosNode(this.PremineNode)
                     .Start()
                     .NotInIBD()
-                    .WithWallet(this.PowWallet, this.PowWalletPassword)
+                    .WithWallet(this.PremineWallet, this.PremineWalletPassword)
                     .Build();
-
-            this.powSenderAddress = this.nodes[this.PowMiner].FullNode.WalletManager().GetUnusedAddress(new WalletAccountReference(this.PowWallet, this.WalletAccount));
-            Features.Wallet.Wallet wallet = this.nodes[this.PowMiner].FullNode.WalletManager().GetWalletByName(this.PowWallet);
-            this.powSenderPrivateKey = wallet.GetExtendedPrivateKeyForAddress(this.PowWalletPassword, this.powSenderAddress).PrivateKey;
         }
 
         public void MineGenesisAndPremineBlocks()
         {
-            this.sharedSteps.MinePremineBlocks(this.nodes[this.PowMiner], this.PowWallet, this.WalletAccount, this.PowWalletPassword);
+            this.sharedSteps.MinePremineBlocks(this.nodes[this.PremineNode], this.PremineWallet, this.PremineWalletAccount, this.PremineWalletPassword);
         }
 
         public void MineCoinsToMaturity()
         {
-            this.nodes[this.PowMiner].GenerateStratisWithMiner(100);
-            this.sharedSteps.WaitForNodeToSync(this.nodes[this.PowMiner]);
+            this.nodes[this.PremineNode].GenerateStratisWithMiner(100);
+            this.sharedSteps.WaitForNodeToSync(this.nodes[this.PremineNode]);
         }
 
-        public void ProofOfStakeNodeWithWallet()
+        public void PremineNodeMinesTenBlocksMoreEnsuringTheyCanBeStaked()
         {
-            this.nodeGroupBuilder
-                    .CreateStratisPosNode(this.PosStaker)
-                    .Start()
-                    .NotInIBD()
-                    .WithWallet(this.PosWallet, this.PosWalletPassword)
-                    .Build();
+            this.nodes[this.PremineNode].GenerateStratisWithMiner(Convert.ToInt32(this.nodes[this.PremineNode].FullNode.Network.Consensus.CoinbaseMaturity));
         }
 
-        public void SyncWithProofWorkNode()
+        public void PremineNodeStartsStaking()
         {
-            this.posReceiverAddress = this.nodes[this.PosStaker].FullNode.WalletManager().GetUnusedAddress(new WalletAccountReference(this.PosWallet, this.WalletAccount));
-            Features.Wallet.Wallet wallet = this.nodes[this.PosStaker].FullNode.WalletManager().GetWalletByName(this.PosWallet);
-            this.posReceiverPrivateKey = wallet.GetExtendedPrivateKeyForAddress(this.PosWalletPassword, this.posReceiverAddress).PrivateKey;
-
-            this.nodes[this.PosStaker].SetDummyMinerSecret(new BitcoinSecret(this.posReceiverPrivateKey, this.nodes[this.PosStaker].FullNode.Network));
-            this.nodeGroupBuilder.WithConnections().Connect(this.PowMiner, this.PosStaker);
+            var minter = this.nodes[this.PremineNode].FullNode.NodeService<IPosMinting>();
+            minter.Stake(new WalletSecret() { WalletName = PremineWallet, WalletPassword = PremineWalletPassword });
         }
 
-        public void SendOneMillionCoinsFromPowWalletToPosWallet()
-        {
-            TransactionBuildContext context = SharedSteps.CreateTransactionBuildContext(
-                this.PowWallet,
-                this.WalletAccount,
-                this.PowWalletPassword,
-                new List<Recipient>() { new Recipient { Amount = Money.COIN * 1000000, ScriptPubKey = this.posReceiverAddress.ScriptPubKey } },
-                FeeType.Medium,
-                101);
-
-            context.OverrideFeeRate = new FeeRate(Money.Satoshis(20000));
-
-            IEnumerable<UnspentOutputReference> unspent = this.nodes[this.PowMiner].FullNode.WalletManager().GetSpendableTransactionsInWallet(this.PowWallet);
-            var coins = new List<Coin>();
-
-            DateTimeOffset blockTimestamp = unspent.OrderBy(u => u.Transaction.CreationTime).Select(ts => ts.Transaction.CreationTime).First();
-            Transaction transaction = this.nodes[this.PowMiner].FullNode.Network.Consensus.ConsensusFactory.CreateTransaction();
-            transaction.Time = (uint)blockTimestamp.ToUnixTimeSeconds();
-
-            foreach (UnspentOutputReference item in unspent.OrderByDescending(a => a.Transaction.Amount))
-            {
-                coins.Add(new Coin(item.Transaction.Id, (uint)item.Transaction.Index, item.Transaction.Amount, item.Transaction.ScriptPubKey));
-            }
-
-            Coin coin = coins.First();
-            TxIn txIn = transaction.AddInput(new TxIn(coin.Outpoint, this.powSenderAddress.ScriptPubKey));
-            transaction.AddOutput(new TxOut(new Money(9699999999995400), this.powSenderAddress.ScriptPubKey));
-            transaction.AddOutput(new TxOut(new Money(100000000000000), this.posReceiverAddress.ScriptPubKey));
-            transaction.Sign(this.nodes[this.PowMiner].FullNode.Network, this.powSenderPrivateKey, new[] { coin });
-
-            this.nodes[this.PowMiner].FullNode.NodeService<WalletController>().SendTransaction(new SendTransactionRequest(transaction.ToHex()));
-        }
-
-        public void PowWalletBroadcastsTransactionOfOneMillionCoinsAndPosWalletReceives()
-        {
-            TestHelper.WaitLoop(() => this.nodes[this.PosStaker].CreateRPCClient().GetRawMempool().Length > 0);
-            TestHelper.WaitLoop(() => this.nodes[this.PosStaker].FullNode.WalletManager().GetSpendableTransactionsInWallet(this.PosWallet).Any());
-
-            this.sharedSteps.WaitForNodeToSync(this.nodes[this.PosStaker]);
-
-            IEnumerable<UnspentOutputReference> received = this.nodes[this.PosStaker].FullNode.WalletManager().GetSpendableTransactionsInWallet(this.PosWallet);
-            received.Sum(s => s.Transaction.Amount).Should().Be(Money.COIN * 1000000);
-        }
-
-        public void PosNodeMinesTenBlocksMoreEnsuringTheyCanBeStaked()
-        {
-            this.nodes[this.PosStaker].GenerateStratisWithMiner(Convert.ToInt32(this.nodes[this.PosStaker].FullNode.Network.Consensus.CoinbaseMaturity));
-        }
-
-        public void PosNodeStartsStaking()
-        {
-            var minter = this.nodes[this.PosStaker].FullNode.NodeService<IPosMinting>();
-            minter.Stake(new WalletSecret() { WalletName = PosWallet, WalletPassword = PosWalletPassword });
-        }
-
-        public void PosNodeWalletHasEarnedCoinsThroughStaking()
+        public void PremineNodeWalletHasEarnedCoinsThroughStaking()
         {
             TestHelper.WaitLoop(() =>
             {
-                long staked = this.nodes[this.PosStaker].FullNode.WalletManager().GetSpendableTransactionsInWallet(this.PosWallet).Sum(s => s.Transaction.Amount);
-                return staked >= Money.COIN * 1000000;
+                long staked = this.nodes[this.PremineNode].FullNode.WalletManager().GetSpendableTransactionsInWallet(this.PremineWallet).Sum(s => s.Transaction.Amount);
+                return staked >= Money.COIN * 98000000;
             });
         }
     }
