@@ -1,7 +1,10 @@
 ﻿using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
+using DBreeze.Utils;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin;
@@ -13,6 +16,7 @@ using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.Utilities;
 using Stratis.FederatedPeg.Features.FederationGateway.Interfaces;
+using Stratis.FederatedPeg.Features.FederationGateway.Models;
 using Stratis.FederatedPeg.Features.FederationGateway.NetworkHelpers;
 using Recipient = Stratis.FederatedPeg.Features.FederationGateway.Wallet;
 using TransactionBuildContext = Stratis.FederatedPeg.Features.FederationGateway.Wallet.TransactionBuildContext;
@@ -53,7 +57,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.CounterChain
         private readonly IFullNode fullnode;
 
         // The sessions are stored here.
-        private readonly ConcurrentDictionary<uint256, CounterChainSession> sessions = new ConcurrentDictionary<uint256, CounterChainSession>();
+        private readonly ConcurrentDictionary<int, CounterChainSession> sessions = new ConcurrentDictionary<int, CounterChainSession>();
 
         private readonly IPAddressComparer ipAddressComparer;
 
@@ -90,43 +94,33 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.CounterChain
             this.ipAddressComparer = new IPAddressComparer();
         }
 
-        ///<inheritdoc/>
-        public void CreateSessionOnCounterChain(uint256 sessionId, Money amount, string destinationAddress)
-        {
-            // We don't process sessions if our chain is not past IBD.
-            if (this.initialBlockDownloadState.IsInitialBlockDownload())
-            {
-                this.logger.LogInformation($"RunSessionsAsync() CounterChain is in IBD exiting. Height:{this.concurrentChain.Height}.");
-                return;
-            }
-            this.RegisterSession(sessionId, amount, destinationAddress, this.concurrentChain.Height);
-        }
-
         // Add the session to its collection.
-        private CounterChainSession RegisterSession(uint256 transactionId, Money amount, string destination, int blockHeight)
+        private CounterChainSession RegisterSession(int blockHeight, List<CounterChainTransactionInfoRequest> counterChainTransactionInfos)
         {
-            this.logger.LogTrace("({0}:'{1}',{2}:'{3}',{4}:'{5}',{6}:'{7}')", nameof(transactionId), transactionId, nameof(amount),
-                amount, nameof(destination), destination, nameof(blockHeight), blockHeight);
+            this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(blockHeight), blockHeight, "Transactions Count", counterChainTransactionInfos.Count);
 
-            var counterChainSession = new CounterChainSession(
-                this.logger, 
-                this.federationGatewaySettings, 
-                transactionId, 
-                amount,
-                destination,
-                blockHeight);
-            this.sessions.AddOrReplace(transactionId, counterChainSession);
+
+            var counterChainSession = new CounterChainSession(this.logger, this.federationGatewaySettings, blockHeight);
+            counterChainSession.CrossChainTransactions = counterChainTransactionInfos.Select(c => new CrossChainTransactionInfo
+            {
+                BlockNumber = blockHeight,
+                TransactionHash = c.TransactionHash,
+                DestinationAddress = c.DestinationAddress,
+                Amount = c.Amount
+            }).ToList();
+
+            this.sessions.AddOrReplace(blockHeight, counterChainSession);
             return counterChainSession;
         }
 
         ///<inheritdoc/>
-        public void ReceivePartial(uint256 sessionId, Transaction partialTransaction, uint256 bossCard)
+        public void ReceivePartial(int blockHeight, Transaction partialTransaction, uint256 bossCard)
         {
             this.logger.LogTrace("()");
-            this.logger.LogInformation("Receive Partial on {0} for BossCard - {1}", this.network.ToChain(), bossCard);
+            this.logger.LogInformation("Receive Partial on {0} for BossCard - {1}. Block height: {2}", this.network.ToChain(), bossCard, blockHeight);
 
             string bc = bossCard.ToString();
-            var counterChainSession = sessions[sessionId];
+            var counterChainSession = sessions[blockHeight];
             bool hasQuorum = counterChainSession.AddPartial(partialTransaction, bc);
 
             if (hasQuorum)
@@ -135,6 +129,17 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.CounterChain
                 BroadcastTransaction(counterChainSession);
             }
             this.logger.LogTrace("(-)");
+        }
+
+        public void CreateSessionOnCounterChain(int blockHeight, List<CounterChainTransactionInfoRequest> counterChainTransactionInfos)
+        {
+            // We don't process sessions if our chain is not past IBD.
+            if (this.initialBlockDownloadState.IsInitialBlockDownload())
+            {
+                this.logger.LogInformation($"RunSessionsAsync() CounterChain is in IBD exiting. Height:{this.concurrentChain.Height}.");
+                return;
+            }
+            this.RegisterSession(blockHeight, counterChainTransactionInfos);
         }
 
         // If we have reached the quorum we can combine and broadcast the transaction. 
@@ -164,15 +169,14 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.CounterChain
         }
 
         ///<inheritdoc/>
-        public async Task<uint256> ProcessCounterChainSession(uint256 sessionId, Money amount, string destinationAddress, int blockHeight)
+        public async Task<uint256> ProcessCounterChainSession(int blockHeight)
         {
             //todo this method is doing too much. factor some of this into private methods after we added the counterchainid.
-            this.logger.LogTrace("({0}:'{1}',{2}:'{3}',{4}:'{5}',{6}:'{7}')", nameof(sessionId), sessionId, nameof(amount), 
-                amount, nameof(destinationAddress), destinationAddress, nameof(blockHeight), blockHeight);
+            this.logger.LogTrace("({0}:'{1}'", nameof(blockHeight), blockHeight);
             this.logger.LogInformation("Session Registered.");
 
             // Check if this has already been done then we just return the transactionId
-            if (this.sessions.TryGetValue(sessionId, out var counterchainSession))
+            if (this.sessions.TryGetValue(blockHeight, out var counterchainSession))
             {
                 // This is the mechanism that tells the round robin not to continue and also
                 // notifies the monitorChain of the completed transactionId from the counterChain transaction.
@@ -184,9 +188,13 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.CounterChain
                     // 3. The monitor wrote the CounterChainTransactionId into the counterChainSession to indicate all was done.
                     // This method then does not try to process the transaction and instead signals to the monitorChain that this
                     // transaction already completed by passing back the transactionId.
-                    this.logger.LogInformation($"Counterchain Session: {sessionId} was already completed. Doing nothing.");
+                    this.logger.LogInformation($"Counterchain Session for block: {blockHeight} was already completed. Doing nothing.");
                     return counterchainSession.CounterChainTransactionId;
                 }
+            }
+            else
+            {
+                throw new InvalidOperationException($"No CounterChainSession found in the counter chain for block height {blockHeight}.");
             }
 
             // Check if the password has been added. If not, no need to go further.
@@ -201,15 +209,15 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.CounterChain
             var wallet = this.federationWalletManager.GetWallet();
             var multiSigAddress = wallet.MultiSigAddress;
 
-            var destination = BitcoinAddress.Create(destinationAddress, this.network).ScriptPubKey;
-
-            // Encode the sessionId into a string.
-            this.logger.LogInformation("SessionId encoded bytes length = {0}.", sessionId.ToBytes().Length);
+            var recipients = counterchainSession.CrossChainTransactions.Select(s =>
+                new Recipient.Recipient
+                {
+                    Amount = s.Amount,
+                    ScriptPubKey = BitcoinAddress.Create(s.DestinationAddress, this.network).ScriptPubKey
+                }).ToList();
 
             // We are the Boss so first I build the multisig transaction template.
-            var multiSigContext = new TransactionBuildContext(
-                (new[] { new Recipient.Recipient { Amount = amount, ScriptPubKey = destination } }).ToList(),
-                this.federationWalletManager.Secret.WalletPassword, sessionId.ToBytes())
+            var multiSigContext = new TransactionBuildContext(recipients, this.federationWalletManager.Secret.WalletPassword, Encoding.UTF8.GetBytes(blockHeight.ToString()))
             {
                 TransactionFee = Money.Coins(0.01m),
                 MinConfirmations = 1,
@@ -223,24 +231,24 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.CounterChain
             var templateTransaction = this.federationWalletTransactionHandler.BuildTransaction(multiSigContext);
 
             //add my own partial
-            this.logger.LogInformation("Signing own partial.");
-            var counterChainSession = this.VerifySession(sessionId, templateTransaction);
+            this.logger.LogInformation("Verify own partial.");
+            var counterChainSession = this.VerifySession(blockHeight, templateTransaction);
 
             if (counterChainSession == null)
             {
-                var exists = this.sessions.TryGetValue(sessionId, out counterChainSession);
+                var exists = this.sessions.TryGetValue(blockHeight, out counterChainSession);
                 if (exists) return counterChainSession.CounterChainTransactionId;
-                throw new InvalidOperationException($"No CounterChainSession found in the counter chain for session id {sessionId}.");
+                throw new InvalidOperationException($"No CounterChainSession found in the counter chain for block height {blockHeight}.");
             }
             this.MarkSessionAsSigned(counterChainSession);
             var partialTransaction = wallet.SignPartialTransaction(templateTransaction, this.federationWalletManager.Secret.WalletPassword);
 
             uint256 bossCard = BossTable.MakeBossTableEntry(blockHeight, this.federationGatewaySettings.PublicKey);
             this.logger.LogInformation("My bossCard: {0}.", bossCard);
-            this.ReceivePartial(sessionId, partialTransaction, bossCard);
+            this.ReceivePartial(blockHeight, partialTransaction, bossCard);
 
             //now build the requests for the partials
-            var requestPartialTransactionPayload = new RequestPartialTransactionPayload(sessionId, templateTransaction, blockHeight);
+            var requestPartialTransactionPayload = new RequestPartialTransactionPayload(templateTransaction, blockHeight);
 
             // Only broadcast to the federation members.
             var federationNetworkPeers =
@@ -263,15 +271,15 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.CounterChain
         }
 
         ///<inheritdoc/>
-        public CounterChainSession VerifySession(uint256 sessionId, Transaction partialTransactionTemplate)
+        public CounterChainSession VerifySession(int blockHeight, Transaction partialTransactionTemplate)
         {
             //TODO: This has a critical flaw in the transaction checking. It's not enough to find one ok output. There could be additional rouge outputs.
             //TODO: What are other ways this code can be circumvented?
 
-            var exists = this.sessions.TryGetValue(sessionId, out var counterChainSession);
+            var exists = this.sessions.TryGetValue(blockHeight, out var counterChainSession);
 
             this.logger.LogTrace("()");
-            this.logger.LogInformation("CounterChainSession exists: {0} sessionId: {1}", exists, sessionId);
+            this.logger.LogInformation("CounterChainSession exists: {0} sessionId: {1}", exists, blockHeight);
 
             // We do not have this session.
             if (!exists) return null;
@@ -280,44 +288,45 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.CounterChain
             this.logger.LogInformation("HaveISigned:{0}", counterChainSession.HaveISigned);
             if (counterChainSession.HaveISigned)
             {
-                this.logger.LogInformation("Fatal: the session {0} has already signed a partial transaction.", sessionId);
+                this.logger.LogInformation("The partial transaction for block {0} has already been signed.", blockHeight);
                 return null;
             }
 
             // We compare our session values with the values we read from the transaction.
-            var scriptPubKeyFromSession = BitcoinAddress.Create(counterChainSession.Destination, this.network).ScriptPubKey;
-            var amountFromSession = counterChainSession.Amount;
-
-            bool addressMatches = false;
-            bool amountMatches = false;
-            foreach (var output in partialTransactionTemplate.Outputs)
-            {
-                if (output.ScriptPubKey == scriptPubKeyFromSession)
+            var allAddressesInSession = counterChainSession.CrossChainTransactions.Select(
+                trxInfo => new
                 {
-                    addressMatches = true;
-                    this.logger.LogInformation("Session {0} found the matching destination address.", sessionId);
-                    if (output.Value == amountFromSession)
-                    {
-                        amountMatches = true;
-                        this.logger.LogInformation("Session {0} found the matching amount.", sessionId);
-                    }
+                    Address = BitcoinAddress.Create(trxInfo.DestinationAddress, this.network).ScriptPubKey,
+                    Amount = trxInfo.Amount
+                }).ToList();
+            var amountByAddress = allAddressesInSession.GroupBy(a => a.Address)
+                .Select(a => new {
+                    Address = a.Key,
+                    TotalAmount = a.Sum(x => x.Amount)
+                });
+
+            var outputAddresses = partialTransactionTemplate.Outputs.Select(o => o.ScriptPubKey).Distinct().ToList();
+            var allAddressesMatch = (outputAddresses.Count == amountByAddress.Count() + 2)
+                                    && amountByAddress.All(a => outputAddresses.Contains(a.Address));
+            if (!allAddressesMatch)
+            {
+                this.logger.LogInformation("Session for block {0} found did not have matching addresses.", blockHeight);
+                this.logger.LogInformation("Expected addresses {0}.", string.Join(",", outputAddresses));
+                this.logger.LogInformation("Found addresses {0}.", string.Join(",", amountByAddress.Select(a => a.Address)));
+                return null;
+            }
+
+            foreach (var amount in amountByAddress)
+            {
+                var match = partialTransactionTemplate.Outputs
+                                .Where(o => o.ScriptPubKey == amount.Address)
+                                .Sum(o => o.Value) == amount.TotalAmount;
+                if (!match)
+                {
+                    logger.LogInformation("Session for block {0} found mismatch in amounts.", blockHeight);
+                    return null;
                 }
             }
-
-            // The addess does not match. exit.
-            if (!addressMatches)
-            {
-                this.logger.LogInformation("Fatal: The destination address did not match in session {0}.", sessionId);
-                return null;
-            }
-
-            // The amount does not match. exit.
-            if (!amountMatches)
-            {
-                this.logger.LogInformation("Fatal: The amount did not match in session {0}.", sessionId);
-                return null;
-            }
-
             return counterChainSession;
         }
 
@@ -325,13 +334,13 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.CounterChain
         public void MarkSessionAsSigned(CounterChainSession session)
         {
             //TODO: this should be locked. the sessions are 30 seconds apart but network conditions could cause a collision.
-            this.logger.LogInformation("has signed session {0}.", session.SessionId);
+            this.logger.LogInformation("has signed session for block {0}.", session.BlockHeight);
             session.HaveISigned = true;
         }
 
-        public void AddCounterChainTransactionId(uint256 sessionId, uint256 transactionId)
+        public void AddCounterChainTransactionId(int blockHeight, uint256 transactionId)
         {
-            if (!this.sessions.TryGetValue(sessionId, out var counterChainSession))
+            if (!this.sessions.TryGetValue(blockHeight, out var counterChainSession))
             {
                 this.logger.LogInformation($"Session::AddCounterChainTransactionId: The session does not exist. Doing nothing.");
                 return;
@@ -344,7 +353,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.CounterChain
             }
 
             counterChainSession.CounterChainTransactionId = transactionId;
-            this.logger.LogInformation($"Session::AddCounterChainTransactionId: Session {sessionId} was completed with transactionId {transactionId}.");
+            this.logger.LogInformation($"Session::AddCounterChainTransactionId: Session for block {blockHeight} was completed with transactionId {transactionId}.");
         }
     }
 }

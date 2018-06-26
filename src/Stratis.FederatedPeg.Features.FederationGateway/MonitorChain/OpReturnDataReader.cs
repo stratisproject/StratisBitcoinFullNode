@@ -22,6 +22,12 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
         /// </summary>
         Hash,
 
+
+        /// <summary>
+        /// Height of the block for the session.
+        /// </summary>
+        BlockHeight,
+
         /// <summary>
         /// Unknown and we can ignore it.
         /// </summary>
@@ -54,12 +60,20 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
                 return address;
             }
 
-            string hash = GetHashFromOpReturn(logger, transaction);
-            if (hash != null)
+            //string hash = GetHashFromOpReturn(logger, transaction);
+            //if (hash != null)
+            //{
+            //    opReturnDataType = OpReturnDataType.Hash;
+            //    return hash;
+            //}
+
+            int blockHeight = GetBlockHeightFromOpReturn(logger, transaction);
+            if (blockHeight != -1)
             {
-                opReturnDataType = OpReturnDataType.Hash;
-                return hash;
+                opReturnDataType = OpReturnDataType.BlockHeight;
+                return blockHeight.ToString();
             }
+
 
             opReturnDataType = OpReturnDataType.Unknown;
             return null;
@@ -78,6 +92,22 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
             }
             return hash;
         }
+
+        private static int GetBlockHeightFromOpReturn(ILogger logger, Transaction transaction)
+        {
+            int blockHeight = -1;
+            foreach (var txOut in transaction.Outputs)
+            {
+                var data = txOut.ScriptPubKey.ToBytes();
+                if ((OpcodeType) data[0] == OpcodeType.OP_RETURN)
+                {
+                    var asString = Encoding.UTF8.GetString(data).Remove(0, 2);
+                    int.TryParse(asString, out blockHeight);
+                }                
+            }
+            return blockHeight;
+        }
+
 
         // Examines the outputs of the transaction to see if an OP_RETURN is present.
         // Validates the base58 result against the counter chain network checksum.

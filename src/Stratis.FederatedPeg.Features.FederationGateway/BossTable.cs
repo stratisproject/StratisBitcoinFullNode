@@ -40,7 +40,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
     /// <summary>
     /// The BossTable.
     /// </summary>
-    internal sealed class BossTable
+    public sealed class BossTable
     {
         /// <summary>
         /// Each entry in the BossTable.

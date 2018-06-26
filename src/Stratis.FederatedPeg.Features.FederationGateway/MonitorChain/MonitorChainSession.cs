@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections;
+using System.Collections.Generic;
 using NBitcoin;
 using Newtonsoft.Json;
 using Stratis.Bitcoin.Features.Consensus;
@@ -14,20 +16,16 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
         Completed
     }
 
-    internal class MonitorChainSession
+    public class MonitorChainSession
     {
         public SessionStatus Status { get; set; }
 
         // Time when the session started.
         private readonly DateTime startTime;
 
-        //Id of the session.
-        public uint256 SessionId { get; }
+        public ICollection<CrossChainTransactionInfo> CrossChainTransactions { get; set; }
 
-        public Money Amount { get; set; }
-
-        public string DestinationAddress { get; set; }
-
+        
         public int BlockNumber { get; }
 
         // Boss table.
@@ -38,14 +36,11 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
 
         public uint256 CounterChainTransactionId { get; private set; } = uint256.Zero;
 
-        public MonitorChainSession(DateTime startTime, uint256 transactionHash, Money amount, string destinationAddress,
-            int blockNumber, string[] federationPubKeys, string myPublicKey)
+        public MonitorChainSession(int blockNumber, string[] federationPubKeys, string myPublicKey)
         {
             this.Status = SessionStatus.Created;
-            this.startTime = startTime;
-            this.SessionId = transactionHash;
-            this.Amount = amount;
-            this.DestinationAddress = destinationAddress;
+            this.startTime = DateTime.Now;
+            this.CrossChainTransactions = new List<CrossChainTransactionInfo>();
             this.BlockNumber = blockNumber;
 
             // Build the boss table.

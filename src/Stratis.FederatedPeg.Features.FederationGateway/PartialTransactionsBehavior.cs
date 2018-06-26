@@ -92,7 +92,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
 
         async Task Broadcast(RequestPartialTransactionPayload payload)
         {
-            this.logger.LogTrace("({0}:'{1}',{2}:'{3}',{4}:'{5}')", nameof(payload.BossCard), payload.BossCard, nameof(payload.Command), payload.Command, nameof(payload.SessionId), payload.SessionId);
+            this.logger.LogTrace("({0}:'{1}',{2}:'{3}',{4}:'{5}')", nameof(payload.BossCard), payload.BossCard, nameof(payload.Command), payload.Command, nameof(payload.BlockHeight), payload.BlockHeight);
 
             if (federationGatewaySettings.FederationNodeIpEndPoints.Any(e => ipAddressComparer.Equals(e.Address, AttachedPeer.PeerEndPoint.Address)))
             {
@@ -110,7 +110,6 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
             {
                 this.logger.LogInformation("RequestPartialTransactionPayload received.");
                 this.logger.LogInformation("OnMessageReceivedAsync: {0}", this.network.ToChain());
-                this.logger.LogInformation("RequestPartialTransactionPayload: SessionId           - {0}.", payload.SessionId);
                 this.logger.LogInformation("RequestPartialTransactionPayload: BossCard            - {0}.", payload.BossCard);
                 this.logger.LogInformation("RequestPartialTransactionPayload: BlockHeight         - {0}.", payload.BlockHeight);
                 this.logger.LogInformation("RequestPartialTransactionPayload: PartialTransaction  - {0}.", payload.PartialTransaction);
@@ -123,7 +122,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
 
                     var template = payload.TemplateTransaction;
 
-                    var partialTransactionSession = this.counterChainSessionManager.VerifySession(payload.SessionId, template);
+                    var partialTransactionSession = this.counterChainSessionManager.VerifySession(payload.BlockHeight, template);
                     if (partialTransactionSession == null) return;
                     this.counterChainSessionManager.MarkSessionAsSigned(partialTransactionSession);
 
@@ -145,7 +144,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
                 {
                     //we got a partial back
                     this.logger.LogInformation("RequestPartialTransactionPayload: PartialTransaction received.");
-                    this.counterChainSessionManager.ReceivePartial(payload.SessionId, payload.PartialTransaction, payload.BossCard);
+                    this.counterChainSessionManager.ReceivePartial(payload.BlockHeight, payload.PartialTransaction, payload.BossCard);
                 }
             }
 
