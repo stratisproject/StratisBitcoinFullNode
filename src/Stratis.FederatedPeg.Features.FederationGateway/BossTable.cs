@@ -21,15 +21,15 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
         /// Builds the boss table. The boss table contains an entry for each participating member
         /// node on the network. 
         /// </summary>
-        /// <param name="sessionId">The hash of the source transaction is used as the sessionId.</param>
+        /// <param name="blockHeight">The height of the block containing the crosschain transaction</param>
         /// <param name="keys">An array of the public keys of each federation member.</param>
         /// <returns></returns>
-        public BossTable Build(uint256 sessionId, IEnumerable<string> keys)
+        public BossTable Build(int blockHeight, IEnumerable<string> keys)
         {
             // BossTableEntries are strings.
             // Hash the concatination of the sessionId and the key to get each entry in the table.
             var bossCards = keys
-                .Select(key => BossTable.MakeBossTableEntry(sessionId, key).ToString())
+                .Select(key => BossTable.MakeBossTableEntry(blockHeight, key).ToString())
                 .OrderBy(k => k);
 
             // We now have a table that is reproducable on every federation node on the network.
@@ -58,12 +58,12 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
         /// <summary>
         /// Hashes the SessionId with the key.
         /// </summary>
-        /// <param name="sessionId">The transaction's sessionId.</param>
+        /// <param name="blockHeight">The transaction's sessionId.</param>
         /// <param name="key"></param>
         /// <returns>The hash of the concatenation of both pieces of data.</returns>
-        public static uint256 MakeBossTableEntry(uint256 sessionId, string key)
+        public static uint256 MakeBossTableEntry(int blockHeight, string key)
         {
-            var mergedBytes = Encoding.UTF8.GetBytes($"{sessionId}{key}");
+            var mergedBytes = Encoding.UTF8.GetBytes($"{blockHeight}{key}");
             return NBitcoin.Crypto.Hashes.Hash256(mergedBytes);
         }
 

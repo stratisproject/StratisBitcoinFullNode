@@ -29,8 +29,9 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.CounterChain
         /// <param name="transactionId">The transactionId that forms the session Id.</param>
         /// <param name="amount">The amount of the transaction.</param>
         /// <param name="destinationAddress">The final destination address.</param>
+        /// <param name="blockHeight">The height at which the transaction was initiated.</param>
         /// <returns></returns>
-        Task<uint256> ProcessCounterChainSession(uint256 transactionId, Money amount, string destinationAddress);
+        Task<uint256> ProcessCounterChainSession(uint256 transactionId, Money amount, string destinationAddress, int blockHeight);
 
         /// <summary>
         /// Receives a partial transaction inbound from the payload behavior.

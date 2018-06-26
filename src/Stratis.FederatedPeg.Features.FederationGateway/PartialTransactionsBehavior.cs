@@ -112,6 +112,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
                 this.logger.LogInformation("OnMessageReceivedAsync: {0}", this.network.ToChain());
                 this.logger.LogInformation("RequestPartialTransactionPayload: SessionId           - {0}.", payload.SessionId);
                 this.logger.LogInformation("RequestPartialTransactionPayload: BossCard            - {0}.", payload.BossCard);
+                this.logger.LogInformation("RequestPartialTransactionPayload: BlockHeight         - {0}.", payload.BlockHeight);
                 this.logger.LogInformation("RequestPartialTransactionPayload: PartialTransaction  - {0}.", payload.PartialTransaction);
                 this.logger.LogInformation("RequestPartialTransactionPayload: TemplateTransaction - {0}.", payload.TemplateTransaction);
 
@@ -129,7 +130,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
                     var wallet = this.federationWalletManager.GetWallet();
 
                     var signedTransaction = wallet.SignPartialTransaction(template, this.federationWalletManager.Secret.WalletPassword);
-                    payload.AddPartial(signedTransaction, BossTable.MakeBossTableEntry(payload.SessionId, this.federationGatewaySettings.PublicKey));
+                    payload.AddPartial(signedTransaction, BossTable.MakeBossTableEntry(payload.BlockHeight, this.federationGatewaySettings.PublicKey));
 
                     this.logger.LogInformation("OnMessageReceivedAsync: PartialTransaction signed.");
                     this.logger.LogInformation("RequestPartialTransactionPayload: BossCard            - {0}.", payload.BossCard);
