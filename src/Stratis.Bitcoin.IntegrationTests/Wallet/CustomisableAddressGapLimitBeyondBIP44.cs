@@ -9,13 +9,19 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         public void Coins_beyond_gap_limit_not_visble_in_balance()
         {
             Given(a_default_gap_limit_of_20);
-            And(a_wallet_with_funds_at_index_20);
+            And(a_wallet_with_funds_at_index_20_which_is_beyond_gap_limit);
             When(getting_wallet_balance);
             Then(the_balance_is_zero);
+        }
 
-            Given(_21_new_addresses_are_requested);
+        [Fact]
+        public void Coins_are_visible_when_addresses_have_been_requested_prior_to_receiving_funds()
+        {
+            Given(a_default_gap_limit_of_20);
+            And(_21_new_addresses_are_requested);
+            And(a_wallet_with_funds_at_index_20_which_is_beyond_gap_limit);
             When(getting_wallet_balance);
-            Then(the_balance_is_no_longer_zero);
+            Then(the_balance_is_NOT_zero);
         }
     }
 }

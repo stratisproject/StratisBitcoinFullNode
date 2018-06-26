@@ -28,6 +28,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         private const string WalletPassword = "password";
         public const string AccountZero = "account 0";
         private const string ReceivingNodeName = "receiving";
+        private const string SendingNodeName = "sending";
 
 
         protected override void BeforeTest()
@@ -47,33 +48,27 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         private void a_default_gap_limit_of_20()
         {
             this.nodeGroup = this.nodeGroupBuilder
-                .StratisPowNode("sending").Start().NotInIBD()
+                .StratisPowNode(SendingNodeName).Start().NotInIBD()
                 .WithWallet(SendingWalletName, WalletPassword)
                 .StratisPowNode(ReceivingNodeName).Start().NotInIBD()
                 .WithWallet(ReceivingWalletName, WalletPassword)
                 .WithConnections()
-                .Connect("sending", ReceivingNodeName)
+                .Connect(SendingNodeName, ReceivingNodeName)
                 .AndNoMoreConnections()
                 .Build();
 
-            this.sendingStratisBitcoinNode = this.nodeGroup["sending"];
+            this.sendingStratisBitcoinNode = this.nodeGroup[SendingNodeName];
             this.receivingStratisBitcoinNode = this.nodeGroup[ReceivingNodeName];
 
-            this.sendingStratisBitcoinNode.FullNode
-                .Network.Consensus.CoinbaseMaturity = 1;
+            var coinbaseMaturity = 1;
 
-            this.receivingStratisBitcoinNode.FullNode
-                .Network.Consensus.CoinbaseMaturity = 1;
-
-
-            var coinbaseMaturity = (int)this.sendingStratisBitcoinNode.FullNode
-                .Network.Consensus.CoinbaseMaturity;
+            this.sendingStratisBitcoinNode.FullNode.Network.Consensus.CoinbaseMaturity = coinbaseMaturity;
+            this.receivingStratisBitcoinNode.FullNode.Network.Consensus.CoinbaseMaturity = coinbaseMaturity;
 
             this.sharedSteps.MineBlocks(coinbaseMaturity + 1, this.sendingStratisBitcoinNode, AccountZero, SendingWalletName, WalletPassword);
-            
         }
 
-        private void a_wallet_with_funds_at_index_20()
+        private void a_wallet_with_funds_at_index_20_which_is_beyond_gap_limit()
         {
             ExtPubKey xPublicKey = this.GetExtendedPublicKey(ReceivingNodeName);
             var recipientAddressBeyondGapLimit = xPublicKey.Derive(new KeyPath($"0/{20}")).PubKey.GetAddress(Network.RegTest);
@@ -127,7 +122,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                 .GetUnusedAddresses(new WalletAccountReference(ReceivingWalletName, AccountZero), 21);
         }
 
-        private void the_balance_is_no_longer_zero()
+        private void the_balance_is_NOT_zero()
         {
             this.walletBalance.Should().Be(1 * Money.COIN);
         }
