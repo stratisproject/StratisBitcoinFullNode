@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using Microsoft.Extensions.Logging;
 
 using NBitcoin;
@@ -83,6 +84,10 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
 
         private readonly ICrossChainTransactionAuditor crossChainTransactionAuditor;
 
+        // The minimum transfer amount permissible.
+        // (Prevents spamming of network.)
+        private readonly Money MinimumTransferAmount = new Money(1.0m, MoneyUnit.BTC);
+
         public CrossChainTransactionMonitor(ILoggerFactory loggerFactory, 
             Network network,
             ConcurrentChain concurrentChain,
@@ -129,44 +134,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
             // Load the auditor if present.
             this.crossChainTransactionAuditor.Initialize();
         }
-
-        /// <inheritdoc/>>
-        public void ProcessTransaction(Transaction transaction, Block block, int blockNumber)
-        {
-            // Look at each output in the transaction.
-            foreach (var txOut in transaction.Outputs)
-            {
-                // Does the ScriptPubKey match the script that we are interested in?
-                if (txOut.ScriptPubKey != this.script) continue;
-                // Ok we found the script in this transaction. Does it also have an OP_RETURN?
-                var stringResult = OpReturnDataReader.GetStringFromOpReturn(this.logger, network, transaction, out var opReturnDataType);
-                switch (opReturnDataType)
-                {
-                    case OpReturnDataType.Unknown:
-                        this.logger.LogTrace("Received transaction with unknown OP_RETURN data: {0}. Transaction hash: {1}.", stringResult, transaction.GetHash());
-                        continue;
-                    case OpReturnDataType.Address:
-                        this.logger.LogInformation("Processing received transaction with address: {0}. Transaction hash: {1}.", stringResult, transaction.GetHash());
-                        this.ProcessAddress(transaction.GetHash(), stringResult, txOut.Value, blockNumber, block.GetHash());
-                        continue;
-                    case OpReturnDataType.Hash:
-                        var hash = uint256.Parse(stringResult);
-                        this.logger.LogInformation("AddCounterChainTransactionId: {0} for transaction {1}.", transaction.GetHash(), hash);
-                        this.counterChainSessionManager.AddCounterChainTransactionId(hash, transaction.GetHash());
-                        continue;
-                    default:
-                        throw new ArgumentOutOfRangeException();
-                }
-            }
-        }
-
-        /// <inheritdoc/>>
-        public void CreateSession(CrossChainTransactionInfo crossChainTransactionInfo)
-        {
-            // Tell our Session Manager that we can start a new session.
-            this.monitorChainSessionManager.CreateMonitorSession(crossChainTransactionInfo);
-        }
-
+        
         /// <inheritdoc/>>
         public void ProcessBlock(Block block)
         {
@@ -192,14 +160,74 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
 
             this.logger.LogTrace("Monitor Processing Block: {0} on {1}", blockNumber, this.network.ToChain());
 
+            // Create a session to process the transaction.
+            // Tell our Session Manager that we can start a new session.
+            MonitorChainSession monitorSession = new MonitorChainSession(blockNumber, this.federationGatewaySettings.FederationPublicKeys.Select(f => f.ToHex()).ToArray(), this.federationGatewaySettings.PublicKey);
+            
             foreach (var transaction in block.Transactions)
-                this.ProcessTransaction(transaction, block, blockNumber);
+            {
+                // Look at each output in the transaction.
+                foreach (var txOut in transaction.Outputs)
+                {
+                    // Does the ScriptPubKey match the script that we are interested in?
+                    if (txOut.ScriptPubKey != this.script) continue;
+                    // Ok we found the script in this transaction. Does it also have an OP_RETURN?
+                    var stringResult = OpReturnDataReader.GetStringFromOpReturn(this.logger, network, transaction, out var opReturnDataType);
+                    switch (opReturnDataType)
+                    {
+                        case OpReturnDataType.Unknown:
+                            this.logger.LogTrace("Received transaction with unknown OP_RETURN data: {0}. Transaction hash: {1}.", stringResult, transaction.GetHash());
+                            continue;
+                        case OpReturnDataType.Address:
+                            this.logger.LogInformation("Processing received transaction with address: {0}. Transaction hash: {1}.", stringResult, transaction.GetHash());
+                            CrossChainTransactionInfo trxInfo = this.ProcessAddress(transaction.GetHash(), stringResult, txOut.Value, blockNumber, block.GetHash());
+
+                            if (trxInfo != null)
+                            {
+                                this.crossChainTransactionAuditor.AddCrossChainTransactionInfo(trxInfo);
+
+                                // Commit audit as we know we have a new record. 
+                                this.crossChainTransactionAuditor.Commit();
+
+                                monitorSession.CrossChainTransactions.Add(trxInfo);
+                            }
+                            continue;
+                        //case OpReturnDataType.Hash:
+                        //    var hash = uint256.Parse(stringResult);
+                        //    this.logger.LogInformation("AddCounterChainTransactionId: {0} for transaction {1}.", transaction.GetHash(), hash);
+                        //    this.counterChainSessionManager.AddCounterChainTransactionId(hash, transaction.GetHash());
+                        //    continue;
+                        case OpReturnDataType.BlockHeight:
+                            var blockHeight = int.Parse(stringResult);
+                            this.logger.LogInformation("AddCounterChainTransactionId: {0} for session in block {1}.", transaction.GetHash(), blockHeight);
+                            this.counterChainSessionManager.AddCounterChainTransactionId(blockHeight, transaction.GetHash());
+                            continue;
+                        default:
+                            throw new ArgumentOutOfRangeException();
+                    }
+                }
+            }
+
+            if (monitorSession.CrossChainTransactions.Any())
+            {
+                this.logger.LogInformation("AddCounterChainTransactionId: Found {0} transactions to process in block with height {1}.", monitorSession.CrossChainTransactions.Count, monitorSession.BlockNumber);
+                this.monitorChainSessionManager.RegisterMonitorSession(monitorSession);
+                this.monitorChainSessionManager.CreateSessionOnCounterChain(this.federationGatewaySettings.CounterChainApiPort, monitorSession);
+            }
+
         }
 
-        private void ProcessAddress(uint256 transactionHash, string destinationAddress, Money amount, int blockNumber, uint256 blockHash)
+        private CrossChainTransactionInfo ProcessAddress(uint256 transactionHash, string destinationAddress, Money amount, int blockNumber, uint256 blockHash)
         {
             this.logger.LogTrace("({0}:'{1}',{2}:'{3}',{4}:'{5}')", nameof(transactionHash), transactionHash, nameof(amount), amount, nameof(destinationAddress), destinationAddress, nameof(blockNumber), blockNumber, nameof(blockHash), blockHash);
 
+            // Ignore sessions below the MinimumTransferAmount
+            if (amount < MinimumTransferAmount)
+            {
+                this.logger.LogInformation($"The transaction {transactionHash} has less than the MinimumTransferAmount.  Ignoring. ");
+                return null;
+            }
+            
             // This looks like a deposit or withdrawal transaction. Record the info.
             var crossChainTransactionInfo = new CrossChainTransactionInfo
             {
@@ -210,18 +238,10 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
                 TransactionHash = transactionHash
             };
 
-            this.crossChainTransactionAuditor.AddCrossChainTransactionInfo(crossChainTransactionInfo);
-
-            // Commit audit as we know we have a new record. 
-            this.crossChainTransactionAuditor.Commit();
-
-            // Create a session to process the transaction.
-            this.CreateSession(crossChainTransactionInfo);
-
             // Log Info for info/diagnostics.
             this.logger.LogInformation("Crosschain Transaction Found on : {0}", this.network.ToChain());
             this.logger.LogInformation("CrosschainTransactionInfo: {0}", crossChainTransactionInfo);
-            this.logger.LogTrace("(-)");
+            return crossChainTransactionInfo;
         }
     }
 }

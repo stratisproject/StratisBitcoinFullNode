@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Net.Http;
 using System.Text;
@@ -27,13 +28,20 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Models
     /// </summary>
     public class CreateCounterChainSessionRequest : RequestModel
     {
+        public List<CounterChainTransactionInfoRequest> CounterChainTransactionInfos { get; set; }
+
         /// <summary>
-        /// An Id used to identify the session. (Since sessions are currently 'per transaction' the hash of the
-        /// originating deposit or withdrawal transaction is used as the sessionId).
+        /// Number of the block at which the countersession was initiated
         /// </summary>
-        [Required(ErrorMessage = "SessionId must be specified.")]
+        [Required(ErrorMessage = "BlockHeight needs to be specified.")]
+        [Range(0, int.MaxValue, ErrorMessage = "Invalid BlockHeight")]
+        public int BlockHeight { get; set; }
+    }
+
+    public class CounterChainTransactionInfoRequest : RequestModel
+    {
         [JsonConverter(typeof(UInt256JsonConverter))]
-        public uint256 SessionId { get; set; }
+        public uint256 TransactionHash { get; set; }
 
         /// <summary>
         /// The amount of the transaction.
@@ -48,12 +56,6 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Models
         [Required(ErrorMessage = "Destination Address required.")]
         public string DestinationAddress { get; set; }
 
-        /// <summary>
-        /// Number of the block at which the countersession was initiated
-        /// </summary>
-        [Required(ErrorMessage = "BlockHeight needs to be specified.")]
-        [Range(0, int.MaxValue, ErrorMessage = "Invalid BlockHeight")]
-        public int BlockHeight { get; set; }
     }
 
     public class ImportMemberKeyRequest : RequestModel

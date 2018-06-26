@@ -27,22 +27,5 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
         /// </summary>
         /// <param name="block">The block received from the BlockObserver.</param>
         void ProcessBlock(Block block);
-
-        /// <summary>
-        /// Does the monitoring work by identifying whether our transaction has the relevant script then
-        /// finding an op_return (if present). These two attributes of the transaction identify a relevant
-        /// transaction that we are interested in processing further.
-        /// </summary>
-        /// <param name="transaction">The transaction that we are examining.</param>
-        /// <param name="block">The block that contains the transaction.</param>
-        /// <param name="blockNumber">The block number.</param>
-        void ProcessTransaction(Transaction transaction, Block block, int blockNumber);
-
-        /// <summary>
-        /// This method creates a session that will handle the co-ordination of cross chain transaction and the signing of
-        /// the multi-sig transactions by the federation.
-        /// </summary>
-        /// <param name="crossChainTransactionInfo"></param>
-        void CreateSession(CrossChainTransactionInfo crossChainTransactionInfo);
     }
 }

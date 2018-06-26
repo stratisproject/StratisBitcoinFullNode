@@ -49,7 +49,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Controllers
         {
             Guard.NotNull(createCounterChainSessionRequest, nameof(createCounterChainSessionRequest));
 
-            this.logger.LogTrace("({0}:'{1}',{2}:'{3}',{4}:'{5}')", nameof(createCounterChainSessionRequest.SessionId), createCounterChainSessionRequest.SessionId, nameof(createCounterChainSessionRequest.DestinationAddress), createCounterChainSessionRequest.DestinationAddress, nameof(createCounterChainSessionRequest.Amount), createCounterChainSessionRequest.Amount);
+            this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(createCounterChainSessionRequest.BlockHeight), createCounterChainSessionRequest.BlockHeight, "Transactions Count", createCounterChainSessionRequest.CounterChainTransactionInfos.Count);
 
             // checks the request is valid
             if (!this.ModelState.IsValid)
@@ -59,10 +59,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Controllers
 
             try
             {
-                this.counterChainSessionManager.CreateSessionOnCounterChain(
-                    createCounterChainSessionRequest.SessionId,
-                    createCounterChainSessionRequest.Amount,
-                    createCounterChainSessionRequest.DestinationAddress);
+                this.counterChainSessionManager.CreateSessionOnCounterChain(createCounterChainSessionRequest.BlockHeight, createCounterChainSessionRequest.CounterChainTransactionInfos);
                 return this.Ok();
             }
             catch (Exception e)
@@ -84,8 +81,8 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Controllers
         {
             Guard.NotNull(createCounterChainSessionRequest, nameof(createCounterChainSessionRequest));
 
-            this.logger.LogTrace("({0}:'{1}',{2}:'{3}',{4}:'{5}')", nameof(createCounterChainSessionRequest.SessionId), createCounterChainSessionRequest.SessionId, nameof(createCounterChainSessionRequest.DestinationAddress), createCounterChainSessionRequest.DestinationAddress, nameof(createCounterChainSessionRequest.Amount), createCounterChainSessionRequest.Amount);
-
+            this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(createCounterChainSessionRequest.BlockHeight), createCounterChainSessionRequest.BlockHeight, "Transactions Count", createCounterChainSessionRequest.CounterChainTransactionInfos.Count);
+            
             // checks the request is valid
             if (!this.ModelState.IsValid)
             {
@@ -94,11 +91,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Controllers
 
             try
             {
-                var result = await this.counterChainSessionManager.ProcessCounterChainSession(
-                    createCounterChainSessionRequest.SessionId,
-                    createCounterChainSessionRequest.Amount,
-                    createCounterChainSessionRequest.DestinationAddress,
-                    createCounterChainSessionRequest.BlockHeight);
+                var result = await this.counterChainSessionManager.ProcessCounterChainSession(createCounterChainSessionRequest.BlockHeight);
                 
                 return this.Json(result);
             }
