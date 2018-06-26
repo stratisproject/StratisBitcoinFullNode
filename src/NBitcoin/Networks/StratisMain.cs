@@ -50,7 +50,7 @@ namespace NBitcoin.Networks
             this.Consensus.MinerConfirmationWindow = 2016; // nPowTargetTimespan / nPowTargetSpacing
             this.Consensus.LastPOWBlock = 12500;
             this.Consensus.IsProofOfStake = true;
-            this.Consensus.ConsensusFactory = new PosConsensusFactory(this) { Consensus = this.Consensus };
+            this.Consensus.ConsensusFactory = new PosConsensusFactory() { Consensus = this.Consensus };
             this.Consensus.ProofOfStakeLimit = new BigInteger(uint256.Parse("00000fffffffffffffffffffffffffffffffffffffffffffffffffffffffffff").ToBytes(false));
             this.Consensus.ProofOfStakeLimitV2 = new BigInteger(uint256.Parse("000000000000ffffffffffffffffffffffffffffffffffffffffffffffffffff").ToBytes(false));
             this.Consensus.CoinType = 105;

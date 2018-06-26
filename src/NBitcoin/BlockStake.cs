@@ -180,7 +180,7 @@ namespace NBitcoin
     /// </summary>
     public class PosConsensusFactory : ConsensusFactory
     {
-        public PosConsensusFactory(Network network)
+        public PosConsensusFactory()
             : base()
         {
         }
