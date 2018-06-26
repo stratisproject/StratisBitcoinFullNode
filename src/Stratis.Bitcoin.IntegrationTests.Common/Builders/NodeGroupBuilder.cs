@@ -32,12 +32,6 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.Builders
             return this;
         }
 
-        public NodeGroupBuilder CreateStratisPowMiningNode(string nodeName)
-        {
-            this.nodes.Add(nodeName, this.nodeBuilder.CreateStratisPowMiningNode());
-            return this;
-        }
-
         public NodeGroupBuilder CreateStratisPosNode(string nodeName)
         {
             this.nodes.Add(nodeName, this.nodeBuilder.CreateStratisPosNode());

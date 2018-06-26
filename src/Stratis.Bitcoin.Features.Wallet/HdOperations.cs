@@ -132,11 +132,11 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// </summary>
         /// <param name="coinType">Type of coin in the HD path.</param>
         /// <param name="accountIndex">Index of the account in the HD path.</param>
-        /// <param name="addressIndex">Index of the address in the HD path.</param>
         /// <param name="isChange">A value indicating whether the HD path to generate corresponds to a change address.</param>
+        /// <param name="addressIndex">Index of the address in the HD path.</param>
         /// <returns>The HD path.</returns>
         /// <remarks>Refer to <seealso cref="https://github.com/bitcoin/bips/blob/master/bip-0044.mediawiki#path-levels"/> for the format of the HD path.</remarks>
-        public static string CreateHdPath(int coinType, int accountIndex, int addressIndex, bool isChange = false)
+        public static string CreateHdPath(int coinType, int accountIndex, bool isChange, int addressIndex)
         {
             int change = isChange ? 1 : 0;
             return $"m/44'/{coinType}'/{accountIndex}'/{change}/{addressIndex}";
