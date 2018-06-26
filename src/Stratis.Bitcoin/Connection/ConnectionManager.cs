@@ -40,6 +40,8 @@ namespace Stratis.Bitcoin.Connection
 
         void AddDiscoveredNodesRequirement(NetworkPeerServices services);
 
+        void BanAndDisconnec(int peerId);
+
         Task<INetworkPeer> ConnectAsync(IPEndPoint ipEndpoint);
 
         IReadOnlyNetworkPeerCollection ConnectedPeers { get; }
@@ -189,6 +191,11 @@ namespace Stratis.Bitcoin.Connection
             this.StartNodeServer();
 
             this.logger.LogTrace("(-)");
+        }
+
+        public void BanAndDisconnec(int peerId)
+        {
+            throw new NotImplementedException();
         }
 
         private void StartNodeServer()
