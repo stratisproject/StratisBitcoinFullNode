@@ -122,7 +122,7 @@ namespace Stratis.Bitcoin.BlockPulling2
 
         /// <summary>Block puller behaviors mapped by peer ID.</summary>
         /// <remarks>This object has to be protected by <see cref="peerLock"/>.</remarks>
-        private readonly Dictionary<int, BlockPullerBehavior> pullerBehaviorsByPeerId;
+        private readonly Dictionary<int, IBlockPullerBehavior> pullerBehaviorsByPeerId;
 
         private readonly CancellationTokenSource cancellationSource;
 
@@ -199,7 +199,7 @@ namespace Stratis.Bitcoin.BlockPulling2
 
             this.averageBlockSizeBytes = new AverageCalculator(AverageBlockSizeSamplesCount);
             
-            this.pullerBehaviorsByPeerId = new Dictionary<int, BlockPullerBehavior>();
+            this.pullerBehaviorsByPeerId = new Dictionary<int, IBlockPullerBehavior>();
 
             this.processQueuesSignal = new AsyncManualResetEvent(false);
             this.queueLock = new object();
@@ -257,7 +257,7 @@ namespace Stratis.Bitcoin.BlockPulling2
 
             lock (this.peerLock)
             {
-                foreach (BlockPullerBehavior blockPullerBehavior in this.pullerBehaviorsByPeerId.Values)
+                foreach (IBlockPullerBehavior blockPullerBehavior in this.pullerBehaviorsByPeerId.Values)
                     blockPullerBehavior.OnIbdStateChanged(isIbd);
 
                 this.isIbd = isIbd;
@@ -549,7 +549,7 @@ namespace Stratis.Bitcoin.BlockPulling2
                 List<uint256> hashes = hashesPair.Value;
                 int peerId = hashesPair.Key;
 
-                BlockPullerBehavior peerBehavior;
+                IBlockPullerBehavior peerBehavior;
 
                 lock (this.peerLock)
                 {
@@ -601,11 +601,11 @@ namespace Stratis.Bitcoin.BlockPulling2
 
             var newAssignments = new List<AssignedDownload>();
 
-            HashSet<BlockPullerBehavior> peerBehaviors;
+            HashSet<IBlockPullerBehavior> peerBehaviors;
 
             lock (this.peerLock)
             {
-                peerBehaviors = new HashSet<BlockPullerBehavior>(this.pullerBehaviorsByPeerId.Values);
+                peerBehaviors = new HashSet<IBlockPullerBehavior>(this.pullerBehaviorsByPeerId.Values);
             }
 
             bool jobFailed = false;
@@ -627,9 +627,9 @@ namespace Stratis.Bitcoin.BlockPulling2
                     double sumOfQualityScores = peerBehaviors.Sum(x => x.QualityScore);
                     double scoreToReachPeer = this.random.NextDouble() * sumOfQualityScores;
 
-                    BlockPullerBehavior selectedBehavior = peerBehaviors.First();
+                    IBlockPullerBehavior selectedBehavior = peerBehaviors.First();
                     
-                    foreach (BlockPullerBehavior peerBehavior in peerBehaviors)
+                    foreach (IBlockPullerBehavior peerBehavior in peerBehaviors)
                     {
                         if (peerBehavior.QualityScore >= scoreToReachPeer)
                         {
@@ -732,7 +732,7 @@ namespace Stratis.Bitcoin.BlockPulling2
 
                     lock (this.peerLock)
                     {
-                        BlockPullerBehavior pullerBehavior = this.pullerBehaviorsByPeerId[peerId];
+                        IBlockPullerBehavior pullerBehavior = this.pullerBehaviorsByPeerId[peerId];
                         pullerBehavior.Penalize(secondsPassed, assignedCount);
 
                         this.RecalculateQuealityScoreLocked(pullerBehavior, peerId);
@@ -795,7 +795,7 @@ namespace Stratis.Bitcoin.BlockPulling2
             lock (this.peerLock)
             {
                 // Add peer sample.
-                BlockPullerBehavior pullerBehavior = this.pullerBehaviorsByPeerId[peerId];
+                IBlockPullerBehavior pullerBehavior = this.pullerBehaviorsByPeerId[peerId];
                 pullerBehavior.AddSample(block.BlockSize.Value, deliveredInSeconds);
 
                 // Recalculate quality score.
@@ -820,7 +820,7 @@ namespace Stratis.Bitcoin.BlockPulling2
         /// <remarks>This method has to be protected by <see cref="peerLock"/>.</remarks>
         /// <param name="pullerBehavior">The puller behavior of a peer which quality score should be recalculated.</param>
         /// <param name="peerId">ID of a peer which behavior is passed.</param>
-        private void RecalculateQuealityScoreLocked(BlockPullerBehavior pullerBehavior, int peerId)
+        private void RecalculateQuealityScoreLocked(IBlockPullerBehavior pullerBehavior, int peerId)
         {
             this.logger.LogTrace("({0}:{1})", nameof(peerId), peerId);
 
@@ -841,7 +841,7 @@ namespace Stratis.Bitcoin.BlockPulling2
                 this.logger.LogTrace("Peer ID {0} is the fastest peer. Recalculating quality score of all peers.", peerId);
 
                 // This is the best peer. Recalculate quality score for everyone.
-                foreach (BlockPullerBehavior peerPullerBehavior in this.pullerBehaviorsByPeerId.Values)
+                foreach (IBlockPullerBehavior peerPullerBehavior in this.pullerBehaviorsByPeerId.Values)
                     peerPullerBehavior.RecalculateQualityScore(adjustedBestSpeed);
             }
 
