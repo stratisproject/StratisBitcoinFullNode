@@ -11,6 +11,7 @@ using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Consensus;
+using Stratis.Bitcoin.Tests.Common;
 using Stratis.Bitcoin.Utilities;
 using Xunit;
 
@@ -162,6 +163,13 @@ namespace Stratis.Bitcoin.Tests.Consensus
                 return previousHeader;
             }
 
+            public Block CreateBlock()
+            {
+                Block block = this.Network.Consensus.ConsensusFactory.CreateBlock();
+                block.GetSerializedSize();
+                return block;
+            }
+
             public List<BlockHeader> ChainedHeaderToList(ChainedHeader chainedHeader, int count)
             {
                 var list = new List<BlockHeader>();
@@ -185,6 +193,13 @@ namespace Stratis.Bitcoin.Tests.Consensus
 
                 return (connectNewHeadersResult.DownloadTo == null)
                        && (connectNewHeadersResult.DownloadFrom == null);
+            }
+        }
+
+        public class InvalidHeaderTestException : ConsensusException
+        {
+            public InvalidHeaderTestException() : base()
+            {
             }
         }
 
@@ -340,17 +355,47 @@ namespace Stratis.Bitcoin.Tests.Consensus
         }
 
         /// <summary>
-        /// Issue 11 @ Create chained header tree component #1321
-        /// When checkpoints are enabled and the first is at block X,
-        /// when we present headers before that- none marked for download.
-        /// When we first present checkpointed header and some after only
-        /// headers before the first checkpoint(including it) are marked for download.
+        /// Issue 7 @ Create chained header tree component #1321
+        /// We have a chain and someone presents an invalid header.
+        /// After that our chain's last block shouldn't change, it shouldn't have a valid .Next
+        /// and it should throw an exception.
         /// </summary>
         [Fact]
-        public void PresentChain_CheckpointsEnabled_MarkToDownloadWhenTwoCheckpointsPresented()
+        public void ConnectHeaders_SupplyInvalidHeader_ExistingChainTipShouldNotChange()
+        {
+            TestContext testContext = new TestContextBuilder().WithInitialChain(5).UseCheckpoints(false).Build();
+            ChainedHeaderTree chainedHeaderTree = testContext.ChainedHeaderTree;
+            ChainedHeader consensusTip = testContext.InitialChainTip;
+
+            ChainedHeader invalidChainedHeader = testContext.ExtendAChain(1, testContext.InitialChainTip);
+            List<BlockHeader> listContainingInvalidHeader = testContext.ChainedHeaderToList(invalidChainedHeader, 1);
+            BlockHeader invalidBlockHeader = listContainingInvalidHeader[0];
+
+            testContext.ChainedHeaderValidatorMock.Setup(x => x.ValidateHeader(It.Is<ChainedHeader>(y => y.HashBlock == invalidBlockHeader.GetHash()))).Throws(new InvalidHeaderTestException());
+
+            Assert.Throws<InvalidHeaderTestException>(() => chainedHeaderTree.ConnectNewHeaders(1, listContainingInvalidHeader));
+
+            // Chain's last block shouldn't change.
+            ChainedHeader consensusTipAfterInvalidHeaderPresented = chainedHeaderTree.GetPeerTipChainedHeaderByPeerId(-1);
+            Assert.Equal(consensusTip, consensusTipAfterInvalidHeaderPresented);
+
+            // Last block shouldn't have a Next.
+            Assert.Empty(consensusTipAfterInvalidHeaderPresented.Next);
+        }
+
+        /// <summary>
+        /// Issue 10 @ Create chained header tree component #1321
+        /// When checkpoints are enabled and the only checkpoint is at block X,
+        /// when we present headers before that none are marked for download.
+        /// When we first present checkpointed header and some after
+        /// all previous are also marked for download & those that are up
+        /// to the last checkpoint are marked as assumevalid.
+        /// </summary>
+        [Fact]
+        public void PresentChain_CheckpointsEnabled_MarkToDownloadWhenCheckpointPresented()
         {
             const int initialChainSize = 5;
-            const int currentChainExtension = 25;
+            const int currentChainExtension = 20;
 
             TestContext testContext = new TestContextBuilder().WithInitialChain(initialChainSize).UseCheckpoints().Build();
             ChainedHeaderTree chainedHeaderTree = testContext.ChainedHeaderTree;
@@ -358,51 +403,59 @@ namespace Stratis.Bitcoin.Tests.Consensus
 
             ChainedHeader extendedChainTip = testContext.ExtendAChain(currentChainExtension, initialChainTip);
 
-            // Total chain length is h1 -> h30.
+            // Total chain length is h1 -> h25.
             List<BlockHeader> listOfCurrentChainHeaders =
                 testContext.ChainedHeaderToList(extendedChainTip, initialChainSize + currentChainExtension);
 
-            // Checkpoints are enabled and there are two checkpoints defined at h(20) and h(30).
-            const int checkpointHeight1 = 20;
-            const int checkpointHeight2 = 30;
-            var checkpoint1 = new CheckpointFixture(checkpointHeight1, listOfCurrentChainHeaders[checkpointHeight1 - 1]);
-            var checkpoint2 = new CheckpointFixture(checkpointHeight2, listOfCurrentChainHeaders[checkpointHeight2 - 1]);
-            testContext.SetupCheckpoints(checkpoint1, checkpoint2);
+            // Checkpoints are enabled and the only checkpoint is at h(20).
+            const int checkpointHeight = 20;
+            var checkpoint = new CheckpointFixture(checkpointHeight, listOfCurrentChainHeaders[checkpointHeight - 1]);
+            testContext.SetupCheckpoints(checkpoint);
 
-            // We present headers before the first checkpoint h6 -> h15.
-            int numberOfHeadersBeforeCheckpoint1 = checkpointHeight1 - initialChainSize;
-            List<BlockHeader> listOfHeadersBeforeCheckpoint1 =
-                listOfCurrentChainHeaders.GetRange(initialChainSize, numberOfHeadersBeforeCheckpoint1 - 5);
-            ConnectNewHeadersResult connectNewHeadersResult =
-                chainedHeaderTree.ConnectNewHeaders(1, listOfHeadersBeforeCheckpoint1);
+            // When we present headers before the checkpoint h6 -> h15 none are marked for download.
+            int numberOfHeadersBeforeCheckpoint = checkpointHeight - initialChainSize;
+            List<BlockHeader> listOfHeadersBeforeCheckpoint = 
+                listOfCurrentChainHeaders.GetRange(initialChainSize, numberOfHeadersBeforeCheckpoint - 5);
+            ConnectNewHeadersResult connectNewHeadersResult = 
+                chainedHeaderTree.ConnectNewHeaders(1, listOfHeadersBeforeCheckpoint);
 
             // None are marked for download.
             connectNewHeadersResult.DownloadFrom.Should().Be(null);
             connectNewHeadersResult.DownloadTo.Should().Be(null);
 
-            // Check all headers beyond the initial chain (h6 -> h30) have foundation state of header only.
+            // Check all headers beyond the initial chain (h6 -> h25) have foundation state of header only.
             ValidationState expectedState = ValidationState.HeaderValidated;
             IEnumerable<ChainedHeader> headersBeyondInitialChain =
                 chainedHeaderTree.GetChainedHeadersByHash().Where(x => x.Value.Height > initialChainSize).Select(y => y.Value);
-            foreach (ChainedHeader header in headersBeyondInitialChain)
+            foreach(ChainedHeader header in headersBeyondInitialChain)
             {
                 header.BlockValidationState.Should().Be(expectedState);
             }
 
-            // Present headers h16 -> h29 (including first checkpoint but excluding second). 
+            // Present remaining headers checkpoint inclusive h16 -> h25.
+            // All are marked for download.
             List<BlockHeader> unconsumedHeaders = listOfCurrentChainHeaders.Skip(connectNewHeadersResult.Consumed.Height).ToList();
-            connectNewHeadersResult = chainedHeaderTree.ConnectNewHeaders(1, unconsumedHeaders.SkipLast(1).ToList());
 
-            // Download headers up to including checkpoint1 (h20) but not beyond.
-            connectNewHeadersResult.DownloadFrom.HashBlock.Should().Be(listOfHeadersBeforeCheckpoint1.First().GetHash());
-            connectNewHeadersResult.DownloadTo.HashBlock.Should().Be(checkpoint1.Header.GetHash());
+            connectNewHeadersResult = chainedHeaderTree.ConnectNewHeaders(1, unconsumedHeaders);
 
-            // Checking from first checkpoint back to the initialized chain (h20 -> h6).
+            connectNewHeadersResult.DownloadFrom.HashBlock.Should().Be(listOfHeadersBeforeCheckpoint.First().GetHash());
+            connectNewHeadersResult.DownloadTo.HashBlock.Should().Be(unconsumedHeaders.Last().GetHash());
+            
             ChainedHeader chainedHeader = chainedHeaderTree.GetChainedHeadersByHash()
-                .SingleOrDefault(x => (x.Value.HashBlock == checkpoint1.Header.GetHash())).Value;
+                .SingleOrDefault(x => (x.Value.HashBlock == checkpoint.Header.GetHash())).Value;
+
+            // Checking from the checkpoint back to the initialized chain.
             while (chainedHeader.Height > initialChainSize)
             {
                 chainedHeader.BlockValidationState.Should().Be(ValidationState.AssumedValid);
+                chainedHeader = chainedHeader.Previous;
+            }
+
+            // Checking from the checkpoint forward to the end of the chain.
+            chainedHeader = chainedHeaderTree.GetPeerTipChainedHeaderByPeerId(1);
+            while (chainedHeader.Height > checkpoint.Height)
+            {
+                chainedHeader.BlockValidationState.Should().Be(ValidationState.HeaderValidated);
                 chainedHeader = chainedHeader.Previous;
             }
         }
@@ -749,8 +802,8 @@ namespace Stratis.Bitcoin.Tests.Consensus
             // Example: h1=h2=h3=h4.
             const int initialChainSize = 4;
             TestContext ctx = new TestContextBuilder()
-                                    .WithInitialChain(initialChainSize, assignBlocks: false)
-                                    .Build();
+                .WithInitialChain(initialChainSize, assignBlocks: false)
+                .Build();
             ChainedHeaderTree cht = ctx.ChainedHeaderTree;
             ChainedHeader initialChainTip = ctx.InitialChainTip;
 
@@ -759,6 +812,40 @@ namespace Stratis.Bitcoin.Tests.Consensus
             bool result = cht.BlockDataDownloaded(initialChainTip, fakeBlock);
             result.Should().BeFalse();
             initialChainTip.Block.Should().BeNull();
+        }
+
+        /// <summary>
+        /// Issue 24 @ BlockDataDownloaded called for some blocks. Make sure CH.Block is not null and for the
+        /// first block true is returned and false for others.
+        /// </summary>
+        [Fact]
+        public void BlockDataDownloadedIsCalled_ForValidBlocksAfterFv_ResultShouldBeTrueForTHeFirstAndFalseForTheRest()
+        {
+            TestContext ctx = new TestContextBuilder().Build();
+            ChainedHeaderTree cht = ctx.ChainedHeaderTree;
+            ChainedHeader chainTip = ctx.InitialChainTip;
+
+            // Extend the chain with 3 more headers.
+            // Example: fv1=fv2=fv3=fv4=h5=h6=h7.
+            chainTip = ctx.ExtendAChain(3, chainTip);
+
+            // Call BlockDataDownloaded on h5, h6 and h7.
+            ChainedHeader chainTipH7 = chainTip;
+            ChainedHeader chainTipH6 = chainTip.Previous;
+            ChainedHeader chainTipH5 = chainTipH6.Previous;
+            bool resultForH7 = cht.BlockDataDownloaded(chainTipH7, ctx.CreateBlock());
+            bool resultForH6 = cht.BlockDataDownloaded(chainTipH6, ctx.CreateBlock());
+            bool resultForH5 = cht.BlockDataDownloaded(chainTipH5, ctx.CreateBlock());
+
+            // Blocks should be set and only header 5 result is true.
+            resultForH7.Should().BeFalse();
+            chainTipH7.Block.Should().NotBeNull();
+
+            resultForH6.Should().BeFalse();
+            chainTipH6.Block.Should().NotBeNull();
+
+            resultForH5.Should().BeTrue();
+            chainTipH5.Block.Should().NotBeNull();
         }
     }
 }
