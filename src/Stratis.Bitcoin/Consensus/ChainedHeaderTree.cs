@@ -325,6 +325,23 @@ namespace Stratis.Bitcoin.Consensus
                 return null;
             }
 
+            // Can happen in case of a race condition when peer 1 presented a block, we started partial validation, peer 1 disconnected,
+            // peer 2 connected, presented header and supplied a block and block puller pushed it so the block data is not null.
+            if ((chainedHeader.Previous.BlockValidationState != ValidationState.PartiallyValidated) &&
+                (chainedHeader.Previous.BlockValidationState != ValidationState.FullyValidated))
+            {
+                this.logger.LogTrace("(-)[PREV_BLOCK_NOT_VALIDATED]:null");
+                return null;
+            }
+
+            // Same scenario as above except for prev block was validated which triggered next partial validation to be started.
+            if ((chainedHeader.BlockValidationState == ValidationState.PartiallyValidated) || 
+                (chainedHeader.BlockValidationState == ValidationState.FullyValidated))
+            {
+                this.logger.LogTrace("(-)[ALREADY_VALIDATED]:null");
+                return null;
+            }
+
             chainedHeader.BlockValidationState = ValidationState.PartiallyValidated;
 
             if (chainedHeader.ChainWork > this.GetConsensusTip().ChainWork)
@@ -848,7 +865,7 @@ namespace Stratis.Bitcoin.Consensus
         }
 
         /// <summary>
-        /// Check whether a header is in one of the following states
+        /// Check whether a header is in one of the following states:
         /// <see cref="ValidationState.AssumedValid"/>, <see cref="ValidationState.PartiallyValidated"/>, <see cref="ValidationState.FullyValidated"/>.
         /// </summary>
         private bool HeaderWasMarkedAsValidated(ChainedHeader chainedHeader)
