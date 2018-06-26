@@ -162,6 +162,13 @@ namespace Stratis.Bitcoin.Tests.Consensus
                 return previousHeader;
             }
 
+            public Block CreateBlock()
+            {
+                Block block = this.Network.Consensus.ConsensusFactory.CreateBlock();
+                block.GetSerializedSize();
+                return block;
+            }
+
             public List<BlockHeader> ChainedHeaderToList(ChainedHeader chainedHeader, int count)
             {
                 var list = new List<BlockHeader>();
@@ -681,8 +688,8 @@ namespace Stratis.Bitcoin.Tests.Consensus
             // Example: h1=h2=h3=h4.
             const int initialChainSize = 4;
             TestContext ctx = new TestContextBuilder()
-                                    .WithInitialChain(initialChainSize, assignBlocks: false)
-                                    .Build();
+                .WithInitialChain(initialChainSize, assignBlocks: false)
+                .Build();
             ChainedHeaderTree cht = ctx.ChainedHeaderTree;
             ChainedHeader initialChainTip = ctx.InitialChainTip;
 
@@ -691,6 +698,40 @@ namespace Stratis.Bitcoin.Tests.Consensus
             bool result = cht.BlockDataDownloaded(initialChainTip, fakeBlock);
             result.Should().BeFalse();
             initialChainTip.Block.Should().BeNull();
+        }
+
+        /// <summary>
+        /// Issue 24 @ BlockDataDownloaded called for some blocks. Make sure CH.Block is not null and for the
+        /// first block true is returned and false for others.
+        /// </summary>
+        [Fact]
+        public void BlockDataDownloadedIsCalled_ForValidBlocksAfterFv_ResultShouldBeTrueForTHeFirstAndFalseForTheRest()
+        {
+            TestContext ctx = new TestContextBuilder().Build();
+            ChainedHeaderTree cht = ctx.ChainedHeaderTree;
+            ChainedHeader chainTip = ctx.InitialChainTip;
+
+            // Extend the chain with 3 more headers.
+            // Example: fv1=fv2=fv3=fv4=h5=h6=h7.
+            chainTip = ctx.ExtendAChain(3, chainTip);
+
+            // Call BlockDataDownloaded on h5, h6 and h7.
+            ChainedHeader chainTipH7 = chainTip;
+            ChainedHeader chainTipH6 = chainTip.Previous;
+            ChainedHeader chainTipH5 = chainTipH6.Previous;
+            bool resultForH7 = cht.BlockDataDownloaded(chainTipH7, ctx.CreateBlock());
+            bool resultForH6 = cht.BlockDataDownloaded(chainTipH6, ctx.CreateBlock());
+            bool resultForH5 = cht.BlockDataDownloaded(chainTipH5, ctx.CreateBlock());
+
+            // Blocks should be set and only header 5 result is true.
+            resultForH7.Should().BeFalse();
+            chainTipH7.Block.Should().NotBeNull();
+
+            resultForH6.Should().BeFalse();
+            chainTipH6.Block.Should().NotBeNull();
+
+            resultForH5.Should().BeTrue();
+            chainTipH5.Block.Should().NotBeNull();
         }
     }
 }
