@@ -1,10 +1,13 @@
-﻿namespace Stratis.Bitcoin.IntegrationTests.Common.Runners
+﻿using NBitcoin;
+
+namespace Stratis.Bitcoin.IntegrationTests.Common.Runners
 {
     public abstract class NodeRunner
     {
         public readonly string DataFolder;
         public bool IsDisposed => this.FullNode.State == FullNodeState.Disposed;
         public FullNode FullNode { get; set; }
+        public Network Network { set; get; }
 
         protected NodeRunner(string dataDir)
         {

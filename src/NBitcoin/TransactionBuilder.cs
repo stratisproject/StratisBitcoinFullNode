@@ -427,7 +427,7 @@ namespace NBitcoin
             public void RestoreMemento(TransactionBuildingContext memento)
             {
                 this._Marker = memento._Marker == null ? null : new ColorMarker(memento._Marker.GetScript());
-                this.Transaction = memento.Transaction.Clone(network: memento.Builder.Network);
+                this.Transaction = Transaction.Load(memento.Transaction.ToHex(), network: memento.Builder.Network);
                 this.AdditionalFees = memento.AdditionalFees;
             }
 
@@ -1106,10 +1106,13 @@ namespace NBitcoin
         public Transaction BuildTransaction(bool sign, SigHash sigHash)
         {
             var ctx = new TransactionBuildingContext(this);
+
             if(this._CompletedTransaction != null)
-                ctx.Transaction = this._CompletedTransaction.Clone(network: this.Network);
+                ctx.Transaction = Transaction.Load(this._CompletedTransaction.ToHex(), this.Network);
+
             if(this._LockTime != null)
                 ctx.Transaction.LockTime = this._LockTime.Value;
+
             foreach(BuilderGroup group in this._BuilderGroups)
             {
                 ctx.Group = group;
@@ -1140,12 +1143,14 @@ namespace NBitcoin
                 ctx.ChangeType = ChangeType.Uncolored;
                 BuildTransaction(ctx, group, group.Builders, group.Coins.Values.OfType<Coin>().Where(IsEconomical), Money.Zero);
             }
+
             ctx.Finish();
 
             if(sign)
             {
                 SignTransactionInPlace(ctx.Transaction, sigHash);
             }
+
             return ctx.Transaction;
         }
 
@@ -1248,7 +1253,7 @@ namespace NBitcoin
 
         public Transaction SignTransaction(Transaction transaction, SigHash sigHash)
         {
-            Transaction tx = transaction.Clone(network: this.Network);
+            Transaction tx = Transaction.Load(transaction.ToHex(), this.Network);
             SignTransactionInPlace(tx, sigHash);
             return tx;
         }
@@ -1476,7 +1481,8 @@ namespace NBitcoin
         {
             if (tx == null)
                 throw new ArgumentNullException("tx");
-            Transaction clone = tx.Clone(network:this.Network);
+
+            Transaction clone = Transaction.Load(tx.ToHex(), this.Network);
             clone.Inputs.Clear();
             int baseSize = clone.GetSerializedSize();
 
@@ -1787,7 +1793,9 @@ namespace NBitcoin
         {
             if(this._CompletedTransaction != null)
                 throw new InvalidOperationException("Transaction to complete already set");
-            this._CompletedTransaction = transaction.Clone(network:this.Network);
+
+            this._CompletedTransaction = Transaction.Load(transaction.ToHex(), this.Network);
+
             return this;
         }
 
@@ -1846,10 +1854,11 @@ namespace NBitcoin
         {
             if(transactions.Length == 1)
                 return transactions[0];
+
             if(transactions.Length == 0)
                 return null;
 
-            Transaction tx = transactions[0].Clone(network: this.Network);
+            Transaction tx = Transaction.Load(transactions[0].ToHex(), this.Network);
             for(int i = 1; i < transactions.Length; i++)
             {
                 Transaction signed = transactions[i];
@@ -1857,7 +1866,6 @@ namespace NBitcoin
             }
             return tx;
         }
-
 
         private readonly List<BuilderExtension> _Extensions = new List<BuilderExtension>();
         public List<BuilderExtension> Extensions
@@ -1872,9 +1880,11 @@ namespace NBitcoin
         {
             if(signed1 == null)
                 return signed2;
+
             if(signed2 == null)
                 return signed1;
-            Transaction tx = signed1.Clone(network: this.Network);
+
+            Transaction tx = Transaction.Load(signed1.ToHex(), this.Network);
             for(int i = 0; i < tx.Inputs.Count; i++)
             {
                 if(i >= signed2.Inputs.Count)

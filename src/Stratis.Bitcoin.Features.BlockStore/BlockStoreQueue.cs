@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
@@ -63,6 +64,9 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// <summary>Queue which contains blocks that should be saved to the database.</summary>
         private readonly AsyncQueue<ChainedHeaderBlock> blocksQueue;
 
+        /// <summary>Batch of blocks which should be saved in the database.</summary>
+        private readonly List<ChainedHeaderBlock> batch;
+
         /// <summary>Task that runs <see cref="DequeueBlocksContinuouslyAsync"/>.</summary>
         private Task dequeueLoopTask;
 
@@ -86,6 +90,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.storeSettings = storeSettings;
             this.chain = chain;
             this.blockRepository = blockRepository;
+            this.batch = new List<ChainedHeaderBlock>();
 
             this.blocksQueue = new AsyncQueue<ChainedHeaderBlock>();
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
@@ -221,6 +226,19 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.logger.LogTrace("(-)");
         }
 
+
+        /// <summary>Shows the stats to the console.</summary>
+        public void ShowStats(StringBuilder benchLog)
+        {
+            if (this.storeTip != null)
+            {
+                benchLog.AppendLine();
+                benchLog.AppendLine("======BlockStore======");
+                benchLog.AppendLine($"Pending Blocks: {this.batch.Count}");
+                benchLog.AppendLine($"Batch Size: {this.currentBatchSizeBytes / 1000} kb / {BatchThresholdSizeBytes / 1000} kb");
+            }
+        }
+
         /// <summary>
         /// Adds a block to the saving queue.
         /// </summary>
@@ -241,8 +259,6 @@ namespace Stratis.Bitcoin.Features.BlockStore
         private async Task DequeueBlocksContinuouslyAsync()
         {
             this.logger.LogTrace("()");
-
-            var batch = new List<ChainedHeaderBlock>();
 
             Task<ChainedHeaderBlock> dequeueTask = null;
             Task timerTask = null;
