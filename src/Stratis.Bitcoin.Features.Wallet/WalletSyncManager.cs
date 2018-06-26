@@ -108,78 +108,9 @@ namespace Stratis.Bitcoin.Features.Wallet
             else
             {
                 this.asyncLoop = this.asyncLoopFactory.Run(nameof(WalletSyncManager), async token =>
-                {
-                    try
                     {
-                        ChainedHeader tip = this.chain.Tip;
-
-                        // if not up-to-date then get previous blocks and sync
-                        if (tip.Height > this.walletTip.Height)
-                        {
-                            ChainedHeader findTip = tip.FindAncestorOrSelf(this.walletTip);
-                            if (findTip == null)
-                            {
-                                this.logger.LogTrace("(-)[NEW_TIP_AHEAD_NOT_IN_WALLET]");
-                                return;
-                            }
-
-                            this.logger.LogTrace("Wallet tip '{0}' is behind the new tip '{1}'.", this.walletTip, tip);
-
-                            ChainedHeader next = this.walletTip;
-
-                            while (next.Height < tip.Height)
-                            {
-                                token.ThrowIfCancellationRequested();
-
-                                next = tip.GetAncestor(next.Height + 1);
-
-                                Block nextBlock;
-                                int index = 0;
-
-                                while (true)
-                                {
-                                    token.ThrowIfCancellationRequested();
-
-                                    nextBlock = this.blockStoreCache.GetBlockAsync(next.HashBlock).GetAwaiter().GetResult();
-                                    if (nextBlock == null)
-                                    {
-                                        // Check if any Blocks are queued up.
-                                        while (this.blocksQueue.TryDequeue(out Block block))
-                                        {
-                                            await this.ProcessAsync(block).ConfigureAwait(false);
-                                        }
-
-                                        // The idea in this abandoning of the loop is to release consensus to push the block.
-                                        // That will make the block available in the next push from consensus.
-                                        index++;
-
-                                        if (index > 10)
-                                        {
-                                            this.logger.LogTrace("(-)[WALLET_CATCHUP_INDEX_MAX]");
-                                            return;
-                                        }
-
-                                        // Really ugly hack to let store catch up.
-                                        // This will block the entire consensus pulling.
-                                        this.logger.LogWarning("Wallet is behind the best chain and the next block is not found in store.");
-                                        Thread.Sleep(100);
-
-                                        continue;
-                                    }
-
-                                    break;
-                                }
-
-                                await this.ProcessAsync(nextBlock).ConfigureAwait(false);
-
-                            }
-                        }
+                        await this.ProcessBlockLoopAsync(token);
                     }
-                    catch (OperationCanceledException)
-                    {
-                        return;
-                    }
-                }
                 , this.nodeLifetime.ApplicationStopping
                 , TimeSpans.Second
                 , TimeSpans.TenSeconds);
@@ -224,70 +155,6 @@ namespace Stratis.Bitcoin.Features.Wallet
         public void ProcessBlock(Block block)
         {
             this.QueueBlock(block);
-        }
-
-        private async Task ProcessAsync(Block block)
-        {
-            await Task.Run(() =>
-            {
-                Guard.NotNull(block, nameof(block));
-                this.logger.LogTrace("({0}:'{1}')", nameof(block), block.GetHash());
-
-                ChainedHeader newTip = this.chain.GetBlock(block.GetHash());
-                if (newTip == null)
-                {
-                    this.logger.LogTrace("(-)[NEW_TIP_REORG]");
-                    return;
-                }
-
-                // If the new block's previous hash is the same as the
-                // wallet hash then just pass the block to the manager.
-                if (block.Header.HashPrevBlock != this.walletTip.HashBlock)
-                {
-                    // If previous block does not match there might have
-                    // been a reorg, check if the wallet is still on the main chain.
-                    ChainedHeader inBestChain = this.chain.GetBlock(this.walletTip.HashBlock);
-                    if (inBestChain == null)
-                    {
-                        // The current wallet hash was not found on the main chain.
-                        // A reorg happened so bring the wallet back top the last known fork.
-                        ChainedHeader fork = this.walletTip;
-
-                        // We walk back the chained block object to find the fork.
-                        while (this.chain.GetBlock(fork.HashBlock) == null)
-                            fork = fork.Previous;
-
-                        this.logger.LogInformation("Reorg detected, going back from '{0}' to '{1}'.", this.walletTip, fork);
-
-                        this.walletManager.RemoveBlocks(fork);
-                        this.walletTip = fork;
-
-                        this.logger.LogTrace("Wallet tip set to '{0}'.", this.walletTip);
-                    }
-
-                    // The new tip can be ahead or behind the wallet.
-                    // If the new tip is ahead we try to bring the wallet up to the new tip.
-                    // If the new tip is behind we just check the wallet and the tip are in the same chain.
-                    if (newTip.Height < this.walletTip.Height)
-                    {
-                        ChainedHeader findTip = this.walletTip.FindAncestorOrSelf(newTip);
-                        if (findTip == null)
-                        {
-                            this.logger.LogTrace("(-)[NEW_TIP_BEHIND_NOT_IN_WALLET]");
-                            return;
-                        }
-
-                        this.logger.LogTrace("Wallet tip '{0}' is ahead or equal to the new tip '{1}'.", this.walletTip, newTip);
-                    }
-                }
-
-                this.logger.LogTrace("New block follows the previously known block '{0}'.", this.walletTip);
-
-                this.walletTip = newTip;
-                this.walletManager.ProcessBlock(block, newTip);
-
-                this.logger.LogTrace("(-)");
-            });           
         }
 
         /// <inheritdoc />
@@ -356,6 +223,145 @@ namespace Stratis.Bitcoin.Features.Wallet
 
                     this.walletManager.ProcessBlock(processedBlock, blockChainedHeader);
                 }
+            }
+        }
+
+        private async Task ProcessAsync(Block block)
+        {
+            await Task.Run(() =>
+            {
+                Guard.NotNull(block, nameof(block));
+                this.logger.LogTrace("({0}:'{1}')", nameof(block), block.GetHash());
+
+                ChainedHeader newTip = this.chain.GetBlock(block.GetHash());
+                if (newTip == null)
+                {
+                    this.logger.LogTrace("(-)[NEW_TIP_REORG]");
+                    return;
+                }
+
+                // If the new block's previous hash is the same as the
+                // wallet hash then just pass the block to the manager.
+                if (block.Header.HashPrevBlock != this.walletTip.HashBlock)
+                {
+                    // If previous block does not match there might have
+                    // been a reorg, check if the wallet is still on the main chain.
+                    ChainedHeader inBestChain = this.chain.GetBlock(this.walletTip.HashBlock);
+                    if (inBestChain == null)
+                    {
+                        // The current wallet hash was not found on the main chain.
+                        // A reorg happened so bring the wallet back top the last known fork.
+                        ChainedHeader fork = this.walletTip;
+
+                        // We walk back the chained block object to find the fork.
+                        while (this.chain.GetBlock(fork.HashBlock) == null)
+                            fork = fork.Previous;
+
+                        this.logger.LogInformation("Reorg detected, going back from '{0}' to '{1}'.", this.walletTip, fork);
+
+                        this.walletManager.RemoveBlocks(fork);
+                        this.walletTip = fork;
+
+                        this.logger.LogTrace("Wallet tip set to '{0}'.", this.walletTip);
+                    }
+
+                    // The new tip can be ahead or behind the wallet.
+                    // If the new tip is ahead we try to bring the wallet up to the new tip.
+                    // If the new tip is behind we just check the wallet and the tip are in the same chain.
+                    if (newTip.Height < this.walletTip.Height)
+                    {
+                        ChainedHeader findTip = this.walletTip.FindAncestorOrSelf(newTip);
+                        if (findTip == null)
+                        {
+                            this.logger.LogTrace("(-)[NEW_TIP_BEHIND_NOT_IN_WALLET]");
+                            return;
+                        }
+
+                        this.logger.LogTrace("Wallet tip '{0}' is ahead or equal to the new tip '{1}'.", this.walletTip, newTip);
+                    }
+                }
+
+                this.logger.LogTrace("New block follows the previously known block '{0}'.", this.walletTip);
+
+                this.walletTip = newTip;
+                this.walletManager.ProcessBlock(block, newTip);
+
+                this.logger.LogTrace("(-)");
+            });
+        }
+
+        private async Task ProcessBlockLoopAsync(CancellationToken token)
+        {
+            try
+            {
+                ChainedHeader tip = this.chain.Tip;
+
+                // if not up-to-date then get previous blocks and sync
+                if (tip.Height > this.walletTip.Height)
+                {
+                    ChainedHeader findTip = tip.FindAncestorOrSelf(this.walletTip);
+                    if (findTip == null)
+                    {
+                        this.logger.LogTrace("(-)[NEW_TIP_AHEAD_NOT_IN_WALLET]");
+                        return;
+                    }
+
+                    this.logger.LogTrace("Wallet tip '{0}' is behind the new tip '{1}'.", this.walletTip, tip);
+
+                    ChainedHeader next = this.walletTip;
+
+                    while (next.Height < tip.Height)
+                    {
+                        token.ThrowIfCancellationRequested();
+
+                        next = tip.GetAncestor(next.Height + 1);
+
+                        Block nextBlock;
+                        int index = 0;
+
+                        while (true)
+                        {
+                            token.ThrowIfCancellationRequested();
+
+                            nextBlock = this.blockStoreCache.GetBlockAsync(next.HashBlock).GetAwaiter().GetResult();
+
+                            if (nextBlock == null)
+                            {
+                                // Check if any Blocks are queued up.
+                                while (this.blocksQueue.TryDequeue(out Block block))
+                                {
+                                    await this.ProcessAsync(block).ConfigureAwait(false);
+                                }
+
+                                // The idea in this abandoning of the loop is to release consensus to push the block.
+                                // That will make the block available in the next push from consensus.
+                                index++;
+
+                                if (index > 10)
+                                {
+                                    this.logger.LogTrace("(-)[WALLET_CATCHUP_INDEX_MAX]");
+                                    return;
+                                }
+
+                                // Really ugly hack to let store catch up.
+                                // This will block the entire consensus pulling.
+                                this.logger.LogWarning("Wallet is behind the best chain and the next block is not found in store.");
+                                Thread.Sleep(100);
+
+                                continue;
+                            }
+
+                            break;
+                        }
+
+                        await this.ProcessAsync(nextBlock).ConfigureAwait(false);
+
+                    }
+                }
+            }
+            catch (OperationCanceledException)
+            {
+                return;
             }
         }
     }
