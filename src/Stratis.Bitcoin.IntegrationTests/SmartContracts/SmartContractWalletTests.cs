@@ -53,7 +53,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
 
                 scSender.SetDummyMinerSecret(new BitcoinSecret(key, scSender.FullNode.Network));
                 var maturity = (int)scSender.FullNode.Network.Consensus.CoinbaseMaturity;
-                scSender.GenerateSmartContractStratis(maturity + 5);
+                scSender.GenerateStratis(maturity + 5);
                 // wait for block repo for block sync to work
 
                 TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(scSender));
@@ -88,8 +88,8 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 Assert.Null(scReceiver.FullNode.WalletManager().GetSpendableTransactionsInWallet(WalletName).First().Transaction.BlockHeight);
 
                 // generate two new blocks do the trx is confirmed
-                scSender.GenerateSmartContractStratis(1, new List<Transaction>(new[] { trx.Clone() }));
-                scSender.GenerateSmartContractStratis(1);
+                scSender.GenerateStratis(1, new List<Transaction>(new[] { trx.Clone() }));
+                scSender.GenerateStratis(1);
 
                 // wait for block repo for block sync to work
                 TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(scSender));

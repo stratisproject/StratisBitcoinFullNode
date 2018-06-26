@@ -331,14 +331,14 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         public void LoadWalletWithNonExistingWalletThrowsFileNotFoundException()
         {
             Assert.Throws<FileNotFoundException>(() =>
-           {
-               DataFolder dataFolder = CreateDataFolder(this);
+            {
+                DataFolder dataFolder = CreateDataFolder(this);
 
-               var walletManager = new WalletManager(this.LoggerFactory.Object, Network.StratisMain, new Mock<ConcurrentChain>().Object, NodeSettings.Default(), new Mock<WalletSettings>().Object,
-                                                dataFolder, new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime(), DateTimeProvider.Default, new ScriptTemplateFactory());
+                var walletManager = new WalletManager(this.LoggerFactory.Object, Network.StratisMain, new Mock<ConcurrentChain>().Object, NodeSettings.Default(), new Mock<WalletSettings>().Object,
+                                                 dataFolder, new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime(), DateTimeProvider.Default, new ScriptTemplateFactory());
 
-               walletManager.LoadWallet("password", "testWallet");
-           });
+                walletManager.LoadWallet("password", "testWallet");
+            });
         }
 
         [Fact]
@@ -776,7 +776,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             walletManager.Wallets.Add(wallet);
 
             HdAddress result = walletManager.GetUnusedChangeAddress(new WalletAccountReference(wallet.Name, wallet.AccountsRoot.First().Accounts.First().Name));
-            
+
             Assert.Equal(alice.GetAddress().ToString(), result.Address);
         }
 
@@ -802,7 +802,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 ExternalAddresses = new List<HdAddress>()
             });
             walletManager.Wallets.Add(wallet);
-            
+
             HdAddress result = walletManager.GetUnusedChangeAddress(new WalletAccountReference(wallet.Name, wallet.AccountsRoot.First().Accounts.First().Name));
 
             Assert.NotNull(result.Address);
@@ -2528,7 +2528,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
             var walletManager = new WalletManager(this.LoggerFactory.Object, Network.Main, new Mock<ConcurrentChain>().Object, NodeSettings.Default(), new Mock<WalletSettings>().Object,
                 dataFolder, new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime(), DateTimeProvider.Default, new ScriptTemplateFactory());
-            
+
             HdAccount account = WalletTestsHelpers.CreateAccount("account 1");
             HdAddress accountAddress1 = WalletTestsHelpers.CreateAddress();
             accountAddress1.Transactions.Add(WalletTestsHelpers.CreateTransaction(new uint256(1), new Money(15000), null));
@@ -2841,7 +2841,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         [Fact]
         public void CreateBip44PathWithChangeAddressReturnsPath()
         {
-            string result = HdOperations.CreateHdPath((int)CoinType.Stratis, 4, 3, true);
+            string result = HdOperations.CreateHdPath((int)CoinType.Stratis, 4, true, 3);
 
             Assert.Equal("m/44'/105'/4'/1/3", result);
         }
@@ -2849,7 +2849,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         [Fact]
         public void CreateBip44PathWithoutChangeAddressReturnsPath()
         {
-            string result = HdOperations.CreateHdPath((int)CoinType.Stratis, 4, 3, false);
+            string result = HdOperations.CreateHdPath((int)CoinType.Stratis, 4, false, 3);
 
             Assert.Equal("m/44'/105'/4'/0/3", result);
         }
@@ -3056,8 +3056,8 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             uint256 trxId = uint256.Parse("d6043add63ec364fcb591cf209285d8e60f1cc06186d4dcbce496cdbb4303400");
             int counter = 0;
 
-            var trxUnconfirmed1 = new TransactionData {Amount = 10, Id = trxId >> counter++ };
-            var trxUnconfirmed2 = new TransactionData {Amount = 10, Id = trxId >> counter++ };
+            var trxUnconfirmed1 = new TransactionData { Amount = 10, Id = trxId >> counter++ };
+            var trxUnconfirmed2 = new TransactionData { Amount = 10, Id = trxId >> counter++ };
             var trxConfirmed1 = new TransactionData { Amount = 10, Id = trxId >> counter++, BlockHeight = 50000 };
             var trxConfirmed2 = new TransactionData { Amount = 10, Id = trxId >> counter++, BlockHeight = 50001 };
 
@@ -3070,7 +3070,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             Assert.Equal(4, transactionCount);
 
             // Act.
-            HashSet<(uint256, DateTimeOffset)> result = walletManager.RemoveTransactionsByIds("wallet1", new [] {trxUnconfirmed1.Id, trxUnconfirmed2.Id, trxConfirmed1.Id, trxConfirmed2.Id });
+            HashSet<(uint256, DateTimeOffset)> result = walletManager.RemoveTransactionsByIds("wallet1", new[] { trxUnconfirmed1.Id, trxUnconfirmed2.Id, trxConfirmed1.Id, trxConfirmed2.Id });
 
             // Assert.
             List<TransactionData> remainingTrxs = firstAccount.GetCombinedAddresses().SelectMany(a => a.Transactions).ToList();
@@ -3110,10 +3110,10 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             uint256 unconfirmedTransactionId = trxId >> counter++;
             var unconfirmedSpendingDetails1 = new SpendingDetails { TransactionId = unconfirmedTransactionId };
             var trxConfirmed2 = new TransactionData { Amount = 10, Id = trxId >> counter++, BlockHeight = 50001, SpendingDetails = unconfirmedSpendingDetails1 };
-            
+
             // Unconfirmed transaction.
             var trxUnconfirmed1 = new TransactionData { Amount = 10, Id = unconfirmedTransactionId };
-            
+
             firstAccount.ExternalAddresses.ElementAt(0).Transactions.Add(trxUnconfirmed1);
             firstAccount.ExternalAddresses.ElementAt(1).Transactions.Add(trxConfirmed1);
             firstAccount.InternalAddresses.ElementAt(1).Transactions.Add(trxConfirmed2);

@@ -707,7 +707,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                     Outputs = new List<TransactionOutputModel>()
                 };
 
-                foreach (var output in transaction.Outputs)
+                foreach (TxOut output in transaction.Outputs)
                 {
                     bool isUnspendable = output.ScriptPubKey.IsUnspendable;
 

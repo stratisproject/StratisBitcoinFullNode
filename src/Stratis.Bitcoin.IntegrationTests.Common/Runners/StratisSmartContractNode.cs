@@ -16,11 +16,12 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.Runners
         public StratisSmartContractNode(string dataDir)
             : base(dataDir)
         {
+            this.Network = Network.SmartContractsRegTest;
         }
 
         public override void BuildNode()
         {
-            var settings = new NodeSettings(Network.SmartContractsRegTest, args: new string[] { "-conf=stratis.conf", "-datadir=" + this.DataFolder });
+            var settings = new NodeSettings(this.Network, args: new string[] { "-conf=stratis.conf", "-datadir=" + this.DataFolder });
 
             this.FullNode = (FullNode)new FullNodeBuilder()
                 .UseNodeSettings(settings)

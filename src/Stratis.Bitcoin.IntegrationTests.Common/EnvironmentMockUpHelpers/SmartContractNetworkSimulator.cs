@@ -23,10 +23,10 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
         {
             this.Nodes = new List<CoreNode>();
 
-            //create nodes
             for (int i = 0; i < nodesCount; ++i)
             {
-                CoreNode node = this.nodeBuilder.CreateSmartContractNode(true);
+                CoreNode node = this.nodeBuilder.CreateSmartContractNode();
+                node.Start();
                 node.NotInIBD();
 
                 node.FullNode.WalletManager().CreateWallet("dummyPassword", "dummyWallet");
