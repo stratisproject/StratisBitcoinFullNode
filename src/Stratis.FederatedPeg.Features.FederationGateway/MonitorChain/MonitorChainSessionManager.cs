@@ -116,7 +116,9 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.MonitorChain
         // A session is added when the CrossChainTransactionMonitor identifies a transaction that needs to be completed cross chain.
         public void CreateMonitorSession(CrossChainTransactionInfo crossChainTransactionInfo)
         {
-            this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(crossChainTransactionInfo.CrossChainTransactionId), crossChainTransactionInfo.CrossChainTransactionId, nameof(crossChainTransactionInfo.DestinationAddress), crossChainTransactionInfo.DestinationAddress);
+            this.logger.LogTrace("({0}:'{1}',{2}:'{3}',{4}:'{5}')", nameof(crossChainTransactionInfo.CrossChainTransactionId), crossChainTransactionInfo.CrossChainTransactionId, 
+                nameof(crossChainTransactionInfo.DestinationAddress), crossChainTransactionInfo.DestinationAddress,
+                nameof(crossChainTransactionInfo.BlockNumber), crossChainTransactionInfo.BlockNumber);
 
             // Ignore sessions below the MinimumTransferAmount
             if (crossChainTransactionInfo.Amount < MinimumTransferAmount)
@@ -142,21 +144,24 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.MonitorChain
             this.CreateSessionOnCounterChain(this.federationGatewaySettings.CounterChainApiPort,
                 crossChainTransactionInfo.TransactionHash,
                 crossChainTransactionInfo.Amount,
-                crossChainTransactionInfo.DestinationAddress);
+                crossChainTransactionInfo.DestinationAddress,
+                crossChainTransactionInfo.BlockNumber);
 
             this.logger.LogTrace("(-)");
         }
 
         // Calls into the counter chain and registers the session there.
-        private void CreateSessionOnCounterChain(int apiPortForSidechain, uint256 transactionId, Money amount, string destination)
+        private void CreateSessionOnCounterChain(int apiPortForSidechain, uint256 transactionId, Money amount, string destination, int blockHeight)
         {
-            this.logger.LogTrace("({0}:'{1}',{2}:'{3}',{4}:'{5}',{6}:'{7}')", nameof(apiPortForSidechain), apiPortForSidechain, nameof(transactionId), transactionId, nameof(amount), amount, nameof(destination), destination);
+            this.logger.LogTrace("({0}:'{1}',{2}:'{3}',{4}:'{5}',{6}:'{7}',{8}:'{9}')", nameof(apiPortForSidechain), apiPortForSidechain, nameof(transactionId), 
+                transactionId, nameof(amount), amount, nameof(destination), destination, nameof(blockHeight), blockHeight);
 
             var createCounterChainSessionRequest = new CreateCounterChainSessionRequest
             {
                 SessionId = transactionId,
                 Amount = amount.ToString(),
-                DestinationAddress = destination
+                DestinationAddress = destination,
+                BlockHeight = blockHeight
             };
 
             using (var client = new HttpClient())
@@ -195,6 +200,8 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.MonitorChain
 
             foreach (var monitorChainSession in this.monitorSessions.Values)
             {
+                if (monitorChainSession.Status == SessionStatus.Completed) continue;
+
                 // Don't start the session if we are still in the SecurityDelay
                 if (!IsBeyondBlockSecurityDelay(monitorChainSession)) continue;
 
@@ -202,8 +209,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.MonitorChain
 
                 this.logger.LogInformation($"Session status: {0} with CounterChainTransactionId: {1}.", 
                     monitorChainSession.Status, monitorChainSession.CounterChainTransactionId);
-
-                if (monitorChainSession.Status == SessionStatus.Completed) continue;
+                
                 this.logger.LogInformation("RunSessionAsync() MyBossCard: {0}", monitorChainSession.BossCard);
                 this.logger.LogInformation("At {0} AmITheBoss: {1} WhoHoldsTheBossCard: {2}", 
                     time, monitorChainSession.AmITheBoss(time), monitorChainSession.WhoHoldsTheBossCard(time));
@@ -218,13 +224,14 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.MonitorChain
                 // We call this for an incomplete session whenever we become the boss.
                 // On the counterchain this will either start the process or just inform us
                 // the the session completed already (and give us the CounterChainTransactionId).
-                // We we were already the boss the status will bre Requested and we will Process
+                // We we were already the boss the status will be Requested and we will Process
                 // to get the CounterChainTransactionId.
                 var result = await ProcessSessionOnCounterChain(
                     this.federationGatewaySettings.CounterChainApiPort,
                     monitorChainSession.Amount,
                     monitorChainSession.DestinationAddress,
-                    monitorChainSession.SessionId).ConfigureAwait(false);
+                    monitorChainSession.SessionId,
+                    monitorChainSession.BlockNumber).ConfigureAwait(false);
 
                 if (monitorChainSession.Status == SessionStatus.Requesting)
                     monitorChainSession.Status = SessionStatus.Requested;
@@ -250,7 +257,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.MonitorChain
 
         private bool IsBeyondBlockSecurityDelay(MonitorChainSession monitorChainSession)
         {
-            this.logger.LogInformation("() Session started at block {0}, block security delay {1}, current block height{2}, waiting for {3} more blocks",
+            this.logger.LogInformation("() Session started at block {0}, block security delay {1}, current block height {2}, waiting for {3} more blocks",
                 monitorChainSession.BlockNumber, BlockSecurityDelay, this.concurrentChain.Tip.Height, 
                 monitorChainSession.BlockNumber + BlockSecurityDelay - this.concurrentChain.Tip.Height );
            
@@ -258,15 +265,17 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.MonitorChain
         }
 
         // Calls into the counter chain and sets off the process to build the multi-sig transaction.
-        private async Task<uint256> ProcessSessionOnCounterChain(int apiPortForSidechain, Money amount, string destination, uint256 transactionId)
+        private async Task<uint256> ProcessSessionOnCounterChain(int apiPortForSidechain, Money amount, string destination, uint256 transactionId, int blockHeight)
         {
-            this.logger.LogTrace("({0}:'{1}',{2}:'{3}',{4}:'{5}',{6}:'{7}')", nameof(apiPortForSidechain), apiPortForSidechain, nameof(transactionId), transactionId, nameof(amount), amount, nameof(destination), destination);
+            this.logger.LogTrace("({0}:'{1}',{2}:'{3}',{4}:'{5}',{6}:'{7}',{7}:'{8}')", nameof(apiPortForSidechain), apiPortForSidechain, nameof(transactionId), transactionId, 
+                nameof(amount), amount, nameof(destination), destination, nameof(blockHeight), blockHeight);
 
             var createPartialTransactionSessionRequest = new CreateCounterChainSessionRequest
             {
                 SessionId = transactionId,
                 Amount = amount.ToString(),
-                DestinationAddress = destination
+                DestinationAddress = destination,
+                BlockHeight = blockHeight
             };
 
             using (var client = new HttpClient())

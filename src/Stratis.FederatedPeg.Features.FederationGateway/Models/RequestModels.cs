@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using System;
+using System.ComponentModel.DataAnnotations;
 using System.Net.Http;
 using System.Text;
 using NBitcoin;
@@ -46,6 +47,13 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Models
         /// </summary>
         [Required(ErrorMessage = "Destination Address required.")]
         public string DestinationAddress { get; set; }
+
+        /// <summary>
+        /// Number of the block at which the countersession was initiated
+        /// </summary>
+        [Required(ErrorMessage = "BlockHeight needs to be specified.")]
+        [Range(0, int.MaxValue, ErrorMessage = "Invalid BlockHeight")]
+        public int BlockHeight { get; set; }
     }
 
     public class ImportMemberKeyRequest : RequestModel

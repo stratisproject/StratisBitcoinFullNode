@@ -99,20 +99,22 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.CounterChain
                 this.logger.LogInformation($"RunSessionsAsync() CounterChain is in IBD exiting. Height:{this.concurrentChain.Height}.");
                 return;
             }
-            this.RegisterSession(sessionId, amount, destinationAddress);
+            this.RegisterSession(sessionId, amount, destinationAddress, this.concurrentChain.Height);
         }
 
         // Add the session to its collection.
-        private CounterChainSession RegisterSession(uint256 transactionId, Money amount, string destination)
+        private CounterChainSession RegisterSession(uint256 transactionId, Money amount, string destination, int blockHeight)
         {
-            this.logger.LogTrace("({0}:'{1}',{2}:'{3}',{4}:'{5}')", nameof(transactionId), transactionId, nameof(amount), amount, nameof(destination), destination);
+            this.logger.LogTrace("({0}:'{1}',{2}:'{3}',{4}:'{5}',{6}:'{7}')", nameof(transactionId), transactionId, nameof(amount),
+                amount, nameof(destination), destination, nameof(blockHeight), blockHeight);
 
             var counterChainSession = new CounterChainSession(
                 this.logger, 
                 this.federationGatewaySettings, 
                 transactionId, 
                 amount,
-                destination);
+                destination,
+                blockHeight);
             this.sessions.AddOrReplace(transactionId, counterChainSession);
             return counterChainSession;
         }
@@ -162,10 +164,11 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.CounterChain
         }
 
         ///<inheritdoc/>
-        public async Task<uint256> ProcessCounterChainSession(uint256 sessionId, Money amount, string destinationAddress)
+        public async Task<uint256> ProcessCounterChainSession(uint256 sessionId, Money amount, string destinationAddress, int blockHeight)
         {
             //todo this method is doing too much. factor some of this into private methods after we added the counterchainid.
-            this.logger.LogTrace("({0}:'{1}',{2}:'{3}',{4}:'{5}')", nameof(sessionId), sessionId, nameof(amount), amount, nameof(destinationAddress), destinationAddress);
+            this.logger.LogTrace("({0}:'{1}',{2}:'{3}',{4}:'{5}',{6}:'{7}')", nameof(sessionId), sessionId, nameof(amount), 
+                amount, nameof(destinationAddress), destinationAddress, nameof(blockHeight), blockHeight);
             this.logger.LogInformation("Session Registered.");
 
             // Check if this has already been done then we just return the transactionId
@@ -232,12 +235,12 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.CounterChain
             this.MarkSessionAsSigned(counterChainSession);
             var partialTransaction = wallet.SignPartialTransaction(templateTransaction, this.federationWalletManager.Secret.WalletPassword);
 
-            uint256 bossCard = BossTable.MakeBossTableEntry(sessionId, this.federationGatewaySettings.PublicKey);
+            uint256 bossCard = BossTable.MakeBossTableEntry(blockHeight, this.federationGatewaySettings.PublicKey);
             this.logger.LogInformation("My bossCard: {0}.", bossCard);
             this.ReceivePartial(sessionId, partialTransaction, bossCard);
 
             //now build the requests for the partials
-            var requestPartialTransactionPayload = new RequestPartialTransactionPayload(sessionId, templateTransaction);
+            var requestPartialTransactionPayload = new RequestPartialTransactionPayload(sessionId, templateTransaction, blockHeight);
 
             // Only broadcast to the federation members.
             var federationNetworkPeers =

@@ -10,6 +10,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
         private Transaction template;
         private Transaction transactionPartial;
         private uint256 bossCard = uint256.Zero;
+        private int blockHeight = 0;
 
         public Transaction PartialTransaction => this.transactionPartial;
 
@@ -18,16 +19,18 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
         public uint256 SessionId => this.sessionId;
 
         public uint256 BossCard => this.bossCard;
-        
+        public int BlockHeight => this.blockHeight;
+
         // Needed for deserialization.
         public RequestPartialTransactionPayload()
         {
         }
 
-        public RequestPartialTransactionPayload(uint256 sessionId, Transaction template)
+        public RequestPartialTransactionPayload(uint256 sessionId, Transaction template, int blockHeight)
         {
             this.sessionId = sessionId;
             this.template = template;
+            this.blockHeight = blockHeight;
         }
 
         public void AddPartial(Transaction partialTransaction, uint256 bossCard)
@@ -42,6 +45,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
             stream.ReadWrite(ref this.bossCard);
             stream.ReadWrite(ref this.transactionPartial);
             stream.ReadWrite(ref this.template);
+            stream.ReadWrite(ref this.blockHeight);
         }
     }
 }

@@ -49,8 +49,8 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
             this.BlockNumber = blockNumber;
 
             // Build the boss table.
-            this.BossTable = new BossTableBuilder().Build(this.SessionId, federationPubKeys);
-            this.BossCard = BossTable.MakeBossTableEntry(transactionHash, myPublicKey).ToString();
+            this.BossTable = new BossTableBuilder().Build(blockNumber, federationPubKeys);
+            this.BossCard = BossTable.MakeBossTableEntry(blockNumber, myPublicKey).ToString();
         }
 
         public void Complete(uint256 counterChainTransactionId)

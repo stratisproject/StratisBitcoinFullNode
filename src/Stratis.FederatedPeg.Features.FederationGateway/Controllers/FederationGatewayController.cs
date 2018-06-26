@@ -97,7 +97,8 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Controllers
                 var result = await this.counterChainSessionManager.ProcessCounterChainSession(
                     createCounterChainSessionRequest.SessionId,
                     createCounterChainSessionRequest.Amount,
-                    createCounterChainSessionRequest.DestinationAddress);
+                    createCounterChainSessionRequest.DestinationAddress,
+                    createCounterChainSessionRequest.BlockHeight);
                 
                 return this.Json(result);
             }
