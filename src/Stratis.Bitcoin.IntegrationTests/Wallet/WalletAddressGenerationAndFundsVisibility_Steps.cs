@@ -15,14 +15,8 @@ using Xunit.Abstractions;
 
 namespace Stratis.Bitcoin.IntegrationTests.Wallet
 {
-    public partial class Customisable_address_gap_limit_beyond_BIP44 : BddSpecification
+    public partial class Wallet_address_generation_and_funds_visibility : BddSpecification
     {
-        private NodeGroupBuilder nodeGroupBuilder;
-        private IDictionary<string, CoreNode> nodeGroup;
-        private CoreNode sendingStratisBitcoinNode;
-        private CoreNode receivingStratisBitcoinNode;
-        private SharedSteps sharedSteps;
-        private long walletBalance;
         private const string SendingWalletName = "senderwallet";
         private const string ReceivingWalletName = "receivingwallet";
         private const string WalletPassword = "password";
@@ -30,6 +24,12 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         private const string ReceivingNodeName = "receiving";
         private const string SendingNodeName = "sending";
 
+        private SharedSteps sharedSteps;
+        private NodeGroupBuilder nodeGroupBuilder;
+        private IDictionary<string, CoreNode> nodeGroup;
+        private CoreNode sendingStratisBitcoinNode;
+        private CoreNode receivingStratisBitcoinNode;
+        private long walletBalance;
 
         protected override void BeforeTest()
         {
@@ -41,7 +41,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         {
         }
 
-        public Customisable_address_gap_limit_beyond_BIP44(ITestOutputHelper output) : base(output)
+        public Wallet_address_generation_and_funds_visibility(ITestOutputHelper output) : base(output)
         {
         }
 

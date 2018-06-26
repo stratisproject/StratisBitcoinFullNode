@@ -3,7 +3,7 @@
 
 namespace Stratis.Bitcoin.IntegrationTests.Wallet
 {
-    public partial class Customisable_address_gap_limit_beyond_BIP44
+    public partial class Wallet_address_generation_and_funds_visibility
     {
         [Fact]
         public void Coins_beyond_gap_limit_not_visble_in_balance()
