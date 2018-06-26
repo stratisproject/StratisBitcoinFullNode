@@ -77,8 +77,6 @@ namespace Stratis.Bitcoin.Consensus
 
         private readonly Dictionary<uint256, long> expectedBlockSizes;
 
-        private readonly Dictionary<int, INetworkPeer> peerIdsToEndpoints;
-
         public ConsensusManager(
             Network network, 
             ILoggerFactory loggerFactory, 
@@ -114,7 +112,6 @@ namespace Stratis.Bitcoin.Consensus
             this.blockRequestedLock = new object();
             this.expectedBlockDataBytes = 0;
             this.expectedBlockSizes = new Dictionary<uint256, long>();
-            this.peerIdsToEndpoints = new Dictionary<int, INetworkPeer>();
 
             this.callbacksByBlocksRequestedHash = new Dictionary<uint256, List<OnBlockDownloadedCallback>>();
             this.toDownloadQueue = new Queue<BlockDownloadRequest>();
@@ -164,22 +161,21 @@ namespace Stratis.Bitcoin.Consensus
         /// A list of headers are presented from a given peer,
         /// we'll attempt to connect the headers to the tree and if new headers are found they will be queued for download.
         /// </summary>
-        /// <param name="networkPeer">The peer that is providing the headers.</param>
+        /// <param name="networkPeerId">The peer that is providing the headers.</param>
         /// <param name="headers">The list of new headers.</param>
         /// <returns>The last chained header that is connected to the tree.</returns>
         /// <exception cref="ConnectHeaderException">Thrown when first presented header can't be connected to any known chain in the tree.</exception>
         /// <exception cref="CheckpointMismatchException">Thrown if checkpointed header doesn't match the checkpoint hash.</exception>
-        public ChainedHeader HeadersPresented(INetworkPeer networkPeer, List<BlockHeader> headers)
+        public ChainedHeader HeadersPresented(int networkPeerId, List<BlockHeader> headers)
         {
-            this.logger.LogTrace("({0}:{1},{2}.{3}:{4})", nameof(networkPeer), networkPeer.Connection.Id, nameof(headers), nameof(headers.Count), headers.Count);
+            this.logger.LogTrace("({0}:{1},{2}.{3}:{4})", nameof(networkPeerId), networkPeerId, nameof(headers), nameof(headers.Count), headers.Count);
 
             ConnectNewHeadersResult newHeaders = null;
 
             lock (this.peerLock)
             {
-                newHeaders = this.chainedHeaderTree.ConnectNewHeaders(networkPeer.Connection.Id, headers);
-                this.blockPuller.NewTipClaimed(networkPeer.Connection.Id, newHeaders.Consumed);
-                this.peerIdsToEndpoints.Add(networkPeer.Connection.Id, networkPeer);
+                newHeaders = this.chainedHeaderTree.ConnectNewHeaders(networkPeerId, headers);
+                this.blockPuller.NewTipClaimed(networkPeerId, newHeaders.Consumed);
             }
 
             if (newHeaders.DownloadTo != null)
@@ -205,7 +201,6 @@ namespace Stratis.Bitcoin.Consensus
             {
                 this.chainedHeaderTree.PeerDisconnected(peerId);
                 this.blockPuller.PeerDisconnected(peerId);
-                this.peerIdsToEndpoints.Remove(peerId);
                 this.ProcessDownloadQueueLocked();
             }
 
@@ -287,7 +282,11 @@ namespace Stratis.Bitcoin.Consensus
                 if (connectBlocksResult.PeersToBan != null)
                 {
                     foreach (int peerId in connectBlocksResult.PeersToBan)
-                        this.connectionManager.BanAndDisconnec(peerId);
+                    {
+                        var peer = this.connectionManager.FindNodeById(peerId);
+                        ConnectionManagerSettings connectionSettings = this.connectionManager.ConnectionSettings;
+                        this.peerBanning.BanPeer(peer.PeerEndPoint, connectionSettings.BanTimeSeconds);
+                    }
 
                     lock (this.peerLock)
                     {
@@ -522,7 +521,7 @@ namespace Stratis.Bitcoin.Consensus
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(newTip), newTip);
 
-            foreach (INetworkPeer connectedPeer in this.peerIdsToEndpoints.Values)
+            foreach (INetworkPeer connectedPeer in this.connectionManager.ConnectedPeers)
             {
                 connectedPeer.Disconnect("Consensus out of sync");
             }
@@ -538,7 +537,7 @@ namespace Stratis.Bitcoin.Consensus
             {
                 this.PeerDisconnected(peerId);
 
-                this.peerIdsToEndpoints[peerId].Behavior<ChainHeadersBehavior>().ResetPendingTipAndSync();
+                this.connectionManager.FindNodeById(peerId).Behavior<ChainHeadersBehavior>().ResetPendingTipAndSync();
             }
         }
 

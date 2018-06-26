@@ -40,8 +40,6 @@ namespace Stratis.Bitcoin.Connection
 
         void AddDiscoveredNodesRequirement(NetworkPeerServices services);
 
-        void BanAndDisconnec(int peerId);
-
         Task<INetworkPeer> ConnectAsync(IPEndPoint ipEndpoint);
 
         IReadOnlyNetworkPeerCollection ConnectedPeers { get; }
@@ -51,6 +49,8 @@ namespace Stratis.Bitcoin.Connection
         INetworkPeer FindNodeByEndpoint(IPEndPoint ipEndpoint);
 
         INetworkPeer FindNodeByIp(IPAddress ipAddress);
+
+        INetworkPeer FindNodeById(int peerId);
 
         string GetNodeStats();
 
@@ -193,11 +193,6 @@ namespace Stratis.Bitcoin.Connection
             this.logger.LogTrace("(-)");
         }
 
-        public void BanAndDisconnec(int peerId)
-        {
-            throw new NotImplementedException();
-        }
-
         private void StartNodeServer()
         {
             var logs = new StringBuilder();
@@ -298,6 +293,7 @@ namespace Stratis.Bitcoin.Connection
             return builder.ToString();
         }
 
+
         public string GetNodeStats()
         {
             var builder = new StringBuilder();
@@ -381,6 +377,11 @@ namespace Stratis.Bitcoin.Connection
         public INetworkPeer FindLocalNode()
         {
             return this.connectedPeers.FindLocal();
+        }
+
+        public INetworkPeer FindNodeById(int peerId)
+        {
+            return this.connectedPeers.FindById(peerId);
         }
 
         /// <summary>
