@@ -1,6 +1,7 @@
 ﻿using System.Collections.Concurrent;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
+using Newtonsoft.Json;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Utilities;
@@ -102,6 +103,7 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet
             {
                 BlockHash = transactionData.BlockHash,
                 Hex = transactionData.Hex,
+                Network = this.network,
                 Id = transactionData.Id,
                 MerkleProof = transactionData.MerkleProof
             });
@@ -152,6 +154,7 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet
                             {
                                 Id = transactionHash,
                                 Hex = transaction.ToHex(),
+                                Network = this.network,
                                 BlockHash = block?.GetHash()
                             };
 
@@ -210,7 +213,8 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet
                         {
                             Id = transactionHash,
                             Hex = transaction.ToHex(),
-                            BlockHash = block?.GetHash(),
+                            Network = this.network,
+                            BlockHash = block?.GetHash()
                         };
 
                         // Add the Merkle proof to the (non-spending) transaction.
@@ -288,7 +292,12 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet
         {
             if (this.fileStorage.Exists(WalletFileName))
             {
-                return this.fileStorage.LoadByFileName(WalletFileName);
+                JsonSerializerSettings settings = new JsonSerializerSettings();
+                settings.Context = new System.Runtime.Serialization.StreamingContext(
+                    System.Runtime.Serialization.StreamingContextStates.File,
+                    this.network);
+
+                return this.fileStorage.LoadByFileName(WalletFileName, settings);
             }
 
             var watchOnlyWallet = new WatchOnlyWallet

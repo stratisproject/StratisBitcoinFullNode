@@ -163,10 +163,16 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet
         public string Hex { get; set; }
 
         /// <summary>
+        /// Allow <see cref="Transaction" /> to be used with networks other than Main.
+        /// </summary>
+        [JsonIgnore]
+        public Network Network { get; set; }
+
+        /// <summary>
         /// A transaction affecting a script being watched.
         /// </summary>
         [JsonIgnore]
-        public Transaction Transaction => Transaction.Parse(this.Hex);
+        public Transaction Transaction => Transaction.Load(this.Hex, this.Network ?? Network.Main);
 
         /// <summary>
         /// The hash of the block including this transaction.
@@ -239,6 +245,7 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet
             var transactionsDictionary = new ConcurrentDictionary<string, TransactionData>();
             foreach (TransactionData transaction in transactions)
             {
+                transaction.Network = serializer.Context.Context as Network;
                 transactionsDictionary.TryAdd(transaction.Transaction.GetHash().ToString(), transaction);
             }
 
