@@ -10,6 +10,7 @@ using NBitcoin;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.Wallet.Broadcasting;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
+using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Utilities;
 
 [assembly: InternalsVisibleTo("Stratis.Bitcoin.Features.Wallet.Tests")]
@@ -78,6 +79,9 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <summary>The settings for the wallet feature.</summary>
         private readonly WalletSettings walletSettings;
 
+        /// <summary>The settings for the wallet feature.</summary>
+        private readonly IScriptTemplateFactory scriptTemplateFactory;
+
         public uint256 WalletTipHash { get; set; }
 
         // In order to allow faster look-ups of transactions affecting the wallets' addresses,
@@ -98,6 +102,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             IAsyncLoopFactory asyncLoopFactory,
             INodeLifetime nodeLifetime,
             IDateTimeProvider dateTimeProvider,
+            IScriptTemplateFactory scriptTemplateFactory,
             IBroadcasterManager broadcasterManager = null) // no need to know about transactions the node will broadcast to.
         {
             Guard.NotNull(loggerFactory, nameof(loggerFactory));
@@ -109,6 +114,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             Guard.NotNull(walletFeePolicy, nameof(walletFeePolicy));
             Guard.NotNull(asyncLoopFactory, nameof(asyncLoopFactory));
             Guard.NotNull(nodeLifetime, nameof(nodeLifetime));
+            Guard.NotNull(scriptTemplateFactory, nameof(scriptTemplateFactory));
 
             this.walletSettings = walletSettings;
             this.lockObject = new object();
@@ -123,6 +129,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             this.nodeLifetime = nodeLifetime;
             this.fileStorage = new FileStorage<Wallet>(dataFolder.WalletPath);
             this.broadcasterManager = broadcasterManager;
+            this.scriptTemplateFactory = scriptTemplateFactory;
             this.dateTimeProvider = dateTimeProvider;
 
             // register events
@@ -1012,7 +1019,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                 {
                     // Figure out how to retrieve the destination address.
                     string destinationAddress = string.Empty;
-                    ScriptTemplate scriptTemplate = paidToOutput.ScriptPubKey.FindTemplate(this.network);
+                    ScriptTemplate scriptTemplate = this.scriptTemplateFactory.GetTemplateFromScriptPubKey(this.network, paidToOutput.ScriptPubKey);
 
                     //TODO: SmartContract HACK > scriptTemplate made nullable
                     switch (scriptTemplate?.Type)

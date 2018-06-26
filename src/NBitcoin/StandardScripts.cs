@@ -4,7 +4,6 @@ using NBitcoin.Policy;
 
 namespace NBitcoin
 {
-
     public static class StandardScripts
     {
         private static readonly ScriptTemplate[] _StandardTemplates = new ScriptTemplate[]

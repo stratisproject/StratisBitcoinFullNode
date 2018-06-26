@@ -10,6 +10,7 @@ using Stratis.Bitcoin.Builder.Feature;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Connection;
+using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.RPC;
@@ -184,6 +185,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                         services.AddSingleton<IBroadcasterManager, FullNodeBroadcasterManager>();
                         services.AddSingleton<BroadcasterBehavior>();
                         services.AddSingleton<WalletSettings>();
+                        services.AddSingleton<IScriptTemplateFactory, ScriptTemplateFactory>();
                         services.AddSingleton<StandardTransactionPolicy>();
                     });
             });
