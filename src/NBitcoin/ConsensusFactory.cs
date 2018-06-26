@@ -39,11 +39,8 @@ namespace NBitcoin
         /// </summary>
         private readonly TypeInfo transactionType = typeof(Transaction).GetTypeInfo();
 
-        private readonly Network network;
-
-        public ConsensusFactory(Network network)
+        public ConsensusFactory()
         {
-            this.network = network;
         }
 
         /// <summary>

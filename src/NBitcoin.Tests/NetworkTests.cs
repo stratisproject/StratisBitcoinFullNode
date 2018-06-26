@@ -552,9 +552,9 @@ namespace NBitcoin.Tests
         public void MineGenesisBlockWithMissingParametersThrowsException()
         {
             Assert.Throws<ArgumentException>(() => Network.MineGenesisBlock(null, "some string", new Target(new uint256()), Money.Zero));
-            Assert.Throws<ArgumentException>(() => Network.MineGenesisBlock(new ConsensusFactory(Network.Main), "", new Target(new uint256()), Money.Zero));
-            Assert.Throws<ArgumentException>(() => Network.MineGenesisBlock(new ConsensusFactory(Network.Main), "some string", null, Money.Zero));
-            Assert.Throws<ArgumentException>(() => Network.MineGenesisBlock(new ConsensusFactory(Network.Main), "some string", new Target(new uint256()), null));
+            Assert.Throws<ArgumentException>(() => Network.MineGenesisBlock(new ConsensusFactory(), "", new Target(new uint256()), Money.Zero));
+            Assert.Throws<ArgumentException>(() => Network.MineGenesisBlock(new ConsensusFactory(), "some string", null, Money.Zero));
+            Assert.Throws<ArgumentException>(() => Network.MineGenesisBlock(new ConsensusFactory(), "some string", new Target(new uint256()), null));
         }
 
         [Fact]
@@ -562,7 +562,7 @@ namespace NBitcoin.Tests
         public void MineGenesisBlockWithLongCoinbaseTextThrowsException()
         {
             string coinbaseText100Long = "1111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111";
-            Assert.Throws<ArgumentException>(() => Network.MineGenesisBlock(new ConsensusFactory(Network.Main), coinbaseText100Long, new Target(new uint256()), Money.Zero));
+            Assert.Throws<ArgumentException>(() => Network.MineGenesisBlock(new ConsensusFactory(), coinbaseText100Long, new Target(new uint256()), Money.Zero));
         }
     }
 }

@@ -16,7 +16,7 @@ namespace Stratis.Bitcoin.Utilities
         /// <summary>
         /// Initializes custom serializers for DBreeze engine.
         /// </summary>
-        public void Initialize(Network network) 
+        public void Initialize(Network network)
         {
             this.Network = network;
             CustomSerializator.ByteArraySerializator = this.Serializer;
@@ -117,7 +117,7 @@ namespace Stratis.Bitcoin.Utilities
                 return Block.Load(bytes, this.Network);
 
             if (type == typeof(BlockStake))
-                return new BlockStake(this.Network, bytes);
+                return BlockStake.Load(bytes, this.Network);
 
             throw new NotSupportedException();
         }
