@@ -98,7 +98,7 @@ namespace Stratis.Bitcoin.BlockPulling2
 
         /// <summary>Callback which is called when puller received a block which it was asked for.</summary>
         /// <remarks>Provided by the component that creates the block puller.</remarks>
-        private readonly OnBlockDownloadedCallback OnDownloadedCallback;
+        private readonly OnBlockDownloadedCallback onDownloadedCallback;
 
         /// <summary>Queue of download jobs which were released from the peers that failed to deliver in time or were disconnected.</summary>
         /// <remarks>This object has to be protected by <see cref="queueLock"/>.</remarks>
@@ -218,7 +218,7 @@ namespace Stratis.Bitcoin.BlockPulling2
 
             this.maxBlocksBeingDownloaded = MinimalCountOfBlocksBeingDownloaded;
 
-            this.OnDownloadedCallback = callback;
+            this.onDownloadedCallback = callback;
             this.chainState = chainState;
             this.dateTimeProvider = dateTimeProvider;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
@@ -417,7 +417,7 @@ namespace Stratis.Bitcoin.BlockPulling2
             // Call callbacks with null since puller failed to deliver requested blocks.
             this.logger.LogTrace("{0} jobs partially or fully failed.", failedHashes.Count);
             foreach (uint256 failedJob in failedHashes)
-                this.OnDownloadedCallback(failedJob, null);
+                this.onDownloadedCallback(failedJob, null);
 
             this.logger.LogTrace("Total amount of downloads assigned in this iteration is {0}.", newAssignments.Count);
 
@@ -813,7 +813,7 @@ namespace Stratis.Bitcoin.BlockPulling2
                 this.processQueuesSignal.Set();
             }
 
-            this.OnDownloadedCallback(blockHash, block);
+            this.onDownloadedCallback(blockHash, block);
 
             this.logger.LogTrace("(-)");
         }

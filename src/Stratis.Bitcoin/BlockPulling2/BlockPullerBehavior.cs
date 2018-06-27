@@ -19,7 +19,7 @@ namespace Stratis.Bitcoin.BlockPulling2
     public interface IBlockPullerBehavior : INetworkPeerBehavior
     {
         /// <summary>Relative quality score of a peer.</summary>
-        /// <remarks>It's a value from <see cref="MinQualityScore"/> to <see cref="MaxQualityScore"/>.</remarks>
+        /// <remarks>It's a value from <see cref="BlockPullerBehavior.MinQualityScore"/> to <see cref="BlockPullerBehavior.MaxQualityScore"/>.</remarks>
         double QualityScore { get; }
 
         /// <summary>Upload speed of a peer in bytes per second.</summary>
@@ -56,11 +56,11 @@ namespace Stratis.Bitcoin.BlockPulling2
     /// <inheritdoc cref="IBlockPullerBehavior"/>
     public class BlockPullerBehavior : NetworkPeerBehavior, IBlockPullerBehavior
     {
-        internal const double MinQualityScore = 0.01;
-        internal const double MaxQualityScore = 1.0;
+        public const double MinQualityScore = 0.01;
+        public const double MaxQualityScore = 1.0;
 
         /// <summary>Default quality score used when there are no samples to calculate the quality score.</summary>
-        internal const double SamplelessQualityScore = 0.3;
+        public const double SamplelessQualityScore = 0.3;
 
         /// <summary>Maximum number of samples that can be used for quality score calculation when node is in IBD.</summary>
         internal const int IbdSamplesCount = 200;
