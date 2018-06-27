@@ -76,6 +76,12 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// </summary>
         private readonly object lockObject;
 
+        /// <summary>
+        /// If the attached peer is whitelisted for relaying.
+        /// This is turned on if the peer is whitelisted and whitelistrelay mempool option is also on.
+        /// </summary>
+        private bool isPeerWhitelistedForRelay;
+
         public MempoolBehavior(
             IMempoolValidator validator,
             MempoolManager mempoolManager,
@@ -99,6 +105,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             this.lockObject = new object();
             this.inventoryTxToSend = new HashSet<uint256>();
             this.filterInventoryKnown = new HashSet<uint256>();
+            this.isPeerWhitelistedForRelay = false;
         }
         
         /// <summary>Time of last memory pool request in unix time.</summary>
@@ -110,6 +117,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             this.logger.LogTrace("()");
 
             this.AttachedPeer.MessageReceived.Register(this.OnMessageReceivedAsync);
+            this.isPeerWhitelistedForRelay = this.AttachedPeer.Behavior<ConnectionManagerBehavior>().Whitelisted && this.mempoolManager.mempoolSettings.WhiteListRelay;
 
             this.logger.LogTrace("(-)");
         }
@@ -371,11 +379,8 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         private bool IsBlocksOnly(INetworkPeer peer)
         {
             this.logger.LogTrace("({0}:'{1}'", nameof(peer), peer.RemoteSocketEndpoint);
-            bool isBlocksOnly = !this.connectionManager.ConnectionSettings.RelayTxes;
 
-            // Allow whitelisted peers to send data other than blocks in blocks only mode if whitelistrelay is true
-            if (peer.Behavior<ConnectionManagerBehavior>().Whitelisted && this.mempoolManager.mempoolSettings.WhiteListRelay)
-                isBlocksOnly = false;
+            bool isBlocksOnly = !this.connectionManager.ConnectionSettings.RelayTxes && !this.isPeerWhitelistedForRelay;                
 
             this.logger.LogTrace("(-):{0}", isBlocksOnly);
             return isBlocksOnly;
@@ -446,7 +451,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                 // Never relay transactions that we would assign a non-zero DoS
                 // score for, as we expect peers to do the same with us in that
                 // case.
-                if (peer.Behavior<ConnectionManagerBehavior>().Whitelisted && this.mempoolManager.mempoolSettings.WhiteListRelay)
+                if (this.isPeerWhitelistedForRelay)
                 {
                     if (!state.IsInvalid)
                     {
