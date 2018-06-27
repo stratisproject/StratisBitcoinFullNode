@@ -868,19 +868,27 @@ namespace Stratis.Bitcoin.Tests.Consensus
             chainTip = ctx.ExtendAChain(1, chainTip);
             List<BlockHeader> listOfCurrentChainHeaders = ctx.ChainedHeaderToList(chainTip, 1);
 
-            // Present header by peer with id 1 and then call PartialOrFullValidationFailed on it.
+            // Present header by peer with id 1.
+            // Then call PartialOrFullValidationFailed on it, followed by 
+            // PartialOrFullValidationFailed.
             const int peerId = 1;
             cht.ConnectNewHeaders(peerId, listOfCurrentChainHeaders);
-            List<int> validationResult = cht.PartialOrFullValidationFailed(chainTip);
+            cht.PartialValidationSucceeded(chainTip, out bool reorgRequired);
+            reorgRequired.Should().BeTrue();
+            cht.PartialOrFullValidationFailed(chainTip);
 
-            // Validation result should contain 1 result pointing to CT.
-            validationResult.Should().HaveCount(1);
-            validationResult.First().Should().Be(peerId);
+            // Peer id must be found only once on header 5.
+            const int localId = -1;
+            Dictionary<uint256, HashSet<int>> peerIdsByTipHash = cht.GetPeerIdsByTipHash();
+            peerIdsByTipHash.Should().HaveCount(1);
+            uint256 header5Hash = chainTip.GetAncestor(5).HashBlock;
+            peerIdsByTipHash[header5Hash].Should().HaveCount(1);
+            peerIdsByTipHash[header5Hash].Single().Should().Be(localId);
         }
 
         /// <summary>
         /// Issue 26 @ CT is at block 5. Call PartialValidationSucceeded with header 6. ConsensusTipChanged on block 6.
-        /// Make sure US_CONSTANT moved to 6.
+        /// Make sure PID moved to 6.
         /// </summary>
         [Fact]
         public void ConsensusAndHeadersAreAtBlock5_Block6Presented_PartialValidationSucceededCalled_LocalPeerIdIsMovedTo6()
@@ -906,9 +914,16 @@ namespace Stratis.Bitcoin.Tests.Consensus
             reorgRequired.Should().BeTrue();
 
             // Call ConsensusTipChanged on chaintip at header 6.
-            cht.ConsensusTipChanged(chainTip);
-            cht.GetPeerTipsByPeerId().Should().ContainKey(1);
-            cht.GetChainedHeadersByHash().Should().ContainKey(chainTip.HashBlock);
+            Dictionary<uint256, HashSet<int>> peerIdsByTipHash = cht.GetPeerIdsByTipHash();
+            uint256 header5Hash = chainTip.GetAncestor(5).HashBlock;
+            const int localId = -1;
+
+            uint256 header6Hash = chainTip.HashBlock;
+            peerIdsByTipHash.Should().HaveCount(2);
+            peerIdsByTipHash[header5Hash].Should().HaveCount(1);
+            peerIdsByTipHash[header5Hash].Should().Contain(localId);
+            peerIdsByTipHash[header6Hash].Should().HaveCount(1);
+            peerIdsByTipHash[header6Hash].Should().Contain(peerId);
         }
     }
 }
