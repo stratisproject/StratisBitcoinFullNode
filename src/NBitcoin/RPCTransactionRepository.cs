@@ -1,5 +1,4 @@
-﻿#if !NOJSONNET
-using System;
+﻿using System;
 using System.Threading.Tasks;
 using NBitcoin.RPC;
 
@@ -34,4 +33,3 @@ namespace NBitcoin
 #endregion
     }
 }
-#endif

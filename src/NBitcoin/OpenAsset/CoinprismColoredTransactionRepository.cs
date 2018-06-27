@@ -1,5 +1,4 @@
-﻿#if !NOJSONNET
-#if !NOHTTPCLIENT
+﻿#if !NOHTTPCLIENT
 using System;
 using System.IO;
 using System.Net;
@@ -180,5 +179,4 @@ namespace NBitcoin.OpenAsset
 #endregion
     }
 }
-#endif
 #endif

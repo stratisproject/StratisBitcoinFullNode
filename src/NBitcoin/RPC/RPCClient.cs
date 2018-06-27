@@ -1,5 +1,4 @@
-﻿#if !NOJSONNET
-using System;
+﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
@@ -1408,4 +1407,3 @@ namespace NBitcoin.RPC
         }
     }
 }
-#endif

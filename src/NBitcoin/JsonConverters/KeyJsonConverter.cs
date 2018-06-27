@@ -1,17 +1,11 @@
-﻿#if !NOJSONNET
-using System;
+﻿using System;
 using System.IO;
 using NBitcoin.DataEncoders;
 using Newtonsoft.Json;
 
 namespace NBitcoin.JsonConverters
 {
-#if !NOJSONNET
-    public
-#else
-    internal
-#endif
-    class KeyJsonConverter : JsonConverter
+    public class KeyJsonConverter : JsonConverter
     {
         public override bool CanConvert(Type objectType)
         {
@@ -58,4 +52,3 @@ namespace NBitcoin.JsonConverters
         }
     }
 }
-#endif

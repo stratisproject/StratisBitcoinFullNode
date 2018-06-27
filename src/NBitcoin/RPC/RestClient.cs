@@ -1,5 +1,4 @@
-﻿#if !NOJSONNET
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
@@ -309,4 +308,3 @@ namespace NBitcoin.RPC
         public bool IsPruned { get; internal set; }
     }
 }
-#endif
