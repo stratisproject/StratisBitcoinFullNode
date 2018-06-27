@@ -170,8 +170,8 @@ namespace Stratis.Bitcoin.BlockPulling2
         /// <inheritdoc cref="ILogger"/>
         private readonly ILogger logger;
 
-        /// <inheritdoc cref="ChainState"/>
-        private readonly ChainState chainState;
+        /// <inheritdoc cref="IChainState"/>
+        private readonly IChainState chainState;
 
         /// <inheritdoc cref="NetworkPeerRequirement"/>
         private readonly NetworkPeerRequirement networkPeerRequirement;
@@ -188,7 +188,7 @@ namespace Stratis.Bitcoin.BlockPulling2
         /// <summary>Loop that checks if peers failed to deliver important blocks in given time and penalizes them if they did.</summary>
         private Task stallingLoop;
 
-        public BlockPuller(OnBlockDownloadedCallback callback, ChainState chainState, ProtocolVersion protocolVersion, IDateTimeProvider dateTimeProvider, LoggerFactory loggerFactory)
+        public BlockPuller(OnBlockDownloadedCallback callback, IChainState chainState, ProtocolVersion protocolVersion, IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory)
         {
             this.reassignedJobsQueue = new Queue<DownloadJob>();
             this.downloadJobsQueue = new Queue<DownloadJob>();
@@ -215,6 +215,8 @@ namespace Stratis.Bitcoin.BlockPulling2
 
             this.cancellationSource = new CancellationTokenSource();
             this.random = new Random();
+
+            this.maxBlocksBeingDownloaded = MinimalCountOfBlocksBeingDownloaded;
 
             this.OnDownloadedCallback = callback;
             this.chainState = chainState;
@@ -286,7 +288,7 @@ namespace Stratis.Bitcoin.BlockPulling2
 
                     if (supportsRequirments)
                     {
-                        var behavior = peer.Behavior<BlockPullerBehavior>();
+                        var behavior = peer.Behavior<IBlockPullerBehavior>();
                         behavior.Tip = newTip;
                         this.pullerBehaviorsByPeerId.Add(peerId, behavior);
 
@@ -327,7 +329,7 @@ namespace Stratis.Bitcoin.BlockPulling2
 
                 this.downloadJobsQueue.Enqueue(new DownloadJob()
                 {
-                    Headers = headers,
+                    Headers = new List<ChainedHeader>(headers),
                     Id = jobId
                 });
 
@@ -438,14 +440,14 @@ namespace Stratis.Bitcoin.BlockPulling2
 
             while ((jobsQueue.Count > 0) && (emptySlots > 0))
             {
-                DownloadJob jobToAassign = jobsQueue.Peek();
-                int jobHeadersCount = jobToAassign.Headers.Count;
+                DownloadJob jobToAssign = jobsQueue.Peek();
+                int jobHeadersCount = jobToAssign.Headers.Count;
 
-                List<AssignedDownload> assignments = this.DistributeHeadersLocked(jobToAassign, failedHashes, emptySlots);
+                List<AssignedDownload> assignments = this.DistributeHeadersLocked(jobToAssign, failedHashes, emptySlots);
                 
                 emptySlots -= assignments.Count;
 
-                this.logger.LogTrace("Assigned {0} headers out of {1} for job {2}.", assignments.Count, jobHeadersCount, jobToAassign.Id);
+                this.logger.LogTrace("Assigned {0} headers out of {1} for job {2}.", assignments.Count, jobHeadersCount, jobToAssign.Id);
 
                 lock (this.assignedLock)
                 {
@@ -457,7 +459,7 @@ namespace Stratis.Bitcoin.BlockPulling2
                 }
 
                 // Remove job from the queue if it was fully consumed.
-                if (jobToAassign.Headers.Count == 0)
+                if (jobToAssign.Headers.Count == 0)
                     jobsQueue.Dequeue();
             }
 
@@ -735,7 +737,7 @@ namespace Stratis.Bitcoin.BlockPulling2
                         IBlockPullerBehavior pullerBehavior = this.pullerBehaviorsByPeerId[peerId];
                         pullerBehavior.Penalize(secondsPassed, assignedCount);
 
-                        this.RecalculateQuealityScoreLocked(pullerBehavior, peerId);
+                        this.RecalculateQualityScoreLocked(pullerBehavior, peerId);
                     }
                 }
 
@@ -799,7 +801,7 @@ namespace Stratis.Bitcoin.BlockPulling2
                 pullerBehavior.AddSample(block.BlockSize.Value, deliveredInSeconds);
 
                 // Recalculate quality score.
-                this.RecalculateQuealityScoreLocked(pullerBehavior, peerId);
+                this.RecalculateQualityScoreLocked(pullerBehavior, peerId);
             }
 
             lock (this.queueLock)
@@ -820,7 +822,7 @@ namespace Stratis.Bitcoin.BlockPulling2
         /// <remarks>This method has to be protected by <see cref="peerLock"/>.</remarks>
         /// <param name="pullerBehavior">The puller behavior of a peer which quality score should be recalculated.</param>
         /// <param name="peerId">ID of a peer which behavior is passed.</param>
-        private void RecalculateQuealityScoreLocked(IBlockPullerBehavior pullerBehavior, int peerId)
+        private void RecalculateQualityScoreLocked(IBlockPullerBehavior pullerBehavior, int peerId)
         {
             this.logger.LogTrace("({0}:{1})", nameof(peerId), peerId);
 

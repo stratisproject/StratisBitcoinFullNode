@@ -5,7 +5,7 @@ using NBitcoin;
 namespace Stratis.Bitcoin.BlockPulling2
 {
     /// <summary>Represents a single download assignment to a peer.</summary>
-    public struct AssignedDownload
+    public class AssignedDownload
     {
         /// <summary>Unique identifier of a job to which this assignment belongs.</summary>
         public int JobId;
