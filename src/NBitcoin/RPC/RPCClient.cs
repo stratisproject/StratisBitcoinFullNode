@@ -218,7 +218,6 @@ namespace NBitcoin.RPC
 
         static RPCClient()
         {
-#if !NOFILEIO
             string home = Environment.GetEnvironmentVariable("HOME");
             string localAppData = Environment.GetEnvironmentVariable("APPDATA");
 
@@ -251,7 +250,6 @@ namespace NBitcoin.RPC
                 string regtest = Path.Combine(bitcoinFolder, "regtest", ".cookie");
                 RegisterDefaultCookiePath(Network.RegTest, regtest);
             }
-#endif
         }
 
         public static void RegisterDefaultCookiePath(Network network, string path)
@@ -615,15 +613,12 @@ namespace NBitcoin.RPC
         {
             if (GetCookiePath() == null)
                 throw new InvalidOperationException("Bug in NBitcoin notify the developers");
-#if !NOFILEIO
+
             string auth = File.ReadAllText(GetCookiePath());
             if (!auth.StartsWith("__cookie__:", StringComparison.OrdinalIgnoreCase))
                 throw new ArgumentException("The authentication string to RPC is not provided and can't be inferred");
 
             this.authentication = auth;
-#else
-            throw new NotSupportedException("Cookie authentication is not supported for this plateform");
-#endif
         }
 
         private void TryRenewCookie(WebException ex)
@@ -631,7 +626,6 @@ namespace NBitcoin.RPC
             if (GetCookiePath() == null)
                 throw new InvalidOperationException("Bug in NBitcoin notify the developers");
 
-#if !NOFILEIO
             try
             {
                 this.authentication = File.ReadAllText(GetCookiePath());
@@ -641,9 +635,6 @@ namespace NBitcoin.RPC
             {
                 ExceptionDispatchInfo.Capture(ex).Throw();
             }
-#else
-            throw new NotSupportedException("Cookie authentication is not supported for this plateform");
-#endif
         }
 
         private async Task<RPCResponse> SendCommandAsyncCoreAsync(RPCRequest request, bool throwIfRPCError)

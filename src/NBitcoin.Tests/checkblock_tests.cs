@@ -1,5 +1,4 @@
-﻿#if !NOFILEIO
-using System.IO;
+﻿using System.IO;
 using NBitcoin.DataEncoders;
 using Xunit;
 
@@ -17,4 +16,3 @@ namespace NBitcoin.Tests
         }        
     }
 }
-#endif

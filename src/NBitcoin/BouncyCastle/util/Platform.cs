@@ -1,6 +1,6 @@
 using System;
 using System.Globalization;
-#if SILVERLIGHT || PORTABLE
+#if PORTABLE
 using System.Collections.Generic;
 #else
 using System.Collections;
@@ -38,7 +38,7 @@ namespace NBitcoin.BouncyCastle.Utilities
 #endif
         }
 
-#if NETCF_1_0 || NETCF_2_0 || SILVERLIGHT || PORTABLE
+#if NETCF_1_0 || NETCF_2_0 || PORTABLE
         internal static string GetEnvironmentVariable(
             string variable)
         {
@@ -82,7 +82,7 @@ namespace NBitcoin.BouncyCastle.Utilities
         }
 #endif
 
-#if SILVERLIGHT || PORTABLE
+#if PORTABLE
         internal static System.Collections.IList CreateArrayList()
         {
             return new List<object>();

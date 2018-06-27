@@ -1,5 +1,4 @@
-﻿#if !NOHTTPCLIENT
-using System;
+﻿using System;
 using System.IO;
 using System.Net;
 using System.Threading.Tasks;
@@ -172,4 +171,3 @@ namespace NBitcoin.OpenAsset
 #endregion
     }
 }
-#endif
