@@ -1130,11 +1130,15 @@ namespace Stratis.Bitcoin.Tests.Consensus
             reorgRequired.Should().BeTrue();
 
             // Call ConsensusTipChanged on chaintip at header 6.
+            cht.ConsensusTipChanged(chainTip);
+
+            // PID moved to header 6.
             Dictionary<uint256, HashSet<int>> peerIdsByTipHash = cht.GetPeerIdsByTipHash();
             uint256 header5Hash = chainTip.GetAncestor(5).HashBlock;
-            const int localId = -1;
-
             uint256 header6Hash = chainTip.HashBlock;
+
+            const int localId = -1;
+            
             peerIdsByTipHash.Should().HaveCount(2);
             peerIdsByTipHash[header5Hash].Should().HaveCount(1);
             peerIdsByTipHash[header5Hash].Should().Contain(localId);
