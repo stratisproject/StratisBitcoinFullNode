@@ -322,20 +322,23 @@ namespace Stratis.Bitcoin.BlockPulling2
         {
             this.logger.LogTrace("({0}:{1})", nameof(headers.Count), headers.Count);
 
+            int jobId;
+
             lock (this.queueLock)
             {
                 // Enqueue new download job.
-                int jobId = this.nextJobId++;
+                jobId = this.nextJobId++;
 
                 this.downloadJobsQueue.Enqueue(new DownloadJob()
                 {
                     Headers = new List<ChainedHeader>(headers),
                     Id = jobId
                 });
-
-                this.logger.LogDebug("{0} blocks were requested from puller. Job ID {1} was created.", headers.Count, jobId);
+                 
                 this.processQueuesSignal.Set();
             }
+
+            this.logger.LogDebug("{0} blocks were requested from puller. Job ID {1} was created.", headers.Count, jobId);
 
             this.logger.LogTrace("(-)");
         }
@@ -405,24 +408,22 @@ namespace Stratis.Bitcoin.BlockPulling2
                 {
                     emptySlots = this.maxBlocksBeingDownloaded - this.assignedDownloadsByHash.Count;
                 }
-
-                this.logger.LogTrace("There are {0} empty slots.", emptySlots);
-
+                
                 if (emptySlots > this.maxBlocksBeingDownloaded * MinEmptySlotsPercentageToStartProcessingTheQueue)
                     this.ProcessQueueLocked(this.downloadJobsQueue, newAssignments, failedHashes, emptySlots);
                 
                 this.processQueuesSignal.Reset();
             }
-            
-            // Call callbacks with null since puller failed to deliver requested blocks.
-            this.logger.LogTrace("{0} jobs partially or fully failed.", failedHashes.Count);
-            foreach (uint256 failedJob in failedHashes)
-                this.onDownloadedCallback(failedJob, null);
 
             this.logger.LogTrace("Total amount of downloads assigned in this iteration is {0}.", newAssignments.Count);
 
             if (newAssignments.Count != 0)
                 await this.AskPeersForBlocksAsync(newAssignments).ConfigureAwait(false);
+
+            // Call callbacks with null since puller failed to deliver requested blocks.
+            this.logger.LogTrace("{0} jobs partially or fully failed.", failedHashes.Count);
+            foreach (uint256 failedJob in failedHashes)
+                this.onDownloadedCallback(failedJob, null);
 
             this.logger.LogTrace("(-)");
         }
