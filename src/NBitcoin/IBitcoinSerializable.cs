@@ -32,6 +32,16 @@ namespace NBitcoin
             });
         }
 
+        public static void ReadWrite(this IBitcoinSerializable serializable, byte[] bytes, ProtocolVersion version = ProtocolVersion.PROTOCOL_VERSION)
+        {
+            ReadWrite(serializable, new MemoryStream(bytes), false, version);
+        }
+
+        public static void ReadWrite(this IBitcoinSerializable serializable, byte[] bytes, ConsensusFactory consensusFactory, ProtocolVersion version = ProtocolVersion.PROTOCOL_VERSION)
+        {
+            ReadWrite(serializable, new MemoryStream(bytes), false, consensusFactory, version);
+        }
+
         public static int GetSerializedSize(this IBitcoinSerializable serializable, ProtocolVersion version, SerializationType serializationType)
         {
             var s = new BitcoinStream(Stream.Null, true);
@@ -66,11 +76,6 @@ namespace NBitcoin
         public static int GetSerializedSize(this IBitcoinSerializable serializable, ProtocolVersion version = ProtocolVersion.PROTOCOL_VERSION)
         {
             return GetSerializedSize(serializable, version, SerializationType.Disk);
-        }
-
-        public static void ReadWrite(this IBitcoinSerializable serializable, byte[] bytes, Network network, ProtocolVersion version = ProtocolVersion.PROTOCOL_VERSION)
-        {
-            ReadWrite(serializable, new MemoryStream(bytes), false, network.Consensus.ConsensusFactory, version);
         }
 
         public static void FromBytes(this IBitcoinSerializable serializable, byte[] bytes, ProtocolVersion version = ProtocolVersion.PROTOCOL_VERSION, Network network = null)

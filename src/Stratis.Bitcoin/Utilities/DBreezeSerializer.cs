@@ -92,21 +92,21 @@ namespace Stratis.Bitcoin.Utilities
             if (type == typeof(Coins))
             {
                 var coin = new Coins();
-                coin.ReadWrite(bytes, network: this.Network);
+                coin.ReadWrite(bytes, this.Network.Consensus.ConsensusFactory);
                 return coin;
             }
 
             if (type == typeof(BlockHeader))
             {
                 BlockHeader header = this.Network.Consensus.ConsensusFactory.CreateBlockHeader();
-                header.ReadWrite(bytes, network: this.Network);
+                header.ReadWrite(bytes, this.Network.Consensus.ConsensusFactory);
                 return header;
             }
 
             if (type == typeof(RewindData))
             {
                 var rewind = new RewindData();
-                rewind.ReadWrite(bytes, network: this.Network);
+                rewind.ReadWrite(bytes, this.Network.Consensus.ConsensusFactory);
                 return rewind;
             }
 

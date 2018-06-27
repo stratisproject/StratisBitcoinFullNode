@@ -67,7 +67,7 @@
                 if(this._Key == null)
                 {
                     this._Key = new ExtKey();
-                    this._Key.ReadWrite(this.vchData, network: this.Network);
+                    this._Key.ReadWrite(this.vchData);
                 }
                 return this._Key;
             }
@@ -163,7 +163,7 @@
                 if(this._PubKey == null)
                 {
                     this._PubKey = new ExtPubKey();
-                    this._PubKey.ReadWrite(this.vchData, network: this.Network);
+                    this._PubKey.ReadWrite(this.vchData);
                 }
                 return this._PubKey;
             }

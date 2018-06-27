@@ -124,7 +124,7 @@ namespace NBitcoin
         public static BlockStake Load(byte[] bytes, Network network)
         {
             var blockStake = new BlockStake();
-            blockStake.ReadWrite(bytes, network);
+            blockStake.ReadWrite(bytes, network.Consensus.ConsensusFactory);
             return blockStake;
         }
 

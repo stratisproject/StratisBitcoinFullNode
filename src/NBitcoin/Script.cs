@@ -398,7 +398,6 @@ namespace NBitcoin
         {
         }
 
-
         private Script(byte[] data, bool @unsafe, bool unused)
         {
             this._Script = @unsafe ? data : data.ToArray();
@@ -409,14 +408,14 @@ namespace NBitcoin
             this._Script = data.ToArray();
         }
 
-        public Script(Network network, byte[] data, bool compressed)
+        public Script(byte[] data, bool compressed)
         {
             if(!compressed)
                 this._Script = data.ToArray();
             else
             {
                 var compressor = new ScriptCompressor();
-                compressor.ReadWrite(data, network: network);
+                compressor.ReadWrite(data);
                 this._Script = compressor.GetScript()._Script;
             }
         }

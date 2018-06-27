@@ -101,7 +101,7 @@ namespace NBitcoin
             }
         }
 
-        public Consensus(Network network)
+        public Consensus()
         {
             this.BuriedDeployments = new BuriedDeploymentsArray();
             this.BIP9Deployments = new BIP9DeploymentsArray();

@@ -75,7 +75,7 @@ namespace NBitcoin
                 throw new ArgumentNullException(nameof(network));
 
             BlockHeader blockHeader = network.Consensus.ConsensusFactory.CreateBlockHeader();
-            blockHeader.ReadWrite(hex, network: network);
+            blockHeader.ReadWrite(hex, network.Consensus.ConsensusFactory);
 
             return blockHeader;
         }

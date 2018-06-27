@@ -232,7 +232,7 @@ namespace NBitcoin.Tests
             Assert.False(parent.Neuter().IsParentOf(notchild.Neuter()));
 
             ExtPubKey keyA = parent.Neuter();
-            var keyB = new ExtPubKey(Network.Main, keyA.ToBytes());
+            var keyB = new ExtPubKey(keyA.ToBytes());
             AssertEx.CollectionEquals(keyA.ToBytes(), keyB.ToBytes());
         }
         private void RunTest(TestVector test)

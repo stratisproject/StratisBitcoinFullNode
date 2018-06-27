@@ -41,7 +41,7 @@ namespace NBitcoin
 
         protected Network()
         {
-            this.Consensus = new Consensus(this);
+            this.Consensus = new Consensus();
         }
 
         /// <summary>

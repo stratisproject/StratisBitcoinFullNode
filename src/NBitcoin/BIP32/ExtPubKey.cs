@@ -72,11 +72,11 @@ namespace NBitcoin
         {
         }
 
-        public ExtPubKey(Network network, byte[] bytes)
+        public ExtPubKey(byte[] bytes)
         {
             if(bytes == null)
                 throw new ArgumentNullException("bytes");
-            this.ReadWrite(bytes, network: network);
+            this.ReadWrite(bytes);
         }
 
         public ExtPubKey(PubKey pubkey, byte[] chainCode, byte depth, byte[] fingerprint, uint child)

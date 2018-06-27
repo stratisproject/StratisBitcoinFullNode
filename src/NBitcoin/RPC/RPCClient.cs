@@ -1153,8 +1153,8 @@ namespace NBitcoin.RPC
 
             response.ThrowIfError();
 
-            var tx = new Transaction();
-            tx.ReadWrite(Encoders.Hex.DecodeData(response.Result.ToString()), this.Network);
+            Transaction tx = this.network.Consensus.ConsensusFactory.CreateTransaction();
+            tx.ReadWrite(Encoders.Hex.DecodeData(response.Result.ToString()), this.network.Consensus.ConsensusFactory);
             return tx;
         }
 

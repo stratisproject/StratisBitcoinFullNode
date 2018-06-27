@@ -39,7 +39,7 @@ namespace NBitcoin.JsonConverters
 
                 var obj = (IBitcoinSerializable)Activator.CreateInstance(objectType);
                 byte[] bytes = Encoders.Hex.DecodeData((string)reader.Value);
-                obj.ReadWrite(bytes, network: this.network);
+                obj.ReadWrite(bytes, consensusFactory: this.network.Consensus.ConsensusFactory);
                 return obj;
             }
             catch (EndOfStreamException)
