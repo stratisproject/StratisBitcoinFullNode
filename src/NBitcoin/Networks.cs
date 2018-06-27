@@ -8,26 +8,14 @@ namespace NBitcoin
         /// <summary> Bitcoin maximal value for the calculated time offset. If the value is over this limit, the time syncing feature will be switched off. </summary>
         public const int BitcoinMaxTimeOffsetSeconds = 70 * 60;
 
-        /// <summary> Stratis maximal value for the calculated time offset. If the value is over this limit, the time syncing feature will be switched off. </summary>
-        public const int StratisMaxTimeOffsetSeconds = 25 * 60;
-
         /// <summary> Bitcoin default value for the maximum tip age in seconds to consider the node in initial block download (24 hours). </summary>
         public const int BitcoinDefaultMaxTipAgeInSeconds = 24 * 60 * 60;
-
-        /// <summary> Stratis default value for the maximum tip age in seconds to consider the node in initial block download (2 hours). </summary>
-        public const int StratisDefaultMaxTipAgeInSeconds = 2 * 60 * 60;
 
         /// <summary> The name of the root folder containing the different Bitcoin blockchains (Main, TestNet, RegTest). </summary>
         public const string BitcoinRootFolderName = "bitcoin";
 
         /// <summary> The default name used for the Bitcoin configuration file. </summary>
         public const string BitcoinDefaultConfigFilename = "bitcoin.conf";
-
-        /// <summary> The name of the root folder containing the different Stratis blockchains (StratisMain, StratisTest, StratisRegTest). </summary>
-        public const string StratisRootFolderName = "stratis";
-
-        /// <summary> The default name used for the Stratis configuration file. </summary>
-        public const string StratisDefaultConfigFilename = "stratis.conf";
 
         public static Network Main => GetNetwork("Main") ?? Register(new BitcoinMain());
 
@@ -60,36 +48,6 @@ namespace NBitcoin
             {
                 Value = genesisReward,
                 ScriptPubKey = genesisOutputScript
-            });
-            Block genesis = consensusFactory.CreateBlock();
-            genesis.Header.BlockTime = Utils.UnixTimeToDateTime(nTime);
-            genesis.Header.Bits = nBits;
-            genesis.Header.Nonce = nNonce;
-            genesis.Header.Version = nVersion;
-            genesis.Transactions.Add(txNew);
-            genesis.Header.HashPrevBlock = uint256.Zero;
-            genesis.UpdateMerkleRoot();
-            return genesis;
-        }
-
-        protected static Block CreateStratisGenesisBlock(ConsensusFactory consensusFactory, uint nTime, uint nNonce, uint nBits, int nVersion, Money genesisReward)
-        {
-            string pszTimestamp = "http://www.theonion.com/article/olympics-head-priestess-slits-throat-official-rio--53466";
-
-            Transaction txNew = consensusFactory.CreateTransaction();
-            txNew.Version = 1;
-            txNew.Time = nTime;
-            txNew.AddInput(new TxIn()
-            {
-                ScriptSig = new Script(Op.GetPushOp(0), new Op()
-                {
-                    Code = (OpcodeType)0x1,
-                    PushData = new[] { (byte)42 }
-                }, Op.GetPushOp(Encoders.ASCII.DecodeData(pszTimestamp)))
-            });
-            txNew.AddOutput(new TxOut()
-            {
-                Value = genesisReward,
             });
             Block genesis = consensusFactory.CreateBlock();
             genesis.Header.BlockTime = Utils.UnixTimeToDateTime(nTime);
