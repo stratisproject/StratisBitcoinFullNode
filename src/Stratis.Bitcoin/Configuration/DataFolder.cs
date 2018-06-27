@@ -27,6 +27,7 @@ namespace Stratis.Bitcoin.Configuration
             this.RpcCookieFile = Path.Combine(path, ".cookie");
             this.WalletPath = Path.Combine(path);
             this.LogPath = Path.Combine(path, "Logs");
+            this.ApplicationsPath = Path.Combine(path, "apps");
             this.DnsMasterFilePath = path;
             this.RootPath = path;
         }
@@ -71,5 +72,8 @@ namespace Stratis.Bitcoin.Configuration
         /// <summary>Path to DNS masterfile.</summary>
         /// <seealso cref="Features.Dns.IMasterFile.Save"/>
         public string DnsMasterFilePath { get; internal set; }
+
+        /// <summary>Path to Stratis applications</summary>
+        public string ApplicationsPath { get; internal set; }
     }
 }
