@@ -463,8 +463,8 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
 
             if (this.runner is StratisSmartContractNode smartContractNode)
             {
-                state = fullNode.NodeService<ContractStateRepositoryRoot>();
                 fullNode = smartContractNode.FullNode;
+                state = fullNode.NodeService<ContractStateRepositoryRoot>();
             }
 
             BitcoinSecret dest = this.MinerSecret;
