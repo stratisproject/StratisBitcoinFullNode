@@ -730,6 +730,7 @@ namespace NBitcoin
                     throw new SocketException(11001);
                 else
                     address = IPAddress.Parse(adr);
+#endif
             }
 
             return address;
@@ -793,7 +794,6 @@ namespace NBitcoin
         }
 #endif
 
-#endif
         public static int GetHashCode(byte[] array)
         {
             unchecked
