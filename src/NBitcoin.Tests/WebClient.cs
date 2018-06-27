@@ -1,5 +1,4 @@
-﻿#if NOWEBCLIENT
-using System;
+﻿using System;
 using System.IO;
 using System.Net.Http;
 
@@ -20,4 +19,3 @@ namespace NBitcoin.Tests
         }
     }
 }
-#endif
