@@ -6,6 +6,9 @@ using NBitcoin.DataEncoders;
 
 namespace NBitcoin
 {
+    /// <summary>
+    /// A container for storing/retrieving known networks
+    /// </summary>
     public static class NetworksContainer
     {
         public static readonly ConcurrentDictionary<string, Network> Networks = new ConcurrentDictionary<string, Network>();
