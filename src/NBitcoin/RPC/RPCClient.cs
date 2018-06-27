@@ -734,7 +734,6 @@ namespace NBitcoin.RPC
         }
 
 #region P2P Networking
-#if !NOSOCKET
         public PeerInfo[] GetPeersInfo()
         {
             PeerInfo[] peers = null;
@@ -924,7 +923,6 @@ namespace NBitcoin.RPC
                 throw;
             }
         }
-#endif
 
 #endregion
 

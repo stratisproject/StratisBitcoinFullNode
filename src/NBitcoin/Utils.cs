@@ -10,9 +10,7 @@ using System.Threading.Tasks;
 using NBitcoin.BouncyCastle.Math;
 using NBitcoin.DataEncoders;
 using NBitcoin.Protocol;
-#if !NOSOCKET
 using System.Net.Sockets;
-#endif
 #if WINDOWS_UWP
 using System.Net.Sockets;
 using Windows.Networking;
@@ -213,13 +211,12 @@ namespace NBitcoin
             {
                 cancellation.ThrowIfCancellationRequested();
                 int currentReadCount = 0;
-#if !NOSOCKET
+
                 if(stream is NetworkStream && cancellation.CanBeCanceled)
                 {
                     currentReadCount = stream.ReadAsync(buffer, offset + totalReadCount, count - totalReadCount, cancellation).GetAwaiter().GetResult();
                 }
                 else
-#endif
                 {
                     currentReadCount = stream.Read(buffer, offset + totalReadCount, count - totalReadCount);
                 }
@@ -380,7 +377,6 @@ namespace NBitcoin
             return ms.ToArray();
         }
 
-#if !NOSOCKET
         internal static IPAddress MapToIPv6(IPAddress address)
         {
             if(address.AddressFamily == AddressFamily.InterNetworkV6)
@@ -412,7 +408,6 @@ namespace NBitcoin
             return bytes[10] == 0xFF && bytes[11] == 0xFF;
         }
 
-#endif
         private static void Write(MemoryStream ms, byte[] bytes)
         {
             ms.Write(bytes, 0, bytes.Length);
@@ -579,8 +574,6 @@ namespace NBitcoin
             Shuffle(arr, null);
         }
 
-
-#if !NOSOCKET
         public static void SafeCloseSocket(Socket socket)
         {
             try
@@ -605,7 +598,7 @@ namespace NBitcoin
                 return endpoint;
             return new IPEndPoint(endpoint.Address.MapToIPv6Ex(), endpoint.Port);
         }
-#endif
+
         public static byte[] ToBytes(uint value, bool littleEndian)
         {
             if(littleEndian)
@@ -715,7 +708,6 @@ namespace NBitcoin
             }
         }
 
-#if !NOSOCKET
         public static IPAddress ParseIPAddress(string ip)
         {
             IPAddress address = null;
@@ -738,7 +730,6 @@ namespace NBitcoin
                     throw new SocketException(11001);
                 else
                     address = IPAddress.Parse(adr);
-#endif
             }
 
             return address;
