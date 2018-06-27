@@ -106,18 +106,16 @@ namespace NBitcoin
         public virtual T TryCreateNew<T>() where T : IBitcoinSerializable
         {
             object result = null;
+
             if (IsBlock<T>())
-            {
                 result = (T)(object)CreateBlock();
-            }
+
             if (IsBlockHeader<T>())
-            {
                 result = (T)(object)CreateBlockHeader();
-            }
+
             if (IsTransaction<T>())
-            {
                 result = (T)(object)CreateTransaction();
-            }
+
             return (T)result;
         }
 

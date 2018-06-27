@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 using NBitcoin.Protocol;
 
 namespace NBitcoin
@@ -10,11 +11,23 @@ namespace NBitcoin
 
     public static class BitcoinSerializableExtensions
     {
-        public static void ReadWrite(this IBitcoinSerializable serializable, Stream stream, bool serializing, ConsensusFactory consensusFactory, ProtocolVersion version = ProtocolVersion.PROTOCOL_VERSION)
+        public static void ReadWrite(this IBitcoinSerializable serializable, Stream stream, bool serializing, ProtocolVersion protocolVersion = ProtocolVersion.PROTOCOL_VERSION)
         {
             serializable.ReadWrite(new BitcoinStream(stream, serializing)
             {
-                ProtocolVersion = version,
+                ProtocolVersion = protocolVersion,
+                ConsensusFactory = new DefaultConsensusFactory()
+            });
+        }
+
+        public static void ReadWrite(this IBitcoinSerializable serializable, Stream stream, bool serializing, ConsensusFactory consensusFactory, ProtocolVersion protocolVersion = ProtocolVersion.PROTOCOL_VERSION)
+        {
+            if (consensusFactory == null)
+                throw new ArgumentException("{0} cannot be null", nameof(consensusFactory));
+
+            serializable.ReadWrite(new BitcoinStream(stream, serializing)
+            {
+                ProtocolVersion = protocolVersion,
                 ConsensusFactory = consensusFactory
             });
         }
