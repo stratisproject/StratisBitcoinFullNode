@@ -22,7 +22,7 @@ namespace Stratis.Bitcoin.Features.Wallet
     public class WalletManager : IWalletManager
     {
         /// <summary>Size of the buffer of unused addresses maintained in an account. </summary>
-        private const int UnusedAddressesBuffer = 20;
+        private int UnusedAddressesBuffer;
 
         /// <summary>Quantity of accounts created in a wallet file when a wallet is restored.</summary>
         private const int WalletRecoveryAccountsCount = 1;
@@ -133,6 +133,8 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             this.keysLookup = new Dictionary<Script, HdAddress>();
             this.outpointLookup = new Dictionary<OutPoint, TransactionData>();
+
+            this.UnusedAddressesBuffer = walletSettings.UnusedAddressesBuffer;
         }
 
         private void BroadcasterManager_TransactionStateChanged(object sender, TransactionBroadcastEntry transactionEntry)

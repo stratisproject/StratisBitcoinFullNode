@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
 using NBitcoin;
@@ -274,6 +275,30 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             Mnemonic mnemonic = walletManager.CreateWallet(password, "mywallet", mnemonicList: mnemonicList.ToString());
 
             Assert.Equal(mnemonic.DeriveSeed(), mnemonicList.DeriveSeed());
+        }
+
+        [Fact]
+        public void CreateWalletWith100UnusedAddressBufferCreates100AddressesToMonitor()
+        {
+            DataFolder dataFolder = CreateDataFolder(this);
+
+            var chain = new ConcurrentChain(Network.StratisMain);
+            uint nonce = RandomUtils.GetUInt32();
+            var block = new Block();
+            block.AddTransaction(new Transaction());
+            block.UpdateMerkleRoot();
+            block.Header.HashPrevBlock = chain.Genesis.HashBlock;
+            block.Header.Nonce = nonce;
+            chain.SetTip(block.Header);
+
+            var walletSettings = new WalletSettings {UnusedAddressesBuffer = 100};
+
+            var walletManager = new WalletManager(this.LoggerFactory.Object, Network.StratisMain, chain, NodeSettings.Default(), walletSettings,
+                dataFolder, new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime(), DateTimeProvider.Default);
+
+            walletManager.CreateWallet("test", "mywallet", mnemonicList: new Mnemonic(Wordlist.French, WordCount.Eighteen).ToString());
+
+            Assert.Equal(100 * 4, walletManager.keysLookup.Count()); //WHY 4x the UnusedAddressesBuffer
         }
 
         [Fact]

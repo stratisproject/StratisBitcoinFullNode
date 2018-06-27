@@ -24,6 +24,9 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// </summary>
         public bool IsLightWallet { get; set; }
 
+        /// <summary>Size of the buffer of unused addresses maintained in an account.</summary>
+        public int UnusedAddressesBuffer { get; set; } = 20;
+
         /// <summary>
         /// Initializes an instance of the object from the default configuration.
         /// </summary>
