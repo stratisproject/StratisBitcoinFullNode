@@ -64,7 +64,7 @@ In this step we will perform a 'Deposit to Sidechain'.  This will send TSTRAT ac
 
 Press the Cross-Chain command that is located next to the send and receive buttons on the TSTRAT mainchain wallet main page. Enter an amount, the federation address and the destination address where you want the newly received TAPEX to be received.
 
-Mainchain Federation Address: asdkf;asdlkfj  (if you are on the stratis Apex testnet).
+Mainchain Federation Address: 2N3UFTMd9ywUSqd12FkBPmYwEebxbGA8rQ  (if you are on the stratis Apex testnet).
 Sidechain Destination Address: this is an address you can get from your TAPEX wallet by using the 'Receive' feature to generate the address.
 
 For information, when you perform a cross-chain transfer such as a Deposit to Sidechain, you are infact not sending any coins across to the destination chain. Instead they are locked up on the mainchain by the federation who, in turn, releases the same amount of coins from a store they control on the sidechain. Therefore, a pair of transaction are performed that create the illusion of a cross-chain transaction.
@@ -73,7 +73,7 @@ Wait several minutes and the amount you sent will appear in your sidechain walle
 
 #### Perform a Withdrawal from Sidechain
 
-Repeat the procedure described for a deposit to perform the symmetrical withdrawal transaction from Apex back to Stratis.
+Repeat the procedure described for a deposit to perform the symmetrical withdrawal transaction from Apex back to Stratis.  The Sidechain Federation address for the Apex testnet network is: pFmbfn5PtgsEENzBKbsDTeS5vkc52bBftL. 
 
 Congratulations you have funded your sidechain from the Stratis network.
 
