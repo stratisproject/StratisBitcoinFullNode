@@ -32,7 +32,7 @@ namespace NBitcoin
             T obj = this.network.Consensus.ConsensusFactory.TryCreateNew<T>();
             if (obj == null)
                 obj = Activator.CreateInstance<T>();
-            obj.ReadWrite(data, network: this.network);
+            obj.ReadWrite(data, consensusFactory: this.network.Consensus.ConsensusFactory);
             return obj;
         }
 

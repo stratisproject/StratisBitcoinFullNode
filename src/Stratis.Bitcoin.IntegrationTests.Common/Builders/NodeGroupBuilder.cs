@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using NBitcoin;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
 
 namespace Stratis.Bitcoin.IntegrationTests.Common.Builders
@@ -9,11 +10,13 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.Builders
     {
         private readonly NodeBuilder nodeBuilder;
         private readonly Dictionary<string, CoreNode> nodes;
+        public readonly Dictionary<string, Mnemonic> NodeMnemonics;
 
         public NodeGroupBuilder(string testFolder)
         {
             this.nodeBuilder = NodeBuilder.Create(testFolder);
             this.nodes = new Dictionary<string, CoreNode>();
+            this.NodeMnemonics = new Dictionary<string, Mnemonic>();
         }
 
         public void Dispose()
@@ -52,7 +55,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.Builders
 
         public NodeGroupBuilder WithWallet(string walletName, string walletPassword)
         {
-            this.nodes.Last().Value.FullNode.WalletManager().CreateWallet(walletPassword, walletName);
+            this.NodeMnemonics.Add(this.nodes.Last().Key, this.nodes.Last().Value.FullNode.WalletManager().CreateWallet(walletPassword, walletName));
             return this;
         }
 
