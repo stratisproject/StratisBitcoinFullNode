@@ -321,6 +321,7 @@ namespace Stratis.Bitcoin.BlockPulling2
         public void RequestBlocksDownload(List<ChainedHeader> headers)
         {
             this.logger.LogTrace("({0}:{1})", nameof(headers.Count), headers.Count);
+            Guard.Assert(headers.Count != 0);
 
             lock (this.queueLock)
             {
@@ -621,8 +622,8 @@ namespace Stratis.Bitcoin.BlockPulling2
                 jobFailed = true;
             }
 
-            int index;
-            for (index = 0; (index < downloadJob.Headers.Count) && (index < emptySlots) && !jobFailed; index++)
+            int lastSucceededIndex = -1;
+            for (int index = 0; (index < downloadJob.Headers.Count) && (index < emptySlots) && !jobFailed; index++)
             {
                 ChainedHeader header = downloadJob.Headers[index];
 
@@ -633,7 +634,7 @@ namespace Stratis.Bitcoin.BlockPulling2
                     double scoreToReachPeer = this.random.NextDouble() * sumOfQualityScores;
 
                     IBlockPullerBehavior selectedBehavior = peerBehaviors.First();
-                    
+
                     foreach (IBlockPullerBehavior peerBehavior in peerBehaviors)
                     {
                         if (peerBehavior.QualityScore >= scoreToReachPeer)
@@ -641,10 +642,10 @@ namespace Stratis.Bitcoin.BlockPulling2
                             selectedBehavior = peerBehavior;
                             break;
                         }
-                        
+
                         scoreToReachPeer -= peerBehavior.QualityScore;
                     }
-                    
+
                     int peerId = selectedBehavior.AttachedPeer.Connection.Id;
 
                     if (selectedBehavior.Tip.FindAncestorOrSelf(header) != null)
@@ -657,6 +658,8 @@ namespace Stratis.Bitcoin.BlockPulling2
                             AssignedTime = this.dateTimeProvider.GetUtcNow(),
                             Header = header
                         });
+
+                        lastSucceededIndex = index;
 
                         this.logger.LogTrace("Block '{0}' was assigned to peer ID {1}.", header.HashBlock, peerId);
                         break;
@@ -677,12 +680,13 @@ namespace Stratis.Bitcoin.BlockPulling2
 
             if (!jobFailed)
             {
-                downloadJob.Headers.RemoveRange(0, index);
+                downloadJob.Headers.RemoveRange(0, downloadJob.Headers.Count);
             }
             else
             {
-                // Index here will be the index of first failed header.
-                IEnumerable<uint256> failed = downloadJob.Headers.GetRange(index, downloadJob.Headers.Count - index).Select(x => x.HashBlock);
+                int removeFrom = (lastSucceededIndex == -1) ? 0 : lastSucceededIndex + 1;
+
+                IEnumerable<uint256> failed = downloadJob.Headers.GetRange(removeFrom, downloadJob.Headers.Count - removeFrom).Select(x => x.HashBlock);
                 failedHashes.AddRange(failed);
 
                 downloadJob.Headers.Clear();
@@ -993,16 +997,6 @@ namespace Stratis.Bitcoin.BlockPulling2
             this.cancellationSource.Dispose();
             
             this.logger.LogTrace("(-)");
-        }
-
-        /// <summary>Represents consecutive collection of headers that are to be downloaded.</summary>
-        private struct DownloadJob
-        {
-            /// <summary>Unique identifier of this job.</summary>
-            public int Id;
-
-            /// <summary>Headers of blocks that are to be downloaded.</summary>
-            public List<ChainedHeader> Headers;
         }
     }
 }
