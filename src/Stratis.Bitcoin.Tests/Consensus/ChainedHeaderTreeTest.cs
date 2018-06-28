@@ -1135,11 +1135,11 @@ namespace Stratis.Bitcoin.Tests.Consensus
             Dictionary<uint256, HashSet<int>> peerIdsByTipHash = cht.GetPeerIdsByTipHash();
             uint256 header5Hash = chainTip.GetAncestor(5).HashBlock;
             uint256 header6Hash = chainTip.HashBlock;
-            
-            peerIdsByTipHash.Should().HaveCount(2);
-            peerIdsByTipHash[header5Hash].Should().HaveCount(1);
-            peerIdsByTipHash[header5Hash].Should().Contain(ChainedHeaderTree.LocalPeerId);
-            peerIdsByTipHash[header6Hash].Should().HaveCount(1);
+
+            peerIdsByTipHash.Should().HaveCount(1);
+            peerIdsByTipHash.Should().NotContainKey(header5Hash);
+            peerIdsByTipHash[header6Hash].Should().HaveCount(2);
+            peerIdsByTipHash[header6Hash].Should().Contain(ChainedHeaderTree.LocalPeerId);
             peerIdsByTipHash[header6Hash].Should().Contain(peerId);
         }
     }
