@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading;
 using NBitcoin.BouncyCastle.Math;
 using NBitcoin.DataEncoders;
+using NBitcoin.Networks;
 using Xunit;
 
 namespace NBitcoin.Tests
@@ -75,13 +76,13 @@ namespace NBitcoin.Tests
             Assert.Equal(Network.GetNetwork("mainnet"), network);
 
             Assert.Equal("Main", network.Name);
-            Assert.Equal(Network.BitcoinRootFolderName, network.RootFolderName);
-            Assert.Equal(Network.BitcoinDefaultConfigFilename, network.DefaultConfigFilename);
+            Assert.Equal(BitcoinMain.BitcoinRootFolderName, network.RootFolderName);
+            Assert.Equal(BitcoinMain.BitcoinDefaultConfigFilename, network.DefaultConfigFilename);
             Assert.Equal(0xD9B4BEF9, network.Magic);
             Assert.Equal(8333, network.DefaultPort);
             Assert.Equal(8332, network.RPCPort);
-            Assert.Equal(Network.BitcoinMaxTimeOffsetSeconds, network.MaxTimeOffsetSeconds);
-            Assert.Equal(Network.BitcoinDefaultMaxTipAgeInSeconds, network.MaxTipAge);
+            Assert.Equal(BitcoinMain.BitcoinMaxTimeOffsetSeconds, network.MaxTimeOffsetSeconds);
+            Assert.Equal(BitcoinMain.BitcoinDefaultMaxTipAgeInSeconds, network.MaxTipAge);
             Assert.Equal(1000, network.MinTxFee);
             Assert.Equal(20000, network.FallbackFee);
             Assert.Equal(1000, network.MinRelayTxFee);
@@ -157,13 +158,13 @@ namespace NBitcoin.Tests
             Assert.Empty(network.SeedNodes);
 
             Assert.Equal("TestNet", network.Name);
-            Assert.Equal(Network.BitcoinRootFolderName, network.RootFolderName);
-            Assert.Equal(Network.BitcoinDefaultConfigFilename, network.DefaultConfigFilename);
+            Assert.Equal(BitcoinMain.BitcoinRootFolderName, network.RootFolderName);
+            Assert.Equal(BitcoinMain.BitcoinDefaultConfigFilename, network.DefaultConfigFilename);
             Assert.Equal(0x0709110B.ToString(), network.Magic.ToString());
             Assert.Equal(18333, network.DefaultPort);
             Assert.Equal(18332, network.RPCPort);
-            Assert.Equal(Network.BitcoinMaxTimeOffsetSeconds, network.MaxTimeOffsetSeconds);
-            Assert.Equal(Network.BitcoinDefaultMaxTipAgeInSeconds, network.MaxTipAge);
+            Assert.Equal(BitcoinMain.BitcoinMaxTimeOffsetSeconds, network.MaxTimeOffsetSeconds);
+            Assert.Equal(BitcoinMain.BitcoinDefaultMaxTipAgeInSeconds, network.MaxTipAge);
             Assert.Equal(1000, network.MinTxFee);
             Assert.Equal(20000, network.FallbackFee);
             Assert.Equal(1000, network.MinRelayTxFee);
@@ -239,13 +240,13 @@ namespace NBitcoin.Tests
             Assert.Empty(network.SeedNodes);
 
             Assert.Equal("RegTest", network.Name);
-            Assert.Equal(Network.BitcoinRootFolderName, network.RootFolderName);
-            Assert.Equal(Network.BitcoinDefaultConfigFilename, network.DefaultConfigFilename);
+            Assert.Equal(BitcoinMain.BitcoinRootFolderName, network.RootFolderName);
+            Assert.Equal(BitcoinMain.BitcoinDefaultConfigFilename, network.DefaultConfigFilename);
             Assert.Equal(0xDAB5BFFA, network.Magic);
             Assert.Equal(18444, network.DefaultPort);
             Assert.Equal(18332, network.RPCPort);
-            Assert.Equal(Network.BitcoinMaxTimeOffsetSeconds, network.MaxTimeOffsetSeconds);
-            Assert.Equal(Network.BitcoinDefaultMaxTipAgeInSeconds, network.MaxTipAge);
+            Assert.Equal(BitcoinMain.BitcoinMaxTimeOffsetSeconds, network.MaxTimeOffsetSeconds);
+            Assert.Equal(BitcoinMain.BitcoinDefaultMaxTipAgeInSeconds, network.MaxTipAge);
             Assert.Equal(1000, network.MinTxFee);
             Assert.Equal(20000, network.FallbackFee);
             Assert.Equal(1000, network.MinRelayTxFee);
@@ -321,13 +322,13 @@ namespace NBitcoin.Tests
             Assert.Equal(3, network.SeedNodes.Count);
 
             Assert.Equal("StratisMain", network.Name);
-            Assert.Equal(Network.StratisRootFolderName, network.RootFolderName);
-            Assert.Equal(Network.StratisDefaultConfigFilename, network.DefaultConfigFilename);
+            Assert.Equal(StratisMain.StratisRootFolderName, network.RootFolderName);
+            Assert.Equal(StratisMain.StratisDefaultConfigFilename, network.DefaultConfigFilename);
             Assert.Equal(0x5223570.ToString(), network.Magic.ToString());
             Assert.Equal(16178, network.DefaultPort);
             Assert.Equal(16174, network.RPCPort);
-            Assert.Equal(Network.StratisMaxTimeOffsetSeconds, network.MaxTimeOffsetSeconds);
-            Assert.Equal(Network.StratisDefaultMaxTipAgeInSeconds, network.MaxTipAge);
+            Assert.Equal(StratisMain.StratisMaxTimeOffsetSeconds, network.MaxTimeOffsetSeconds);
+            Assert.Equal(StratisMain.StratisDefaultMaxTipAgeInSeconds, network.MaxTipAge);
             Assert.Equal(10000, network.MinTxFee);
             Assert.Equal(60000, network.FallbackFee);
             Assert.Equal(10000, network.MinRelayTxFee);
@@ -400,13 +401,13 @@ namespace NBitcoin.Tests
             Assert.Equal(4, network.SeedNodes.Count);
 
             Assert.Equal("StratisTest", network.Name);
-            Assert.Equal(Network.StratisRootFolderName, network.RootFolderName);
-            Assert.Equal(Network.StratisDefaultConfigFilename, network.DefaultConfigFilename);
+            Assert.Equal(StratisMain.StratisRootFolderName, network.RootFolderName);
+            Assert.Equal(StratisMain.StratisDefaultConfigFilename, network.DefaultConfigFilename);
             Assert.Equal(0x11213171.ToString(), network.Magic.ToString());
             Assert.Equal(26178, network.DefaultPort);
             Assert.Equal(26174, network.RPCPort);
-            Assert.Equal(Network.StratisMaxTimeOffsetSeconds, network.MaxTimeOffsetSeconds);
-            Assert.Equal(Network.StratisDefaultMaxTipAgeInSeconds, network.MaxTipAge);
+            Assert.Equal(StratisMain.StratisMaxTimeOffsetSeconds, network.MaxTimeOffsetSeconds);
+            Assert.Equal(StratisMain.StratisDefaultMaxTipAgeInSeconds, network.MaxTipAge);
             Assert.Equal(10000, network.MinTxFee);
             Assert.Equal(60000, network.FallbackFee);
             Assert.Equal(10000, network.MinRelayTxFee);
@@ -479,13 +480,13 @@ namespace NBitcoin.Tests
             Assert.Empty(network.SeedNodes);
 
             Assert.Equal("StratisRegTest", network.Name);
-            Assert.Equal(Network.StratisRootFolderName, network.RootFolderName);
-            Assert.Equal(Network.StratisDefaultConfigFilename, network.DefaultConfigFilename);
+            Assert.Equal(StratisMain.StratisRootFolderName, network.RootFolderName);
+            Assert.Equal(StratisMain.StratisDefaultConfigFilename, network.DefaultConfigFilename);
             Assert.Equal(0xefc0f2cd, network.Magic);
             Assert.Equal(18444, network.DefaultPort);
             Assert.Equal(18442, network.RPCPort);
-            Assert.Equal(Network.StratisMaxTimeOffsetSeconds, network.MaxTimeOffsetSeconds);
-            Assert.Equal(Network.StratisDefaultMaxTipAgeInSeconds, network.MaxTipAge);
+            Assert.Equal(StratisMain.StratisMaxTimeOffsetSeconds, network.MaxTimeOffsetSeconds);
+            Assert.Equal(StratisMain.StratisDefaultMaxTipAgeInSeconds, network.MaxTipAge);
             Assert.Equal(0, network.MinTxFee);
             Assert.Equal(0, network.FallbackFee);
             Assert.Equal(0, network.MinRelayTxFee);
