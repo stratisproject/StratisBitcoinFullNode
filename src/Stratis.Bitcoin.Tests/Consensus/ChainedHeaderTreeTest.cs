@@ -1086,16 +1086,16 @@ namespace Stratis.Bitcoin.Tests.Consensus
             ChainedHeader chainATip = ctx.ExtendAChain(maxReorg + 50, initialChainTip);
 
             // Chain A is presented by peer 1.
-            List<BlockHeader> listOfChainAHeaders = ctx.ChainedHeaderToList(chainATip, maxReorg + 50);
-            cht.ConnectNewHeaders(1, listOfChainAHeaders);
+            List<BlockHeader> listOfChainABlockHeaders = ctx.ChainedHeaderToList(chainATip, maxReorg + 50);
+            List<ChainedHeader> listOfChainAChainHeaders = chainATip.ToList(maxReorg + 50);
+            cht.ConnectNewHeaders(1, listOfChainABlockHeaders);
             
             // Sync 490 blocks from chain A.
-            for (int i = 1; i <= 490; i++)
+            for (int i = 0; i < 490; i++)
             {
-                ChainedHeader currentChainTip = chainATip.GetAncestor(initialChainSize + i);
+                ChainedHeader currentChainTip = listOfChainAChainHeaders[i];
                 cht.BlockDataDownloaded(currentChainTip, currentChainTip.Block);
                 cht.PartialValidationSucceeded(currentChainTip, out bool reorgRequired);
-                // TODO: Fix. Null reference is thrown at height 101, possibly due to KeepBlockDataForLastBlocks = 100
                 cht.ConsensusTipChanged(currentChainTip);
             }
 
@@ -1108,14 +1108,14 @@ namespace Stratis.Bitcoin.Tests.Consensus
             List<BlockHeader> listOfChainBHeaders = ctx.ChainedHeaderToList(chainBTip, chainBExtension);
             cht.ConnectNewHeaders(2, listOfChainBHeaders);
 
-            // Continue syncing remaining bocks from chain B.
+            // Continue syncing remaining blocks from chain A.
             // TODO: add asserts
-            for (int i = 491; i <= 550; i++)
+            for (int i = 490; i < 550; i++)
             {
-                ChainedHeader currentChainTip = chainATip.GetAncestor(initialChainSize + i);
+                ChainedHeader currentChainTip = listOfChainAChainHeaders[i];
                 cht.BlockDataDownloaded(currentChainTip, ctx.CreateBlock());
                 cht.PartialValidationSucceeded(currentChainTip, out bool reorgRequired);
-                cht.ConsensusTipChanged(currentChainTip);
+                List<int> tips = cht.ConsensusTipChanged(currentChainTip);
             }
         }
     }
