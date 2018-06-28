@@ -1080,7 +1080,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
             ChainedHeader initialChainTip = ctx.InitialChainTip;
 
             // Extend the chain (chain A) with max reorg headers (500) + 50 extra.
-            // Example: h1=h2=h3=h4=h5=a6=...=a555.
+            // Example: h1=h2=h3=h4=(h5)=a6=...=a555.
             const int maxReorg = 500;
             ctx.ChainStateMock.Setup(x => x.MaxReorgLength).Returns(maxReorg);
             ChainedHeader chainATip = ctx.ExtendAChain(maxReorg + 50, initialChainTip);
@@ -1100,7 +1100,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
             }
 
             // Create new chain B with 2 headers after the fork point.
-            // Example: h1=h2=h3=h4=h5=b7=b8.
+            // Example: h1=h2=h3=h4=(h5)=b7=b8.
             const int chainBExtension = 2;
             ChainedHeader chainBTip = ctx.ExtendAChain(chainBExtension, initialChainTip);
 
