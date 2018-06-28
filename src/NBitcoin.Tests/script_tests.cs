@@ -8,9 +8,7 @@ using NBitcoin.DataEncoders;
 using NBitcoin.Protocol;
 using Newtonsoft.Json.Linq;
 using Xunit;
-#if !NOCONSENSUSLIB
 using System.Net.Http;
-#endif
 
 namespace NBitcoin.Tests
 {
@@ -375,19 +373,16 @@ namespace NBitcoin.Tests
             ScriptError actual;
             Script.VerifyScript(Network.Main, scriptSig, scriptPubKey, spendingTransaction, 0, amount, flags, SigHash.Undefined, out actual);
             Assert.True(expectedError == actual, "Test : " + testIndex + " " + comment);
-#if !NOCONSENSUSLIB
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
                 bool ok = Script.VerifyScriptConsensus(scriptPubKey, spendingTransaction, 0, amount, flags);
                 Assert.True(ok == (expectedError == ScriptError.OK), "[ConsensusLib] Test : " + testIndex + " " + comment);
             }
-#endif
         }
 
 
         private void EnsureHasLibConsensus()
         {
-#if !NOCONSENSUSLIB
             string environment = RuntimeInformation.ProcessArchitecture == Architecture.X64 ? "x64" : "x86";
             if(File.Exists(Script.LibConsensusDll))
             {
@@ -402,9 +397,8 @@ namespace NBitcoin.Tests
                 throw new InvalidOperationException("Downloaded consensus li has wrong hash");
             }
             File.WriteAllBytes(Script.LibConsensusDll, libConsensus);
-#endif
         }
-#if !NOCONSENSUSLIB
+
         private bool CheckHashConsensus(byte[] bytes, string env)
         {
             //from bitcoin-0.13.1 rc2
@@ -419,7 +413,6 @@ namespace NBitcoin.Tests
                 return actualHash == "eb099bf52e57add12bb8ec28f10fdfd15f1e066604948c68ea52b69a0d5d32b8";
             }
         }
-#endif
 
         private static Transaction CreateSpendingTransaction(WitScript wit, Script scriptSig, Transaction creditingTransaction)
         {
@@ -766,23 +759,21 @@ namespace NBitcoin.Tests
         private void AssertInvalidScript(Script scriptPubKey, Transaction tx, int n, ScriptVerify verify)
         {
             Assert.False(Script.VerifyScript(Network.Main, scriptPubKey, tx, n, null, this.flags));
-#if !NOCONSENSUSLIB
+
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
                 Assert.False(Script.VerifyScriptConsensus(scriptPubKey, tx, (uint)n, this.flags));
             }
-#endif
         }
 
         private void AssertValidScript(Script scriptPubKey, Transaction tx, int n, ScriptVerify verify)
         {
             Assert.True(Script.VerifyScript(Network.Main, scriptPubKey, tx, n, null, this.flags));
-#if !NOCONSENSUSLIB
+
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
                 Assert.True(Script.VerifyScriptConsensus(scriptPubKey, tx, (uint)n, this.flags));
             }
-#endif
         }
 
         [Fact]
