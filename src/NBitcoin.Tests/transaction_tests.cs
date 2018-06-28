@@ -170,7 +170,7 @@ namespace NBitcoin.Tests
                 ScriptSig = scriptPubKey
             });
             tx.AddOutput(new TxOut("21", key.PubKey.Hash));
-            Transaction clone = tx.Clone();
+            Transaction clone = tx.Clone(Network.Main.Consensus.ConsensusFactory);
             tx.Sign(Network.Main, key, false);
             AssertCorrectlySigned(tx, scriptPubKey);
             clone.Sign(Network.Main, key, true);
@@ -444,10 +444,10 @@ namespace NBitcoin.Tests
             tx.AddInput(new TxIn(RandomCoin(Money.Coins(1.0m), new Key()).Outpoint, Script.Empty));
             tx.Inputs[0].WitScript = new WitScript(Op.GetPushOp(3));
             tx.AddOutput(RandomCoin(Money.Coins(1.0m), new Key()).TxOut);
-            var template = tx.Clone();
+            Transaction template = tx.Clone(Network.Main.Consensus.ConsensusFactory);
 
             // If lazy is true, then the cache will be calculated later
-            tx = template.Clone();
+            tx = template.Clone(Network.Main.Consensus.ConsensusFactory);
             var initialHashes = new uint256[] { tx.GetHash(), tx.GetWitHash() };
             tx.PrecomputeHash(false, true);
             tx.Outputs[0].Value = Money.Coins(1.1m);
@@ -458,7 +458,7 @@ namespace NBitcoin.Tests
             /////
 
             // If lazy is false, then the cache is calculated now
-            tx = template.Clone();
+            tx = template.Clone(Network.Main.Consensus.ConsensusFactory);
             initialHashes = new uint256[] { tx.GetHash(), tx.GetWitHash() };
             tx.PrecomputeHash(false, false);
             tx.Outputs[0].Value = Money.Coins(1.1m);
@@ -470,7 +470,7 @@ namespace NBitcoin.Tests
             /////
 
             // If invalidExisting is false, then the cache is not recalculated
-            tx = template.Clone();
+            tx = template.Clone(Network.Main.Consensus.ConsensusFactory);
             initialHashes = new uint256[] { tx.GetHash(), tx.GetWitHash() };
             tx.PrecomputeHash(false, false);
             tx.Outputs[0].Value = Money.Coins(1.1m);
@@ -487,7 +487,7 @@ namespace NBitcoin.Tests
             ///////
 
             // If invalidExisting is true, then the cache is recalculated
-            tx = template.Clone();
+            tx = template.Clone(Network.Main.Consensus.ConsensusFactory);
             initialHashes = new uint256[] { tx.GetHash(), tx.GetWitHash() };
             tx.PrecomputeHash(false, false);
             tx.Outputs[0].Value = Money.Coins(1.1m);
@@ -1318,7 +1318,7 @@ namespace NBitcoin.Tests
 
         private Transaction AssertClone(Transaction before)
         {
-            Transaction after = before.Clone();
+            Transaction after = before.Clone(Network.Main.Consensus.ConsensusFactory);
             Transaction after2 = null;
 
             var ms = new MemoryStream();
@@ -1691,7 +1691,7 @@ namespace NBitcoin.Tests
                     .BuildTransaction(true);
             Assert.False(txBuilder.Verify(tx, "0.0001"));
 
-            Transaction partiallySigned = tx.Clone();
+            Transaction partiallySigned = tx.Clone(Network.Main.Consensus.ConsensusFactory);
 
             txBuilder = new TransactionBuilder(0);
             tx = txBuilder
@@ -1888,7 +1888,7 @@ namespace NBitcoin.Tests
 
             spendTransaction.Inputs[0].ScriptSig = redeem; //The redeem should be in the scriptSig before signing
 
-            Transaction partiallySigned = spendTransaction.Clone();
+            Transaction partiallySigned = spendTransaction.Clone(Network.Main.Consensus.ConsensusFactory);
             //... Now I can partially sign it using one private key:
 
             partiallySigned.Sign(Network.Main, privKeys[0], true);
@@ -1905,13 +1905,13 @@ namespace NBitcoin.Tests
             AssertCorrectlySigned(gistTransaction, fundingTransaction.Outputs[0].ScriptPubKey, this.allowHighS); //One sig in the hard code tx is high
 
             //Can sign out of order
-            partiallySigned = spendTransaction.Clone();
+            partiallySigned = spendTransaction.Clone(Network.Main.Consensus.ConsensusFactory);
             partiallySigned.Sign(Network.Main, privKeys[2], true);
             partiallySigned.Sign(Network.Main, privKeys[0], true);
             AssertCorrectlySigned(partiallySigned, fundingTransaction.Outputs[0].ScriptPubKey);
 
             //Can sign multiple inputs
-            partiallySigned = spendTransaction.Clone();
+            partiallySigned = spendTransaction.Clone(Network.Main.Consensus.ConsensusFactory);
             partiallySigned.Inputs.Add(new TxIn()
             {
                 PrevOut = new OutPoint(fundingTransaction.GetHash(), 1),
@@ -1994,7 +1994,7 @@ namespace NBitcoin.Tests
         {
             var tx = new Transaction();
             tx.LockTime = new LockTime(4);
-            Transaction clone = tx.Clone();
+            Transaction clone = tx.Clone(Network.Main.Consensus.ConsensusFactory);
             Assert.Equal(tx.LockTime, clone.LockTime);
 
             Assert.Equal("Height : 0", new LockTime().ToString());
@@ -2682,7 +2682,7 @@ namespace NBitcoin.Tests
 
                             if (flag == SigHash.None)
                             {
-                                Transaction clone = result.Clone();
+                                Transaction clone = result.Clone(Network.Main.Consensus.ConsensusFactory);
                                 foreach (TxIn input in clone.Inputs)
                                 {
                                     if (input.PrevOut != signedCoin.Outpoint)
@@ -3086,7 +3086,7 @@ namespace NBitcoin.Tests
             outputm.Outputs[0].Value = Money.Satoshis(1);
             outputm.Outputs[0].ScriptPubKey = outscript;
 
-            output = outputm.Clone();
+            output = outputm.Clone(Network.Main.Consensus.ConsensusFactory);
 
             Assert.True(output.Inputs.Count == 1);
             Assert.True(output.Inputs[0].ToBytes().SequenceEqual(outputm.Inputs[0].ToBytes()));
@@ -3105,7 +3105,7 @@ namespace NBitcoin.Tests
             inputm.Outputs[0].ScriptPubKey = Script.Empty;
             bool ret = SignSignature(keystore, output, inputm, 0);
             Assert.True(ret == success);
-            input = inputm.Clone();
+            input = inputm.Clone(Network.Main.Consensus.ConsensusFactory);
             Assert.True(input.Inputs.Count == 1);
             Assert.True(input.Inputs[0].ToBytes().SequenceEqual(inputm.Inputs[0].ToBytes()));
             Assert.True(input.Outputs.Count == 1);
@@ -3157,7 +3157,7 @@ namespace NBitcoin.Tests
 
         private void CheckWithFlag(Transaction output, Transaction input, ScriptVerify flags, bool success)
         {
-            Transaction inputi = input.Clone();
+            Transaction inputi = input.Clone(Network.Main.Consensus.ConsensusFactory);
             var ctx = new ScriptEvaluationContext(Network.Main);
             ctx.ScriptVerify = flags;
             bool ret = ctx.VerifyScript(inputi.Inputs[0].ScriptSig, output.Outputs[0].ScriptPubKey, new TransactionChecker(inputi, 0, output.Outputs[0].Value));

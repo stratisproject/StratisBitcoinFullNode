@@ -170,7 +170,7 @@ namespace NBitcoin.Tests
                 ScriptSig = scriptPubKey
             });
             tx.AddOutput(new TxOut("21", key.PubKey.Hash));
-            Transaction clone = tx.Clone(network: Network.StratisMain);
+            Transaction clone = tx.Clone(Network.StratisMain.Consensus.ConsensusFactory);
             tx.Sign(Network.StratisMain, key, false);
             AssertCorrectlySigned(tx, scriptPubKey);
             clone.Sign(Network.StratisMain, key, true);
@@ -1201,7 +1201,7 @@ namespace NBitcoin.Tests
 
         private Transaction AssertClone(Transaction before)
         {
-            Transaction after = before.Clone(network: Network.StratisMain);
+            Transaction after = before.Clone(Network.StratisMain.Consensus.ConsensusFactory);
             Transaction after2 = null;
 
             var ms = new MemoryStream();
@@ -1652,7 +1652,7 @@ namespace NBitcoin.Tests
 
             spendTransaction.Inputs[0].ScriptSig = redeem; //The redeem should be in the scriptSig before signing
 
-            Transaction partiallySigned = spendTransaction.Clone(network: Network.StratisMain);
+            Transaction partiallySigned = spendTransaction.Clone(Network.StratisMain.Consensus.ConsensusFactory);
             //... Now I can partially sign it using one private key:
 
             partiallySigned.Sign(Network.StratisMain, privKeys[0], true);
@@ -1668,13 +1668,13 @@ namespace NBitcoin.Tests
             AssertCorrectlySigned(gistTransaction, fundingTransaction.Outputs[0].ScriptPubKey, this.allowHighS); //One sig in the hard code tx is high
 
             //Can sign out of order
-            partiallySigned = spendTransaction.Clone(network: Network.StratisMain);
+            partiallySigned = spendTransaction.Clone(Network.StratisMain.Consensus.ConsensusFactory);
             partiallySigned.Sign(Network.StratisMain, privKeys[2], true);
             partiallySigned.Sign(Network.StratisMain, privKeys[0], true);
             AssertCorrectlySigned(partiallySigned, fundingTransaction.Outputs[0].ScriptPubKey);
 
             //Can sign multiple inputs
-            partiallySigned = spendTransaction.Clone(network: Network.StratisMain);
+            partiallySigned = spendTransaction.Clone(Network.StratisMain.Consensus.ConsensusFactory);
             partiallySigned.Inputs.Add(new TxIn()
             {
                 PrevOut = new OutPoint(fundingTransaction.GetHash(), 1),
@@ -1759,7 +1759,7 @@ namespace NBitcoin.Tests
         {
             Transaction tx = Network.StratisMain.Consensus.ConsensusFactory.CreateTransaction();
             tx.LockTime = new LockTime(4);
-            Transaction clone = tx.Clone(network: Network.StratisMain);
+            Transaction clone = tx.Clone(Network.StratisMain.Consensus.ConsensusFactory);
             Assert.Equal(tx.LockTime, clone.LockTime);
 
             Assert.Equal("Height : 0", new LockTime().ToString());
@@ -2287,7 +2287,7 @@ namespace NBitcoin.Tests
 
                             if (flag == SigHash.None)
                             {
-                                Transaction clone = result.Clone(network: Network.StratisMain);
+                                Transaction clone = result.Clone(Network.StratisMain.Consensus.ConsensusFactory);
                                 foreach (TxIn input in clone.Inputs)
                                 {
                                     if (input.PrevOut != signedCoin.Outpoint)
@@ -2703,7 +2703,7 @@ namespace NBitcoin.Tests
             outputm.Outputs[0].Value = Money.Satoshis(1);
             outputm.Outputs[0].ScriptPubKey = outscript;
 
-            output = outputm.Clone(network: Network.StratisMain);
+            output = outputm.Clone(Network.StratisMain.Consensus.ConsensusFactory);
 
             Assert.True(output.Inputs.Count == 1);
             Assert.True(output.Inputs[0].ToBytes().SequenceEqual(outputm.Inputs[0].ToBytes()));
@@ -2723,7 +2723,7 @@ namespace NBitcoin.Tests
             inputm.Outputs[0].ScriptPubKey = Script.Empty;
             bool ret = SignSignature(keystore, output, inputm, 0);
             Assert.True(ret == success);
-            input = inputm.Clone(network: Network.StratisMain);
+            input = inputm.Clone(Network.StratisMain.Consensus.ConsensusFactory);
             Assert.True(input.Inputs.Count == 1);
             Assert.True(input.Inputs[0].ToBytes().SequenceEqual(inputm.Inputs[0].ToBytes()));
             Assert.True(input.Outputs.Count == 1);
@@ -2775,7 +2775,7 @@ namespace NBitcoin.Tests
 
         private void CheckWithFlag(Transaction output, Transaction input, ScriptVerify flags, bool success)
         {
-            Transaction inputi = input.Clone(network: Network.StratisMain);
+            Transaction inputi = input.Clone(Network.StratisMain.Consensus.ConsensusFactory);
             var ctx = new ScriptEvaluationContext(Network.StratisMain);
             ctx.ScriptVerify = flags;
             bool ret = ctx.VerifyScript(inputi.Inputs[0].ScriptSig, output.Outputs[0].ScriptPubKey, new TransactionChecker(inputi, 0, output.Outputs[0].Value));

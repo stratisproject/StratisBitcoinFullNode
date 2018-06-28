@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using FluentAssertions;
 using NBitcoin;
@@ -95,7 +94,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         private void receiving_node_attempts_to_double_spend_mempool_doesnotaccept()
         {
             var unusedAddress = this.stratisReceiver.FullNode.WalletManager().GetUnusedAddress(new WalletAccountReference("mywallet", "account 0"));
-            var transactionCloned = this.transaction.Clone();
+            var transactionCloned = this.transaction.Clone(this.stratisReceiver.FullNode.Network.Consensus.ConsensusFactory);
             transactionCloned.Outputs[1].ScriptPubKey = unusedAddress.ScriptPubKey;
             this.stratisReceiver.FullNode.MempoolManager().Validator.AcceptToMemoryPool(this.mempoolValidationState, transactionCloned).Result.Should().BeFalse();
         }

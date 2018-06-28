@@ -100,31 +100,40 @@ namespace NBitcoin
             serializable.ReadWrite(bms);
         }
 
-        public static T Clone<T>(this T serializable, ProtocolVersion version = ProtocolVersion.PROTOCOL_VERSION, Network network = null) where T : IBitcoinSerializable, new()
+        public static T Clone<T>(this T serializable, ProtocolVersion version = ProtocolVersion.PROTOCOL_VERSION) where T : IBitcoinSerializable, new()
         {
-            network = network ?? Network.Main;
-
-            T instance = network.Consensus.ConsensusFactory.TryCreateNew<T>();
+            T instance = new DefaultConsensusFactory().TryCreateNew<T>();
             if (instance == null)
                 instance = new T();
 
-            instance.FromBytes(serializable.ToBytes(version, network), network.Consensus.ConsensusFactory, version);
+            instance.FromBytes(serializable.ToBytes(version), version);
 
             return instance;
         }
 
-        public static byte[] ToBytes(this IBitcoinSerializable serializable, ProtocolVersion version = ProtocolVersion.PROTOCOL_VERSION, Network network = null)
+        public static T Clone<T>(this T serializable, ConsensusFactory consensusFactory, ProtocolVersion version = ProtocolVersion.PROTOCOL_VERSION) where T : IBitcoinSerializable, new()
         {
-            network = network ?? Network.Main;
+            T instance = consensusFactory.TryCreateNew<T>();
+            if (instance == null)
+                instance = new T();
 
+            instance.FromBytes(serializable.ToBytes(consensusFactory, version), consensusFactory, version);
+
+            return instance;
+        }
+
+        public static byte[] ToBytes(this IBitcoinSerializable serializable, ProtocolVersion version = ProtocolVersion.PROTOCOL_VERSION)
+        {
             using (var ms = new MemoryStream())
             {
                 var bms = new BitcoinStream(ms, true)
                 {
                     ProtocolVersion = version,
-                    ConsensusFactory = network.Consensus.ConsensusFactory
+                    ConsensusFactory = new DefaultConsensusFactory()
                 };
+
                 serializable.ReadWrite(bms);
+
                 return ToArrayEfficient(ms);
             }
         }
@@ -136,9 +145,11 @@ namespace NBitcoin
                 var bms = new BitcoinStream(ms, true)
                 {
                     ProtocolVersion = version,
-                    ConsensusFactory = consensusFactory ?? Network.Main.Consensus.ConsensusFactory
+                    ConsensusFactory = consensusFactory
                 };
+
                 serializable.ReadWrite(bms);
+
                 return ToArrayEfficient(ms);
             }
         }

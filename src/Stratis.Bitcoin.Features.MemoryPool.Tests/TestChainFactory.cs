@@ -113,11 +113,11 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             var srcTxs = new List<Transaction>();
             for (int i = 0; i < blockinfo.Count; ++i)
             {
-                Block currentBlock = newBlock.Block.Clone(); // pointer for convenience
+                Block currentBlock = newBlock.Block.Clone(network.Consensus.ConsensusFactory); // pointer for convenience
                 currentBlock.Header.HashPrevBlock = chain.Tip.HashBlock;
                 currentBlock.Header.Version = 1;
                 currentBlock.Header.Time = Utils.DateTimeToUnixTime(chain.Tip.GetMedianTimePast()) + 1;
-                Transaction txCoinbase = currentBlock.Transactions[0].Clone();
+                Transaction txCoinbase = currentBlock.Transactions[0].Clone(network.Consensus.ConsensusFactory);
                 txCoinbase.Inputs.Clear();
                 txCoinbase.Version = 1;
                 txCoinbase.AddInput(new TxIn(new Script(new[] { Op.GetPushOp(blockinfo[i].extraNonce), Op.GetPushOp(chain.Height) })));

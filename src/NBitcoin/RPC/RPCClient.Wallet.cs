@@ -246,7 +246,7 @@ namespace NBitcoin.RPC
                 return tx.ToHex();
 
             // if there is, do this ACK so that NBitcoin does not change the version number
-            return Encoders.Hex.EncodeData(tx.ToBytes(Protocol.ProtocolVersion.WITNESS_VERSION - 1));
+            return Encoders.Hex.EncodeData(tx.ToBytes(version: Protocol.ProtocolVersion.WITNESS_VERSION - 1));
         }
 
         // getreceivedbyaddress
