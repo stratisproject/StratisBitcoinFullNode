@@ -411,29 +411,66 @@ namespace Stratis.Bitcoin.Tests.BlockPulling2
             Assert.True(elipson < headers.Count * 0.1);
         }
 
-        /*
         /// <summary>
-        /// there are 2 peers. One is on chain which is 100 blocks. 2nd is on chain which forks from prev peer chain at block 50 and goes to 100b.
-        /// Hashes from chain A are requested. Make sure that hashes 50-100 assigned only to peer A, hashes 0-50 are distributed between peer A and B
+        /// There are 2 peers. One is on chain which is 1000 blocks. 2nd is on chain which forks from prev peer chain at block 500 and goes to 1000b.
+        /// Hashes from chain A are requested. Make sure that hashes 500 - 1000 assigned only to peer A, hashes 0-500 are distributed between peer A and B.
         /// </summary>
         [Fact]
         public void DistributeHeaders_OnePeerForksAtSomePoint()
         {
+            INetworkPeer peer1 = this.helper.CreatePeer(out ExtendedBlockPullerBehavior behavior1);
+            INetworkPeer peer2 = this.helper.CreatePeer(out ExtendedBlockPullerBehavior behavior2);
+            List<ChainedHeader> peer1Headers = this.helper.CreateConsequtiveHeaders(1000);
+            List<ChainedHeader> peer2Headers = this.helper.CreateConsequtiveHeaders(500, peer1Headers[500]);
+            
+            this.puller.NewPeerTipClaimed(peer1, peer1Headers.Last());
+            this.puller.NewPeerTipClaimed(peer2, peer2Headers.Last());
+            
+            var job = new DownloadJob() { Headers = new List<ChainedHeader>(peer1Headers), Id = 1 };
+            var failedHashes = new List<uint256>();
 
-            throw new NotImplementedException();
+            List<AssignedDownload> assignedDownloads = this.puller.DistributeHeadersLocked(job, failedHashes, int.MaxValue);
+
+            Assert.Empty(failedHashes);
+            Assert.Equal(peer1Headers.Count, assignedDownloads.Count);
+
+            int elipson = Math.Abs(assignedDownloads.Take(500).Count(x => x.PeerId == peer1.Connection.Id) - assignedDownloads.Take(500).Count(x => x.PeerId == peer2.Connection.Id));
+            Assert.True(elipson < 50);
+            
+            Assert.True(assignedDownloads.Skip(501).All(x => x.PeerId == peer1.Connection.Id));
         }
 
+        
         /// <summary>
-        /// There are 2 peers claiming same chain. Peer A has 1 quality score. Peer B has 0.1 quality score. 1000 hashes are distributed, make sure that
-        /// peer B doesn't get more than 150 hashes assigned. Sum of assigned hashes equals to 1000.
+        /// There are 2 peers claiming same chain. Peer A has 1 quality score. Peer B has 0.1 quality score. Some hashes are distributed,
+        /// make sure that peer B is assigned to just a few headers.
         /// </summary>
         [Fact]
         public void DistributeHeaders_DownloadsAreDistributedAccordingToQualityScore()
         {
+            INetworkPeer peer1 = this.helper.CreatePeer(out ExtendedBlockPullerBehavior behavior1);
+            INetworkPeer peer2 = this.helper.CreatePeer(out ExtendedBlockPullerBehavior behavior2);
 
-            throw new NotImplementedException();
+            behavior1.OverrideQualityScore = 1;
+            behavior2.OverrideQualityScore = 0.1;
+
+            List<ChainedHeader> headers = this.helper.CreateConsequtiveHeaders(10000);
+
+            this.puller.NewPeerTipClaimed(peer1, headers.Last());
+            this.puller.NewPeerTipClaimed(peer2, headers.Last());
+
+            var job = new DownloadJob() { Headers = new List<ChainedHeader>(headers), Id = 1 };
+            var failedHashes = new List<uint256>();
+
+            List<AssignedDownload> assignedDownloads = this.puller.DistributeHeadersLocked(job, failedHashes, int.MaxValue);
+            
+            double timesDiff = (double)assignedDownloads.Count(x => x.PeerId == peer1.Connection.Id) / assignedDownloads.Count(x => x.PeerId == peer2.Connection.Id);
+
+            // Peer A is expected to get 10 times more than peer B. 7 is used to avoid false alarms when randomization is too lucky.
+            Assert.True(timesDiff > 7);
         }
 
+        /*
         /// <summary>
         /// There are 10 peers. 5 of them claim chain A, 5 claim chain B (those peers are mixed in the list, it's not like 5 peers that are on chain A are in a row).
         /// Both chains are 10 000 blocks long. Chain B has a fork point against chain A at 5000. Distribute and make sure that 5 peers get no blocks assigned after 5000.

@@ -93,13 +93,13 @@ namespace Stratis.Bitcoin.Tests.BlockPulling2
             return genesisHeader;
         }
 
-        public List<ChainedHeader> CreateConsequtiveHeaders(int count)
+        public List<ChainedHeader> CreateConsequtiveHeaders(int count, ChainedHeader prevBlock = null)
         {
             var chainedHeaders = new List<ChainedHeader>();
             Network network = Network.StratisMain;
             
-            ChainedHeader tip = this.GetGenesisHeader();
-            uint256 hashPrevBlock = network.GenesisHash;
+            ChainedHeader tip = prevBlock ?? this.GetGenesisHeader();
+            uint256 hashPrevBlock = tip.HashBlock;
 
             for (int i = 0; i < count; ++i)
             {
@@ -209,6 +209,8 @@ namespace Stratis.Bitcoin.Tests.BlockPulling2
 
         public bool ShouldThrowAtRequestBlocksAsync;
 
+        public double? OverrideQualityScore;
+
         private readonly BlockPullerBehavior underlyingBehavior;
 
         public ExtendedBlockPullerBehavior(IBlockPuller blockPuller, IInitialBlockDownloadState ibdState, ILoggerFactory loggerFactory)
@@ -233,7 +235,16 @@ namespace Stratis.Bitcoin.Tests.BlockPulling2
             return Task.CompletedTask;
         }
 
-        public double QualityScore => this.underlyingBehavior.QualityScore;
+        public double QualityScore
+        {
+            get
+            {
+                if (this.OverrideQualityScore != null)
+                    return this.OverrideQualityScore.Value;
+
+                return this.underlyingBehavior.QualityScore;
+            }
+        }  
 
         public int SpeedBytesPerSecond => this.underlyingBehavior.SpeedBytesPerSecond;
 
