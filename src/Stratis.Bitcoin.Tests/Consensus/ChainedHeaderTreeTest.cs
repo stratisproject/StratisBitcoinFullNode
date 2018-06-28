@@ -1065,8 +1065,9 @@ namespace Stratis.Bitcoin.Tests.Consensus
         }
 
         /// <summary>
-        /// Issue 26 @ BlockDataDownloaded called for some blocks. Make sure CH.Block is not null and for the
-        /// first block true is returned and false for others.
+        /// Issue 26 @  Checkpoints are disabled. Chain tip is at header 5. Reorganisation is initiaised with max reorg of 500 blocks plus extra 50 blocks. 
+        /// We start syncing until block 490. Peer 2 presents the alternative chain with 2 headers after fork point at header 5. We then you join the rest of
+        /// 60 blocks. ConsensusTipChanged should return identifier of the second peer at block number 506.
         /// </summary>
         [Fact]
         public void ChainWithMaxReorgPlusExtraHeadersIsCalled_AnotherChainIsPresented_ConsensusTipChangedReturnsSecondPeerId()
@@ -1076,31 +1077,46 @@ namespace Stratis.Bitcoin.Tests.Consensus
             const int initialChainSize = 5;
             TestContext ctx = new TestContextBuilder().WithInitialChain(initialChainSize).Build();
             ChainedHeaderTree cht = ctx.ChainedHeaderTree;
-            ChainedHeader chainTip = ctx.InitialChainTip;
+            ChainedHeader initialChainTip = ctx.InitialChainTip;
 
-            // Extend the chain with max reorg headers (500) + 50 extra.
-            // Example: h1=h2=h3=h4=h5=m0=...=mx+50.
+            // Extend the chain (chain A) with max reorg headers (500) + 50 extra.
+            // Example: h1=h2=h3=h4=h5=a6=...=a555.
             const int maxReorg = 500;
             ctx.ChainStateMock.Setup(x => x.MaxReorgLength).Returns(maxReorg);
-            chainTip = ctx.ExtendAChain(maxReorg + 50, chainTip);
+            ChainedHeader chainATip = ctx.ExtendAChain(maxReorg + 50, initialChainTip);
 
-            // Call BlockDataDownloaded on h5, h6 and h7.
-            ChainedHeader chainTipH7 = chainTip;
-            ChainedHeader chainTipH6 = chainTip.Previous;
-            ChainedHeader chainTipH5 = chainTipH6.Previous;
-            bool resultForH7 = cht.BlockDataDownloaded(chainTipH7, ctx.CreateBlock());
-            bool resultForH6 = cht.BlockDataDownloaded(chainTipH6, ctx.CreateBlock());
-            bool resultForH5 = cht.BlockDataDownloaded(chainTipH5, ctx.CreateBlock());
+            // Chain A is presented by peer 1.
+            List<BlockHeader> listOfChainAHeaders = ctx.ChainedHeaderToList(chainATip, maxReorg + 50);
+            cht.ConnectNewHeaders(1, listOfChainAHeaders);
+            
+            // Sync 490 blocks from chain A.
+            for (int i = 1; i <= 490; i++)
+            {
+                ChainedHeader currentChainTip = chainATip.GetAncestor(initialChainSize + i);
+                cht.BlockDataDownloaded(currentChainTip, currentChainTip.Block);
+                cht.PartialValidationSucceeded(currentChainTip, out bool reorgRequired);
+                // TODO: Fix. Null reference is thrown at height 101, possibly due to KeepBlockDataForLastBlocks = 100
+                cht.ConsensusTipChanged(currentChainTip);
+            }
 
-            // Blocks should be set and only header 5 result is true.
-            resultForH7.Should().BeFalse();
-            chainTipH7.Block.Should().NotBeNull();
+            // Create new chain B with 2 headers after the fork point.
+            // Example: h1=h2=h3=h4=h5=b7=b8.
+            const int chainBExtension = 2;
+            ChainedHeader chainBTip = ctx.ExtendAChain(chainBExtension, initialChainTip);
 
-            resultForH6.Should().BeFalse();
-            chainTipH6.Block.Should().NotBeNull();
+            // Chain A is presented by peer 1.
+            List<BlockHeader> listOfChainBHeaders = ctx.ChainedHeaderToList(chainBTip, chainBExtension);
+            cht.ConnectNewHeaders(2, listOfChainBHeaders);
 
-            resultForH5.Should().BeTrue();
-            chainTipH5.Block.Should().NotBeNull();
+            // Continue syncing remaining bocks from chain B.
+            // TODO: add asserts
+            for (int i = 491; i <= 550; i++)
+            {
+                ChainedHeader currentChainTip = chainATip.GetAncestor(initialChainSize + i);
+                cht.BlockDataDownloaded(currentChainTip, ctx.CreateBlock());
+                cht.PartialValidationSucceeded(currentChainTip, out bool reorgRequired);
+                cht.ConsensusTipChanged(currentChainTip);
+            }
         }
     }
 }
