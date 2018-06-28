@@ -3,5 +3,9 @@
     public interface IStratisApp
     {
         string DisplayName { get; }
+
+        string Location { get; }     
+        
+        string WebRoot { get; }
     }
 }

@@ -1,24 +1,21 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
-using System.Reflection;
 using Microsoft.Extensions.Logging;
 using Moq;
-using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.Apps.Interfaces;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.Apps.Tests.AppStore
 {
-    public class AppStoreTests
+    public class AppsStoreTests
     {
-        private readonly IAppStore appStore;
+        private readonly IAppsStore appStore;
         private readonly FakeAppsFileService fileService = new FakeAppsFileService();
 
-        public AppStoreTests()
+        public AppsStoreTests()
         {
-            this.appStore = new Apps.AppStore(new DataFolder("x"), new Mock<ILoggerFactory>().Object, this.fileService);
+            this.appStore = new Apps.AppsStore(new Mock<ILoggerFactory>().Object, this.fileService);
         }
 
         [Fact]
@@ -42,7 +39,7 @@ namespace Stratis.Bitcoin.Features.Apps.Tests.AppStore
         {
             var apps = new List<IStratisApp>();
             this.appStore.GetApplications().Subscribe(x => apps.AddRange(x));
-            Assert.Equal("app2", apps[1].DisplayName);
+            Assert.Equal("app2", apps.Last().DisplayName);
         }
     }
 }

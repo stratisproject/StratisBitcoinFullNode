@@ -27,7 +27,7 @@ namespace Stratis.Bitcoin.Features.Apps.Tests
         public void Test_UseApps_adds_the_AppStore()
         {
             this.fullNodeBuilder.UseApps().Build();
-            var count = this.fullNodeBuilder.Services.Count(x => x.ServiceType == typeof(IAppStore));
+            var count = this.fullNodeBuilder.Services.Count(x => x.ServiceType == typeof(IAppsStore));
             Assert.Equal(1, count);
         }
     }

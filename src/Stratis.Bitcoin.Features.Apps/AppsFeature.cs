@@ -1,8 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Stratis.Bitcoin.Builder;
@@ -12,49 +8,24 @@ using Stratis.Bitcoin.Features.Apps.Interfaces;
 
 namespace Stratis.Bitcoin.Features.Apps
 {
-    public class Startup
-    {
-        public void ConfigureServices(IServiceCollection services)
-        {
-        }
-
-        public void Configure(IApplicationBuilder app)
-        {
-            app.UseDefaultFiles();
-            app.UseStaticFiles();
-        }
-    }
-
     public class AppsFeature : FullNodeFeature
     {
         private readonly ILogger logger;
-        private readonly IAppStore appStore;
+        private readonly IAppsStore appsStore;
+        private readonly IAppsHost appsHost;
 
-        public AppsFeature(ILoggerFactory loggerFactory, IAppStore appStore)
+        public AppsFeature(ILoggerFactory loggerFactory, IAppsStore appsStore, IAppsHost appsHost)
         {
             this.logger = loggerFactory.CreateLogger(GetType().FullName);
-            this.appStore = appStore;
+            this.appsStore = appsStore;
+            this.appsHost = appsHost;
         }
 
         public override void Initialize()
         {
             this.logger.LogInformation($"Initializing {nameof(AppsFeature)}");
 
-            this.appStore.GetApplications().Subscribe(OnGetApplications);
-        }
-
-        private void OnGetApplications(IReadOnlyCollection<IStratisApp> stratisApps)
-        {
-            new WebHostBuilder()
-                .UseKestrel()
-                .UseIISIntegration()
-                .UseWebRoot(@"C:\Development\app1\dist\app1")
-                .UseContentRoot(Directory.GetCurrentDirectory())
-                .UseUrls("http://localhost:32500")
-                .UseStartup<Startup>()
-                .Build()
-                .Start();
-                
+            this.appsStore.GetApplications().Subscribe(x => this.appsHost.Host(x));
         }
     }
 
@@ -70,8 +41,9 @@ namespace Stratis.Bitcoin.Features.Apps
                     .AddFeature<AppsFeature>()
                     .FeatureServices(services =>
                     {
-                        services.AddSingleton<IAppStore, AppStore>();
+                        services.AddSingleton<IAppsStore, AppsStore>();
                         services.AddSingleton<IAppsFileService, AppsFileService>();
+                        services.AddSingleton<IAppsHost, AppsHost>();
                     });
             });
 

@@ -1,14 +1,16 @@
-﻿using Stratis.Bitcoin.Features.Apps.Interfaces;
-
-namespace Stratis.Bitcoin.Features.Apps.Tests.AppStore
+﻿namespace Stratis.Bitcoin.Features.Apps.Tests.AppStore
 {
-    public class FakeStratisApp1 : IStratisApp
+    public class FakeStratisApp1 : StratisAppBase
     {
-        public string DisplayName { get; } = "app1";
+        public FakeStratisApp1() : base("app1")
+        {
+        }
     }
 
-    public class FakeStratisApp2 : IStratisApp
+    public class FakeStratisApp2 : StratisAppBase
     {
-        public string DisplayName { get; } = "app2";
+        public FakeStratisApp2() : base("app2")
+        {
+        }
     }
 }

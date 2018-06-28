@@ -6,12 +6,10 @@ namespace Stratis.Bitcoin.Features.Apps.Interfaces
 {
     public interface IAppsFileService
     {
-        bool DirectoryExists(string path);
+        string StratisAppsFolderPath { get; }
 
-        IEnumerable<FileInfo> GetAppFiles(string path);
+        IEnumerable<FileInfo> GetStratisAppFileInfos();
 
-        IEnumerable<Type> GetAppTypes(string assemblyPath);
-
-        IObservable<string> WatchForNewFiles(string path);
+        IEnumerable<Type> GetTypesOfStratisApps(string stratisAppAssemblyPath);
     }
 }
