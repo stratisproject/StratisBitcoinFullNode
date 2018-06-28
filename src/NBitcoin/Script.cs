@@ -398,7 +398,6 @@ namespace NBitcoin
         {
         }
 
-
         private Script(byte[] data, bool @unsafe, bool unused)
         {
             this._Script = @unsafe ? data : data.ToArray();
