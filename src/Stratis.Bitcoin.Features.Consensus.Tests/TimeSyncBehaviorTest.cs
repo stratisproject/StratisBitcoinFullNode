@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Net;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
+using NBitcoin.Networks;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Utilities;
 using Xunit;
@@ -98,7 +99,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
             int offsetAboveWarningLevelSeconds = TimeSyncBehaviorState.TimeOffsetWarningThresholdSeconds + 1;
             int offsetAboveWarningLevelMs = offsetAboveWarningLevelSeconds * 1000;
 
-            int offsetAbovSwitchOffLevel = Network.BitcoinMaxTimeOffsetSeconds + 1;
+            int offsetAbovSwitchOffLevel = BitcoinMain.BitcoinMaxTimeOffsetSeconds + 1;
             int offsetAbovSwitchOffLevelMs = offsetAbovSwitchOffLevel * 1000;
 
             // Samples to be inserted to the state.

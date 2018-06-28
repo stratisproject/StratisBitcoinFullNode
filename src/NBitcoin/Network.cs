@@ -40,7 +40,7 @@ namespace NBitcoin
         {
             this.Consensus = new Consensus();
         }
-        
+
         /// <summary>
         /// Maximal value for the calculated time offset.
         /// If the value is over this limit, the time syncing feature will be switched off.
@@ -346,7 +346,7 @@ namespace NBitcoin
                 if (bytes.Length < prefix.Length)
                     continue;
                 if (Utils.ArrayEqual(bytes, 0, prefix, 0, prefix.Length))
-                    return (Base58Type) i;
+                    return (Base58Type)i;
             }
             return null;
         }
