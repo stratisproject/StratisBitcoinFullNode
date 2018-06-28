@@ -240,19 +240,6 @@ namespace NBitcoin.Tests
             Assert.Equal("http://toto.com/o", url.ToString());
         }
 
-#if !PORTABLE
-        /* TODO: The external service is giving security errors for connection attempt to its testnet.
-         * 
-        [Fact]
-        [Trait("UnitTest", "UnitTest")]
-        public void CanFetchTransactionFromCoinprism()
-        {
-            CanFetchTransactionFromCoinprismCore("CanColorizeIssuanceTransaction");
-            CanFetchTransactionFromCoinprismCore("CanColorizeTransferTransaction");
-            Assert.Null(new CoinprismColoredTransactionRepository().Get(uint256.Parse("b4399a545c4ddd640920d63af75e7367fe4d94b2d7f7a3423105e25ac5f165a5")));
-        }
-        */
-
         private void CanFetchTransactionFromCoinprismCore(string test)
         {
             ColoredCoinTester tester = CreateTester(test);
@@ -260,7 +247,7 @@ namespace NBitcoin.Tests
             ColoredTransaction actual = new CoinprismColoredTransactionRepository().Get(tester.TestedTxId);
             Assert.True(actual.ToBytes().SequenceEqual(expected.ToBytes()));
         }
-#endif
+
         //https://www.coinprism.info/tx/b4399a545c4ddd640920d63af75e7367fe4d94b2d7f7a3423105e25ac5f165a6
         //Asset Id : 3QzJDrSsi4Pm2DhcZFXR9MGJsXXtsYhUsq
         //1BvvRfz4XnxSWJ524TusetYKrtZnAbgV3r to 18Jcv42cRknPmxrQPb2zSBuEVWq3egjCKq
