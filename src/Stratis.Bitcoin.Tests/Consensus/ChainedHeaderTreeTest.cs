@@ -1063,5 +1063,44 @@ namespace Stratis.Bitcoin.Tests.Consensus
             resultForH5.Should().BeTrue();
             chainTipH5.Block.Should().NotBeNull();
         }
+
+        /// <summary>
+        /// Issue 26 @ BlockDataDownloaded called for some blocks. Make sure CH.Block is not null and for the
+        /// first block true is returned and false for others.
+        /// </summary>
+        [Fact]
+        public void ChainWithMaxReorgPlusExtraHeadersIsCalled_AnotherChainIsPresented_ConsensusTipChangedReturnsSecondPeerId()
+        {
+            // Chain header tree setup. Initial chain has 5 headers.
+            // Example: h1=h2=h3=h4=h5.
+            const int initialChainSize = 5;
+            TestContext ctx = new TestContextBuilder().WithInitialChain(initialChainSize).Build();
+            ChainedHeaderTree cht = ctx.ChainedHeaderTree;
+            ChainedHeader chainTip = ctx.InitialChainTip;
+
+            // Extend the chain with max reorg headers (500) + 50 extra.
+            // Example: h1=h2=h3=h4=h5=m0=...=mx+50.
+            const int maxReorg = 500;
+            ctx.ChainStateMock.Setup(x => x.MaxReorgLength).Returns(maxReorg);
+            chainTip = ctx.ExtendAChain(maxReorg + 50, chainTip);
+
+            // Call BlockDataDownloaded on h5, h6 and h7.
+            ChainedHeader chainTipH7 = chainTip;
+            ChainedHeader chainTipH6 = chainTip.Previous;
+            ChainedHeader chainTipH5 = chainTipH6.Previous;
+            bool resultForH7 = cht.BlockDataDownloaded(chainTipH7, ctx.CreateBlock());
+            bool resultForH6 = cht.BlockDataDownloaded(chainTipH6, ctx.CreateBlock());
+            bool resultForH5 = cht.BlockDataDownloaded(chainTipH5, ctx.CreateBlock());
+
+            // Blocks should be set and only header 5 result is true.
+            resultForH7.Should().BeFalse();
+            chainTipH7.Block.Should().NotBeNull();
+
+            resultForH6.Should().BeFalse();
+            chainTipH6.Block.Should().NotBeNull();
+
+            resultForH5.Should().BeTrue();
+            chainTipH5.Block.Should().NotBeNull();
+        }
     }
 }
