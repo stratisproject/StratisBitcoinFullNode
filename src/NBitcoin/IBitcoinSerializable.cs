@@ -78,15 +78,25 @@ namespace NBitcoin
             return GetSerializedSize(serializable, version, SerializationType.Disk);
         }
 
-        public static void FromBytes(this IBitcoinSerializable serializable, byte[] bytes, ProtocolVersion version = ProtocolVersion.PROTOCOL_VERSION, Network network = null)
+        public static void FromBytes(this IBitcoinSerializable serializable, byte[] bytes, ProtocolVersion version = ProtocolVersion.PROTOCOL_VERSION)
         {
-            network = network ?? Network.Main;
-
             var bms = new BitcoinStream(bytes)
             {
                 ProtocolVersion = version,
-                ConsensusFactory = network.Consensus.ConsensusFactory
+                ConsensusFactory = new DefaultConsensusFactory()
             };
+
+            serializable.ReadWrite(bms);
+        }
+
+        public static void FromBytes(this IBitcoinSerializable serializable, byte[] bytes, ConsensusFactory consensusFactory, ProtocolVersion version = ProtocolVersion.PROTOCOL_VERSION)
+        {
+            var bms = new BitcoinStream(bytes)
+            {
+                ProtocolVersion = version,
+                ConsensusFactory = consensusFactory
+            };
+
             serializable.ReadWrite(bms);
         }
 
@@ -98,7 +108,7 @@ namespace NBitcoin
             if (instance == null)
                 instance = new T();
 
-            instance.FromBytes(serializable.ToBytes(version, network), version, network);
+            instance.FromBytes(serializable.ToBytes(version, network), network.Consensus.ConsensusFactory, version);
 
             return instance;
         }

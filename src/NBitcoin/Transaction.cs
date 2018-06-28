@@ -1190,7 +1190,7 @@ namespace NBitcoin
                 throw new ArgumentNullException(nameof(network));
 
             Transaction transaction = network.Consensus.ConsensusFactory.CreateTransaction();
-            transaction.FromBytes(Encoders.Hex.DecodeData(hex), version, network);
+            transaction.FromBytes(Encoders.Hex.DecodeData(hex), version);
             return transaction;
         }
 
@@ -1203,7 +1203,7 @@ namespace NBitcoin
                 throw new ArgumentNullException(nameof(network));
 
             Transaction transaction = network.Consensus.ConsensusFactory.CreateTransaction();
-            transaction.FromBytes(bytes, network: network);
+            transaction.FromBytes(bytes);
             return transaction;
         }
 
