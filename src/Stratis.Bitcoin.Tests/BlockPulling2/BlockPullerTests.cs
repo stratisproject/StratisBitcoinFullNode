@@ -113,7 +113,7 @@ namespace Stratis.Bitcoin.Tests.BlockPulling2
 
             this.puller.OnIbdStateChanged(true);
 
-            // After recalculation all scores should be different
+            // After recalculation all scores should be different.
             for (int i = 0; i < peers.Count; i++)
                 this.puller.RecalculateQualityScoreLocked(behaviors[i], peers[i].Connection.Id);
 
@@ -203,7 +203,7 @@ namespace Stratis.Bitcoin.Tests.BlockPulling2
 
             await this.puller.AssignDownloadJobsAsync();
             
-            // make sure all jobs were assigned to 1.
+            // Make sure all jobs were assigned to 1.
             foreach (ChainedHeader chainedHeader in headers)
                 Assert.True(this.puller.AssignedDownloadsByHash.ContainsKey(chainedHeader.HashBlock));
 
@@ -332,48 +332,92 @@ namespace Stratis.Bitcoin.Tests.BlockPulling2
             Assert.Equal(headers.Count, this.helper.CallbacksCalled.Count);
             Assert.Equal(headers.Count, this.helper.CallbacksCalled.Values.Count(x => x == null));
         }
-
-        /*
+         
         /// <summary>
         /// 2 peers claim 2 different chains. 10 blocks from chain 1 are requested. Make sure all blocks are assigned to peer 1, distributedHashes contains same
-        /// amount of items as there were hashes. Check that the return value match the hashes that are supposed to be distributed. PendingDownloadCount is increased.
+        /// amount of items as there were hashes. Check that the return value match the hashes that were supposed to be distributed.
         /// </summary>
         [Fact]
-        public void DistributeHashes_BetweenTwoPeersWhereOneIsOnADifferentChain()
+        public void DistributeHeaders_BetweenTwoPeersWhereOneIsOnADifferentChain()
         {
-            
+            INetworkPeer peer1 = this.helper.CreatePeer(out ExtendedBlockPullerBehavior behavior1);
+            INetworkPeer peer2 = this.helper.CreatePeer(out ExtendedBlockPullerBehavior behavior2);
+            List<ChainedHeader> peer1Headers = this.helper.CreateConsequtiveHeaders(10);
+            List<ChainedHeader> peer2Headers = this.helper.CreateConsequtiveHeaders(5);
 
-            throw new NotImplementedException();
+            this.puller.NewPeerTipClaimed(peer1, peer1Headers.Last());
+            this.puller.NewPeerTipClaimed(peer2, peer2Headers.Last());
+            
+            var job = new DownloadJob() {Headers = new List<ChainedHeader>(peer1Headers), Id = 1};
+            var failedHashes = new List<uint256>();
+
+            List<AssignedDownload> assignedDownloads = this.puller.DistributeHeadersLocked(job, failedHashes, int.MaxValue);
+            
+            // make sure all jobs were assigned to 1.
+            foreach (ChainedHeader chainedHeader in peer1Headers)
+                Assert.True(assignedDownloads.Exists(x => x.Header == chainedHeader));
+
+            Assert.Equal(peer1Headers.Count, assignedDownloads.Count);
         }
 
         /// <summary>
         /// 2 peers claim same chain. 1 hash is asked and no peer claim it. Make sure failedHashes contains this hash.
         /// </summary>
         [Fact]
-        public void DistributeHashes_NoPeerClaimTheChain()
+        public void DistributeHeaders_NoPeerClaimTheChain()
         {
+            INetworkPeer peer1 = this.helper.CreatePeer(out ExtendedBlockPullerBehavior behavior1);
+            INetworkPeer peer2 = this.helper.CreatePeer(out ExtendedBlockPullerBehavior behavior2);
+            List<ChainedHeader> headers = this.helper.CreateConsequtiveHeaders(10);
+            ChainedHeader unclaimedHeader = this.helper.CreateChainedHeader();
 
+            this.puller.NewPeerTipClaimed(peer1, headers.Last());
+            this.puller.NewPeerTipClaimed(peer2, headers.Last());
 
-            throw new NotImplementedException();
+            var job = new DownloadJob() { Headers = new List<ChainedHeader>() { unclaimedHeader }, Id = 1 };
+            var failedHashes = new List<uint256>();
+
+            List<AssignedDownload> assignedDownloads = this.puller.DistributeHeadersLocked(job, failedHashes, int.MaxValue);
+
+            Assert.Equal(failedHashes.First(), unclaimedHeader.HashBlock);
+            Assert.Single(failedHashes);
+            Assert.Empty(assignedDownloads);
         }
 
         /// <summary>
-        /// 2 peers claim same chain, they have equal quality score. 1000 blocks requested. Make sure 100 blocks are distributed between 2 peers.
+        /// 2 peers claim same chain, they have equal quality score. 10000 blocks requested. Make sure blocks are distributed between 2 peers evenly (approximately).
         /// </summary>
         [Fact]
-        public void DistributeHashes_EvenlyDistributed()
+        public void DistributeHeaders_EvenlyDistributed()
         {
+            INetworkPeer peer1 = this.helper.CreatePeer(out ExtendedBlockPullerBehavior behavior1);
+            INetworkPeer peer2 = this.helper.CreatePeer(out ExtendedBlockPullerBehavior behavior2);
+            List<ChainedHeader> headers = this.helper.CreateConsequtiveHeaders(10000);
 
+            this.puller.NewPeerTipClaimed(peer1, headers.Last());
+            this.puller.NewPeerTipClaimed(peer2, headers.Last());
 
-            throw new NotImplementedException();
+            var job = new DownloadJob() { Headers = new List<ChainedHeader>(headers), Id = 1 };
+            var failedHashes = new List<uint256>();
+
+            List<AssignedDownload> assignedDownloads = this.puller.DistributeHeadersLocked(job, failedHashes, int.MaxValue);
+            
+            Assert.Empty(failedHashes);
+            Assert.Equal(headers.Count, assignedDownloads.Count);
+
+            int elipson = Math.Abs(assignedDownloads.Count(x => x.PeerId == peer1.Connection.Id) - assignedDownloads.Count(x => x.PeerId == peer2.Connection.Id));
+            
+            // Amount of jobs assigned to peer 1 shouldn't be more than 10% different comparing to amount assigned to peer 2.
+            Assert.True(elipson < headers.Count * 0.1);
         }
 
+        /*
         /// <summary>
         /// there are 2 peers. One is on chain which is 100 blocks. 2nd is on chain which forks from prev peer chain at block 50 and goes to 100b.
         /// Hashes from chain A are requested. Make sure that hashes 50-100 assigned only to peer A, hashes 0-50 are distributed between peer A and B
         /// </summary>
         [Fact]
-        public void DistributeHashes_OnePeerForksAtSomePoint()
+        public void DistributeHeaders_OnePeerForksAtSomePoint()
         {
 
             throw new NotImplementedException();
@@ -384,7 +428,7 @@ namespace Stratis.Bitcoin.Tests.BlockPulling2
         /// peer B doesn't get more than 150 hashes assigned. Sum of assigned hashes equals to 1000.
         /// </summary>
         [Fact]
-        public void DistributeHashes_DownloadsAreDistributedAccordingToQualityScore()
+        public void DistributeHeaders_DownloadsAreDistributedAccordingToQualityScore()
         {
 
             throw new NotImplementedException();
@@ -396,7 +440,7 @@ namespace Stratis.Bitcoin.Tests.BlockPulling2
         /// Make sure first 5000 is somewhat evenly distributed between 10 peers.
         /// </summary>
         [Fact]
-        public void DistributeHashes_WithALotOfPeersAndForkInTheMiddle()
+        public void DistributeHeaders_WithALotOfPeersAndForkInTheMiddle()
         {
 
             throw new NotImplementedException();
@@ -406,7 +450,7 @@ namespace Stratis.Bitcoin.Tests.BlockPulling2
         /// We are asked for 100 hashes. emptySlots is 50. Make sure that only 50 hashes were assigned.
         /// </summary>
         [Fact]
-        public void DistributeHashes_LimitedByEmptySlots()
+        public void DistributeHeaders_LimitedByEmptySlots()
         {
 
             throw new NotImplementedException();

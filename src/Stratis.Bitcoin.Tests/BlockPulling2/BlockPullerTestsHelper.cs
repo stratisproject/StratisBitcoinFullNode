@@ -31,7 +31,7 @@ namespace Stratis.Bitcoin.Tests.BlockPulling2
         private int currentPeerId = 0;
         private readonly ILoggerFactory loggerFactory;
 
-        private ChainState chainState;
+        private readonly ChainState chainState;
 
         public BlockPullerTestsHelper()
         {
@@ -39,9 +39,8 @@ namespace Stratis.Bitcoin.Tests.BlockPulling2
             this.loggerFactory.AddConsoleWithFilters();
 
             this.CallbacksCalled = new Dictionary<uint256, Block>();
-            this.chainState = new ChainState(new InvalidBlockHashStore(new DateTimeProvider()));
-            this.chainState.ConsensusTip = this.GetGenesisHeader();
-            
+            this.chainState = new ChainState(new InvalidBlockHashStore(new DateTimeProvider())) {ConsensusTip = this.GetGenesisHeader()};
+
             var dateTimeProvider = new Mock<IDateTimeProvider>();
 
             this.Puller = new ExtendedBlockPuller((hash, block) => { this.CallbacksCalled.Add(hash, block); }, this.chainState, NodeSettings.SupportedProtocolVersion, dateTimeProvider.Object, this.loggerFactory);
@@ -178,6 +177,11 @@ namespace Stratis.Bitcoin.Tests.BlockPulling2
         public void SetMaxBlocksBeingDownloaded(int value)
         {
             this.puller.SetPrivateVariableValue("maxBlocksBeingDownloaded", value);
+        }
+
+        public List<AssignedDownload> DistributeHeadersLocked(DownloadJob downloadJob, List<uint256> failedHashes, int emptySlots)
+        {
+            return (List<AssignedDownload>)this.puller.InvokeMethod("DistributeHeadersLocked", downloadJob, failedHashes, emptySlots);
         }
 
         public void Initialize() { this.puller.Initialize(); }
