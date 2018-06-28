@@ -41,10 +41,6 @@ namespace NBitcoin
 
         public static Network StratisRegTest => GetNetwork("StratisRegTest") ?? Register(new StratisRegTest());
 
-        public static Network SmartContractsTest => Network.GetNetwork("SmartContractsTest") ?? Register(new SmartContractsTest());
-
-        public static Network SmartContractsRegTest => Network.GetNetwork("SmartContractsRegTest") ?? Register(new SmartContractsRegTest());
-
         protected static Block CreateBitcoinGenesisBlock(ConsensusFactory consensusFactory, uint nTime, uint nNonce, uint nBits, int nVersion, Money genesisReward)
         {
             string pszTimestamp = "The Times 03/Jan/2009 Chancellor on brink of second bailout for banks";

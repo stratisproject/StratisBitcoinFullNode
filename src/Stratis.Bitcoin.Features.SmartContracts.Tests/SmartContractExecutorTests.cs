@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Configuration.Logging;
+using Stratis.Bitcoin.Features.SmartContracts.Networks;
 using Stratis.Patricia;
 using Stratis.SmartContracts;
 using Stratis.SmartContracts.Core;
@@ -35,7 +36,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             this.keyEncodingStrategy = BasicKeyEncodingStrategy.Default;
             this.loggerFactory = new ExtendedLoggerFactory();
             this.loggerFactory.AddConsoleWithFilters();
-            this.network = Network.SmartContractsRegTest;
+            this.network = new SmartContractsRegTest();
             this.refundProcessor = new SmartContractResultRefundProcessor(this.loggerFactory);
             this.state = new ContractStateRepositoryRoot(new NoDeleteSource<byte[], byte[]>(new MemoryDictionarySource()));
             this.transferProcessor = new SmartContractResultTransferProcessor(this.loggerFactory, this.network);

@@ -2,6 +2,7 @@
 using Moq;
 using NBitcoin;
 using Stratis.Bitcoin.Configuration.Logging;
+using Stratis.Bitcoin.Features.SmartContracts.Networks;
 using Stratis.SmartContracts;
 using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.State;
@@ -21,7 +22,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         {
             this.loggerFactory = new ExtendedLoggerFactory();
             this.loggerFactory.AddConsoleWithFilters();
-            this.network = Network.SmartContractsRegTest;
+            this.network = new SmartContractsRegTest();
             this.transferProcessor = new SmartContractResultTransferProcessor(this.loggerFactory, this.network);
         }
 

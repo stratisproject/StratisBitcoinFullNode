@@ -1,6 +1,7 @@
 ﻿using System.Text;
 using NBitcoin;
 using Newtonsoft.Json;
+using Stratis.Bitcoin.Features.SmartContracts.Networks;
 using Stratis.SmartContracts;
 using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Executor.Reflection.Exceptions;
@@ -17,7 +18,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         public PersistentStateSerializerTests()
         {
             this.serializer = new PersistentStateSerializer();
-            this.network = Network.SmartContractsRegTest;
+            this.network = new SmartContractsRegTest();
         }
 
         [Fact]

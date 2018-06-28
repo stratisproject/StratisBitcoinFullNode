@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using NBitcoin;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Features.Consensus;
+using Stratis.Bitcoin.Features.SmartContracts.Networks;
 using Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Consensus.Rules;
 using Stratis.Bitcoin.Utilities;
 using Stratis.SmartContracts;
@@ -17,7 +18,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
 
         public SmartContractFormatRuleTest()
         {
-            this.network = Network.SmartContractsRegTest;
+            this.network = new SmartContractsRegTest();
         }
 
         private UnspentOutputSet GetMockOutputSet()

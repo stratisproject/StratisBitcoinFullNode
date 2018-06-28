@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Configuration.Logging;
+using Stratis.Bitcoin.Features.SmartContracts.Networks;
 using Stratis.Patricia;
 using Stratis.SmartContracts;
 using Stratis.SmartContracts.Core;
@@ -31,7 +32,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             this.keyEncodingStrategy = BasicKeyEncodingStrategy.Default;
             this.loggerFactory = new ExtendedLoggerFactory();
             this.loggerFactory.AddConsoleWithFilters();
-            this.network = Network.SmartContractsRegTest;
+            this.network = new SmartContractsRegTest();
         }
 
         [Fact]

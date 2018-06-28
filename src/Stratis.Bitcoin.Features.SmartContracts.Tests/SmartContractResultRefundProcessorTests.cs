@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Configuration.Logging;
+using Stratis.Bitcoin.Features.SmartContracts.Networks;
 using Stratis.SmartContracts;
 using Stratis.SmartContracts.Executor.Reflection;
 using Stratis.SmartContracts.Executor.Reflection.Exceptions;
@@ -19,7 +20,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         {
             this.loggerFactory = new ExtendedLoggerFactory();
             this.loggerFactory.AddConsoleWithFilters();
-            this.network = Network.SmartContractsRegTest;
+            this.network = new SmartContractsRegTest();
             this.refundProcessor = new SmartContractResultRefundProcessor(this.loggerFactory);
         }
 

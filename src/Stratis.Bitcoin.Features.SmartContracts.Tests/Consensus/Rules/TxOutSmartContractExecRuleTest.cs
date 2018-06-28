@@ -4,6 +4,7 @@ using NBitcoin;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Features.SmartContracts.Consensus.Rules;
+using Stratis.Bitcoin.Features.SmartContracts.Networks;
 using Stratis.SmartContracts.Core;
 using Xunit;
 
@@ -15,7 +16,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
 
         public TxOutSmartContractExecRuleTest()
         {
-            this.network = Network.SmartContractsRegTest;
+            this.network = new SmartContractsRegTest();
         }
 
         [Fact]

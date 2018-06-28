@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 using NBitcoin;
 using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.Features.SmartContracts.Models;
+using Stratis.Bitcoin.Features.SmartContracts.Networks;
 using Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Controllers;
@@ -280,7 +281,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
 
                 JsonResult result = (JsonResult)senderSmartContractsController.BuildCreateSmartContractTransaction(buildRequest);
                 var response = (BuildCreateContractTransactionResponse)result.Value;
-                var transaction = Transaction.Load(response.Hex, Network.SmartContractsRegTest);
+                var transaction = Transaction.Load(response.Hex, new SmartContractsRegTest());
                 Assert.Single(transaction.Inputs);
             }
         }
@@ -593,7 +594,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 SmartContractSharedSteps.SendTransactionAndMine(scSender, scReceiver, senderWalletController, response.Hex);
 
                 ContractStateRepositoryRoot senderState = scSender.FullNode.NodeService<ContractStateRepositoryRoot>();
-                Assert.Equal((ulong) 30 * 100_000_000, senderState.GetCurrentBalance(new Address(response.NewContractAddress).ToUint160(Network.SmartContractsRegTest)));
+                Assert.Equal((ulong) 30 * 100_000_000, senderState.GetCurrentBalance(new Address(response.NewContractAddress).ToUint160(new SmartContractsRegTest())));
             }
         }
     }

@@ -26,6 +26,7 @@ using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.MemoryPool.Fee;
 using Stratis.Bitcoin.Features.Miner;
 using Stratis.Bitcoin.Features.SmartContracts;
+using Stratis.Bitcoin.Features.SmartContracts.Networks;
 using Stratis.Bitcoin.Mining;
 using Stratis.Bitcoin.P2P;
 using Stratis.Bitcoin.P2P.Peer;
@@ -163,7 +164,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                     this.blockinfo.Add(new Blockinfo { extranonce = (int)lst[i], nonce = (uint)lst[i + 1] });
 
                 // Note that by default, these tests run with size accounting enabled.
-                this.network = Network.SmartContractsRegTest;
+                this.network = new SmartContractsRegTest();
                 this.privateKey = new Key();
                 this.scriptPubKey = PayToPubkeyHashTemplate.Instance.GenerateScriptPubKey(this.privateKey.PubKey);
                 this.newBlock = new BlockTemplate(this.network);

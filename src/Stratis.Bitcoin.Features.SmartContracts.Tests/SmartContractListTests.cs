@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using NBitcoin;
+using Stratis.Bitcoin.Features.SmartContracts.Networks;
 using Stratis.Patricia;
 using Stratis.SmartContracts.Core.State;
 using Stratis.SmartContracts.Executor.Reflection;
@@ -13,7 +14,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
         public SmartContractListTests()
         {
-            this.network = Network.SmartContractsRegTest;
+            this.network = new SmartContractsRegTest();
         }
 
         [Fact]

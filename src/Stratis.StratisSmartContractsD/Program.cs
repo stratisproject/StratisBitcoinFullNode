@@ -11,6 +11,7 @@ using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.Miner;
 using Stratis.Bitcoin.Features.RPC;
 using Stratis.Bitcoin.Features.SmartContracts;
+using Stratis.Bitcoin.Features.SmartContracts.Networks;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Utilities;
 
@@ -27,7 +28,8 @@ namespace Stratis.StratisSmartContractsD
         {
             try
             {
-                NodeSettings nodeSettings = new NodeSettings(Network.SmartContractsTest, ProtocolVersion.ALT_PROTOCOL_VERSION, "StratisSC", args: args);
+                var network = Network.Register(new SmartContractsTest());
+                NodeSettings nodeSettings = new NodeSettings(network, ProtocolVersion.ALT_PROTOCOL_VERSION, "StratisSC", args: args);
 
                 Bitcoin.IFullNode node = new FullNodeBuilder()
                     .UseNodeSettings(nodeSettings)
