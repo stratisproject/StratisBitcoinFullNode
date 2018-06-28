@@ -1104,7 +1104,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
             const int chainBExtension = 2;
             ChainedHeader chainBTip = ctx.ExtendAChain(chainBExtension, initialChainTip);
 
-            // Chain A is presented by peer 1.
+            // Chain B is presented by peer 2.
             List<BlockHeader> listOfChainBHeaders = ctx.ChainedHeaderToList(chainBTip, chainBExtension);
             cht.ConnectNewHeaders(2, listOfChainBHeaders);
 
