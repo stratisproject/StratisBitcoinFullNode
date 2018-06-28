@@ -31,6 +31,11 @@ namespace Stratis.SmartContracts.Core
         IEnumerable<byte> ContractData { get; }
 
         /// <summary>
+        /// The script pub key
+        /// </summary>
+        Script ScriptPubKey { get; }
+
+        /// <summary>
         /// Total fee for transaction.
         /// </summary>
         Money MempoolFee { get; }

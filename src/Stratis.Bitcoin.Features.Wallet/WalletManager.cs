@@ -80,7 +80,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         private readonly WalletSettings walletSettings;
 
         /// <summary>The settings for the wallet feature.</summary>
-        private readonly IScriptTemplateFactory scriptTemplateFactory;
+        private readonly IScriptAddressReader scriptAddressReader;
 
         public uint256 WalletTipHash { get; set; }
 
@@ -102,7 +102,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             IAsyncLoopFactory asyncLoopFactory,
             INodeLifetime nodeLifetime,
             IDateTimeProvider dateTimeProvider,
-            IScriptTemplateFactory scriptTemplateFactory,
+            IScriptAddressReader scriptAddressReader,
             IBroadcasterManager broadcasterManager = null) // no need to know about transactions the node will broadcast to.
         {
             Guard.NotNull(loggerFactory, nameof(loggerFactory));
@@ -114,7 +114,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             Guard.NotNull(walletFeePolicy, nameof(walletFeePolicy));
             Guard.NotNull(asyncLoopFactory, nameof(asyncLoopFactory));
             Guard.NotNull(nodeLifetime, nameof(nodeLifetime));
-            Guard.NotNull(scriptTemplateFactory, nameof(scriptTemplateFactory));
+            Guard.NotNull(scriptAddressReader, nameof(scriptAddressReader));
 
             this.walletSettings = walletSettings;
             this.lockObject = new object();
@@ -129,7 +129,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             this.nodeLifetime = nodeLifetime;
             this.fileStorage = new FileStorage<Wallet>(dataFolder.WalletPath);
             this.broadcasterManager = broadcasterManager;
-            this.scriptTemplateFactory = scriptTemplateFactory;
+            this.scriptAddressReader = scriptAddressReader;
             this.dateTimeProvider = dateTimeProvider;
 
             // register events
@@ -1018,29 +1018,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                 foreach (TxOut paidToOutput in paidToOutputs)
                 {
                     // Figure out how to retrieve the destination address.
-                    string destinationAddress = string.Empty;
-                    ScriptTemplate scriptTemplate = this.scriptTemplateFactory.GetTemplateFromScriptPubKey(this.network, paidToOutput.ScriptPubKey);
-
-                    //TODO: SmartContract HACK > scriptTemplate made nullable
-                    switch (scriptTemplate?.Type)
-                    {
-                        // Pay to PubKey can be found in outputs of staking transactions.
-                        case TxOutType.TX_PUBKEY:
-                            PubKey pubKey = PayToPubkeyTemplate.Instance.ExtractScriptPubKeyParameters(paidToOutput.ScriptPubKey);
-                            destinationAddress = pubKey.GetAddress(this.network).ToString();
-                            break;
-                        // Pay to PubKey hash is the regular, most common type of output.
-                        case TxOutType.TX_PUBKEYHASH:
-                            destinationAddress = paidToOutput.ScriptPubKey.GetDestinationAddress(this.network).ToString();
-                            break;
-                        case TxOutType.TX_NONSTANDARD:
-                        case TxOutType.TX_SCRIPTHASH:
-                        case TxOutType.TX_MULTISIG:
-                        case TxOutType.TX_NULL_DATA:
-                        case TxOutType.TX_SEGWIT:
-                        case null:
-                            break;
-                    }
+                    string destinationAddress = this.scriptAddressReader.GetAddressFromScriptPubKey(this.network, paidToOutput.ScriptPubKey);
 
                     payments.Add(new PaymentDetails
                     {

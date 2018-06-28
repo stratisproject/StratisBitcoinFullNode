@@ -8,12 +8,15 @@ using NBitcoin.Policy;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Builder.Feature;
 using Stratis.Bitcoin.Configuration.Logging;
+using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.Interfaces;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.Miner;
 using Stratis.Bitcoin.Features.Miner.Interfaces;
+using Stratis.Bitcoin.Features.SmartContracts.Consensus;
+using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Mining;
 using Stratis.SmartContracts.Core.Receipts;
 using Stratis.SmartContracts.Core.State;
@@ -84,6 +87,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                         services.AddSingleton<IMempoolValidator, SmartContractMempoolValidator>();
                         services.AddConsensusRules(new SmartContractRuleRegistration(fullNodeBuilder));
                         services.AddSingleton<StandardTransactionPolicy, SmartContractTransactionPolicy>();
+
+                        services.Replace(new ServiceDescriptor(typeof(IScriptAddressReader),
+                            new SmartContractScriptAddressReader(new ScriptAddressReader())));
                     });
             });
             return new SmartContractVmBuilder(fullNodeBuilder);

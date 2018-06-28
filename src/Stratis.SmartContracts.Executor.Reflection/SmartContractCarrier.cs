@@ -218,33 +218,45 @@ namespace Stratis.SmartContracts.Executor.Reflection
         {
             var byteCursor = 0;
             var takeLength = 0;
-            byte[] smartContractBytes = transactionContext.ContractData.ToArray();
+
+            var carrier = Deserialize(transactionContext.ScriptPubKey);
+
+            carrier.Nvout = transactionContext.Nvout;
+            carrier.Sender = transactionContext.Sender;
+            carrier.TransactionHash = transactionContext.TransactionHash;
+            carrier.Value = transactionContext.TxOutValue;
+
+            return carrier;
+        }
+
+        public static SmartContractCarrier Deserialize(Script script)
+        {
+            var byteCursor = 1;
+            var takeLength = 0;
+            byte[] smartContractBytes = script.ToBytes();
 
             var carrier = new SmartContractCarrier(new MethodParameterSerializer())
             {
-                OpCodeType =  transactionContext.IsCreate ? (byte) ScOpcodeType.OP_CREATECONTRACT : (byte) ScOpcodeType.OP_CALLCONTRACT,
-                VmVersion = Deserialize<int>(smartContractBytes, ref byteCursor, ref takeLength)
+                OpCodeType = smartContractBytes[0]
             };
 
-            if (carrier.OpCodeType == (byte) ScOpcodeType.OP_CALLCONTRACT)
+            carrier.VmVersion = Deserialize<int>(smartContractBytes, ref byteCursor, ref takeLength);
+            
+            if (carrier.OpCodeType == (byte)ScOpcodeType.OP_CALLCONTRACT)
             {
                 carrier.ContractAddress = Deserialize<uint160>(smartContractBytes, ref byteCursor, ref takeLength);
                 carrier.MethodName = Deserialize<string>(smartContractBytes, ref byteCursor, ref takeLength);
             }
 
-            if (carrier.OpCodeType == (byte) ScOpcodeType.OP_CREATECONTRACT)
+            if (carrier.OpCodeType == (byte)ScOpcodeType.OP_CREATECONTRACT)
                 carrier.ContractExecutionCode = Deserialize<byte[]>(smartContractBytes, ref byteCursor, ref takeLength);
 
             var methodParameters = Deserialize<string>(smartContractBytes, ref byteCursor, ref takeLength);
             if (!string.IsNullOrEmpty(methodParameters))
                 carrier.MethodParameters = carrier.serializer.ToObjects(methodParameters);
 
-            carrier.Nvout = transactionContext.Nvout;
-            carrier.Sender = transactionContext.Sender;
             carrier.GasPrice = (Gas)Deserialize<ulong>(smartContractBytes, ref byteCursor, ref takeLength);
             carrier.GasLimit = (Gas)Deserialize<ulong>(smartContractBytes, ref byteCursor, ref takeLength);
-            carrier.TransactionHash = transactionContext.TransactionHash;
-            carrier.Value = transactionContext.TxOutValue;
 
             return carrier;
         }

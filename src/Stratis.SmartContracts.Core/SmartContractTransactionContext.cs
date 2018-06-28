@@ -61,6 +61,8 @@ namespace Stratis.SmartContracts.Core
             get { return this.contractTxOut.ScriptPubKey.ToBytes().Skip(1); }
         }
 
+        public Script ScriptPubKey => this.contractTxOut.ScriptPubKey;
+
         /// <inheritdoc />
         public Money MempoolFee
         {

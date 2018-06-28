@@ -29,10 +29,10 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             );
 
             var carrier = SmartContractCarrier.CreateContract(1, contractExecutionCode, 1, (Gas)5000);
-
+            var serializedCarrier = carrier.Serialize();
             var tx = new Transaction();
             tx.AddInput(new TxIn(new OutPoint(0, 0), new Script(OpcodeType.OP_1)));
-            tx.AddOutput(new TxOut(new Money(5000000000L - 10000), new Script(carrier.Serialize())));
+            tx.AddOutput(new TxOut(new Money(5000000000L - 10000), new Script(serializedCarrier)));
 
             SmartContractCarrier deserialized = SmartContractCarrier.Deserialize(tx);
             Assert.Equal(1, deserialized.VmVersion);

@@ -185,7 +185,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                         services.AddSingleton<IBroadcasterManager, FullNodeBroadcasterManager>();
                         services.AddSingleton<BroadcasterBehavior>();
                         services.AddSingleton<WalletSettings>();
-                        services.AddSingleton<IScriptTemplateFactory, ScriptTemplateFactory>();
+                        services.AddSingleton<IScriptAddressReader>(new ScriptAddressReader());
                         services.AddSingleton<StandardTransactionPolicy>();
                     });
             });
