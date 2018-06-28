@@ -8,35 +8,16 @@ namespace NBitcoin.BouncyCastle.Utilities
     {
         private static readonly CompareInfo InvariantCompareInfo = CultureInfo.InvariantCulture.CompareInfo;
 
-#if NETCF_1_0 || NETCF_2_0
-        private static string GetNewLine()
-        {
-            MemoryStream buf = new MemoryStream();
-            StreamWriter w = new StreamWriter(buf, Encoding.UTF8);
-            w.WriteLine();
-            Dispose(w);
-            byte[] bs = buf.ToArray();
-            return Encoding.UTF8.GetString(bs, 0, bs.Length);
-        }
-#else
         private static string GetNewLine()
         {
             return Environment.NewLine;
         }
-#endif
 
         internal static bool EqualsIgnoreCase(string a, string b)
         {
             return ToUpperInvariant(a) == ToUpperInvariant(b);
         }
 
-#if NETCF_1_0 || NETCF_2_0
-        internal static string GetEnvironmentVariable(
-            string variable)
-        {
-            return null;
-        }
-#else
         internal static string GetEnvironmentVariable(
             string variable)
         {
@@ -51,28 +32,12 @@ namespace NBitcoin.BouncyCastle.Utilities
                 return null;
             }
         }
-#endif
 
-#if NETCF_1_0
-        internal static Exception CreateNotImplementedException(
-            string message)
-        {
-            return new Exception("Not implemented: " + message);
-        }
-
-        internal static bool Equals(
-            object    a,
-            object    b)
-        {
-            return a == b || (a != null && b != null && a.Equals(b));
-        }
-#else
         internal static Exception CreateNotImplementedException(
             string message)
         {
             return new NotImplementedException(message);
         }
-#endif
 
         internal static IList CreateArrayList()
         {

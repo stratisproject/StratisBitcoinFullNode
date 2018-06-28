@@ -494,7 +494,7 @@ namespace NBitcoin.RPC
 
             HttpWebRequest webRequest = CreateWebRequest();
 
-#if !(PORTABLE || NETCORE)
+#if !NETCORE
             webRequest.ContentLength = bytes.Length;
 #endif
 
@@ -658,7 +658,7 @@ namespace NBitcoin.RPC
                 writer.Flush();
                 string json = writer.ToString();
                 byte[] bytes = Encoding.UTF8.GetBytes(json);
-#if !(PORTABLE || NETCORE)
+#if !NETCORE
                 webRequest.ContentLength = bytes.Length;
 #endif
                 Stream dataStream = await webRequest.GetRequestStreamAsync().ConfigureAwait(false);
@@ -1347,7 +1347,6 @@ namespace NBitcoin.RPC
         }
     }
 
-#if !NOSOCKET
     public class PeerInfo
     {
         public int Id { get; internal set; }
@@ -1386,7 +1385,6 @@ namespace NBitcoin.RPC
         public IPEndPoint Address { get; internal set; }
         public bool Connected { get; internal set; }
     }
-#endif
 
     public class NoEstimationException : Exception
     {

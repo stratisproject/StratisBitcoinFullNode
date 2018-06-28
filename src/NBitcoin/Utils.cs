@@ -140,7 +140,7 @@ namespace NBitcoin
             }
         }
 
-#if !(PORTABLE || NETCORE)
+#if !NETCORE
         public static int ReadEx(this Stream stream, byte[] buffer, int offset, int count, CancellationToken cancellation = default(CancellationToken))
         {
             if(stream == null)
