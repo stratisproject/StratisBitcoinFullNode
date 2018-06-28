@@ -1094,12 +1094,11 @@ namespace Stratis.Bitcoin.Tests.Consensus
             cht.PartialOrFullValidationFailed(chainTip);
 
             // Peer id must be found only once on header 5.
-            const int localId = -1;
             Dictionary<uint256, HashSet<int>> peerIdsByTipHash = cht.GetPeerIdsByTipHash();
             peerIdsByTipHash.Should().HaveCount(1);
             uint256 header5Hash = chainTip.GetAncestor(5).HashBlock;
             peerIdsByTipHash[header5Hash].Should().HaveCount(1);
-            peerIdsByTipHash[header5Hash].Single().Should().Be(localId);
+            peerIdsByTipHash[header5Hash].Single().Should().Be(ChainedHeaderTree.LocalPeerId);
         }
 
         /// <summary>
@@ -1136,12 +1135,10 @@ namespace Stratis.Bitcoin.Tests.Consensus
             Dictionary<uint256, HashSet<int>> peerIdsByTipHash = cht.GetPeerIdsByTipHash();
             uint256 header5Hash = chainTip.GetAncestor(5).HashBlock;
             uint256 header6Hash = chainTip.HashBlock;
-
-            const int localId = -1;
             
             peerIdsByTipHash.Should().HaveCount(2);
             peerIdsByTipHash[header5Hash].Should().HaveCount(1);
-            peerIdsByTipHash[header5Hash].Should().Contain(localId);
+            peerIdsByTipHash[header5Hash].Should().Contain(ChainedHeaderTree.LocalPeerId);
             peerIdsByTipHash[header6Hash].Should().HaveCount(1);
             peerIdsByTipHash[header6Hash].Should().Contain(peerId);
         }
