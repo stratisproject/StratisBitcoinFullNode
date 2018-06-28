@@ -82,6 +82,11 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// </summary>
         private bool isPeerWhitelistedForRelay;
 
+        /// <summary>
+        /// Whether the attached peer should only be relayed blocks (no transactions).
+        /// </summary> 
+        private bool isBlocksOnlyMode;
+
         public MempoolBehavior(
             IMempoolValidator validator,
             MempoolManager mempoolManager,
@@ -106,6 +111,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             this.inventoryTxToSend = new HashSet<uint256>();
             this.filterInventoryKnown = new HashSet<uint256>();
             this.isPeerWhitelistedForRelay = false;
+            this.isBlocksOnlyMode = false;
         }
         
         /// <summary>Time of last memory pool request in unix time.</summary>
@@ -118,6 +124,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
 
             this.AttachedPeer.MessageReceived.Register(this.OnMessageReceivedAsync);
             this.isPeerWhitelistedForRelay = this.AttachedPeer.Behavior<ConnectionManagerBehavior>().Whitelisted && this.mempoolManager.mempoolSettings.WhiteListRelay;
+            this.isBlocksOnlyMode = !this.connectionManager.ConnectionSettings.RelayTxes && !this.isPeerWhitelistedForRelay;
 
             this.logger.LogTrace("(-)");
         }
@@ -300,9 +307,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                 this.logger.LogTrace("(-)[IS_IBD]");
                 return;
             }
-
-            bool blocksOnly = this.IsBlocksOnly(peer);
-
+            
             //uint32_t nFetchFlags = GetFetchFlags(pfrom, chainActive.Tip(), chainparams.GetConsensus());
 
             var send = new GetDataPayload();
@@ -310,7 +315,8 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             {
                 //inv.type |= nFetchFlags;
 
-                if (blocksOnly)
+                // TODO: This is incorrect, in blocks only mode we should just add to known inventory but not relay
+                if (this.isBlocksOnlyMode)                 
                     this.logger.LogInformation("Transaction ID '{0}' inventory sent in violation of protocol peer '{1}'.", inv.Hash, peer.RemoteSocketEndpoint);
 
                 if (await this.orphans.AlreadyHaveAsync(inv.Hash))
@@ -372,21 +378,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         }
 
         /// <summary>
-        /// Whether peer should receive only blocks.
-        /// </summary>
-        /// <param name="peer">Peer to check.</param>
-        /// <returns>Whether peer should receive only blocks.</returns>
-        private bool IsBlocksOnly(INetworkPeer peer)
-        {
-            this.logger.LogTrace("({0}:'{1}'", nameof(peer), peer.RemoteSocketEndpoint);
-
-            bool isBlocksOnly = !this.connectionManager.ConnectionSettings.RelayTxes && !this.isPeerWhitelistedForRelay;                
-
-            this.logger.LogTrace("(-):{0}", isBlocksOnly);
-            return isBlocksOnly;
-        }
-
-        /// <summary>
         /// Processing of the transaction payload message from peer.
         /// Adds transaction from the transaction payload to the memory pool.
         /// </summary>
@@ -397,9 +388,9 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             this.logger.LogTrace("({0}:'{1}',{2}.{3}:{4})", nameof(peer), peer.RemoteSocketEndpoint, nameof(transactionPayload), nameof(transactionPayload.Obj), transactionPayload?.Obj?.GetHash());
 
             // Stop processing the transaction early if we are in blocks only mode.
-            if (this.IsBlocksOnly(peer))
+            if (this.isBlocksOnlyMode)
             {
-                this.logger.LogInformation("Transaction sent in violation of protocol from peer'{0}'.", peer.RemoteSocketEndpoint);
+                this.logger.LogInformation("Transaction sent in violation of protocol from peer '{0}'.", peer.RemoteSocketEndpoint);
                 this.logger.LogTrace("(-)[BLOCKSONLY]");
                 return;
             }
