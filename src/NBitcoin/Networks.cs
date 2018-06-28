@@ -1,20 +1,19 @@
-using NBitcoin.DataEncoders;
 using NBitcoin.Networks;
 
 namespace NBitcoin
 {
     public partial class Network
     {
-        public static Network Main => GetNetwork("Main") ?? Register(new BitcoinMain());
+        public static Network Main => NetworksContainer.GetNetwork("Main") ?? NetworksContainer.Register(new BitcoinMain());
 
-        public static Network TestNet => GetNetwork("TestNet") ?? Register(new BitcoinTest());
+        public static Network TestNet => NetworksContainer.GetNetwork("TestNet") ?? NetworksContainer.Register(new BitcoinTest());
 
-        public static Network RegTest => GetNetwork("RegTest") ?? Register(new BitcoinRegTest());
+        public static Network RegTest => NetworksContainer.GetNetwork("RegTest") ?? NetworksContainer.Register(new BitcoinRegTest());
 
-        public static Network StratisMain => GetNetwork("StratisMain") ?? Register(new StratisMain());
+        public static Network StratisMain => NetworksContainer.GetNetwork("StratisMain") ?? NetworksContainer.Register(new StratisMain());
 
-        public static Network StratisTest => GetNetwork("StratisTest") ?? Register(new StratisTest());
+        public static Network StratisTest => NetworksContainer.GetNetwork("StratisTest") ?? NetworksContainer.Register(new StratisTest());
 
-        public static Network StratisRegTest => GetNetwork("StratisRegTest") ?? Register(new StratisRegTest());
+        public static Network StratisRegTest => NetworksContainer.GetNetwork("StratisRegTest") ?? NetworksContainer.Register(new StratisRegTest());
     }
 }

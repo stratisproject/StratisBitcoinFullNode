@@ -23,20 +23,20 @@ namespace NBitcoin.Tests
             Network stratisTestnet = Network.StratisTest;
             Network stratisRegtest = Network.StratisRegTest;
 
-            Assert.Equal(Network.GetNetwork("main"), bitcoinMain);
-            Assert.Equal(Network.GetNetwork("mainnet"), bitcoinMain);
-            Assert.Equal(Network.GetNetwork("MainNet"), bitcoinMain);
-            Assert.Equal(Network.GetNetwork("test"), bitcoinTestnet);
-            Assert.Equal(Network.GetNetwork("testnet"), bitcoinTestnet);
-            Assert.Equal(Network.GetNetwork("regtest"), bitcoinRegtest);
-            Assert.Equal(Network.GetNetwork("reg"), bitcoinRegtest);
-            Assert.Equal(Network.GetNetwork("stratismain"), stratisMain);
-            Assert.Equal(Network.GetNetwork("StratisMain"), stratisMain);
-            Assert.Equal(Network.GetNetwork("StratisTest"), stratisTestnet);
-            Assert.Equal(Network.GetNetwork("stratistest"), stratisTestnet);
-            Assert.Equal(Network.GetNetwork("StratisRegTest"), stratisRegtest);
-            Assert.Equal(Network.GetNetwork("stratisregtest"), stratisRegtest);
-            Assert.Null(Network.GetNetwork("invalid"));
+            Assert.Equal(NetworksContainer.GetNetwork("main"), bitcoinMain);
+            Assert.Equal(NetworksContainer.GetNetwork("mainnet"), bitcoinMain);
+            Assert.Equal(NetworksContainer.GetNetwork("MainNet"), bitcoinMain);
+            Assert.Equal(NetworksContainer.GetNetwork("test"), bitcoinTestnet);
+            Assert.Equal(NetworksContainer.GetNetwork("testnet"), bitcoinTestnet);
+            Assert.Equal(NetworksContainer.GetNetwork("regtest"), bitcoinRegtest);
+            Assert.Equal(NetworksContainer.GetNetwork("reg"), bitcoinRegtest);
+            Assert.Equal(NetworksContainer.GetNetwork("stratismain"), stratisMain);
+            Assert.Equal(NetworksContainer.GetNetwork("StratisMain"), stratisMain);
+            Assert.Equal(NetworksContainer.GetNetwork("StratisTest"), stratisTestnet);
+            Assert.Equal(NetworksContainer.GetNetwork("stratistest"), stratisTestnet);
+            Assert.Equal(NetworksContainer.GetNetwork("StratisRegTest"), stratisRegtest);
+            Assert.Equal(NetworksContainer.GetNetwork("stratisregtest"), stratisRegtest);
+            Assert.Null(NetworksContainer.GetNetwork("invalid"));
         }
 
         [Fact]
@@ -44,7 +44,7 @@ namespace NBitcoin.Tests
         public void RegisterNetworkTwiceFails()
         {
             Network main = Network.Main;
-            var error = Assert.Throws<InvalidOperationException>(() => Network.Register(main));
+            var error = Assert.Throws<InvalidOperationException>(() => NetworksContainer.Register(main));
             Assert.Contains("is already registered", error.Message);
         }
 
@@ -72,8 +72,8 @@ namespace NBitcoin.Tests
             Assert.Equal(6, network.DNSSeeds.Count);
             Assert.Equal(512, network.SeedNodes.Count);
 
-            Assert.Equal(Network.GetNetwork("main"), network);
-            Assert.Equal(Network.GetNetwork("mainnet"), network);
+            Assert.Equal(NetworksContainer.GetNetwork("main"), network);
+            Assert.Equal(NetworksContainer.GetNetwork("mainnet"), network);
 
             Assert.Equal("Main", network.Name);
             Assert.Equal(BitcoinMain.BitcoinRootFolderName, network.RootFolderName);
