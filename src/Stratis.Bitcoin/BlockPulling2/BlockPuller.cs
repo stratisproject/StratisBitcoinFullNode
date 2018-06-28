@@ -408,10 +408,14 @@ namespace Stratis.Bitcoin.BlockPulling2
                 {
                     emptySlots = this.maxBlocksBeingDownloaded - this.assignedDownloadsByHash.Count;
                 }
-                
-                if (emptySlots > this.maxBlocksBeingDownloaded * MinEmptySlotsPercentageToStartProcessingTheQueue)
+
+                int slotsThreshold = (int)(this.maxBlocksBeingDownloaded * MinEmptySlotsPercentageToStartProcessingTheQueue);
+
+                if (emptySlots >= slotsThreshold)
                     this.ProcessQueueLocked(this.downloadJobsQueue, newAssignments, failedHashes, emptySlots);
-                
+                else
+                    this.logger.LogTrace("Slots threshold is not met, queue will not be processed. There are {0} empty slots, threshold is {1}.", emptySlots, slotsThreshold);
+
                 this.processQueuesSignal.Reset();
             }
 
