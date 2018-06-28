@@ -2,7 +2,7 @@
 using System.IO;
 using System.Linq;
 using NBitcoin.BouncyCastle.Crypto.Digests;
-#if !WINDOWS_UWP && !USEBC
+#if !USEBC
 using System.Security.Cryptography;
 #endif
 
@@ -23,7 +23,7 @@ namespace NBitcoin.Crypto
 
         public static uint256 Hash256(byte[] data, int offset, int count)
         {
-#if USEBC || WINDOWS_UWP || NETCORE
+#if USEBC || NETCORE
             var sha256 = new Sha256Digest();
             sha256.BlockUpdate(data, offset, count);
             var rv = new byte[32];
@@ -71,7 +71,7 @@ namespace NBitcoin.Crypto
 
         public static byte[] RIPEMD160(byte[] data, int offset, int count)
         {
-#if USEBC || WINDOWS_UWP || NETCORE
+#if USEBC || NETCORE
             var ripemd = new RipeMD160Digest();
             ripemd.BlockUpdate(data, offset, count);
             var rv = new byte[20];
@@ -269,7 +269,7 @@ namespace NBitcoin.Crypto
 
         public static byte[] SHA256(byte[] data, int offset, int count)
         {
-#if USEBC || WINDOWS_UWP || NETCORE
+#if USEBC || NETCORE
             var sha256 = new Sha256Digest();
             sha256.BlockUpdate(data, offset, count);
             var rv = new byte[32];
@@ -377,7 +377,7 @@ namespace NBitcoin.Crypto
             }
         }
 
-#if USEBC || WINDOWS_UWP
+#if USEBC
         public static byte[] HMACSHA512(byte[] key, byte[] data)
         {
             var mac = new NBitcoin.BouncyCastle.Crypto.Macs.HMac(new Sha512Digest());

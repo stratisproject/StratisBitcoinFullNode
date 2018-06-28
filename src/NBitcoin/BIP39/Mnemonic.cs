@@ -5,9 +5,6 @@ using System.Text;
 using NBitcoin.BouncyCastle.Crypto.Parameters;
 using NBitcoin.Crypto;
 
-#if !WINDOWS_UWP && !USEBC
-#endif
-
 namespace NBitcoin
 {
     /// <summary>
@@ -175,7 +172,7 @@ namespace NBitcoin
             byte[] salt = Concat(Encoding.UTF8.GetBytes("mnemonic"), Normalize(passphrase));
             byte[] bytes = Normalize(this._Mnemonic);
 
-#if USEBC || WINDOWS_UWP || NETCORE
+#if USEBC || NETCORE
             var mac = new NBitcoin.BouncyCastle.Crypto.Macs.HMac(new NBitcoin.BouncyCastle.Crypto.Digests.Sha512Digest());
             mac.Init(new KeyParameter(bytes));
             return Pbkdf2.ComputeDerivedKey(mac, salt, 2048, 64);

@@ -24,9 +24,6 @@ using System.Threading.Tasks;
 using NBitcoin.BouncyCastle.Crypto.Parameters;
 using NBitcoin.Crypto.Internal;
 
-#if !USEBC
-#endif
-
 namespace NBitcoin.Crypto
 {
     // See http://www.tarsnap.com/scrypt/scrypt.pdf for algorithm details.

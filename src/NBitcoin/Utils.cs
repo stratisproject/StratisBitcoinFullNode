@@ -11,11 +11,6 @@ using NBitcoin.BouncyCastle.Math;
 using NBitcoin.DataEncoders;
 using NBitcoin.Protocol;
 using System.Net.Sockets;
-#if WINDOWS_UWP
-using System.Net.Sockets;
-using Windows.Networking;
-using Windows.Networking.Connectivity;
-#endif
 
 namespace NBitcoin
 {
@@ -721,7 +716,7 @@ namespace NBitcoin
                 if (ip.Trim() == string.Empty || Uri.CheckHostName(ip) == UriHostNameType.Unknown)
                     throw;
 
-#if !(WINDOWS_UWP || NETCORE)
+#if !NETCORE
                 address = Dns.GetHostEntry(ip).AddressList[0];
 #else
                 string adr = DnsLookup(ip).GetAwaiter().GetResult();
@@ -769,24 +764,6 @@ namespace NBitcoin
                     if (adr != null && adr.IsIPv4() == true)
                     {
                         return adr.ToString();
-                    }
-                }
-            }
-            return string.Empty;
-        }
-#endif
-#if WINDOWS_UWP
-        private static async Task<string> DnsLookup(string remoteHostName)
-        {
-            IReadOnlyList<EndpointPair> data = await DatagramSocket.GetEndpointPairsAsync(new HostName(remoteHostName), "0").AsTask().ConfigureAwait(false);
-
-            if(data != null && data.Count > 0)
-            {
-                foreach(EndpointPair item in data)
-                {
-                    if(item != null && item.RemoteHostName != null && item.RemoteHostName.Type == HostNameType.Ipv4)
-                    {
-                        return item.RemoteHostName.CanonicalName;
                     }
                 }
             }

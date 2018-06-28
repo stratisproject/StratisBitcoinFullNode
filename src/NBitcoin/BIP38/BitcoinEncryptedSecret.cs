@@ -5,7 +5,7 @@ using NBitcoin.BouncyCastle.Asn1.X9;
 using NBitcoin.BouncyCastle.Math;
 using NBitcoin.Crypto;
 using NBitcoin.DataEncoders;
-#if !WINDOWS_UWP && !USEBC
+#if !USEBC
 using System.Security.Cryptography;
 #endif
 
@@ -323,7 +323,7 @@ namespace NBitcoin
             return new BitcoinSecret(GetKey(password), this.Network);
         }
 
-#if USEBC || WINDOWS_UWP
+#if USEBC
         internal static PaddedBufferedBlockCipher CreateAES256(bool encryption, byte[] key)
         {
             var aes = new PaddedBufferedBlockCipher(new AesFastEngine(), new Pkcs7Padding());
@@ -355,7 +355,7 @@ namespace NBitcoin
 
             var encryptedhalf1 = new byte[16];
             var encryptedhalf2 = new byte[16];
-#if USEBC || WINDOWS_UWP
+#if USEBC
             var aes = BitcoinEncryptedSecret.CreateAES256(true, derivedhalf2);
 #else
             Aes aes = CreateAES256();
@@ -367,7 +367,7 @@ namespace NBitcoin
             {
                 derivedhalf1[i] = (byte)(keyhalf1[i] ^ derivedhalf1[i]);
             }
-#if USEBC || WINDOWS_UWP
+#if USEBC
             aes.ProcessBytes(derivedhalf1, 0, 16, encryptedhalf1, 0);
             aes.ProcessBytes(derivedhalf1, 0, 16, encryptedhalf1, 0);
 #else
@@ -377,7 +377,7 @@ namespace NBitcoin
             {
                 derivedhalf1[16 + i] = (byte)(keyhalf2[i] ^ derivedhalf1[16 + i]);
             }
-#if USEBC || WINDOWS_UWP
+#if USEBC
             aes.ProcessBytes(derivedhalf1, 16, 16, encryptedhalf2, 0);
             aes.ProcessBytes(derivedhalf1, 16, 16, encryptedhalf2, 0);
 #else
@@ -397,7 +397,7 @@ namespace NBitcoin
             var bitcoinprivkey1 = new byte[16];
             var bitcoinprivkey2 = new byte[16];
 
-#if USEBC || WINDOWS_UWP
+#if USEBC
             var aes = CreateAES256(false, derivedhalf2);
             aes.ProcessBytes(encryptedHalf1, 0, 16, bitcoinprivkey1, 0);
             aes.ProcessBytes(encryptedHalf1, 0, 16, bitcoinprivkey1, 0);
@@ -416,7 +416,7 @@ namespace NBitcoin
             {
                 bitcoinprivkey1[i] ^= derivedhalf1[i];
             }
-#if USEBC || WINDOWS_UWP
+#if USEBC
             aes.ProcessBytes(encryptedHalf2, 0, 16, bitcoinprivkey2, 0);
             aes.ProcessBytes(encryptedHalf2, 0, 16, bitcoinprivkey2, 0);
 #else
@@ -441,7 +441,7 @@ namespace NBitcoin
             var encryptedhalf1 = new byte[16];
             var encryptedhalf2 = new byte[16];
 
-#if USEBC || WINDOWS_UWP
+#if USEBC
             var aes = CreateAES256(true, derivedhalf2);
 #else
             Aes aes = CreateAES256();
@@ -453,7 +453,7 @@ namespace NBitcoin
             {
                 derivedhalf1[i] = (byte)(seedb[i] ^ derivedhalf1[i]);
             }
-#if USEBC || WINDOWS_UWP
+#if USEBC
             aes.ProcessBytes(derivedhalf1, 0, 16, encryptedhalf1, 0);
             aes.ProcessBytes(derivedhalf1, 0, 16, encryptedhalf1, 0);
 #else
@@ -466,7 +466,7 @@ namespace NBitcoin
             {
                 derivedhalf1[16 + i] = (byte)(half[i] ^ derivedhalf1[16 + i]);
             }
-#if USEBC || WINDOWS_UWP
+#if USEBC
             aes.ProcessBytes(derivedhalf1, 16, 16, encryptedhalf2, 0);
             aes.ProcessBytes(derivedhalf1, 16, 16, encryptedhalf2, 0);
 #else
@@ -482,7 +482,7 @@ namespace NBitcoin
             byte[] derivedhalf2 = derived.SafeSubarray(32, 32);
 
             byte[] encryptedhalf2 = encrypted.SafeSubarray(16, 16);
-#if USEBC || WINDOWS_UWP
+#if USEBC
             var aes = CreateAES256(false, derivedhalf2);
 #else
             Aes aes = CreateAES256();
@@ -491,7 +491,7 @@ namespace NBitcoin
 #endif
             var half = new byte[16];
             //Decrypt encryptedpart2 using AES256Decrypt to yield the last 8 bytes of seedb and the last 8 bytes of encryptedpart1.
-#if USEBC || WINDOWS_UWP
+#if USEBC
             aes.ProcessBytes(encryptedhalf2, 0, 16, half, 0);
             aes.ProcessBytes(encryptedhalf2, 0, 16, half, 0);
 #else
@@ -516,7 +516,7 @@ namespace NBitcoin
                 encrypted[i + 8] = half[i];
             }
             byte[] encryptedhalf1 = encrypted.SafeSubarray(0, 16);
-#if USEBC || WINDOWS_UWP
+#if USEBC
             aes.ProcessBytes(encryptedhalf1, 0, 16, seedb, 0);
             aes.ProcessBytes(encryptedhalf1, 0, 16, seedb, 0);
 #else
