@@ -322,23 +322,21 @@ namespace Stratis.Bitcoin.BlockPulling2
         {
             this.logger.LogTrace("({0}:{1})", nameof(headers.Count), headers.Count);
 
-            int jobId;
-
             lock (this.queueLock)
             {
                 // Enqueue new download job.
-                jobId = this.nextJobId++;
+                int jobId = this.nextJobId++;
 
                 this.downloadJobsQueue.Enqueue(new DownloadJob()
                 {
                     Headers = new List<ChainedHeader>(headers),
                     Id = jobId
                 });
-                 
+
+                this.logger.LogDebug("{0} blocks were requested from puller. Job ID {1} was created.", headers.Count, jobId);
+
                 this.processQueuesSignal.Set();
             }
-
-            this.logger.LogDebug("{0} blocks were requested from puller. Job ID {1} was created.", headers.Count, jobId);
 
             this.logger.LogTrace("(-)");
         }
