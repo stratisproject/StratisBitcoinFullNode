@@ -1,4 +1,3 @@
-using NBitcoin.DataEncoders;
 using NBitcoin.Networks;
 
 namespace NBitcoin
