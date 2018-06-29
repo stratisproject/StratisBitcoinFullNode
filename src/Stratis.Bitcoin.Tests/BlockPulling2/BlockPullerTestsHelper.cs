@@ -56,6 +56,7 @@ namespace Stratis.Bitcoin.Tests.BlockPulling2
             return behavior;
         }
 
+        /// <summary>Creates a peer with extended puller behavior.</summary>
         public INetworkPeer CreatePeer(out ExtendedBlockPullerBehavior mockedBehavior, bool notSupportedVersion = false)
         {
             var peer = new Mock<INetworkPeer>();
@@ -88,9 +89,7 @@ namespace Stratis.Bitcoin.Tests.BlockPulling2
 
         public ChainedHeader GetGenesisHeader()
         {
-            var genesisHeader = new ChainedHeader(Network.StratisMain.GetGenesis().Header, Network.StratisMain.GenesisHash, 0);
-
-            return genesisHeader;
+            return new ChainedHeader(Network.StratisMain.GetGenesis().Header, Network.StratisMain.GenesisHash, 0);
         }
 
         public List<ChainedHeader> CreateConsequtiveHeaders(int count, ChainedHeader prevBlock = null)
@@ -119,6 +118,7 @@ namespace Stratis.Bitcoin.Tests.BlockPulling2
             return chainedHeaders;
         }
 
+        /// <summary>Creates a new block with mocked serialized size.</summary>
         public Block GenerateBlock(long size)
         {
             Block block = Network.StratisMain.Consensus.ConsensusFactory.CreateBlock();
@@ -132,12 +132,14 @@ namespace Stratis.Bitcoin.Tests.BlockPulling2
         {
             return this.CreateConsequtiveHeaders(1).First();
         }
+
         public bool DoubleEqual(double a, double b)
         {
             return Math.Abs(a - b) < 0.00001;
         }
     }
 
+    /// <summary>Wrapper around <see cref="BlockPuller"/> that exposes private methods and properties using reflection.</summary>
     public class ExtendedBlockPuller : IBlockPuller, IDisposable
     {
         private readonly BlockPuller puller;
@@ -201,6 +203,7 @@ namespace Stratis.Bitcoin.Tests.BlockPulling2
         public void Dispose() { this.puller.Dispose(); }
     }
 
+    /// <summary>Wrapper around <see cref="NetworkPeerBehavior"/> that exposes private methods and properties using reflection.</summary>
     public class ExtendedBlockPullerBehavior : NetworkPeerBehavior, IBlockPullerBehavior
     {
         public readonly List<uint256> RequestedHashes;
@@ -219,6 +222,7 @@ namespace Stratis.Bitcoin.Tests.BlockPulling2
             this.RequestedHashes = new List<uint256>();
             this.underlyingBehavior = new BlockPullerBehavior(blockPuller, ibdState, loggerFactory);
         }
+
         public void OnIbdStateChanged(bool isIbd)
         {
             this.underlyingBehavior.OnIbdStateChanged(isIbd);
