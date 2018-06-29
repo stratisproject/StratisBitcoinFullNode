@@ -183,6 +183,11 @@ namespace Stratis.Bitcoin.Tests.BlockPulling2
             this.puller.SetPrivateVariableValue("maxBlocksBeingDownloaded", value);
         }
 
+        public int GetMaxBlocksBeingDownloaded()
+        {
+            return (int)this.puller.GetMemberValue("maxBlocksBeingDownloaded");
+        }
+
         public List<AssignedDownload> DistributeHeadersLocked(DownloadJob downloadJob, List<uint256> failedHashes, int emptySlots)
         {
             return (List<AssignedDownload>)this.puller.InvokeMethod("DistributeHeadersLocked", downloadJob, failedHashes, emptySlots);
@@ -212,6 +217,8 @@ namespace Stratis.Bitcoin.Tests.BlockPulling2
 
         public bool ProvidedIbdState;
 
+        public bool RecalculateQualityScoreWasCalled;
+
         public bool ShouldThrowAtRequestBlocksAsync;
 
         public double? OverrideQualityScore;
@@ -221,6 +228,7 @@ namespace Stratis.Bitcoin.Tests.BlockPulling2
         public ExtendedBlockPullerBehavior(IBlockPuller blockPuller, IInitialBlockDownloadState ibdState, ILoggerFactory loggerFactory)
         {
             this.ShouldThrowAtRequestBlocksAsync = false;
+            this.RecalculateQualityScoreWasCalled = false;
             this.RequestedHashes = new List<uint256>();
             this.underlyingBehavior = new BlockPullerBehavior(blockPuller, ibdState, loggerFactory);
         }
@@ -260,7 +268,11 @@ namespace Stratis.Bitcoin.Tests.BlockPulling2
 
         public void Penalize(double delaySeconds, int notDeliveredBlocksCount) { this.underlyingBehavior.Penalize(delaySeconds, notDeliveredBlocksCount); }
 
-        public void RecalculateQualityScore(int bestSpeedBytesPerSecond) { this.underlyingBehavior.RecalculateQualityScore(bestSpeedBytesPerSecond); }
+        public void RecalculateQualityScore(int bestSpeedBytesPerSecond)
+        {
+            this.underlyingBehavior.RecalculateQualityScore(bestSpeedBytesPerSecond);
+            this.RecalculateQualityScoreWasCalled = true;
+        }
 
         public override object Clone() { return null; }
 

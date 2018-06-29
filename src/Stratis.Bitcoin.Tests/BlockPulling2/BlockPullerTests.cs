@@ -8,6 +8,8 @@ using Stratis.Bitcoin.BlockPulling2;
 using Stratis.Bitcoin.P2P.Peer;
 using Xunit;
 
+//TODO add test that checks that order in linked list is correct when we ask blocks for download in random order (5-10, 1-4, 11-15)
+
 namespace Stratis.Bitcoin.Tests.BlockPulling2
 {
     public class BlockPullerTests
@@ -700,15 +702,45 @@ namespace Stratis.Bitcoin.Tests.BlockPulling2
             Assert.True(this.puller.AssignedDownloadsByHash.All(x => x.Value.PeerId == peer1.Connection.Id));
             this.VerifyAssignedDownloadsSortedOrder();
         }
-
-        /*
+        
         /// <summary>
         /// We have 2 hashes in reassign queue and 2 in assign queue. There is 1 empty slot. Make sure that reassign queue is consumed fully and assign queue has only 1 item left.
         /// </summary>
         [Fact]
-        public void AssignDownloadJobs_ReassignQueueIgnoresEmptySlots()
-        { 
-            throw new NotImplementedException();
+        public async Task AssignDownloadJobs_ReassignQueueIgnoresEmptySlotsAsync()
+        {
+            INetworkPeer peer1 = this.helper.CreatePeer(out ExtendedBlockPullerBehavior behavior1);
+            INetworkPeer peer2 = this.helper.CreatePeer(out ExtendedBlockPullerBehavior behavior2);
+            behavior2.ShouldThrowAtRequestBlocksAsync = true;
+
+            this.puller.SetMaxBlocksBeingDownloaded(int.MaxValue);
+
+            List<ChainedHeader> peer1Headers = this.helper.CreateConsequtiveHeaders(2);
+            List<ChainedHeader> peer2Headers = this.helper.CreateConsequtiveHeaders(2);
+
+            this.puller.NewPeerTipClaimed(peer1, peer1Headers.Last());
+            this.puller.NewPeerTipClaimed(peer2, peer2Headers.Last());
+
+            this.puller.RequestBlocksDownload(peer2Headers);
+
+            await this.puller.AssignDownloadJobsAsync();
+
+            this.puller.RequestBlocksDownload(peer1Headers);
+
+            Assert.Single(this.puller.ReassignedJobsQueue);
+            Assert.Single(this.puller.DownloadJobsQueue);
+
+            Assert.Equal(2, this.puller.ReassignedJobsQueue.Peek().Headers.Count);
+            Assert.Equal(2, this.puller.DownloadJobsQueue.Peek().Headers.Count);
+
+            // 1 empty slot.
+            this.puller.SetMaxBlocksBeingDownloaded(1);
+
+            await this.puller.AssignDownloadJobsAsync();
+
+            Assert.Empty(this.puller.ReassignedJobsQueue);
+            Assert.Single(this.puller.DownloadJobsQueue);
+            Assert.Single(this.puller.DownloadJobsQueue.Peek().Headers);
         }
         
         /// <summary>
@@ -718,7 +750,6 @@ namespace Stratis.Bitcoin.Tests.BlockPulling2
         [Fact]
         public void Stalling_CanReassignAndDecreaseQualityScore()
         {
-
             throw new NotImplementedException();
         }
 
@@ -732,7 +763,7 @@ namespace Stratis.Bitcoin.Tests.BlockPulling2
 
             throw new NotImplementedException();
         }
-
+        
         /// <summary>
         /// We are not in IBD, Ask 1 peer for (important block margin constant) 10 blocks. After that ask 2 new peers for 20 blocks. None of the peer
         /// deliver anything, peer 1's blocks are reassigned and penalty is applied, penalty is not applied on other peers because their assignment
@@ -757,7 +788,7 @@ namespace Stratis.Bitcoin.Tests.BlockPulling2
         }
 
         /// <summary>
-        /// Dont start assigner loop. Assign following headers (1 header = 1 job) for 20 headers but ask those in random order.
+        /// Don't start assigner loop. Assign following headers (1 header = 1 job) for 20 headers but ask those in random order.
         /// Create 100 peers with same quality score. Assign jobs to peers. No one delivers. Make sure that peers that were
         /// assigned important jobs are penalized, others are not.
         /// </summary>
@@ -771,13 +802,41 @@ namespace Stratis.Bitcoin.Tests.BlockPulling2
         /// <summary>
         /// Request some hashes (RequestBlockDownload). Call push blocks. Make sure callback is called. Make sure that assignment is
         /// removed from AssignedDownloads. Make sure quality score is updated. Make sure max blocks being downloaded is recalculated.
-        /// Make sure TotalSpeedOfAllPeersBytesPerSec and AvgBlockSize are recalculated and new values for the circular array are added. Make sure that signal is set.
+        /// Make sure TotalSpeedOfAllPeersBytesPerSec and AvgBlockSize are recalculated. Make sure that signal is set.
         /// </summary>
         [Fact]
-        public void PushBlock_AppropriateStructuresAreUpdated()
+        public async Task PushBlock_AppropriateStructuresAreUpdatedAsync()
         {
+            INetworkPeer peer = this.helper.CreatePeer(out ExtendedBlockPullerBehavior behavior);
+            List<ChainedHeader> headers = this.helper.CreateConsequtiveHeaders(2);
 
-            throw new NotImplementedException();
+            this.puller.NewPeerTipClaimed(peer, headers.Last());
+
+            this.puller.RequestBlocksDownload(headers);
+
+            await this.puller.AssignDownloadJobsAsync();
+
+            Assert.Equal(0, this.puller.GetAverageBlockSizeBytes());
+            Assert.False(behavior.RecalculateQualityScoreWasCalled);
+
+            Block blockToPush = this.helper.GenerateBlock(100);
+
+            int oldMaxBlocksBeingDownloaded = 100;
+            this.puller.SetMaxBlocksBeingDownloaded(oldMaxBlocksBeingDownloaded);
+
+            int oldTotalSpeed = this.puller.GetTotalSpeedOfAllPeersBytesPerSec();
+
+            this.puller.PushBlock(headers.First().HashBlock, blockToPush, peer.Connection.Id);
+
+            Assert.Single(this.helper.CallbacksCalled);
+            Assert.Equal(blockToPush, this.helper.CallbacksCalled.First().Value);
+
+            Assert.Single(this.puller.AssignedDownloadsByHash);
+            Assert.Equal(blockToPush.BlockSize.Value, this.puller.GetAverageBlockSizeBytes());
+            Assert.True(this.puller.ProcessQueuesSignal.IsSet);
+            Assert.True(behavior.RecalculateQualityScoreWasCalled);
+            Assert.NotEqual(oldMaxBlocksBeingDownloaded, this.puller.GetMaxBlocksBeingDownloaded());
+            Assert.NotEqual(oldTotalSpeed, this.puller.GetTotalSpeedOfAllPeersBytesPerSec());
         }
 
         /// <summary>
@@ -786,22 +845,35 @@ namespace Stratis.Bitcoin.Tests.BlockPulling2
         [Fact]
         public void PushBlock_OnBlockThatWasntRequested_NothingHappens()
         {
+            this.puller.PushBlock(this.helper.CreateChainedHeader().HashBlock, this.helper.GenerateBlock(100), 1);
 
-            throw new NotImplementedException();
+            Assert.Empty(this.helper.CallbacksCalled);
         }
 
         /// <summary>
-        /// Push block that was requested from another peer- nothing happens, no structure is updated. 
+        /// Push block that was requested from another peer- nothing happens, no structure is updated, no callback is called. 
         /// </summary>
         [Fact]
-        public void PushBlock_ByPeerThatWereNotAssignedToIt_NothingHappens()
+        public async Task PushBlock_ByPeerThatWereNotAssignedToIt_NothingHappensAsync()
         {
+            INetworkPeer peer1 = this.helper.CreatePeer(out ExtendedBlockPullerBehavior behavior1);
+            INetworkPeer peer2 = this.helper.CreatePeer(out ExtendedBlockPullerBehavior behavior2);
+            
+            List<ChainedHeader> peer1Headers = this.helper.CreateConsequtiveHeaders(2);
+            List<ChainedHeader> peer2Headers = this.helper.CreateConsequtiveHeaders(2);
 
-            throw new NotImplementedException();
+            this.puller.NewPeerTipClaimed(peer1, peer1Headers.Last());
+            this.puller.NewPeerTipClaimed(peer2, peer2Headers.Last());
+
+            this.puller.RequestBlocksDownload(peer1Headers);
+
+            await this.puller.AssignDownloadJobsAsync();
+
+            this.puller.PushBlock(peer1Headers.First().HashBlock, this.helper.GenerateBlock(100), peer2.Connection.Id);
+
+            Assert.Empty(this.helper.CallbacksCalled);
+            Assert.Equal(peer1Headers.Count, this.puller.AssignedDownloadsByHash.Count);
         }
-        */
-
-        //TODO check that order in linked list is correct when we ask blocks for download in random order (5-10, 1-4, 11-15)
 
         private void VerifyAssignedDownloadsSortedOrder()
         {
