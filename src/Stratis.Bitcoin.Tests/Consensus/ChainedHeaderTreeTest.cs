@@ -1108,7 +1108,8 @@ namespace Stratis.Bitcoin.Tests.Consensus
 
             // Chain B is presented by peer 2.
             List<BlockHeader> listOfChainBHeaders = ctx.ChainedHeaderToList(chainBTip, chainBExtension);
-            cht.ConnectNewHeaders(2, listOfChainBHeaders);
+            Action connectAction = () => cht.ConnectNewHeaders(2, listOfChainBHeaders);
+            connectAction.Should().Throw<MaxReorgViolationException>();
 
             // Continue syncing remaining blocks from chain A.
             for (int i = maxReorg - 10; i < maxReorg + 50; i++)
