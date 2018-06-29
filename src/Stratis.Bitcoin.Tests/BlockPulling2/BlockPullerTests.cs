@@ -980,7 +980,7 @@ namespace Stratis.Bitcoin.Tests.BlockPulling2
             }
         }
 
-        private Random random = new Random();
+        private readonly Random random = new Random();
 
         private void Shuffle<T>(IList<T> list)
         {

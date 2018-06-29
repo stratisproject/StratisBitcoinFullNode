@@ -26,32 +26,25 @@ namespace Stratis.Bitcoin.Tests.BlockPulling2
     {
         public readonly ExtendedBlockPuller Puller;
 
+        /// <summary>
+        /// Headers to blocks provided through the callback which is called by the
+        /// puller when blocks are delivered or failed to be delivered.
+        /// </summary>
         public readonly Dictionary<uint256, Block> CallbacksCalled;
 
         private int currentPeerId = 0;
         private readonly ILoggerFactory loggerFactory;
-
-        private readonly ChainState chainState;
-
+        
         public BlockPullerTestsHelper()
         {
             this.loggerFactory = new ExtendedLoggerFactory();
             this.loggerFactory.AddConsoleWithFilters();
 
             this.CallbacksCalled = new Dictionary<uint256, Block>();
-            this.chainState = new ChainState(new InvalidBlockHashStore(new DateTimeProvider())) {ConsensusTip = this.GetGenesisHeader()};
+            var chainState = new ChainState(new InvalidBlockHashStore(new DateTimeProvider())) {ConsensusTip = this.CreateGenesisChainedHeader()};
 
-            this.Puller = new ExtendedBlockPuller((hash, block) => { this.CallbacksCalled.Add(hash, block); }, this.chainState, NodeSettings.SupportedProtocolVersion, new DateTimeProvider(), this.loggerFactory);
-        }
-
-        public ExtendedBlockPullerBehavior CreateBlockPullerBehavior()
-        {
-            var ibdState = new Mock<IInitialBlockDownloadState>();
-            ibdState.Setup(x => x.IsInitialBlockDownload()).Returns(() => true);
-
-            var behavior = new ExtendedBlockPullerBehavior(this.Puller, ibdState.Object, this.loggerFactory);
-
-            return behavior;
+            this.Puller = new ExtendedBlockPuller((hash, block) => { this.CallbacksCalled.Add(hash, block); }, 
+                chainState, NodeSettings.SupportedProtocolVersion, new DateTimeProvider(), this.loggerFactory);
         }
 
         /// <summary>Creates a peer with extended puller behavior.</summary>
@@ -85,9 +78,14 @@ namespace Stratis.Bitcoin.Tests.BlockPulling2
             return peer.Object;
         }
 
-        public ChainedHeader GetGenesisHeader()
+        private ExtendedBlockPullerBehavior CreateBlockPullerBehavior()
         {
-            return new ChainedHeader(Network.StratisMain.GetGenesis().Header, Network.StratisMain.GenesisHash, 0);
+            var ibdState = new Mock<IInitialBlockDownloadState>();
+            ibdState.Setup(x => x.IsInitialBlockDownload()).Returns(() => true);
+
+            var behavior = new ExtendedBlockPullerBehavior(this.Puller, ibdState.Object, this.loggerFactory);
+
+            return behavior;
         }
 
         public List<ChainedHeader> CreateConsequtiveHeaders(int count, ChainedHeader prevBlock = null)
@@ -95,7 +93,7 @@ namespace Stratis.Bitcoin.Tests.BlockPulling2
             var chainedHeaders = new List<ChainedHeader>();
             Network network = Network.StratisMain;
             
-            ChainedHeader tip = prevBlock ?? this.GetGenesisHeader();
+            ChainedHeader tip = prevBlock ?? this.CreateGenesisChainedHeader();
             uint256 hashPrevBlock = tip.HashBlock;
 
             for (int i = 0; i < count; ++i)
@@ -114,6 +112,11 @@ namespace Stratis.Bitcoin.Tests.BlockPulling2
             }
 
             return chainedHeaders;
+        }
+
+        private ChainedHeader CreateGenesisChainedHeader()
+        {
+            return new ChainedHeader(Network.StratisMain.GetGenesis().Header, Network.StratisMain.GenesisHash, 0);
         }
 
         /// <summary>Creates a new block with mocked serialized size.</summary>
