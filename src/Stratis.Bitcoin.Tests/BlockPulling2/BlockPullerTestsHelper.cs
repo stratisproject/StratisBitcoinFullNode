@@ -41,9 +41,7 @@ namespace Stratis.Bitcoin.Tests.BlockPulling2
             this.CallbacksCalled = new Dictionary<uint256, Block>();
             this.chainState = new ChainState(new InvalidBlockHashStore(new DateTimeProvider())) {ConsensusTip = this.GetGenesisHeader()};
 
-            var dateTimeProvider = new Mock<IDateTimeProvider>();
-
-            this.Puller = new ExtendedBlockPuller((hash, block) => { this.CallbacksCalled.Add(hash, block); }, this.chainState, NodeSettings.SupportedProtocolVersion, dateTimeProvider.Object, this.loggerFactory);
+            this.Puller = new ExtendedBlockPuller((hash, block) => { this.CallbacksCalled.Add(hash, block); }, this.chainState, NodeSettings.SupportedProtocolVersion, new DateTimeProvider(), this.loggerFactory);
         }
 
         public ExtendedBlockPullerBehavior CreateBlockPullerBehavior()
@@ -163,6 +161,10 @@ namespace Stratis.Bitcoin.Tests.BlockPulling2
 
         public int PeerSpeedLimitWhenNotInIbdBytesPerSec => typeof(BlockPuller).GetPrivateConstantValue<int>("PeerSpeedLimitWhenNotInIbdBytesPerSec");
 
+        public int StallingLoopIntervalMs => typeof(BlockPuller).GetPrivateConstantValue<int>("StallingLoopIntervalMs");
+
+        public int MaxSecondsToDeliverBlock => typeof(BlockPuller).GetPrivateConstantValue<int>("MaxSecondsToDeliverBlock");
+
         public void RecalculateQualityScoreLocked(IBlockPullerBehavior pullerBehavior, int peerId)
         {
             this.puller.InvokeMethod("RecalculateQualityScoreLocked", pullerBehavior, peerId);
@@ -181,6 +183,11 @@ namespace Stratis.Bitcoin.Tests.BlockPulling2
         public void SetMaxBlocksBeingDownloaded(int value)
         {
             this.puller.SetPrivateVariableValue("maxBlocksBeingDownloaded", value);
+        }
+
+        public void CheckStalling()
+        {
+            this.puller.InvokeMethod("CheckStalling");
         }
 
         public int GetMaxBlocksBeingDownloaded()

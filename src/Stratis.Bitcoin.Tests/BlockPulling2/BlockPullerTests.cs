@@ -742,27 +742,51 @@ namespace Stratis.Bitcoin.Tests.BlockPulling2
             Assert.Single(this.puller.DownloadJobsQueue);
             Assert.Single(this.puller.DownloadJobsQueue.Peek().Headers);
         }
+
+        /// <summary>
+        /// Peer is asked 100 block. After N seconds he doesn't deliver and they are reassigned. Make sure peer quality score is decreased
+        /// but doesn't go to min quality score (only fixed % of all samples can be taken).
+        /// </summary>
+        [Fact]
+        public async Task Stalling_CanReassignAndDecreaseQualityScoreAsync()
+        {
+            INetworkPeer peer = this.helper.CreatePeer(out ExtendedBlockPullerBehavior behavior);
+            
+            List<ChainedHeader> headers = this.helper.CreateConsequtiveHeaders(100);
+
+            this.puller.SetMaxBlocksBeingDownloaded(100);
+
+            this.puller.NewPeerTipClaimed(peer, headers.Last());
+            this.puller.OnIbdStateChanged(false);
+
+            int bestSpeed = 1000;
+            for (int i=0; i < 10; ++i)
+                behavior.AddSample(bestSpeed, 1);
+
+            behavior.RecalculateQualityScore(bestSpeed);
+
+            double initialQuelityScore = behavior.QualityScore;
+
+            this.puller.RequestBlocksDownload(headers);
+
+            await this.puller.AssignDownloadJobsAsync();
+
+            // Fake assign time to avoid waiting for a long time.
+            foreach (AssignedDownload assignedDownload in this.puller.AssignedDownloadsByHash.Values)
+                assignedDownload.AssignedTime = (assignedDownload.AssignedTime - TimeSpan.FromSeconds(this.puller.MaxSecondsToDeliverBlock));
+            
+            Assert.Empty(this.puller.ReassignedJobsQueue);
+
+            this.puller.CheckStalling();
+            behavior.RecalculateQualityScore(bestSpeed);
+
+            Assert.Single(this.puller.ReassignedJobsQueue);
+            Assert.Equal(headers.Count, this.puller.ReassignedJobsQueue.Peek().Headers.Count);
+
+            Assert.True(behavior.QualityScore < initialQuelityScore);
+            Assert.True(behavior.QualityScore > BlockPullerBehavior.MinQualityScore);
+        }
         
-        /// <summary>
-        /// There are 2 peers with quality score of 1 and 0.5. Peer 2 is asked 1 block. After N seconds he doesn't deliver and it's reassigned.
-        /// Make sure quality score is decreased and peer sample is added (and before that time it shouldn't be changed).
-        /// </summary>
-        [Fact]
-        public void Stalling_CanReassignAndDecreaseQualityScore()
-        {
-            throw new NotImplementedException();
-        }
-
-        /// <summary>
-        /// We are not in IBD, Peer is asked for 10 blocks, peer failed to deliver all of them. They are reassigned, make sure that peer have 1
-        /// (calculated from the constant value of % of samples to penalize) sample with 0kb size added.
-        /// </summary>
-        [Fact]
-        public void Stalling_WhenPeerFailsToDeliverOnlyFixedAmountOfSamesIsSetToZero()
-        {
-
-            throw new NotImplementedException();
-        }
         
         /// <summary>
         /// We are not in IBD, Ask 1 peer for (important block margin constant) 10 blocks. After that ask 2 new peers for 20 blocks. None of the peer
