@@ -669,26 +669,96 @@ namespace Stratis.Bitcoin.Tests.BlockPulling2
 
             throw new NotImplementedException();
         }
+        
+        /// <summary>
+        /// There are 2 peers with quality score of 1 and 0.5. Peer 2 is asked 1 block. After N seconds he doesn't deliver and it's reassigned.
+        /// Make sure quality score is decreased and peer sample is added (and before that time it shouldn't be changed).
+        /// </summary>
+        [Fact]
+        public void Stalling_CanReassignAndDecreaseQualityScore()
+        {
+
+            throw new NotImplementedException();
+        }
+
+        /// <summary>
+        /// We are not in IBD, Peer is asked for 10 blocks, peer failed to deliver all of them. They are reassigned, make sure that peer have 1
+        /// (calculated from the constant value of % of samples to penalize) sample with 0kb size added.
+        /// </summary>
+        [Fact]
+        public void Stalling_WhenPeerFailsToDeliverOnlyFixedAmountOfSamesIsSetToZero()
+        {
+
+            throw new NotImplementedException();
+        }
+
+        /// <summary>
+        /// We are not in IBD, Ask 1 peer for (important block margin constant) 10 blocks. After that ask 2 new peers for 20 blocks. None of the peer
+        /// deliver anything, peer 1's blocks are reassigned and penalty is applied, penalty is not applied on other peers because their assignment
+        /// is not important. Make sure that headers that are released are in reassign job queue (don't start async loop so they are not consumed immediately).
+        /// </summary>
+        [Fact]
+        public void Stalling_DoesntAffectPeersThatFailedToDeliverNotImportantBlocks()
+        {
+
+            throw new NotImplementedException();
+        }
+
+        /// <summary>
+        /// We are not in IBD, ask 1 peer for 10 blocks and another peer for 2 blocks. First peer don't deliver- reassign his blocks to him again.
+        /// Advance CT by 1. None of them deliver. Make sure both peers are penalized.
+        /// </summary>
+        [Fact]
+        public void Stalling_PenaltyIsAppliedWhenBlockBecomesImportantAndPeerStalls()
+        {
+
+            throw new NotImplementedException();
+        }
+
+        /// <summary>
+        /// Dont start assigner loop. Assign following headers (1 header = 1 job) for 20 headers but ask those in random order.
+        /// Create 100 peers with same quality score. Assign jobs to peers. No one delivers. Make sure that peers that were
+        /// assigned important jobs are penalized, others are not.
+        /// </summary>
+        [Fact]
+        public void Stalling_ImportantHeadersAreReleased()
+        {
+
+            throw new NotImplementedException();
+        }
+
+        /// <summary>
+        /// Request some hashes (RequestBlockDownload). Call push blocks. Make sure callback is called. Make sure that assignment is
+        /// removed from AssignedDownloads. Make sure quality score is updated. Make sure max blocks being downloaded is recalculated.
+        /// Make sure TotalSpeedOfAllPeersBytesPerSec and AvgBlockSize are recalculated and new values for the circular array are added. Make sure that signal is set.
+        /// </summary>
+        [Fact]
+        public void PushBlock_AppropriateStructuresAreUpdated()
+        {
+
+            throw new NotImplementedException();
+        }
+
+        /// <summary>
+        /// Push block that wasn't requested for download- nothing happens, no structure is updated.
+        /// </summary>
+        [Fact]
+        public void PushBlock_OnBlockThatWasntRequested_NothingHappens()
+        {
+
+            throw new NotImplementedException();
+        }
+
+        /// <summary>
+        /// Push block that was requested from another peer- nothing happens, no structure is updated. 
+        /// </summary>
+        [Fact]
+        public void PushBlock_ByPeerThatWereNotAssignedToIt_NothingHappens()
+        {
+
+            throw new NotImplementedException();
+        }
         */
-
-        // ==========================
-
-
-        /*
-
-===Stalling      
-1) There are 2 peers with quality score of 1 and 0.5. Peer 2 is asked 1 block.After N seconds he doesn't deliver and it's reassigned. Make sure quality score is decreased and peer sample is added (and before that time it shouldn't be changed)
-2) We are not in IBD, Peer is asked for 10 blocks, peer failed to deliver all of them. They are reassigned, make sure that peer have 1 (calculated from the constant value of % of samples to penalize) sample with 0kb size added.
-3) We are not in IBD, Ask 1 peer for (important block margin constant) 10 blocks. After that ask 2 new peers for 20 blocks. None of the peer deliver anything, peer 1's blocks are reassigned and penalty is applied, penalty is not applied on other peers because their assignment is not important. Make sure that headers that are released are in reassign job queue (don't start async loop so they are not consumed immediately).
-4) We are not in IBD, ask 1 peer for 10 blocks and another peer for 2 blocks. First peer don't deliver- reassign his blocks to him again. Advance CT by 1. None of them deliver. Make sure both peers are penalized.
-5) Dont start assigner loop. Assign following headers (1 header = 1 job) for 20 headers but ask those in random order. Create 100 peers with same quality score. Assign jobs to peers. No one delivers. Make sure that peers that were assigned important jobs are penalized, others are not.
-
-====PushBlock
-1) Request some hashes (RequestBlockDownload). Call push blocks. Make sure callback is called. Make sure that assignment is removed from AssignedDownloads. Make sure quality score is updated. Make sure max blocks being downloaded is recalculated. Make sure TotalSpeedOfAllPeersBytesPerSec and AvgBlockSize are recalculated and new values for the circular array are added. Make sure that signal is set.
-2) Push block that wasn't requested for download- nothing happens, no structure is updated.
-3) Push block that was requested from another peer- nothing happens, no structure is updated.
- 
-         */
 
         private Random random = new Random();
 
