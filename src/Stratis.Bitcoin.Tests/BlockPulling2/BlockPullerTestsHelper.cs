@@ -161,6 +161,8 @@ namespace Stratis.Bitcoin.Tests.BlockPulling2
 
         public int PeerSpeedLimitWhenNotInIbdBytesPerSec => typeof(BlockPuller).GetPrivateConstantValue<int>("PeerSpeedLimitWhenNotInIbdBytesPerSec");
 
+        public int ImportantHeightMargin => typeof(BlockPuller).GetPrivateConstantValue<int>("ImportantHeightMargin");
+
         public int StallingLoopIntervalMs => typeof(BlockPuller).GetPrivateConstantValue<int>("StallingLoopIntervalMs");
 
         public int MaxSecondsToDeliverBlock => typeof(BlockPuller).GetPrivateConstantValue<int>("MaxSecondsToDeliverBlock");
