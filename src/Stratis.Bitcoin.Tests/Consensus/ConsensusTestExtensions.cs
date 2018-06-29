@@ -28,7 +28,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
             return chainedHeaderTree.GetChainedHeadersByHash()[chainedHeaderTree.GetPeerTipsByPeerId()[peer]];
         }
 
-        public static List<ChainedHeader> ToList(this ChainedHeader chainedHeader, int headersToTake)
+        public static ChainedHeader[] ToArray(this ChainedHeader chainedHeader, int headersToTake)
         {
             var headers = new ChainedHeader[headersToTake];
             ChainedHeader current = chainedHeader;
@@ -39,7 +39,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
                 current = current.Previous;
             }
 
-            return headers.ToList();
+            return headers;
         }
     }
 }

@@ -1087,13 +1087,13 @@ namespace Stratis.Bitcoin.Tests.Consensus
 
             // Chain A is presented by peer 1.
             List<BlockHeader> listOfChainABlockHeaders = ctx.ChainedHeaderToList(chainATip, maxReorg + 50);
-            List<ChainedHeader> listOfChainAChainHeaders = chainATip.ToList(maxReorg + 50);
+            ChainedHeader[] chainAChainHeaders = chainATip.ToArray(maxReorg + 50);
             cht.ConnectNewHeaders(1, listOfChainABlockHeaders);
             
             // Sync 490 blocks from chain A.
             for (int i = 0; i < maxReorg - 10; i++)
             {
-                ChainedHeader currentChainTip = listOfChainAChainHeaders[i];
+                ChainedHeader currentChainTip = chainAChainHeaders[i];
                 cht.BlockDataDownloaded(currentChainTip, currentChainTip.Block);
                 cht.PartialValidationSucceeded(currentChainTip, out bool reorgRequired);
                 List<int> peerIds = cht.ConsensusTipChanged(currentChainTip);
@@ -1112,7 +1112,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
             // Continue syncing remaining blocks from chain A.
             for (int i = maxReorg - 10; i < maxReorg + 50; i++)
             {
-                ChainedHeader currentChainTip = listOfChainAChainHeaders[i];
+                ChainedHeader currentChainTip = chainAChainHeaders[i];
                 cht.BlockDataDownloaded(currentChainTip, ctx.CreateBlock());
                 cht.PartialValidationSucceeded(currentChainTip, out bool reorgRequired);
                 List<int> peerIds = cht.ConsensusTipChanged(currentChainTip);
