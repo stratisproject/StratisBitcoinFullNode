@@ -425,6 +425,13 @@ namespace Stratis.Bitcoin.Tests.Consensus
             ChainedHeader chainedHeaderTo = connectNewHeadersResult.DownloadTo;
             int headersToDownloadCount = chainedHeaderTo.Height - chainedHeaderFrom.Height + 1; // Inclusive
 
+            ChainedHeader chainedHeader = chainedHeaderTo;
+            while (chainedHeader.Height >= chainedHeaderFrom.Height)
+            {
+                chainedHeader.BlockDataAvailability.Should().Be(BlockDataAvailabilityState.BlockRequired);
+                chainedHeader = chainedHeader.Previous;
+            }
+            
             // ToDownload array of the same size as the amount of headers
             Assert.Equal(headersToDownloadCount, peer2Headers.Count);
         }
@@ -645,6 +652,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
             foreach(ChainedHeader header in headersBeyondInitialChain)
             {
                 header.BlockValidationState.Should().Be(expectedState);
+                header.BlockDataAvailability.Should().Be(BlockDataAvailabilityState.HeaderOnly);
             }
 
             // Present remaining headers checkpoint inclusive h16 -> h25.
@@ -663,6 +671,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
             while (chainedHeader.Height > initialChainSize)
             {
                 chainedHeader.BlockValidationState.Should().Be(ValidationState.AssumedValid);
+                chainedHeader.BlockDataAvailability.Should().Be(BlockDataAvailabilityState.BlockRequired);
                 chainedHeader = chainedHeader.Previous;
             }
 
@@ -671,6 +680,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
             while (chainedHeader.Height > checkpoint.Height)
             {
                 chainedHeader.BlockValidationState.Should().Be(ValidationState.HeaderValidated);
+                chainedHeader.BlockDataAvailability.Should().Be(BlockDataAvailabilityState.BlockRequired);
                 chainedHeader = chainedHeader.Previous;
             }
         }
