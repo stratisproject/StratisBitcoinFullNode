@@ -97,6 +97,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.Bitcoin.Features.Ap
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.Bitcoin.Features.Apps", "Stratis.Bitcoin.Features.Apps\Stratis.Bitcoin.Features.Apps.csproj", "{FF6DDE2B-CF33-438F-BCC8-B1E109AB2472}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Stratis.Bitcoin.Features.Apps.Browser", "Stratis.Bitcoin.Features.Apps.Browser\Stratis.Bitcoin.Features.Apps.Browser.csproj", "{615E3EFC-A710-49EC-9608-AD026AF7EBC1}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -251,6 +253,10 @@ Global
 		{FF6DDE2B-CF33-438F-BCC8-B1E109AB2472}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{FF6DDE2B-CF33-438F-BCC8-B1E109AB2472}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{FF6DDE2B-CF33-438F-BCC8-B1E109AB2472}.Release|Any CPU.Build.0 = Release|Any CPU
+		{615E3EFC-A710-49EC-9608-AD026AF7EBC1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{615E3EFC-A710-49EC-9608-AD026AF7EBC1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{615E3EFC-A710-49EC-9608-AD026AF7EBC1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{615E3EFC-A710-49EC-9608-AD026AF7EBC1}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

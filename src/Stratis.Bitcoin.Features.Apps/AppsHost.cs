@@ -16,6 +16,17 @@ namespace Stratis.Bitcoin.Features.Apps
 
         public void Configure(IApplicationBuilder app)
         {
+            //app.Map("/app1", app1 =>
+            //{
+            //    app.UseSpa(spa =>
+            //    {
+            //        spa.UseSpaPrerendering(options =>
+            //        {
+            //            options.BootModulePath = $""
+            //        });
+            //    });
+            //});
+
             app.UseDefaultFiles();
             app.UseStaticFiles();
         }
@@ -23,11 +34,11 @@ namespace Stratis.Bitcoin.Features.Apps
 
     public class AppsHost : IAppsHost
     {
-        private int seedPort = 32500;
+        private int seedPort = 32500;       
         private readonly List<IWebHost> hosts = new List<IWebHost>();                
 
         public bool Host(IEnumerable<IStratisApp> stratisApps)
-        {
+        {           
             this.hosts.AddRange(stratisApps.Select(CreateHost));    
             this.hosts.ForEach(x => x.Start());       
 
@@ -35,13 +46,13 @@ namespace Stratis.Bitcoin.Features.Apps
         }
 
         private IWebHost CreateHost(IStratisApp stratisApp)
-        {
+        {            
             return new WebHostBuilder()
                 .UseKestrel()
                 .UseIISIntegration()
                 .UseWebRoot(stratisApp.WebRoot)
                 .UseContentRoot(Directory.GetCurrentDirectory())
-                .UseUrls($"http://localhost:{this.seedPort++}")
+                .UseUrls($"http://localhost:{this.seedPort++}")                
                 .UseStartup<Startup>()
                 .Build();
         }

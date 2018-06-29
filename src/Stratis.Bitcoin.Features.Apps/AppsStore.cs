@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Reactive.Subjects;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using Microsoft.Extensions.Logging;
@@ -16,12 +17,16 @@ namespace Stratis.Bitcoin.Features.Apps
         private readonly ILogger logger;
         private List<IStratisApp> stratisApps;
         private readonly IAppsFileService appsFileService;
+        private readonly Subject<IStratisApp> newAppStream = new Subject<IStratisApp>();
 
         public AppsStore(ILoggerFactory loggerFactory, IAppsFileService appsFileService)
         {
             this.appsFileService = appsFileService;
             this.logger = loggerFactory.CreateLogger(GetType().FullName);
-        }       
+            this.NewAppStream = this.newAppStream.AsObservable();
+        }
+
+        public IObservable<IStratisApp> NewAppStream { get; }
 
         public IObservable<IReadOnlyCollection<IStratisApp>> GetApplications()
         {
@@ -57,7 +62,7 @@ namespace Stratis.Bitcoin.Features.Apps
             this.stratisApps.AddRange(apps);
 
             LogApps(apps);
-        }
+        }        
 
         private static List<IStratisApp> CreateApps(IEnumerable<Type> types)
         {
