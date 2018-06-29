@@ -1,4 +1,6 @@
-﻿namespace NBitcoin
+﻿using NBitcoin;
+
+namespace Stratis.Bitcoin.Features.SmartContracts
 {
     public class SmartContractConsensusFactory : ConsensusFactory
     {

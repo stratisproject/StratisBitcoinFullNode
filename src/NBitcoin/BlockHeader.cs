@@ -56,7 +56,7 @@ namespace NBitcoin
             }
         }
 
-        internal BlockHeader()
+        public BlockHeader()
         {
             this.version = this.CurrentVersion;
             this.hashPrevBlock = 0;

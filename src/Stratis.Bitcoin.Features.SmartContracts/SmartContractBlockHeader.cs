@@ -1,4 +1,6 @@
-﻿namespace NBitcoin
+﻿using NBitcoin;
+
+namespace Stratis.Bitcoin.Features.SmartContracts
 {
     public class SmartContractBlockHeader : BlockHeader
     {
@@ -15,7 +17,7 @@
         }
 
         /// <summary>
-        /// <see cref="ReadWrite(BitcoinStream)"/> overridden so that we can write the <see cref="hashStateRoot"/>.
+        /// <see cref="ReadWrite(NBitcoin.BitcoinStream)"/> overridden so that we can write the <see cref="hashStateRoot"/>.
         /// </summary>
         public override void ReadWrite(BitcoinStream stream)
         {
