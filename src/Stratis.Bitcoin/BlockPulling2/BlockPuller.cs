@@ -680,7 +680,7 @@ namespace Stratis.Bitcoin.BlockPulling2
 
             if (!jobFailed)
             {
-                downloadJob.Headers.RemoveRange(0, downloadJob.Headers.Count);
+                downloadJob.Headers.RemoveRange(0, lastSucceededIndex + 1);
             }
             else
             {
