@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using NBitcoin;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Tests.Common;
@@ -29,18 +30,16 @@ namespace Stratis.Bitcoin.Tests.Consensus
 
         public static List<ChainedHeader> ToList(this ChainedHeader chainedHeader, int headersToTake)
         {
-            var list = new List<ChainedHeader>();
+            var headers = new ChainedHeader[headersToTake];
             ChainedHeader current = chainedHeader;
 
-            for (int i = 0; i < headersToTake; i++)
+            for (int i = headersToTake - 1; i >= 0 && current != null; i--)
             {
-                list.Add(current);
+                headers[i] = current;
                 current = current.Previous;
             }
 
-            list.Reverse();
-
-            return list;
+            return headers.ToList();
         }
     }
 }

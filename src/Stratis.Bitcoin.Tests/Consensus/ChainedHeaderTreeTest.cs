@@ -1065,8 +1065,8 @@ namespace Stratis.Bitcoin.Tests.Consensus
         }
 
         /// <summary>
-        /// Issue 26 @  Checkpoints are disabled. Chain tip is at header 5. Reorganisation is initiaised with max reorg of 500 blocks plus extra 50 blocks. 
-        /// We start syncing until block 490. Peer 2 presents the alternative chain with 2 headers after fork point at header 5. We then you join the rest of
+        /// Issue 27 @  Checkpoints are disabled. Chain tip is at header 5. Present a chain A with headers equal to max reorg of 500 blocks plus extra 50. 
+        /// Then start syncing until block 490. Peer 2 presents the alternative chain with 2 headers after fork point at header 5. We then you join the rest of
         /// 60 blocks. ConsensusTipChanged should return identifier of the second peer at block number 505.
         /// </summary>
         [Fact]
@@ -1096,7 +1096,8 @@ namespace Stratis.Bitcoin.Tests.Consensus
                 ChainedHeader currentChainTip = listOfChainAChainHeaders[i];
                 cht.BlockDataDownloaded(currentChainTip, currentChainTip.Block);
                 cht.PartialValidationSucceeded(currentChainTip, out bool reorgRequired);
-                List<int> tips = cht.ConsensusTipChanged(currentChainTip);
+                List<int> peerIds = cht.ConsensusTipChanged(currentChainTip);
+                peerIds.Should().BeEmpty();
             }
 
             // Create new chain B with 2 headers after the fork point.
@@ -1109,18 +1110,22 @@ namespace Stratis.Bitcoin.Tests.Consensus
             cht.ConnectNewHeaders(2, listOfChainBHeaders);
 
             // Continue syncing remaining blocks from chain A.
-            // TODO: add asserts
             for (int i = maxReorg - 10; i < maxReorg + 50; i++)
             {
                 ChainedHeader currentChainTip = listOfChainAChainHeaders[i];
                 cht.BlockDataDownloaded(currentChainTip, ctx.CreateBlock());
                 cht.PartialValidationSucceeded(currentChainTip, out bool reorgRequired);
-                List<int> tips = cht.ConsensusTipChanged(currentChainTip);
+                List<int> peerIds = cht.ConsensusTipChanged(currentChainTip);
                 if (currentChainTip.Height == maxReorg + initialChainSize)
                 {
-                    tips.Should().HaveCount(1);
-                    tips[0].Should().Be(2);
+                    peerIds.Should().HaveCount(1);
+                    peerIds[0].Should().Be(2);
                 }
+                else
+                {
+                    peerIds.Should().BeEmpty();
+                }
+
             }
         }
     }
