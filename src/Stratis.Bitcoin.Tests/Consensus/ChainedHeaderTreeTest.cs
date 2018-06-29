@@ -197,9 +197,6 @@ namespace Stratis.Bitcoin.Tests.Consensus
 
         public class InvalidHeaderTestException : ConsensusException
         {
-            public InvalidHeaderTestException() : base()
-            {
-            }
         }
 
         [Fact]
@@ -1144,7 +1141,8 @@ namespace Stratis.Bitcoin.Tests.Consensus
         }
 
         /// <summary>
-        /// Issue 29 @ Remove ChainHeader manually from a tree and call PartialValidationSucceeded, make sure it returns nothing.
+        /// Issue 29 @ Remove ChainHeader manually from a tree and call PartialValidationSucceeded,
+        /// make sure it returns nothing.
         /// </summary>
         [Fact]
         public void ChainedHeaderIsRemovedFromTheTree_PartialValidationSucceededCalled_NothingIsReturned()
@@ -1158,32 +1156,13 @@ namespace Stratis.Bitcoin.Tests.Consensus
             ChainedHeaderTree cht = ctx.ChainedHeaderTree;
             ChainedHeader chainTip = ctx.InitialChainTip;
 
-            cht.BlockDataDownloaded();
+            // Manually remove chained header.
+            Dictionary<uint256, ChainedHeader> chainedHeaders = cht.GetChainedHeadersByHash();
+            chainedHeaders.Remove(chainTip.HashBlock);
 
-            // Extend a chain by 1 header.
-            // Example: h1=h2=h3=h4=h5=h6.
-            chainTip = ctx.ExtendAChain(1, chainTip);
-            List<BlockHeader> listOfCurrentChainHeaders = ctx.ChainedHeaderToList(chainTip, 1);
-
-            // Present header by peer with id 1 and then call PartialValidationSucceeded on it.
-            const int peerId = 1;
-            cht.ConnectNewHeaders(peerId, listOfCurrentChainHeaders);
-            cht.PartialValidationSucceeded(chainTip, out bool reorgRequired);
-            reorgRequired.Should().BeTrue();
-
-            // Call ConsensusTipChanged on chaintip at header 6.
-            cht.ConsensusTipChanged(chainTip);
-
-            // PID moved to header 6.
-            Dictionary<uint256, HashSet<int>> peerIdsByTipHash = cht.GetPeerIdsByTipHash();
-            uint256 header5Hash = chainTip.GetAncestor(5).HashBlock;
-            uint256 header6Hash = chainTip.HashBlock;
-
-            peerIdsByTipHash.Should().HaveCount(1);
-            peerIdsByTipHash.Should().NotContainKey(header5Hash);
-            peerIdsByTipHash[header6Hash].Should().HaveCount(2);
-            peerIdsByTipHash[header6Hash].Should().Contain(ChainedHeaderTree.LocalPeerId);
-            peerIdsByTipHash[header6Hash].Should().Contain(peerId);
+            // PartialValidationSucceeded should return null.
+            List<ChainedHeader> headersToValidate = cht.PartialValidationSucceeded(chainTip, out bool reorgRequired);
+            headersToValidate.Should().BeNull();
         }
     }
 }
