@@ -783,7 +783,7 @@ namespace Stratis.Bitcoin.Features.Miner
             }
 
             this.logger.LogTrace("Worker #{0} found the kernel.", workersResult.KernelFoundIndex);
-            
+
             // Get reward for newly created block.
             long reward = fees + this.consensusLoop.ConsensusRules.GetRule<PosCoinviewRule>().GetProofOfStakeReward(chainTip.Height + 1);
             if (reward <= 0)
@@ -913,11 +913,12 @@ namespace Stratis.Bitcoin.Features.Miner
                         continue;
 
                     context.Logger.LogTrace("Trying with transaction time {0}...", txTime);
+
                     try
                     {
                         var prevoutStake = new OutPoint(utxoStakeInfo.UtxoSet.TransactionId, utxoStakeInfo.OutPoint.N);
 
-                        var contextInformation = new PosRuleContext(new BlockStake(block));
+                        var contextInformation = new PosRuleContext(BlockStake.Load(block));
 
                         this.stakeValidator.CheckKernel(contextInformation, chainTip, block.Header.Bits, txTime, prevoutStake);
 
@@ -1100,7 +1101,7 @@ namespace Stratis.Bitcoin.Features.Miner
             ChainedHeader chainedBlock = this.chain.GetBlock(utxoStakeDescription.HashBlock);
 
             if (chainedBlock == null)
-                return this.mempoolLock.ReadAsync(() => this.mempool.Exists(utxoStakeDescription.UtxoSet.TransactionId) ? 0 : -1).GetAwaiter().GetResult(); 
+                return this.mempoolLock.ReadAsync(() => this.mempool.Exists(utxoStakeDescription.UtxoSet.TransactionId) ? 0 : -1).GetAwaiter().GetResult();
 
             return this.chain.Tip.Height - chainedBlock.Height + 1;
         }

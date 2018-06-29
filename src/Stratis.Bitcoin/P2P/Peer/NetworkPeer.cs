@@ -895,7 +895,7 @@ namespace Stratis.Bitcoin.P2P.Peer
         }
 
         /// <inheritdoc />
-        public T Behavior<T>() where T : NetworkPeerBehavior
+        public T Behavior<T>() where T : INetworkPeerBehavior
         {
             return this.Behaviors.Find<T>();
         }
