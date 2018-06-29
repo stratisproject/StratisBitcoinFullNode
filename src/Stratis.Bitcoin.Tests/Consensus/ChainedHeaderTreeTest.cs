@@ -1125,7 +1125,6 @@ namespace Stratis.Bitcoin.Tests.Consensus
                 {
                     peerIds.Should().BeEmpty();
                 }
-
             }
         }
     }
