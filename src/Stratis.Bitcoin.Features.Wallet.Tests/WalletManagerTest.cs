@@ -278,27 +278,21 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         }
 
         [Fact]
-        public void CreateWalletWith100UnusedAddressBufferCreates100AddressesToMonitor()
+        public void CreateWalletWithWalletSetting100UnusedAddressBufferCreates100AddressesToMonitor()
         {
             DataFolder dataFolder = CreateDataFolder(this);
 
-            var chain = new ConcurrentChain(Network.StratisMain);
-            uint nonce = RandomUtils.GetUInt32();
-            var block = new Block();
-            block.AddTransaction(new Transaction());
-            block.UpdateMerkleRoot();
-            block.Header.HashPrevBlock = chain.Genesis.HashBlock;
-            block.Header.Nonce = nonce;
-            chain.SetTip(block.Header);
+            var walletSettings = new WalletSettings { UnusedAddressesBuffer = 100};
 
-            var walletSettings = new WalletSettings {UnusedAddressesBuffer = 100};
-
-            var walletManager = new WalletManager(this.LoggerFactory.Object, Network.StratisMain, chain, NodeSettings.Default(), walletSettings,
+            var walletManager = new WalletManager(this.LoggerFactory.Object, Network.StratisMain, new ConcurrentChain(Network.StratisMain), NodeSettings.Default(), walletSettings,
                 dataFolder, new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime(), DateTimeProvider.Default);
 
-            walletManager.CreateWallet("test", "mywallet", mnemonicList: new Mnemonic(Wordlist.French, WordCount.Eighteen).ToString());
+            walletManager.CreateWallet("test", "mywallet", new Mnemonic(Wordlist.English, WordCount.Eighteen).ToString());
 
-            Assert.Equal(100 * 4, walletManager.keysLookup.Count()); //WHY 4x the UnusedAddressesBuffer
+            HdAccount hdAccount = walletManager.Wallets.Single().AccountsRoot.Single().Accounts.Single();
+
+            Assert.Equal(100, hdAccount.ExternalAddresses.Count);
+            Assert.Equal(100, hdAccount.InternalAddresses.Count);
         }
 
         [Fact]
