@@ -1,8 +1,11 @@
 ﻿using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using FluentAssertions;
+using Microsoft.Extensions.DependencyInjection;
 using NBitcoin;
+using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Controllers;
 using Stratis.Bitcoin.Features.Wallet.Models;
@@ -34,7 +37,6 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         {
             this.nodeGroupBuilder = new NodeGroupBuilder(Path.Combine(this.GetType().Name, this.CurrentTest.DisplayName));
             this.sharedSteps = new SharedSteps();
-            CreateNodesAndMineSpendableCoins();
         }
 
         protected override void AfterTest()
@@ -45,18 +47,8 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         {
         }
 
-        private void CreateNodesAndMineSpendableCoins()
+        private void MineSpendableCoins()
         {
-            this.nodeGroup = this.nodeGroupBuilder
-                .StratisPowNode(SendingNodeName).Start().NotInIBD()
-                .WithWallet(SendingWalletName, WalletPassword)
-                .StratisPowNode(ReceivingNodeName).Start().NotInIBD()
-                .WithWallet(ReceivingWalletName, WalletPassword)
-                .WithConnections()
-                .Connect(SendingNodeName, ReceivingNodeName)
-                .AndNoMoreConnections()
-                .Build();
-
             this.sendingStratisBitcoinNode = this.nodeGroup[SendingNodeName];
             this.receivingStratisBitcoinNode = this.nodeGroup[ReceivingNodeName];
 
@@ -71,12 +63,37 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
 
         private void a_default_gap_limit_of_20()
         {
+            this.nodeGroup = this.nodeGroupBuilder
+                .StratisPowNode(SendingNodeName).Start().NotInIBD()
+                .WithWallet(SendingWalletName, WalletPassword)
+                .StratisPowNode(ReceivingNodeName).Start().NotInIBD()
+                .WithWallet(ReceivingWalletName, WalletPassword)
+                .WithConnections()
+                .Connect(SendingNodeName, ReceivingNodeName)
+                .AndNoMoreConnections()
+                .Build();
+
+            MineSpendableCoins();
         }
 
         private void a_gap_limit_of_21()
         {
+            int customUnusedAddressBuffer = 21;
 
+            this.nodeGroup = this.nodeGroupBuilder
+                .StratisPowNode(SendingNodeName).Start().NotInIBD()
+                .WithWallet(SendingWalletName, WalletPassword)
+                .StratisPowNode(ReceivingNodeName).Start().NotInIBD()
+                .WithDependency<WalletSettings>(x => x.UnusedAddressesBuffer = customUnusedAddressBuffer)
+                .WithWallet(ReceivingWalletName, WalletPassword)
+                .WithConnections()
+                .Connect(SendingNodeName, ReceivingNodeName)
+                .AndNoMoreConnections()
+                .Build();
+
+            MineSpendableCoins();
         }
+
 
         private void a_wallet_with_funds_at_index_20_which_is_beyond_default_gap_limit()
         {

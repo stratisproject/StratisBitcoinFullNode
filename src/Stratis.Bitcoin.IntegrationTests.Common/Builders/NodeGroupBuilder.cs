@@ -70,5 +70,12 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.Builders
         {
             return new NodeConnectionBuilder(this).With(this.nodes);
         }
+
+        public NodeGroupBuilder WithDependency<T>(Action<T> changeAction)
+        {
+            var thingToChange = this.nodes.Last().Value.FullNode.NodeService<T>();
+            changeAction(thingToChange);
+            return this;
+        }
     }
 }

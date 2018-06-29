@@ -1096,7 +1096,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                     int lastUsedAddressIndex = account.GetLastUsedAddress(isChange).Index;
                     int addressesCount = isChange ? account.InternalAddresses.Count() : account.ExternalAddresses.Count();
                     int emptyAddressesCount = addressesCount - lastUsedAddressIndex - 1;
-                    int accountsToAdd = this.unusedAddressesBuffer - emptyAddressesCount;
+                    int accountsToAdd = this.walletSettings.UnusedAddressesBuffer - emptyAddressesCount;
                     IEnumerable<HdAddress> newAddresses = account.CreateAddresses(this.network, accountsToAdd, isChange);
 
                     this.UpdateKeysLookupLock(newAddresses);
