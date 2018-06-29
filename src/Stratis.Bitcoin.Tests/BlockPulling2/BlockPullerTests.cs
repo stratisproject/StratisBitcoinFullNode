@@ -788,7 +788,7 @@ namespace Stratis.Bitcoin.Tests.BlockPulling2
         }
         
         /// <summary>
-        /// We are not in IBD, Ask 1 peer for ImportantHeightMargin blocks. After that ask 2nd peer for more. None of the peers
+        /// Ask 1 peer for ImportantHeightMargin blocks. After that ask 2nd peer for more. None of the peers
         /// deliver anything, peer 1's blocks are reassigned and penalty is applied, penalty is not applied on another peer because their assignment
         /// is not important. Make sure that headers that are released are in reassign job queue.
         /// </summary>
@@ -803,9 +803,9 @@ namespace Stratis.Bitcoin.Tests.BlockPulling2
             List<ChainedHeader> headers = this.helper.CreateConsequtiveHeaders(this.puller.ImportantHeightMargin * 100);
 
             this.puller.NewPeerTipClaimed(peer1, headers.Last());
-            
-            this.puller.RequestBlocksDownload(headers.Take(this.puller.ImportantHeightMargin).ToList());
 
+            // Assign first ImportantHeightMargin headers to peer 1 so when stalling happens it happens only on peer 1.
+            this.puller.RequestBlocksDownload(headers.Take(this.puller.ImportantHeightMargin).ToList());
             await this.puller.AssignDownloadJobsAsync();
 
             this.puller.NewPeerTipClaimed(peer2, headers.Last());
@@ -827,34 +827,68 @@ namespace Stratis.Bitcoin.Tests.BlockPulling2
             // Two jobs reassigned from peer 1.
             Assert.Equal(2, this.puller.ReassignedJobsQueue.Count);
 
-            var reassignedHeader = new List<ChainedHeader>();
+            var chainedHeaders = new List<ChainedHeader>();
             foreach (DownloadJob downloadJob in this.puller.ReassignedJobsQueue)
-                reassignedHeader.AddRange(downloadJob.Headers);
+                chainedHeaders.AddRange(downloadJob.Headers);
 
-            Assert.True(reassignedHeader.All(x => peer1Assignments.Exists(y => y.Header == x)));
+            Assert.True(chainedHeaders.All(x => peer1Assignments.Exists(y => y.Header == x)));
         }
 
         /// <summary>
-        /// We are not in IBD, ask 1 peer for 10 blocks and another peer for 2 blocks. First peer don't deliver- reassign his blocks to him again.
-        /// Advance CT by 1. None of them deliver. Make sure both peers are penalized.
+        /// Don't start assigner loop. Assign following headers (1 header = 1 job) for ImportantHeightMargin*2 headers but ask those in random order.
+        /// Create a lot of peers (more than headers) with same quality score. Assign jobs to peers. No one delivers. Make sure that peers that were
+        /// assigned important jobs were stalled, others are not.
         /// </summary>
         [Fact]
-        public void Stalling_PenaltyIsAppliedWhenBlockBecomesImportantAndPeerStalls()
+        public async Task Stalling_ImportantHeadersAreReleasedAsync()
         {
+            List<ChainedHeader> headers = this.helper.CreateConsequtiveHeaders(this.puller.ImportantHeightMargin * 2);
 
-            throw new NotImplementedException();
-        }
+            var peers = new List<INetworkPeer>();
 
-        /// <summary>
-        /// Don't start assigner loop. Assign following headers (1 header = 1 job) for 20 headers but ask those in random order.
-        /// Create 100 peers with same quality score. Assign jobs to peers. No one delivers. Make sure that peers that were
-        /// assigned important jobs are penalized, others are not.
-        /// </summary>
-        [Fact]
-        public void Stalling_ImportantHeadersAreReleased()
-        {
+            for (int i = 0; i < this.puller.ImportantHeightMargin * 5; i++)
+            {
+                INetworkPeer peer = this.helper.CreatePeer(out ExtendedBlockPullerBehavior behavior);
+                peers.Add(peer);
+                this.puller.NewPeerTipClaimed(peer, headers.Last());
+            }
 
-            throw new NotImplementedException();
+            this.puller.SetMaxBlocksBeingDownloaded(int.MaxValue);
+
+            foreach (ChainedHeader header in headers)
+                this.puller.RequestBlocksDownload(new List<ChainedHeader>() { header });
+
+            await this.puller.AssignDownloadJobsAsync();
+
+            // Fake assign time to avoid waiting for a long time.
+            foreach (AssignedDownload assignedDownload in this.puller.AssignedDownloadsByHash.Values)
+                assignedDownload.AssignedTime = (assignedDownload.AssignedTime - TimeSpan.FromSeconds(this.puller.MaxSecondsToDeliverBlock));
+
+            Assert.Empty(this.puller.ReassignedJobsQueue);
+
+            // Peers that were assigned headers 0 to ImportantHeightMargin
+            var peersWithImportantJobs = new HashSet<int>();
+            var importantHeaders = new List<ChainedHeader>();
+
+            foreach (AssignedDownload assignedDownload in this.puller.AssignedDownloadsByHash.Values)
+            {
+                if (assignedDownload.Header.Height <= this.puller.ImportantHeightMargin)
+                {
+                    peersWithImportantJobs.Add(assignedDownload.PeerId);
+                    importantHeaders.Add(assignedDownload.Header);
+                }
+            }
+            
+            this.puller.CheckStalling();
+            
+            Assert.True(this.puller.ReassignedJobsQueue.Count >= peersWithImportantJobs.Count);
+            
+            var chainedHeaders = new List<ChainedHeader>();
+            foreach (DownloadJob downloadJob in this.puller.ReassignedJobsQueue)
+                chainedHeaders.AddRange(downloadJob.Headers);
+
+            // All important headers are reassigned.
+            Assert.True(importantHeaders.All(x => chainedHeaders.Exists(y => y == x)));
         }
 
         /// <summary>
