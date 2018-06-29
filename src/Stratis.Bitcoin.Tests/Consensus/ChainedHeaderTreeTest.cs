@@ -11,7 +11,6 @@ using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Consensus;
-using Stratis.Bitcoin.Tests.Common;
 using Stratis.Bitcoin.Utilities;
 using Xunit;
 
@@ -1041,27 +1040,107 @@ namespace Stratis.Bitcoin.Tests.Consensus
             ChainedHeaderTree cht = ctx.ChainedHeaderTree;
             ChainedHeader chainTip = ctx.InitialChainTip;
 
-            // Extend the chain with 3 more headers.
-            // Example: fv1=fv2=fv3=fv4=h5=h6=h7.
+            // Extend the chain with 3 headers.
+            // Example: h1=h2=h3.
             chainTip = ctx.ExtendAChain(3, chainTip);
 
-            // Call BlockDataDownloaded on h5, h6 and h7.
-            ChainedHeader chainTipH7 = chainTip;
-            ChainedHeader chainTipH6 = chainTip.Previous;
-            ChainedHeader chainTipH5 = chainTipH6.Previous;
-            bool resultForH7 = cht.BlockDataDownloaded(chainTipH7, ctx.CreateBlock());
-            bool resultForH6 = cht.BlockDataDownloaded(chainTipH6, ctx.CreateBlock());
-            bool resultForH5 = cht.BlockDataDownloaded(chainTipH5, ctx.CreateBlock());
+            // Call BlockDataDownloaded on h1, h2 and h3.
+            ChainedHeader chainTipH3 = chainTip;
+            ChainedHeader chainTipH2 = chainTip.Previous;
+            ChainedHeader chainTipH1 = chainTipH2.Previous;
+            bool resultForH3 = cht.BlockDataDownloaded(chainTipH3, ctx.CreateBlock());
+            bool resultForH2 = cht.BlockDataDownloaded(chainTipH2, ctx.CreateBlock());
+            bool resultForH1 = cht.BlockDataDownloaded(chainTipH1, ctx.CreateBlock());
 
-            // Blocks should be set and only header 5 result is true.
-            resultForH7.Should().BeFalse();
-            chainTipH7.Block.Should().NotBeNull();
+            // Blocks should be set and only header 1 result is true.
+            resultForH3.Should().BeFalse();
+            chainTipH3.Block.Should().NotBeNull();
 
-            resultForH6.Should().BeFalse();
-            chainTipH6.Block.Should().NotBeNull();
+            resultForH2.Should().BeFalse();
+            chainTipH2.Block.Should().NotBeNull();
 
-            resultForH5.Should().BeTrue();
-            chainTipH5.Block.Should().NotBeNull();
+            resultForH1.Should().BeTrue();
+            chainTipH1.Block.Should().NotBeNull();
+        }
+
+        /// <summary>
+        /// Issue 25 @ Consensus and headers are at block 5. Block 6 is presented and PV is successful.
+        /// Call PartialOrFullValidationFailed and after make sure that there is a single US_CONSTANT on CT.
+        /// </summary>
+        [Fact]
+        public void ConsensusAndHeadersAreAtBlock5_Block6Presented_PartialOrFullValidationFailedCalled_ThereShouldBeASingleConstant()
+        {
+            // Chain header tree setup. Initial chain has 5 headers.
+            // Example: h1=h2=h3=h4=h5.
+            const int initialChainSize = 5;
+            TestContext ctx = new TestContextBuilder()
+                .WithInitialChain(initialChainSize)
+                .Build();
+            ChainedHeaderTree cht = ctx.ChainedHeaderTree;
+            ChainedHeader chainTip = ctx.InitialChainTip;
+
+            // Extend a chain by 1 header.
+            // Example: h1=h2=h3=h4=h5=h6.
+            chainTip = ctx.ExtendAChain(1, chainTip);
+            List<BlockHeader> listOfCurrentChainHeaders = ctx.ChainedHeaderToList(chainTip, 1);
+
+            // Present header by peer with id 1.
+            // Then call PartialOrFullValidationFailed on it, followed by 
+            // PartialOrFullValidationFailed.
+            const int peerId = 1;
+            cht.ConnectNewHeaders(peerId, listOfCurrentChainHeaders);
+            cht.PartialValidationSucceeded(chainTip, out bool reorgRequired);
+            reorgRequired.Should().BeTrue();
+            cht.PartialOrFullValidationFailed(chainTip);
+
+            // Peer id must be found only once on header 5.
+            Dictionary<uint256, HashSet<int>> peerIdsByTipHash = cht.GetPeerIdsByTipHash();
+            peerIdsByTipHash.Should().HaveCount(1);
+            uint256 header5Hash = chainTip.GetAncestor(5).HashBlock;
+            peerIdsByTipHash[header5Hash].Should().HaveCount(1);
+            peerIdsByTipHash[header5Hash].Single().Should().Be(ChainedHeaderTree.LocalPeerId);
+        }
+
+        /// <summary>
+        /// Issue 26 @ CT is at block 5. Call PartialValidationSucceeded with header 6. ConsensusTipChanged on block 6.
+        /// Make sure PID moved to 6.
+        /// </summary>
+        [Fact]
+        public void ConsensusAndHeadersAreAtBlock5_Block6Presented_PartialValidationSucceededCalled_LocalPeerIdIsMovedTo6()
+        {
+            // Chain header tree setup. Initial chain has 5 headers.
+            // Example: h1=h2=h3=h4=h5.
+            const int initialChainSize = 5;
+            TestContext ctx = new TestContextBuilder()
+                .WithInitialChain(initialChainSize)
+                .Build();
+            ChainedHeaderTree cht = ctx.ChainedHeaderTree;
+            ChainedHeader chainTip = ctx.InitialChainTip;
+
+            // Extend a chain by 1 header.
+            // Example: h1=h2=h3=h4=h5=h6.
+            chainTip = ctx.ExtendAChain(1, chainTip);
+            List<BlockHeader> listOfCurrentChainHeaders = ctx.ChainedHeaderToList(chainTip, 1);
+
+            // Present header by peer with id 1 and then call PartialValidationSucceeded on it.
+            const int peerId = 1;
+            cht.ConnectNewHeaders(peerId, listOfCurrentChainHeaders);
+            cht.PartialValidationSucceeded(chainTip, out bool reorgRequired);
+            reorgRequired.Should().BeTrue();
+
+            // Call ConsensusTipChanged on chaintip at header 6.
+            cht.ConsensusTipChanged(chainTip);
+
+            // PID moved to header 6.
+            Dictionary<uint256, HashSet<int>> peerIdsByTipHash = cht.GetPeerIdsByTipHash();
+            uint256 header5Hash = chainTip.GetAncestor(5).HashBlock;
+            uint256 header6Hash = chainTip.HashBlock;
+
+            peerIdsByTipHash.Should().HaveCount(1);
+            peerIdsByTipHash.Should().NotContainKey(header5Hash);
+            peerIdsByTipHash[header6Hash].Should().HaveCount(2);
+            peerIdsByTipHash[header6Hash].Should().Contain(ChainedHeaderTree.LocalPeerId);
+            peerIdsByTipHash[header6Hash].Should().Contain(peerId);
         }
     }
 }
