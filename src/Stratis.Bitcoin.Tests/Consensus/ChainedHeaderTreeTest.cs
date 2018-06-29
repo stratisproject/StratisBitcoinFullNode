@@ -741,6 +741,14 @@ namespace Stratis.Bitcoin.Tests.Consensus
                 chainedHeader.BlockValidationState.Should().Be(ValidationState.AssumedValid);
                 chainedHeader = chainedHeader.Previous;
             }
+
+            // Checking from first checkpoint to second checkpoint (h21 -> h29). 
+            chainedHeader = chainedHeaderTree.GetPeerTipChainedHeaderByPeerId(1);
+            while (chainedHeader.Height > checkpoint1.Height)
+            {
+                chainedHeader.BlockValidationState.Should().Be(ValidationState.HeaderValidated);
+                chainedHeader = chainedHeader.Previous;
+            }
         }
 
         /// <summary>
