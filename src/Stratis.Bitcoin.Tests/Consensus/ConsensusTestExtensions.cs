@@ -31,8 +31,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
         {
             var headers = new ChainedHeader[headersToTake];
             ChainedHeader current = chainedHeader;
-            var list = new List<ChainedHeader>();
-            list.Reverse();
+
             for (int i = headersToTake - 1; (i >= 0) && (current != null); i--)
             {
                 headers[i] = current;
