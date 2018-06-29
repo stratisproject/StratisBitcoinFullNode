@@ -157,6 +157,8 @@ namespace Stratis.Bitcoin.Tests.BlockPulling2
 
         public Queue<DownloadJob> DownloadJobsQueue => (Queue<DownloadJob>)this.puller.GetMemberValue("downloadJobsQueue");
 
+        public LinkedList<AssignedDownload> AssignedDownloadsSorted => (LinkedList<AssignedDownload>)this.puller.GetMemberValue("assignedDownloadsSorted");
+
         public AsyncManualResetEvent ProcessQueuesSignal => (AsyncManualResetEvent)this.puller.GetMemberValue("processQueuesSignal");
 
         public int PeerSpeedLimitWhenNotInIbdBytesPerSec => typeof(BlockPuller).GetPrivateConstantValue<int>("PeerSpeedLimitWhenNotInIbdBytesPerSec");

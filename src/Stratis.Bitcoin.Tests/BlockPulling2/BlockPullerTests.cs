@@ -636,37 +636,78 @@ namespace Stratis.Bitcoin.Tests.BlockPulling2
             Assert.Empty(this.helper.CallbacksCalled);
 
             Assert.Equal(10, this.puller.AssignedDownloadsByHash.Count);
+            this.VerifyAssignedDownloadsSortedOrder();
+        }
+        
+        /// <summary>
+        /// Assign some headers, peer that claimed them is disconnected. Process the queue.
+        /// Make sure that callbacks for those blocks are called with null, make sure job removed from the structures.
+        /// </summary>
+        [Fact]
+        public async Task AssignDownloadJobs_PeerDisconnectedAndJobFailedAsync()
+        {
+            INetworkPeer peer = this.helper.CreatePeer(out ExtendedBlockPullerBehavior behavior);
+
+            List<ChainedHeader> headers = this.helper.CreateConsequtiveHeaders(100);
+
+            this.puller.NewPeerTipClaimed(peer, headers.Last());
+
+            this.puller.RequestBlocksDownload(headers);
+
+            this.puller.PeerDisconnected(peer.Connection.Id);
+
+            await this.puller.AssignDownloadJobsAsync();
+
+            Assert.Equal(100, this.helper.CallbacksCalled.Count);
+            Assert.Empty(this.puller.AssignedDownloadsByHash);
+        }
+
+        /// <summary>
+        /// Assign some headers and when peer.BlockPullerBehaviour.Download is called- throw for one peer.
+        /// Make sure that all hashes that belong to that peer are reassigned to someone else and that
+        /// we don't have this peer in our structures.
+        /// </summary>
+        [Fact]
+        public async Task AssignDownloadJobs_PeerThrowsAndHisAssignmentAreReassignedAsync()
+        {
+            INetworkPeer peer1 = this.helper.CreatePeer(out ExtendedBlockPullerBehavior behavior1);
+            INetworkPeer peer2 = this.helper.CreatePeer(out ExtendedBlockPullerBehavior behavior2);
+            behavior2.ShouldThrowAtRequestBlocksAsync = true;
+
+            this.puller.SetMaxBlocksBeingDownloaded(int.MaxValue);
+
+            List<ChainedHeader> headers = this.helper.CreateConsequtiveHeaders(10000);
+
+            this.puller.NewPeerTipClaimed(peer1, headers.Last());
+            this.puller.NewPeerTipClaimed(peer2, headers.Last());
+
+            this.puller.RequestBlocksDownload(headers);
+
+            await this.puller.AssignDownloadJobsAsync();
+
+            int headersReassignedFromPeer2Count = headers.Count - this.puller.AssignedDownloadsByHash.Values.Count(x => x.PeerId == peer1.Connection.Id);
+            
+            Assert.Single(this.puller.ReassignedJobsQueue);
+            Assert.Empty(this.puller.DownloadJobsQueue);
+            Assert.Equal(headersReassignedFromPeer2Count, this.puller.ReassignedJobsQueue.Peek().Headers.Count);
+            Assert.Single(this.puller.PullerBehaviorsByPeerId);
+
+            await this.puller.AssignDownloadJobsAsync();
+
+            Assert.Empty(this.puller.ReassignedJobsQueue);
+            Assert.Empty(this.puller.DownloadJobsQueue);
+            Assert.Equal(headers.Count, this.puller.AssignedDownloadsByHash.Count);
+            Assert.True(this.puller.AssignedDownloadsByHash.All(x => x.Value.PeerId == peer1.Connection.Id));
+            this.VerifyAssignedDownloadsSortedOrder();
         }
 
         /*
-        /// <summary>
-        /// Assign some headers, peers that claimed them are disconnected. Make sure that callbacks for those blocks are called with null, make sure job removed from the structures.
-        /// </summary>
-        [Fact]
-        public void AssignDownloadJobs_PeerDisconnectedAndJobFailed()
-        {
-
-            throw new NotImplementedException();
-        }
-
-        /// <summary>
-        /// Assign some headers and when peer.BlockPullerBehaviour.Download is called- throw for one peer. Make sure that all hashes that belong to that peer are
-        /// reassigned to someone else and that we don't have this peer in our structures.
-        /// </summary>
-        [Fact]
-        public void AssignDownloadJobs_PeerThrowsAndHisAssignmentAreReassigned()
-        {
-
-            throw new NotImplementedException();
-        }
-
         /// <summary>
         /// We have 2 hashes in reassign queue and 2 in assign queue. There is 1 empty slot. Make sure that reassign queue is consumed fully and assign queue has only 1 item left.
         /// </summary>
         [Fact]
         public void AssignDownloadJobs_ReassignQueueIgnoresEmptySlots()
-        {
-
+        { 
             throw new NotImplementedException();
         }
         
@@ -759,6 +800,21 @@ namespace Stratis.Bitcoin.Tests.BlockPulling2
             throw new NotImplementedException();
         }
         */
+
+        //TODO check that order in linked list is correct when we ask blocks for download in random order (5-10, 1-4, 11-15)
+
+        private void VerifyAssignedDownloadsSortedOrder()
+        {
+            int current = -1;
+
+            foreach (AssignedDownload assignedDownload in this.puller.AssignedDownloadsSorted)
+            {
+                if (current != -1)
+                    Assert.True(assignedDownload.Header.Height >= current);
+
+                current = assignedDownload.Header.Height;
+            }
+        }
 
         private Random random = new Random();
 

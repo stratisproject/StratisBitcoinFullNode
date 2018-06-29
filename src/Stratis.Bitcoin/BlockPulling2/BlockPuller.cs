@@ -499,12 +499,12 @@ namespace Stratis.Bitcoin.BlockPulling2
             }
             else
             {
-                LinkedListNode<AssignedDownload> current = lastDownload.Previous;
-
-                while (current.Value.Header.Height > assignment.Header.Height)
+                LinkedListNode<AssignedDownload> current = lastDownload;
+                
+                while (current.Previous != null && current.Previous.Value.Header.Height > assignment.Header.Height)
                     current = current.Previous;
 
-                assignment.LinkedListNode = this.assignedDownloadsSorted.AddAfter(current, assignment);
+                assignment.LinkedListNode = this.assignedDownloadsSorted.AddBefore(current, assignment);
             }
 
             this.logger.LogTrace("(-)");
