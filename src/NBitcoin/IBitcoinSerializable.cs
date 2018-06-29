@@ -42,20 +42,28 @@ namespace NBitcoin
             ReadWrite(serializable, new MemoryStream(bytes), false, consensusFactory, version);
         }
 
+        private static BitcoinStream CreateBitcoinStream()
+        {
+            return new BitcoinStream(Stream.Null, true)
+            {
+                ConsensusFactory = new DefaultConsensusFactory(),
+            };
+        }
+
         public static int GetSerializedSize(this IBitcoinSerializable serializable, ProtocolVersion version, SerializationType serializationType)
         {
-            var s = new BitcoinStream(Stream.Null, true);
-            s.Type = serializationType;
-            s.ReadWrite(serializable);
-            return (int)s.Counter.WrittenBytes;
+            BitcoinStream bitcoinStream = CreateBitcoinStream();
+            bitcoinStream.Type = serializationType;
+            bitcoinStream.ReadWrite(serializable);
+            return (int)bitcoinStream.Counter.WrittenBytes;
         }
 
         public static int GetSerializedSize(this IBitcoinSerializable serializable, TransactionOptions options)
         {
-            var bms = new BitcoinStream(Stream.Null, true);
-            bms.TransactionOptions = options;
-            serializable.ReadWrite(bms);
-            return (int)bms.Counter.WrittenBytes;
+            BitcoinStream bitcoinStream = CreateBitcoinStream();
+            bitcoinStream.TransactionOptions = options;
+            serializable.ReadWrite(bitcoinStream);
+            return (int)bitcoinStream.Counter.WrittenBytes;
         }
 
         public static string ToHex(this IBitcoinSerializable serializable, Network network, SerializationType serializationType = SerializationType.Disk)
