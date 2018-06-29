@@ -1096,6 +1096,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
                 ChainedHeader currentChainTip = chainAChainHeaders[i];
                 cht.BlockDataDownloaded(currentChainTip, currentChainTip.Block);
                 cht.PartialValidationSucceeded(currentChainTip, out bool reorgRequired);
+                ctx.FinalizedBlockMock.Setup(m => m.GetFinalizedBlockHeight()).Returns(currentChainTip.Height);
                 List<int> peerIds = cht.ConsensusTipChanged(currentChainTip);
                 peerIds.Should().BeEmpty();
             }
@@ -1115,6 +1116,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
                 ChainedHeader currentChainTip = chainAChainHeaders[i];
                 cht.BlockDataDownloaded(currentChainTip, ctx.CreateBlock());
                 cht.PartialValidationSucceeded(currentChainTip, out bool reorgRequired);
+                ctx.FinalizedBlockMock.Setup(m => m.GetFinalizedBlockHeight()).Returns(currentChainTip.Height);
                 List<int> peerIds = cht.ConsensusTipChanged(currentChainTip);
                 if (currentChainTip.Height == maxReorg + initialChainSize)
                 {
