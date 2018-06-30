@@ -8,8 +8,6 @@ using Stratis.Bitcoin.BlockPulling2;
 using Stratis.Bitcoin.P2P.Peer;
 using Xunit;
 
-//TODO add test that checks that order in linked list is correct when we ask blocks for download in random order (5-10, 1-4, 11-15)
-
 namespace Stratis.Bitcoin.Tests.BlockPulling2
 {
     public class BlockPullerTests
@@ -55,7 +53,7 @@ namespace Stratis.Bitcoin.Tests.BlockPulling2
 
             await this.puller.AssignDownloadJobsAsync();
 
-            // Make sure jobs were assigned.
+            // Make sure job was assigned.
             foreach (ChainedHeader chainedHeader in headers)
                 Assert.True(this.puller.AssignedDownloadsByHash.ContainsKey(chainedHeader.HashBlock));
 
@@ -186,6 +184,9 @@ namespace Stratis.Bitcoin.Tests.BlockPulling2
 
             Assert.True(this.puller.PullerBehaviorsByPeerId.ContainsKey(peer.Connection.Id));
             Assert.Single(this.puller.PullerBehaviorsByPeerId);
+
+            this.puller.PeerDisconnected(peer.Connection.Id);
+            Assert.Empty(this.puller.PullerBehaviorsByPeerId);
         }
 
         /// <summary>
@@ -226,6 +227,7 @@ namespace Stratis.Bitcoin.Tests.BlockPulling2
             // All should be assigned to peer 2.
             Assert.Equal(headers.Count, this.puller.AssignedDownloadsByHash.Count);
             Assert.Equal(headers.Count, this.puller.AssignedDownloadsByHash.Values.Count(x => x.PeerId == peer2.Connection.Id));
+            Assert.Empty(this.puller.ReassignedJobsQueue);
         }
        
         /// <summary>
