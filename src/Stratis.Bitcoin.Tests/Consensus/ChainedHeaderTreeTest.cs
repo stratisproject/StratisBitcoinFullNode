@@ -203,15 +203,6 @@ namespace Stratis.Bitcoin.Tests.Consensus
         }
 
         [Fact]
-        public void ConnectHeaders_HeadersCantConnect_ShouldFail()
-        {
-            TestContext testContext = new TestContextBuilder().Build();
-            ChainedHeaderTree chainedHeaderTree = testContext.ChainedHeaderTree;
-
-            Assert.Throws<ConnectHeaderException>(() => chainedHeaderTree.ConnectNewHeaders(1, new List<BlockHeader>(new[] { testContext.Network.GetGenesis().Header })));
-        }
-
-        [Fact]
         public void ConnectHeaders_NoNewHeadersToConnect_ShouldReturnNothingToDownload()
         {
             TestContext testContext = new TestContextBuilder().WithInitialChain(10).Build();
@@ -249,6 +240,19 @@ namespace Stratis.Bitcoin.Tests.Consensus
 
             Assert.True(testContext.NoDownloadRequested(connectNewHeaders1));
             Assert.True(testContext.NoDownloadRequested(connectNewHeaders2));
+        }
+
+        /// <summary>
+        /// Issue 1 @ Create chained header tree component #1321
+        /// Supply headers where first header can't be connected - should throw.
+        /// </summary>
+        [Fact]
+        public void ConnectHeaders_HeadersCantConnect_ShouldFail()
+        {
+            TestContext testContext = new TestContextBuilder().Build();
+            ChainedHeaderTree chainedHeaderTree = testContext.ChainedHeaderTree;
+
+            Assert.Throws<ConnectHeaderException>(() => chainedHeaderTree.ConnectNewHeaders(1, new List<BlockHeader>(new[] { testContext.Network.GetGenesis().Header })));
         }
 
         /// <summary>
@@ -318,6 +322,33 @@ namespace Stratis.Bitcoin.Tests.Consensus
 
             // reassigning # so amount of items the same
             Assert.True(peerTipsByPeerIdBefore.Values.Count == peerTipsByPeerIdAfter.Values.Count);
+        }
+
+        /// <summary>
+        /// Issue 4 @ Create chained header tree component #1321
+        /// Supply headers where half of them are new and half are old. 
+        /// Make sure that ChainedHeader was created for new ones.
+        /// </summary>
+        [Fact]
+        public void ConnectHeaders_HalfOldHalfNew_ShouldCreateHeadersForNew()
+        {
+            const int initialChainSize = 20, chainExtensionSize = 20;
+
+            // Initialize tree with h1->h20.
+            TestContext testContext = new TestContextBuilder().WithInitialChain(initialChainSize).Build();
+            ChainedHeaderTree chainedHeaderTree = testContext.ChainedHeaderTree;
+            ChainedHeader chainTip = testContext.InitialChainTip;
+
+            // Extend chain from h21->h40.
+            ChainedHeader newChainTip = testContext.ExtendAChain(chainExtensionSize, chainTip);
+            List<BlockHeader> listOfOldAndNewHeaders = testContext.ChainedHeaderToList(newChainTip, initialChainSize + chainExtensionSize);
+            
+            // Supply both old and new headers. 
+            chainedHeaderTree.ConnectNewHeaders(1, listOfOldAndNewHeaders);
+
+            // ChainedHeader tree entries are created for all new BlockHeaders.
+            IEnumerable<uint256> hashesOfNewBlocks = listOfOldAndNewHeaders.Select(x => x.GetHash()).TakeLast(chainExtensionSize);
+            Assert.True(hashesOfNewBlocks.All(x => chainedHeaderTree.GetChainedHeadersByHash().Keys.Contains(x)));
         }
 
         /// <summary>
