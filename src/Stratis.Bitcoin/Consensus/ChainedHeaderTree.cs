@@ -72,9 +72,9 @@ namespace Stratis.Bitcoin.Consensus
         /// </para>
         /// </remarks>
         /// <param name="chainedHeader">The chained header.</param>
-        /// <param name="reorgRequired"><c>true</c> in case we want to switch our consensus tip to <paramref name="chainedHeader"/>.</param>
-        /// <returns>List of chained headers which block data should be partially validated next. Or <c>null</c> if none should be validated.</returns>
-        List<ChainedHeader> PartialValidationSucceeded(ChainedHeader chainedHeader, out bool reorgRequired);
+        /// <param name="fullValidationRequired"><c>true</c> in case we want to switch our consensus tip to <paramref name="chainedHeader"/>.</param>
+        /// <returns>List of chained header blocks with block data that should be partially validated next. Or <c>null</c> if none should be validated.</returns>
+        List<ChainedHeaderBlock> PartialValidationSucceeded(ChainedHeader chainedHeader, out bool fullValidationRequired);
 
         /// <summary>
         /// Handles situation when block data was considered to be invalid
@@ -140,10 +140,14 @@ namespace Stratis.Bitcoin.Consensus
         /// If the header is not in the tree <see cref="ChainedHeaderBlock"/> will be <c>null</c>, the <see cref="ChainedHeaderBlock.Block"/> may also be null.
         /// </summary>
         /// <remarks>
-        /// The block can be null when the block data has not yet been downloaded or if the block data has been persisted to the database and removed from the memory.
+        /// The block can be <c>null</c> when the block data has not yet been downloaded or if the block data has been persisted to the database and removed from the memory.
         /// </remarks>
         /// <returns>The block and its chained header (the <see cref="ChainedHeaderBlock.Block"/> can be <c>null</c> or the <see cref="ChainedHeaderBlock"/> result can be <c>null</c>).</returns>
         ChainedHeaderBlock GetChainedHeaderBlock(uint256 blockHash);
+
+        /// <summary>Get the chained header.</summary>
+        /// <returns>Chained header for specified block hash if it exists, <c>null</c> otherwise.</returns>
+        ChainedHeader GetChainedHeader(uint256 blockHash);
     }
 
     /// <inheritdoc />
@@ -261,6 +265,21 @@ namespace Stratis.Bitcoin.Consensus
             return chainedHeaderBlock;
         }
 
+        // <inheritdoc />
+        public ChainedHeader GetChainedHeader(uint256 blockHash)
+        {
+            this.logger.LogTrace("({0}:'{1}')", nameof(blockHash), blockHash);
+            
+            if (this.chainedHeadersByHash.TryGetValue(blockHash, out ChainedHeader chainedHeader))
+            {
+                this.logger.LogTrace("(-):'{0}'", chainedHeader);
+                return chainedHeader;
+            }
+
+            this.logger.LogTrace("(-):null");
+            return null;
+        }
+
         /// <summary>Gets the consensus tip.</summary>
         private ChainedHeader GetConsensusTip()
         {
@@ -303,11 +322,11 @@ namespace Stratis.Bitcoin.Consensus
         }
 
         /// <inheritdoc />
-        public List<ChainedHeader> PartialValidationSucceeded(ChainedHeader chainedHeader, out bool reorgRequired)
+        public List<ChainedHeaderBlock> PartialValidationSucceeded(ChainedHeader chainedHeader, out bool fullValidationRequired)
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(chainedHeader), chainedHeader);
 
-            reorgRequired = false;
+            fullValidationRequired = false;
 
             // Can happen in case peer was disconnected during the validation and it was the only peer claiming that header.
             if (!this.chainedHeadersByHash.ContainsKey(chainedHeader.HashBlock))
@@ -336,21 +355,22 @@ namespace Stratis.Bitcoin.Consensus
 
                 this.ClaimPeerTip(LocalPeerId, chainedHeader.HashBlock);
 
-                reorgRequired = true;
+                fullValidationRequired = true;
             }
 
-            var headersToValidate = new List<ChainedHeader>();
+            var chainedHeaderBlocksToValidate = new List<ChainedHeaderBlock>();
             foreach (ChainedHeader header in chainedHeader.Next)
             {
                 if (header.BlockDataAvailability == BlockDataAvailabilityState.BlockAvailable)
                 {
-                    headersToValidate.Add(header);
+                    // Block header is not ancestor of the consensus tip so it's block data is guaranteed to be there. 
+                    chainedHeaderBlocksToValidate.Add(new ChainedHeaderBlock(header.Block, header));
                     this.logger.LogTrace("Chained header '{0}' is selected for partial validation.", header);
                 }
             }
             
-            this.logger.LogTrace("(-):*.{0}={1},{2}={3}", nameof(headersToValidate.Count), headersToValidate.Count, nameof(reorgRequired), reorgRequired);
-            return headersToValidate;
+            this.logger.LogTrace("(-):*.{0}={1},{2}={3}", nameof(chainedHeaderBlocksToValidate.Count), chainedHeaderBlocksToValidate.Count, nameof(fullValidationRequired), fullValidationRequired);
+            return chainedHeaderBlocksToValidate;
         }
 
         /// <summary>Sets the tip claim for a peer.</summary>

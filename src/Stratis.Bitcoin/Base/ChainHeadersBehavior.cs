@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Connection;
+using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.P2P.Protocol;
@@ -84,8 +85,12 @@ namespace Stratis.Bitcoin.Base
             }
         }
 
-        public List<ChainedHeader> ConsensusAdvanced(ChainedHeader chainedHeader)
+        public ConnectNewHeadersResult ConsensusTipChanged(ChainedHeader chainedHeader)
         {
+            // TODO async lock has to be obtained before calling CM.HeadersPresented
+            //TODO Call CM.HeadersPresented with (false) and return ConnectNewHeadersResult
+            // TODO clear the cached when peer disconnects
+
             throw new NotImplementedException();
         }
 
@@ -424,11 +429,15 @@ namespace Stratis.Bitcoin.Base
             this.logger.LogTrace("(-)");
         }
 
-        public Task ResetPendingTipAndSync()
+        public async Task ResetPendingTipAndSyncAsync()
         {
+            this.logger.LogTrace("()");
+
             this.pendingTip = null;
 
-            return this.TrySyncAsync();
+            await this.TrySyncAsync().ConfigureAwait(false);
+
+            this.logger.LogTrace("(-)");
         }
 
         /// <summary>

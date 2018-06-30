@@ -13,9 +13,8 @@ namespace Stratis.Bitcoin.Consensus.Validators
     /// <summary>
     /// A callback that is invoked when <see cref="IBlockValidator.StartPartialValidation"/> completes validation of a block.
     /// </summary>
-    /// <param name="chainedHeaderBlock">The block and its chained header.</param>
-    /// <param name="success">An indicator whether validation succeeded.</param>
-    public delegate Task OnPartialValidationCompletedAsyncCallback(ChainedHeaderBlock chainedHeaderBlock, bool success);
+    /// <param name="validationResult">Result of the validation including information about banning if necessary.</param>
+    public delegate Task OnPartialValidationCompletedAsyncCallback(PartialValidationResult validationResult);
 
     public interface IHeaderValidator
     {
