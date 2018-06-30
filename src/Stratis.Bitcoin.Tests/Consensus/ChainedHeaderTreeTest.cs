@@ -1096,7 +1096,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
                 ChainedHeader currentChainTip = chainAChainHeaders[i];
                 cht.BlockDataDownloaded(currentChainTip, currentChainTip.Block);
                 cht.PartialValidationSucceeded(currentChainTip, out bool reorgRequired);
-                ctx.FinalizedBlockMock.Setup(m => m.GetFinalizedBlockHeight()).Returns(currentChainTip.Height);
+                ctx.FinalizedBlockMock.Setup(m => m.GetFinalizedBlockHeight()).Returns(currentChainTip.Height - maxReorg);
                 List<int> peerIds = cht.ConsensusTipChanged(currentChainTip);
                 peerIds.Should().BeEmpty();
             }
@@ -1108,8 +1108,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
 
             // Chain B is presented by peer 2.
             List<BlockHeader> listOfChainBHeaders = ctx.ChainedHeaderToList(chainBTip, chainBExtension);
-            Action connectAction = () => cht.ConnectNewHeaders(2, listOfChainBHeaders);
-            connectAction.Should().Throw<MaxReorgViolationException>();
+            cht.ConnectNewHeaders(2, listOfChainBHeaders);
 
             // Continue syncing remaining blocks from chain A.
             for (int i = maxReorg - 10; i < maxReorg + 50; i++)
@@ -1117,9 +1116,9 @@ namespace Stratis.Bitcoin.Tests.Consensus
                 ChainedHeader currentChainTip = chainAChainHeaders[i];
                 cht.BlockDataDownloaded(currentChainTip, ctx.CreateBlock());
                 cht.PartialValidationSucceeded(currentChainTip, out bool reorgRequired);
-                ctx.FinalizedBlockMock.Setup(m => m.GetFinalizedBlockHeight()).Returns(currentChainTip.Height);
+                ctx.FinalizedBlockMock.Setup(m => m.GetFinalizedBlockHeight()).Returns(currentChainTip.Height - maxReorg);
                 List<int> peerIds = cht.ConsensusTipChanged(currentChainTip);
-                if (currentChainTip.Height == maxReorg + initialChainSize)
+                if (currentChainTip.Height >= maxReorg + initialChainSize)
                 {
                     peerIds.Should().HaveCount(1);
                     peerIds[0].Should().Be(2);
