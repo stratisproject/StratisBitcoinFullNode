@@ -74,7 +74,7 @@ namespace NBitcoin.Tests
                 sigHashHex = (string)test[4];
 
 
-                tx.ReadWrite(ParseHex(raw_tx));                
+                tx.ReadWrite(ParseHex(raw_tx), Network.Main.Consensus.ConsensusFactory);
 
                 byte[] raw = ParseHex(raw_script);
                 scriptCode = new Script(raw);

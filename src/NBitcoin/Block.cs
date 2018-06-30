@@ -170,7 +170,7 @@ namespace NBitcoin
                 throw new ArgumentNullException(nameof(network));
 
             Block block = network.Consensus.ConsensusFactory.CreateBlock();
-            block.ReadWrite(Encoders.Hex.DecodeData(hex), network: network);
+            block.ReadWrite(Encoders.Hex.DecodeData(hex), consensusFactory: network.Consensus.ConsensusFactory);
 
             return block;
         }
@@ -184,7 +184,7 @@ namespace NBitcoin
                 throw new ArgumentNullException(nameof(network));
 
             Block block = network.Consensus.ConsensusFactory.CreateBlock();
-            block.ReadWrite(hex, network: network);
+            block.ReadWrite(hex, network.Consensus.ConsensusFactory);
 
             return block;
         }

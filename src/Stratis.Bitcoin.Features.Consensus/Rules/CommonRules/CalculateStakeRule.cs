@@ -17,7 +17,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         {
             var posRuleContext = context as PosRuleContext;
 
-            posRuleContext.BlockStake = new BlockStake(context.ValidationContext.Block);
+            posRuleContext.BlockStake = BlockStake.Load(context.ValidationContext.Block);
 
             if (posRuleContext.BlockStake.IsProofOfWork())
             {

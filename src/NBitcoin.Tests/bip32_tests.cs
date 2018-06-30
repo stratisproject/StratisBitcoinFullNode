@@ -108,7 +108,7 @@ namespace NBitcoin.Tests
         [Trait("UnitTest", "UnitTest")]
         public void CanRecoverExtKeyFromExtPubKeyAndOneChildExtKey()
         {
-            ExtKey key = ExtKey.Parse("xprv9s21ZrQH143K3Z9EwCXrA5VbypnvWGiE9z22S1cLLPi7r8DVUkTabBvMjeirS8KCyppw24KoD4sFmja8UDU4VL32SBdip78LY6sz3X2GPju")
+            ExtKey key = ExtKey.Parse("xprv9s21ZrQH143K3Z9EwCXrA5VbypnvWGiE9z22S1cLLPi7r8DVUkTabBvMjeirS8KCyppw24KoD4sFmja8UDU4VL32SBdip78LY6sz3X2GPju", Network.Main)
                 .Derive(1);
             ExtPubKey pubkey = key.Neuter();
             ExtKey childKey = key.Derive(1);
@@ -127,7 +127,7 @@ namespace NBitcoin.Tests
         [Trait("UnitTest", "UnitTest")]
         public void CanRecoverExtKeyFromExtPubKeyAndOneChildExtKey2()
         {
-            for(int i = 0; i < 255; i++)
+            for (int i = 0; i < 255; i++)
             {
                 ExtKey key = new ExtKey().Derive((uint)i);
                 ExtKey childKey = key.Derive((uint)i);
@@ -240,7 +240,7 @@ namespace NBitcoin.Tests
             byte[] seed = TestUtils.ParseHex(test.strHexMaster);
             var key = new ExtKey(seed);
             ExtPubKey pubkey = key.Neuter();
-            foreach(TestDerivation derive in test.vDerive)
+            foreach (TestDerivation derive in test.vDerive)
             {
                 byte[] data = key.ToBytes();
                 Assert.Equal(74, data.Length);
@@ -255,7 +255,7 @@ namespace NBitcoin.Tests
                 // Derive new keys
                 ExtKey keyNew = key.Derive(derive.nChild);
                 ExtPubKey pubkeyNew = keyNew.Neuter();
-                if(!((derive.nChild & 0x80000000) != 0))
+                if (!((derive.nChild & 0x80000000) != 0))
                 {
                     // Compare with public derivation
                     ExtPubKey pubkeyNew2 = pubkey.Derive(derive.nChild);

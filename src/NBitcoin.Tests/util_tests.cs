@@ -559,7 +559,7 @@ namespace NBitcoin.Tests
         [Trait("UnitTest", "UnitTest")]
         public void NetworksAreValid()
         {
-            foreach(Network network in Network.GetNetworks())
+            foreach(Network network in NetworksContainer.GetNetworks())
             {
                 Assert.NotNull(network);
             }
@@ -807,7 +807,7 @@ namespace NBitcoin.Tests
 
                     if(test.Network != null)
                     {
-                        foreach(Network network in Network.GetNetworks())
+                        foreach(Network network in NetworksContainer.GetNetworks())
                         {
                             if(network == test.Network)
                                 break;
