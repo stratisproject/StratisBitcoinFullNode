@@ -11,7 +11,7 @@ namespace Stratis.Bitcoin.Consensus
         {
             var scriptTemplate = StandardScripts.GetTemplateFromScriptPubKey(network, script);
 
-            string destinationAddress = "";
+            var destinationAddress = string.Empty;
 
             switch (scriptTemplate.Type)
             {

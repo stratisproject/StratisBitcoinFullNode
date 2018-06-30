@@ -469,7 +469,6 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
             }
 
             BitcoinSecret dest = this.MinerSecret;
-
             var blocks = new List<Block>();
             DateTimeOffset now = this.MockTime == null ? DateTimeOffset.UtcNow : this.MockTime.Value;
 
@@ -506,7 +505,6 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
                 {
                     uint256 blockHash = block.GetHash();
                     var newChain = new ChainedHeader(block.Header, blockHash, fullNode.Chain.Tip);
-
                     ChainedHeader oldTip = fullNode.Chain.SetTip(newChain);
                     fullNode.ConsensusLoop().Puller.InjectBlock(blockHash, new DownloadedBlock { Length = block.GetSerializedSize(), Block = block }, CancellationToken.None);
                 }

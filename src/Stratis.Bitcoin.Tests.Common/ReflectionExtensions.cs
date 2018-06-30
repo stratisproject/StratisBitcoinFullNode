@@ -30,6 +30,18 @@ namespace Stratis.Bitcoin.Tests.Common
             throw new Exception();
         }
 
+        /// <summary>Gets private constant member of specified type.</summary>
+        public static T GetPrivateConstantValue<T>(this Type type, string constantName)
+        {
+            T value = type
+                .GetFields(BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.FlattenHierarchy)
+                .Where(fi => fi.IsLiteral && !fi.IsInitOnly && fi.FieldType == typeof(T) && fi.Name == constantName)
+                .Select(x => (T)x.GetRawConstantValue())
+                .First();
+
+            return value;
+        }
+
         /// <summary>
         /// Gets the member info.
         /// </summary>
@@ -56,6 +68,14 @@ namespace Stratis.Bitcoin.Tests.Common
                 return fieldInfos[0];
 
             return null;
+        }
+
+        /// <summary>Calls private method using reflection.</summary>
+        public static object InvokeMethod<T>(this T obj, string methodName, params object[] args)
+        {
+            Type type = typeof(T);
+            MethodInfo method = type.GetTypeInfo().GetDeclaredMethod(methodName);
+            return method.Invoke(obj, args);
         }
 
         /// <summary>

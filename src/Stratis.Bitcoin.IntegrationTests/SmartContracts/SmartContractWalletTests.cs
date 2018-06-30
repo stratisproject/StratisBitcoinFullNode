@@ -594,7 +594,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 SmartContractSharedSteps.SendTransactionAndMine(scSender, scReceiver, senderWalletController, response.Hex);
 
                 ContractStateRepositoryRoot senderState = scSender.FullNode.NodeService<ContractStateRepositoryRoot>();
-                Assert.Equal((ulong) 30 * 100_000_000, senderState.GetCurrentBalance(new Address(response.NewContractAddress).ToUint160(new SmartContractsRegTest())));
+                Assert.Equal((ulong)30 * 100_000_000, senderState.GetCurrentBalance(new Address(response.NewContractAddress).ToUint160(new SmartContractsRegTest())));
             }
         }
     }

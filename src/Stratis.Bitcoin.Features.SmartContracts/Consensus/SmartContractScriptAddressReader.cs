@@ -1,13 +1,11 @@
-﻿using System;
-using NBitcoin;
-using Stratis.Bitcoin.Consensus;
+﻿using NBitcoin;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Executor.Reflection;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Consensus
 {
-    public class SmartContractScriptAddressReader : IScriptAddressReader
+    public sealed class SmartContractScriptAddressReader : IScriptAddressReader
     {
         private readonly IScriptAddressReader baseAddressReader;
 
@@ -21,7 +19,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Consensus
             if (script.IsSmartContractCreate() || script.IsSmartContractCall())
             {
                 var carrier = SmartContractCarrier.Deserialize(script);
-                return carrier.ContractAddress.ToAddress(network);
+                return carrier.ContractAddress?.ToAddress(network);
             }
 
             return this.baseAddressReader.GetAddressFromScriptPubKey(network, script);

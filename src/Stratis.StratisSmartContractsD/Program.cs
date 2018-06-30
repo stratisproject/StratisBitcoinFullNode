@@ -28,7 +28,7 @@ namespace Stratis.StratisSmartContractsD
         {
             try
             {
-                var network = Network.Register(new SmartContractsTest());
+                Network network = NetworksContainer.Register(new SmartContractsTest());
                 NodeSettings nodeSettings = new NodeSettings(network, ProtocolVersion.ALT_PROTOCOL_VERSION, "StratisSC", args: args);
 
                 Bitcoin.IFullNode node = new FullNodeBuilder()

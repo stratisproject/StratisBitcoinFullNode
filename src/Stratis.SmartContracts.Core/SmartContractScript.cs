@@ -12,19 +12,19 @@ namespace Stratis.SmartContracts.Core
             if (firstOp == null)
                 return false;
 
-            var opCode = (byte) firstOp.Code;
+            var opCode = (byte)firstOp.Code;
 
-            return opCode == (byte) ScOpcodeType.OP_CALLCONTRACT || opCode == (byte) ScOpcodeType.OP_CREATECONTRACT;            
+            return opCode == (byte)ScOpcodeType.OP_CALLCONTRACT || opCode == (byte)ScOpcodeType.OP_CREATECONTRACT;
         }
 
         public static bool IsSmartContractCall(this Script script)
-        {            
+        {
             Op firstOp = script.ToOps().FirstOrDefault();
 
             if (firstOp == null)
                 return false;
-            
-            return (byte)firstOp.Code == (byte) ScOpcodeType.OP_CALLCONTRACT;
+
+            return (byte)firstOp.Code == (byte)ScOpcodeType.OP_CALLCONTRACT;
         }
 
         public static bool IsSmartContractCreate(this Script script)
@@ -33,8 +33,8 @@ namespace Stratis.SmartContracts.Core
 
             if (firstOp == null)
                 return false;
-            
-            return (byte)firstOp.Code == (byte) ScOpcodeType.OP_CREATECONTRACT;
+
+            return (byte)firstOp.Code == (byte)ScOpcodeType.OP_CREATECONTRACT;
         }
 
         public static bool IsSmartContractSpend(this Script script)
@@ -43,7 +43,7 @@ namespace Stratis.SmartContracts.Core
             if (op == null)
                 return false;
 
-            return (byte) op.Code == (byte) ScOpcodeType.OP_SPEND;
+            return (byte)op.Code == (byte)ScOpcodeType.OP_SPEND;
         }
 
         public static bool IsSmartContractInternalCall(this Script script)
@@ -52,7 +52,7 @@ namespace Stratis.SmartContracts.Core
             if (op == null)
                 return false;
 
-            return (byte) op.Code == (byte) ScOpcodeType.OP_INTERNALCONTRACTTRANSFER;
+            return (byte)op.Code == (byte)ScOpcodeType.OP_INTERNALCONTRACTTRANSFER;
         }
     }
 

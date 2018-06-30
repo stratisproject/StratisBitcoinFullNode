@@ -166,8 +166,11 @@ namespace Stratis.SmartContracts.Executor.Reflection
         /// </summary>
         public byte[] Serialize()
         {
-            var bytes = new List<byte>();
-            bytes.Add((byte) this.OpCodeType);
+            var bytes = new List<byte>
+            {
+                this.OpCodeType
+            };
+
             bytes.AddRange(this.PrefixLength(BitConverter.GetBytes(this.VmVersion)));
 
             if (this.OpCodeType == (byte) ScOpcodeType.OP_CALLCONTRACT)

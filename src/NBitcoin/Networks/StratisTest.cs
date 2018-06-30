@@ -5,7 +5,7 @@ using NBitcoin.Protocol;
 
 namespace NBitcoin.Networks
 {
-    public class StratisTest : StratisMain
+    public class StratisTest : StratisMainNet
     {
         public StratisTest()
         {

@@ -17,7 +17,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         }
 
         /// <summary>
-        /// <see cref="ReadWrite(NBitcoin.BitcoinStream)"/> overridden so that we can write the <see cref="hashStateRoot"/>.
+        /// <see cref="ReadWrite(BitcoinStream)"/> overridden so that we can write the <see cref="hashStateRoot"/>.
         /// </summary>
         public override void ReadWrite(BitcoinStream stream)
         {

@@ -149,7 +149,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
             if (receipt == null)
             {
                 this.logger.LogTrace("(-)[RECEIPT_NOT_FOUND]");
-                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, 
+                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest,
                     "Receipt not found.",
                     "Could not find a stored transaction for this hash.");
             }
@@ -265,10 +265,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
             }
 
             ulong totalFee = (gasPrice * gasLimit) + Money.Parse(request.FeeAmount);
-            var context = new TransactionBuildContext(
-                new WalletAccountReference(request.WalletName, request.AccountName),
-                new[] { new Recipient { Amount = request.Amount ?? "0", ScriptPubKey = new Script(carrier.Serialize()) } }.ToList(),
-                request.Password)
+            var walletAccountReference = new WalletAccountReference(request.WalletName, request.AccountName);
+            var recipient = new Recipient { Amount = request.Amount ?? "0", ScriptPubKey = new Script(carrier.Serialize()) };
+            var context = new TransactionBuildContext(walletAccountReference, new[] { recipient }.ToList(), request.Password)
             {
                 TransactionFee = totalFee,
                 ChangeAddress = senderAddress,
@@ -277,7 +276,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
                 UseAllInputs = false,
                 DustPrevention = false
             };
-            
+
             try
             {
                 Transaction transaction = this.walletTransactionHandler.BuildTransaction(context);
