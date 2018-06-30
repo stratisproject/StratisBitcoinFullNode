@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 using Microsoft.Extensions.DependencyInjection;
@@ -197,7 +199,20 @@ namespace Stratis.Bitcoin.Builder
                 fullNodeServiceProvider,
                 this.Features.FeatureRegistrations.Select(s => s.FeatureType).ToList()));
 
+            this.WritePID();
+
             return fullNode;
+        }
+
+        /// <summary>
+        /// Writes a file called pid to DataDir containing the Process ID
+        /// </summary>
+        private void WritePID()
+        {
+            var fileStorage = new FileStorage<int>(this.NodeSettings.DataDir);
+            int processId = Process.GetCurrentProcess().Id;
+
+            fileStorage.SaveToFile(processId, "pid");
         }
 
         /// <summary>
