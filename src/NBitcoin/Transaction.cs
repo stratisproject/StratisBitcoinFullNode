@@ -1888,12 +1888,6 @@ namespace NBitcoin
             return new SequenceLock(nMinHeight, nMinTime);
         }
 
-
-        private DateTimeOffset Max(DateTimeOffset a, DateTimeOffset b)
-        {
-            return a > b ? a : b;
-        }
-
         /// <summary>
         /// Create a transaction with the specified option only. (useful for stripping data from a transaction)
         /// </summary>

@@ -35,13 +35,6 @@ namespace NBitcoin.JsonConverters
             throw new JsonObjectException("Invalid bitcoin object of type " + objectType.Name, reader);
         }
 
-        private static void InverseIfNeeded(Type type, byte[] bytes)
-        {
-            bool inverse = type == typeof(uint256) || type == typeof(uint160);
-            if(inverse)
-                Array.Reverse(bytes);
-        }
-
         public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
         {
             if(value != null)
