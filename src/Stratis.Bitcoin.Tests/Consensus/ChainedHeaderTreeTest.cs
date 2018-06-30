@@ -278,6 +278,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
             Assert.True(testContext.NoDownloadRequested(connectedHeadersResultOld));
             Assert.Equal(listOfNewHeaders.Last(), connectedHeadersResultNew.DownloadTo.Header);
             Assert.Equal(listOfNewHeaders.First(), connectedHeadersResultNew.DownloadFrom.Header);
+            Assert.True(connectedHeadersResultNew.HaveBlockDataAvailabilityStateOf(BlockDataAvailabilityState.BlockRequired));
         }
 
         /// <summary>
@@ -424,14 +425,8 @@ namespace Stratis.Bitcoin.Tests.Consensus
             ChainedHeader chainedHeaderFrom = connectNewHeadersResult.DownloadFrom;
             ChainedHeader chainedHeaderTo = connectNewHeadersResult.DownloadTo;
             int headersToDownloadCount = chainedHeaderTo.Height - chainedHeaderFrom.Height + 1; // Inclusive
+            Assert.True(connectNewHeadersResult.HaveBlockDataAvailabilityStateOf(BlockDataAvailabilityState.BlockRequired));
 
-            ChainedHeader chainedHeader = chainedHeaderTo;
-            while (chainedHeader.Height >= chainedHeaderFrom.Height)
-            {
-                chainedHeader.BlockDataAvailability.Should().Be(BlockDataAvailabilityState.BlockRequired);
-                chainedHeader = chainedHeader.Previous;
-            }
-            
             // ToDownload array of the same size as the amount of headers
             Assert.Equal(headersToDownloadCount, peer2Headers.Count);
         }
@@ -663,7 +658,8 @@ namespace Stratis.Bitcoin.Tests.Consensus
 
             connectNewHeadersResult.DownloadFrom.HashBlock.Should().Be(listOfHeadersBeforeCheckpoint.First().GetHash());
             connectNewHeadersResult.DownloadTo.HashBlock.Should().Be(unconsumedHeaders.Last().GetHash());
-            
+            Assert.True(connectNewHeadersResult.HaveBlockDataAvailabilityStateOf(BlockDataAvailabilityState.BlockRequired));
+
             ChainedHeader chainedHeader = chainedHeaderTree.GetChainedHeadersByHash()
                 .SingleOrDefault(x => (x.Value.HashBlock == checkpoint.Header.GetHash())).Value;
 
@@ -712,6 +708,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
             ConnectNewHeadersResult connectNewHeadersResult = cht.ConnectNewHeaders(1, listOfChainABlockHeaders);
             ChainedHeader chainedHeaderTo = connectNewHeadersResult.DownloadTo;
             chainedHeaderTo.HashBlock.Should().Be(chainATip.HashBlock);
+            Assert.True(connectNewHeadersResult.HaveBlockDataAvailabilityStateOf(BlockDataAvailabilityState.BlockRequired));
 
             // Set chain A tip as a consensus tip.
             cht.ConsensusTipChanged(chainATip);
@@ -720,7 +717,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
             // B has less chain work.
             connectNewHeadersResult = cht.ConnectNewHeaders(2, listOfChainBBlockHeaders);
             connectNewHeadersResult.DownloadTo.Should().BeNull();
-
+             
             // Add more chain work and blocks into chain B.
             const int chainBAdditionalBlocks = 4;
             chainBTip = ctx.ExtendAChain(chainBAdditionalBlocks, chainBTip); // i.e. (h1=h2=h3=h4)=b5=b6=b7=b8=b9=b10
@@ -739,6 +736,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
 
             chainedHeaderTo = connectNewHeadersResult.DownloadTo;
             chainedHeaderTo.HashBlock.Should().Be(chainBTip.HashBlock);
+            Assert.True(connectNewHeadersResult.HaveBlockDataAvailabilityStateOf(BlockDataAvailabilityState.BlockRequired));
         }
 
         /// <summary>
@@ -779,7 +777,8 @@ namespace Stratis.Bitcoin.Tests.Consensus
             // DownloadTo should be set to a checkpoint 1. 
             ConnectNewHeadersResult result = cht.ConnectNewHeaders(1, listOfNewChainHeaders.Take(5).ToList());
             result.DownloadTo.HashBlock.Should().Be(checkpoint1.Header.GetHash());
-
+            Assert.True(result.HaveBlockDataAvailabilityStateOf(BlockDataAvailabilityState.BlockRequired));
+            
             // Remaining 5 blocks are presented by peer 1 which do not cover checkpoint 2.
             // InvalidHeaderException should be thrown.
             List<BlockHeader> violatingHeaders = listOfNewChainHeaders.Skip(5).ToList();
@@ -828,12 +827,14 @@ namespace Stratis.Bitcoin.Tests.Consensus
             ConnectNewHeadersResult connectNewHeadersResult = cht.ConnectNewHeaders(1, listOfChainABlockHeaders);
             ChainedHeader chainedHeaderDownloadTo = connectNewHeadersResult.DownloadTo;
             chainedHeaderDownloadTo.HashBlock.Should().Be(chainATip.HashBlock);
+            Assert.True(connectNewHeadersResult.HaveBlockDataAvailabilityStateOf(BlockDataAvailabilityState.BlockRequired));
 
             // Chain B is presented by peer 2. It doesn't meet "assume valid" hash but should still
             // be marked for a download.
             connectNewHeadersResult = cht.ConnectNewHeaders(2, listOfChainBBlockHeaders);
             chainedHeaderDownloadTo = connectNewHeadersResult.DownloadTo;
             chainedHeaderDownloadTo.HashBlock.Should().Be(chainBTip.HashBlock);
+            Assert.True(connectNewHeadersResult.HaveBlockDataAvailabilityStateOf(BlockDataAvailabilityState.BlockRequired));
         }
 
         /// <summary>
@@ -884,6 +885,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
             ConnectNewHeadersResult result = cht.ConnectNewHeaders(1, listOfChainABlockHeaders);
             result.DownloadFrom.HashBlock.Should().Be(listOfChainABlockHeaders.Skip(2).First().GetHash());
             result.DownloadTo.HashBlock.Should().Be(listOfChainABlockHeaders.Last().GetHash());
+            Assert.True(result.HaveBlockDataAvailabilityStateOf(BlockDataAvailabilityState.BlockRequired));
 
             // Chain B is presented by peer 2.
             // DownloadFrom should be set to header 5. 
@@ -891,6 +893,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
             result = cht.ConnectNewHeaders(2, listOfChainBBlockHeaders);
             result.DownloadFrom.HashBlock.Should().Be(listOfChainBBlockHeaders[checkpointHeight].GetHash());
             result.DownloadTo.HashBlock.Should().Be(listOfChainBBlockHeaders.Last().GetHash());
+            Assert.True(result.HaveBlockDataAvailabilityStateOf(BlockDataAvailabilityState.BlockRequired));
         }
 
         /// <summary>
@@ -936,6 +939,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
             ConnectNewHeadersResult result = cht.ConnectNewHeaders(2, listOfCurrentChainHeaders);
             result.DownloadFrom.HashBlock.Should().Be(listOfCurrentChainHeaders.Skip(2).First().GetHash());
             result.DownloadTo.HashBlock.Should().Be(listOfCurrentChainHeaders.Last().GetHash());
+            Assert.True(result.HaveBlockDataAvailabilityStateOf(BlockDataAvailabilityState.BlockRequired));
         }
 
         /// <summary>
