@@ -1284,5 +1284,38 @@ namespace Stratis.Bitcoin.Tests.Consensus
                 }
             }
         }
+
+        /// <summary>
+        /// Issue 32 @ Call FullValidationSucceeded on some header.
+        /// Make sure header.ValidationState == FV
+        /// </summary>
+        [Fact]
+        public void ChainOfHeaders_CallFullValidationSucceededOnHeader_ValidationStateSetToFullyValidated()
+        {
+            // Setup with initial chain of 17 headers (h1->h17).
+            const int initialChainSize = 17;
+            TestContext testContext = new TestContextBuilder().WithInitialChain(initialChainSize).Build();
+            ChainedHeaderTree chainedHeaderTree = testContext.ChainedHeaderTree;
+            ChainedHeader chainTip = testContext.InitialChainTip;
+
+            // Extend chain and connect all headers (h1->h22).
+            const int extensionChainSize = 5;
+            chainTip = testContext.ExtendAChain(extensionChainSize, chainTip);
+            List<BlockHeader> listOfChainHeaders =
+                testContext.ChainedHeaderToList(chainTip, initialChainSize + extensionChainSize);
+            ConnectNewHeadersResult connectNewHeadersResult =
+                chainedHeaderTree.ConnectNewHeaders(1, listOfChainHeaders);
+            chainTip = connectNewHeadersResult.Consumed;
+
+            // Select an arbitrary header h19 on the extended chain.
+            ChainedHeader newHeader = chainTip.GetAncestor(19);
+
+            // Verify its initial BlockValidationState.
+            Assert.Equal(ValidationState.HeaderValidated, newHeader.BlockValidationState);
+
+            // Call FullValidationSucceeded and verify BlockValidationState has changed.
+            chainedHeaderTree.FullValidationSucceeded(newHeader);
+            Assert.Equal(ValidationState.FullyValidated, newHeader.BlockValidationState);
+        }
     }
 }
