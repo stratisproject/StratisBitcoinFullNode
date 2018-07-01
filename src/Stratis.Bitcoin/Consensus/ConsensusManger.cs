@@ -323,20 +323,30 @@ namespace Stratis.Bitcoin.Consensus
             {
                 if (connectBlocksResult.PeersToBan != null)
                 {
+                    var peersToBan = new List<INetworkPeer>();
+
                     lock (this.peerLock)
                     {
                         foreach (int peerId in connectBlocksResult.PeersToBan)
                         {
                             if (this.peersByPeerId.TryGetValue(peerId, out INetworkPeer peer))
-                                this.peerBanning.BanAndDisconnectPeer(peer.PeerEndPoint, connectBlocksResult.BanDurationSeconds, connectBlocksResult.BanReason);
+                                peersToBan.Add(peer);
                         }
-
-                        this.ProcessDownloadQueueLocked();
                     }
+
+                    this.logger.LogTrace("{0} peers will be banned.", peersToBan.Count);
+
+                    foreach (INetworkPeer peer in peersToBan)
+                        this.peerBanning.BanAndDisconnectPeer(peer.PeerEndPoint, connectBlocksResult.BanDurationSeconds, connectBlocksResult.BanReason);
                 }
 
                 if (connectBlocksResult.ConsensusTipChanged)
                     this.NotifyBehaviorsOnConsensusTipChanged();
+
+                lock (this.peerLock)
+                {
+                    this.ProcessDownloadQueueLocked();
+                }
             }
 
             if (chainedHeaderBlocksToValidate != null)
@@ -562,11 +572,6 @@ namespace Stratis.Bitcoin.Consensus
                 this.signals.SignalBlock(validatedBlock.Block);
             }
 
-            lock (this.peerLock)
-            {
-                this.ProcessDownloadQueueLocked();
-            }
-
             this.logger.LogTrace("(-):'{0}'", connectBlockResult);
             return connectBlockResult;
         }
@@ -578,8 +583,7 @@ namespace Stratis.Bitcoin.Consensus
         private async Task<ConnectBlocksResult> ReconnectOldChainAsync(ChainedHeader oldTip, ChainedHeader currentTip, List<ChainedHeaderBlock> blocksToReconnect)
         {
             this.logger.LogTrace("({0}:'{1}',{2}:'{3}',{4}.{5}:{6})", nameof(oldTip), oldTip, nameof(currentTip), currentTip, nameof(blocksToReconnect), nameof(blocksToReconnect.Count), blocksToReconnect.Count);
-
-
+            
             // Connect back the old blocks.
             ConnectBlocksResult connectBlockResult = await this.ConnectBlocksAsync(currentTip, blocksToReconnect).ConfigureAwait(false);
 
