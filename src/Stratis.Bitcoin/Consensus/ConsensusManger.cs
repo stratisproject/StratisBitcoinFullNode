@@ -270,18 +270,23 @@ namespace Stratis.Bitcoin.Consensus
             }
             else
             {
+                var peersToBan = new List<INetworkPeer>();
+
                 lock (this.peerLock)
                 {
-                    List<int> peersToBan = this.chainedHeaderTree.PartialOrFullValidationFailed(validationResult.ChainedHeaderBlock.ChainedHeader);
+                    List<int> peerIdsToBan = this.chainedHeaderTree.PartialOrFullValidationFailed(validationResult.ChainedHeaderBlock.ChainedHeader);
                     
-                    this.logger.LogDebug("Validation of block '{0}' failed, banning and disconnecting {1} peers.", validationResult.ChainedHeaderBlock, peersToBan.Count);
+                    this.logger.LogDebug("Validation of block '{0}' failed, banning and disconnecting {1} peers.", validationResult.ChainedHeaderBlock, peerIdsToBan.Count);
 
-                    foreach (int peerId in peersToBan)
+                    foreach (int peerId in peerIdsToBan)
                     {
                         if (this.peersByPeerId.TryGetValue(peerId, out INetworkPeer peer))
-                            this.peerBanning.BanAndDisconnectPeer(peer.RemoteSocketEndpoint, validationResult.BanDurationSeconds, validationResult.BanReason);
+                            peersToBan.Add(peer);
                     }
                 }
+                
+                foreach (INetworkPeer peer in peersToBan)
+                    this.peerBanning.BanAndDisconnectPeer(peer.RemoteSocketEndpoint, validationResult.BanDurationSeconds, validationResult.BanReason);
             }
 
             this.logger.LogTrace("(-)");
