@@ -531,7 +531,7 @@ namespace Stratis.Bitcoin.Consensus
             ChainedHeader currentBlockToDeleteData = consensusTip.GetAncestor(lastBlockHeightToKeep).Previous;
 
             // Process blocks that were not process before or until the genesis block exclusive.
-            while ((currentBlockToDeleteData.Block == null) || (currentBlockToDeleteData.Previous == null))
+            while ((currentBlockToDeleteData.Block != null) && (currentBlockToDeleteData.Previous != null))
             {
                 currentBlockToDeleteData.Block = null;
                 if (!this.blockStoreAvailable)
