@@ -42,17 +42,13 @@ namespace NBitcoin
             ReadWrite(serializable, new MemoryStream(bytes), false, consensusFactory, version);
         }
 
-        private static BitcoinStream CreateBitcoinStream()
+        public static int GetSerializedSize(this IBitcoinSerializable serializable, ProtocolVersion version, SerializationType serializationType)
         {
-            return new BitcoinStream(Stream.Null, true)
+            var bitcoinStream = new BitcoinStream(Stream.Null, true)
             {
                 ConsensusFactory = new DefaultConsensusFactory(),
             };
-        }
 
-        public static int GetSerializedSize(this IBitcoinSerializable serializable, ProtocolVersion version, SerializationType serializationType)
-        {
-            BitcoinStream bitcoinStream = CreateBitcoinStream();
             bitcoinStream.Type = serializationType;
             bitcoinStream.ReadWrite(serializable);
             return (int)bitcoinStream.Counter.WrittenBytes;
@@ -60,7 +56,11 @@ namespace NBitcoin
 
         public static int GetSerializedSize(this IBitcoinSerializable serializable, TransactionOptions options)
         {
-            BitcoinStream bitcoinStream = CreateBitcoinStream();
+            var bitcoinStream = new BitcoinStream(Stream.Null, true)
+            {
+                ConsensusFactory = new DefaultConsensusFactory(),
+            };
+
             bitcoinStream.TransactionOptions = options;
             serializable.ReadWrite(bitcoinStream);
             return (int)bitcoinStream.Counter.WrittenBytes;
