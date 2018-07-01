@@ -29,13 +29,21 @@ namespace Stratis.Bitcoin.Tests.Consensus
 
         public static bool HaveBlockDataAvailabilityStateOf(this ConnectNewHeadersResult connectNewHeadersResult, BlockDataAvailabilityState blockDataAvailabilityState)
         {
-            if (connectNewHeadersResult.DownloadFrom == null || connectNewHeadersResult.DownloadTo == null) return false;
-            ChainedHeader chainedHeader = connectNewHeadersResult.DownloadTo;
-            while (chainedHeader.Height > connectNewHeadersResult.DownloadFrom.Height)
+            if (connectNewHeadersResult.DownloadFrom == null || connectNewHeadersResult.DownloadTo == null)
             {
-                if (chainedHeader.BlockDataAvailability != blockDataAvailabilityState) return false;
+                return false;
+            }
+
+            ChainedHeader chainedHeader = connectNewHeadersResult.DownloadTo;
+            while (chainedHeader.Height >= connectNewHeadersResult.DownloadFrom.Height)
+            {
+                if (chainedHeader.BlockDataAvailability != blockDataAvailabilityState)
+                {
+                    return false;
+                }
                 chainedHeader = chainedHeader.Previous;
             }
+
             return true;
         }
     }
