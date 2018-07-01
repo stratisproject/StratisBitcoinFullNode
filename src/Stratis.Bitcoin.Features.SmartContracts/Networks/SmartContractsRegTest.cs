@@ -44,7 +44,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Networks
             this.Consensus.RuleChangeActivationThreshold = 108;
             this.Consensus.MinerConfirmationWindow = 144;
 
-            this.Consensus.IsSmartContracts = true;
             this.Consensus.CoinbaseMaturity = 5;
             this.Consensus.PremineReward = Money.Zero;
             this.Consensus.ProofOfWorkReward = Money.Coins(50);

@@ -36,11 +36,6 @@ namespace NBitcoin
         public long CoinbaseMaturity { get; set; }
 
         /// <summary>
-        /// An indicator whether this is a Smart Contract network.
-        /// </summary>
-        public bool IsSmartContracts { get; set; }
-
-        /// <summary>
         /// Amount of coins mined when a new network is bootstrapped.
         /// Set to Money.Zero when there is no premine.
         /// </summary>

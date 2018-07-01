@@ -49,7 +49,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Networks
 
             this.Consensus.DefaultAssumeValid = new uint256("0x000000003ccfe92231efee04df6621e7bb3f7f513588054e19f78d626b951f59"); // 1235126
 
-            this.Consensus.IsSmartContracts = true;
             this.Consensus.CoinbaseMaturity = 5;
             this.Consensus.PremineHeight = 2;
             this.Consensus.PremineReward = Money.Coins(1000000);

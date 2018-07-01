@@ -493,8 +493,8 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
 
                 block.UpdateMerkleRoot();
 
-                if (this.runner.Network.Consensus.IsSmartContracts)
-                    ((SmartContractBlockHeader)block.Header).HashStateRoot = new uint256(state.Root);
+                if (block.Header is SmartContractBlockHeader smartContractBlockHeader)
+                    smartContractBlockHeader.HashStateRoot = new uint256(state.Root);
 
                 while (!block.CheckProofOfWork())
                     block.Header.Nonce = ++nonce;

@@ -344,6 +344,7 @@ namespace Stratis.Bitcoin.Base
                     services.AddSingleton<ConnectionManagerSettings>();
                     services.AddSingleton<PayloadProvider>(new PayloadProvider().DiscoverPayloads());
                     services.AddSingleton<BestChainSelector>();
+                    services.AddSingleton<IVersionProvider, VersionProvider>();
 
                     // Peer address manager
                     services.AddSingleton<IPeerAddressManager, PeerAddressManager>();
