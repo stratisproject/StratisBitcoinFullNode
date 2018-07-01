@@ -59,6 +59,8 @@ namespace Stratis.Bitcoin.Controllers
         /// <summary>Specification of the network the node runs on.</summary>
         private Network network; // Not readonly because of ValidateAddress
 
+        /// <summary>An interface implementation for the blockstore.</summary>
+        private readonly IBlockStore blockStore;
 
         public NodeController(IFullNode fullNode, ILoggerFactory loggerFactory, 
             IDateTimeProvider dateTimeProvider, IChainState chainState, 
@@ -66,7 +68,8 @@ namespace Stratis.Bitcoin.Controllers
             ConcurrentChain chain, Network network, IPooledTransaction pooledTransaction = null,
             IPooledGetUnspentTransaction pooledGetUnspentTransaction = null,
             IGetUnspentTransaction getUnspentTransaction = null,
-            INetworkDifficulty networkDifficulty = null)
+            INetworkDifficulty networkDifficulty = null,
+            IBlockStore blockStore = null)
         {
             Guard.NotNull(fullNode, nameof(fullNode));
             Guard.NotNull(network, nameof(network));
@@ -89,6 +92,7 @@ namespace Stratis.Bitcoin.Controllers
             this.pooledGetUnspentTransaction = pooledGetUnspentTransaction;
             this.getUnspentTransaction = getUnspentTransaction;
             this.networkDifficulty = networkDifficulty;
+            this.blockStore = blockStore;
         }
 
         /// <summary>
@@ -223,8 +227,7 @@ namespace Stratis.Bitcoin.Controllers
                 Transaction trx = this.pooledTransaction != null ? await this.pooledTransaction.GetTransaction(txid).ConfigureAwait(false) : null;
                 if (trx == null)
                 {
-                    var blockStore = this.fullNode.NodeFeature<IBlockStore>();
-                    trx = blockStore != null ? await blockStore.GetTrxAsync(txid).ConfigureAwait(false) : null;
+                    trx = this.blockStore != null ? await this.blockStore.GetTrxAsync(txid).ConfigureAwait(false) : null;
                 }
 
                 if (trx == null)
