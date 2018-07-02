@@ -226,7 +226,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
             context.PeerAddressManager.AddPeer(endpoint, endpoint.Address.MapToIPv6());
 
             // Act
-            context.PeerBanning.BanPeer(endpoint, context.ConnectionManager.ConnectionSettings.BanTimeSeconds, nameof(PeerBanningTest));
+            context.PeerBanning.BanAndDisconnectPeer(endpoint, context.ConnectionManager.ConnectionSettings.BanTimeSeconds, nameof(PeerBanningTest));
 
             // Assert
             PeerAddress peer = context.PeerAddressManager.FindPeer(endpoint);
@@ -247,7 +247,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
             context.PeerAddressManager.AddPeer(endpoint, endpoint.Address.MapToIPv6());
 
             // Act - Ban Peer, save store, clear current Peers, load store
-            context.PeerBanning.BanPeer(endpoint, context.ConnectionManager.ConnectionSettings.BanTimeSeconds, nameof(PeerBanningTest));
+            context.PeerBanning.BanAndDisconnectPeer(endpoint, context.ConnectionManager.ConnectionSettings.BanTimeSeconds, nameof(PeerBanningTest));
             context.PeerAddressManager.SavePeers();
             context.PeerAddressManager.Peers.Clear();
             context.PeerAddressManager.LoadPeers();
@@ -271,7 +271,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
             context.PeerAddressManager.AddPeer(endpoint, endpoint.Address.MapToIPv6());
 
             // Act 
-            context.PeerBanning.BanPeer(endpoint, 1, nameof(PeerBanningTest));
+            context.PeerBanning.BanAndDisconnectPeer(endpoint, 1, nameof(PeerBanningTest));
             context.PeerAddressManager.SavePeers();
 
             // Wait one second for ban to expire.
