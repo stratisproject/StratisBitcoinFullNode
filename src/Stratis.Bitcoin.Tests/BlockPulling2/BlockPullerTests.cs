@@ -140,7 +140,8 @@ namespace Stratis.Bitcoin.Tests.BlockPulling2
         }
 
         /// <summary>
-        /// Call NewPeerTipClaimed, make sure that pullerBehaviorsByPeerId is updated, make sure that PullerBehavior.Tip is set.
+        /// Call <see cref="BlockPuller.NewPeerTipClaimed"/>, make sure that internal structures of the puller are updated,
+        /// make sure that <see cref="BlockPullerBehavior.Tip"/> is set.
         /// </summary>
         [Fact]
         public void NewPeerTipClaimed_StructuresAreUpdated()
@@ -157,7 +158,8 @@ namespace Stratis.Bitcoin.Tests.BlockPulling2
         }
 
         /// <summary>
-        /// Call NewPeerTipClaimed on a peer that can't send blocks (doesn't support the requirements) and make sure it's not added to pullerBehaviorsByPeerId.
+        /// Call <see cref="BlockPuller.NewPeerTipClaimed"/> on a peer that can't send blocks (doesn't support the requirements)
+        /// and make sure it's not added to the block puller's structures.
         /// </summary>
         [Fact]
         public void NewPeerTipClaimed_PeerDoesntSupportRequirments_StructuresNotUpdated()
@@ -168,11 +170,12 @@ namespace Stratis.Bitcoin.Tests.BlockPulling2
             this.puller.NewPeerTipClaimed(peer, header);
 
             Assert.Empty(this.puller.PullerBehaviorsByPeerId);
+            Assert.Null(behavior.Tip);
         }
 
         /// <summary>
-        /// Call PeerDisconnected an a peer that wasn't connected- nothing happens.
-        /// Call it on a peer that did exist- it's key is removed from pullerBehaviorsByPeerId.
+        /// Call <see cref="BlockPuller.PeerDisconnected"/> an a peer that wasn't connected, nothing happens.
+        /// Call it on a peer that did exist, it's key is removed from inner structures.
         /// </summary>
         [Fact]
         public void PeerDisconnected_OnPeerThatPullerIsNotAwereOf_NothingHappens()
@@ -193,7 +196,7 @@ namespace Stratis.Bitcoin.Tests.BlockPulling2
 
         /// <summary>
         /// Create a chain and let 2 peers claim it. Connect peer 1. Assign all the blocks to peer 1. Connect peer 2.
-        /// Call PeerDisconnected on PeerId 1, make sure all blocks are reassigned to peer 2.
+        /// Call <see cref="BlockPuller.PeerDisconnected"/> on peer 1, make sure all blocks are reassigned to peer 2.
         /// </summary>
         [Fact]
         public async Task PeerDisconnected_AllDownloadJobsAreReassignedAsync()
@@ -211,6 +214,8 @@ namespace Stratis.Bitcoin.Tests.BlockPulling2
             // Make sure all jobs were assigned to 1.
             foreach (ChainedHeader chainedHeader in headers)
                 Assert.True(this.puller.AssignedDownloadsByHash.ContainsKey(chainedHeader.HashBlock));
+
+            Assert.Equal(headers.Count, this.puller.AssignedDownloadsByHash.Count(x => x.Value.PeerId == peer1.Connection.Id));
 
             this.puller.NewPeerTipClaimed(peer2, headers.Last());
 
@@ -231,10 +236,11 @@ namespace Stratis.Bitcoin.Tests.BlockPulling2
             Assert.Equal(headers.Count, this.puller.AssignedDownloadsByHash.Values.Count(x => x.PeerId == peer2.Connection.Id));
             Assert.Empty(this.puller.ReassignedJobsQueue);
         }
-       
+
         /// <summary>
         /// Create a chain and let 1 peer claim it. Assign all the blocks to peer 1. Peer 2 connects but it is on a different chain (no blocks in common except for genesis).
-        /// Call PeerDisconnected on PeerId 1, make sure callback is called with null for all blocks that were requested. Maker sure that nothing is assigned to peer 2.
+        /// Call <see cref="BlockPuller.PeerDisconnected"/> on peer 1, make sure callback is called with null for all blocks that were requested.
+        /// Make sure that nothing is assigned to peer 2.
         /// </summary>
         [Fact]
         public async Task PeerDisconnected_AnotherPeerThatClaimsDifferentChainAssignedNothingAsync()
@@ -253,10 +259,12 @@ namespace Stratis.Bitcoin.Tests.BlockPulling2
 
             await this.puller.AssignDownloadJobsAsync();
 
-            // make sure all jobs were assigned to 1.
+            // Make sure all jobs were assigned to peer 1.
             foreach (ChainedHeader chainedHeader in peer1Headers)
                 Assert.True(this.puller.AssignedDownloadsByHash.ContainsKey(chainedHeader.HashBlock));
-            
+
+            Assert.Equal(peer1Headers.Count, this.puller.AssignedDownloadsByHash.Count(x => x.Value.PeerId == peer1.Connection.Id));
+
             this.puller.PeerDisconnected(peer1.Connection.Id);
 
             // Make sure all assignments went to reassign queue as a single job.
@@ -264,6 +272,7 @@ namespace Stratis.Bitcoin.Tests.BlockPulling2
 
             Assert.Empty(this.helper.CallbacksCalled);
 
+            // Try to reassign.
             await this.puller.AssignDownloadJobsAsync();
 
             Assert.Empty(this.puller.ReassignedJobsQueue);
@@ -278,8 +287,8 @@ namespace Stratis.Bitcoin.Tests.BlockPulling2
         }
 
         /// <summary>
-        /// There are no peers. Call RequestBlocksDownload with 2 headers. Make sure that DownloadJobsQueue is updated and signal is set.
-        /// Call process queue and make sure callback is called for each header with null.
+        /// There are no peers. Call <see cref="BlockPuller.RequestBlocksDownload"/> with 2 headers. Make sure that download queue is updated and signal is set.
+        /// Call process queue and make sure callback is called for each header with <c>null</c>.
         /// </summary>
         [Fact]
         public async Task RequestBlocksDownload_WhileThereAreNoPeers_JobFailedAsync()
@@ -305,12 +314,11 @@ namespace Stratis.Bitcoin.Tests.BlockPulling2
         }
 
         /// <summary>
-        /// There is 1 peer claiming the chain. Call RequestBlocksDownload with a header from that chain. Call process queue and make sure (mock it) that
-        /// PeerBehavior.RequestBlocksAsync throws OperationCanceledException (mock it).
-        /// Make sure that all headers are added to reassign queue and peer is removed from pullerBehaviorsByPeerId.
-        /// Try to assign jobs again and make sure that callbacks are called with null.
+        /// There is 1 peer claiming the chain. Call <see cref="BlockPuller.RequestBlocksDownload"/> with a header from that chain.
+        /// Process queue and make sure that <see cref="BlockPullerBehavior.RequestBlocksAsync"/> throws <see cref="OperationCanceledException"/> (mock it).
+        /// Make sure that all headers are added to reassign queue and peer is removed from the inner structures.
+        /// Try to assign jobs again and make sure that callbacks are called with <c>null</c>.
         /// </summary>
-        /// <exception cref="NotImplementedException"></exception>
         [Fact]
         public async Task RequestBlocksDownload_AssignedPeerThrows_JobIsFailedAndPeerDisconnectedAsync()
         {
@@ -325,23 +333,26 @@ namespace Stratis.Bitcoin.Tests.BlockPulling2
             this.puller.RequestBlocksDownload(headers);
 
             Assert.Empty(this.helper.CallbacksCalled);
-            this.puller.PullerBehaviorsByPeerId.Should().HaveCount(1);
+            Assert.Single(this.puller.PullerBehaviorsByPeerId);
 
             await this.puller.AssignDownloadJobsAsync();
 
-            this.puller.PullerBehaviorsByPeerId.Should().HaveCount(0);
-            this.puller.ReassignedJobsQueue.Should().HaveCount(1);
+            Assert.Empty(this.puller.PullerBehaviorsByPeerId);
+            Assert.Single(this.puller.ReassignedJobsQueue);
             Assert.Equal(headers.Count, this.puller.ReassignedJobsQueue.Peek().Headers.Count);
 
             await this.puller.AssignDownloadJobsAsync();
 
             Assert.Equal(headers.Count, this.helper.CallbacksCalled.Count);
-            Assert.Equal(headers.Count, this.helper.CallbacksCalled.Values.Count(x => x == null));
+
+            // Callbacks are called with null.
+            foreach (ChainedHeader chainedHeader in headers)
+                Assert.Null(this.helper.CallbacksCalled[chainedHeader.HashBlock]);
         }
         
         /// <summary>
-        /// 2 peers claim 2 different chains. 10 blocks from chain 1 are requested. Make sure all blocks are assigned to peer 1, distributedHashes contains same
-        /// amount of items as there were hashes. Check that the return value match the hashes that were supposed to be distributed.
+        /// 2 peers claim 2 different chains. 10 blocks from chain 1 are requested. Make sure all blocks are assigned to peer 1,
+        /// and inner structures are updated accordingly. Check that the distributed assignments match the hashes that were supposed to be distributed.
         /// </summary>
         [Fact]
         public void DistributeHeaders_BetweenTwoPeersWhereOneIsOnADifferentChain()
@@ -359,7 +370,7 @@ namespace Stratis.Bitcoin.Tests.BlockPulling2
 
             List<AssignedDownload> assignedDownloads = this.puller.DistributeHeadersLocked(job, failedHashes, int.MaxValue);
             
-            // make sure all jobs were assigned to 1.
+            // Make sure all jobs were assigned to peer 1.
             foreach (ChainedHeader chainedHeader in peer1Headers)
                 Assert.True(assignedDownloads.Exists(x => x.Header == chainedHeader));
 
@@ -367,18 +378,16 @@ namespace Stratis.Bitcoin.Tests.BlockPulling2
         }
 
         /// <summary>
-        /// 2 peers claim same chain. 1 random hash is asked and no peer claim it. Make sure failedHashes contains this hash.
+        /// Peer claim some chain. 1 random hash is asked and peer doesn't claim it. Make sure hash was marked as failed.
         /// </summary>
         [Fact]
         public void DistributeHeaders_NoPeerClaimTheChain()
         {
             INetworkPeer peer1 = this.helper.CreatePeer(out ExtendedBlockPullerBehavior behavior1);
-            INetworkPeer peer2 = this.helper.CreatePeer(out ExtendedBlockPullerBehavior behavior2);
             List<ChainedHeader> headers = this.helper.CreateConsequtiveHeaders(10);
             ChainedHeader unclaimedHeader = this.helper.CreateChainedHeader();
 
             this.puller.NewPeerTipClaimed(peer1, headers.Last());
-            this.puller.NewPeerTipClaimed(peer2, headers.Last());
 
             var job = new DownloadJob() { Headers = new List<ChainedHeader>() { unclaimedHeader }, Id = 1 };
             var failedHashes = new List<uint256>();
@@ -400,6 +409,8 @@ namespace Stratis.Bitcoin.Tests.BlockPulling2
             INetworkPeer peer2 = this.helper.CreatePeer(out ExtendedBlockPullerBehavior behavior2);
             List<ChainedHeader> headers = this.helper.CreateConsequtiveHeaders(10000);
 
+            behavior1.OverrideQualityScore = behavior2.OverrideQualityScore = 1;
+
             this.puller.NewPeerTipClaimed(peer1, headers.Last());
             this.puller.NewPeerTipClaimed(peer2, headers.Last());
 
@@ -411,14 +422,14 @@ namespace Stratis.Bitcoin.Tests.BlockPulling2
             Assert.Empty(failedHashes);
             Assert.Equal(headers.Count, assignedDownloads.Count);
 
-            int elipson = Math.Abs(assignedDownloads.Count(x => x.PeerId == peer1.Connection.Id) - assignedDownloads.Count(x => x.PeerId == peer2.Connection.Id));
+            int epsilon = Math.Abs(assignedDownloads.Count(x => x.PeerId == peer1.Connection.Id) - assignedDownloads.Count(x => x.PeerId == peer2.Connection.Id));
             
             // Amount of jobs assigned to peer 1 shouldn't be more than 10% different comparing to amount assigned to peer 2.
-            Assert.True(elipson < headers.Count * 0.1);
+            Assert.True(epsilon < headers.Count * 0.1);
         }
 
         /// <summary>
-        /// There are 2 peers. One is on chain which is 1000 blocks. 2nd is on chain which forks from peer1 chain at block 500 and goes to 1000b.
+        /// There are 2 peers. One is on a chain which is 1000 blocks. 2nd is on chain which forks from peer1 chain at block 500 and goes to 1000b.
         /// Hashes from chain A are requested. Make sure that hashes 500 - 1000 assigned only to peer A, hashes 0-500 are distributed between peer A and B.
         /// </summary>
         [Fact]
@@ -427,7 +438,7 @@ namespace Stratis.Bitcoin.Tests.BlockPulling2
             INetworkPeer peer1 = this.helper.CreatePeer(out ExtendedBlockPullerBehavior behavior1);
             INetworkPeer peer2 = this.helper.CreatePeer(out ExtendedBlockPullerBehavior behavior2);
             List<ChainedHeader> peer1Headers = this.helper.CreateConsequtiveHeaders(1000);
-            List<ChainedHeader> peer2Headers = this.helper.CreateConsequtiveHeaders(500, peer1Headers[500]);
+            List<ChainedHeader> peer2Headers = this.helper.CreateConsequtiveHeaders(500, peer1Headers[500 - 1]);
             
             this.puller.NewPeerTipClaimed(peer1, peer1Headers.Last());
             this.puller.NewPeerTipClaimed(peer2, peer2Headers.Last());
@@ -439,11 +450,9 @@ namespace Stratis.Bitcoin.Tests.BlockPulling2
 
             Assert.Empty(failedHashes);
             Assert.Equal(peer1Headers.Count, assignedDownloads.Count);
-
-            int elipson = Math.Abs(assignedDownloads.Take(500).Count(x => x.PeerId == peer1.Connection.Id) - assignedDownloads.Take(500).Count(x => x.PeerId == peer2.Connection.Id));
-            Assert.True(elipson < 50);
-            
-            Assert.True(assignedDownloads.Skip(501).All(x => x.PeerId == peer1.Connection.Id));
+            Assert.True(assignedDownloads.Take(500).Count(x => x.PeerId == peer1.Connection.Id) > 0);
+            Assert.True(assignedDownloads.Take(500).Count(x => x.PeerId == peer2.Connection.Id) > 0);
+            Assert.True(assignedDownloads.Skip(500).All(x => x.PeerId == peer1.Connection.Id));
         }
         
         /// <summary>
@@ -471,8 +480,8 @@ namespace Stratis.Bitcoin.Tests.BlockPulling2
             
             double margin = (double)assignedDownloads.Count(x => x.PeerId == peer1.Connection.Id) / assignedDownloads.Count(x => x.PeerId == peer2.Connection.Id);
 
-            // Peer A is expected to get 10 times more than peer B. 7 is used to avoid false alarms when randomization is too lucky.
-            Assert.True(margin > 7);
+            // Peer A is expected to get 10 times more than peer B. 8 is used to avoid false alarms when randomization is too lucky.
+            Assert.True(margin > 8);
         }
 
         /// <summary>
@@ -489,23 +498,16 @@ namespace Stratis.Bitcoin.Tests.BlockPulling2
                 INetworkPeer peer = this.helper.CreatePeer(out ExtendedBlockPullerBehavior behavior);
                 peers.Add(peer);
             }
+            
+            List<ChainedHeader> chainA = this.helper.CreateConsequtiveHeaders(10000);
+            List<ChainedHeader> chainB = this.helper.CreateConsequtiveHeaders(5000, chainA[5000 - 1]);
+
+            List<int> peerIdsClaimingA = peers.Take(5).Select(x => x.Connection.Id).ToList();
 
             this.Shuffle(peers);
 
-            List<ChainedHeader> chainA = this.helper.CreateConsequtiveHeaders(10000);
-            List<ChainedHeader> chainB = this.helper.CreateConsequtiveHeaders(5000, chainA[5000]);
-
-            var peerIdsClaimingA = new HashSet<int>();
-
-            for (int i = 0; i < peers.Count; i++)
-            {
-                ChainedHeader tip = i >= 5 ? chainA.Last() : chainB.Last();
-
-                if (i >= 5)
-                    peerIdsClaimingA.Add(peers[i].Connection.Id);
-
-                this.puller.NewPeerTipClaimed(peers[i], tip);
-            }
+            foreach (INetworkPeer peer in peers)
+                this.puller.NewPeerTipClaimed(peer, peerIdsClaimingA.Contains(peer.Connection.Id) ? chainA.Last() : chainB.Last());
 
             var job = new DownloadJob() { Headers = new List<ChainedHeader>(chainA), Id = 1 };
             var failedHashes = new List<uint256>();
@@ -517,7 +519,7 @@ namespace Stratis.Bitcoin.Tests.BlockPulling2
 
             var peerIds = new HashSet<int>();
 
-            foreach (AssignedDownload assignedDownload in assignedDownloads.Skip(5001))
+            foreach (AssignedDownload assignedDownload in assignedDownloads.Skip(5000))
                 peerIds.Add(assignedDownload.PeerId);
             
             Assert.Equal(5, peerIds.Count);
@@ -528,7 +530,7 @@ namespace Stratis.Bitcoin.Tests.BlockPulling2
         }
 
         /// <summary>
-        /// We are asked for 100 hashes. emptySlots is 50. Make sure that only 50 hashes were assigned. Make sure that 50 headers are left in the job.
+        /// We are asked for 100 hashes. We only have 50 slots empty. Make sure that only 50 hashes were assigned. Make sure that 50 headers are left in the job.
         /// </summary>
         [Fact]
         public void DistributeHeaders_LimitedByEmptySlots()
@@ -568,9 +570,9 @@ namespace Stratis.Bitcoin.Tests.BlockPulling2
             Assert.Equal(50, assignedDownloads.Count);
             Assert.Equal(50, failedHashes.Count);
         }
-        
+
         /// <summary>
-        /// Call Initialize, signal queue processing, wait until it is reset, make sure no structures were updated. 
+        /// Call <see cref="BlockPuller.Initialize"/>, signal queue processing, wait until it is reset, make sure no structures were updated. 
         /// </summary>
         [Fact]
         public async Task AssignDownloadJobs_CalledOnEmptyQueuesAsync()
@@ -579,12 +581,13 @@ namespace Stratis.Bitcoin.Tests.BlockPulling2
 
             this.puller.ProcessQueuesSignal.Set();
 
-            await Task.Delay(500);
-
-            this.puller.Dispose();
+            while (this.puller.ProcessQueuesSignal.IsSet)
+                await Task.Delay(50);
 
             Assert.Empty(this.puller.AssignedDownloadsByHash);
             Assert.Empty(this.puller.DownloadJobsQueue);
+
+            this.puller.Dispose();
         }
 
         /// <summary>

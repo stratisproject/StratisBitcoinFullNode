@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -34,11 +35,13 @@ namespace Stratis.Bitcoin.Tests.BlockPulling2
 
         private int currentPeerId = 0;
         private readonly ILoggerFactory loggerFactory;
+        private int currentNonce;
         
         public BlockPullerTestsHelper()
         {
             this.loggerFactory = new ExtendedLoggerFactory();
             this.loggerFactory.AddConsoleWithFilters();
+            this.currentNonce = 0;
 
             this.CallbacksCalled = new Dictionary<uint256, Block>();
             var chainState = new ChainState(new InvalidBlockHashStore(new DateTimeProvider())) {ConsensusTip = this.CreateGenesisChainedHeader()};
@@ -99,7 +102,7 @@ namespace Stratis.Bitcoin.Tests.BlockPulling2
             for (int i = 0; i < count; ++i)
             {
                 BlockHeader header = network.Consensus.ConsensusFactory.CreateBlockHeader();
-                header.Nonce = RandomUtils.GetUInt32();
+                header.Nonce = (uint)Interlocked.Increment(ref this.currentNonce);
                 header.HashPrevBlock = hashPrevBlock;
                 header.Bits = Target.Difficulty1;
 
