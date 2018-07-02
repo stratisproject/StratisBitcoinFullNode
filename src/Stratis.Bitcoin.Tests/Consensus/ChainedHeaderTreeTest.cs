@@ -1283,8 +1283,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
         }
 
         /// <summary>
-        /// Issue 29 @ Peer presents at least two headers. 
-        /// Those headers will be connected the tree. 
+        /// Issue 29 @ Peer presents at least two headers. Those headers will be connected the tree. 
         /// Then we save the first such connected block to variable X and simulate block downloaded for BOTH block.
         /// Disconnect of the peer is then flollowed, which removes its chain from the tree. 
         /// Partial validation succeeded is then called on X.
