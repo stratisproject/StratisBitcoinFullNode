@@ -86,8 +86,8 @@ namespace Stratis.Bitcoin.Tests.BlockPulling2
         }
 
         /// <summary>
-        /// Connect 3 peers. Setup avg speed of them as: max / 2, max, max * 2.  When in IBD there are no speed limitations and all should have different quality scores,
-        /// when not in IBD last 2 should have quality score of 1.
+        /// Connect 3 peers. Setup avg speed of them as: max / 2, max, max * 2 (where max is the max speed when the node is not in IBD).
+        /// When in IBD there are no speed limitations and all should have different quality scores, when not in IBD last 2 should have quality score of 1.
         /// </summary>
         [Fact]
         public void OnIbdStateChanged_AffectsQualityScore()
@@ -117,7 +117,8 @@ namespace Stratis.Bitcoin.Tests.BlockPulling2
             for (int i = 0; i < peers.Count; i++)
                 this.puller.RecalculateQualityScoreLocked(behaviors[i], peers[i].Connection.Id);
 
-            Assert.True(behaviors[0].QualityScore < behaviors[1].QualityScore && behaviors[1].QualityScore < behaviors[2].QualityScore);
+            Assert.True(behaviors[0].QualityScore < behaviors[1].QualityScore);
+            Assert.True(behaviors[1].QualityScore < behaviors[2].QualityScore);
 
             this.puller.OnIbdStateChanged(false);
 
@@ -130,11 +131,12 @@ namespace Stratis.Bitcoin.Tests.BlockPulling2
 
             this.puller.OnIbdStateChanged(true);
 
-            // Back to IBD- no speed limits.
+            // Back to IBD, no speed limits.
             for (int i = 0; i < peers.Count; i++)
                 this.puller.RecalculateQualityScoreLocked(behaviors[i], peers[i].Connection.Id);
 
-            Assert.True(behaviors[0].QualityScore < behaviors[1].QualityScore && behaviors[1].QualityScore < behaviors[2].QualityScore);
+            Assert.True(behaviors[0].QualityScore < behaviors[1].QualityScore);
+            Assert.True(behaviors[1].QualityScore < behaviors[2].QualityScore);
         }
 
         /// <summary>
