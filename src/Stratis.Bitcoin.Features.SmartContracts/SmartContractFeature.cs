@@ -1,21 +1,23 @@
-﻿using System;
-using System.Linq;
-using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NBitcoin.Policy;
+using Stratis.Bitcoin.BlockPulling;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Builder.Feature;
 using Stratis.Bitcoin.Configuration.Logging;
+using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Features.Consensus;
+using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.Consensus.Interfaces;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.Miner;
 using Stratis.Bitcoin.Features.Miner.Interfaces;
 using Stratis.Bitcoin.Features.SmartContracts.Consensus;
+using Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Mining;
 using Stratis.SmartContracts.Core.Receipts;
@@ -23,13 +25,13 @@ using Stratis.SmartContracts.Core.State;
 
 namespace Stratis.Bitcoin.Features.SmartContracts
 {
-    public class SmartContractFeature : FullNodeFeature
+    public sealed class SmartContractFeature : FullNodeFeature
     {
         private readonly ILogger logger;
-        private readonly ContractStateRepositoryRoot stateRoot;
         private readonly IConsensusLoop consensusLoop;
+        private readonly ContractStateRepositoryRoot stateRoot;
 
-        public SmartContractFeature(ILoggerFactory loggerFactory, ContractStateRepositoryRoot stateRoot, IConsensusLoop consensusLoop)
+        public SmartContractFeature(IConsensusLoop consensusLoop, ILoggerFactory loggerFactory, ContractStateRepositoryRoot stateRoot)
         {
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.stateRoot = stateRoot;
@@ -43,18 +45,21 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         }
     }
 
-    public class ReflectionVirtualMachineFeature : FullNodeFeature
+    public sealed class ReflectionVirtualMachineFeature : FullNodeFeature
     {
+        private readonly IConsensusRules consensusRules;
         private readonly ILogger logger;
 
-        public ReflectionVirtualMachineFeature(ILoggerFactory loggerFactory)
+        public ReflectionVirtualMachineFeature(IConsensusRules consensusRules, ILoggerFactory loggerFactory)
         {
+            this.consensusRules = consensusRules;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
         }
 
         public override void Initialize()
         {
             this.logger.LogInformation("Reflection Virtual Machine Injected.");
+            this.consensusRules.Register(new ReflectionRuleRegistration());
         }
     }
 
@@ -68,7 +73,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             {
                 features
                     .AddFeature<SmartContractFeature>()
-                    .DependOn<ConsensusFeature>()
                     .DependOn<MiningFeature>()
                     .FeatureServices(services =>
                     {
@@ -85,69 +89,48 @@ namespace Stratis.Bitcoin.Features.SmartContracts
 
                         // CONSENSUS ------------------------------------------------------------------------
                         services.AddSingleton<IMempoolValidator, SmartContractMempoolValidator>();
-                        services.AddConsensusRules(new SmartContractRuleRegistration(fullNodeBuilder));
                         services.AddSingleton<StandardTransactionPolicy, SmartContractTransactionPolicy>();
 
-                        services.Replace(new ServiceDescriptor(typeof(IScriptAddressReader),
-                            new SmartContractScriptAddressReader(new ScriptAddressReader())));
+                        services.Replace(new ServiceDescriptor(typeof(IScriptAddressReader), new SmartContractScriptAddressReader(new ScriptAddressReader())));
                     });
             });
+
             return new SmartContractVmBuilder(fullNodeBuilder);
         }
-    }
 
-    public static class ConsensusRuleUtils
-    {
-        /// <summary>
-        /// This is a hack to enable us to to compose objects that depend on implementations defined earlier
-        /// in the feature setup process.
-        ///
-        /// We want to be able to take any existing IRuleRegistration, and extend it with our own
-        /// smart contract specific rules.
-        ///
-        /// Here we get an existing IRuleRegistration ServiceDescriptor, re-register it as its ConcreteType
-        /// then replace the dependency on IRuleRegistration with our own implementation that depends on ConcreteType.
-        /// </summary>
-        public static void AddConsensusRules(this IServiceCollection services, IAdditionalRuleRegistration rulesToAdd)
+        public static IFullNodeBuilder UseSmartContractConsensus(this IFullNodeBuilder fullNodeBuilder)
         {
-            ServiceDescriptor existingService = services.FirstOrDefault(s => s.ServiceType == typeof(IRuleRegistration));
-            if (existingService == null)
-                throw new Exception("SmartContracts feature must be added after Consensus feature");
+            LoggingConfiguration.RegisterFeatureNamespace<ConsensusFeature>("consensus");
+            LoggingConfiguration.RegisterFeatureClass<ConsensusStats>("bench");
 
-            Type concreteType = existingService.ImplementationType;
-            if (concreteType != null)
+            fullNodeBuilder.ConfigureFeature(features =>
             {
-                // Register concrete type if it does not already exist
-                if (services.FirstOrDefault(s => s.ServiceType == concreteType) == null)
-                    services.Add(new ServiceDescriptor(concreteType, concreteType, ServiceLifetime.Singleton));
-
-                // Replace the existing rule registration with our own factory
-                var newService = new ServiceDescriptor(typeof(IRuleRegistration), serviceProvider =>
+                features
+                .AddFeature<ConsensusFeature>()
+                .DependOn<SmartContractFeature>()
+                .FeatureServices(services =>
                 {
-                    var existingRuleRegistration = serviceProvider.GetService(concreteType);
-                    rulesToAdd.SetPreviousRegistration((IRuleRegistration)existingRuleRegistration);
-                    return rulesToAdd;
-                }, ServiceLifetime.Singleton);
+                    fullNodeBuilder.Network.Consensus.Options = new PowConsensusOptions();
 
-                services.Replace(newService);
+                    services.AddSingleton<ICheckpoints, Checkpoints>();
+                    services.AddSingleton<NBitcoin.Consensus.ConsensusOptions, PowConsensusOptions>();
+                    services.AddSingleton<DBreezeCoinView>();
+                    services.AddSingleton<CoinView, CachedCoinView>();
+                    services.AddSingleton<LookaheadBlockPuller>().AddSingleton<ILookaheadBlockPuller, LookaheadBlockPuller>(provider => provider.GetService<LookaheadBlockPuller>()); ;
+                    services.AddSingleton<IConsensusLoop, ConsensusLoop>()
+                        .AddSingleton<INetworkDifficulty, ConsensusLoop>(provider => provider.GetService<IConsensusLoop>() as ConsensusLoop)
+                        .AddSingleton<IGetUnspentTransaction, ConsensusLoop>(provider => provider.GetService<IConsensusLoop>() as ConsensusLoop);
+                    services.AddSingleton<IInitialBlockDownloadState, InitialBlockDownloadState>();
+                    services.AddSingleton<ConsensusController>();
+                    services.AddSingleton<ConsensusStats>();
+                    services.AddSingleton<ConsensusSettings>();
 
-                return;
-            }
+                    services.AddSingleton<IConsensusRules, SmartContractConsensusRules>();
+                    services.AddSingleton<IRuleRegistration, SmartContractRuleRegistration>();
+                });
+            });
 
-            Func<IServiceProvider, object> implementationFactory = existingService.ImplementationFactory;
-
-            if (implementationFactory != null)
-            {
-                // Factory method has already been defined, just add the extra rules
-                var newService = new ServiceDescriptor(typeof(IRuleRegistration), serviceProvider =>
-                {
-                    var existingRuleRegistration = implementationFactory.Invoke(serviceProvider);
-                    rulesToAdd.SetPreviousRegistration((IRuleRegistration)existingRuleRegistration);
-                    return rulesToAdd;
-                }, ServiceLifetime.Singleton);
-
-                services.Replace(newService);
-            }
+            return fullNodeBuilder;
         }
     }
 }

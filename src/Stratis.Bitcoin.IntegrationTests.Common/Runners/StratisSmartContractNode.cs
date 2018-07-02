@@ -1,7 +1,6 @@
 ﻿using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.BlockStore;
-using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.Miner;
 using Stratis.Bitcoin.Features.RPC;
@@ -26,7 +25,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.Runners
             this.FullNode = (FullNode)new FullNodeBuilder()
                 .UseNodeSettings(settings)
                 .UseBlockStore()
-                .UsePowConsensus()
+                .UseSmartContractConsensus()
                 .UseMempool()
                 .AddMining()
                 .UseWallet()

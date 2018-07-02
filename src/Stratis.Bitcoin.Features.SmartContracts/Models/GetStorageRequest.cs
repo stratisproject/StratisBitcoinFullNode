@@ -20,7 +20,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Models
         Bytes,
         Char,
         Address,
-        Bool, 
+        Bool,
         Int,
         Long,
         Uint,

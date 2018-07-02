@@ -1,37 +1,29 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using Microsoft.Extensions.Logging;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
 using Stratis.Bitcoin.Features.SmartContracts.Consensus.Rules;
-using Stratis.Bitcoin.Utilities;
 using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.Receipts;
 using Stratis.SmartContracts.Core.State;
 
 namespace Stratis.Bitcoin.Features.SmartContracts
 {
-    public sealed class SmartContractRuleRegistration : IAdditionalRuleRegistration
+    public sealed class SmartContractRuleRegistration : IRuleRegistration
     {
-        private IRuleRegistration baseRegistration;
-        private Func<CoinView> coinView;
-        private Func<ISmartContractExecutorFactory> executorFactory;
+        private readonly Func<CoinView> coinView;
+        private readonly Func<ISmartContractExecutorFactory> executorFactory;
         private readonly IFullNodeBuilder fullNodeBuilder;
-        private Func<ILoggerFactory> loggerFactory;
-        private Func<ContractStateRepositoryRoot> originalStateRoot;
-        private Func<ISmartContractReceiptStorage> receiptStorage;
+        private readonly Func<ILoggerFactory> loggerFactory;
+        private readonly Func<ContractStateRepositoryRoot> originalStateRoot;
+        private readonly Func<ISmartContractReceiptStorage> receiptStorage;
 
         public SmartContractRuleRegistration(IFullNodeBuilder fullNodeBuilder)
         {
             this.fullNodeBuilder = fullNodeBuilder;
-        }
-
-        public void SetPreviousRegistration(IRuleRegistration previousRegistration)
-        {
-            this.baseRegistration = previousRegistration;
 
             this.coinView = () => this.fullNodeBuilder.ServiceProvider.GetService(typeof(CoinView)) as CoinView;
             this.executorFactory = () => this.fullNodeBuilder.ServiceProvider.GetService(typeof(ISmartContractExecutorFactory)) as ISmartContractExecutorFactory;
@@ -42,15 +34,39 @@ namespace Stratis.Bitcoin.Features.SmartContracts
 
         public IEnumerable<ConsensusRule> GetRules()
         {
-            Guard.Assert(this.baseRegistration != null);
+            var rules = new List<ConsensusRule>
+            {
+                new BlockHeaderRule(),
 
-            var rules = new List<ConsensusRule>();
+                // rules that are inside the method CheckBlockHeader
+                new CalculateWorkRule(),
 
-            rules.AddRange(this.baseRegistration.GetRules().Where(r => r.GetType() != typeof(PowCoinviewRule)));
+                // rules that are inside the method ContextualCheckBlockHeader
+                new CheckpointsRule(),
+                new AssumeValidRule(),
+                new BlockHeaderPowContextualRule(),
 
-            rules.Add(new TxOutSmartContractExecRule());
-            rules.Add(new OpSpendRule());
-            rules.Add(new SmartContractCoinviewRule(this.coinView(), this.executorFactory(), this.loggerFactory(), this.originalStateRoot(), this.receiptStorage()));
+                // rules that are inside the method ContextualCheckBlock
+                new TransactionLocktimeActivationRule(), // implements BIP113
+                new CoinbaseHeightActivationRule(), // implements BIP34
+                new WitnessCommitmentsRule(), // BIP141, BIP144
+                new BlockSizeRule(),
+
+                // rules that are inside the method CheckBlock
+                new BlockMerkleRootRule(),
+                new EnsureCoinbaseRule(),
+                new CheckPowTransactionRule(),
+                new CheckSigOpsRule(),
+
+                // rules that require the store to be loaded (coinview)
+                new SmartContractLoadCoinviewRule(),
+                new TransactionDuplicationActivationRule(), // implements BIP30
+
+                // Smart contract specific rules
+                new TxOutSmartContractExecRule(),
+                new OpSpendRule(),
+                new SmartContractCoinviewRule(this.coinView(), this.executorFactory(), this.loggerFactory(), this.originalStateRoot(), this.receiptStorage()), // implements BIP68, MaxSigOps and BlockReward calculation
+            };
 
             return rules;
         }

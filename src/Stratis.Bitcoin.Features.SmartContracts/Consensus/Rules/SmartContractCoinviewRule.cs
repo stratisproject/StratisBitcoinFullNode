@@ -24,16 +24,13 @@ namespace Stratis.Bitcoin.Features.SmartContracts
     {
         private List<Transaction> blockTxsProcessed;
         private readonly CoinView coinview;
-        /// <summary>Consensus parameters.</summary>
         private NBitcoin.Consensus consensusParams;
         private readonly ISmartContractExecutorFactory executorFactory;
         private Transaction generatedTransaction;
-        /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
         private readonly ContractStateRepositoryRoot originalStateRoot;
         private readonly ISmartContractReceiptStorage receiptStorage;
         private uint refundCounter;
-
 
         public SmartContractCoinviewRule(CoinView coinview,
             ISmartContractExecutorFactory executorFactory,

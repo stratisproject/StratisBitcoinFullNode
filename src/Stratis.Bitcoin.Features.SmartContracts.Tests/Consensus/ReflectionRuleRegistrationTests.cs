@@ -1,42 +1,30 @@
-﻿using System.Collections.Generic;
-using System.Linq;
+﻿using System.Linq;
 using Moq;
-using Stratis.Bitcoin.Consensus.Rules;
-using Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor;
+using NBitcoin;
+using Stratis.Bitcoin.BlockPulling;
+using Stratis.Bitcoin.Configuration.Logging;
+using Stratis.Bitcoin.Consensus;
+using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Consensus.Rules;
+using Stratis.Bitcoin.Utilities;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus
 {
-    public class ReflectionRuleRegistrationTests
+    public sealed class ReflectionRuleRegistrationTests
     {
         [Fact]
-        public void ReflectionRuleRegistration_AddTests_Success()
+        public void ReflectionVirtualMachineFeature_OnInitialize_RulesAdded()
         {
-            var baseRuleRegistration = new Mock<IRuleRegistration>();
+            var chain = new ConcurrentChain();
+            var loggerFactory = new ExtendedLoggerFactory();
+            Network network = Network.StratisRegTest;
 
-            var mockRules = new List<ConsensusRule>
-            {
-                new Mock<ConsensusRule>().Object,
-                new Mock<ConsensusRule>().Object,
-                new Mock<ConsensusRule>().Object
-            };
+            var consensusRules = new SmartContractConsensusRules(network, loggerFactory, DateTimeProvider.Default, chain, new Base.Deployments.NodeDeployments(network, chain), new Configuration.Settings.ConsensusSettings(), new Mock<ICheckpoints>().Object, new Mock<CoinView>().Object, new Mock<ILookaheadBlockPuller>().Object);
+            var feature = new ReflectionVirtualMachineFeature(consensusRules, loggerFactory);
+            feature.Initialize();
 
-            baseRuleRegistration.Setup(x => x.GetRules()).Returns(() => mockRules);
-
-            var reflectionRuleRegistration = new ReflectionRuleRegistration();
-            reflectionRuleRegistration.SetPreviousRegistration(baseRuleRegistration.Object);
-
-            var smartContractConsensusRules = reflectionRuleRegistration.GetRules().ToList();
-
-            // Check that new rules are present
-            Assert.Single(smartContractConsensusRules.OfType<SmartContractFormatRule>());
-
-            // Check that original rules are present
-            foreach (ConsensusRule rule in baseRuleRegistration.Object.GetRules())
-            {
-                Assert.Contains(rule, smartContractConsensusRules);
-            }
+            Assert.Single(consensusRules.Rules.Where(r => r.Rule.GetType() == typeof(SmartContractFormatRule)));
         }
     }
 }

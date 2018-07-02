@@ -42,7 +42,6 @@ using Stratis.SmartContracts.Core.Validation;
 using Stratis.SmartContracts.Executor.Reflection;
 using Stratis.SmartContracts.Executor.Reflection.Compilation;
 using Xunit;
-using static Stratis.Bitcoin.Features.Consensus.FullNodeBuilderConsensusExtension;
 using Key = NBitcoin.Key;
 
 
@@ -220,7 +219,6 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 var fullNodeBuilder = new Mock<IFullNodeBuilder>();
                 fullNodeBuilder.SetupGet(f => f.ServiceProvider).Returns(new MockServiceProvider(this.cachedCoinView, this.executorFactory, this.stateRoot, loggerFactory, this.receiptStorage));
                 var smartContractRuleRegistration = new SmartContractRuleRegistration(fullNodeBuilder.Object);
-                smartContractRuleRegistration.SetPreviousRegistration(new PowConsensusRulesRegistration());
 
                 ConsensusRules consensusRules = new PowConsensusRules(this.network, loggerFactory, dateTimeProvider, this.chain, deployments, consensusSettings, new Checkpoints(), this.cachedCoinView, blockPuller).Register(smartContractRuleRegistration);
                 this.consensus = new ConsensusLoop(new AsyncLoopFactory(loggerFactory), new NodeLifetime(), this.chain, this.cachedCoinView, blockPuller, new NodeDeployments(this.network, this.chain), loggerFactory, new ChainState(new InvalidBlockHashStore(dateTimeProvider)), connectionManager, dateTimeProvider, new Signals.Signals(), consensusSettings, nodeSettings, peerBanning, consensusRules);

@@ -13,7 +13,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         /// </summary>
         public static IEnumerable<Transaction> GetSmartContractExecTransactions(this IEnumerable<Transaction> transactions)
         {
-            return transactions.Where(x=> x.IsSmartContractExecTransaction());
+            return transactions.Where(x => x.IsSmartContractExecTransaction());
         }
 
         /// <summary>

@@ -76,7 +76,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Networks
             this.Base58Prefixes[(int)Base58Type.ASSET_ID] = new byte[] { 115 };
             this.Base58Prefixes[(int)Base58Type.COLORED_ADDRESS] = new byte[] { 0x13 };
 
-            var encoder = Encoders.Bech32("tb");
+            Bech32Encoder encoder = Encoders.Bech32("tb");
             this.Bech32Encoders = new Bech32Encoder[2];
             this.Bech32Encoders[(int)Bech32Type.WITNESS_PUBKEY_ADDRESS] = encoder;
             this.Bech32Encoders[(int)Bech32Type.WITNESS_SCRIPT_ADDRESS] = encoder;
