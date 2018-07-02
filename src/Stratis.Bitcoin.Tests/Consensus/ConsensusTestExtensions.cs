@@ -43,7 +43,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
 
         public static bool HaveBlockDataAvailabilityStateOf(this ConnectNewHeadersResult connectNewHeadersResult, BlockDataAvailabilityState blockDataAvailabilityState)
         {
-            if (connectNewHeadersResult.DownloadFrom == null || connectNewHeadersResult.DownloadTo == null)
+            if ((connectNewHeadersResult.DownloadFrom == null) || (connectNewHeadersResult.DownloadTo == null))
             {
                 return false;
             }
@@ -57,7 +57,6 @@ namespace Stratis.Bitcoin.Tests.Consensus
                 }
                 chainedHeader = chainedHeader.Previous;
             }
-
             return true;
         }
     }
