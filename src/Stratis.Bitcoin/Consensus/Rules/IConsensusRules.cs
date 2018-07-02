@@ -36,7 +36,8 @@ namespace Stratis.Bitcoin.Consensus.Rules
         /// If it's a new block that was mined or staked it will extend the chain and the new block will set <see cref="ConcurrentChain.Tip"/>.
         /// </summary>
         /// <param name="validationContext">Information about the block to validate.</param>
-        Task AcceptBlockAsync(ValidationContext validationContext);
+        /// <param name="tip">The current tip.</param>
+        Task AcceptBlockAsync(ValidationContext validationContext, ChainedHeader tip);
 
         /// <summary>
         /// Execute the consensus rule engine.
@@ -79,7 +80,7 @@ namespace Stratis.Bitcoin.Consensus.Rules
         /// </para>
         /// </summary>
         /// <returns>Hash of the block header which is now the tip of the chain.</returns>
-        Task<uint256> RewindAsync();
+        Task<RewindState> RewindAsync();
     }
 
     /// <summary>

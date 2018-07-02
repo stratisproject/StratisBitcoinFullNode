@@ -83,6 +83,11 @@ namespace Stratis.Bitcoin.P2P.Peer
             return this.FindByIp(IPAddress.Loopback);
         }
 
+        public INetworkPeer FindById(int peerId)
+        {
+            return this.networkPeers.FirstOrDefault(n => n.Connection.Id == peerId);
+        }
+
         public INetworkPeer FindByIp(IPAddress ip)
         {
             ip = ip.EnsureIPv6();
