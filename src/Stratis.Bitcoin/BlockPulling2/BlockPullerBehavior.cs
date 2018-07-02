@@ -16,6 +16,7 @@ namespace Stratis.Bitcoin.BlockPulling2
     /// Relation of the node's puller to a network peer node.
     /// Keeps all peer-related values that <see cref="BlockPuller"/> needs to know about a peer.
     /// </summary>
+    /// <remarks>The component is not thread safe and it is supposed to be protected by the caller.</remarks>
     public interface IBlockPullerBehavior : INetworkPeerBehavior
     {
         /// <summary>Relative quality score of a peer.</summary>

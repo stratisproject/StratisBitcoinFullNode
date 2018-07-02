@@ -124,6 +124,7 @@ namespace Stratis.Bitcoin.BlockPulling2
         /// <remarks>This object has to be protected by <see cref="peerLock"/>.</remarks>
         private readonly Dictionary<int, IBlockPullerBehavior> pullerBehaviorsByPeerId;
 
+        /// <summary>The cancellation source that indicates that component's shutdown was triggered.</summary>
         private readonly CancellationTokenSource cancellationSource;
 
         /// <summary>The average block size in bytes calculated used up to <see cref="AverageBlockSizeSamplesCount"/> most recent samples.</summary>
