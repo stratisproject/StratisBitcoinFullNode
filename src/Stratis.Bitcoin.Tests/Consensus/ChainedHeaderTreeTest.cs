@@ -1315,5 +1315,33 @@ namespace Stratis.Bitcoin.Tests.Consensus
                 }
             }
         }
+
+        /// <summary>
+        /// Issue 36 @ The list of headers is presented where the 1st half of them can be connected but then there is
+        /// header which is not consecutive – its previous hash is not hash of the previous header in the list.
+        /// The 1st nonconsecutive header should be header that we saw before, so that it actually connects but it
+        /// is out of order.
+        /// </summary>
+        [Fact]
+        public void ListWithOnlyHalfConnectableHeadersPresented_TheFirstNonconsecutiveHeaderShouldBeHeaderWeSawBefore()
+        {
+            // Chain header tree setup. Initial chain has 2 headers.
+            // Example: h1=h2.
+            const int initialChainSize = 2;
+            TestContext ctx = new TestContextBuilder().WithInitialChain(initialChainSize).Build();
+            ChainedHeaderTree cht = ctx.ChainedHeaderTree;
+            ChainedHeader chainTip = ctx.InitialChainTip;
+
+            // Extend chain with 10 more headers.
+            // Example: h1=h2=a3=a4=a5=a6=a7=a8=a9=a10=a11=a12.
+            // Then swap h8 with h2 before connecting it.
+            const int extensionChainSize = 10;
+            chainTip = ctx.ExtendAChain(extensionChainSize, chainTip);
+            List<BlockHeader> listOfHeaders = ctx.ChainedHeaderToList(chainTip, extensionChainSize);
+            listOfHeaders[initialChainSize + 5] = chainTip.GetAncestor(2).Header;
+
+            // Present headers that contain out of order header.
+            ConnectNewHeadersResult connectionResult = cht.ConnectNewHeaders(1, listOfHeaders);
+        }
     }
 }
