@@ -131,8 +131,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
                 ChainedHeader chainedHeader = null, 
                 int difficultyAdjustmentDivisor = 1, 
                 bool assignBlocks = true,
-                ValidationState? validationState = null,
-                BlockDataAvailabilityState? blockDataAvailabilityState = null)
+                ValidationState? validationState = null)
             {
                 if (difficultyAdjustmentDivisor == 0) throw new ArgumentException("Divisor cannot be 0");
 
@@ -149,9 +148,6 @@ namespace Stratis.Bitcoin.Tests.Consensus
                     var newHeader = new ChainedHeader(header, header.GetHash(), previousHeader);
                     if (validationState.HasValue)
                         newHeader.BlockValidationState = validationState.Value;
-
-                    if (blockDataAvailabilityState.HasValue)
-                        newHeader.BlockDataAvailability = blockDataAvailabilityState.Value;
 
                     if (assignBlocks)
                     {
