@@ -462,7 +462,7 @@ namespace Stratis.Bitcoin.Consensus
             if (connectBlockResult.LastValidatedBlockHeader != null)
             {
                 // Block validation failed we need to rewind any blocks that were added to the chain.
-                await this.RewindInvalidChainPartAsync(connectBlockResult.LastValidatedBlockHeader, currentTip).ConfigureAwait(false);
+                await this.RewindPartiallyConnectedChainAsync(connectBlockResult.LastValidatedBlockHeader, currentTip).ConfigureAwait(false);
             }
             
             if (isExtension)
@@ -512,7 +512,7 @@ namespace Stratis.Bitcoin.Consensus
         }
         
         /// <summary>Rewinds the connected part of invalid chain.</summary>
-        private async Task RewindInvalidChainPartAsync(ChainedHeader lastValidatedBlockHeader, ChainedHeader currentTip)
+        private async Task RewindPartiallyConnectedChainAsync(ChainedHeader lastValidatedBlockHeader, ChainedHeader currentTip)
         {
             this.logger.LogTrace("({0}:'{1}',{2}:'{3}'", nameof(lastValidatedBlockHeader), lastValidatedBlockHeader, nameof(currentTip), currentTip);
             
