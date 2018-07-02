@@ -1218,5 +1218,71 @@ namespace Stratis.Bitcoin.Tests.Consensus
             peerIdsByTipHash[header6Hash].Should().Contain(ChainedHeaderTree.LocalPeerId);
             peerIdsByTipHash[header6Hash].Should().Contain(peerId);
         }
+
+        /// <summary>
+        /// Issue 27 @  Checkpoints are disabled. Chain tip is at header 5. Present a chain A with headers equal to max reorg of 500 blocks plus extra 50. 
+        /// Then start syncing until block 490. Peer 2 presents the alternative chain with 2 headers after fork point at header 5. We then you join the rest of
+        /// 60 blocks. ConsensusTipChanged should return identifier of the second peer at block number 505.
+        /// </summary>
+        [Fact]
+        public void ChainWithMaxReorgPlusExtraHeadersIsCalled_AnotherChainIsPresented_ConsensusTipChangedReturnsSecondPeerId()
+        {
+            // Chain header tree setup. Initial chain has 5 headers.
+            // Example: h1=h2=h3=h4=h5.
+            const int initialChainSize = 5;
+            TestContext ctx = new TestContextBuilder().WithInitialChain(initialChainSize).Build();
+            ChainedHeaderTree cht = ctx.ChainedHeaderTree;
+            ChainedHeader initialChainTip = ctx.InitialChainTip;
+
+            // Extend the chain (chain A) with max reorg headers (500) + 50 extra.
+            // Example: h1=h2=h3=h4=(h5)=a6=...=a555.
+            const int maxReorg = 500;
+            ctx.ChainStateMock.Setup(x => x.MaxReorgLength).Returns(maxReorg);
+            ChainedHeader chainATip = ctx.ExtendAChain(maxReorg + 50, initialChainTip);
+
+            // Chain A is presented by peer 1.
+            List<BlockHeader> listOfChainABlockHeaders = ctx.ChainedHeaderToList(chainATip, maxReorg + 50);
+            ChainedHeader[] chainAChainHeaders = chainATip.ToArray(maxReorg + 50);
+            cht.ConnectNewHeaders(1, listOfChainABlockHeaders);
+            
+            // Sync 490 blocks from chain A.
+            for (int i = 0; i < maxReorg - 10; i++)
+            {
+                ChainedHeader currentChainTip = chainAChainHeaders[i];
+                cht.BlockDataDownloaded(currentChainTip, currentChainTip.Block);
+                cht.PartialValidationSucceeded(currentChainTip, out bool reorgRequired);
+                ctx.FinalizedBlockMock.Setup(m => m.GetFinalizedBlockHeight()).Returns(currentChainTip.Height - maxReorg);
+                List<int> peerIds = cht.ConsensusTipChanged(currentChainTip);
+                peerIds.Should().BeEmpty();
+            }
+
+            // Create new chain B with 2 headers after the fork point.
+            // Example: h1=h2=h3=h4=(h5)=b7=b8.
+            const int chainBExtension = 2;
+            ChainedHeader chainBTip = ctx.ExtendAChain(chainBExtension, initialChainTip);
+
+            // Chain B is presented by peer 2.
+            List<BlockHeader> listOfChainBHeaders = ctx.ChainedHeaderToList(chainBTip, chainBExtension);
+            cht.ConnectNewHeaders(2, listOfChainBHeaders);
+
+            // Continue syncing remaining blocks from chain A.
+            for (int i = maxReorg - 10; i < maxReorg + 50; i++)
+            {
+                ChainedHeader currentChainTip = chainAChainHeaders[i];
+                cht.BlockDataDownloaded(currentChainTip, ctx.CreateBlock());
+                cht.PartialValidationSucceeded(currentChainTip, out bool reorgRequired);
+                ctx.FinalizedBlockMock.Setup(m => m.GetFinalizedBlockHeight()).Returns(currentChainTip.Height - maxReorg);
+                List<int> peerIds = cht.ConsensusTipChanged(currentChainTip);
+                if (currentChainTip.Height >= maxReorg + initialChainSize)
+                {
+                    peerIds.Should().HaveCount(1);
+                    peerIds[0].Should().Be(2);
+                }
+                else
+                {
+                    peerIds.Should().BeEmpty();
+                }
+            }
+        }
     }
 }
