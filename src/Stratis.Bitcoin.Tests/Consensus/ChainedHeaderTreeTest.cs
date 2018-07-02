@@ -1162,8 +1162,8 @@ namespace Stratis.Bitcoin.Tests.Consensus
             // PartialOrFullValidationFailed.
             const int peerId = 1;
             cht.ConnectNewHeaders(peerId, listOfCurrentChainHeaders);
-            cht.PartialValidationSucceeded(chainTip, out bool reorgRequired);
-            reorgRequired.Should().BeTrue();
+            cht.PartialValidationSucceeded(chainTip, out bool fullValidationRequired);
+            fullValidationRequired.Should().BeTrue();
             cht.PartialOrFullValidationFailed(chainTip);
 
             // Peer id must be found only once on header 5.
@@ -1198,8 +1198,8 @@ namespace Stratis.Bitcoin.Tests.Consensus
             // Present header by peer with id 1 and then call PartialValidationSucceeded on it.
             const int peerId = 1;
             cht.ConnectNewHeaders(peerId, listOfCurrentChainHeaders);
-            cht.PartialValidationSucceeded(chainTip, out bool reorgRequired);
-            reorgRequired.Should().BeTrue();
+            cht.PartialValidationSucceeded(chainTip, out bool fullValidationRequired);
+            fullValidationRequired.Should().BeTrue();
 
             // Call ConsensusTipChanged on chaintip at header 6.
             cht.ConsensusTipChanged(chainTip);
@@ -1247,7 +1247,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
             {
                 ChainedHeader currentChainTip = chainAChainHeaders[i];
                 cht.BlockDataDownloaded(currentChainTip, currentChainTip.Block);
-                cht.PartialValidationSucceeded(currentChainTip, out bool reorgRequired);
+                cht.PartialValidationSucceeded(currentChainTip, out bool fullValidationRequired);
                 ctx.FinalizedBlockMock.Setup(m => m.GetFinalizedBlockHeight()).Returns(currentChainTip.Height - maxReorg);
                 List<int> peerIds = cht.ConsensusTipChanged(currentChainTip);
                 peerIds.Should().BeEmpty();
@@ -1267,7 +1267,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
             {
                 ChainedHeader currentChainTip = chainAChainHeaders[i];
                 cht.BlockDataDownloaded(currentChainTip, ctx.CreateBlock());
-                cht.PartialValidationSucceeded(currentChainTip, out bool reorgRequired);
+                cht.PartialValidationSucceeded(currentChainTip, out bool fullValidationRequired);
                 ctx.FinalizedBlockMock.Setup(m => m.GetFinalizedBlockHeight()).Returns(currentChainTip.Height - maxReorg);
                 List<int> peerIds = cht.ConsensusTipChanged(currentChainTip);
                 if (currentChainTip.Height >= maxReorg + initialChainSize)
@@ -1283,9 +1283,9 @@ namespace Stratis.Bitcoin.Tests.Consensus
         }
 
         /// <summary>
-        /// Issue 29 @ Peer presents at least two headers. Those headers will be connected the tree. 
-        /// Then we save the first such connected block to variable X and simulate block downloaded for BOTH block.
-        /// Disconnect of the peer is then flollowed, which removes its chain from the tree. 
+        /// Issue 29 @ Peer presents at least two headers. Those headers will be connected to the tree. 
+        /// Then we save the first such connected block to variable X and simulate block downloaded for both blocks.
+        /// Then the peer is disconnected, which removes its chain from the tree. 
         /// Partial validation succeeded is then called on X.
         /// </summary>
         [Fact]
@@ -1312,14 +1312,15 @@ namespace Stratis.Bitcoin.Tests.Consensus
             // Download both blocks.
             ChainedHeader firstPresentedHeader = chainTip.Previous;
             cht.BlockDataDownloaded(chainTip, chainTip.Block);
-            cht.BlockDataDownloaded(chainTip.Previous, firstPresentedHeader.Block);
+            cht.BlockDataDownloaded(firstPresentedHeader, firstPresentedHeader.Block);
 
             // Disconnect peer 1.
             cht.PeerDisconnected(peer1Id);
 
             // Attempt to call PartialValidationSucceeded on a saved bock.
-            List<ChainedHeader> headersToValidate = cht.PartialValidationSucceeded(firstPresentedHeader, out bool reorgRequired);
+            List<ChainedHeader> headersToValidate = cht.PartialValidationSucceeded(firstPresentedHeader, out bool fullValidationRequired);
             headersToValidate.Should().BeNull();
+            fullValidationRequired.Should().BeFalse();
         }
     }
 }
