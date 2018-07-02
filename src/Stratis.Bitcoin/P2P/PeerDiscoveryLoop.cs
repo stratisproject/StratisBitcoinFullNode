@@ -96,7 +96,7 @@ namespace Stratis.Bitcoin.P2P
             if (!connectionManager.Parameters.PeerAddressManagerBehaviour().Mode.HasFlag(PeerAddressManagerBehaviourMode.Discover))
                 return;
 
-            this.currentParameters = connectionManager.Parameters.Clone();
+            this.currentParameters = connectionManager.Parameters.Clone(); //TODO we shouldn't add all the behaviors, only those that we need.
             this.currentParameters.TemplateBehaviors.Add(new ConnectionManagerBehavior(false, connectionManager, this.loggerFactory));
 
             this.peersToFind = this.currentParameters.PeerAddressManagerBehaviour().PeersToDiscover;
