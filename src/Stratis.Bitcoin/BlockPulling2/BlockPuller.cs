@@ -501,7 +501,7 @@ namespace Stratis.Bitcoin.BlockPulling2
             {
                 LinkedListNode<AssignedDownload> current = lastDownload;
                 
-                while (current.Previous != null && current.Previous.Value.Header.Height > assignment.Header.Height)
+                while ((current.Previous != null) && (current.Previous.Value.Header.Height > assignment.Header.Height))
                     current = current.Previous;
 
                 assignment.LinkedListNode = this.assignedDownloadsSorted.AddBefore(current, assignment);
