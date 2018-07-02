@@ -5,90 +5,15 @@ using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using System.Text;
 using System.Threading;
 using NBitcoin;
 using NBitcoin.Protocol;
-using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Builder;
-using Stratis.Bitcoin.Features.BlockStore;
-using Stratis.Bitcoin.Features.Consensus;
-using Stratis.Bitcoin.Features.Consensus.CoinViews;
-using Stratis.Bitcoin.Features.Consensus.Interfaces;
-using Stratis.Bitcoin.Features.MemoryPool;
-using Stratis.Bitcoin.Features.Wallet;
-using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.IntegrationTests.Common.Runners;
 using Stratis.Bitcoin.Tests.Common;
 
 namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
 {
-    public static class FullNodeExt
-    {
-        public static WalletManager WalletManager(this FullNode fullNode)
-        {
-            return fullNode.NodeService<IWalletManager>() as WalletManager;
-        }
-
-        public static WalletTransactionHandler WalletTransactionHandler(this FullNode fullNode)
-        {
-            return fullNode.NodeService<IWalletTransactionHandler>() as WalletTransactionHandler;
-        }
-
-        public static ConsensusLoop ConsensusLoop(this FullNode fullNode)
-        {
-            return fullNode.NodeService<IConsensusLoop>() as ConsensusLoop;
-        }
-
-        public static CoinView CoinView(this FullNode fullNode)
-        {
-            return fullNode.NodeService<CoinView>();
-        }
-
-        public static MempoolManager MempoolManager(this FullNode fullNode)
-        {
-            return fullNode.NodeService<MempoolManager>();
-        }
-
-        public static BlockStoreManager BlockStoreManager(this FullNode fullNode)
-        {
-            return fullNode.NodeService<BlockStoreManager>();
-        }
-
-        public static ChainedHeader GetBlockStoreTip(this FullNode fullNode)
-        {
-            return fullNode.NodeService<IChainState>().BlockStoreTip;
-        }
-    }
-
-    public enum CoreNodeState
-    {
-        Stopped,
-        Starting,
-        Running,
-        Killed
-    }
-
-    public class NodeConfigParameters : Dictionary<string, string>
-    {
-        public void Import(NodeConfigParameters configParameters)
-        {
-            foreach (KeyValuePair<string, string> kv in configParameters)
-            {
-                if (!this.ContainsKey(kv.Key))
-                    this.Add(kv.Key, kv.Value);
-            }
-        }
-
-        public override string ToString()
-        {
-            var builder = new StringBuilder();
-            foreach (KeyValuePair<string, string> kv in this)
-                builder.AppendLine(kv.Key + "=" + kv.Value);
-            return builder.ToString();
-        }
-    }
-
     public class NodeBuilder : IDisposable
     {
         public List<CoreNode> Nodes { get; }
@@ -183,18 +108,15 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
         /// <param name="protocolVersion">Use <see cref="ProtocolVersion.PROTOCOL_VERSION"/> for BTC PoW-like networks and <see cref="ProtocolVersion.ALT_PROTOCOL_VERSION"/> for Stratis PoS-like networks.</param>
         /// <param name="configFileName">The name for the node's configuration file.</param>
         /// <param name="agent">A user agent string to distinguish different node versions from each other.</param>
-        public CoreNode CreateCustomNode(bool start, Action<IFullNodeBuilder> callback, Network network, ProtocolVersion protocolVersion = ProtocolVersion.PROTOCOL_VERSION, IEnumerable<string> args = null, string agent = "Custom")
+        public CoreNode CreateCustomNode(bool start, Action<IFullNodeBuilder> callback, Network network, ProtocolVersion protocolVersion = ProtocolVersion.PROTOCOL_VERSION, string agent = "Custom", NodeConfigParameters extraParams = null)
         {
-            var argsList = args as List<string> ?? args?.ToList() ?? new List<string>();
-
+            extraParams = extraParams ?? new NodeConfigParameters();
             string configFileName = "custom.conf";
-            if (!argsList.Any(a => a.StartsWith("-conf="))) argsList.Add($"-conf={configFileName}");
-            else configFileName = argsList.First(a => a.StartsWith("-conf=")).Replace("-conf=", "");
+            extraParams.SetDefaultValueIfUndefined("conf", configFileName);
+            extraParams.SetDefaultValueIfUndefined("datadir", this.GetNextDataFolderName(agent));
 
-            string dataDir = this.GetNextDataFolderName(agent);
-            if (!argsList.Any(a => a.StartsWith("-datadir="))) argsList.Add($"-datadir={dataDir}");
-
-            return CreateNode(new CustomNodeRunner(dataDir, callback, network, protocolVersion, argsList, agent), start, configFileName);
+            extraParams?.ToList().ForEach(p => this.ConfigParameters[p.Key] = p.Value);
+            return CreateNode(new CustomNodeRunner(this.GetNextDataFolderName(agent), callback, network, protocolVersion, extraParams, agent), start, configFileName);
         }
 
         private string GetNextDataFolderName(string folderName = null)
