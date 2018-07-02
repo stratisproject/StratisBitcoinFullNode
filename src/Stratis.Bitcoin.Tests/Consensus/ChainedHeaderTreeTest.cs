@@ -1341,7 +1341,19 @@ namespace Stratis.Bitcoin.Tests.Consensus
             listOfHeaders[initialChainSize + 5] = chainTip.GetAncestor(2).Header;
 
             // Present headers that contain out of order header.
-            ConnectNewHeadersResult connectionResult = cht.ConnectNewHeaders(1, listOfHeaders);
+            Action connectHeadersAction = () =>
+            {
+                ConnectNewHeadersResult connectionResult = cht.ConnectNewHeaders(1, listOfHeaders);
+            };
+
+            // Exception is thrown and no new headers are connected.
+            ChainedHeader[] allHeaders = chainTip.ToArray(initialChainSize + extensionChainSize + 1);
+            connectHeadersAction.Should().Throw<ArgumentException>();
+            Dictionary<uint256, ChainedHeader> currentHeaders = cht.GetChainedHeadersByHash();
+            currentHeaders.Should().HaveCount(initialChainSize + 1); // initial chain size + genesis.
+            currentHeaders.Should().ContainKey(allHeaders[0].HashBlock);
+            currentHeaders.Should().ContainKey(allHeaders[1].HashBlock);
+            currentHeaders.Should().ContainKey(allHeaders[2].HashBlock);
         }
     }
 }

@@ -129,7 +129,7 @@ namespace NBitcoin
             else
             {
                 if (previous.HashBlock != header.HashPrevBlock)
-                    throw new ArgumentException("The previous block has not the expected hash");
+                    throw new ArgumentException("The previous block does not have the expected hash");
 
                 // Calculates the location of the skip block for this block.
                 this.Skip = this.Previous.GetAncestor(GetSkipHeight(this.Height));
