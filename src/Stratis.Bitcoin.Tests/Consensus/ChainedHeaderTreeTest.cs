@@ -131,7 +131,8 @@ namespace Stratis.Bitcoin.Tests.Consensus
                 ChainedHeader chainedHeader = null, 
                 int difficultyAdjustmentDivisor = 1, 
                 bool assignBlocks = true,
-                ValidationState? validationState = null)
+                ValidationState? validationState = null,
+                BlockDataAvailabilityState? blockDataAvailabilityState = null)
             {
                 if (difficultyAdjustmentDivisor == 0) throw new ArgumentException("Divisor cannot be 0");
 
@@ -148,6 +149,9 @@ namespace Stratis.Bitcoin.Tests.Consensus
                     var newHeader = new ChainedHeader(header, header.GetHash(), previousHeader);
                     if (validationState.HasValue)
                         newHeader.BlockValidationState = validationState.Value;
+
+                    if (blockDataAvailabilityState.HasValue)
+                        newHeader.BlockDataAvailability = blockDataAvailabilityState.Value;
 
                     if (assignBlocks)
                     {
@@ -1283,6 +1287,48 @@ namespace Stratis.Bitcoin.Tests.Consensus
                     peerIds.Should().BeEmpty();
                 }
             }
+        }
+
+        /// <summary>
+        /// Issue 30 @ Chain is 10 headers long. All headers are "Data Available". Call PartialValidationSucceeded on
+        /// the first header. First header is marked Partially Validated (PV). Make sure the rest of them are returned for
+        /// partial validation.
+        /// </summary>
+        [Fact]
+        public void ChainWith10DataAvailableHeaders_PartialValidationSucceededOnTheFirstHeaderCalled_RemainingHeadersPartiallyValidated()
+        {
+            // Chain header tree setup. Initial chain has 2 headers.
+            // Example: h1=h2.
+            const int initialChainSize = 2;
+            TestContext ctx = new TestContextBuilder()
+                .WithInitialChain(initialChainSize)
+                .Build();
+            ChainedHeaderTree cht = ctx.ChainedHeaderTree;
+            ChainedHeader chainTip = ctx.InitialChainTip;
+            
+            // Extend chain by 10 headers and connect it to CHT.
+            // Example: h1=h2=h3=h4=h5=h6=h7=h8=h9=h10=h11=h12.
+            const int extensionSize = 10;
+            chainTip = ctx.ExtendAChain(extensionSize, chainTip);
+            List<BlockHeader> listOfExtendedHeaders = ctx.ChainedHeaderToList(chainTip, extensionSize);
+            ConnectNewHeadersResult connectionResult = cht.ConnectNewHeaders(1, listOfExtendedHeaders);
+            chainTip = connectionResult.Consumed;
+
+            // Download all header blocks and call PartialValidationSucceeded on h3.
+            ChainedHeader[] headerArray = chainTip.ToArray(extensionSize);
+            ChainedHeader firstHeader = headerArray[0];
+            ChainedHeader secondHeader = headerArray[1];
+            foreach (ChainedHeader chainedHeader in headerArray)
+            {
+                cht.BlockDataDownloaded(chainedHeader, ctx.CreateBlock());
+            }
+
+            List<ChainedHeader> listOfHeaders = cht.PartialValidationSucceeded(firstHeader, out bool reorgRequired);
+
+            // FIrst header validation state should be "PartiallyValidated" and next header returned.
+            firstHeader.BlockValidationState.Should().Be(ValidationState.PartiallyValidated);
+            listOfHeaders.Should().HaveCount(1);
+            listOfHeaders.First().HashBlock.Should().Be(secondHeader.HashBlock);
         }
     }
 }
