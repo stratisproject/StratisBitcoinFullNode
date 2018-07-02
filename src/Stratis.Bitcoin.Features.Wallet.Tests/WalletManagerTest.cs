@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -3160,6 +3161,34 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             Assert.Null(trxConfirmed2.SpendingDetails);
         }
 
+        [Fact]
+        public void Start_takes_account_of_address_buffer_even_for_existing_wallets()
+        {
+            DataFolder dataFolder = CreateDataFolder(this);
+
+            var nodeSettings = new NodeSettings(Network.Main, ProtocolVersion.PROTOCOL_VERSION, "StratisBitcoin",
+                new string[] { });
+
+            var walletSettings = new WalletSettings(nodeSettings);
+
+            var walletManager = new WalletManager(this.LoggerFactory.Object, Network.Main, new ConcurrentChain(Network.Main), NodeSettings.Default(), walletSettings,
+                dataFolder, new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime(), DateTimeProvider.Default);
+
+            walletManager.CreateWallet("test", "mywallet", new Mnemonic(Wordlist.English, WordCount.Eighteen).ToString());
+
+            walletSettings.UnusedAddressesBuffer = 30;
+
+            walletManager = new WalletManager(this.LoggerFactory.Object, Network.Main, new ConcurrentChain(Network.Main), NodeSettings.Default(), walletSettings,
+                dataFolder, new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime(), DateTimeProvider.Default);
+
+            walletManager.Start();
+
+            var hdAccount = walletManager.Wallets.Single().AccountsRoot.Single().Accounts.Single();
+
+            Assert.Equal(30, hdAccount.ExternalAddresses.Count);
+            Assert.Equal(30, hdAccount.InternalAddresses.Count);
+        }
+
         private (Mnemonic mnemonic, Wallet wallet) CreateWalletOnDiskAndDeleteWallet(DataFolder dataFolder, string password, string passphrase, string walletName, ConcurrentChain chain)
         {
             var walletManager = new WalletManager(this.LoggerFactory.Object, Network.StratisMain, chain, NodeSettings.Default(), new Mock<WalletSettings>().Object,
@@ -3211,6 +3240,32 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
             string serializedNewWallet = JsonConvert.SerializeObject(newWallet, Formatting.None);
             return JsonConvert.DeserializeObject<Wallet>(serializedNewWallet);
+        }
+
+        public Wallet GenerateWalletWithOneAccount(string name, string password)
+        {
+            if (this.walletsGenerated.TryGetValue((name, password), out Wallet existingWallet))
+            {
+                string serializedExistingWallet = JsonConvert.SerializeObject(existingWallet, Formatting.None);
+                return JsonConvert.DeserializeObject<Wallet>(serializedExistingWallet);
+            }
+
+            var newWallet = WalletTestsHelpers.GenerateBlankWalletWithExtKey(name, password);
+            this.walletsGenerated.Add((name, password), newWallet.wallet);
+
+            newWallet.wallet.AccountsRoot.Add(new AccountRoot()
+            {
+                CoinType = CoinType.Bitcoin,
+                Accounts = new List<HdAccount>
+                {
+                    new HdAccount
+                    {
+                        ExternalAddresses = WalletTestsHelpers.GenerateAddresses(0),
+                        InternalAddresses = WalletTestsHelpers.GenerateAddresses(0)
+                    }
+                }
+            });
+            return newWallet.wallet;
         }
     }
 }
