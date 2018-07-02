@@ -24,6 +24,9 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// </summary>
         public bool IsLightWallet { get; set; }
 
+        /// <summary>Size of the buffer of unused addresses maintained in an account.</summary>
+        public int UnusedAddressesBuffer { get; set; }
+
         /// <summary>
         /// Initializes an instance of the object from the default configuration.
         /// </summary>
@@ -45,6 +48,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             TextFileConfiguration config = nodeSettings.ConfigReader;
 
             this.SaveTransactionHex = config.GetOrDefault<bool>("savetrxhex", false, this.logger);
+            this.UnusedAddressesBuffer = config.GetOrDefault<int>("walletaddressbuffer", 20, this.logger);
 
             this.logger.LogTrace("(-)");
         }

@@ -44,6 +44,20 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         {
         }
 
+        private void MineSpendableCoins()
+        {
+            this.sendingStratisBitcoinNode = this.nodeGroup[SendingNodeName];
+            this.receivingStratisBitcoinNode = this.nodeGroup[ReceivingNodeName];
+
+            var coinbaseMaturity = 1;
+
+            this.sendingStratisBitcoinNode.FullNode.Network.Consensus.CoinbaseMaturity = coinbaseMaturity;
+            this.receivingStratisBitcoinNode.FullNode.Network.Consensus.CoinbaseMaturity = coinbaseMaturity;
+
+            this.sharedSteps.MineBlocks(coinbaseMaturity + 1, this.sendingStratisBitcoinNode, AccountZero, SendingWalletName,
+                WalletPassword);
+        }
+
         private void a_default_gap_limit_of_20()
         {
             this.nodeGroup = this.nodeGroupBuilder
@@ -56,18 +70,28 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                 .AndNoMoreConnections()
                 .Build();
 
-            this.sendingStratisBitcoinNode = this.nodeGroup[SendingNodeName];
-            this.receivingStratisBitcoinNode = this.nodeGroup[ReceivingNodeName];
-
-            var coinbaseMaturity = 1;
-
-            this.sendingStratisBitcoinNode.FullNode.Network.Consensus.CoinbaseMaturity = coinbaseMaturity;
-            this.receivingStratisBitcoinNode.FullNode.Network.Consensus.CoinbaseMaturity = coinbaseMaturity;
-
-            this.sharedSteps.MineBlocks(coinbaseMaturity + 1, this.sendingStratisBitcoinNode, AccountZero, SendingWalletName, WalletPassword);
+            MineSpendableCoins();
         }
 
-        private void a_wallet_with_funds_at_index_20_which_is_beyond_gap_limit()
+        private void a_gap_limit_of_21()
+        {
+            int customUnusedAddressBuffer = 21;
+
+            this.nodeGroup = this.nodeGroupBuilder
+                .StratisPowNode(SendingNodeName).Start().NotInIBD()
+                .WithWallet(SendingWalletName, WalletPassword)
+                .StratisCustomPowNode(ReceivingNodeName, new[] { $"-walletaddressbuffer={customUnusedAddressBuffer}" }).Start()
+                .WithWallet(ReceivingWalletName, WalletPassword)
+                .WithConnections()
+                .Connect(SendingNodeName, ReceivingNodeName)
+                .AndNoMoreConnections()
+                .Build();
+
+            MineSpendableCoins();
+        }
+
+
+        private void a_wallet_with_funds_at_index_20_which_is_beyond_default_gap_limit()
         {
             ExtPubKey xPublicKey = this.GetExtendedPublicKey(ReceivingNodeName);
             var recipientAddressBeyondGapLimit = xPublicKey.Derive(new KeyPath("0/20")).PubKey.GetAddress(Network.RegTest);
