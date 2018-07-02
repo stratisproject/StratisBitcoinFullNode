@@ -754,13 +754,13 @@ namespace Stratis.Bitcoin.Tests.Consensus
         /// <summary>
         /// Issue 12 @ Create chained header tree component #1321
         /// Checkpoints are disabled, assumevalid at block X, blocks up to
-        /// X-10 are marked for download, blocks before X-20 are FV,
+        /// X-10 are marked for download, blocks before X-20 are fully validated,
         /// headers up to block X + some more are presented, all from X-10
         /// are marked for download. Make sure that all blocks before assumevalid block
-        /// that are not FV or PV are marked assumevalid.
+        /// that are not fully validated or partially validated are marked assumevalid.
         /// </summary>
         [Fact]
-        public void CheckpointsDisabled_AssumeValid_BlockDownloadAndValidationStatesSetCorrectly()
+        public void PresentChain_CheckpointsDisabled_BlocksNotFullyOrPartiallyValidatedAreAssumeValid()
         {
             // Checkpoints are disabled.
             // Initial chain has headers (h1-h10).
@@ -813,17 +813,16 @@ namespace Stratis.Bitcoin.Tests.Consensus
             chainedHeaderDownloadFrom.HashBlock.Should().Be(fromHeader.HashBlock);
             chainedHeaderDownloadTo.HashBlock.Should().Be(extendedChainTip.HashBlock);
 
-            // Make sure that all blocks before assumevalid block that are not FV or PV are marked assumevalid.
-            var allowableBlockValidationStates = new[]
+            // Make sure that all blocks before assumevalid block
+            // that are not fully or partially validated are marked assumevalid.
+            ChainedHeader headerBeforeIncludingAssumeValid = 
+                chainedHeaderTree.GetChainedHeadersByHash().Values.First(x => x.Height == assumeValidBlockHeight);
+
+            while (headerBeforeIncludingAssumeValid.Height > assumeValidBlockHeight - 20)
             {
-                ValidationState.PartiallyValidated, ValidationState.FullyValidated, ValidationState.AssumedValid
-            };
-
-            IEnumerable<ChainedHeader> headersBeforeAssumeValid = 
-                chainedHeaderTree.GetChainedHeadersByHash().Values.Where(x => x.Height < assumeValidBlockHeight);
-
-            Assert.True(headersBeforeAssumeValid.All(x =>
-                allowableBlockValidationStates.Contains(x.BlockValidationState)));
+                headerBeforeIncludingAssumeValid.BlockValidationState.Should().Be(ValidationState.AssumedValid);
+                headerBeforeIncludingAssumeValid = headerBeforeIncludingAssumeValid.Previous;
+            }
         }
 
         /// <summary>
