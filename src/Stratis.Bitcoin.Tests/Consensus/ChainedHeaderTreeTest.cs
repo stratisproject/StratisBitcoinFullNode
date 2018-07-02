@@ -1283,8 +1283,11 @@ namespace Stratis.Bitcoin.Tests.Consensus
         }
 
         /// <summary>
-        /// Issue 29 @ Remove ChainHeader manually from a tree and call PartialValidationSucceeded,
-        /// make sure it returns nothing.
+        /// Issue 29 @ Peer presents at least two headers. 
+        /// Those headers will be connected the tree. 
+        /// Then we save the first such connected block to variable X and simulate block downloaded for BOTH block.
+        /// Disconnect of the peer is then flollowed, which removes its chain from the tree. 
+        /// Partial validation succeeded is then called on X.
         /// </summary>
         [Fact]
         public void ChainedHeaderIsRemovedFromTheTree_PartialValidationSucceededCalled_NothingIsReturned()
@@ -1298,12 +1301,25 @@ namespace Stratis.Bitcoin.Tests.Consensus
             ChainedHeaderTree cht = ctx.ChainedHeaderTree;
             ChainedHeader chainTip = ctx.InitialChainTip;
 
-            // Manually remove chained header.
-            Dictionary<uint256, ChainedHeader> chainedHeaders = cht.GetChainedHeadersByHash();
-            chainedHeaders.Remove(chainTip.HashBlock);
+            // Extend chaintip with 2 headers, i.e. h1=h2=h3=h4=h5=h6=h7.
+            const int chainExtension = 2;
+            chainTip = ctx.ExtendAChain(chainExtension, chainTip);
+            
+            // Peer 1 presents these 2 headers.
+            const int peer1Id = 1;
+            List<BlockHeader> listOfHeaders = ctx.ChainedHeaderToList(chainTip, chainExtension);
+            cht.ConnectNewHeaders(peer1Id, listOfHeaders);
 
-            // PartialValidationSucceeded should return null.
-            List<ChainedHeader> headersToValidate = cht.PartialValidationSucceeded(chainTip, out bool reorgRequired);
+            // Download both blocks.
+            ChainedHeader firstPresentedHeader = chainTip.Previous;
+            cht.BlockDataDownloaded(chainTip, chainTip.Block);
+            cht.BlockDataDownloaded(chainTip.Previous, firstPresentedHeader.Block);
+
+            // Disconnect peer 1.
+            cht.PeerDisconnected(peer1Id);
+
+            // Attempt to call PartialValidationSucceeded on a saved bock.
+            List<ChainedHeader> headersToValidate = cht.PartialValidationSucceeded(firstPresentedHeader, out bool reorgRequired);
             headersToValidate.Should().BeNull();
         }
     }
