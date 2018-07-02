@@ -3241,31 +3241,5 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             string serializedNewWallet = JsonConvert.SerializeObject(newWallet, Formatting.None);
             return JsonConvert.DeserializeObject<Wallet>(serializedNewWallet);
         }
-
-        public Wallet GenerateWalletWithOneAccount(string name, string password)
-        {
-            if (this.walletsGenerated.TryGetValue((name, password), out Wallet existingWallet))
-            {
-                string serializedExistingWallet = JsonConvert.SerializeObject(existingWallet, Formatting.None);
-                return JsonConvert.DeserializeObject<Wallet>(serializedExistingWallet);
-            }
-
-            var newWallet = WalletTestsHelpers.GenerateBlankWalletWithExtKey(name, password);
-            this.walletsGenerated.Add((name, password), newWallet.wallet);
-
-            newWallet.wallet.AccountsRoot.Add(new AccountRoot()
-            {
-                CoinType = CoinType.Bitcoin,
-                Accounts = new List<HdAccount>
-                {
-                    new HdAccount
-                    {
-                        ExternalAddresses = WalletTestsHelpers.GenerateAddresses(0),
-                        InternalAddresses = WalletTestsHelpers.GenerateAddresses(0)
-                    }
-                }
-            });
-            return newWallet.wallet;
-        }
     }
 }
