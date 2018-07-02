@@ -261,7 +261,7 @@ namespace NBitcoin.Tests
         {
             ColoredCoinTester tester = CreateTester(test);
             ColoredTransaction expected = ColoredTransaction.FetchColors(tester.TestedTxId, tester.Repository);
-            ColoredTransaction actual = new CoinprismColoredTransactionRepository().Get(tester.TestedTxId);
+            ColoredTransaction actual = new CoinprismColoredTransactionRepository(Network.Main).Get(tester.TestedTxId);
             Assert.True(actual.ToBytes().SequenceEqual(expected.ToBytes()));
         }
 #endif

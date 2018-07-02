@@ -5,7 +5,6 @@ using Newtonsoft.Json.Linq;
 #endif
 using System;
 using System.Collections.Generic;
-using System.Threading.Tasks;
 
 namespace NBitcoin.OpenAsset
 {
@@ -487,11 +486,6 @@ namespace NBitcoin.OpenAsset
             }
         }
 #if !NOJSONNET
-        public override string ToString()
-        {
-            return ToString(Network.Main);
-        }
-
         public string ToString(Network network)
         {
             var obj = new JObject();
