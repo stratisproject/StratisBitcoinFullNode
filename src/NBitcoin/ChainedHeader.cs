@@ -595,7 +595,7 @@ namespace NBitcoin
                 currentHeader = currentHeader.Previous;
             }
 
-            if (currentHeader != chainedHeader)
+            if (hashes[0] != chainedHeader)
                 throw new NotSupportedException("Header must be on the same chain.");
 
             return hashes;
