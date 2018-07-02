@@ -6,17 +6,9 @@ using Newtonsoft.Json;
 
 namespace NBitcoin.JsonConverters
 {
-    public class BitcoinSerializableJsonConverter : JsonConverter
+    public sealed class BitcoinSerializableJsonConverter : JsonConverter
     {
-        private readonly Network network;
-
-        public BitcoinSerializableJsonConverter()
-        { }
-
-        public BitcoinSerializableJsonConverter(Network network)
-        {
-            this.network = network;
-        }
+        public BitcoinSerializableJsonConverter() { }
 
         public override bool CanConvert(Type objectType)
         {
@@ -33,7 +25,7 @@ namespace NBitcoin.JsonConverters
 
                 var obj = (IBitcoinSerializable)Activator.CreateInstance(objectType);
                 byte[] bytes = Encoders.Hex.DecodeData((string)reader.Value);
-                obj.ReadWrite(bytes, consensusFactory: this.network.Consensus.ConsensusFactory);
+                obj.ReadWrite(bytes);
                 return obj;
             }
             catch (EndOfStreamException)
