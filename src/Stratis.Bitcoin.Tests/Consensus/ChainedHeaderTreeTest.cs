@@ -1313,7 +1313,6 @@ namespace Stratis.Bitcoin.Tests.Consensus
             // Verify its initial BlockValidationState.
             Assert.Equal(ValidationState.HeaderValidated, newHeader.BlockValidationState);
 
-            // Call FullValidationSucceeded and verify BlockValidationState has changed.
             chainedHeaderTree.FullValidationSucceeded(newHeader);
             Assert.Equal(ValidationState.FullyValidated, newHeader.BlockValidationState);
         }
