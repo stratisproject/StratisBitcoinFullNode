@@ -1,5 +1,4 @@
-﻿#if !NOJSONNET
-using System;
+﻿using System;
 using System.IO;
 using System.Reflection;
 using NBitcoin.DataEncoders;
@@ -7,13 +6,10 @@ using Newtonsoft.Json;
 
 namespace NBitcoin.JsonConverters
 {
-#if !NOJSONNET
-    public
-#else
-    internal
-#endif
-    class BitcoinSerializableJsonConverter : JsonConverter
+    public sealed class BitcoinSerializableJsonConverter : JsonConverter
     {
+        public BitcoinSerializableJsonConverter() { }
+
         public override bool CanConvert(Type objectType)
         {
             return typeof(IBitcoinSerializable).GetTypeInfo().IsAssignableFrom(objectType.GetTypeInfo());
@@ -38,6 +34,7 @@ namespace NBitcoin.JsonConverters
             catch (FormatException)
             {
             }
+
             throw new JsonObjectException("Invalid bitcoin object of type " + objectType.Name, reader);
         }
 
@@ -48,4 +45,3 @@ namespace NBitcoin.JsonConverters
         }
     }
 }
-#endif

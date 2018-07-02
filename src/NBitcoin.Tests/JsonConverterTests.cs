@@ -42,7 +42,7 @@ namespace NBitcoin.Tests
         private T CanSerializeInJsonCore<T>(T value)
         {
             string str = Serializer.ToString(value);
-            var obj2 = Serializer.ToObject<T>(str);
+            T obj2 = Serializer.ToObject<T>(str, Network.Main);
             Assert.Equal(str, Serializer.ToString(obj2));
             return obj2;
         }

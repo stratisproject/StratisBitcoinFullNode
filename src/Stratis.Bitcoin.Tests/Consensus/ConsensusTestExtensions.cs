@@ -21,5 +21,24 @@ namespace Stratis.Bitcoin.Tests.Consensus
         {
             return chainedHeaderTree.GetMemberValue("chainedHeadersByHash") as Dictionary<uint256, ChainedHeader>;
         }
+
+        public static ChainedHeader GetPeerTipChainedHeaderByPeerId(this ChainedHeaderTree chainedHeaderTree, int peer)
+        {
+            return chainedHeaderTree.GetChainedHeadersByHash()[chainedHeaderTree.GetPeerTipsByPeerId()[peer]];
+        }
+
+        public static ChainedHeader[] ToArray(this ChainedHeader chainedHeader, int headersToTake)
+        {
+            var headers = new ChainedHeader[headersToTake];
+            ChainedHeader current = chainedHeader;
+
+            for (int i = headersToTake - 1; (i >= 0) && (current != null); i--)
+            {
+                headers[i] = current;
+                current = current.Previous;
+            }
+
+            return headers;
+        }
     }
 }
