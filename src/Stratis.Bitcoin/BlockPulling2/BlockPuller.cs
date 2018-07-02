@@ -278,9 +278,9 @@ namespace Stratis.Bitcoin.BlockPulling2
             {
                 int peerId = peer.Connection.Id;
 
-                if (this.pullerBehaviorsByPeerId.ContainsKey(peerId))
+                if (this.pullerBehaviorsByPeerId.TryGetValue(peerId, out IBlockPullerBehavior behavior))
                 {
-                    this.pullerBehaviorsByPeerId[peerId].Tip = newTip;
+                    behavior.Tip = newTip;
                     this.logger.LogTrace("Tip for peer with ID {0} was changed to '{1}'.", peerId, newTip);
                 }
                 else
@@ -289,7 +289,7 @@ namespace Stratis.Bitcoin.BlockPulling2
 
                     if (supportsRequirments)
                     {
-                        var behavior = peer.Behavior<IBlockPullerBehavior>();
+                        behavior = peer.Behavior<IBlockPullerBehavior>();
                         behavior.Tip = newTip;
                         this.pullerBehaviorsByPeerId.Add(peerId, behavior);
 
@@ -560,7 +560,7 @@ namespace Stratis.Bitcoin.BlockPulling2
 
                 lock (this.peerLock)
                 {
-                    peerBehavior = this.pullerBehaviorsByPeerId[peerId];
+                    this.pullerBehaviorsByPeerId.TryGetValue(peerId, out peerBehavior);
                 }
 
                 bool success = false;
@@ -805,11 +805,13 @@ namespace Stratis.Bitcoin.BlockPulling2
             lock (this.peerLock)
             {
                 // Add peer sample.
-                IBlockPullerBehavior pullerBehavior = this.pullerBehaviorsByPeerId[peerId];
-                pullerBehavior.AddSample(block.BlockSize.Value, deliveredInSeconds);
+                if (this.pullerBehaviorsByPeerId.TryGetValue(peerId, out IBlockPullerBehavior behavior))
+                {
+                    behavior.AddSample(block.BlockSize.Value, deliveredInSeconds);
 
-                // Recalculate quality score.
-                this.RecalculateQualityScoreLocked(pullerBehavior, peerId);
+                    // Recalculate quality score.
+                    this.RecalculateQualityScoreLocked(behavior, peerId);
+                }
             }
 
             lock (this.queueLock)
