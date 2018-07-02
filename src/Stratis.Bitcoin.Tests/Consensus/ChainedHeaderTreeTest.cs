@@ -673,6 +673,82 @@ namespace Stratis.Bitcoin.Tests.Consensus
         }
 
         /// <summary>
+        /// Issue 11 @ Create chained header tree component #1321
+        /// When checkpoints are enabled and the first is at block X,
+        /// when we present headers before that- none marked for download.
+        /// When we first present checkpointed header and some after only
+        /// headers before the first checkpoint(including it) are marked for download.
+        /// </summary>
+        [Fact]
+        public void PresentChain_CheckpointsEnabled_MarkToDownloadWhenTwoCheckpointsPresented()
+        {
+            const int initialChainSize = 5;
+            const int currentChainExtension = 25;
+
+            TestContext testContext = new TestContextBuilder().WithInitialChain(initialChainSize).UseCheckpoints().Build();
+            ChainedHeaderTree chainedHeaderTree = testContext.ChainedHeaderTree;
+            ChainedHeader initialChainTip = testContext.InitialChainTip;
+
+            ChainedHeader extendedChainTip = testContext.ExtendAChain(currentChainExtension, initialChainTip);
+
+            // Total chain length is h1 -> h30.
+            List<BlockHeader> listOfCurrentChainHeaders =
+                testContext.ChainedHeaderToList(extendedChainTip, initialChainSize + currentChainExtension);
+
+            // Checkpoints are enabled and there are two checkpoints defined at h(20) and h(30).
+            const int checkpointHeight1 = 20;
+            const int checkpointHeight2 = 30;
+            var checkpoint1 = new CheckpointFixture(checkpointHeight1, listOfCurrentChainHeaders[checkpointHeight1 - 1]);
+            var checkpoint2 = new CheckpointFixture(checkpointHeight2, listOfCurrentChainHeaders[checkpointHeight2 - 1]);
+            testContext.SetupCheckpoints(checkpoint1, checkpoint2);
+
+            // We present headers before the first checkpoint h6 -> h15.
+            int numberOfHeadersBeforeCheckpoint1 = checkpointHeight1 - initialChainSize;
+            List<BlockHeader> listOfHeadersBeforeCheckpoint1 =
+                listOfCurrentChainHeaders.GetRange(initialChainSize, numberOfHeadersBeforeCheckpoint1 - 5);
+            ConnectNewHeadersResult connectNewHeadersResult =
+                chainedHeaderTree.ConnectNewHeaders(1, listOfHeadersBeforeCheckpoint1);
+
+            // None are marked for download.
+            connectNewHeadersResult.DownloadFrom.Should().Be(null);
+            connectNewHeadersResult.DownloadTo.Should().Be(null);
+
+            // Check all headers beyond the initial chain (h6 -> h30) have foundation state of header only.
+            ValidationState expectedState = ValidationState.HeaderValidated;
+            IEnumerable<ChainedHeader> headersBeyondInitialChain =
+                chainedHeaderTree.GetChainedHeadersByHash().Where(x => x.Value.Height > initialChainSize).Select(y => y.Value);
+            foreach (ChainedHeader header in headersBeyondInitialChain)
+            {
+                header.BlockValidationState.Should().Be(expectedState);
+            }
+
+            // Present headers h16 -> h29 (including first checkpoint but excluding second). 
+            List<BlockHeader> unconsumedHeaders = listOfCurrentChainHeaders.Skip(connectNewHeadersResult.Consumed.Height).ToList();
+            connectNewHeadersResult = chainedHeaderTree.ConnectNewHeaders(1, unconsumedHeaders.SkipLast(1).ToList());
+
+            // Download headers up to including checkpoint1 (h20) but not beyond.
+            connectNewHeadersResult.DownloadFrom.HashBlock.Should().Be(listOfHeadersBeforeCheckpoint1.First().GetHash());
+            connectNewHeadersResult.DownloadTo.HashBlock.Should().Be(checkpoint1.Header.GetHash());
+
+            // Checking from first checkpoint back to the initialized chain (h20 -> h6).
+            ChainedHeader chainedHeader = chainedHeaderTree.GetChainedHeadersByHash()
+                .SingleOrDefault(x => (x.Value.HashBlock == checkpoint1.Header.GetHash())).Value;
+            while (chainedHeader.Height > initialChainSize)
+            {
+                chainedHeader.BlockValidationState.Should().Be(ValidationState.AssumedValid);
+                chainedHeader = chainedHeader.Previous;
+            }
+
+            // Checking from first checkpoint to second checkpoint (h21 -> h29). 
+            chainedHeader = chainedHeaderTree.GetPeerTipChainedHeaderByPeerId(1);
+            while (chainedHeader.Height > checkpoint1.Height)
+            {
+                chainedHeader.BlockValidationState.Should().Be(ValidationState.HeaderValidated);
+                chainedHeader = chainedHeader.Previous;
+            }
+        }
+
+        /// <summary>
         /// Issue 13 @ Create 2 chains - chain A and chain B, where chain A has more chain work than chain B. Connect both
         /// chains to chain header tree. Consensus tip should be set to chain A. Now extend / update chain B to make it have
         /// more chain work. Attempt to connect chain B again. Consensus tip should be set to chain B.
@@ -1138,6 +1214,72 @@ namespace Stratis.Bitcoin.Tests.Consensus
             peerIdsByTipHash[header6Hash].Should().HaveCount(2);
             peerIdsByTipHash[header6Hash].Should().Contain(ChainedHeaderTree.LocalPeerId);
             peerIdsByTipHash[header6Hash].Should().Contain(peerId);
+        }
+
+        /// <summary>
+        /// Issue 27 @  Checkpoints are disabled. Chain tip is at header 5. Present a chain A with headers equal to max reorg of 500 blocks plus extra 50. 
+        /// Then start syncing until block 490. Peer 2 presents the alternative chain with 2 headers after fork point at header 5. We then you join the rest of
+        /// 60 blocks. ConsensusTipChanged should return identifier of the second peer at block number 505.
+        /// </summary>
+        [Fact]
+        public void ChainWithMaxReorgPlusExtraHeadersIsCalled_AnotherChainIsPresented_ConsensusTipChangedReturnsSecondPeerId()
+        {
+            // Chain header tree setup. Initial chain has 5 headers.
+            // Example: h1=h2=h3=h4=h5.
+            const int initialChainSize = 5;
+            TestContext ctx = new TestContextBuilder().WithInitialChain(initialChainSize).Build();
+            ChainedHeaderTree cht = ctx.ChainedHeaderTree;
+            ChainedHeader initialChainTip = ctx.InitialChainTip;
+
+            // Extend the chain (chain A) with max reorg headers (500) + 50 extra.
+            // Example: h1=h2=h3=h4=(h5)=a6=...=a555.
+            const int maxReorg = 500;
+            ctx.ChainStateMock.Setup(x => x.MaxReorgLength).Returns(maxReorg);
+            ChainedHeader chainATip = ctx.ExtendAChain(maxReorg + 50, initialChainTip);
+
+            // Chain A is presented by peer 1.
+            List<BlockHeader> listOfChainABlockHeaders = ctx.ChainedHeaderToList(chainATip, maxReorg + 50);
+            ChainedHeader[] chainAChainHeaders = chainATip.ToArray(maxReorg + 50);
+            cht.ConnectNewHeaders(1, listOfChainABlockHeaders);
+            
+            // Sync 490 blocks from chain A.
+            for (int i = 0; i < maxReorg - 10; i++)
+            {
+                ChainedHeader currentChainTip = chainAChainHeaders[i];
+                cht.BlockDataDownloaded(currentChainTip, currentChainTip.Block);
+                cht.PartialValidationSucceeded(currentChainTip, out bool reorgRequired);
+                ctx.FinalizedBlockMock.Setup(m => m.GetFinalizedBlockHeight()).Returns(currentChainTip.Height - maxReorg);
+                List<int> peerIds = cht.ConsensusTipChanged(currentChainTip);
+                peerIds.Should().BeEmpty();
+            }
+
+            // Create new chain B with 2 headers after the fork point.
+            // Example: h1=h2=h3=h4=(h5)=b7=b8.
+            const int chainBExtension = 2;
+            ChainedHeader chainBTip = ctx.ExtendAChain(chainBExtension, initialChainTip);
+
+            // Chain B is presented by peer 2.
+            List<BlockHeader> listOfChainBHeaders = ctx.ChainedHeaderToList(chainBTip, chainBExtension);
+            cht.ConnectNewHeaders(2, listOfChainBHeaders);
+
+            // Continue syncing remaining blocks from chain A.
+            for (int i = maxReorg - 10; i < maxReorg + 50; i++)
+            {
+                ChainedHeader currentChainTip = chainAChainHeaders[i];
+                cht.BlockDataDownloaded(currentChainTip, ctx.CreateBlock());
+                cht.PartialValidationSucceeded(currentChainTip, out bool reorgRequired);
+                ctx.FinalizedBlockMock.Setup(m => m.GetFinalizedBlockHeight()).Returns(currentChainTip.Height - maxReorg);
+                List<int> peerIds = cht.ConsensusTipChanged(currentChainTip);
+                if (currentChainTip.Height >= maxReorg + initialChainSize)
+                {
+                    peerIds.Should().HaveCount(1);
+                    peerIds[0].Should().Be(2);
+                }
+                else
+                {
+                    peerIds.Should().BeEmpty();
+                }
+            }
         }
 
         /// <summary>
