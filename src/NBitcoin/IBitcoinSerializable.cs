@@ -64,7 +64,6 @@ namespace NBitcoin
             {
                 var bitcoinStream = new BitcoinStream(memoryStream, true);
                 bitcoinStream.ConsensusFactory = network.Consensus.ConsensusFactory;
-
                 bitcoinStream.Type = serializationType;
                 bitcoinStream.ReadWrite(serializable);
                 memoryStream.Seek(0, SeekOrigin.Begin);

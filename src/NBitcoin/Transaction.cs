@@ -1393,14 +1393,6 @@ namespace NBitcoin
                 _Hashes[1] = GetWitHash();
         }
 
-        public Transaction Clone(bool cloneCache, Network network = null)
-        {
-            Transaction clone = Load(this.ToHex(), network: network);
-            if(cloneCache)
-                clone._Hashes = this._Hashes.ToArray();
-            return clone;
-        }
-
         private uint256[] _Hashes = null;
 
         public uint256 GetWitHash()
