@@ -1,11 +1,8 @@
 ﻿using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Reflection;
 using FluentAssertions;
-using Microsoft.Extensions.DependencyInjection;
 using NBitcoin;
-using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Controllers;
 using Stratis.Bitcoin.Features.Wallet.Models;
@@ -83,8 +80,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             this.nodeGroup = this.nodeGroupBuilder
                 .StratisPowNode(SendingNodeName).Start().NotInIBD()
                 .WithWallet(SendingWalletName, WalletPassword)
-                .StratisPowNode(ReceivingNodeName).Start().NotInIBD()
-                .WithDependency<WalletSettings>(x => x.UnusedAddressesBuffer = customUnusedAddressBuffer)
+                .StratisCustomPowNode(ReceivingNodeName, new[] { $"-walletaddressbuffer={customUnusedAddressBuffer}" }).Start()
                 .WithWallet(ReceivingWalletName, WalletPassword)
                 .WithConnections()
                 .Connect(SendingNodeName, ReceivingNodeName)

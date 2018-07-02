@@ -35,6 +35,12 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.Builders
             return this;
         }
 
+        public NodeGroupBuilder StratisCustomPowNode(string nodeName, IEnumerable<string> args)
+        {
+            this.nodes.Add(nodeName, this.nodeBuilder.CreateStratisCustomPowNode(args));
+            return this;
+        }
+
         public NodeGroupBuilder CreateStratisPosNode(string nodeName)
         {
             this.nodes.Add(nodeName, this.nodeBuilder.CreateStratisPosNode());
@@ -69,13 +75,6 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.Builders
         public NodeConnectionBuilder WithConnections()
         {
             return new NodeConnectionBuilder(this).With(this.nodes);
-        }
-
-        public NodeGroupBuilder WithDependency<T>(Action<T> changeAction)
-        {
-            var thingToChange = this.nodes.Last().Value.FullNode.NodeService<T>();
-            changeAction(thingToChange);
-            return this;
         }
     }
 }
