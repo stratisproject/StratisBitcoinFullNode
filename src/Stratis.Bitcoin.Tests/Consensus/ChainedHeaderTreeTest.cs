@@ -1307,7 +1307,6 @@ namespace Stratis.Bitcoin.Tests.Consensus
             // Continue syncing remaining blocks from chain A.
             for (int i = maxReorg - 10; i < maxReorg + 50; i++)
             {
-            {
                 ChainedHeader currentChainTip = consumedHeaders[i];
                 Block block = chainAChainHeaders[i].Block;
 
