@@ -1146,13 +1146,13 @@ namespace Stratis.Bitcoin.Tests.Consensus
             ChainedHeader chainTip = ctx.InitialChainTip;
             
             // Extend the chain with 3 headers.
-            // Example: h2=h3=h4.
+            // Example: h1=h2=h3=h4.
             ChainedHeader newChainTip = ctx.ExtendAChain(3, chainTip);
             
             List<BlockHeader> listOfChainABlockHeaders = ctx.ChainedHeaderToList(newChainTip, 3);
             chainTip = cht.ConnectNewHeaders(1, listOfChainABlockHeaders).Consumed;
 
-            // Call BlockDataDownloaded on h1, h2 and h3.
+            // Call BlockDataDownloaded on h2, h3 and h4.
             ChainedHeader chainTip4 = chainTip;
             ChainedHeader chainTip3 = chainTip.Previous;
             ChainedHeader chainTip2 = chainTip3.Previous;
