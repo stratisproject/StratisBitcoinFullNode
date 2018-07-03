@@ -118,7 +118,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
                 currentBlock.Header.Version = 1;
                 currentBlock.Header.Time = Utils.DateTimeToUnixTime(chain.Tip.GetMedianTimePast()) + 1;
 
-                Transaction txCoinbase = Transaction.Load(currentBlock.Transactions[0].ToBytes(network.Consensus.ConsensusFactory), network);
+                Transaction txCoinbase = network.Consensus.ConsensusFactory.CreateTransaction(currentBlock.Transactions[0].ToBytes());
                 txCoinbase.Inputs.Clear();
                 txCoinbase.Version = 1;
                 txCoinbase.AddInput(new TxIn(new Script(new[] { Op.GetPushOp(blockinfo[i].extraNonce), Op.GetPushOp(chain.Height) })));

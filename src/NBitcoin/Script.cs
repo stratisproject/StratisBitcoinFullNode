@@ -664,9 +664,6 @@ namespace NBitcoin
                 return GetHash(sss);
             }
 
-
-
-
             if(nIn >= txTo.Inputs.Count)
             {
                 Utils.log("ERROR: SignatureHash() : nIn=" + nIn + " out of range\n");
@@ -688,7 +685,7 @@ namespace NBitcoin
             var scriptCopy = new Script(scriptCode._Script);
             scriptCopy.FindAndDelete(OpcodeType.OP_CODESEPARATOR);
 
-            Transaction txCopy = Transaction.Load(txTo.ToBytes(), network);
+            Transaction txCopy = network.Consensus.ConsensusFactory.CreateTransaction(txTo.ToBytes());
 
             //Set all TxIn script to empty string
             foreach(TxIn txin in txCopy.Inputs)

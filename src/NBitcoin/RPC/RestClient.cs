@@ -104,7 +104,7 @@ namespace NBitcoin.RPC
                 throw new ArgumentNullException("txId");
 
             byte[] result = await SendRequestAsync("tx", RestResponseFormat.Bin, txId.ToString()).ConfigureAwait(false);
-            return new Transaction(result);
+            return this.Network.Consensus.ConsensusFactory.CreateTransaction(result);
         }
 
         /// <summary>

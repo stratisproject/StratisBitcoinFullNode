@@ -847,8 +847,8 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <summary>
         /// Gets or sets the full transaction object.
         /// </summary>
-        [JsonIgnore]
-        public Transaction Transaction => this.Hex == null ? null : Transaction.Parse(this.Hex);
+        //[JsonIgnore]
+        //public Transaction Transaction => this.Hex == null ? null : Transaction.Parse(this.Hex);
 
         /// <summary>
         /// The details of the transaction in which the output referenced in this transaction is spent.
@@ -965,8 +965,8 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <summary>
         /// Gets or sets the full transaction object.
         /// </summary>
-        [JsonIgnore]
-        public Transaction Transaction => this.Hex == null ? null : Transaction.Parse(this.Hex);
+        //[JsonIgnore]
+        //public Transaction Transaction => this.Hex == null ? null : Transaction.Parse(this.Hex);
 
         /// <summary>
         /// Determines whether this transaction being spent is confirmed.

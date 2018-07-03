@@ -1163,49 +1163,50 @@ namespace NBitcoin
         private TxOutList vout;
         private LockTime nLockTime;
 
+        [Obsolete("Please use consensus factory to create a transaction")]
         public Transaction()
         {
             this.vin = new TxInList(this);
             this.vout = new TxOutList(this);
         }
 
-        internal Transaction(string hex, ProtocolVersion version = ProtocolVersion.PROTOCOL_VERSION)
-            : this()
-        {
-            this.FromBytes(Encoders.Hex.DecodeData(hex), version);
-        }
+        //internal Transaction(string hex, ProtocolVersion version = ProtocolVersion.PROTOCOL_VERSION)
+        //    : this()
+        //{
+        //    this.FromBytes(Encoders.Hex.DecodeData(hex), version);
+        //}
 
-        internal Transaction(byte[] bytes)
-            : this()
-        {
-            this.FromBytes(bytes);
-        }
+        //internal Transaction(byte[] bytes)
+        //    : this()
+        //{
+        //    this.FromBytes(bytes);
+        //}
 
-        public static Transaction Load(string hex, Network network, ProtocolVersion version = ProtocolVersion.PROTOCOL_VERSION)
-        {
-            if (hex == null)
-                throw new ArgumentNullException(nameof(hex));
+        //public static Transaction Load(string hex, Network network, ProtocolVersion version = ProtocolVersion.PROTOCOL_VERSION)
+        //{
+        //    if (hex == null)
+        //        throw new ArgumentNullException(nameof(hex));
 
-            if (network == null)
-                throw new ArgumentNullException(nameof(network));
+        //    if (network == null)
+        //        throw new ArgumentNullException(nameof(network));
 
-            Transaction transaction = network.Consensus.ConsensusFactory.CreateTransaction();
-            transaction.FromBytes(Encoders.Hex.DecodeData(hex), version);
-            return transaction;
-        }
+        //    Transaction transaction = network.Consensus.ConsensusFactory.CreateTransaction();
+        //    transaction.FromBytes(Encoders.Hex.DecodeData(hex), version);
+        //    return transaction;
+        //}
 
-        public static Transaction Load(byte[] bytes, Network network)
-        {
-            if (bytes == null)
-                throw new ArgumentNullException(nameof(bytes));
+        //public static Transaction Load(byte[] bytes, Network network)
+        //{
+        //    if (bytes == null)
+        //        throw new ArgumentNullException(nameof(bytes));
 
-            if (network == null)
-                throw new ArgumentNullException(nameof(network));
+        //    if (network == null)
+        //        throw new ArgumentNullException(nameof(network));
 
-            Transaction transaction = network.Consensus.ConsensusFactory.CreateTransaction();
-            transaction.FromBytes(bytes);
-            return transaction;
-        }
+        //    Transaction transaction = network.Consensus.ConsensusFactory.CreateTransaction();
+        //    transaction.FromBytes(bytes);
+        //    return transaction;
+        //}
 
         public Money TotalOut
         {
@@ -1671,10 +1672,10 @@ namespace NBitcoin
             return GetFormatter(format, network).ParseJson(tx);
         }
 
-        public static Transaction Parse(string hex)
-        {
-            return new Transaction(Encoders.Hex.DecodeData(hex));
-        }
+        //public static Transaction Parse(string hex)
+        //{
+        //    return new Transaction(Encoders.Hex.DecodeData(hex));
+        //}
 
         public string ToHex()
         {

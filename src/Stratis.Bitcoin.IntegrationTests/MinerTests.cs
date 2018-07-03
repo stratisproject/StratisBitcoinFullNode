@@ -120,8 +120,6 @@ namespace Stratis.Bitcoin.IntegrationTests
             public int baseheight;
             public CachedCoinView cachedCoinView;
 
-            private bool useCheckpoints = true;
-
             public async Task InitializeAsync()
             {
                 this.blockinfo = new List<Blockinfo>();
@@ -188,7 +186,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                     block.Header.Version = 1;
                     block.Header.Time = Utils.DateTimeToUnixTime(this.chain.Tip.GetMedianTimePast()) + 1;
 
-                    Transaction txCoinbase = Transaction.Load(block.Transactions[0].ToBytes(this.network.Consensus.ConsensusFactory), this.network);
+                    Transaction txCoinbase = this.network.Consensus.ConsensusFactory.CreateTransaction(block.Transactions[0].ToBytes());
                     txCoinbase.Inputs.Clear();
                     txCoinbase.Version = 1;
                     txCoinbase.AddInput(new TxIn(new Script(new[] { Op.GetPushOp(this.blockinfo[i].extranonce), Op.GetPushOp(this.chain.Height) })));
@@ -213,12 +211,6 @@ namespace Stratis.Bitcoin.IntegrationTests
                 this.newBlock = AssemblerForTest(this).Build(this.chain.Tip, this.scriptPubKey);
                 Assert.NotNull(this.newBlock);
             }
-
-            internal TestContext WithoutCheckpoints()
-            {
-                this.useCheckpoints = false;
-                return this;
-            }
         }
 
         // Test suite for ancestor feerate transaction selection.
@@ -235,7 +227,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 
             // Test that a medium fee transaction will be selected after a higher fee
             // rate package with a low fee rate parent.
-            var tx = new Transaction();
+            var tx = context.network.Consensus.ConsensusFactory.CreateTransaction();
             tx.AddInput(new TxIn(new OutPoint(context.txFirst[0].GetHash(), 0), new Script(OpcodeType.OP_1)));
             tx.AddOutput(new TxOut(new Money(5000000000L - 1000), new Script()));
 
@@ -244,14 +236,14 @@ namespace Stratis.Bitcoin.IntegrationTests
             context.mempool.AddUnchecked(hashParentTx, entry.Fee(1000).Time(context.DateTimeProvider.GetTime()).SpendsCoinbase(true).FromTx(tx));
 
             // This tx has a medium fee: 10000 satoshis
-            tx = Transaction.Load(tx.ToBytes(context.network.Consensus.ConsensusFactory), context.network);
+            tx = context.network.Consensus.ConsensusFactory.CreateTransaction(tx.ToBytes());
             tx.Inputs[0].PrevOut.Hash = context.txFirst[1].GetHash();
             tx.Outputs[0].Value = 5000000000L - 10000;
             uint256 hashMediumFeeTx = tx.GetHash();
             context.mempool.AddUnchecked(hashMediumFeeTx, entry.Fee(10000).Time(context.DateTimeProvider.GetTime()).SpendsCoinbase(true).FromTx(tx));
 
             // This tx has a high fee, but depends on the first transaction
-            tx = Transaction.Load(tx.ToBytes(context.network.Consensus.ConsensusFactory), context.network);
+            tx = context.network.Consensus.ConsensusFactory.CreateTransaction(tx.ToBytes());
             tx.Inputs[0].PrevOut.Hash = hashParentTx;
             tx.Outputs[0].Value = 5000000000L - 1000 - 50000; // 50k satoshi fee
             uint256 hashHighFeeTx = tx.GetHash();
@@ -263,7 +255,7 @@ namespace Stratis.Bitcoin.IntegrationTests
             Assert.True(pblocktemplate.Block.Transactions[3].GetHash() == hashMediumFeeTx);
 
             // Test that a package below the block min tx fee doesn't get included
-            tx = Transaction.Load(tx.ToBytes(context.network.Consensus.ConsensusFactory), context.network);
+            tx = context.network.Consensus.ConsensusFactory.CreateTransaction(tx.ToBytes());
             tx.Inputs[0].PrevOut.Hash = hashHighFeeTx;
             tx.Outputs[0].Value = 5000000000L - 1000 - 50000; // 0 fee
             uint256 hashFreeTx = tx.GetHash();
@@ -274,7 +266,7 @@ namespace Stratis.Bitcoin.IntegrationTests
             // below the block min tx fee (assuming 1 child tx of the same size).
             Money feeToUse = blockMinFeeRate.GetFee(2 * freeTxSize) - 1;
 
-            tx = Transaction.Load(tx.ToBytes(context.network.Consensus.ConsensusFactory), context.network);
+            tx = context.network.Consensus.ConsensusFactory.CreateTransaction(tx.ToBytes());
             tx.Inputs[0].PrevOut.Hash = hashFreeTx;
             tx.Outputs[0].Value = 5000000000L - 1000 - 50000 - feeToUse;
             uint256 hashLowFeeTx = tx.GetHash();
@@ -291,7 +283,7 @@ namespace Stratis.Bitcoin.IntegrationTests
             // of the transactions is below the min relay fee
             // Remove the low fee transaction and replace with a higher fee transaction
             context.mempool.RemoveRecursive(tx);
-            tx = Transaction.Load(tx.ToBytes(context.network.Consensus.ConsensusFactory), context.network);
+            tx = context.network.Consensus.ConsensusFactory.CreateTransaction(tx.ToBytes());
             tx.Outputs[0].Value -= 2; // Now we should be just over the min relay fee
             hashLowFeeTx = tx.GetHash();
             context.mempool.AddUnchecked(hashLowFeeTx, entry.Fee(feeToUse + 2).FromTx(tx));
@@ -302,7 +294,7 @@ namespace Stratis.Bitcoin.IntegrationTests
             // Test that transaction selection properly updates ancestor fee
             // calculations as ancestor transactions get included in a block.
             // Add a 0-fee transaction that has 2 outputs.
-            tx = Transaction.Load(tx.ToBytes(context.network.Consensus.ConsensusFactory), context.network);
+            tx = context.network.Consensus.ConsensusFactory.CreateTransaction(tx.ToBytes());
             tx.Inputs[0].PrevOut.Hash = context.txFirst[2].GetHash();
             tx.AddOutput(Money.Zero, new Script());
             tx.Outputs[0].Value = 5000000000L - 100000000;
@@ -311,7 +303,7 @@ namespace Stratis.Bitcoin.IntegrationTests
             context.mempool.AddUnchecked(hashFreeTx2, entry.Fee(0).SpendsCoinbase(true).FromTx(tx));
 
             // This tx can't be mined by itself
-            tx = Transaction.Load(tx.ToBytes(context.network.Consensus.ConsensusFactory), context.network);
+            tx = context.network.Consensus.ConsensusFactory.CreateTransaction(tx.ToBytes());
             tx.Inputs[0].PrevOut.Hash = hashFreeTx2;
             tx.Outputs.RemoveAt(1);
             feeToUse = blockMinFeeRate.GetFee(freeTxSize);
@@ -329,7 +321,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 
             // This tx will be mineable, and should cause hashLowFeeTx2 to be selected
             // as well.
-            tx = Transaction.Load(tx.ToBytes(context.network.Consensus.ConsensusFactory), context.network);
+            tx = context.network.Consensus.ConsensusFactory.CreateTransaction(tx.ToBytes());
             tx.Inputs[0].PrevOut.N = 1;
             tx.Outputs[0].Value = 100000000 - 10000; // 10k satoshi fee
             context.mempool.AddUnchecked(tx.GetHash(), entry.Fee(10000).FromTx(tx));
@@ -341,10 +333,10 @@ namespace Stratis.Bitcoin.IntegrationTests
         public async Task MinerCreateBlockSigopsLimit1000Async()
         {
             var context = new TestContext();
-            await context.WithoutCheckpoints().InitializeAsync();
+            await context.InitializeAsync();
 
             // block sigops > limit: 1000 CHECKMULTISIG + 1
-            var tx = new Transaction();
+            var tx = context.network.Consensus.ConsensusFactory.CreateTransaction();
             tx.AddInput(new TxIn(new OutPoint(context.txFirst[0].GetHash(), 0), new Script(new byte[] { (byte)OpcodeType.OP_0, (byte)OpcodeType.OP_0, (byte)OpcodeType.OP_0, (byte)OpcodeType.OP_NOP, (byte)OpcodeType.OP_CHECKMULTISIG, (byte)OpcodeType.OP_1 })));
             // NOTE: OP_NOP is used to force 20 SigOps for the CHECKMULTISIG
             tx.AddOutput(context.BLOCKSUBSIDY, new Script());
@@ -355,7 +347,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 bool spendsCoinbase = (i == 0); // only first tx spends coinbase
                                                 // If we don't set the # of sig ops in the CTxMemPoolEntry, template creation fails
                 context.mempool.AddUnchecked(context.hash, context.entry.Fee(context.LOWFEE).Time(context.DateTimeProvider.GetTime()).SpendsCoinbase(spendsCoinbase).FromTx(tx));
-                tx = Transaction.Load(tx.ToBytes(context.network.Consensus.ConsensusFactory), context.network);
+                tx = context.network.Consensus.ConsensusFactory.CreateTransaction(tx.ToBytes());
                 tx.Inputs[0].PrevOut.Hash = context.hash;
             }
             var error = Assert.Throws<ConsensusErrorException>(() => AssemblerForTest(context).Build(context.chain.Tip, context.scriptPubKey));
@@ -371,7 +363,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 bool spendsCoinbase = (i == 0); // only first tx spends coinbase
                                                 // If we do set the # of sig ops in the CTxMemPoolEntry, template creation passes
                 context.mempool.AddUnchecked(context.hash, context.entry.Fee(context.LOWFEE).Time(context.DateTimeProvider.GetTime()).SpendsCoinbase(spendsCoinbase).SigOpsCost(80).FromTx(tx));
-                tx = Transaction.Load(tx.ToBytes(context.network.Consensus.ConsensusFactory), context.network);
+                tx = context.network.Consensus.ConsensusFactory.CreateTransaction(tx.ToBytes());
                 tx.Inputs[0].PrevOut.Hash = context.hash;
             }
             BlockTemplate pblocktemplate = AssemblerForTest(context).Build(context.chain.Tip, context.scriptPubKey);
@@ -384,12 +376,12 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             var context = new TestContext();
             await context.InitializeAsync();
-            var tx = new Transaction();
+            var tx = context.network.Consensus.ConsensusFactory.CreateTransaction();
             tx.AddInput(new TxIn());
             tx.AddOutput(new TxOut());
 
             // block size > limit
-            tx = new Transaction();
+            tx = context.network.Consensus.ConsensusFactory.CreateTransaction();
             tx.AddInput(new TxIn());
             tx.AddOutput(new TxOut());
             tx.Inputs[0].ScriptSig = new Script();
@@ -406,7 +398,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 context.hash = tx.GetHash();
                 bool spendsCoinbase = (i == 0); // only first tx spends coinbase
                 context.mempool.AddUnchecked(context.hash, context.entry.Fee(context.LOWFEE).Time(context.DateTimeProvider.GetTime()).SpendsCoinbase(spendsCoinbase).FromTx(tx));
-                tx = Transaction.Load(tx.ToBytes(context.network.Consensus.ConsensusFactory), context.network);
+                tx = context.network.Consensus.ConsensusFactory.CreateTransaction(tx.ToBytes());
                 tx.Inputs[0].PrevOut.Hash = context.hash;
             }
             BlockTemplate pblocktemplate = AssemblerForTest(context).Build(context.chain.Tip, context.scriptPubKey);
@@ -419,18 +411,18 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             var context = new TestContext();
             await context.InitializeAsync();
-            var tx = new Transaction();
+            var tx = context.network.Consensus.ConsensusFactory.CreateTransaction();
             tx.AddInput(new TxIn());
             tx.AddOutput(new TxOut());
 
             // child with higher feerate than parent
-            tx = Transaction.Load(tx.ToBytes(context.network.Consensus.ConsensusFactory), context.network);
+            tx = context.network.Consensus.ConsensusFactory.CreateTransaction(tx.ToBytes());
             tx.Inputs[0].ScriptSig = new Script(OpcodeType.OP_1);
             tx.Inputs[0].PrevOut.Hash = context.txFirst[1].GetHash();
             tx.Outputs[0].Value = context.BLOCKSUBSIDY - context.HIGHFEE;
             context.hash = tx.GetHash();
             context.mempool.AddUnchecked(context.hash, context.entry.Fee(context.HIGHFEE).Time(context.DateTimeProvider.GetTime()).SpendsCoinbase(true).FromTx(tx));
-            tx = Transaction.Load(tx.ToBytes(context.network.Consensus.ConsensusFactory), context.network);
+            tx = context.network.Consensus.ConsensusFactory.CreateTransaction(tx.ToBytes());
             tx.Inputs[0].PrevOut.Hash = context.hash;
             tx.Inputs.Add(new TxIn());
             tx.Inputs[1].ScriptSig = new Script(OpcodeType.OP_1);
@@ -448,8 +440,8 @@ namespace Stratis.Bitcoin.IntegrationTests
         public async Task MinerCreateBlockCoinbaseMempoolTemplateCreationFailsAsync()
         {
             var context = new TestContext();
-            await context.WithoutCheckpoints().InitializeAsync();
-            var tx = new Transaction();
+            await context.InitializeAsync();
+            var tx = context.network.Consensus.ConsensusFactory.CreateTransaction();
             tx.AddInput(new TxIn());
             tx.AddOutput(new TxOut());
 
@@ -470,7 +462,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             var context = new TestContext();
             await context.InitializeAsync();
-            var tx = new Transaction();
+            var tx = context.network.Consensus.ConsensusFactory.CreateTransaction();
             tx.AddInput(new TxIn());
             tx.AddOutput(new TxOut());
 
@@ -521,7 +513,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             var context = new TestContext();
             await context.InitializeAsync();
-            var tx = new Transaction();
+            var tx = context.network.Consensus.ConsensusFactory.CreateTransaction();
             tx.AddInput(new TxIn());
             tx.AddOutput(new TxOut());
 
@@ -551,7 +543,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             var context = new TestContext();
             await context.InitializeAsync();
-            var tx = new Transaction();
+            var tx = context.network.Consensus.ConsensusFactory.CreateTransaction();
             tx.AddInput(new TxIn());
             tx.AddOutput(new TxOut());
             Transaction.LockTimeFlags flags = Transaction.LockTimeFlags.VerifySequence | Transaction.LockTimeFlags.MedianTimePast;
@@ -611,7 +603,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             var context = new TestContext();
             await context.InitializeAsync();
-            var tx = new Transaction();
+            var tx = context.network.Consensus.ConsensusFactory.CreateTransaction();
             tx.AddInput(new TxIn());
             tx.AddOutput(new TxOut());
             Transaction.LockTimeFlags flags = Transaction.LockTimeFlags.VerifySequence | Transaction.LockTimeFlags.MedianTimePast;
