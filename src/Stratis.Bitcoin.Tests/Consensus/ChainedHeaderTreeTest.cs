@@ -1368,7 +1368,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
 
                 cht.BlockDataDownloaded(currentChainTip, block);
                 cht.PartialValidationSucceeded(currentChainTip, out bool fullValidationRequired);
-                //ctx.FinalizedBlockMock.Setup(m => m.GetFinalizedBlockHeight()).Returns(currentChainTip.Height - maxReorg);
+                cht.ConsensusTipChanged(currentChainTip);
             }
 
             // Create new chain B with 20 headers and a fork point at height 10.
@@ -1380,7 +1380,10 @@ namespace Stratis.Bitcoin.Tests.Consensus
             // Chain B is presented by peer 2.
             List<BlockHeader> listOfChainBHeaders = ctx.ChainedHeaderToList(chainBTip, chainBSize);
             ConnectNewHeadersResult connectNewHeadersResult = cht.ConnectNewHeaders(2, listOfChainBHeaders);
-            connectNewHeadersResult.Should().BeNull();
+
+            // Nothing is marked for download.
+            connectNewHeadersResult.DownloadFrom.Should().BeNull();
+            connectNewHeadersResult.DownloadTo.Should().BeNull();
         }
     }
 }
