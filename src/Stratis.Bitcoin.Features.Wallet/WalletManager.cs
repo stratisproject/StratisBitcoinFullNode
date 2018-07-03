@@ -21,9 +21,6 @@ namespace Stratis.Bitcoin.Features.Wallet
     /// </summary>
     public class WalletManager : IWalletManager
     {
-        /// <summary>Size of the buffer of unused addresses maintained in an account. </summary>
-        private const int UnusedAddressesBuffer = 20;
-
         /// <summary>Quantity of accounts created in a wallet file when a wallet is restored.</summary>
         private const int WalletRecoveryAccountsCount = 1;
 
@@ -160,7 +157,14 @@ namespace Stratis.Bitcoin.Features.Wallet
             IEnumerable<Wallet> wallets = this.fileStorage.LoadByFileExtension(WalletFileExtension);
 
             foreach (Wallet wallet in wallets)
+            {
                 this.Wallets.Add(wallet);
+                foreach (HdAccount account in wallet.GetAccountsByCoinType(this.coinType))
+                {
+                    this.AddAddressesToMaintainBuffer(account, false);
+                    this.AddAddressesToMaintainBuffer(account, true);
+                }
+            }
 
             // Load data in memory for faster lookups.
             this.LoadKeysLookupLock();
@@ -226,8 +230,8 @@ namespace Stratis.Bitcoin.Features.Wallet
             for (int i = 0; i < WalletCreationAccountsCount; i++)
             {
                 HdAccount account = wallet.AddNewAccount(password, this.coinType, this.dateTimeProvider.GetTimeOffset());
-                IEnumerable<HdAddress> newReceivingAddresses = account.CreateAddresses(this.network, UnusedAddressesBuffer);
-                IEnumerable<HdAddress> newChangeAddresses = account.CreateAddresses(this.network, UnusedAddressesBuffer, true);
+                IEnumerable<HdAddress> newReceivingAddresses = account.CreateAddresses(this.network, this.walletSettings.UnusedAddressesBuffer);
+                IEnumerable<HdAddress> newChangeAddresses = account.CreateAddresses(this.network, this.walletSettings.UnusedAddressesBuffer, true);
                 this.UpdateKeysLookupLock(newReceivingAddresses.Concat(newChangeAddresses));
             }
 
@@ -316,8 +320,8 @@ namespace Stratis.Bitcoin.Features.Wallet
             for (int i = 0; i < WalletRecoveryAccountsCount; i++)
             {
                 HdAccount account = wallet.AddNewAccount(password, this.coinType, this.dateTimeProvider.GetTimeOffset());
-                IEnumerable<HdAddress> newReceivingAddresses = account.CreateAddresses(this.network, UnusedAddressesBuffer);
-                IEnumerable<HdAddress> newChangeAddresses = account.CreateAddresses(this.network, UnusedAddressesBuffer, true);
+                IEnumerable<HdAddress> newReceivingAddresses = account.CreateAddresses(this.network, this.walletSettings.UnusedAddressesBuffer);
+                IEnumerable<HdAddress> newChangeAddresses = account.CreateAddresses(this.network, this.walletSettings.UnusedAddressesBuffer, true);
                 this.UpdateKeysLookupLock(newReceivingAddresses.Concat(newChangeAddresses));
             }
 
@@ -1095,12 +1099,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                         continue;
                     }
 
-                    // Calculate how many accounts to add to keep a buffer of 20 unused addresses.
-                    int lastUsedAddressIndex = account.GetLastUsedAddress(isChange).Index;
-                    int addressesCount = isChange ? account.InternalAddresses.Count() : account.ExternalAddresses.Count();
-                    int emptyAddressesCount = addressesCount - lastUsedAddressIndex - 1;
-                    int accountsToAdd = UnusedAddressesBuffer - emptyAddressesCount;
-                    IEnumerable<HdAddress> newAddresses = account.CreateAddresses(this.network, accountsToAdd, isChange);
+                    IEnumerable<HdAddress> newAddresses = this.AddAddressesToMaintainBuffer(account, isChange);
 
                     this.UpdateKeysLookupLock(newAddresses);
                 }
@@ -1109,6 +1108,16 @@ namespace Stratis.Bitcoin.Features.Wallet
             this.logger.LogTrace("()");
         }
 
+        private IEnumerable<HdAddress> AddAddressesToMaintainBuffer(HdAccount account, bool isChange)
+        {
+            HdAddress lastUsedAddress = account.GetLastUsedAddress(isChange);
+            int lastUsedAddressIndex = lastUsedAddress?.Index ?? -1;
+            int addressesCount = isChange ? account.InternalAddresses.Count() : account.ExternalAddresses.Count();
+            int emptyAddressesCount = addressesCount - lastUsedAddressIndex - 1;
+            int addressesToAdd = this.walletSettings.UnusedAddressesBuffer - emptyAddressesCount;
+
+            return addressesToAdd > 0 ? account.CreateAddresses(this.network, addressesToAdd, isChange) : new List<HdAddress>();
+        }
         /// <inheritdoc />
         public void DeleteWallet()
         {

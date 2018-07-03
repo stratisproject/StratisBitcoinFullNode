@@ -2,10 +2,12 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Moq;
 using NBitcoin;
+using NBitcoin.Protocol;
 using Newtonsoft.Json;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
@@ -274,6 +276,27 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             Mnemonic mnemonic = walletManager.CreateWallet(password, "mywallet", mnemonicList: mnemonicList.ToString());
 
             Assert.Equal(mnemonic.DeriveSeed(), mnemonicList.DeriveSeed());
+        }
+
+        [Fact]
+        public void CreateWalletWithWalletSetting100UnusedAddressBufferCreates100AddressesToMonitor()
+        {
+            DataFolder dataFolder = CreateDataFolder(this);
+
+            var nodeSettings = new NodeSettings(Network.RegTest, ProtocolVersion.PROTOCOL_VERSION, "StratisBitcoin", 
+                new [] {"-walletaddressbuffer=100"});
+
+            var walletSettings = new WalletSettings(nodeSettings);
+
+            var walletManager = new WalletManager(this.LoggerFactory.Object, Network.StratisMain, new ConcurrentChain(Network.StratisMain), NodeSettings.Default(), walletSettings,
+                dataFolder, new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime(), DateTimeProvider.Default);
+
+            walletManager.CreateWallet("test", "mywallet", new Mnemonic(Wordlist.English, WordCount.Eighteen).ToString());
+
+            HdAccount hdAccount = walletManager.Wallets.Single().AccountsRoot.Single().Accounts.Single();
+
+            Assert.Equal(100, hdAccount.ExternalAddresses.Count);
+            Assert.Equal(100, hdAccount.InternalAddresses.Count);
         }
 
         [Fact]
@@ -3136,6 +3159,38 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             Assert.Contains((unconfirmedTransactionId, trxUnconfirmed1.CreationTime), result);
             Assert.DoesNotContain(trxUnconfirmed1, remainingTrxs);
             Assert.Null(trxConfirmed2.SpendingDetails);
+        }
+
+        [Fact]
+        public void Start_takes_account_of_address_buffer_even_for_existing_wallets()
+        {
+            DataFolder dataFolder = CreateDataFolder(this);
+
+            WalletManager walletManager = this.GetWalletManagerWithCustomConfigParam(dataFolder);
+            walletManager.CreateWallet("test", "mywallet", new Mnemonic(Wordlist.English, WordCount.Eighteen).ToString());
+
+            // Default of 20 addresses becuause walletaddressbuffer not set
+            HdAccount hdAccount = walletManager.Wallets.Single().AccountsRoot.Single().Accounts.Single();
+            Assert.Equal(20, hdAccount.ExternalAddresses.Count);
+            Assert.Equal(20, hdAccount.InternalAddresses.Count);
+
+            // Restart with walletaddressbuffer set
+            walletManager = this.GetWalletManagerWithCustomConfigParam(dataFolder, "-walletaddressbuffer=30");
+            walletManager.Start();
+
+            // Addresses populated to fill the buffer set
+            hdAccount = walletManager.Wallets.Single().AccountsRoot.Single().Accounts.Single();
+            Assert.Equal(30, hdAccount.ExternalAddresses.Count);
+            Assert.Equal(30, hdAccount.InternalAddresses.Count);
+        }
+
+        private WalletManager GetWalletManagerWithCustomConfigParam(DataFolder dataFolder, params string[] cmdLineArgs)
+        {
+            var nodeSettings = new NodeSettings(Network.RegTest, ProtocolVersion.PROTOCOL_VERSION, "StratisBitcoin", cmdLineArgs);
+            var walletSettings = new WalletSettings(nodeSettings);
+
+            return new WalletManager(this.LoggerFactory.Object, Network.Main, new ConcurrentChain(Network.Main),
+                NodeSettings.Default(), walletSettings, dataFolder, new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime(), DateTimeProvider.Default);
         }
 
         private (Mnemonic mnemonic, Wallet wallet) CreateWalletOnDiskAndDeleteWallet(DataFolder dataFolder, string password, string passphrase, string walletName, ConcurrentChain chain)

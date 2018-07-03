@@ -35,6 +35,12 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.Builders
             return this;
         }
 
+        public NodeGroupBuilder StratisCustomPowNode(string nodeName, NodeConfigParameters configParameters)
+        {
+            this.nodes.Add(nodeName, this.nodeBuilder.CreateStratisCustomPowNode(configParameters));
+            return this;
+        }
+
         public NodeGroupBuilder CreateStratisPosNode(string nodeName)
         {
             this.nodes.Add(nodeName, this.nodeBuilder.CreateStratisPosNode());
@@ -55,7 +61,8 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.Builders
 
         public NodeGroupBuilder WithWallet(string walletName, string walletPassword)
         {
-            this.NodeMnemonics.Add(this.nodes.Last().Key, this.nodes.Last().Value.FullNode.WalletManager().CreateWallet(walletPassword, walletName));
+            Mnemonic mnemonic = this.nodes.Last().Value.FullNode.WalletManager().CreateWallet(walletPassword, walletName);
+            this.NodeMnemonics.Add(this.nodes.Last().Key, mnemonic);
             return this;
         }
 

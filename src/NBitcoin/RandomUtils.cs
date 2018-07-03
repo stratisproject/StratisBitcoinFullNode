@@ -2,9 +2,6 @@
 using System.Text;
 using NBitcoin.Crypto;
 
-#if !USEBC
-#endif
-
 namespace NBitcoin
 {
     public class UnsecureRandom : IRandom

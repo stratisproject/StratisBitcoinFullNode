@@ -9,6 +9,16 @@ using System.Threading;
 using NBitcoin;
 using NBitcoin.Protocol;
 using Stratis.Bitcoin.Builder;
+using Stratis.Bitcoin.Configuration;
+using Stratis.Bitcoin.Features.BlockStore;
+using Stratis.Bitcoin.Features.Consensus;
+using Stratis.Bitcoin.Features.Consensus.CoinViews;
+using Stratis.Bitcoin.Features.Consensus.Interfaces;
+using Stratis.Bitcoin.Features.MemoryPool;
+using Stratis.Bitcoin.Features.Miner;
+using Stratis.Bitcoin.Features.RPC;
+using Stratis.Bitcoin.Features.Wallet;
+using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.IntegrationTests.Common.Runners;
 using Stratis.Bitcoin.Tests.Common;
 
@@ -83,6 +93,20 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
             return CreateNode(new StratisBitcoinPowRunner(this.GetNextDataFolderName()), start);
         }
 
+        public CoreNode CreateStratisCustomPowNode(NodeConfigParameters configParameters, bool start = false)
+        {
+            var callback = new Action<IFullNodeBuilder>( builder => builder
+                .UseBlockStore()
+                .UsePowConsensus()
+                .UseMempool()
+                .AddMining()
+                .UseWallet()
+                .AddRPC()
+                .MockIBD());
+
+            return CreateCustomNode(start, callback, Network.RegTest, ProtocolVersion.PROTOCOL_VERSION, configParameters: configParameters);
+        }
+
         public CoreNode CreateStratisPosNode()
         {
             return CreateNode(new StratisBitcoinPosRunner(this.GetNextDataFolderName()), false, "stratis.conf");
@@ -108,15 +132,15 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
         /// <param name="protocolVersion">Use <see cref="ProtocolVersion.PROTOCOL_VERSION"/> for BTC PoW-like networks and <see cref="ProtocolVersion.ALT_PROTOCOL_VERSION"/> for Stratis PoS-like networks.</param>
         /// <param name="configFileName">The name for the node's configuration file.</param>
         /// <param name="agent">A user agent string to distinguish different node versions from each other.</param>
-        public CoreNode CreateCustomNode(bool start, Action<IFullNodeBuilder> callback, Network network, ProtocolVersion protocolVersion = ProtocolVersion.PROTOCOL_VERSION, string agent = "Custom", NodeConfigParameters extraParams = null)
+        public CoreNode CreateCustomNode(bool start, Action<IFullNodeBuilder> callback, Network network, ProtocolVersion protocolVersion = ProtocolVersion.PROTOCOL_VERSION, string agent = "Custom", NodeConfigParameters configParameters = null)
         {
-            extraParams = extraParams ?? new NodeConfigParameters();
+            configParameters = configParameters ?? new NodeConfigParameters();
             string configFileName = "custom.conf";
-            extraParams.SetDefaultValueIfUndefined("conf", configFileName);
-            extraParams.SetDefaultValueIfUndefined("datadir", this.GetNextDataFolderName(agent));
+            configParameters.SetDefaultValueIfUndefined("conf", configFileName);
+            configParameters.SetDefaultValueIfUndefined("datadir", this.GetNextDataFolderName(agent));
 
-            extraParams?.ToList().ForEach(p => this.ConfigParameters[p.Key] = p.Value);
-            return CreateNode(new CustomNodeRunner(this.GetNextDataFolderName(agent), callback, network, protocolVersion, extraParams, agent), start, configFileName);
+            configParameters?.ToList().ForEach(p => this.ConfigParameters[p.Key] = p.Value);
+            return CreateNode(new CustomNodeRunner(this.GetNextDataFolderName(agent), callback, network, protocolVersion, configParameters, agent), start, configFileName);
         }
 
         private string GetNextDataFolderName(string folderName = null)
