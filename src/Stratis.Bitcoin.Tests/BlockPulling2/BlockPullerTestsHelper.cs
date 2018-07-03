@@ -33,6 +33,8 @@ namespace Stratis.Bitcoin.Tests.BlockPulling2
         /// </summary>
         public readonly Dictionary<uint256, Block> CallbacksCalled;
 
+        public readonly ChainState ChainState;
+
         private int currentPeerId = 0;
         private readonly ILoggerFactory loggerFactory;
         private int currentNonce;
@@ -44,10 +46,10 @@ namespace Stratis.Bitcoin.Tests.BlockPulling2
             this.currentNonce = 0;
 
             this.CallbacksCalled = new Dictionary<uint256, Block>();
-            var chainState = new ChainState(new InvalidBlockHashStore(new DateTimeProvider())) {ConsensusTip = this.CreateGenesisChainedHeader()};
+            this.ChainState = new ChainState(new InvalidBlockHashStore(new DateTimeProvider())) {ConsensusTip = this.CreateGenesisChainedHeader()};
 
-            this.Puller = new ExtendedBlockPuller((hash, block) => { this.CallbacksCalled.Add(hash, block); }, 
-                chainState, NodeSettings.SupportedProtocolVersion, new DateTimeProvider(), this.loggerFactory);
+            this.Puller = new ExtendedBlockPuller((hash, block) => { this.CallbacksCalled.Add(hash, block); },
+                this.ChainState, NodeSettings.SupportedProtocolVersion, new DateTimeProvider(), this.loggerFactory);
         }
 
         /// <summary>Creates a peer with extended puller behavior.</summary>
@@ -279,7 +281,9 @@ namespace Stratis.Bitcoin.Tests.BlockPulling2
 
         public ChainedHeader Tip { get => this.underlyingBehavior.Tip; set => this.underlyingBehavior.Tip = value; }
 
-        public void AddSample(long blockSizeBytes, double delaySeconds) { this.underlyingBehavior.AddSample(blockSizeBytes, delaySeconds); } 
+        public void AddSample(long blockSizeBytes, double delaySeconds) { this.underlyingBehavior.AddSample(blockSizeBytes, delaySeconds); }
+
+        public AverageCalculator AverageSizeBytes => this.underlyingBehavior.averageSizeBytes;
 
         public void Penalize(double delaySeconds, int notDeliveredBlocksCount) { this.underlyingBehavior.Penalize(delaySeconds, notDeliveredBlocksCount); }
 

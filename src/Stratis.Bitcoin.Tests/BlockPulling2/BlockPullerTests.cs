@@ -5,6 +5,8 @@ using System.Threading.Tasks;
 using NBitcoin;
 using Stratis.Bitcoin.BlockPulling2;
 using Stratis.Bitcoin.P2P.Peer;
+using Stratis.Bitcoin.Tests.Common;
+using Stratis.Bitcoin.Utilities;
 using Xunit;
 
 namespace Stratis.Bitcoin.Tests.BlockPulling2
@@ -844,10 +846,13 @@ namespace Stratis.Bitcoin.Tests.BlockPulling2
             Assert.Empty(this.puller.ReassignedJobsQueue);
 
             List<AssignedDownload> peer1Assignments = this.puller.AssignedDownloadsByHash.Values.Where(x => x.PeerId == peer1.Connection.Id).ToList();
- 
+
             this.puller.CheckStalling();
 
             Assert.True(behavior1.QualityScore < behavior2.QualityScore);
+
+            List<double> samples = ((CircularArray<double>)behavior1.AverageSizeBytes.GetMemberValue("samples")).ToList();
+            Assert.Equal(BlockPullerBehavior.IbdSamplesCount * BlockPullerBehavior.MaxSamplesPercentageToPenalize, samples.Count(x => this.helper.DoubleEqual(x, 0)));
 
             // Two jobs reassigned from peer 1.
             Assert.Equal(2, this.puller.ReassignedJobsQueue.Count);
@@ -865,9 +870,11 @@ namespace Stratis.Bitcoin.Tests.BlockPulling2
         /// No one delivers. Make sure that peers that were assigned important jobs were stalled, others are not.
         /// </summary>
         [Fact]
-        public async Task Stalling_ImportantHeadersAreReleasedAsync() //TODO make sure headers below CT are important
+        public async Task Stalling_ImportantHeadersAreReleasedAsync()
         {
-            List<ChainedHeader> headers = this.helper.CreateConsequtiveHeaders(this.puller.ImportantHeightMargin * 2);
+            List<ChainedHeader> headers = this.helper.CreateConsequtiveHeaders(this.puller.ImportantHeightMargin * 2 + 5);
+
+            this.helper.ChainState.ConsensusTip = headers[5];
 
             var peers = new List<INetworkPeer>();
 
@@ -898,7 +905,7 @@ namespace Stratis.Bitcoin.Tests.BlockPulling2
 
             foreach (AssignedDownload assignedDownload in this.puller.AssignedDownloadsByHash.Values)
             {
-                if (assignedDownload.Header.Height <= this.puller.ImportantHeightMargin)
+                if (assignedDownload.Header.Height <= this.helper.ChainState.ConsensusTip.Height + this.puller.ImportantHeightMargin)
                 {
                     peersWithImportantJobs.Add(assignedDownload.PeerId);
                     importantHeaders.Add(assignedDownload.Header);
@@ -992,6 +999,9 @@ namespace Stratis.Bitcoin.Tests.BlockPulling2
             Assert.Empty(this.helper.CallbacksCalled);
             Assert.Equal(peer1Headers.Count, this.puller.AssignedDownloadsByHash.Count);
         }
+
+        // TODO peer fails to deliver for 100 times but it's the only peer and it's quality score is 1.
+
 
         private void VerifyAssignedDownloadsSortedOrder()
         {
