@@ -1353,8 +1353,8 @@ namespace Stratis.Bitcoin.Tests.Consensus
 
             // Download both blocks.
             ChainedHeader firstPresentedHeader = consumedHeader.Previous;
-            cht.BlockDataDownloaded(consumedHeader, ctx.CreateBlock());
-            cht.BlockDataDownloaded(firstPresentedHeader, ctx.CreateBlock());
+            cht.BlockDataDownloaded(consumedHeader, chainTip.Previous.Block);
+            cht.BlockDataDownloaded(firstPresentedHeader, chainTip.Block);
 
             // Disconnect peer 1.
             cht.PeerDisconnected(peer1Id);
