@@ -1,5 +1,4 @@
-﻿#if !NOJSONNET
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
@@ -248,7 +247,7 @@ namespace NBitcoin.RPC
 
             HttpWebRequest request = WebRequest.CreateHttp(uriBuilder.Uri);
             request.Method = "GET";
-#if !(PORTABLE || NETCORE)
+#if !NETCORE
             request.KeepAlive = false;
 #endif
             return request;
@@ -309,4 +308,3 @@ namespace NBitcoin.RPC
         public bool IsPruned { get; internal set; }
     }
 }
-#endif

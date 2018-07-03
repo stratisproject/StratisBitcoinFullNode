@@ -8,9 +8,8 @@ using NBitcoin.DataEncoders;
 using NBitcoin.Protocol;
 using Newtonsoft.Json.Linq;
 using Xunit;
-#if !NOCONSENSUSLIB
+using NBitcoin.BitcoinCore;
 using System.Net.Http;
-#endif
 
 namespace NBitcoin.Tests
 {
@@ -20,12 +19,12 @@ namespace NBitcoin.Tests
         public static Script ParseScript(string s)
         {
             var result = new MemoryStream();
-            if(mapOpNames.Count == 0)
+            if (mapOpNames.Count == 0)
             {
                 mapOpNames = new Dictionary<string, OpcodeType>(Op._OpcodeByName);
-                foreach(KeyValuePair<string, OpcodeType> kv in mapOpNames.ToArray())
+                foreach (KeyValuePair<string, OpcodeType> kv in mapOpNames.ToArray())
                 {
-                    if(kv.Key.StartsWith("OP_", StringComparison.Ordinal))
+                    if (kv.Key.StartsWith("OP_", StringComparison.Ordinal))
                     {
                         string name = kv.Key.Substring(3, kv.Key.Length - 3);
                         mapOpNames.AddOrReplace(name, kv.Value);
@@ -35,11 +34,11 @@ namespace NBitcoin.Tests
 
             string[] words = s.Split(' ', '\t', '\n');
 
-            foreach(string w in words)
+            foreach (string w in words)
             {
-                if(w == "")
+                if (w == "")
                     continue;
-                if(w.All(l => l.IsDigit()) ||
+                if (w.All(l => l.IsDigit()) ||
                     (w.StartsWith("-") && w.Substring(1).All(l => l.IsDigit())))
                 {
 
@@ -47,20 +46,20 @@ namespace NBitcoin.Tests
                     long n = long.Parse(w);
                     Op.GetPushOp(n).WriteTo(result);
                 }
-                else if(w.StartsWith("0x") && HexEncoder.IsWellFormed(w.Substring(2)))
+                else if (w.StartsWith("0x") && HexEncoder.IsWellFormed(w.Substring(2)))
                 {
                     // Raw hex data, inserted NOT pushed onto stack:
                     byte[] raw = Encoders.Hex.DecodeData(w.Substring(2));
                     result.Write(raw, 0, raw.Length);
                 }
-                else if(w.Length >= 2 && w.StartsWith("'") && w.EndsWith("'"))
+                else if (w.Length >= 2 && w.StartsWith("'") && w.EndsWith("'"))
                 {
                     // Single-quoted string, pushed as data. NOTE: this is poor-man's
                     // parsing, spaces/tabs/newlines in single-quoted strings won't work.
                     byte[] b = TestUtils.ToBytes(w.Substring(1, w.Length - 2));
                     Op.GetPushOp(b).WriteTo(result);
                 }
-                else if(mapOpNames.ContainsKey(w))
+                else if (mapOpNames.ContainsKey(w))
                 {
                     // opcode, e.g. OP_ADD or ADD:
                     result.WriteByte((byte)mapOpNames[w]);
@@ -170,7 +169,7 @@ namespace NBitcoin.Tests
                 new object[]{(ulong)1 << 32, new byte[]{0x8E, 0xFE, 0xFE, 0xFF, 0x00}},
             };
 
-            foreach(object[] test in tests)
+            foreach (object[] test in tests)
             {
                 ulong val = (ulong)test[0];
                 var expectedBytes = (byte[])test[1];
@@ -187,7 +186,7 @@ namespace NBitcoin.Tests
                 Assert.Equal(val, compact.ToLong());
             }
 
-            foreach(int i in Enumerable.Range(0, 65535 * 4))
+            foreach (int i in Enumerable.Range(0, 65535 * 4))
             {
                 var compact = new CompactVarInt((ulong)i, sizeof(ulong));
                 byte[] bytes = compact.ToBytes();
@@ -249,11 +248,6 @@ namespace NBitcoin.Tests
         public void CanCompressScript()
         {
             //Testing some strange key
-            var txx = new Transaction("01000000016244e8baca71666b77677882f3451e9a83b2b9e5fec71128e6cfb7c95e04297700000000494830450220572d08a87f14917a016a8c70e473162a0edc5bc099f4395f4aaa1141c6800b07022100e7e3dbe9885c0e78725907a9b0cdc6083a3460735753686567fd8b68a0d3267f01ffffffff025e489800000000001976a9145ea25a1d1791557fe831b139fd1c7b089121919a88ac010000000000000043410431415926535897932384626433832795028841971693993751058209749445923078164062862089986280348253421170679821480865132823066470938446ac00000000");
-            var coins = new BitcoinCore.Coins(txx, 0);
-            BitcoinSerializableExtensions.Clone(coins);
-            /////
-
             var key = new Key(true);
 
             //Pay to pubkey hash (encoded as 21 bytes)
@@ -292,7 +286,7 @@ namespace NBitcoin.Tests
         private Script AssertCompressed(Script script, int expectedSize)
         {
             var compressor = new ScriptCompressor(script);
-            byte[] compressed = compressor.ToBytes(); 
+            byte[] compressed = compressor.ToBytes();
             Assert.Equal(expectedSize, compressed.Length);
 
             compressor = new ScriptCompressor();
@@ -310,15 +304,15 @@ namespace NBitcoin.Tests
         {
             Assert.False(TransactionSignature.IsValid(Network.Main, new byte[0]));
             JArray sigs = JArray.Parse(File.ReadAllText(TestDataLocations.GetFileFromDataFolder("sig_canonical.json")));
-            foreach(JToken sig in sigs)
+            foreach (JToken sig in sigs)
             {
                 Assert.True(TransactionSignature.IsValid(Network.Main, Encoders.Hex.DecodeData(sig.ToString())));
             }
 
             sigs = JArray.Parse(File.ReadAllText(TestDataLocations.GetFileFromDataFolder("sig_noncanonical.json")));
-            foreach(JToken sig in sigs)
+            foreach (JToken sig in sigs)
             {
-                if(((HexEncoder)Encoders.Hex).IsValid(sig.ToString()))
+                if (((HexEncoder)Encoders.Hex).IsValid(sig.ToString()))
                 {
                     Assert.False(TransactionSignature.IsValid(Network.Main, Encoders.Hex.DecodeData(sig.ToString())));
                 }
@@ -331,18 +325,18 @@ namespace NBitcoin.Tests
         {
             EnsureHasLibConsensus();
             TestCase[] tests = TestCase.read_json(TestDataLocations.GetFileFromDataFolder("script_tests.json"));
-            foreach(TestCase test in tests)
+            foreach (TestCase test in tests)
             {
-                if(test.Count == 1)
+                if (test.Count == 1)
                     continue;
                 int i = 0;
 
                 Script wit = null;
                 Money amount = Money.Zero;
-                if(test[i] is JArray)
+                if (test[i] is JArray)
                 {
                     var array = (JArray)test[i];
-                    for(int ii = 0; ii < array.Count - 1; ii++)
+                    for (int ii = 0; ii < array.Count - 1; ii++)
                     {
                         wit += Encoders.Hex.DecodeData(array[ii].ToString());
                     }
@@ -364,7 +358,7 @@ namespace NBitcoin.Tests
 
         private void AssertVerifyScript(WitScript wit, Money amount, Script scriptSig, Script scriptPubKey, ScriptVerify flags, int testIndex, string comment, ScriptError expectedError)
         {
-            if(flags.HasFlag(ScriptVerify.CleanStack))
+            if (flags.HasFlag(ScriptVerify.CleanStack))
             {
                 flags |= ScriptVerify.Witness;
                 flags |= ScriptVerify.P2SH;
@@ -374,40 +368,36 @@ namespace NBitcoin.Tests
             ScriptError actual;
             Script.VerifyScript(Network.Main, scriptSig, scriptPubKey, spendingTransaction, 0, amount, flags, SigHash.Undefined, out actual);
             Assert.True(expectedError == actual, "Test : " + testIndex + " " + comment);
-#if !NOCONSENSUSLIB
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
                 bool ok = Script.VerifyScriptConsensus(scriptPubKey, spendingTransaction, 0, amount, flags);
                 Assert.True(ok == (expectedError == ScriptError.OK), "[ConsensusLib] Test : " + testIndex + " " + comment);
             }
-#endif
         }
 
 
         private void EnsureHasLibConsensus()
         {
-#if !NOCONSENSUSLIB
             string environment = RuntimeInformation.ProcessArchitecture == Architecture.X64 ? "x64" : "x86";
-            if(File.Exists(Script.LibConsensusDll))
+            if (File.Exists(Script.LibConsensusDll))
             {
                 byte[] bytes = File.ReadAllBytes(Script.LibConsensusDll);
-                if(CheckHashConsensus(bytes, environment))
+                if (CheckHashConsensus(bytes, environment))
                     return;
             }
             var client = new HttpClient();
             byte[] libConsensus = client.GetByteArrayAsync("https://aois.blob.core.windows.net/public/libbitcoinconsensus/" + environment + "/libbitcoinconsensus-0.dll").Result;
-            if(!CheckHashConsensus(libConsensus, environment))
+            if (!CheckHashConsensus(libConsensus, environment))
             {
                 throw new InvalidOperationException("Downloaded consensus li has wrong hash");
             }
             File.WriteAllBytes(Script.LibConsensusDll, libConsensus);
-#endif
         }
-#if !NOCONSENSUSLIB
+
         private bool CheckHashConsensus(byte[] bytes, string env)
         {
             //from bitcoin-0.13.1 rc2
-            if(env == "x86")
+            if (env == "x86")
             {
                 string actualHash = Encoders.Hex.EncodeData(Hashes.SHA256(bytes));
                 return actualHash == "1b812e2dad7bf041d16b51654aab029cf547b858d6415456c89f0fd5566a4706";
@@ -418,7 +408,6 @@ namespace NBitcoin.Tests
                 return actualHash == "eb099bf52e57add12bb8ec28f10fdfd15f1e066604948c68ea52b69a0d5d32b8";
             }
         }
-#endif
 
         private static Transaction CreateSpendingTransaction(WitScript wit, Script scriptSig, Transaction creditingTransaction)
         {
@@ -453,81 +442,81 @@ namespace NBitcoin.Tests
 
         private ScriptError ParseScriptError(string str)
         {
-            if(str == "OK")
+            if (str == "OK")
                 return ScriptError.OK;
-            if(str == "EVAL_FALSE")
+            if (str == "EVAL_FALSE")
                 return ScriptError.EvalFalse;
-            if(str == "BAD_OPCODE")
+            if (str == "BAD_OPCODE")
                 return ScriptError.BadOpCode;
-            if(str == "UNBALANCED_CONDITIONAL")
+            if (str == "UNBALANCED_CONDITIONAL")
                 return ScriptError.UnbalancedConditional;
-            if(str == "OP_RETURN")
+            if (str == "OP_RETURN")
                 return ScriptError.OpReturn;
-            if(str == "VERIFY")
+            if (str == "VERIFY")
                 return ScriptError.Verify;
-            if(str == "INVALID_ALTSTACK_OPERATION")
+            if (str == "INVALID_ALTSTACK_OPERATION")
                 return ScriptError.InvalidAltStackOperation;
-            if(str == "INVALID_STACK_OPERATION")
+            if (str == "INVALID_STACK_OPERATION")
                 return ScriptError.InvalidStackOperation;
-            if(str == "EQUALVERIFY")
+            if (str == "EQUALVERIFY")
                 return ScriptError.EqualVerify;
-            if(str == "DISABLED_OPCODE")
+            if (str == "DISABLED_OPCODE")
                 return ScriptError.DisabledOpCode;
-            if(str == "UNKNOWN_ERROR")
+            if (str == "UNKNOWN_ERROR")
                 return ScriptError.UnknownError;
-            if(str == "DISCOURAGE_UPGRADABLE_NOPS")
+            if (str == "DISCOURAGE_UPGRADABLE_NOPS")
                 return ScriptError.DiscourageUpgradableNops;
-            if(str == "PUSH_SIZE")
+            if (str == "PUSH_SIZE")
                 return ScriptError.PushSize;
-            if(str == "OP_COUNT")
+            if (str == "OP_COUNT")
                 return ScriptError.OpCount;
-            if(str == "STACK_SIZE")
+            if (str == "STACK_SIZE")
                 return ScriptError.StackSize;
-            if(str == "SCRIPT_SIZE")
+            if (str == "SCRIPT_SIZE")
                 return ScriptError.ScriptSize;
-            if(str == "PUBKEY_COUNT")
+            if (str == "PUBKEY_COUNT")
                 return ScriptError.PubkeyCount;
-            if(str == "SIG_COUNT")
+            if (str == "SIG_COUNT")
                 return ScriptError.SigCount;
-            if(str == "SIG_PUSHONLY")
+            if (str == "SIG_PUSHONLY")
                 return ScriptError.SigPushOnly;
-            if(str == "MINIMALDATA")
+            if (str == "MINIMALDATA")
                 return ScriptError.MinimalData;
-            if(str == "PUBKEYTYPE")
+            if (str == "PUBKEYTYPE")
                 return ScriptError.PubKeyType;
-            if(str == "SIG_DER")
+            if (str == "SIG_DER")
                 return ScriptError.SigDer;
-            if(str == "WITNESS_MALLEATED")
+            if (str == "WITNESS_MALLEATED")
                 return ScriptError.WitnessMalleated;
-            if(str == "WITNESS_MALLEATED_P2SH")
+            if (str == "WITNESS_MALLEATED_P2SH")
                 return ScriptError.WitnessMalleatedP2SH;
-            if(str == "WITNESS_PROGRAM_WITNESS_EMPTY")
+            if (str == "WITNESS_PROGRAM_WITNESS_EMPTY")
                 return ScriptError.WitnessProgramEmpty;
-            if(str == "WITNESS_PROGRAM_MISMATCH")
+            if (str == "WITNESS_PROGRAM_MISMATCH")
                 return ScriptError.WitnessProgramMissmatch;
-            if(str == "WITNESS_PROGRAM_WRONG_LENGTH")
+            if (str == "WITNESS_PROGRAM_WRONG_LENGTH")
                 return ScriptError.WitnessProgramWrongLength;
-            if(str == "WITNESS_UNEXPECTED")
+            if (str == "WITNESS_UNEXPECTED")
                 return ScriptError.WitnessUnexpected;
-            if(str == "SIG_HIGH_S")
+            if (str == "SIG_HIGH_S")
                 return ScriptError.SigHighS;
-            if(str == "SIG_HASHTYPE")
+            if (str == "SIG_HASHTYPE")
                 return ScriptError.SigHashType;
-            if(str == "SIG_NULLDUMMY")
+            if (str == "SIG_NULLDUMMY")
                 return ScriptError.SigNullDummy;
-            if(str == "CLEANSTACK")
+            if (str == "CLEANSTACK")
                 return ScriptError.CleanStack;
-            if(str == "DISCOURAGE_UPGRADABLE_WITNESS_PROGRAM")
+            if (str == "DISCOURAGE_UPGRADABLE_WITNESS_PROGRAM")
                 return ScriptError.DiscourageUpgradableWitnessProgram;
-            if(str == "NULLFAIL")
+            if (str == "NULLFAIL")
                 return ScriptError.NullFail;
-            if(str == "NEGATIVE_LOCKTIME")
+            if (str == "NEGATIVE_LOCKTIME")
                 return ScriptError.NegativeLockTime;
-            if(str == "UNSATISFIED_LOCKTIME")
+            if (str == "UNSATISFIED_LOCKTIME")
                 return ScriptError.UnsatisfiedLockTime;
-            if(str == "MINIMALIF")
+            if (str == "MINIMALIF")
                 return ScriptError.MinimalIf;
-            if(str == "WITNESS_PUBKEYTYPE")
+            if (str == "WITNESS_PUBKEYTYPE")
                 return ScriptError.WitnessPubkeyType;
             throw new NotSupportedException(str);
         }
@@ -535,64 +524,64 @@ namespace NBitcoin.Tests
         private ScriptVerify ParseFlag(string flag)
         {
             var result = ScriptVerify.None;
-            foreach(string p in flag.Split(',', '|').Select(p => p.Trim().ToUpperInvariant()))
+            foreach (string p in flag.Split(',', '|').Select(p => p.Trim().ToUpperInvariant()))
             {
-                if(p == "P2SH")
+                if (p == "P2SH")
                     result |= ScriptVerify.P2SH;
-                else if(p == "STRICTENC")
+                else if (p == "STRICTENC")
                     result |= ScriptVerify.StrictEnc;
-                else if(p == "MINIMALDATA")
+                else if (p == "MINIMALDATA")
                 {
                     result |= ScriptVerify.MinimalData;
                 }
-                else if(p == "DERSIG")
+                else if (p == "DERSIG")
                 {
                     result |= ScriptVerify.DerSig;
                 }
-                else if(p == "SIGPUSHONLY")
+                else if (p == "SIGPUSHONLY")
                 {
                     result |= ScriptVerify.SigPushOnly;
                 }
-                else if(p == "NULLDUMMY")
+                else if (p == "NULLDUMMY")
                 {
                     result |= ScriptVerify.NullDummy;
                 }
-                else if(p == "LOW_S")
+                else if (p == "LOW_S")
                 {
                     result |= ScriptVerify.LowS;
                 }
-                else if(p == "")
+                else if (p == "")
                 {
                 }
-                else if(p == "DISCOURAGE_UPGRADABLE_NOPS")
+                else if (p == "DISCOURAGE_UPGRADABLE_NOPS")
                 {
                     result |= ScriptVerify.DiscourageUpgradableNops;
                 }
-                else if(p == "CLEANSTACK")
+                else if (p == "CLEANSTACK")
                 {
                     result |= ScriptVerify.CleanStack;
                 }
-                else if(p == "WITNESS")
+                else if (p == "WITNESS")
                 {
                     result |= ScriptVerify.Witness;
                 }
-                else if(p == "DISCOURAGE_UPGRADABLE_WITNESS_PROGRAM")
+                else if (p == "DISCOURAGE_UPGRADABLE_WITNESS_PROGRAM")
                 {
                     result |= ScriptVerify.DiscourageUpgradableWitnessProgram;
                 }
-                else if(p == "CHECKSEQUENCEVERIFY")
+                else if (p == "CHECKSEQUENCEVERIFY")
                 {
                     result |= ScriptVerify.CheckSequenceVerify;
                 }
-                else if(p == "NULLFAIL")
+                else if (p == "NULLFAIL")
                 {
                     result |= ScriptVerify.NullFail;
                 }
-                else if(p == "MINIMALIF")
+                else if (p == "MINIMALIF")
                 {
                     result |= ScriptVerify.MinimalIf;
                 }
-                else if(p == "WITNESS_PUBKEYTYPE")
+                else if (p == "WITNESS_PUBKEYTYPE")
                 {
                     result |= ScriptVerify.WitnessPubkeyType;
                 }
@@ -606,14 +595,14 @@ namespace NBitcoin.Tests
         [Trait("Core", "Core")]
         public void script_standard_push()
         {
-            for(int i = -1; i < 1000; i++)
+            for (int i = -1; i < 1000; i++)
             {
                 var script = new Script(Op.GetPushOp(i).ToBytes());
                 Assert.True(script.IsPushOnly, "Number " + i + " is not pure push.");
                 Assert.True(script.HasCanonicalPushes, "Number " + i + " push is not canonical.");
             }
 
-            for(int i = 0; i < 1000; i++)
+            for (int i = 0; i < 1000; i++)
             {
                 byte[] data = Enumerable.Range(0, i).Select(_ => (byte)0x49).ToArray();
                 var script = new Script(Op.GetPushOp(data).ToBytes());
@@ -638,7 +627,7 @@ namespace NBitcoin.Tests
             // and vice-versa)
             //
             ops.Add(OpcodeType.OP_0);
-            foreach(Key key in keys)
+            foreach (Key key in keys)
             {
                 List<byte> vchSig = key.Sign(hash).ToDER().ToList();
                 vchSig.Add((byte)SigHash.All);
@@ -765,23 +754,21 @@ namespace NBitcoin.Tests
         private void AssertInvalidScript(Script scriptPubKey, Transaction tx, int n, ScriptVerify verify)
         {
             Assert.False(Script.VerifyScript(Network.Main, scriptPubKey, tx, n, null, this.flags));
-#if !NOCONSENSUSLIB
+
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
                 Assert.False(Script.VerifyScriptConsensus(scriptPubKey, tx, (uint)n, this.flags));
             }
-#endif
         }
 
         private void AssertValidScript(Script scriptPubKey, Transaction tx, int n, ScriptVerify verify)
         {
             Assert.True(Script.VerifyScript(Network.Main, scriptPubKey, tx, n, null, this.flags));
-#if !NOCONSENSUSLIB
+
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
                 Assert.True(Script.VerifyScriptConsensus(scriptPubKey, tx, (uint)n, this.flags));
             }
-#endif
         }
 
         [Fact]
