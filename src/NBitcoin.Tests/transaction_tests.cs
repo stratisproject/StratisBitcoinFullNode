@@ -1240,7 +1240,7 @@ namespace NBitcoin.Tests
             AssertEx.CollectionEquals(Encoders.Hex.DecodeData("0102030405060708090102030405060708090102030405060708090102030405"), bytes.ToArray());
             Assert.True(new uint256("0102030405060708090102030405060708090102030405060708090102030405") == new uint256(new uint256("0102030405060708090102030405060708090102030405060708090102030405")));
         }
-#if !NOSOCKET
+
         [Fact]
         [Trait("UnitTest", "UnitTest")]
         public void OtherCoverage()
@@ -1249,7 +1249,7 @@ namespace NBitcoin.Tests
             Assert.False(Utils.IsIPv4MappedToIPv6(System.Net.IPAddress.Parse("127.0.0.1")));
             Assert.True(Utils.IsIPv4MappedToIPv6(Utils.MapToIPv6(System.Net.IPAddress.Parse("127.0.0.1"))));
         }
-#endif
+
         [Fact]
         [Trait("UnitTest", "UnitTest")]
         public void BitcoinStreamCoverage()
@@ -3151,9 +3151,7 @@ namespace NBitcoin.Tests
                 {
                     CheckFee = false,
                     MinRelayTxFee = null,
-#if !NOCONSENSUSLIB
                     UseConsensusLib = false,
-#endif
                     CheckScriptPubKey = false
                 }
             }

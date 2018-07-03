@@ -5,9 +5,6 @@ using System.Text;
 using NBitcoin.BouncyCastle.Crypto.Parameters;
 using NBitcoin.Crypto;
 
-#if !WINDOWS_UWP && !USEBC
-#endif
-
 namespace NBitcoin
 {
     /// <summary>
@@ -117,32 +114,6 @@ namespace NBitcoin
             return msArray.Any(_ => _ == ms);
         }
 
-
-        // FIXME: this method is not used. Shouldn't we delete it?
-        private int ToInt(BitArray bits)
-        {
-            if(bits.Length != 11)
-            {
-                throw new InvalidOperationException("should never happen, bug in nbitcoin");
-            }
-
-            int number = 0;
-            int base2Divide = 1024; //it's all downhill from here...literally we halve this for each bit we move to.
-
-            //literally picture this loop as going from the most significant bit across to the least in the 11 bits, dividing by 2 for each bit as per binary/base 2
-            foreach(bool b in bits)
-            {
-                if(b)
-                {
-                    number = number + base2Divide;
-                }
-
-                base2Divide = base2Divide / 2;
-            }
-
-            return number;
-        }
-
         private readonly Wordlist _WordList;
         public Wordlist WordList
         {
@@ -175,7 +146,7 @@ namespace NBitcoin
             byte[] salt = Concat(Encoding.UTF8.GetBytes("mnemonic"), Normalize(passphrase));
             byte[] bytes = Normalize(this._Mnemonic);
 
-#if USEBC || WINDOWS_UWP || NETCORE
+#if NETCORE
             var mac = new NBitcoin.BouncyCastle.Crypto.Macs.HMac(new NBitcoin.BouncyCastle.Crypto.Digests.Sha512Digest());
             mac.Init(new KeyParameter(bytes));
             return Pbkdf2.ComputeDerivedKey(mac, salt, 2048, 64);
@@ -192,44 +163,8 @@ namespace NBitcoin
 
         internal static string NormalizeString(string word)
         {
-#if !NOSTRNORMALIZE
-            if(!SupportOsNormalization())
-            {
-                return KDTable.NormalizeKD(word);
-            }
-            else
-            {
-                return word.Normalize(NormalizationForm.FormKD);
-            }
-#else
             return KDTable.NormalizeKD(word);
-#endif
         }
-
-#if !NOSTRNORMALIZE
-        static bool? _SupportOSNormalization;
-        internal static bool SupportOsNormalization()
-        {
-            if(_SupportOSNormalization == null)
-            {
-                var notNormalized = "あおぞら";
-                var normalized = "あおぞら";
-                if(notNormalized.Equals(normalized, StringComparison.Ordinal))
-                {
-                    _SupportOSNormalization = false;
-                }
-                else
-                {
-                    try
-                    {
-                        _SupportOSNormalization = notNormalized.Normalize(NormalizationForm.FormKD).Equals(normalized, StringComparison.Ordinal);
-                    }
-                    catch { _SupportOSNormalization = false; }
-                }
-            }
-            return _SupportOSNormalization.Value;
-        }
-#endif
 
         public ExtKey DeriveExtKey(string passphrase = null)
         {

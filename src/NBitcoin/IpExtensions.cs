@@ -1,5 +1,4 @@
-﻿#if !NOSOCKET
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
@@ -8,49 +7,6 @@ namespace NBitcoin
 {
     public static class IpExtensions
     {
-#if WIN
-        interface ICompatibility
-        {
-            IPAddress MapToIPv6(IPAddress address);
-            bool IsIPv4MappedToIPv6(IPAddress address);
-        }
-        class MonoCompatibility : ICompatibility
-        {
-            public bool IsIPv4MappedToIPv6(IPAddress address)
-            {
-                return Utils.IsIPv4MappedToIPv6(address);
-            }
-
-            public IPAddress MapToIPv6(IPAddress address)
-            {
-                return Utils.MapToIPv6(address);
-            }
-        }
-        class WinCompatibility : ICompatibility
-        {
-            public bool IsIPv4MappedToIPv6(IPAddress address)
-            {
-                return address.IsIPv4MappedToIPv6;
-            }
-
-            public IPAddress MapToIPv6(IPAddress address)
-            {
-                return address.MapToIPv6();
-            }
-        }
-        static ICompatibility _Compatibility;
-        static ICompatibility Compatibility
-        {
-            get
-            {
-                if(_Compatibility == null)
-                {
-                    _Compatibility = IsRunningOnMono() ? (ICompatibility)new MonoCompatibility() : new WinCompatibility();
-                }
-                return _Compatibility;
-            }
-        }
-#endif
         public static bool IsRFC1918(this IPAddress address)
         {
             address = address.EnsureIPv6();
@@ -219,20 +175,12 @@ namespace NBitcoin
 
         public static IPAddress MapToIPv6Ex(this IPAddress address)
         {
-#if WIN
-            return Compatibility.MapToIPv6(address);
-#else
             return Utils.MapToIPv6(address);
-#endif
         }
+
         public static bool IsIPv4MappedToIPv6Ex(this IPAddress address)
         {
-#if WIN
-            return Compatibility.IsIPv4MappedToIPv6(address);
-#else
             return Utils.IsIPv4MappedToIPv6(address);
-#endif
-
         }
 
         public static bool IsLocal(this IPAddress address)
@@ -302,4 +250,3 @@ namespace NBitcoin
         }
     }
 }
-#endif

@@ -458,7 +458,6 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
             BitcoinSecret dest = this.MinerSecret;
             var blocks = new List<Block>();
             DateTimeOffset now = this.MockTime == null ? DateTimeOffset.UtcNow : this.MockTime.Value;
-#if !NOSOCKET
 
             for (int i = 0; i < blockCount; i++)
             {
@@ -512,7 +511,6 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
             }
 
             return blocks.ToArray();
-#endif
         }
 
         public async Task BroadcastBlocksAsync(Block[] blocks, INetworkPeer peer)
