@@ -1329,6 +1329,10 @@ namespace Stratis.Bitcoin.Tests.Consensus
             
             Assert.Equal(extendedChain.First(), connectedHeadersResultNew.DownloadFrom.Header);
             Assert.Equal(assumeValidHeader.Header, connectedHeadersResultNew.DownloadTo.Header);
+
+            // @apro
+            //TODO: please include checking of block data availability state for all these headers that are marked for download
+            //TODO: as well as for those that are not marked for download after assumed valid block.
         }
     }
 }
