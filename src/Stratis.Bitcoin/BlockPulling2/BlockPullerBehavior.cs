@@ -165,7 +165,10 @@ namespace Stratis.Bitcoin.BlockPulling2
         {
             this.logger.LogTrace("({0}:{1})", nameof(bestSpeedBytesPerSecond), bestSpeedBytesPerSecond);
 
-            this.QualityScore = (double)this.SpeedBytesPerSecond / bestSpeedBytesPerSecond;
+            if (bestSpeedBytesPerSecond == 0)
+                this.QualityScore = MaxQualityScore;
+            else
+                this.QualityScore = (double)this.SpeedBytesPerSecond / bestSpeedBytesPerSecond;
 
             if (this.QualityScore < MinQualityScore)
                 this.QualityScore = MinQualityScore;

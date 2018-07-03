@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using FluentAssertions;
 using NBitcoin;
 using Stratis.Bitcoin.BlockPulling2;
 using Stratis.Bitcoin.P2P.Peer;
@@ -591,26 +590,31 @@ namespace Stratis.Bitcoin.Tests.BlockPulling2
         }
 
         /// <summary>
-        /// Add something to DownloadJobsQueue. Make sure we have less than 10% of empty slots, start AssignerLoop and make sure no jobs were assigned.
+        /// Add some items to download job queue. Make sure we have less than 10% of empty slots,
+        /// invoke downloads assigning and make sure no jobs were assigned.
         /// </summary>
         [Fact]
         public async Task AssignDownloadJobs_LessThanThresholdSlotsAsync()
         {
             this.puller.SetMaxBlocksBeingDownloaded(100);
 
-            // Fill AssignedDownloadsByHash to ensure that we nave just 5 slots.
+            // Fill AssignedDownloadsByHash to ensure that we have just 5 slots.
             for (int i = 0; i < 95; i++)
                 this.puller.AssignedDownloadsByHash.Add(RandomUtils.GetUInt64(), new AssignedDownload());
 
+            List<ChainedHeader> headers = this.helper.CreateConsequtiveHeaders(10);
+            this.puller.RequestBlocksDownload(headers);
+
             await this.puller.AssignDownloadJobsAsync();
 
-            // If nothing was assigned- no callbacks with null are called.
+            // If nothing was assigned, no callbacks with null are called.
             Assert.Empty(this.helper.CallbacksCalled);
+            Assert.Equal(10, this.puller.DownloadJobsQueue.Peek().Headers.Count);
         }
 
         /// <summary>
-        /// Empty slots = 10. 3 Jobs in the queue (5 elements, 4 elements and 10 elements). Call AssignDownloadJobsAsync and make sure that first 2 jobs were consumed and
-        /// the last job has only 1 item consumed (9 items left). Make sure that peer behaviors were called to request consumed hashes. AssignedDownloadsByHash was properly modified.
+        /// Empty slots = 10. 3 jobs are the queue (5 elements, 4 elements and 10 elements). Trigger assignments and make sure that first 2 jobs were consumed and
+        /// the last job has only 1 item consumed (9 items left). Make sure that peer behaviors were called to request consumed hashes. Puller's structures were properly modified.
         /// </summary>
         [Fact]
         public async Task AssignDownloadJobs_SlotsLimitStopsConsumptionAsync()
@@ -636,8 +640,7 @@ namespace Stratis.Bitcoin.Tests.BlockPulling2
 
             Assert.Single(this.puller.DownloadJobsQueue);
             Assert.Equal(9, this.puller.DownloadJobsQueue.Peek().Headers.Count);
-
-
+            
             Assert.Equal(jobSizes[0], behaviors[0].RequestedHashes.Count);
             Assert.Equal(jobSizes[1], behaviors[1].RequestedHashes.Count);
 
@@ -647,10 +650,10 @@ namespace Stratis.Bitcoin.Tests.BlockPulling2
             Assert.Equal(10, this.puller.AssignedDownloadsByHash.Count);
             this.VerifyAssignedDownloadsSortedOrder();
         }
-        
+
         /// <summary>
         /// Assign some headers, peer that claimed them is disconnected. Process the queue.
-        /// Make sure that callbacks for those blocks are called with null, make sure job removed from the structures.
+        /// Make sure that callbacks for those blocks are called with <c>null</c>, make sure job removed from the structures.
         /// </summary>
         [Fact]
         public async Task AssignDownloadJobs_PeerDisconnectedAndJobFailedAsync()
@@ -668,13 +671,17 @@ namespace Stratis.Bitcoin.Tests.BlockPulling2
             await this.puller.AssignDownloadJobsAsync();
 
             Assert.Equal(100, this.helper.CallbacksCalled.Count);
+            foreach (ChainedHeader chainedHeader in headers)
+                Assert.Null(this.helper.CallbacksCalled[chainedHeader.HashBlock]);
+
             Assert.Empty(this.puller.AssignedDownloadsByHash);
+            Assert.Empty(this.puller.DownloadJobsQueue);
         }
 
         /// <summary>
-        /// Assign some headers and when peer.BlockPullerBehaviour.Download is called- throw for one peer.
-        /// Make sure that all hashes that belong to that peer are reassigned to someone else and that
-        /// we don't have this peer in our structures.
+        /// Assign some headers and when one of the peers is asked for a block it throws.
+        /// Make sure that all hashes that belong to that peer are reassigned to someone
+        /// else and that we don't have this peer in our structures.
         /// </summary>
         [Fact]
         public async Task AssignDownloadJobs_PeerThrowsAndHisAssignmentAreReassignedAsync()
@@ -711,7 +718,8 @@ namespace Stratis.Bitcoin.Tests.BlockPulling2
         }
         
         /// <summary>
-        /// We have 2 hashes in reassign queue and 2 in assign queue. There is 1 empty slot. Make sure that reassign queue is consumed fully and assign queue has only 1 item left.
+        /// We have 2 hashes in reassign queue and 2 in assign queue. There is 1 empty slot.
+        /// Make sure that reassign queue is consumed fully and assign queue has only 1 item left.
         /// </summary>
         [Fact]
         public async Task AssignDownloadJobs_ReassignQueueIgnoresEmptySlotsAsync()
@@ -751,8 +759,8 @@ namespace Stratis.Bitcoin.Tests.BlockPulling2
         }
 
         /// <summary>
-        /// Peer is asked 100 block. After N seconds he doesn't deliver and they are reassigned. Make sure peer quality score is decreased
-        /// but doesn't go to min quality score (only fixed % of all samples can be taken).
+        /// Peer is asked for 100 block. After N (stalling threshold) seconds he doesn't deliver and they are reassigned. Make sure peer quality score is decreased
+        /// but it doesn't go to min quality score (only fixed % of all samples can be taken out).
         /// </summary>
         [Fact]
         public async Task Stalling_CanReassignAndDecreaseQualityScoreAsync()
@@ -767,12 +775,12 @@ namespace Stratis.Bitcoin.Tests.BlockPulling2
             this.puller.OnIbdStateChanged(false);
 
             int bestSpeed = 1000;
-            for (int i=0; i < 10; ++i)
+            for (int i=0; i < 10; i++)
                 behavior.AddSample(bestSpeed, 1);
 
             behavior.RecalculateQualityScore(bestSpeed);
 
-            double initialQuelityScore = behavior.QualityScore;
+            double initialQualityScore = behavior.QualityScore;
 
             this.puller.RequestBlocksDownload(headers);
 
@@ -790,12 +798,12 @@ namespace Stratis.Bitcoin.Tests.BlockPulling2
             Assert.Single(this.puller.ReassignedJobsQueue);
             Assert.Equal(headers.Count, this.puller.ReassignedJobsQueue.Peek().Headers.Count);
 
-            Assert.True(behavior.QualityScore < initialQuelityScore);
+            Assert.True(behavior.QualityScore < initialQualityScore);
             Assert.True(behavior.QualityScore > BlockPullerBehavior.MinQualityScore);
         }
-        
+
         /// <summary>
-        /// Ask 1 peer for ImportantHeightMargin blocks. After that ask 2nd peer for more. None of the peers
+        /// Ask 1 peer for <see cref="ExtendedBlockPuller.ImportantHeightMargin"/> blocks. After that ask 2nd peer for more. None of the peers
         /// deliver anything, peer 1's blocks are reassigned and penalty is applied, penalty is not applied on another peer because their assignment
         /// is not important. Make sure that headers that are released are in reassign job queue.
         /// </summary>
@@ -807,7 +815,7 @@ namespace Stratis.Bitcoin.Tests.BlockPulling2
 
             this.puller.SetMaxBlocksBeingDownloaded(int.MaxValue);
 
-            List<ChainedHeader> headers = this.helper.CreateConsequtiveHeaders(this.puller.ImportantHeightMargin * 100);
+            List<ChainedHeader> headers = this.helper.CreateConsequtiveHeaders(this.puller.ImportantHeightMargin + 10000);
 
             this.puller.NewPeerTipClaimed(peer1, headers.Last());
 
@@ -818,6 +826,14 @@ namespace Stratis.Bitcoin.Tests.BlockPulling2
             this.puller.NewPeerTipClaimed(peer2, headers.Last());
             
             this.puller.RequestBlocksDownload(headers.Skip(this.puller.ImportantHeightMargin).ToList());
+            
+            behavior1.AddSample(100, 1);
+            behavior2.AddSample(100, 1);
+
+            behavior1.RecalculateQualityScore(100);
+            behavior2.RecalculateQualityScore(100);
+            
+            Assert.True(this.helper.DoubleEqual(behavior1.QualityScore, behavior2.QualityScore));
 
             await this.puller.AssignDownloadJobsAsync();
 
@@ -828,8 +844,10 @@ namespace Stratis.Bitcoin.Tests.BlockPulling2
             Assert.Empty(this.puller.ReassignedJobsQueue);
 
             List<AssignedDownload> peer1Assignments = this.puller.AssignedDownloadsByHash.Values.Where(x => x.PeerId == peer1.Connection.Id).ToList();
-            
+ 
             this.puller.CheckStalling();
+
+            Assert.True(behavior1.QualityScore < behavior2.QualityScore);
 
             // Two jobs reassigned from peer 1.
             Assert.Equal(2, this.puller.ReassignedJobsQueue.Count);
@@ -842,12 +860,12 @@ namespace Stratis.Bitcoin.Tests.BlockPulling2
         }
 
         /// <summary>
-        /// Don't start assigner loop. Assign following headers (1 header = 1 job) for ImportantHeightMargin*2 headers but ask those in random order.
-        /// Create a lot of peers (more than headers) with same quality score. Assign jobs to peers. No one delivers. Make sure that peers that were
-        /// assigned important jobs were stalled, others are not.
+        /// Don't start assigner loop. Assign following headers (1 header = 1 job) for <see cref="ExtendedBlockPuller.ImportantHeightMargin"/> * 2 headers
+        /// but ask those in random order. Create a lot of peers (more than headers) with same quality score. Assign jobs to peers.
+        /// No one delivers. Make sure that peers that were assigned important jobs were stalled, others are not.
         /// </summary>
         [Fact]
-        public async Task Stalling_ImportantHeadersAreReleasedAsync()
+        public async Task Stalling_ImportantHeadersAreReleasedAsync() //TODO make sure headers below CT are important
         {
             List<ChainedHeader> headers = this.helper.CreateConsequtiveHeaders(this.puller.ImportantHeightMargin * 2);
 
@@ -861,7 +879,8 @@ namespace Stratis.Bitcoin.Tests.BlockPulling2
             }
 
             this.puller.SetMaxBlocksBeingDownloaded(int.MaxValue);
-
+            
+            this.Shuffle(headers);
             foreach (ChainedHeader header in headers)
                 this.puller.RequestBlocksDownload(new List<ChainedHeader>() { header });
 
@@ -976,14 +995,14 @@ namespace Stratis.Bitcoin.Tests.BlockPulling2
 
         private void VerifyAssignedDownloadsSortedOrder()
         {
-            int current = -1;
+            int previousHeight = -1;
 
             foreach (AssignedDownload assignedDownload in this.puller.AssignedDownloadsSorted)
             {
-                if (current != -1)
-                    Assert.True(assignedDownload.Header.Height >= current);
+                if (previousHeight != -1)
+                    Assert.True(assignedDownload.Header.Height >= previousHeight);
 
-                current = assignedDownload.Header.Height;
+                previousHeight = assignedDownload.Header.Height;
             }
         }
 
