@@ -12,6 +12,7 @@ using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Consensus.Validators;
+using Stratis.Bitcoin.Primitives;
 using Stratis.Bitcoin.Utilities;
 using Xunit;
 
@@ -1362,7 +1363,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
             cht.PeerDisconnected(peer1Id);
 
             // Attempt to call PartialValidationSucceeded on a saved bock.
-            List<ChainedHeader> headersToValidate = cht.PartialValidationSucceeded(firstPresentedHeader, out bool fullValidationRequired);
+            List<ChainedHeaderBlock> headersToValidate = cht.PartialValidationSucceeded(firstPresentedHeader, out bool fullValidationRequired);
             headersToValidate.Should().BeNull();
             fullValidationRequired.Should().BeFalse();
         }
@@ -1443,12 +1444,12 @@ namespace Stratis.Bitcoin.Tests.Consensus
                 cht.BlockDataDownloaded(headerArray[i], originalHeaderArray[i].Block);
             }
 
-            List<ChainedHeader> listOfHeaders = cht.PartialValidationSucceeded(firstHeader, out bool fullValidationRequired);
+            List<ChainedHeaderBlock> listOfHeaders = cht.PartialValidationSucceeded(firstHeader, out bool fullValidationRequired);
 
             // First header validation state should be "PartiallyValidated" and next header returned.
             firstHeader.BlockValidationState.Should().Be(ValidationState.PartiallyValidated);
             listOfHeaders.Should().HaveCount(1);
-            listOfHeaders.First().HashBlock.Should().Be(secondHeader.HashBlock);
+            listOfHeaders.First().Block.GetHash().Should().Be(secondHeader.HashBlock);
         }
     }
 }
