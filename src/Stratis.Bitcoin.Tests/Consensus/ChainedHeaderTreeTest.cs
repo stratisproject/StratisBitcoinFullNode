@@ -1287,8 +1287,8 @@ namespace Stratis.Bitcoin.Tests.Consensus
 
         /// <summary>
         /// Issue 30 @ Chain is 10 headers long. All headers are "Data Available". Call PartialValidationSucceeded on
-        /// the first header. First header is marked Partially Validated (PV). Make sure the rest of them are returned for
-        /// partial validation.
+        /// the first header. First header is marked Partially Validated (PV). Make sure the next header is also marked
+        /// for partial validation.
         /// </summary>
         [Fact]
         public void ChainWith10DataAvailableHeaders_PartialValidationSucceededOnTheFirstHeaderCalled_RemainingHeadersPartiallyValidated()
@@ -1308,20 +1308,21 @@ namespace Stratis.Bitcoin.Tests.Consensus
             chainTip = ctx.ExtendAChain(extensionSize, chainTip);
             List<BlockHeader> listOfExtendedHeaders = ctx.ChainedHeaderToList(chainTip, extensionSize);
             ConnectNewHeadersResult connectionResult = cht.ConnectNewHeaders(1, listOfExtendedHeaders);
-            chainTip = connectionResult.Consumed;
+            ChainedHeader consumed = connectionResult.Consumed;
 
             // Download all header blocks and call PartialValidationSucceeded on h3.
-            ChainedHeader[] headerArray = chainTip.ToArray(extensionSize);
+            ChainedHeader[] originalHeaderArray = chainTip.ToArray(extensionSize);
+            ChainedHeader[] headerArray = consumed.ToArray(extensionSize);
             ChainedHeader firstHeader = headerArray[0];
             ChainedHeader secondHeader = headerArray[1];
-            foreach (ChainedHeader chainedHeader in headerArray)
+            for (int i = 0; i < headerArray.Length; i++)
             {
-                cht.BlockDataDownloaded(chainedHeader, ctx.CreateBlock());
+                cht.BlockDataDownloaded(headerArray[i], originalHeaderArray[i].Block);
             }
 
-            List<ChainedHeader> listOfHeaders = cht.PartialValidationSucceeded(firstHeader, out bool reorgRequired);
+            List<ChainedHeader> listOfHeaders = cht.PartialValidationSucceeded(firstHeader, out bool fullValidationRequired);
 
-            // FIrst header validation state should be "PartiallyValidated" and next header returned.
+            // First header validation state should be "PartiallyValidated" and next header returned.
             firstHeader.BlockValidationState.Should().Be(ValidationState.PartiallyValidated);
             listOfHeaders.Should().HaveCount(1);
             listOfHeaders.First().HashBlock.Should().Be(secondHeader.HashBlock);
