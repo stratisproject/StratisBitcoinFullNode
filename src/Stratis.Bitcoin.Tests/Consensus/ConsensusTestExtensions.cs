@@ -55,8 +55,10 @@ namespace Stratis.Bitcoin.Tests.Consensus
                 {
                     return false;
                 }
+
                 chainedHeader = chainedHeader.Previous;
             }
+
             return true;
         }
     }
