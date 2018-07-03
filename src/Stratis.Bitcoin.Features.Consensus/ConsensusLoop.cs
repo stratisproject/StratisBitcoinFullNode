@@ -365,7 +365,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                     if ((validationContext.Peer != null) && peerShouldGetBanned)
                     {
                         int banDuration = validationContext.BanDurationSeconds == ValidationContext.BanDurationDefaultBan ? this.connectionManager.ConnectionSettings.BanTimeSeconds : validationContext.BanDurationSeconds;
-                        this.peerBanning.BanPeer(validationContext.Peer, banDuration, $"Invalid block received: {validationContext.Error.Message}");
+                        this.peerBanning.BanAndDisconnectPeer(validationContext.Peer, banDuration, $"Invalid block received: {validationContext.Error.Message}");
                     }
 
                     if (validationContext.Error != ConsensusErrors.BadTransactionDuplicate)
