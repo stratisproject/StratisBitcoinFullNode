@@ -1327,7 +1327,8 @@ namespace Stratis.Bitcoin.Tests.Consensus
         /// Issue 29 @ Peer presents at least two headers. Those headers will be connected to the tree. 
         /// Then we save the first such connected block to variable X and simulate block downloaded for both blocks.
         /// Then the peer is disconnected, which removes its chain from the tree. 
-        /// Partial validation succeeded is then called on X.
+        /// Partial validation succeeded is then called on X. No headers to validate should be returned and
+        /// full validation required should be false.
         /// </summary>
         [Fact]
         public void ChainedHeaderIsRemovedFromTheTree_PartialValidationSucceededCalled_NothingIsReturned()
@@ -1353,8 +1354,8 @@ namespace Stratis.Bitcoin.Tests.Consensus
 
             // Download both blocks.
             ChainedHeader firstPresentedHeader = consumedHeader.Previous;
-            cht.BlockDataDownloaded(consumedHeader, chainTip.Previous.Block);
-            cht.BlockDataDownloaded(firstPresentedHeader, chainTip.Block);
+            cht.BlockDataDownloaded(consumedHeader, chainTip.Block);
+            cht.BlockDataDownloaded(firstPresentedHeader, chainTip.Previous.Block);
 
             // Disconnect peer 1.
             cht.PeerDisconnected(peer1Id);
