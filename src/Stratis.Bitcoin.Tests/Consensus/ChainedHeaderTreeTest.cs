@@ -1435,8 +1435,9 @@ namespace Stratis.Bitcoin.Tests.Consensus
 
                 cht.BlockDataDownloaded(currentChainTip, originalChainBHeaders[i].Block);
                 cht.PartialValidationSucceeded(currentChainTip, out bool fullValidationRequired);
-                cht.ConsensusTipChanged(currentChainTip);
             }
+
+            cht.ConsensusTipChanged(connectionResult.Consumed);
 
             // Headers 2-60 should have block data null.
             // Headers 61 - 161 should have block data.
