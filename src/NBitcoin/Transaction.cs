@@ -1190,7 +1190,7 @@ namespace NBitcoin
                 throw new ArgumentNullException(nameof(network));
 
             Transaction transaction = network.Consensus.ConsensusFactory.CreateTransaction();
-            transaction.FromBytes(Encoders.Hex.DecodeData(hex), version, network);
+            transaction.FromBytes(Encoders.Hex.DecodeData(hex), version);
             return transaction;
         }
 
@@ -1203,7 +1203,7 @@ namespace NBitcoin
                 throw new ArgumentNullException(nameof(network));
 
             Transaction transaction = network.Consensus.ConsensusFactory.CreateTransaction();
-            transaction.FromBytes(bytes, network: network);
+            transaction.FromBytes(bytes);
             return transaction;
         }
 
@@ -1391,14 +1391,6 @@ namespace NBitcoin
                 _Hashes[0] = GetHash();
             if (!lazily && _Hashes[1] == null)
                 _Hashes[1] = GetWitHash();
-        }
-
-        public Transaction Clone(bool cloneCache, Network network = null)
-        {
-            Transaction clone = Load(this.ToHex(), network: network);
-            if(cloneCache)
-                clone._Hashes = this._Hashes.ToArray();
-            return clone;
         }
 
         private uint256[] _Hashes = null;
