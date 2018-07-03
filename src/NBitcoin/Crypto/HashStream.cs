@@ -103,7 +103,7 @@ namespace NBitcoin.Crypto
                 ProcessBlock();
         }
 
-#if(USEBC || WINDOWS_UWP || NETCORE)
+#if NETCORE
         private BouncyCastle.Crypto.Digests.Sha256Digest sha = new BouncyCastle.Crypto.Digests.Sha256Digest();
         private void ProcessBlock()
         {

@@ -77,18 +77,6 @@ namespace Stratis.Bitcoin.Tests.Utilities
             Assert.Equal(1, this.iterationCount);
         }
 
-        private Task DoExceptionalTask(CancellationToken token)
-        {
-            Interlocked.Increment(ref this.iterationCount);
-
-            if (this.iterationCount == 3)
-            {
-                throw new InvalidOperationException("Cannot run more than 3 times.");
-            }
-
-            return Task.CompletedTask;
-        }
-
         private Task DoTask(CancellationToken token)
         {
             Interlocked.Increment(ref this.iterationCount);
