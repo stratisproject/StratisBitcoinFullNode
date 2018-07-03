@@ -1326,5 +1326,56 @@ namespace Stratis.Bitcoin.Tests.Consensus
                 }
             }
         }
+
+        /// <summary>
+        /// Issue 37 @ CT advances at 1000 blocks. Make sure that block data for headers 1-900 are removed.
+        /// </summary>
+        [Fact]
+        public void ChainTipAdvancesAt1000Blocks_DataForHeadersForFirst900HeadersAreRemoved()
+        {
+            // Chain header tree setup. Initial chain has 1 header.
+            // Example: h1.
+            const int initialChainSize = 1;
+            TestContext ctx = new TestContextBuilder().WithInitialChain(initialChainSize).Build();
+            ChainedHeaderTree cht = ctx.ChainedHeaderTree;
+            ChainedHeader chainTip = ctx.InitialChainTip;
+
+            // Extend a chain by 1000 headers.
+            // Example: h1=h2=...=h1001.
+            const int extensionSize = 1000;
+            chainTip = ctx.ExtendAChain(extensionSize, chainTip);
+            List<BlockHeader> listOfCurrentChainHeaders = ctx.ChainedHeaderToList(chainTip, extensionSize);
+
+            // Peer 1 presents a chain.
+            const int peerId = 1;
+            ConnectNewHeadersResult connectionResult = cht.ConnectNewHeaders(peerId, listOfCurrentChainHeaders);
+            ChainedHeader[] consumedHeaders = connectionResult.Consumed.ToArray(extensionSize);
+
+            // Sync all blocks.
+            for (int i = 0; i < extensionSize; i++)
+            {
+                ChainedHeader currentChainTip = consumedHeaders[i];
+
+                cht.BlockDataDownloaded(currentChainTip, ctx.CreateBlock());
+                cht.PartialValidationSucceeded(currentChainTip, out bool fullValidationRequired);
+                ctx.FinalizedBlockMock.Setup(m => m.GetFinalizedBlockHeight()).Returns(currentChainTip.Height - extensionSize);
+                cht.ConsensusTipChanged(currentChainTip);
+            }
+
+            // Headers 2-901 should have block data null.
+            // Headers 901 - 1001 should have block data.
+            Dictionary<uint256, ChainedHeader> connectedHeaders = cht.GetChainedHeadersByHash();
+            foreach (ChainedHeader consumedHeader in consumedHeaders)
+            {
+                if (consumedHeader.Height < 901)
+                {
+                    connectedHeaders[consumedHeader.HashBlock].Block.Should().BeNull();
+                }
+                else
+                {
+                    connectedHeaders[consumedHeader.HashBlock].Block.Should().NotBeNull();
+                }
+            }
+        }
     }
 }
