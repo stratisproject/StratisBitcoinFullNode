@@ -12,6 +12,7 @@ using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Consensus.Validators;
+using Stratis.Bitcoin.Primitives;
 using Stratis.Bitcoin.Utilities;
 using Xunit;
 
@@ -1377,7 +1378,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
             cht.PeerDisconnected(peer1Id);
 
             // Attempt to call PartialValidationSucceeded on a saved bock.
-            List<ChainedHeader> headersToValidate = cht.PartialValidationSucceeded(firstPresentedHeader, out bool fullValidationRequired);
+            List<ChainedHeaderBlock> headersToValidate = cht.PartialValidationSucceeded(firstPresentedHeader, out bool fullValidationRequired);
             headersToValidate.Should().BeNull();
             fullValidationRequired.Should().BeFalse();
         }
