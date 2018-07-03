@@ -16,22 +16,22 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.Runners
         private readonly string configFileName;
         private readonly Network network;
         private readonly ProtocolVersion protocolVersion;
-        private NodeConfigParameters args;
+        private readonly NodeConfigParameters configParameters;
 
         public CustomNodeRunner(string dataDir, Action<IFullNodeBuilder> callback, Network network, 
-            ProtocolVersion protocolVersion = ProtocolVersion.PROTOCOL_VERSION, NodeConfigParameters args = null, string agent = "Custom")
+            ProtocolVersion protocolVersion = ProtocolVersion.PROTOCOL_VERSION, NodeConfigParameters configParameters = null, string agent = "Custom")
             : base(dataDir)
         {
             this.callback = callback;
             this.network = network;
             this.protocolVersion = protocolVersion;
             this.agent = agent;
-            this.args = args ?? new NodeConfigParameters();
+            this.configParameters = configParameters ?? new NodeConfigParameters();
         }
 
         public override void BuildNode()
         {
-            var argsAsStringArray = this.args.Where(p => p.Key != "conf").Select(p => $"-{p.Key}={p.Value}").ToArray();
+            var argsAsStringArray = this.configParameters.Where(p => p.Key != "conf").Select(p => $"-{p.Key}={p.Value}").ToArray();
             var settings = new NodeSettings(this.network, this.protocolVersion, this.agent, argsAsStringArray);
             IFullNodeBuilder builder = new FullNodeBuilder().UseNodeSettings(settings);
 
