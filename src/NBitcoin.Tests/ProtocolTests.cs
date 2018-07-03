@@ -1,5 +1,4 @@
-﻿#if !NOSOCKET
-using System;
+﻿using System;
 using System.Collections.Generic;
 
 namespace NBitcoin.Tests
@@ -708,4 +707,3 @@ namespace NBitcoin.Tests
 
 */    }
 }
-#endif

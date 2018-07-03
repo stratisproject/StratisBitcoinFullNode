@@ -5,9 +5,7 @@ using NBitcoin.BouncyCastle.Asn1.X9;
 using NBitcoin.BouncyCastle.Math;
 using NBitcoin.Crypto;
 using NBitcoin.DataEncoders;
-#if !WINDOWS_UWP && !USEBC
 using System.Security.Cryptography;
-#endif
 
 namespace NBitcoin
 {
@@ -323,15 +321,6 @@ namespace NBitcoin
             return new BitcoinSecret(GetKey(password), this.Network);
         }
 
-#if USEBC || WINDOWS_UWP
-        internal static PaddedBufferedBlockCipher CreateAES256(bool encryption, byte[] key)
-        {
-            var aes = new PaddedBufferedBlockCipher(new AesFastEngine(), new Pkcs7Padding());
-            aes.Init(encryption, new KeyParameter(key));
-            aes.ProcessBytes(new byte[16], 0, 16, new byte[16], 0);
-            return aes;
-        }
-#else
         internal static Aes CreateAES256()
         {
             Aes aes = Aes.Create();
@@ -340,7 +329,7 @@ namespace NBitcoin
             aes.IV = new byte[16];
             return aes;
         }
-#endif
+
         internal static byte[] EncryptKey(byte[] key, byte[] derived)
         {
             byte[] keyhalf1 = key.SafeSubarray(0, 16);
@@ -355,34 +344,24 @@ namespace NBitcoin
 
             var encryptedhalf1 = new byte[16];
             var encryptedhalf2 = new byte[16];
-#if USEBC || WINDOWS_UWP
-            var aes = BitcoinEncryptedSecret.CreateAES256(true, derivedhalf2);
-#else
+
             Aes aes = CreateAES256();
             aes.Key = derivedhalf2;
             ICryptoTransform encrypt = aes.CreateEncryptor();
-#endif
 
             for(int i = 0; i < 16; i++)
             {
                 derivedhalf1[i] = (byte)(keyhalf1[i] ^ derivedhalf1[i]);
             }
-#if USEBC || WINDOWS_UWP
-            aes.ProcessBytes(derivedhalf1, 0, 16, encryptedhalf1, 0);
-            aes.ProcessBytes(derivedhalf1, 0, 16, encryptedhalf1, 0);
-#else
+
             encrypt.TransformBlock(derivedhalf1, 0, 16, encryptedhalf1, 0);
-#endif
+
             for(int i = 0; i < 16; i++)
             {
                 derivedhalf1[16 + i] = (byte)(keyhalf2[i] ^ derivedhalf1[16 + i]);
             }
-#if USEBC || WINDOWS_UWP
-            aes.ProcessBytes(derivedhalf1, 16, 16, encryptedhalf2, 0);
-            aes.ProcessBytes(derivedhalf1, 16, 16, encryptedhalf2, 0);
-#else
             encrypt.TransformBlock(derivedhalf1, 16, 16, encryptedhalf2, 0);
-#endif
+
             return encryptedhalf1.Concat(encryptedhalf2).ToArray();
         }
 
@@ -397,33 +376,22 @@ namespace NBitcoin
             var bitcoinprivkey1 = new byte[16];
             var bitcoinprivkey2 = new byte[16];
 
-#if USEBC || WINDOWS_UWP
-            var aes = CreateAES256(false, derivedhalf2);
-            aes.ProcessBytes(encryptedHalf1, 0, 16, bitcoinprivkey1, 0);
-            aes.ProcessBytes(encryptedHalf1, 0, 16, bitcoinprivkey1, 0);
-#else
             Aes aes = CreateAES256();
             aes.Key = derivedhalf2;
             ICryptoTransform decrypt = aes.CreateDecryptor();
             //Need to call that two time, seems AES bug
             decrypt.TransformBlock(encryptedHalf1, 0, 16, bitcoinprivkey1, 0);
             decrypt.TransformBlock(encryptedHalf1, 0, 16, bitcoinprivkey1, 0);
-#endif
-
-
 
             for(int i = 0; i < 16; i++)
             {
                 bitcoinprivkey1[i] ^= derivedhalf1[i];
             }
-#if USEBC || WINDOWS_UWP
-            aes.ProcessBytes(encryptedHalf2, 0, 16, bitcoinprivkey2, 0);
-            aes.ProcessBytes(encryptedHalf2, 0, 16, bitcoinprivkey2, 0);
-#else
+
             //Need to call that two time, seems AES bug
             decrypt.TransformBlock(encryptedHalf2, 0, 16, bitcoinprivkey2, 0);
             decrypt.TransformBlock(encryptedHalf2, 0, 16, bitcoinprivkey2, 0);
-#endif
+
             for(int i = 0; i < 16; i++)
             {
                 bitcoinprivkey2[i] ^= derivedhalf1[16 + i];
@@ -441,24 +409,17 @@ namespace NBitcoin
             var encryptedhalf1 = new byte[16];
             var encryptedhalf2 = new byte[16];
 
-#if USEBC || WINDOWS_UWP
-            var aes = CreateAES256(true, derivedhalf2);
-#else
             Aes aes = CreateAES256();
             aes.Key = derivedhalf2;
             ICryptoTransform encrypt = aes.CreateEncryptor();
-#endif
+
             //AES256Encrypt(seedb[0...15] xor derivedhalf1[0...15], derivedhalf2), call the 16-byte result encryptedpart1
             for(int i = 0; i < 16; i++)
             {
                 derivedhalf1[i] = (byte)(seedb[i] ^ derivedhalf1[i]);
             }
-#if USEBC || WINDOWS_UWP
-            aes.ProcessBytes(derivedhalf1, 0, 16, encryptedhalf1, 0);
-            aes.ProcessBytes(derivedhalf1, 0, 16, encryptedhalf1, 0);
-#else
+
             encrypt.TransformBlock(derivedhalf1, 0, 16, encryptedhalf1, 0);
-#endif
 
             //AES256Encrypt((encryptedpart1[8...15] + seedb[16...23]) xor derivedhalf1[16...31], derivedhalf2), call the 16-byte result encryptedpart2. The "+" operator is concatenation.
             byte[] half = encryptedhalf1.SafeSubarray(8, 8).Concat(seedb.SafeSubarray(16, 8)).ToArray();
@@ -466,12 +427,9 @@ namespace NBitcoin
             {
                 derivedhalf1[16 + i] = (byte)(half[i] ^ derivedhalf1[16 + i]);
             }
-#if USEBC || WINDOWS_UWP
-            aes.ProcessBytes(derivedhalf1, 16, 16, encryptedhalf2, 0);
-            aes.ProcessBytes(derivedhalf1, 16, 16, encryptedhalf2, 0);
-#else
+
             encrypt.TransformBlock(derivedhalf1, 16, 16, encryptedhalf2, 0);
-#endif
+
             return encryptedhalf1.Concat(encryptedhalf2).ToArray();
         }
 
@@ -482,23 +440,17 @@ namespace NBitcoin
             byte[] derivedhalf2 = derived.SafeSubarray(32, 32);
 
             byte[] encryptedhalf2 = encrypted.SafeSubarray(16, 16);
-#if USEBC || WINDOWS_UWP
-            var aes = CreateAES256(false, derivedhalf2);
-#else
+
             Aes aes = CreateAES256();
             aes.Key = derivedhalf2;
             ICryptoTransform decrypt = aes.CreateDecryptor();
-#endif
+
             var half = new byte[16];
             //Decrypt encryptedpart2 using AES256Decrypt to yield the last 8 bytes of seedb and the last 8 bytes of encryptedpart1.
-#if USEBC || WINDOWS_UWP
-            aes.ProcessBytes(encryptedhalf2, 0, 16, half, 0);
-            aes.ProcessBytes(encryptedhalf2, 0, 16, half, 0);
-#else
+
             decrypt.TransformBlock(encryptedhalf2, 0, 16, half, 0);
             decrypt.TransformBlock(encryptedhalf2, 0, 16, half, 0);
 
-#endif
             //half = (encryptedpart1[8...15] + seedb[16...23]) xor derivedhalf1[16...31])
             for(int i = 0; i < 16; i++)
             {
@@ -516,13 +468,10 @@ namespace NBitcoin
                 encrypted[i + 8] = half[i];
             }
             byte[] encryptedhalf1 = encrypted.SafeSubarray(0, 16);
-#if USEBC || WINDOWS_UWP
-            aes.ProcessBytes(encryptedhalf1, 0, 16, seedb, 0);
-            aes.ProcessBytes(encryptedhalf1, 0, 16, seedb, 0);
-#else
+
             decrypt.TransformBlock(encryptedhalf1, 0, 16, seedb, 0);
             decrypt.TransformBlock(encryptedhalf1, 0, 16, seedb, 0);
-#endif
+
             //seedb = seedb[0...15] xor derivedhalf1[0...15]
             for(int i = 0; i < 16; i++)
             {

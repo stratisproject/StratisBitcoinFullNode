@@ -494,7 +494,7 @@ namespace NBitcoin
             var m = obj as Money;
             if(m != null)
                 return this._Satoshis.CompareTo(m._Satoshis);
-#if !(PORTABLE || NETCORE)
+#if !NETCORE
             return _Satoshis.CompareTo(obj);
 #else
             return this._Satoshis.CompareTo((long)obj);

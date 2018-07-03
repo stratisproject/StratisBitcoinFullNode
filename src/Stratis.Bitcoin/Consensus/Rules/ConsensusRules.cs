@@ -118,10 +118,11 @@ namespace Stratis.Bitcoin.Consensus.Rules
         }
 
         /// <inheritdoc/>
-        public async Task AcceptBlockAsync(ValidationContext validationContext)
+        public async Task AcceptBlockAsync(ValidationContext validationContext, ChainedHeader tip)
         {
             Guard.NotNull(validationContext, nameof(validationContext));
-            Guard.NotNull(validationContext.RuleContext, nameof(validationContext.RuleContext));
+
+            validationContext.RuleContext = this.CreateRuleContext(validationContext, tip);
 
             try
             {
@@ -130,11 +131,6 @@ namespace Stratis.Bitcoin.Consensus.Rules
             catch (ConsensusErrorException ex)
             {
                 validationContext.Error = ex.ConsensusError;
-            }
-
-            if (validationContext.Error != null)
-            {
-                // TODO invoke the error handler rule.
             }
         }
 
@@ -178,12 +174,27 @@ namespace Stratis.Bitcoin.Consensus.Rules
         public abstract Task<uint256> GetBlockHashAsync();
 
         /// <inheritdoc />
-        public abstract Task<uint256> RewindAsync();
+        public abstract Task<RewindState> RewindAsync();
 
         /// <inheritdoc />
         public T GetRule<T>() where T : ConsensusRule
         {
             return (T)this.Rules.Single(r => r.Rule is T).Rule;
         }
+    }
+
+    /// <summary>
+    /// A class that is used to store transitions of state of consensus underline storage.
+    /// </summary>
+    /// <remarks>
+    /// A transition state can have transition information of several consecutive block,
+    /// The <see cref="BlockHash"/> parameter represents the tip of the consecutive list of blocks.
+    /// </remarks>
+    public class RewindState
+    {
+        /// <summary>
+        /// The block hash that represents the tip of the transition.
+        /// </summary>
+        public uint256 BlockHash { get; set; }
     }
 }

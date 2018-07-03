@@ -1,17 +1,11 @@
-﻿#if !NOJSONNET
-using System;
+﻿using System;
 using System.IO;
 using NBitcoin.DataEncoders;
 using Newtonsoft.Json;
 
 namespace NBitcoin.JsonConverters
 {
-#if !NOJSONNET
-    public
-#else
-    internal
-#endif
-    class KeyJsonConverter : JsonConverter
+    public class KeyJsonConverter : JsonConverter
     {
         public override bool CanConvert(Type objectType)
         {
@@ -41,13 +35,6 @@ namespace NBitcoin.JsonConverters
             throw new JsonObjectException("Invalid bitcoin object of type " + objectType.Name, reader);
         }
 
-        private static void InverseIfNeeded(Type type, byte[] bytes)
-        {
-            bool inverse = type == typeof(uint256) || type == typeof(uint160);
-            if(inverse)
-                Array.Reverse(bytes);
-        }
-
         public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
         {
             if(value != null)
@@ -58,4 +45,3 @@ namespace NBitcoin.JsonConverters
         }
     }
 }
-#endif
