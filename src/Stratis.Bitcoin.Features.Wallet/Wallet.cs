@@ -845,12 +845,6 @@ namespace Stratis.Bitcoin.Features.Wallet
         public bool? IsPropagated { get; set; }
 
         /// <summary>
-        /// Gets or sets the full transaction object.
-        /// </summary>
-        //[JsonIgnore]
-        //public Transaction Transaction => this.Hex == null ? null : Transaction.Parse(this.Hex);
-
-        /// <summary>
         /// The details of the transaction in which the output referenced in this transaction is spent.
         /// </summary>
         [JsonProperty(PropertyName = "spendingDetails", NullValueHandling = NullValueHandling.Ignore)]
@@ -961,12 +955,6 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// </summary>
         [JsonProperty(PropertyName = "hex", NullValueHandling = NullValueHandling.Ignore)]
         public string Hex { get; set; }
-
-        /// <summary>
-        /// Gets or sets the full transaction object.
-        /// </summary>
-        //[JsonIgnore]
-        //public Transaction Transaction => this.Hex == null ? null : Transaction.Parse(this.Hex);
 
         /// <summary>
         /// Determines whether this transaction being spent is confirmed.

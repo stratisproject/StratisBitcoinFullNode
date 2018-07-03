@@ -427,7 +427,7 @@ namespace NBitcoin
             public void RestoreMemento(TransactionBuildingContext memento)
             {
                 this._Marker = memento._Marker == null ? null : new ColorMarker(memento._Marker.GetScript());
-                this.Transaction = memento.Builder.Network.Consensus.ConsensusFactory.CreateTransaction(memento.Transaction.ToHex());
+                this.Transaction = memento.Builder.Network.Consensus.ConsensusFactory.CreateTransaction(memento.Transaction.ToBytes());
                 this.AdditionalFees = memento.AdditionalFees;
             }
 
@@ -1109,7 +1109,7 @@ namespace NBitcoin
             var ctx = new TransactionBuildingContext(this);
 
             if(this._CompletedTransaction != null)
-                ctx.Transaction = this.Network.Consensus.ConsensusFactory.CreateTransaction(this._CompletedTransaction.ToHex());
+                ctx.Transaction = this.Network.Consensus.ConsensusFactory.CreateTransaction(this._CompletedTransaction.ToBytes());
 
             if(this._LockTime != null)
                 ctx.Transaction.LockTime = this._LockTime.Value;
@@ -1258,7 +1258,7 @@ namespace NBitcoin
 
         public Transaction SignTransaction(Transaction transaction, SigHash sigHash)
         {
-            Transaction tx = this.Network.Consensus.ConsensusFactory.CreateTransaction(transaction.ToHex());
+            Transaction tx = this.Network.Consensus.ConsensusFactory.CreateTransaction(transaction.ToBytes());
             SignTransactionInPlace(tx, sigHash);
             return tx;
         }
