@@ -106,7 +106,7 @@ namespace NBitcoin
             var m = obj as FeeRate;
             if (m != null)
                 return this._FeePerK.CompareTo(m._FeePerK);
-#if !(PORTABLE || NETCORE)
+#if !NETCORE
             return _FeePerK.CompareTo(obj);
 #else
             return this._FeePerK.CompareTo((long)obj);

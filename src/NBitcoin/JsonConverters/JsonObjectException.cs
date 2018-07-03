@@ -1,15 +1,9 @@
-﻿#if !NOJSONNET
-using System;
+﻿using System;
 using Newtonsoft.Json;
 
 namespace NBitcoin.JsonConverters
 {
-#if !NOJSONNET
-    public
-#else
-    internal
-#endif
-    class JsonObjectException : Exception
+    public class JsonObjectException : Exception
     {
         public JsonObjectException(Exception inner, JsonReader reader)
             : base(inner.Message, inner)
@@ -29,4 +23,3 @@ namespace NBitcoin.JsonConverters
         }
     }
 }
-#endif

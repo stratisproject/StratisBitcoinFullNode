@@ -1,5 +1,4 @@
-﻿#if !NOJSONNET
-using System;
+﻿using System;
 using Newtonsoft.Json;
 
 namespace NBitcoin.JsonConverters
@@ -32,4 +31,3 @@ namespace NBitcoin.JsonConverters
         }
     }
 }
-#endif
