@@ -1111,9 +1111,9 @@ namespace Stratis.Bitcoin.Features.Wallet
         private IEnumerable<HdAddress> AddAddressesToMaintainBuffer(HdAccount account, bool isChange)
         {
             HdAddress lastUsedAddress = account.GetLastUsedAddress(isChange);
-            int lastUsedAddressIndex = lastUsedAddress?.Index ?? 0;
+            int lastUsedAddressIndex = lastUsedAddress?.Index ?? -1;
             int addressesCount = isChange ? account.InternalAddresses.Count() : account.ExternalAddresses.Count();
-            int emptyAddressesCount = addressesCount - lastUsedAddressIndex; // should this be -1 ??
+            int emptyAddressesCount = addressesCount - lastUsedAddressIndex - 1;
             int addressesToAdd = this.walletSettings.UnusedAddressesBuffer - emptyAddressesCount;
 
             return addressesToAdd > 0 ? account.CreateAddresses(this.network, addressesToAdd, isChange) : new List<HdAddress>();

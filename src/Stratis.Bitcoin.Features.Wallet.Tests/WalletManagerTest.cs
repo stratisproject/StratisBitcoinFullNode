@@ -3166,27 +3166,31 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         {
             DataFolder dataFolder = CreateDataFolder(this);
 
-            var nodeSettings = new NodeSettings(Network.Main, ProtocolVersion.PROTOCOL_VERSION, "StratisBitcoin",
-                new string[] { });
-
-            var walletSettings = new WalletSettings(nodeSettings);
-
-            var walletManager = new WalletManager(this.LoggerFactory.Object, Network.Main, new ConcurrentChain(Network.Main), NodeSettings.Default(), walletSettings,
-                dataFolder, new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime(), DateTimeProvider.Default);
-
+            WalletManager walletManager = this.GetWalletManagerWithCustomConfigParam(dataFolder);
             walletManager.CreateWallet("test", "mywallet", new Mnemonic(Wordlist.English, WordCount.Eighteen).ToString());
 
-            walletSettings.UnusedAddressesBuffer = 30;
+            // Default of 20 addresses becuause walletaddressbuffer not set
+            HdAccount hdAccount = walletManager.Wallets.Single().AccountsRoot.Single().Accounts.Single();
+            Assert.Equal(20, hdAccount.ExternalAddresses.Count);
+            Assert.Equal(20, hdAccount.InternalAddresses.Count);
 
-            walletManager = new WalletManager(this.LoggerFactory.Object, Network.Main, new ConcurrentChain(Network.Main), NodeSettings.Default(), walletSettings,
-                dataFolder, new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime(), DateTimeProvider.Default);
-
+            // Restart with walletaddressbuffer set
+            walletManager = this.GetWalletManagerWithCustomConfigParam(dataFolder, "-walletaddressbuffer=30");
             walletManager.Start();
 
-            var hdAccount = walletManager.Wallets.Single().AccountsRoot.Single().Accounts.Single();
-
+            // Addresses populated to fill the buffer set
+            hdAccount = walletManager.Wallets.Single().AccountsRoot.Single().Accounts.Single();
             Assert.Equal(30, hdAccount.ExternalAddresses.Count);
             Assert.Equal(30, hdAccount.InternalAddresses.Count);
+        }
+
+        private WalletManager GetWalletManagerWithCustomConfigParam(DataFolder dataFolder, params string[] cmdLineArgs)
+        {
+            var nodeSettings = new NodeSettings(Network.RegTest, ProtocolVersion.PROTOCOL_VERSION, "StratisBitcoin", cmdLineArgs);
+            var walletSettings = new WalletSettings(nodeSettings);
+
+            return new WalletManager(this.LoggerFactory.Object, Network.Main, new ConcurrentChain(Network.Main),
+                NodeSettings.Default(), walletSettings, dataFolder, new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime(), DateTimeProvider.Default);
         }
 
         private (Mnemonic mnemonic, Wallet wallet) CreateWalletOnDiskAndDeleteWallet(DataFolder dataFolder, string password, string passphrase, string walletName, ConcurrentChain chain)
