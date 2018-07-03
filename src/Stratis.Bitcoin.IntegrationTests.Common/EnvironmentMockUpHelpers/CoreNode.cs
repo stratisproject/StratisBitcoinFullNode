@@ -29,8 +29,6 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
         private readonly NodeRunner runner;
         private readonly NetworkCredential creds;
         private List<Transaction> transactions = new List<Transaction>();
-        private readonly HashSet<OutPoint> locked = new HashSet<OutPoint>();
-        private readonly Money fee = Money.Coins(0.0001m);
         private readonly object lockObject = new object();
 
         public int ProtocolPort => int.Parse(this.ConfigParameters["port"]);
@@ -38,12 +36,9 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
         public int ApiPort => int.Parse(this.ConfigParameters["apiport"]);
 
         /// <summary>Location of the data directory for the node.</summary>
-        public string DataFolder
-        {
-            get { return this.runner.DataFolder; }
-        }
+        public string DataFolder => this.runner.DataFolder;
 
-        public IPEndPoint Endpoint { get { return new IPEndPoint(IPAddress.Parse("127.0.0.1"), this.ProtocolPort); } }
+        public IPEndPoint Endpoint => new IPEndPoint(IPAddress.Parse("127.0.0.1"), this.ProtocolPort);
 
         public string Config { get; }
 
@@ -71,13 +66,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
         }
 
         /// <summary>Get stratis full node if possible.</summary>
-        public FullNode FullNode
-        {
-            get
-            {
-                return this.runner.FullNode;
-            }
-        }
+        public FullNode FullNode => this.runner.FullNode;
 
         public CoreNodeState State { get; private set; }
 
@@ -91,7 +80,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
 
         public void NotInIBD()
         {
-            (this.FullNode.NodeService<IInitialBlockDownloadState>() as InitialBlockDownloadStateMock).SetIsInitialBlockDownload(false, DateTime.UtcNow.AddMinutes(5));
+            ((InitialBlockDownloadStateMock) this.FullNode.NodeService<IInitialBlockDownloadState>()).SetIsInitialBlockDownload(false, DateTime.UtcNow.AddMinutes(5));
         }
 
         public RPCClient CreateRPCClient()
@@ -212,7 +201,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
                 };
 
                 DateTimeOffset before = DateTimeOffset.UtcNow;
-                await peer.SendMessageAsync(ping);
+                await peer.SendMessageAsync(ping, cancellation);
 
                 while ((await listener.ReceivePayloadAsync<PongPayload>(cancellation).ConfigureAwait(false)).Nonce != ping.Nonce)
                 {
@@ -375,7 +364,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
                     {
                         BlockLocators = awaited,
                         HashStop = hashStop
-                    }).GetAwaiter().GetResult();
+                    }, cancellationToken).GetAwaiter().GetResult();
 
                     while (true)
                     {
@@ -450,7 +439,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
 
         public bool AddToStratisMempool(Transaction trx)
         {
-            FullNode fullNode = (this.runner as StratisBitcoinPowRunner).FullNode;
+            FullNode fullNode = ((StratisBitcoinPowRunner) this.runner).FullNode;
             var state = new MempoolValidationState(true);
 
             return fullNode.MempoolManager().Validator.AcceptToMemoryPool(state, trx).Result;
@@ -464,10 +453,10 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
         [Obsolete("Please use GenerateStratisWithMiner instead.")]
         public Block[] GenerateStratis(int blockCount, List<Transaction> passedTransactions = null, bool broadcast = true)
         {
-            FullNode fullNode = (this.runner as StratisBitcoinPowRunner).FullNode;
+            FullNode fullNode = ((StratisBitcoinPowRunner) this.runner).FullNode;
             BitcoinSecret dest = this.MinerSecret;
             var blocks = new List<Block>();
-            DateTimeOffset now = this.MockTime == null ? DateTimeOffset.UtcNow : this.MockTime.Value;
+            DateTimeOffset now = MockTime ?? DateTimeOffset.UtcNow;
 
             for (int i = 0; i < blockCount; i++)
             {
@@ -489,13 +478,13 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
                 while (!block.CheckProofOfWork())
                     block.Header.Nonce = ++nonce;
                 blocks.Add(block);
-                if (broadcast)
-                {
-                    uint256 blockHash = block.GetHash();
-                    var newChain = new ChainedHeader(block.Header, blockHash, fullNode.Chain.Tip);
-                    ChainedHeader oldTip = fullNode.Chain.SetTip(newChain);
-                    fullNode.ConsensusLoop().Puller.InjectBlock(blockHash, new DownloadedBlock { Length = block.GetSerializedSize(), Block = block }, CancellationToken.None);
-                }
+
+                if (!broadcast) continue;
+
+                uint256 blockHash = block.GetHash();
+                var newChain = new ChainedHeader(block.Header, blockHash, fullNode.Chain.Tip);
+                ChainedHeader oldTip = fullNode.Chain.SetTip(newChain);
+                fullNode.ConsensusLoop().Puller.InjectBlock(blockHash, new DownloadedBlock { Length = block.GetSerializedSize(), Block = block }, CancellationToken.None);
             }
 
             return blocks.ToArray();
@@ -559,11 +548,10 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
                             node.DependsOn.Remove(parent);
                     }
 
-                    if (node.DependsOn.Count == 0)
-                    {
-                        result.Add(node.Transaction);
-                        dictionary.Remove(node.Hash);
-                    }
+                    if (node.DependsOn.Count != 0) continue;
+
+                    result.Add(node.Transaction);
+                    dictionary.Remove(node.Hash);
                 }
             }
 
@@ -576,11 +564,10 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
                 return this.MinerSecret;
 
             BitcoinSecret dest = rpc.ListSecrets().FirstOrDefault();
-            if (dest == null)
-            {
-                BitcoinAddress address = rpc.GetNewAddress();
-                dest = rpc.DumpPrivKey(address);
-            }
+            if (dest != null) return dest;
+
+            BitcoinAddress address = rpc.GetNewAddress();
+            dest = rpc.DumpPrivKey(address);
             return dest;
         }
     }
