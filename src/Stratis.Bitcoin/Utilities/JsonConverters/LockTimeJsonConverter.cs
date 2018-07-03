@@ -1,7 +1,8 @@
 ﻿using System;
+using NBitcoin;
 using Newtonsoft.Json;
 
-namespace NBitcoin.JsonConverters
+namespace Stratis.Bitcoin.Utilities.JsonConverters
 {
     public class LockTimeJsonConverter : JsonConverter
     {

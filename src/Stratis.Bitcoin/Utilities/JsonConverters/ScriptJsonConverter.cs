@@ -1,9 +1,10 @@
 ﻿using System;
 using System.Reflection;
+using NBitcoin;
 using NBitcoin.DataEncoders;
 using Newtonsoft.Json;
 
-namespace NBitcoin.JsonConverters
+namespace Stratis.Bitcoin.Utilities.JsonConverters
 {
     public class ScriptJsonConverter : JsonConverter
     {

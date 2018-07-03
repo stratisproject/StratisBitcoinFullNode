@@ -2,7 +2,7 @@
 using NBitcoin.DataEncoders;
 using Newtonsoft.Json;
 
-namespace NBitcoin.JsonConverters
+namespace Stratis.Bitcoin.Utilities.JsonConverters
 {
     public class HexJsonConverter : JsonConverter
     {

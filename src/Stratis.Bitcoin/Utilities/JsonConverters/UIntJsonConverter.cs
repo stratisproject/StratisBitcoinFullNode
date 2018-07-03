@@ -1,8 +1,9 @@
 ﻿using System;
 using System.IO;
+using NBitcoin;
 using Newtonsoft.Json;
 
-namespace NBitcoin.JsonConverters
+namespace Stratis.Bitcoin.Utilities.JsonConverters
 {
     public class UInt160JsonConverter : JsonConverter
     {

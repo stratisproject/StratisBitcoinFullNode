@@ -1,10 +1,11 @@
 ﻿using System;
+using NBitcoin;
 using NBitcoin.Crypto;
-using NBitcoin.JsonConverters;
 using NBitcoin.OpenAsset;
+using Stratis.Bitcoin.Utilities.JsonConverters;
 using Xunit;
 
-namespace NBitcoin.Tests
+namespace Stratis.Bitcoin.Tests.Utilities
 {
     public class JsonConverterTests
     {

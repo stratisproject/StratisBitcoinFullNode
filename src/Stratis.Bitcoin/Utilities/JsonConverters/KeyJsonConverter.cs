@@ -1,47 +1,48 @@
 ﻿using System;
 using System.IO;
-using System.Reflection;
+using NBitcoin;
 using NBitcoin.DataEncoders;
 using Newtonsoft.Json;
 
-namespace NBitcoin.JsonConverters
+namespace Stratis.Bitcoin.Utilities.JsonConverters
 {
-    public sealed class BitcoinSerializableJsonConverter : JsonConverter
+    public class KeyJsonConverter : JsonConverter
     {
-        public BitcoinSerializableJsonConverter() { }
-
         public override bool CanConvert(Type objectType)
         {
-            return typeof(IBitcoinSerializable).GetTypeInfo().IsAssignableFrom(objectType.GetTypeInfo());
+            return typeof(Key) == objectType || typeof(PubKey) == objectType;
         }
 
         public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
         {
-            if (reader.TokenType == JsonToken.Null)
+            if(reader.TokenType == JsonToken.Null)
                 return null;
 
             try
             {
 
-                var obj = (IBitcoinSerializable)Activator.CreateInstance(objectType);
                 byte[] bytes = Encoders.Hex.DecodeData((string)reader.Value);
-                obj.ReadWrite(bytes);
-                return obj;
+                if(objectType == typeof(Key))
+                    return new Key(bytes);
+                else
+                    return new PubKey(bytes);
             }
-            catch (EndOfStreamException)
+            catch(EndOfStreamException)
             {
             }
-            catch (FormatException)
+            catch(FormatException)
             {
             }
-
             throw new JsonObjectException("Invalid bitcoin object of type " + objectType.Name, reader);
         }
 
         public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
         {
-            byte[] bytes = ((IBitcoinSerializable)value).ToBytes();
-            writer.WriteValue(Encoders.Hex.EncodeData(bytes));
+            if(value != null)
+            {
+                byte[] bytes = ((IBitcoinSerializable)value).ToBytes();
+                writer.WriteValue(Encoders.Hex.EncodeData(bytes));
+            }
         }
     }
 }

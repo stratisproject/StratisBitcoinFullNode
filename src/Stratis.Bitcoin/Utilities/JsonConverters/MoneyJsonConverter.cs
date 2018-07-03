@@ -1,8 +1,9 @@
 ﻿using System;
 using System.Reflection;
+using NBitcoin;
 using Newtonsoft.Json;
 
-namespace NBitcoin.JsonConverters
+namespace Stratis.Bitcoin.Utilities.JsonConverters
 {
     public class MoneyJsonConverter : JsonConverter
     {
