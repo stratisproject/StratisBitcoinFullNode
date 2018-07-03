@@ -1593,7 +1593,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
             // First header validation state should be "PartiallyValidated" and next header returned.
             firstHeader.BlockValidationState.Should().Be(ValidationState.PartiallyValidated);
             listOfHeaders.Should().HaveCount(1);
-            listOfHeaders.First().Block.GetHash().Should().Be(secondHeader.HashBlock);
+            listOfHeaders.First().ChainedHeader.HashBlock.Should().Be(secondHeader.HashBlock);
         }
     }
 }
