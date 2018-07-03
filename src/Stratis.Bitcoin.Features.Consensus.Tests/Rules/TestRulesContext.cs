@@ -56,6 +56,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
     {        
         private Mock<IRuleRegistration> ruleRegistration;
 
+        public RuleContext RuleContext { get; set; }
+
         public TestConsensusRules(Network network, ILoggerFactory loggerFactory, IDateTimeProvider dateTimeProvider, ConcurrentChain chain, NodeDeployments nodeDeployments, ConsensusSettings consensusSettings, ICheckpoints checkpoints)
             : base(network, loggerFactory, dateTimeProvider, chain, nodeDeployments, consensusSettings, checkpoints)
         {
@@ -74,7 +76,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
 
         public override RuleContext CreateRuleContext(ValidationContext validationContext, ChainedHeader tip)
         {
-            throw new System.NotImplementedException();
+           return this.RuleContext ?? new PowRuleContext();
         }
 
         public override Task<uint256> GetBlockHashAsync()
