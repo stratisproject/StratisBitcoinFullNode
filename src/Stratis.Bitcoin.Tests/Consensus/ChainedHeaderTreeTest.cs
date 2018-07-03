@@ -1333,55 +1333,59 @@ namespace Stratis.Bitcoin.Tests.Consensus
         /// Nothing is marked for download but the chain is accepted.
         /// </summary>
         [Fact]
-        public void ChainTipAdvancesAt1000Blocks_DataForHeadersForFirst900HeadersAreRemoved()
+        public void ChainTHasCheckpointAt1000_MaxReorgIs10_TwoChainsPriorTo1000Presented_NothingIsMarkedForDownload()
         {
-            // Chain header tree setup. Initial chain has 1 header.
+            // Chain header tree setup. Initial chain has 1 header and it uses checkpoints.
             // Example: h1.
-            const int initialChainSize = 1000;
+            const int initialChainSize = 1;
             TestContext ctx = new TestContextBuilder().WithInitialChain(initialChainSize).UseCheckpoints().Build();
             ChainedHeaderTree cht = ctx.ChainedHeaderTree;
             ChainedHeader chainTip = ctx.InitialChainTip;
+
+            // Set checkpoint at height 1000.
+            const int checkpointHeight = 1000;
+            ChainedHeader fakeChainTip = ctx.ExtendAChain(checkpointHeight - initialChainSize, chainTip);
+            var checkpoint = new CheckpointFixture(checkpointHeight, fakeChainTip.Header);
+            ctx.SetupCheckpoints(checkpoint);
 
             // Setup max reorg of 10.
             const int maxReorg = 10;
             ctx.ChainStateMock.Setup(x => x.MaxReorgLength).Returns(maxReorg);
 
-            // Extend a chain by 1000 headers.
-            // Example: h1=h2=...=h1001.
-            const int extensionSize = 1000;
+            // Extend a chain by 50 headers.
+            // Example: h1=h2=...=h50.
+            const int extensionSize = 50;
             chainTip = ctx.ExtendAChain(extensionSize, chainTip);
-            List<BlockHeader> listOfCurrentChainHeaders = ctx.ChainedHeaderToList(chainTip, extensionSize);
 
-            // Peer 1 presents a chain.
-            const int peerId = 1;
-            ConnectNewHeadersResult connectionResult = cht.ConnectNewHeaders(peerId, listOfCurrentChainHeaders);
-            ChainedHeader[] consumedHeaders = connectionResult.Consumed.ToArray(extensionSize);
+            // Setup chain A that has 100 headers and is based on the previous 50 header extension.
+            // Example: h1=h2=..=h51=a52=a53=..=a101.
+            const int chainAExtensionSize = 50;
+            ChainedHeader chainATip = ctx.ExtendAChain(chainAExtensionSize, chainTip);
+            List<BlockHeader> listOfChainAHeaders =
+                ctx.ChainedHeaderToList(chainATip, extensionSize + chainAExtensionSize);
 
-            // Sync all blocks.
-            for (int i = 0; i < extensionSize; i++)
-            {
-                ChainedHeader currentChainTip = consumedHeaders[i];
+            // Peer 1 presents a chain A.
+            // Chain accepted but nothing marked for download.
+            const int peer1Id = 1;
+            ConnectNewHeadersResult connectionResult = cht.ConnectNewHeaders(peer1Id, listOfChainAHeaders);
+            connectionResult.DownloadFrom.Should().BeNull();
+            connectionResult.DownloadTo.Should().BeNull();
+            connectionResult.Consumed.HashBlock.Should().Be(chainATip.HashBlock);
 
-                cht.BlockDataDownloaded(currentChainTip, ctx.CreateBlock());
-                cht.PartialValidationSucceeded(currentChainTip, out bool fullValidationRequired);
-                ctx.FinalizedBlockMock.Setup(m => m.GetFinalizedBlockHeight()).Returns(currentChainTip.Height - extensionSize);
-                cht.ConsensusTipChanged(currentChainTip);
-            }
+            // Setup chain BB that has 150 headers and is based on the previous 50 header extension, i.e. fork point at 51.
+            // Example: h1=h2=..=h51=b52=b53=..=b151.
+            const int chainBExtensionSize = 100;
+            ChainedHeader chainBTip = ctx.ExtendAChain(chainBExtensionSize, chainTip);
+            List<BlockHeader> listOfChainBHeaders =
+                ctx.ChainedHeaderToList(chainBTip, extensionSize + chainBExtensionSize);
 
-            // Headers 2-901 should have block data null.
-            // Headers 901 - 1001 should have block data.
-            Dictionary<uint256, ChainedHeader> connectedHeaders = cht.GetChainedHeadersByHash();
-            foreach (ChainedHeader consumedHeader in consumedHeaders)
-            {
-                if (consumedHeader.Height <= (extensionSize - ChainedHeaderTree.KeepBlockDataForLastBlocks))
-                {
-                    connectedHeaders[consumedHeader.HashBlock].Block.Should().BeNull();
-                }
-                else
-                {
-                    connectedHeaders[consumedHeader.HashBlock].Block.Should().NotBeNull();
-                }
-            }
+            // Peer 2 presents a chain B.
+            // Chain accepted but nothing marked for download.
+            const int peer2Id = 2;
+            connectionResult = cht.ConnectNewHeaders(peer2Id, listOfChainBHeaders);
+            connectionResult.DownloadFrom.Should().BeNull();
+            connectionResult.DownloadTo.Should().BeNull();
+            connectionResult.Consumed.HashBlock.Should().Be(chainBTip.HashBlock);
         }
     }
 }
