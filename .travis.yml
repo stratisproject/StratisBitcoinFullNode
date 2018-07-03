@@ -1,6 +1,6 @@
 language: csharp
 mono: none
-dotnet: 2.0.0
+dotnet: 2.1.301
 matrix:
   include:
     - os: linux # Ubuntu 14.04
