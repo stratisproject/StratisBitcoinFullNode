@@ -8,11 +8,13 @@ namespace Stratis.Bitcoin.Utilities.JsonConverters
 {
     public class ScriptJsonConverter : JsonConverter
     {
+        /// <inheritdoc />
         public override bool CanConvert(Type objectType)
         {
             return typeof(Script).GetTypeInfo().IsAssignableFrom(objectType.GetTypeInfo()) || typeof(WitScript).GetTypeInfo().IsAssignableFrom(objectType.GetTypeInfo());
         }
 
+        /// <inheritdoc />
         public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
         {
             if(reader.TokenType == JsonToken.Null)
@@ -27,9 +29,11 @@ namespace Stratis.Bitcoin.Utilities.JsonConverters
             catch(FormatException)
             {
             }
+
             throw new JsonObjectException("A script should be a byte string", reader);
         }
 
+        /// <inheritdoc />
         public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
         {
             if(value != null)

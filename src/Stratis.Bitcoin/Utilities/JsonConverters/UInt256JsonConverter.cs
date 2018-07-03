@@ -1,37 +1,42 @@
 ﻿using System;
-using System.Reflection;
+using System.IO;
 using NBitcoin;
 using Newtonsoft.Json;
 
 namespace Stratis.Bitcoin.Utilities.JsonConverters
 {
-    public class KeyPathJsonConverter : JsonConverter
+    public class UInt256JsonConverter : JsonConverter
     {
         /// <inheritdoc />
         public override bool CanConvert(Type objectType)
         {
-            return typeof(KeyPath).GetTypeInfo().IsAssignableFrom(objectType.GetTypeInfo());
+            return typeof(uint256) == objectType;
         }
 
         /// <inheritdoc />
         public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
         {
+            if (reader.TokenType == JsonToken.Null)
+                return null;
+
             try
             {
-                return reader.TokenType == JsonToken.Null ? null : KeyPath.Parse(reader.Value.ToString());
+                return uint256.Parse((string)reader.Value);
+            }
+            catch (EndOfStreamException)
+            {
             }
             catch (FormatException)
             {
-                throw new JsonObjectException("Invalid key path", reader);
             }
+
+            throw new JsonObjectException("Invalid bitcoin object of type " + objectType.Name, reader);
         }
 
         /// <inheritdoc />
         public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
         {
-            var keyPath = value as KeyPath;
-            if (keyPath != null)
-                writer.WriteValue(keyPath.ToString());
+            writer.WriteValue(value.ToString());
         }
     }
 }

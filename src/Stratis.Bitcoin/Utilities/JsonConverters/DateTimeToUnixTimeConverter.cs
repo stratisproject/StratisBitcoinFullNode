@@ -7,6 +7,7 @@ namespace Stratis.Bitcoin.Utilities.JsonConverters
 {
     public class DateTimeToUnixTimeConverter : JsonConverter
     {
+        /// <inheritdoc />
         public override bool CanConvert(Type objectType)
         {
             return typeof(DateTime).GetTypeInfo().IsAssignableFrom(objectType.GetTypeInfo()) ||
@@ -14,6 +15,7 @@ namespace Stratis.Bitcoin.Utilities.JsonConverters
                 typeof(DateTimeOffset?).GetTypeInfo().IsAssignableFrom(objectType.GetTypeInfo());
         }
 
+        /// <inheritdoc />
         public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
         {
             if (reader.Value == null)
@@ -24,6 +26,7 @@ namespace Stratis.Bitcoin.Utilities.JsonConverters
             return result;
         }
 
+        /// <inheritdoc />
         public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
         {
             DateTime time;

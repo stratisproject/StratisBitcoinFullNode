@@ -8,17 +8,22 @@ namespace Stratis.Bitcoin.Utilities.JsonConverters
 {
     public class AssetIdJsonConverter : JsonConverter
     {
+        public Network Network { get; set; }
+
         public AssetIdJsonConverter(Network network)
         {
-            if(network == null)
-                throw new ArgumentNullException("network");
+            Guard.NotNull(network, nameof(network));
+
             this.Network = network;
         }
+
+        /// <inheritdoc />
         public override bool CanConvert(Type objectType)
         {
             return typeof(AssetId).GetTypeInfo().IsAssignableFrom(objectType.GetTypeInfo());
         }
 
+        /// <inheritdoc />
         public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
         {
             if(reader.TokenType == JsonToken.Null)
@@ -26,7 +31,7 @@ namespace Stratis.Bitcoin.Utilities.JsonConverters
 
             try
             {
-                string value = reader.Value.ToString();
+                var value = reader.Value.ToString();
                 return new BitcoinAssetId(value, this.Network).AssetId;
             }
             catch(FormatException)
@@ -35,6 +40,7 @@ namespace Stratis.Bitcoin.Utilities.JsonConverters
             }
         }
 
+        /// <inheritdoc />
         public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
         {
             var assetId = value as AssetId;
@@ -42,12 +48,6 @@ namespace Stratis.Bitcoin.Utilities.JsonConverters
             {
                 writer.WriteValue(assetId.ToString(this.Network));
             }
-        }
-
-        public Network Network
-        {
-            get;
-            set;
         }
     }
 }

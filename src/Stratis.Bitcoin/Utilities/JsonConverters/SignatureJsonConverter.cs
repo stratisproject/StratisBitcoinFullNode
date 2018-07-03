@@ -8,11 +8,13 @@ namespace Stratis.Bitcoin.Utilities.JsonConverters
 {
     public class SignatureJsonConverter : JsonConverter
     {
+        /// <inheritdoc />
         public override bool CanConvert(Type objectType)
         {
             return objectType == typeof(ECDSASignature) || objectType == typeof(TransactionSignature);
         }
 
+        /// <inheritdoc />
         public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
         {
             if(reader.TokenType == JsonToken.Null)
@@ -28,9 +30,11 @@ namespace Stratis.Bitcoin.Utilities.JsonConverters
             catch
             {
             }
+
             throw new JsonObjectException("Invalid signature", reader);
         }
 
+        /// <inheritdoc />
         public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
         {
             if(value != null)

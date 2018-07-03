@@ -7,6 +7,7 @@ namespace Stratis.Bitcoin.Utilities.JsonConverters
 {
     public class TxDestinationJsonConverter : JsonConverter
     {
+        /// <inheritdoc />
         public override bool CanConvert(Type objectType)
         {
             return objectType == typeof(KeyId) || 
@@ -15,6 +16,7 @@ namespace Stratis.Bitcoin.Utilities.JsonConverters
                 objectType == typeof(WitScriptId);
         }
 
+        /// <inheritdoc />
         public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
         {
             if(reader.TokenType == JsonToken.Null)
@@ -33,9 +35,11 @@ namespace Stratis.Bitcoin.Utilities.JsonConverters
             catch
             {
             }
+
             throw new JsonObjectException("Invalid signature", reader);
         }
 
+        /// <inheritdoc />
         public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
         {
             if(value != null)

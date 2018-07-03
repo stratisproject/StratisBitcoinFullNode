@@ -6,11 +6,13 @@ namespace Stratis.Bitcoin.Utilities.JsonConverters
 {
     public class HexJsonConverter : JsonConverter
     {
+        /// <inheritdoc />
         public override bool CanConvert(Type objectType)
         {
             return objectType == typeof(byte[]);
         }
 
+        /// <inheritdoc />
         public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
         {
             try
@@ -23,6 +25,7 @@ namespace Stratis.Bitcoin.Utilities.JsonConverters
             }
         }
 
+        /// <inheritdoc />
         public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
         {
             if(value != null)

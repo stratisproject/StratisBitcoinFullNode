@@ -8,11 +8,13 @@ namespace Stratis.Bitcoin.Utilities.JsonConverters
 {
     public class KeyJsonConverter : JsonConverter
     {
+        /// <inheritdoc />
         public override bool CanConvert(Type objectType)
         {
             return typeof(Key) == objectType || typeof(PubKey) == objectType;
         }
 
+        /// <inheritdoc />
         public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
         {
             if(reader.TokenType == JsonToken.Null)
@@ -36,6 +38,7 @@ namespace Stratis.Bitcoin.Utilities.JsonConverters
             throw new JsonObjectException("Invalid bitcoin object of type " + objectType.Name, reader);
         }
 
+        /// <inheritdoc />
         public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
         {
             if(value != null)

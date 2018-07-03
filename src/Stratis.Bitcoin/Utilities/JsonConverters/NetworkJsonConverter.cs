@@ -7,11 +7,13 @@ namespace Stratis.Bitcoin.Utilities.JsonConverters
 {
     public class NetworkJsonConverter : JsonConverter
     {
+        /// <inheritdoc />
         public override bool CanConvert(Type objectType)
         {
             return typeof(Network).GetTypeInfo().IsAssignableFrom(objectType.GetTypeInfo());
         }
 
+        /// <inheritdoc />
         public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
         {
             if (reader.TokenType == JsonToken.Null)
@@ -32,6 +34,7 @@ namespace Stratis.Bitcoin.Utilities.JsonConverters
             throw new JsonObjectException("Unknown network (valid values : main, test, reg)", reader);
         }
 
+        /// <inheritdoc />
         public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
         {
             var net = (Network)value;

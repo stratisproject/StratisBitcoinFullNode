@@ -7,14 +7,14 @@ namespace Stratis.Bitcoin.Utilities.JsonConverters
 {
     public class BitcoinStringJsonConverter : JsonConverter
     {
-        public BitcoinStringJsonConverter()
-        {
+        public Network Network { get; set; }
 
-        }
         public BitcoinStringJsonConverter(Network network)
         {
             this.Network = network;
         }
+
+        /// <inheritdoc />
         public override bool CanConvert(Type objectType)
         {
             return
@@ -22,6 +22,7 @@ namespace Stratis.Bitcoin.Utilities.JsonConverters
                 (typeof(IDestination).GetTypeInfo().IsAssignableFrom(objectType.GetTypeInfo()) && objectType.GetTypeInfo().AssemblyQualifiedName.Contains("NBitcoin"));
         }
 
+        /// <inheritdoc />
         public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
         {
             if(reader.TokenType == JsonToken.Null)
@@ -34,6 +35,7 @@ namespace Stratis.Bitcoin.Utilities.JsonConverters
                 {
                     throw new JsonObjectException("Invalid BitcoinString data", reader);
                 }
+
                 if(this.Network != null)
                 {
                     if(result.Network != this.Network)
@@ -45,10 +47,12 @@ namespace Stratis.Bitcoin.Utilities.JsonConverters
                         }
                     }
                 }
+
                 if(!objectType.GetTypeInfo().IsAssignableFrom(result.GetType().GetTypeInfo()))
                 {
                     throw new JsonObjectException("Invalid BitcoinString type expected " + objectType.Name + ", actual " + result.GetType().Name, reader);
                 }
+
                 return result;
             }
             catch(FormatException)
@@ -57,6 +61,7 @@ namespace Stratis.Bitcoin.Utilities.JsonConverters
             }
         }
 
+        /// <inheritdoc />
         public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
         {
             var base58 = value as IBitcoinString;
@@ -64,12 +69,6 @@ namespace Stratis.Bitcoin.Utilities.JsonConverters
             {
                 writer.WriteValue(value.ToString());
             }
-        }
-
-        public Network Network
-        {
-            get;
-            set;
         }
     }
 }

@@ -7,15 +7,18 @@ namespace Stratis.Bitcoin.Utilities.JsonConverters
 {
     public class UInt160JsonConverter : JsonConverter
     {
+        /// <inheritdoc />
         public override bool CanConvert(Type objectType)
         {
             return typeof(uint160) == objectType;
         }
 
+        /// <inheritdoc />
         public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
         {
             if(reader.TokenType == JsonToken.Null)
                 return null;
+
             try
             {
                 return uint160.Parse((string)reader.Value);
@@ -26,39 +29,11 @@ namespace Stratis.Bitcoin.Utilities.JsonConverters
             catch(FormatException)
             {
             }
+
             throw new JsonObjectException("Invalid bitcoin object of type " + objectType.Name, reader);
         }
 
-        public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
-        {
-            writer.WriteValue(value.ToString());
-        }
-    }
-
-    public class UInt256JsonConverter : JsonConverter
-    {
-        public override bool CanConvert(Type objectType)
-        {
-            return typeof(uint256) == objectType;
-        }
-
-        public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
-        {
-            if(reader.TokenType == JsonToken.Null)
-                return null;
-            try
-            {
-                return uint256.Parse((string)reader.Value);
-            }
-            catch(EndOfStreamException)
-            {
-            }
-            catch(FormatException)
-            {
-            }
-            throw new JsonObjectException("Invalid bitcoin object of type " + objectType.Name, reader);
-        }
-
+        /// <inheritdoc />
         public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
         {
             writer.WriteValue(value.ToString());
