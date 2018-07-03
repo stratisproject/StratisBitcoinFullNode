@@ -1350,15 +1350,15 @@ namespace Stratis.Bitcoin.Tests.Consensus
             const int peerId = 1;
             ConnectNewHeadersResult connectionResult = cht.ConnectNewHeaders(peerId, listOfCurrentChainHeaders);
             ChainedHeader[] consumedHeaders = connectionResult.Consumed.ToArray(extensionSize);
+            ChainedHeader[] originalHeaders = chainTip.ToArray(extensionSize);
 
             // Sync all blocks.
             for (int i = 0; i < extensionSize; i++)
             {
                 ChainedHeader currentChainTip = consumedHeaders[i];
 
-                cht.BlockDataDownloaded(currentChainTip, ctx.CreateBlock());
+                cht.BlockDataDownloaded(currentChainTip, originalHeaders[i].Block);
                 cht.PartialValidationSucceeded(currentChainTip, out bool fullValidationRequired);
-                ctx.FinalizedBlockMock.Setup(m => m.GetFinalizedBlockHeight()).Returns(currentChainTip.Height - extensionSize);
                 cht.ConsensusTipChanged(currentChainTip);
             }
 
@@ -1404,15 +1404,15 @@ namespace Stratis.Bitcoin.Tests.Consensus
             const int peer1Id = 1;
             ConnectNewHeadersResult connectionResult = cht.ConnectNewHeaders(peer1Id, listOfCurrentChainAHeaders);
             ChainedHeader[] consumedChainAHeaders = connectionResult.Consumed.ToArray(chainAExtensionSize);
+            ChainedHeader[] originalChainAHeaders = chainATip.ToArray(chainAExtensionSize);
 
             // Sync all blocks for chain A.
             for (int i = 0; i < chainAExtensionSize; i++)
             {
                 ChainedHeader currentChainTip = consumedChainAHeaders[i];
 
-                cht.BlockDataDownloaded(currentChainTip, ctx.CreateBlock());
+                cht.BlockDataDownloaded(currentChainTip, originalChainAHeaders[i].Block);
                 cht.PartialValidationSucceeded(currentChainTip, out bool fullValidationRequired);
-                ctx.FinalizedBlockMock.Setup(m => m.GetFinalizedBlockHeight()).Returns(currentChainTip.Height - chainAExtensionSize);
                 cht.ConsensusTipChanged(currentChainTip);
             }
 
@@ -1426,15 +1426,15 @@ namespace Stratis.Bitcoin.Tests.Consensus
             const int peer2Id = 2;
             connectionResult = cht.ConnectNewHeaders(peer2Id, listOfCurrentChainBHeaders);
             ChainedHeader[] consumedChainBHeaders = connectionResult.Consumed.ToArray(chainBExtensionSize - extensionBeforeFork);
+            ChainedHeader[] originalChainBHeaders = chainBTip.ToArray(chainBExtensionSize - extensionBeforeFork);
 
             // Sync all new blocks for chain B.
             for (int i = 0; i < chainBExtensionSize - extensionBeforeFork; i++)
             {
                 ChainedHeader currentChainTip = consumedChainBHeaders[i];
 
-                cht.BlockDataDownloaded(currentChainTip, ctx.CreateBlock());
+                cht.BlockDataDownloaded(currentChainTip, originalChainBHeaders[i].Block);
                 cht.PartialValidationSucceeded(currentChainTip, out bool fullValidationRequired);
-                ctx.FinalizedBlockMock.Setup(m => m.GetFinalizedBlockHeight()).Returns(currentChainTip.Height - chainBExtensionSize);
                 cht.ConsensusTipChanged(currentChainTip);
             }
 
