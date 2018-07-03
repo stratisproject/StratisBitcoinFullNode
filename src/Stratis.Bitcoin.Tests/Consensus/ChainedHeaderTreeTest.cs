@@ -1354,7 +1354,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
             // Present headers that contain out of order header.
             Action connectHeadersAction = () =>
             {
-                ConnectNewHeadersResult connectionResult = cht.ConnectNewHeaders(1, listOfHeaders);
+                cht.ConnectNewHeaders(1, listOfHeaders);
             };
 
             // Exception is thrown and no new headers are connected.
@@ -1365,6 +1365,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
             currentHeaders.Should().ContainKey(allHeaders[0].HashBlock);
             currentHeaders.Should().ContainKey(allHeaders[1].HashBlock);
             currentHeaders.Should().ContainKey(allHeaders[2].HashBlock);
+            currentHeaders[allHeaders[2].HashBlock].Next.Should().BeEmpty();
         }
     }
 }
