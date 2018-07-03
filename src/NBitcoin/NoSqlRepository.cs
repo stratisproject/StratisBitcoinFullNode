@@ -16,7 +16,7 @@ namespace NBitcoin
 
         public Task PutAsync(string key, IBitcoinSerializable obj)
         {
-            return PutBytes(key, obj == null ? null : obj.ToBytes(network: this.network));
+            return PutBytes(key, obj == null ? null : obj.ToBytes(this.network.Consensus.ConsensusFactory));
         }
 
         public void Put(string key, IBitcoinSerializable obj)

@@ -1057,8 +1057,6 @@ namespace NBitcoin
             return result;
         }
 
-
-#if !NOCONSENSUSLIB
         public const string LibConsensusDll = "libbitcoinconsensus-0.dll";
         public enum BitcoinConsensusError
         {
@@ -1105,7 +1103,6 @@ namespace NBitcoin
             int valid = VerifyScriptConsensusWithAmount(scriptPubKeyBytes, (uint)scriptPubKeyBytes.Length, amount.Satoshi, txToBytes, (uint)txToBytes.Length, nIn, flags, ref err);
             return valid == 1;
         }
-#endif
 
         public bool IsUnspendable
         {

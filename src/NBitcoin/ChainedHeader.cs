@@ -129,7 +129,7 @@ namespace NBitcoin
             else
             {
                 if (previous.HashBlock != header.HashPrevBlock)
-                    throw new ArgumentException("The previous block has not the expected hash");
+                    throw new ArgumentException("The previous block does not have the expected hash");
 
                 // Calculates the location of the skip block for this block.
                 this.Skip = this.Previous.GetAncestor(GetSkipHeight(this.Height));
@@ -563,7 +563,7 @@ namespace NBitcoin
 
                 // Only follow skip if Previous.skip isn't better than skip.Previous.
                 int heightSkip = walk.Skip.Height;
-                int heightSkipPrev = GetSkipHeight(walk.Height - 1);
+                int heightSkipPrev = this.GetSkipHeight(walk.Height - 1);
                 bool skipAboveTarget = heightSkip > ancestorHeight;
                 bool skipPreviousBetterThanPreviousSkip = !((heightSkipPrev < (heightSkip - 2)) && (heightSkipPrev >= ancestorHeight));
                 if (skipAboveTarget && skipPreviousBetterThanPreviousSkip)
@@ -576,6 +576,29 @@ namespace NBitcoin
             }
 
             return walk;
+        }
+
+        /// <summary>
+        /// Select all headers between current header and <paramref name="chainedHeader"/> and add them to an array
+        /// of consecutive headers, both items are included in the array.
+        /// </summary>
+        /// <returns>Array of consecutive headers.</returns>
+        public ChainedHeader[] ToChainedHeaderArray(ChainedHeader chainedHeader)
+        {
+            var hashes = new ChainedHeader[this.Height - chainedHeader.Height + 1];
+
+            ChainedHeader currentHeader = this;
+
+            for (int i = hashes.Length - 1; i >= 0; i--)
+            {
+                hashes[i] = currentHeader;
+                currentHeader = currentHeader.Previous;
+            }
+
+            if (hashes[0] != chainedHeader)
+                throw new NotSupportedException("Header must be on the same chain.");
+
+            return hashes;
         }
 
         /// <summary>
