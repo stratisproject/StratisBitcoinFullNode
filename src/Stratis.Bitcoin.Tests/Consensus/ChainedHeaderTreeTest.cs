@@ -1146,13 +1146,13 @@ namespace Stratis.Bitcoin.Tests.Consensus
             ChainedHeader chainTip = ctx.InitialChainTip;
             
             // Extend the chain with 3 headers.
-            // Example: h2=h3=h4.
+            // Example: h1=h2=h3=h4.
             ChainedHeader newChainTip = ctx.ExtendAChain(3, chainTip);
             
             List<BlockHeader> listOfChainABlockHeaders = ctx.ChainedHeaderToList(newChainTip, 3);
             chainTip = cht.ConnectNewHeaders(1, listOfChainABlockHeaders).Consumed;
 
-            // Call BlockDataDownloaded on h1, h2 and h3.
+            // Call BlockDataDownloaded on h2, h3 and h4.
             ChainedHeader chainTip4 = chainTip;
             ChainedHeader chainTip3 = chainTip.Previous;
             ChainedHeader chainTip2 = chainTip3.Previous;
@@ -1325,6 +1325,47 @@ namespace Stratis.Bitcoin.Tests.Consensus
                     peerIds.Should().BeEmpty();
                 }
             }
+        }
+
+        /// <summary>
+        /// Issue 36 @ The list of headers is presented where the 1st half of them can be connected but then there is
+        /// header which is not consecutive – its previous hash is not hash of the previous header in the list.
+        /// The 1st nonconsecutive header should be header that we saw before, so that it actually connects but it
+        /// is out of order.
+        /// </summary>
+        [Fact]
+        public void ListWithOnlyHalfConnectableHeadersPresented_TheFirstNonconsecutiveHeaderShouldBeHeaderWeSawBefore()
+        {
+            // Chain header tree setup. Initial chain has 2 headers.
+            // Example: h1=h2.
+            const int initialChainSize = 2;
+            TestContext ctx = new TestContextBuilder().WithInitialChain(initialChainSize).Build();
+            ChainedHeaderTree cht = ctx.ChainedHeaderTree;
+            ChainedHeader chainTip = ctx.InitialChainTip;
+
+            // Extend chain with 10 more headers.
+            // Example: h1=h2=a3=a4=a5=a6=a7=a8=a9=a10=a11=a12.
+            // Then swap h8 with h2 before connecting it.
+            const int extensionChainSize = 10;
+            chainTip = ctx.ExtendAChain(extensionChainSize, chainTip);
+            List<BlockHeader> listOfHeaders = ctx.ChainedHeaderToList(chainTip, extensionChainSize);
+            listOfHeaders[initialChainSize + 5] = chainTip.GetAncestor(2).Header;
+
+            // Present headers that contain out of order header.
+            Action connectHeadersAction = () =>
+            {
+                cht.ConnectNewHeaders(1, listOfHeaders);
+            };
+
+            // Exception is thrown and no new headers are connected.
+            ChainedHeader[] allHeaders = chainTip.ToArray(initialChainSize + extensionChainSize + 1);
+            connectHeadersAction.Should().Throw<ArgumentException>();
+            Dictionary<uint256, ChainedHeader> currentHeaders = cht.GetChainedHeadersByHash();
+            currentHeaders.Should().HaveCount(initialChainSize + 1); // initial chain size + genesis.
+            currentHeaders.Should().ContainKey(allHeaders[0].HashBlock);
+            currentHeaders.Should().ContainKey(allHeaders[1].HashBlock);
+            currentHeaders.Should().ContainKey(allHeaders[2].HashBlock);
+            currentHeaders[allHeaders[2].HashBlock].Next.Should().BeEmpty();
         }
     }
 }
