@@ -25,7 +25,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         }
 
         [Fact]
-        public void Coins_beyond_gap_limit_ARE_visble_in_balance_when_gap_limit_overridden()
+        public void Coins_beyond_default_gap_limit_ARE_visble_in_balance_when_gap_limit_overridden()
         {
             Given(a_gap_limit_of_21);
             And(a_wallet_with_funds_at_index_20_which_is_beyond_default_gap_limit);
