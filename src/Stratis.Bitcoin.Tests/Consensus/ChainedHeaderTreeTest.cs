@@ -1652,33 +1652,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
             listOfHeaders.Should().HaveCount(1);
             listOfHeaders.First().ChainedHeader.HashBlock.Should().Be(secondHeader.HashBlock);
         }
-        /// <summary>
-        /// Issue 18 Peer A starts to claim chain D claims. Make sure 8a and 9a are disconected
-        /// </summary>
-        [Fact]
-        public void Test18()
-        {
-            
-            const int initialChainSize = 5;
-            TestContext ctx = new TestContextBuilder().WithInitialChain(initialChainSize).UseCheckpoints().Build();
-            ChainedHeaderTree cht = ctx.ChainedHeaderTree;
-            ChainedHeader initialChainTip = ctx.InitialChainTip;
-            
-            IEnumerable<BlockHeader> listOfAllUniqueBlockHeaders = SetupPeersForTest(initialChainSize, ctx, cht, initialChainTip);
-
-            // peers 1,2,3,4,5 setup.
-            var noUnclaimedBranchesCheckResult = CheckForbasicCases(cht, listOfAllUniqueBlockHeaders);
-            noUnclaimedBranchesCheckResult.noUnclaimedBraches.Should().BeTrue();
-            noUnclaimedBranchesCheckResult.eachPeerOneEntry.Should().BeTrue();
-            noUnclaimedBranchesCheckResult.reflecttipHash.Should().BeTrue();
-            noUnclaimedBranchesCheckResult.chbhHasOnlyReachebleHeaders.Should().BeTrue();
-            noUnclaimedBranchesCheckResult.isCorrectChainSequence.Should().BeTrue();
-            noUnclaimedBranchesCheckResult.hasLocalPeer.Should().BeTrue();
-
-
-
-        }
-
+      
         /// <summary>
         /// Issue 19 @ New peer K claims 10d. Peer K disconnects. Chain doesnt change.
         /// </summary>
