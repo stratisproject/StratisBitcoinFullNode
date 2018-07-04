@@ -58,9 +58,6 @@ namespace Stratis.Bitcoin.Utilities.JsonConverters
 
         public CoinJson(ICoin coin, Network network)
         {
-            if (network == null)
-                network = Network.Main;
-
             this.TransactionId = coin.Outpoint.Hash;
             this.Index = coin.Outpoint.N;
             this.ScriptPubKey = coin.TxOut.ScriptPubKey;
