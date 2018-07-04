@@ -40,6 +40,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
         public class TestContextBuilder
         {
             private readonly TestContext testContext;
+            private bool blockstoreAvailable = true;
 
             public TestContextBuilder()
             {
@@ -61,10 +62,16 @@ namespace Stratis.Bitcoin.Tests.Consensus
                 return this;
             }
 
+            internal TestContextBuilder WithBlockStoreDisabled()
+            {
+                this.blockstoreAvailable = false;
+                return this;
+            }
+
             internal TestContext Build()
             {
                 if (this.testContext.InitialChainTip != null)
-                    this.testContext.ChainedHeaderTree.Initialize(this.testContext.InitialChainTip, true);
+                    this.testContext.ChainedHeaderTree.Initialize(this.testContext.InitialChainTip, blockstoreAvailable);
 
                 return this.testContext;
             }
@@ -1665,6 +1672,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
             const int initialChainSize = 2;
             TestContext ctx = new TestContextBuilder()
                 .WithInitialChain(initialChainSize)
+                .WithBlockStoreDisabled()
                 .Build();
             ChainedHeaderTree cht = ctx.ChainedHeaderTree;
             ChainedHeader chainTip = ctx.InitialChainTip;
@@ -1677,7 +1685,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
             ConnectNewHeadersResult connectionResult = cht.ConnectNewHeaders(1, listOfExtendedHeaders);
             ChainedHeader consumed = connectionResult.Consumed;
 
-            // Download all header blocks and call PartialValidationSucceeded on h3.
+            // Sync all header blocks.
             ChainedHeader[] originalHeaderArray = chainTip.ToArray(extensionSize);
             ChainedHeader[] consumedHeaderArray = consumed.ToArray(extensionSize);
             for (int i = 0; i < consumedHeaderArray.Length; i++)
