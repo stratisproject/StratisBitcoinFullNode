@@ -1680,18 +1680,8 @@ namespace NBitcoin
         {
             return Encoders.Hex.EncodeData(this.ToBytes());
         }
-<<<<<<< HEAD
-#if !NOJSONNET
+
         public string ToString(RawFormat rawFormat, Network network)
-=======
-
-        public override string ToString()
-        {
-            return ToString(RawFormat.BlockExplorer);
-        }
-
-        public string ToString(RawFormat rawFormat, Network network = null)
->>>>>>> 181ab516232e67199e7700968ccaec328eeb34e6
         {
             RawFormatter formatter = GetFormatter(rawFormat, network);
             return ToString(formatter);

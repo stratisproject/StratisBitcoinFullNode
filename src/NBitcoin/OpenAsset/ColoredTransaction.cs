@@ -1,8 +1,8 @@
-﻿using System.Threading.Tasks;
-using System.Linq;
-using Newtonsoft.Json.Linq;
-using System;
+﻿using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using Newtonsoft.Json.Linq;
 
 namespace NBitcoin.OpenAsset
 {
@@ -45,7 +45,8 @@ namespace NBitcoin.OpenAsset
                 this._Asset = value;
             }
         }
-#region IBitcoinSerializable Members
+
+        #region IBitcoinSerializable Members
 
         public void ReadWrite(BitcoinStream stream)
         {
@@ -67,7 +68,7 @@ namespace NBitcoin.OpenAsset
             }
         }
 
-#endregion
+        #endregion
 
         public override string ToString()
         {
@@ -77,6 +78,7 @@ namespace NBitcoin.OpenAsset
                 return "[" + this.Index + "] " + this.Asset;
         }
     }
+
     public class ColoredTransaction : IBitcoinSerializable
     {
         public static Task<ColoredTransaction> FetchColorsAsync(Transaction tx, IColoredTransactionRepository repo)
@@ -441,7 +443,7 @@ namespace NBitcoin.OpenAsset
                 .ToArray();
         }
 
-#region IBitcoinSerializable Members
+        #region IBitcoinSerializable Members
 
         public void ReadWrite(BitcoinStream stream)
         {
@@ -469,7 +471,7 @@ namespace NBitcoin.OpenAsset
             stream.ReadWrite(ref this._Transfers);
         }
 
-#endregion
+        #endregion
 
         private List<ColoredEntry> _Inputs;
         public List<ColoredEntry> Inputs
@@ -483,16 +485,7 @@ namespace NBitcoin.OpenAsset
                 this._Inputs = value;
             }
         }
-<<<<<<< HEAD
-#if !NOJSONNET
-=======
 
-        public override string ToString()
-        {
-            return ToString(Network.Main);
-        }
-
->>>>>>> 181ab516232e67199e7700968ccaec328eeb34e6
         public string ToString(Network network)
         {
             var obj = new JObject();
