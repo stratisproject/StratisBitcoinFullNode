@@ -71,6 +71,8 @@ namespace Stratis.Bitcoin.Consensus
 
         private readonly Dictionary<uint256, long> expectedBlockSizes;
 
+        private bool isIbd;
+
         public ConsensusManager(
             Network network, 
             ILoggerFactory loggerFactory, 
@@ -151,9 +153,14 @@ namespace Stratis.Bitcoin.Consensus
                 consensusTipHash = transitionState.BlockHash;
             }
             
+            this.chainState.ConsensusTip = this.Tip;
+
             this.chainedHeaderTree.Initialize(this.Tip, this.blockStore != null);
 
             this.blockPuller.Initialize();
+
+            this.isIbd = this.ibdState.IsInitialBlockDownload();
+            this.blockPuller.OnIbdStateChanged(this.isIbd);
 
             this.logger.LogTrace("(-)");
         }
@@ -758,6 +765,14 @@ namespace Stratis.Bitcoin.Consensus
             List<int> reorgViolatedFailed = this.chainedHeaderTree.ConsensusTipChanged(newTip);
 
             this.Tip = newTip;
+
+            this.chainState.ConsensusTip = this.Tip;
+            bool ibd = this.ibdState.IsInitialBlockDownload();
+
+            if (ibd != this.isIbd)
+                this.blockPuller.OnIbdStateChanged(ibd);
+
+            this.isIbd = ibd;
 
             this.logger.LogTrace("(-):*.{0}={1}", nameof(reorgViolatedFailed.Count), reorgViolatedFailed.Count);
             return reorgViolatedFailed;
