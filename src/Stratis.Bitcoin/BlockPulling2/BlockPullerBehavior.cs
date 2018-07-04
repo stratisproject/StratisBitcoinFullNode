@@ -16,6 +16,7 @@ namespace Stratis.Bitcoin.BlockPulling2
     /// Relation of the node's puller to a network peer node.
     /// Keeps all peer-related values that <see cref="BlockPuller"/> needs to know about a peer.
     /// </summary>
+    /// <remarks>The component is not thread safe and it is supposed to be protected by the caller.</remarks>
     public interface IBlockPullerBehavior : INetworkPeerBehavior
     {
         /// <summary>Relative quality score of a peer.</summary>
@@ -135,7 +136,9 @@ namespace Stratis.Bitcoin.BlockPulling2
 
             int maxSamplesToPenalize = (int)(this.averageDelaySeconds.GetMaxSamples() * MaxSamplesPercentageToPenalize);
             int penalizeTimes = notDeliveredBlocksCount < maxSamplesToPenalize ? notDeliveredBlocksCount : maxSamplesToPenalize;
-            
+            if (penalizeTimes < 1)
+                penalizeTimes = 1;
+
             this.logger.LogDebug("Peer will be penalized {0} times.", penalizeTimes);
 
             for (int i = 0; i < penalizeTimes; i++)
@@ -162,7 +165,10 @@ namespace Stratis.Bitcoin.BlockPulling2
         {
             this.logger.LogTrace("({0}:{1})", nameof(bestSpeedBytesPerSecond), bestSpeedBytesPerSecond);
 
-            this.QualityScore = (double)this.SpeedBytesPerSecond / bestSpeedBytesPerSecond;
+            if (bestSpeedBytesPerSecond == 0)
+                this.QualityScore = MaxQualityScore;
+            else
+                this.QualityScore = (double)this.SpeedBytesPerSecond / bestSpeedBytesPerSecond;
 
             if (this.QualityScore < MinQualityScore)
                 this.QualityScore = MinQualityScore;

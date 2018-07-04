@@ -2245,7 +2245,7 @@ namespace NBitcoin.Tests
                        "00f2052a0100000023210295aefb5b15cd9204f18ceda653ebeaada10c69b6ef7f757450c5d66c0f0ebb8dac0000000000000000266a24aa21a9" +
                        "ede2f61c3f71d1defd3fa999dfa36953755c690689799962b48bebd836974e8cf900000000");
 
-            tx.ToString(RawFormat.Satoshi);
+            tx.ToString(Network.Main, RawFormat.Satoshi);
         }
 
         [Fact]
@@ -3473,10 +3473,10 @@ namespace NBitcoin.Tests
 
                 Transaction raw = Transaction.Parse(testData, format, network);
 
-                Assert.True(JToken.DeepEquals(raw.ToString(format, network), testData));
+                Assert.True(JToken.DeepEquals(raw.ToString(network, format), testData));
 
-                Transaction raw3 = Transaction.Parse(raw.ToString(format, network), format);
-                Assert.Equal(raw.ToString(format, network), raw3.ToString(format, network));
+                Transaction raw3 = Transaction.Parse(raw.ToString(network, format), format);
+                Assert.Equal(raw.ToString(network, format), raw3.ToString(network, format));
             }
         }
 
