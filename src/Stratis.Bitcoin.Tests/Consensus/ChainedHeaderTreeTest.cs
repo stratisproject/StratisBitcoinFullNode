@@ -827,6 +827,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
             while (chainedHeader.Height > 0)
             {
                 chainedHeader.BlockValidationState.Should().Be(expectedState);
+                chainedHeader.BlockDataAvailability.Should().Be(BlockDataAvailabilityState.BlockAvailable);
                 chainedHeader = chainedHeader.Previous;
             }
 
@@ -845,7 +846,10 @@ namespace Stratis.Bitcoin.Tests.Consensus
             
             chainedHeaderDownloadFrom.HashBlock.Should().Be(fromHeader.HashBlock);
             chainedHeaderDownloadTo.HashBlock.Should().Be(extendedChainTip.HashBlock);
-
+            
+            // Check block data availability of headers marked for download.
+            Assert.True(connectNewHeadersResult.HaveBlockDataAvailabilityStateOf(BlockDataAvailabilityState.BlockRequired));
+            
             // Make sure that all blocks before assumevalid block
             // that are not fully or partially validated are marked assumevalid.
             ChainedHeader headerBeforeIncludingAssumeValid = 
