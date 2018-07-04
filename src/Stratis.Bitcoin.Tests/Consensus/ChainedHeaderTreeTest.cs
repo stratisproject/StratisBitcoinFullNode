@@ -1479,7 +1479,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
             // -----CP1----HEADERS_START----CP2-----AV----HEADERS_END
             // h1---h10--------h15----------h20-----h25------h30-----
             int headersToPresentCount = (headersEndHeight - headersStartHeight + 1 /* inclusive */);
-            listOfChainHeaders = listOfChainHeaders.Skip(headersStartHeight - 1).Take(headersToPresentCount).ToList();
+            listOfChainHeaders = listOfChainHeaders.Skip(headersStartHeight - 1).ToList();
             ConnectNewHeadersResult connectedHeadersResultNew = chainedHeaderTree.ConnectNewHeaders(1, listOfChainHeaders);
 
             // From initialised chain up to and including headers end (h30) inclusive are marked for download.
