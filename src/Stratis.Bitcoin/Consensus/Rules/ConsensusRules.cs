@@ -49,12 +49,24 @@ namespace Stratis.Bitcoin.Consensus.Rules
         /// <summary>
         /// Grouping of rules that are marked with a <see cref="PartialValidationRuleAttribute"/> or no attribute.
         /// </summary>
-        private readonly List<ConsensusRuleDescriptor> validationRules;
+        private readonly List<ConsensusRuleDescriptor> partialValidationRules;
 
         /// <summary>
         /// Grouping of rules that are marked with a <see cref="FullValidationRuleAttribute"/>.
         /// </summary>
-        private readonly List<ConsensusRuleDescriptor> executionRules;
+        private readonly List<ConsensusRuleDescriptor> fullValidationRules;
+
+        /// <summary>
+        /// Grouping of rules that are marked with a <see cref="IntegrityValidationRuleAttribute"/>.
+        /// </summary>
+        private readonly List<ConsensusRuleDescriptor> integrityValidationRules;
+
+
+        /// <summary>
+        /// Grouping of rules that are marked with a <see cref="HeaderValidationRuleAttribute"/>.
+        /// </summary>
+        private readonly List<ConsensusRuleDescriptor> headerValidationRules;
+
 
         /// <inheritdoc />
         public IEnumerable<ConsensusRuleDescriptor> Rules => this.consensusRules.Values;
@@ -84,8 +96,8 @@ namespace Stratis.Bitcoin.Consensus.Rules
             this.PerformanceCounter = new ConsensusPerformanceCounter(this.DateTimeProvider);
 
             this.consensusRules = new Dictionary<string, ConsensusRuleDescriptor>();
-            this.validationRules = new List<ConsensusRuleDescriptor>();
-            this.executionRules = new List<ConsensusRuleDescriptor>();
+            this.partialValidationRules = new List<ConsensusRuleDescriptor>();
+            this.headerValidationRules = new List<ConsensusRuleDescriptor>();
         }
 
         /// <inheritdoc />
@@ -102,8 +114,10 @@ namespace Stratis.Bitcoin.Consensus.Rules
                 this.consensusRules.Add(consensusRule.GetType().FullName, new ConsensusRuleDescriptor(consensusRule));
             }
 
-            this.validationRules.AddRange(this.consensusRules.Values.Where(w => w.RuleAttributes.OfType<PartialValidationRuleAttribute>().Any() || w.RuleAttributes.Count == 0));
-            this.executionRules.AddRange(this.consensusRules.Values.Where(w => w.RuleAttributes.OfType<FullValidationRuleAttribute>().Any()));
+            this.partialValidationRules.AddRange(this.consensusRules.Values.Where(w => w.RuleAttributes.OfType<PartialValidationRuleAttribute>().Any() || w.RuleAttributes.Count == 0));
+            this.fullValidationRules.AddRange(this.consensusRules.Values.Where(w => w.RuleAttributes.OfType<FullValidationRuleAttribute>().Any()));
+            this.headerValidationRules.AddRange(this.consensusRules.Values.Where(w => w.RuleAttributes.OfType<HeaderValidationRuleAttribute>().Any()));
+            this.integrityValidationRules.AddRange(this.consensusRules.Values.Where(w => w.RuleAttributes.OfType<IntegrityValidationRuleAttribute>().Any()));
 
             return this;
         }
@@ -144,7 +158,7 @@ namespace Stratis.Bitcoin.Consensus.Rules
 
             using (new StopwatchDisposable(o => this.PerformanceCounter.AddBlockProcessingTime(o)))
             {
-                foreach (ConsensusRuleDescriptor ruleDescriptor in this.executionRules)
+                foreach (ConsensusRuleDescriptor ruleDescriptor in this.headerValidationRules)
                 {
                     await ruleDescriptor.Rule.RunAsync(ruleContext).ConfigureAwait(false);
                 }
@@ -157,7 +171,7 @@ namespace Stratis.Bitcoin.Consensus.Rules
         {
             using (new StopwatchDisposable(o => this.PerformanceCounter.AddBlockProcessingTime(o)))
             {
-                foreach (ConsensusRuleDescriptor ruleDescriptor in this.validationRules)
+                foreach (ConsensusRuleDescriptor ruleDescriptor in this.partialValidationRules)
                 {
                     if (ruleContext.SkipValidation && ruleDescriptor.CanSkipValidation)
                     {
@@ -182,7 +196,7 @@ namespace Stratis.Bitcoin.Consensus.Rules
             {
                 using (new StopwatchDisposable(o => this.PerformanceCounter.AddBlockProcessingTime(o)))
                 {
-                    foreach (ConsensusRuleDescriptor ruleDescriptor in this.executionRules)
+                    foreach (ConsensusRuleDescriptor ruleDescriptor in this.fullValidationRules)
                     {
                         await ruleDescriptor.Rule.RunAsync(ruleContext).ConfigureAwait(false);
                     }
@@ -205,7 +219,7 @@ namespace Stratis.Bitcoin.Consensus.Rules
             {
                 using (new StopwatchDisposable(o => this.PerformanceCounter.AddBlockProcessingTime(o)))
                 {
-                    foreach (ConsensusRuleDescriptor ruleDescriptor in this.validationRules)
+                    foreach (ConsensusRuleDescriptor ruleDescriptor in this.partialValidationRules)
                     {
                         if (ruleContext.SkipValidation && ruleDescriptor.CanSkipValidation)
                         {
