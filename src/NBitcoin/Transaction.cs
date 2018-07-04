@@ -1681,12 +1681,7 @@ namespace NBitcoin
             return Encoders.Hex.EncodeData(this.ToBytes());
         }
 
-        public override string ToString()
-        {
-            return ToString(RawFormat.BlockExplorer);
-        }
-
-        public string ToString(RawFormat rawFormat, Network network = null)
+        public string ToString(Network network, RawFormat rawFormat = RawFormat.BlockExplorer)
         {
             RawFormatter formatter = GetFormatter(rawFormat, network);
             return ToString(formatter);
@@ -1701,12 +1696,11 @@ namespace NBitcoin
                     formatter = new SatoshiFormatter(network);
                     break;
                 case RawFormat.BlockExplorer:
-                    formatter = new BlockExplorerFormatter();
+                    formatter = new BlockExplorerFormatter(network);
                     break;
                 default:
                     throw new NotSupportedException(rawFormat.ToString());
             }
-            formatter.Network = network ?? formatter.Network;
             return formatter;
         }
 
