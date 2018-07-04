@@ -1681,7 +1681,7 @@ namespace NBitcoin
             return Encoders.Hex.EncodeData(this.ToBytes());
         }
 
-        public string ToString(RawFormat rawFormat, Network network)
+        public string ToString(Network network, RawFormat rawFormat = RawFormat.BlockExplorer)
         {
             RawFormatter formatter = GetFormatter(rawFormat, network);
             return ToString(formatter);

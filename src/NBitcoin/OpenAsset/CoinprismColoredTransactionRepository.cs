@@ -12,10 +12,12 @@ namespace NBitcoin.OpenAsset
         public CoinprismException()
         {
         }
+
         public CoinprismException(string message)
             : base(message)
         {
         }
+
         public CoinprismException(string message, Exception inner)
             : base(message, inner)
         {
@@ -57,7 +59,6 @@ namespace NBitcoin.OpenAsset
                 return new CoinprismTransactionRepository();
             }
         }
-
        
         public async Task<ColoredTransaction> GetAsync(uint256 txId)
         {
