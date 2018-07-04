@@ -1652,5 +1652,42 @@ namespace Stratis.Bitcoin.Tests.Consensus
             listOfHeaders.Should().HaveCount(1);
             listOfHeaders.First().ChainedHeader.HashBlock.Should().Be(secondHeader.HashBlock);
         }
+
+        /// <summary>
+        /// Issue 49 @ CHT is initialized with BlockStore disabled. CT advances and old block data pointers are removed.
+        /// Make sure that data availability for those headers set to header only.
+        /// </summary>
+        [Fact]
+        public void ChainHeaderTreeInitialisedWIthBlockStoreDisabled_ConsensusTipAdvances_AvailabilityForHeadersSetToHeaderOnly()
+        {
+            // Chain header tree setup. Initial chain has 2 headers.
+            // Example: h1=h2.
+            const int initialChainSize = 2;
+            TestContext ctx = new TestContextBuilder()
+                .WithInitialChain(initialChainSize)
+                .Build();
+            ChainedHeaderTree cht = ctx.ChainedHeaderTree;
+            ChainedHeader chainTip = ctx.InitialChainTip;
+
+            // Extend chain by 10 headers and connect it to CHT.
+            // Example: h1=h2=h3=h4=h5=h6=h7=h8=h9=h10=h11=h12.
+            const int extensionSize = 10;
+            chainTip = ctx.ExtendAChain(extensionSize, chainTip);
+            List<BlockHeader> listOfExtendedHeaders = ctx.ChainedHeaderToList(chainTip, extensionSize);
+            ConnectNewHeadersResult connectionResult = cht.ConnectNewHeaders(1, listOfExtendedHeaders);
+            ChainedHeader consumed = connectionResult.Consumed;
+
+            // Download all header blocks and call PartialValidationSucceeded on h3.
+            ChainedHeader[] originalHeaderArray = chainTip.ToArray(extensionSize);
+            ChainedHeader[] consumedHeaderArray = consumed.ToArray(extensionSize);
+            for (int i = 0; i < consumedHeaderArray.Length; i++)
+            {
+                ChainedHeader currentChainTip = consumedHeaderArray[i];
+
+                cht.BlockDataDownloaded(currentChainTip, originalHeaderArray[i].Block);
+                cht.PartialValidationSucceeded(currentChainTip, out bool fullValidationRequired);
+                cht.ConsensusTipChanged(currentChainTip);
+            }
+        }
     }
 }
