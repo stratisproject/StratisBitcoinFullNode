@@ -23,7 +23,7 @@ namespace Stratis.Bitcoin.IntegrationTests.API
         [Fact]
         public void Getblockhash_via_rpc_callbyname_returns_the_blockhash()
         {
-            Given(a_proof_of_stake_node_with_api_enabled);
+            Given(a_pow_node_with_api_enabled);
             When(calling_rpc_getblockhash_via_callbyname);
             Then(the_blockhash_is_returned);
         }
@@ -39,13 +39,9 @@ namespace Stratis.Bitcoin.IntegrationTests.API
         [Fact]
         public void Block_with_valid_hash_via_api_returns_transaction_block()
         {
-            Given(sending_and_receiving_pos_nodes_with_api_enabled);
-            And(genesis_is_mined);
-            And(coins_are_mined_to_maturity);
-            And(coins_are_mined_past_maturity);
-            And(the_pos_node_starts_staking);
-            And(some_blocks_creating_reward);
-            And(the_nodes_are_synced);
+            Given(sending_node_and_receiving_node_with_api_enabled);
+            And(a_block_is_mined_creating_spendable_coins);
+            And(more_blocks_mined_past_maturity_of_original_block);
             And(a_real_transaction);
             And(the_block_with_the_transaction_is_mined);
 
@@ -56,66 +52,73 @@ namespace Stratis.Bitcoin.IntegrationTests.API
         }
 
         [Fact]
-        public void GetblockCount_via_api_returns()
+        public void Getblockcount_via_api_returns_tipheight()
         {
-            Given(a_proof_of_stake_node_with_api_enabled);
+            Given(a_pow_node_with_api_enabled);
+            And(a_block_is_mined_creating_spendable_coins);
+            And(more_blocks_mined_past_maturity_of_original_block);
 
-        }
+            When(calling_getblockcount_via_api_returns_an_int);
 
-        [Fact]
-        public void Addnode_via_api_returns()
-        {
-            Given(a_proof_of_stake_node_with_api_enabled);
-
+            Then(the_blockcount_should_match_consensus_tip_height);
         }
 
         [Fact]
         public void Getpeerinfo_via_api_returns()
         {
-            Given(a_proof_of_stake_node_with_api_enabled);
-
+            Given(a_pow_node_with_api_enabled);
         }
 
         [Fact]
-        public void Getbestblockhash_via_api_returns()
+        public void Getbestblockhash_via_api_returns_tip_hash()
         {
-            Given(a_proof_of_stake_node_with_api_enabled);
+            Given(a_pow_node_with_api_enabled);
+            And(a_block_is_mined_creating_spendable_coins);
+            And(more_blocks_mined_past_maturity_of_original_block);
 
+            When(calling_getbestblockhash_via_api);
+
+            Then(the_consensus_tip_blockhash_is_returned);
         }
 
         [Fact]
         public void Getblockhash_via_api_returns()
         {
-            Given(a_proof_of_stake_node_with_api_enabled);
-
+            Given(a_pow_node_with_api_enabled);
+            And(a_block_is_mined_creating_spendable_coins);
+            And(more_blocks_mined_past_maturity_of_original_block);
         }
 
         [Fact]
-        public void Getrawmembpool_via_api_returns()
+        public void Getrawmempool_via_api_returns()
         {
-            Given(a_proof_of_stake_node_with_api_enabled);
-
+            Given(sending_node_and_receiving_node_with_api_enabled);
+            And(a_block_is_mined_creating_spendable_coins);
+            And(more_blocks_mined_past_maturity_of_original_block);
         }
 
         [Fact]
         public void Getblockheader_via_api_returns()
         {
-            Given(a_proof_of_stake_node_with_api_enabled);
-
+            Given(a_pow_node_with_api_enabled);
+            And(a_block_is_mined_creating_spendable_coins);
+            And(more_blocks_mined_past_maturity_of_original_block);
         }
 
         [Fact]
         public void Getrawtransaction_nonverbose_via_api_returns()
         {
-            Given(a_proof_of_stake_node_with_api_enabled);
-
+            Given(sending_node_and_receiving_node_with_api_enabled);
+            And(a_block_is_mined_creating_spendable_coins);
+            And(more_blocks_mined_past_maturity_of_original_block);
         }
 
         [Fact]
         public void Getrawtransaction_verbose_via_api_returns()
         {
-            Given(a_proof_of_stake_node_with_api_enabled);
-
+            Given(sending_node_and_receiving_node_with_api_enabled);
+            And(a_block_is_mined_creating_spendable_coins);
+            And(more_blocks_mined_past_maturity_of_original_block);
         }
     }
 }

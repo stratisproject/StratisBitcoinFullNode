@@ -6,8 +6,10 @@ using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
 using FluentAssertions;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.VisualStudio.TestPlatform.CommunicationUtilities;
 using NBitcoin;
+using Newtonsoft.Json.Linq;
 using Stratis.Bitcoin.Features.Api;
 using Stratis.Bitcoin.Features.BlockStore.Models;
 using Stratis.Bitcoin.Features.Miner;
@@ -17,12 +19,11 @@ using Stratis.Bitcoin.Features.RPC.Models;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Controllers;
 using Stratis.Bitcoin.Features.Wallet.Models;
-using Stratis.Bitcoin.IntegrationTests;
+using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.Builders;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
 using Stratis.Bitcoin.Tests.Common.TestFramework;
 using Xunit.Abstractions;
-using static Stratis.Bitcoin.Features.Miner.PosMinting;
 
 namespace Stratis.Bitcoin.IntegrationTests.API
 {
@@ -30,32 +31,26 @@ namespace Stratis.Bitcoin.IntegrationTests.API
     {
         private const string JsonContentType = "application/json";
         private const string PosNode = "pos_node";
+        private const string SendingNode = "sending_node";
         private const string ReceivingNode = "receiving_node";
-        private const string SendingWalletName = "sending_wallet_name";
+        private const string WalletName = "wallet_name";
         private const string ReceivingWalletName = "receiving_wallet_name";
         private const string WalletAccountName = "account 0";
         private const string WalletPassword = "wallet_password";
         private const string StratisRegTest = "StratisRegTest";
-        private const decimal OneMillion = 1_000_000;
 
-        private ProofOfStakeSteps proofOfStakeSteps;
-
-        private HttpClient httpClient;
-        private Uri apiUri;
-        private string response;
-        private NodeGroupBuilder nodeGroupBuilder;
-        private IDictionary<string, CoreNode> nodes;
-        private List<uint256> blockIds;
-        private string password = "P@ssw0rd";
-        private WalletAccountReference miningWalletAccountReference;
-        private HdAddress minerAddress;
-        private Features.Wallet.Wallet miningWallet;
-        private Key key;
-        private int maturity;
-        private readonly Money transferAmount = Money.COIN * 2;
-        private Transaction transaction;
         private HdAddress receiverAddress;
-        private uint256 blockWithTransactionId;
+        private HttpClient httpClient;
+        private HttpResponseMessage response;
+        private IDictionary<string, CoreNode> nodes;
+        private int maturity;
+        private readonly Money transferAmount = Money.COIN * 1;
+        private NodeGroupBuilder nodeGroupBuilder;
+        private SharedSteps sharedSteps;
+        private string responseText;
+        private Transaction transaction;
+        private uint256 block;
+        private Uri apiUri;
 
         public ApiSpecification(ITestOutputHelper output) : base(output)
         {
@@ -63,7 +58,7 @@ namespace Stratis.Bitcoin.IntegrationTests.API
 
         protected override void BeforeTest()
         {
-            this.proofOfStakeSteps = new ProofOfStakeSteps(this.CurrentTest.DisplayName);
+            this.sharedSteps = new SharedSteps();
             this.httpClient = new HttpClient();
             this.nodeGroupBuilder = new NodeGroupBuilder(Path.Combine(this.GetType().Name, this.CurrentTest.DisplayName));
         }
@@ -77,15 +72,13 @@ namespace Stratis.Bitcoin.IntegrationTests.API
             }
 
             this.nodeGroupBuilder.Dispose();
-            this.proofOfStakeSteps.NodeGroupBuilder?.Dispose();
-
         }
 
         private void a_proof_of_stake_node_with_api_enabled()
         {
             this.nodes = this.nodeGroupBuilder.CreateStratisPosApiNode(PosNode)
                 .Start()
-                .WithWallet(SendingWalletName, WalletPassword)
+                .WithWallet(WalletName, WalletPassword)
                 .Build();
 
             this.nodes[PosNode].FullNode.NodeService<IPosMinting>(true)
@@ -94,51 +87,60 @@ namespace Stratis.Bitcoin.IntegrationTests.API
             this.apiUri = this.nodes[PosNode].FullNode.NodeService<ApiSettings>().ApiUri;
         }
 
-        private void preminenode_and_receiving_node_with_api_enabled()
+        private void sending_node_and_receiving_node_with_api_enabled()
         {
-            this.proofOfStakeSteps.GenerateCoins();
-
-            this.proofOfStakeSteps.PremineNodeWithCoins.FullNode.WalletManager()
-                .GetSpendableTransactionsInWallet(this.proofOfStakeSteps.PremineWallet)
-                .Sum(utxo => utxo.Transaction.Amount)
-                .Should().BeGreaterThan(Money.Coins(OneMillion));
-
-            this.nodes[ReceivingNode] = this.proofOfStakeSteps.NodeGroupBuilder
-                                    .CreateStratisPosNode(ReceivingNode)
-                                    .Start()
-                                    .NotInIBD()
-                                    .WithWallet(ReceivingWalletName, WalletPassword)
-                                    .Build()[ReceivingNode];
-
             this.nodes = this.nodeGroupBuilder
-                .CreateStratisPosNode(ReceivingNode).Start()
+                .CreateStratisPowApiNode(SendingNode)
+                .Start()
+                .NotInIBD()
+                .WithWallet(WalletName, WalletPassword)
+                .CreateStratisPowApiNode(ReceivingNode)
+                .Start()
                 .WithWallet(ReceivingWalletName, WalletPassword)
+                .NotInIBD()
                 .WithConnections()
-                .Connect(PosNode, ReceivingNode)
+                .Connect(SendingNode, ReceivingNode)
                 .AndNoMoreConnections()
                 .Build();
 
             this.receiverAddress = this.nodes[ReceivingNode].FullNode.WalletManager()
                 .GetUnusedAddress(new WalletAccountReference(ReceivingWalletName, WalletAccountName));
 
-            this.maturity = (int)this.nodes[PosNode].FullNode
+            this.maturity = (int)this.nodes[SendingNode].FullNode
                 .Network.Consensus.CoinbaseMaturity;
 
-            this.apiUri = this.nodes[PosNode].FullNode.NodeService<ApiSettings>().ApiUri;
+            this.nodes[SendingNode].SetDummyMinerSecret(new BitcoinSecret(new Key(), this.nodes[SendingNode].FullNode.Network));
+
+            this.apiUri = this.nodes[SendingNode].FullNode.NodeService<ApiSettings>().ApiUri;
+        }
+
+        private void a_pow_node_with_api_enabled()
+        {
+            this.nodes = this.nodeGroupBuilder
+                .CreateStratisPowApiNode(SendingNode)
+                .Start()
+                .NotInIBD()
+                .WithWallet(WalletName, WalletPassword)
+                .Build();
+
+            this.maturity = (int)this.nodes[SendingNode].FullNode
+                .Network.Consensus.CoinbaseMaturity;
+
+            this.nodes[SendingNode].SetDummyMinerSecret(new BitcoinSecret(new Key(), this.nodes[SendingNode].FullNode.Network));
+
+            this.apiUri = this.nodes[SendingNode].FullNode.NodeService<ApiSettings>().ApiUri;
         }
 
         private void getting_general_info()
         {
-            this.httpClient.DefaultRequestHeaders.Accept.Clear();
-            this.httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue(JsonContentType));
-            this.response = this.httpClient.GetStringAsync($"{this.apiUri}api/wallet/general-info?name={SendingWalletName}").GetAwaiter().GetResult();
+            this.send_api_get_request($"api/wallet/general-info?name={WalletName}");
         }
 
         private void general_information_about_the_wallet_and_node_is_returned()
         {
-            var generalInfoResponse = JsonDataSerializer.Instance.Deserialize<WalletGeneralInfoModel>(this.response);
+            var generalInfoResponse = JsonDataSerializer.Instance.Deserialize<WalletGeneralInfoModel>(this.responseText);
 
-            generalInfoResponse.WalletFilePath.Should().ContainAll(StratisRegTest, $"{SendingWalletName}.wallet.json");
+            generalInfoResponse.WalletFilePath.Should().ContainAll(StratisRegTest, $"{WalletName}.wallet.json");
             generalInfoResponse.Network.Name.Should().Be(StratisRegTest);
             generalInfoResponse.ChainTip.Should().Be(0);
             generalInfoResponse.IsChainSynced.Should().BeFalse();
@@ -148,30 +150,24 @@ namespace Stratis.Bitcoin.IntegrationTests.API
 
         private void staking_is_started()
         {
-            var stakingRequest = new StartStakingRequest() { Name = SendingWalletName, Password = WalletPassword };
+            var stakingRequest = new StartStakingRequest() { Name = WalletName, Password = WalletPassword };
 
             var httpRequestContent = new StringContent(stakingRequest.ToString(), Encoding.UTF8, JsonContentType);
-            HttpResponseMessage stakingResponse = this.httpClient.PostAsync($"{this.apiUri}api/miner/startstaking", httpRequestContent).GetAwaiter().GetResult();
+            this.response = this.httpClient.PostAsync($"{this.apiUri}api/miner/startstaking", httpRequestContent).GetAwaiter().GetResult();
 
-            stakingResponse.StatusCode.Should().Be(System.Net.HttpStatusCode.OK);
-            string responseText = stakingResponse.Content.ReadAsStringAsync().GetAwaiter().GetResult();
-            responseText.Should().BeEmpty();
+            this.response.StatusCode.Should().Be(System.Net.HttpStatusCode.OK);
+            this.responseText = this.response.Content.ReadAsStringAsync().GetAwaiter().GetResult();
+            this.responseText.Should().BeEmpty();
         }
 
         private void calling_rpc_getblockhash_via_callbyname()
         {
-            this.httpClient.DefaultRequestHeaders.Accept.Clear();
-            this.httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue(JsonContentType));
-
-            this.response = this.httpClient.GetStringAsync($"{this.apiUri}api/rpc/callbyname?methodName=getblockhash&height=0")
-                .GetAwaiter().GetResult();
+            this.send_api_get_request("api/rpc/callbyname?methodName=getblockhash&height=0");
         }
 
         private void calling_rpc_listmethods()
         {
-            this.httpClient.DefaultRequestHeaders.Accept.Clear();
-            this.httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue(JsonContentType));
-            this.response = this.httpClient.GetStringAsync($"{this.apiUri}api/rpc/listmethods").GetAwaiter().GetResult();
+            this.send_api_get_request("api/rpc/listmethods");
         }
 
         private void staking_is_enabled_but_nothing_is_staked()
@@ -186,12 +182,12 @@ namespace Stratis.Bitcoin.IntegrationTests.API
 
         private void the_blockhash_is_returned()
         {
-            this.response.Should().Be("\"" + Network.StratisRegTest.Consensus.HashGenesisBlock + "\"");
+            this.responseText.Should().Be("\"" + Network.StratisRegTest.Consensus.HashGenesisBlock + "\"");
         }
 
         private void a_full_list_of_available_commands_is_returned()
         {
-            var commands = JsonDataSerializer.Instance.Deserialize<List<RpcCommandModel>>(this.response);
+            var commands = JsonDataSerializer.Instance.Deserialize<List<RpcCommandModel>>(this.responseText);
 
             commands.Count.Should().Be(16);
             commands.Should().Contain(x => x.Command == "stop");
@@ -212,85 +208,105 @@ namespace Stratis.Bitcoin.IntegrationTests.API
             commands.Should().Contain(x => x.Command == "sendtoaddress <bitcoinaddress> <amount>");
         }
 
-        public void some_real_blocks_with_a_uint256_identifier()
+        protected void a_block_is_mined_creating_spendable_coins()
         {
-            this.maturity = (int)this.nodes[PosNode].FullNode.Network.Consensus.CoinbaseMaturity;
-            this.blockIds = this.nodes[PosNode].GenerateStratisWithMiner(this.maturity + 1);
+            this.sharedSteps.MineBlocks(1, this.nodes[SendingNode], WalletAccountName, WalletName, WalletPassword);
         }
 
-        public void some_blocks_creating_reward()
+        private void more_blocks_mined_past_maturity_of_original_block()
         {
-            this.some_real_blocks_with_a_uint256_identifier();
+            this.sharedSteps.MineBlocks(this.maturity + 10, this.nodes[SendingNode], WalletAccountName, WalletName, WalletPassword);
         }
 
-        public void genesis_is_mined()
+        private void a_real_transaction()
         {
-            this.sharedSteps.MinePremineBlocks(this.nodes[PosNode], SendingWalletName, "account 0", WalletPassword);
+            IActionResult sendTransactionResult = this.SendTransaction(this.BuildTransaction());
         }
 
-        public void coins_are_mined_to_maturity()
+        private IActionResult SendTransaction(IActionResult transactionResult)
         {
-            this.nodes[PosNode].GenerateStratisWithMiner(100);
-            this.sharedSteps.WaitForNodeToSync(this.nodes[PosNode]);
+            var walletTransactionModel = (WalletBuildTransactionModel)(transactionResult as JsonResult)?.Value;
+            if (walletTransactionModel == null)
+                return null;
+            this.transaction = Transaction.Parse(walletTransactionModel.Hex);
+            return this.nodes[SendingNode].FullNode.NodeService<WalletController>().SendTransaction(new SendTransactionRequest(walletTransactionModel.Hex));
         }
 
-        public void coins_are_mined_past_maturity()
+        private IActionResult BuildTransaction()
         {
-            this.nodes[PosNode].GenerateStratisWithMiner(Convert.ToInt32(this.nodes[PosNode].FullNode.Network.Consensus.CoinbaseMaturity));
-        }
-
-    public void the_pos_node_starts_staking()
-        {
-            var minter = this.nodes[PosNode].FullNode.NodeService<IPosMinting>();
-            minter.Stake(new WalletSecret() { WalletName = SendingWalletName, WalletPassword = WalletPassword });
-        }
-
-        public void the_node_is_synced()
-        {
-            this.sharedSteps.WaitForNodeToSync(this.nodes[PosNode]);
-        }
-
-        public void the_nodes_are_synced()
-        {
-            this.sharedSteps.WaitForNodeToSync(this.nodes[PosNode], this.nodes[ReceivingNode]);
-        }
-
-        public void a_real_transaction()
-        {
-            var transactionBuildContext = new TransactionBuildContext(
-                    this.miningWalletAccountReference,
-                    new List<Recipient>() { new Recipient() { Amount = this.transferAmount, ScriptPubKey = this.receiverAddress.ScriptPubKey } },
-                    this.password)
-            { MinConfirmations = this.maturity };
-            this.transaction = this.nodes[PosNode].FullNode.WalletTransactionHandler().BuildTransaction(transactionBuildContext);
-            this.nodes[PosNode].FullNode.NodeService<WalletController>()
-                .SendTransaction(new SendTransactionRequest(this.transaction.ToHex()));
+            IActionResult transactionResult = this.nodes[SendingNode].FullNode.NodeService<WalletController>()
+                .BuildTransaction(new BuildTransactionRequest
+                {
+                    AccountName = WalletAccountName,
+                    AllowUnconfirmed = true,
+                    Amount = this.transferAmount.ToString(),
+                    DestinationAddress = this.receiverAddress.Address,
+                    FeeType = FeeType.Medium.ToString("D"),
+                    Password = WalletPassword,
+                    WalletName = WalletName,
+                    FeeAmount = Money.Satoshis(82275).ToString() // Minimum fee
+                });
+            return transactionResult;
         }
 
         private void the_block_with_the_transaction_is_mined()
         {
-            this.blockWithTransactionId = this.nodes[PosNode].GenerateStratisWithMiner(1).Single();
-            this.nodes[PosNode].GenerateStratisWithMiner(1);
-            this.sharedSteps.WaitForNodeToSync(this.nodes[PosNode], this.nodes[ReceivingNode]);
+            this.block = this.nodes[SendingNode].GenerateStratisWithMiner(1).Single();
+            this.nodes[SendingNode].GenerateStratisWithMiner(1);
+        }
+
+        private void one_more_block_is_mined_to_get_blockid()
+        {
+            this.block = this.nodes[SendingNode].GenerateStratisWithMiner(1).Single();
         }
 
         private void calling_block_with_valid_hash_via_api_returns_block()
         {
-            this.httpClient.DefaultRequestHeaders.Accept.Clear();
-            this.httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue(JsonContentType));
-            this.response = this.httpClient.GetStringAsync($"{this.apiUri}api/BlockStore/block?Hash={this.blockWithTransactionId}&OutputJson=true").GetAwaiter().GetResult();
+            this.send_api_get_request($"api/BlockStore/block?Hash={this.block}&OutputJson=true");
         }
 
         private void the_real_block_should_be_retrieved()
         {
-            BlockModel blockResponse = JsonDataSerializer.Instance.Deserialize<BlockModel>(this.response);
-            blockResponse.Hash.Should().Be(this.blockWithTransactionId.ToString());
+            JObject.Parse(this.responseText)["hash"].Value<string>()
+                .Should().Be(this.block.ToString());
+            JObject.Parse(this.responseText)["size"].Value<int>()
+                .Should().Be(this.block.Size);
         }
 
         private void the_block_should_contain_the_transaction()
         {
-            BlockModel blockResponse = JsonDataSerializer.Instance.Deserialize<BlockModel>(this.response);
-            blockResponse.Transactions.Should().Contain(this.transaction.ToHex(Network.StratisRegTest));
+            JObject.Parse(this.responseText)["transactions"][1].Value<string>()
+                .Should().Be(this.transaction.GetHash().ToString());
+        }
+
+        private void calling_getblockcount_via_api_returns_an_int()
+        {
+            this.send_api_get_request("api/BlockStore/getblockcount");
+        }
+
+        private void calling_getbestblockhash_via_api()
+        {
+            this.send_api_get_request("api/Consensus/getbestblockhash");
+        }
+
+        private void the_consensus_tip_blockhash_is_returned()
+        {
+            this.responseText.Should().Be(this.block.ToString());
+            this.responseText.Should().Be(this.nodes[SendingNode].FullNode.ConsensusLoop().Tip.HashBlock.ToString());
+        }
+
+        private void the_blockcount_should_match_consensus_tip_height()
+        {
+            this.responseText.Should().Be(this.nodes[SendingNode].FullNode.ConsensusLoop().Tip.Height.ToString());
+        }
+
+        private void send_api_get_request(string apiendpoint)
+        {
+            this.httpClient.DefaultRequestHeaders.Accept.Clear();
+            this.httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue(JsonContentType));
+            this.response = this.httpClient.GetAsync($"{this.apiUri}{apiendpoint}").GetAwaiter().GetResult();
+            this.response.StatusCode.Should().Be(System.Net.HttpStatusCode.OK);
+            this.responseText = this.response.Content.ReadAsStringAsync().GetAwaiter().GetResult();
         }
     }
 }
