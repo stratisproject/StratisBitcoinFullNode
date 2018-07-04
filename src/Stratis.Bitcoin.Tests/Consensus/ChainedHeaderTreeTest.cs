@@ -1652,5 +1652,48 @@ namespace Stratis.Bitcoin.Tests.Consensus
             listOfHeaders.Should().HaveCount(1);
             listOfHeaders.First().ChainedHeader.HashBlock.Should().Be(secondHeader.HashBlock);
         }
+
+        /// <summary>
+        /// Issue 15 @ Checkpoint are disabled. Assume valid is enabled.
+        /// Headers that pass assume valid and meet it is presented.
+        /// Chain is marked for download.
+        /// Alternative chain that is of the same lenght is presented but it doesnt meet the assume valid- also marked as to download.
+        /// </summary>
+        [Fact]
+        public void ChainHasAssumeValidHeaderAndMarkedForDownloadWhenPresented_SecondChainWithoutAssumeValidAlsoMarkedForDownload()
+        {
+            // Chain header tree setup with disabled checkpoints.
+            // Initial chain has 2 headers.
+            // Example: h1=h2.
+            const int initialChainSize = 2;
+            TestContext ctx = new TestContextBuilder().WithInitialChain(initialChainSize).UseCheckpoints(false).Build();
+            ChainedHeaderTree cht = ctx.ChainedHeaderTree;
+            ChainedHeader initialChainTip = ctx.InitialChainTip;
+
+            // Setup two alternative chains A and B of the same length.
+            const int presentedChainSize = 4;
+            ChainedHeader chainATip = ctx.ExtendAChain(presentedChainSize, initialChainTip); // i.e. h1=h2=a1=a2=a3=a4
+            ChainedHeader chainBTip = ctx.ExtendAChain(presentedChainSize, initialChainTip); // i.e. h1=h2=b1=b2=b3=b4
+            List<BlockHeader> listOfChainABlockHeaders = ctx.ChainedHeaderToList(chainATip, initialChainSize + presentedChainSize);
+            List<BlockHeader> listOfChainBBlockHeaders = ctx.ChainedHeaderToList(chainBTip, initialChainSize + presentedChainSize);
+
+            // Set "Assume Valid" to the 4th block of the chain A.
+            // Example h1=h2=a1=(a2)=a3=a4.
+            ctx.ConsensusSettings.BlockAssumedValid = listOfChainABlockHeaders[3].GetHash();
+
+            // Chain A is presented by peer 1. It meets "assume valid" hash and should
+            // be marked for a download.
+            ConnectNewHeadersResult connectNewHeadersResult = cht.ConnectNewHeaders(1, listOfChainABlockHeaders);
+            ChainedHeader chainedHeaderDownloadTo = connectNewHeadersResult.DownloadTo;
+            chainedHeaderDownloadTo.HashBlock.Should().Be(chainATip.HashBlock);
+            Assert.True(connectNewHeadersResult.HaveBlockDataAvailabilityStateOf(BlockDataAvailabilityState.BlockRequired));
+
+            // Chain B is presented by peer 2. It doesn't meet "assume valid" hash but should still
+            // be marked for a download.
+            connectNewHeadersResult = cht.ConnectNewHeaders(2, listOfChainBBlockHeaders);
+            chainedHeaderDownloadTo = connectNewHeadersResult.DownloadTo;
+            chainedHeaderDownloadTo.HashBlock.Should().Be(chainBTip.HashBlock);
+            Assert.True(connectNewHeadersResult.HaveBlockDataAvailabilityStateOf(BlockDataAvailabilityState.BlockRequired));
+        }
     }
 }
