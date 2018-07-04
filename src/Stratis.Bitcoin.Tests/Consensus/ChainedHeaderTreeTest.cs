@@ -1594,6 +1594,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
 
                 cht.BlockDataDownloaded(currentChainTip, block);
                 cht.PartialValidationSucceeded(currentChainTip, out bool fullValidationRequired);
+                ctx.FinalizedBlockMock.Setup(m => m.GetFinalizedBlockHeight()).Returns(currentChainTip.Height - maxReorg);
                 cht.ConsensusTipChanged(currentChainTip);
             }
 
@@ -1605,11 +1606,10 @@ namespace Stratis.Bitcoin.Tests.Consensus
 
             // Chain B is presented by peer 2.
             List<BlockHeader> listOfChainBHeaders = ctx.ChainedHeaderToList(chainBTip, chainBSize);
-            ConnectNewHeadersResult connectNewHeadersResult = cht.ConnectNewHeaders(2, listOfChainBHeaders);
+            Action connectHeadersAction = () => cht.ConnectNewHeaders(2, listOfChainBHeaders);
 
-            // Nothing is marked for download.
-            connectNewHeadersResult.DownloadFrom.Should().BeNull();
-            connectNewHeadersResult.DownloadTo.Should().BeNull();
+            // Connection fails.
+            connectHeadersAction.Should().Throw<MaxReorgViolationException>();
         }
     }
 }
