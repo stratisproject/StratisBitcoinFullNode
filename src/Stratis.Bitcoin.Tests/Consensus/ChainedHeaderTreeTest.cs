@@ -72,7 +72,8 @@ namespace Stratis.Bitcoin.Tests.Consensus
         public class TestContext
         {
             public Network Network = Network.RegTest;
-            public Mock<IBlockValidator> ChainedHeaderValidatorMock = new Mock<IBlockValidator>();
+            public Mock<IHeaderValidator> HeaderValidatorMock = new Mock<IHeaderValidator>();
+            public Mock<IIntegrityValidator> IntegrityValidatorMock = new Mock<IIntegrityValidator>();
             public Mock<ICheckpoints> CheckpointsMock = new Mock<ICheckpoints>();
             public Mock<IChainState> ChainStateMock = new Mock<IChainState>();
             public Mock<IFinalizedBlockHeight> FinalizedBlockMock = new Mock<IFinalizedBlockHeight>();
@@ -89,7 +90,8 @@ namespace Stratis.Bitcoin.Tests.Consensus
                 this.ChainedHeaderTree = new ChainedHeaderTree(
                     this.Network,
                     new ExtendedLoggerFactory(),
-                    this.ChainedHeaderValidatorMock.Object,
+                    this.HeaderValidatorMock.Object,
+                    this.IntegrityValidatorMock.Object,
                     this.CheckpointsMock.Object,
                     this.ChainStateMock.Object,
                     this.FinalizedBlockMock.Object,
@@ -478,7 +480,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
             List<BlockHeader> listContainingInvalidHeader = testContext.ChainedHeaderToList(invalidChainedHeader, 1);
             BlockHeader invalidBlockHeader = listContainingInvalidHeader[0];
 
-            testContext.ChainedHeaderValidatorMock.Setup(x => x.ValidateHeader(It.Is<ChainedHeader>(y => y.HashBlock == invalidBlockHeader.GetHash()))).Throws(new InvalidHeaderTestException());
+            testContext.HeaderValidatorMock.Setup(x => x.ValidateHeader(It.Is<ChainedHeader>(y => y.HashBlock == invalidBlockHeader.GetHash()))).Throws(new InvalidHeaderTestException());
 
             Assert.Throws<InvalidHeaderTestException>(() => chainedHeaderTree.ConnectNewHeaders(1, listContainingInvalidHeader));
 
@@ -533,7 +535,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
             
             int depthOfInvalidHeader = 3;
             BlockHeader invalidBlockHeader = listOfPeerOnesHeaders[depthOfInvalidHeader];
-            testContext.ChainedHeaderValidatorMock.Setup(x =>
+            testContext.HeaderValidatorMock.Setup(x =>
                 x.ValidateHeader(It.Is<ChainedHeader>(y => y.HashBlock == invalidBlockHeader.GetHash()))).Throws(new InvalidHeaderTestException());
 
             Assert.Throws<InvalidHeaderTestException>(() => chainedHeaderTree.ConnectNewHeaders(1, listOfPeerOnesHeaders));

@@ -50,7 +50,7 @@ namespace Stratis.Bitcoin.Consensus
         private readonly ILogger logger;
         private readonly IChainedHeaderTree chainedHeaderTree;
         private readonly IChainState chainState;
-        private readonly IBlockValidator blockValidator;
+        private readonly IPartialValidation partialValidation;
         private readonly ConsensusSettings consensusSettings;
         private readonly IBlockPuller blockPuller;
         private readonly IConsensusRules consensusRules;
@@ -84,8 +84,10 @@ namespace Stratis.Bitcoin.Consensus
         public ConsensusManager(
             Network network, 
             ILoggerFactory loggerFactory, 
-            IChainState chainState, 
-            IBlockValidator blockValidator, 
+            IChainState chainState,
+            IHeaderValidator headerValidator,
+            IIntegrityValidator integrityValidator,
+            IPartialValidation partialValidation, 
             ICheckpoints checkpoints, 
             ConsensusSettings consensusSettings, 
             IBlockPuller blockPuller,
@@ -97,7 +99,7 @@ namespace Stratis.Bitcoin.Consensus
         {
             this.network = network;
             this.chainState = chainState;
-            this.blockValidator = blockValidator;
+            this.partialValidation = partialValidation;
             this.consensusSettings = consensusSettings;
             this.blockPuller = blockPuller;
             this.consensusRules = consensusRules;
@@ -107,7 +109,7 @@ namespace Stratis.Bitcoin.Consensus
             this.finalizedBlockHeight = finalizedBlockHeight;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
 
-            this.chainedHeaderTree = new ChainedHeaderTree(network, loggerFactory, blockValidator, checkpoints, chainState, finalizedBlockHeight, consensusSettings);
+            this.chainedHeaderTree = new ChainedHeaderTree(network, loggerFactory, headerValidator, integrityValidator, checkpoints, chainState, finalizedBlockHeight, consensusSettings);
 
             this.peerLock = new object();
             this.reorgLock = new AsyncLock();
@@ -255,7 +257,7 @@ namespace Stratis.Bitcoin.Consensus
             }
 
             if (partialValidationRequired)
-                this.blockValidator.StartPartialValidation(chainedHeaderBlock, this.OnPartialValidationCompletedCallbackAsync);
+                this.partialValidation.StartPartialValidation(chainedHeaderBlock, this.OnPartialValidationCompletedCallbackAsync);
 
             this.logger.LogTrace("(-)");
         }
@@ -356,7 +358,7 @@ namespace Stratis.Bitcoin.Consensus
                 // Start validating all next blocks that come after the current block,
                 // all headers in this list have the blocks present in the header.
                 foreach (ChainedHeaderBlock toValidate in chainedHeaderBlocksToValidate)
-                    this.blockValidator.StartPartialValidation(toValidate, this.OnPartialValidationCompletedCallbackAsync);
+                    this.partialValidation.StartPartialValidation(toValidate, this.OnPartialValidationCompletedCallbackAsync);
             }
 
             this.logger.LogTrace("(-)");
@@ -686,7 +688,7 @@ namespace Stratis.Bitcoin.Consensus
                 var validationContext = new ValidationContext() { Block = nextChainedHeaderBlock.Block };
 
                 // Call the validation engine.
-                await this.consensusRules.AcceptBlockAsync(validationContext, chainTipToExtand).ConfigureAwait(false);
+                await this.consensusRules.FullValidationAsync(validationContext, chainTipToExtand).ConfigureAwait(false);
 
                 if (validationContext.Error != null)
                 {

@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -118,10 +119,10 @@ namespace Stratis.Bitcoin.Consensus.Rules
         }
 
         /// <inheritdoc/>
+        [Obsolete("Delete when CM activates")]
         public async Task AcceptBlockAsync(ValidationContext validationContext, ChainedHeader tip)
         {
             Guard.NotNull(validationContext, nameof(validationContext));
-            Guard.NotNull(validationContext.RuleContext, nameof(validationContext.RuleContext));
 
             validationContext.RuleContext = this.CreateRuleContext(validationContext, tip);
 
@@ -136,6 +137,7 @@ namespace Stratis.Bitcoin.Consensus.Rules
         }
 
         /// <inheritdoc />
+        [Obsolete("Delete when CM activates")]
         public async Task ValidateAndExecuteAsync(RuleContext ruleContext)
         {
             await this.ValidateAsync(ruleContext);
@@ -150,6 +152,7 @@ namespace Stratis.Bitcoin.Consensus.Rules
         }
 
         /// <inheritdoc />
+        [Obsolete("Delete when CM activates")]
         public async Task ValidateAsync(RuleContext ruleContext)
         {
             using (new StopwatchDisposable(o => this.PerformanceCounter.AddBlockProcessingTime(o)))
@@ -165,6 +168,59 @@ namespace Stratis.Bitcoin.Consensus.Rules
                         await ruleDescriptor.Rule.RunAsync(ruleContext).ConfigureAwait(false);
                     }
                 }
+            }
+        }
+
+        /// <inheritdoc/>
+        public async Task FullValidationAsync(ValidationContext validationContext, ChainedHeader tip)
+        {
+            Guard.NotNull(validationContext, nameof(validationContext));
+
+            RuleContext ruleContext = this.CreateRuleContext(validationContext, tip);
+
+            try
+            {
+                using (new StopwatchDisposable(o => this.PerformanceCounter.AddBlockProcessingTime(o)))
+                {
+                    foreach (ConsensusRuleDescriptor ruleDescriptor in this.executionRules)
+                    {
+                        await ruleDescriptor.Rule.RunAsync(ruleContext).ConfigureAwait(false);
+                    }
+                }
+            }
+            catch (ConsensusErrorException ex)
+            {
+                validationContext.Error = ex.ConsensusError;
+            }
+        }
+
+        /// <inheritdoc/>
+        public async Task PartialValidationAsync(ValidationContext validationContext, ChainedHeader tip)
+        {
+            Guard.NotNull(validationContext, nameof(validationContext));
+
+            RuleContext ruleContext = this.CreateRuleContext(validationContext, tip);
+
+            try
+            {
+                using (new StopwatchDisposable(o => this.PerformanceCounter.AddBlockProcessingTime(o)))
+                {
+                    foreach (ConsensusRuleDescriptor ruleDescriptor in this.validationRules)
+                    {
+                        if (ruleContext.SkipValidation && ruleDescriptor.CanSkipValidation)
+                        {
+                            this.logger.LogTrace("Rule {0} skipped for block at height {1}.", nameof(ruleDescriptor), ruleContext.ConsensusTip?.Height);
+                        }
+                        else
+                        {
+                            await ruleDescriptor.Rule.RunAsync(ruleContext).ConfigureAwait(false);
+                        }
+                    }
+                }
+            }
+            catch (ConsensusErrorException ex)
+            {
+                validationContext.Error = ex.ConsensusError;
             }
         }
 

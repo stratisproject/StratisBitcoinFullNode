@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using NBitcoin;
 
@@ -37,6 +38,7 @@ namespace Stratis.Bitcoin.Consensus.Rules
         /// </summary>
         /// <param name="validationContext">Information about the block to validate.</param>
         /// <param name="tip">The current tip.</param>
+        [Obsolete("Delete when CM activates")]
         Task AcceptBlockAsync(ValidationContext validationContext, ChainedHeader tip);
 
         /// <summary>
@@ -44,6 +46,7 @@ namespace Stratis.Bitcoin.Consensus.Rules
         /// </summary>
         /// <param name="ruleContext">A context that holds information about the current validated block.</param>
         /// <returns>The processing task.</returns>
+        [Obsolete("Delete when CM activates")]
         Task ValidateAndExecuteAsync(RuleContext ruleContext);
 
         /// <summary>
@@ -51,6 +54,7 @@ namespace Stratis.Bitcoin.Consensus.Rules
         /// </summary>
         /// <param name="ruleContext">A context that holds information about the current validated block.</param>
         /// <returns>The processing task.</returns>
+        [Obsolete("Delete when CM activates")]
         Task ValidateAsync(RuleContext ruleContext);
 
         /// <summary>
@@ -81,6 +85,20 @@ namespace Stratis.Bitcoin.Consensus.Rules
         /// </summary>
         /// <returns>Hash of the block header which is now the tip of the chain.</returns>
         Task<RewindState> RewindAsync();
+
+        /// <summary>
+        /// Execute rules that are marked with the as <see cref="ValidationRuleAttribute"/>
+        /// </summary>
+        /// <param name="validationContext">The validation context.</param>
+        /// <param name="tip">The current tip.</param>
+        Task PartialValidationAsync(ValidationContext validationContext, ChainedHeader tip);
+
+        /// <summary>
+        /// Execute rules that are marked with the as <see cref="ExecutionRuleAttribute"/>
+        /// </summary>
+        /// <param name="validationContext">The validation context.</param>
+        /// <param name="tip">The current tip.</param>
+        Task FullValidationAsync(ValidationContext validationContext, ChainedHeader tip);
     }
 
     /// <summary>

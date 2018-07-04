@@ -18,7 +18,9 @@ namespace Stratis.Bitcoin.Tests.Consensus
         public class TestContext
         {
             public readonly Network Network = Network.RegTest;
-            public readonly Mock<IBlockValidator> ChainedHeaderValidatorMock = new Mock<IBlockValidator>();
+            public Mock<IHeaderValidator> HeaderValidatorMock = new Mock<IHeaderValidator>();
+            public Mock<IIntegrityValidator> IntegrityValidatorMock = new Mock<IIntegrityValidator>();
+            public readonly Mock<IPartialValidation> PartialValidationMock = new Mock<IPartialValidation>();
             public readonly Mock<ICheckpoints> CheckpointsMock = new Mock<ICheckpoints>();
             public readonly Mock<IBlockPuller> BlockPullerMock = new Mock<IBlockPuller>();
             public readonly Mock<IPeerBanning> PeerBanningMock = new Mock<IPeerBanning>();
@@ -36,7 +38,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
             internal ConsensusManager CreateConsensusManager()
             {
                 this.ConsensusManager = new ConsensusManager(this.Network, new ExtendedLoggerFactory(), this.ChainStateMock.Object, 
-                    this.ChainedHeaderValidatorMock.Object, this.CheckpointsMock.Object, this.ConsensusSettings, this.BlockPullerMock.Object,
+                    this.HeaderValidatorMock.Object, this.IntegrityValidatorMock.Object, this.PartialValidationMock.Object, this.CheckpointsMock.Object, this.ConsensusSettings, this.BlockPullerMock.Object,
                     this.ConsensusRulesMock.Object, this.FinalizedBlockMock.Object, new Bitcoin.Signals.Signals(), this.PeerBanningMock.Object);
 
                 this.ChainedHeaderTree = this.ConsensusManager.GetMemberValue("chainedHeaderTree") as ChainedHeaderTree;
