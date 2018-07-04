@@ -1666,45 +1666,14 @@ namespace Stratis.Bitcoin.Tests.Consensus
             ChainedHeaderTree cht = ctx.ChainedHeaderTree;
             ChainedHeader initialChainTip = ctx.InitialChainTip;
 
-            //int peerAExtension = 4;
-            //int peerBExtension = 4;
-            //int peerCExtension = 3;
-            //int peerDExtension = 3;
-            //int peerKExtension = 3;
-            //List<BlockHeader> initialchainHeaders = ctx.ChainedHeaderToList(initialChainTip, initialChainSize + 1);
-            //ChainedHeader chainATip = ctx.ExtendAChain(peerAExtension, initialChainTip); // i.e. (h1=h2=h3=h4=h5)=6a=7a=8a=9a
-            //ChainedHeader chainBTip = ctx.ExtendAChain(peerBExtension, initialChainTip); // i.e. (h1=h2=h3=h4=h5)=6b=7b=8b=9b
-            //ChainedHeader chainCTip = ctx.ExtendAChain(peerCExtension, initialChainTip.GetAncestor(2)); // i.e. (h1=h2)=3c=4c=5c
-            //ChainedHeader chainDTip = ctx.ExtendAChain(peerDExtension, chainATip.GetAncestor(7)); // i.e. ((h1=h2=h3=h4=h5)=6a=7a)=8d=9d=10d
-            //ChainedHeader chainKTip = ctx.ExtendAChain(peerKExtension, chainDTip.GetAncestor(10)); // i.e. (((h1=h2=h3=h4=h5)=6a=7a)=8d=9d=10d)=11k=12k=13k
-
-            //List<BlockHeader> peerABlockHeaders = ctx.ChainedHeaderToList(chainATip, chainATip.Height);
-            //List<BlockHeader> peerBBlockHeaders = ctx.ChainedHeaderToList(chainBTip, chainBTip.Height);
-            //List<BlockHeader> peerCBlockHeaders = ctx.ChainedHeaderToList(chainCTip, chainCTip.Height);
-            //List<BlockHeader> peerDBlockHeaders = ctx.ChainedHeaderToList(chainDTip, chainDTip.Height);
-            //List<BlockHeader> peerKBlockHeaders = ctx.ChainedHeaderToList(chainKTip, chainKTip.Height);
-
-            //List<BlockHeader> listOfAllBlockHeaders = new List<BlockHeader>(initialchainHeaders);
-            //listOfAllBlockHeaders.AddRange(peerABlockHeaders);
-            //listOfAllBlockHeaders.AddRange(peerBBlockHeaders);
-            //listOfAllBlockHeaders.AddRange(peerCBlockHeaders);
-            //listOfAllBlockHeaders.AddRange(peerDBlockHeaders);
-            //IEnumerable<BlockHeader> listOfAllUniqueBlockHeaders = listOfAllBlockHeaders.Distinct();
-
-            //ConnectNewHeadersResult connectionPeerAResult = cht.ConnectNewHeaders(1, peerABlockHeaders);
-            //cht.ConnectNewHeaders(2, peerBBlockHeaders);
-            //cht.ConnectNewHeaders(3, peerCBlockHeaders);
-            //ConnectNewHeadersResult connectionPeerDResult = cht.ConnectNewHeaders(4, peerDBlockHeaders);
-
             IEnumerable<BlockHeader> listOfAllUniqueBlockHeaders = SetupPeersForTest(initialChainSize, ctx, cht, initialChainTip, out ChainedHeader chainATip, out ChainedHeader chainDTip);
-
             CheckForbasicCases(cht, listOfAllUniqueBlockHeaders);
 
             //Additional SetUp for current test
             int peerKExtension = 3;
             ChainedHeader chainKTip = ctx.ExtendAChain(peerKExtension, chainDTip.GetAncestor(10)); // i.e. (((h1=h2=h3=h4=h5)=6a=7a)=8d=9d=10d)=11k=12k=13k
             List<BlockHeader> peerKBlockHeaders = ctx.ChainedHeaderToList(chainKTip, chainKTip.Height);
-            
+
             //Claiming Peer K chain
             ConnectNewHeadersResult connectionPeerKResult = cht.ConnectNewHeaders(5, peerKBlockHeaders);
             ClaimPeerChain(cht, chainKTip, connectionPeerKResult);
@@ -1719,23 +1688,22 @@ namespace Stratis.Bitcoin.Tests.Consensus
 
         }
 
-        
 
-
-        /// <summary>
-        /// Initial setup for tests 18-20, 28
-        ///Chain header tree setup. Initial chain has 4 headers.
-        /// SetUp:
-        ///                       =8d=9d=10d
-        ///                  6a=7a=8a=9a
-        ///GENESIS=1=2=3=4=5=
-        ///                  6b=7b=8b=9b
-        ///            3c=4c=5c
-        /// </summary>
-        /// <param name="initialChainSize"></param>
-        /// <param name="ctx"></param>
-        /// <param name="cht"></param>
-        /// <param name="initialChainTip"></param>
+        ///  <summary>
+        ///  Initial setup for tests 18-20, 28
+        /// Chain header tree setup. Initial chain has 4 headers.
+        ///  SetUp:
+        ///                        =8d=9d=10d
+        ///                   6a=7a=8a=9a
+        /// GENESIS=1=2=3=4=5=
+        ///                   6b=7b=8b=9b
+        ///             3c=4c=5c
+        ///  </summary>
+        ///  <param name="initialChainSize"></param>
+        ///  <param name="ctx"></param>
+        ///  <param name="cht"></param>
+        ///  <param name="initialChainTip"></param>
+        /// <param name="chainATip"></param>
         /// <returns></returns>
         private IEnumerable<BlockHeader> SetupPeersForTest(int initialChainSize, TestContext ctx, ChainedHeaderTree cht, ChainedHeader initialChainTip, out ChainedHeader chainATip, out ChainedHeader chainDTip)
         {
@@ -1768,7 +1736,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
             ConnectNewHeadersResult connectionPeerDResult = cht.ConnectNewHeaders(4, peerDBlockHeaders);
 
             //Downloading chain A
-            ClaimPeerChain(cht, chainATip, connectionPeerDResult);
+            ClaimPeerChain(cht, chainATip, connectionPeerAResult);
 
             //Downloading chain D
             ClaimPeerChain(cht, chainDTip, connectionPeerDResult);
@@ -1811,8 +1779,6 @@ namespace Stratis.Bitcoin.Tests.Consensus
             bool isCorrectChainSequence = true;
             bool hasLocalPeer = false;
 
-            
-
             Dictionary<int, int> peerEntryDictionary = new Dictionary<int, int>()
             {
                 {1, 0},
@@ -1852,7 +1818,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
             if (peerEntryDictionary.Count(x => x.Value > 1) > 0) eachPeerOneEntry = false; //Exactly 1 entry
             if (peerEntryDictionary.Count(x => x.Value > 1) > 0) eachPeerOneEntry = false; //Exactly 1 entry
 
-            var chainHeaders = cht.GetChainedHeadersByHash();
+            Dictionary<uint256, ChainedHeader> chainHeaders = cht.GetChainedHeadersByHash();
 
             foreach (ChainedHeader header in chainHeaders.Values.OrderBy(x=>x.Height))
             {
@@ -1864,8 +1830,6 @@ namespace Stratis.Bitcoin.Tests.Consensus
                     }
                 }
                     
-                
-
                 if (listOfAllUniqueBlockHeaders.Any(x => x.GetHash() == header.HashBlock)) continue;
                 else chbhHasOnlyReachebleHeaders = false;
             }
