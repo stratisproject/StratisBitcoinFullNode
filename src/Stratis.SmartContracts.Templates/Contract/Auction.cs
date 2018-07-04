@@ -8,7 +8,7 @@ public class Auction : SmartContract
         {
             return PersistentState.GetAddress("Owner");
         }
-        set
+        private set
         {
             PersistentState.SetAddress("Owner", value);
         }
@@ -20,7 +20,7 @@ public class Auction : SmartContract
         {
             return PersistentState.GetUInt64("EndBlock");
         }
-        set
+        private set
         {
             PersistentState.SetUInt64("EndBlock", value);
         }
@@ -32,7 +32,7 @@ public class Auction : SmartContract
         {
             return PersistentState.GetAddress("HighestBidder");
         }
-        set
+        private set
         {
             PersistentState.SetAddress("HighestBidder", value);
         }
@@ -44,7 +44,7 @@ public class Auction : SmartContract
         {
             return PersistentState.GetUInt64("HighestBid");
         }
-        set
+        private set
         {
             PersistentState.SetUInt64("HighestBid", value);
         }
@@ -56,7 +56,7 @@ public class Auction : SmartContract
         {
             return PersistentState.GetBool("HasEnded");
         }
-        set
+        private set
         {
             PersistentState.SetBool("HasEnded", value);
         }
