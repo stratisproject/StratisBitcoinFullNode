@@ -52,12 +52,12 @@ namespace Stratis.Bitcoin.Consensus.Rules
             this.Rule = rule;
             this.RuleAttributes = Attribute.GetCustomAttributes(rule.GetType()).OfType<RuleAttribute>().ToList();
 
-            ValidationRuleAttribute validationRuleAttribute = this.RuleAttributes.OfType<ValidationRuleAttribute>().FirstOrDefault();
+            PartialValidationRuleAttribute partialValidationRuleAttribute = this.RuleAttributes.OfType<PartialValidationRuleAttribute>().FirstOrDefault();
 
-            this.CanSkipValidation = validationRuleAttribute?.CanSkipValidation ?? !this.RuleAttributes.Any();
+            this.CanSkipValidation = partialValidationRuleAttribute?.CanSkipValidation ?? !this.RuleAttributes.Any();
         }
 
-        /// <summary>Rules that are strictly validation can be skipped unless the <see cref="ValidationRuleAttribute.CanSkipValidation"/> is <c>false</c>.</summary>
+        /// <summary>Rules that are strictly validation can be skipped unless the <see cref="PartialValidationRuleAttribute.CanSkipValidation"/> is <c>false</c>.</summary>
         public bool CanSkipValidation { get; } 
 
         /// <summary>The rule represented by this descriptor.</summary>
@@ -83,7 +83,7 @@ namespace Stratis.Bitcoin.Consensus.Rules
     /// State in this context is the manipulation of information in the consensus data store based on actions specified in <see cref="Block"/> and <see cref="Transaction"/>.
     /// This will allow to ability to run validation checks on blocks (during mining for example) without change the underline store.
     /// </remarks>
-    public class ValidationRuleAttribute : RuleAttribute
+    public class PartialValidationRuleAttribute : RuleAttribute
     {
         /// <summary>A flag that specifies the rule can be skipped when the <see cref="RuleContext.SkipValidation"/> is set.</summary>
         public bool CanSkipValidation { get; set; }
@@ -92,7 +92,21 @@ namespace Stratis.Bitcoin.Consensus.Rules
     /// <summary>
     /// Whether the rule is manipulating the consensus state, making changes to the store.
     /// </summary>
-    public class ExecutionRuleAttribute : RuleAttribute
+    public class FullValidationRuleAttribute : RuleAttribute
+    {
+    }
+
+    /// <summary>
+    /// Validate block headers only.
+    /// </summary>
+    public class HeaderValidationRuleAttribute : RuleAttribute
+    {
+    }
+
+    /// <summary>
+    /// Validate block headers only.
+    /// </summary>
+    public class IntegrityValidationRuleAttribute : RuleAttribute
     {
     }
 

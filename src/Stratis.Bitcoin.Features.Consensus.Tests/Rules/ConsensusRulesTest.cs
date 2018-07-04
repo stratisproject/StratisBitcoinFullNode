@@ -299,7 +299,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
             });
         }
 
-        [ValidationRule]
+        [PartialValidationRule]
         private class ConsensusRuleWithValidationAttribute : ConsensusRule
         {
             public bool RunCalled { get; private set; }
@@ -316,7 +316,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
             }
         }
 
-        [ValidationRule(CanSkipValidation = true)]
+        [PartialValidationRule(CanSkipValidation = true)]
         private class ConsensusRuleWithSkipValidationAttribute : ConsensusRule
         {
             public bool RunCalled { get; private set; }
@@ -333,7 +333,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
             }
         }
 
-        [ExecutionRule]
+        [FullValidationRule]
         private class ConsensusRuleWithoutNonValidationRuleAttribute : ConsensusRule
         {
             public bool RunCalled { get; private set; }

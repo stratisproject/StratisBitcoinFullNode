@@ -17,8 +17,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
             descriptor.Rule.Should().BeOfType<RuleWithValidationExecutionMempoolAttributes>();
             descriptor.RuleAttributes.Should().HaveCount(3);
             descriptor.RuleAttributes.Should().Contain(x => x is MempoolRuleAttribute);
-            descriptor.RuleAttributes.Should().Contain(x => x is ExecutionRuleAttribute);
-            descriptor.RuleAttributes.Should().Contain(x => x is ValidationRuleAttribute);
+            descriptor.RuleAttributes.Should().Contain(x => x is FullValidationRuleAttribute);
+            descriptor.RuleAttributes.Should().Contain(x => x is PartialValidationRuleAttribute);
 
             descriptor.CanSkipValidation.Should().BeFalse();
         }
@@ -30,7 +30,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
 
             descriptor.Rule.Should().BeOfType<RuleWithOptionalValidationAttribute>();
             descriptor.RuleAttributes.Should().HaveCount(1);
-            descriptor.RuleAttributes.Single().Should().BeOfType<ValidationRuleAttribute>();
+            descriptor.RuleAttributes.Single().Should().BeOfType<PartialValidationRuleAttribute>();
 
             descriptor.CanSkipValidation.Should().BeTrue();
         }
@@ -67,13 +67,13 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
         }
 
         [MempoolRule]
-        [ExecutionRule]
-        [ValidationRule(CanSkipValidation = false)]
+        [FullValidationRule]
+        [PartialValidationRule(CanSkipValidation = false)]
         private class RuleWithValidationExecutionMempoolAttributes : MyConsensusRule
         {
         }
 
-        [ValidationRule(CanSkipValidation = true)]
+        [PartialValidationRule(CanSkipValidation = true)]
         private class RuleWithOptionalValidationAttribute : MyConsensusRule
         {
         }

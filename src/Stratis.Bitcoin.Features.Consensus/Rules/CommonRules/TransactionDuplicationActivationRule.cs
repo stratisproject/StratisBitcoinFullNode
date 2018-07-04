@@ -13,7 +13,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
     /// <remarks>
     /// More info here https://github.com/bitcoin/bips/blob/master/bip-0030.mediawiki
     /// </remarks>
-    [ExecutionRule]
+    [FullValidationRule]
     public class TransactionDuplicationActivationRule : UtxoStoreConsensusRule
     {
         /// <inheritdoc />>

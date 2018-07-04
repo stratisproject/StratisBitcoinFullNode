@@ -47,12 +47,12 @@ namespace Stratis.Bitcoin.Consensus.Rules
         public ConsensusPerformanceCounter PerformanceCounter { get; }
 
         /// <summary>
-        /// Grouping of rules that are marked with a <see cref="ValidationRuleAttribute"/> or no attribute.
+        /// Grouping of rules that are marked with a <see cref="PartialValidationRuleAttribute"/> or no attribute.
         /// </summary>
         private readonly List<ConsensusRuleDescriptor> validationRules;
 
         /// <summary>
-        /// Grouping of rules that are marked with a <see cref="ExecutionRuleAttribute"/>.
+        /// Grouping of rules that are marked with a <see cref="FullValidationRuleAttribute"/>.
         /// </summary>
         private readonly List<ConsensusRuleDescriptor> executionRules;
 
@@ -102,8 +102,8 @@ namespace Stratis.Bitcoin.Consensus.Rules
                 this.consensusRules.Add(consensusRule.GetType().FullName, new ConsensusRuleDescriptor(consensusRule));
             }
 
-            this.validationRules.AddRange(this.consensusRules.Values.Where(w => w.RuleAttributes.OfType<ValidationRuleAttribute>().Any() || w.RuleAttributes.Count == 0));
-            this.executionRules.AddRange(this.consensusRules.Values.Where(w => w.RuleAttributes.OfType<ExecutionRuleAttribute>().Any()));
+            this.validationRules.AddRange(this.consensusRules.Values.Where(w => w.RuleAttributes.OfType<PartialValidationRuleAttribute>().Any() || w.RuleAttributes.Count == 0));
+            this.executionRules.AddRange(this.consensusRules.Values.Where(w => w.RuleAttributes.OfType<FullValidationRuleAttribute>().Any()));
 
             return this;
         }

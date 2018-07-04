@@ -8,7 +8,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
     /// <summary>
     /// Check that the previous block hash is correct.
     /// </summary>  
-    [ValidationRule(CanSkipValidation = false)]
+    [PartialValidationRule(CanSkipValidation = false)]
     public class BlockHeaderRule : ConsensusRule
     {
         /// <inheritdoc />
