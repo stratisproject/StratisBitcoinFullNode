@@ -1440,6 +1440,56 @@ namespace Stratis.Bitcoin.Tests.Consensus
             }
         }
 
+        /// Issue 35 @ We receive headers message
+        /// (first header in the message is HEADERS_START and last is HEADERS_END).
+        /// AV = assume valid header, CP1,CP2 - checkpointed headers. '---' some headers.
+        /// LAST_CP = last checkpoint.
+        /// ----CP1-----HEADERS_START----LAST_CP----AV-----HEADERS_END
+        /// All headers until HEADERS_END (including it) are marked for download.
+        /// </summary>
+        [Fact]
+        public void ConnectHeaders_FirstCheckpointsExcluded_AssumeValidBeyondLastCheckPoint_DownloadAllHeaders()
+        {
+            const int initialChainSize = 14;
+            const int chainExtension = 16;
+            const int assumeValidHeaderHeight = 25;
+            const int headersStartHeight = 15;
+            const int headersEndHeight = 30;
+
+            TestContext testContext = new TestContextBuilder().WithInitialChain(initialChainSize).UseCheckpoints(true).Build();
+            ChainedHeaderTree chainedHeaderTree = testContext.ChainedHeaderTree;
+            ChainedHeader initialChainTip = testContext.InitialChainTip;
+            ChainedHeader chainTip = testContext.ExtendAChain(chainExtension, initialChainTip);
+
+            // Assume valid header at h25.
+            ChainedHeader assumeValidChainHeader = chainTip.GetAncestor(assumeValidHeaderHeight);
+            testContext.ConsensusSettings.BlockAssumedValid = assumeValidChainHeader.HashBlock;
+
+            List<BlockHeader> listOfChainHeaders =
+                testContext.ChainedHeaderToList(chainTip, initialChainSize + chainExtension);
+
+            // Two checkpoints at h10 and h20.
+            const int firstCheckpointHeight = 10;
+            const int secondCheckpointHeight = 20;
+            var checkpoint1 = new CheckpointFixture(firstCheckpointHeight, listOfChainHeaders[firstCheckpointHeight - 1]);
+            var checkpoint2 = new CheckpointFixture(secondCheckpointHeight, listOfChainHeaders[secondCheckpointHeight - 1]);
+            testContext.SetupCheckpoints(checkpoint1, checkpoint2);
+
+            // Present chain h15->h30 covering second checkpoint at h20 and assume valid at h25.
+            // -----CP1----HEADERS_START----CP2-----AV----HEADERS_END
+            // h1---h10--------h15----------h20-----h25------h30-----
+            int headersToPresentCount = (headersEndHeight - headersStartHeight + 1 /* inclusive */);
+            listOfChainHeaders = listOfChainHeaders.Skip(headersStartHeight - 1).Take(headersToPresentCount).ToList();
+            ConnectNewHeadersResult connectedHeadersResultNew = chainedHeaderTree.ConnectNewHeaders(1, listOfChainHeaders);
+
+            // From initialised chain up to and including headers end (h30) inclusive are marked for download.
+            Assert.Equal(listOfChainHeaders.First(), connectedHeadersResultNew.DownloadFrom.Header);
+            Assert.Equal(listOfChainHeaders.Last(), connectedHeadersResultNew.DownloadTo.Header);
+
+            // Check block data availability of headers marked for download.
+            Assert.True(connectedHeadersResultNew.HaveBlockDataAvailabilityStateOf(BlockDataAvailabilityState.BlockRequired));
+        }
+
         /// <summary>
         /// Issue 36 @ The list of headers is presented where the 1st half of them can be connected but then there is
         /// header which is not consecutive – its previous hash is not hash of the previous header in the list.
