@@ -167,7 +167,7 @@ namespace NBitcoin
         /// <summary>
         /// Create a <see cref="Transaction"/> instance.
         /// </summary>
-        public virtual Transaction CreateTransaction()
+        internal virtual Transaction CreateTransaction()
         {
             return new Transaction();
         }
@@ -175,7 +175,7 @@ namespace NBitcoin
         /// <summary>
         /// Create a <see cref="Transaction"/> instance from a hex string representation.
         /// </summary>
-        public virtual Transaction CreateTransaction(string hex)
+        internal virtual Transaction CreateTransaction(string hex)
         {
             var transaction = new Transaction();
             transaction.FromBytes(Encoders.Hex.DecodeData(hex));
@@ -185,7 +185,7 @@ namespace NBitcoin
         /// <summary>
         /// Create a <see cref="Transaction"/> instance from a byte array representation.
         /// </summary>
-        public virtual Transaction CreateTransaction(byte[] bytes)
+        internal virtual Transaction CreateTransaction(byte[] bytes)
         {
             var transaction = new Transaction();
             transaction.FromBytes(bytes);

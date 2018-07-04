@@ -317,14 +317,16 @@ namespace NBitcoin
                 set;
             }
         }
+
         internal class TransactionBuildingContext
         {
             public TransactionBuildingContext(TransactionBuilder builder)
             {
                 this.Builder = builder;
-                this.Transaction = builder.Network.Consensus.ConsensusFactory.CreateTransaction();
+                this.Transaction = builder.Network.CreateTransaction();
                 this.AdditionalFees = Money.Zero;
             }
+
             public BuilderGroup Group
             {
                 get;
@@ -339,11 +341,13 @@ namespace NBitcoin
                     return this._ConsumedCoins;
                 }
             }
+
             public TransactionBuilder Builder
             {
                 get;
                 set;
             }
+
             public Transaction Transaction
             {
                 get;
@@ -427,7 +431,7 @@ namespace NBitcoin
             public void RestoreMemento(TransactionBuildingContext memento)
             {
                 this._Marker = memento._Marker == null ? null : new ColorMarker(memento._Marker.GetScript());
-                this.Transaction = memento.Builder.Network.Consensus.ConsensusFactory.CreateTransaction(memento.Transaction.ToBytes());
+                this.Transaction = memento.Builder.Network.CreateTransaction(memento.Transaction.ToBytes());
                 this.AdditionalFees = memento.AdditionalFees;
             }
 
@@ -1109,7 +1113,7 @@ namespace NBitcoin
             var ctx = new TransactionBuildingContext(this);
 
             if(this._CompletedTransaction != null)
-                ctx.Transaction = this.Network.Consensus.ConsensusFactory.CreateTransaction(this._CompletedTransaction.ToBytes());
+                ctx.Transaction = this.Network.CreateTransaction(this._CompletedTransaction.ToBytes());
 
             if(this._LockTime != null)
                 ctx.Transaction.LockTime = this._LockTime.Value;
@@ -1258,7 +1262,7 @@ namespace NBitcoin
 
         public Transaction SignTransaction(Transaction transaction, SigHash sigHash)
         {
-            Transaction tx = this.Network.Consensus.ConsensusFactory.CreateTransaction(transaction.ToBytes());
+            Transaction tx = this.Network.CreateTransaction(transaction.ToBytes());
             SignTransactionInPlace(tx, sigHash);
             return tx;
         }
@@ -1275,9 +1279,12 @@ namespace NBitcoin
 
         public Transaction SignTransactionInPlace(Transaction transaction, SigHash sigHash)
         {
-            var ctx = new TransactionSigningContext(this, transaction);
-            ctx.SigHash = sigHash;
-            foreach(IndexedTxIn input in transaction.Inputs.AsIndexedInputs())
+            var ctx = new TransactionSigningContext(this, transaction)
+            {
+                SigHash = sigHash
+            };
+
+            foreach (IndexedTxIn input in transaction.Inputs.AsIndexedInputs())
             {
                 ICoin coin = FindSignableCoin(input);
                 if(coin != null)
@@ -1291,8 +1298,10 @@ namespace NBitcoin
         public ICoin FindSignableCoin(IndexedTxIn txIn)
         {
             ICoin coin = FindCoin(txIn.PrevOut);
+
             if(coin is IColoredCoin)
                 coin = ((IColoredCoin)coin).Bearer;
+
             if(coin == null || coin is ScriptCoin || coin is StealthCoin)
                 return coin;
 
@@ -1489,7 +1498,7 @@ namespace NBitcoin
             if (tx == null)
                 throw new ArgumentNullException("tx");
 
-            Transaction clone = this.Network.Consensus.ConsensusFactory.CreateTransaction(tx.ToHex());
+            Transaction clone = this.Network.CreateTransaction(tx.ToHex());
             clone.Inputs.Clear();
             int baseSize = clone.GetSerializedSize();
 
@@ -1513,9 +1522,8 @@ namespace NBitcoin
             if (coin is IColoredCoin)
                 coin = ((IColoredCoin)coin).Bearer;
 
-            if (coin is ScriptCoin)
+            if (coin is ScriptCoin scriptCoin)
             {
-                var scriptCoin = (ScriptCoin)coin;
                 Script p2sh = scriptCoin.GetP2SHRedeem();
                 if (p2sh != null)
                 {
@@ -1801,7 +1809,7 @@ namespace NBitcoin
             if(this._CompletedTransaction != null)
                 throw new InvalidOperationException("Transaction to complete already set");
 
-            this._CompletedTransaction = this.Network.Consensus.ConsensusFactory.CreateTransaction(transaction.ToHex());
+            this._CompletedTransaction = this.Network.CreateTransaction(transaction.ToHex());
 
             return this;
         }
@@ -1865,7 +1873,7 @@ namespace NBitcoin
             if(transactions.Length == 0)
                 return null;
 
-            Transaction tx = this.Network.Consensus.ConsensusFactory.CreateTransaction(transactions[0].ToHex());
+            Transaction tx = this.Network.CreateTransaction(transactions[0].ToHex());
             for(int i = 1; i < transactions.Length; i++)
             {
                 Transaction signed = transactions[i];
@@ -1891,7 +1899,7 @@ namespace NBitcoin
             if(signed2 == null)
                 return signed1;
 
-            Transaction tx = this.Network.Consensus.ConsensusFactory.CreateTransaction(signed1.ToHex());
+            Transaction tx = this.Network.CreateTransaction(signed1.ToHex());
             for(int i = 0; i < tx.Inputs.Count; i++)
             {
                 if(i >= signed2.Inputs.Count)

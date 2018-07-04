@@ -43,7 +43,7 @@ namespace NBitcoin
                 tx.EnsureSuccessStatusCode();
 
                 byte[] bytes = await tx.Content.ReadAsByteArrayAsync().ConfigureAwait(false);
-                return this.network.Consensus.ConsensusFactory.CreateTransaction(bytes);
+                return this.network.CreateTransaction(bytes);
             }
         }
 

@@ -202,7 +202,7 @@ namespace NBitcoin
         /// Mines a new genesis block, to use with a new network.
         /// Typically, 3 such genesis blocks need to be created when bootstrapping a new coin: for Main, Test and Reg networks.
         /// </summary>
-        /// <param name="consensusFactory">
+        /// <param name="network">
         /// The consensus factory used to create transactions and blocks. 
         /// Use <see cref="PosConsensusFactory"/> for proof-of-stake based networks.
         /// </param>
@@ -239,16 +239,10 @@ namespace NBitcoin
         /// </code>
         /// </example>
         /// <returns>A genesis block.</returns>
-        public static Block MineGenesisBlock(ConsensusFactory consensusFactory, string coinbaseText, Target target, Money genesisReward, int version = 1)
+        public static Block MineGenesisBlock(Network network, string coinbaseText, Target target, Money genesisReward, int version = 1)
         {
-            if (target == null)
-                throw new ArgumentException($"Parameter '{nameof(target)}' cannot be null. Example use: new Target(new uint256(\"0000ffff00000000000000000000000000000000000000000000000000000000\"))");
-
-            if (consensusFactory == null)
-            {
-                throw new ArgumentException($"Parameter '{nameof(consensusFactory)}' cannot be null. Use 'new ConsensusFactory()' for Bitcoin-like proof-of-work blockchains" +
-                                            "and 'new PosConsensusFactory()' for Stratis-like proof-of-stake blockchains.");
-            }
+            if (network == null)
+                throw new ArgumentException($"Parameter '{nameof(network)}' cannot be null. Use 'new ConsensusFactory()' for Bitcoin-like proof-of-work blockchains and 'new PosConsensusFactory()' for Stratis-like proof-of-stake blockchains.");
 
             if (string.IsNullOrEmpty(coinbaseText))
                 throw new ArgumentException($"Parameter '{nameof(coinbaseText)}' cannot be null. Use a news headline or any other appropriate string.");
@@ -262,7 +256,7 @@ namespace NBitcoin
             DateTimeOffset time = DateTimeOffset.Now;
             uint unixTime = Utils.DateTimeToUnixTime(time);
 
-            Transaction txNew = consensusFactory.CreateTransaction();
+            Transaction txNew = network.CreateTransaction();
             txNew.Version = (uint)version;
             txNew.Time = unixTime;
             txNew.AddInput(new TxIn()
@@ -282,9 +276,9 @@ namespace NBitcoin
                 Value = genesisReward,
             });
 
-            Block genesis = consensusFactory.CreateBlock();
+            Block genesis = network.Consensus.ConsensusFactory.CreateBlock();
             genesis.Header.BlockTime = time;
-            genesis.Header.Bits = target;
+            genesis.Header.Bits = target ?? throw new ArgumentException($"Parameter '{nameof(target)}' cannot be null. Example use: new Target(new uint256(\"0000ffff00000000000000000000000000000000000000000000000000000000\"))");
             genesis.Header.Nonce = 0;
             genesis.Header.Version = version;
             genesis.Transactions.Add(txNew);
@@ -698,6 +692,21 @@ namespace NBitcoin
                     Endpoint = Utils.ParseIpEndpoint(seed, defaultPort)
                 };
             }
+        }
+
+        public Transaction CreateTransaction()
+        {
+            return this.Consensus.ConsensusFactory.CreateTransaction();
+        }
+
+        public Transaction CreateTransaction(string hex)
+        {
+            return this.Consensus.ConsensusFactory.CreateTransaction(hex);
+        }
+
+        public Transaction CreateTransaction(byte[] bytes)
+        {
+            return this.Consensus.ConsensusFactory.CreateTransaction(bytes);
         }
     }
 }

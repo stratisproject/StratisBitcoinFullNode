@@ -1163,7 +1163,6 @@ namespace NBitcoin
         private TxOutList vout;
         private LockTime nLockTime;
 
-        [Obsolete("Please use consensus factory to create a transaction")]
         public Transaction()
         {
             this.vin = new TxInList(this);

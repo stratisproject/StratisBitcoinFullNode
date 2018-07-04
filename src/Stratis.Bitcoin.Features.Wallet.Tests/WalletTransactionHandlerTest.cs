@@ -149,7 +149,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             TransactionBuildContext context = CreateContext(walletReference, "password", destinationKeys.PubKey.ScriptPubKey, new Money(7500), FeeType.Low, 0);
             Transaction transactionResult = walletTransactionHandler.BuildTransaction(context);
 
-            Transaction result = this.network.Consensus.ConsensusFactory.CreateTransaction(transactionResult.ToHex());
+            Transaction result = this.network.CreateTransaction(transactionResult.ToHex());
             (PubKey PubKey, BitcoinPubKeyAddress Address) expectedChangeAddressKeys = WalletTestsHelpers.GenerateAddressKeys(wallet, accountKeys.ExtPubKey, "1/0");
 
             Assert.Single(result.Inputs);
@@ -368,7 +368,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             fundTransaction.Inputs.RemoveAt(1);
             Assert.Single(fundTransaction.Inputs); // 4 inputs
 
-            Transaction fundTransactionClone = this.network.Consensus.ConsensusFactory.CreateTransaction(fundTransaction.ToBytes());
+            Transaction fundTransactionClone = this.network.CreateTransaction(fundTransaction.ToBytes());
             var fundContext = new TransactionBuildContext(walletReference, new List<Recipient>(), "password")
             {
                 MinConfirmations = 0,

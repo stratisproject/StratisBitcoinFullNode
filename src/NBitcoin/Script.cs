@@ -685,7 +685,7 @@ namespace NBitcoin
             var scriptCopy = new Script(scriptCode._Script);
             scriptCopy.FindAndDelete(OpcodeType.OP_CODESEPARATOR);
 
-            Transaction txCopy = network.Consensus.ConsensusFactory.CreateTransaction(txTo.ToBytes());
+            Transaction txCopy = network.CreateTransaction(txTo.ToBytes());
 
             //Set all TxIn script to empty string
             foreach(TxIn txin in txCopy.Inputs)
