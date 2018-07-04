@@ -22,10 +22,6 @@ using System.IO;
 using NBitcoin.BouncyCastle.Crypto;
 using NBitcoin.Crypto.Internal;
 
-#if !WINDOWS_UWP && !USEBC
-
-#endif
-
 namespace NBitcoin.Crypto
 {
     /// <summary>
@@ -55,7 +51,7 @@ namespace NBitcoin.Crypto
 
         private byte[] _saltBuffer, _digest, _digestT1;
 
-#if USEBC || WINDOWS_UWP || NETCORE
+#if NETCORE
         private IMac _hmacAlgorithm;
 #else
         KeyedHashAlgorithm _hmacAlgorithm;
@@ -73,7 +69,7 @@ namespace NBitcoin.Crypto
         ///     A unique salt means a unique PBKDF2 stream, even if the original key is identical.
         /// </param>
         /// <param name="iterations">The number of iterations to apply.</param>
-#if USEBC || WINDOWS_UWP || NETCORE
+#if NETCORE
         public Pbkdf2(IMac hmacAlgorithm, byte[] salt, int iterations)
         {
             Internal.Check.Null("hmacAlgorithm", hmacAlgorithm);
@@ -137,7 +133,7 @@ namespace NBitcoin.Crypto
         /// <param name="iterations">The number of iterations to apply.</param>
         /// <param name="derivedKeyLength">The desired length of the derived key.</param>
         /// <returns>The derived key.</returns>
-#if USEBC || WINDOWS_UWP || NETCORE
+#if NETCORE
         public static byte[] ComputeDerivedKey(IMac hmacAlgorithm, byte[] salt, int iterations,
                                                int derivedKeyLength)
         {
@@ -165,7 +161,7 @@ namespace NBitcoin.Crypto
         /// <summary>
         /// Closes the stream, clearing memory and disposing of the HMAC algorithm.
         /// </summary>
-#if USEBC || WINDOWS_UWP || NETCORE
+#if NETCORE
         protected override void Dispose(bool disposing)
         {
             Security.Clear(this._saltBuffer);
@@ -202,7 +198,7 @@ namespace NBitcoin.Crypto
             Security.Clear(this._digestT1);
         }
 
-#if USEBC || WINDOWS_UWP || NETCORE
+#if NETCORE
         private void ComputeHmac(byte[] input, byte[] output)
         {
             var hash = new byte[this._hmacAlgorithm.GetMacSize()];

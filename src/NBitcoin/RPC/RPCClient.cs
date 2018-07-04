@@ -1,5 +1,4 @@
-﻿#if !NOJSONNET
-using System;
+﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
@@ -183,7 +182,7 @@ namespace NBitcoin.RPC
 
             if (address != null && network == null)
             {
-                network = Network.GetNetworks().FirstOrDefault(n => n.RPCPort == address.Port);
+                network = NetworksContainer.GetNetworks().FirstOrDefault(n => n.RPCPort == address.Port);
                 if (network == null)
                     throw new ArgumentNullException("network");
             }
@@ -219,7 +218,6 @@ namespace NBitcoin.RPC
 
         static RPCClient()
         {
-#if !NOFILEIO
             string home = Environment.GetEnvironmentVariable("HOME");
             string localAppData = Environment.GetEnvironmentVariable("APPDATA");
 
@@ -252,7 +250,6 @@ namespace NBitcoin.RPC
                 string regtest = Path.Combine(bitcoinFolder, "regtest", ".cookie");
                 RegisterDefaultCookiePath(Network.RegTest, regtest);
             }
-#endif
         }
 
         public static void RegisterDefaultCookiePath(Network network, string path)
@@ -497,7 +494,7 @@ namespace NBitcoin.RPC
 
             HttpWebRequest webRequest = CreateWebRequest();
 
-#if !(PORTABLE || NETCORE)
+#if !NETCORE
             webRequest.ContentLength = bytes.Length;
 #endif
 
@@ -616,15 +613,12 @@ namespace NBitcoin.RPC
         {
             if (GetCookiePath() == null)
                 throw new InvalidOperationException("Bug in NBitcoin notify the developers");
-#if !NOFILEIO
+
             string auth = File.ReadAllText(GetCookiePath());
             if (!auth.StartsWith("__cookie__:", StringComparison.OrdinalIgnoreCase))
                 throw new ArgumentException("The authentication string to RPC is not provided and can't be inferred");
 
             this.authentication = auth;
-#else
-            throw new NotSupportedException("Cookie authentication is not supported for this plateform");
-#endif
         }
 
         private void TryRenewCookie(WebException ex)
@@ -632,7 +626,6 @@ namespace NBitcoin.RPC
             if (GetCookiePath() == null)
                 throw new InvalidOperationException("Bug in NBitcoin notify the developers");
 
-#if !NOFILEIO
             try
             {
                 this.authentication = File.ReadAllText(GetCookiePath());
@@ -642,9 +635,6 @@ namespace NBitcoin.RPC
             {
                 ExceptionDispatchInfo.Capture(ex).Throw();
             }
-#else
-            throw new NotSupportedException("Cookie authentication is not supported for this plateform");
-#endif
         }
 
         private async Task<RPCResponse> SendCommandAsyncCoreAsync(RPCRequest request, bool throwIfRPCError)
@@ -668,7 +658,7 @@ namespace NBitcoin.RPC
                 writer.Flush();
                 string json = writer.ToString();
                 byte[] bytes = Encoding.UTF8.GetBytes(json);
-#if !(PORTABLE || NETCORE)
+#if !NETCORE
                 webRequest.ContentLength = bytes.Length;
 #endif
                 Stream dataStream = await webRequest.GetRequestStreamAsync().ConfigureAwait(false);
@@ -735,7 +725,6 @@ namespace NBitcoin.RPC
         }
 
 #region P2P Networking
-#if !NOSOCKET
         public PeerInfo[] GetPeersInfo()
         {
             PeerInfo[] peers = null;
@@ -925,7 +914,6 @@ namespace NBitcoin.RPC
                 throw;
             }
         }
-#endif
 
 #endregion
 
@@ -1153,8 +1141,8 @@ namespace NBitcoin.RPC
 
             response.ThrowIfError();
 
-            var tx = new Transaction();
-            tx.ReadWrite(Encoders.Hex.DecodeData(response.Result.ToString()));
+            Transaction tx = this.network.Consensus.ConsensusFactory.CreateTransaction();
+            tx.ReadWrite(Encoders.Hex.DecodeData(response.Result.ToString()), this.network.Consensus.ConsensusFactory);
             return tx;
         }
 
@@ -1359,7 +1347,6 @@ namespace NBitcoin.RPC
         }
     }
 
-#if !NOSOCKET
     public class PeerInfo
     {
         public int Id { get; internal set; }
@@ -1398,7 +1385,6 @@ namespace NBitcoin.RPC
         public IPEndPoint Address { get; internal set; }
         public bool Connected { get; internal set; }
     }
-#endif
 
     public class NoEstimationException : Exception
     {
@@ -1408,4 +1394,3 @@ namespace NBitcoin.RPC
         }
     }
 }
-#endif

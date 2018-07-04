@@ -150,6 +150,6 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// </summary>
         /// <typeparam name="T">Type of the behavior to find.</typeparam>
         /// <returns>Collection of behaviors of specific type.</returns>
-        T Behavior<T>() where T : NetworkPeerBehavior;
+        T Behavior<T>() where T : INetworkPeerBehavior;
     }
 }

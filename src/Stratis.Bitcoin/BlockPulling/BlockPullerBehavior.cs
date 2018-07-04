@@ -27,7 +27,7 @@ namespace Stratis.Bitcoin.BlockPulling
         double QualityScore { get; }
     }
 
-    /// <inheritdoc />
+    /// <inheritdoc cref="IBlockPullerBehavior"/>
     public class BlockPullerBehavior : NetworkPeerBehavior, IBlockPullerBehavior
     {
         /// <summary>Logger factory to create loggers.</summary>

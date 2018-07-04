@@ -1,17 +1,11 @@
-﻿#if !NOJSONNET
-using Newtonsoft.Json;
+﻿using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 
 namespace NBitcoin.JsonConverters
 {
     public class Serializer
     {
-#if !NOJSONNET
-        public
-#else
-    internal
-#endif
-        static void RegisterFrontConverters(JsonSerializerSettings settings, Network network = null)
+        public static void RegisterFrontConverters(JsonSerializerSettings settings, Network network = null)
         {
             settings.Converters.Add(new MoneyJsonConverter());
             settings.Converters.Add(new KeyJsonConverter());
@@ -38,6 +32,7 @@ namespace NBitcoin.JsonConverters
         {
             return ToObject<T>(data, null);
         }
+
         public static T ToObject<T>(string data, Network network)
         {
             var settings = new JsonSerializerSettings
@@ -57,10 +52,10 @@ namespace NBitcoin.JsonConverters
             RegisterFrontConverters(settings, network);
             return JsonConvert.SerializeObject(response, settings);
         }
+
         public static string ToString<T>(T response)
         {
             return ToString<T>(response, null);
         }
     }
 }
-#endif

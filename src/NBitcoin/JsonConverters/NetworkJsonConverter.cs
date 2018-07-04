@@ -1,16 +1,10 @@
-﻿#if !NOJSONNET
-using System;
+﻿using System;
 using System.Reflection;
 using Newtonsoft.Json;
 
 namespace NBitcoin.JsonConverters
 {
-#if !NOJSONNET
-    public
-#else
-    internal
-#endif
-    class NetworkJsonConverter : JsonConverter
+    public class NetworkJsonConverter : JsonConverter
     {
         public override bool CanConvert(Type objectType)
         {
@@ -31,7 +25,7 @@ namespace NBitcoin.JsonConverters
                 return Network.TestNet;
             if(network.Equals("RegTest", StringComparison.OrdinalIgnoreCase) || network.Equals("reg", StringComparison.OrdinalIgnoreCase))
                 return Network.RegTest;
-            Network net = Network.GetNetwork(network);
+            Network net = NetworksContainer.GetNetwork(network);
             if(net != null)
                 return net;
             throw new JsonObjectException("Unknown network (valid values : main, test, reg)", reader);
@@ -54,4 +48,3 @@ namespace NBitcoin.JsonConverters
         }
     }
 }
-#endif
