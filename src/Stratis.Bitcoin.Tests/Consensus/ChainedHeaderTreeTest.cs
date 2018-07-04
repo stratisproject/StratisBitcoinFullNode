@@ -1654,46 +1654,41 @@ namespace Stratis.Bitcoin.Tests.Consensus
         }
 
         /// <summary>
-        /// Issue 15 @ Checkpoint are disabled. Assume valid is enabled.
-        /// Headers that pass assume valid and meet it is presented.
-        /// Chain is marked for download.
-        /// Alternative chain that is of the same lenght is presented but it doesnt meet the assume valid- also marked as to download.
+        /// Issue 48 @ CT is at 5. AssumeValid is at 10. ConnectNewHeaders called with 4 new headers (from peer1).
+        /// Make sure headers 6 - 9 are marked for download. After that ConnectNewHeaders called with headers 6 to 15 (from peer2).
+        /// Make sure 10 - 15 are marked for download.
         /// </summary>
         [Fact]
-        public void ChainHasAssumeValidHeaderAndMarkedForDownloadWhenPresented_SecondChainWithoutAssumeValidAlsoMarkedForDownload()
+        public void ConsensusTipAtHeight5_AssumedValidIsAt10_WhenConnectingHeadersByDifferentPeers_CorrectHeadersAreMarkedForDownload()
         {
-            // Chain header tree setup with disabled checkpoints.
-            // Initial chain has 2 headers.
-            // Example: h1=h2.
-            const int initialChainSize = 2;
-            TestContext ctx = new TestContextBuilder().WithInitialChain(initialChainSize).UseCheckpoints(false).Build();
+            // Chain header tree setup.
+            // Initial chain has 5 headers.
+            // Example: h1=h2=h3=h4=h5.
+            const int initialChainSize = 5;
+            TestContext ctx = new TestContextBuilder().WithInitialChain(initialChainSize).Build();
             ChainedHeaderTree cht = ctx.ChainedHeaderTree;
-            ChainedHeader initialChainTip = ctx.InitialChainTip;
+            ChainedHeader chainTip = ctx.InitialChainTip;
 
-            // Setup two alternative chains A and B of the same length.
-            const int presentedChainSize = 4;
-            ChainedHeader chainATip = ctx.ExtendAChain(presentedChainSize, initialChainTip); // i.e. h1=h2=a1=a2=a3=a4
-            ChainedHeader chainBTip = ctx.ExtendAChain(presentedChainSize, initialChainTip); // i.e. h1=h2=b1=b2=b3=b4
-            List<BlockHeader> listOfChainABlockHeaders = ctx.ChainedHeaderToList(chainATip, initialChainSize + presentedChainSize);
-            List<BlockHeader> listOfChainBBlockHeaders = ctx.ChainedHeaderToList(chainBTip, initialChainSize + presentedChainSize);
+            // Extend a chain tip by 10 headers and set assumed valid to header 10.
+            // Example: h1=h2=h3=h4=h5=h6=h7=h8=h9=(h10)=h11=h12=h13=h14=h15.
+            const int extensionSize = 10;
+            chainTip = ctx.ExtendAChain(extensionSize, chainTip); 
+            List<BlockHeader> listOfChainBlockHeaders = ctx.ChainedHeaderToList(chainTip, extensionSize);
+            ctx.ConsensusSettings.BlockAssumedValid = listOfChainBlockHeaders[4].GetHash();
 
-            // Set "Assume Valid" to the 4th block of the chain A.
-            // Example h1=h2=a1=(a2)=a3=a4.
-            ctx.ConsensusSettings.BlockAssumedValid = listOfChainABlockHeaders[3].GetHash();
+            ChainedHeader[] originalHeaders = chainTip.ToArray(extensionSize);
 
-            // Chain A is presented by peer 1. It meets "assume valid" hash and should
-            // be marked for a download.
-            ConnectNewHeadersResult connectNewHeadersResult = cht.ConnectNewHeaders(1, listOfChainABlockHeaders);
-            ChainedHeader chainedHeaderDownloadTo = connectNewHeadersResult.DownloadTo;
-            chainedHeaderDownloadTo.HashBlock.Should().Be(chainATip.HashBlock);
-            Assert.True(connectNewHeadersResult.HaveBlockDataAvailabilityStateOf(BlockDataAvailabilityState.BlockRequired));
+            // Peer 1 presents 4 headers: h6, h7, h8 and h9.
+            // Headers 6-9 should be marked for download.
+            ConnectNewHeadersResult connectNewHeadersResult = cht.ConnectNewHeaders(1, listOfChainBlockHeaders.Take(4).ToList());
+            connectNewHeadersResult.DownloadFrom.HashBlock.Should().Be(originalHeaders[0].HashBlock); // h6
+            connectNewHeadersResult.DownloadTo.HashBlock.Should().Be(originalHeaders[3].HashBlock); // h9
 
-            // Chain B is presented by peer 2. It doesn't meet "assume valid" hash but should still
-            // be marked for a download.
-            connectNewHeadersResult = cht.ConnectNewHeaders(2, listOfChainBBlockHeaders);
-            chainedHeaderDownloadTo = connectNewHeadersResult.DownloadTo;
-            chainedHeaderDownloadTo.HashBlock.Should().Be(chainBTip.HashBlock);
-            Assert.True(connectNewHeadersResult.HaveBlockDataAvailabilityStateOf(BlockDataAvailabilityState.BlockRequired));
+            // Peer 2 presents 10 headers: h6 - h15.
+            // Headers 10-15 should be marked for download.
+            connectNewHeadersResult = cht.ConnectNewHeaders(2, listOfChainBlockHeaders.ToList());
+            connectNewHeadersResult.DownloadFrom.HashBlock.Should().Be(originalHeaders[4].HashBlock); // h9
+            connectNewHeadersResult.DownloadTo.HashBlock.Should().Be(originalHeaders[9].HashBlock); // h15
         }
     }
 }
