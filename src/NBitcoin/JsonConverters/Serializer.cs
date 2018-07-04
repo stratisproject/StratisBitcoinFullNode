@@ -1,17 +1,11 @@
-﻿#if !NOJSONNET
-using Newtonsoft.Json;
+﻿using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 
 namespace NBitcoin.JsonConverters
 {
     public class Serializer
     {
-#if !NOJSONNET
-        public
-#else
-    internal
-#endif
-        static void RegisterFrontConverters(JsonSerializerSettings settings, Network network = null)
+        public static void RegisterFrontConverters(JsonSerializerSettings settings, Network network = null)
         {
             settings.Converters.Add(new MoneyJsonConverter());
             settings.Converters.Add(new KeyJsonConverter());
@@ -19,7 +13,7 @@ namespace NBitcoin.JsonConverters
             settings.Converters.Add(new ScriptJsonConverter());
             settings.Converters.Add(new UInt160JsonConverter());
             settings.Converters.Add(new UInt256JsonConverter());
-            settings.Converters.Add(new BitcoinSerializableJsonConverter(network));
+            settings.Converters.Add(new BitcoinSerializableJsonConverter());
             settings.Converters.Add(new NetworkJsonConverter());
             settings.Converters.Add(new KeyPathJsonConverter());
             settings.Converters.Add(new SignatureJsonConverter());
@@ -65,4 +59,3 @@ namespace NBitcoin.JsonConverters
         }
     }
 }
-#endif

@@ -1,5 +1,4 @@
-﻿#if !NOJSONNET
-using System;
+﻿using System;
 using System.IO;
 using System.Reflection;
 using NBitcoin.DataEncoders;
@@ -7,22 +6,9 @@ using Newtonsoft.Json;
 
 namespace NBitcoin.JsonConverters
 {
-#if !NOJSONNET
-    public
-#else
-    internal
-#endif
-    class BitcoinSerializableJsonConverter : JsonConverter
+    public sealed class BitcoinSerializableJsonConverter : JsonConverter
     {
-        private readonly Network network;
-
-        public BitcoinSerializableJsonConverter()
-        { }
-
-        public BitcoinSerializableJsonConverter(Network network)
-        {
-            this.network = network;
-        }
+        public BitcoinSerializableJsonConverter() { }
 
         public override bool CanConvert(Type objectType)
         {
@@ -59,4 +45,3 @@ namespace NBitcoin.JsonConverters
         }
     }
 }
-#endif

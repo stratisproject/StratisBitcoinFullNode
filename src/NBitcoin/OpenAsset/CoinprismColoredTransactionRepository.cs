@@ -1,6 +1,4 @@
-﻿#if !NOJSONNET
-#if !NOHTTPCLIENT
-using System;
+﻿using System;
 using System.IO;
 using System.Net;
 using System.Threading.Tasks;
@@ -75,10 +73,6 @@ namespace NBitcoin.OpenAsset
                 HttpWebRequest req = WebRequest.CreateHttp(url);
                 req.Method = "GET";
 
-//#if !NOCUSTOMSSLVALIDATION
-//                if(_network == Network.TestNet)
-//                    req.ServerCertificateValidationCallback += (a, b, c, d) => true;
-//#endif
                 using(WebResponse response = await req.GetResponseAsync().ConfigureAwait(false))
                 {
                     var writer = new StreamReader(response.GetResponseStream());
@@ -161,10 +155,7 @@ namespace NBitcoin.OpenAsset
             HttpWebRequest req = WebRequest.CreateHttp(url);
             req.Method = "POST";
             req.ContentType = "application/json";
-//#if !NOCUSTOMSSLVALIDATION
-//            if(_network == Network.TestNet)
-//                req.ServerCertificateValidationCallback += (a, b, c, d) => true;
-//#endif
+
             Stream stream = await req.GetRequestStreamAsync().ConfigureAwait(false);
             var writer = new StreamWriter(stream);
             await writer.WriteAsync("\"" + transaction.ToHex() + "\"").ConfigureAwait(false);
@@ -180,5 +171,3 @@ namespace NBitcoin.OpenAsset
 #endregion
     }
 }
-#endif
-#endif

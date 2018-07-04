@@ -141,7 +141,7 @@ namespace NBitcoin.BitcoinCore
                     byte chAvail = 0;
                     for (uint i = 0; i < 8 && 2 + b * 8 + i < this.Outputs.Count; i++)
                     {
-                        if(!this.IsNull(this.Outputs[2 + (int)b * 8 + (int)i]))
+                        if (!this.IsNull(this.Outputs[2 + (int)b * 8 + (int)i]))
                             chAvail |= (byte)(1 << (int)i);
                     }
 

@@ -375,7 +375,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             fundTransaction.Inputs.RemoveAt(1);
             Assert.Single(fundTransaction.Inputs); // 4 inputs
 
-            Transaction fundTransactionClone = fundTransaction.Clone();
+            Transaction fundTransactionClone = Transaction.Load(fundTransaction.ToBytes(this.network.Consensus.ConsensusFactory), this.network);
             var fundContext = new TransactionBuildContext(walletReference, new List<Recipient>(), "password")
             {
                 MinConfirmations = 0,

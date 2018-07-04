@@ -245,30 +245,32 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 this.txFirst = new List<Transaction>();
                 for (int i = 0; i < this.blockinfo.Count; ++i)
                 {
-                    var pblock = this.newBlock.Block.Clone(network: this.network); // pointer for convenience
-                    ((SmartContractBlockHeader)pblock.Header).HashStateRoot = ((SmartContractBlockHeader)this.newBlock.Block.Header).HashStateRoot;
-                    pblock.Header.HashPrevBlock = this.chain.Tip.HashBlock;
-                    pblock.Header.Version = 1;
-                    pblock.Header.Time = Utils.DateTimeToUnixTime(this.chain.Tip.GetMedianTimePast()) + 1;
-                    Transaction txCoinbase = pblock.Transactions[0].Clone();
+                    var block = NBitcoin.Block.Load(this.newBlock.Block.ToBytes(this.network.Consensus.ConsensusFactory), this.network);
+                    ((SmartContractBlockHeader)block.Header).HashStateRoot = ((SmartContractBlockHeader)this.newBlock.Block.Header).HashStateRoot;
+                    block.Header.HashPrevBlock = this.chain.Tip.HashBlock;
+                    block.Header.Version = 1;
+                    block.Header.Time = Utils.DateTimeToUnixTime(this.chain.Tip.GetMedianTimePast()) + 1;
+
+                    Transaction txCoinbase = Transaction.Load(block.Transactions[0].ToBytes(this.network.Consensus.ConsensusFactory), this.network);
                     txCoinbase.Inputs.Clear();
                     txCoinbase.Version = 1;
                     txCoinbase.AddInput(new TxIn(new Script(new[] { Op.GetPushOp(this.blockinfo[i].extranonce), Op.GetPushOp(this.chain.Height) })));
-                    // Ignore the (optional) segwit commitment added by CreateNewBlock (as the hardcoded nonces don't account for this)
                     txCoinbase.AddOutput(new TxOut(Money.Zero, new Script()));
-                    pblock.Transactions[0] = txCoinbase;
+                    block.Transactions[0] = txCoinbase;
 
                     if (this.txFirst.Count == 0)
                         this.baseheight = this.chain.Height;
+
                     if (this.txFirst.Count < 4)
-                        this.txFirst.Add(pblock.Transactions[0]);
-                    pblock.UpdateMerkleRoot();
+                        this.txFirst.Add(block.Transactions[0]);
 
-                    pblock.Header.Nonce = this.blockinfo[i].nonce;
+                    block.UpdateMerkleRoot();
 
-                    this.chain.SetTip(pblock.Header);
-                    await this.consensus.ValidateAndExecuteBlockAsync(new PowRuleContext(new ValidationContext { Block = pblock }, this.network.Consensus, this.consensus.Tip) { MinedBlock = true });
-                    blocks.Add(pblock);
+                    block.Header.Nonce = this.blockinfo[i].nonce;
+
+                    this.chain.SetTip(block.Header);
+                    await this.consensus.ValidateAndExecuteBlockAsync(new PowRuleContext(new ValidationContext { Block = block }, this.network.Consensus, this.consensus.Tip) { MinedBlock = true });
+                    blocks.Add(block);
                 }
 
                 // Just to make sure we can still make simple blocks

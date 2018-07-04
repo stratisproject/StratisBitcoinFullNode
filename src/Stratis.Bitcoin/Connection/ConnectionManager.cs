@@ -50,6 +50,8 @@ namespace Stratis.Bitcoin.Connection
 
         INetworkPeer FindNodeByIp(IPAddress ipAddress);
 
+        INetworkPeer FindNodeById(int peerId);
+
         string GetNodeStats();
 
         string GetStats();
@@ -296,6 +298,7 @@ namespace Stratis.Bitcoin.Connection
             return builder.ToString();
         }
 
+
         public string GetNodeStats()
         {
             var builder = new StringBuilder();
@@ -373,6 +376,11 @@ namespace Stratis.Bitcoin.Connection
         public INetworkPeer FindLocalNode()
         {
             return this.connectedPeers.FindLocal();
+        }
+
+        public INetworkPeer FindNodeById(int peerId)
+        {
+            return this.connectedPeers.FindById(peerId);
         }
 
         /// <summary>
