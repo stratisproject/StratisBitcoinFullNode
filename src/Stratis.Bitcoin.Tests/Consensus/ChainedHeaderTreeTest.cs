@@ -1701,8 +1701,8 @@ namespace Stratis.Bitcoin.Tests.Consensus
             // Create new chain B with 20 headers and a fork point at height 10.
             const int forkPointHeight = 10;
             const int chainBSize = 20;
-            ChainedHeader forkTip = chainATip.GetAncestor(checkpointHeight + forkPointHeight);
-            ChainedHeader chainBTip = ctx.ExtendAChain(initialChainSize + chainBSize - forkPointHeight, forkTip);
+            ChainedHeader forkTip = chainATip.GetAncestor(forkPointHeight);
+            ChainedHeader chainBTip = ctx.ExtendAChain(chainBSize - forkPointHeight, forkTip);
 
             // Chain B is presented by peer 2.
             List<BlockHeader> listOfChainBHeaders = ctx.ChainedHeaderToList(chainBTip, chainBSize);
