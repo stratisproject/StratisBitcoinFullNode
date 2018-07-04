@@ -1687,7 +1687,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
             // Peer 2 presents 10 headers: h6 - h15.
             // Headers 10-15 should be marked for download.
             connectNewHeadersResult = cht.ConnectNewHeaders(2, listOfChainBlockHeaders.Skip(5).ToList());
-            connectNewHeadersResult.DownloadFrom.HashBlock.Should().Be(originalHeaders[8].HashBlock); // h9
+            connectNewHeadersResult.DownloadFrom.HashBlock.Should().Be(originalHeaders[9].HashBlock); // h10
             connectNewHeadersResult.DownloadTo.HashBlock.Should().Be(originalHeaders[14].HashBlock); // h15
         }
     }
