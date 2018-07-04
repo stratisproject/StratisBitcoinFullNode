@@ -7,6 +7,7 @@ using NBitcoin;
 using NBitcoin.Protocol;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.BlockPulling2;
+using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Consensus.Rules;
@@ -84,7 +85,7 @@ namespace Stratis.Bitcoin.Consensus
             IFinalizedBlockHeight finalizedBlockHeight,
             Signals.Signals signals,
             IPeerBanning peerBanning,
-            IConnectionManager connectionManager,
+            NodeSettings nodeSettings,
             IDateTimeProvider dateTimeProvider,
             IInitialBlockDownloadState ibdState,
             IBlockStore blockStore = null)
@@ -113,7 +114,7 @@ namespace Stratis.Bitcoin.Consensus
             this.toDownloadQueue = new Queue<BlockDownloadRequest>();
             this.ibdState = ibdState;
 
-            ProtocolVersion protocolVersion = connectionManager.NodeSettings.ProtocolVersion;
+            ProtocolVersion protocolVersion = nodeSettings.ProtocolVersion;
 
             this.blockPuller = new BlockPuller(this.BlockDownloaded, this.chainState, protocolVersion, dateTimeProvider, loggerFactory);
         }
@@ -854,7 +855,7 @@ namespace Stratis.Bitcoin.Consensus
 
         private void BlockDownloaded(uint256 blockHash, Block block)
         {
-            this.logger.LogTrace("({0}:'{1}',{2}:{3})", nameof(blockHash), blockHash);
+            this.logger.LogTrace("({0}:'{1}')", nameof(blockHash), blockHash);
 
             ChainedHeader chainedHeader = null;
             
