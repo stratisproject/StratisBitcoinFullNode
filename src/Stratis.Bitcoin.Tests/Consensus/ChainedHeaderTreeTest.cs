@@ -1272,7 +1272,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
         /// <summary>
         /// Issue 27 @  Checkpoints are disabled. Chain tip is at header 5. Present a chain A with headers equal to max reorg of 500 blocks plus extra 50. 
         /// Then start syncing until block 490. Peer 2 presents the alternative chain with 2 headers after fork point at header 5. We then you join the rest of
-        /// 60 blocks. ConsensusTipChanged should return identifier of the second peer at block number 505.
+        /// 60 blocks. ConsensusTipChanged should return identifier of the second peer at block number 506.
         /// </summary>
         [Fact]
         public void ChainWithMaxReorgPlusExtraHeadersIsCalled_AnotherChainIsPresented_ConsensusTipChangedReturnsSecondPeerId()
@@ -1328,7 +1328,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
                 cht.PartialValidationSucceeded(currentChainTip, out bool fullValidationRequired);
                 ctx.FinalizedBlockMock.Setup(m => m.GetFinalizedBlockHeight()).Returns(currentChainTip.Height - maxReorg);
                 List<int> peerIds = cht.ConsensusTipChanged(currentChainTip);
-                if (currentChainTip.Height >= maxReorg + initialChainSize)
+                if (currentChainTip.Height > maxReorg + initialChainSize)
                 {
                     peerIds.Should().HaveCount(1);
                     peerIds[0].Should().Be(2);
