@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Threading;
 using FluentAssertions;
@@ -19,7 +18,6 @@ using Xunit;
 
 namespace Stratis.Bitcoin.Tests.Consensus
 {
-    [SuppressMessage("ReSharper", "ArrangeThisQualifier")]
     public class ChainedHeaderTreeTest
     {
         public class CheckpointFixture
