@@ -1441,6 +1441,68 @@ namespace Stratis.Bitcoin.Tests.Consensus
         }
 
         /// <summary>
+        /// Issue 34 @ We receive headers message
+        /// (first header in the message is HEADERS_START and last is HEADERS_END).
+        /// AV = assume valid header, CP1,CP2 - checkpointed headers. '---' some headers.
+        /// CP1---HEADERS_START---AV---HEADERS_END---CP2---
+        /// Check that headers till AV(including AV) are marked for download.
+        /// Headers after AV are not marked for download.
+        /// </summary>
+        [Fact]
+        public void
+        ConnectHeaders_AssumeValidBetweenTwoCheckPoints_BothCheckpointsExcluded_DownloadUpToIncludingAssumeValid()
+        {
+            const int initialChainSize = 14;
+            const int chainExtension = 16;
+            const int assumeValidHeaderHeight = 20;
+            const int headersStartHeight = 15;
+            const int headersEndHeight = 25;
+
+            TestContext testContext = new TestContextBuilder().WithInitialChain(initialChainSize).UseCheckpoints(true).Build();
+            ChainedHeaderTree chainedHeaderTree = testContext.ChainedHeaderTree;
+            ChainedHeader initialChainTip = testContext.InitialChainTip;
+            ChainedHeader chainTip = testContext.ExtendAChain(chainExtension, initialChainTip);
+
+            // Assume valid header at h20.
+            ChainedHeader assumeValidChainHeader = chainTip.GetAncestor(assumeValidHeaderHeight);
+            testContext.ConsensusSettings.BlockAssumedValid = assumeValidChainHeader.HashBlock;
+
+            List<BlockHeader> listOfChainHeaders = testContext.ChainedHeaderToList(chainTip, initialChainSize + chainExtension);
+
+            // Two checkpoints at h10 and h30.
+            const int firstCheckpointHeight = 10;
+            const int secondCheckpointHeight = 30;
+            var checkpoint1 = new CheckpointFixture(firstCheckpointHeight, listOfChainHeaders[firstCheckpointHeight - 1]);
+            var checkpoint2 = new CheckpointFixture(secondCheckpointHeight, listOfChainHeaders[secondCheckpointHeight - 1]);
+            testContext.SetupCheckpoints(checkpoint1, checkpoint2);
+
+            // Present chain h15->h25 covering assume valid at h20 and excluding both checkpoints.
+            int headersToPresentCount = (headersEndHeight - headersStartHeight + 1 /* inclusive */);
+            listOfChainHeaders = listOfChainHeaders.Skip(headersStartHeight - 1).Take(headersToPresentCount).ToList();
+
+            // Present chain:
+            // ----CP1----HEADERS_START----AV----HEADERS_END----CP2
+            // h1--h10--------h15----------h20------h25---------h30
+            ConnectNewHeadersResult connectedHeadersResultNew = chainedHeaderTree.ConnectNewHeaders(1, listOfChainHeaders);
+
+            // From initialised chain up to and including assume valid (h15->h20) inclusive are marked for download.
+            // Headers after assume valid (h21->h30) are not marked for download.
+            Assert.Equal(listOfChainHeaders.First(), connectedHeadersResultNew.DownloadFrom.Header);
+            Assert.Equal(assumeValidChainHeader.Header, connectedHeadersResultNew.DownloadTo.Header);
+
+            // Check block data availability of headers marked for download.
+            Assert.True(connectedHeadersResultNew.HaveBlockDataAvailabilityStateOf(BlockDataAvailabilityState.BlockRequired));
+
+            // Check block data availability of headers not marked for download after assumed valid block.
+            ChainedHeader chainedHeader = chainTip;
+            while (chainedHeader.Height > assumeValidChainHeader.Height)
+            {
+                chainedHeader.BlockDataAvailability.Should().Be(BlockDataAvailabilityState.HeaderOnly);
+                chainedHeader = chainedHeader.Previous;
+            }
+        }
+
+        /// <summary>
         /// Issue 36 @ The list of headers is presented where the 1st half of them can be connected but then there is
         /// header which is not consecutive – its previous hash is not hash of the previous header in the list.
         /// The 1st nonconsecutive header should be header that we saw before, so that it actually connects but it
