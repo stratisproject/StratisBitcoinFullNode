@@ -71,7 +71,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
             internal TestContext Build()
             {
                 if (this.testContext.InitialChainTip != null)
-                    this.testContext.ChainedHeaderTree.Initialize(this.testContext.InitialChainTip, blockstoreAvailable);
+                    this.testContext.ChainedHeaderTree.Initialize(this.testContext.InitialChainTip, this.blockstoreAvailable);
 
                 return this.testContext;
             }
@@ -1667,9 +1667,9 @@ namespace Stratis.Bitcoin.Tests.Consensus
         [Fact]
         public void ChainHeaderTreeInitialisedWIthBlockStoreDisabled_ConsensusTipAdvances_AvailabilityForHeadersSetToHeaderOnly()
         {
-            // Chain header tree setup. Initial chain has 2 headers.
-            // Example: h1=h2.
-            const int initialChainSize = 2;
+            // Chain header tree setup. Initial chain has 1 header.
+            // Example: h1.
+            const int initialChainSize = 1;
             TestContext ctx = new TestContextBuilder()
                 .WithInitialChain(initialChainSize)
                 .WithBlockStoreDisabled()
@@ -1677,15 +1677,15 @@ namespace Stratis.Bitcoin.Tests.Consensus
             ChainedHeaderTree cht = ctx.ChainedHeaderTree;
             ChainedHeader chainTip = ctx.InitialChainTip;
 
-            // Extend chain by 10 headers and connect it to CHT.
-            // Example: h1=h2=h3=h4=h5=h6=h7=h8=h9=h10=h11=h12.
-            const int extensionSize = 10;
+            // Extend chain by 150 headers and connect it to CHT.
+            // Example: h1=h2=..=h151.
+            const int extensionSize = 150;
             chainTip = ctx.ExtendAChain(extensionSize, chainTip);
             List<BlockHeader> listOfExtendedHeaders = ctx.ChainedHeaderToList(chainTip, extensionSize);
             ConnectNewHeadersResult connectionResult = cht.ConnectNewHeaders(1, listOfExtendedHeaders);
             ChainedHeader consumed = connectionResult.Consumed;
 
-            // Sync all header blocks.
+            // Sync all headers.
             ChainedHeader[] originalHeaderArray = chainTip.ToArray(extensionSize);
             ChainedHeader[] consumedHeaderArray = consumed.ToArray(extensionSize);
             for (int i = 0; i < consumedHeaderArray.Length; i++)
@@ -1695,6 +1695,26 @@ namespace Stratis.Bitcoin.Tests.Consensus
                 cht.BlockDataDownloaded(currentChainTip, originalHeaderArray[i].Block);
                 cht.PartialValidationSucceeded(currentChainTip, out bool fullValidationRequired);
                 cht.ConsensusTipChanged(currentChainTip);
+            }
+
+            // Make sure that headers 2-51 have no block data and headers 52-150 have.
+            Dictionary<uint256, ChainedHeader> storedHeaders = cht.GetChainedHeadersByHash();
+            foreach (ChainedHeader consumedHeader in consumedHeaderArray)
+            {
+                storedHeaders.Should().ContainKey(consumedHeader.HashBlock);
+                var heightOfFirstHeaderWithBlockData =
+                    initialChainSize + extensionSize - ChainedHeaderTree.KeepBlockDataForLastBlocks;
+
+                if (consumedHeader.Height < heightOfFirstHeaderWithBlockData)
+                {
+                    storedHeaders[consumedHeader.HashBlock].BlockDataAvailability.Should().Be(BlockDataAvailabilityState.HeaderOnly);
+                    storedHeaders[consumedHeader.HashBlock].Block.Should().BeNull();
+                }
+                else
+                {
+                    storedHeaders[consumedHeader.HashBlock].BlockDataAvailability.Should().Be(BlockDataAvailabilityState.BlockAvailable);
+                    storedHeaders[consumedHeader.HashBlock].Block.Should().NotBeNull();
+                }
             }
         }
     }
