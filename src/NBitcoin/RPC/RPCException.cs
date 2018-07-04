@@ -1,5 +1,4 @@
-﻿#if !NOJSONNET
-using System;
+﻿using System;
 
 namespace NBitcoin.RPC
 {
@@ -237,4 +236,3 @@ namespace NBitcoin.RPC
         }
     }
 }
-#endif

@@ -11,11 +11,14 @@ using NBitcoin;
 using NBitcoin.Protocol;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Builder;
+using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.Consensus.Interfaces;
 using Stratis.Bitcoin.Features.MemoryPool;
+using Stratis.Bitcoin.Features.Miner;
+using Stratis.Bitcoin.Features.RPC;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.IntegrationTests.Common.Runners;
@@ -156,6 +159,20 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
         public CoreNode CreateStratisPowNode(bool start = false)
         {
             return CreateNode(new StratisBitcoinPowRunner(this.GetNextDataFolderName()), start);
+        }
+
+        public CoreNode CreateStratisCustomPowNode(IEnumerable<string> args, bool start = false)
+        {
+            var callback = new Action<IFullNodeBuilder>( builder => builder
+                .UseBlockStore()
+                .UsePowConsensus()
+                .UseMempool()
+                .AddMining()
+                .UseWallet()
+                .AddRPC()
+                .MockIBD());
+
+            return CreateCustomNode(start, callback, Network.RegTest, ProtocolVersion.PROTOCOL_VERSION, args);
         }
 
         public CoreNode CreateStratisPosNode()

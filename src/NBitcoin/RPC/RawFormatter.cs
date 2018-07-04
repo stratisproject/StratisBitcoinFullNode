@@ -1,5 +1,4 @@
-﻿#if !NOJSONNET
-using System;
+﻿using System;
 using System.IO;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -60,4 +59,3 @@ namespace NBitcoin.RPC
         }     
     }
 }
-#endif

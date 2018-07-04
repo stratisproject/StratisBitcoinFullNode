@@ -152,7 +152,7 @@ namespace NBitcoin
 
         public static byte[] ToArrayEfficient(this MemoryStream ms)
         {
-#if !(PORTABLE || NETCORE)
+#if !NETCORE
             var bytes = ms.GetBuffer();
             Array.Resize(ref bytes, (int)ms.Length);
             return bytes;

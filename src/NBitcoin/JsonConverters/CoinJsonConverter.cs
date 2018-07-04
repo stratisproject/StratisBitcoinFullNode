@@ -1,17 +1,11 @@
-﻿#if !NOJSONNET
-using System;
+﻿using System;
 using System.Reflection;
 using NBitcoin.OpenAsset;
 using Newtonsoft.Json;
 
 namespace NBitcoin.JsonConverters
 {
-#if !NOJSONNET
-    public
-#else
-    internal
-#endif
-    class CoinJsonConverter : JsonConverter
+    public class CoinJsonConverter : JsonConverter
     {
         public class CoinJson
         {
@@ -121,4 +115,3 @@ namespace NBitcoin.JsonConverters
         }
     }
 }
-#endif

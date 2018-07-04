@@ -3,12 +3,7 @@ using System.Diagnostics;
 
 namespace NBitcoin
 {
-#if NOTRACESOURCE
-        internal
-#else
-    public
-#endif
- class TraceCorrelationScope : IDisposable
+    public class TraceCorrelationScope : IDisposable
     {
         private Guid old;
 
@@ -56,12 +51,7 @@ namespace NBitcoin
 
         #endregion
     }
-#if NOTRACESOURCE
-        internal
-#else
-    public
-#endif
- class TraceCorrelation
+    public class TraceCorrelation
     {
         private TraceSource _Source;
         private string _ActivityName;

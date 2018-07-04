@@ -1,5 +1,4 @@
-﻿#if !NOFILEIO
-using System;
+﻿using System;
 using System.IO;
 using System.Threading;
 
@@ -69,4 +68,3 @@ namespace NBitcoin
         //}
     }
 }
-#endif

@@ -1666,12 +1666,10 @@ namespace NBitcoin
             return new TxPayload(this.Clone());
         }
         */
-#if !NOJSONNET
         public static Transaction Parse(string tx, RawFormat format, Network network = null)
         {
             return GetFormatter(format, network).ParseJson(tx);
         }
-#endif
 
         public static Transaction Parse(string hex)
         {
@@ -1682,8 +1680,18 @@ namespace NBitcoin
         {
             return Encoders.Hex.EncodeData(this.ToBytes());
         }
+<<<<<<< HEAD
 #if !NOJSONNET
         public string ToString(RawFormat rawFormat, Network network)
+=======
+
+        public override string ToString()
+        {
+            return ToString(RawFormat.BlockExplorer);
+        }
+
+        public string ToString(RawFormat rawFormat, Network network = null)
+>>>>>>> 181ab516232e67199e7700968ccaec328eeb34e6
         {
             RawFormatter formatter = GetFormatter(rawFormat, network);
             return ToString(formatter);
@@ -1712,7 +1720,7 @@ namespace NBitcoin
                 throw new ArgumentNullException("formatter");
             return formatter.ToString(this);
         }
-#endif
+      
         /// <summary>
         /// Calculate the fee of the transaction
         /// </summary>
@@ -1874,12 +1882,6 @@ namespace NBitcoin
             }
 
             return new SequenceLock(nMinHeight, nMinTime);
-        }
-
-
-        private DateTimeOffset Max(DateTimeOffset a, DateTimeOffset b)
-        {
-            return a > b ? a : b;
         }
 
         /// <summary>

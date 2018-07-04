@@ -1,8 +1,6 @@
-﻿#if !NOJSONNET
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using System.Linq;
 using Newtonsoft.Json.Linq;
-#endif
 using System;
 using System.Collections.Generic;
 
@@ -485,7 +483,16 @@ namespace NBitcoin.OpenAsset
                 this._Inputs = value;
             }
         }
+<<<<<<< HEAD
 #if !NOJSONNET
+=======
+
+        public override string ToString()
+        {
+            return ToString(Network.Main);
+        }
+
+>>>>>>> 181ab516232e67199e7700968ccaec328eeb34e6
         public string ToString(Network network)
         {
             var obj = new JObject();
@@ -529,7 +536,7 @@ namespace NBitcoin.OpenAsset
             var quantity = new JProperty("quantity", entry.Asset.Quantity);
             inputs.Add(new JObject(index, asset, quantity));
         }
-#endif
+
         //00000000000000001c7a19e8ef62d815d84a473f543de77f23b8342fc26812a9 at 299220 Monday, May 5, 2014 3:47:37 PM first block
         public static readonly DateTimeOffset FirstColoredDate = new DateTimeOffset(2014, 05, 4, 0, 0, 0, TimeSpan.Zero);
     }
