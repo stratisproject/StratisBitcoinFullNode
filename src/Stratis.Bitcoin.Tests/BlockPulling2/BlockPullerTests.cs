@@ -651,6 +651,10 @@ namespace Stratis.Bitcoin.Tests.BlockPulling2
 
             Assert.Equal(10, this.puller.AssignedDownloadsByHash.Count);
             this.VerifyAssignedDownloadsSortedOrder();
+
+            Assert.True(this.puller.AssignedHeadersByPeerId[behaviors[0].AttachedPeer.Connection.Id].Count == jobSizes[0]);
+            Assert.True(this.puller.AssignedHeadersByPeerId[behaviors[1].AttachedPeer.Connection.Id].Count == jobSizes[1]);
+            Assert.True(this.puller.AssignedHeadersByPeerId[behaviors[2].AttachedPeer.Connection.Id].Count == 1);
         }
 
         /// <summary>
@@ -925,9 +929,57 @@ namespace Stratis.Bitcoin.Tests.BlockPulling2
         }
 
         /// <summary>
-        /// Request some hashes (RequestBlockDownload). Call push blocks. Make sure callback is called. Make sure that assignment is
-        /// removed from AssignedDownloads. Make sure quality score is updated. Make sure max blocks being downloaded is recalculated.
-        /// Make sure TotalSpeedOfAllPeersBytesPerSec and AvgBlockSize are recalculated. Make sure that signal is set.
+        /// There are 2 peers that claim different chains. Peer 1 is asked to deliver but it continuously stalls and all the jobs are
+        /// still reassigned to it because it's the only peer that claims requested chain.
+        /// </summary>
+        [Fact]
+        public async Task Stalling_PeerStallsButQualityScoreIsTheBestBecausePeerIsTheOnlyOneAsync()
+        {
+            List<ChainedHeader> headers = this.helper.CreateConsequtiveHeaders(1000);
+            
+            INetworkPeer peer1 = this.helper.CreatePeer(out ExtendedBlockPullerBehavior behavior1);
+            this.puller.NewPeerTipClaimed(peer1, headers.Last());
+            behavior1.AddSample(1000000, 1);
+
+            INetworkPeer peer2 = this.helper.CreatePeer(out ExtendedBlockPullerBehavior behavior2);
+            this.puller.NewPeerTipClaimed(peer2, this.helper.CreateConsequtiveHeaders(10).Last());
+            behavior2.AddSample(100000, 1);
+
+            this.puller.SetMaxBlocksBeingDownloaded(int.MaxValue);
+
+            this.puller.RequestBlocksDownload(headers);
+
+            for (int i = 0; i < 100; i++)
+            {
+                await this.puller.AssignDownloadJobsAsync();
+
+                // Fake assign time to avoid waiting for a long time.
+                foreach (AssignedDownload assignedDownload in this.puller.AssignedDownloadsByHash.Values)
+                    assignedDownload.AssignedTime = (assignedDownload.AssignedTime - TimeSpan.FromSeconds(this.puller.MaxSecondsToDeliverBlock));
+
+                this.puller.CheckStalling();
+            }
+
+            Assert.Equal(BlockPullerBehavior.MinQualityScore, behavior1.QualityScore);
+
+            Assert.Single(this.puller.ReassignedJobsQueue);
+            Assert.Equal(this.puller.ReassignedJobsQueue.Peek().Headers.Count, headers.Count);
+
+            await this.puller.AssignDownloadJobsAsync();
+
+            Assert.Equal(headers.Count, this.puller.AssignedDownloadsByHash.Values.Count(x => x.PeerId == peer1.Connection.Id));
+            Assert.Single(this.puller.AssignedHeadersByPeerId);
+            Assert.True(this.puller.AssignedHeadersByPeerId.ContainsKey(peer1.Connection.Id));
+
+            foreach (ChainedHeader chainedHeader in this.puller.AssignedHeadersByPeerId.First().Value)
+                Assert.True(headers.Contains(chainedHeader));
+
+            Assert.True(this.puller.AssignedHeadersByPeerId[peer1.Connection.Id].Count == headers.Count);
+        }
+
+        /// <summary>
+        /// Request some hashes and deliver one of the blocks. Make sure callback is called, assignment is removed from puller's structures, quality score
+        /// is updated, max blocks being downloaded is recalculated, total speed and average block size values are updated and the signal is set.
         /// </summary>
         [Fact]
         public async Task PushBlock_AppropriateStructuresAreUpdatedAsync()
@@ -954,9 +1006,13 @@ namespace Stratis.Bitcoin.Tests.BlockPulling2
             this.puller.PushBlock(headers.First().HashBlock, blockToPush, peer.Connection.Id);
 
             Assert.Single(this.helper.CallbacksCalled);
-            Assert.Equal(blockToPush, this.helper.CallbacksCalled.First().Value);
+            Assert.Equal(blockToPush, this.helper.CallbacksCalled[headers.First().HashBlock]);
 
+            Assert.Single(this.puller.AssignedHeadersByPeerId);
+            Assert.True(this.puller.AssignedHeadersByPeerId.ContainsKey(peer.Connection.Id));
+            Assert.True(this.puller.AssignedHeadersByPeerId.First().Value.First() == headers.Last());
             Assert.Single(this.puller.AssignedDownloadsByHash);
+            Assert.False(this.puller.AssignedDownloadsByHash.ContainsKey(headers.First().HashBlock));
             Assert.Equal(blockToPush.BlockSize.Value, this.puller.GetAverageBlockSizeBytes());
             Assert.True(this.puller.ProcessQueuesSignal.IsSet);
             Assert.True(behavior.RecalculateQualityScoreWasCalled);
@@ -965,12 +1021,21 @@ namespace Stratis.Bitcoin.Tests.BlockPulling2
         }
 
         /// <summary>
-        /// Push block that wasn't requested for download- nothing happens, no structure is updated.
+        /// Push block that wasn't requested for download and nothing happens, no structure is updated.
         /// </summary>
         [Fact]
         public void PushBlock_OnBlockThatWasntRequested_NothingHappens()
         {
+            INetworkPeer peer = this.helper.CreatePeer(out ExtendedBlockPullerBehavior behavior);
+            List<ChainedHeader> headers = this.helper.CreateConsequtiveHeaders(2);
+
+            this.puller.NewPeerTipClaimed(peer, headers.Last());
+
             this.puller.PushBlock(this.helper.CreateChainedHeader().HashBlock, this.helper.GenerateBlock(100), 1);
+
+            Assert.Empty(this.puller.DownloadJobsQueue);
+            Assert.Empty(this.puller.ReassignedJobsQueue);
+            Assert.Empty(this.puller.AssignedHeadersByPeerId);
 
             Assert.Empty(this.helper.CallbacksCalled);
         }
@@ -996,12 +1061,12 @@ namespace Stratis.Bitcoin.Tests.BlockPulling2
 
             this.puller.PushBlock(peer1Headers.First().HashBlock, this.helper.GenerateBlock(100), peer2.Connection.Id);
 
+            foreach (ChainedHeader chainedHeader in this.puller.AssignedHeadersByPeerId[peer1.Connection.Id])
+                Assert.True(peer1Headers.Contains(chainedHeader));
+            
             Assert.Empty(this.helper.CallbacksCalled);
             Assert.Equal(peer1Headers.Count, this.puller.AssignedDownloadsByHash.Count);
         }
-
-        // TODO peer fails to deliver for 100 times but it's the only peer and it's quality score is 1.
-
 
         private void VerifyAssignedDownloadsSortedOrder()
         {

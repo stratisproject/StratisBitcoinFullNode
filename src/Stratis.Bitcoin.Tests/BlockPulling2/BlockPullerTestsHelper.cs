@@ -167,6 +167,8 @@ namespace Stratis.Bitcoin.Tests.BlockPulling2
 
         public AsyncManualResetEvent ProcessQueuesSignal => (AsyncManualResetEvent)this.puller.GetMemberValue("processQueuesSignal");
 
+        public Dictionary<int, List<ChainedHeader>> AssignedHeadersByPeerId => (Dictionary<int, List<ChainedHeader>>)this.puller.GetMemberValue("assignedHeadersByPeerId");
+
         public int PeerSpeedLimitWhenNotInIbdBytesPerSec => typeof(BlockPuller).GetPrivateConstantValue<int>("PeerSpeedLimitWhenNotInIbdBytesPerSec");
 
         public int ImportantHeightMargin => typeof(BlockPuller).GetPrivateConstantValue<int>("ImportantHeightMargin");
