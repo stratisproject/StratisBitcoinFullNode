@@ -847,5 +847,261 @@ namespace Stratis.Bitcoin.Tests.Consensus
             resultForH5.Should().BeTrue();
             chainTipH5.Block.Should().NotBeNull();
         }
+        /// <summary>
+        /// Issue 18 Peer A starts to claim chain D claims. Make sure 8a and 9a are disconected
+        /// </summary>
+        [Fact]
+        public void Test18()
+        {
+            
+            const int initialChainSize = 5;
+            TestContext ctx = new TestContextBuilder().WithInitialChain(initialChainSize).UseCheckpoints().Build();
+            ChainedHeaderTree cht = ctx.ChainedHeaderTree;
+            ChainedHeader initialChainTip = ctx.InitialChainTip;
+            
+            IEnumerable<BlockHeader> listOfAllUniqueBlockHeaders = SetupPeersForTest(initialChainSize, ctx, cht, initialChainTip);
+
+            // peers 1,2,3,4,5 setup.
+            var noUnclaimedBranchesCheckResult = CheckForbasicCases(cht, listOfAllUniqueBlockHeaders);
+            noUnclaimedBranchesCheckResult.noUnclaimedBraches.Should().BeTrue();
+            noUnclaimedBranchesCheckResult.eachPeerOneEntry.Should().BeTrue();
+            noUnclaimedBranchesCheckResult.reflecttipHash.Should().BeTrue();
+            noUnclaimedBranchesCheckResult.chbhHasOnlyReachebleHeaders.Should().BeTrue();
+            noUnclaimedBranchesCheckResult.isCorrectChainSequence.Should().BeTrue();
+            noUnclaimedBranchesCheckResult.hasLocalPeer.Should().BeTrue();
+
+
+
+        }
+
+        /// <summary>
+        /// Issue 19 @ New peer K claims 10d. Peer K disconnects. Chain doesnt change.
+        /// </summary>
+        [Fact]
+        public void NewPeerClaimsHeadSecondTime_PeerDisconnected_ChainShouldNotChange()
+        {
+            const int initialChainSize = 5;
+            TestContext ctx = new TestContextBuilder().WithInitialChain(initialChainSize).UseCheckpoints().Build();
+            ChainedHeaderTree cht = ctx.ChainedHeaderTree;
+            ChainedHeader initialChainTip = ctx.InitialChainTip;
+
+            int peerAExtension = 4;
+            int peerBExtension = 4;
+            int peerCExtension = 3;
+            int peerDExtension = 3;
+            int peerKExtension = 3;
+            List<BlockHeader> initialchainHeaders = ctx.ChainedHeaderToList(initialChainTip, initialChainSize + 1);
+            ChainedHeader chainATip = ctx.ExtendAChain(peerAExtension, initialChainTip); // i.e. (h1=h2=h3=h4=h5)=6a=7a=8a=9a
+            ChainedHeader chainBTip = ctx.ExtendAChain(peerBExtension, initialChainTip); // i.e. (h1=h2=h3=h4=h5)=6b=7b=8b=9b
+            ChainedHeader chainCTip = ctx.ExtendAChain(peerCExtension, initialChainTip.GetAncestor(2)); // i.e. (h1=h2)=3c=4c=5c
+            ChainedHeader chainDTip = ctx.ExtendAChain(peerDExtension, chainATip.GetAncestor(7)); // i.e. ((h1=h2=h3=h4=h5)=6a=7a)=8d=9d=10d
+            ChainedHeader chainKTip = ctx.ExtendAChain(peerKExtension, chainDTip.GetAncestor(10)); // i.e. (((h1=h2=h3=h4=h5)=6a=7a)=8d=9d=10d)=11k=12k=13k
+
+            List<BlockHeader> peerABlockHeaders = ctx.ChainedHeaderToList(chainATip, chainATip.Height);
+            List<BlockHeader> peerBBlockHeaders = ctx.ChainedHeaderToList(chainBTip, chainBTip.Height);
+            List<BlockHeader> peerCBlockHeaders = ctx.ChainedHeaderToList(chainCTip, chainCTip.Height);
+            List<BlockHeader> peerDBlockHeaders = ctx.ChainedHeaderToList(chainDTip, chainDTip.Height);
+            List<BlockHeader> peerKBlockHeaders = ctx.ChainedHeaderToList(chainKTip, chainKTip.Height);
+
+            List<BlockHeader> listOfAllBlockHeaders = new List<BlockHeader>(initialchainHeaders);
+            listOfAllBlockHeaders.AddRange(peerABlockHeaders);
+            listOfAllBlockHeaders.AddRange(peerBBlockHeaders);
+            listOfAllBlockHeaders.AddRange(peerCBlockHeaders);
+            listOfAllBlockHeaders.AddRange(peerDBlockHeaders);
+            IEnumerable<BlockHeader> listOfAllUniqueBlockHeaders = listOfAllBlockHeaders.Distinct();
+
+            ConnectNewHeadersResult connectionPeerAResult = cht.ConnectNewHeaders(1, peerABlockHeaders);
+            cht.ConnectNewHeaders(2, peerBBlockHeaders);
+            cht.ConnectNewHeaders(3, peerCBlockHeaders);
+            ConnectNewHeadersResult connectionPeerDResult = cht.ConnectNewHeaders(4, peerDBlockHeaders);
+
+            var noUnclaimedBranchesCheckResult = CheckForbasicCases(cht, listOfAllUniqueBlockHeaders);
+
+            noUnclaimedBranchesCheckResult.noUnclaimedBraches.Should().BeTrue();
+            noUnclaimedBranchesCheckResult.eachPeerOneEntry.Should().BeTrue();
+            noUnclaimedBranchesCheckResult.reflecttipHash.Should().BeTrue();
+            noUnclaimedBranchesCheckResult.chbhHasOnlyReachebleHeaders.Should().BeTrue();
+            noUnclaimedBranchesCheckResult.isCorrectChainSequence.Should().BeTrue();
+            noUnclaimedBranchesCheckResult.hasLocalPeer.Should().BeTrue();
+
+            //Downloading chain A
+
+            ChainedHeader chainedHeaderFrom = connectionPeerAResult.DownloadFrom;
+            ChainedHeader currentConsumedCh = chainedHeaderFrom;
+            while(currentConsumedCh != null)
+            {
+                cht.BlockDataDownloaded(currentConsumedCh, chainATip.GetAncestor(currentConsumedCh.Height).Block);
+                cht.PartialValidationSucceeded(currentConsumedCh, out bool fullValidationRequired);
+                cht.ConsensusTipChanged(currentConsumedCh);
+
+                currentConsumedCh = currentConsumedCh.Next.Any() ? currentConsumedCh.Next[0] : null;
+            }
+
+            //Downloading chain D
+
+            chainedHeaderFrom = connectionPeerDResult.DownloadFrom;
+            currentConsumedCh = chainedHeaderFrom;
+            while (currentConsumedCh != null)
+            {
+                cht.BlockDataDownloaded(currentConsumedCh, chainDTip.GetAncestor(currentConsumedCh.Height).Block);
+                cht.PartialValidationSucceeded(currentConsumedCh, out bool fullValidationRequired);
+                cht.ConsensusTipChanged(currentConsumedCh);
+
+                currentConsumedCh = currentConsumedCh.Next.Any() ? currentConsumedCh.Next[0] : null;
+            }
+
+            //Claiming Peer K chain
+            ConnectNewHeadersResult connectionPeerKResult = cht.ConnectNewHeaders(5, peerKBlockHeaders);
+            chainedHeaderFrom = connectionPeerKResult.DownloadFrom;
+            currentConsumedCh = chainedHeaderFrom;
+            while (currentConsumedCh != null)
+            {
+                cht.BlockDataDownloaded(currentConsumedCh, chainKTip.GetAncestor(currentConsumedCh.Height).Block);
+                cht.PartialValidationSucceeded(currentConsumedCh, out bool fullValidationRequired);
+                cht.ConsensusTipChanged(currentConsumedCh);
+
+                currentConsumedCh = currentConsumedCh.Next.Any() ? currentConsumedCh.Next[0] : null;
+            }
+
+            Dictionary<uint256, ChainedHeader> chainedHeadersWithPeerK = cht.GetChainedHeadersByHash();
+            
+            cht.PeerDisconnected(5);
+
+            Dictionary<uint256, ChainedHeader> chainedHeadersWithoutPeerK = cht.GetChainedHeadersByHash();
+
+            chainedHeadersWithoutPeerK.Should().BeEquivalentTo(chainedHeadersWithPeerK);
+
+        }
+
+
+        /// <summary>
+        /// Initial setup for tests 18-20, 28
+        ///Chain header tree setup. Initial chain has 4 headers.
+        /// SetUp:
+        ///                       =8d=9d=10d
+        ///                  6a=7a=8a=9a
+        ///GENESIS=1=2=3=4=5=
+        ///                  6b=7b=8b=9b
+        ///            3c=4c=5c
+        /// </summary>
+        /// <param name="initialChainSize"></param>
+        /// <param name="ctx"></param>
+        /// <param name="cht"></param>
+        /// <param name="initialChainTip"></param>
+        /// <returns></returns>
+        private static IEnumerable<BlockHeader> SetupPeersForTest(int initialChainSize, TestContext ctx, ChainedHeaderTree cht, ChainedHeader initialChainTip)
+        {
+
+            int peerAExtension = 4;
+            int peerBExtension = 4;
+            int peerCExtension = 3;
+            int peerDExtension = 3;
+            List<BlockHeader> initialchainHeaders = ctx.ChainedHeaderToList(initialChainTip, initialChainSize + 1);
+            ChainedHeader chainATip = ctx.ExtendAChain(peerAExtension, initialChainTip); // i.e. (h1=h2=h3=h4=h5)=6a=7a=8a=9a
+            ChainedHeader chainBTip = ctx.ExtendAChain(peerBExtension, initialChainTip); // i.e. (h1=h2=h3=h4=h5)=6b=7b=8b=9b
+            ChainedHeader chainCTip = ctx.ExtendAChain(peerCExtension, initialChainTip.GetAncestor(2)); // i.e. (h1=h2)=3c=4c=5c
+            ChainedHeader chainDTip = ctx.ExtendAChain(peerDExtension, chainATip.GetAncestor(7)); // i.e. ((h1=h2=h3=h4=h5)=6a=7a)=8d=9d=10d
+
+            List<BlockHeader> peerABlockHeaders = ctx.ChainedHeaderToList(chainATip, chainATip.Height);
+            List<BlockHeader> peerBBlockHeaders = ctx.ChainedHeaderToList(chainBTip, chainBTip.Height);
+            List<BlockHeader> peerCBlockHeaders = ctx.ChainedHeaderToList(chainCTip, chainCTip.Height);
+            List<BlockHeader> peerDBlockHeaders = ctx.ChainedHeaderToList(chainDTip, chainDTip.Height);
+
+            List<BlockHeader> listOfAllBlockHeaders = new List<BlockHeader>(initialchainHeaders);
+            listOfAllBlockHeaders.AddRange(peerABlockHeaders);
+            listOfAllBlockHeaders.AddRange(peerBBlockHeaders);
+            listOfAllBlockHeaders.AddRange(peerCBlockHeaders);
+            listOfAllBlockHeaders.AddRange(peerDBlockHeaders);
+            IEnumerable<BlockHeader> listOfAllUniqueBlockHeaders = listOfAllBlockHeaders.Distinct();
+
+            cht.ConnectNewHeaders(1, peerABlockHeaders);
+            cht.ConnectNewHeaders(2, peerBBlockHeaders);
+            cht.ConnectNewHeaders(3, peerCBlockHeaders);
+            cht.ConnectNewHeaders(4, peerDBlockHeaders);
+            return listOfAllUniqueBlockHeaders;
+        }
+
+      
+        /// <summary>
+        /// Basic test for tests 18 to 28.
+        /// 1/6 There is no branch which is claimed by no one (PeerTipsByHash have tip of every branch), none of list should be empty.
+        /// 2/6 ChainHeadersByHash contains only reachable headers.
+        /// 3/6 ChainHeader claims LocalPeer
+        /// 4/6 Each connected peer has exactly  1 entry in PeertipsByHash
+        /// 5/6 CH.Next[i].Prev == CH for every header and every .Next
+        /// 6/6 PeerTipsByPeerId should reflect PeerIdsByHash(except local marker).
+        /// </summary>
+        /// <param name="ctx"></param>
+        private static (bool noUnclaimedBraches, bool eachPeerOneEntry, bool reflecttipHash, bool chbhHasOnlyReachebleHeaders, bool isCorrectChainSequence, bool hasLocalPeer) CheckForbasicCases(ChainedHeaderTree cht, IEnumerable<BlockHeader> listOfAllUniqueBlockHeaders)
+        {
+            Tuple<bool, bool, bool> checkResult = null;
+            bool noUnclaimedBraches = true;
+            bool eachPeerOneEntry = true;
+            bool reflecttipHash = true;
+            bool chbhHasOnlyReachebleHeaders = true;
+            bool isCorrectChainSequence = true;
+            bool hasLocalPeer = false;
+
+            
+
+            Dictionary<int, int> peerEntryDictionary = new Dictionary<int, int>()
+            {
+                {1, 0},
+                {2, 0},
+                {3, 0},
+                {4, 0}
+            };
+            Dictionary<int, int> peerHDictionary = new Dictionary<int, int>()
+            {
+                {1, 0},
+                {2, 0},
+                {3, 0},
+                {4, 0}
+            };
+
+            Dictionary<uint256, HashSet<int>> tipsDictionary = cht.GetPeerIdsByTipHash();
+            Dictionary<int, uint256> peerIdsDictionary = cht.GetPeerTipsByPeerId();
+
+            foreach (KeyValuePair<uint256, HashSet<int>> tips in tipsDictionary)
+            {
+                if (tips.Value.Count == 0) noUnclaimedBraches = false;
+
+                foreach (int peerId in tips.Value)
+                {
+                    if (peerId != -1) //ignore local
+                    {
+                        peerEntryDictionary[peerId] = peerEntryDictionary[peerId]++;
+
+                        if (peerIdsDictionary[peerId] == tips.Key) peerHDictionary[peerId]++;
+                        else reflecttipHash = false;
+                    }
+                    else hasLocalPeer = true;
+                }
+
+            }
+
+            if (peerEntryDictionary.Count(x => x.Value > 1) > 0) eachPeerOneEntry = false; //Exactly 1 entry
+            if (peerEntryDictionary.Count(x => x.Value > 1) > 0) eachPeerOneEntry = false; //Exactly 1 entry
+
+            var chainHeaders = cht.GetChainedHeadersByHash();
+
+            foreach (ChainedHeader header in chainHeaders.Values.OrderBy(x=>x.Height))
+            {
+                if (header.Next.Any())
+                {
+                    for (int i = 0; i < header.Next.Count; i++)
+                    {
+                        if(header.Next[i].Previous.HashBlock != header.HashBlock) isCorrectChainSequence = false;
+                    }
+                }
+                    
+                
+
+                if (listOfAllUniqueBlockHeaders.Any(x => x.GetHash() == header.HashBlock)) continue;
+                else chbhHasOnlyReachebleHeaders = false;
+            }
+
+            return (noUnclaimedBraches, eachPeerOneEntry, reflecttipHash, chbhHasOnlyReachebleHeaders, isCorrectChainSequence, hasLocalPeer);
+        }
     }
 }
