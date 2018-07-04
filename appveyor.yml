@@ -31,6 +31,8 @@ cache:
   - '%USERPROFILE%\.nuget\packages'
   
 init:
+# install .NET Core SDK
+- ps: choco install dotnetcore-sdk --no-progress --confirm --version 2.1.301
 - ps: dotnet --info
 
 #---------------------------------#
