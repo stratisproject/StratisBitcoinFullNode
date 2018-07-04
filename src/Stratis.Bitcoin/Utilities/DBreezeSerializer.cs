@@ -32,7 +32,7 @@ namespace Stratis.Bitcoin.Utilities
         {
             var serializable = obj as IBitcoinSerializable;
             if (serializable != null)
-                return serializable.ToBytes(network: this.Network);
+                return serializable.ToBytes(this.Network.Consensus.ConsensusFactory);
 
             var u256 = obj as uint256;
             if (u256 != null)

@@ -194,12 +194,10 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
             var blockValidationContext = new ValidationContext()
             {
                 ChainedHeader = this.concurrentChain.Tip,
-                RuleContext = new RuleContext()
-                {
-                    SkipValidation = true
-                }
             };
             TestConsensusRules consensusRules = InitializeConsensusRules();
+            consensusRules.RuleContext = new RuleContext() { SkipValidation = true };
+
             consensusRules.Register(this.ruleRegistration.Object);
 
             await consensusRules.AcceptBlockAsync(blockValidationContext, new ChainedHeader(this.network.GetGenesis().Header, this.network.GenesisHash, 0));
