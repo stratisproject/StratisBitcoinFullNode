@@ -1425,16 +1425,16 @@ namespace Stratis.Bitcoin.Tests.Consensus
         }
 
         /// <summary>
-        /// Issue 39 @ Single checkpoint is at 1000. Max reorg is 10. We receive a chain of 100 headers from peer1.
-        /// Nothing is marked for download. Peer2 presents a chain which forks at 50 and goes to 150.
-        /// Nothing is marked for download but the chain is accepted.
+        /// Issue 39 @ Initial chain is 20 headers long. Single checkpoint is at 1000. Max reorg is 10. Finalized height is 10.
+        /// We receive a chain of 100 headers from peer1. Nothing is marked for download. Peer2 presents a chain which forks
+        /// at 50 and goes to 150. Nothing is marked for download but the chain is accepted.
         /// </summary>
         [Fact]
         public void ChainTHasCheckpointAt1000_MaxReorgIs10_TwoChainsPriorTo1000Presented_NothingIsMarkedForDownload()
         {
             // Chain header tree setup. Initial chain has 1 header and it uses checkpoints.
-            // Example: h1.
-            const int initialChainSize = 1;
+            // Example: h1=h2=...=h20.
+            const int initialChainSize = 20;
             TestContext ctx = new TestContextBuilder().WithInitialChain(initialChainSize).UseCheckpoints().Build();
             ChainedHeaderTree cht = ctx.ChainedHeaderTree;
             ChainedHeader chainTip = ctx.InitialChainTip;
@@ -1449,14 +1449,17 @@ namespace Stratis.Bitcoin.Tests.Consensus
             const int maxReorg = 10;
             ctx.ChainStateMock.Setup(x => x.MaxReorgLength).Returns(maxReorg);
 
+            // Setup finalized block height to 10.
+            ctx.FinalizedBlockMock.Setup(m => m.GetFinalizedBlockHeight()).Returns(10);
+
             // Extend a chain by 50 headers.
             // Example: h1=h2=...=h50.
-            const int extensionSize = 50;
+            const int extensionSize = 30;
             chainTip = ctx.ExtendAChain(extensionSize, chainTip);
 
-            // Setup chain A that has 100 headers and is based on the previous 50 header extension.
-            // Example: h1=h2=..=h51=a52=a53=..=a101.
-            const int chainAExtensionSize = 50;
+            // Setup chain A that has 100 headers and is based on the previous 30 header extension.
+            // Example: h1=h2=..=h50=a51=a52=..=a120.
+            const int chainAExtensionSize = 70;
             ChainedHeader chainATip = ctx.ExtendAChain(chainAExtensionSize, chainTip);
             List<BlockHeader> listOfChainAHeaders =
                 ctx.ChainedHeaderToList(chainATip, extensionSize + chainAExtensionSize);
@@ -1469,8 +1472,8 @@ namespace Stratis.Bitcoin.Tests.Consensus
             connectionResult.DownloadTo.Should().BeNull();
             connectionResult.Consumed.HashBlock.Should().Be(chainATip.HashBlock);
 
-            // Setup chain BB that has 150 headers and is based on the previous 50 header extension, i.e. fork point at 51.
-            // Example: h1=h2=..=h51=b52=b53=..=b151.
+            // Setup chain BB that has 150 headers and is based on the previous 30 header extension, i.e. fork point at 50.
+            // Example: h1=h2=..=h50=b51=b52=..=b170.
             const int chainBExtensionSize = 100;
             ChainedHeader chainBTip = ctx.ExtendAChain(chainBExtensionSize, chainTip);
             List<BlockHeader> listOfChainBHeaders =
