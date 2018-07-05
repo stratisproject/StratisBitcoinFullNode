@@ -1654,7 +1654,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
         }
 
         /// <summary>
-        /// Issue 48 @ CT is at 5. AssumeValid is at 10. ConnectNewHeaders called with headers 1 - 9(from peer1).
+        /// Issue 48 @ CT is at 5. AssumeValid is at 10. ConnectNewHeaders called with headers 1 - 9 (from peer1).
         /// Make sure headers 6 - 9 are marked for download. After that ConnectNewHeaders called with headers 5 to 15 (from peer2).
         /// Make sure 9 - 15 are marked for download.
         /// </summary>
@@ -1678,17 +1678,19 @@ namespace Stratis.Bitcoin.Tests.Consensus
 
             ChainedHeader[] originalHeaders = chainTip.ToArray(initialChainSize + extensionSize);
 
-            // Peer 1 presents 4 headers: h6, h7, h8 and h9.
+            // Peer 1 presents 9 headers: h1 - h9.
             // Headers 6-9 should be marked for download.
             ConnectNewHeadersResult connectNewHeadersResult = cht.ConnectNewHeaders(1, listOfChainBlockHeaders.Take(9).ToList());
             connectNewHeadersResult.DownloadFrom.HashBlock.Should().Be(originalHeaders[5].HashBlock); // h6
             connectNewHeadersResult.DownloadTo.HashBlock.Should().Be(originalHeaders[8].HashBlock); // h9
+            connectNewHeadersResult.HaveBlockDataAvailabilityStateOf(BlockDataAvailabilityState.BlockAvailable);
 
             // Peer 2 presents 10 headers: h6 - h15.
             // Headers 10-15 should be marked for download.
             connectNewHeadersResult = cht.ConnectNewHeaders(2, listOfChainBlockHeaders.Skip(5).ToList());
             connectNewHeadersResult.DownloadFrom.HashBlock.Should().Be(originalHeaders[9].HashBlock); // h10
             connectNewHeadersResult.DownloadTo.HashBlock.Should().Be(originalHeaders[14].HashBlock); // h15
+            connectNewHeadersResult.HaveBlockDataAvailabilityStateOf(BlockDataAvailabilityState.BlockAvailable);
         }
     }
 }
