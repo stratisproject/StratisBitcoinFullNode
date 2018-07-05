@@ -1954,11 +1954,11 @@ namespace Stratis.Bitcoin.Tests.Consensus
             chainedHeaderTree.ConnectNewHeaders(1, listOfChainHeaders);
 
             // Call PartialValidationSucceeded on h2.
-            chainedHeaderTree.PartialValidationSucceeded(chainTip, out bool reorgRequired);
+            chainedHeaderTree.PartialValidationSucceeded(chainTip, out bool fullValidationRequired);
 
             chainTip.BlockValidationState.Should().Be(ValidationState.PartiallyValidated);
 
-            reorgRequired.Should().BeTrue();
+            fullValidationRequired.Should().BeTrue();
         }
 
         /// <summary>
