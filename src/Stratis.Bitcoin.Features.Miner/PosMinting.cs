@@ -644,7 +644,7 @@ namespace Stratis.Bitcoin.Features.Miner
             }
 
             var coinstakeContext = new CoinstakeContext();
-            coinstakeContext.CoinstakeTx = this.network.Consensus.ConsensusFactory.CreateTransaction();
+            coinstakeContext.CoinstakeTx = this.network.CreateTransaction();
             coinstakeContext.CoinstakeTx.Time = coinstakeTimestamp;
 
             // Search to current coinstake time.
@@ -872,8 +872,8 @@ namespace Stratis.Bitcoin.Features.Miner
 
                 // Script of the first coinstake input.
                 Script scriptPubKeyKernel = utxoStakeInfo.TxOut.ScriptPubKey;
-                if (!PayToPubkeyTemplate.Instance.CheckScriptPubKey(this.network, scriptPubKeyKernel)
-                    && !PayToPubkeyHashTemplate.Instance.CheckScriptPubKey(this.network, scriptPubKeyKernel))
+                if (!PayToPubkeyTemplate.Instance.CheckScriptPubKey(scriptPubKeyKernel)
+                    && !PayToPubkeyHashTemplate.Instance.CheckScriptPubKey(scriptPubKeyKernel))
                 {
                     context.Logger.LogTrace("Kernel type must be P2PK or P2PKH, kernel rejected.");
                     continue;
