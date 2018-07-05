@@ -820,8 +820,15 @@ namespace Stratis.Bitcoin.Tests.Consensus
             chainedHeaderDownloadFrom.HashBlock.Should().Be(initialChainTip.Next[0].HashBlock); // h11
             chainedHeaderDownloadTo.HashBlock.Should().Be(listOfCurrentChainHeaders.Last().GetHash());
 
+            ChainedHeader chainedHeader = chainedHeaderDownloadTo;
+            while (chainedHeader.Height >= chainedHeaderDownloadFrom.Height)
+            {
+                chainedHeader.BlockDataAvailability.Should().Be(BlockDataAvailabilityState.BlockRequired);
+                chainedHeader = chainedHeader.Previous;
+            }
+            
             // Blocks before X-20 (h1->h10) are FV.
-            ChainedHeader chainedHeader = initialChainTip;
+            chainedHeader = initialChainTip;
             Assert.Equal(chainedHeader.Height, assumeValidBlockHeight - 20);
             ValidationState expectedState = ValidationState.FullyValidated;
             while (chainedHeader.Height > 0)
@@ -838,6 +845,13 @@ namespace Stratis.Bitcoin.Tests.Consensus
                 testContext.ChainedHeaderToList(extendedChainTip, assumeValidBlockHeight + extendChainByFiveBlocks);
             connectNewHeadersResult = chainedHeaderTree.ConnectNewHeaders(1, listOfCurrentChainHeaders);
 
+            chainedHeader = extendedChainTip;
+            while (chainedHeader.Height > assumeValidBlockHeight)
+            {
+                chainedHeader.BlockDataAvailability.Should().Be(BlockDataAvailabilityState.HeaderOnly);
+                chainedHeader = chainedHeader.Previous;
+            }
+            
             // All from X-10 (h21->h30) are marked for download.
             int chainedHeaderHeightXMinus10 = (assumeValidBlockHeight - 10);
             ChainedHeader fromHeader = extendedChainTip.GetAncestor(chainedHeaderHeightXMinus10 + 1);
