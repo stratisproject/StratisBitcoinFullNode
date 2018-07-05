@@ -241,17 +241,14 @@ namespace NBitcoin
         /// <returns>A genesis block.</returns>
         public static Block MineGenesisBlock(ConsensusFactory consensusFactory, string coinbaseText, Target target, Money genesisReward, int version = 1)
         {
-            if (target == null)
-                throw new ArgumentException($"Parameter '{nameof(target)}' cannot be null. Example use: new Target(new uint256(\"0000ffff00000000000000000000000000000000000000000000000000000000\"))");
-
             if (consensusFactory == null)
-            {
-                throw new ArgumentException($"Parameter '{nameof(consensusFactory)}' cannot be null. Use 'new ConsensusFactory()' for Bitcoin-like proof-of-work blockchains" +
-                                            "and 'new PosConsensusFactory()' for Stratis-like proof-of-stake blockchains.");
-            }
+                throw new ArgumentException($"Parameter '{nameof(consensusFactory)}' cannot be null. Use 'new ConsensusFactory()' for Bitcoin-like proof-of-work blockchains and 'new PosConsensusFactory()' for Stratis-like proof-of-stake blockchains.");
 
             if (string.IsNullOrEmpty(coinbaseText))
                 throw new ArgumentException($"Parameter '{nameof(coinbaseText)}' cannot be null. Use a news headline or any other appropriate string.");
+
+            if (target == null)
+                throw new ArgumentException($"Parameter '{nameof(target)}' cannot be null. Example use: new Target(new uint256(\"0000ffff00000000000000000000000000000000000000000000000000000000\"))");
 
             if (coinbaseText.Length >= 92)
                 throw new ArgumentException($"Parameter '{nameof(coinbaseText)}' should be shorter than 92 characters.");
@@ -698,6 +695,21 @@ namespace NBitcoin
                     Endpoint = Utils.ParseIpEndpoint(seed, defaultPort)
                 };
             }
+        }
+
+        public Transaction CreateTransaction()
+        {
+            return this.Consensus.ConsensusFactory.CreateTransaction();
+        }
+
+        public Transaction CreateTransaction(string hex)
+        {
+            return this.Consensus.ConsensusFactory.CreateTransaction(hex);
+        }
+
+        public Transaction CreateTransaction(byte[] bytes)
+        {
+            return this.Consensus.ConsensusFactory.CreateTransaction(bytes);
         }
     }
 }

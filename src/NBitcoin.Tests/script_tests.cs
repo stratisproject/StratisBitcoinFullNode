@@ -2,18 +2,17 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net.Http;
 using System.Runtime.InteropServices;
 using NBitcoin.Crypto;
 using NBitcoin.DataEncoders;
 using NBitcoin.Protocol;
 using Newtonsoft.Json.Linq;
 using Xunit;
-using NBitcoin.BitcoinCore;
-using System.Net.Http;
 
 namespace NBitcoin.Tests
 {
-    public class script_tests
+    public class Script_Tests
     {
         private static Dictionary<string, OpcodeType> mapOpNames = new Dictionary<string, OpcodeType>();
         public static Script ParseScript(string s)
@@ -73,6 +72,12 @@ namespace NBitcoin.Tests
 
             return new Script(result.ToArray());
         }
+        private readonly Network network;
+
+        public Script_Tests()
+        {
+            this.network = Network.Main;
+        }
 
         [Fact]
         [Trait("UnitTest", "UnitTest")]
@@ -80,6 +85,7 @@ namespace NBitcoin.Tests
         {
             new Script("OP_NOP1 OP_NOP2 OP_NOP3 OP_NOP4 OP_NOP5 OP_NOP6 OP_NOP7 OP_NOP8 OP_NOP9");
         }
+
         [Fact]
         [Trait("UnitTest", "UnitTest")]
         public void BIP65_tests()
@@ -134,21 +140,21 @@ namespace NBitcoin.Tests
 
         private void BIP65_testsCore(LockTime target, LockTime now, bool expectedResult)
         {
-            var tx = new Transaction();
+            Transaction tx = this.network.CreateTransaction();
             tx.Outputs.Add(new TxOut()
             {
                 ScriptPubKey = new Script(Op.GetPushOp(target.Value), OpcodeType.OP_CHECKLOCKTIMEVERIFY)
             });
 
-            var spending = new Transaction();
+            Transaction spending = this.network.CreateTransaction();
             spending.LockTime = now;
             spending.Inputs.Add(new TxIn(tx.Outputs.AsCoins().First().Outpoint, new Script()));
             spending.Inputs[0].Sequence = 1;
 
-            Assert.Equal(expectedResult, spending.Inputs.AsIndexedInputs().First().VerifyScript(Network.Main, tx.Outputs[0].ScriptPubKey));
+            Assert.Equal(expectedResult, spending.Inputs.AsIndexedInputs().First().VerifyScript(this.network, tx.Outputs[0].ScriptPubKey));
 
             spending.Inputs[0].Sequence = uint.MaxValue;
-            Assert.False(spending.Inputs.AsIndexedInputs().First().VerifyScript(Network.Main, tx.Outputs[0].ScriptPubKey));
+            Assert.False(spending.Inputs.AsIndexedInputs().First().VerifyScript(this.network, tx.Outputs[0].ScriptPubKey));
         }
 
         [Fact]
@@ -226,9 +232,9 @@ namespace NBitcoin.Tests
         [Trait("UnitTest", "UnitTest")]
         public void PayToMultiSigTemplateShouldAcceptNonKeyParameters()
         {
-            Transaction tx = Transaction.Parse("0100000002f9cbafc519425637ba4227f8d0a0b7160b4e65168193d5af39747891de98b5b5000000006b4830450221008dd619c563e527c47d9bd53534a770b102e40faa87f61433580e04e271ef2f960220029886434e18122b53d5decd25f1f4acb2480659fea20aabd856987ba3c3907e0121022b78b756e2258af13779c1a1f37ea6800259716ca4b7f0b87610e0bf3ab52a01ffffffff42e7988254800876b69f24676b3e0205b77be476512ca4d970707dd5c60598ab00000000fd260100483045022015bd0139bcccf990a6af6ec5c1c52ed8222e03a0d51c334df139968525d2fcd20221009f9efe325476eb64c3958e4713e9eefe49bf1d820ed58d2112721b134e2a1a53034930460221008431bdfa72bc67f9d41fe72e94c88fb8f359ffa30b33c72c121c5a877d922e1002210089ef5fc22dd8bfc6bf9ffdb01a9862d27687d424d1fefbab9e9c7176844a187a014c9052483045022015bd0139bcccf990a6af6ec5c1c52ed8222e03a0d51c334df139968525d2fcd20221009f9efe325476eb64c3958e4713e9eefe49bf1d820ed58d2112721b134e2a1a5303210378d430274f8c5ec1321338151e9f27f4c676a008bdf8638d07c0b6be9ab35c71210378d430274f8c5ec1321338151e9f27f4c676a008bdf8638d07c0b6be9ab35c7153aeffffffff01a08601000000000017a914d8dacdadb7462ae15cd906f1878706d0da8660e68700000000");
-            Script redeemScript = PayToScriptHashTemplate.Instance.ExtractScriptSigParameters(Network.Main, tx.Inputs[1].ScriptSig).RedeemScript;
-            PayToMultiSigTemplateParameters result = PayToMultiSigTemplate.Instance.ExtractScriptPubKeyParameters(Network.Main, redeemScript);
+            Transaction tx = this.network.CreateTransaction("0100000002f9cbafc519425637ba4227f8d0a0b7160b4e65168193d5af39747891de98b5b5000000006b4830450221008dd619c563e527c47d9bd53534a770b102e40faa87f61433580e04e271ef2f960220029886434e18122b53d5decd25f1f4acb2480659fea20aabd856987ba3c3907e0121022b78b756e2258af13779c1a1f37ea6800259716ca4b7f0b87610e0bf3ab52a01ffffffff42e7988254800876b69f24676b3e0205b77be476512ca4d970707dd5c60598ab00000000fd260100483045022015bd0139bcccf990a6af6ec5c1c52ed8222e03a0d51c334df139968525d2fcd20221009f9efe325476eb64c3958e4713e9eefe49bf1d820ed58d2112721b134e2a1a53034930460221008431bdfa72bc67f9d41fe72e94c88fb8f359ffa30b33c72c121c5a877d922e1002210089ef5fc22dd8bfc6bf9ffdb01a9862d27687d424d1fefbab9e9c7176844a187a014c9052483045022015bd0139bcccf990a6af6ec5c1c52ed8222e03a0d51c334df139968525d2fcd20221009f9efe325476eb64c3958e4713e9eefe49bf1d820ed58d2112721b134e2a1a5303210378d430274f8c5ec1321338151e9f27f4c676a008bdf8638d07c0b6be9ab35c71210378d430274f8c5ec1321338151e9f27f4c676a008bdf8638d07c0b6be9ab35c7153aeffffffff01a08601000000000017a914d8dacdadb7462ae15cd906f1878706d0da8660e68700000000");
+            Script redeemScript = PayToScriptHashTemplate.Instance.ExtractScriptSigParameters(this.network, tx.Inputs[1].ScriptSig).RedeemScript;
+            PayToMultiSigTemplateParameters result = PayToMultiSigTemplate.Instance.ExtractScriptPubKeyParameters(redeemScript);
             Assert.Equal(2, result.PubKeys.Length);
             Assert.Equal(2, result.SignatureCount);
             Assert.Single(result.InvalidPubKeys);
@@ -240,7 +246,7 @@ namespace NBitcoin.Tests
         {
             byte[] data = Encoders.Hex.DecodeData("035c030441ef8fa580553f149a5422ba4b0038d160b07a28e6fe2e1041b940fe95b1553c040000000000000050db680300000000000002b0466f722050696572636520616e64205061756c");
 
-            PayToPubkeyHashTemplate.Instance.ExtractScriptSigParameters(Network.Main, new Script(data));
+            PayToPubkeyHashTemplate.Instance.ExtractScriptSigParameters(this.network, new Script(data));
         }
 
         [Fact]
@@ -302,11 +308,11 @@ namespace NBitcoin.Tests
         [Trait("Core", "Core")]
         public void sig_validinvalid()
         {
-            Assert.False(TransactionSignature.IsValid(Network.Main, new byte[0]));
+            Assert.False(TransactionSignature.IsValid(this.network, new byte[0]));
             JArray sigs = JArray.Parse(File.ReadAllText(TestDataLocations.GetFileFromDataFolder("sig_canonical.json")));
             foreach (JToken sig in sigs)
             {
-                Assert.True(TransactionSignature.IsValid(Network.Main, Encoders.Hex.DecodeData(sig.ToString())));
+                Assert.True(TransactionSignature.IsValid(this.network, Encoders.Hex.DecodeData(sig.ToString())));
             }
 
             sigs = JArray.Parse(File.ReadAllText(TestDataLocations.GetFileFromDataFolder("sig_noncanonical.json")));
@@ -314,7 +320,7 @@ namespace NBitcoin.Tests
             {
                 if (((HexEncoder)Encoders.Hex).IsValid(sig.ToString()))
                 {
-                    Assert.False(TransactionSignature.IsValid(Network.Main, Encoders.Hex.DecodeData(sig.ToString())));
+                    Assert.False(TransactionSignature.IsValid(this.network, Encoders.Hex.DecodeData(sig.ToString())));
                 }
             }
         }
@@ -366,7 +372,7 @@ namespace NBitcoin.Tests
             Transaction creditingTransaction = CreateCreditingTransaction(scriptPubKey, amount);
             Transaction spendingTransaction = CreateSpendingTransaction(wit, scriptSig, creditingTransaction);
             ScriptError actual;
-            Script.VerifyScript(Network.Main, scriptSig, scriptPubKey, spendingTransaction, 0, amount, flags, SigHash.Undefined, out actual);
+            Script.VerifyScript(this.network, scriptSig, scriptPubKey, spendingTransaction, 0, amount, flags, SigHash.Undefined, out actual);
             Assert.True(expectedError == actual, "Test : " + testIndex + " " + comment);
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
@@ -409,26 +415,30 @@ namespace NBitcoin.Tests
             }
         }
 
-        private static Transaction CreateSpendingTransaction(WitScript wit, Script scriptSig, Transaction creditingTransaction)
+        private Transaction CreateSpendingTransaction(WitScript wit, Script scriptSig, Transaction creditingTransaction)
         {
-            var spendingTransaction = new Transaction();
+            Transaction spendingTransaction = this.network.CreateTransaction();
+
             spendingTransaction.AddInput(new TxIn(new OutPoint(creditingTransaction, 0))
             {
                 ScriptSig = scriptSig,
                 WitScript = wit ?? WitScript.Empty
             });
+
             spendingTransaction.AddOutput(new TxOut()
             {
                 ScriptPubKey = new Script(),
                 Value = creditingTransaction.Outputs[0].Value
             });
+
             return spendingTransaction;
         }
 
-        private static Transaction CreateCreditingTransaction(Script scriptPubKey, Money amount = null)
+        private Transaction CreateCreditingTransaction(Script scriptPubKey, Money amount = null)
         {
             amount = amount ?? Money.Zero;
-            var creditingTransaction = new Transaction();
+
+            Transaction creditingTransaction = this.network.CreateTransaction();
             creditingTransaction.Version = 1;
             creditingTransaction.LockTime = LockTime.Zero;
             creditingTransaction.AddInput(new TxIn()
@@ -436,7 +446,9 @@ namespace NBitcoin.Tests
                 ScriptSig = new Script(OpcodeType.OP_0, OpcodeType.OP_0),
                 Sequence = Sequence.Final
             });
+
             creditingTransaction.AddOutput(amount, scriptPubKey);
+
             return creditingTransaction;
         }
 
@@ -523,7 +535,7 @@ namespace NBitcoin.Tests
 
         private ScriptVerify ParseFlag(string flag)
         {
-            var result = ScriptVerify.None;
+            ScriptVerify result = ScriptVerify.None;
             foreach (string p in flag.Split(',', '|').Select(p => p.Trim().ToUpperInvariant()))
             {
                 if (p == "P2SH")
@@ -614,7 +626,7 @@ namespace NBitcoin.Tests
 
         private Script sign_multisig(Script scriptPubKey, Key[] keys, Transaction transaction)
         {
-            uint256 hash = Script.SignatureHash(Network.Main, scriptPubKey, transaction, 0, SigHash.All);
+            uint256 hash = Script.SignatureHash(this.network, scriptPubKey, transaction, 0, SigHash.All);
 
             var ops = new List<Op>();
             //CScript result;
@@ -642,9 +654,10 @@ namespace NBitcoin.Tests
         }
 
         private ScriptVerify flags = ScriptVerify.P2SH | ScriptVerify.StrictEnc;
+
         [Fact]
         [Trait("Core", "Core")]
-        public void script_CHECKMULTISIG12()
+        public void Script_CHECKMULTISIG12()
         {
             EnsureHasLibConsensus();
             var key1 = new Key(true);
@@ -659,12 +672,12 @@ namespace NBitcoin.Tests
                     OpcodeType.OP_CHECKMULTISIG
                 );
 
-            var txFrom12 = new Transaction();
+            Transaction txFrom12 = this.network.CreateTransaction();
             txFrom12.Outputs.Add(new TxOut());
             txFrom12.Outputs[0].ScriptPubKey = scriptPubKey12;
 
 
-            var txTo12 = new Transaction();
+            Transaction txTo12 = this.network.CreateTransaction();
             txTo12.Inputs.Add(new TxIn());
             txTo12.Outputs.Add(new TxOut());
             txTo12.Inputs[0].PrevOut.N = 0;
@@ -685,7 +698,7 @@ namespace NBitcoin.Tests
 
         [Fact]
         [Trait("Core", "Core")]
-        public void script_CHECKMULTISIG23()
+        public void Script_CHECKMULTISIG23()
         {
             EnsureHasLibConsensus();
             var key1 = new Key(true);
@@ -703,11 +716,11 @@ namespace NBitcoin.Tests
                 );
 
 
-            var txFrom23 = new Transaction();
+            Transaction txFrom23 = this.network.CreateTransaction();
             txFrom23.Outputs.Add(new TxOut());
             txFrom23.Outputs[0].ScriptPubKey = scriptPubKey23;
 
-            var txTo23 = new Transaction();
+            Transaction txTo23 = this.network.CreateTransaction();
             txTo23.Inputs.Add(new TxIn());
             txTo23.Outputs.Add(new TxOut());
             txTo23.Inputs[0].PrevOut.N = 0;
@@ -753,7 +766,7 @@ namespace NBitcoin.Tests
 
         private void AssertInvalidScript(Script scriptPubKey, Transaction tx, int n, ScriptVerify verify)
         {
-            Assert.False(Script.VerifyScript(Network.Main, scriptPubKey, tx, n, null, this.flags));
+            Assert.False(Script.VerifyScript(this.network, scriptPubKey, tx, n, null, this.flags));
 
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
@@ -763,7 +776,7 @@ namespace NBitcoin.Tests
 
         private void AssertValidScript(Script scriptPubKey, Transaction tx, int n, ScriptVerify verify)
         {
-            Assert.True(Script.VerifyScript(Network.Main, scriptPubKey, tx, n, null, this.flags));
+            Assert.True(Script.VerifyScript(this.network, scriptPubKey, tx, n, null, this.flags));
 
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
@@ -775,16 +788,16 @@ namespace NBitcoin.Tests
         [Trait("Core", "Core")]
         public void script_single_hashtype()
         {
-            var tx = new Transaction("010000000390d31c6107013d754529d8818eff285fe40a3e7635f6930fec5d12eb02107a43010000006b483045022100f40815ae3c81a0dd851cc8d376d6fd226c88416671346a9033468cca2cdcc6c202204f764623903e6c4bed1b734b75d82c40f1725e4471a55ad4f51218f86130ac038321033d710ab45bb54ac99618ad23b3c1da661631aa25f23bfe9d22b41876f1d46e4effffffff3ff04a68e22bdd52e7c8cb848156d2d158bd5515b3c50adabc87d0ca2cd3482d010000006a4730440220598d263c107004008e9e26baa1e770be30fd31ee55ded1898f7c00da05a75977022045536bead322ca246779698b9c3df3003377090f41afeca7fb2ce9e328ec4af2832102b738b531def73020bd637f32935924cc88549c8206976226d968edd3a42fc2d7ffffffff46a8dc8970eb96622f27a516adcf40e0fcec5731e7556e174f2a271aef6861c7010000006b483045022100c5b90a777a9fdc90c208dbef7290d1fc1be651f47151ee4ccff646872a454cf90220640cfbc4550446968fbbe9d12528f3adf7d87b31541569c59e790db8a220482583210391332546e22bbe8fe3af54addfad6f8b83d05fa4f5e047593d4c07ae938795beffffffff028036be26000000001976a914ddfb29efad43a667465ac59ff14dc6442a1adfca88ac3d5cba01000000001976a914b64dde7a505a13ca986c40e86e984a8dc81368b688ac00000000");
+            Transaction tx = this.network.CreateTransaction("010000000390d31c6107013d754529d8818eff285fe40a3e7635f6930fec5d12eb02107a43010000006b483045022100f40815ae3c81a0dd851cc8d376d6fd226c88416671346a9033468cca2cdcc6c202204f764623903e6c4bed1b734b75d82c40f1725e4471a55ad4f51218f86130ac038321033d710ab45bb54ac99618ad23b3c1da661631aa25f23bfe9d22b41876f1d46e4effffffff3ff04a68e22bdd52e7c8cb848156d2d158bd5515b3c50adabc87d0ca2cd3482d010000006a4730440220598d263c107004008e9e26baa1e770be30fd31ee55ded1898f7c00da05a75977022045536bead322ca246779698b9c3df3003377090f41afeca7fb2ce9e328ec4af2832102b738b531def73020bd637f32935924cc88549c8206976226d968edd3a42fc2d7ffffffff46a8dc8970eb96622f27a516adcf40e0fcec5731e7556e174f2a271aef6861c7010000006b483045022100c5b90a777a9fdc90c208dbef7290d1fc1be651f47151ee4ccff646872a454cf90220640cfbc4550446968fbbe9d12528f3adf7d87b31541569c59e790db8a220482583210391332546e22bbe8fe3af54addfad6f8b83d05fa4f5e047593d4c07ae938795beffffffff028036be26000000001976a914ddfb29efad43a667465ac59ff14dc6442a1adfca88ac3d5cba01000000001976a914b64dde7a505a13ca986c40e86e984a8dc81368b688ac00000000");
             var scriptPubKey = new Script("OP_DUP OP_HASH160 34fea2c5a75414fd945273ae2d029ce1f28dafcf OP_EQUALVERIFY OP_CHECKSIG");
-            Assert.True(tx.Inputs.AsIndexedInputs().ToArray()[2].VerifyScript(Network.Main, scriptPubKey, out ScriptError error));
+            Assert.True(tx.Inputs.AsIndexedInputs().ToArray()[2].VerifyScript(this.network, scriptPubKey, out ScriptError error));
         }
 
         [Fact]
         [Trait("Core", "Core")]
         public void script_combineSigs()
         {
-            var keys = new[] { new Key(), new Key(), new Key() };
+            Key[] keys = new[] { new Key(), new Key(), new Key() };
             Transaction txFrom = CreateCreditingTransaction(keys[0].PubKey.Hash.ScriptPubKey);
             Transaction txTo = CreateSpendingTransaction(null, new Script(), txFrom);
 
@@ -792,22 +805,22 @@ namespace NBitcoin.Tests
             Script scriptSig = txTo.Inputs[0].ScriptSig;
 
             var empty = new Script();
-            Script combined = Script.CombineSignatures(Network.Main, scriptPubKey, txTo, 0, empty, empty);
+            Script combined = Script.CombineSignatures(this.network, scriptPubKey, txTo, 0, empty, empty);
             Assert.True(combined.ToBytes().Length == 0);
 
             // Single signature case:
             SignSignature(keys, txFrom, txTo, 0); // changes scriptSig
             scriptSig = txTo.Inputs[0].ScriptSig;
-            combined = Script.CombineSignatures(Network.Main, scriptPubKey, txTo, 0, scriptSig, empty);
+            combined = Script.CombineSignatures(this.network, scriptPubKey, txTo, 0, scriptSig, empty);
             Assert.True(combined == scriptSig);
-            combined = Script.CombineSignatures(Network.Main, scriptPubKey, txTo, 0, empty, scriptSig);
+            combined = Script.CombineSignatures(this.network, scriptPubKey, txTo, 0, empty, scriptSig);
             Assert.True(combined == scriptSig);
             Script scriptSigCopy = scriptSig.Clone();
             // Signing again will give a different, valid signature:
             SignSignature(keys, txFrom, txTo, 0);
             scriptSig = txTo.Inputs[0].ScriptSig;
 
-            combined = Script.CombineSignatures(Network.Main, scriptPubKey, txTo, 0, scriptSigCopy, scriptSig);
+            combined = Script.CombineSignatures(this.network, scriptPubKey, txTo, 0, scriptSigCopy, scriptSig);
             Assert.True(combined == scriptSigCopy || combined == scriptSig);
 
 
@@ -820,10 +833,10 @@ namespace NBitcoin.Tests
             SignSignature(keys, txFrom, txTo, 0, pkSingle);
             scriptSig = txTo.Inputs[0].ScriptSig;
 
-            combined = Script.CombineSignatures(Network.Main, scriptPubKey, txTo, 0, scriptSig, empty);
+            combined = Script.CombineSignatures(this.network, scriptPubKey, txTo, 0, scriptSig, empty);
             Assert.True(combined == scriptSig);
 
-            combined = Script.CombineSignatures(Network.Main, scriptPubKey, txTo, 0, empty, scriptSig);
+            combined = Script.CombineSignatures(this.network, scriptPubKey, txTo, 0, empty, scriptSig);
             scriptSig = txTo.Inputs[0].ScriptSig;
             Assert.True(combined == scriptSig);
             scriptSigCopy = scriptSig.Clone();
@@ -831,13 +844,13 @@ namespace NBitcoin.Tests
             SignSignature(keys, txFrom, txTo, 0);
             scriptSig = txTo.Inputs[0].ScriptSig;
 
-            combined = Script.CombineSignatures(Network.Main, scriptPubKey, txTo, 0, scriptSigCopy, scriptSig);
+            combined = Script.CombineSignatures(this.network, scriptPubKey, txTo, 0, scriptSigCopy, scriptSig);
             Assert.True(combined == scriptSigCopy || combined == scriptSig);
             // dummy scriptSigCopy with placeholder, should always choose non-placeholder:
             scriptSigCopy = new Script(OpcodeType.OP_0, Op.GetPushOp(pkSingle.ToBytes()));
-            combined = Script.CombineSignatures(Network.Main, scriptPubKey, txTo, 0, scriptSigCopy, scriptSig);
+            combined = Script.CombineSignatures(this.network, scriptPubKey, txTo, 0, scriptSigCopy, scriptSig);
             Assert.True(combined == scriptSig);
-            combined = Script.CombineSignatures(Network.Main, scriptPubKey, txTo, 0, scriptSig, scriptSigCopy);
+            combined = Script.CombineSignatures(this.network, scriptPubKey, txTo, 0, scriptSig, scriptSigCopy);
             Assert.True(combined == scriptSig);
 
             // Hardest case:  Multisig 2-of-3
@@ -848,22 +861,20 @@ namespace NBitcoin.Tests
             SignSignature(keys, txFrom, txTo, 0);
             scriptSig = txTo.Inputs[0].ScriptSig;
 
-            combined = Script.CombineSignatures(Network.Main, scriptPubKey, txTo, 0, scriptSig, empty);
+            combined = Script.CombineSignatures(this.network, scriptPubKey, txTo, 0, scriptSig, empty);
             Assert.True(combined == scriptSig);
-            combined = Script.CombineSignatures(Network.Main, scriptPubKey, txTo, 0, empty, scriptSig);
+            combined = Script.CombineSignatures(this.network, scriptPubKey, txTo, 0, empty, scriptSig);
             Assert.True(combined == scriptSig);
 
             // A couple of partially-signed versions:
-            uint256 hash1 = Script.SignatureHash(Network.Main, scriptPubKey, txTo, 0, SigHash.All);
+            uint256 hash1 = Script.SignatureHash(this.network, scriptPubKey, txTo, 0, SigHash.All);
             var sig1 = new TransactionSignature(keys[0].Sign(hash1), SigHash.All);
 
-            uint256 hash2 = Script.SignatureHash(Network.Main, scriptPubKey, txTo, 0, SigHash.None);
+            uint256 hash2 = Script.SignatureHash(this.network, scriptPubKey, txTo, 0, SigHash.None);
             var sig2 = new TransactionSignature(keys[1].Sign(hash2), SigHash.None);
 
-
-            uint256 hash3 = Script.SignatureHash(Network.Main, scriptPubKey, txTo, 0, SigHash.Single);
+            uint256 hash3 = Script.SignatureHash(this.network, scriptPubKey, txTo, 0, SigHash.Single);
             var sig3 = new TransactionSignature(keys[2].Sign(hash3), SigHash.Single);
-
 
             // Not fussy about order (or even existence) of placeholders or signatures:
             Script partial1a = new Script() + OpcodeType.OP_0 + Op.GetPushOp(sig1.ToBytes()) + OpcodeType.OP_0;
@@ -877,21 +888,21 @@ namespace NBitcoin.Tests
             Script complete13 = new Script() + OpcodeType.OP_0 + Op.GetPushOp(sig1.ToBytes()) + Op.GetPushOp(sig3.ToBytes());
             Script complete23 = new Script() + OpcodeType.OP_0 + Op.GetPushOp(sig2.ToBytes()) + Op.GetPushOp(sig3.ToBytes());
 
-            combined = Script.CombineSignatures(Network.Main, scriptPubKey, txTo, 0, partial1a, partial1b);
+            combined = Script.CombineSignatures(this.network, scriptPubKey, txTo, 0, partial1a, partial1b);
             Assert.True(combined == partial1a);
-            combined = Script.CombineSignatures(Network.Main, scriptPubKey, txTo, 0, partial1a, partial2a);
+            combined = Script.CombineSignatures(this.network, scriptPubKey, txTo, 0, partial1a, partial2a);
             Assert.True(combined == complete12);
-            combined = Script.CombineSignatures(Network.Main, scriptPubKey, txTo, 0, partial2a, partial1a);
+            combined = Script.CombineSignatures(this.network, scriptPubKey, txTo, 0, partial2a, partial1a);
             Assert.True(combined == complete12);
-            combined = Script.CombineSignatures(Network.Main, scriptPubKey, txTo, 0, partial1b, partial2b);
+            combined = Script.CombineSignatures(this.network, scriptPubKey, txTo, 0, partial1b, partial2b);
             Assert.True(combined == complete12);
-            combined = Script.CombineSignatures(Network.Main, scriptPubKey, txTo, 0, partial3b, partial1b);
+            combined = Script.CombineSignatures(this.network, scriptPubKey, txTo, 0, partial3b, partial1b);
             Assert.True(combined == complete13);
-            combined = Script.CombineSignatures(Network.Main, scriptPubKey, txTo, 0, partial2a, partial3a);
+            combined = Script.CombineSignatures(this.network, scriptPubKey, txTo, 0, partial2a, partial3a);
             Assert.True(combined == complete23);
-            combined = Script.CombineSignatures(Network.Main, scriptPubKey, txTo, 0, partial3b, partial2b);
+            combined = Script.CombineSignatures(this.network, scriptPubKey, txTo, 0, partial3b, partial2b);
             Assert.True(combined == complete23);
-            combined = Script.CombineSignatures(Network.Main, scriptPubKey, txTo, 0, partial3b, partial3a);
+            combined = Script.CombineSignatures(this.network, scriptPubKey, txTo, 0, partial3b, partial3a);
             Assert.True(combined == partial3c);
         }
 
@@ -906,7 +917,7 @@ namespace NBitcoin.Tests
 
         [Fact]
         [Trait("Core", "Core")]
-        public void script_PushData()
+        public void Script_PushData()
         {
             // Check that PUSHDATA1, PUSHDATA2, and PUSHDATA4 create the same value on
             // the stack as the 1-75 opcodes do.
@@ -915,7 +926,7 @@ namespace NBitcoin.Tests
             var pushdata2 = new Script(new byte[] { (byte)OpcodeType.OP_PUSHDATA2, 1, 0, 0x5a });
             var pushdata4 = new Script(new byte[] { (byte)OpcodeType.OP_PUSHDATA4, 1, 0, 0, 0, 0x5a });
 
-            var context = new ScriptEvaluationContext(Network.Main)
+            var context = new ScriptEvaluationContext(this.network)
             {
                 ScriptVerify = ScriptVerify.P2SH,
                 SigHash = 0
@@ -946,7 +957,7 @@ namespace NBitcoin.Tests
             Assert.Equal("b72a6481ec2c2e65aa6bd9b42e213dce16fc6217", pubKey.ToString());
             var scriptSig = new Script("3044022064f45a382a15d3eb5e7fe72076eec4ef0f56fde1adfd710866e729b9e5f3383d02202720a895914c69ab49359087364f06d337a2138305fbc19e20d18da78415ea9301 0364bd4b02a752798342ed91c681a48793bb1c0853cbcd0b978c55e53485b8e27c");
 
-            PayToPubkeyHashScriptSigParameters sigResult = PayToPubkeyHashTemplate.Instance.ExtractScriptSigParameters(Network.Main, scriptSig);
+            PayToPubkeyHashScriptSigParameters sigResult = PayToPubkeyHashTemplate.Instance.ExtractScriptSigParameters(this.network, scriptSig);
             Assert.Equal("3044022064f45a382a15d3eb5e7fe72076eec4ef0f56fde1adfd710866e729b9e5f3383d02202720a895914c69ab49359087364f06d337a2138305fbc19e20d18da78415ea9301", Encoders.Hex.EncodeData(sigResult.TransactionSignature.ToBytes()));
             Assert.Equal("0364bd4b02a752798342ed91c681a48793bb1c0853cbcd0b978c55e53485b8e27c", sigResult.PublicKey.ToString());
 
@@ -955,7 +966,7 @@ namespace NBitcoin.Tests
 
             scriptSig = new Script("0 0364bd4b02a752798342ed91c681a48793bb1c0853cbcd0b978c55e53485b8e27c");
 
-            sigResult = PayToPubkeyHashTemplate.Instance.ExtractScriptSigParameters(Network.Main, scriptSig);
+            sigResult = PayToPubkeyHashTemplate.Instance.ExtractScriptSigParameters(this.network, scriptSig);
             Assert.Null(sigResult.TransactionSignature);
 
             Script scriptSig2 = PayToPubkeyHashTemplate.Instance.GenerateScriptSig(sigResult);
@@ -979,19 +990,19 @@ namespace NBitcoin.Tests
             Assert.Null(pub);
 
             string scriptSig = "3044022064f45a382a15d3eb5e7fe72076eec4ef0f56fde1adfd710866e729b9e5f3383d02202720a895914c69ab49359087364f06d337a2138305fbc19e20d18da78415ea9301";
-            TransactionSignature sig = PayToPubkeyTemplate.Instance.ExtractScriptSigParameters(Network.Main, new Script(scriptSig));
+            TransactionSignature sig = PayToPubkeyTemplate.Instance.ExtractScriptSigParameters(this.network, new Script(scriptSig));
             Assert.NotNull(sig);
-            Assert.True(PayToPubkeyTemplate.Instance.CheckScriptSig(Network.Main, new Script(scriptSig), null));
+            Assert.True(PayToPubkeyTemplate.Instance.CheckScriptSig(this.network, new Script(scriptSig), null));
 
             scriptSig = "0044022064f45a382a15d3eb5e7fe72076eec4ef0f56fde1adfd710866e729b9e5f3383d02202720a895914c69ab49359087364f06d337a2138305fbc19e20d18da78415ea9301";
-            sig = PayToPubkeyTemplate.Instance.ExtractScriptSigParameters(Network.Main, new Script(scriptSig));
+            sig = PayToPubkeyTemplate.Instance.ExtractScriptSigParameters(this.network, new Script(scriptSig));
             Assert.Null(sig);
-            Assert.False(PayToPubkeyTemplate.Instance.CheckScriptSig(Network.Main, new Script(scriptSig), null));
+            Assert.False(PayToPubkeyTemplate.Instance.CheckScriptSig(this.network, new Script(scriptSig), null));
 
             scriptSig = Encoders.Hex.EncodeData(TransactionSignature.Empty.ToBytes());
-            sig = PayToPubkeyTemplate.Instance.ExtractScriptSigParameters(Network.Main, new Script(scriptSig));
+            sig = PayToPubkeyTemplate.Instance.ExtractScriptSigParameters(this.network, new Script(scriptSig));
             Assert.NotNull(sig);
-            Assert.True(PayToPubkeyTemplate.Instance.CheckScriptSig(Network.Main, new Script(scriptSig), null));
+            Assert.True(PayToPubkeyTemplate.Instance.CheckScriptSig(this.network, new Script(scriptSig), null));
         }
 
         [Fact]
@@ -1002,7 +1013,7 @@ namespace NBitcoin.Tests
             var scriptPubKey = new Script("0 05481b7f1d90c5a167a15b00e8af76eb6984ea59");
             Assert.Equal(scriptPubKey, PayToWitPubKeyHashTemplate.Instance.GenerateScriptPubKey(pubkey));
             Assert.Equal(scriptPubKey, PayToWitPubKeyHashTemplate.Instance.GenerateScriptPubKey(pubkey.WitHash));
-            Assert.Equal(scriptPubKey, PayToWitPubKeyHashTemplate.Instance.GenerateScriptPubKey((BitcoinWitPubKeyAddress)pubkey.WitHash.GetAddress(Network.Main)));
+            Assert.Equal(scriptPubKey, PayToWitPubKeyHashTemplate.Instance.GenerateScriptPubKey((BitcoinWitPubKeyAddress)pubkey.WitHash.GetAddress(this.network)));
             var expected = new WitScript("304402206104c335e4adbb920184957f9f710b09de17d015329fde6807b9d321fd2142db02200b24ad996b4aa4ff103000348b5ad690abfd9fddae546af9e568394ed4a8311301 03a65786c1a48d4167aca08cf6eb8eed081e13f45c02dc6000fd8f3bb16242579a");
             WitScript actual = PayToWitPubKeyHashTemplate.Instance.GenerateWitScript(new PayToWitPubkeyHashScriptSigParameters()
             {
@@ -1029,7 +1040,7 @@ namespace NBitcoin.Tests
         public void CanParseAndGeneratePayToMultiSig()
         {
             string scriptPubKey = "1 0364bd4b02a752798342ed91c681a48793bb1c0853cbcd0b978c55e53485b8e27c 0364bd4b02a752798342ed91c681a48793bb1c0853cbcd0b978c55e53485b8e27d 2 OP_CHECKMULTISIG";
-            PayToMultiSigTemplateParameters scriptPubKeyResult = PayToMultiSigTemplate.Instance.ExtractScriptPubKeyParameters(Network.Main, new Script(scriptPubKey));
+            PayToMultiSigTemplateParameters scriptPubKeyResult = PayToMultiSigTemplate.Instance.ExtractScriptPubKeyParameters(new Script(scriptPubKey));
             Assert.Equal("0364bd4b02a752798342ed91c681a48793bb1c0853cbcd0b978c55e53485b8e27c", scriptPubKeyResult.PubKeys[0].ToString());
             Assert.Equal("0364bd4b02a752798342ed91c681a48793bb1c0853cbcd0b978c55e53485b8e27d", scriptPubKeyResult.PubKeys[1].ToString());
             Assert.Equal(1, scriptPubKeyResult.SignatureCount);
@@ -1037,14 +1048,14 @@ namespace NBitcoin.Tests
 
             string scriptSig = "0 3044022064f45a382a15d3eb5e7fe72076eec4ef0f56fde1adfd710866e729b9e5f3383d02202720a895914c69ab49359087364f06d337a2138305fbc19e20d18da78415ea9301 3044022064f45a382a15d3eb5e7fe72076eec4ef0f56fde1adfd710866e729b9e5f3383d02202720a895914c69ab49359087364f06d337a2138305fbc19e20d18da78415ea9302";
 
-            TransactionSignature[] result = PayToMultiSigTemplate.Instance.ExtractScriptSigParameters(Network.Main, new Script(scriptSig));
+            TransactionSignature[] result = PayToMultiSigTemplate.Instance.ExtractScriptSigParameters(this.network, new Script(scriptSig));
             Assert.Equal("3044022064f45a382a15d3eb5e7fe72076eec4ef0f56fde1adfd710866e729b9e5f3383d02202720a895914c69ab49359087364f06d337a2138305fbc19e20d18da78415ea9301", Encoders.Hex.EncodeData(result[0].ToBytes()));
             Assert.Equal("3044022064f45a382a15d3eb5e7fe72076eec4ef0f56fde1adfd710866e729b9e5f3383d02202720a895914c69ab49359087364f06d337a2138305fbc19e20d18da78415ea9302", Encoders.Hex.EncodeData(result[1].ToBytes()));
 
             Assert.Equal(scriptSig, PayToMultiSigTemplate.Instance.GenerateScriptSig(result).ToString());
 
             scriptSig = "0 0 3044022064f45a382a15d3eb5e7fe72076eec4ef0f56fde1adfd710866e729b9e5f3383d02202720a895914c69ab49359087364f06d337a2138305fbc19e20d18da78415ea9302";
-            result = PayToMultiSigTemplate.Instance.ExtractScriptSigParameters(Network.Main, new Script(scriptSig));
+            result = PayToMultiSigTemplate.Instance.ExtractScriptSigParameters(this.network, new Script(scriptSig));
             Assert.Null(result[0]);
             Assert.Equal("3044022064f45a382a15d3eb5e7fe72076eec4ef0f56fde1adfd710866e729b9e5f3383d02202720a895914c69ab49359087364f06d337a2138305fbc19e20d18da78415ea9302", Encoders.Hex.EncodeData(result[1].ToBytes()));
 
@@ -1053,7 +1064,7 @@ namespace NBitcoin.Tests
 
 
             var sig = new TransactionSignature(Encoders.Hex.DecodeData("3044022064f45a382a15d3eb5e7fe72076eec4ef0f56fde1adfd710866e729b9e5f3383d02202720a895914c69ab49359087364f06d337a2138305fbc19e20d18da78415ea9301"));
-            Script actual = PayToScriptHashTemplate.Instance.GenerateScriptSig(Network.Main, new[] { sig, sig }, new Script(scriptPubKey));
+            Script actual = PayToScriptHashTemplate.Instance.GenerateScriptSig(this.network, new[] { sig, sig }, new Script(scriptPubKey));
             var expected = new Script("0 3044022064f45a382a15d3eb5e7fe72076eec4ef0f56fde1adfd710866e729b9e5f3383d02202720a895914c69ab49359087364f06d337a2138305fbc19e20d18da78415ea9301 3044022064f45a382a15d3eb5e7fe72076eec4ef0f56fde1adfd710866e729b9e5f3383d02202720a895914c69ab49359087364f06d337a2138305fbc19e20d18da78415ea9301 " + new Script(scriptPubKey).ToHex());
             Assert.Equal(expected, actual);
         }
@@ -1064,35 +1075,35 @@ namespace NBitcoin.Tests
         {
             var payToMultiSig = new Script("1 0364bd4b02a752798342ed91c681a48793bb1c0853cbcd0b978c55e53485b8e27c 0364bd4b02a752798342ed91c681a48793bb1c0853cbcd0b978c55e53485b8e27d 2 OP_CHECKMULTISIG");
 
-            Assert.Null(payToMultiSig.GetSigner(Network.Main));
-            PubKey[] destinations = payToMultiSig.GetDestinationPublicKeys(Network.Main);
+            Assert.Null(payToMultiSig.GetSigner(this.network));
+            PubKey[] destinations = payToMultiSig.GetDestinationPublicKeys(this.network);
             Assert.Equal(2, destinations.Length);
             Assert.Equal("0364bd4b02a752798342ed91c681a48793bb1c0853cbcd0b978c55e53485b8e27c", destinations[0].ToHex());
             Assert.Equal("0364bd4b02a752798342ed91c681a48793bb1c0853cbcd0b978c55e53485b8e27d", destinations[1].ToHex());
 
             var payToScriptHash = new Script("OP_HASH160 b5b88dd9befc9236915fcdbb7fd50052df50c855 OP_EQUAL");
-            Assert.NotNull(payToScriptHash.GetDestination(Network.Main));
-            Assert.IsType<ScriptId>(payToScriptHash.GetDestination(Network.Main));
-            Assert.Equal("b5b88dd9befc9236915fcdbb7fd50052df50c855", payToScriptHash.GetDestination(Network.Main).ToString());
-            Assert.True(payToScriptHash.GetDestination(Network.Main).GetAddress(Network.Main).GetType() == typeof(BitcoinScriptAddress));
+            Assert.NotNull(payToScriptHash.GetDestination(this.network));
+            Assert.IsType<ScriptId>(payToScriptHash.GetDestination(this.network));
+            Assert.Equal("b5b88dd9befc9236915fcdbb7fd50052df50c855", payToScriptHash.GetDestination(this.network).ToString());
+            Assert.True(payToScriptHash.GetDestination(this.network).GetAddress(this.network).GetType() == typeof(BitcoinScriptAddress));
 
             var payToPubKeyHash = new Script("OP_DUP OP_HASH160 356facdac5f5bcae995d13e667bb5864fd1e7d59 OP_EQUALVERIFY OP_CHECKSIG");
-            Assert.NotNull(payToPubKeyHash.GetDestination(Network.Main));
-            Assert.IsType<KeyId>(payToPubKeyHash.GetDestination(Network.Main));
-            Assert.Equal("356facdac5f5bcae995d13e667bb5864fd1e7d59", payToPubKeyHash.GetDestination(Network.Main).ToString());
-            Assert.True(payToPubKeyHash.GetDestination(Network.Main).GetAddress(Network.Main).GetType() == typeof(BitcoinPubKeyAddress));
+            Assert.NotNull(payToPubKeyHash.GetDestination(this.network));
+            Assert.IsType<KeyId>(payToPubKeyHash.GetDestination(this.network));
+            Assert.Equal("356facdac5f5bcae995d13e667bb5864fd1e7d59", payToPubKeyHash.GetDestination(this.network).ToString());
+            Assert.True(payToPubKeyHash.GetDestination(this.network).GetAddress(this.network).GetType() == typeof(BitcoinPubKeyAddress));
 
             var p2shScriptSig = new Script("0 3044022064f45a382a15d3eb5e7fe72076eec4ef0f56fde1adfd710866e729b9e5f3383d02202720a895914c69ab49359087364f06d337a2138305fbc19e20d18da78415ea9301 51210364bd4b02a752798342ed91c681a48793bb1c0853cbcd0b978c55e53485b8e27c210364bd4b02a752798342ed91c681a48793bb1c0853cbcd0b978c55e53485b8e27d52ae");
 
-            Assert.NotNull(p2shScriptSig.GetSigner(Network.Main));
-            Assert.IsType<ScriptId>(p2shScriptSig.GetSigner(Network.Main));
-            Assert.Equal("b5b88dd9befc9236915fcdbb7fd50052df50c855", p2shScriptSig.GetSigner(Network.Main).ToString());
+            Assert.NotNull(p2shScriptSig.GetSigner(this.network));
+            Assert.IsType<ScriptId>(p2shScriptSig.GetSigner(this.network));
+            Assert.Equal("b5b88dd9befc9236915fcdbb7fd50052df50c855", p2shScriptSig.GetSigner(this.network).ToString());
 
             var p2phScriptSig = new Script("3045022100af878a48aab5a71397d518ee1ae3c35267cb559240bc4a06926d65d575090e7f02202a9208e1f13683b4e450b349ae3e7bd4498d5d808f06c4b8059ea41595447af401 02a71e88db4924c7620f3b27fa748817444b6ad02cd8cea32ed3cf2deb8b5ccae7");
 
-            Assert.NotNull(p2phScriptSig.GetSigner(Network.Main));
-            Assert.IsType<KeyId>(p2phScriptSig.GetSigner(Network.Main));
-            Assert.Equal("352183abbcc80a0cd7c051a28df0abbf1e80ac3e", p2phScriptSig.GetSigner(Network.Main).ToString());
+            Assert.NotNull(p2phScriptSig.GetSigner(this.network));
+            Assert.IsType<KeyId>(p2phScriptSig.GetSigner(this.network));
+            Assert.Equal("352183abbcc80a0cd7c051a28df0abbf1e80ac3e", p2phScriptSig.GetSigner(this.network).ToString());
         }
 
 
@@ -1102,7 +1113,7 @@ namespace NBitcoin.Tests
         {
             var p2pkhScriptSig = new Script("304402206e3f2f829644ffe78b56ec8d0ea3715aee66e533a8195220bdea1526dc6ed3b202205eabcae791abfea55d54f8ec4e6de1bad1f7aa90e91687e81150b411e457025701 029f4485fddb359aeed82d71dc8df2fb0e83e31601c749d468ea92c99c13c5558b");
             p2pkhScriptSig.ToString();
-            PayToScriptHashSigParameters result = PayToScriptHashTemplate.Instance.ExtractScriptSigParameters(Network.Main, p2pkhScriptSig);
+            PayToScriptHashSigParameters result = PayToScriptHashTemplate.Instance.ExtractScriptSigParameters(this.network, p2pkhScriptSig);
 
             Assert.Null(result);
         }
@@ -1121,24 +1132,24 @@ namespace NBitcoin.Tests
             Assert.Equal("b5b88dd9befc9236915fcdbb7fd50052df50c855", pubParams.ToString());
             Assert.Equal(scriptPubkey, PayToScriptHashTemplate.Instance.GenerateScriptPubKey(pubParams).ToString());
             new ScriptId(new Script());
-            PayToScriptHashSigParameters sigParams = PayToScriptHashTemplate.Instance.ExtractScriptSigParameters(Network.Main, new Script(scriptSig));
-            Assert.Equal("3044022064f45a382a15d3eb5e7fe72076eec4ef0f56fde1adfd710866e729b9e5f3383d02202720a895914c69ab49359087364f06d337a2138305fbc19e20d18da78415ea9301", Encoders.Hex.EncodeData(sigParams.GetMultisigSignatures(Network.Main)[0].ToBytes()));
+            PayToScriptHashSigParameters sigParams = PayToScriptHashTemplate.Instance.ExtractScriptSigParameters(this.network, new Script(scriptSig));
+            Assert.Equal("3044022064f45a382a15d3eb5e7fe72076eec4ef0f56fde1adfd710866e729b9e5f3383d02202720a895914c69ab49359087364f06d337a2138305fbc19e20d18da78415ea9301", Encoders.Hex.EncodeData(sigParams.GetMultisigSignatures(this.network)[0].ToBytes()));
             Assert.Equal(redeem, sigParams.RedeemScript.ToString());
             Assert.Equal(scriptSig, PayToScriptHashTemplate.Instance.GenerateScriptSig(sigParams).ToString());
 
             //If scriptPubKey is provided, is it verifying the provided scriptSig is coherent with it ?
-            sigParams = PayToScriptHashTemplate.Instance.ExtractScriptSigParameters(Network.Main, new Script(scriptSig), sigParams.RedeemScript.PaymentScript);
+            sigParams = PayToScriptHashTemplate.Instance.ExtractScriptSigParameters(this.network, new Script(scriptSig), sigParams.RedeemScript.PaymentScript);
             Assert.NotNull(sigParams);
-            sigParams = PayToScriptHashTemplate.Instance.ExtractScriptSigParameters(Network.Main, new Script(scriptSig), new Script("OP_HASH160 b5b88dd9befc9236915fcdbb7fd50052df50c853 OP_EQUAL"));
+            sigParams = PayToScriptHashTemplate.Instance.ExtractScriptSigParameters(this.network, new Script(scriptSig), new Script("OP_HASH160 b5b88dd9befc9236915fcdbb7fd50052df50c853 OP_EQUAL"));
             Assert.Null(sigParams);
-            sigParams = PayToScriptHashTemplate.Instance.ExtractScriptSigParameters(Network.Main, new Script(scriptSig), new Script("OP_HASH160 OP_EQUAL"));
+            sigParams = PayToScriptHashTemplate.Instance.ExtractScriptSigParameters(this.network, new Script(scriptSig), new Script("OP_HASH160 OP_EQUAL"));
             Assert.Null(sigParams);
             ///
 
             scriptSig = "0 0 51210364bd4b02a752798342ed91c681a48793bb1c0853cbcd0b978c55e53485b8e27c210364bd4b02a752798342ed91c681a48793bb1c0853cbcd0b978c55e53485b8e27d52ae";
 
-            sigParams = PayToScriptHashTemplate.Instance.ExtractScriptSigParameters(Network.Main, new Script(scriptSig));
-            Assert.Null(sigParams.GetMultisigSignatures(Network.Main)[0]);
+            sigParams = PayToScriptHashTemplate.Instance.ExtractScriptSigParameters(this.network, new Script(scriptSig));
+            Assert.Null(sigParams.GetMultisigSignatures(this.network)[0]);
             Script scriptSig2 = PayToScriptHashTemplate.Instance.GenerateScriptSig(sigParams);
             Assert.Equal(scriptSig2.ToString(), scriptSig);
         }
