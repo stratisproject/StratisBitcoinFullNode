@@ -407,7 +407,7 @@ namespace NBitcoin.Tests
             var satoshi = new Key();
             var bob = new Key();
 
-            var repo = new NoSqlColoredTransactionRepository(new NoSqlTransactionRepository(this.network), new InMemoryNoSqlRepository(this.network));
+            var repo = new NoSqlColoredTransactionRepository(this.network);
 
             Transaction init = this.consensusFactory.CreateTransaction();
 
@@ -495,7 +495,7 @@ namespace NBitcoin.Tests
             var bob = new Key();
             var alice = new Key();
 
-            var repo = new NoSqlColoredTransactionRepository();
+            var repo = new NoSqlColoredTransactionRepository(this.network);
 
             Transaction init = this.consensusFactory.CreateTransaction();
             init.Outputs.AddRange(new[]
