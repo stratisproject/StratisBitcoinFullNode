@@ -1671,7 +1671,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
             ChainedHeader extendedChainTip = testContext.ExtendAChain(chainExtension, initialChainTip);
             List<BlockHeader> listOfChainBlockHeaders = testContext.ChainedHeaderToList(extendedChainTip, initialChainSize + chainExtension);
 
-            // Ten headers beyond the initial chain presented h6->h15.
+            // Present all chain headers h1->h15.
             ConnectNewHeadersResult connectNewHeadersResult = chainedHeaderTree.ConnectNewHeaders(1, listOfChainBlockHeaders);
             Assert.True(connectNewHeadersResult.HaveBlockDataAvailabilityStateOf(BlockDataAvailabilityState.BlockRequired));
 
