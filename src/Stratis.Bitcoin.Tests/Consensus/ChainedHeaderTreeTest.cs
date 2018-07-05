@@ -1528,7 +1528,9 @@ namespace Stratis.Bitcoin.Tests.Consensus
             connectionResult.DownloadFrom.Should().BeNull();
             connectionResult.DownloadTo.Should().BeNull();
             connectionResult.Consumed.HashBlock.Should().Be(chainATip.HashBlock);
-            connectionResult.HaveBlockDataAvailabilityStateOf(BlockDataAvailabilityState.BlockAvailable);
+
+            ChainedHeader[] consumedHeaders = connectionResult.Consumed.ToArray(listOfChainAHeaders.Count);
+            consumedHeaders.HaveBlockDataAvailabilityStateOf(BlockDataAvailabilityState.HeaderOnly).Should().BeTrue();
 
             // Setup chain B that extends to height 150 and is based on the previous 30 header extension, i.e. fork point at 50.
             // Example: h1=h2=..=h50=b51=b52=..=b150.
@@ -1544,7 +1546,8 @@ namespace Stratis.Bitcoin.Tests.Consensus
             connectionResult.DownloadFrom.Should().BeNull();
             connectionResult.DownloadTo.Should().BeNull();
             connectionResult.Consumed.HashBlock.Should().Be(chainBTip.HashBlock);
-            connectionResult.HaveBlockDataAvailabilityStateOf(BlockDataAvailabilityState.BlockAvailable);
+            consumedHeaders = connectionResult.Consumed.ToArray(listOfChainAHeaders.Count);
+            consumedHeaders.HaveBlockDataAvailabilityStateOf(BlockDataAvailabilityState.HeaderOnly).Should().BeTrue();
         }
 
         /// <summary>
