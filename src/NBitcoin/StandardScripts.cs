@@ -29,7 +29,7 @@ namespace NBitcoin
             return tx.Outputs.All(vout => IsStandardScriptPubKey(network, vout.ScriptPubKey));
         }
 
-        public static ScriptTemplate GetTemplateFromScriptPubKey(Network network, Script script)
+        public static ScriptTemplate GetTemplateFromScriptPubKey(Script script)
         {
             return _StandardTemplates.FirstOrDefault(t => t.CheckScriptPubKey(script));
         }
@@ -40,7 +40,7 @@ namespace NBitcoin
         }
         private static bool IsStandardScriptSig(Network network, Script scriptSig, Script scriptPubKey)
         {
-            ScriptTemplate template = GetTemplateFromScriptPubKey(network, scriptPubKey);
+            ScriptTemplate template = GetTemplateFromScriptPubKey(scriptPubKey);
             if(template == null)
                 return false;
 

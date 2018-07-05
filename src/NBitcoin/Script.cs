@@ -885,7 +885,7 @@ namespace NBitcoin
 
         public ScriptTemplate FindTemplate(Network network)
         {
-            return StandardScripts.GetTemplateFromScriptPubKey(network, this);
+            return StandardScripts.GetTemplateFromScriptPubKey(this);
         }
 
         /// <summary>
@@ -1205,12 +1205,12 @@ namespace NBitcoin
 
         private static Script CombineSignatures(Network network, Script scriptPubKey, TransactionChecker checker, byte[][] sigs1, byte[][] sigs2, HashVersion hashVersion)
         {
-            ScriptTemplate template = StandardScripts.GetTemplateFromScriptPubKey(network, scriptPubKey);
+            ScriptTemplate template = StandardScripts.GetTemplateFromScriptPubKey(scriptPubKey);
 
             if(template is PayToWitPubKeyHashTemplate)
             {
                 scriptPubKey = new KeyId(scriptPubKey.ToBytes(true).SafeSubarray(1, 20)).ScriptPubKey;
-                template = StandardScripts.GetTemplateFromScriptPubKey(network, scriptPubKey);
+                template = StandardScripts.GetTemplateFromScriptPubKey(scriptPubKey);
             }
             if(template == null || template is TxNullDataTemplate)
                 return PushAll(Max(sigs1, sigs2));
