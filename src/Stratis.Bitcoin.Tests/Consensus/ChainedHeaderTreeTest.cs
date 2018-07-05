@@ -1956,6 +1956,8 @@ namespace Stratis.Bitcoin.Tests.Consensus
             // Call PartialValidationSucceeded on h2.
             chainedHeaderTree.PartialValidationSucceeded(chainTip, out bool reorgRequired);
 
+            chainTip.BlockValidationState.Should().Be(ValidationState.PartiallyValidated);
+
             reorgRequired.Should().BeTrue();
         }
 
