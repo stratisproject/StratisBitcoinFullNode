@@ -1934,11 +1934,11 @@ namespace Stratis.Bitcoin.Tests.Consensus
             listOfHeaders.First().ChainedHeader.HashBlock.Should().Be(secondHeader.HashBlock);
         }
 
-        /// Issue 31 @ Chain is 2 blocks long, CT is header 1, call FullValidationRequired on header 2.
-        /// Make sure that reorg that is returned is true.
+        /// Issue 31 @ Chain is 2 blocks long, CT is header 1, call PartialValidationSucceeded on header 2.
+        /// Make sure that full validation is required.
         /// </summary>
         [Fact]
-        public void ChainOfHeaders_CallFullValidationRequiredOnBlockBeyondConsensusTip_ReorgIsRequired()
+        public void ChainOfHeaders_CallPartialValidationSucceededOnBlockBeyondConsensusTip_FullValidationIsRequired()
         {
             // Chain header tree setup.
             const int initialChainSize = 1;
@@ -1953,7 +1953,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
             // Chain is 2 blocks long: h1=h2.
             chainedHeaderTree.ConnectNewHeaders(1, listOfChainHeaders);
 
-            // Call FullValidationRequired on h2.
+            // Call PartialValidationSucceeded on h2.
             chainedHeaderTree.PartialValidationSucceeded(chainTip, out bool reorgRequired);
 
             reorgRequired.Should().BeTrue();
