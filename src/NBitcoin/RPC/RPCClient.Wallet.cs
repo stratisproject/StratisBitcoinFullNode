@@ -231,7 +231,7 @@ namespace NBitcoin.RPC
             var r = (JObject)response.Result;
             return new FundRawTransactionResponse()
             {
-                Transaction = new Transaction(r["hex"].Value<string>()),
+                Transaction = this.network.CreateTransaction(r["hex"].Value<string>()),
                 Fee = Money.Coins(r["fee"].Value<decimal>()),
                 ChangePos = r["changepos"].Value<int>()
             };
@@ -608,7 +608,7 @@ namespace NBitcoin.RPC
         public async Task<Transaction> SignRawTransactionAsync(Transaction tx)
         {
             RPCResponse result = await SendCommandAsync(RPCOperations.signrawtransaction, tx.ToHex()).ConfigureAwait(false);
-            return new Transaction(result.Result["hex"].Value<string>());
+            return this.network.CreateTransaction(result.Result["hex"].Value<string>());
         }
     }
 }

@@ -1,11 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
+using NBitcoin.Protocol;
 using Stratis.Bitcoin.Base;
+using Stratis.Bitcoin.BlockPulling2;
+using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Consensus.Rules;
@@ -17,20 +19,6 @@ using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Consensus
 {
-    /// <summary>
-    /// TODO: replace with interface from the new block puller.
-    /// </summary>
-    public interface IBlockPuller
-    {
-        void NewTipClaimed(int networkPeerId, ChainedHeader chainedHeader);
-
-        long AverageBlockSize { get; }
-
-        void RequestNewData(BlockDownloadRequest downloadRequest);
-
-        void PeerDisconnected(int networkPeerId);
-    }
-
     public class ConsensusManager : IDisposable
     {
         /// <summary>
@@ -73,6 +61,9 @@ namespace Stratis.Bitcoin.Consensus
         /// <summary>Protects access to the <see cref="blockPuller"/>, <see cref="chainedHeaderTree"/>, <see cref="expectedBlockSizes"/> and <see cref="expectedBlockDataBytes"/>.</summary>
         private readonly object peerLock;
 
+        /// <inheritdoc cref="IInitialBlockDownloadState"/>
+        private IInitialBlockDownloadState ibdState;
+
         private readonly object blockRequestedLock;
 
         private readonly AsyncLock reorgLock;
@@ -81,25 +72,28 @@ namespace Stratis.Bitcoin.Consensus
 
         private readonly Dictionary<uint256, long> expectedBlockSizes;
 
+        private bool isIbd;
+
         public ConsensusManager(
             Network network, 
             ILoggerFactory loggerFactory, 
             IChainState chainState, 
             IBlockValidator blockValidator, 
             ICheckpoints checkpoints, 
-            ConsensusSettings consensusSettings, 
-            IBlockPuller blockPuller,
+            ConsensusSettings consensusSettings,
             IConsensusRules consensusRules,
             IFinalizedBlockHeight finalizedBlockHeight,
             Signals.Signals signals,
             IPeerBanning peerBanning,
+            NodeSettings nodeSettings,
+            IDateTimeProvider dateTimeProvider,
+            IInitialBlockDownloadState ibdState,
             IBlockStore blockStore = null)
         {
             this.network = network;
             this.chainState = chainState;
             this.blockValidator = blockValidator;
             this.consensusSettings = consensusSettings;
-            this.blockPuller = blockPuller;
             this.consensusRules = consensusRules;
             this.signals = signals;
             this.peerBanning = peerBanning;
@@ -118,6 +112,11 @@ namespace Stratis.Bitcoin.Consensus
             this.callbacksByBlocksRequestedHash = new Dictionary<uint256, List<OnBlockDownloadedCallback>>();
             this.peersByPeerId = new Dictionary<int, INetworkPeer>();
             this.toDownloadQueue = new Queue<BlockDownloadRequest>();
+            this.ibdState = ibdState;
+
+            ProtocolVersion protocolVersion = nodeSettings.ProtocolVersion;
+
+            this.blockPuller = new BlockPuller(this.BlockDownloaded, this.chainState, protocolVersion, dateTimeProvider, loggerFactory);
         }
 
         /// <summary>
@@ -155,7 +154,14 @@ namespace Stratis.Bitcoin.Consensus
                 consensusTipHash = transitionState.BlockHash;
             }
             
+            this.chainState.ConsensusTip = this.Tip;
+
             this.chainedHeaderTree.Initialize(this.Tip, this.blockStore != null);
+
+            this.blockPuller.Initialize();
+
+            this.isIbd = this.ibdState.IsInitialBlockDownload();
+            this.blockPuller.OnIbdStateChanged(this.isIbd);
 
             this.logger.LogTrace("(-)");
         }
@@ -181,7 +187,7 @@ namespace Stratis.Bitcoin.Consensus
                 int peerId = peer.Connection.Id;
 
                 connectNewHeadersResult = this.chainedHeaderTree.ConnectNewHeaders(peerId, headers);
-                this.blockPuller.NewTipClaimed(peerId, connectNewHeadersResult.Consumed);
+                this.blockPuller.NewPeerTipClaimed(peer, connectNewHeadersResult.Consumed);
                 
                 if (!this.peersByPeerId.ContainsKey(peerId))
                 {
@@ -761,6 +767,14 @@ namespace Stratis.Bitcoin.Consensus
 
             this.Tip = newTip;
 
+            this.chainState.ConsensusTip = this.Tip;
+            bool ibd = this.ibdState.IsInitialBlockDownload();
+
+            if (ibd != this.isIbd)
+                this.blockPuller.OnIbdStateChanged(ibd);
+
+            this.isIbd = ibd;
+
             this.logger.LogTrace("(-):*.{0}={1}", nameof(reorgViolatedFailed.Count), reorgViolatedFailed.Count);
             return reorgViolatedFailed;
         }
@@ -839,9 +853,9 @@ namespace Stratis.Bitcoin.Consensus
             this.logger.LogTrace("(-)");
         }
 
-        private void BlockDownloaded(Block block, uint256 blockHash, int peerId)
+        private void BlockDownloaded(uint256 blockHash, Block block)
         {
-            this.logger.LogTrace("({0}:'{1}',{2}:{3})", nameof(blockHash), blockHash, nameof(peerId), peerId);
+            this.logger.LogTrace("({0}:'{1}')", nameof(blockHash), blockHash);
 
             ChainedHeader chainedHeader = null;
             
@@ -1024,7 +1038,7 @@ namespace Stratis.Bitcoin.Consensus
                     return;
                 }
 
-                long avgSize = this.blockPuller.AverageBlockSize;
+                long avgSize = (long)this.blockPuller.GetAverageBlockSizeBytes();
                 int blocksToAsk = avgSize != 0 ? (int)(freeBytes / avgSize) : DefaultNumberOfBlocksToAsk;
 
                 this.logger.LogTrace("With {0} average block size, we have {1} download slots available.", avgSize, blocksToAsk);
@@ -1048,7 +1062,7 @@ namespace Stratis.Bitcoin.Consensus
                     request = blockPullerRequest;
                 }
 
-                this.blockPuller.RequestNewData(request);
+                this.blockPuller.RequestBlocksDownload(request.BlocksToDownload);
 
                 foreach (ChainedHeader chainedHeader in request.BlocksToDownload)
                     this.expectedBlockSizes.Add(chainedHeader.HashBlock, avgSize);

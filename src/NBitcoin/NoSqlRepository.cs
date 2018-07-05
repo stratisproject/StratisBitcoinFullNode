@@ -29,9 +29,11 @@ namespace NBitcoin
             byte[] data = await GetBytes(key).ConfigureAwait(false);
             if (data == null)
                 return default(T);
+
             T obj = this.network.Consensus.ConsensusFactory.TryCreateNew<T>();
             if (obj == null)
                 obj = Activator.CreateInstance<T>();
+
             obj.ReadWrite(data, consensusFactory: this.network.Consensus.ConsensusFactory);
             return obj;
         }
