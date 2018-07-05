@@ -6,7 +6,7 @@ namespace NBitcoin
 {
     public class QBitNinjaTransactionRepository : ITransactionRepository
     {
-        private readonly Uri baseUri;
+        public readonly Uri BaseUri;
         private readonly Network network;
 
         /// <summary>
@@ -16,7 +16,7 @@ namespace NBitcoin
         public QBitNinjaTransactionRepository(Network network)
         {
             this.network = network ?? throw new ArgumentNullException("network");
-            this.baseUri = new Uri("http://" + (network == Network.Main ? "" : "t") + "api.qbit.ninja/");
+            this.BaseUri = new Uri("http://" + (network == Network.Main ? "" : "t") + "api.qbit.ninja/");
         }
 
         public QBitNinjaTransactionRepository(Uri baseUri)
@@ -29,14 +29,14 @@ namespace NBitcoin
             if(!baseUri.EndsWith("/"))
                 baseUri += "/";
 
-            this.baseUri = new Uri(baseUri, UriKind.Absolute);
+            this.BaseUri = new Uri(baseUri, UriKind.Absolute);
         }
 
         public async Task<Transaction> GetAsync(uint256 txId)
         {
             using(var client = new HttpClient())
             {
-                HttpResponseMessage tx = await client.GetAsync(this.baseUri.AbsoluteUri + "transactions/" + txId + "?format=raw").ConfigureAwait(false);
+                HttpResponseMessage tx = await client.GetAsync(this.BaseUri.AbsoluteUri + "transactions/" + txId + "?format=raw").ConfigureAwait(false);
                 if(tx.StatusCode == System.Net.HttpStatusCode.NotFound)
                     return null;
 
