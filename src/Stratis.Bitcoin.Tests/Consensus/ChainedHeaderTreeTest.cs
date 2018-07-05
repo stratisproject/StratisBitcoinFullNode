@@ -1672,9 +1672,9 @@ namespace Stratis.Bitcoin.Tests.Consensus
             // Extend chain by 4 headers and connect it to CHT.
             // Example: h1=h2=h3=h4=h5=h6=h7=h8=h9.
             const int extensionSize = 4;
-            chainTip = ctx.ExtendAChain(extensionSize, chainTip, assignBlocks: false);
+            chainTip = ctx.ExtendAChain(extensionSize, chainTip);
 
-            // Present headers and download them.
+            // Present headers.
             List<BlockHeader> listOfExtendedHeaders = ctx.ChainedHeaderToList(chainTip, extensionSize);
             ConnectNewHeadersResult connectionResult = cht.ConnectNewHeaders(1, listOfExtendedHeaders);
             ChainedHeader consumed = connectionResult.Consumed;
