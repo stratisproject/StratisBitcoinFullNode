@@ -121,7 +121,7 @@ namespace Stratis.Bitcoin.Tests.Base
             foreach (ConcurrentChain chain in chains)
             {
                 Block block = this.Network.Consensus.ConsensusFactory.CreateBlock();
-                block.AddTransaction(this.Network.Consensus.ConsensusFactory.CreateTransaction());
+                block.AddTransaction(this.Network.CreateTransaction());
                 block.UpdateMerkleRoot();
                 block.Header.HashPrevBlock = previous == null ? chain.Tip.HashBlock : previous.HashBlock;
                 block.Header.Nonce = nonce;
