@@ -198,19 +198,19 @@ namespace NBitcoin
         }
 
         /// <inheritdoc />
-        internal override Transaction CreateTransaction()
+        public override Transaction CreateTransaction()
         {
             return new PosTransaction();
         }
 
         /// <inheritdoc />
-        internal override Transaction CreateTransaction(string hex)
+        public override Transaction CreateTransaction(string hex)
         {
             return new PosTransaction(hex);
         }
 
         /// <inheritdoc />
-        internal override Transaction CreateTransaction(byte[] bytes)
+        public override Transaction CreateTransaction(byte[] bytes)
         {
             return new PosTransaction(bytes);
         }
