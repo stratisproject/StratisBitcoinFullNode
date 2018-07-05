@@ -78,9 +78,9 @@ namespace Stratis.Bitcoin.Consensus.Validators
         public PartialValidation(IConsensusRules consensusRules, ILoggerFactory loggerFactory)
         {
             this.consensusRules = consensusRules;
-            this.asyncQueue = new AsyncQueue<PartialValidationItem>(this.OnEnqueueAsync);
-
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
+
+            this.asyncQueue = new AsyncQueue<PartialValidationItem>(this.OnEnqueueAsync);
         }
 
         private async Task OnEnqueueAsync(PartialValidationItem item, CancellationToken cancellationtoken)

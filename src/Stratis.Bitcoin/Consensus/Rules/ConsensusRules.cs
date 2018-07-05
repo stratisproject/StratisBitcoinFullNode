@@ -192,20 +192,7 @@ namespace Stratis.Bitcoin.Consensus.Rules
 
             RuleContext ruleContext = this.CreateRuleContext(validationContext, tip);
 
-            try
-            {
-                using (new StopwatchDisposable(o => this.PerformanceCounter.AddBlockProcessingTime(o)))
-                {
-                    foreach (ConsensusRuleDescriptor ruleDescriptor in this.fullValidationRules)
-                    {
-                        await ruleDescriptor.Rule.RunAsync(ruleContext).ConfigureAwait(false);
-                    }
-                }
-            }
-            catch (ConsensusErrorException ex)
-            {
-                validationContext.Error = ex.ConsensusError;
-            }
+            await this.ExecuteRulesAsync(this.partialValidationRules, ruleContext);
         }
 
         /// <inheritdoc/>
@@ -215,11 +202,18 @@ namespace Stratis.Bitcoin.Consensus.Rules
 
             RuleContext ruleContext = this.CreateRuleContext(validationContext, tip);
 
+            await this.ExecuteRulesAsync(this.partialValidationRules, ruleContext);
+        }
+
+        private async Task ExecuteRulesAsync(List<ConsensusRuleDescriptor> rules, RuleContext ruleContext)
+        {
             try
             {
                 using (new StopwatchDisposable(o => this.PerformanceCounter.AddBlockProcessingTime(o)))
                 {
-                    foreach (ConsensusRuleDescriptor ruleDescriptor in this.partialValidationRules)
+                    ruleContext.SkipValidation = ruleContext.ValidationContext.ChainedHeader.BlockValidationState == ValidationState.AssumedValid;
+
+                    foreach (ConsensusRuleDescriptor ruleDescriptor in rules)
                     {
                         if (ruleContext.SkipValidation && ruleDescriptor.CanSkipValidation)
                         {
@@ -234,7 +228,7 @@ namespace Stratis.Bitcoin.Consensus.Rules
             }
             catch (ConsensusErrorException ex)
             {
-                validationContext.Error = ex.ConsensusError;
+                ruleContext.ValidationContext.Error = ex.ConsensusError;
             }
         }
 

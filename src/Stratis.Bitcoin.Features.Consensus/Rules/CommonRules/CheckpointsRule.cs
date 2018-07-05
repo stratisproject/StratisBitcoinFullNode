@@ -26,8 +26,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
             }
 
             // Check whether to use checkpoint to skip block validation.
-            context.SkipValidation = false;
-            if (this.Parent.ConsensusSettings.UseCheckpoints)
+            if (context.SkipValidation == false && this.Parent.ConsensusSettings.UseCheckpoints)
             {
                 int lastCheckpointHeight = this.Parent.Checkpoints.GetLastCheckpointHeight();
                 context.SkipValidation = context.ValidationContext.ChainedHeader.Height <= lastCheckpointHeight;
