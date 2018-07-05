@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Reflection;
+using NBitcoin.DataEncoders;
 
 namespace NBitcoin
 {
@@ -169,6 +170,26 @@ namespace NBitcoin
         public virtual Transaction CreateTransaction()
         {
             return new Transaction();
+        }
+
+        /// <summary>
+        /// Create a <see cref="Transaction"/> instance from a hex string representation.
+        /// </summary>
+        public virtual Transaction CreateTransaction(string hex)
+        {
+            var transaction = new Transaction();
+            transaction.FromBytes(Encoders.Hex.DecodeData(hex));
+            return transaction;
+        }
+
+        /// <summary>
+        /// Create a <see cref="Transaction"/> instance from a byte array representation.
+        /// </summary>
+        public virtual Transaction CreateTransaction(byte[] bytes)
+        {
+            var transaction = new Transaction();
+            transaction.FromBytes(bytes);
+            return transaction;
         }
     }
 
