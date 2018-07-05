@@ -40,12 +40,27 @@ namespace Stratis.Bitcoin.Tests.Utilities
             CanSerializeInJsonCore(new LockTime(DateTime.UtcNow));
         }
 
+        [Fact]
+        public void CanSerializeRandomClass()
+        {
+            string str = Serializer.ToString(new DummyClass() { ExtPubKey = new ExtKey().Neuter().GetWif(Network.RegTest) }, Network.RegTest);
+            Assert.NotNull(Serializer.ToObject<DummyClass>(str, Network.RegTest));
+        }
+
         private T CanSerializeInJsonCore<T>(T value)
         {
             string str = Serializer.ToString(value);
             T obj2 = Serializer.ToObject<T>(str, Network.Main);
             Assert.Equal(str, Serializer.ToString(obj2));
             return obj2;
+        }
+    }
+
+    public class DummyClass
+    {
+        public BitcoinExtPubKey ExtPubKey
+        {
+            get; set;
         }
     }
 }
