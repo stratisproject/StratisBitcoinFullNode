@@ -1697,7 +1697,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
                 cht.ConsensusTipChanged(currentChainTip);
             }
 
-            // Make sure that headers 2-51 have no block data and headers 52-150 have.
+            // Make sure that headers 2-51 have no block data and headers 52-151 have.
             Dictionary<uint256, ChainedHeader> storedHeaders = cht.GetChainedHeadersByHash();
             foreach (ChainedHeader consumedHeader in consumedHeaderArray)
             {
