@@ -839,7 +839,8 @@ namespace Stratis.Bitcoin.Tests.Consensus
             connectNewHeadersResult = chainedHeaderTree.ConnectNewHeaders(1, listOfCurrentChainHeaders);
 
             // All from X-10 (h21->h30) are marked for download.
-            ChainedHeader fromHeader = chainedHeaderTree.GetChainedHeadersByHash().Values.First(x => x.Height > assumeValidBlockHeight - 10);
+            int chainedHeaderHeightXMinus10 = (assumeValidBlockHeight - 10);
+            ChainedHeader fromHeader = extendedChainTip.GetAncestor(chainedHeaderHeightXMinus10 + 1);
             
             chainedHeaderDownloadFrom = connectNewHeadersResult.DownloadFrom;
             chainedHeaderDownloadTo = connectNewHeadersResult.DownloadTo;
@@ -852,8 +853,8 @@ namespace Stratis.Bitcoin.Tests.Consensus
             
             // Make sure that all blocks before assumevalid block
             // that are not fully or partially validated are marked assumevalid.
-            ChainedHeader headerBeforeIncludingAssumeValid = 
-                chainedHeaderTree.GetChainedHeadersByHash().Values.First(x => x.Height == assumeValidBlockHeight);
+            ChainedHeader headerBeforeIncludingAssumeValid = chainedHeaderTree
+                .GetPeerTipChainedHeaderByPeerId(1).GetAncestor(assumeValidBlockHeight);
 
             while (headerBeforeIncludingAssumeValid.Height > assumeValidBlockHeight - 20)
             {
