@@ -124,6 +124,7 @@ namespace Stratis.Bitcoin.BlockPulling2
         /// <remarks>This object has to be protected by <see cref="peerLock"/>.</remarks>
         private readonly Dictionary<int, IBlockPullerBehavior> pullerBehaviorsByPeerId;
 
+        /// <summary>The cancellation source that indicates that component's shutdown was triggered.</summary>
         private readonly CancellationTokenSource cancellationSource;
 
         /// <summary>The average block size in bytes calculated used up to <see cref="AverageBlockSizeSamplesCount"/> most recent samples.</summary>
@@ -277,9 +278,9 @@ namespace Stratis.Bitcoin.BlockPulling2
             {
                 int peerId = peer.Connection.Id;
 
-                if (this.pullerBehaviorsByPeerId.ContainsKey(peerId))
+                if (this.pullerBehaviorsByPeerId.TryGetValue(peerId, out IBlockPullerBehavior behavior))
                 {
-                    this.pullerBehaviorsByPeerId[peerId].Tip = newTip;
+                    behavior.Tip = newTip;
                     this.logger.LogTrace("Tip for peer with ID {0} was changed to '{1}'.", peerId, newTip);
                 }
                 else
@@ -288,7 +289,7 @@ namespace Stratis.Bitcoin.BlockPulling2
 
                     if (supportsRequirments)
                     {
-                        var behavior = peer.Behavior<IBlockPullerBehavior>();
+                        behavior = peer.Behavior<IBlockPullerBehavior>();
                         behavior.Tip = newTip;
                         this.pullerBehaviorsByPeerId.Add(peerId, behavior);
 
@@ -321,6 +322,7 @@ namespace Stratis.Bitcoin.BlockPulling2
         public void RequestBlocksDownload(List<ChainedHeader> headers)
         {
             this.logger.LogTrace("({0}:{1})", nameof(headers.Count), headers.Count);
+            Guard.Assert(headers.Count != 0);
 
             lock (this.queueLock)
             {
@@ -498,12 +500,12 @@ namespace Stratis.Bitcoin.BlockPulling2
             }
             else
             {
-                LinkedListNode<AssignedDownload> current = lastDownload.Previous;
-
-                while (current.Value.Header.Height > assignment.Header.Height)
+                LinkedListNode<AssignedDownload> current = lastDownload;
+                
+                while ((current.Previous != null) && (current.Previous.Value.Header.Height > assignment.Header.Height))
                     current = current.Previous;
 
-                assignment.LinkedListNode = this.assignedDownloadsSorted.AddAfter(current, assignment);
+                assignment.LinkedListNode = this.assignedDownloadsSorted.AddBefore(current, assignment);
             }
 
             this.logger.LogTrace("(-)");
@@ -558,7 +560,7 @@ namespace Stratis.Bitcoin.BlockPulling2
 
                 lock (this.peerLock)
                 {
-                    peerBehavior = this.pullerBehaviorsByPeerId[peerId];
+                    this.pullerBehaviorsByPeerId.TryGetValue(peerId, out peerBehavior);
                 }
 
                 bool success = false;
@@ -621,8 +623,8 @@ namespace Stratis.Bitcoin.BlockPulling2
                 jobFailed = true;
             }
 
-            int index;
-            for (index = 0; (index < downloadJob.Headers.Count) && (index < emptySlots) && !jobFailed; index++)
+            int lastSucceededIndex = -1;
+            for (int index = 0; (index < downloadJob.Headers.Count) && (index < emptySlots) && !jobFailed; index++)
             {
                 ChainedHeader header = downloadJob.Headers[index];
 
@@ -633,7 +635,7 @@ namespace Stratis.Bitcoin.BlockPulling2
                     double scoreToReachPeer = this.random.NextDouble() * sumOfQualityScores;
 
                     IBlockPullerBehavior selectedBehavior = peerBehaviors.First();
-                    
+
                     foreach (IBlockPullerBehavior peerBehavior in peerBehaviors)
                     {
                         if (peerBehavior.QualityScore >= scoreToReachPeer)
@@ -641,10 +643,10 @@ namespace Stratis.Bitcoin.BlockPulling2
                             selectedBehavior = peerBehavior;
                             break;
                         }
-                        
+
                         scoreToReachPeer -= peerBehavior.QualityScore;
                     }
-                    
+
                     int peerId = selectedBehavior.AttachedPeer.Connection.Id;
 
                     if (selectedBehavior.Tip.FindAncestorOrSelf(header) != null)
@@ -657,6 +659,8 @@ namespace Stratis.Bitcoin.BlockPulling2
                             AssignedTime = this.dateTimeProvider.GetUtcNow(),
                             Header = header
                         });
+
+                        lastSucceededIndex = index;
 
                         this.logger.LogTrace("Block '{0}' was assigned to peer ID {1}.", header.HashBlock, peerId);
                         break;
@@ -677,12 +681,13 @@ namespace Stratis.Bitcoin.BlockPulling2
 
             if (!jobFailed)
             {
-                downloadJob.Headers.RemoveRange(0, index);
+                downloadJob.Headers.RemoveRange(0, lastSucceededIndex + 1);
             }
             else
             {
-                // Index here will be the index of first failed header.
-                IEnumerable<uint256> failed = downloadJob.Headers.GetRange(index, downloadJob.Headers.Count - index).Select(x => x.HashBlock);
+                int removeFrom = (lastSucceededIndex == -1) ? 0 : lastSucceededIndex + 1;
+
+                IEnumerable<uint256> failed = downloadJob.Headers.GetRange(removeFrom, downloadJob.Headers.Count - removeFrom).Select(x => x.HashBlock);
                 failedHashes.AddRange(failed);
 
                 downloadJob.Headers.Clear();
@@ -800,11 +805,13 @@ namespace Stratis.Bitcoin.BlockPulling2
             lock (this.peerLock)
             {
                 // Add peer sample.
-                IBlockPullerBehavior pullerBehavior = this.pullerBehaviorsByPeerId[peerId];
-                pullerBehavior.AddSample(block.BlockSize.Value, deliveredInSeconds);
+                if (this.pullerBehaviorsByPeerId.TryGetValue(peerId, out IBlockPullerBehavior behavior))
+                {
+                    behavior.AddSample(block.BlockSize.Value, deliveredInSeconds);
 
-                // Recalculate quality score.
-                this.RecalculateQualityScoreLocked(pullerBehavior, peerId);
+                    // Recalculate quality score.
+                    this.RecalculateQualityScoreLocked(behavior, peerId);
+                }
             }
 
             lock (this.queueLock)
@@ -993,16 +1000,6 @@ namespace Stratis.Bitcoin.BlockPulling2
             this.cancellationSource.Dispose();
             
             this.logger.LogTrace("(-)");
-        }
-
-        /// <summary>Represents consecutive collection of headers that are to be downloaded.</summary>
-        private struct DownloadJob
-        {
-            /// <summary>Unique identifier of this job.</summary>
-            public int Id;
-
-            /// <summary>Headers of blocks that are to be downloaded.</summary>
-            public List<ChainedHeader> Headers;
         }
     }
 }
