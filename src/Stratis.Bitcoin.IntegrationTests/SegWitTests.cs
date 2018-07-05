@@ -1,4 +1,5 @@
 ﻿using System;
+using FluentAssertions;
 using NBitcoin;
 using NBitcoin.RPC;
 using Stratis.Bitcoin.Base.Deployments;
@@ -25,11 +26,12 @@ namespace Stratis.Bitcoin.IntegrationTests
 
                 CoreNode stratisNode = builder.CreateStratisPowNode(start: true);
 
-                RPCClient stratisNodeRpc = stratisNode.CreateRPCClient();
                 RPCClient coreRpc = coreNode.CreateRPCClient();
-
-                coreRpc.AddNode(stratisNode.Endpoint, false);
+                RPCClient stratisNodeRpc = stratisNode.CreateRPCClient();
+      
                 stratisNodeRpc.AddNode(coreNode.Endpoint, false);
+                TestHelper.WaitLoop(() => TestHelper.IsNodeConnected(stratisNode));
+                TestHelper.IsNodeConnected(stratisNode).Should().BeTrue();
 
                 // core (in version 0.15.1) only mines segwit blocks above a certain height on regtest
                 // future versions of core will change that behaviour so this test may need to be changed in the future
@@ -42,7 +44,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                     // generate 450 blocks, block 431 will be segwit activated.
                     coreRpc.Generate(450);
 
-                    TestHelper.WaitLoop(() => stratisNode.CreateRPCClient().GetBestBlockHash() == coreNode.CreateRPCClient().GetBestBlockHash());
+                    TestHelper.WaitLoop(() => stratisNodeRpc.GetBestBlockHash() == coreRpc.GetBestBlockHash());
 
                     // segwit activation on Bitcoin regtest.
                     // - On regtest deployment state changes every 144 block, the threshold for activating a rule is 108 blocks.
