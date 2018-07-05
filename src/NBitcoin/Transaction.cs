@@ -1190,7 +1190,7 @@ namespace NBitcoin
                 throw new ArgumentNullException(nameof(network));
 
             Transaction transaction = network.Consensus.ConsensusFactory.CreateTransaction();
-            transaction.FromBytes(Encoders.Hex.DecodeData(hex), version, network);
+            transaction.FromBytes(Encoders.Hex.DecodeData(hex), version);
             return transaction;
         }
 
@@ -1203,7 +1203,7 @@ namespace NBitcoin
                 throw new ArgumentNullException(nameof(network));
 
             Transaction transaction = network.Consensus.ConsensusFactory.CreateTransaction();
-            transaction.FromBytes(bytes, network: network);
+            transaction.FromBytes(bytes);
             return transaction;
         }
 
@@ -1391,14 +1391,6 @@ namespace NBitcoin
                 _Hashes[0] = GetHash();
             if (!lazily && _Hashes[1] == null)
                 _Hashes[1] = GetWitHash();
-        }
-
-        public Transaction Clone(bool cloneCache, Network network = null)
-        {
-            Transaction clone = Load(this.ToHex(), network: network);
-            if(cloneCache)
-                clone._Hashes = this._Hashes.ToArray();
-            return clone;
         }
 
         private uint256[] _Hashes = null;
@@ -1674,12 +1666,10 @@ namespace NBitcoin
             return new TxPayload(this.Clone());
         }
         */
-#if !NOJSONNET
         public static Transaction Parse(string tx, RawFormat format, Network network = null)
         {
             return GetFormatter(format, network).ParseJson(tx);
         }
-#endif
 
         public static Transaction Parse(string hex)
         {
@@ -1690,13 +1680,8 @@ namespace NBitcoin
         {
             return Encoders.Hex.EncodeData(this.ToBytes());
         }
-#if !NOJSONNET
-        public override string ToString()
-        {
-            return ToString(RawFormat.BlockExplorer);
-        }
 
-        public string ToString(RawFormat rawFormat, Network network = null)
+        public string ToString(Network network, RawFormat rawFormat = RawFormat.BlockExplorer)
         {
             RawFormatter formatter = GetFormatter(rawFormat, network);
             return ToString(formatter);
@@ -1711,12 +1696,11 @@ namespace NBitcoin
                     formatter = new SatoshiFormatter(network);
                     break;
                 case RawFormat.BlockExplorer:
-                    formatter = new BlockExplorerFormatter();
+                    formatter = new BlockExplorerFormatter(network);
                     break;
                 default:
                     throw new NotSupportedException(rawFormat.ToString());
             }
-            formatter.Network = network ?? formatter.Network;
             return formatter;
         }
 
@@ -1726,7 +1710,7 @@ namespace NBitcoin
                 throw new ArgumentNullException("formatter");
             return formatter.ToString(this);
         }
-#endif
+      
         /// <summary>
         /// Calculate the fee of the transaction
         /// </summary>
@@ -1888,12 +1872,6 @@ namespace NBitcoin
             }
 
             return new SequenceLock(nMinHeight, nMinTime);
-        }
-
-
-        private DateTimeOffset Max(DateTimeOffset a, DateTimeOffset b)
-        {
-            return a > b ? a : b;
         }
 
         /// <summary>

@@ -1,5 +1,4 @@
-﻿#if !NOJSONNET
-using NBitcoin.DataEncoders;
+﻿using NBitcoin.DataEncoders;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
@@ -7,6 +6,10 @@ namespace NBitcoin.RPC
 {
     internal class BlockExplorerFormatter : RawFormatter
     {
+        internal BlockExplorerFormatter(Network network) : base(network)
+        {
+        }
+
         protected override void BuildTransaction(JObject json, Transaction tx)
         {
             tx.Version = (uint)json.GetValue("ver");
@@ -115,4 +118,3 @@ namespace NBitcoin.RPC
 
     }
 }
-#endif

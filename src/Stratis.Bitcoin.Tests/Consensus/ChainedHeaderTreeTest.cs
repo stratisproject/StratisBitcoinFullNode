@@ -12,6 +12,7 @@ using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Consensus.Validators;
+using Stratis.Bitcoin.Primitives;
 using Stratis.Bitcoin.Utilities;
 using Xunit;
 
@@ -198,9 +199,6 @@ namespace Stratis.Bitcoin.Tests.Consensus
 
         public class InvalidHeaderTestException : ConsensusException
         {
-            public InvalidHeaderTestException() : base()
-            {
-            }
         }
 
         [Fact]
@@ -283,6 +281,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
             Assert.True(testContext.NoDownloadRequested(connectedHeadersResultOld));
             Assert.Equal(listOfNewHeaders.Last(), connectedHeadersResultNew.DownloadTo.Header);
             Assert.Equal(listOfNewHeaders.First(), connectedHeadersResultNew.DownloadFrom.Header);
+            Assert.True(connectedHeadersResultNew.HaveBlockDataAvailabilityStateOf(BlockDataAvailabilityState.BlockRequired));
         }
 
         /// <summary>
@@ -456,6 +455,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
             ChainedHeader chainedHeaderFrom = connectNewHeadersResult.DownloadFrom;
             ChainedHeader chainedHeaderTo = connectNewHeadersResult.DownloadTo;
             int headersToDownloadCount = chainedHeaderTo.Height - chainedHeaderFrom.Height + 1; // Inclusive
+            Assert.True(connectNewHeadersResult.HaveBlockDataAvailabilityStateOf(BlockDataAvailabilityState.BlockRequired));
 
             // ToDownload array of the same size as the amount of headers
             Assert.Equal(headersToDownloadCount, peer2Headers.Count);
@@ -674,6 +674,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
             foreach(ChainedHeader header in headersBeyondInitialChain)
             {
                 header.BlockValidationState.Should().Be(expectedState);
+                header.BlockDataAvailability.Should().Be(BlockDataAvailabilityState.HeaderOnly);
             }
 
             // Present remaining headers checkpoint inclusive h16 -> h25.
@@ -684,13 +685,16 @@ namespace Stratis.Bitcoin.Tests.Consensus
 
             connectNewHeadersResult.DownloadFrom.HashBlock.Should().Be(listOfHeadersBeforeCheckpoint.First().GetHash());
             connectNewHeadersResult.DownloadTo.HashBlock.Should().Be(unconsumedHeaders.Last().GetHash());
-            
-            ChainedHeader chainedHeader = chainedHeaderTree.GetChainedHeadersByHash()[checkpoint.Header.GetHash()];
+            Assert.True(connectNewHeadersResult.HaveBlockDataAvailabilityStateOf(BlockDataAvailabilityState.BlockRequired));
+
+            ChainedHeader chainedHeader = chainedHeaderTree.GetChainedHeadersByHash()
+                .SingleOrDefault(x => (x.Value.HashBlock == checkpoint.Header.GetHash())).Value;
 
             // Checking from the checkpoint back to the initialized chain.
             while (chainedHeader.Height > initialChainSize)
             {
                 chainedHeader.BlockValidationState.Should().Be(ValidationState.AssumedValid);
+                chainedHeader.BlockDataAvailability.Should().Be(BlockDataAvailabilityState.BlockRequired);
                 chainedHeader = chainedHeader.Previous;
             }
 
@@ -699,6 +703,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
             while (chainedHeader.Height > checkpoint.Height)
             {
                 chainedHeader.BlockValidationState.Should().Be(ValidationState.HeaderValidated);
+                chainedHeader.BlockDataAvailability.Should().Be(BlockDataAvailabilityState.BlockRequired);
                 chainedHeader = chainedHeader.Previous;
             }
         }
@@ -806,6 +811,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
             ConnectNewHeadersResult connectNewHeadersResult = cht.ConnectNewHeaders(1, listOfChainABlockHeaders);
             ChainedHeader chainedHeaderTo = connectNewHeadersResult.DownloadTo;
             chainedHeaderTo.HashBlock.Should().Be(chainATip.HashBlock);
+            Assert.True(connectNewHeadersResult.HaveBlockDataAvailabilityStateOf(BlockDataAvailabilityState.BlockRequired));
 
             foreach (ChainedHeader chainedHeader in connectNewHeadersResult.ToHashArray())
                 cht.BlockDataDownloaded(chainedHeader, chainATip.FindAncestorOrSelf(chainedHeader).Block);
@@ -817,7 +823,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
             // B has less chain work.
             connectNewHeadersResult = cht.ConnectNewHeaders(2, listOfChainBBlockHeaders);
             connectNewHeadersResult.DownloadTo.Should().BeNull();
-
+             
             // Add more chain work and blocks into chain B.
             const int chainBAdditionalBlocks = 4;
             chainBTip = ctx.ExtendAChain(chainBAdditionalBlocks, chainBTip); // i.e. (h1=h2=h3=h4)=b5=b6=b7=b8=b9=b10
@@ -836,6 +842,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
 
             chainedHeaderTo = connectNewHeadersResult.DownloadTo;
             chainedHeaderTo.HashBlock.Should().Be(chainBTip.HashBlock);
+            Assert.True(connectNewHeadersResult.HaveBlockDataAvailabilityStateOf(BlockDataAvailabilityState.BlockRequired));
         }
 
         /// <summary>
@@ -876,7 +883,8 @@ namespace Stratis.Bitcoin.Tests.Consensus
             // DownloadTo should be set to a checkpoint 1. 
             ConnectNewHeadersResult result = cht.ConnectNewHeaders(1, listOfNewChainHeaders.Take(5).ToList());
             result.DownloadTo.HashBlock.Should().Be(checkpoint1.Header.GetHash());
-
+            Assert.True(result.HaveBlockDataAvailabilityStateOf(BlockDataAvailabilityState.BlockRequired));
+            
             // Remaining 5 blocks are presented by peer 1 which do not cover checkpoint 2.
             // InvalidHeaderException should be thrown.
             List<BlockHeader> violatingHeaders = listOfNewChainHeaders.Skip(5).ToList();
@@ -925,12 +933,14 @@ namespace Stratis.Bitcoin.Tests.Consensus
             ConnectNewHeadersResult connectNewHeadersResult = cht.ConnectNewHeaders(1, listOfChainABlockHeaders);
             ChainedHeader chainedHeaderDownloadTo = connectNewHeadersResult.DownloadTo;
             chainedHeaderDownloadTo.HashBlock.Should().Be(chainATip.HashBlock);
+            Assert.True(connectNewHeadersResult.HaveBlockDataAvailabilityStateOf(BlockDataAvailabilityState.BlockRequired));
 
             // Chain B is presented by peer 2. It doesn't meet "assume valid" hash but should still
             // be marked for a download.
             connectNewHeadersResult = cht.ConnectNewHeaders(2, listOfChainBBlockHeaders);
             chainedHeaderDownloadTo = connectNewHeadersResult.DownloadTo;
             chainedHeaderDownloadTo.HashBlock.Should().Be(chainBTip.HashBlock);
+            Assert.True(connectNewHeadersResult.HaveBlockDataAvailabilityStateOf(BlockDataAvailabilityState.BlockRequired));
         }
 
         /// <summary>
@@ -981,6 +991,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
             ConnectNewHeadersResult result = cht.ConnectNewHeaders(1, listOfChainABlockHeaders);
             result.DownloadFrom.HashBlock.Should().Be(listOfChainABlockHeaders.Skip(2).First().GetHash());
             result.DownloadTo.HashBlock.Should().Be(listOfChainABlockHeaders.Last().GetHash());
+            Assert.True(result.HaveBlockDataAvailabilityStateOf(BlockDataAvailabilityState.BlockRequired));
 
             // Chain B is presented by peer 2.
             // DownloadFrom should be set to header 5. 
@@ -988,6 +999,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
             result = cht.ConnectNewHeaders(2, listOfChainBBlockHeaders);
             result.DownloadFrom.HashBlock.Should().Be(listOfChainBBlockHeaders[checkpointHeight].GetHash());
             result.DownloadTo.HashBlock.Should().Be(listOfChainBBlockHeaders.Last().GetHash());
+            Assert.True(result.HaveBlockDataAvailabilityStateOf(BlockDataAvailabilityState.BlockRequired));
         }
 
         /// <summary>
@@ -1033,6 +1045,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
             ConnectNewHeadersResult result = cht.ConnectNewHeaders(2, listOfCurrentChainHeaders);
             result.DownloadFrom.HashBlock.Should().Be(listOfCurrentChainHeaders.Skip(2).First().GetHash());
             result.DownloadTo.HashBlock.Should().Be(listOfCurrentChainHeaders.Last().GetHash());
+            Assert.True(result.HaveBlockDataAvailabilityStateOf(BlockDataAvailabilityState.BlockRequired));
         }
 
         /// <summary>
@@ -1146,13 +1159,13 @@ namespace Stratis.Bitcoin.Tests.Consensus
             ChainedHeader chainTip = ctx.InitialChainTip;
             
             // Extend the chain with 3 headers.
-            // Example: h2=h3=h4.
+            // Example: h1=h2=h3=h4.
             ChainedHeader newChainTip = ctx.ExtendAChain(3, chainTip);
             
             List<BlockHeader> listOfChainABlockHeaders = ctx.ChainedHeaderToList(newChainTip, 3);
             chainTip = cht.ConnectNewHeaders(1, listOfChainABlockHeaders).Consumed;
 
-            // Call BlockDataDownloaded on h1, h2 and h3.
+            // Call BlockDataDownloaded on h2, h3 and h4.
             ChainedHeader chainTip4 = chainTip;
             ChainedHeader chainTip3 = chainTip.Previous;
             ChainedHeader chainTip2 = chainTip3.Previous;
@@ -1325,6 +1338,319 @@ namespace Stratis.Bitcoin.Tests.Consensus
                     peerIds.Should().BeEmpty();
                 }
             }
+        }
+
+        /// <summary>
+        /// Issue 29 @ Peer presents at least two headers. Those headers will be connected to the tree. 
+        /// Then we save the first such connected block to variable X and simulate block downloaded for both blocks.
+        /// Then the peer is disconnected, which removes its chain from the tree. 
+        /// Partial validation succeeded is then called on X. No headers to validate should be returned and
+        /// full validation required should be false.
+        /// </summary>
+        [Fact]
+        public void ChainedHeaderIsRemovedFromTheTree_PartialValidationSucceededCalled_NothingIsReturned()
+        {
+            // Chain header tree setup. Initial chain has 5 headers.
+            // Example: h1=h2=h3=h4=h5.
+            const int initialChainSize = 5;
+            TestContext ctx = new TestContextBuilder()
+                .WithInitialChain(initialChainSize)
+                .Build();
+            ChainedHeaderTree cht = ctx.ChainedHeaderTree;
+            ChainedHeader chainTip = ctx.InitialChainTip;
+
+            // Extend chaintip with 2 headers, i.e. h1=h2=h3=h4=h5=h6=h7.
+            const int chainExtension = 2;
+            chainTip = ctx.ExtendAChain(chainExtension, chainTip);
+            
+            // Peer 1 presents these 2 headers.
+            const int peer1Id = 1;
+            List<BlockHeader> listOfHeaders = ctx.ChainedHeaderToList(chainTip, chainExtension);
+            ConnectNewHeadersResult connectionResult = cht.ConnectNewHeaders(peer1Id, listOfHeaders);
+            ChainedHeader consumedHeader = connectionResult.Consumed;
+
+            // Download both blocks.
+            ChainedHeader firstPresentedHeader = consumedHeader.Previous;
+            cht.BlockDataDownloaded(consumedHeader, chainTip.Block);
+            cht.BlockDataDownloaded(firstPresentedHeader, chainTip.Previous.Block);
+
+            // Disconnect peer 1.
+            cht.PeerDisconnected(peer1Id);
+
+            // Attempt to call PartialValidationSucceeded on a saved bock.
+            List<ChainedHeaderBlock> headersToValidate = cht.PartialValidationSucceeded(firstPresentedHeader, out bool fullValidationRequired);
+            headersToValidate.Should().BeNull();
+            fullValidationRequired.Should().BeFalse();
+        }
+
+        /// <summary>
+        /// Issue 33 @  We receive headers message
+        /// (first header in the message is HEADERS_START and last is HEADERS_END).
+        /// AV = assume valid header, CP1,CP2 - checkpointed headers. '---' some headers.
+        /// HEADERS_START--CP1----AV----HEADERS_END---CP2---
+        /// Check that headers till AV(including AV) are marked for download.
+        /// Headers after AV are not marked for download.
+        /// </summary>
+        [Fact]
+        public void ConnectHeaders_AssumeValidBetweenTwoCheckPoints_DownloadUpToIncludingAssumeValid()
+        {
+            const int initialChainSize = 5;
+            const int chainExtension = 40;
+            const int assumeValidHeaderHeight = 30;
+
+            TestContext testContext = new TestContextBuilder().WithInitialChain(initialChainSize).UseCheckpoints(true).Build();
+            ChainedHeaderTree chainedHeaderTree = testContext.ChainedHeaderTree;
+            ChainedHeader initialChainTip = testContext.InitialChainTip;
+            ChainedHeader chainTip = testContext.ExtendAChain(chainExtension, initialChainTip);
+
+            // Assume valid header at h30.
+            ChainedHeader assumeValidHeader = chainTip.GetAncestor(assumeValidHeaderHeight);
+            testContext.ConsensusSettings.BlockAssumedValid = assumeValidHeader.HashBlock;
+
+            List<BlockHeader> listOfChainHeaders = testContext.ChainedHeaderToList(chainTip, initialChainSize + chainExtension);
+
+            // Two checkpoints at h18 and h45.
+            const int firstCheckpointHeight = 18;
+            const int secondCheckpointHeight = 45;
+            var checkpoint1 = new CheckpointFixture(firstCheckpointHeight, listOfChainHeaders[firstCheckpointHeight - 1]);
+            var checkpoint2 = new CheckpointFixture(secondCheckpointHeight, listOfChainHeaders[secondCheckpointHeight - 1]);
+            testContext.SetupCheckpoints(checkpoint1, checkpoint2);
+
+            // Present chain h1->h40 covering first checkpoint at h18 and assume valid at h30.
+            // Exclude second checkpoint at h45.
+            listOfChainHeaders = listOfChainHeaders.Take(40).ToList();
+            ConnectNewHeadersResult connectedHeadersResultNew = chainedHeaderTree.ConnectNewHeaders(1, listOfChainHeaders);
+
+            // From initialised chain up to and including assume valid (h6->h30) are marked for download.
+            // Headers after assume valid (h31->h40) are not marked for download.
+            IEnumerable<BlockHeader> extendedChain = listOfChainHeaders.Skip(initialChainSize);
+
+            Assert.Equal(extendedChain.First(), connectedHeadersResultNew.DownloadFrom.Header);
+            Assert.Equal(assumeValidHeader.Header, connectedHeadersResultNew.DownloadTo.Header);
+
+            // Check block data availability of headers marked for download.
+            Assert.True(connectedHeadersResultNew.HaveBlockDataAvailabilityStateOf(BlockDataAvailabilityState.BlockRequired));
+
+            // Check block data availability of headers not marked for download after assumed valid block.
+            ChainedHeader chainedHeader = chainTip;
+            while (chainedHeader.Height > assumeValidHeader.Height)
+            {
+                chainedHeader.BlockDataAvailability.Should().Be(BlockDataAvailabilityState.HeaderOnly);
+                chainedHeader = chainedHeader.Previous;
+            }
+        }
+
+        /// <summary>
+        /// Issue 36 @ The list of headers is presented where the 1st half of them can be connected but then there is
+        /// header which is not consecutive – its previous hash is not hash of the previous header in the list.
+        /// The 1st nonconsecutive header should be header that we saw before, so that it actually connects but it
+        /// is out of order.
+        /// </summary>
+        [Fact]
+        public void ListWithOnlyHalfConnectableHeadersPresented_TheFirstNonconsecutiveHeaderShouldBeHeaderWeSawBefore()
+        {
+            // Chain header tree setup. Initial chain has 2 headers.
+            // Example: h1=h2.
+            const int initialChainSize = 2;
+            TestContext ctx = new TestContextBuilder().WithInitialChain(initialChainSize).Build();
+            ChainedHeaderTree cht = ctx.ChainedHeaderTree;
+            ChainedHeader chainTip = ctx.InitialChainTip;
+
+            // Extend chain with 10 more headers.
+            // Example: h1=h2=a3=a4=a5=a6=a7=a8=a9=a10=a11=a12.
+            // Then swap h8 with h2 before connecting it.
+            const int extensionChainSize = 10;
+            chainTip = ctx.ExtendAChain(extensionChainSize, chainTip);
+            List<BlockHeader> listOfHeaders = ctx.ChainedHeaderToList(chainTip, extensionChainSize);
+            listOfHeaders[initialChainSize + 5] = chainTip.GetAncestor(2).Header;
+
+            // Present headers that contain out of order header.
+            Action connectHeadersAction = () =>
+            {
+                cht.ConnectNewHeaders(1, listOfHeaders);
+            };
+
+            // Exception is thrown and no new headers are connected.
+            ChainedHeader[] allHeaders = chainTip.ToArray(initialChainSize + extensionChainSize + 1);
+            connectHeadersAction.Should().Throw<ArgumentException>();
+            Dictionary<uint256, ChainedHeader> currentHeaders = cht.GetChainedHeadersByHash();
+            currentHeaders.Should().HaveCount(initialChainSize + 1); // initial chain size + genesis.
+            currentHeaders.Should().ContainKey(allHeaders[0].HashBlock);
+            currentHeaders.Should().ContainKey(allHeaders[1].HashBlock);
+            currentHeaders.Should().ContainKey(allHeaders[2].HashBlock);
+            currentHeaders[allHeaders[2].HashBlock].Next.Should().BeEmpty();
+        }
+
+        /// <summary>
+        /// Issue 37 @ CT advances at 1000 blocks. Make sure that block data for headers 1-900 are removed.
+        /// </summary>
+        [Fact]
+        public void ChainTipAdvancesAt1000Blocks_DataForHeadersForFirst900HeadersAreRemoved()
+        {
+            // Chain header tree setup. Initial chain has 1 header.
+            // Example: h1.
+            const int initialChainSize = 1;
+            TestContext ctx = new TestContextBuilder().WithInitialChain(initialChainSize).Build();
+            ChainedHeaderTree cht = ctx.ChainedHeaderTree;
+            ChainedHeader chainTip = ctx.InitialChainTip;
+
+            // Extend a chain by 1000 headers.
+            // Example: h1=h2=...=h1001.
+            const int extensionSize = 1000;
+            chainTip = ctx.ExtendAChain(extensionSize, chainTip);
+            List<BlockHeader> listOfCurrentChainHeaders = ctx.ChainedHeaderToList(chainTip, extensionSize);
+
+            // Peer 1 presents a chain.
+            const int peerId = 1;
+            ConnectNewHeadersResult connectionResult = cht.ConnectNewHeaders(peerId, listOfCurrentChainHeaders);
+            ChainedHeader[] consumedHeaders = connectionResult.Consumed.ToArray(extensionSize);
+            ChainedHeader[] originalHeaders = chainTip.ToArray(extensionSize);
+
+            // Sync all blocks.
+            for (int i = 0; i < extensionSize; i++)
+            {
+                ChainedHeader currentChainTip = consumedHeaders[i];
+
+                cht.BlockDataDownloaded(currentChainTip, originalHeaders[i].Block);
+                cht.PartialValidationSucceeded(currentChainTip, out bool fullValidationRequired);
+                cht.ConsensusTipChanged(currentChainTip);
+            }
+
+            // Headers 2-901 should have block data null.
+            // Headers 901 - 1001 should have block data.
+            Dictionary<uint256, ChainedHeader> connectedHeaders = cht.GetChainedHeadersByHash();
+            foreach (ChainedHeader consumedHeader in consumedHeaders)
+            {
+                if (consumedHeader.Height <= (extensionSize - ChainedHeaderTree.KeepBlockDataForLastBlocks))
+                {
+                    connectedHeaders[consumedHeader.HashBlock].Block.Should().BeNull();
+                }
+                else
+                {
+                    connectedHeaders[consumedHeader.HashBlock].Block.Should().NotBeNull();
+                }
+            }
+        }
+
+        /// <summary>
+        /// Issue 38 @ CT advances at 150. Alternative chain with fork at 120 and total length 160 is presented.
+        /// CT switches to 160. Make sure block data for 0-60 is removed.
+        /// </summary>
+        [Fact]
+        public void ChainTipAdvancesAt150Blocks_AlternativeChainPresented_RelevantBlockDataIsRemoved()
+        {
+            // Chain header tree setup. Initial chain has 1 header.
+            // Example: h1.
+            const int initialChainSize = 1;
+            TestContext ctx = new TestContextBuilder().WithInitialChain(initialChainSize).Build();
+            ChainedHeaderTree cht = ctx.ChainedHeaderTree;
+            ChainedHeader chainTip = ctx.InitialChainTip;
+
+            // Create a chain A with 150 headers.
+            // Example: h1=h2=...h120=h121=a122=a123=a124=...=a151.
+            const int extensionBeforeFork = 120;
+            const int chainAExtensionSize = 150;
+            chainTip = ctx.ExtendAChain(extensionBeforeFork, chainTip);
+            ChainedHeader chainATip = ctx.ExtendAChain(chainAExtensionSize - extensionBeforeFork, chainTip);
+            List<BlockHeader> listOfCurrentChainAHeaders = ctx.ChainedHeaderToList(chainATip, chainAExtensionSize);
+
+            // Peer 1 presents a chain A.
+            const int peer1Id = 1;
+            ConnectNewHeadersResult connectionResult = cht.ConnectNewHeaders(peer1Id, listOfCurrentChainAHeaders);
+            ChainedHeader[] consumedChainAHeaders = connectionResult.Consumed.ToArray(chainAExtensionSize);
+            ChainedHeader[] originalChainAHeaders = chainATip.ToArray(chainAExtensionSize);
+
+            // Sync all blocks for chain A.
+            for (int i = 0; i < chainAExtensionSize; i++)
+            {
+                ChainedHeader currentChainTip = consumedChainAHeaders[i];
+
+                cht.BlockDataDownloaded(currentChainTip, originalChainAHeaders[i].Block);
+                cht.PartialValidationSucceeded(currentChainTip, out bool fullValidationRequired);
+                cht.ConsensusTipChanged(currentChainTip);
+            }
+
+            // Create a chain B with 160 headers and a fork at 121.
+            // Example: h1=h2=...h120=h121=b122=b123=b124=...=b161.
+            const int chainBExtensionSize = 160;
+            ChainedHeader chainBTip = ctx.ExtendAChain(chainBExtensionSize - extensionBeforeFork, chainTip);
+            List<BlockHeader> listOfCurrentChainBHeaders = ctx.ChainedHeaderToList(chainBTip, chainBExtensionSize - extensionBeforeFork);
+
+            // Peer 2 presents a chain B.
+            const int peer2Id = 2;
+            connectionResult = cht.ConnectNewHeaders(peer2Id, listOfCurrentChainBHeaders);
+            ChainedHeader[] consumedChainBHeaders = connectionResult.Consumed.ToArray(chainBExtensionSize - extensionBeforeFork);
+            ChainedHeader[] originalChainBHeaders = chainBTip.ToArray(chainBExtensionSize - extensionBeforeFork);
+
+            // Sync all new blocks for chain B.
+            for (int i = 0; i < chainBExtensionSize - extensionBeforeFork; i++)
+            {
+                ChainedHeader currentChainTip = consumedChainBHeaders[i];
+
+                cht.BlockDataDownloaded(currentChainTip, originalChainBHeaders[i].Block);
+                cht.PartialValidationSucceeded(currentChainTip, out bool fullValidationRequired);
+            }
+
+            cht.ConsensusTipChanged(connectionResult.Consumed);
+
+            // Headers 2-60 should have block data null.
+            // Headers 61 - 161 should have block data.
+            Dictionary<uint256, ChainedHeader> connectedHeaders = cht.GetChainedHeadersByHash();
+            ChainedHeader[] allChainBHeaders = connectionResult.Consumed.ToArray(chainBExtensionSize);
+            foreach (ChainedHeader consumedHeader in allChainBHeaders)
+            {
+                if (consumedHeader.Height <= (chainBExtensionSize - ChainedHeaderTree.KeepBlockDataForLastBlocks))
+                {
+                    connectedHeaders[consumedHeader.HashBlock].Block.Should().BeNull();
+                }
+                else
+                {
+                    connectedHeaders[consumedHeader.HashBlock].Block.Should().NotBeNull();
+                }
+            }
+        }
+
+        /// <summary>
+        /// Issue 30 @ Chain is 10 headers long. All headers are "Data Available". Call PartialValidationSucceeded on
+        /// the first header. First header is marked Partially Validated (PV). Make sure the next header is also marked
+        /// for partial validation.
+        /// </summary>
+        [Fact]
+        public void ChainWith10DataAvailableHeaders_PartialValidationSucceededOnTheFirstHeaderCalled_RemainingHeadersPartiallyValidated()
+        {
+            // Chain header tree setup. Initial chain has 2 headers.
+            // Example: h1=h2.
+            const int initialChainSize = 2;
+            TestContext ctx = new TestContextBuilder()
+                .WithInitialChain(initialChainSize)
+                .Build();
+            ChainedHeaderTree cht = ctx.ChainedHeaderTree;
+            ChainedHeader chainTip = ctx.InitialChainTip;
+            
+            // Extend chain by 10 headers and connect it to CHT.
+            // Example: h1=h2=h3=h4=h5=h6=h7=h8=h9=h10=h11=h12.
+            const int extensionSize = 10;
+            chainTip = ctx.ExtendAChain(extensionSize, chainTip);
+            List<BlockHeader> listOfExtendedHeaders = ctx.ChainedHeaderToList(chainTip, extensionSize);
+            ConnectNewHeadersResult connectionResult = cht.ConnectNewHeaders(1, listOfExtendedHeaders);
+            ChainedHeader consumed = connectionResult.Consumed;
+
+            // Download all header blocks and call PartialValidationSucceeded on h3.
+            ChainedHeader[] originalHeaderArray = chainTip.ToArray(extensionSize);
+            ChainedHeader[] headerArray = consumed.ToArray(extensionSize);
+            ChainedHeader firstHeader = headerArray[0];
+            ChainedHeader secondHeader = headerArray[1];
+            for (int i = 0; i < headerArray.Length; i++)
+            {
+                cht.BlockDataDownloaded(headerArray[i], originalHeaderArray[i].Block);
+            }
+
+            List<ChainedHeaderBlock> listOfHeaders = cht.PartialValidationSucceeded(firstHeader, out bool fullValidationRequired);
+
+            // First header validation state should be "PartiallyValidated" and next header returned.
+            firstHeader.BlockValidationState.Should().Be(ValidationState.PartiallyValidated);
+            listOfHeaders.Should().HaveCount(1);
+            listOfHeaders.First().ChainedHeader.HashBlock.Should().Be(secondHeader.HashBlock);
         }
     }
 }

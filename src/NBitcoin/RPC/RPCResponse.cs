@@ -1,5 +1,4 @@
-﻿#if !NOJSONNET
-using System.IO;
+﻿using System.IO;
 using System.Text;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -45,12 +44,7 @@ namespace NBitcoin.RPC
             set;
         }
 
-#if !NOJSONNET
-        public
-#else
-        internal
-#endif
-        JToken Result
+        public JToken Result
         {
             get;
             set;
@@ -81,4 +75,3 @@ namespace NBitcoin.RPC
         }
     }
 }
-#endif

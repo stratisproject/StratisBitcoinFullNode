@@ -1184,7 +1184,7 @@ namespace NBitcoin
                 if(builderList[i].Target == this._SubstractFeeBuilder)
                 {
                     builderList.Remove(builderList[i]);
-                    TxOut newTxOut = this._SubstractFeeBuilder._TxOut.Clone(network: this.Network);
+                    TxOut newTxOut = this._SubstractFeeBuilder._TxOut.Clone();
                     newTxOut.Value -= fees;
                     builderList.Insert(i, new SendBuilder(newTxOut).Build);
                 }

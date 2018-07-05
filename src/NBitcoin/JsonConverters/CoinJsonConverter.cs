@@ -1,17 +1,11 @@
-﻿#if !NOJSONNET
-using System;
+﻿using System;
 using System.Reflection;
 using NBitcoin.OpenAsset;
 using Newtonsoft.Json;
 
 namespace NBitcoin.JsonConverters
 {
-#if !NOJSONNET
-    public
-#else
-    internal
-#endif
-    class CoinJsonConverter : JsonConverter
+    public class CoinJsonConverter : JsonConverter
     {
         public class CoinJson
         {
@@ -19,10 +13,9 @@ namespace NBitcoin.JsonConverters
             {
 
             }
+
             public CoinJson(ICoin coin, Network network)
             {
-                if (network == null)
-                    network = Network.Main;
                 this.TransactionId = coin.Outpoint.Hash;
                 this.Index = coin.Outpoint.N;
                 this.ScriptPubKey = coin.TxOut.ScriptPubKey;
@@ -30,7 +23,7 @@ namespace NBitcoin.JsonConverters
                 {
                     this.RedeemScript = ((ScriptCoin)coin).Redeem;
                 }
-                if(coin is Coin)
+                if (coin is Coin)
                 {
                     this.Value = ((Coin)coin).Amount;
                 }
@@ -122,4 +115,3 @@ namespace NBitcoin.JsonConverters
         }
     }
 }
-#endif

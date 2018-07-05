@@ -240,31 +240,14 @@ namespace NBitcoin.Tests
             Assert.Equal("http://toto.com/o", url.ToString());
         }
 
-#if !PORTABLE
-        /* TODO: The external service is giving security errors for connection attempt to its testnet.
-         * 
-        [Fact]
-        [Trait("UnitTest", "UnitTest")]
-        public void CanFetchTransactionFromCoinprism()
-        {
-            CanFetchTransactionFromCoinprismCore("CanColorizeIssuanceTransaction");
-            CanFetchTransactionFromCoinprismCore("CanColorizeTransferTransaction");
-            Assert.Null(new CoinprismColoredTransactionRepository().Get(uint256.Parse("b4399a545c4ddd640920d63af75e7367fe4d94b2d7f7a3423105e25ac5f165a5")));
-#if !NOCUSTOMSSLVALIDATION
-            Assert.Null(new CoinprismColoredTransactionRepository(Network.TestNet).Get(uint256.Parse("b4399a545c4ddd640920d63af75e7367fe4d94b2d7f7a3423105e25ac5f165a5")));
-            Assert.NotNull(new CoinprismColoredTransactionRepository(Network.TestNet).Get(uint256.Parse("100972a4a519c6a40f6aa30bf0f89c1378c2a90a2a45715ec955d09fbf4d2253")));
-#endif
-        }
-        */
-
         private void CanFetchTransactionFromCoinprismCore(string test)
         {
             ColoredCoinTester tester = CreateTester(test);
             ColoredTransaction expected = ColoredTransaction.FetchColors(tester.TestedTxId, tester.Repository);
-            ColoredTransaction actual = new CoinprismColoredTransactionRepository().Get(tester.TestedTxId);
+            ColoredTransaction actual = new CoinprismColoredTransactionRepository(Network.Main).Get(tester.TestedTxId);
             Assert.True(actual.ToBytes().SequenceEqual(expected.ToBytes()));
         }
-#endif
+
         //https://www.coinprism.info/tx/b4399a545c4ddd640920d63af75e7367fe4d94b2d7f7a3423105e25ac5f165a6
         //Asset Id : 3QzJDrSsi4Pm2DhcZFXR9MGJsXXtsYhUsq
         //1BvvRfz4XnxSWJ524TusetYKrtZnAbgV3r to 18Jcv42cRknPmxrQPb2zSBuEVWq3egjCKq

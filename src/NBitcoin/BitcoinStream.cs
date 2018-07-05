@@ -95,6 +95,7 @@ namespace NBitcoin
 
         public BitcoinStream(Stream inner, bool serializing)
         {
+            this.ConsensusFactory = new DefaultConsensusFactory();
             this.serializing = serializing;
             this.inner = inner;
         }

@@ -1,5 +1,4 @@
-﻿#if !NOJSONNET
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using NBitcoin.DataEncoders;
@@ -10,11 +9,8 @@ namespace NBitcoin.RPC
 {
     internal class SatoshiFormatter : RawFormatter
     {
-        private readonly Network network;
-
-        public SatoshiFormatter(Network network)
+        public SatoshiFormatter(Network network) : base(network)
         {
-            this.network = network;
         }
 
         protected override void BuildTransaction(JObject json, Transaction tx)
@@ -112,17 +108,17 @@ namespace NBitcoin.RPC
                 WritePropertyValue(writer, "asm", txout.ScriptPubKey.ToString());
                 WritePropertyValue(writer, "hex", Encoders.Hex.EncodeData(txout.ScriptPubKey.ToBytes()));
 
-                var destinations = new List<TxDestination>() { txout.ScriptPubKey.GetDestination(this.network) };
+                var destinations = new List<TxDestination>() { txout.ScriptPubKey.GetDestination(this.Network) };
                 if(destinations[0] == null)
                 {
-                    destinations = txout.ScriptPubKey.GetDestinationPublicKeys(this.network)
+                    destinations = txout.ScriptPubKey.GetDestinationPublicKeys(this.Network)
                                                         .Select(p => p.Hash)
                                                         .ToList<TxDestination>();
                 }
                 if(destinations.Count == 1)
                 {
                     WritePropertyValue(writer, "reqSigs", 1);
-                    WritePropertyValue(writer, "type", GetScriptType(txout.ScriptPubKey.FindTemplate(this.network)));
+                    WritePropertyValue(writer, "type", GetScriptType(txout.ScriptPubKey.FindTemplate(this.Network)));
                     writer.WritePropertyName("addresses");
                     writer.WriteStartArray();
                     writer.WriteValue(destinations[0].GetAddress(this.Network).ToString());
@@ -130,10 +126,10 @@ namespace NBitcoin.RPC
                 }
                 else
                 {
-                    PayToMultiSigTemplateParameters multi = PayToMultiSigTemplate.Instance.ExtractScriptPubKeyParameters(this.network, txout.ScriptPubKey);
+                    PayToMultiSigTemplateParameters multi = PayToMultiSigTemplate.Instance.ExtractScriptPubKeyParameters(this.Network, txout.ScriptPubKey);
                     if (multi != null)
                         WritePropertyValue(writer, "reqSigs", multi.SignatureCount);
-                    WritePropertyValue(writer, "type", GetScriptType(txout.ScriptPubKey.FindTemplate(this.network)));
+                    WritePropertyValue(writer, "type", GetScriptType(txout.ScriptPubKey.FindTemplate(this.Network)));
                     if (multi != null)
                     {
                         writer.WritePropertyName("addresses");
@@ -185,4 +181,3 @@ namespace NBitcoin.RPC
         }
     }
 }
-#endif
