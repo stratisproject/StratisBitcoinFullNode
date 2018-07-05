@@ -1996,6 +1996,63 @@ namespace Stratis.Bitcoin.Tests.Consensus
         }
 
         /// <summary>
+        /// Issue 42 @ CT is at 0. 10 headers are presented.
+        /// 10 blocks are downloaded. CT advances to 5.
+        /// Make sure that UnconsumedBlocksDataBytes is equal to
+        /// the sum of serialized sizes of last five blocks.
+        /// CT advances to 10.  Make sure UnconsumedBlocksDataBytes is 0.
+        /// </summary>
+        [Fact]
+        public void PresentHeaders_ChainHeaderTreeAdvances_UnconsumedBlocksDataBytes_Equals_SumOfSerializedBlockSize()
+        {
+            const int initialChainSize = 0;
+            const int chainExtensionSize = 10;
+
+            // Chain header tree setup.
+            TestContext ctx = new TestContextBuilder().WithInitialChain(initialChainSize).UseCheckpoints(false).Build();
+            ChainedHeaderTree chainedHeaderTree = ctx.ChainedHeaderTree;
+            ChainedHeader initialChainTip = ctx.InitialChainTip;
+
+            // 10 headers are presented.
+            ChainedHeader commonChainTip = ctx.ExtendAChain(chainExtensionSize, initialChainTip);
+            List<BlockHeader> listOfChainBlockHeaders = ctx.ChainedHeaderToList(commonChainTip, chainExtensionSize);
+
+            // 10 blocks are downloaded.
+            ConnectNewHeadersResult connectNewHeadersResult = chainedHeaderTree.ConnectNewHeaders(1, listOfChainBlockHeaders);
+            ChainedHeader chainedHeaderTo = connectNewHeadersResult.DownloadTo;
+            chainedHeaderTo.HashBlock.Should().Be(commonChainTip.HashBlock);
+
+            Assert.True(connectNewHeadersResult.HaveBlockDataAvailabilityStateOf(BlockDataAvailabilityState.BlockRequired));
+
+            foreach (ChainedHeader chainedHeader in connectNewHeadersResult.ToHashArray())
+            {
+                chainedHeaderTree.BlockDataDownloaded(chainedHeader, commonChainTip.FindAncestorOrSelf(chainedHeader).Block);
+                chainedHeaderTree.PartialValidationSucceeded(chainedHeader, out bool fullValidationRequired);
+                fullValidationRequired.Should().BeTrue();
+            }
+
+            // CT advances to 5.
+            chainedHeaderTree.ConsensusTipChanged(chainedHeaderTo.GetAncestor(5));
+
+            int serializedSizeOfBlocks = 0;
+            IEnumerable<ChainedHeader> lastFive = connectNewHeadersResult.ToHashArray().TakeLast(5);
+            foreach (ChainedHeader chainedHeader in lastFive)
+            {
+                serializedSizeOfBlocks += chainedHeader.Block.GetSerializedSize();
+            }
+
+            // UnconsumedBlocksDataBytes is non-zero and equal to the sum of serialized sizes of last five blocks.
+            Assert.NotEqual(0, chainedHeaderTree.UnconsumedBlocksDataBytes);
+            Assert.Equal(serializedSizeOfBlocks, chainedHeaderTree.UnconsumedBlocksDataBytes);
+
+            // CT advances to 10.
+            chainedHeaderTree.ConsensusTipChanged(chainedHeaderTo);
+
+            // UnconsumedBlocksDataBytes is 0.
+            Assert.Equal(0, chainedHeaderTree.UnconsumedBlocksDataBytes);
+        }
+
+        /// <summary>
         /// Issue 48 @ CT is at 5. AssumeValid is at 10. ConnectNewHeaders called with headers 1 - 9 (from peer1).
         /// Make sure headers 6 - 9 are marked for download. After that ConnectNewHeaders called with headers 5 to 15 (from peer2).
         /// Make sure 9 - 15 are marked for download.
