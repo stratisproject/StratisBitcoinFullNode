@@ -4,7 +4,6 @@ using NBitcoin.Policy;
 
 namespace NBitcoin
 {
-
     public static class StandardScripts
     {
         private static readonly ScriptTemplate[] _StandardTemplates = new ScriptTemplate[]
@@ -38,6 +37,7 @@ namespace NBitcoin
         {
             return _StandardTemplates.Any(template => template.CheckScriptPubKey(scriptPubKey));
         }
+
         private static bool IsStandardScriptSig(Network network, Script scriptSig, Script scriptPubKey)
         {
             ScriptTemplate template = GetTemplateFromScriptPubKey(scriptPubKey);
@@ -47,7 +47,6 @@ namespace NBitcoin
             return template.CheckScriptSig(network, scriptSig, scriptPubKey);
         }
 
-        //
         // Check transaction inputs, and make sure any
         // pay-to-script-hash transactions are evaluating IsStandard scripts
         //
@@ -57,7 +56,6 @@ namespace NBitcoin
         // script can be anything; an attacker could use a very
         // expensive-to-check-upon-redemption script like:
         //   DUP CHECKSIG DROP ... repeated 100 times... OP_1
-        //
         public static bool AreInputsStandard(Network network, Transaction tx, CoinsView coinsView)
         {
             if(tx.IsCoinBase)
