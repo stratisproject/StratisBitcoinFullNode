@@ -1734,7 +1734,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
         /// Make sure that reorg that is returned is true.
         /// </summary>
         [Fact]
-        public void ChainOfHeaders_CallPartialValidationSucceededOnBlockBeyondConsensusTip_ReorgIsRequired()
+        public void ChainOfHeaders_CallFullValidationRequiredOnBlockBeyondConsensusTip_ReorgIsRequired()
         {
             // Chain header tree setup.
             const int initialChainSize = 1;
