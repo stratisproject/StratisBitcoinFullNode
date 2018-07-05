@@ -1935,6 +1935,34 @@ namespace Stratis.Bitcoin.Tests.Consensus
         }
 
         /// <summary>
+        /// Issue 31 @ Chain is 2 blocks long, CT is header 1, call PartialValidationSucceeded on header 2.
+        /// Make sure that full validation is required.
+        /// </summary>
+        [Fact]
+        public void ChainOfHeaders_CallPartialValidationSucceededOnBlockBeyondConsensusTip_FullValidationIsRequired()
+        {
+            // Chain header tree setup.
+            const int initialChainSize = 1;
+            TestContext testContext = new TestContextBuilder().WithInitialChain(initialChainSize).Build();
+            ChainedHeaderTree chainedHeaderTree = testContext.ChainedHeaderTree;
+            ChainedHeader initialChainTip = testContext.InitialChainTip;
+
+            const int chainExtension = 1;
+            ChainedHeader chainTip = testContext.ExtendAChain(chainExtension, initialChainTip);
+            List<BlockHeader> listOfChainHeaders = testContext.ChainedHeaderToList(chainTip, 1);
+
+            // Chain is 2 blocks long: h1=h2.
+            chainedHeaderTree.ConnectNewHeaders(1, listOfChainHeaders);
+
+            // Call PartialValidationSucceeded on h2.
+            chainedHeaderTree.PartialValidationSucceeded(chainTip, out bool fullValidationRequired);
+
+            chainTip.BlockValidationState.Should().Be(ValidationState.PartiallyValidated);
+
+            fullValidationRequired.Should().BeTrue();
+        }
+
+        /// <summary>
         /// Issue 48 @ CT is at 5. AssumeValid is at 10. ConnectNewHeaders called with headers 1 - 9 (from peer1).
         /// Make sure headers 6 - 9 are marked for download. After that ConnectNewHeaders called with headers 5 to 15 (from peer2).
         /// Make sure 9 - 15 are marked for download.
