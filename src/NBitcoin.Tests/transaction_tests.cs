@@ -879,7 +879,7 @@ namespace NBitcoin.Tests
 
                 foreach (TxOut output in transfer.Outputs)
                 {
-                    Assert.False(TxNullDataTemplate.Instance.CheckScriptPubKey(Network.Main, output.ScriptPubKey));
+                    Assert.False(TxNullDataTemplate.Instance.CheckScriptPubKey(output.ScriptPubKey));
                     Assert.False(output.Value == output.GetDustThreshold(txBuilder.StandardTransactionPolicy.MinRelayTxFee));
                 }
             }
@@ -1514,17 +1514,17 @@ namespace NBitcoin.Tests
         public void CanCheckSegwitPubkey()
         {
             var a = new Script("OP_DUP 033fbe0a2aa8dc28ee3b2e271e3fedc7568529ffa20df179b803bf9073c11b6a8b OP_CHECKSIG OP_IF OP_DROP 0382fdfb0a3898bc6504f63204e7d15a63be82a3b910b5b865690dc96d1249f98c OP_ELSE OP_CODESEPARATOR 033fbe0a2aa8dc28ee3b2e271e3fedc7568529ffa20df179b803bf9073c11b6a8b OP_ENDIF OP_CHECKSIG");
-            Assert.False(PayToWitTemplate.Instance.CheckScriptPubKey(Network.Main, a));
+            Assert.False(PayToWitTemplate.Instance.CheckScriptPubKey(a));
             a = new Script("1 033fbe0a2aa8dc28ee3b2e271e3fedc7568529ffa20df179b803bf9073c1");
-            Assert.True(PayToWitTemplate.Instance.CheckScriptPubKey(Network.Main, a));
+            Assert.True(PayToWitTemplate.Instance.CheckScriptPubKey(a));
 
             foreach (int pushSize in new[] { 2, 10, 20, 32 })
             {
                 a = new Script("1 " + String.Concat(Enumerable.Range(0, pushSize * 2).Select(_ => "0").ToArray()));
-                Assert.True(PayToWitTemplate.Instance.CheckScriptPubKey(Network.Main, a));
+                Assert.True(PayToWitTemplate.Instance.CheckScriptPubKey(a));
             }
             a = new Script("1 " + String.Concat(Enumerable.Range(0, 33 * 2).Select(_ => "0").ToArray()));
-            Assert.False(PayToWitTemplate.Instance.CheckScriptPubKey(Network.Main, a));
+            Assert.False(PayToWitTemplate.Instance.CheckScriptPubKey(a));
         }
 
         [Fact]

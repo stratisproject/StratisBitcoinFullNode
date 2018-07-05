@@ -525,7 +525,7 @@ namespace NBitcoin
         /// </summary>
         public bool IsWitness(Network network)
         {
-            return PayToWitTemplate.Instance.CheckScriptPubKey(network, this);
+            return PayToWitTemplate.Instance.CheckScriptPubKey(this);
         }
 
         public override string ToString()
@@ -860,7 +860,7 @@ namespace NBitcoin
 
         public bool IsPayToScriptHash(Network network)
         {
-            return PayToScriptHashTemplate.Instance.CheckScriptPubKey(network, this);
+            return PayToScriptHashTemplate.Instance.CheckScriptPubKey(this);
         }
 
         public BitcoinWitScriptAddress GetWitScriptAddress(Network network)
@@ -882,7 +882,7 @@ namespace NBitcoin
 
         public ScriptTemplate FindTemplate(Network network)
         {
-            return StandardScripts.GetTemplateFromScriptPubKey(network, this);
+            return StandardScripts.GetTemplateFromScriptPubKey(this);
         }
 
         /// <summary>
@@ -954,7 +954,7 @@ namespace NBitcoin
             }
             else
             {
-                PayToMultiSigTemplateParameters multiSig = PayToMultiSigTemplate.Instance.ExtractScriptPubKeyParameters(network, this);
+                PayToMultiSigTemplateParameters multiSig = PayToMultiSigTemplate.Instance.ExtractScriptPubKeyParameters(this);
                 if(multiSig != null)
                 {
                     result.AddRange(multiSig.PubKeys);
@@ -1202,12 +1202,12 @@ namespace NBitcoin
 
         private static Script CombineSignatures(Network network, Script scriptPubKey, TransactionChecker checker, byte[][] sigs1, byte[][] sigs2, HashVersion hashVersion)
         {
-            ScriptTemplate template = StandardScripts.GetTemplateFromScriptPubKey(network, scriptPubKey);
+            ScriptTemplate template = StandardScripts.GetTemplateFromScriptPubKey(scriptPubKey);
 
             if(template is PayToWitPubKeyHashTemplate)
             {
                 scriptPubKey = new KeyId(scriptPubKey.ToBytes(true).SafeSubarray(1, 20)).ScriptPubKey;
-                template = StandardScripts.GetTemplateFromScriptPubKey(network, scriptPubKey);
+                template = StandardScripts.GetTemplateFromScriptPubKey(scriptPubKey);
             }
             if(template == null || template is TxNullDataTemplate)
                 return PushAll(Max(sigs1, sigs2));
@@ -1266,7 +1266,7 @@ namespace NBitcoin
                 }
             }
 
-            PayToMultiSigTemplateParameters multiSigParams = PayToMultiSigTemplate.Instance.ExtractScriptPubKeyParameters(network, scriptPubKey);
+            PayToMultiSigTemplateParameters multiSigParams = PayToMultiSigTemplate.Instance.ExtractScriptPubKeyParameters(scriptPubKey);
             if(multiSigParams == null)
                 throw new InvalidOperationException("The scriptPubKey is not a valid multi sig");
 
