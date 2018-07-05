@@ -142,7 +142,7 @@ namespace NBitcoin
 
         public static Block ParseJson(Network network, string json)
         {
-            var formatter = new BlockExplorerFormatter();
+            var formatter = new BlockExplorerFormatter(network);
             JObject block = JObject.Parse(json);
             var txs = (JArray)block["tx"];
             Block blk = network.Consensus.ConsensusFactory.CreateBlock();
