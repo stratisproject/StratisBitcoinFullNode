@@ -1687,7 +1687,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
             // Example: h1=h2=h3=h4=h5.
             const int initialChainSize = 5;
             TestContext ctx = new TestContextBuilder()
-                .WithInitialChain(initialChainSize, assignBlocks: false)
+                .WithInitialChain(initialChainSize)
                 .Build();
             ChainedHeaderTree cht = ctx.ChainedHeaderTree;
             ChainedHeader chainTip = ctx.InitialChainTip;
@@ -1697,6 +1697,18 @@ namespace Stratis.Bitcoin.Tests.Consensus
             const int extensionSize = 4;
             chainTip = ctx.ExtendAChain(extensionSize, chainTip);
 
+            // Present headers and download them.
+            List<BlockHeader> listOfExtendedHeaders = ctx.ChainedHeaderToList(chainTip, extensionSize);
+            ConnectNewHeadersResult connectionResult = cht.ConnectNewHeaders(1, listOfExtendedHeaders);
+            ChainedHeader consumed = connectionResult.Consumed;
+
+            ChainedHeader[] originalHeaderArray = chainTip.ToArray(extensionSize);
+            ChainedHeader[] headerArray = consumed.ToArray(extensionSize);
+            for (int i = 0; i < headerArray.Length; i++)
+            {
+                cht.BlockDataDownloaded(headerArray[i], originalHeaderArray[i].Block);
+            }
+            
             // Call partial validation on h9 (h8 has validation state as HeaderOnly) and make sure nothing is returned
             // and full validation is not required.
             List<ChainedHeaderBlock> headers = cht.PartialValidationSucceeded(chainTip, out bool fullValidationRequired);
@@ -1715,7 +1727,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
             // Example: h1=h2=h3=h4=h5.
             const int initialChainSize = 5;
             TestContext ctx = new TestContextBuilder()
-                .WithInitialChain(initialChainSize, assignBlocks: false)
+                .WithInitialChain(initialChainSize)
                 .Build();
             ChainedHeaderTree cht = ctx.ChainedHeaderTree;
             ChainedHeader chainTip = ctx.InitialChainTip;
@@ -1725,12 +1737,23 @@ namespace Stratis.Bitcoin.Tests.Consensus
             const int extensionSize = 4;
             chainTip = ctx.ExtendAChain(extensionSize, chainTip);
 
-            // Mock a partially validate state for h9 by setting its state as partially validated.
-            chainTip.BlockValidationState = ValidationState.PartiallyValidated;
+            // Present headers, download them and partially validate them.
+            List<BlockHeader> listOfExtendedHeaders = ctx.ChainedHeaderToList(chainTip, extensionSize);
+            ConnectNewHeadersResult connectionResult = cht.ConnectNewHeaders(1, listOfExtendedHeaders);
+            ChainedHeader consumed = connectionResult.Consumed;
 
-            // Call partial validation on h9 and make sure nothing is returned
+            ChainedHeader[] originalHeaderArray = chainTip.ToArray(extensionSize);
+            ChainedHeader[] headerArray = consumed.ToArray(extensionSize);
+            bool fullValidationRequired;
+            for (int i = 0; i < headerArray.Length; i++)
+            {
+                cht.BlockDataDownloaded(headerArray[i], originalHeaderArray[i].Block);
+                cht.PartialValidationSucceeded(headerArray[i], out fullValidationRequired);
+            }
+
+            // Call partial validation on h9 again and make sure nothing is returned
             // and full validation is not required.
-            List<ChainedHeaderBlock> headers = cht.PartialValidationSucceeded(chainTip, out bool fullValidationRequired);
+            List<ChainedHeaderBlock> headers = cht.PartialValidationSucceeded(chainTip, out fullValidationRequired);
             headers.Should().BeNull();
             fullValidationRequired.Should().BeFalse();
         }
