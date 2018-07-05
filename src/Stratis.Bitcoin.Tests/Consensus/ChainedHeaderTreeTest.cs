@@ -792,6 +792,99 @@ namespace Stratis.Bitcoin.Tests.Consensus
         }
 
         /// <summary>
+        /// Issue 12 @ Create chained header tree component #1321
+        /// Checkpoints are disabled, assumevalid at block X, blocks up to
+        /// X-10 are marked for download, blocks before X-20 are fully validated,
+        /// headers up to block X + some more are presented, all from X-10
+        /// are marked for download. Make sure that all blocks before assumevalid block
+        /// that are not fully validated or partially validated are marked assumevalid.
+        /// </summary>
+        [Fact]
+        public void PresentChain_CheckpointsDisabled_BlocksNotFullyOrPartiallyValidatedAreAssumeValid()
+        {
+            // Checkpoints are disabled.
+            // Initial chain has headers (h1-h10).
+            const int initialChainOfTenBlocks = 10;
+            TestContext testContext = new TestContextBuilder().WithInitialChain(initialChainOfTenBlocks)
+                .UseCheckpoints(false).Build();
+            ChainedHeaderTree chainedHeaderTree = testContext.ChainedHeaderTree;
+            ChainedHeader initialChainTip = testContext.InitialChainTip;
+
+            // Assume valid at Block X (h30).
+            const int assumeValidBlockHeight = 30;
+            const int extendChainByTwentyBlocks = 20;
+            ChainedHeader extendedChainTip = testContext.ExtendAChain(extendChainByTwentyBlocks, initialChainTip);
+            Assert.Equal(extendedChainTip.Height, assumeValidBlockHeight);
+            testContext.ConsensusSettings.BlockAssumedValid = extendedChainTip.HashBlock;
+            
+            // Blocks up to X-10 (h11->h20) are marked for download.
+            List<BlockHeader> listOfCurrentChainHeaders =
+                testContext.ChainedHeaderToList(extendedChainTip, initialChainOfTenBlocks + extendChainByTwentyBlocks).Take(extendChainByTwentyBlocks).ToList();
+            ConnectNewHeadersResult connectNewHeadersResult = chainedHeaderTree.ConnectNewHeaders(1, listOfCurrentChainHeaders);
+            ChainedHeader chainedHeaderDownloadFrom = connectNewHeadersResult.DownloadFrom;
+            ChainedHeader chainedHeaderDownloadTo = connectNewHeadersResult.DownloadTo;
+
+            chainedHeaderDownloadFrom.HashBlock.Should().Be(initialChainTip.Next[0].HashBlock); // h11
+            chainedHeaderDownloadTo.HashBlock.Should().Be(listOfCurrentChainHeaders.Last().GetHash());
+
+            ChainedHeader chainedHeader = chainedHeaderDownloadTo;
+            while (chainedHeader.Height >= chainedHeaderDownloadFrom.Height)
+            {
+                chainedHeader.BlockDataAvailability.Should().Be(BlockDataAvailabilityState.BlockRequired);
+                chainedHeader = chainedHeader.Previous;
+            }
+            
+            // Blocks before X-20 (h1->h10) are FV.
+            chainedHeader = initialChainTip;
+            Assert.Equal(chainedHeader.Height, assumeValidBlockHeight - 20);
+            ValidationState expectedState = ValidationState.FullyValidated;
+            while (chainedHeader.Height > 0)
+            {
+                chainedHeader.BlockValidationState.Should().Be(expectedState);
+                chainedHeader.BlockDataAvailability.Should().Be(BlockDataAvailabilityState.BlockAvailable);
+                chainedHeader = chainedHeader.Previous;
+            }
+
+            // Headers up to block X (h30) + some more (h31->h35) are presented.
+            const int extendChainByFiveBlocks = 5;
+            extendedChainTip = testContext.ExtendAChain(extendChainByFiveBlocks, extendedChainTip);
+            listOfCurrentChainHeaders =
+                testContext.ChainedHeaderToList(extendedChainTip, assumeValidBlockHeight + extendChainByFiveBlocks);
+            connectNewHeadersResult = chainedHeaderTree.ConnectNewHeaders(1, listOfCurrentChainHeaders);
+
+            chainedHeader = extendedChainTip;
+            while (chainedHeader.Height > assumeValidBlockHeight)
+            {
+                chainedHeader.BlockDataAvailability.Should().Be(BlockDataAvailabilityState.HeaderOnly);
+                chainedHeader = chainedHeader.Previous;
+            }
+            
+            // All from X-10 (h21->h30) are marked for download.
+            int chainedHeaderHeightXMinus10 = (assumeValidBlockHeight - 10);
+            ChainedHeader fromHeader = extendedChainTip.GetAncestor(chainedHeaderHeightXMinus10 + 1);
+            
+            chainedHeaderDownloadFrom = connectNewHeadersResult.DownloadFrom;
+            chainedHeaderDownloadTo = connectNewHeadersResult.DownloadTo;
+            
+            chainedHeaderDownloadFrom.HashBlock.Should().Be(fromHeader.HashBlock);
+            chainedHeaderDownloadTo.HashBlock.Should().Be(extendedChainTip.HashBlock);
+            
+            // Check block data availability of headers marked for download.
+            Assert.True(connectNewHeadersResult.HaveBlockDataAvailabilityStateOf(BlockDataAvailabilityState.BlockRequired));
+            
+            // Make sure that all blocks before assumevalid block
+            // that are not fully or partially validated are marked assumevalid.
+            ChainedHeader headerBeforeIncludingAssumeValid = chainedHeaderTree
+                .GetPeerTipChainedHeaderByPeerId(1).GetAncestor(assumeValidBlockHeight);
+
+            while (headerBeforeIncludingAssumeValid.Height > assumeValidBlockHeight - 20)
+            {
+                headerBeforeIncludingAssumeValid.BlockValidationState.Should().Be(ValidationState.AssumedValid);
+                headerBeforeIncludingAssumeValid = headerBeforeIncludingAssumeValid.Previous;
+            }
+        }
+
+        /// <summary>
         /// Issue 13 @ Create 2 chains - chain A and chain B, where chain A has more chain work than chain B. Connect both
         /// chains to chain header tree. Consensus tip should be set to chain A. Now extend / update chain B to make it have
         /// more chain work. Attempt to connect chain B again. Consensus tip should be set to chain B.
