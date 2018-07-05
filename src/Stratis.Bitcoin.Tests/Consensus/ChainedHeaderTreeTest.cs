@@ -1963,6 +1963,39 @@ namespace Stratis.Bitcoin.Tests.Consensus
         }
 
         /// <summary>
+        /// Issue 41 @ BlockDataDownloaded called on 10 known blocks.
+        /// Make sure that UnconsumedBlocksDataBytes is equal to the sum of serialized sizes of those blocks.
+        /// </summary>
+        [Fact]
+        public void BlockDataDownloadedIsCalled_UnconsumedBlocksDataBytes_Equals_SumOfSerializedBlockSize()
+        {
+            const int initialChainSize = 5;
+            const int chainExtension = 10;
+
+            // Chain header tree setup.
+            TestContext testContext = new TestContextBuilder().WithInitialChain(initialChainSize).UseCheckpoints(false).Build();
+            ChainedHeaderTree chainedHeaderTree = testContext.ChainedHeaderTree;
+            ChainedHeader initialChainTip = testContext.InitialChainTip;
+
+            ChainedHeader extendedChainTip = testContext.ExtendAChain(chainExtension, initialChainTip);
+            List<BlockHeader> listOfChainBlockHeaders = testContext.ChainedHeaderToList(extendedChainTip, initialChainSize + chainExtension);
+
+            // Present all chain headers h1->h15.
+            ConnectNewHeadersResult connectNewHeadersResult = chainedHeaderTree.ConnectNewHeaders(1, listOfChainBlockHeaders);
+            Assert.True(connectNewHeadersResult.HaveBlockDataAvailabilityStateOf(BlockDataAvailabilityState.BlockRequired));
+
+            int serializedSizeOfBlocks = 0;
+            foreach (ChainedHeader chainedHeader in connectNewHeadersResult.ToHashArray())
+            {
+                chainedHeaderTree.BlockDataDownloaded(chainedHeader, extendedChainTip.FindAncestorOrSelf(chainedHeader).Block);
+                serializedSizeOfBlocks += chainedHeader.Block.GetSerializedSize();
+            }
+
+            // UnconsumedBlocksDataBytes is equal to the sum of serialized sizes of the blocks.
+            Assert.Equal(chainedHeaderTree.UnconsumedBlocksDataBytes, serializedSizeOfBlocks);
+        }
+
+        /// <summary>
         /// Issue 48 @ CT is at 5. AssumeValid is at 10. ConnectNewHeaders called with headers 1 - 9 (from peer1).
         /// Make sure headers 6 - 9 are marked for download. After that ConnectNewHeaders called with headers 5 to 15 (from peer2).
         /// Make sure 9 - 15 are marked for download.
