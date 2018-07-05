@@ -1498,7 +1498,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
             const int chainExtension = 40;
             const int assumeValidHeaderHeight = 30;
 
-            TestContext testContext = new TestContextBuilder().WithInitialChain(initialChainSize).UseCheckpoints(true).Build();
+            TestContext testContext = new TestContextBuilder().WithInitialChain(initialChainSize).UseCheckpoints().Build();
             ChainedHeaderTree chainedHeaderTree = testContext.ChainedHeaderTree;
             ChainedHeader initialChainTip = testContext.InitialChainTip;
             ChainedHeader chainTip = testContext.ExtendAChain(chainExtension, initialChainTip);
@@ -1540,6 +1540,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
             }
         }
 
+        /// <summary>
         /// Issue 35 @ We receive headers message
         /// (first header in the message is HEADERS_START and last is HEADERS_END).
         /// AV = assume valid header, CP1,CP2 - checkpointed headers. '---' some headers.
@@ -1932,6 +1933,65 @@ namespace Stratis.Bitcoin.Tests.Consensus
             firstHeader.BlockValidationState.Should().Be(ValidationState.PartiallyValidated);
             listOfHeaders.Should().HaveCount(1);
             listOfHeaders.First().ChainedHeader.HashBlock.Should().Be(secondHeader.HashBlock);
+        }
+
+        /// <summary>
+        /// Issue 40 @ CT advances after last checkpoint to height LC + MaxReorg + 10. New chain is presented with
+        /// fork point at LC + 5, chain is not accepted.
+        /// </summary>
+        [Fact]
+        public void ChainAdvancesAfterACheckpoint_NewChainIsPresentedWithForkPoint_ChainIsNotAccepted()
+        {
+            // Chain header tree setup. Initial chain has 5 headers and checkpoint at h5.
+            // Example: h1=h2=h3=h4=(h5).
+            const int initialChainSize = 5;
+            TestContext ctx = new TestContextBuilder().WithInitialChain(initialChainSize).UseCheckpoints().Build();
+            ChainedHeaderTree cht = ctx.ChainedHeaderTree;
+            ChainedHeader chainTip = ctx.InitialChainTip;
+
+            const int checkpointHeight = 5;
+            var checkpoint = new CheckpointFixture(checkpointHeight, chainTip.Header);
+            ctx.SetupCheckpoints(checkpoint);
+
+            // Setup max reorg to 100.
+            const int maxReorg = 100;
+            ctx.ChainStateMock.Setup(x => x.MaxReorgLength).Returns(maxReorg);
+
+            // Extend the chain with (checkpoint + MaxReorg + 10) headers, i.e. 115 headers.
+            const int extensionSize = 10;
+            const int chainASize = checkpointHeight + maxReorg + extensionSize;
+            ChainedHeader chainATip = ctx.ExtendAChain(chainASize, chainTip);
+
+            // Chain A is presented by peer 1.
+            List<BlockHeader> listOfChainABlockHeaders = ctx.ChainedHeaderToList(chainATip, chainASize);
+            ChainedHeader consumed = cht.ConnectNewHeaders(1, listOfChainABlockHeaders).Consumed;
+            ChainedHeader[] consumedChainAHeaders = consumed.ToArray(chainASize);
+            ChainedHeader[] originalChainAHeaders = chainATip.ToArray(chainASize);
+
+            // Sync all blocks from chain A.
+            for (int i = 0; i < chainASize; i++)
+            {
+                ChainedHeader currentChainTip = consumedChainAHeaders[i];
+                Block block = originalChainAHeaders[i].Block;
+
+                cht.BlockDataDownloaded(currentChainTip, block);
+                cht.PartialValidationSucceeded(currentChainTip, out bool fullValidationRequired);
+                ctx.FinalizedBlockMock.Setup(m => m.GetFinalizedBlockHeight()).Returns(currentChainTip.Height - maxReorg);
+                cht.ConsensusTipChanged(currentChainTip);
+            }
+
+            // Create new chain B with 20 headers and a fork point at height 10.
+            const int forkPointHeight = 10;
+            const int chainBSize = 20;
+            ChainedHeader forkTip = chainATip.GetAncestor(forkPointHeight);
+            ChainedHeader chainBTip = ctx.ExtendAChain(chainBSize - forkPointHeight, forkTip);
+
+            // Chain B is presented by peer 2.
+            List<BlockHeader> listOfChainBHeaders = ctx.ChainedHeaderToList(chainBTip, chainBSize);
+            Action connectHeadersAction = () => cht.ConnectNewHeaders(2, listOfChainBHeaders);
+
+            // Connection fails.
+            connectHeadersAction.Should().Throw<MaxReorgViolationException>();
         }
 
         /// <summary>
