@@ -202,7 +202,7 @@ namespace NBitcoin
         /// Mines a new genesis block, to use with a new network.
         /// Typically, 3 such genesis blocks need to be created when bootstrapping a new coin: for Main, Test and Reg networks.
         /// </summary>
-        /// <param name="network">
+        /// <param name="consensusFactory">
         /// The consensus factory used to create transactions and blocks. 
         /// Use <see cref="PosConsensusFactory"/> for proof-of-stake based networks.
         /// </param>
@@ -239,13 +239,16 @@ namespace NBitcoin
         /// </code>
         /// </example>
         /// <returns>A genesis block.</returns>
-        public static Block MineGenesisBlock(Network network, string coinbaseText, Target target, Money genesisReward, int version = 1)
+        public static Block MineGenesisBlock(ConsensusFactory consensusFactory, string coinbaseText, Target target, Money genesisReward, int version = 1)
         {
-            if (network == null)
-                throw new ArgumentException($"Parameter '{nameof(network)}' cannot be null. Use 'new ConsensusFactory()' for Bitcoin-like proof-of-work blockchains and 'new PosConsensusFactory()' for Stratis-like proof-of-stake blockchains.");
+            if (consensusFactory == null)
+                throw new ArgumentException($"Parameter '{nameof(consensusFactory)}' cannot be null. Use 'new ConsensusFactory()' for Bitcoin-like proof-of-work blockchains and 'new PosConsensusFactory()' for Stratis-like proof-of-stake blockchains.");
 
             if (string.IsNullOrEmpty(coinbaseText))
                 throw new ArgumentException($"Parameter '{nameof(coinbaseText)}' cannot be null. Use a news headline or any other appropriate string.");
+
+            if (target == null)
+                throw new ArgumentException($"Parameter '{nameof(target)}' cannot be null. Example use: new Target(new uint256(\"0000ffff00000000000000000000000000000000000000000000000000000000\"))");
 
             if (coinbaseText.Length >= 92)
                 throw new ArgumentException($"Parameter '{nameof(coinbaseText)}' should be shorter than 92 characters.");
@@ -256,7 +259,7 @@ namespace NBitcoin
             DateTimeOffset time = DateTimeOffset.Now;
             uint unixTime = Utils.DateTimeToUnixTime(time);
 
-            Transaction txNew = network.CreateTransaction();
+            Transaction txNew = consensusFactory.CreateTransaction();
             txNew.Version = (uint)version;
             txNew.Time = unixTime;
             txNew.AddInput(new TxIn()
@@ -276,9 +279,9 @@ namespace NBitcoin
                 Value = genesisReward,
             });
 
-            Block genesis = network.Consensus.ConsensusFactory.CreateBlock();
+            Block genesis = consensusFactory.CreateBlock();
             genesis.Header.BlockTime = time;
-            genesis.Header.Bits = target ?? throw new ArgumentException($"Parameter '{nameof(target)}' cannot be null. Example use: new Target(new uint256(\"0000ffff00000000000000000000000000000000000000000000000000000000\"))");
+            genesis.Header.Bits = target;
             genesis.Header.Nonce = 0;
             genesis.Header.Version = version;
             genesis.Transactions.Add(txNew);
