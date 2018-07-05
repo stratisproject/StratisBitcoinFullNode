@@ -509,7 +509,7 @@ namespace Stratis.Bitcoin.Consensus
                     int finalizedHeight = this.finalizedBlockHeight.GetFinalizedBlockHeight();
 
                     // Do nothing in case peer's tip is on our consensus chain.
-                    if ((fork != null) && (fork.Height <= finalizedHeight))
+                    if ((fork != null) && (fork.Height < finalizedHeight))
                     {
                         peerIdsToResync.Add(peerId);
                         this.logger.LogTrace("Peer with Id {0} claims a chain that violates max reorg, its tip is '{1}' and the last finalized block height is {2}.", peerId, peerTip, finalizedHeight);
@@ -1135,7 +1135,7 @@ namespace Stratis.Bitcoin.Consensus
 
                     int finalizedHeight = this.finalizedBlockHeight.GetFinalizedBlockHeight();
 
-                    if (fork.Height <= finalizedHeight)
+                    if (fork.Height < finalizedHeight)
                     {
                         this.logger.LogTrace("Reorganization of length {0} prevented, maximal reorganization length is {1}, consensus tip is '{2}' and the last finalized block height is {3}.", reorgLength, maxReorgLength, consensusTip, finalizedHeight);
                         this.logger.LogTrace("(-)[MAX_REORG_VIOLATION]");
