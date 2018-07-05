@@ -6,9 +6,13 @@ using Newtonsoft.Json;
 
 namespace Stratis.Bitcoin.Utilities.JsonConverters
 {
+    /// <summary>
+    /// Converter used to convert an <see cref="AssetId"/> to and from JSON.
+    /// </summary>
+    /// <seealso cref="Newtonsoft.Json.JsonConverter" />
     public class AssetIdJsonConverter : JsonConverter
     {
-        public Network Network { get; set; }
+        public Network Network { get; }
 
         public AssetIdJsonConverter(Network network)
         {

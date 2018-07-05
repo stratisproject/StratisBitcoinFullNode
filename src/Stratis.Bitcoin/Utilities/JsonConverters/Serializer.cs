@@ -4,6 +4,9 @@ using Newtonsoft.Json.Serialization;
 
 namespace Stratis.Bitcoin.Utilities.JsonConverters
 {
+    /// <summary>
+    /// Class providing method used to serialize/deserialize domain objects to and from JSON.
+    /// </summary>
     public class Serializer
     {
         public static void RegisterFrontConverters(JsonSerializerSettings settings, Network network = null)

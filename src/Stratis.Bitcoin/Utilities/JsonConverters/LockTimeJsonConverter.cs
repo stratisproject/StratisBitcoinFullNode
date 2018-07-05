@@ -4,6 +4,10 @@ using Newtonsoft.Json;
 
 namespace Stratis.Bitcoin.Utilities.JsonConverters
 {
+    /// <summary>
+    /// Converter used to convert a <see cref="LockTime"/> to and from JSON.
+    /// </summary>
+    /// <seealso cref="Newtonsoft.Json.JsonConverter" />
     public class LockTimeJsonConverter : JsonConverter
     {
         /// <inheritdoc />

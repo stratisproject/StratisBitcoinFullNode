@@ -6,6 +6,10 @@ using Newtonsoft.Json;
 
 namespace Stratis.Bitcoin.Utilities.JsonConverters
 {
+    /// <summary>
+    /// Converter used to convert a <see cref="Key"/> or a <see cref="PubKey"/> to and from JSON.
+    /// </summary>
+    /// <seealso cref="Newtonsoft.Json.JsonConverter" />
     public class KeyJsonConverter : JsonConverter
     {
         /// <inheritdoc />
@@ -35,6 +39,7 @@ namespace Stratis.Bitcoin.Utilities.JsonConverters
             catch(FormatException)
             {
             }
+
             throw new JsonObjectException("Invalid bitcoin object of type " + objectType.Name, reader);
         }
 

@@ -5,6 +5,10 @@ using Newtonsoft.Json;
 
 namespace Stratis.Bitcoin.Utilities.JsonConverters
 {
+    /// <summary>
+    /// Converter used to convert a <see cref="KeyPath"/> to and from JSON.
+    /// </summary>
+    /// <seealso cref="Newtonsoft.Json.JsonConverter" />
     public class KeyPathJsonConverter : JsonConverter
     {
         /// <inheritdoc />

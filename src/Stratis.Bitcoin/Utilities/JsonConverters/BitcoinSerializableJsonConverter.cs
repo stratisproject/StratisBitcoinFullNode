@@ -7,15 +7,19 @@ using Newtonsoft.Json;
 
 namespace Stratis.Bitcoin.Utilities.JsonConverters
 {
+    /// <summary>
+    /// Converter used to convert an object implementing <see cref="IBitcoinSerializable"/> to and from JSON.
+    /// </summary>
+    /// <seealso cref="Newtonsoft.Json.JsonConverter" />
     public sealed class BitcoinSerializableJsonConverter : JsonConverter
     {
-        public BitcoinSerializableJsonConverter() { }
-
+        /// <inheritdoc />
         public override bool CanConvert(Type objectType)
         {
             return typeof(IBitcoinSerializable).GetTypeInfo().IsAssignableFrom(objectType.GetTypeInfo());
         }
 
+        /// <inheritdoc />
         public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
         {
             if (reader.TokenType == JsonToken.Null)
@@ -39,6 +43,7 @@ namespace Stratis.Bitcoin.Utilities.JsonConverters
             throw new JsonObjectException("Invalid bitcoin object of type " + objectType.Name, reader);
         }
 
+        /// <inheritdoc />
         public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
         {
             byte[] bytes = ((IBitcoinSerializable)value).ToBytes();
