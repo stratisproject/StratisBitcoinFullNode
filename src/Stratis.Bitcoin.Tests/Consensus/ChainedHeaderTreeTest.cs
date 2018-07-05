@@ -1963,60 +1963,36 @@ namespace Stratis.Bitcoin.Tests.Consensus
         }
 
         /// <summary>
-        /// Issue 42 @ CT is at 0. 10 headers are presented.
-        /// 10 blocks are downloaded. CT advances to 5.
-        /// Make sure that UnconsumedBlocksDataBytes is equal to
-        /// the sum of serialized sizes of last five blocks.
-        /// CT advances to 10.  Make sure UnconsumedBlocksDataBytes is 0.
+        /// Issue 41 @ BlockDataDownloaded called on 10 known blocks.
+        /// Make sure that UnconsumedBlocksDataBytes is equal to the sum of serialized sizes of those blocks.
         /// </summary>
         [Fact]
-        public void PresentHeaders_ChainHeaderTreeAdvances_UnconsumedBlocksDataBytes_Equals_SumOfSerializedBlockSize()
+        public void BlockDataDownloadedIsCalled_UnconsumedBlocksDataBytes_Equals_SumOfSerializedBlockSize()
         {
-            const int initialChainSize = 0;
-            const int chainExtensionSize = 10;
+            const int initialChainSize = 5;
+            const int chainExtension = 10;
 
             // Chain header tree setup.
-            TestContext ctx = new TestContextBuilder().WithInitialChain(initialChainSize).UseCheckpoints(false).Build();
-            ChainedHeaderTree chainedHeaderTree = ctx.ChainedHeaderTree;
-            ChainedHeader initialChainTip = ctx.InitialChainTip;
+            TestContext testContext = new TestContextBuilder().WithInitialChain(initialChainSize).UseCheckpoints(false).Build();
+            ChainedHeaderTree chainedHeaderTree = testContext.ChainedHeaderTree;
+            ChainedHeader initialChainTip = testContext.InitialChainTip;
 
-            // 10 headers are presented.
-            ChainedHeader commonChainTip = ctx.ExtendAChain(chainExtensionSize, initialChainTip);
-            List<BlockHeader> listOfChainBlockHeaders = ctx.ChainedHeaderToList(commonChainTip, chainExtensionSize);
+            ChainedHeader extendedChainTip = testContext.ExtendAChain(chainExtension, initialChainTip);
+            List<BlockHeader> listOfChainBlockHeaders = testContext.ChainedHeaderToList(extendedChainTip, initialChainSize + chainExtension);
 
-            // 10 blocks are downloaded.
+            // Present all chain headers h1->h15.
             ConnectNewHeadersResult connectNewHeadersResult = chainedHeaderTree.ConnectNewHeaders(1, listOfChainBlockHeaders);
-            ChainedHeader chainedHeaderTo = connectNewHeadersResult.DownloadTo;
-            chainedHeaderTo.HashBlock.Should().Be(commonChainTip.HashBlock);
-
             Assert.True(connectNewHeadersResult.HaveBlockDataAvailabilityStateOf(BlockDataAvailabilityState.BlockRequired));
 
+            int serializedSizeOfBlocks = 0;
             foreach (ChainedHeader chainedHeader in connectNewHeadersResult.ToHashArray())
             {
-                chainedHeaderTree.BlockDataDownloaded(chainedHeader, commonChainTip.FindAncestorOrSelf(chainedHeader).Block);
-                chainedHeaderTree.PartialValidationSucceeded(chainedHeader, out bool fullValidationRequired);
-                fullValidationRequired.Should().BeTrue();
-            }
-
-            // CT advances to 5.
-            chainedHeaderTree.ConsensusTipChanged(chainedHeaderTo.GetAncestor(5));
-
-            int serializedSizeOfBlocks = 0;
-            IEnumerable<ChainedHeader> lastFive = connectNewHeadersResult.ToHashArray().TakeLast(5);
-            foreach (ChainedHeader chainedHeader in lastFive)
-            {
+                chainedHeaderTree.BlockDataDownloaded(chainedHeader, extendedChainTip.FindAncestorOrSelf(chainedHeader).Block);
                 serializedSizeOfBlocks += chainedHeader.Block.GetSerializedSize();
             }
 
-            // UnconsumedBlocksDataBytes is non-zero and equal to the sum of serialized sizes of last five blocks.
-            Assert.NotEqual(0, chainedHeaderTree.UnconsumedBlocksDataBytes);
-            Assert.Equal(serializedSizeOfBlocks, chainedHeaderTree.UnconsumedBlocksDataBytes);
-
-            // CT advances to 10.
-            chainedHeaderTree.ConsensusTipChanged(chainedHeaderTo);
-
-            // UnconsumedBlocksDataBytes is 0.
-            Assert.Equal(0, chainedHeaderTree.UnconsumedBlocksDataBytes);
+            // UnconsumedBlocksDataBytes is equal to the sum of serialized sizes of the blocks.
+            Assert.Equal(chainedHeaderTree.UnconsumedBlocksDataBytes, serializedSizeOfBlocks);
         }
 
         /// <summary>
