@@ -305,25 +305,17 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             {
                 //inv.type |= nFetchFlags;
 
+                lock (this.lockObject)
+                {
+                    this.filterInventoryKnown.Add(inv.Hash);
+                }
+
                 if (blocksOnly)
                     this.logger.LogInformation("Transaction ID '{0}' inventory sent in violation of protocol peer '{1}'.", inv.Hash, peer.RemoteSocketEndpoint);
-
-                if (await this.orphans.AlreadyHaveAsync(inv.Hash))
-                {
+                else if (await this.orphans.AlreadyHaveAsync(inv.Hash))
                     this.logger.LogDebug("Transaction ID '{0}' already in orphans, skipped.", inv.Hash);
-                    continue;
-                }
-
-                send.Inventory.Add(inv);
-            }
-
-            // add to known inventory
-            lock (this.lockObject)
-            {
-                foreach (InventoryVector inventoryVector in send.Inventory)
-                {
-                    this.filterInventoryKnown.Add(inventoryVector.Hash);                    
-                }
+                else
+                    send.Inventory.Add(inv);               
             }
 
             if (peer.IsConnected)
