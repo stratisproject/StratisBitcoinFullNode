@@ -2,14 +2,13 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net.Http;
 using System.Runtime.InteropServices;
 using NBitcoin.Crypto;
 using NBitcoin.DataEncoders;
 using NBitcoin.Protocol;
 using Newtonsoft.Json.Linq;
 using Xunit;
-using NBitcoin.BitcoinCore;
-using System.Net.Http;
 
 namespace NBitcoin.Tests
 {
@@ -796,7 +795,7 @@ namespace NBitcoin.Tests
             Assert.True(combined.ToBytes().Length == 0);
 
             // Single signature case:
-            SignSignature(keys, txFrom, txTo, 0); // changes scriptSig
+            SignSignature(Network.Main, keys, txFrom, txTo, 0); // changes scriptSig
             scriptSig = txTo.Inputs[0].ScriptSig;
             combined = Script.CombineSignatures(Network.Main, scriptPubKey, txTo, 0, scriptSig, empty);
             Assert.True(combined == scriptSig);
@@ -804,7 +803,7 @@ namespace NBitcoin.Tests
             Assert.True(combined == scriptSig);
             Script scriptSigCopy = scriptSig.Clone();
             // Signing again will give a different, valid signature:
-            SignSignature(keys, txFrom, txTo, 0);
+            SignSignature(Network.Main, keys, txFrom, txTo, 0);
             scriptSig = txTo.Inputs[0].ScriptSig;
 
             combined = Script.CombineSignatures(Network.Main, scriptPubKey, txTo, 0, scriptSigCopy, scriptSig);
@@ -817,7 +816,7 @@ namespace NBitcoin.Tests
             txFrom.Outputs[0].ScriptPubKey = scriptPubKey;
             txTo.Inputs[0].PrevOut = new OutPoint(txFrom, 0);
 
-            SignSignature(keys, txFrom, txTo, 0, pkSingle);
+            SignSignature(Network.Main, keys, txFrom, txTo, 0, pkSingle);
             scriptSig = txTo.Inputs[0].ScriptSig;
 
             combined = Script.CombineSignatures(Network.Main, scriptPubKey, txTo, 0, scriptSig, empty);
@@ -828,7 +827,7 @@ namespace NBitcoin.Tests
             Assert.True(combined == scriptSig);
             scriptSigCopy = scriptSig.Clone();
 
-            SignSignature(keys, txFrom, txTo, 0);
+            SignSignature(Network.Main, keys, txFrom, txTo, 0);
             scriptSig = txTo.Inputs[0].ScriptSig;
 
             combined = Script.CombineSignatures(Network.Main, scriptPubKey, txTo, 0, scriptSigCopy, scriptSig);
@@ -845,7 +844,7 @@ namespace NBitcoin.Tests
             txFrom.Outputs[0].ScriptPubKey = scriptPubKey;
             txTo.Inputs[0].PrevOut = new OutPoint(txFrom, 0);
 
-            SignSignature(keys, txFrom, txTo, 0);
+            SignSignature(Network.Main, keys, txFrom, txTo, 0);
             scriptSig = txTo.Inputs[0].ScriptSig;
 
             combined = Script.CombineSignatures(Network.Main, scriptPubKey, txTo, 0, scriptSig, empty);
@@ -895,9 +894,9 @@ namespace NBitcoin.Tests
             Assert.True(combined == partial3c);
         }
 
-        private void SignSignature(Key[] keys, Transaction txFrom, Transaction txTo, int n, params Script[] knownRedeems)
+        private void SignSignature(Network network, Key[] keys, Transaction txFrom, Transaction txTo, int n, params Script[] knownRedeems)
         {
-            new TransactionBuilder()
+            new TransactionBuilder(network)
                 .AddKeys(keys)
                 .AddKnownRedeems(knownRedeems)
                 .AddCoins(txFrom)

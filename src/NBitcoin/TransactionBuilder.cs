@@ -524,16 +524,6 @@ namespace NBitcoin
                 return this._CurrentGroup;
             }
         }
-        internal TransactionBuilder()
-        {
-            this.Network = Network.Main;
-
-            this._Rand = new Random();
-            this.CoinSelector = new DefaultCoinSelector();
-            this.StandardTransactionPolicy = new StandardTransactionPolicy(this.Network);
-            this.DustPrevention = true;
-            InitExtensions();
-        }
 
         public TransactionBuilder(Network network)
         {
@@ -555,16 +545,6 @@ namespace NBitcoin
         }
 
         internal Random _Rand;
-        internal TransactionBuilder(int seed)
-        {
-            this.Network = Network.Main;
-
-            this._Rand = new Random(seed);
-            this.CoinSelector = new DefaultCoinSelector(seed);
-            this.StandardTransactionPolicy = new StandardTransactionPolicy(this.Network);
-            this.DustPrevention = true;
-            InitExtensions();
-        }
 
         public TransactionBuilder(int seed, Network network)
         {
