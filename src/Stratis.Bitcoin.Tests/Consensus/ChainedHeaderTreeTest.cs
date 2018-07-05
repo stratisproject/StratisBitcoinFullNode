@@ -1730,6 +1730,32 @@ namespace Stratis.Bitcoin.Tests.Consensus
         }
 
         /// <summary>
+        /// Issue 31 @ Chain is 2 blocks long, CT is header 1, call FullValidationRequired on header 2.
+        /// Make sure that reorg that is returned is true.
+        /// </summary>
+        [Fact]
+        public void ChainOfHeaders_CallPartialValidationSucceededOnBlockBeyondConsensusTip_ReorgIsRequired()
+        {
+            // Chain header tree setup.
+            const int initialChainSize = 1;
+            TestContext testContext = new TestContextBuilder().WithInitialChain(initialChainSize).Build();
+            ChainedHeaderTree chainedHeaderTree = testContext.ChainedHeaderTree;
+            ChainedHeader initialChainTip = testContext.InitialChainTip;
+
+            const int chainExtension = 1;
+            ChainedHeader chainTip = testContext.ExtendAChain(chainExtension, initialChainTip);
+            List<BlockHeader> listOfChainHeaders = testContext.ChainedHeaderToList(chainTip, 1);
+
+            // Chain is 2 blocks long: h1=h2.
+            chainedHeaderTree.ConnectNewHeaders(1, listOfChainHeaders);
+
+            // Call FullValidationRequired on h2.
+            chainedHeaderTree.PartialValidationSucceeded(chainTip, out bool reorgRequired);
+
+            reorgRequired.Should().BeTrue();
+        }
+
+        /// <summary>
         /// Issue 49 @ CHT is initialized with BlockStore disabled. CT advances and old block data pointers are removed.
         /// Make sure that data availability for those headers set to header only.
         /// </summary>
