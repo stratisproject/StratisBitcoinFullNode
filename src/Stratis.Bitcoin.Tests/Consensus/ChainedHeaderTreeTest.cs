@@ -1934,6 +1934,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
             listOfHeaders.First().ChainedHeader.HashBlock.Should().Be(secondHeader.HashBlock);
         }
 
+        /// <summary>
         /// Issue 31 @ Chain is 2 blocks long, CT is header 1, call PartialValidationSucceeded on header 2.
         /// Make sure that full validation is required.
         /// </summary>
