@@ -1,11 +1,17 @@
 ﻿using System;
+using NBitcoin;
 using NBitcoin.DataEncoders;
 using Newtonsoft.Json;
 
-namespace NBitcoin.JsonConverters
+namespace Stratis.Bitcoin.Utilities.JsonConverters
 {
+    /// <summary>
+    /// Converter used to convert a <see cref="KeyId"/>, a <see cref="ScriptId"/>, a <see cref="WitKeyId"/> or a <see cref="WitScriptId"/> to and from JSON.
+    /// </summary>
+    /// <seealso cref="Newtonsoft.Json.JsonConverter" />
     public class TxDestinationJsonConverter : JsonConverter
     {
+        /// <inheritdoc />
         public override bool CanConvert(Type objectType)
         {
             return objectType == typeof(KeyId) || 
@@ -14,6 +20,7 @@ namespace NBitcoin.JsonConverters
                 objectType == typeof(WitScriptId);
         }
 
+        /// <inheritdoc />
         public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
         {
             if(reader.TokenType == JsonToken.Null)
@@ -32,9 +39,11 @@ namespace NBitcoin.JsonConverters
             catch
             {
             }
+
             throw new JsonObjectException("Invalid signature", reader);
         }
 
+        /// <inheritdoc />
         public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
         {
             if(value != null)
