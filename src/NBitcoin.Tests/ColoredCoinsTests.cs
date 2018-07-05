@@ -18,7 +18,7 @@ namespace NBitcoin.Tests
             {
                 TestCase testcase = JsonConvert.DeserializeObject<TestCase[]>(File.ReadAllText(TestDataLocations.GetFileFromDataFolder("openasset-known-tx.json")))
                     .First(t => t.test == test);
-                var repository = new NoSqlTransactionRepository();
+                var repository = new NoSqlTransactionRepository(Network.Main);
                 foreach(string tx in testcase.txs)
                 {
                     Transaction txObj = Transaction.Parse(tx);
@@ -346,7 +346,7 @@ namespace NBitcoin.Tests
             Assert.True(destroyed[0].Id == colored2.Inputs[0].Asset.Id);
 
             //Verify that FetchColor update the repository
-            var persistent = new NoSqlColoredTransactionRepository(tester.Repository.Transactions, new InMemoryNoSqlRepository());
+            var persistent = new NoSqlColoredTransactionRepository(tester.Repository.Transactions, new InMemoryNoSqlRepository(Network.Main));
             colored2 = ColoredTransaction.FetchColors(tester.TestedTxId, persistent);
             Assert.NotNull(persistent.Get(tester.TestedTxId));
 
@@ -361,13 +361,10 @@ namespace NBitcoin.Tests
             Assert.NotNull(cached.Get(tx.Inputs[0].PrevOut.Hash)); //However, the previous transaction should have been loaded by loadbulk via ReadThrough
         }
 
-
-
         private ColoredCoinTester CreateTester([CallerMemberName]string test = null)
         {
             return new ColoredCoinTester(test);
         }
-
 
         //Data in the marker output      Description
         //-----------------------------  -------------------------------------------------------------------

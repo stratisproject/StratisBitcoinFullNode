@@ -2616,7 +2616,7 @@ namespace NBitcoin.Tests
             dummyPubKey2[0] = 0x02;
             //CBasicKeyStore keystore;
             //CCoinsView coinsDummy;
-            var coins = new CoinsView();//(coinsDummy);           
+            var coins = new CoinsView(this.network);//(coinsDummy);           
             Transaction[] dummyTransactions = SetupDummyInputs(coins);//(keystore, coins);
 
             Transaction t1 = this.consensusFactory.CreateTransaction();
@@ -3032,9 +3032,9 @@ namespace NBitcoin.Tests
 
         [Fact]
         [Trait("Core", "Core")]
-        public void test_IsStandard()
+        public void Test_IsStandard()
         {
-            var coins = new CoinsView();
+            var coins = new CoinsView(this.network);
             Transaction[] dummyTransactions = SetupDummyInputs(coins);
 
             Transaction t = this.consensusFactory.CreateTransaction();

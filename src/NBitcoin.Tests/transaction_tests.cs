@@ -523,7 +523,7 @@ namespace NBitcoin.Tests
             var satoshi = new Key();
             var bob = new Key();
 
-            var repo = new NoSqlColoredTransactionRepository(new NoSqlTransactionRepository(), new InMemoryNoSqlRepository());
+            var repo = new NoSqlColoredTransactionRepository(new NoSqlTransactionRepository(this.network), new InMemoryNoSqlRepository(this.network));
 
             var init = new Transaction()
             {
@@ -1487,7 +1487,7 @@ namespace NBitcoin.Tests
             //P2SH(P2WSH)
             var previousTx = new Transaction();
             previousTx.Outputs.Add(new TxOut(Money.Coins(1.0m), alice.PubKey.ScriptPubKey.WitHash.ScriptPubKey.Hash));
-            var previousCoin = previousTx.Outputs.AsCoins().First();
+            Coin previousCoin = previousTx.Outputs.AsCoins().First();
 
             var witnessCoin = new ScriptCoin(previousCoin, alice.PubKey.ScriptPubKey);
             builder = new TransactionBuilder();
@@ -2816,7 +2816,7 @@ namespace NBitcoin.Tests
 
         [Fact]
         [Trait("Core", "Core")]
-        public void tx_valid()
+        public void Tx_Valid()
         {
             // Read tests from test/data/tx_valid.json
             // Format is an array of arrays
@@ -2934,7 +2934,7 @@ namespace NBitcoin.Tests
 
         [Fact]
         [Trait("Core", "Core")]
-        public void tx_invalid()
+        public void Tx_Invalid()
         {
             // Read tests from test/data/tx_valid.json
             // Format is an array of arrays
@@ -2996,7 +2996,7 @@ namespace NBitcoin.Tests
 
         [Fact]
         [Trait("Core", "Core")]
-        public void test_Get()
+        public void Test_Get()
         {
             byte[] dummyPubKey = TransactionSignature.Empty.ToBytes();
 
@@ -3004,7 +3004,7 @@ namespace NBitcoin.Tests
             dummyPubKey2[0] = 0x02;
             //CBasicKeyStore keystore;
             //CCoinsView coinsDummy;
-            var coins = new CoinsView();//(coinsDummy);
+            var coins = new CoinsView(this.network);//(coinsDummy);
             Transaction[] dummyTransactions = SetupDummyInputs(coins);//(keystore, coins);
 
             var t1 = new Transaction();
@@ -3118,6 +3118,7 @@ namespace NBitcoin.Tests
             Assert.True(input.Inputs[0].ToBytes().SequenceEqual(inputm.Inputs[0].ToBytes()));
             Assert.True(input.Outputs.Count == 1);
             Assert.True(input.Outputs[0].ToBytes().SequenceEqual(inputm.Outputs[0].ToBytes()));
+
             if (!inputm.HasWitness)
             {
                 Assert.True(!input.HasWitness);
@@ -3201,7 +3202,7 @@ namespace NBitcoin.Tests
 
         [Fact]
         [Trait("Core", "Core")]
-        public void test_witness()
+        public void Test_witness()
         {
             var keystore = new CKeyStore();
             var keystore2 = new CKeyStore();
@@ -3395,7 +3396,6 @@ namespace NBitcoin.Tests
             CheckWithFlag(output1, input1, ScriptVerify.Standard, true);
         }
 
-
         private Script GetScriptForWitness(Script scriptPubKey)
         {
             PubKey pubkey = PayToPubkeyTemplate.Instance.ExtractScriptPubKeyParameters(scriptPubKey);
@@ -3408,12 +3408,11 @@ namespace NBitcoin.Tests
             return new Script(OpcodeType.OP_0, Op.GetPushOp(scriptPubKey.WitHash.ToBytes()));
         }
 
-
         [Fact]
         [Trait("Core", "Core")]
-        public void test_IsStandard()
+        public void Test_IsStandard()
         {
-            var coins = new CoinsView();
+            var coins = new CoinsView(this.network);
             Transaction[] dummyTransactions = SetupDummyInputs(coins);
 
             var t = new Transaction();

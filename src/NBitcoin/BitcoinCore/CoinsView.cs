@@ -6,25 +6,17 @@ namespace NBitcoin.BitcoinCore
 {
     public class CoinsView
     {
-        private readonly NoSqlRepository index;
-
-        public CoinsView(NoSqlRepository index)
+        public CoinsView(NoSqlRepository noSqlRepository)
         {
-            this.index = index ?? throw new ArgumentNullException("index");
+            this.Index = noSqlRepository ?? throw new ArgumentNullException(nameof(noSqlRepository));
         }
 
-        public CoinsView()
-            : this(new InMemoryNoSqlRepository())
+        public CoinsView(Network network)
+            : this(new InMemoryNoSqlRepository(network))
         {
         }
 
-        public NoSqlRepository Index
-        {
-            get
-            {
-                return this.index;
-            }
-        }
+        public NoSqlRepository Index { get; }
 
         public Coins GetCoins(uint256 txId)
         {
