@@ -7,7 +7,7 @@ namespace NBitcoin.RPC
     {
         public Network Network { get; }
 
-        internal UnspentCoin(JObject unspent, Network network)
+        public UnspentCoin(JObject unspent, Network network)
         {
             this.Network = network;
             this.OutPoint = new OutPoint(uint256.Parse((string)unspent["txid"]), (uint)unspent["vout"]);
