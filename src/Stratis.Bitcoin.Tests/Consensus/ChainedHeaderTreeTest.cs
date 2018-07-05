@@ -1498,7 +1498,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
             const int chainExtension = 40;
             const int assumeValidHeaderHeight = 30;
 
-            TestContext testContext = new TestContextBuilder().WithInitialChain(initialChainSize).UseCheckpoints(true).Build();
+            TestContext testContext = new TestContextBuilder().WithInitialChain(initialChainSize).UseCheckpoints().Build();
             ChainedHeaderTree chainedHeaderTree = testContext.ChainedHeaderTree;
             ChainedHeader initialChainTip = testContext.InitialChainTip;
             ChainedHeader chainTip = testContext.ExtendAChain(chainExtension, initialChainTip);
@@ -1540,6 +1540,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
             }
         }
 
+        /// <summary>
         /// Issue 35 @ We receive headers message
         /// (first header in the message is HEADERS_START and last is HEADERS_END).
         /// AV = assume valid header, CP1,CP2 - checkpointed headers. '---' some headers.
