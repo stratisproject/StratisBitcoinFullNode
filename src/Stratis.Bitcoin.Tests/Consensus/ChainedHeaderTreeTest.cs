@@ -1652,5 +1652,87 @@ namespace Stratis.Bitcoin.Tests.Consensus
             listOfHeaders.Should().HaveCount(1);
             listOfHeaders.First().ChainedHeader.HashBlock.Should().Be(secondHeader.HashBlock);
         }
+
+        /// <summary>
+        /// Issue 51 @ Call PartialValidationSucceeded on a chained header which doesn't have the block data but it is
+        /// in the tree, make sure PartialValidationSucceeded returns null and ReorgRequired is false.
+        /// </summary>
+        [Fact]
+        public void CallingPartialValidationSucceeded_ForConnectedHeaderWithNoBlockData_NothingReturnedAndFullValidationIsNotRequired()
+        {
+            // Chain header tree setup. Initial chain has 5 headers with no blocks.
+            // Example: h1=h2=h3=h4=h5.
+            const int initialChainSize = 5;
+            TestContext ctx = new TestContextBuilder()
+                .WithInitialChain(initialChainSize, assignBlocks: false)
+                .Build();
+            ChainedHeaderTree cht = ctx.ChainedHeaderTree;
+            ChainedHeader chainTip = ctx.InitialChainTip;
+            
+            // Call partial validation on h4 and make sure nothing is returned
+            // and full validation is not required.
+            List<ChainedHeaderBlock> headers = cht.PartialValidationSucceeded(chainTip, out bool fullValidationRequired);
+            headers.Should().BeNull();
+            fullValidationRequired.Should().BeFalse();
+        }
+
+        /// <summary>
+        /// Issue 52 @ Call PartialValidationSucceeded on a chained header which prev header has validation state as HeaderOnly,
+        /// make sure PartialValidationSucceeded returns null and ReorgRequired is false.
+        /// </summary>
+        [Fact]
+        public void CallingPartialValidationSucceeded_FoHeaderWithPreviousHeaderWithValidationStateHeaderOnly_NothingReturnedAndFullValidationIsNotRequired()
+        {
+            // Chain header tree setup. Initial chain has 5 headers with no blocks.
+            // Example: h1=h2=h3=h4=h5.
+            const int initialChainSize = 5;
+            TestContext ctx = new TestContextBuilder()
+                .WithInitialChain(initialChainSize, assignBlocks: false)
+                .Build();
+            ChainedHeaderTree cht = ctx.ChainedHeaderTree;
+            ChainedHeader chainTip = ctx.InitialChainTip;
+
+            // Extend chain by 4 headers and connect it to CHT.
+            // Example: h1=h2=h3=h4=h5=h6=h7=h8=h9.
+            const int extensionSize = 4;
+            chainTip = ctx.ExtendAChain(extensionSize, chainTip);
+
+            // Call partial validation on h9 (h8 has validation state as HeaderOnly) and make sure nothing is returned
+            // and full validation is not required.
+            List<ChainedHeaderBlock> headers = cht.PartialValidationSucceeded(chainTip, out bool fullValidationRequired);
+            headers.Should().BeNull();
+            fullValidationRequired.Should().BeFalse();
+        }
+
+        /// <summary>
+        /// Issue 53 @ Call PartialValidationSucceeded on a chained header which validation state is PartiallyValid,
+        /// make sure PartialValidationSucceeded returns null and ReorgRequired is false.
+        /// </summary>
+        [Fact]
+        public void CallingPartialValidationSucceeded_FoHeaderWithValidationStateAsPartiallyValidated_NothingReturnedAndFullValidationIsNotRequired()
+        {
+            // Chain header tree setup. Initial chain has 5 headers with no blocks.
+            // Example: h1=h2=h3=h4=h5.
+            const int initialChainSize = 5;
+            TestContext ctx = new TestContextBuilder()
+                .WithInitialChain(initialChainSize, assignBlocks: false)
+                .Build();
+            ChainedHeaderTree cht = ctx.ChainedHeaderTree;
+            ChainedHeader chainTip = ctx.InitialChainTip;
+
+            // Extend chain by 4 headers and connect it to CHT.
+            // Example: h1=h2=h3=h4=h5=h6=h7=h8=h9.
+            const int extensionSize = 4;
+            chainTip = ctx.ExtendAChain(extensionSize, chainTip);
+
+            // Mock a partially validate state for h9 by setting its state as partially validated.
+            chainTip.BlockValidationState = ValidationState.PartiallyValidated;
+
+            // Call partial validation on h9 and make sure nothing is returned
+            // and full validation is not required.
+            List<ChainedHeaderBlock> headers = cht.PartialValidationSucceeded(chainTip, out bool fullValidationRequired);
+            headers.Should().BeNull();
+            fullValidationRequired.Should().BeFalse();
+        }
     }
 }
