@@ -957,7 +957,7 @@ namespace NBitcoin
             }
             else
             {
-                PayToMultiSigTemplateParameters multiSig = PayToMultiSigTemplate.Instance.ExtractScriptPubKeyParameters(network, this);
+                PayToMultiSigTemplateParameters multiSig = PayToMultiSigTemplate.Instance.ExtractScriptPubKeyParameters(this);
                 if(multiSig != null)
                 {
                     result.AddRange(multiSig.PubKeys);
@@ -1269,7 +1269,7 @@ namespace NBitcoin
                 }
             }
 
-            PayToMultiSigTemplateParameters multiSigParams = PayToMultiSigTemplate.Instance.ExtractScriptPubKeyParameters(network, scriptPubKey);
+            PayToMultiSigTemplateParameters multiSigParams = PayToMultiSigTemplate.Instance.ExtractScriptPubKeyParameters(scriptPubKey);
             if(multiSigParams == null)
                 throw new InvalidOperationException("The scriptPubKey is not a valid multi sig");
 

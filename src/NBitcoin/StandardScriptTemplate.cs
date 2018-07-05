@@ -175,7 +175,7 @@ namespace NBitcoin
             return ops[ops.Length - 1].Code == OpcodeType.OP_CHECKMULTISIG;
         }
 
-        public PayToMultiSigTemplateParameters ExtractScriptPubKeyParameters(Network network, Script scriptPubKey)
+        public PayToMultiSigTemplateParameters ExtractScriptPubKeyParameters(Script scriptPubKey)
         {
             bool needMoreCheck;
             if(!FastCheckScriptPubKey(scriptPubKey, out needMoreCheck))
