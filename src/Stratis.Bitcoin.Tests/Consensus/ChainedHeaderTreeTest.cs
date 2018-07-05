@@ -1664,14 +1664,24 @@ namespace Stratis.Bitcoin.Tests.Consensus
             // Example: h1=h2=h3=h4=h5.
             const int initialChainSize = 5;
             TestContext ctx = new TestContextBuilder()
-                .WithInitialChain(initialChainSize, assignBlocks: false)
+                .WithInitialChain(initialChainSize)
                 .Build();
             ChainedHeaderTree cht = ctx.ChainedHeaderTree;
             ChainedHeader chainTip = ctx.InitialChainTip;
-            
+
+            // Extend chain by 4 headers and connect it to CHT.
+            // Example: h1=h2=h3=h4=h5=h6=h7=h8=h9.
+            const int extensionSize = 4;
+            chainTip = ctx.ExtendAChain(extensionSize, chainTip, assignBlocks: false);
+
+            // Present headers and download them.
+            List<BlockHeader> listOfExtendedHeaders = ctx.ChainedHeaderToList(chainTip, extensionSize);
+            ConnectNewHeadersResult connectionResult = cht.ConnectNewHeaders(1, listOfExtendedHeaders);
+            ChainedHeader consumed = connectionResult.Consumed;
+
             // Call partial validation on h4 and make sure nothing is returned
             // and full validation is not required.
-            List<ChainedHeaderBlock> headers = cht.PartialValidationSucceeded(chainTip, out bool fullValidationRequired);
+            List<ChainedHeaderBlock> headers = cht.PartialValidationSucceeded(consumed, out bool fullValidationRequired);
             headers.Should().BeNull();
             fullValidationRequired.Should().BeFalse();
         }
@@ -1711,7 +1721,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
             
             // Call partial validation on h9 (h8 has validation state as HeaderOnly) and make sure nothing is returned
             // and full validation is not required.
-            List<ChainedHeaderBlock> headers = cht.PartialValidationSucceeded(chainTip, out bool fullValidationRequired);
+            List<ChainedHeaderBlock> headers = cht.PartialValidationSucceeded(consumed, out bool fullValidationRequired);
             headers.Should().BeNull();
             fullValidationRequired.Should().BeFalse();
         }
@@ -1753,7 +1763,8 @@ namespace Stratis.Bitcoin.Tests.Consensus
 
             // Call partial validation on h9 again and make sure nothing is returned
             // and full validation is not required.
-            List<ChainedHeaderBlock> headers = cht.PartialValidationSucceeded(chainTip, out fullValidationRequired);
+            Dictionary<uint256, ChainedHeader> treeHeaders = cht.GetChainedHeadersByHash();
+            List<ChainedHeaderBlock> headers = cht.PartialValidationSucceeded(treeHeaders[chainTip.HashBlock], out fullValidationRequired);
             headers.Should().BeNull();
             fullValidationRequired.Should().BeFalse();
         }
