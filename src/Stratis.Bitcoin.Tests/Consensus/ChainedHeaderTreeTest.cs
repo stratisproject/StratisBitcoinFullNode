@@ -1683,14 +1683,14 @@ namespace Stratis.Bitcoin.Tests.Consensus
             ConnectNewHeadersResult connectNewHeadersResult = cht.ConnectNewHeaders(1, listOfChainBlockHeaders.Take(9).ToList());
             connectNewHeadersResult.DownloadFrom.HashBlock.Should().Be(originalHeaders[5].HashBlock); // h6
             connectNewHeadersResult.DownloadTo.HashBlock.Should().Be(originalHeaders[8].HashBlock); // h9
-            connectNewHeadersResult.HaveBlockDataAvailabilityStateOf(BlockDataAvailabilityState.HeaderOnly).Should().BeTrue();
+            connectNewHeadersResult.HaveBlockDataAvailabilityStateOf(BlockDataAvailabilityState.BlockRequired).Should().BeTrue();
 
             // Peer 2 presents 10 headers: h6 - h15.
             // Headers 10-15 should be marked for download.
             connectNewHeadersResult = cht.ConnectNewHeaders(2, listOfChainBlockHeaders.Skip(5).ToList());
             connectNewHeadersResult.DownloadFrom.HashBlock.Should().Be(originalHeaders[9].HashBlock); // h10
             connectNewHeadersResult.DownloadTo.HashBlock.Should().Be(originalHeaders[14].HashBlock); // h15
-            connectNewHeadersResult.HaveBlockDataAvailabilityStateOf(BlockDataAvailabilityState.HeaderOnly).Should().BeTrue();
+            connectNewHeadersResult.HaveBlockDataAvailabilityStateOf(BlockDataAvailabilityState.BlockRequired).Should().BeTrue();
         }
     }
 }
