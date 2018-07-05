@@ -1935,6 +1935,46 @@ namespace Stratis.Bitcoin.Tests.Consensus
         }
 
         /// <summary>
+        /// Issue 48 @ CT is at 5. AssumeValid is at 10. ConnectNewHeaders called with headers 1 - 9 (from peer1).
+        /// Make sure headers 6 - 9 are marked for download. After that ConnectNewHeaders called with headers 5 to 15 (from peer2).
+        /// Make sure 9 - 15 are marked for download.
+        /// </summary>
+        [Fact]
+        public void ConsensusTipAtHeight5_AssumedValidIsAt10_WhenConnectingHeadersByDifferentPeers_CorrectHeadersAreMarkedForDownload()
+        {
+            // Chain header tree setup.
+            // Initial chain has 5 headers.
+            // Example: h1=h2=h3=h4=h5.
+            const int initialChainSize = 5;
+            TestContext ctx = new TestContextBuilder().WithInitialChain(initialChainSize).Build();
+            ChainedHeaderTree cht = ctx.ChainedHeaderTree;
+            ChainedHeader chainTip = ctx.InitialChainTip;
+
+            // Extend a chain tip by 10 headers and set assumed valid to header 10.
+            // Example: h1=h2=h3=h4=h5=h6=h7=h8=h9=(h10)=h11=h12=h13=h14=h15.
+            const int extensionSize = 10;
+            chainTip = ctx.ExtendAChain(extensionSize, chainTip); 
+            List<BlockHeader> listOfChainBlockHeaders = ctx.ChainedHeaderToList(chainTip, initialChainSize + extensionSize);
+            ctx.ConsensusSettings.BlockAssumedValid = listOfChainBlockHeaders[9].GetHash();
+
+            ChainedHeader[] originalHeaders = chainTip.ToArray(initialChainSize + extensionSize);
+
+            // Peer 1 presents 9 headers: h1 - h9.
+            // Headers 6-9 should be marked for download.
+            ConnectNewHeadersResult connectNewHeadersResult = cht.ConnectNewHeaders(1, listOfChainBlockHeaders.Take(9).ToList());
+            connectNewHeadersResult.DownloadFrom.HashBlock.Should().Be(originalHeaders[5].HashBlock); // h6
+            connectNewHeadersResult.DownloadTo.HashBlock.Should().Be(originalHeaders[8].HashBlock); // h9
+            connectNewHeadersResult.HaveBlockDataAvailabilityStateOf(BlockDataAvailabilityState.BlockRequired).Should().BeTrue();
+
+            // Peer 2 presents 10 headers: h6 - h15.
+            // Headers 10-15 should be marked for download.
+            connectNewHeadersResult = cht.ConnectNewHeaders(2, listOfChainBlockHeaders.Skip(5).ToList());
+            connectNewHeadersResult.DownloadFrom.HashBlock.Should().Be(originalHeaders[9].HashBlock); // h10
+            connectNewHeadersResult.DownloadTo.HashBlock.Should().Be(originalHeaders[14].HashBlock); // h15
+            connectNewHeadersResult.HaveBlockDataAvailabilityStateOf(BlockDataAvailabilityState.BlockRequired).Should().BeTrue();
+        }
+
+        /// <summary>
         /// Issue 49 @ CHT is initialized with BlockStore disabled. CT advances and old block data pointers are removed.
         /// Make sure that data availability for those headers set to header only.
         /// </summary>
