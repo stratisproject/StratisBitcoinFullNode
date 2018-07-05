@@ -525,7 +525,7 @@ namespace NBitcoin
         /// </summary>
         public bool IsWitness(Network network)
         {
-            return PayToWitTemplate.Instance.CheckScriptPubKey(network, this);
+            return PayToWitTemplate.Instance.CheckScriptPubKey(this);
         }
 
         public override string ToString()
@@ -863,7 +863,7 @@ namespace NBitcoin
 
         public bool IsPayToScriptHash(Network network)
         {
-            return PayToScriptHashTemplate.Instance.CheckScriptPubKey(network, this);
+            return PayToScriptHashTemplate.Instance.CheckScriptPubKey(this);
         }
 
         public BitcoinWitScriptAddress GetWitScriptAddress(Network network)

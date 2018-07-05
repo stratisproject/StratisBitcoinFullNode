@@ -31,12 +31,12 @@ namespace NBitcoin
 
         public static ScriptTemplate GetTemplateFromScriptPubKey(Network network, Script script)
         {
-            return _StandardTemplates.FirstOrDefault(t => t.CheckScriptPubKey(network, script));
+            return _StandardTemplates.FirstOrDefault(t => t.CheckScriptPubKey(script));
         }
 
         public static bool IsStandardScriptPubKey(Network network, Script scriptPubKey)
         {
-            return _StandardTemplates.Any(template => template.CheckScriptPubKey(network, scriptPubKey));
+            return _StandardTemplates.Any(template => template.CheckScriptPubKey(scriptPubKey));
         }
         private static bool IsStandardScriptSig(Network network, Script scriptSig, Script scriptPubKey)
         {
