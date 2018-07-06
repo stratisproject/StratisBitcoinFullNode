@@ -46,7 +46,7 @@ namespace Stratis.Bitcoin.IntegrationTests
             using (NodeContext ctx = NodeContext.Create(this))
             {
                 Block genesis = ctx.Network.GetGenesis();
-                var genesisChainedHeader = new ChainedHeader(genesis.Header, ctx.Network.GenesisHash ,0);
+                var genesisChainedHeader = new ChainedHeader(genesis.Header, ctx.Network.GenesisHash, 0);
                 ChainedHeader chained = this.MakeNext(genesisChainedHeader, ctx.Network);
                 ctx.PersistentCoinView.SaveChangesAsync(new UnspentOutputs[] { new UnspentOutputs(genesis.Transactions[0].GetHash(), new Coins(genesis.Transactions[0], 0)) }, null, genesisChainedHeader.HashBlock, chained.HashBlock).Wait();
                 Assert.NotNull(ctx.PersistentCoinView.FetchCoinsAsync(new[] { genesis.Transactions[0].GetHash() }).Result.UnspentOutputs[0]);
@@ -261,23 +261,23 @@ namespace Stratis.Bitcoin.IntegrationTests
         [Fact]
         public void CanSaveChainIncrementally()
         {
-                using (var repo = new ChainRepository(TestBase.CreateTestDir(this), this.loggerFactory))
-                {
-                    var chain = new ConcurrentChain(Network.RegTest);
-                    repo.LoadAsync(chain).GetAwaiter().GetResult();
-                    Assert.True(chain.Tip == chain.Genesis);
-                    chain = new ConcurrentChain(Network.RegTest);
-                    ChainedHeader tip = this.AppendBlock(chain);
-                    repo.SaveAsync(chain).GetAwaiter().GetResult();
-                    var newChain = new ConcurrentChain(Network.RegTest);
-                    repo.LoadAsync(newChain).GetAwaiter().GetResult();
-                    Assert.Equal(tip, newChain.Tip);
-                    tip = this.AppendBlock(chain);
-                    repo.SaveAsync(chain).GetAwaiter().GetResult();
-                    newChain = new ConcurrentChain(Network.RegTest);
-                    repo.LoadAsync(newChain).GetAwaiter().GetResult();
-                    Assert.Equal(tip, newChain.Tip);
-                }
+            using (var repo = new ChainRepository(TestBase.CreateTestDir(this), this.loggerFactory))
+            {
+                var chain = new ConcurrentChain(Network.RegTest, Network.RegTest.GetGenesis().Header);
+                repo.LoadAsync(chain).GetAwaiter().GetResult();
+                Assert.True(chain.Tip == chain.Genesis);
+                chain = new ConcurrentChain(Network.RegTest, Network.RegTest.GetGenesis().Header);
+                ChainedHeader tip = this.AppendBlock(chain);
+                repo.SaveAsync(chain).GetAwaiter().GetResult();
+                var newChain = new ConcurrentChain(Network.RegTest, Network.RegTest.GetGenesis().Header);
+                repo.LoadAsync(newChain).GetAwaiter().GetResult();
+                Assert.Equal(tip, newChain.Tip);
+                tip = this.AppendBlock(chain);
+                repo.SaveAsync(chain).GetAwaiter().GetResult();
+                newChain = new ConcurrentChain(Network.RegTest, Network.RegTest.GetGenesis().Header);
+                repo.LoadAsync(newChain).GetAwaiter().GetResult();
+                Assert.Equal(tip, newChain.Tip);
+            }
         }
 
         public ChainedHeader AppendBlock(ChainedHeader previous, params ConcurrentChain[] chains)
