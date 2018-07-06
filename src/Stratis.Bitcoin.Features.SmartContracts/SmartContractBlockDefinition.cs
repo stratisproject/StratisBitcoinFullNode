@@ -150,7 +150,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
 
             ISmartContractTransactionContext transactionContext = new SmartContractTransactionContext((ulong)this.height, this.coinbaseAddress, mempoolEntry.Fee, getSenderResult.Sender, mempoolEntry.Transaction);
             ISmartContractExecutor executor = this.executorFactory.CreateExecutor(this.stateSnapshot, transactionContext);
-            ISmartContractExecutionResult result = executor.Execute();
+            ISmartContractExecutionResult result = executor.Execute(transactionContext);
 
             this.logger.LogTrace("(-)");
 

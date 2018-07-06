@@ -65,16 +65,16 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             //-------------------------------------------------------
             this.state.SetCode(new uint160(1), contractExecutionCode);
             ISmartContractTransactionContext transactionContext = new SmartContractTransactionContext(BlockHeight, CoinbaseAddress, MempoolFee, SenderAddress, transactionCall);
-            SmartContractExecutor executor = new CallSmartContract(
+            
+            var executor = new CallSmartContract(
                 this.keyEncodingStrategy,
                 this.loggerFactory,
                 this.network,
-                this.refundProcessor,
                 this.state,
-                transactionContext,
-                this.transferProcessor,
-                this.validator);
-            ISmartContractExecutionResult result = executor.Execute();
+                this.refundProcessor,
+                this.transferProcessor);
+
+            ISmartContractExecutionResult result = executor.Execute(transactionContext);
 
             Assert.True(result.Revert);
             Assert.NotNull(result.InternalTransaction);
@@ -101,13 +101,11 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 this.keyEncodingStrategy,
                 this.loggerFactory,
                 this.network,
-                this.refundProcessor,
                 this.state,
-                transactionContext,
-                this.transferProcessor,
-                this.validator
-                );
-            ISmartContractExecutionResult result = executor.Execute();
+                this.refundProcessor,
+                this.transferProcessor);
+
+            ISmartContractExecutionResult result = executor.Execute(transactionContext);
             Assert.IsType<SmartContractDoesNotExistException>(result.Exception);
         }
 
@@ -128,14 +126,12 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 this.keyEncodingStrategy,
                 this.loggerFactory,
                 this.network,
-                this.refundProcessor,
                 this.state,
-                transactionContext,
-                this.transferProcessor,
-                this.validator
-                );
+                this.validator,
+                this.refundProcessor,
+                this.transferProcessor);
 
-            ISmartContractExecutionResult result = executor.Execute();
+            ISmartContractExecutionResult result = executor.Execute(transactionContext);
 
             Assert.NotNull(result.Exception);
             // Base cost + constructor cost
@@ -159,17 +155,17 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             tx.AddOutput(0, new Script(carrier.Serialize()));
 
             ISmartContractTransactionContext transactionContext = new SmartContractTransactionContext(BlockHeight, CoinbaseAddress, MempoolFee, new uint160(2), tx);
+            
             var executor = new CreateSmartContract(
                 this.keyEncodingStrategy,
                 this.loggerFactory,
                 this.network,
-                this.refundProcessor,
                 this.state,
-                transactionContext,
-                this.transferProcessor,
-                this.validator
-            );
-            ISmartContractExecutionResult result = executor.Execute();
+                this.validator,
+                this.refundProcessor,
+                this.transferProcessor);
+
+            ISmartContractExecutionResult result = executor.Execute(transactionContext);
             Assert.NotNull(result.Exception);
             Assert.Equal(GasPriceList.BaseCost, result.GasConsumed);
         }
@@ -196,13 +192,12 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 this.keyEncodingStrategy,
                 this.loggerFactory,
                 this.network,
-                this.refundProcessor,
                 this.state,
-                transactionContext,
-                this.transferProcessor,
-                this.validator
-                );
-            ISmartContractExecutionResult result = executor.Execute();
+                this.validator,
+                this.refundProcessor,
+                this.transferProcessor);
+
+            ISmartContractExecutionResult result = executor.Execute(transactionContext);
 
             Assert.NotNull(result.Exception);
             Assert.Equal(GasPriceList.BaseCost, result.GasConsumed);
@@ -234,13 +229,12 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 this.keyEncodingStrategy,
                 this.loggerFactory,
                 this.network,
-                this.refundProcessor,
                 this.state,
-                transactionContext,
-                this.transferProcessor,
-                this.validator
-            );
-            ISmartContractExecutionResult result = executor.Execute();
+                this.validator,
+                this.refundProcessor,
+                this.transferProcessor);
+
+            ISmartContractExecutionResult result = executor.Execute(transactionContext);
             uint160 address1 = result.NewContractAddress;
             //-------------------------------------------------------
 
@@ -266,18 +260,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             //-------------------------------------------------------
 
             transactionContext = new SmartContractTransactionContext(BlockHeight, CoinbaseAddress, MempoolFee, SenderAddress, transaction);
-            executor = new CreateSmartContract(
-                this.keyEncodingStrategy,
-                this.loggerFactory,
-                this.network,
-                this.refundProcessor,
-                this.state,
-                transactionContext,
-                this.transferProcessor,
-                this.validator
-            );
 
-            result = executor.Execute();
+            result = executor.Execute(transactionContext);
 
             uint160 address2 = result.NewContractAddress;
 
@@ -301,11 +285,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 this.keyEncodingStrategy,
                 this.loggerFactory,
                 this.network,
-                this.refundProcessor,
                 this.state,
-                transactionContext,
-                this.transferProcessor,
-                this.validator
+                this.refundProcessor,
+                this.transferProcessor
             );
 
             // Because our contract contains an infinite loop, we want to kill our test after
@@ -313,7 +295,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             // for the method body to have finished execution while minimising the amount of time we spend 
             // running tests
             // If you're running with the debugger on this will obviously be a source of failures
-            result = RunWithTimeout(3, () => callExecutor.Execute());
+            result = RunWithTimeout(3, () => callExecutor.Execute(transactionContext));
 
             Assert.IsType<OutOfGasException>(result.Exception);
             Assert.Equal(gasLimit, result.GasConsumed);

@@ -42,12 +42,6 @@ namespace Stratis.SmartContracts.Core
         IList<TransferInfo> InternalTransfers { get; set; }
 
         /// <summary>
-        /// After a contract is executed internally, we will need to merge the results.
-        /// </summary>
-        /// <param name="another"></param>
-        void Merge(ISmartContractExecutionResult another);
-
-        /// <summary>
         /// If the execution created a new contract, its address will be stored here.
         /// </summary>
         uint160 NewContractAddress { get; set; }

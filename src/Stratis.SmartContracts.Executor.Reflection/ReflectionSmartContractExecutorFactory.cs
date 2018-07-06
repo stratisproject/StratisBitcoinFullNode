@@ -18,8 +18,6 @@ namespace Stratis.SmartContracts.Executor.Reflection
         private readonly ISmartContractResultTransferProcessor transferProcessor;
         private readonly SmartContractValidator validator;
 
-        public ReflectionSmartContractExecutorFactory() { }
-
         public ReflectionSmartContractExecutorFactory(
             IKeyEncodingStrategy keyEncodingStrategy,
             ILoggerFactory loggerFactory,
@@ -48,28 +46,12 @@ namespace Stratis.SmartContracts.Executor.Reflection
         {
             if (transactionContext.IsCreate)
             {
-                return new CreateSmartContract(
-                    this.keyEncodingStrategy,
-                    this.loggerFactory,
-                    this.network,
-                    this.refundProcessor,
-                    stateRepository,
-                    transactionContext,
-                    this.transferProcessor,
-                    this.validator
-                    );
+                return new CreateSmartContract(this.keyEncodingStrategy, this.loggerFactory, this.network,
+                    stateRepository, this.validator, this.refundProcessor, this.transferProcessor);
             }
 
-            return new CallSmartContract(
-                this.keyEncodingStrategy,
-                this.loggerFactory,
-                this.network,
-                this.refundProcessor,
-                stateRepository,
-                transactionContext,
-                this.transferProcessor,
-                this.validator
-                );
+            return new CallSmartContract(this.keyEncodingStrategy, this.loggerFactory, this.network, 
+                    stateRepository, this.refundProcessor, this.transferProcessor);
         }
     }
 }

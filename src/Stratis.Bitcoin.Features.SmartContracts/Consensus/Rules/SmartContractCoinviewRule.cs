@@ -274,7 +274,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             ISmartContractTransactionContext txContext = GetSmartContractTransactionContext(context, transaction);
             ISmartContractExecutor executor = this.executorFactory.CreateExecutor(this.originalStateRoot, txContext);
 
-            ISmartContractExecutionResult result = executor.Execute();
+            ISmartContractExecutionResult result = executor.Execute(txContext);
 
             ValidateRefunds(result.Refunds, context.ValidationContext.Block.Transactions[0]);
 

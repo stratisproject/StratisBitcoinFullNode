@@ -2,6 +2,6 @@
 {
     public interface ISmartContractExecutor
     {
-        ISmartContractExecutionResult Execute();
+        ISmartContractExecutionResult Execute(ISmartContractTransactionContext transactionContext);
     }
 }

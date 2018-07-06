@@ -52,14 +52,6 @@ namespace Stratis.SmartContracts.Executor.Reflection
         }
 
         /// <summary>
-        /// After a contract is executed internally, we will need to merge the results.
-        /// </summary>
-        public void Merge(ISmartContractExecutionResult another)
-        {
-            throw new NotImplementedException();
-        }
-
-        /// <summary>
         /// Contract does not exist, so set the gas units used to a value from the price list and set
         /// a <see cref="SmartContractDoesNotExistException"/>.
         /// </summary>
