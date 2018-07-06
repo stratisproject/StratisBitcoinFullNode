@@ -2058,12 +2058,13 @@ namespace Stratis.Bitcoin.Tests.Consensus
             foreach (ChainedHeader chainedHeader in connectNewHeadersResult.ToHashArray())
             {
                 chainedHeaderTree.BlockDataDownloaded(chainedHeader, chainTip.FindAncestorOrSelf(chainedHeader).Block);
-                chainedHeaderTree.PartialValidationSucceeded(chainedHeader, out bool fullValidationRequired);
-                fullValidationRequired.Should().BeTrue();
+                if (chainedHeader.Height <= 5)
+                {
+                    chainedHeaderTree.PartialValidationSucceeded(chainedHeader, out bool fullValidationRequired);
+                    fullValidationRequired.Should().BeTrue();
+                    chainedHeaderTree.ConsensusTipChanged(chainedHeader);
+                }
             }
-
-            // CT advances to 5.
-            chainedHeaderTree.ConsensusTipChanged(connectNewHeadersResult.DownloadTo.GetAncestor(5));
 
             // Make sure that UnconsumedBlocksDataBytes is equal to the sum of serialized sizes of the last five blocks.
             int serializedSizeOfChain = 0;
