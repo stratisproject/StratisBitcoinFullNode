@@ -168,110 +168,184 @@ namespace Stratis.Bitcoin.Features.Miner
         }
 
         ///<inheritdoc/>
-        public List<uint256> GenerateBlocks(ReserveScript reserveScript, ulong generate, ulong maxTries)
+        public List<uint256> GenerateBlocks(ReserveScript reserveScript, ulong amountOfBlocksToMine, ulong maxTries)
         {
-            ulong nHeightStart = 0;
-            ulong nHeightEnd = 0;
-            ulong nHeight = 0;
+            var context = new MineBlockContext(amountOfBlocksToMine, (ulong)this.chain.Height, maxTries, reserveScript);
 
-            nHeightStart = (ulong)this.chain.Height;
-            nHeight = nHeightStart;
-            nHeightEnd = nHeightStart + generate;
-            int nExtraNonce = 0;
-            var blocks = new List<uint256>();
+            while (context.MiningCanContinue)
+            {
+                if (!ConsensusIsAtTip(context))
+                    continue;
 
-            while (nHeight < nHeightEnd)
+                if (!BuildBlock(context))
+                    continue;
+
+                if (!MineBlock(context))
+                    break;
+
+                if (!ValidateMinedBlock(context))
+                    continue;
+
+                ValidateMinedBlockWithConsensus(context);
+
+                if (!CheckValidationContext(context))
+                    break;
+
+                if (!CheckValidationContextPreviousTip(context))
+                    continue;
+
+                OnBlockMined(context);
+            }
+
+            return context.Blocks;
+        }
+
+        private bool ConsensusIsAtTip(MineBlockContext context)
+        {
+            this.miningCancellationTokenSource.Token.ThrowIfCancellationRequested();
+
+            context.ChainTip = this.consensusLoop.Tip;
+            if (this.chain.Tip != context.ChainTip)
+            {
+                Task.Delay(TimeSpan.FromMinutes(1), this.nodeLifetime.ApplicationStopping).GetAwaiter().GetResult();
+                return false;
+            }
+
+            return true;
+        }
+
+        private bool BuildBlock(MineBlockContext context)
+        {
+            if (this.network.Consensus.IsProofOfStake)
+                context.BlockTemplate = this.blockProvider.BuildPosBlock(context.ChainTip, context.ReserveScript.ReserveFullNodeScript);
+            else
+                context.BlockTemplate = this.blockProvider.BuildPowBlock(context.ChainTip, context.ReserveScript.ReserveFullNodeScript);
+
+            if (this.network.Consensus.IsProofOfStake)
+            {
+                // Make sure the POS consensus rules are valid. This is required for generation of blocks inside tests,
+                // where it is possible to generate multiple blocks within one second.
+                if (context.BlockTemplate.Block.Header.Time <= context.ChainTip.Header.Time)
+                    return false;
+            }
+
+            context.ExtraNonce = this.IncrementExtraNonce(context.BlockTemplate.Block, context.ChainTip, context.ExtraNonce);
+
+            return true;
+        }
+
+        private bool MineBlock(MineBlockContext context)
+        {
+            Block block = context.BlockTemplate.Block;
+            while ((context.MaxTries > 0) && (block.Header.Nonce < InnerLoopCount) && !block.CheckProofOfWork())
             {
                 this.miningCancellationTokenSource.Token.ThrowIfCancellationRequested();
 
-                ChainedHeader chainTip = this.consensusLoop.Tip;
-                if (this.chain.Tip != chainTip)
-                {
-                    Task.Delay(TimeSpan.FromMinutes(1), this.nodeLifetime.ApplicationStopping).GetAwaiter().GetResult();
-                    continue;
-                }
-
-                BlockTemplate blockTemplate = this.blockProvider.BuildPowBlock(chainTip, reserveScript.ReserveFullNodeScript);
-
-                if (this.network.Consensus.IsProofOfStake)
-                {
-                    // Make sure the POS consensus rules are valid. This is required for generation of blocks inside tests,
-                    // where it is possible to generate multiple blocks within one second.
-                    if (blockTemplate.Block.Header.Time <= chainTip.Header.Time)
-                        continue;
-                }
-
-                nExtraNonce = this.IncrementExtraNonce(blockTemplate.Block, chainTip, nExtraNonce);
-                Block block = blockTemplate.Block;
-
-                while ((maxTries > 0) && (block.Header.Nonce < InnerLoopCount) && !block.CheckProofOfWork())
-                {
-                    this.miningCancellationTokenSource.Token.ThrowIfCancellationRequested();
-
-                    ++block.Header.Nonce;
-                    --maxTries;
-                }
-
-                if (maxTries == 0)
-                    break;
-
-                if (block.Header.Nonce == InnerLoopCount)
-                    continue;
-
-                var newChain = new ChainedHeader(block.Header, block.GetHash(), chainTip);
-
-                if (newChain.ChainWork <= chainTip.ChainWork)
-                    continue;
-
-                var blockValidationContext = new ValidationContext { Block = block };
-
-                this.consensusLoop.AcceptBlockAsync(blockValidationContext).GetAwaiter().GetResult();
-
-                if (blockValidationContext.ChainedHeader == null)
-                {
-                    this.logger.LogTrace("(-)[REORG-2]");
-                    return blocks;
-                }
-
-                if (blockValidationContext.Error != null)
-                {
-                    if (blockValidationContext.Error == ConsensusErrors.InvalidPrevTip)
-                        continue;
-
-                    this.logger.LogTrace("(-)[ACCEPT_BLOCK_ERROR]");
-                    return blocks;
-                }
-
-                this.logger.LogInformation("Mined new {0} block: '{1}'.", BlockStake.IsProofOfStake(blockValidationContext.Block) ? "POS" : "POW", blockValidationContext.ChainedHeader);
-
-                nHeight++;
-                blocks.Add(block.GetHash());
-
-                blockTemplate = null;
+                ++block.Header.Nonce;
+                --context.MaxTries;
             }
 
-            return blocks;
+            if (context.MaxTries == 0)
+                return false;
+
+            return true;
         }
 
-        ///<inheritdoc/>
-        public int IncrementExtraNonce(Block pblock, ChainedHeader pindexPrev, int nExtraNonce)
+        private bool ValidateMinedBlock(MineBlockContext context)
         {
-            // Update nExtraNonce
-            if (this.hashPrevBlock != pblock.Header.HashPrevBlock)
+            if (context.BlockTemplate.Block.Header.Nonce == InnerLoopCount)
+                return false;
+
+            var chainedHeader = new ChainedHeader(context.BlockTemplate.Block.Header, context.BlockTemplate.Block.GetHash(), context.ChainTip);
+            if (chainedHeader.ChainWork <= context.ChainTip.ChainWork)
+                return false;
+
+            return true;
+        }
+
+        private void ValidateMinedBlockWithConsensus(MineBlockContext context)
+        {
+            context.ValidationContext = new ValidationContext { Block = context.BlockTemplate.Block };
+            this.consensusLoop.AcceptBlockAsync(context.ValidationContext).GetAwaiter().GetResult();
+        }
+
+        private bool CheckValidationContext(MineBlockContext context)
+        {
+            if (context.ValidationContext.ChainedHeader == null)
             {
-                nExtraNonce = 0;
-                this.hashPrevBlock = pblock.Header.HashPrevBlock;
+                this.logger.LogTrace("(-)[REORG-2]");
+                return false;
             }
 
-            nExtraNonce++;
-            int nHeight = pindexPrev.Height + 1; // Height first in coinbase required for block.version=2
-            Transaction txCoinbase = pblock.Transactions[0];
-            txCoinbase.Inputs[0] = TxIn.CreateCoinbase(nHeight);
+            if (context.ValidationContext.Error != null && context.ValidationContext.Error != ConsensusErrors.InvalidPrevTip)
+            {
+                this.logger.LogTrace("(-)[ACCEPT_BLOCK_ERROR]");
+                return false;
+            }
+
+            return true;
+        }
+
+        private bool CheckValidationContextPreviousTip(MineBlockContext context)
+        {
+            if (context.ValidationContext.Error != null)
+                if (context.ValidationContext.Error == ConsensusErrors.InvalidPrevTip)
+                    return false;
+            return true;
+        }
+
+        private void OnBlockMined(MineBlockContext context)
+        {
+            this.logger.LogInformation("Mined new {0} block: '{1}'.", BlockStake.IsProofOfStake(context.ValidationContext.Block) ? "POS" : "POW", context.ValidationContext.ChainedHeader);
+
+            context.CurrentHeight++;
+
+            context.Blocks.Add(context.BlockTemplate.Block.GetHash());
+            context.BlockTemplate = null;
+        }
+
+        //<inheritdoc/>
+        public int IncrementExtraNonce(Block block, ChainedHeader previousHeader, int extraNonce)
+        {
+            if (this.hashPrevBlock != block.Header.HashPrevBlock)
+            {
+                extraNonce = 0;
+                this.hashPrevBlock = block.Header.HashPrevBlock;
+            }
+
+            extraNonce++;
+            int height = previousHeader.Height + 1; // Height first in coinbase required for block.version=2
+            Transaction txCoinbase = block.Transactions[0];
+            txCoinbase.Inputs[0] = TxIn.CreateCoinbase(height);
 
             Guard.Assert(txCoinbase.Inputs[0].ScriptSig.Length <= 100);
-            pblock.UpdateMerkleRoot();
+            block.UpdateMerkleRoot();
 
-            return nExtraNonce;
+            return extraNonce;
+        }
+
+        private class MineBlockContext
+        {
+            private readonly ulong amountOfBlocksToMine;
+            public List<uint256> Blocks = new List<uint256>();
+            public BlockTemplate BlockTemplate { get; set; }
+            public ulong ChainHeight { get; set; }
+            public ulong CurrentHeight { get; set; }
+            public ChainedHeader ChainTip { get; set; }
+            public int ExtraNonce { get; set; }
+            public ulong MaxTries { get; set; }
+            public bool MiningCanContinue { get { return this.CurrentHeight < this.ChainHeight + this.amountOfBlocksToMine; } }
+            public readonly ReserveScript ReserveScript;
+            public ValidationContext ValidationContext { get; set; }
+
+            public MineBlockContext(ulong amountOfBlocksToMine, ulong chainHeight, ulong maxTries, ReserveScript reserveScript)
+            {
+                this.amountOfBlocksToMine = amountOfBlocksToMine;
+                this.ChainHeight = chainHeight;
+                this.CurrentHeight = chainHeight;
+                this.MaxTries = maxTries;
+                this.ReserveScript = reserveScript;
+            }
         }
     }
 }
