@@ -3,6 +3,7 @@ using System.Net;
 using NBitcoin;
 using NBitcoin.RPC;
 using Stratis.Bitcoin.Connection;
+using Stratis.Bitcoin.Features.RPC;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
