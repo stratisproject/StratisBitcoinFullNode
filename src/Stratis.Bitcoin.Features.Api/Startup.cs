@@ -41,6 +41,7 @@ namespace Stratis.Bitcoin.Features.Api
 
                             builder
                             .WithOrigins(allowedDomains)
+                            .AllowAnyOrigin()
                             .AllowAnyMethod()
                             .AllowAnyHeader()
                             .AllowCredentials();

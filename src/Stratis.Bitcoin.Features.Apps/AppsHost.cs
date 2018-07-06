@@ -1,60 +1,55 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Stratis.Bitcoin.Features.Apps.Interfaces;
 
 namespace Stratis.Bitcoin.Features.Apps
 {
-    public class Startup
-    {
-        public void ConfigureServices(IServiceCollection services)
-        {
-        }
-
-        public void Configure(IApplicationBuilder app)
-        {
-            //app.Map("/app1", app1 =>
-            //{
-            //    app.UseSpa(spa =>
-            //    {
-            //        spa.UseSpaPrerendering(options =>
-            //        {
-            //            options.BootModulePath = $""
-            //        });
-            //    });
-            //});
-
-            app.UseDefaultFiles();
-            app.UseStaticFiles();
-        }
-    }
-
     public class AppsHost : IAppsHost
     {
-        private int seedPort = 32500;       
-        private readonly List<IWebHost> hosts = new List<IWebHost>();                
+        private int seedPort = 32500;
+        private readonly ILogger logger;
+        private readonly List<(StratisApp, IWebHost)> hostedApps = new List<(StratisApp, IWebHost)>();
 
-        public bool Host(IEnumerable<IStratisApp> stratisApps)
-        {           
-            this.hosts.AddRange(stratisApps.Select(CreateHost));    
-            this.hosts.ForEach(x => x.Start());       
-
-            return true;
+        public AppsHost(ILoggerFactory loggerFactory)
+        {
+            this.logger = loggerFactory.CreateLogger(GetType().FullName);
         }
 
-        private IWebHost CreateHost(IStratisApp stratisApp)
-        {            
-            return new WebHostBuilder()
-                .UseKestrel()
-                .UseIISIntegration()
-                .UseWebRoot(stratisApp.WebRoot)
-                .UseContentRoot(Directory.GetCurrentDirectory())
-                .UseUrls($"http://localhost:{this.seedPort++}")                
-                .UseStartup<Startup>()
-                .Build();
+        public void Host(IEnumerable<StratisApp> stratisApps)
+        {
+            stratisApps.Where(x => x.IsSinglePageApp).ToList().ForEach(HostSinglePageApp);
+        }
+
+        private void HostSinglePageApp(StratisApp stratisApp)
+        {
+            try
+            {
+                stratisApp.Address = $"http://localhost:{this.seedPort}";
+
+                (StratisApp, IWebHost) pair = (stratisApp, new WebHostBuilder()
+                            .UseKestrel()
+                            .UseIISIntegration()
+                            .UseWebRoot(Path.Combine(stratisApp.Location, stratisApp.WebRoot))
+                            .UseContentRoot(Directory.GetCurrentDirectory())
+                            .UseUrls(stratisApp.Address)
+                            .UseStartup<SinglePageStartup>()
+                            .Build());
+
+                pair.Item2.Start();
+
+                this.hostedApps.Add(pair);
+                this.seedPort++;
+
+                this.logger.LogError($"SPA '{stratisApp.DisplayName}' hosted at {stratisApp.Address}");
+            }
+            catch (Exception e)
+            {
+                this.logger.LogError($"Failed to host app '{stratisApp.DisplayName}' : {e.Message}");
+            }
         }
     }
 }

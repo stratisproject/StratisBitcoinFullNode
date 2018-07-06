@@ -30,5 +30,29 @@ namespace Stratis.Bitcoin.Features.Apps.Tests
             var count = this.fullNodeBuilder.Services.Count(x => x.ServiceType == typeof(IAppsStore));
             Assert.Equal(1, count);
         }
+
+        [Fact]
+        public void Test_UseApps_adds_the_FileService()
+        {
+            this.fullNodeBuilder.UseApps().Build();
+            var count = this.fullNodeBuilder.Services.Count(x => x.ServiceType == typeof(IAppsFileService));
+            Assert.Equal(1, count);
+        }
+
+        [Fact]
+        public void Test_UseApps_adds_the_AppsHost()
+        {
+            this.fullNodeBuilder.UseApps().Build();
+            var count = this.fullNodeBuilder.Services.Count(x => x.ServiceType == typeof(IAppsHost));
+            Assert.Equal(1, count);
+        }
+
+        [Fact]
+        public void Test_UseApps_adds_the_AppsController()
+        {
+            this.fullNodeBuilder.UseApps().Build();
+            var count = this.fullNodeBuilder.Services.Count(x => x.ServiceType == typeof(AppsController));
+            Assert.Equal(1, count);
+        }
     }
 }

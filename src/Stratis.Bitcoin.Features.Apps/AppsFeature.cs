@@ -1,5 +1,4 @@
-﻿using System;
-using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Builder.Feature;
@@ -16,16 +15,17 @@ namespace Stratis.Bitcoin.Features.Apps
 
         public AppsFeature(ILoggerFactory loggerFactory, IAppsStore appsStore, IAppsHost appsHost)
         {
-            this.logger = loggerFactory.CreateLogger(GetType().FullName);
             this.appsStore = appsStore;
             this.appsHost = appsHost;
+            this.logger = loggerFactory.CreateLogger(GetType().FullName);
+            this.logger.LogInformation($"{nameof(AppsFeature)} created");
         }
 
         public override void Initialize()
         {
             this.logger.LogInformation($"Initializing {nameof(AppsFeature)}");
 
-            this.appsStore.GetApplications().Subscribe(x => this.appsHost.Host(x));
+            this.appsHost.Host(this.appsStore.Applications);
         }
     }
 

@@ -1,6 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using Stratis.Bitcoin.Features.Apps.Interfaces;
 
@@ -15,14 +15,9 @@ namespace Stratis.Bitcoin.Features.Apps.Tests.AppStore
 
         public string StratisAppsFolderPath { get; }
 
-        public IEnumerable<FileInfo> GetStratisAppFileInfos()
+        public IEnumerable<FileInfo> GetStratisAppConfigFileInfos()
         {
-            return new DirectoryInfo(this.StratisAppsFolderPath).GetFiles("*.dll", SearchOption.TopDirectoryOnly);
-        }
-
-        public IEnumerable<Type> GetTypesOfStratisApps(string stratisAppAssemblyPath)
-        {
-            return Assembly.LoadFrom(stratisAppAssemblyPath).GetTypes();
+            return Enumerable.Empty<FileInfo>();
         }
     }
 }

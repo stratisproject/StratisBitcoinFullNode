@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
 
 namespace Stratis.Bitcoin.Features.Apps.Interfaces
@@ -8,8 +7,6 @@ namespace Stratis.Bitcoin.Features.Apps.Interfaces
     {
         string StratisAppsFolderPath { get; }
 
-        IEnumerable<FileInfo> GetStratisAppFileInfos();
-
-        IEnumerable<Type> GetTypesOfStratisApps(string stratisAppAssemblyPath);
+        IEnumerable<FileInfo> GetStratisAppConfigFileInfos();
     }
 }

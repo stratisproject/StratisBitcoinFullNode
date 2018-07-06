@@ -1,10 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
+using System.IO;
 using System.Linq;
-using System.Reactive.Subjects;
-using System.Reactive.Disposables;
-using System.Reactive.Linq;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Stratis.Bitcoin.Features.Apps.Interfaces;
 using Stratis.Bitcoin.Utilities.Extensions;
@@ -13,65 +11,58 @@ namespace Stratis.Bitcoin.Features.Apps
 {
     public class AppsStore : IAppsStore
     {
-        private readonly object _lock = new object();
         private readonly ILogger logger;
-        private List<IStratisApp> stratisApps;
+        private readonly List<StratisApp> applications = new List<StratisApp>();
         private readonly IAppsFileService appsFileService;
-        private readonly Subject<IStratisApp> newAppStream = new Subject<IStratisApp>();
 
         public AppsStore(ILoggerFactory loggerFactory, IAppsFileService appsFileService)
         {
             this.appsFileService = appsFileService;
             this.logger = loggerFactory.CreateLogger(GetType().FullName);
-            this.NewAppStream = this.newAppStream.AsObservable();
+
+            Load();
         }
 
-        public IObservable<IStratisApp> NewAppStream { get; }
-
-        public IObservable<IReadOnlyCollection<IStratisApp>> GetApplications()
-        {
-            return Observable.Create<IReadOnlyCollection<IStratisApp>>(x =>
-            {
-                var apps = new List<IStratisApp>();
-                lock (this._lock)
-                {
-                    if (this.stratisApps == null)
-                    {
-                        this.stratisApps = new List<IStratisApp>();
-                        Load();
-                    }
-
-                    apps.AddRange(this.stratisApps);
-                }
-
-                x.OnNext(apps);
-
-                return Disposable.Empty;
-            });
-        }
+        public IEnumerable<StratisApp> Applications => this.applications;
 
         private void Load()
         {
-            Debug.Assert(this.stratisApps.IsEmpty());
+            IEnumerable<FileInfo> configs = this.appsFileService.GetStratisAppConfigFileInfos();
+            var apps = configs.Select(CreateApp).Where(x => x != null).ToList();
 
-            var apps = this.appsFileService.GetStratisAppFileInfos()
-                            .SelectMany(x => CreateApps(this.appsFileService.GetTypesOfStratisApps(x.FullName))).ToList();
             if (apps.IsEmpty())
-                this.logger?.LogWarning($"No Stratis apps found at or below {this.appsFileService.StratisAppsFolderPath}");
+            {
+                this.logger.LogWarning(
+                    $"No Stratis applications found at or below {this.appsFileService.StratisAppsFolderPath}");
+                return;
+            }
 
-            this.stratisApps.AddRange(apps);
-
-            LogApps(apps);
-        }        
-
-        private static List<IStratisApp> CreateApps(IEnumerable<Type> types)
-        {
-            return types.Where(x => x.IsClass && x.BaseType == typeof(StratisAppBase))
-                .Select(Activator.CreateInstance)
-                .Cast<IStratisApp>()
-                .ToList();
+            this.applications.AddRange(apps);
         }
 
-        private void LogApps(List<IStratisApp> apps) => apps.ForEach(x => this.logger?.LogInformation($"Application loaded: {x}"));
+        private StratisApp CreateApp(FileInfo fileInfo)
+        {
+            try
+            {
+                IConfigurationProvider provider = new ConfigurationBuilder()
+                    .SetBasePath(fileInfo.DirectoryName)
+                    .AddJsonFile(fileInfo.Name)
+                    .Build().Providers.First();
+
+                provider.TryGet("displayName", out string displayName);
+                provider.TryGet("webRoot", out string webRoot);
+
+                var stratisApp = new StratisApp { DisplayName = displayName, Location = fileInfo.DirectoryName };
+                if (!string.IsNullOrEmpty(webRoot))
+                    stratisApp.WebRoot = webRoot;
+
+                return stratisApp;
+            }
+            catch (Exception e)
+            {
+                this.logger.LogError($"Failed to create app : {e.Message}");   
+                return null;
+            }
+        }
     }
 }
