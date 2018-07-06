@@ -13,7 +13,9 @@ namespace Stratis.Bitcoin.IntegrationTests
 {
     public class SegWitTests
     {
+    #if DEBUG
         [Fact]
+    #endif
         public void TestSegwit_MinedOnCore_ActivatedOn_StratisNode()
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))

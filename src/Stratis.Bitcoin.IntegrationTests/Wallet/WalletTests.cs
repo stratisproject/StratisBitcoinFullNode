@@ -448,6 +448,9 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
 
                 // check that store recovered to be the same as the best chain.
                 Assert.Equal(newNodeInstance.FullNode.Chain.Tip.HashBlock, newNodeInstance.FullNode.WalletManager().WalletTipHash);
+
+                newNodeInstance.Kill();
+                TestHelper.WaitLoop(() => newNodeInstance.State == CoreNodeState.Killed || newNodeInstance.State == CoreNodeState.Stopped);
             }
         }
 
