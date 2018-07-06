@@ -575,7 +575,7 @@ namespace NBitcoin
 
         }
 
-        internal ScriptCoin(OutPoint fromOutpoint, TxOut fromTxOut, Script redeem)
+        public ScriptCoin(OutPoint fromOutpoint, TxOut fromTxOut, Script redeem)
             : base(fromOutpoint, fromTxOut)
         {
             this.Redeem = redeem;
