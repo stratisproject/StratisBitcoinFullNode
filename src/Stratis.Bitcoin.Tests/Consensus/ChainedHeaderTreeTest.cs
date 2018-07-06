@@ -2129,10 +2129,19 @@ namespace Stratis.Bitcoin.Tests.Consensus
             ChainedHeaderTree chainedHeaderTree = testContext.ChainedHeaderTree;
             ChainedHeader chainTip = testContext.InitialChainTip;
 
+            // First peer presents headers from the original chain.
+            List<BlockHeader> listOfExistingHeaders = testContext.ChainedHeaderToList(chainTip, initialChainSize);
+            ConnectNewHeadersResult connectNewHeadersResult = chainedHeaderTree.ConnectNewHeaders(1, listOfExistingHeaders);
+
+            // None are marked for download.
+            connectNewHeadersResult.DownloadFrom.Should().Be(null);
+            connectNewHeadersResult.DownloadTo.Should().Be(null);
+
+            // Second peer presents fork.
             ChainedHeader forkedBlockHeader = chainTip.GetAncestor(depthOfReorg);
             ChainedHeader newTip = testContext.ExtendAChain(extensionSize, forkedBlockHeader);
             List<BlockHeader> listOfExtendedHeaders = testContext.ChainedHeaderToList(newTip, heightOfFork + extensionSize);
-            ConnectNewHeadersResult connectNewHeadersResult = chainedHeaderTree.ConnectNewHeaders(1, listOfExtendedHeaders);
+            connectNewHeadersResult = chainedHeaderTree.ConnectNewHeaders(2, listOfExtendedHeaders);
 
             foreach (ChainedHeader chainedHeader in connectNewHeadersResult.ToHashArray())
             {
@@ -2141,7 +2150,6 @@ namespace Stratis.Bitcoin.Tests.Consensus
                 chainedHeaderTree.ConsensusTipChanged(chainedHeader);
             }
 
-            // Check status of headers for the blocks that were reorged away.
             ChainedHeader chainHeader = chainTip;
             while (chainHeader.Height > forkedBlockHeader.Height)
             {
@@ -2150,6 +2158,10 @@ namespace Stratis.Bitcoin.Tests.Consensus
 
                 // Header block data availability == headers only.
                 Assert.Equal(BlockDataAvailabilityState.HeaderOnly, chainHeader.BlockDataAvailability);
+
+                // Status of headers for the blocks that were reorged away is fully validated.
+                Assert.Equal(ValidationState.FullyValidated, chainHeader.BlockValidationState);
+
                 chainHeader = chainHeader.Previous;
             }
         }
