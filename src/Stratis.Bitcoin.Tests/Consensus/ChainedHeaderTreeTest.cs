@@ -2023,10 +2023,87 @@ namespace Stratis.Bitcoin.Tests.Consensus
         }
 
         /// <summary>
-        /// Issue 41 @ BlockDataDownloaded called on 10 known blocks.
-        /// Make sure that UnconsumedBlocksDataBytes is equal to the sum of serialized sizes of those blocks.
+        /// Issue 44 @ CT is at 0. 10 headers are presented. 10 blocks are downloaded.
+        /// CT advances to 5. Make sure that UnconsumedBlocksDataBytes is
+        /// equal to the sum of serialized sizes of the last five blocks.
+        /// Second peer claims the same chain but till block 8.
+        /// First peer that presented this chain disconnected.
+        /// Make sure that UnconsumedBlocksDataBytes is equal to sum of block sizes of 6,7,8.
         /// </summary>
         [Fact]
+        public void PresentHeaders_BlocksDownloaded_UnconsumedBlocksDataBytes_Equals_SerializedSizesOfLastBlocks()
+        {
+            const int peer1Id = 1;
+            const int peer2Id = 2;
+            const int initialChainSize = 0;
+            const int chainExtensionSize = 10;
+
+            // Chain header tree setup.
+            TestContext testContext = new TestContextBuilder().WithInitialChain(initialChainSize).UseCheckpoints(false).Build();
+            ChainedHeaderTree chainedHeaderTree = testContext.ChainedHeaderTree;
+            ChainedHeader initialChainTip = testContext.InitialChainTip;
+
+            // 10 headers are presented.
+            ChainedHeader chainTip = testContext.ExtendAChain(chainExtensionSize, initialChainTip);
+            List<BlockHeader> listOfExtendedChainBlockHeaders =
+                testContext.ChainedHeaderToList(chainTip, chainExtensionSize);
+
+            // 10 blocks are downloaded.
+            ConnectNewHeadersResult connectNewHeadersResult =
+                chainedHeaderTree.ConnectNewHeaders(peer1Id, listOfExtendedChainBlockHeaders);
+            Assert.Equal(connectNewHeadersResult.DownloadFrom.Header, listOfExtendedChainBlockHeaders.First());
+            Assert.Equal(connectNewHeadersResult.DownloadTo.Header, listOfExtendedChainBlockHeaders.Last());
+            Assert.True(connectNewHeadersResult.HaveBlockDataAvailabilityStateOf(BlockDataAvailabilityState.BlockRequired));
+
+            foreach (ChainedHeader chainedHeader in connectNewHeadersResult.ToHashArray())
+            {
+                chainedHeaderTree.BlockDataDownloaded(chainedHeader, chainTip.FindAncestorOrSelf(chainedHeader).Block);
+                if (chainedHeader.Height <= 5)
+                {
+                    chainedHeaderTree.PartialValidationSucceeded(chainedHeader, out bool fullValidationRequired);
+                    fullValidationRequired.Should().BeTrue();
+                    chainedHeaderTree.ConsensusTipChanged(chainedHeader);
+                }
+            }
+
+            // Make sure that UnconsumedBlocksDataBytes is equal to the sum of serialized sizes of the last five blocks.
+            int serializedSizeOfChain = 0;
+
+            ChainedHeader chainedHeaderChain = chainTip;
+            while (chainedHeaderChain.Height > 5)
+            {
+                serializedSizeOfChain += chainedHeaderChain.Block.GetSerializedSize();
+                chainedHeaderChain = chainedHeaderChain.Previous;
+            }
+
+            Assert.Equal(chainedHeaderTree.UnconsumedBlocksDataBytes, serializedSizeOfChain);
+
+            // Second peer claims the same chain but till block 8.
+            const int headersBeyondBlockEight = 2;
+            chainedHeaderTree.ConnectNewHeaders(peer2Id, listOfExtendedChainBlockHeaders.SkipLast(headersBeyondBlockEight).ToList());
+            ChainedHeader secondPeerTip = chainedHeaderTree.GetChainedHeadersByHash()[chainedHeaderTree.GetPeerTipsByPeerId()[peer2Id]];
+            Assert.Equal(8, secondPeerTip.Height);
+
+            // First peer that presented this chain disconnected.
+            chainedHeaderTree.PeerDisconnected(peer1Id);
+
+            // Make sure that UnconsumedBlocksDataBytes is equal to sum of block sizes of 6,7,8.
+            serializedSizeOfChain = 0;
+            chainedHeaderChain = secondPeerTip;
+
+            while (chainedHeaderChain.Height >= 6)
+            {
+                serializedSizeOfChain += chainedHeaderChain.Block.GetSerializedSize();
+                chainedHeaderChain = chainedHeaderChain.Previous;
+            }
+            Assert.Equal(chainedHeaderTree.UnconsumedBlocksDataBytes, serializedSizeOfChain);
+        }
+ 
+    /// <summary>
+    /// Issue 41 @ BlockDataDownloaded called on 10 known blocks.
+    /// Make sure that UnconsumedBlocksDataBytes is equal to the sum of serialized sizes of those blocks.
+    /// </summary>
+    [Fact]
         public void BlockDataDownloadedIsCalled_UnconsumedBlocksDataBytes_Equals_SumOfSerializedBlockSize()
         {
             const int initialChainSize = 5;
