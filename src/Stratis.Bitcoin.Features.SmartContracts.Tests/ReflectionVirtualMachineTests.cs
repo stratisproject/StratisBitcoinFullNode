@@ -65,10 +65,10 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             var repository = new ContractStateRepositoryRoot(new NoDeleteSource<byte[], byte[]>(new MemoryDictionarySource()));
             IContractStateRepository stateRepository = repository.StartTracking();
 
-            var gasMeter = new GasMeter(deserializedCall.GasLimit);
+            var gasMeter = new GasMeter(deserializedCall.CallData.GasLimit);
 
             var persistenceStrategy = new MeteredPersistenceStrategy(repository, gasMeter, this.keyEncodingStrategy);
-            var persistentState = new PersistentState(persistenceStrategy, deserializedCall.ContractAddress, this.network);
+            var persistentState = new PersistentState(persistenceStrategy, deserializedCall.CallData.ContractAddress, this.network);
 
             var internalTxExecutorFactory =
                 new InternalTransactionExecutorFactory(this.keyEncodingStrategy, this.loggerFactory, this.network);
@@ -79,13 +79,13 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             var context = new SmartContractExecutionContext(
                             new Block(1, new Address("2")),
                             new Message(
-                                new Address(deserializedCall.ContractAddress.ToString()),
+                                new Address(deserializedCall.CallData.ContractAddress.ToString()),
                                 new Address(sender),
                                 deserializedCall.Value,
-                                deserializedCall.GasLimit
+                                deserializedCall.CallData.GasLimit
                                 ),
                             TestAddress.ToUint160(this.network),
-                            deserializedCall.GasPrice
+                            deserializedCall.CallData.GasPrice
                         );
 
             ISmartContractExecutionResult result = vm.ExecuteMethod(
@@ -96,8 +96,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             stateRepository.Commit();
 
-            Assert.Equal(Encoding.UTF8.GetBytes("TestValue"), stateRepository.GetStorageValue(deserializedCall.ContractAddress, Encoding.UTF8.GetBytes("TestKey")));
-            Assert.Equal(Encoding.UTF8.GetBytes("TestValue"), repository.GetStorageValue(deserializedCall.ContractAddress, Encoding.UTF8.GetBytes("TestKey")));
+            Assert.Equal(Encoding.UTF8.GetBytes("TestValue"), stateRepository.GetStorageValue(deserializedCall.CallData.ContractAddress, Encoding.UTF8.GetBytes("TestKey")));
+            Assert.Equal(Encoding.UTF8.GetBytes("TestValue"), repository.GetStorageValue(deserializedCall.CallData.ContractAddress, Encoding.UTF8.GetBytes("TestKey")));
         }
 
         [Fact]
@@ -129,10 +129,10 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             var repository = new ContractStateRepositoryRoot(new NoDeleteSource<byte[], byte[]>(new MemoryDictionarySource()));
             IContractStateRepository track = repository.StartTracking();
 
-            var gasMeter = new GasMeter(deserializedCall.GasLimit);
+            var gasMeter = new GasMeter(deserializedCall.CallData.GasLimit);
 
             var persistenceStrategy = new MeteredPersistenceStrategy(repository, gasMeter, this.keyEncodingStrategy);
-            var persistentState = new PersistentState(persistenceStrategy, deserializedCall.ContractAddress, this.network);
+            var persistentState = new PersistentState(persistenceStrategy, deserializedCall.CallData.ContractAddress, this.network);
 
             var internalTxExecutorFactory =
                 new InternalTransactionExecutorFactory(this.keyEncodingStrategy, this.loggerFactory, this.network);
@@ -143,13 +143,13 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             var context = new SmartContractExecutionContext(
                             new Block(1, new Address("2")),
                             new Message(
-                                deserializedCall.ContractAddress.ToAddress(this.network),
+                                deserializedCall.CallData.ContractAddress.ToAddress(this.network),
                                 new Address(sender),
                                 deserializedCall.Value,
-                                deserializedCall.GasLimit
+                                deserializedCall.CallData.GasLimit
                                 ),
-                            deserializedCall.ContractAddress,
-                            deserializedCall.GasPrice,
+                            deserializedCall.CallData.ContractAddress,
+                            deserializedCall.CallData.GasPrice,
                             deserializedCall.MethodParameters
                         );
 
@@ -195,7 +195,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             var repository = new ContractStateRepositoryRoot(new NoDeleteSource<byte[], byte[]>(new MemoryDictionarySource()));
             IContractStateRepository track = repository.StartTracking();
 
-            var gasMeter = new GasMeter(deserializedCall.GasLimit);
+            var gasMeter = new GasMeter(deserializedCall.CallData.GasLimit);
             var persistenceStrategy = new MeteredPersistenceStrategy(repository, gasMeter, new BasicKeyEncodingStrategy());
             var persistentState = new PersistentState(persistenceStrategy, TestAddress.ToUint160(this.network), this.network);
             var internalTxExecutorFactory =
@@ -208,10 +208,10 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                                 TestAddress,
                                 TestAddress,
                                 deserializedCall.Value,
-                                deserializedCall.GasLimit
+                                deserializedCall.CallData.GasLimit
                                 ),
                             TestAddress.ToUint160(this.network),
-                            deserializedCall.GasPrice,
+                            deserializedCall.CallData.GasPrice,
                             deserializedCall.MethodParameters
                         );
 

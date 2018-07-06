@@ -61,25 +61,25 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Consensus.R
             // Also the deserializer should throw custom exceptions.
             SmartContractCarrier carrier = SmartContractCarrier.Deserialize(transaction);
 
-            if (carrier.GasPrice < GasPriceMinimum)
+            if (carrier.CallData.GasPrice < GasPriceMinimum)
             {
                 // Supplied gas price is too low.
                 this.ThrowGasPriceLessThanMinimum();
             }
 
-            if (carrier.GasPrice > GasPriceMaximum)
+            if (carrier.CallData.GasPrice > GasPriceMaximum)
             {
                 // Supplied gas price is too high.
                 this.ThrowGasPriceMoreThanMaximum();
             }
 
-            if (carrier.GasLimit < GasLimitMinimum)
+            if (carrier.CallData.GasLimit < GasLimitMinimum)
             {
                 // Supplied gas limit is too low.
                 this.ThrowGasLessThanBaseFee();
             }
 
-            if (carrier.GasLimit > GasLimitMaximum)
+            if (carrier.CallData.GasLimit > GasLimitMaximum)
             {
                 // Supplied gas limit is too high - at a certain point we deem that a contract is taking up too much time. 
                 this.ThrowGasGreaterThanHardLimit();

@@ -41,7 +41,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
                     return;
                 }
 
-                uint160 contractAddress = carrier.ContractAddress ?? carrier.GetNewContractAddress();
+                uint160 contractAddress = carrier.CallData.ContractAddress ?? carrier.GetNewContractAddress();
 
                 // If contract had no balance, received funds, but made no transfers, assign the current UTXO.
                 if (stateSnapshot.GetUnspent(contractAddress) == null && carrier.Value > 0 && !result.InternalTransfers.Any())

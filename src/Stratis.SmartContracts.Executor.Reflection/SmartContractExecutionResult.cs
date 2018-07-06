@@ -67,7 +67,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
         {
             var executionResult = new SmartContractExecutionResult
             {
-                Exception = new SmartContractDoesNotExistException(carrier.MethodName),
+                Exception = new SmartContractDoesNotExistException(carrier.CallData.MethodName),
                 GasConsumed = GasPriceList.ContractDoesNotExist()
             };
 

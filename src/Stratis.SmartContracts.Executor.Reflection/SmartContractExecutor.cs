@@ -41,7 +41,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
             SmartContractValidator validator)
         {
             this.carrier = SmartContractCarrier.Deserialize(transactionContext);
-            this.gasMeter = new GasMeter(this.carrier.GasLimit);
+            this.gasMeter = new GasMeter(this.carrier.CallData.GasLimit);
             this.keyEncodingStrategy = keyEncodingStrategy;
             this.loggerFactory = loggerFactory;
             this.logger = loggerFactory.CreateLogger(this.GetType());
@@ -110,7 +110,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
             builder.Append(string.Format("{0}:{1},{2}:{3},", nameof(block.Coinbase), block.Coinbase, nameof(block.Number), block.Number));
             builder.Append(string.Format("{0}:{1},", nameof(contractAddress), contractAddress.ToAddress(this.network)));
-            builder.Append(string.Format("{0}:{1},", nameof(carrier.GasPrice), carrier.GasPrice));
+            builder.Append(string.Format("{0}:{1},", nameof(carrier.CallData.GasPrice), carrier.CallData.GasPrice));
             builder.Append(string.Format("{0}:{1},{2}:{3},{4}:{5},{6}:{7}", nameof(message.ContractAddress), message.ContractAddress, nameof(message.GasLimit), message.GasLimit, nameof(message.Sender), message.Sender, nameof(message.Value), message.Value));
 
             if (carrier.MethodParameters != null && carrier.MethodParameters.Length > 0)
@@ -149,7 +149,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
             this.stateSnapshot.CreateAccount(newContractAddress);
 
             // Decompile the contract execution code and validate it.
-            SmartContractDecompilation decompilation = SmartContractDecompiler.GetModuleDefinition(this.carrier.ContractExecutionCode);
+            SmartContractDecompilation decompilation = SmartContractDecompiler.GetModuleDefinition(this.carrier.CallData.ContractExecutionCode);
             SmartContractValidationResult validation = this.validator.Validate(decompilation);
 
             // If validation failed, refund the sender any remaining gas.
@@ -168,10 +168,10 @@ namespace Stratis.SmartContracts.Executor.Reflection
                     newContractAddress.ToAddress(this.network),
                     this.carrier.Sender.ToAddress(this.network),
                     this.carrier.Value,
-                    this.carrier.GasLimit
+                    this.carrier.CallData.GasLimit
                 ),
                 newContractAddress,
-                this.carrier.GasPrice,
+                this.carrier.CallData.GasPrice,
                 this.carrier.MethodParameters
             );
 
@@ -184,7 +184,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
             var vm = new ReflectionVirtualMachine(new InternalTransactionExecutorFactory(this.keyEncodingStrategy, this.loggerFactory, this.network), this.loggerFactory, persistentState, this.stateSnapshot);
 
             // Push internal tx executor and getbalance down into VM
-            this.Result = vm.Create(this.carrier.ContractExecutionCode, executionContext, this.gasMeter);
+            this.Result = vm.Create(this.carrier.CallData.ContractExecutionCode, executionContext, this.gasMeter);
 
             if (this.Result.Revert)
             {
@@ -194,7 +194,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
             this.Result.NewContractAddress = newContractAddress;
 
-            this.stateSnapshot.SetCode(newContractAddress, this.carrier.ContractExecutionCode);
+            this.stateSnapshot.SetCode(newContractAddress, this.carrier.CallData.ContractExecutionCode);
 
             this.logger.LogTrace("(-):{0}={1}", nameof(newContractAddress), newContractAddress);
         }
@@ -223,7 +223,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
             this.logger.LogTrace("()");
 
             // Get the contract code (dll) from the repository.
-            byte[] contractExecutionCode = this.stateSnapshot.GetCode(this.carrier.ContractAddress);
+            byte[] contractExecutionCode = this.stateSnapshot.GetCode(this.carrier.CallData.ContractAddress);
             if (contractExecutionCode == null)
             {
                 this.Result = SmartContractExecutionResult.ContractDoesNotExist(this.carrier);
@@ -231,7 +231,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
             }
 
             // Execute the call to the contract.
-            this.Result = this.CreateContextAndExecute(this.carrier.ContractAddress, contractExecutionCode, this.carrier.MethodName);
+            this.Result = this.CreateContextAndExecute(this.carrier.CallData.ContractAddress, contractExecutionCode, this.carrier.CallData.MethodName);
         }
 
         private ISmartContractExecutionResult CreateContextAndExecute(uint160 contractAddress, byte[] contractCode, string methodName)
@@ -246,10 +246,10 @@ namespace Stratis.SmartContracts.Executor.Reflection
                     contractAddress.ToAddress(this.network),
                     this.carrier.Sender.ToAddress(this.network),
                     this.carrier.Value,
-                    this.carrier.GasLimit
+                    this.carrier.CallData.GasLimit
                 ),
                 contractAddress,
-                this.carrier.GasPrice,
+                this.carrier.CallData.GasPrice,
                 this.carrier.MethodParameters
             );
 

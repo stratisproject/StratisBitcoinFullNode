@@ -30,8 +30,8 @@ namespace Stratis.SmartContracts.Executor.Reflection
                 return;
             }
 
-            var refund = new Money(carrier.GasCostBudget - (result.GasConsumed * carrier.GasPrice));
-            this.logger.LogTrace("{0}:{1},{2}:{3},{4}:{5},{6}:{7}", nameof(carrier.GasCostBudget), carrier.GasCostBudget, nameof(result.GasConsumed), result.GasConsumed, nameof(carrier.GasPrice), carrier.GasPrice, nameof(refund), refund);
+            var refund = new Money(carrier.GasCostBudget - (result.GasConsumed * carrier.CallData.GasPrice));
+            this.logger.LogTrace("{0}:{1},{2}:{3},{4}:{5},{6}:{7}", nameof(carrier.GasCostBudget), carrier.GasCostBudget, nameof(result.GasConsumed), result.GasConsumed, nameof(carrier.CallData.GasPrice), carrier.CallData.GasPrice, nameof(refund), refund);
 
             if (refund > 0)
             {
