@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using FluentAssertions;
 using NBitcoin;
 using Stratis.Bitcoin.Features.Wallet;
@@ -113,7 +114,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
         private void charlie_mines_this_block()
         {
             this.sharedSteps.MineBlocks(1, this.nodes[Charlie], AccountZero, WalletZero, WalletPassword, this.shortChainTransactionFee.Satoshi);
-            this.sharedSteps.WaitForNodeToSync(this.nodes[Bob], this.nodes[Charlie], this.nodes[Dave]);
+            this.sharedSteps.WaitForNodesToSync(this.nodes[Bob], this.nodes[Charlie], this.nodes[Dave]);
         }
 
         private void dave_confirms_transaction_is_present()
@@ -123,10 +124,21 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
             transaction.GetHash().Should().Be(this.shorterChainTransaction.GetHash());
         }
 
+        private void meanwhile_jings_chain_advanced_ahead_of_the_others()
+        {
+            this.sharedSteps.MineBlocks(10, this.nodes[JingTheFastMiner], AccountZero, WalletZero, WalletPassword);
+
+            this.jingsBlockHeight = this.nodes[JingTheFastMiner].FullNode.Chain.Height;
+
+            (this.nodes[Bob].FullNode.Chain.Height + 10).Should().BeLessOrEqualTo(this.jingsBlockHeight);
+            (this.nodes[Charlie].FullNode.Chain.Height + 10).Should().BeLessOrEqualTo(this.jingsBlockHeight);
+            (this.nodes[Dave].FullNode.Chain.Height + 10).Should().BeLessOrEqualTo(this.jingsBlockHeight);
+        }
+
         private void jings_connection_comes_back()
         {
             this.nodes[JingTheFastMiner].CreateRPCClient().AddNode(this.nodes[Bob].Endpoint);
-            this.sharedSteps.WaitForNodeToSync(this.nodes.Values.ToArray());
+            this.sharedSteps.WaitForNodesToSync(this.nodes.Values.ToArray());
         }
 
         private void bob_charlie_and_dave_reorg_to_jings_longest_chain()
@@ -136,10 +148,12 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
             TestHelper.WaitLoop(() => this.nodes[Dave].FullNode.Chain.Height == this.jingsBlockHeight);
         }
 
-        private void bobs_transaction_from_shorter_chain_is_now_missing()
+        private async Task bobs_transaction_from_shorter_chain_is_now_missing()
         {
+            //todo: make sure that BlockRepository is a good place to look for that
             this.nodes[Bob].FullNode.BlockStoreManager().BlockRepository.GetTrxAsync(this.shorterChainTransaction.GetHash()).Result
                 .Should().BeNull("longest chain comes from selfish miner and shouldn't contain the transaction made on the chain with the other 3 nodes.");
+
         }
 
         private void bobs_transaction_is_not_returned_to_the_mem_pool()
@@ -159,13 +173,6 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
             TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(this.nodes[Bob]));
             TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(this.nodes[Charlie]));
             TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(this.nodes[Dave]));
-        }
-
-        private void meanwhile_jings_chain_advanced_ahead_of_the_others()
-        {
-            this.sharedSteps.MineBlocks(5, this.nodes[JingTheFastMiner], AccountZero, WalletZero, WalletPassword);
-
-            this.jingsBlockHeight = this.nodes[JingTheFastMiner].FullNode.Chain.Height;
         }
     }
 }

@@ -26,7 +26,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
 
         public void MineBlocks(int blockCount, CoreNode node, string accountName, string toWalletName, string withPassword, long expectedFees = 0)
         {
-            this.WaitForNodeToSync(node);
+            this.WaitForNodesToSync(node);
 
             HdAddress address = node.FullNode.WalletManager().GetUnusedAddress(new WalletAccountReference(toWalletName, accountName));
 
@@ -49,14 +49,14 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
 
             long balanceIncrease = balanceAfterMining - balanceBeforeMining;
 
-            this.WaitForNodeToSync(node);
+            this.WaitForNodesToSync(node);
 
             balanceIncrease.Should().Be(node.GetProofOfWorkRewardForMinedBlocks(blockCount) + expectedFees);
         }
 
         public void MinePremineBlocks(CoreNode node, string walletName, string walletAccount, string walletPassword)
         {
-            this.WaitForNodeToSync(node);
+            this.WaitForNodesToSync(node);
 
             HdAddress unusedAddress = node.FullNode.WalletManager().GetUnusedAddress(new WalletAccountReference(walletName, walletAccount));
             Wallet wallet = node.FullNode.WalletManager().GetWalletByName(walletName);
@@ -65,20 +65,21 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
             node.SetDummyMinerSecret(new BitcoinSecret(extendedPrivateKey, node.FullNode.Network));
             node.GenerateStratisWithMiner(2);
 
-            this.WaitForNodeToSync(node);
+            this.WaitForNodesToSync(node);
 
             IEnumerable<UnspentOutputReference> spendable = node.FullNode.WalletManager().GetSpendableTransactionsInWallet(walletName);
             Money amountShouldBe = node.FullNode.Network.Consensus.PremineReward + node.FullNode.Network.Consensus.ProofOfWorkReward;
             spendable.Sum(s => s.Transaction.Amount).Should().Be(amountShouldBe);
         }
 
-        public void WaitForNodeToSync(params CoreNode[] nodes)
+        public void WaitForNodesToSync(params CoreNode[] nodes)
         {
-            nodes.ToList().ForEach(n =>
-                TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(n)));
+            var firstNode = nodes.First();
+
+            TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(firstNode));
 
             nodes.Skip(1).ToList().ForEach(
-                n => TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(nodes.First(), n)));
+                n => TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(firstNode, n)));
         }
     }
 }

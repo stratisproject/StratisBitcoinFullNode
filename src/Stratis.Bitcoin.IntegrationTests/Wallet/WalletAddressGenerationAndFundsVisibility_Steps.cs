@@ -134,7 +134,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
 
         private void getting_wallet_balance()
         {
-            this.sharedSteps.WaitForNodeToSync(this.nodeGroup.Values.ToArray());
+            this.sharedSteps.WaitForNodesToSync(this.nodeGroup.Values.ToArray());
 
             this.walletBalance = this.receivingStratisBitcoinNode.FullNode.WalletManager()
                .GetSpendableTransactionsInWallet(ReceivingWalletName)

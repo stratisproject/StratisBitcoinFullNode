@@ -71,7 +71,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
             this.transactionNode.NotInIBD();
 
             this.transactionNode.CreateRPCClient().AddNode(this.node.Endpoint, true);
-            this.sharedSteps.WaitForNodeToSync(this.node, this.transactionNode);
+            this.sharedSteps.WaitForNodesToSync(this.node, this.transactionNode);
 
             this.transactionNode.FullNode.WalletManager().CreateWallet(this.password, "receiver");
             this.receiverAddress = this.transactionNode.FullNode.WalletManager()
@@ -114,12 +114,12 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
 
         public void the_node_is_synced()
         {
-            this.sharedSteps.WaitForNodeToSync(this.node);
+            this.sharedSteps.WaitForNodesToSync(this.node);
         }
 
         public void the_nodes_are_synced()
         {
-            this.sharedSteps.WaitForNodeToSync(this.node, this.transactionNode);
+            this.sharedSteps.WaitForNodesToSync(this.node, this.transactionNode);
         }
 
         public void a_real_transaction()
@@ -139,7 +139,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
         {
             this.blockWithTransactionId = this.node.GenerateStratisWithMiner(1).Single();
             this.node.GenerateStratisWithMiner(1);
-            this.sharedSteps.WaitForNodeToSync(this.node, this.transactionNode);
+            this.sharedSteps.WaitForNodesToSync(this.node, this.transactionNode);
         }
 
         public async Task trying_to_retrieve_the_blocks_from_the_blockstore()

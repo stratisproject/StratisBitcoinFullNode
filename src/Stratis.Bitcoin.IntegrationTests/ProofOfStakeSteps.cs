@@ -58,7 +58,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         public void MineCoinsToMaturity()
         {
             this.nodes[this.PremineNode].GenerateStratisWithMiner(100);
-            this.sharedSteps.WaitForNodeToSync(this.nodes[this.PremineNode]);
+            this.sharedSteps.WaitForNodesToSync(this.nodes[this.PremineNode]);
         }
 
         public void PremineNodeMinesTenBlocksMoreEnsuringTheyCanBeStaked()

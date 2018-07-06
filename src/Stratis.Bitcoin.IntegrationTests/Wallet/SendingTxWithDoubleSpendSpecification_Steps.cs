@@ -103,7 +103,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         {
             new SharedSteps().MineBlocks(1, this.stratisSender, "account 0", "mywallet", "123456", 16360L);
 
-            new SharedSteps().WaitForNodeToSync(this.stratisSender, this.stratisReceiver);
+            new SharedSteps().WaitForNodesToSync(this.stratisSender, this.stratisReceiver);
 
             this.stratisSender.FullNode.MempoolManager().GetMempoolAsync().Result.Should().NotContain(this.transaction.GetHash());
             this.stratisReceiver.FullNode.MempoolManager().GetMempoolAsync().Result.Should().NotContain(this.transaction.GetHash());
