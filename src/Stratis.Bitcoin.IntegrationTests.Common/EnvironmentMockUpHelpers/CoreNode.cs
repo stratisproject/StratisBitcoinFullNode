@@ -247,7 +247,6 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
             RPCClient rpc = this.CreateRPCClient();
             BitcoinSecret dest = this.GetFirstSecret(rpc);
             uint256 bestBlock = rpc.GetBestBlockHash();
-            ConcurrentChain chain = null;
             var blocks = new List<Block>();
             DateTimeOffset now = this.MockTime == null ? DateTimeOffset.UtcNow : this.MockTime.Value;
 
@@ -255,7 +254,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
             {
                 peer.VersionHandshakeAsync().GetAwaiter().GetResult();
 
-                chain = bestBlock == this.runner.Network.GenesisHash ? new ConcurrentChain(this.runner.Network) : this.GetChain(peer);
+                var chain = bestBlock == this.runner.Network.GenesisHash ? new ConcurrentChain(this.runner.Network, this.runner.Network.GetGenesis().Header) : this.GetChain(peer);
 
                 for (int i = 0; i < blockCount; i++)
                 {
@@ -303,7 +302,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
         /// <returns>The chain of headers.</returns>
         private ConcurrentChain GetChain(INetworkPeer peer, uint256 hashStop = null, CancellationToken cancellationToken = default(CancellationToken))
         {
-            var chain = new ConcurrentChain(peer.Network);
+            var chain = new ConcurrentChain(peer.Network, peer.Network.GetGenesis().Header);
             this.SynchronizeChain(peer, chain, hashStop, cancellationToken);
             return chain;
         }
