@@ -16,13 +16,11 @@ namespace Stratis.Bitcoin.Features.Apps
 
         public AppsHost(ILoggerFactory loggerFactory)
         {
-            this.logger = loggerFactory.CreateLogger(GetType().FullName);
+            this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
         }
 
-        public void Host(IEnumerable<StratisApp> stratisApps)
-        {
-            stratisApps.Where(x => x.IsSinglePageApp).ToList().ForEach(HostSinglePageApp);
-        }
+        public void Host(IEnumerable<StratisApp> stratisApps) =>
+            stratisApps.Where(x => x.IsSinglePageApp).ToList().ForEach(this.HostSinglePageApp);        
 
         private void HostSinglePageApp(StratisApp stratisApp)
         {

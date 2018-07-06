@@ -13,15 +13,15 @@ namespace Stratis.Bitcoin.Features.Apps
         public AppsController(ILoggerFactory loggerFactory, IAppsStore appsStore)
         {
             this.appsStore = appsStore;
-            this.logger = loggerFactory.CreateLogger(GetType().FullName);
+            this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
         }
 
         [HttpGet]
         [Route("all")]
         public IActionResult GetApplications()
         {
-            this.logger.LogInformation($"{nameof(GetApplications)}");
-            return Ok(this.appsStore.Applications);
+            this.logger.LogInformation($"{nameof(this.GetApplications)}");
+            return this.Ok(this.appsStore.Applications);
         }
     }
 }

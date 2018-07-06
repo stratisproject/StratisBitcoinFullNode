@@ -18,9 +18,9 @@ namespace Stratis.Bitcoin.Features.Apps
         public AppsStore(ILoggerFactory loggerFactory, IAppsFileService appsFileService)
         {
             this.appsFileService = appsFileService;
-            this.logger = loggerFactory.CreateLogger(GetType().FullName);
+            this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
 
-            Load();
+            this.Load();
         }
 
         public IEnumerable<StratisApp> Applications => this.applications;
@@ -28,7 +28,7 @@ namespace Stratis.Bitcoin.Features.Apps
         private void Load()
         {
             IEnumerable<FileInfo> configs = this.appsFileService.GetStratisAppConfigFileInfos();
-            var apps = configs.Select(CreateApp).Where(x => x != null).ToList();
+            var apps = configs.Select(this.CreateApp).Where(x => x != null).ToList();
 
             if (apps.IsEmpty())
             {

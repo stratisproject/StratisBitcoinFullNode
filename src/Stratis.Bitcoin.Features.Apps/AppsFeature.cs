@@ -17,7 +17,7 @@ namespace Stratis.Bitcoin.Features.Apps
         {
             this.appsStore = appsStore;
             this.appsHost = appsHost;
-            this.logger = loggerFactory.CreateLogger(GetType().FullName);
+            this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.logger.LogInformation($"{nameof(AppsFeature)} created");
         }
 
