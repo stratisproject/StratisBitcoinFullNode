@@ -1998,9 +1998,8 @@ namespace Stratis.Bitcoin.Tests.Consensus
             foreach (ChainedHeader chainedHeader in connectNewHeadersResult.ToHashArray())
             {
                 chainedHeaderTree.BlockDataDownloaded(chainedHeader, chainTip.FindAncestorOrSelf(chainedHeader).Block);
-                // Causes failure:
-                //chainedHeaderTree.PartialValidationSucceeded(chainedHeader, out bool fullValidationRequired);
-                //fullValidationRequired.Should().BeTrue();
+                chainedHeaderTree.PartialValidationSucceeded(chainedHeader, out bool fullValidationRequired);
+                fullValidationRequired.Should().BeTrue();
             }
 
             // CT advances to 5.
