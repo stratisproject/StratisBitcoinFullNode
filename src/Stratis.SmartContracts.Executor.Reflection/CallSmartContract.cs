@@ -42,14 +42,14 @@ namespace Stratis.SmartContracts.Executor.Reflection
             var carrier = SmartContractCarrier.Deserialize(transactionContext);
 
             // Get the contract code (dll) from the repository.
-            byte[] contractExecutionCode = this.stateSnapshot.GetCode(carrier.ContractAddress);
+            byte[] contractExecutionCode = this.stateSnapshot.GetCode(carrier.CallData.ContractAddress);
             if (contractExecutionCode == null)
             {
                 return SmartContractExecutionResult.ContractDoesNotExist(carrier);
             }
 
             // Execute the call to the contract.
-            return this.CreateContextAndExecute(carrier.ContractAddress, contractExecutionCode, carrier.MethodName, transactionContext, carrier);
+            return this.CreateContextAndExecute(carrier.CallData.ContractAddress, contractExecutionCode, carrier.CallData.MethodName, transactionContext, carrier);
         }
 
         private ISmartContractExecutionResult CreateContextAndExecute(uint160 contractAddress, byte[] contractCode,
@@ -65,16 +65,16 @@ namespace Stratis.SmartContracts.Executor.Reflection
                     contractAddress.ToAddress(this.network),
                     carrier.Sender.ToAddress(this.network),
                     carrier.Value,
-                    carrier.GasLimit
+                    carrier.CallData.GasLimit
                 ),
                 contractAddress,
-                carrier.GasPrice,
+                carrier.CallData.GasPrice,
                 carrier.MethodParameters
             );
 
             LogExecutionContext(this.logger, block, executionContext.Message, contractAddress, carrier);
 
-            var gasMeter = new GasMeter(carrier.GasLimit);
+            var gasMeter = new GasMeter(carrier.CallData.GasLimit);
 
             IPersistenceStrategy persistenceStrategy = new MeteredPersistenceStrategy(this.stateSnapshot, gasMeter, this.keyEncodingStrategy);
             var persistentState = new PersistentState(persistenceStrategy, contractAddress, this.network);
@@ -110,7 +110,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
             builder.Append(string.Format("{0}:{1},{2}:{3},", nameof(block.Coinbase), block.Coinbase, nameof(block.Number), block.Number));
             builder.Append(string.Format("{0}:{1},", nameof(contractAddress), contractAddress.ToAddress(this.network)));
-            builder.Append(string.Format("{0}:{1},", nameof(carrier.GasPrice), carrier.GasPrice));
+            builder.Append(string.Format("{0}:{1},", nameof(carrier.CallData.GasPrice), carrier.CallData.GasPrice));
             builder.Append(string.Format("{0}:{1},{2}:{3},{4}:{5},{6}:{7}", nameof(message.ContractAddress), message.ContractAddress, nameof(message.GasLimit), message.GasLimit, nameof(message.Sender), message.Sender, nameof(message.Value), message.Value));
 
             if (carrier.MethodParameters != null && carrier.MethodParameters.Length > 0)
