@@ -16,10 +16,8 @@ namespace NBitcoin
             PayToWitTemplate.Instance
         };
 
-        public static bool IsStandardTransaction(Transaction tx, Network network = null)
+        public static bool IsStandardTransaction(Transaction tx, Network network)
         {
-            network = network ?? Network.Main;
-
             return new StandardTransactionPolicy(network).Check(tx, null).Length == 0;
         }
 
