@@ -512,7 +512,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
                     this.mempool.Object,
                     this.mempoolLock,
                     this.network,
-                    this.consensusRules, 
+                    this.consensusRules,
                     null);
         }
 
@@ -524,7 +524,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
 
         private static ConcurrentChain GenerateChainWithHeight(int blockAmount, Network network)
         {
-            var chain = new ConcurrentChain(network);
+            var chain = new ConcurrentChain(network, network.GetGenesis().Header);
             uint nonce = RandomUtils.GetUInt32();
             uint256 prevBlockHash = chain.Genesis.HashBlock;
             for (int i = 0; i < blockAmount; i++)
@@ -604,7 +604,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
         public PowMiningTestFixture()
         {
             this.Network = Network.RegTest; // fast mining so use regtest
-            this.Chain = new ConcurrentChain(this.Network);
+            this.Chain = new ConcurrentChain(this.Network, this.Network.GetGenesis().Header);
             this.Key = new Key();
             this.ReserveScript = new ReserveScript(this.Key.ScriptPubKey);
 

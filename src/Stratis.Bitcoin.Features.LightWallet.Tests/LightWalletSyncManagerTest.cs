@@ -4,7 +4,6 @@ using System.Threading;
 using Microsoft.Extensions.Logging;
 using Moq;
 using NBitcoin;
-using Stratis.Bitcoin.Features.Notifications;
 using Stratis.Bitcoin.Features.Notifications.Interfaces;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
@@ -29,13 +28,14 @@ namespace Stratis.Bitcoin.Features.LightWallet.Tests
 
         public LightWalletSyncManagerTest()
         {
+            this.network = Network.StratisMain;
+
             this.walletManager = new Mock<IWalletManager>();
-            this.chain = new ConcurrentChain();
+            this.chain = new ConcurrentChain(this.network);
             this.blockNotification = new Mock<IBlockNotification>();
             this.signals = new Mock<ISignals>();
             this.nodeLifetime = new Mock<INodeLifetime>();
             this.asyncLoopFactory = new Mock<IAsyncLoopFactory>();
-            this.network = Network.StratisMain;
         }
 
         [Fact]
@@ -271,7 +271,7 @@ namespace Stratis.Bitcoin.Features.LightWallet.Tests
         [Fact]
         public void Start_HavingWalletsAndEmptyChain_StartsSyncFromGenesisBlock()
         {
-            this.chain = new ConcurrentChain(this.network);
+            this.chain = new ConcurrentChain(this.network, this.network.GetGenesis().Header);
             this.walletManager.Setup(w => w.ContainsWallets)
                 .Returns(true);
             this.walletManager.SetupGet(w => w.WalletTipHash)
@@ -332,7 +332,7 @@ namespace Stratis.Bitcoin.Features.LightWallet.Tests
         [Fact]
         public void SyncFromHeight_EmptyChain_StartsAsyncLoopToCatchup()
         {
-            this.chain = new ConcurrentChain(this.network);
+            this.chain = new ConcurrentChain(this.network, this.network.GetGenesis().Header);
             var lightWalletSyncManager = new LightWalletSyncManager(this.LoggerFactory.Object, this.walletManager.Object, this.chain, this.network,
                 this.blockNotification.Object, this.signals.Object, this.nodeLifetime.Object, this.asyncLoopFactory.Object);
 
@@ -402,7 +402,7 @@ namespace Stratis.Bitcoin.Features.LightWallet.Tests
         [Fact]
         public void SyncFromDate_EmptyChain_StartsAsyncLoopToCatchup()
         {
-            this.chain = new ConcurrentChain(this.network);
+            this.chain = new ConcurrentChain(this.network, network.GetGenesis().Header);
             var lightWalletSyncManager = new LightWalletSyncManager(this.LoggerFactory.Object, this.walletManager.Object, this.chain, this.network,
                 this.blockNotification.Object, this.signals.Object, this.nodeLifetime.Object, this.asyncLoopFactory.Object);
 

@@ -53,7 +53,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
     /// Test consensus rules for unit tests.
     /// </summary>
     public class TestConsensusRules : ConsensusRules
-    {        
+    {
         private Mock<IRuleRegistration> ruleRegistration;
 
         public RuleContext RuleContext { get; set; }
@@ -76,7 +76,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
 
         public override RuleContext CreateRuleContext(ValidationContext validationContext, ChainedHeader tip)
         {
-           return this.RuleContext ?? new PowRuleContext();
+            return this.RuleContext ?? new PowRuleContext();
         }
 
         public override Task<uint256> GetBlockHashAsync()
@@ -130,7 +130,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
             string dataDir = Path.Combine("TestData", pathName);
             Directory.CreateDirectory(dataDir);
 
-            testRulesContext.NodeSettings = new NodeSettings(network, args:new[] { $"-datadir={dataDir}" });
+            testRulesContext.NodeSettings = new NodeSettings(network, args: new[] { $"-datadir={dataDir}" });
             testRulesContext.LoggerFactory = testRulesContext.NodeSettings.LoggerFactory;
             testRulesContext.LoggerFactory.AddConsoleWithFilters();
             testRulesContext.DateTimeProvider = DateTimeProvider.Default;
@@ -138,7 +138,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
 
             var consensusSettings = new ConsensusSettings(testRulesContext.NodeSettings);
             testRulesContext.Checkpoints = new Checkpoints();
-            testRulesContext.Chain = new ConcurrentChain(network);
+            testRulesContext.Chain = new ConcurrentChain(network, network.GetGenesis().Header);
 
             var deployments = new NodeDeployments(testRulesContext.Network, testRulesContext.Chain);
             testRulesContext.Consensus = new PowConsensusRules(testRulesContext.Network, testRulesContext.LoggerFactory, testRulesContext.DateTimeProvider, testRulesContext.Chain, deployments, consensusSettings, testRulesContext.Checkpoints, new InMemoryCoinView(new uint256()), new Mock<ILookaheadBlockPuller>().Object).Register(new FullNodeBuilderConsensusExtension.PowConsensusRulesRegistration());
@@ -174,6 +174,5 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
 
             return block;
         }
-
     }
 }

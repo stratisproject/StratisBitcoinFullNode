@@ -477,7 +477,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
 
         public static ConcurrentChain GenerateChainWithBlockTimeAndHeight(int blockAmount, Network network, int incrementSeconds, uint nbits)
         {
-            var chain = new ConcurrentChain(network);
+            var chain = new ConcurrentChain(network, network.GetGenesis().Header);
             uint nonce = RandomUtils.GetUInt32();
             uint256 prevBlockHash = chain.Genesis.HashBlock;
             DateTime blockTime = Utils.UnixTimeToDateTime(chain.Genesis.Header.Time).UtcDateTime;

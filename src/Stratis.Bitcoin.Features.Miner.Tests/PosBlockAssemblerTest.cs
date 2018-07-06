@@ -335,7 +335,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
 
         private static ConcurrentChain GenerateChainWithHeight(int blockAmount, Network network, Key key)
         {
-            var chain = new ConcurrentChain(network);
+            var chain = new ConcurrentChain(network, network.GetGenesis().Header);
             uint nonce = RandomUtils.GetUInt32();
             uint256 prevBlockHash = chain.Genesis.HashBlock;
             for (int i = 0; i < blockAmount; i++)
@@ -358,7 +358,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
 
         private static ConcurrentChain GenerateChainWithHeightAndActivatedBip9(int blockAmount, Network network, Key key, BIP9DeploymentsParameters parameter, Target bits = null)
         {
-            var chain = new ConcurrentChain(network);
+            var chain = new ConcurrentChain(network, network.GetGenesis().Header);
             uint nonce = RandomUtils.GetUInt32();
             uint256 prevBlockHash = chain.Genesis.HashBlock;
             for (int i = 0; i < blockAmount; i++)

@@ -75,7 +75,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
 
             network.Consensus.Options = new PowConsensusOptions();
             var consensusSettings = new ConsensusSettings(nodeSettings);
-            var chain = new ConcurrentChain(network);
+            var chain = new ConcurrentChain(network, network.GetGenesis().Header);
             var cachedCoinView = new CachedCoinView(new InMemoryCoinView(chain.Tip.HashBlock), DateTimeProvider.Default, loggerFactory);
             var networkPeerFactory = new NetworkPeerFactory(network, dateTimeProvider, loggerFactory, new PayloadProvider().DiscoverPayloads(), new SelfEndpointTracker());
 

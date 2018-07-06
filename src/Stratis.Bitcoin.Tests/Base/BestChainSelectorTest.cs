@@ -17,7 +17,7 @@ namespace Stratis.Bitcoin.Tests.Base
         public BestChainSelectorTest()
         {
             this.chainedHeaders = new List<ChainedHeader>();
-            var chain = new ConcurrentChain(Network.StratisMain);
+            var chain = new ConcurrentChain(Network.StratisMain, Network.StratisMain.GetGenesis().Header);
             this.network = Network.StratisMain;
 
             for (int i = 0; i < 20; ++i)
@@ -44,7 +44,7 @@ namespace Stratis.Bitcoin.Tests.Base
         [Fact]
         public async Task NewTipIsSelectedWhenBestTipProviderDisconnectsAsync()
         {
-            var chain = new ConcurrentChain(this.network);
+            var chain = new ConcurrentChain(this.network, this.network.GetGenesis().Header);
             var chainSelector = new BestChainSelector(chain, this.chainState.Object, new LoggerFactory());
 
             chain.SetTip(this.chainedHeaders[10]);
@@ -78,7 +78,7 @@ namespace Stratis.Bitcoin.Tests.Base
         [Fact]
         public async Task CantSwitchToTipBelowConsensusAsync()
         {
-            var chain = new ConcurrentChain(this.network);
+            var chain = new ConcurrentChain(this.network, this.network.GetGenesis().Header);
             var chainSelector = new BestChainSelector(chain, this.chainState.Object, new LoggerFactory());
 
             chain.SetTip(this.chainedHeaders[10]);
@@ -105,7 +105,7 @@ namespace Stratis.Bitcoin.Tests.Base
         [Fact]
         public async Task OneOfManyBestChainProvidersDisconnectsAsync()
         {
-            var chain = new ConcurrentChain(this.network);
+            var chain = new ConcurrentChain(this.network, this.network.GetGenesis().Header);
             var chainSelector = new BestChainSelector(chain, this.chainState.Object, new LoggerFactory());
 
             chain.SetTip(this.chainedHeaders[10]);

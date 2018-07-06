@@ -15,29 +15,26 @@ namespace NBitcoin
         private ReaderWriterLock lockObject = new ReaderWriterLock();
 
         private volatile ChainedHeader tip;
-        private Network network;
         public override ChainedHeader Tip { get { return this.tip; } }
+
         public override int Height { get { return this.Tip.Height; } }
+
+        private readonly Network network;
         public override Network Network { get { return this.network; } }
-        
-        public ConcurrentChain()
+
+        public ConcurrentChain(Network network)
         {
-            this.network = Network.Main;
+            this.network = network;
         }
-        
-        public ConcurrentChain(BlockHeader genesisHeader, Network network = null) // TODO: Remove the null default
+
+        public ConcurrentChain(Network network, BlockHeader genesisHeader)
+            : this(network)
         {
-            this.network = network ?? Network.Main;
             SetTip(new ChainedHeader(genesisHeader, genesisHeader.GetHash(), 0));
         }
 
-        public ConcurrentChain(Network network)
-            :this(network.GetGenesis().Header, network)
-        {
-        }
-
-        public ConcurrentChain(byte[] bytes, Network network = null) // TODO: Remove the null default
-            : this(network ?? Network.Main)
+        public ConcurrentChain(Network network, byte[] bytes)
+            : this(network)
         {
             Load(bytes);
         }
@@ -113,26 +110,6 @@ namespace NBitcoin
                     stream.ReadWrite(block.Header);
                 }
             }
-        }
-
-        public ConcurrentChain Clone()
-        {
-            var chain = new ConcurrentChain();
-            chain.network = this.network;
-            chain.tip = this.tip;
-            using (this.lockObject.LockRead())
-            {
-                foreach (KeyValuePair<uint256, ChainedHeader> kv in this.blocksById)
-                {
-                    chain.blocksById.Add(kv.Key, kv.Value);
-                }
-
-                foreach (KeyValuePair<int, ChainedHeader> kv in this.blocksByHeight)
-                {
-                    chain.blocksByHeight.Add(kv.Key, kv.Value);
-                }
-            }
-            return chain;
         }
 
         /// <inheritdoc />

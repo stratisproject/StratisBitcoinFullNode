@@ -45,7 +45,7 @@ namespace NBitcoin.Tests
         [Trait("UnitTest", "UnitTest")]
         public void CanGetMedianBlock()
         {
-            var chain = new ConcurrentChain(this.network);
+            var chain = new ConcurrentChain(this.network, this.network.GetGenesis().Header);
             DateTimeOffset now = DateTimeOffset.UtcNow;
             chain.SetTip(CreateBlock(now, 0, chain));
             chain.SetTip(CreateBlock(now, -1, chain));
@@ -1113,7 +1113,7 @@ namespace NBitcoin.Tests
 
             BlockHeader blockHeader = network.Consensus.ConsensusFactory.CreateBlockHeader();
             blockHeader.BlockTime = first;
-            var chain = new ConcurrentChain(blockHeader);
+            var chain = new ConcurrentChain(this.network, blockHeader);
             first = first + TimeSpan.FromMinutes(10);
 
             while (currentHeight != chain.Height)
@@ -1126,7 +1126,7 @@ namespace NBitcoin.Tests
                 first = first + TimeSpan.FromMinutes(10);
             }
 
-            var tx = network.CreateTransaction();
+            Transaction tx = network.CreateTransaction();
             tx.Version = 2;
             for (int i = 0; i < sequences.Length; i++)
             {
@@ -1191,10 +1191,12 @@ namespace NBitcoin.Tests
                 return new Coin(outpoint, new TxOut(amount, scriptPubKey));
             return new ScriptCoin(outpoint, new TxOut(amount, scriptPubKey.Hash), scriptPubKey);
         }
+
         private Coin RandomCoin(Money amount, Key receiver)
         {
             return RandomCoin(amount, receiver.PubKey.GetAddress(this.network));
         }
+
         private Coin RandomCoin(Money amount, IDestination receiver)
         {
             OutPoint outpoint = RandOutpoint();

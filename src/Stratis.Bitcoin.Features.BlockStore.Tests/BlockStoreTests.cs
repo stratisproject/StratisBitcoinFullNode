@@ -93,7 +93,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
 
         private ConcurrentChain CreateChain(int blocksCount)
         {
-            var chain = new ConcurrentChain(this.network);
+            var chain = new ConcurrentChain(this.network, this.network.GetGenesis().Header);
             for (int i = 0; i < blocksCount; i++)
             {
                 BlockHeader header = this.network.Consensus.ConsensusFactory.CreateBlockHeader();
@@ -113,7 +113,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             int iterations = 0;
 
             var queue = this.blockStoreQueue.GetMemberValue("blocksQueue") as AsyncQueue<ChainedHeaderBlock>;
-            
+
             while (true)
             {
                 int itemsCount = ((Queue<ChainedHeaderBlock>)queue.GetMemberValue("items")).Count;

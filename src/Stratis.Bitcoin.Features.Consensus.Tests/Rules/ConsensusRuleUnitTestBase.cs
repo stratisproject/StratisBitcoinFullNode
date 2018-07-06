@@ -38,7 +38,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
                 .Returns(new Mock<ILogger>().Object);
             this.dateTimeProvider = new Mock<IDateTimeProvider>();
 
-            this.concurrentChain = new ConcurrentChain(this.network);
+            this.concurrentChain = new ConcurrentChain(this.network, this.network.GetGenesis().Header);
             this.nodeDeployments = new NodeDeployments(this.network, this.concurrentChain);
             this.consensusSettings = new ConsensusSettings();
             this.checkpoints = new Mock<ICheckpoints>();
@@ -121,7 +121,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
                 .Returns(new Mock<ILogger>().Object);
             this.dateTimeProvider = new Mock<IDateTimeProvider>();
 
-            this.concurrentChain = new ConcurrentChain(this.network);
+            this.concurrentChain = new ConcurrentChain(this.network, network.GetGenesis().Header);
             this.nodeDeployments = new NodeDeployments(this.network, this.concurrentChain);
             this.consensusSettings = new ConsensusSettings();
             this.checkpoints = new Mock<ICheckpoints>();
@@ -148,7 +148,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
 
         protected static ConcurrentChain GenerateChainWithHeight(int blockAmount, Network network)
         {
-            var chain = new ConcurrentChain(network);
+            var chain = new ConcurrentChain(network, network.GetGenesis().Header);
             uint nonce = RandomUtils.GetUInt32();
             uint256 prevBlockHash = chain.Genesis.HashBlock;
             for (int i = 0; i < blockAmount; i++)
@@ -168,7 +168,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
 
         protected static ConcurrentChain MineChainWithHeight(int blockAmount, Network network)
         {
-            var chain = new ConcurrentChain(network);
+            var chain = new ConcurrentChain(network, network.GetGenesis().Header);
             uint256 prevBlockHash = chain.Genesis.HashBlock;
             for (int i = 0; i < blockAmount; i++)
             {
@@ -184,7 +184,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
 
     public class TestConsensusRulesUnitTestBase : ConsensusRuleUnitTestBase<TestConsensusRules>
     {
-        public TestConsensusRulesUnitTestBase() : base( Network.TestNet)
+        public TestConsensusRulesUnitTestBase() : base(Network.TestNet)
         {
             this.network.Consensus.Options = new PowConsensusOptions();
             this.consensusRules = InitializeConsensusRules();
