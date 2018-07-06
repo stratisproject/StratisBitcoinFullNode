@@ -51,11 +51,6 @@ namespace NBitcoin
             this.ReadWrite(stream);
         }
 
-        [Obsolete("Should use Block.Load outside of ConsensusFactories")]
-        internal Block(byte[] bytes) : this(bytes, Network.Main.Consensus.ConsensusFactory)
-        {
-        }
-
         public virtual void ReadWrite(BitcoinStream stream)
         {
             stream.ReadWrite(ref this.header);
@@ -145,6 +140,7 @@ namespace NBitcoin
             var formatter = new BlockExplorerFormatter(network);
             JObject block = JObject.Parse(json);
             var txs = (JArray)block["tx"];
+
             Block blk = network.Consensus.ConsensusFactory.CreateBlock();
             blk.Header.Bits = new Target((uint)block["bits"]);
             blk.Header.BlockTime = Utils.UnixTimeToDateTime((uint)block["time"]);
