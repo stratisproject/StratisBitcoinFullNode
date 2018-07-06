@@ -35,7 +35,7 @@ namespace Stratis.Bitcoin.Utilities.JsonConverters
             {
                 if (ipEndPoint.Address != null || ipEndPoint.Port != 0)
                 {
-                    JToken.FromObject(string.Format("{0}|{1}", ipEndPoint.Address, ipEndPoint.Port)).WriteTo(writer);
+                    JToken.FromObject($"{ipEndPoint.Address}|{ipEndPoint.Port}").WriteTo(writer);
                     return;
                 }
             }

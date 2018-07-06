@@ -1,19 +1,24 @@
 ﻿using System;
 using System.Reflection;
+using NBitcoin;
 using Newtonsoft.Json;
 
-namespace NBitcoin.JsonConverters
+namespace Stratis.Bitcoin.Utilities.JsonConverters
 {
+    /// <summary>
+    /// Converter used to convert an object implementing <see cref="IBitcoinString"/> to and from JSON.
+    /// </summary>
+    /// <seealso cref="Newtonsoft.Json.JsonConverter" />
     public class BitcoinStringJsonConverter : JsonConverter
     {
-        public BitcoinStringJsonConverter()
-        {
+        public Network Network { get; set; }
 
-        }
         public BitcoinStringJsonConverter(Network network)
         {
             this.Network = network;
         }
+
+        /// <inheritdoc />
         public override bool CanConvert(Type objectType)
         {
             return
@@ -21,6 +26,7 @@ namespace NBitcoin.JsonConverters
                 (typeof(IDestination).GetTypeInfo().IsAssignableFrom(objectType.GetTypeInfo()) && objectType.GetTypeInfo().AssemblyQualifiedName.Contains("NBitcoin"));
         }
 
+        /// <inheritdoc />
         public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
         {
             if(reader.TokenType == JsonToken.Null)
@@ -33,6 +39,7 @@ namespace NBitcoin.JsonConverters
                 {
                     throw new JsonObjectException("Invalid BitcoinString data", reader);
                 }
+
                 if(this.Network != null)
                 {
                     if(result.Network != this.Network)
@@ -44,10 +51,12 @@ namespace NBitcoin.JsonConverters
                         }
                     }
                 }
+
                 if(!objectType.GetTypeInfo().IsAssignableFrom(result.GetType().GetTypeInfo()))
                 {
                     throw new JsonObjectException("Invalid BitcoinString type expected " + objectType.Name + ", actual " + result.GetType().Name, reader);
                 }
+
                 return result;
             }
             catch(FormatException)
@@ -56,6 +65,7 @@ namespace NBitcoin.JsonConverters
             }
         }
 
+        /// <inheritdoc />
         public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
         {
             var base58 = value as IBitcoinString;
@@ -63,12 +73,6 @@ namespace NBitcoin.JsonConverters
             {
                 writer.WriteValue(value.ToString());
             }
-        }
-
-        public Network Network
-        {
-            get;
-            set;
         }
     }
 }
