@@ -87,7 +87,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Transactions
 
         private void the_wallets_are_in_sync()
         {
-            this.senderNode.CreateRPCClient().AddNode(this.receiverNode.Endpoint, true);
+            this.senderNode.CreateRPCClient().AddNode(this.receiverNode.Endpoint, false);
             TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(this.senderNode, this.receiverNode));
         }
 

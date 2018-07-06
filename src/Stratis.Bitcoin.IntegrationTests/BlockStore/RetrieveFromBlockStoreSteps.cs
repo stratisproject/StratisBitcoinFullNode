@@ -70,7 +70,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
             this.transactionNode.Start();
             this.transactionNode.NotInIBD();
 
-            this.transactionNode.CreateRPCClient().AddNode(this.node.Endpoint, true);
+            this.transactionNode.CreateRPCClient().AddNode(this.node.Endpoint, false);
             this.sharedSteps.WaitForNodesToSync(this.node, this.transactionNode);
 
             this.transactionNode.FullNode.WalletManager().CreateWallet(this.password, "receiver");

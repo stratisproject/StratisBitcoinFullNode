@@ -107,8 +107,8 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
                 TestHelper.WaitLoop(() => stratisNodeSync.FullNode.GetBlockStoreTip().HashBlock == stratisNodeSync.FullNode.Chain.Tip.HashBlock);
 
                 // sync both nodes
-                stratisNode1.CreateRPCClient().AddNode(stratisNodeSync.Endpoint, true);
-                stratisNode2.CreateRPCClient().AddNode(stratisNodeSync.Endpoint, true);
+                stratisNode1.CreateRPCClient().AddNode(stratisNodeSync.Endpoint, false);
+                stratisNode2.CreateRPCClient().AddNode(stratisNodeSync.Endpoint, false);
                 TestHelper.WaitLoop(() => stratisNode1.CreateRPCClient().GetBestBlockHash() == stratisNodeSync.CreateRPCClient().GetBestBlockHash());
                 TestHelper.WaitLoop(() => stratisNode2.CreateRPCClient().GetBestBlockHash() == stratisNodeSync.CreateRPCClient().GetBestBlockHash());
 
@@ -176,8 +176,8 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
                 stratisNode1.SetDummyMinerSecret(new BitcoinSecret(new Key(), stratisNodeSync.FullNode.Network));
                 stratisNode2.SetDummyMinerSecret(new BitcoinSecret(new Key(), stratisNodeSync.FullNode.Network));
                 // sync both nodes
-                stratisNodeSync.CreateRPCClient().AddNode(stratisNode1.Endpoint, true);
-                stratisNodeSync.CreateRPCClient().AddNode(stratisNode2.Endpoint, true);
+                stratisNodeSync.CreateRPCClient().AddNode(stratisNode1.Endpoint, false);
+                stratisNodeSync.CreateRPCClient().AddNode(stratisNode2.Endpoint, false);
 
                 stratisNode1.GenerateStratisWithMiner(10);
                 TestHelper.WaitLoop(() => stratisNode1.FullNode.GetBlockStoreTip().Height == 10);
@@ -205,7 +205,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
                 TestHelper.WaitLoop(() => stratisNode2.FullNode.GetBlockStoreTip().Height == 30);
 
                 // add node2
-                stratisNodeSync.CreateRPCClient().AddNode(stratisNode2.Endpoint, true);
+                stratisNodeSync.CreateRPCClient().AddNode(stratisNode2.Endpoint, false);
 
                 // node2 should be synced
                 TestHelper.WaitLoop(() => stratisNode2.FullNode.GetBlockStoreTip().HashBlock == stratisNodeSync.FullNode.GetBlockStoreTip().HashBlock);
@@ -227,7 +227,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
                 stratisNode1.SetDummyMinerSecret(new BitcoinSecret(new Key(), stratisNode1.FullNode.Network));
                 stratisNode2.SetDummyMinerSecret(new BitcoinSecret(new Key(), stratisNode2.FullNode.Network));
                 // sync both nodes
-                stratisNode1.CreateRPCClient().AddNode(stratisNode2.Endpoint, true);
+                stratisNode1.CreateRPCClient().AddNode(stratisNode2.Endpoint, false);
                 stratisNode1.GenerateStratisWithMiner(10);
                 TestHelper.WaitLoop(() => stratisNode1.FullNode.GetBlockStoreTip().Height == 10);
                 TestHelper.WaitLoop(() => stratisNode1.FullNode.GetBlockStoreTip().HashBlock == stratisNode2.FullNode.GetBlockStoreTip().HashBlock);
