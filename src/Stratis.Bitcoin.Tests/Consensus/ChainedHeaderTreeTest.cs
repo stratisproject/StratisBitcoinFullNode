@@ -2306,7 +2306,6 @@ namespace Stratis.Bitcoin.Tests.Consensus
             const int checkpoint2Height = 20;
 
             var checkpoint1 = new CheckpointFixture(checkpoint1Height, listOfExtendedChainHeaders[checkpoint1Height - 1]);
-            testContext.SetupCheckpoints(checkpoint1);
             var checkpoint2 = new CheckpointFixture(checkpoint2Height, listOfExtendedChainHeaders[checkpoint2Height - 1]);
             testContext.SetupCheckpoints(checkpoint1, checkpoint2);
             
@@ -2314,14 +2313,22 @@ namespace Stratis.Bitcoin.Tests.Consensus
             List<BlockHeader> listOfBlockHeadersOneToNine = listOfExtendedChainHeaders.Take(9).ToList();
             chainedHeaderTree.ConnectNewHeaders(peerOneId, listOfBlockHeadersOneToNine);
 
-            // Second peer presents headers including checkpoint1, excluding checkpoint2: h5 -> 15.
-            List<BlockHeader> listOfBlockHeadersFiveToFifteen = listOfExtendedChainHeaders.GetRange(initialChainSizeOfFiveHeaders, 10);
+            // Second peer presents headers including checkpoint1, excluding checkpoint2: h5 -> h15.
+            List<BlockHeader> listOfBlockHeadersFiveToFifteen = listOfExtendedChainHeaders.GetRange(initialChainSizeOfFiveHeaders, 11);
             ConnectNewHeadersResult connectNewHeadersResult = chainedHeaderTree.ConnectNewHeaders(peerTwoId, listOfBlockHeadersFiveToFifteen);
 
             // Headers h6 -> h10 should be marked for download.
             connectNewHeadersResult.DownloadFrom.HashBlock.Should().Be(extendedChainTip.GetAncestor(initialChainSizeOfFiveHeaders + 1).HashBlock); // h6
             connectNewHeadersResult.DownloadTo.HashBlock.Should().Be(extendedChainTip.GetAncestor(checkpoint1Height).HashBlock); // h10
-            connectNewHeadersResult.HaveBlockDataAvailabilityStateOf(BlockDataAvailabilityState.BlockRequired).Should().BeTrue(); 
+            connectNewHeadersResult.HaveBlockDataAvailabilityStateOf(BlockDataAvailabilityState.BlockRequired).Should().BeTrue();
+
+            // Headers h11 -> h20 have availability state of header only.
+            ChainedHeader chainedHeader = extendedChainTip;
+            while (chainedHeader.Height > connectNewHeadersResult.DownloadTo.Height)
+            {
+                Assert.Equal(BlockDataAvailabilityState.HeaderOnly, chainedHeader.BlockDataAvailability);
+                chainedHeader = chainedHeader.Previous;
+            }
         }
 
         /// <summary>
