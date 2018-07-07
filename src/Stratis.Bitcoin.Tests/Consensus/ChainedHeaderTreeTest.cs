@@ -2606,7 +2606,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
                 chainedHeaderTree.BlockDataDownloaded(chainedHeader, tipOfFork.FindAncestorOrSelf(chainedHeader).Block);
                 chainedHeaderTree.PartialValidationSucceeded(chainedHeader, out bool fullValidationRequired);
 
-                if (chainedHeader.Height <= 8)  // CT advances to 5.
+                if (chainedHeader.Height <= 8)  // CT advances to 8.
                 {
                     chainedHeaderTree.ConsensusTipChanged(chainedHeader);
                 }
