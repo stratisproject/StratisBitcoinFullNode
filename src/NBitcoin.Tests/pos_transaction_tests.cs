@@ -403,7 +403,7 @@ namespace NBitcoin.Tests
             var satoshi = new Key();
             var bob = new Key();
 
-            var repo = new NoSqlColoredTransactionRepository(new NoSqlTransactionRepository(this.network), new InMemoryNoSqlRepository(this.network));
+            var repo = new NoSqlColoredTransactionRepository(this.network);
 
             Transaction init = this.network.CreateTransaction();
 
@@ -491,7 +491,7 @@ namespace NBitcoin.Tests
             var bob = new Key();
             var alice = new Key();
 
-            var repo = new NoSqlColoredTransactionRepository();
+            var repo = new NoSqlColoredTransactionRepository(this.network);
 
             Transaction init = this.network.CreateTransaction();
             init.Outputs.AddRange(new[]
@@ -2611,7 +2611,7 @@ namespace NBitcoin.Tests
             dummyPubKey2[0] = 0x02;
             //CBasicKeyStore keystore;
             //CCoinsView coinsDummy;
-            var coins = new CoinsView();//(coinsDummy);           
+            var coins = new CoinsView(this.network);//(coinsDummy);           
             Transaction[] dummyTransactions = SetupDummyInputs(coins);//(keystore, coins);
 
             Transaction t1 = this.network.CreateTransaction();
@@ -3028,9 +3028,9 @@ namespace NBitcoin.Tests
 
         [Fact]
         [Trait("Core", "Core")]
-        public void test_IsStandard()
+        public void Test_IsStandard()
         {
-            var coins = new CoinsView();
+            var coins = new CoinsView(this.network);
             Transaction[] dummyTransactions = SetupDummyInputs(coins);
 
             Transaction t = this.network.CreateTransaction();
@@ -3043,30 +3043,30 @@ namespace NBitcoin.Tests
             var key = new Key(true);
             t.Outputs[0].ScriptPubKey = PayToPubkeyHashTemplate.Instance.GenerateScriptPubKey(key.PubKey.Hash);
 
-            Assert.True(StandardScripts.IsStandardTransaction(t));
+            Assert.True(StandardScripts.IsStandardTransaction(t, this.network));
 
             t.Outputs[0].Value = 501; //dust
-            Assert.True(!StandardScripts.IsStandardTransaction(t));
+            Assert.True(!StandardScripts.IsStandardTransaction(t, this.network));
 
             t.Outputs[0].Value = 2730; // not dust
-            Assert.True(StandardScripts.IsStandardTransaction(t));
+            Assert.True(StandardScripts.IsStandardTransaction(t, this.network));
 
             t.Outputs[0].ScriptPubKey = new Script() + OpcodeType.OP_1;
-            Assert.True(!StandardScripts.IsStandardTransaction(t));
+            Assert.True(!StandardScripts.IsStandardTransaction(t, this.network));
 
             // 80-byte TX_NULL_DATA (standard)
             t.Outputs[0].ScriptPubKey = new Script() + OpcodeType.OP_RETURN + ParseHex("04678afdb0fe5548271967f1a67130b7105cd6a828e03909a67962e0ea1f61deb649f6bc3f4cef3804678afdb0fe5548271967f1a67130b7105cd6a828e03909a67962e0ea1f61deb649f6bc3f4cef38");
-            Assert.True(StandardScripts.IsStandardTransaction(t));
+            Assert.True(StandardScripts.IsStandardTransaction(t, this.network));
 
             // 81-byte TX_NULL_DATA (non-standard)
             t.Outputs[0].ScriptPubKey = new Script() + OpcodeType.OP_RETURN + ParseHex("04678afdb0fe5548271967f1a67130b7105cd6a828e03909a67962e0ea1f61deb649f6bc3f4cef3804678afdb0fe5548271967f1a67130b7105cd6a828e03909a67962e0ea1f61deb649f6bc3f4cef3800");
-            Assert.True(!StandardScripts.IsStandardTransaction(t));
+            Assert.True(!StandardScripts.IsStandardTransaction(t, this.network));
 
             // TX_NULL_DATA w/o PUSHDATA
             t.Outputs.Clear();
             t.Outputs.Add(new TxOut());
             t.Outputs[0].ScriptPubKey = new Script() + OpcodeType.OP_RETURN;
-            Assert.True(StandardScripts.IsStandardTransaction(t));
+            Assert.True(StandardScripts.IsStandardTransaction(t, this.network));
 
             // Only one TX_NULL_DATA permitted in all cases
             t.Outputs.Clear();
@@ -3074,15 +3074,15 @@ namespace NBitcoin.Tests
             t.Outputs.Add(new TxOut());
             t.Outputs[0].ScriptPubKey = new Script() + OpcodeType.OP_RETURN + ParseHex("04678afdb0fe5548271967f1a67130b7105cd6a828e03909a67962e0ea1f61deb649f6bc3f4cef38");
             t.Outputs[1].ScriptPubKey = new Script() + OpcodeType.OP_RETURN + ParseHex("04678afdb0fe5548271967f1a67130b7105cd6a828e03909a67962e0ea1f61deb649f6bc3f4cef38");
-            Assert.True(!StandardScripts.IsStandardTransaction(t));
+            Assert.True(!StandardScripts.IsStandardTransaction(t, this.network));
 
             t.Outputs[0].ScriptPubKey = new Script() + OpcodeType.OP_RETURN + ParseHex("04678afdb0fe5548271967f1a67130b7105cd6a828e03909a67962e0ea1f61deb649f6bc3f4cef38");
             t.Outputs[1].ScriptPubKey = new Script() + OpcodeType.OP_RETURN;
-            Assert.True(!StandardScripts.IsStandardTransaction(t));
+            Assert.True(!StandardScripts.IsStandardTransaction(t, this.network));
 
             t.Outputs[0].ScriptPubKey = new Script() + OpcodeType.OP_RETURN;
             t.Outputs[1].ScriptPubKey = new Script() + OpcodeType.OP_RETURN;
-            Assert.True(!StandardScripts.IsStandardTransaction(t));
+            Assert.True(!StandardScripts.IsStandardTransaction(t, this.network));
         }
 
         //[Fact]

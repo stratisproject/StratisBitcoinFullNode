@@ -6,10 +6,10 @@ namespace NBitcoin
 {
     public class InMemoryNoSqlRepository : NoSqlRepository
     {
-        private Dictionary<string, byte[]> table = new Dictionary<string, byte[]>();
+        private readonly Dictionary<string, byte[]> table = new Dictionary<string, byte[]>();
 
-        public InMemoryNoSqlRepository(Network network = null)
-            :base(network ?? Network.Main)
+        public InMemoryNoSqlRepository(Network network)
+            :base(network)
         {
         }
 
