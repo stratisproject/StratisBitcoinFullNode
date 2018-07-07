@@ -2557,6 +2557,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
             const int initialChainSize = 0;
             const int chainExtensionSize = 10;
             const int peerOneId = 1;
+            const int peerTwoId = 2;
 
             // Chain header tree setup.
             TestContext testContext = new TestContextBuilder().WithInitialChain(initialChainSize).UseCheckpoints(false).Build();
@@ -2593,7 +2594,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
 
             // Block data for alternative chain is downloaded.
             listOfAlternativeChainBlockHeaders = testContext.ChainedHeaderToList(alternativeChainTip, alternativeChainTip.Height - heightOfFork);
-            connectNewHeadersResult = chainedHeaderTree.ConnectNewHeaders(1, listOfAlternativeChainBlockHeaders);
+            connectNewHeadersResult = chainedHeaderTree.ConnectNewHeaders(peerTwoId, listOfAlternativeChainBlockHeaders);
 
             Assert.True(connectNewHeadersResult.HaveBlockDataAvailabilityStateOf(BlockDataAvailabilityState.BlockRequired));
             Assert.Equal(connectNewHeadersResult.DownloadFrom.Header, alternativeChainTip.GetAncestor(heightOfFork + 1).Header);
@@ -2622,12 +2623,12 @@ namespace Stratis.Bitcoin.Tests.Consensus
                 chainedHeaderChainB = chainedHeaderChainB.Previous;
             }
 
-            int serializedSizeOfChainsAandB = serializedSizeOfChainA + serializedSizeOfChainB;
-            Assert.Equal(chainedHeaderTree.UnconsumedBlocksDataBytes, serializedSizeOfChainsAandB);
-
             // CT changes to block 8 of the 2nd chain.
             ChainedHeader blockHeaderEightOfAlternateChain = alternativeChainTip.GetAncestor(8);
             chainedHeaderTree.ConsensusTipChanged(blockHeaderEightOfAlternateChain);
+
+            int serializedSizeOfChainsAandB = serializedSizeOfChainA + serializedSizeOfChainB;
+            Assert.Equal(chainedHeaderTree.UnconsumedBlocksDataBytes, serializedSizeOfChainsAandB);
         }
     }
 }
