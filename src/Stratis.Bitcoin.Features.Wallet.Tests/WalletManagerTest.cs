@@ -283,13 +283,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         {
             DataFolder dataFolder = CreateDataFolder(this);
 
-            var nodeSettings = new NodeSettings(Network.RegTest, ProtocolVersion.PROTOCOL_VERSION, "StratisBitcoin", 
-                new [] {"-walletaddressbuffer=100"});
-
-            var walletSettings = new WalletSettings(nodeSettings);
-
-            var walletManager = new WalletManager(this.LoggerFactory.Object, Network.StratisMain, new ConcurrentChain(Network.StratisMain), NodeSettings.Default(), walletSettings,
-                dataFolder, new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime(), DateTimeProvider.Default);
+            var walletManager = GetWalletManagerWithCustomConfigParam(dataFolder, "-walletaddressbuffer=100");
 
             walletManager.CreateWallet("test", "mywallet", new Mnemonic(Wordlist.English, WordCount.Eighteen).ToString());
 
@@ -3173,7 +3167,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             HdAccount hdAccount = walletManager.Wallets.Single().AccountsRoot.Single().Accounts.Single();
             Assert.Equal(20, hdAccount.ExternalAddresses.Count);
             Assert.Equal(20, hdAccount.InternalAddresses.Count);
-
+            
             // Restart with walletaddressbuffer set
             walletManager = this.GetWalletManagerWithCustomConfigParam(dataFolder, "-walletaddressbuffer=30");
             walletManager.Start();

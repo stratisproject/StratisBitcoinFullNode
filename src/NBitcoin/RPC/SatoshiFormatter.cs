@@ -126,7 +126,7 @@ namespace NBitcoin.RPC
                 }
                 else
                 {
-                    PayToMultiSigTemplateParameters multi = PayToMultiSigTemplate.Instance.ExtractScriptPubKeyParameters(this.Network, txout.ScriptPubKey);
+                    PayToMultiSigTemplateParameters multi = PayToMultiSigTemplate.Instance.ExtractScriptPubKeyParameters(txout.ScriptPubKey);
                     if (multi != null)
                         WritePropertyValue(writer, "reqSigs", multi.SignatureCount);
                     WritePropertyValue(writer, "type", GetScriptType(txout.ScriptPubKey.FindTemplate(this.Network)));

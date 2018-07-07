@@ -1,11 +1,17 @@
 ﻿using System;
 using System.Reflection;
+using NBitcoin;
 using Newtonsoft.Json;
 
-namespace NBitcoin.JsonConverters
+namespace Stratis.Bitcoin.Utilities.JsonConverters
 {
+    /// <summary>
+    /// Converter used to convert a <see cref="DateTime"/> to and from JSON.
+    /// </summary>
+    /// <seealso cref="Newtonsoft.Json.JsonConverter" />
     public class DateTimeToUnixTimeConverter : JsonConverter
     {
+        /// <inheritdoc />
         public override bool CanConvert(Type objectType)
         {
             return typeof(DateTime).GetTypeInfo().IsAssignableFrom(objectType.GetTypeInfo()) ||
@@ -13,6 +19,7 @@ namespace NBitcoin.JsonConverters
                 typeof(DateTimeOffset?).GetTypeInfo().IsAssignableFrom(objectType.GetTypeInfo());
         }
 
+        /// <inheritdoc />
         public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
         {
             if (reader.Value == null)
@@ -23,6 +30,7 @@ namespace NBitcoin.JsonConverters
             return result;
         }
 
+        /// <inheritdoc />
         public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
         {
             DateTime time;

@@ -1,8 +1,12 @@
-﻿using Newtonsoft.Json;
+﻿using NBitcoin;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 
-namespace NBitcoin.JsonConverters
+namespace Stratis.Bitcoin.Utilities.JsonConverters
 {
+    /// <summary>
+    /// Class providing method used to serialize/deserialize domain objects to and from JSON.
+    /// </summary>
     public class Serializer
     {
         public static void RegisterFrontConverters(JsonSerializerSettings settings, Network network = null)
@@ -21,19 +25,12 @@ namespace NBitcoin.JsonConverters
             settings.Converters.Add(new DateTimeToUnixTimeConverter());
             settings.Converters.Add(new TxDestinationJsonConverter());
             settings.Converters.Add(new LockTimeJsonConverter());
-            settings.Converters.Add(new BitcoinStringJsonConverter()
-            {
-                Network = network
-            });
+            settings.Converters.Add(new BitcoinStringJsonConverter(network));
+
             settings.ContractResolver = new CamelCasePropertyNamesContractResolver();
         }
 
-        public static T ToObject<T>(string data)
-        {
-            return ToObject<T>(data, null);
-        }
-
-        public static T ToObject<T>(string data, Network network)
+        public static T ToObject<T>(string data, Network network = null)
         {
             var settings = new JsonSerializerSettings
             {
@@ -43,7 +40,7 @@ namespace NBitcoin.JsonConverters
             return JsonConvert.DeserializeObject<T>(data, settings);
         }
 
-        public static string ToString<T>(T response, Network network)
+        public static string ToString<T>(T response, Network network = null)
         {
             var settings = new JsonSerializerSettings
             {
@@ -51,11 +48,6 @@ namespace NBitcoin.JsonConverters
             };
             RegisterFrontConverters(settings, network);
             return JsonConvert.SerializeObject(response, settings);
-        }
-
-        public static string ToString<T>(T response)
-        {
-            return ToString<T>(response, null);
         }
     }
 }

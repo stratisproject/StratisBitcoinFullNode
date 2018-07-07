@@ -6,14 +6,8 @@ namespace NBitcoin
 {
     public class QBitNinjaTransactionRepository : ITransactionRepository
     {
-        private readonly Uri _BaseUri;
-        public Uri BaseUri
-        {
-            get
-            {
-                return this._BaseUri;
-            }
-        }
+        public readonly Uri BaseUri;
+        private readonly Network network;
 
         /// <summary>
         /// Use qbitninja public servers
@@ -21,27 +15,22 @@ namespace NBitcoin
         /// <param name="network"></param>
         public QBitNinjaTransactionRepository(Network network)
         {
-            if(network == null)
-                throw new ArgumentNullException("network");
-            this._BaseUri = new Uri("http://" + (network == Network.Main ? "" : "t") + "api.qbit.ninja/");
+            this.network = network ?? throw new ArgumentNullException("network");
+            this.BaseUri = new Uri("http://" + (network == Network.Main ? "" : "t") + "api.qbit.ninja/");
         }
 
         public QBitNinjaTransactionRepository(Uri baseUri)
             : this(baseUri.AbsoluteUri)
         {
-
         }
 
         public QBitNinjaTransactionRepository(string baseUri)
         {
             if(!baseUri.EndsWith("/"))
                 baseUri += "/";
-            this._BaseUri = new Uri(baseUri, UriKind.Absolute);
+
+            this.BaseUri = new Uri(baseUri, UriKind.Absolute);
         }
-
-
-
-        #region ITransactionRepository Members
 
         public async Task<Transaction> GetAsync(uint256 txId)
         {
@@ -50,9 +39,11 @@ namespace NBitcoin
                 HttpResponseMessage tx = await client.GetAsync(this.BaseUri.AbsoluteUri + "transactions/" + txId + "?format=raw").ConfigureAwait(false);
                 if(tx.StatusCode == System.Net.HttpStatusCode.NotFound)
                     return null;
+
                 tx.EnsureSuccessStatusCode();
+
                 byte[] bytes = await tx.Content.ReadAsByteArrayAsync().ConfigureAwait(false);
-                return new Transaction(bytes);
+                return this.network.CreateTransaction(bytes);
             }
         }
 
@@ -60,7 +51,5 @@ namespace NBitcoin
         {
             return Task.FromResult(false);
         }
-
-        #endregion
     }
 }
