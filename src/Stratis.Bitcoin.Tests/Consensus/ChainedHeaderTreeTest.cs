@@ -913,7 +913,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
             chainedHeaderTo.HashBlock.Should().Be(chainATip.HashBlock);
             Assert.True(connectNewHeadersResult.HaveBlockDataAvailabilityStateOf(BlockDataAvailabilityState.BlockRequired));
 
-            foreach (ChainedHeader chainedHeader in connectNewHeadersResult.ToHashArray())
+            foreach (ChainedHeader chainedHeader in connectNewHeadersResult.ToArray())
                 cht.BlockDataDownloaded(chainedHeader, chainATip.FindAncestorOrSelf(chainedHeader).Block);
 
             // Set chain A tip as a consensus tip.
@@ -2087,7 +2087,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
             Assert.Equal(connectNewHeadersResult.DownloadTo.Header, listOfExtendedChainBlockHeaders.Last());
             Assert.True(connectNewHeadersResult.HaveBlockDataAvailabilityStateOf(BlockDataAvailabilityState.BlockRequired));
 
-            foreach (ChainedHeader chainedHeader in connectNewHeadersResult.ToHashArray())
+            foreach (ChainedHeader chainedHeader in connectNewHeadersResult.ToArray())
             {
                 chainedHeaderTree.BlockDataDownloaded(chainedHeader, chainTip.FindAncestorOrSelf(chainedHeader).Block);
                 if (chainedHeader.Height <= 5)
@@ -2154,7 +2154,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
             Assert.True(connectNewHeadersResult.HaveBlockDataAvailabilityStateOf(BlockDataAvailabilityState.BlockRequired));
 
             int serializedSizeOfBlocks = 0;
-            foreach (ChainedHeader chainedHeader in connectNewHeadersResult.ToHashArray())
+            foreach (ChainedHeader chainedHeader in connectNewHeadersResult.ToArray())
             {
                 chainedHeaderTree.BlockDataDownloaded(chainedHeader, extendedChainTip.FindAncestorOrSelf(chainedHeader).Block);
                 serializedSizeOfBlocks += chainedHeader.Block.GetSerializedSize();
@@ -2193,7 +2193,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
 
             Assert.True(connectNewHeadersResult.HaveBlockDataAvailabilityStateOf(BlockDataAvailabilityState.BlockRequired));
 
-            foreach (ChainedHeader chainedHeader in connectNewHeadersResult.ToHashArray())
+            foreach (ChainedHeader chainedHeader in connectNewHeadersResult.ToArray())
             {
                 chainedHeaderTree.BlockDataDownloaded(chainedHeader, commonChainTip.FindAncestorOrSelf(chainedHeader).Block);
                 chainedHeaderTree.PartialValidationSucceeded(chainedHeader, out bool fullValidationRequired);
@@ -2204,7 +2204,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
             chainedHeaderTree.ConsensusTipChanged(chainedHeaderTo.GetAncestor(5));
 
             int serializedSizeOfBlocks = 0;
-            IEnumerable<ChainedHeader> lastFive = connectNewHeadersResult.ToHashArray().TakeLast(5);
+            IEnumerable<ChainedHeader> lastFive = connectNewHeadersResult.ToArray().TakeLast(5);
             foreach (ChainedHeader chainedHeader in lastFive)
             {
                 serializedSizeOfBlocks += chainedHeader.Block.GetSerializedSize();
@@ -2252,7 +2252,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
             List<BlockHeader> listOfExtendedHeaders = testContext.ChainedHeaderToList(newTip, heightOfFork + extensionSize);
             connectNewHeadersResult = chainedHeaderTree.ConnectNewHeaders(2, listOfExtendedHeaders);
 
-            foreach (ChainedHeader chainedHeader in connectNewHeadersResult.ToHashArray())
+            foreach (ChainedHeader chainedHeader in connectNewHeadersResult.ToArray())
             {
                 chainedHeaderTree.BlockDataDownloaded(chainedHeader, newTip.FindAncestorOrSelf(chainedHeader).Block);
                 chainedHeaderTree.PartialValidationSucceeded(chainedHeader, out bool fullValidationRequired);
