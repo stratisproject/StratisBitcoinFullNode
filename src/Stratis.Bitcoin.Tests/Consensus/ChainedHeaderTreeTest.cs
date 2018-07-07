@@ -2317,8 +2317,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
             List<BlockHeader> listOfChainBlockHeaders = 
                 testContext.ChainedHeaderToList(tipOfFork, initialChainSizeOfFiveHeaders + chainExtensionOfNineHeaders);
 
-            // ** Throws checkpoint exception:
-            // ConnectNewHeadersResult connectNewHeadersResult0 = chainedHeaderTree.ConnectNewHeaders(peerOneId, listOfChainBlockHeaders);
+            chainedHeaderTree.ConnectNewHeaders(peerOneId, listOfChainBlockHeaders);
 
             // ConnectNewHeaders called with headers h5 -> 15 (from peer2).
             List<BlockHeader> listOfHeadersBeforeCheckpoint = listOfCurrentChainHeaders.GetRange(initialChainSizeOfFiveHeaders, 10);
