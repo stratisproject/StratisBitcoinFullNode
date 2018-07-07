@@ -2113,6 +2113,61 @@ namespace Stratis.Bitcoin.Tests.Consensus
         }
 
         /// <summary>
+        /// Issue 47 @ CT is at 5. Checkpoints are at 10 and 20.
+        /// ConnectNewHeaders called with 9 new headers (from peer1).
+        /// After that ConnectNewHeaders called with headers 5 to 15 (from peer2).
+        /// Make sure 6 - 10 are requested for download.
+        /// </summary>
+        [Fact]
+        public void PresentHeaders_CheckpointsEnabledAndSet_PresentHeadersFromAlternatePeer_MarkedForDownload()
+        {
+            const int initialChainSizeOfFiveHeaders= 5;
+            const int chainExtensionOfFifteenHeaders = 15;
+            const int chainExtensionOfNineHeaders = 9;
+            const int peerOneId = 1;
+            const int peerTwoId = 2;
+
+            TestContext testContext = new TestContextBuilder().WithInitialChain(initialChainSizeOfFiveHeaders).UseCheckpoints().Build();
+            ChainedHeaderTree chainedHeaderTree = testContext.ChainedHeaderTree;
+            ChainedHeader initialChainTip = testContext.InitialChainTip;
+
+            // Chain tip is at h5.
+            Assert.Equal(initialChainSizeOfFiveHeaders, initialChainTip.Height);
+
+            // Extend chain tip by 15 headers to h20.
+            ChainedHeader extendedChainTip = testContext.ExtendAChain(chainExtensionOfFifteenHeaders, initialChainTip);
+            List<BlockHeader> listOfCurrentChainHeaders =
+                testContext.ChainedHeaderToList(extendedChainTip, initialChainSizeOfFiveHeaders + chainExtensionOfFifteenHeaders);
+
+            // Checkpoints are at h10 and h20.
+            const int checkpoint1Height = 10;
+            const int checkpoint2Height = 20;
+
+            var checkpoint1 = new CheckpointFixture(checkpoint1Height, listOfCurrentChainHeaders[checkpoint1Height - 1]);
+            testContext.SetupCheckpoints(checkpoint1);
+            var checkpoint2 = new CheckpointFixture(checkpoint2Height, listOfCurrentChainHeaders[checkpoint2Height - 1]);
+            testContext.SetupCheckpoints(checkpoint1, checkpoint2);
+
+            // ConnectNewHeaders called with 9 new headers (from peer1).
+            // Connect h6 -> h14 on a fork (so doesn't hit CP on other chain and cause download).
+            ChainedHeader tipOfFork = testContext.ExtendAChain(chainExtensionOfNineHeaders, initialChainTip);
+            List<BlockHeader> listOfChainBlockHeaders = 
+                testContext.ChainedHeaderToList(tipOfFork, initialChainSizeOfFiveHeaders + chainExtensionOfNineHeaders);
+
+            // ** Throws checkpoint exception:
+            // ConnectNewHeadersResult connectNewHeadersResult0 = chainedHeaderTree.ConnectNewHeaders(peerOneId, listOfChainBlockHeaders);
+
+            // ConnectNewHeaders called with headers h5 -> 15 (from peer2).
+            List<BlockHeader> listOfHeadersBeforeCheckpoint = listOfCurrentChainHeaders.GetRange(initialChainSizeOfFiveHeaders, 10);
+            ConnectNewHeadersResult connectNewHeadersResult = chainedHeaderTree.ConnectNewHeaders(peerTwoId, listOfHeadersBeforeCheckpoint);
+
+            // Headers h6 -> h10 should be marked for download.
+            connectNewHeadersResult.DownloadFrom.HashBlock.Should().Be(extendedChainTip.GetAncestor(initialChainSizeOfFiveHeaders + 1).HashBlock); // h6
+            connectNewHeadersResult.DownloadTo.HashBlock.Should().Be(extendedChainTip.GetAncestor(checkpoint1Height).HashBlock); // h10
+            connectNewHeadersResult.HaveBlockDataAvailabilityStateOf(BlockDataAvailabilityState.BlockRequired).Should().BeTrue(); 
+        }
+
+        /// <summary>
         /// Issue 48 @ CT is at 5. AssumeValid is at 10. ConnectNewHeaders called with headers 1 - 9 (from peer1).
         /// Make sure headers 6 - 9 are marked for download. After that ConnectNewHeaders called with headers 5 to 15 (from peer2).
         /// Make sure 9 - 15 are marked for download.
