@@ -2580,12 +2580,13 @@ namespace Stratis.Bitcoin.Tests.Consensus
             {
                 chainedHeaderTree.BlockDataDownloaded(chainedHeader, extendedChainTip.FindAncestorOrSelf(chainedHeader).Block);
                 chainedHeaderTree.PartialValidationSucceeded(chainedHeader, out bool fullValidationRequired);
-                chainedHeaderTree.ConsensusTipChanged(chainedHeader);
-            }
 
-            // CT advances to 5.
-            chainedHeaderTree.ConsensusTipChanged(connectNewHeadersResult.DownloadTo.GetAncestor(5));
-
+                if (chainedHeader.Height <= 5) // CT advances to 5.
+                {
+                    chainedHeaderTree.ConsensusTipChanged(chainedHeader);
+                }
+            }      
+            
             // Alternative chain with fork at h3 and tip at h12 is presented.
             const int heightOfFork = 3;
             const int chainBExtension = 9;
@@ -2604,12 +2605,16 @@ namespace Stratis.Bitcoin.Tests.Consensus
             {
                 chainedHeaderTree.BlockDataDownloaded(chainedHeader, tipOfFork.FindAncestorOrSelf(chainedHeader).Block);
                 chainedHeaderTree.PartialValidationSucceeded(chainedHeader, out bool fullValidationRequired);
-                chainedHeaderTree.ConsensusTipChanged(chainedHeader);
+
+                if (chainedHeader.Height <= 8)  // CT advances to 5.
+                {
+                    chainedHeaderTree.ConsensusTipChanged(chainedHeader);
+                }
             }
 
             // CT changes to block 8 of the 2nd chain.
-            ChainedHeader blockHeaderEightOfAlternateChain = tipOfFork.GetAncestor(8);
-            chainedHeaderTree.ConsensusTipChanged(blockHeaderEightOfAlternateChain);
+            //ChainedHeader blockHeaderEightOfAlternateChain = tipOfFork.GetAncestor(8);
+            //chainedHeaderTree.ConsensusTipChanged(blockHeaderEightOfAlternateChain);
             
             // UnconsumedBlocksDataBytes is equal to the sum of serialized sizes of 9b-12b + 6a-10a.
             int serializedSizeOfChainA = 0;
