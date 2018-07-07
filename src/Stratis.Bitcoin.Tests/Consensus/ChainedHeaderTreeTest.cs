@@ -1652,5 +1652,92 @@ namespace Stratis.Bitcoin.Tests.Consensus
             listOfHeaders.Should().HaveCount(1);
             listOfHeaders.First().ChainedHeader.HashBlock.Should().Be(secondHeader.HashBlock);
         }
+
+        /// <summary>
+        /// Issue 43 @ CT is at 0. 10 headers are presented. 10 blocks are downloaded.
+        /// CT advances to 5. Alternative chain with fork at 3 and tip at 12 is presented.
+        /// Block data for alternative chain is downloaded. CT changes to block 8 of the 2nd chain.
+        /// Make sure that UnconsumedBlocksDataBytes is equal to the sum of
+        /// serialized sizes of 9b-12b + 6a-10a (a- first chain, b- second chain).
+        /// </summary>
+        [Fact]
+        public void
+        PresentHeaders_BlocksDownloaded_ForkPresented_BlockDataForAlternativeChainDownloaded_ChainTipChanges()
+        {
+            const int initialChainSize = 0;
+            const int chainExtensionSize = 10;
+            const int peerOneId = 1;
+
+            // Chain header tree setup.
+            TestContext testContext = new TestContextBuilder().WithInitialChain(initialChainSize).UseCheckpoints(false).Build();
+            ChainedHeaderTree chainedHeaderTree = testContext.ChainedHeaderTree;
+            ChainedHeader initialChainTip = testContext.InitialChainTip;
+
+            // Chain tip is at 0.
+            Assert.Equal(0, initialChainTip.Height);
+
+            // 10 headers are presented.
+            ChainedHeader extendedChainTip = testContext.ExtendAChain(chainExtensionSize, initialChainTip);
+            List<BlockHeader> listOfAlternativeChainBlockHeaders = testContext.ChainedHeaderToList(extendedChainTip, chainExtensionSize);
+
+            // 10 blocks are downloaded.
+            ConnectNewHeadersResult connectNewHeadersResult = chainedHeaderTree.ConnectNewHeaders(peerOneId, listOfAlternativeChainBlockHeaders);
+            Assert.Equal(connectNewHeadersResult.DownloadFrom.Header, extendedChainTip.GetAncestor(initialChainSize + 1).Header); // h1
+            Assert.Equal(connectNewHeadersResult.DownloadTo.Header, extendedChainTip.Header); // h10
+            Assert.True(connectNewHeadersResult.HaveBlockDataAvailabilityStateOf(BlockDataAvailabilityState.BlockRequired));
+
+            foreach (ChainedHeader chainedHeader in connectNewHeadersResult.ToHashArray())
+            {
+                chainedHeaderTree.BlockDataDownloaded(chainedHeader, extendedChainTip.FindAncestorOrSelf(chainedHeader).Block);
+            }
+
+            // CT advances to 5.
+            chainedHeaderTree.ConsensusTipChanged(connectNewHeadersResult.DownloadTo.GetAncestor(5));
+
+            // Alternative chain with fork at 3 and tip at 12 is presented.
+            const int heightOfFork = 3;
+            const int chainBExtension = 9;
+            ChainedHeader forkedChainHeader = connectNewHeadersResult.DownloadTo.GetAncestor(heightOfFork);
+            ChainedHeader alternativeChainTip = testContext.ExtendAChain(chainBExtension, forkedChainHeader);
+            Assert.Equal(12, alternativeChainTip.Height);
+
+            // Block data for alternative chain is downloaded.
+            listOfAlternativeChainBlockHeaders = testContext.ChainedHeaderToList(alternativeChainTip, alternativeChainTip.Height - heightOfFork);
+            connectNewHeadersResult = chainedHeaderTree.ConnectNewHeaders(1, listOfAlternativeChainBlockHeaders);
+
+            Assert.True(connectNewHeadersResult.HaveBlockDataAvailabilityStateOf(BlockDataAvailabilityState.BlockRequired));
+            Assert.Equal(connectNewHeadersResult.DownloadFrom.Header, alternativeChainTip.GetAncestor(heightOfFork + 1).Header);
+            Assert.Equal(connectNewHeadersResult.DownloadTo.Header, alternativeChainTip.Header);
+
+            foreach (ChainedHeader chainedHeader in connectNewHeadersResult.ToHashArray())
+            {
+                chainedHeaderTree.BlockDataDownloaded(chainedHeader, alternativeChainTip.FindAncestorOrSelf(chainedHeader).Block);
+            }
+ 
+            // UnconsumedBlocksDataBytes is equal to the sum of serialized sizes of 9b-12b + 6a-10a.
+            int serializedSizeOfChainA = 0;
+            int serializedSizeOfChainB = 0;
+
+            ChainedHeader chainedHeaderChainA = alternativeChainTip;
+            while (chainedHeaderChainA.Height >= 9)
+            {
+                serializedSizeOfChainA += chainedHeaderChainA.Block.GetSerializedSize();
+                chainedHeaderChainA = chainedHeaderChainA.Previous;
+            }
+
+            ChainedHeader chainedHeaderChainB = extendedChainTip;
+            while (chainedHeaderChainB.Height >= 6)
+            {
+                serializedSizeOfChainB += chainedHeaderChainB.Block.GetSerializedSize();
+                chainedHeaderChainB = chainedHeaderChainB.Previous;
+            }
+
+            int serializedSizeOfChainsAandB = serializedSizeOfChainA + serializedSizeOfChainB;
+            Assert.Equal(chainedHeaderTree.UnconsumedBlocksDataBytes, serializedSizeOfChainsAandB);
+
+            // CT changes to block 8 of the 2nd chain.
+            ChainedHeader blockHeaderEightOfAlternateChain = alternativeChainTip.GetAncestor(8);
+            chainedHeaderTree.ConsensusTipChanged(blockHeaderEightOfAlternateChain);
+        }
     }
 }
