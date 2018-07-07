@@ -2612,10 +2612,6 @@ namespace Stratis.Bitcoin.Tests.Consensus
                 }
             }
 
-            // CT changes to block 8 of the 2nd chain.
-            //ChainedHeader blockHeaderEightOfAlternateChain = tipOfFork.GetAncestor(8);
-            //chainedHeaderTree.ConsensusTipChanged(blockHeaderEightOfAlternateChain);
-            
             // UnconsumedBlocksDataBytes is equal to the sum of serialized sizes of 9b-12b + 6a-10a.
             int serializedSizeOfChainA = 0;
             int serializedSizeOfChainB = 0;
