@@ -2566,16 +2566,15 @@ namespace Stratis.Bitcoin.Tests.Consensus
             // Chain tip is at 0.
             Assert.Equal(0, initialChainTip.Height);
 
-            // 10 headers are presented.
+            // Headers are presented for h1 -> h10.
             ChainedHeader extendedChainTip = testContext.ExtendAChain(chainExtensionSize, initialChainTip);
             List<BlockHeader> listOfExtendedChainBlockHeaders = testContext.ChainedHeaderToList(extendedChainTip, chainExtensionSize);
-
-            // 10 blocks are downloaded.
             ConnectNewHeadersResult connectNewHeadersResult = chainedHeaderTree.ConnectNewHeaders(peerOneId, listOfExtendedChainBlockHeaders);
             Assert.Equal(connectNewHeadersResult.DownloadFrom.Header, extendedChainTip.GetAncestor(initialChainSize + 1).Header); // h1
             Assert.Equal(connectNewHeadersResult.DownloadTo.Header, extendedChainTip.Header); // h10
             Assert.True(connectNewHeadersResult.HaveBlockDataAvailabilityStateOf(BlockDataAvailabilityState.BlockRequired));
-
+            
+            // 10 blocks are downloaded.
             foreach (ChainedHeader chainedHeader in connectNewHeadersResult.ToHashArray())
             {
                 chainedHeaderTree.BlockDataDownloaded(chainedHeader, extendedChainTip.FindAncestorOrSelf(chainedHeader).Block);
