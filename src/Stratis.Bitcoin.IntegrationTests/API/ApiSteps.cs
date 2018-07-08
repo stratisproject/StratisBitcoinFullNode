@@ -182,7 +182,7 @@ namespace Stratis.Bitcoin.IntegrationTests.API
 
         private void the_blockhash_is_returned()
         {
-            this.responseText.Should().Be("\"" + Network.StratisRegTest.Consensus.HashGenesisBlock + "\"");
+            this.responseText.Should().Contain(Network.StratisRegTest.Consensus.HashGenesisBlock.ToString());
         }
 
         private void a_full_list_of_available_commands_is_returned()
@@ -228,7 +228,7 @@ namespace Stratis.Bitcoin.IntegrationTests.API
             var walletTransactionModel = (WalletBuildTransactionModel)(transactionResult as JsonResult)?.Value;
             if (walletTransactionModel == null)
                 return null;
-            this.transaction = Transaction.Parse(walletTransactionModel.Hex);
+            this.transaction = this.nodes[SendingNode].FullNode.Network.CreateTransaction(walletTransactionModel.Hex);
             return this.nodes[SendingNode].FullNode.NodeService<WalletController>().SendTransaction(new SendTransactionRequest(walletTransactionModel.Hex));
         }
 
@@ -289,6 +289,16 @@ namespace Stratis.Bitcoin.IntegrationTests.API
             this.send_api_get_request("api/Consensus/getbestblockhash");
         }
 
+        private void calling_getpeerinfo_via_api()
+        {
+            this.send_api_get_request("api/ConnectionManager/getpeerinfo");
+        }
+
+        private void calling_getblockhash_via_api()
+        {
+            this.send_api_get_request("api/Consensus/getblockhash?height=0");
+        }
+
         private void the_consensus_tip_blockhash_is_returned()
         {
             this.responseText.Should().Be(this.block.ToString());
@@ -298,6 +308,13 @@ namespace Stratis.Bitcoin.IntegrationTests.API
         private void the_blockcount_should_match_consensus_tip_height()
         {
             this.responseText.Should().Be(this.nodes[SendingNode].FullNode.ConsensusLoop().Tip.Height.ToString());
+        }
+
+        private void a_single_connected_peer_is_returned()
+        {
+            JObject.Parse(this.responseText).Count.Should().Be(1);
+            JObject.Parse(this.responseText)[0]["id"].Value<int>()
+                .Should().Be(0);
         }
 
         private void send_api_get_request(string apiendpoint)

@@ -44,9 +44,7 @@ namespace Stratis.Bitcoin.IntegrationTests.API
             And(more_blocks_mined_past_maturity_of_original_block);
             And(a_real_transaction);
             And(the_block_with_the_transaction_is_mined);
-
             When(calling_block_with_valid_hash_via_api_returns_block);
-
             Then(the_real_block_should_be_retrieved);
             And(the_block_should_contain_the_transaction);
         }
@@ -57,16 +55,16 @@ namespace Stratis.Bitcoin.IntegrationTests.API
             Given(a_pow_node_with_api_enabled);
             And(a_block_is_mined_creating_spendable_coins);
             And(more_blocks_mined_past_maturity_of_original_block);
-
             When(calling_getblockcount_via_api_returns_an_int);
-
             Then(the_blockcount_should_match_consensus_tip_height);
         }
 
         [Fact]
-        public void Getpeerinfo_via_api_returns()
+        public void Getpeerinfo_via_api_returns_connected_peer()
         {
-            Given(a_pow_node_with_api_enabled);
+            Given(sending_node_and_receiving_node_with_api_enabled);
+            When(calling_getpeerinfo_via_api);
+            Then(a_single_connected_peer_is_returned);
         }
 
         [Fact]
@@ -75,9 +73,7 @@ namespace Stratis.Bitcoin.IntegrationTests.API
             Given(a_pow_node_with_api_enabled);
             And(a_block_is_mined_creating_spendable_coins);
             And(more_blocks_mined_past_maturity_of_original_block);
-
             When(calling_getbestblockhash_via_api);
-
             Then(the_consensus_tip_blockhash_is_returned);
         }
 
@@ -87,6 +83,8 @@ namespace Stratis.Bitcoin.IntegrationTests.API
             Given(a_pow_node_with_api_enabled);
             And(a_block_is_mined_creating_spendable_coins);
             And(more_blocks_mined_past_maturity_of_original_block);
+            When(calling_getblockhash_via_api);
+            Then(the_blockhash_is_returned);
         }
 
         [Fact]
