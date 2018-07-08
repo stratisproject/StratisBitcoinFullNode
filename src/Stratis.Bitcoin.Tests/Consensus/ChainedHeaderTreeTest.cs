@@ -2284,7 +2284,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
         [Fact]
         public void PresentHeaders_CheckpointsEnabledAndSet_PresentHeadersFromAlternatePeer_MarkedForDownload()
         {
-            const int initialChainSizeOfFiveHeaders= 5;
+            const int initialChainSizeOfFiveHeaders = 5;
             const int chainExtensionSizeOfFifteenHeaders = 15;
             const int peerOneId = 1;
             const int peerTwoId = 2;
@@ -2314,7 +2314,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
             chainedHeaderTree.ConnectNewHeaders(peerOneId, listOfBlockHeadersOneToNine);
 
             // Second peer presents headers including checkpoint1, excluding checkpoint2: h5 -> h15.
-            List<BlockHeader> listOfBlockHeadersFiveToFifteen = listOfExtendedChainHeaders.GetRange(initialChainSizeOfFiveHeaders, 11);
+            List<BlockHeader> listOfBlockHeadersFiveToFifteen = listOfExtendedChainHeaders.GetRange(initialChainSizeOfFiveHeaders - 1, 11);
             ConnectNewHeadersResult connectNewHeadersResult = chainedHeaderTree.ConnectNewHeaders(peerTwoId, listOfBlockHeadersFiveToFifteen);
 
             // Headers h6 -> h10 should be marked for download.
