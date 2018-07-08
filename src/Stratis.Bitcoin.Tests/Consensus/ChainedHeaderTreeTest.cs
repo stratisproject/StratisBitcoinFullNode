@@ -2314,7 +2314,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
             // Peer 2 presents ten headers including checkpoint: h5 -> h15.
             extendedChainTip = testContext.ExtendAChain(chainExtensionSizeOfFive, extendedChainTip); // tip h15
             listOfChainBlockHeaders = testContext.ChainedHeaderToList(extendedChainTip, initialChainSizeOfFive + chainExtensionSizeOfFive * 2);
-            connectNewHeadersResult = chainedHeaderTree.ConnectNewHeaders(peerTwoId, listOfChainBlockHeaders.GetRange(initialChainSizeOfFive, 10).ToList());
+            connectNewHeadersResult = chainedHeaderTree.ConnectNewHeaders(peerTwoId, listOfChainBlockHeaders.GetRange(initialChainSizeOfFive - 1, 11).ToList());
             
             // Headers h6 -> 15 should be marked for download.
             connectNewHeadersResult.DownloadFrom.HashBlock.Should().Be(extendedChainTip.GetAncestor(initialChainSizeOfFive + 1).HashBlock); // h6
