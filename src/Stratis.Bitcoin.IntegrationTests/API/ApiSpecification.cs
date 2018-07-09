@@ -8,7 +8,7 @@ namespace Stratis.Bitcoin.IntegrationTests.API
         public void Getgeneralinfo_returns_json_starting_with_wallet_path()
         {
             Given(a_proof_of_stake_node_with_api_enabled);
-            When(getting_general_info);
+            When(calling_general_info_via_api);
             Then(general_information_about_the_wallet_and_node_is_returned);
         }
 
@@ -16,7 +16,7 @@ namespace Stratis.Bitcoin.IntegrationTests.API
         public void Startstaking_enables_staking_but_nothing_staked()
         {
             Given(a_proof_of_stake_node_with_api_enabled);
-            When(staking_is_started);
+            When(calling_startstaking_via_api);
             Then(staking_is_enabled_but_nothing_is_staked);
         }
 
@@ -39,7 +39,7 @@ namespace Stratis.Bitcoin.IntegrationTests.API
         [Fact]
         public void Block_with_valid_hash_via_api_returns_transaction_block()
         {
-            Given(sending_node_and_receiving_node_with_api_enabled);
+            Given(two_connected_pow_nodes_with_api_enabled);
             And(a_block_is_mined_creating_spendable_coins);
             And(more_blocks_mined_past_maturity_of_original_block);
             And(a_real_transaction);
@@ -62,7 +62,7 @@ namespace Stratis.Bitcoin.IntegrationTests.API
         [Fact]
         public void Getpeerinfo_via_api_returns_connected_peer()
         {
-            Given(sending_node_and_receiving_node_with_api_enabled);
+            Given(two_connected_pow_nodes_with_api_enabled);
             When(calling_getpeerinfo_via_api);
             Then(a_single_connected_peer_is_returned);
         }
@@ -78,45 +78,84 @@ namespace Stratis.Bitcoin.IntegrationTests.API
         }
 
         [Fact]
-        public void Getblockhash_via_api_returns()
+        public void Getblockhash_via_api_returns_blockhash_at_given_height()
         {
             Given(a_pow_node_with_api_enabled);
             And(a_block_is_mined_creating_spendable_coins);
-            And(more_blocks_mined_past_maturity_of_original_block);
             When(calling_getblockhash_via_api);
             Then(the_blockhash_is_returned);
         }
 
         [Fact]
-        public void Getrawmempool_via_api_returns()
+        public void Getrawmempool_via_api_finds_mempool_transaction()
         {
-            Given(sending_node_and_receiving_node_with_api_enabled);
+            Given(two_connected_pow_nodes_with_api_enabled);
             And(a_block_is_mined_creating_spendable_coins);
             And(more_blocks_mined_past_maturity_of_original_block);
+            And(a_real_transaction);
+            When(calling_getrawmempool_via_api);
+            Then(the_transaction_is_found_in_mempool);
         }
 
         [Fact]
-        public void Getblockheader_via_api_returns()
+        public void Getblockheader_via_api_returns_blockheader()
         {
             Given(a_pow_node_with_api_enabled);
             And(a_block_is_mined_creating_spendable_coins);
-            And(more_blocks_mined_past_maturity_of_original_block);
+            When(calling_getblockheader_via_api);
+            Then(the_blockheader_is_returned);
         }
 
         [Fact]
-        public void Getrawtransaction_nonverbose_via_api_returns()
+        public void Getrawtransaction_nonverbose_via_api_returns_transaction_hash()
         {
-            Given(sending_node_and_receiving_node_with_api_enabled);
+            Given(two_connected_pow_nodes_with_api_enabled);
             And(a_block_is_mined_creating_spendable_coins);
             And(more_blocks_mined_past_maturity_of_original_block);
+            And(a_real_transaction);
+            And(the_block_with_the_transaction_is_mined);
+            When(calling_getrawtransaction_nonverbose_via_api);
+            Then(the_transaction_hash_is_returned);
         }
 
         [Fact]
         public void Getrawtransaction_verbose_via_api_returns()
         {
-            Given(sending_node_and_receiving_node_with_api_enabled);
+            Given(two_connected_pow_nodes_with_api_enabled);
             And(a_block_is_mined_creating_spendable_coins);
             And(more_blocks_mined_past_maturity_of_original_block);
+            And(a_real_transaction);
+            And(the_block_with_the_transaction_is_mined);
+            When(calling_getrawtransaction_verbose_via_api);
+            Then(a_verbose_raw_transaction_is_returned);
+        }
+
+        [Fact]
+        public void Gettxout_nomempool_via_api_returns_txouts()
+        {
+            Given(two_connected_pow_nodes_with_api_enabled);
+            And(a_block_is_mined_creating_spendable_coins);
+            And(more_blocks_mined_past_maturity_of_original_block);
+            And(a_real_transaction);
+            And(the_block_with_the_transaction_is_mined);
+            When(calling_gettxout_notmempool_via_api);
+            Then(the_txout_is_returned);
+        }
+
+        [Fact]
+        public void Validateaddress_via_api_confirms_valid_address()
+        {
+            Given(a_pow_node_with_api_enabled);
+            When(calling_validateaddress_via_api);
+            Then(a_valid_address_is_validated);
+        }
+
+        [Fact]
+        public void Status_via_api_returns_status_info()
+        {
+            Given(a_pow_node_with_api_enabled);
+            When(calling_status_via_api);
+            Then(status_information_is_returned);
         }
     }
 }
