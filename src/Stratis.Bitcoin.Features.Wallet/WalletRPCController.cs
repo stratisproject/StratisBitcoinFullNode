@@ -3,7 +3,7 @@ using System.Linq;
 using Microsoft.AspNetCore.Mvc;
 using NBitcoin;
 using Stratis.Bitcoin.Controllers;
-using Stratis.Bitcoin.Features.RPC;
+using Stratis.Bitcoin.Features.RPC.Exceptions;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
 
 namespace Stratis.Bitcoin.Features.Wallet
