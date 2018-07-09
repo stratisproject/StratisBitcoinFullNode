@@ -216,10 +216,7 @@ namespace Stratis.Bitcoin.Features.Miner
 
         private bool BuildBlock(MineBlockContext context)
         {
-            if (this.network.Consensus.IsProofOfStake)
-                context.BlockTemplate = this.blockProvider.BuildPosBlock(context.ChainTip, context.ReserveScript.ReserveFullNodeScript);
-            else
-                context.BlockTemplate = this.blockProvider.BuildPowBlock(context.ChainTip, context.ReserveScript.ReserveFullNodeScript);
+            context.BlockTemplate = this.blockProvider.BuildPowBlock(context.ChainTip, context.ReserveScript.ReserveFullNodeScript);
 
             if (this.network.Consensus.IsProofOfStake)
             {
@@ -229,13 +226,13 @@ namespace Stratis.Bitcoin.Features.Miner
                     return false;
             }
 
-            context.ExtraNonce = this.IncrementExtraNonce(context.BlockTemplate.Block, context.ChainTip, context.ExtraNonce);
-
             return true;
         }
 
         private bool MineBlock(MineBlockContext context)
         {
+            context.ExtraNonce = this.IncrementExtraNonce(context.BlockTemplate.Block, context.ChainTip, context.ExtraNonce);
+
             Block block = context.BlockTemplate.Block;
             while ((context.MaxTries > 0) && (block.Header.Nonce < InnerLoopCount) && !block.CheckProofOfWork())
             {
