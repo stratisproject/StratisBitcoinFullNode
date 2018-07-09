@@ -255,7 +255,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                     block.Header.Version = 1;
                     block.Header.Time = Utils.DateTimeToUnixTime(this.chain.Tip.GetMedianTimePast()) + 1;
 
-                    Transaction txCoinbase = Transaction.Load(block.Transactions[0].ToBytes(this.network.Consensus.ConsensusFactory), this.network);
+                    Transaction txCoinbase = this.network.CreateTransaction(block.Transactions[0].ToBytes(this.network.Consensus.ConsensusFactory));
                     txCoinbase.Inputs.Clear();
                     txCoinbase.Version = 1;
                     txCoinbase.AddInput(new TxIn(new Script(new[] { Op.GetPushOp(this.blockinfo[i].extranonce), Op.GetPushOp(this.chain.Height) })));

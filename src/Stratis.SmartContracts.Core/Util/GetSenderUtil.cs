@@ -20,7 +20,7 @@ namespace Stratis.SmartContracts.Core.Util
         /// <param name="coinView"></param>
         /// <param name="blockTxs"></param>
         /// <returns></returns>
-        public static GetSenderResult GetSender(Network network, Transaction tx, CoinView coinView, IList<Transaction> blockTxs)
+        public static GetSenderResult GetSender(Transaction tx, CoinView coinView, IList<Transaction> blockTxs)
         {
             OutPoint prevOut = tx.Inputs[0].PrevOut;
 
@@ -32,7 +32,7 @@ namespace Stratis.SmartContracts.Core.Util
                     if (btx.GetHash() == prevOut.Hash)
                     {
                         Script script = btx.Outputs[prevOut.N].ScriptPubKey;
-                        return GetAddressFromScript(network, script);
+                        return GetAddressFromScript(script);
                     }
                 }
             }
@@ -50,7 +50,7 @@ namespace Stratis.SmartContracts.Core.Util
 
                 Script script = unspentOutputs.Outputs[prevOut.N].ScriptPubKey;
 
-                return GetAddressFromScript(network, script);
+                return GetAddressFromScript(script);
             }
 
             return GetSenderResult.CreateFailure("Unable to get the sender of the transaction");
@@ -61,7 +61,7 @@ namespace Stratis.SmartContracts.Core.Util
         /// </summary>
         /// <param name="script"></param>
         /// <returns></returns>
-        public static GetSenderResult GetAddressFromScript(Network network, Script script)
+        public static GetSenderResult GetAddressFromScript(Script script)
         {
             PubKey payToPubKey = PayToPubkeyTemplate.Instance.ExtractScriptPubKeyParameters(script);
 
@@ -71,7 +71,7 @@ namespace Stratis.SmartContracts.Core.Util
                 return GetSenderResult.CreateSuccess(address);
             }
 
-            if (PayToPubkeyHashTemplate.Instance.CheckScriptPubKey(network, script))
+            if (PayToPubkeyHashTemplate.Instance.CheckScriptPubKey(script))
             {
                 var address = new uint160(PayToPubkeyHashTemplate.Instance.ExtractScriptPubKeyParameters(script).ToBytes());
                 return GetSenderResult.CreateSuccess(address);
@@ -109,6 +109,5 @@ namespace Stratis.SmartContracts.Core.Util
                 return new GetSenderResult(error);
             }
         }
-
     }
 }

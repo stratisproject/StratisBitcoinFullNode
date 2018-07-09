@@ -178,7 +178,7 @@ namespace Stratis.Bitcoin.Features.Miner
         /// </summary>
         protected virtual void CreateCoinbase()
         {
-            this.coinbase = this.Network.Consensus.ConsensusFactory.CreateTransaction();
+            this.coinbase = this.Network.CreateTransaction();
             this.coinbase.Time = (uint)this.DateTimeProvider.GetAdjustedTimeAsUnixTimestamp();
             this.coinbase.AddInput(TxIn.CreateCoinbase(this.ChainTip.Height + 1));
             this.coinbase.AddOutput(new TxOut(Money.Zero, this.scriptPubKey));

@@ -89,7 +89,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 Assert.Null(scReceiver.FullNode.WalletManager().GetSpendableTransactionsInWallet(WalletName).First().Transaction.BlockHeight);
 
                 // generate two new blocks do the trx is confirmed
-                scSender.GenerateStratis(1, new List<Transaction>(new[] { Transaction.Load(trx.ToBytes(scSender.FullNode.Network.Consensus.ConsensusFactory), scSender.FullNode.Network) }));
+                scSender.GenerateStratis(1, new List<Transaction>(new[] { scSender.FullNode.Network.CreateTransaction(trx.ToBytes()) }));
                 scSender.GenerateStratis(1);
 
                 // wait for block repo for block sync to work
@@ -281,7 +281,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
 
                 JsonResult result = (JsonResult)senderSmartContractsController.BuildCreateSmartContractTransaction(buildRequest);
                 var response = (BuildCreateContractTransactionResponse)result.Value;
-                var transaction = Transaction.Load(response.Hex, new SmartContractsRegTest());
+                var transaction = scSender.FullNode.Network.CreateTransaction(response.Hex);
                 Assert.Single(transaction.Inputs);
             }
         }

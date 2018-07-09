@@ -99,7 +99,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         {
             this.logger.LogTrace("()");
 
-            GetSenderUtil.GetSenderResult getSenderResult = GetSenderUtil.GetAddressFromScript(this.Network, scriptPubKeyIn);
+            GetSenderUtil.GetSenderResult getSenderResult = GetSenderUtil.GetAddressFromScript(scriptPubKeyIn);
             if (!getSenderResult.Success)
                 throw new ConsensusErrorException(new ConsensusError("sc-block-assembler-createnewblock", getSenderResult.Error));
 
@@ -144,7 +144,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         {
             this.logger.LogTrace("()");
 
-            GetSenderUtil.GetSenderResult getSenderResult = GetSenderUtil.GetSender(this.Network, mempoolEntry.Transaction, this.coinView, this.inBlock.Select(x => x.Transaction).ToList());
+            GetSenderUtil.GetSenderResult getSenderResult = GetSenderUtil.GetSender(mempoolEntry.Transaction, this.coinView, this.inBlock.Select(x => x.Transaction).ToList());
             if (!getSenderResult.Success)
                 throw new ConsensusErrorException(new ConsensusError("sc-block-assembler-addcontracttoblock", getSenderResult.Error));
 
