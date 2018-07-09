@@ -6,7 +6,7 @@ namespace NBitcoin.Policy
 {
     public class StandardTransactionPolicy : ITransactionPolicy
     {
-        protected readonly Network network;
+        private readonly Network network;
 
         public StandardTransactionPolicy(Network network)
         {
@@ -194,7 +194,7 @@ namespace NBitcoin.Policy
 
         private bool VerifyScript(IndexedTxIn input, Script scriptPubKey, Money value, ScriptVerify scriptVerify, out ScriptError error)
         {
-            if(!this.UseConsensusLib)
+            if (!this.UseConsensusLib)
                 return input.VerifyScript(this.network, scriptPubKey, value, scriptVerify, out error);
             else
             {

@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Linq;
-using System.Security;
 using System.Text;
 using NBitcoin.BouncyCastle.Asn1.X9;
 using NBitcoin.BouncyCastle.Math;

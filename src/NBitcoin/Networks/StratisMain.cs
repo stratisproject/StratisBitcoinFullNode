@@ -6,7 +6,7 @@ using NBitcoin.DataEncoders;
 
 namespace NBitcoin.Networks
 {
-    public class StratisMainNet : Network
+    public class StratisMain : Network
     {
         /// <summary> Stratis maximal value for the calculated time offset. If the value is over this limit, the time syncing feature will be switched off. </summary>
         public const int StratisMaxTimeOffsetSeconds = 25 * 60;
@@ -20,7 +20,7 @@ namespace NBitcoin.Networks
         /// <summary> The default name used for the Stratis configuration file. </summary>
         public const string StratisDefaultConfigFilename = "stratis.conf";
 
-        public StratisMainNet()
+        public StratisMain()
         {
             // The message start string is designed to be unlikely to occur in normal data.
             // The characters are rarely used upper ASCII, not valid as UTF-8, and produce

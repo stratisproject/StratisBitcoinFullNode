@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Linq;
 using NBitcoin;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Utilities;
@@ -219,7 +218,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <returns>The transaction size.</returns>
         public long GetTxSize()
         {
-            return this.Transaction.GetVirtualSize();
+            return (long)this.Transaction.GetVirtualSize();
         }
 
         /// <summary>

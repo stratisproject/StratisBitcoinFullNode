@@ -480,7 +480,7 @@ namespace Stratis.Bitcoin.Features.Miner
                 List<TxMempoolEntry> sortedEntries = ancestors.ToList().OrderBy(o => o, new CompareTxIterByAncestorCount()).ToList();
                 foreach (TxMempoolEntry sortedEntry in sortedEntries)
                 {
-                    AddToBlock(sortedEntry);
+                    this.AddToBlock(sortedEntry);
                     // Erase from the modified set, if present
                     mapModifiedTx.Remove(sortedEntry.TransactionHash);
                 }

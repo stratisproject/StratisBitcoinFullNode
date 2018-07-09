@@ -234,7 +234,7 @@ namespace NBitcoin.RPC
             {
                 response = await request.GetResponseAsync().ConfigureAwait(false);
             }
-            catch (WebException ex)
+            catch(WebException ex)
             {
                 // Even if the request "failed" we need to continue reading the response from the router
                 response = ex.Response as HttpWebResponse;

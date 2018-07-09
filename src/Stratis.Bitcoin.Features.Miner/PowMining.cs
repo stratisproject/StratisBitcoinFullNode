@@ -32,19 +32,19 @@ namespace Stratis.Bitcoin.Features.Miner
     public class PowMining : IPowMining
     {
         /// <summary>Factory for creating background async loop tasks.</summary>
-        protected readonly IAsyncLoopFactory asyncLoopFactory;
+        private readonly IAsyncLoopFactory asyncLoopFactory;
 
         /// <summary>Builder that creates a proof-of-work block template.</summary>
         private readonly IBlockProvider blockProvider;
 
         /// <summary>Thread safe chain of block headers from genesis.</summary>
-        protected readonly ConcurrentChain chain;
+        private readonly ConcurrentChain chain;
 
         /// <summary>Manager of the longest fully validated chain of blocks.</summary>
-        protected readonly IConsensusLoop consensusLoop;
+        private readonly IConsensusLoop consensusLoop;
 
         /// <summary>Provider of time functions.</summary>
-        protected readonly IDateTimeProvider dateTimeProvider;
+        private readonly IDateTimeProvider dateTimeProvider;
 
         /// <summary>Default for "-blockmintxfee", which sets the minimum feerate for a transaction in blocks created by mining code.</summary>
         public const int DefaultBlockMinTxFee = 1000;
@@ -68,19 +68,19 @@ namespace Stratis.Bitcoin.Features.Miner
         private readonly ILogger logger;
 
         /// <summary>Factory for creating loggers.</summary>
-        protected readonly ILoggerFactory loggerFactory;
+        private readonly ILoggerFactory loggerFactory;
 
         /// <summary>Transaction memory pool for managing transactions in the memory pool.</summary>
-        protected readonly ITxMempool mempool;
+        private readonly ITxMempool mempool;
 
         /// <summary>A lock for managing asynchronous access to memory pool.</summary>
-        protected readonly MempoolSchedulerLock mempoolLock;
+        private readonly MempoolSchedulerLock mempoolLock;
 
         /// <summary>The async loop we need to wait upon before we can shut down this feature.</summary>
         private IAsyncLoop miningLoop;
 
         /// <summary>Specification of the network the node runs on - regtest/testnet/mainnet.</summary>
-        protected readonly Network network;
+        private readonly Network network;
 
         /// <summary>Global application life cycle control - triggers when application shuts down.</summary>
         private readonly INodeLifetime nodeLifetime;

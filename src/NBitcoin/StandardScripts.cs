@@ -56,13 +56,13 @@ namespace NBitcoin
         //   DUP CHECKSIG DROP ... repeated 100 times... OP_1
         public static bool AreInputsStandard(Network network, Transaction tx, CoinsView coinsView)
         {
-            if (tx.IsCoinBase)
+            if(tx.IsCoinBase)
                 return true; // Coinbases don't use vin normally
 
             foreach(TxIn input in tx.Inputs)
             {
                 TxOut prev = coinsView.GetOutputFor(input);
-                if (prev == null)
+                if(prev == null)
                     return false;
                 if(!IsStandardScriptSig(network, input.ScriptSig, prev.ScriptPubKey))
                     return false;
