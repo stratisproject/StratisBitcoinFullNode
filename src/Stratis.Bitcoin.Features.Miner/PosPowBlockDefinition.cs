@@ -9,6 +9,9 @@ using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.Miner
 {
+    /// <summary>
+    /// Defines how a proof of work block will be built on a proof of stake network.
+    /// </summary>
     public sealed class PosPowBlockDefinition : BlockDefinition
     {
         /// <summary>Instance logger.</summary>
