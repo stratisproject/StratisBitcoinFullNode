@@ -243,12 +243,6 @@ namespace Stratis.Bitcoin.Tests.Consensus
                 ConnectNewHeadersResult connectionPeerCResult = cht.ConnectNewHeaders(3, peerCBlockHeaders);
                 ConnectNewHeadersResult connectionPeerDResult = cht.ConnectNewHeaders(4, peerDBlockHeaders);
 
-                //Downloading chain A
-                this.ClaimPeerChain(cht, chainATip, connectionPeerAResult);
-
-                //Downloading chain D
-                this.ClaimPeerChain(cht, chainDTip, connectionPeerDResult);
-
                 return listOfAllUniqueBlockHeaders;
             }
 
@@ -1738,8 +1732,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
             CheckChainedHeaderTreeConsistency(cht, listOfAllUniqueBlockHeaders);
 
             //Additional SetUp for current test
-            int peerKExtension = 3;
-            ChainedHeader chainKTip = ctx.ExtendAChain(peerKExtension, chainDTip.GetAncestor(10)); // i.e. (((h1=h2=h3=h4=h5)=6a=7a)=8d=9d=10d)=11k=12k=13k
+            ChainedHeader chainKTip = chainDTip; //peer K has exactly the same chain as peer D.
             List<BlockHeader> peerKBlockHeaders = ctx.ChainedHeaderToList(chainKTip, chainKTip.Height);
 
             //Claiming Peer K chain
@@ -1754,11 +1747,6 @@ namespace Stratis.Bitcoin.Tests.Consensus
 
             chainedHeadersWithoutPeerK.Should().BeEquivalentTo(chainedHeadersWithPeerK);
         }
-
-        
-
-        
-
 
         /// <summary>
         /// Basic test for tests 18 to 20, 28.
