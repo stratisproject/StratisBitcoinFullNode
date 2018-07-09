@@ -121,7 +121,6 @@ namespace Stratis.Bitcoin.Consensus.Rules
         public async Task AcceptBlockAsync(ValidationContext validationContext, ChainedHeader tip)
         {
             Guard.NotNull(validationContext, nameof(validationContext));
-            Guard.NotNull(validationContext.RuleContext, nameof(validationContext.RuleContext));
 
             validationContext.RuleContext = this.CreateRuleContext(validationContext, tip);
 
