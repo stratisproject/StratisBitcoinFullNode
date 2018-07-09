@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Stratis.Bitcoin.Features.Apps.Interfaces;
 using Stratis.Bitcoin.Utilities.Extensions;
@@ -43,14 +42,8 @@ namespace Stratis.Bitcoin.Features.Apps
         private StratisApp CreateApp(FileInfo fileInfo)
         {
             try
-            {
-                IConfigurationProvider provider = new ConfigurationBuilder()
-                    .SetBasePath(fileInfo.DirectoryName)
-                    .AddJsonFile(fileInfo.Name)
-                    .Build().Providers.First();
-
-                provider.TryGet("displayName", out string displayName);
-                provider.TryGet("webRoot", out string webRoot);
+            {                
+                this.appsFileService.GetConfigurationFields(fileInfo, out string displayName, out string webRoot);
 
                 var stratisApp = new StratisApp { DisplayName = displayName, Location = fileInfo.DirectoryName };
                 if (!string.IsNullOrEmpty(webRoot))

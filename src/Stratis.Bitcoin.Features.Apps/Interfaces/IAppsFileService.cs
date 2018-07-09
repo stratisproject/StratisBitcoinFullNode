@@ -8,5 +8,7 @@ namespace Stratis.Bitcoin.Features.Apps.Interfaces
         string StratisAppsFolderPath { get; }
 
         IEnumerable<FileInfo> GetStratisAppConfigFileInfos();
+
+        bool GetConfigurationFields(FileInfo stratisAppJson, out string displayName, out string webRoot);        
     }
 }
