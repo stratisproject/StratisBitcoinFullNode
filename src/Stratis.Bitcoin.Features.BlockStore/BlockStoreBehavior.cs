@@ -66,8 +66,8 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// </remarks>
         private uint256 getBlocksBatchLastItemHash;
 
-        /// <summary>The last block sent to the peer.</summary>
-        private ChainedHeader lastBlockSent;
+        /// <summary>Chained header of the last header sent to the peer.</summary>
+        private ChainedHeader lastHeaderSent;
 
         public BlockStoreBehavior(
             ConcurrentChain chain,
@@ -189,8 +189,8 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
             ChainedHeader highestHeader = peerTip;
 
-            if ((highestHeader == null) || ((this.lastBlockSent != null) && (highestHeader.Height < this.lastBlockSent.Height)))
-                highestHeader = this.lastBlockSent;
+            if ((highestHeader == null) || ((this.lastHeaderSent != null) && (highestHeader.Height < this.lastHeaderSent.Height)))
+                highestHeader = this.lastHeaderSent;
 
             this.logger.LogTrace("(-):'{0}'", highestHeader);
             return highestHeader;
@@ -293,7 +293,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 if (highestHeader?.Height < lastAddedChainedHeader.Height)
                 {
                     this.logger.LogTrace("Setting peer's last block sent to '{0}'.", lastAddedChainedHeader);
-                    this.lastBlockSent = lastAddedChainedHeader;
+                    this.lastHeaderSent = lastAddedChainedHeader;
 
                     // Set last item of the batch (unless we are announcing the tip), which is then used
                     // when the peer sends us "getdata" message. When we detect "getdata" message for this block,
@@ -459,7 +459,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
                         if (headers.Count > 1) this.logger.LogDebug("Sending {0} headers, range {1} - {2}, to peer '{3}'.", headers.Count, headers.First(), headers.Last(), peer.RemoteSocketEndpoint);
                         else this.logger.LogDebug("Sending header '{0}' to peer '{1}'.", headers.First(), peer.RemoteSocketEndpoint);
 
-                        this.lastBlockSent = bestIndex;
+                        this.lastHeaderSent = bestIndex;
 
                         await peer.SendMessageAsync(new HeadersPayload(headers.ToArray())).ConfigureAwait(false);
                         this.logger.LogTrace("(-)[SEND_HEADERS_PAYLOAD]");
