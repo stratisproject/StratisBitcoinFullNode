@@ -31,51 +31,22 @@ namespace Stratis.Bitcoin.Base
         private readonly IInitialBlockDownloadState initialBlockDownloadState;
 
         /// <summary>
-        /// Our view of the peer's headers tip constructed on peer's announcement of its tip using "headers" message.
-        /// <para>
-        /// The announced tip is accepted if it seems to be valid. Validation is only done on headers
-        /// and so the announced tip may refer to invalid block.
-        /// </para>
+        /// Our view of the peer's consensus tip constructed on peer's announcement of its tip using "headers" message.
         /// </summary>
-        private ChainedHeader pendingTip;
-
-        /// <summary>Information about the peer's announcement of its tip using "headers" message.</summary>
-        public ChainedHeader PendingTip
-        {
-            get
-            {
-                ChainedHeader tip = this.pendingTip;
-                if (tip == null)
-                    return null;
-
-                // Prevent memory leak by returning a block from the chain instead of real pending tip if possible.
-                return this.Chain.GetBlock(tip.HashBlock) ?? tip;
-            }
-        }
+        /// <remarks>
+        /// The announced tip is accepted if it seems to be valid. Validation is only done on headers and so the announced tip may refer to invalid block.
+        /// </remarks>
+        public ChainedHeader ExpectedTip { get; private set; }
 
         private Timer refreshTimer;
 
         /// <summary>Thread safe access to the best chain of block headers (that the node is aware of) from genesis.</summary>
-        private ConcurrentChain chain;
-
-        /// <summary>Thread safe access to the best chain of block headers (that the node is aware of) from genesis.</summary>
-        public ConcurrentChain Chain
-        {
-            get
-            {
-                return this.chain;
-            }
-            set
-            {
-                this.AssertNotAttached();
-                this.chain = value;
-            }
-        }
+        private readonly ConcurrentChain chain;
 
         public ConnectNewHeadersResult ConsensusTipChanged(ChainedHeader chainedHeader)
         {
             // TODO async lock has to be obtained before calling CM.HeadersPresented
-            //TODO Call CM.HeadersPresented with (false) and return ConnectNewHeadersResult
+            // TODO Call CM.HeadersPresented with (false) and return ConnectNewHeadersResult
             // TODO clear the cached when peer disconnects
 
             throw new NotImplementedException();
@@ -191,7 +162,7 @@ namespace Stratis.Bitcoin.Base
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(invPayload), invPayload);
 
-            if (invPayload.Inventory.Any(i => ((i.Type & InventoryType.MSG_BLOCK) != 0) && !this.Chain.Contains(i.Hash)))
+            if (invPayload.Inventory.Any(i => ((i.Type & InventoryType.MSG_BLOCK) != 0) && !this.chain.Contains(i.Hash)))
             {
                 // No need of periodical refresh, the peer is notifying us.
                 this.refreshTimer.Dispose();
@@ -231,9 +202,9 @@ namespace Stratis.Bitcoin.Base
 
             var headers = new HeadersPayload();
             ChainedHeader consensusTip = this.chainState.ConsensusTip;
-            consensusTip = this.Chain.GetBlock(consensusTip.HashBlock);
+            consensusTip = this.chain.GetBlock(consensusTip.HashBlock);
 
-            ChainedHeader fork = this.Chain.FindFork(getHeadersPayload.BlockLocators);
+            ChainedHeader fork = this.chain.FindFork(getHeadersPayload.BlockLocators);
             if (fork != null)
             {
                 if ((consensusTip == null) || (fork.Height > consensusTip.Height))
@@ -244,7 +215,7 @@ namespace Stratis.Bitcoin.Base
 
                 if (fork != null)
                 {
-                    foreach (ChainedHeader header in this.Chain.EnumerateToTip(fork).Skip(1))
+                    foreach (ChainedHeader header in this.chain.EnumerateToTip(fork).Skip(1))
                     {
                         if (header.Height > consensusTip.Height)
                             break;
@@ -258,7 +229,7 @@ namespace Stratis.Bitcoin.Base
 
             // Set our view of peer's tip equal to the last header that was sent to it.
             if (headers.Headers.Count != 0)
-                this.pendingTip = this.Chain.GetBlock(headers.Headers.Last().GetHash()) ?? this.pendingTip;
+                this.ExpectedTip = this.chain.GetBlock(headers.Headers.Last().GetHash()) ?? this.ExpectedTip;
 
             await peer.SendMessageAsync(headers).ConfigureAwait(false);
 
@@ -294,7 +265,7 @@ namespace Stratis.Bitcoin.Base
                 return;
             }
 
-            ChainedHeader pendingTipBefore = this.pendingTip;
+            ChainedHeader pendingTipBefore = this.ExpectedTip;
             this.logger.LogTrace("Pending tip is '{0}', received {1} new headers.", pendingTipBefore, headersPayload.Headers.Count);
 
             bool doTrySync = false;
@@ -315,7 +286,7 @@ namespace Stratis.Bitcoin.Base
                     // we can fix it.
 
                     // Try to find the header's previous hash on our best chain.
-                    prev = this.Chain.GetBlock(header.HashPrevBlock);
+                    prev = this.chain.GetBlock(header.HashPrevBlock);
 
                     if (prev == null)
                     {
@@ -333,7 +304,7 @@ namespace Stratis.Bitcoin.Base
                 }
 
                 tip = new ChainedHeader(header, header.GetHash(), prev);
-                bool validated = this.Chain.GetBlock(tip.HashBlock) != null || tip.Validate(peer.Network);
+                bool validated = this.chain.GetBlock(tip.HashBlock) != null || tip.Validate(peer.Network);
                 validated &= !this.chainState.IsMarkedInvalid(tip.HashBlock);
                 if (!validated)
                 {
@@ -342,24 +313,24 @@ namespace Stratis.Bitcoin.Base
                     break;
                 }
 
-                this.pendingTip = tip;
+                this.ExpectedTip = tip;
             }
 
-            if (pendingTipBefore != this.pendingTip)
-                this.logger.LogTrace("Pending tip changed to '{0}'.", this.pendingTip);
+            if (pendingTipBefore != this.ExpectedTip)
+                this.logger.LogTrace("Pending tip changed to '{0}'.", this.ExpectedTip);
 
-            if ((this.pendingTip != null) && !this.bestChainSelector.TrySetAvailableTip(this.AttachedPeer.Connection.Id, this.pendingTip))
+            if ((this.ExpectedTip != null) && !this.bestChainSelector.TrySetAvailableTip(this.AttachedPeer.Connection.Id, this.ExpectedTip))
                 this.InvalidHeaderReceived = true;
 
-            ChainedHeader chainedPendingTip = this.pendingTip == null ? null : this.Chain.GetBlock(this.pendingTip.HashBlock);
+            ChainedHeader chainedPendingTip = this.ExpectedTip == null ? null : this.chain.GetBlock(this.ExpectedTip.HashBlock);
             if (chainedPendingTip != null)
             {
                 // This allows garbage collection to collect the duplicated pendingTip and ancestors.
-                this.pendingTip = chainedPendingTip;
+                this.ExpectedTip = chainedPendingTip;
             }
 
             // If we made any advancement or the sync is enforced by 'doTrySync'- continue syncing.
-            if (doTrySync || (this.pendingTip == null) || (pendingTipBefore == null) || (pendingTipBefore.HashBlock != this.pendingTip.HashBlock))
+            if (doTrySync || (this.ExpectedTip == null) || (pendingTipBefore == null) || (pendingTipBefore.HashBlock != this.ExpectedTip.HashBlock))
                 await this.TrySyncAsync().ConfigureAwait(false);
 
             this.logger.LogTrace("(-)");
@@ -384,9 +355,15 @@ namespace Stratis.Bitcoin.Base
         {
             this.logger.LogTrace("()");
 
-            this.pendingTip = null;
+            this.ExpectedTip = null;
 
-            await this.TrySyncAsync().ConfigureAwait(false);
+            try
+            {
+                await this.TrySyncAsync().ConfigureAwait(false);
+            }
+            catch (OperationCanceledException)
+            {
+            }
 
             this.logger.LogTrace("(-)");
         }
@@ -403,32 +380,26 @@ namespace Stratis.Bitcoin.Base
             {
                 if ((peer.State == NetworkPeerState.HandShaked) && !this.InvalidHeaderReceived)
                 {
-                    await peer.SendMessageAsync(this.GetPendingTipHeadersPayload()).ConfigureAwait(false);
+                    var headersPayload = new GetHeadersPayload()
+                    {
+                        BlockLocators = (this.ExpectedTip ?? this.chainState.ConsensusTip ?? this.chain.Tip).GetLocator(),
+                        HashStop = null
+                    };
+
+                    await peer.SendMessageAsync(headersPayload).ConfigureAwait(false);
                 }
-                else this.logger.LogTrace("No sync. Peer's state is {0} (need {1}), {2}invalid header received from this peer.", peer.State, NetworkPeerState.HandShaked, this.InvalidHeaderReceived ? "" : "NO ");
+                else
+                    this.logger.LogTrace("No sync. Peer's state is {0} (need {1}), {2}invalid header received from this peer.", peer.State, NetworkPeerState.HandShaked, this.InvalidHeaderReceived ? "" : "NO ");
             }
             else this.logger.LogTrace("No peer attached.");
 
             this.logger.LogTrace("(-)");
         }
 
-        /// <summary>
-        /// Creates <see cref="GetHeadersPayload"/> using <see cref="pendingTip"/>'s or our tip's locator.
-        /// </summary>
-        /// <returns>Get headers payload based on peer's or our tip.</returns>
-        private GetHeadersPayload GetPendingTipHeadersPayload()
-        {
-            return new GetHeadersPayload()
-            {
-                BlockLocators = (this.pendingTip ?? this.chainState.ConsensusTip ?? this.Chain.Tip).GetLocator(),
-                HashStop = null
-            };
-        }
-
         /// <inheritdoc />
         public override object Clone()
         {
-            return new ChainHeadersBehavior(this.Chain, this.chainState, this.initialBlockDownloadState, this.bestChainSelector, this.loggerFactory);
+            return new ChainHeadersBehavior(this.chain, this.chainState, this.initialBlockDownloadState, this.bestChainSelector, this.loggerFactory);
         }
     }
 }

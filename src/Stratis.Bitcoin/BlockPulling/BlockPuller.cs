@@ -345,7 +345,7 @@ namespace Stratis.Bitcoin.BlockPulling
 
             foreach (BlockPullerBehavior behavior in nodes)
             {
-                int? peerHeight = behavior.ChainHeadersBehavior?.PendingTip?.Height;
+                int? peerHeight = behavior.ChainHeadersBehavior?.ExpectedTip?.Height;
                 if (peerHeight >= minHeight)
                 {
                     var peerInfo = new PullerDownloadAssignments.PeerInformation
