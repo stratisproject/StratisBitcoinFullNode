@@ -28,7 +28,7 @@ namespace NBitcoin.OpenAsset
 
         private class CoinprismTransactionRepository : ITransactionRepository
         {
-#region ITransactionRepository Members
+        #region ITransactionRepository Members
 
             public Task<Transaction> GetAsync(uint256 txId)
             {
@@ -52,7 +52,7 @@ namespace NBitcoin.OpenAsset
             this._network = network;
         }
 
-#region IColoredTransactionRepository Members
+        #region IColoredTransactionRepository Members
 
         public ITransactionRepository Transactions
         {
