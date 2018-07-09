@@ -1,7 +1,8 @@
-﻿using NBitcoin.DataEncoders;
+﻿using NBitcoin;
+using NBitcoin.DataEncoders;
 using Newtonsoft.Json.Linq;
 
-namespace NBitcoin.RPC
+namespace Stratis.Bitcoin.Features.RPC
 {
     public class UnspentCoin
     {
