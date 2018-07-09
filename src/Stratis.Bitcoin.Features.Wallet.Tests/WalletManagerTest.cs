@@ -3184,7 +3184,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             DataFolder dataFolder = CreateDataFolder(this);
 
             Wallet wallet = this.walletFixture.GenerateBlankWallet("testWallet", "password");
-            wallet.IsExtPubKeyWallet = "true";
+            wallet.IsExtPubKeyWallet = true;
             wallet.EncryptedSeed = null;
             wallet.ChainCode = null;
             
