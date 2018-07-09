@@ -456,7 +456,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
             FullNode fullNode = ((StratisBitcoinPowRunner) this.runner).FullNode;
             BitcoinSecret dest = this.MinerSecret;
             var blocks = new List<Block>();
-            DateTimeOffset now = MockTime ?? DateTimeOffset.UtcNow;
+            DateTimeOffset now = this.MockTime ?? DateTimeOffset.UtcNow;
 
             for (int i = 0; i < blockCount; i++)
             {
