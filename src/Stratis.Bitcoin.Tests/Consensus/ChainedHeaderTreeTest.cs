@@ -2073,8 +2073,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
         /// </summary>
         /// <param name="cht">ChainHeaderTree</param>
         /// <param name="listOfAllUniqueBlockHeaders">List of All unique blockheader in all connected chains</param>
-        private void CheckChainedHeaderTreeConsistency(ChainedHeaderTree cht,
-            IEnumerable<BlockHeader> listOfAllUniqueBlockHeaders)
+        private void CheckChainedHeaderTreeConsistency(ChainedHeaderTree cht, IEnumerable<BlockHeader> listOfAllUniqueBlockHeaders)
         {
             Tuple<bool, bool, bool> checkResult = null;
             bool noUnclaimedBraches = true;
@@ -2119,7 +2118,6 @@ namespace Stratis.Bitcoin.Tests.Consensus
                 }
 
             }
-
             Assert.True(noUnclaimedBraches);
             Assert.True(reflecttipHash);
             Assert.True(hasLocalPeer);
@@ -2143,8 +2141,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
                 if (listOfAllUniqueBlockHeaders.Any(x => x.GetHash() == header.HashBlock)) continue;
                 else chbhHasOnlyReachebleHeaders = false;
             }
-
-
+            
             Assert.True(chbhHasOnlyReachebleHeaders);
             Assert.True(isCorrectChainSequence);
         }
