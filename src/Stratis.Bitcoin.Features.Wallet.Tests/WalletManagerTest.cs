@@ -3178,6 +3178,24 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             Assert.Equal(30, hdAccount.InternalAddresses.Count);
         }
 
+        [Fact]
+        public void Xpubkey_only_wallet_can_load_without_private_key()
+        {
+            DataFolder dataFolder = CreateDataFolder(this);
+
+            Wallet wallet = this.walletFixture.GenerateBlankWallet("testWallet", "password");
+            wallet.IsExtPubKeyWallet = "true";
+            wallet.EncryptedSeed = null;
+            wallet.ChainCode = null;
+            
+            File.WriteAllText(Path.Combine(dataFolder.WalletPath, "testWallet.wallet.json"), JsonConvert.SerializeObject(wallet, Formatting.Indented, new ByteArrayConverter()));
+
+            var walletManager = new WalletManager(this.LoggerFactory.Object, Network.StratisMain, new Mock<ConcurrentChain>().Object, NodeSettings.Default(), new Mock<WalletSettings>().Object,
+                dataFolder, new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime(), DateTimeProvider.Default);
+
+            walletManager.LoadWallet("password", "testWallet");
+        }
+
         private WalletManager GetWalletManagerWithCustomConfigParam(DataFolder dataFolder, params string[] cmdLineArgs)
         {
             var nodeSettings = new NodeSettings(Network.RegTest, ProtocolVersion.PROTOCOL_VERSION, "StratisBitcoin", cmdLineArgs);

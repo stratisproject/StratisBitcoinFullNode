@@ -29,15 +29,21 @@ namespace Stratis.Bitcoin.Features.Wallet
         public string Name { get; set; }
 
         /// <summary>
+        /// Flag indicating if it is a watch only wallet.
+        /// </summary>
+        [JsonProperty(PropertyName = "isExtPubKeyWallet")]
+        public bool IsExtPubKeyWallet { get; set; }
+
+        /// <summary>
         /// The seed for this wallet, password encrypted.
         /// </summary>
-        [JsonProperty(PropertyName = "encryptedSeed")]
+        [JsonProperty(PropertyName = "encryptedSeed", NullValueHandling = NullValueHandling.Ignore)]
         public string EncryptedSeed { get; set; }
 
         /// <summary>
         /// The chain code.
         /// </summary>
-        [JsonProperty(PropertyName = "chainCode")]
+        [JsonProperty(PropertyName = "chainCode", NullValueHandling = NullValueHandling.Ignore)]
         [JsonConverter(typeof(ByteArrayConverter))]
         public byte[] ChainCode { get; set; }
 
@@ -433,7 +439,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// The list of external addresses, typically used for receiving money.
         /// </summary>
         [JsonProperty(PropertyName = "externalAddresses")]
-        public ICollection<HdAddress> ExternalAddresses { get; set; }
+        public ICollection<HdAddress> ExternalAddresses { get ; set; }
 
         /// <summary>
         /// The list of internal addresses, typically used to receive change.
