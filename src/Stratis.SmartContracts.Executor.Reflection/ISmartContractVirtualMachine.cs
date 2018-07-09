@@ -1,4 +1,5 @@
 ﻿using Stratis.SmartContracts.Core;
+using Stratis.SmartContracts.Core.State;
 
 namespace Stratis.SmartContracts.Executor.Reflection
 {
@@ -6,11 +7,11 @@ namespace Stratis.SmartContracts.Executor.Reflection
     {
         ISmartContractExecutionResult Create(byte[] contractCode,
             ISmartContractExecutionContext context,
-            IGasMeter gasMeter);
+            IGasMeter gasMeter, IPersistentState persistentState, IContractStateRepository repository);
 
         ISmartContractExecutionResult ExecuteMethod(byte[] contractCode,
             string methodName,
             ISmartContractExecutionContext context,
-            IGasMeter gasMeter);
+            IGasMeter gasMeter, IPersistentState persistentState, IContractStateRepository repository);
     }
 }

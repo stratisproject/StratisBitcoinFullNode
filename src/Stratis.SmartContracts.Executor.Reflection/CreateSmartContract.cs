@@ -19,15 +19,16 @@ namespace Stratis.SmartContracts.Executor.Reflection
         private readonly ILoggerFactory loggerFactory;
         private readonly ISmartContractResultRefundProcessor refundProcessor;
         private readonly ISmartContractResultTransferProcessor transferProcessor;
+        private readonly ISmartContractVirtualMachine vm;
 
-        public CreateSmartContract(
-            IKeyEncodingStrategy keyEncodingStrategy,
+        public CreateSmartContract(IKeyEncodingStrategy keyEncodingStrategy,
             ILoggerFactory loggerFactory,
             Network network,
             IContractStateRepository stateSnapshot,
             SmartContractValidator validator,
             ISmartContractResultRefundProcessor refundProcessor,
-            ISmartContractResultTransferProcessor transferProcessor)
+            ISmartContractResultTransferProcessor transferProcessor, 
+            ISmartContractVirtualMachine vm)
         {
             this.logger = loggerFactory.CreateLogger(this.GetType());
             this.loggerFactory = loggerFactory;
@@ -37,6 +38,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
             this.keyEncodingStrategy = keyEncodingStrategy;
             this.refundProcessor = refundProcessor;
             this.transferProcessor = transferProcessor;
+            this.vm = vm;
         }
 
         public ISmartContractExecutionResult Execute(ISmartContractTransactionContext transactionContext)
@@ -84,11 +86,8 @@ namespace Stratis.SmartContracts.Executor.Reflection
             IPersistenceStrategy persistenceStrategy = new MeteredPersistenceStrategy(this.stateSnapshot, gasMeter, new BasicKeyEncodingStrategy());
             var persistentState = new PersistentState(persistenceStrategy, newContractAddress, this.network);
 
-            // TODO push TXExecutorFactory to DI
-            var vm = new ReflectionVirtualMachine(new InternalTransactionExecutorFactory(this.keyEncodingStrategy, this.loggerFactory, this.network), this.loggerFactory, persistentState, this.stateSnapshot);
-
             // Push internal tx executor and getbalance down into VM
-            ISmartContractExecutionResult result = vm.Create(carrier.CallData.ContractExecutionCode, executionContext, gasMeter);
+            ISmartContractExecutionResult result = this.vm.Create(carrier.CallData.ContractExecutionCode, executionContext, gasMeter, persistentState, this.stateSnapshot);
 
             if (result.Revert)
             {

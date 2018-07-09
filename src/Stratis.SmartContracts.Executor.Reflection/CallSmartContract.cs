@@ -17,14 +17,15 @@ namespace Stratis.SmartContracts.Executor.Reflection
         private readonly ILoggerFactory loggerFactory;
         private readonly ISmartContractResultRefundProcessor refundProcessor;
         private readonly ISmartContractResultTransferProcessor transferProcessor;
+        private readonly ISmartContractVirtualMachine vm;
 
-        public CallSmartContract(
-            IKeyEncodingStrategy keyEncodingStrategy,
+        public CallSmartContract(IKeyEncodingStrategy keyEncodingStrategy,
             ILoggerFactory loggerFactory,
             Network network,
             IContractStateRepository stateSnapshot,
             ISmartContractResultRefundProcessor refundProcessor,
-            ISmartContractResultTransferProcessor transferProcessor)
+            ISmartContractResultTransferProcessor transferProcessor, 
+            ISmartContractVirtualMachine vm)
         {
             this.logger = loggerFactory.CreateLogger(this.GetType());
             this.loggerFactory = loggerFactory;
@@ -33,6 +34,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
             this.keyEncodingStrategy = keyEncodingStrategy;
             this.refundProcessor = refundProcessor;
             this.transferProcessor = transferProcessor;
+            this.vm = vm;
         }
 
         public ISmartContractExecutionResult Execute(ISmartContractTransactionContext transactionContext)
@@ -79,12 +81,13 @@ namespace Stratis.SmartContracts.Executor.Reflection
             IPersistenceStrategy persistenceStrategy = new MeteredPersistenceStrategy(this.stateSnapshot, gasMeter, this.keyEncodingStrategy);
             var persistentState = new PersistentState(persistenceStrategy, contractAddress, this.network);
 
-            var vm = new ReflectionVirtualMachine(new InternalTransactionExecutorFactory(this.keyEncodingStrategy, this.loggerFactory, this.network), this.loggerFactory, persistentState, this.stateSnapshot);
-            ISmartContractExecutionResult result = vm.ExecuteMethod(
+            ISmartContractExecutionResult result = this.vm.ExecuteMethod(
                 contractCode,
                 methodName,
                 executionContext,
-                gasMeter);
+                gasMeter,
+                persistentState, 
+                this.stateSnapshot);
 
             this.logger.LogTrace("(-)");
 

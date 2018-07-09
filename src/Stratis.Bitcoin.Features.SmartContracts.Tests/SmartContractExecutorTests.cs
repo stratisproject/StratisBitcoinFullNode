@@ -30,6 +30,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         private readonly IContractStateRepository state;
         private readonly ISmartContractResultTransferProcessor transferProcessor;
         private readonly SmartContractValidator validator;
+        private InternalTransactionExecutorFactory internalTxExecutorFactory;
+        private ReflectionVirtualMachine vm;
 
         public SmartContractExecutorTests()
         {
@@ -41,6 +43,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             this.state = new ContractStateRepositoryRoot(new NoDeleteSource<byte[], byte[]>(new MemoryDictionarySource()));
             this.transferProcessor = new SmartContractResultTransferProcessor(this.loggerFactory, this.network);
             this.validator = new SmartContractValidator(new ISmartContractValidator[] { });
+            this.internalTxExecutorFactory = new InternalTransactionExecutorFactory(this.keyEncodingStrategy, loggerFactory, this.network);
+            this.vm = new ReflectionVirtualMachine(this.internalTxExecutorFactory, loggerFactory);
         }
 
         [Fact]
@@ -72,7 +76,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 this.network,
                 this.state,
                 this.refundProcessor,
-                this.transferProcessor);
+                this.transferProcessor, 
+                this.vm);
 
             ISmartContractExecutionResult result = executor.Execute(transactionContext);
 
@@ -103,7 +108,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 this.network,
                 this.state,
                 this.refundProcessor,
-                this.transferProcessor);
+                this.transferProcessor, 
+                this.vm);
 
             ISmartContractExecutionResult result = executor.Execute(transactionContext);
             Assert.IsType<SmartContractDoesNotExistException>(result.Exception);
@@ -129,7 +135,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 this.state,
                 this.validator,
                 this.refundProcessor,
-                this.transferProcessor);
+                this.transferProcessor, 
+                this.vm);
 
             ISmartContractExecutionResult result = executor.Execute(transactionContext);
 
@@ -163,7 +170,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 this.state,
                 this.validator,
                 this.refundProcessor,
-                this.transferProcessor);
+                this.transferProcessor, 
+                this.vm);
 
             ISmartContractExecutionResult result = executor.Execute(transactionContext);
             Assert.NotNull(result.Exception);
@@ -195,7 +203,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 this.state,
                 this.validator,
                 this.refundProcessor,
-                this.transferProcessor);
+                this.transferProcessor, 
+                this.vm);
 
             ISmartContractExecutionResult result = executor.Execute(transactionContext);
 
@@ -232,7 +241,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 this.state,
                 this.validator,
                 this.refundProcessor,
-                this.transferProcessor);
+                this.transferProcessor, 
+                this.vm);
 
             ISmartContractExecutionResult result = executor.Execute(transactionContext);
             uint160 address1 = result.NewContractAddress;
@@ -287,8 +297,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 this.network,
                 this.state,
                 this.refundProcessor,
-                this.transferProcessor
-            );
+                this.transferProcessor, 
+                this.vm);
 
             // Because our contract contains an infinite loop, we want to kill our test after
             // some amount of time without achieving a result. 3 seconds is an arbitrarily high enough timeout

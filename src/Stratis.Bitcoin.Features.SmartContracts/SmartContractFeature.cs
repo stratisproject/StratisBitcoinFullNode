@@ -22,6 +22,7 @@ using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Mining;
 using Stratis.SmartContracts.Core.Receipts;
 using Stratis.SmartContracts.Core.State;
+using Stratis.SmartContracts.Executor.Reflection;
 
 namespace Stratis.Bitcoin.Features.SmartContracts
 {
@@ -90,6 +91,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                         // CONSENSUS ------------------------------------------------------------------------
                         services.AddSingleton<IMempoolValidator, SmartContractMempoolValidator>();
                         services.AddSingleton<StandardTransactionPolicy, SmartContractTransactionPolicy>();
+
+                        services.AddSingleton<InternalTransactionExecutorFactory>();
+                        services.AddSingleton<ISmartContractVirtualMachine, ReflectionVirtualMachine>();
 
                         services.Replace(new ServiceDescriptor(typeof(IScriptAddressReader), new SmartContractScriptAddressReader(new ScriptAddressReader())));
                     });

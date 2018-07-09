@@ -49,7 +49,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             var persistentState = new PersistentState(persistenceStrategy,
                 TestAddress.ToUint160(this.network), this.network);
             var internalTxExecutorFactory = new InternalTransactionExecutorFactory(this.keyEncodingStrategy, this.loggerFactory, this.network);
-            var vm = new ReflectionVirtualMachine(internalTxExecutorFactory, this.loggerFactory, persistentState, this.repository);
+            var vm = new ReflectionVirtualMachine(internalTxExecutorFactory, this.loggerFactory);
 
             var context = new SmartContractExecutionContext(
                 new Block(0, TestAddress),
@@ -63,7 +63,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 contractCode,
                 "ThrowException",
                 context,
-                gasMeter);
+                gasMeter, persistentState, 
+                this.repository);
 
             Assert.Equal(typeof(Exception), result.Exception.GetType());
         }

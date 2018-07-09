@@ -80,13 +80,15 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
             ISmartContractExecutionContext newContext = new SmartContractExecutionContext(smartContractState.Block, newMessage, addressTo.ToUint160(this.network), 0, contractDetails.MethodParameters);
 
-            ISmartContractVirtualMachine vm = new ReflectionVirtualMachine(new InternalTransactionExecutorFactory(this.keyEncodingStrategy, this.loggerFactory, this.network), this.loggerFactory, newPersistentState, track);
+            ISmartContractVirtualMachine vm = new ReflectionVirtualMachine(new InternalTransactionExecutorFactory(this.keyEncodingStrategy, this.loggerFactory, this.network), this.loggerFactory);
 
             ISmartContractExecutionResult executionResult = vm.ExecuteMethod(
                 contractCode,
                 contractDetails.ContractMethodName,
                 newContext,
-                smartContractState.GasMeter);
+                smartContractState.GasMeter, 
+                newPersistentState, 
+                track);
 
             smartContractState.GasMeter.Spend(executionResult.GasConsumed);
 

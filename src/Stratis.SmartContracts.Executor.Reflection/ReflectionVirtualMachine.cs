@@ -16,22 +16,24 @@ namespace Stratis.SmartContracts.Executor.Reflection
     {
         private readonly InternalTransactionExecutorFactory internalTransactionExecutorFactory;
         private readonly ILogger logger;
-        private readonly IPersistentState persistentState;
-        private readonly IContractStateRepository repository;
         public static int VmVersion = 1;
 
-        public ReflectionVirtualMachine(InternalTransactionExecutorFactory internalTransactionExecutorFactory, ILoggerFactory loggerFactory, IPersistentState persistentState, IContractStateRepository repository)
+        public ReflectionVirtualMachine(
+            InternalTransactionExecutorFactory internalTransactionExecutorFactory,
+            ILoggerFactory loggerFactory)
         {
             this.internalTransactionExecutorFactory = internalTransactionExecutorFactory;
             this.logger = loggerFactory.CreateLogger(this.GetType());
-            this.persistentState = persistentState;
-            this.repository = repository;
         }
 
         /// <summary>
         /// Creates a new instance of a smart contract by invoking the contract's constructor
         /// </summary>
-        public ISmartContractExecutionResult Create(byte[] contractCode, ISmartContractExecutionContext context, IGasMeter gasMeter)
+        public ISmartContractExecutionResult Create(byte[] contractCode,
+            ISmartContractExecutionContext context,
+            IGasMeter gasMeter,
+            IPersistentState persistentState, 
+            IContractStateRepository repository)
         {
             this.logger.LogTrace("()");
 
@@ -41,14 +43,14 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
             var internalTransferList = new InternalTransferList();
 
-            IInternalTransactionExecutor internalTransactionExecutor = this.internalTransactionExecutorFactory.Create(this.repository, internalTransferList);
+            IInternalTransactionExecutor internalTransactionExecutor = this.internalTransactionExecutorFactory.Create(repository, internalTransferList);
 
-            var balanceState = new BalanceState(this.repository, context.Message.Value, internalTransferList);
+            var balanceState = new BalanceState(repository, context.Message.Value, internalTransferList);
 
             var contractState = new SmartContractState(
                 context.Block,
                 context.Message,
-                this.persistentState,
+                persistentState,
                 gasMeter,
                 internalTransactionExecutor,
                 new InternalHashHelper(),
@@ -56,6 +58,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
             // Invoke the constructor of the provided contract code
             LifecycleResult result = SmartContractConstructor.Construct(contractType, contractState, context.Parameters);
+
             ISmartContractExecutionResult executionResult = new SmartContractExecutionResult
             {
                 GasConsumed = gasMeter.GasConsumed
@@ -86,7 +89,9 @@ namespace Stratis.SmartContracts.Executor.Reflection
         public ISmartContractExecutionResult ExecuteMethod(byte[] contractCode,
             string contractMethodName,
             ISmartContractExecutionContext context,
-            IGasMeter gasMeter)
+            IGasMeter gasMeter,
+            IPersistentState persistentState, 
+            IContractStateRepository repository)
         {
             this.logger.LogTrace("(){0}:{1}", nameof(contractMethodName), contractMethodName);
 
@@ -108,14 +113,14 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
             var internalTransferList = new InternalTransferList();
 
-            IInternalTransactionExecutor internalTransactionExecutor = this.internalTransactionExecutorFactory.Create(this.repository, internalTransferList);
+            IInternalTransactionExecutor internalTransactionExecutor = this.internalTransactionExecutorFactory.Create(repository, internalTransferList);
 
-            var balanceState = new BalanceState(this.repository, context.Message.Value, internalTransferList);
+            var balanceState = new BalanceState(repository, context.Message.Value, internalTransferList);
 
             var contractState = new SmartContractState(
                 context.Block,
                 context.Message,
-                this.persistentState,
+                persistentState,
                 gasMeter,
                 internalTransactionExecutor,
                 new InternalHashHelper(),

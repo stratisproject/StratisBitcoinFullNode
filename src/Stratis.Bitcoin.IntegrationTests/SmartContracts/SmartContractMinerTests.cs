@@ -150,6 +150,8 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
 
             private bool useCheckpoints = true;
             public Key privateKey;
+            private InternalTransactionExecutorFactory internalTxExecutorFactory;
+            private ReflectionVirtualMachine vm;
 
             public TestContext()
             {
@@ -203,7 +205,9 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 this.refundProcessor = new SmartContractResultRefundProcessor(loggerFactory);
                 this.transferProcessor = new SmartContractResultTransferProcessor(loggerFactory, this.network);
 
-                this.executorFactory = new ReflectionSmartContractExecutorFactory(this.keyEncodingStrategy, loggerFactory, this.network, this.refundProcessor, this.transferProcessor, this.validator);
+                this.internalTxExecutorFactory = new InternalTransactionExecutorFactory(this.keyEncodingStrategy, loggerFactory, this.network);
+                this.vm = new ReflectionVirtualMachine(this.internalTxExecutorFactory, loggerFactory);
+                this.executorFactory = new ReflectionSmartContractExecutorFactory(this.keyEncodingStrategy, loggerFactory, this.network, this.refundProcessor, this.transferProcessor, this.validator, this.vm);
 
                 var networkPeerFactory = new NetworkPeerFactory(this.network, dateTimeProvider, loggerFactory, new PayloadProvider(), new SelfEndpointTracker());
 
