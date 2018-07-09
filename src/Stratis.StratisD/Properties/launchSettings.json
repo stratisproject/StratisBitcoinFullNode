@@ -5,7 +5,7 @@
     },
     "Stratis.StratisD Test": {
       "commandName": "Project",
-      "commandLineArgs": "-testnet -port=22123 -apiprefix=jbw -addnode=13.70.81.5"
+      "commandLineArgs": "-testnet"
     },
     "Stratis.StratisD Test with RPC": {
       "commandName": "Project",
