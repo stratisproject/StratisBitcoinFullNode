@@ -283,7 +283,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         {
             DataFolder dataFolder = CreateDataFolder(this);
 
-            var walletManager = GetWalletManagerWithCustomConfigParam(dataFolder, "-walletaddressbuffer=100");
+            var walletManager = this.CreateWalletManager(dataFolder, "-walletaddressbuffer=100");
 
             walletManager.CreateWallet("test", "mywallet", new Mnemonic(Wordlist.English, WordCount.Eighteen).ToString());
 
@@ -3160,7 +3160,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         {
             DataFolder dataFolder = CreateDataFolder(this);
 
-            WalletManager walletManager = this.GetWalletManagerWithCustomConfigParam(dataFolder);
+            WalletManager walletManager = this.CreateWalletManager(dataFolder);
             walletManager.CreateWallet("test", "mywallet", new Mnemonic(Wordlist.English, WordCount.Eighteen).ToString());
 
             // Default of 20 addresses becuause walletaddressbuffer not set
@@ -3169,7 +3169,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             Assert.Equal(20, hdAccount.InternalAddresses.Count);
             
             // Restart with walletaddressbuffer set
-            walletManager = this.GetWalletManagerWithCustomConfigParam(dataFolder, "-walletaddressbuffer=30");
+            walletManager = this.CreateWalletManager(dataFolder, "-walletaddressbuffer=30");
             walletManager.Start();
 
             // Addresses populated to fill the buffer set
@@ -3190,13 +3190,12 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             
             File.WriteAllText(Path.Combine(dataFolder.WalletPath, "testWallet.wallet.json"), JsonConvert.SerializeObject(wallet, Formatting.Indented, new ByteArrayConverter()));
 
-            var walletManager = new WalletManager(this.LoggerFactory.Object, Network.StratisMain, new Mock<ConcurrentChain>().Object, NodeSettings.Default(), new Mock<WalletSettings>().Object,
-                dataFolder, new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime(), DateTimeProvider.Default);
+            var walletManager = this.CreateWalletManager(dataFolder);
 
             walletManager.LoadWallet("password", "testWallet");
         }
 
-        private WalletManager GetWalletManagerWithCustomConfigParam(DataFolder dataFolder, params string[] cmdLineArgs)
+        private WalletManager CreateWalletManager(DataFolder dataFolder, params string[] cmdLineArgs)
         {
             var nodeSettings = new NodeSettings(Network.RegTest, ProtocolVersion.PROTOCOL_VERSION, "StratisBitcoin", cmdLineArgs);
             var walletSettings = new WalletSettings(nodeSettings);
