@@ -1,23 +1,33 @@
 ﻿using System;
 using System.Reflection;
+using NBitcoin;
 using NBitcoin.OpenAsset;
 using Newtonsoft.Json;
 
-namespace NBitcoin.JsonConverters
+namespace Stratis.Bitcoin.Utilities.JsonConverters
 {
+    /// <summary>
+    /// Converter used to convert an <see cref="AssetId"/> to and from JSON.
+    /// </summary>
+    /// <seealso cref="Newtonsoft.Json.JsonConverter" />
     public class AssetIdJsonConverter : JsonConverter
     {
+        public Network Network { get; }
+
         public AssetIdJsonConverter(Network network)
         {
-            if(network == null)
-                throw new ArgumentNullException("network");
+            Guard.NotNull(network, nameof(network));
+
             this.Network = network;
         }
+
+        /// <inheritdoc />
         public override bool CanConvert(Type objectType)
         {
             return typeof(AssetId).GetTypeInfo().IsAssignableFrom(objectType.GetTypeInfo());
         }
 
+        /// <inheritdoc />
         public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
         {
             if(reader.TokenType == JsonToken.Null)
@@ -25,7 +35,7 @@ namespace NBitcoin.JsonConverters
 
             try
             {
-                string value = reader.Value.ToString();
+                var value = reader.Value.ToString();
                 return new BitcoinAssetId(value, this.Network).AssetId;
             }
             catch(FormatException)
@@ -34,6 +44,7 @@ namespace NBitcoin.JsonConverters
             }
         }
 
+        /// <inheritdoc />
         public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
         {
             var assetId = value as AssetId;
@@ -41,12 +52,6 @@ namespace NBitcoin.JsonConverters
             {
                 writer.WriteValue(assetId.ToString(this.Network));
             }
-        }
-
-        public Network Network
-        {
-            get;
-            set;
         }
     }
 }

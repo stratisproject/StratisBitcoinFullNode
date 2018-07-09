@@ -32,19 +32,12 @@ namespace NBitcoin
             #endregion
         }
 
-        public CachedNoSqlRepository(NoSqlRepository inner)
+        public CachedNoSqlRepository(NoSqlRepository inner) : base(inner.Network)
         {
-            this._InnerRepository = inner;
+            this.InnerRepository = inner;
         }
 
-        private readonly NoSqlRepository _InnerRepository;
-        public NoSqlRepository InnerRepository
-        {
-            get
-            {
-                return this._InnerRepository;
-            }
-        }
+        public NoSqlRepository InnerRepository { get; }
 
         private Dictionary<string, byte[]> _Table = new Dictionary<string, byte[]>();
         private HashSet<string> _Removed = new HashSet<string>();
@@ -54,7 +47,7 @@ namespace NBitcoin
         public override async Task PutBatch(IEnumerable<Tuple<string, IBitcoinSerializable>> values)
         {
             await base.PutBatch(values).ConfigureAwait(false);
-            await this._InnerRepository.PutBatch(values).ConfigureAwait(false);
+            await this.InnerRepository.PutBatch(values).ConfigureAwait(false);
         }
 
         protected override Task PutBytesBatch(IEnumerable<Tuple<string, byte[]>> enumerable)

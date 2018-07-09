@@ -279,7 +279,7 @@ namespace Stratis.Bitcoin.Controllers.Models
                 }
                 else
                 {
-                    PayToMultiSigTemplateParameters multi = PayToMultiSigTemplate.Instance.ExtractScriptPubKeyParameters(network, script);
+                    PayToMultiSigTemplateParameters multi = PayToMultiSigTemplate.Instance.ExtractScriptPubKeyParameters(script);
                     this.ReqSigs = multi.SignatureCount;
                     this.Addresses = multi.PubKeys.Select(m => m.GetAddress(network).ToString()).ToList();
                 }

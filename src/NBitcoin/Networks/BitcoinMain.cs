@@ -152,6 +152,7 @@ namespace NBitcoin.Networks
                 Value = genesisReward,
                 ScriptPubKey = genesisOutputScript
             });
+
             Block genesis = consensusFactory.CreateBlock();
             genesis.Header.BlockTime = Utils.UnixTimeToDateTime(nTime);
             genesis.Header.Bits = nBits;
