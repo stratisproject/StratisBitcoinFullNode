@@ -4,7 +4,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using NBitcoin;
 using NBitcoin.DataEncoders;
-using NBitcoin.RPC;
 using Newtonsoft.Json.Linq;
 
 namespace Stratis.Bitcoin.Features.RPC

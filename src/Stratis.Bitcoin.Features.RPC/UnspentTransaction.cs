@@ -1,5 +1,5 @@
 ﻿using NBitcoin;
-using NBitcoin.RPC;
+using NBitcoin.Formatters;
 using Newtonsoft.Json.Linq;
 
 namespace Stratis.Bitcoin.Features.RPC

@@ -1,5 +1,4 @@
 ﻿using System;
-using NBitcoin.RPC;
 
 namespace Stratis.Bitcoin.Features.RPC.Exceptions
 {
