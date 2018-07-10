@@ -174,32 +174,33 @@ namespace Stratis.Bitcoin.Features.Miner
 
             while (context.MiningCanContinue)
             {
-                if (!ConsensusIsAtTip(context))
+                if (!this.ConsensusIsAtTip(context))
                     continue;
 
-                if (!BuildBlock(context))
+                if (!this.BuildBlock(context))
                     continue;
 
-                if (!MineBlock(context))
+                if (!this.MineBlock(context))
                     break;
 
-                if (!ValidateMinedBlock(context))
+                if (!this.ValidateMinedBlock(context))
                     continue;
 
-                ValidateMinedBlockWithConsensus(context);
-
-                if (!CheckValidationContext(context))
+                if (!this.ValidateAndConnectBlock(context))
                     break;
 
-                if (!CheckValidationContextPreviousTip(context))
+                if (!this.CheckValidationContextPreviousTip(context))
                     continue;
 
-                OnBlockMined(context);
+                this.OnBlockMined(context);
             }
 
             return context.Blocks;
         }
 
+        /// <summary>
+        /// Ensures that the node is synced before mining is allowed to start.
+        /// </summary>
         private bool ConsensusIsAtTip(MineBlockContext context)
         {
             this.miningCancellationTokenSource.Token.ThrowIfCancellationRequested();
@@ -214,14 +215,19 @@ namespace Stratis.Bitcoin.Features.Miner
             return true;
         }
 
+        /// <summary>
+        /// Creates a proof of work or proof of stake block depending on the network the node is running on.
+        /// <para>
+        /// If the node is on a POS network, make sure the POS consensus rules are valid. This is required for 
+        /// generation of blocks inside tests, where it is possible to generate multiple blocks within one second.
+        /// </para>
+        /// </summary>
         private bool BuildBlock(MineBlockContext context)
         {
             context.BlockTemplate = this.blockProvider.BuildPowBlock(context.ChainTip, context.ReserveScript.ReserveFullNodeScript);
 
             if (this.network.Consensus.IsProofOfStake)
             {
-                // Make sure the POS consensus rules are valid. This is required for generation of blocks inside tests,
-                // where it is possible to generate multiple blocks within one second.
                 if (context.BlockTemplate.Block.Header.Time <= context.ChainTip.Header.Time)
                     return false;
             }
@@ -229,6 +235,9 @@ namespace Stratis.Bitcoin.Features.Miner
             return true;
         }
 
+        /// <summary>
+        /// Executes until the required work (difficulty) has been reached. This is the "mining" process.
+        /// </summary>
         private bool MineBlock(MineBlockContext context)
         {
             context.ExtraNonce = this.IncrementExtraNonce(context.BlockTemplate.Block, context.ChainTip, context.ExtraNonce);
@@ -248,6 +257,9 @@ namespace Stratis.Bitcoin.Features.Miner
             return true;
         }
 
+        /// <summary>
+        /// Ensures that the block was properly mined by checking the block's work against the next difficulty target.
+        /// </summary>
         private bool ValidateMinedBlock(MineBlockContext context)
         {
             if (context.BlockTemplate.Block.Header.Nonce == InnerLoopCount)
@@ -260,14 +272,17 @@ namespace Stratis.Bitcoin.Features.Miner
             return true;
         }
 
-        private void ValidateMinedBlockWithConsensus(MineBlockContext context)
+        /// <summary>
+        /// Validate the mined block by passing it to the consensus rule engine.
+        /// <para>
+        /// On successfull block validation the block will be connected to the chain.
+        /// </para>
+        /// </summary>
+        private bool ValidateAndConnectBlock(MineBlockContext context)
         {
             context.ValidationContext = new ValidationContext { Block = context.BlockTemplate.Block };
             this.consensusLoop.AcceptBlockAsync(context.ValidationContext).GetAwaiter().GetResult();
-        }
 
-        private bool CheckValidationContext(MineBlockContext context)
-        {
             if (context.ValidationContext.ChainedHeader == null)
             {
                 this.logger.LogTrace("(-)[REORG-2]");
@@ -321,6 +336,9 @@ namespace Stratis.Bitcoin.Features.Miner
             return extraNonce;
         }
 
+        /// <summary>
+        /// Context class that holds information on the current state of the mining process (per block).
+        /// </summary>
         private class MineBlockContext
         {
             private readonly ulong amountOfBlocksToMine;
