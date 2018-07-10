@@ -1,6 +1,6 @@
 ﻿using System.Threading.Tasks;
 
-namespace NBitcoin.RPC
+namespace Stratis.Bitcoin.Features.RPC
 {
     /// <summary>
     /// Interface for an RPC client.

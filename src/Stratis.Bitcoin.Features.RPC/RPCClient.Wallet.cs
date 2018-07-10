@@ -2,36 +2,12 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using NBitcoin;
 using NBitcoin.DataEncoders;
 using Newtonsoft.Json.Linq;
 
-namespace NBitcoin.RPC
+namespace Stratis.Bitcoin.Features.RPC
 {
-    public class RPCAccount
-    {
-        public Money Amount { get; set; }
-        public string AccountName { get; set; }
-    }
-
-    public class ChangeAddress
-    {
-        public Money Amount { get; set; }
-        public BitcoinAddress Address { get; set; }
-    }
-
-    public class AddressGrouping
-    {
-        public AddressGrouping()
-        {
-            this.ChangeAddresses = new List<ChangeAddress>();
-        }
-
-        public BitcoinAddress PublicAddress { get; set; }
-        public Money Amount { get; set; }
-        public string Account { get; set; }
-        public List<ChangeAddress> ChangeAddresses { get; set; }
-    }
-
     /*
         Category            Name                        Implemented 
         ------------------ --------------------------- -----------------------
@@ -245,7 +221,7 @@ namespace NBitcoin.RPC
                 return tx.ToHex();
 
             // if there is, do this ACK so that NBitcoin does not change the version number
-            return Encoders.Hex.EncodeData(tx.ToBytes(version: Protocol.ProtocolVersion.WITNESS_VERSION - 1));
+            return Encoders.Hex.EncodeData(tx.ToBytes(version: NBitcoin.Protocol.ProtocolVersion.WITNESS_VERSION - 1));
         }
 
         // getreceivedbyaddress
