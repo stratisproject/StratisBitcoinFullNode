@@ -844,7 +844,7 @@ namespace Stratis.Bitcoin.Features.RPC
             if (nodeEndPoint == null)
                 throw new ArgumentNullException("nodeEndPoint");
 
-            SendCommandAsync(RPCOperations.addnode, nodeEndPoint.ToString(), "remove");
+            SendCommand(RPCOperations.addnode, nodeEndPoint.ToString(), "remove");
         }
 
         public async Task RemoveNodeAsync(EndPoint nodeEndPoint)
@@ -951,7 +951,7 @@ namespace Stratis.Bitcoin.Features.RPC
         public async Task<Block> GetBlockAsync(uint256 blockId)
         {
             RPCResponse resp = await SendCommandAsync(RPCOperations.getblock, blockId.ToString(), false).ConfigureAwait(false);
-            return new Block(Encoders.Hex.DecodeData(resp.Result.ToString()));
+            return Block.Load(Encoders.Hex.DecodeData(resp.Result.ToString()), this.Network);
         }
 
         /// <summary>
