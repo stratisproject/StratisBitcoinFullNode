@@ -10,9 +10,9 @@ namespace NBitcoin
     /// </summary>
     public class ConcurrentChain : ChainBase
     {
-        private Dictionary<uint256, ChainedHeader> blocksById = new Dictionary<uint256, ChainedHeader>();
-        private Dictionary<int, ChainedHeader> blocksByHeight = new Dictionary<int, ChainedHeader>();
-        private ReaderWriterLock lockObject = new ReaderWriterLock();
+        private readonly Dictionary<uint256, ChainedHeader> blocksById = new Dictionary<uint256, ChainedHeader>();
+        private readonly Dictionary<int, ChainedHeader> blocksByHeight = new Dictionary<int, ChainedHeader>();
+        private readonly ReaderWriterLock lockObject = new ReaderWriterLock();
 
         private volatile ChainedHeader tip;
         public override ChainedHeader Tip { get { return this.tip; } }
@@ -22,15 +22,24 @@ namespace NBitcoin
         private readonly Network network;
         public override Network Network { get { return this.network; } }
 
+        [Obsolete("Do not use this constructor, it will eventually be replaced with ChainHeaderTree.")]
+        public ConcurrentChain() { }
+
         public ConcurrentChain(Network network)
         {
             this.network = network;
         }
 
-        public ConcurrentChain(Network network, BlockHeader genesisHeader)
+        public ConcurrentChain(Network network, BlockHeader header)
             : this(network)
         {
-            SetTip(new ChainedHeader(genesisHeader, genesisHeader.GetHash(), 0));
+            SetTip(new ChainedHeader(header, header.GetHash(), 0));
+        }
+
+        public ConcurrentChain(Network network, ChainedHeader chainedHeader)
+                : this(network)
+        {
+            SetTip(chainedHeader);
         }
 
         public ConcurrentChain(Network network, byte[] bytes)
