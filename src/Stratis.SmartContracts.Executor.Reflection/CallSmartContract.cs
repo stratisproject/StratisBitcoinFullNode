@@ -61,6 +61,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
             var block = new Block(transactionContext.BlockHeight,
                 transactionContext.CoinbaseAddress.ToAddress(this.network));
+
             var executionContext = new SmartContractExecutionContext
             (
                 block,
@@ -81,6 +82,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
             IPersistenceStrategy persistenceStrategy =
                 new MeteredPersistenceStrategy(this.stateSnapshot, gasMeter, this.keyEncodingStrategy);
+
             var persistentState = new PersistentState(persistenceStrategy, contractAddress, this.network);
 
             var result = this.vm.ExecuteMethod(
@@ -91,22 +93,34 @@ namespace Stratis.SmartContracts.Executor.Reflection
                 persistentState,
                 this.stateSnapshot);
 
+            var revert = result.ExecutionException != null;
+
             this.logger.LogTrace("(-)");
 
-            // TODO Wrap vm execution result with this for now
+            var internalTransaction = this.transferProcessor.Process(
+                carrier, 
+                this.stateSnapshot, 
+                transactionContext, 
+                result.InternalTransferList?.Transfers, 
+                revert);
+
+            (var fee, var refundTxOuts) = this.refundProcessor.Process(
+                carrier,
+                transactionContext.MempoolFee,
+                result.GasConsumed,
+                result.ExecutionException);
+
             var executionResult = new SmartContractExecutionResult
             {
                 Exception = result.ExecutionException,
                 GasConsumed = result.GasConsumed,
-                InternalTransfers = result.InternalTransferList?.Transfers,
-                Return = result.Result
-            };            
-            
-            // Post-execute
-            this.transferProcessor.Process(carrier, executionResult, this.stateSnapshot, transactionContext);
-            this.refundProcessor.Process(executionResult, carrier, transactionContext.MempoolFee);
+                Return = result.Result,
+                InternalTransaction = internalTransaction,
+                Fee = fee,
+                Refunds = refundTxOuts
+            };                       
 
-            if (executionResult.Revert)
+            if (revert)
             {
                 this.stateSnapshot.Rollback();
             }

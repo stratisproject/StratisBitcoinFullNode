@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using NBitcoin;
 using Stratis.SmartContracts.Core;
-using Stratis.SmartContracts.Core.State.AccountAbstractionLayer;
 using Stratis.SmartContracts.Core.Validation;
 using Stratis.SmartContracts.Executor.Reflection.Exceptions;
 
@@ -14,30 +13,10 @@ namespace Stratis.SmartContracts.Executor.Reflection
     public sealed class SmartContractExecutionResult : ISmartContractExecutionResult
     {
         /// <inheritdoc/>
-        public Exception Exception { get; set; }
-
-        /// <inheritdoc/>
-        public ulong Fee { get; set; }
-
-        /// <inheritdoc/>
-        public ulong FutureRefund { get; set; }
-
-        /// <inheritdoc/>
-        public Gas GasConsumed { get; set; }
-
-        /// <inheritdoc/>
-        public Transaction InternalTransaction { get; set; }
-
-        public IList<TransferInfo> InternalTransfers { get; set; }
-
-        /// <inheritdoc/>
         public uint160 NewContractAddress { get; set; }
 
         /// <inheritdoc/>
-        public List<TxOut> Refunds { get; set; }
-
-        /// <inheritdoc/>
-        public object Return { get; set; }
+        public Exception Exception { get; set; }
 
         /// <inheritdoc/>
         public bool Revert
@@ -45,10 +24,27 @@ namespace Stratis.SmartContracts.Executor.Reflection
             get { return this.Exception != null; }
         }
 
+        /// <inheritdoc/>
+        public ulong FutureRefund { get; set; }
+
+        /// <inheritdoc/>
+        public Gas GasConsumed { get; set; }
+        
+        /// <inheritdoc/>
+        public object Return { get; set; }
+
+        /// <inheritdoc/>
+        public Transaction InternalTransaction { get; set; }
+
+        /// <inheritdoc/>
+        public ulong Fee { get; set; }
+
+        /// <inheritdoc/>
+        public List<TxOut> Refunds { get; set; }
+
         public SmartContractExecutionResult()
         {
             this.Refunds = new List<TxOut>();
-            this.InternalTransfers = new List<TransferInfo>();
         }
 
         /// <summary>

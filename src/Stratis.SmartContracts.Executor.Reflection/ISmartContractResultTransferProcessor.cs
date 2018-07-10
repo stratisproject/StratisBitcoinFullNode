@@ -1,5 +1,8 @@
-﻿using Stratis.SmartContracts.Core;
+﻿using System.Collections.Generic;
+using NBitcoin;
+using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.State;
+using Stratis.SmartContracts.Core.State.AccountAbstractionLayer;
 
 namespace Stratis.SmartContracts.Executor.Reflection
 {
@@ -9,12 +12,12 @@ namespace Stratis.SmartContracts.Executor.Reflection
     public interface ISmartContractResultTransferProcessor
     {
         /// <summary>
-        /// Alters an ISmartContractExecutionResult to account for value transfers after smart contract execution.
+        /// Returns a single Transaction which accounts for value transfers that occurred during contract execution.
         /// </summary>
-        void Process(
-            SmartContractCarrier carrier,
-            ISmartContractExecutionResult result,
+        Transaction Process(SmartContractCarrier carrier,
             IContractStateRepository stateSnapshot,
-            ISmartContractTransactionContext transactionContext);
+            ISmartContractTransactionContext transactionContext,
+            IList<TransferInfo> internalTransfers,
+            bool reversionRequired);
     }
 }

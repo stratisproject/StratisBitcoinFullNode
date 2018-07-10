@@ -88,36 +88,44 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
             var result = this.vm.Create(carrier.CallData.ContractExecutionCode, executionContext, gasMeter, persistentState, this.stateSnapshot);
 
+            var revert = result.ExecutionException != null;
+
+            var internalTransaction = this.transferProcessor.Process(
+                carrier,
+                this.stateSnapshot,
+                transactionContext,
+                result.InternalTransferList?.Transfers,
+                revert);
+
+            (var fee, var refundTxOuts) = this.refundProcessor.Process(
+                carrier,
+                transactionContext.MempoolFee,
+                result.GasConsumed,
+                result.ExecutionException);
+
             var executionResult = new SmartContractExecutionResult
             {
+                NewContractAddress = revert ? null : newContractAddress,
                 Exception = result.ExecutionException,
                 GasConsumed = result.GasConsumed,
-                InternalTransfers = result.InternalTransferList?.Transfers,
-                Return = result.Result
+                Return = result.Result,
+                InternalTransaction = internalTransaction,
+                Fee = fee,
+                Refunds = refundTxOuts
             };
 
-            if (executionResult.Revert)
+            if (revert)
             {
                 this.logger.LogTrace("(-)[CONTRACT_EXECUTION_FAILED]");
-                return executionResult;
-            }
 
-            executionResult.NewContractAddress = newContractAddress;
-
-            this.stateSnapshot.SetCode(newContractAddress, carrier.CallData.ContractExecutionCode);
-
-            this.logger.LogTrace("(-):{0}={1}", nameof(newContractAddress), newContractAddress);
-
-            // Post-execute
-            this.transferProcessor.Process(carrier, executionResult, this.stateSnapshot, transactionContext);
-            this.refundProcessor.Process(executionResult, carrier, transactionContext.MempoolFee);
-
-            if (executionResult.Revert)
-            {
                 this.stateSnapshot.Rollback();
             }
             else
             {
+                this.logger.LogTrace("(-):{0}={1}", nameof(newContractAddress), newContractAddress);
+
+                this.stateSnapshot.SetCode(newContractAddress, carrier.CallData.ContractExecutionCode);
+
                 this.stateSnapshot.Commit();
             }
 

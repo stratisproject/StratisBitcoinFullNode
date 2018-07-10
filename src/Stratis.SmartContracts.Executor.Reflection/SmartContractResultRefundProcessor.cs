@@ -1,4 +1,6 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using System;
+using System.Collections.Generic;
+using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Executor.Reflection.Exceptions;
@@ -18,28 +20,34 @@ namespace Stratis.SmartContracts.Executor.Reflection
             this.logger = loggerFactory.CreateLogger(this.GetType());
         }
 
-        public void Process(ISmartContractExecutionResult result, SmartContractCarrier carrier, Money mempoolFee)
+        public (Money, List<TxOut>) Process(SmartContractCarrier carrier, Money mempoolFee,
+            Gas gasConsumed,
+            Exception exception)
         {
             this.logger.LogTrace("(){0}:{1}", nameof(mempoolFee), mempoolFee);
 
-            result.Fee = mempoolFee;
+            Money fee = mempoolFee;
 
-            if (result.Exception is OutOfGasException)
+            var refunds = new List<TxOut>();
+
+            if (exception is OutOfGasException)
             {
                 this.logger.LogTrace("(-)[OUTOFGAS_EXCEPTION]");
-                return;
+                return (fee, refunds);
             }
 
-            var refund = new Money(carrier.GasCostBudget - (result.GasConsumed * carrier.CallData.GasPrice));
-            this.logger.LogTrace("{0}:{1},{2}:{3},{4}:{5},{6}:{7}", nameof(carrier.GasCostBudget), carrier.GasCostBudget, nameof(result.GasConsumed), result.GasConsumed, nameof(carrier.CallData.GasPrice), carrier.CallData.GasPrice, nameof(refund), refund);
+            var refund = new Money(carrier.GasCostBudget - (gasConsumed * carrier.CallData.GasPrice));
+            this.logger.LogTrace("{0}:{1},{2}:{3},{4}:{5},{6}:{7}", nameof(carrier.GasCostBudget), carrier.GasCostBudget, nameof(gasConsumed), gasConsumed, nameof(carrier.CallData.GasPrice), carrier.CallData.GasPrice, nameof(refund), refund);
 
             if (refund > 0)
             {
-                result.Fee -= refund;
-                result.Refunds.Add(CreateRefund(carrier.Sender, refund));
+                fee -= refund;
+                refunds.Add(CreateRefund(carrier.Sender, refund));
             }
 
             this.logger.LogTrace("(-)");
+
+            return (fee, refunds);
         }
 
         /// <summary>

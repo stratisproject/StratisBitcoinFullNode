@@ -1,5 +1,6 @@
-﻿using NBitcoin;
-using Stratis.SmartContracts.Core;
+﻿using System;
+using System.Collections.Generic;
+using NBitcoin;
 
 namespace Stratis.SmartContracts.Executor.Reflection
 {
@@ -9,8 +10,10 @@ namespace Stratis.SmartContracts.Executor.Reflection
     public interface ISmartContractResultRefundProcessor
     {
         /// <summary>
-        /// Alters an ISmartContractExecutionResult to account for gas refunds after contract execution.
+        /// Returns the fee and refund transactions to account for gas refunds after contract execution.
         /// </summary>
-        void Process(ISmartContractExecutionResult result, SmartContractCarrier carrier, Money mempoolFee);
+        (Money, List<TxOut>) Process(SmartContractCarrier carrier, Money mempoolFee,
+            Gas gasConsumed,
+            Exception exception);
     }
 }

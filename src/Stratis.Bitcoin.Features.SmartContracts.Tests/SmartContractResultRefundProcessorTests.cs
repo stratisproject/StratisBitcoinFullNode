@@ -32,17 +32,12 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             var carrier = SmartContractCarrier.CallContract(1, contractAddress, "ThrowException", 1, (Gas)5000);
             carrier.Sender = new uint160(2);
 
-            var result = new SmartContractExecutionResult
-            {
-                GasConsumed = (Gas)950
-            };
+            (var fee, var refunds) = this.refundProcessor.Process(carrier, new Money(10500), (Gas)950, null);
 
-            this.refundProcessor.Process(result, carrier, new Money(10500));
-
-            Assert.Equal((ulong)6450, result.Fee);
-            Assert.Single(result.Refunds);
-            Assert.Equal(carrier.Sender.ToBytes(), result.Refunds.First().ScriptPubKey.GetDestination(this.network).ToBytes());
-            Assert.Equal(4050, result.Refunds.First().Value);
+            Assert.Equal(6450, fee);
+            Assert.Single(refunds);
+            Assert.Equal(carrier.Sender.ToBytes(), refunds.First().ScriptPubKey.GetDestination(this.network).ToBytes());
+            Assert.Equal(4050, refunds.First().Value);
         }
 
         [Fact]
@@ -53,15 +48,10 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             var carrier = SmartContractCarrier.CallContract(1, contractAddress, "ThrowException", 1, (Gas)5000);
             carrier.Sender = new uint160(2);
 
-            var result = new SmartContractExecutionResult
-            {
-                GasConsumed = (Gas)5000
-            };
+            (var fee, var refunds) = this.refundProcessor.Process(carrier, new Money(10500), (Gas)5000, null);
 
-            this.refundProcessor.Process(result, carrier, new Money(10500));
-
-            Assert.Equal((ulong)10500, result.Fee);
-            Assert.Empty(result.Refunds);
+            Assert.Equal(10500, fee);
+            Assert.Empty(refunds);
         }
 
         [Fact]
@@ -72,16 +62,10 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             var carrier = SmartContractCarrier.CallContract(1, contractAddress, "ThrowException", 1, (Gas)5000);
             carrier.Sender = new uint160(2);
 
-            var result = new SmartContractExecutionResult
-            {
-                Exception = new OutOfGasException(),
-                GasConsumed = (Gas)5000
-            };
+            (var fee, var refunds) = this.refundProcessor.Process(carrier, new Money(10500), (Gas)5000, new OutOfGasException());
 
-            this.refundProcessor.Process(result, carrier, new Money(10500));
-
-            Assert.Equal((ulong)10500, result.Fee);
-            Assert.Empty(result.Refunds);
+            Assert.Equal(10500, fee);
+            Assert.Empty(refunds);
         }
     }
 }

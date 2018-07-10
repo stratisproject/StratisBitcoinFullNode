@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System.Collections.Generic;
+using System.Linq;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.SmartContracts.Core;
@@ -19,47 +20,46 @@ namespace Stratis.SmartContracts.Executor.Reflection
         }
 
         /// <inheritdoc />
-        public void Process(
-            SmartContractCarrier carrier,
-            ISmartContractExecutionResult result,
+        public Transaction Process(SmartContractCarrier carrier,
             IContractStateRepository stateSnapshot,
-            ISmartContractTransactionContext transactionContext)
+            ISmartContractTransactionContext transactionContext,
+            IList<TransferInfo> internalTransfers,
+            bool reversionRequired)
         {
-            if (result.Revert)
+            if (reversionRequired)
             {
                 // Send back funds
                 if (carrier.Value > 0)
                 {
-                    result.InternalTransaction = CreateRefundTransaction(transactionContext);
+                    return CreateRefundTransaction(transactionContext);
                 }
             }
-            else
+
+            // If contract received no funds and made no transfers, do nothing.
+            if (carrier.Value == 0 && !internalTransfers.Any())
             {
-                // If contract received no funds and made no transfers, do nothing.
-                if (carrier.Value == 0 && !result.InternalTransfers.Any())
-                {
-                    return;
-                }
-
-                uint160 contractAddress = carrier.CallData.ContractAddress ?? carrier.GetNewContractAddress();
-
-                // If contract had no balance, received funds, but made no transfers, assign the current UTXO.
-                if (stateSnapshot.GetUnspent(contractAddress) == null && carrier.Value > 0 && !result.InternalTransfers.Any())
-                {
-                    stateSnapshot.SetUnspent(contractAddress, new ContractUnspentOutput
-                    {
-                        Value = carrier.Value,
-                        Hash = carrier.TransactionHash,
-                        Nvout = carrier.Nvout
-                    });
-                }
-                // All other cases we need a condensing transaction
-                else
-                {
-                    var transactionCondenser = new TransactionCondenser(contractAddress, this.loggerFactory, result.InternalTransfers, stateSnapshot, this.network, transactionContext);
-                    result.InternalTransaction = transactionCondenser.CreateCondensingTransaction();
-                }
+                return null;
             }
+
+            // TODO we should not be generating addresses in here!
+            uint160 contractAddress = carrier.CallData.ContractAddress ?? carrier.GetNewContractAddress();
+
+            // If contract had no balance, received funds, but made no transfers, assign the current UTXO.
+            if (stateSnapshot.GetUnspent(contractAddress) == null && carrier.Value > 0 && !internalTransfers.Any())
+            {
+                stateSnapshot.SetUnspent(contractAddress, new ContractUnspentOutput
+                {
+                    Value = carrier.Value,
+                    Hash = carrier.TransactionHash,
+                    Nvout = carrier.Nvout
+                });
+
+                return null;
+            }
+            // All other cases we need a condensing transaction
+
+            var transactionCondenser = new TransactionCondenser(contractAddress, this.loggerFactory, internalTransfers, stateSnapshot, this.network, transactionContext);
+            return transactionCondenser.CreateCondensingTransaction();
         }
 
         /// <summary>
