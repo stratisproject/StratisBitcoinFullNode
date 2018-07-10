@@ -406,8 +406,8 @@ namespace NBitcoin.Tests
         public void CanForkSidePartialChain()
         {
             Block genesis = TestUtils.CreateFakeBlock();
-            var side = new ConcurrentChain(this.network);
-            var main = new ConcurrentChain(this.network);
+            var side = new ConcurrentChain(this.network, new ChainedHeader(genesis.Header, genesis.GetHash(), 0));
+            var main = new ConcurrentChain(this.network, new ChainedHeader(genesis.Header, genesis.GetHash(), 0));
             this.AppendBlock(side, main);
             this.AppendBlock(side, main);
             ChainedHeader common = this.AppendBlock(side, main);

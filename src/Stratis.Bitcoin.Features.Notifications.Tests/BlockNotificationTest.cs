@@ -48,8 +48,6 @@ namespace Stratis.Bitcoin.Features.Notifications.Tests
 
             var startBlockId = new uint256(156);
             var chain = new ConcurrentChain(this.Network);
-            //chain.Setup(c => c.GetBlock(startBlockId)).Returns((ChainedHeader)null);
-
             var notification = new BlockNotification(this.LoggerFactory.Object, chain, new Mock<ILookaheadBlockPuller>().Object, signals.Object, new AsyncLoopFactory(new LoggerFactory()), lifetime);
             notification.SyncFrom(startBlockId);
             notification.Notify(lifetime.ApplicationStopping);

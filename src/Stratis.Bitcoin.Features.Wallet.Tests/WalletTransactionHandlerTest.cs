@@ -56,7 +56,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                     });
 
                 BlockHeader blockHeader = this.network.Consensus.ConsensusFactory.CreateBlockHeader();
-                var chain = new ConcurrentChain(this.network, new ChainedHeader(blockHeader, blockHeader.GetHash(), 0));
+                var chain = new ConcurrentChain(this.network, new ChainedHeader(blockHeader, blockHeader.GetHash(), 1));
 
                 string dataDir = "TestData/WalletTransactionHandlerTest/BuildTransactionNoSpendableTransactionsThrowsWalletException";
                 var walletManager = new WalletManager(this.LoggerFactory.Object, this.network, chain, NodeSettings.Default(), new Mock<WalletSettings>().Object,
