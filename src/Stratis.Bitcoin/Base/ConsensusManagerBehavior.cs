@@ -40,9 +40,6 @@ namespace Stratis.Bitcoin.Base
 
         private Timer refreshTimer;
 
-        /// <summary>Thread safe access to the best chain of block headers (that the node is aware of) from genesis.</summary>
-        private readonly ConcurrentChain chain;
-
         public ConnectNewHeadersResult ConsensusTipChanged(ChainedHeader chainedHeader)
         {
             // TODO async lock has to be obtained before calling CM.HeadersPresented
@@ -52,29 +49,20 @@ namespace Stratis.Bitcoin.Base
             throw new NotImplementedException();
         }
 
-        public bool InvalidHeaderReceived { get; private set; }
+        private bool invalidHeaderReceived;
 
-        /// <summary>Selects the best available chain based on tips provided by the peers and switches to it.</summary>
-        private readonly BestChainSelector bestChainSelector;
-
-        /// <summary>
-        /// Initializes an instanse of the object.
-        /// </summary>
-        /// <param name="chain">Thread safe chain of block headers from genesis.</param>
+        /// <summary>Initializes an instance of the object.</summary>
         /// <param name="chainState">Information about node's chain.</param>
         /// <param name="loggerFactory">Factory for creating loggers.</param>
         /// <param name="initialBlockDownloadState">Provider of IBD state.</param>
-        /// <param name="bestChainSelector">Selects the best available chain based on tips provided by the peers and switches to it.</param>
-        public ConsensusManagerBehavior(ConcurrentChain chain, IChainState chainState, IInitialBlockDownloadState initialBlockDownloadState, BestChainSelector bestChainSelector, ILoggerFactory loggerFactory)
+        public ConsensusManagerBehavior(IChainState chainState, IInitialBlockDownloadState initialBlockDownloadState, ILoggerFactory loggerFactory)
         {
-            Guard.NotNull(chain, nameof(chain));
-
             this.chainState = chainState;
-            this.chain = chain;
             this.loggerFactory = loggerFactory;
             this.initialBlockDownloadState = initialBlockDownloadState;
-            this.bestChainSelector = bestChainSelector;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName, $"[{this.GetHashCode():x}] ");
+
+            this.invalidHeaderReceived = false;
         }
 
         protected override void AttachCore()
@@ -164,8 +152,6 @@ namespace Stratis.Bitcoin.Base
 
             if (invPayload.Inventory.Any(i => ((i.Type & InventoryType.MSG_BLOCK) != 0) && !this.chain.Contains(i.Hash)))
             {
-                // No need of periodical refresh, the peer is notifying us.
-                this.refreshTimer.Dispose();
                 await this.TrySyncAsync().ConfigureAwait(false);
             }
 
@@ -194,6 +180,7 @@ namespace Stratis.Bitcoin.Base
             this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(peer), peer.RemoteSocketEndpoint, nameof(getHeadersPayload), getHeadersPayload);
 
             // Ignoring "getheaders" from peers because node is in initial block download unless the peer is whitelisted.
+            // Don't tell peers at which stage of syncing with the network node is, don't announce which blocks we have.
             if (this.initialBlockDownloadState.IsInitialBlockDownload() && !peer.Behavior<ConnectionManagerBehavior>().Whitelisted)
             {
                 this.logger.LogTrace("(-)[IGNORE_ON_IBD]");
@@ -309,7 +296,7 @@ namespace Stratis.Bitcoin.Base
                 if (!validated)
                 {
                     this.logger.LogTrace("Validation of new header '{0}' failed.", tip);
-                    this.InvalidHeaderReceived = true;
+                    this.invalidHeaderReceived = true;
                     break;
                 }
 
@@ -320,7 +307,7 @@ namespace Stratis.Bitcoin.Base
                 this.logger.LogTrace("Pending tip changed to '{0}'.", this.ExpectedTip);
 
             if ((this.ExpectedTip != null) && !this.bestChainSelector.TrySetAvailableTip(this.AttachedPeer.Connection.Id, this.ExpectedTip))
-                this.InvalidHeaderReceived = true;
+                this.invalidHeaderReceived = true;
 
             ChainedHeader chainedPendingTip = this.ExpectedTip == null ? null : this.chain.GetBlock(this.ExpectedTip.HashBlock);
             if (chainedPendingTip != null)
@@ -378,7 +365,7 @@ namespace Stratis.Bitcoin.Base
             INetworkPeer peer = this.AttachedPeer;
             if (peer != null)
             {
-                if ((peer.State == NetworkPeerState.HandShaked) && !this.InvalidHeaderReceived)
+                if ((peer.State == NetworkPeerState.HandShaked) && !this.invalidHeaderReceived)
                 {
                     var headersPayload = new GetHeadersPayload()
                     {
@@ -389,7 +376,7 @@ namespace Stratis.Bitcoin.Base
                     await peer.SendMessageAsync(headersPayload).ConfigureAwait(false);
                 }
                 else
-                    this.logger.LogTrace("No sync. Peer's state is {0} (need {1}), {2}invalid header received from this peer.", peer.State, NetworkPeerState.HandShaked, this.InvalidHeaderReceived ? "" : "NO ");
+                    this.logger.LogTrace("No sync. Peer's state is {0} (need {1}), {2}invalid header received from this peer.", peer.State, NetworkPeerState.HandShaked, this.invalidHeaderReceived ? "" : "NO ");
             }
             else this.logger.LogTrace("No peer attached.");
 
