@@ -2769,10 +2769,10 @@ namespace Stratis.Bitcoin.Tests.Consensus
 
             // Peer 1 presents headers from 20a to 60b, with fork point 40a.
             const int heightOfFirstFork = 40;
-            const int chainBExtensionBeyondFork = 20; // h40 -> h60
+            const int chainBExtensionBeyondFork = 20; // h41 -> h60
             ChainedHeader tipOfForkOfChainB = testContext.ExtendAChain(chainBExtensionBeyondFork, initialChainTip.GetAncestor(heightOfFirstFork));
             Assert.Equal(60, tipOfForkOfChainB.Height);
-            List<BlockHeader> listOfChainBBlockHeaders = testContext.ChainedHeaderToList(tipOfForkOfChainB, 40); // h20 -> h60
+            List<BlockHeader> listOfChainBBlockHeaders = testContext.ChainedHeaderToList(tipOfForkOfChainB, 41); // h20 -> h60
             ConnectNewHeadersResult connectNewHeadersResult = chainedHeaderTree.ConnectNewHeaders(peerOneId, listOfChainBBlockHeaders);
 
             // Headers from Peer 1 should be marked for download (41b to 60b).
@@ -2782,9 +2782,9 @@ namespace Stratis.Bitcoin.Tests.Consensus
 
             // Peer 2 presents 25a to 55c with fork point at 39a.
             const int heightOfSecondFork = 39;
-            const int chainCExtension = 16; // h39 -> h55
+            const int chainCExtension = 16; // h40 -> h55
             ChainedHeader tipOfForkOfChainC = testContext.ExtendAChain(chainCExtension, initialChainTip.GetAncestor(heightOfSecondFork));
-            List<BlockHeader> listOfChainCBlockHeaders = testContext.ChainedHeaderToList(tipOfForkOfChainC, 30); // 25 -> 55
+            List<BlockHeader> listOfChainCBlockHeaders = testContext.ChainedHeaderToList(tipOfForkOfChainC, 31); // 25 -> 55
             Assert.Throws<MaxReorgViolationException>(() => chainedHeaderTree.ConnectNewHeaders(peerTwoId, listOfChainCBlockHeaders));
         }
     }
