@@ -1175,7 +1175,7 @@ namespace Stratis.Bitcoin.Consensus
         /// of consecutive headers, both items are included in the array.
         /// </summary>
         /// <returns>Array of consecutive headers.</returns>
-        public ChainedHeader[] ToHashArray()
+        public ChainedHeader[] ToArray()
         {
             return this.DownloadTo.ToChainedHeaderArray(this.DownloadFrom);
         }

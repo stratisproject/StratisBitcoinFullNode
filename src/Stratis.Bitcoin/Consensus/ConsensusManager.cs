@@ -72,6 +72,8 @@ namespace Stratis.Bitcoin.Consensus
 
         private readonly Dictionary<uint256, long> expectedBlockSizes;
 
+        private readonly ConcurrentChain chain;
+
         private bool isIbd;
 
         public ConsensusManager(
@@ -88,6 +90,7 @@ namespace Stratis.Bitcoin.Consensus
             NodeSettings nodeSettings,
             IDateTimeProvider dateTimeProvider,
             IInitialBlockDownloadState ibdState,
+            ConcurrentChain chain,
             IBlockStore blockStore = null)
         {
             this.network = network;
@@ -99,6 +102,7 @@ namespace Stratis.Bitcoin.Consensus
             this.peerBanning = peerBanning;
             this.blockStore = blockStore;
             this.finalizedBlockHeight = finalizedBlockHeight;
+            this.chain = chain;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
 
             this.chainedHeaderTree = new ChainedHeaderTree(network, loggerFactory, blockValidator, checkpoints, chainState, finalizedBlockHeight, consensusSettings);
@@ -197,7 +201,7 @@ namespace Stratis.Bitcoin.Consensus
             }
 
             if (triggerDownload && (connectNewHeadersResult.DownloadTo != null))
-                this.DownloadBlocks(connectNewHeadersResult.ToHashArray(), this.ProcessDownloadedBlock);
+                this.DownloadBlocks(connectNewHeadersResult.ToArray(), this.ProcessDownloadedBlock);
 
             this.logger.LogTrace("(-):'{0}'", connectNewHeadersResult);
             return connectNewHeadersResult;
@@ -406,7 +410,7 @@ namespace Stratis.Bitcoin.Consensus
             }
             
             foreach (ConnectNewHeadersResult newHeaders in blocksToDownload)
-                this.DownloadBlocks(newHeaders.ToHashArray(), this.ProcessDownloadedBlock);
+                this.DownloadBlocks(newHeaders.ToArray(), this.ProcessDownloadedBlock);
 
             this.logger.LogTrace("(-)");
         }
@@ -768,6 +772,8 @@ namespace Stratis.Bitcoin.Consensus
             this.Tip = newTip;
 
             this.chainState.ConsensusTip = this.Tip;
+            this.chain.SetTip(this.Tip);
+
             bool ibd = this.ibdState.IsInitialBlockDownload();
 
             if (ibd != this.isIbd)
