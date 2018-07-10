@@ -187,7 +187,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         {
             this.logger.LogTrace("()");
 
-            ChainedHeader peerTip = this.headersBehavior.ExpectedTip;
+            ChainedHeader peerTip = this.headersBehavior.ExpectedPeerTip;
 
             ChainedHeader highestHeader = peerTip;
 

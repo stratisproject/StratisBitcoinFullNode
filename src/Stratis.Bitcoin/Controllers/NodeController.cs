@@ -136,7 +136,7 @@ namespace Stratis.Bitcoin.Controllers
                 {
                     Version = peer.PeerVersion != null ? peer.PeerVersion.UserAgent : "[Unknown]",
                     RemoteSocketEndpoint = peer.RemoteSocketEndpoint.ToString(),
-                    TipHeight = chainHeadersBehavior.ExpectedTip != null ? chainHeadersBehavior.ExpectedTip.Height : peer.PeerVersion?.StartHeight ?? -1,
+                    TipHeight = chainHeadersBehavior.ExpectedPeerTip != null ? chainHeadersBehavior.ExpectedPeerTip.Height : peer.PeerVersion?.StartHeight ?? -1,
                     IsInbound = connectionManagerBehavior.Inbound
                 };
 
