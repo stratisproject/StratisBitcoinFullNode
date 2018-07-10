@@ -24,11 +24,11 @@ namespace Stratis.Bitcoin.Base
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
 
-        /// <summary>Information about node's chain.</summary>
-        private readonly IChainState chainState;
-
         /// <summary>Provider of IBD state.</summary>
         private readonly IInitialBlockDownloadState initialBlockDownloadState;
+
+        /// <inheritdoc cref="ConsensusManager"/>
+        private readonly ConsensusManager consensusManager;
 
         /// <summary>
         /// Our view of the peer's consensus tip constructed on peer's announcement of its tip using "headers" message.
@@ -49,20 +49,13 @@ namespace Stratis.Bitcoin.Base
             throw new NotImplementedException();
         }
 
-        private bool invalidHeaderReceived;
-
-        /// <summary>Initializes an instance of the object.</summary>
-        /// <param name="chainState">Information about node's chain.</param>
-        /// <param name="loggerFactory">Factory for creating loggers.</param>
-        /// <param name="initialBlockDownloadState">Provider of IBD state.</param>
-        public ConsensusManagerBehavior(IChainState chainState, IInitialBlockDownloadState initialBlockDownloadState, ILoggerFactory loggerFactory)
+        public ConsensusManagerBehavior(IInitialBlockDownloadState initialBlockDownloadState, ConsensusManager consensusManager, ILoggerFactory loggerFactory)
         {
-            this.chainState = chainState;
             this.loggerFactory = loggerFactory;
             this.initialBlockDownloadState = initialBlockDownloadState;
-            this.logger = loggerFactory.CreateLogger(this.GetType().FullName, $"[{this.GetHashCode():x}] ");
+            this.consensusManager = consensusManager;
 
-            this.invalidHeaderReceived = false;
+            this.logger = loggerFactory.CreateLogger(this.GetType().FullName, $"[{this.GetHashCode():x}] ");
         }
 
         protected override void AttachCore()
@@ -86,10 +79,7 @@ namespace Stratis.Bitcoin.Base
 
             this.RegisterDisposable(this.refreshTimer);
             if (this.AttachedPeer.State == NetworkPeerState.Connected)
-            {
-                ChainedHeader highPoW = this.chainState.ConsensusTip;
-                this.AttachedPeer.MyVersion.StartHeight = highPoW?.Height ?? 0;
-            }
+                this.AttachedPeer.MyVersion.StartHeight = this.consensusManager.Tip?.Height ?? 0;
 
             this.AttachedPeer.StateChanged.Register(this.OnStateChangedAsync);
             this.AttachedPeer.MessageReceived.Register(this.OnMessageReceivedAsync, true);
