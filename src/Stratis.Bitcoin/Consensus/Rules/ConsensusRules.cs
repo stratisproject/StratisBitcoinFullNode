@@ -97,6 +97,9 @@ namespace Stratis.Bitcoin.Consensus.Rules
             this.consensusRules = new Dictionary<string, ConsensusRuleDescriptor>();
             this.partialValidationRules = new List<ConsensusRuleDescriptor>();
             this.headerValidationRules = new List<ConsensusRuleDescriptor>();
+            this.fullValidationRules = new List<ConsensusRuleDescriptor>();
+            this.integrityValidationRules = new List<ConsensusRuleDescriptor>();
+
         }
 
         /// <inheritdoc />
