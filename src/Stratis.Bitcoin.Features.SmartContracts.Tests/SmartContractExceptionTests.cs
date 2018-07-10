@@ -59,14 +59,14 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 new object[] { }
             );
 
-            ISmartContractExecutionResult result = vm.ExecuteMethod(
+            var result = vm.ExecuteMethod(
                 contractCode,
                 "ThrowException",
                 context,
                 gasMeter, persistentState, 
                 this.repository);
 
-            Assert.Equal(typeof(Exception), result.Exception.GetType());
+            Assert.Equal(typeof(Exception), result.ExecutionException.GetType());
         }
     }
 }

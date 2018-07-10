@@ -86,26 +86,33 @@ namespace Stratis.SmartContracts.Executor.Reflection
             IPersistenceStrategy persistenceStrategy = new MeteredPersistenceStrategy(this.stateSnapshot, gasMeter, new BasicKeyEncodingStrategy());
             var persistentState = new PersistentState(persistenceStrategy, newContractAddress, this.network);
 
-            // Push internal tx executor and getbalance down into VM
-            ISmartContractExecutionResult result = this.vm.Create(carrier.CallData.ContractExecutionCode, executionContext, gasMeter, persistentState, this.stateSnapshot);
+            var result = this.vm.Create(carrier.CallData.ContractExecutionCode, executionContext, gasMeter, persistentState, this.stateSnapshot);
 
-            if (result.Revert)
+            var executionResult = new SmartContractExecutionResult
+            {
+                Exception = result.ExecutionException,
+                GasConsumed = result.GasConsumed,
+                InternalTransfers = result.InternalTransferList?.Transfers,
+                Return = result.Result
+            };
+
+            if (executionResult.Revert)
             {
                 this.logger.LogTrace("(-)[CONTRACT_EXECUTION_FAILED]");
-                return result;
+                return executionResult;
             }
 
-            result.NewContractAddress = newContractAddress;
+            executionResult.NewContractAddress = newContractAddress;
 
             this.stateSnapshot.SetCode(newContractAddress, carrier.CallData.ContractExecutionCode);
 
             this.logger.LogTrace("(-):{0}={1}", nameof(newContractAddress), newContractAddress);
 
             // Post-execute
-            this.transferProcessor.Process(carrier, result, this.stateSnapshot, transactionContext);
-            this.refundProcessor.Process(result, carrier, transactionContext.MempoolFee);
+            this.transferProcessor.Process(carrier, executionResult, this.stateSnapshot, transactionContext);
+            this.refundProcessor.Process(executionResult, carrier, transactionContext.MempoolFee);
 
-            if (result.Revert)
+            if (executionResult.Revert)
             {
                 this.stateSnapshot.Rollback();
             }
@@ -114,7 +121,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
                 this.stateSnapshot.Commit();
             }
 
-            return result;
+            return executionResult;
         }
 
         internal void LogExecutionContext(ILogger logger, IBlock block, IMessage message, uint160 contractAddress, SmartContractCarrier carrier)

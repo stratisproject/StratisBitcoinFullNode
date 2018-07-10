@@ -82,7 +82,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
             ISmartContractVirtualMachine vm = new ReflectionVirtualMachine(new InternalTransactionExecutorFactory(this.keyEncodingStrategy, this.loggerFactory, this.network), this.loggerFactory);
 
-            ISmartContractExecutionResult executionResult = vm.ExecuteMethod(
+            var result = vm.ExecuteMethod(
                 contractCode,
                 contractDetails.ContractMethodName,
                 newContext,
@@ -90,12 +90,14 @@ namespace Stratis.SmartContracts.Executor.Reflection
                 newPersistentState, 
                 track);
 
-            smartContractState.GasMeter.Spend(executionResult.GasConsumed);
+            smartContractState.GasMeter.Spend(result.GasConsumed);
 
-            if (executionResult.Revert)
+            var revert = result.ExecutionException != null;
+
+            if (revert)
             {
                 track.Rollback();
-                return TransferResult.Failed(executionResult.Exception);
+                return TransferResult.Failed(result.ExecutionException);
             }
 
             track.Commit();
@@ -109,7 +111,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
             this.logger.LogTrace("(-)");
 
-            return TransferResult.Transferred(executionResult.Return);
+            return TransferResult.Transferred(result.Result);
         }
     }
 }

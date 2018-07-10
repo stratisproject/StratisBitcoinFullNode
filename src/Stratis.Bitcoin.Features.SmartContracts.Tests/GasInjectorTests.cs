@@ -134,7 +134,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 new Block(0, TestAddress),
                 new Message(TestAddress, TestAddress, 0, (Gas)500000), TestAddress.ToUint160(this.network), 1, new object[] { 1 });
 
-            ISmartContractExecutionResult result = vm.ExecuteMethod(
+            var result = vm.ExecuteMethod(
                 originalAssemblyBytes,
                 MethodName,
                 executionContext,
@@ -163,13 +163,13 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             var executionContext = new SmartContractExecutionContext(new Block(0, TestAddress), new Message(TestAddress, TestAddress, 0, (Gas)500000), TestAddress.ToUint160(this.network), 1);
 
-            ISmartContractExecutionResult result = vm.ExecuteMethod(
+            var result = vm.ExecuteMethod(
                 originalAssemblyBytes,
                 "UseAllGas",
                 executionContext,
                 gasMeter, persistentState, repository);
 
-            Assert.NotNull(result.Exception);
+            Assert.NotNull(result.ExecutionException);
             Assert.Equal((Gas)0, gasMeter.GasAvailable);
             Assert.Equal(gasLimit, result.GasConsumed);
             Assert.Equal(gasLimit, gasMeter.GasConsumed);
@@ -194,7 +194,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             var executionContext = new SmartContractExecutionContext(new Block(0, TestAddress), new Message(TestAddress, TestAddress, 0, (Gas)500000), TestAddress.ToUint160(this.network), 1);
 
-            ISmartContractExecutionResult result = vm.Create(
+            var result = vm.Create(
                 originalAssemblyBytes,
                 executionContext,
                 gasMeter, persistentState, repository);
@@ -223,7 +223,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             var vm = new ReflectionVirtualMachine(internalTxExecutorFactory, this.loggerFactory);
             var executionContext = new SmartContractExecutionContext(new Block(0, TestAddress), new Message(TestAddress, TestAddress, 0, (Gas)500000), TestAddress.ToUint160(this.network), 1, new[] { "Tset Owner" });
 
-            ISmartContractExecutionResult result = vm.Create(
+            var result = vm.Create(
                 originalAssemblyBytes,
                 executionContext,
                 gasMeter, persistentState, repository);

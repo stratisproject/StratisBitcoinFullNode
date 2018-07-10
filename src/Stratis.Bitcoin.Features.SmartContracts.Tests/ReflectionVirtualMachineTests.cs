@@ -88,7 +88,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                             deserializedCall.CallData.GasPrice
                         );
 
-            ISmartContractExecutionResult result = vm.ExecuteMethod(
+            var result = vm.ExecuteMethod(
                 contractExecutionCode,
                 "StoreData",
                 context,
@@ -155,7 +155,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                             deserializedCall.MethodParameters
                         );
 
-            ISmartContractExecutionResult result = vm.ExecuteMethod(
+            var result = vm.ExecuteMethod(
                 contractExecutionCode,
                 "StoreData",
                 context,
@@ -219,7 +219,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                             deserializedCall.MethodParameters
                         );
 
-            ISmartContractExecutionResult result = vm.Create(
+            var result = vm.Create(
                 contractExecutionCode,
                 context,
                 gasMeter, 

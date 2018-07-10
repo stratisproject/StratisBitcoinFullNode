@@ -29,7 +29,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
         /// <summary>
         /// Creates a new instance of a smart contract by invoking the contract's constructor
         /// </summary>
-        public ISmartContractExecutionResult Create(byte[] contractCode,
+        public VmExecutionResult Create(byte[] contractCode,
             ISmartContractExecutionContext context,
             IGasMeter gasMeter,
             IPersistentState persistentState, 
@@ -59,34 +59,26 @@ namespace Stratis.SmartContracts.Executor.Reflection
             // Invoke the constructor of the provided contract code
             LifecycleResult result = SmartContractConstructor.Construct(contractType, contractState, context.Parameters);
 
-            ISmartContractExecutionResult executionResult = new SmartContractExecutionResult
-            {
-                GasConsumed = gasMeter.GasConsumed
-            };
-
             if (!result.Success)
             {
                 LogException(result.Exception);
 
                 this.logger.LogTrace("(-)[CREATE_CONTRACT_INSTANTIATION_FAILED]:{0}={1}", nameof(gasMeter.GasConsumed), gasMeter.GasConsumed);
 
-                executionResult.Exception = result.Exception.InnerException ?? result.Exception;
-                return executionResult;
+                return VmExecutionResult.Error(gasMeter.GasConsumed, result.Exception.InnerException ?? result.Exception);
             }
             else
                 this.logger.LogTrace("[CREATE_CONTRACT_INSTANTIATION_SUCCEEDED]");
 
-            executionResult.Return = result.Object;
-
             this.logger.LogTrace("(-):{0}={1}", nameof(gasMeter.GasConsumed), gasMeter.GasConsumed);
 
-            return executionResult;
+            return VmExecutionResult.Success(internalTransferList, gasMeter.GasConsumed, result.Object);
         }
 
         /// <summary>
         /// Invokes a method on an existing smart contract
         /// </summary>
-        public ISmartContractExecutionResult ExecuteMethod(byte[] contractCode,
+        public VmExecutionResult ExecuteMethod(byte[] contractCode,
             string contractMethodName,
             ISmartContractExecutionContext context,
             IGasMeter gasMeter,
@@ -100,7 +92,8 @@ namespace Stratis.SmartContracts.Executor.Reflection
             if (contractMethodName == null)
             {
                 this.logger.LogTrace("(-)[CALLCONTRACT_METHODNAME_NOT_GIVEN]");
-                return executionResult;
+                return VmExecutionResult.Error(gasMeter.GasConsumed, null);
+
             }
 
             byte[] gasInjectedCode = SmartContractGasInjector.AddGasCalculationToContractMethod(contractCode, contractMethodName);
@@ -108,7 +101,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
             if (contractType == null)
             {
                 this.logger.LogTrace("(-)[CALLCONTRACT_CONTRACTTYPE_NULL]");
-                return executionResult;
+                return VmExecutionResult.Error(gasMeter.GasConsumed, null);
             }
 
             var internalTransferList = new InternalTransferList();
@@ -137,10 +130,12 @@ namespace Stratis.SmartContracts.Executor.Reflection
                 executionResult.Exception = result.Exception.InnerException ?? result.Exception;
                 executionResult.GasConsumed = gasMeter.GasConsumed;
 
-                return executionResult;
+                return VmExecutionResult.Error(gasMeter.GasConsumed, result.Exception.InnerException ?? result.Exception);
             }
             else
                 this.logger.LogTrace("[CALL_CONTRACT_INSTANTIATION_SUCCEEDED]");
+
+            object methodResult = null;
 
             try
             {
@@ -152,38 +147,31 @@ namespace Stratis.SmartContracts.Executor.Reflection
                     throw new ConstructorInvocationException("[CALLCONTRACT_CANNOT_INVOKE_CTOR]");
 
                 SmartContract smartContract = result.Object;
-                executionResult.Return = methodToInvoke.Invoke(smartContract, context.Parameters);
-
-                executionResult.InternalTransfers = internalTransferList.Transfers;
+                methodResult = methodToInvoke.Invoke(smartContract, context.Parameters);
             }
             catch (ArgumentException argumentException)
             {
                 LogException(argumentException);
-                executionResult.Exception = argumentException;
+                return VmExecutionResult.Error(gasMeter.GasConsumed, argumentException);
             }
             catch (TargetInvocationException targetException)
             {
                 LogException(targetException);
-                executionResult.Exception = targetException.InnerException ?? targetException;
+                return VmExecutionResult.Error(gasMeter.GasConsumed, targetException.InnerException ?? targetException);
             }
-            catch (TargetParameterCountException parameterExcepion)
+            catch (TargetParameterCountException parameterException)
             {
-                LogException(parameterExcepion);
-                executionResult.Exception = parameterExcepion;
+                LogException(parameterException);
             }
             catch (ConstructorInvocationException constructorInvocationException)
             {
                 LogException(constructorInvocationException);
-                executionResult.Exception = constructorInvocationException;
-            }
-            finally
-            {
-                executionResult.GasConsumed = gasMeter.GasConsumed;
+                return VmExecutionResult.Error(gasMeter.GasConsumed, constructorInvocationException);
             }
 
             this.logger.LogTrace("(-):{0}={1}", nameof(gasMeter.GasConsumed), gasMeter.GasConsumed);
 
-            return executionResult;
+            return VmExecutionResult.Success(internalTransferList, gasMeter.GasConsumed, methodResult);
         }
 
         private void LogException(Exception exception)
