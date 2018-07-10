@@ -8,6 +8,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
     /// <summary>
     /// Checks if <see cref="Block"/> has a valid PoS header.
     /// </summary>
+    [PartialValidationRule]
     public class BlockHeaderPosContextualRule : StakeStoreConsensusRule
     {
         /// <summary>PoS block's timestamp mask.</summary>

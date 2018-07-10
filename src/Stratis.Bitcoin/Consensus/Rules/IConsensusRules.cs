@@ -87,14 +87,14 @@ namespace Stratis.Bitcoin.Consensus.Rules
         Task<RewindState> RewindAsync();
 
         /// <summary>
-        /// Execute rules that are marked with the as <see cref="PartialValidationRuleAttribute"/>
+        /// Execute rules that are marked with the as <see cref="PartialValidationRuleAttribute"/>.
         /// </summary>
         /// <param name="validationContext">The validation context.</param>
         /// <param name="tip">The current tip.</param>
         Task PartialValidationAsync(ValidationContext validationContext, ChainedHeader tip);
 
         /// <summary>
-        /// Execute rules that are marked with the as <see cref="FullValidationRuleAttribute"/>
+        /// Execute rules that are marked with the as <see cref="FullValidationRuleAttribute"/>.
         /// </summary>
         /// <param name="validationContext">The validation context.</param>
         /// <param name="tip">The current tip.</param>

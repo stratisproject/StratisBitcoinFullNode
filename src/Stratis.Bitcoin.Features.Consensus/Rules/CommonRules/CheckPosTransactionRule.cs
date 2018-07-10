@@ -7,6 +7,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
 {    /// <summary>
      /// Validate a PoS transaction.
      /// </summary>
+    [PartialValidationRule]
     public class CheckPosTransactionRule : ConsensusRule
     {
         /// <inheritdoc />

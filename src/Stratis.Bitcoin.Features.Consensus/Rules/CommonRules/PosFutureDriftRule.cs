@@ -8,6 +8,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
     /// <summary>
     /// A rule that will verify the block time drift is according to the PoS consensus rules.
     /// </summary>
+    [PartialValidationRule]
     public class PosFutureDriftRule : StakeStoreConsensusRule
     {
         /// <summary>Drifting Bug Fix, hardfork on Sat, 19 Nov 2016 00:00:00 GMT.</summary>

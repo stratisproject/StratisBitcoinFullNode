@@ -47,23 +47,22 @@ namespace Stratis.Bitcoin.Consensus.Rules
         public ConsensusPerformanceCounter PerformanceCounter { get; }
 
         /// <summary>
-        /// Grouping of rules that are marked with a <see cref="PartialValidationRuleAttribute"/> or no attribute.
+        /// Group of rules that are marked with a <see cref="PartialValidationRuleAttribute"/> or no attribute.
         /// </summary>
         private readonly List<ConsensusRuleDescriptor> partialValidationRules;
 
         /// <summary>
-        /// Grouping of rules that are marked with a <see cref="FullValidationRuleAttribute"/>.
+        /// Group of rules that are marked with a <see cref="FullValidationRuleAttribute"/>.
         /// </summary>
         private readonly List<ConsensusRuleDescriptor> fullValidationRules;
 
         /// <summary>
-        /// Grouping of rules that are marked with a <see cref="IntegrityValidationRuleAttribute"/>.
+        /// Group of rules that are marked with a <see cref="IntegrityValidationRuleAttribute"/>.
         /// </summary>
         private readonly List<ConsensusRuleDescriptor> integrityValidationRules;
 
-
         /// <summary>
-        /// Grouping of rules that are marked with a <see cref="HeaderValidationRuleAttribute"/>.
+        /// Group of rules that are marked with a <see cref="HeaderValidationRuleAttribute"/>.
         /// </summary>
         private readonly List<ConsensusRuleDescriptor> headerValidationRules;
 
@@ -114,7 +113,7 @@ namespace Stratis.Bitcoin.Consensus.Rules
                 this.consensusRules.Add(consensusRule.GetType().FullName, new ConsensusRuleDescriptor(consensusRule));
             }
 
-            this.partialValidationRules.AddRange(this.consensusRules.Values.Where(w => w.RuleAttributes.OfType<PartialValidationRuleAttribute>().Any() || w.RuleAttributes.Count == 0));
+            this.partialValidationRules.AddRange(this.consensusRules.Values.Where(w => w.RuleAttributes.OfType<PartialValidationRuleAttribute>().Any()));
             this.fullValidationRules.AddRange(this.consensusRules.Values.Where(w => w.RuleAttributes.OfType<FullValidationRuleAttribute>().Any()));
             this.headerValidationRules.AddRange(this.consensusRules.Values.Where(w => w.RuleAttributes.OfType<HeaderValidationRuleAttribute>().Any()));
             this.integrityValidationRules.AddRange(this.consensusRules.Values.Where(w => w.RuleAttributes.OfType<IntegrityValidationRuleAttribute>().Any()));
@@ -192,7 +191,7 @@ namespace Stratis.Bitcoin.Consensus.Rules
 
             RuleContext ruleContext = this.CreateRuleContext(validationContext, tip);
 
-            await this.ExecuteRulesAsync(this.partialValidationRules, ruleContext);
+            await this.ExecuteRulesAsync(this.partialValidationRules, ruleContext).ConfigureAwait(false);
         }
 
         /// <inheritdoc/>
@@ -202,7 +201,7 @@ namespace Stratis.Bitcoin.Consensus.Rules
 
             RuleContext ruleContext = this.CreateRuleContext(validationContext, tip);
 
-            await this.ExecuteRulesAsync(this.partialValidationRules, ruleContext);
+            await this.ExecuteRulesAsync(this.partialValidationRules, ruleContext).ConfigureAwait(false);
         }
 
         private async Task ExecuteRulesAsync(List<ConsensusRuleDescriptor> rules, RuleContext ruleContext)

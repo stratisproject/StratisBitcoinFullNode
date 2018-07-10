@@ -8,6 +8,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
     /// <summary>
     /// Ensures a block follows the coinbase rules.
     /// </summary>
+    [PartialValidationRule]
     public class EnsureCoinbaseRule : ConsensusRule
     {
         /// <inheritdoc />

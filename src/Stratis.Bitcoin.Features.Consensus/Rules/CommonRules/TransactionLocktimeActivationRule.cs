@@ -12,7 +12,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
     /// </summary>
     /// <remarks>
     /// More info here https://github.com/bitcoin/bips/blob/master/bip-0113.mediawiki
-    /// </remarks>    
+    /// </remarks>   
+    [PartialValidationRule]
     public class TransactionLocktimeActivationRule : ConsensusRule
     {
         /// <inheritdoc />

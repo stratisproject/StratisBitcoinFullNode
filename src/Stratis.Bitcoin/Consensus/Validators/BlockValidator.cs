@@ -26,7 +26,7 @@ namespace Stratis.Bitcoin.Consensus.Validators
     public interface IPartialValidation
     {
         /// <summary>
-        /// Partial validation of a block, this will not changes any state in the consensus store when validating a block.
+        /// Partial validation of a block, this will not change any state in the consensus store when validating a block.
         /// </summary>
         /// <param name="chainedHeaderBlock">The block to validate.</param>
         /// <param name="onPartialValidationCompletedAsyncCallback">A callback that is called when validation is complete.</param>
@@ -95,12 +95,13 @@ namespace Stratis.Bitcoin.Consensus.Validators
             {
                 ChainedHeaderBlock = item.ChainedHeaderBlock,
                 BanDurationSeconds = validationContext.BanDurationSeconds,
+                BanReason = validationContext.Error != null ? $"Invalid block received: {validationContext.Error.Message}" : string.Empty,
                 Succeeded = validationContext.Error != null
             };
 
-            await item.PartialValidationCompletedAsyncCallback(partialValidationResult);
+            await item.PartialValidationCompletedAsyncCallback(partialValidationResult).ConfigureAwait(false);
 
-            this.logger.LogTrace("(-):{0}", partialValidationResult);
+            this.logger.LogTrace("(-)");
         }
 
         // <inheritdoc />
@@ -122,6 +123,12 @@ namespace Stratis.Bitcoin.Consensus.Validators
             public ChainedHeaderBlock ChainedHeaderBlock { get; set; }
 
             public OnPartialValidationCompletedAsyncCallback PartialValidationCompletedAsyncCallback { get; set; }
+
+            /// <inheritdoc/>
+            public override string ToString()
+            {
+                return base.ToString() + $",{nameof(this.ChainedHeaderBlock)}={this.ChainedHeaderBlock}";
+            }
         }
     }
 }
