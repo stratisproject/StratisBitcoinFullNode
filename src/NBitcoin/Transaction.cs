@@ -4,8 +4,8 @@ using System.IO;
 using System.Linq;
 using NBitcoin.Crypto;
 using NBitcoin.DataEncoders;
+using NBitcoin.Formatters;
 using NBitcoin.Protocol;
-using NBitcoin.RPC;
 
 namespace NBitcoin
 {

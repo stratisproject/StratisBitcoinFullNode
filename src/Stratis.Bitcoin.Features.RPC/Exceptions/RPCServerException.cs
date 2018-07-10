@@ -1,7 +1,6 @@
 ﻿using System;
-using NBitcoin.RPC;
 
-namespace Stratis.Bitcoin.Features.RPC
+namespace Stratis.Bitcoin.Features.RPC.Exceptions
 {
     public class RPCServerException : Exception
     {

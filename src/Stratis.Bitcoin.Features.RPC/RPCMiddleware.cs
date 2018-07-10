@@ -4,10 +4,10 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Primitives;
 using NBitcoin.DataEncoders;
-using NBitcoin.RPC;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Stratis.Bitcoin.Configuration;
+using Stratis.Bitcoin.Features.RPC.Exceptions;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.RPC
