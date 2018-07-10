@@ -39,6 +39,8 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
         private readonly IBlockStoreCache blockStoreCache;
 
+        private ChainHeadersBehavior headersBehavior;
+
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
 
@@ -103,6 +105,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.logger.LogTrace("()");
 
             this.AttachedPeer.MessageReceived.Register(this.OnMessageReceivedAsync);
+            this.headersBehavior = this.AttachedPeer.Behavior<ChainHeadersBehavior>();
 
             this.logger.LogTrace("(-)");
         }
@@ -180,12 +183,11 @@ namespace Stratis.Bitcoin.Features.BlockStore
         }
 
         /// <summary>Gets the highest header between the header of the last block that was sent to a peer and the expected peer's tip.</summary>
-        private ChainedHeader GetHighestHeader(INetworkPeer peer)
+        private ChainedHeader GetHighestHeader()
         {
-            this.logger.LogTrace("({0}:'{1}')", nameof(peer), peer.RemoteSocketEndpoint);
+            this.logger.LogTrace("()");
 
-            var chainBehavior = peer.Behavior<ChainHeadersBehavior>();
-            ChainedHeader peerTip = chainBehavior.ExpectedTip;
+            ChainedHeader peerTip = this.headersBehavior.ExpectedTip;
 
             ChainedHeader highestHeader = peerTip;
 
@@ -288,7 +290,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             int count = inv.Inventory.Count;
             if (count > 0)
             {
-                ChainedHeader highestHeader = this.GetHighestHeader(peer);
+                ChainedHeader highestHeader = this.GetHighestHeader();
 
                 if (highestHeader?.Height < lastAddedChainedHeader.Height)
                 {
@@ -407,7 +409,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
             try
             {
-                ChainedHeader highestHeader = this.GetHighestHeader(peer);
+                ChainedHeader highestHeader = this.GetHighestHeader();
 
                 ChainedHeader bestIndex = null;
                 if (!revertToInv)
