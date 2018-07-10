@@ -126,13 +126,10 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
 
         private void meanwhile_jings_chain_advanced_ahead_of_the_others()
         {
-            this.sharedSteps.MineBlocks(10, this.nodes[JingTheFastMiner], AccountZero, WalletZero, WalletPassword);
+            this.sharedSteps.MineBlocks(5, this.nodes[JingTheFastMiner], AccountZero, WalletZero, WalletPassword);
 
             this.jingsBlockHeight = this.nodes[JingTheFastMiner].FullNode.Chain.Height;
 
-            (this.nodes[Bob].FullNode.Chain.Height + 10).Should().BeLessOrEqualTo(this.jingsBlockHeight);
-            (this.nodes[Charlie].FullNode.Chain.Height + 10).Should().BeLessOrEqualTo(this.jingsBlockHeight);
-            (this.nodes[Dave].FullNode.Chain.Height + 10).Should().BeLessOrEqualTo(this.jingsBlockHeight);
         }
 
         private void jings_connection_comes_back()
@@ -151,7 +148,8 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
         private async Task bobs_transaction_from_shorter_chain_is_now_missing()
         {
             //todo: make sure that BlockRepository is a good place to look for that
-            this.nodes[Bob].FullNode.BlockStoreManager().BlockRepository.GetTrxAsync(this.shorterChainTransaction.GetHash()).Result
+            this.nodes[Bob].FullNode.BlockStoreManager().BlockRepository
+                .GetTrxAsync(this.shorterChainTransaction.GetHash()).Result
                 .Should().BeNull("longest chain comes from selfish miner and shouldn't contain the transaction made on the chain with the other 3 nodes.");
 
         }

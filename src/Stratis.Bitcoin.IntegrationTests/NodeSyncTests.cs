@@ -98,7 +98,8 @@ namespace Stratis.Bitcoin.IntegrationTests
             }
         }
 
-        [Fact(Skip = "currently this times out")]
+        [Fact]
+        [Trait("unstable", "times out frequently")]
         public void CanCoreSyncFromStratis()
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
@@ -133,7 +134,8 @@ namespace Stratis.Bitcoin.IntegrationTests
             }
         }
 
-        [Fact(Skip = "Timing out or failing on the assert not equal HashBlock")]
+        [Fact]
+        [Trait("unstable", "Timing out or failing on the assert not equal HashBlock")]
         public void Given_NodesAreSynced_When_ABigReorgHappens_Then_TheReorgIsIgnored()
         {
             // Temporary fix so the Network static initialize will not break.

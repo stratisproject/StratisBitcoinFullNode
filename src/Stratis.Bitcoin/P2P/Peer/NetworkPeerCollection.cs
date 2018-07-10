@@ -60,7 +60,7 @@ namespace Stratis.Bitcoin.P2P.Peer
                 return peer.RemoteSocketPort.GetHashCode() ^ peer.RemoteSocketAddress.MapToIPv6().ToString().GetHashCode();
             }
         }
-
+        
         public NetworkPeerCollection()
         {
             this.networkPeers = new ConcurrentHashSet<INetworkPeer>(new NetworkPeerComparer());
@@ -103,16 +103,13 @@ namespace Stratis.Bitcoin.P2P.Peer
 
         private static bool Match(IPAddress ip, int? port, INetworkPeer peer)
         {
-            if (port.HasValue)
-            {
-                return ((peer.State == NetworkPeerState.Connected || peer.State == NetworkPeerState.HandShaked) && peer.RemoteSocketAddress.Equals(ip) && 
-                        (peer.RemoteSocketPort == port.Value)) || (peer.PeerVersion.AddressFrom.Address.Equals(ip) && (peer.PeerVersion.AddressFrom.Port == port.Value));
-            }
-            else
-            {
-                return ((peer.State == NetworkPeerState.Connected || peer.State == NetworkPeerState.HandShaked) && 
-                        peer.RemoteSocketAddress.Equals(ip)) || peer.PeerVersion.AddressFrom.Address.Equals(ip);
-            }
+            bool isConnectedOrHandShaked = (peer.State == NetworkPeerState.Connected || peer.State == NetworkPeerState.HandShaked);
+            bool isAddressMatching = peer.RemoteSocketAddress.Equals(ip) && (!port.HasValue || peer.RemoteSocketPort == port.Value);
+            bool isPeerVersionAddressMatching = peer.PeerVersion != null &&
+                                                peer.PeerVersion.AddressFrom.Address.Equals(ip) &&
+                                                (!port.HasValue || peer.PeerVersion.AddressFrom.Port == port.Value);
+
+            return (isConnectedOrHandShaked && isAddressMatching) || isPeerVersionAddressMatching;
         }
 
         public IEnumerator<INetworkPeer> GetEnumerator()

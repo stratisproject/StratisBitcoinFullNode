@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
 using NBitcoin;
 using NBitcoin.RPC;
@@ -103,7 +104,8 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             }
         }
 
-        [Fact(Skip = "Not stable yet")]
+        [Fact]
+        [Trait("unstable", "true")]
         public void WalletCanReorg()
         {
             // this test has 4 parts:
@@ -264,7 +266,8 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             }
         }
 
-        [Fact(Skip = "not stable yet : getting timeout or 21 instead of 22")]
+        [Fact]
+        [Trait("unstable", "getting timeout or 21 instead of 22")]
         public void Given_TheNodeHadAReorg_And_WalletTipIsBehindConsensusTip_When_ANewBlockArrives_Then_WalletCanRecover()
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
@@ -326,7 +329,8 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             }
         }
 
-        [Fact(Skip = "getting timeouts or 22 for tip height instead of 20")]
+        [Fact]
+        [Trait("unstable", "getting timeouts or 22 for tip height instead of 20")]
         public void Given_TheNodeHadAReorg_And_ConensusTipIsdifferentFromWalletTip_When_ANewBlockArrives_Then_WalletCanRecover()
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
