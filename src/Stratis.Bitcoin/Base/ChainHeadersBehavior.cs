@@ -142,8 +142,7 @@ namespace Stratis.Bitcoin.Base
 
                 this.logger.LogTrace("(-)");
             }, null, 0, (int)TimeSpan.FromMinutes(10).TotalMilliseconds);
-
-            this.RegisterDisposable(this.refreshTimer);
+            
             if (this.AttachedPeer.State == NetworkPeerState.Connected)
             {
                 ChainedHeader highPoW = this.chainState.ConsensusTip;
@@ -166,6 +165,14 @@ namespace Stratis.Bitcoin.Base
             this.bestChainSelector.RemoveAvailableTip(this.AttachedPeer.Connection.Id);
 
             this.logger.LogTrace("(-)");
+        }
+
+        ///  <inheritdoc />
+        public override void Dispose()
+        {
+            this.refreshTimer?.Dispose();
+
+            base.Dispose();
         }
 
         /// <summary>
