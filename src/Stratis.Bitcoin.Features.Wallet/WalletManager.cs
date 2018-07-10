@@ -268,7 +268,8 @@ namespace Stratis.Bitcoin.Features.Wallet
             // Check the password.
             try
             {
-                Key.Parse(wallet.EncryptedSeed, password, wallet.Network);
+                if (!wallet.IsExtPubKeyWallet)
+                    Key.Parse(wallet.EncryptedSeed, password, wallet.Network);
             }
             catch (Exception ex)
             {
@@ -1118,6 +1119,7 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             return addressesToAdd > 0 ? account.CreateAddresses(this.network, addressesToAdd, isChange) : new List<HdAddress>();
         }
+
         /// <inheritdoc />
         public void DeleteWallet()
         {
