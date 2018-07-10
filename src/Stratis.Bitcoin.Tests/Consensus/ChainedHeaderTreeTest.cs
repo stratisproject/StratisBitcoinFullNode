@@ -913,7 +913,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
             chainedHeaderTo.HashBlock.Should().Be(chainATip.HashBlock);
             Assert.True(connectNewHeadersResult.HaveBlockDataAvailabilityStateOf(BlockDataAvailabilityState.BlockRequired));
 
-            foreach (ChainedHeader chainedHeader in connectNewHeadersResult.ToHashArray())
+            foreach (ChainedHeader chainedHeader in connectNewHeadersResult.ToArray())
                 cht.BlockDataDownloaded(chainedHeader, chainATip.FindAncestorOrSelf(chainedHeader).Block);
 
             // Set chain A tip as a consensus tip.
@@ -2087,7 +2087,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
             Assert.Equal(connectNewHeadersResult.DownloadTo.Header, listOfExtendedChainBlockHeaders.Last());
             Assert.True(connectNewHeadersResult.HaveBlockDataAvailabilityStateOf(BlockDataAvailabilityState.BlockRequired));
 
-            foreach (ChainedHeader chainedHeader in connectNewHeadersResult.ToHashArray())
+            foreach (ChainedHeader chainedHeader in connectNewHeadersResult.ToArray())
             {
                 chainedHeaderTree.BlockDataDownloaded(chainedHeader, chainTip.FindAncestorOrSelf(chainedHeader).Block);
                 if (chainedHeader.Height <= 5)
@@ -2154,7 +2154,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
             Assert.True(connectNewHeadersResult.HaveBlockDataAvailabilityStateOf(BlockDataAvailabilityState.BlockRequired));
 
             int serializedSizeOfBlocks = 0;
-            foreach (ChainedHeader chainedHeader in connectNewHeadersResult.ToHashArray())
+            foreach (ChainedHeader chainedHeader in connectNewHeadersResult.ToArray())
             {
                 chainedHeaderTree.BlockDataDownloaded(chainedHeader, extendedChainTip.FindAncestorOrSelf(chainedHeader).Block);
                 serializedSizeOfBlocks += chainedHeader.Block.GetSerializedSize();
@@ -2193,7 +2193,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
 
             Assert.True(connectNewHeadersResult.HaveBlockDataAvailabilityStateOf(BlockDataAvailabilityState.BlockRequired));
 
-            foreach (ChainedHeader chainedHeader in connectNewHeadersResult.ToHashArray())
+            foreach (ChainedHeader chainedHeader in connectNewHeadersResult.ToArray())
             {
                 chainedHeaderTree.BlockDataDownloaded(chainedHeader, commonChainTip.FindAncestorOrSelf(chainedHeader).Block);
                 chainedHeaderTree.PartialValidationSucceeded(chainedHeader, out bool fullValidationRequired);
@@ -2204,7 +2204,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
             chainedHeaderTree.ConsensusTipChanged(chainedHeaderTo.GetAncestor(5));
 
             int serializedSizeOfBlocks = 0;
-            IEnumerable<ChainedHeader> lastFive = connectNewHeadersResult.ToHashArray().TakeLast(5);
+            IEnumerable<ChainedHeader> lastFive = connectNewHeadersResult.ToArray().TakeLast(5);
             foreach (ChainedHeader chainedHeader in lastFive)
             {
                 serializedSizeOfBlocks += chainedHeader.Block.GetSerializedSize();
@@ -2252,7 +2252,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
             List<BlockHeader> listOfExtendedHeaders = testContext.ChainedHeaderToList(newTip, heightOfFork + extensionSize);
             connectNewHeadersResult = chainedHeaderTree.ConnectNewHeaders(2, listOfExtendedHeaders);
 
-            foreach (ChainedHeader chainedHeader in connectNewHeadersResult.ToHashArray())
+            foreach (ChainedHeader chainedHeader in connectNewHeadersResult.ToArray())
             {
                 chainedHeaderTree.BlockDataDownloaded(chainedHeader, newTip.FindAncestorOrSelf(chainedHeader).Block);
                 chainedHeaderTree.PartialValidationSucceeded(chainedHeader, out bool fullValidationRequired);
@@ -2678,7 +2678,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
             Assert.True(connectNewHeadersResult.HaveBlockDataAvailabilityStateOf(BlockDataAvailabilityState.BlockRequired));
             
             // 10 blocks are downloaded.
-            foreach (ChainedHeader chainedHeader in connectNewHeadersResult.ToHashArray())
+            foreach (ChainedHeader chainedHeader in connectNewHeadersResult.ToArray())
             {
                 chainedHeaderTree.BlockDataDownloaded(chainedHeader, extendedChainTip.FindAncestorOrSelf(chainedHeader).Block);
                 chainedHeaderTree.PartialValidationSucceeded(chainedHeader, out bool fullValidationRequired);
@@ -2703,7 +2703,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
             Assert.Equal(connectNewHeadersResult.DownloadFrom.Header, tipOfFork.GetAncestor(heightOfFork + 1).Header);
             Assert.Equal(connectNewHeadersResult.DownloadTo.Header, tipOfFork.Header);
 
-            foreach (ChainedHeader chainedHeader in connectNewHeadersResult.ToHashArray())
+            foreach (ChainedHeader chainedHeader in connectNewHeadersResult.ToArray())
             {
                 chainedHeaderTree.BlockDataDownloaded(chainedHeader, tipOfFork.FindAncestorOrSelf(chainedHeader).Block);
                 chainedHeaderTree.PartialValidationSucceeded(chainedHeader, out bool fullValidationRequired);
@@ -2734,6 +2734,60 @@ namespace Stratis.Bitcoin.Tests.Consensus
             
             int serializedSizeOfChainsAandB = serializedSizeOfChainA + serializedSizeOfChainB;
             Assert.Equal(chainedHeaderTree.UnconsumedBlocksDataBytes, serializedSizeOfChainsAandB);
+        }
+
+        /// <summary>
+        /// Issue 55 @ CT is at 20a. AssumeValid is on 12b.
+        /// Peer 1 presents a chain with tip at 15b and fork point at 10a.
+        /// 11b,12b should be marked as AV, 13b,14b,15b should be header only.
+        /// No headers from chain b are requested for download.
+        /// </summary>
+        [Fact] public void PresentHeaders_AssumeValidBelowAVBlock_HeadersOnlyAboveAVBlock_NoHeadersRequestedForDownloaded()
+        {
+            const int initialChainSizeOfTwenty = 20;
+            const int chainExtensionSizeOfFive = 5;
+            const int assumeValidBlockHeightOfTwelve = 12;
+            
+            const int forkHeight = 10;
+            const int peerOneId = 1;
+
+            // Chain header tree setup.
+            TestContext testContext = new TestContextBuilder().WithInitialChain(initialChainSizeOfTwenty).UseCheckpoints(false).Build();
+            ChainedHeaderTree chainedHeaderTree = testContext.ChainedHeaderTree;
+            ChainedHeader initialChainTip = testContext.InitialChainTip;
+
+            // Chain tip is at 20.
+            Assert.Equal(initialChainSizeOfTwenty, initialChainTip.Height);
+
+            ChainedHeader tipOfChainBFork = testContext.ExtendAChain(chainExtensionSizeOfFive, initialChainTip.GetAncestor(forkHeight));
+
+            // AssumeValid is on 12b.
+            testContext.ConsensusSettings.BlockAssumedValid = tipOfChainBFork.GetAncestor(assumeValidBlockHeightOfTwelve).HashBlock;
+
+            // Peer 1 presents a chain with tip at 15b and fork point at 10a.
+            List<BlockHeader> listOfExtendedChainBlockHeaders = testContext.ChainedHeaderToList(tipOfChainBFork, tipOfChainBFork.Height - forkHeight + 1 /* fork inclusive */);
+            ConnectNewHeadersResult connectNewHeadersResult = chainedHeaderTree.ConnectNewHeaders(peerOneId, listOfExtendedChainBlockHeaders);
+
+            // 11b, 12b should be marked as AV.
+            connectNewHeadersResult.Consumed.GetAncestor(11).BlockValidationState.Should().Be(ValidationState.AssumedValid);
+            connectNewHeadersResult.Consumed.GetAncestor(12).BlockValidationState.Should().Be(ValidationState.AssumedValid);
+
+            // 13b, 14b, 15b should be header only.
+            connectNewHeadersResult.Consumed.GetAncestor(13).BlockValidationState.Should().Be(ValidationState.HeaderValidated);
+            connectNewHeadersResult.Consumed.GetAncestor(14).BlockValidationState.Should().Be(ValidationState.HeaderValidated);
+            connectNewHeadersResult.Consumed.GetAncestor(15).BlockValidationState.Should().Be(ValidationState.HeaderValidated);
+
+            // No headers from chain b are requested for download.
+            connectNewHeadersResult.DownloadFrom.Should().Be(null);
+            connectNewHeadersResult.DownloadTo.Should().Be(null);
+
+            // Block availability state for 11b – 15b is header only.
+            ChainedHeader chainedHeader = connectNewHeadersResult.Consumed;
+            while (chainedHeader.Height > connectNewHeadersResult.Consumed.GetAncestor(11).Height)
+            {
+                chainedHeader.BlockDataAvailability.Should().Be(BlockDataAvailabilityState.HeaderOnly);
+                chainedHeader = chainedHeader.Previous;
+            }
         }
     }
 }
