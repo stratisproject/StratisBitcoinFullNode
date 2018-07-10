@@ -85,6 +85,8 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
             IPersistenceStrategy persistenceStrategy = new MeteredPersistenceStrategy(this.stateSnapshot, gasMeter, new BasicKeyEncodingStrategy());
             var persistentState = new PersistentState(persistenceStrategy, newContractAddress, this.network);
+            
+            gasMeter.Spend((Gas)GasPriceList.BaseCost);
 
             var result = this.vm.Create(carrier.CallData.ContractExecutionCode, executionContext, gasMeter, persistentState, this.stateSnapshot);
 
