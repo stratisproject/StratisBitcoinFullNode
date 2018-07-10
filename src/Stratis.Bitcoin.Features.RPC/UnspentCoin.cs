@@ -1,13 +1,14 @@
-﻿using NBitcoin.DataEncoders;
+﻿using NBitcoin;
+using NBitcoin.DataEncoders;
 using Newtonsoft.Json.Linq;
 
-namespace NBitcoin.RPC
+namespace Stratis.Bitcoin.Features.RPC
 {
     public class UnspentCoin
     {
         public Network Network { get; }
 
-        internal UnspentCoin(JObject unspent, Network network)
+        public UnspentCoin(JObject unspent, Network network)
         {
             this.Network = network;
             this.OutPoint = new OutPoint(uint256.Parse((string)unspent["txid"]), (uint)unspent["vout"]);

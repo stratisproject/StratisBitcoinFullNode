@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace NBitcoin.RPC
+namespace Stratis.Bitcoin.Features.RPC
 {
     /// <summary>
     /// RPC error code thrown by the <see cref="RPCClient"/>.

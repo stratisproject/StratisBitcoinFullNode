@@ -6,10 +6,11 @@ using System.Linq;
 using System.Net;
 using System.Text;
 using System.Threading.Tasks;
+using NBitcoin;
 using NBitcoin.Protocol.Payloads;
 using Newtonsoft.Json.Linq;
 
-namespace NBitcoin.RPC
+namespace Stratis.Bitcoin.Features.RPC
 {
     public enum RestResponseFormat
     {
