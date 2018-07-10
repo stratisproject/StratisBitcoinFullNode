@@ -103,7 +103,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
                 carrier, 
                 this.stateSnapshot, 
                 transactionContext, 
-                result.InternalTransferList?.Transfers, 
+                result.InternalTransfers, 
                 revert);
 
             (var fee, var refundTxOuts) = this.refundProcessor.Process(

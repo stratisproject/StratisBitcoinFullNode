@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using System.Collections.Generic;
+using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.Exceptions;
@@ -11,7 +12,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
     public sealed class InternalTransactionExecutor : IInternalTransactionExecutor
     {
         private readonly IContractStateRepository contractStateRepository;
-        private readonly InternalTransferList internalTransferList;
+        private readonly List<TransferInfo> internalTransferList;
         private readonly IKeyEncodingStrategy keyEncodingStrategy;
         private readonly ILogger logger;
         private readonly ILoggerFactory loggerFactory;
@@ -19,7 +20,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
         public InternalTransactionExecutor(
             IContractStateRepository contractStateRepository,
-            InternalTransferList internalTransferList,
+            List<TransferInfo> internalTransferList,
             IKeyEncodingStrategy keyEncodingStrategy,
             ILoggerFactory loggerFactory,
             Network network)

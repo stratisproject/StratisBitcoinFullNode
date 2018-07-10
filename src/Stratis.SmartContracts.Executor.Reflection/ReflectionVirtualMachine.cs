@@ -1,9 +1,11 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using Microsoft.Extensions.Logging;
 using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.State;
+using Stratis.SmartContracts.Core.State.AccountAbstractionLayer;
 using Stratis.SmartContracts.Executor.Reflection.Exceptions;
 using Stratis.SmartContracts.Executor.Reflection.Lifecycle;
 
@@ -41,7 +43,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
             Type contractType = Load(gasInjectedCode);
 
-            var internalTransferList = new InternalTransferList();
+            var internalTransferList = new List<TransferInfo>();
 
             IInternalTransactionExecutor internalTransactionExecutor = this.internalTransactionExecutorFactory.Create(repository, internalTransferList);
 
@@ -104,7 +106,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
                 return VmExecutionResult.Error(gasMeter.GasConsumed, null);
             }
 
-            var internalTransferList = new InternalTransferList();
+            var internalTransferList = new List<TransferInfo>();
 
             IInternalTransactionExecutor internalTransactionExecutor = this.internalTransactionExecutorFactory.Create(repository, internalTransferList);
 

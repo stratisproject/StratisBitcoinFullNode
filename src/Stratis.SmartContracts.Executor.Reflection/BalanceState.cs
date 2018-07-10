@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System.Collections.Generic;
+using System.Linq;
 using NBitcoin;
 using Stratis.SmartContracts.Core.State;
 using Stratis.SmartContracts.Core.State.AccountAbstractionLayer;
@@ -12,10 +13,10 @@ namespace Stratis.SmartContracts.Executor.Reflection
     public class BalanceState
     {
         private readonly IBalanceRepository repository;
-        private readonly InternalTransferList internalTransfers;
+        private readonly List<TransferInfo> internalTransfers;
         private readonly ulong txAmount;
 
-        public BalanceState(IBalanceRepository repository, ulong txAmount, InternalTransferList internalTransfers)
+        public BalanceState(IBalanceRepository repository, ulong txAmount, List<TransferInfo> internalTransfers)
         {
             this.repository = repository;
             this.txAmount = txAmount;
@@ -33,12 +34,12 @@ namespace Stratis.SmartContracts.Executor.Reflection
         {
             ulong ret = 0;
 
-            foreach (TransferInfo transfer in this.internalTransfers.Transfers.Where(x => x.To == address))
+            foreach (TransferInfo transfer in this.internalTransfers.Where(x => x.To == address))
             {
                 ret += transfer.Value;
             }
 
-            foreach (TransferInfo transfer in this.internalTransfers.Transfers.Where(x => x.From == address))
+            foreach (TransferInfo transfer in this.internalTransfers.Where(x => x.From == address))
             {
                 ret -= transfer.Value;
             }

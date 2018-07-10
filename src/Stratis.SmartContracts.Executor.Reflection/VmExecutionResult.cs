@@ -1,11 +1,13 @@
 ﻿using System;
+using System.Collections.Generic;
 using Stratis.SmartContracts.Core.State;
+using Stratis.SmartContracts.Core.State.AccountAbstractionLayer;
 
 namespace Stratis.SmartContracts.Executor.Reflection
 {
     public class VmExecutionResult
     {
-        public InternalTransferList InternalTransferList { get; }
+        public List<TransferInfo> InternalTransfers { get; }
 
         public Gas GasConsumed { get; }
 
@@ -14,18 +16,18 @@ namespace Stratis.SmartContracts.Executor.Reflection
         public Exception ExecutionException { get; }
 
         private VmExecutionResult(
-            InternalTransferList internalTransfers, 
+            List<TransferInfo> internalTransfers, 
             Gas gasConsumed, 
             object result,
             Exception e = null)
         {
-            this.InternalTransferList = internalTransfers;
+            this.InternalTransfers = internalTransfers ?? new List<TransferInfo>();
             this.GasConsumed = gasConsumed;
             this.Result = result;
             this.ExecutionException = e;
         }
 
-        public static VmExecutionResult Success(InternalTransferList internalTransfers, Gas gasConsumed, object result)
+        public static VmExecutionResult Success(List<TransferInfo> internalTransfers, Gas gasConsumed, object result)
         {
             return new VmExecutionResult(internalTransfers, gasConsumed, result);
         }
