@@ -347,6 +347,44 @@ namespace Stratis.Bitcoin.Features.Wallet
             return wallet;
         }
 
+        public Wallet RecoverWalletViaExtPubKey(string name, string accountExtPubKey, int accountIndex, DateTime creationTime)
+        {
+            Guard.NotEmpty(name, nameof(name));
+            Guard.NotEmpty(accountExtPubKey, nameof(accountExtPubKey));
+            this.logger.LogTrace("({0}:'{1}')", nameof(name), name);
+
+            ExtPubKey extPubKey = ExtPubKey.Parse(accountExtPubKey);
+
+            // Create a wallet file.
+            Wallet wallet = this.GenerateWalletFileXpub(name, creationTime);
+
+            // Generate account
+            HdAccount account = wallet.AddNewAccountXpub(this.coinType, extPubKey, accountIndex, this.dateTimeProvider.GetTimeOffset());
+            IEnumerable<HdAddress> newReceivingAddresses = account.CreateAddresses(this.network, this.walletSettings.UnusedAddressesBuffer);
+            IEnumerable<HdAddress> newChangeAddresses = account.CreateAddresses(this.network, this.walletSettings.UnusedAddressesBuffer, true);
+            this.UpdateKeysLookupLock(newReceivingAddresses.Concat(newChangeAddresses));
+
+            // If the chain is downloaded, we set the height of the recovered wallet to that of the recovery date.
+            // However, if the chain is still downloading when the user restores a wallet,
+            // we wait until it is downloaded in order to set it. Otherwise, the height of the wallet may not be known.
+            if (this.chain.IsDownloaded())
+            {
+                int blockSyncStart = this.chain.GetHeightAtTime(creationTime);
+                this.UpdateLastBlockSyncedHeight(wallet, this.chain.GetBlock(blockSyncStart));
+            }
+            else
+            {
+                this.UpdateWhenChainDownloaded(new[] { wallet }, creationTime);
+            }
+
+            // Save the changes to the file and add addresses to be tracked.
+            this.SaveWallet(wallet);
+            this.Load(wallet);
+
+            this.logger.LogTrace("(-)");
+            return wallet;
+        }
+
         /// <inheritdoc />
         public HdAccount GetUnusedAccount(string walletName, string password)
         {
@@ -1240,6 +1278,34 @@ namespace Stratis.Bitcoin.Features.Wallet
             // Create a folder if none exists and persist the file.
             this.SaveWallet(walletFile);
             
+            this.logger.LogTrace("(-)");
+            return walletFile;
+        }
+
+        private Wallet GenerateWalletFileXpub(string name, DateTimeOffset? creationTime = null)
+        {
+            Guard.NotEmpty(name, nameof(name));
+            this.logger.LogTrace("({0}:'{1}')", nameof(name), name);
+
+            // Check if any wallet file already exists, with case insensitive comparison.
+            if (this.Wallets.Any(w => string.Equals(w.Name, name, StringComparison.OrdinalIgnoreCase)))
+            {
+                this.logger.LogTrace("(-)[WALLET_ALREADY_EXISTS]");
+                throw new WalletException($"Wallet with name '{name}' already exists.");
+            }
+
+            var walletFile = new Wallet
+            {
+                Name = name,
+                IsExtPubKeyWallet = true,
+                CreationTime = creationTime ?? this.dateTimeProvider.GetTimeOffset(),
+                Network = this.network,
+                AccountsRoot = new List<AccountRoot> { new AccountRoot() { Accounts = new List<HdAccount>(), CoinType = this.coinType } },
+            };
+
+            // Create a folder if none exists and persist the file.
+            this.SaveWallet(walletFile);
+
             this.logger.LogTrace("(-)");
             return walletFile;
         }

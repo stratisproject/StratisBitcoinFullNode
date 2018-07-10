@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
+using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
 using NBitcoin;
@@ -164,7 +165,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             string passphrase = "this is my magic passphrase";
 
             // create the wallet
-            Mnemonic mnemonic = walletManager.CreateWallet(password, "mywallet", passphrase);
+            Mnemonic mnemonic = walletManager.CreateWallet(password, "mywallet", passphrase: passphrase);
 
             // assert it has saved it to disk and has been created correctly.
             var expectedWallet = JsonConvert.DeserializeObject<Wallet>(File.ReadAllText(dataFolder.WalletPath + "/mywallet.wallet.json"));
@@ -273,7 +274,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             var mnemonicList = new Mnemonic(Wordlist.French, WordCount.Eighteen);
 
             // create the wallet
-            Mnemonic mnemonic = walletManager.CreateWallet(password, "mywallet", mnemonicList: mnemonicList.ToString());
+            Mnemonic mnemonic = walletManager.CreateWallet(password, "mywallet");
 
             Assert.Equal(mnemonic.DeriveSeed(), mnemonicList.DeriveSeed());
         }
@@ -285,7 +286,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
             var walletManager = this.CreateWalletManager(dataFolder, "-walletaddressbuffer=100");
 
-            walletManager.CreateWallet("test", "mywallet", new Mnemonic(Wordlist.English, WordCount.Eighteen).ToString());
+            walletManager.CreateWallet("test", "mywallet", passphrase: new Mnemonic(Wordlist.English, WordCount.Eighteen).ToString());
 
             HdAccount hdAccount = walletManager.Wallets.Single().AccountsRoot.Single().Accounts.Single();
 
@@ -3161,7 +3162,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             DataFolder dataFolder = CreateDataFolder(this);
 
             WalletManager walletManager = this.CreateWalletManager(dataFolder);
-            walletManager.CreateWallet("test", "mywallet", new Mnemonic(Wordlist.English, WordCount.Eighteen).ToString());
+            walletManager.CreateWallet("test", "mywallet", passphrase: new Mnemonic(Wordlist.English, WordCount.Eighteen).ToString());
 
             // Default of 20 addresses becuause walletaddressbuffer not set
             HdAccount hdAccount = walletManager.Wallets.Single().AccountsRoot.Single().Accounts.Single();
@@ -3179,20 +3180,22 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         }
 
         [Fact]
-        public void Xpubkey_only_wallet_can_load_without_private_key()
+        public void RecoverViaXpubkey_can_recover_wallet_without_mnemonic()
         {
             DataFolder dataFolder = CreateDataFolder(this);
 
-            Wallet wallet = this.walletFixture.GenerateBlankWallet("testWallet", "password");
-            wallet.IsExtPubKeyWallet = true;
-            wallet.EncryptedSeed = null;
-            wallet.ChainCode = null;
-            
-            File.WriteAllText(Path.Combine(dataFolder.WalletPath, "testWallet.wallet.json"), JsonConvert.SerializeObject(wallet, Formatting.Indented, new ByteArrayConverter()));
-
+            const string stratisAccount0ExtPubKey = "xpub661MyMwAqRbcEgnsMFfhjdrwR52TgicebTrbnttywb9zn3orkrzn6MHJrgBmKrd7MNtS6LAim44a6V2gizt3jYVPHGYq1MzAN849WEyoedJ";
             var walletManager = this.CreateWalletManager(dataFolder);
+            walletManager.RecoverWalletViaExtPubKey("testWallet", stratisAccount0ExtPubKey, 1, DateTime.Now.AddHours(-2));
+            
+            var wallet = walletManager.LoadWallet("password", "testWallet");
 
-            walletManager.LoadWallet("password", "testWallet");
+            wallet.IsExtPubKeyWallet.Should().BeTrue();
+            wallet.EncryptedSeed.Should().BeNull();
+            wallet.ChainCode.Should().BeNull();
+
+            wallet.AccountsRoot.SelectMany(x => x.Accounts).Single().ExtendedPubKey
+                .Should().Be(stratisAccount0ExtPubKey);
         }
 
         private WalletManager CreateWalletManager(DataFolder dataFolder, params string[] cmdLineArgs)
@@ -3210,7 +3213,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 dataFolder, new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime(), DateTimeProvider.Default);
 
             // create the wallet
-            Mnemonic mnemonic = walletManager.CreateWallet(password, walletName, passphrase);
+            Mnemonic mnemonic = walletManager.CreateWallet(password, walletName, passphrase: passphrase);
             Wallet wallet = walletManager.Wallets.ElementAt(0);
 
             File.Delete(dataFolder.WalletPath + $"/{walletName}.wallet.json");

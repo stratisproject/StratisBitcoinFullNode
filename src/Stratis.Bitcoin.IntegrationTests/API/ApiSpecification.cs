@@ -35,5 +35,16 @@ namespace Stratis.Bitcoin.IntegrationTests.API
             When(calling_rpc_listmethods);
             Then(a_full_list_of_available_commands_is_returned);
         }
+
+        [Fact]
+        public void CreateExtPubKeyOnlyWallet_creates_wallet_with_extra_flag()
+        {
+            Given(a_proof_of_stake_node_with_api_enabled);
+            When(calling_recover_via_extpubkey_for_account_0);
+            Then(a_wallet_is_created_without_private_key_for_account_0);
+
+            When(calling_recover_via_extpubkey_for_account_1);
+            Then(a_wallet_is_created_without_private_key_for_account_1);
+        }
     }
 }

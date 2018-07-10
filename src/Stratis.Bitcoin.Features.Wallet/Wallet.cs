@@ -187,6 +187,13 @@ namespace Stratis.Bitcoin.Features.Wallet
             return accountRoot.AddNewAccount(password, this.EncryptedSeed, this.ChainCode, this.Network, accountCreationTime);
         }
 
+        public HdAccount AddNewAccountXpub(CoinType coinType, ExtPubKey extPubKey, int accountNumber,
+            DateTimeOffset accountCreationTime)
+        {
+            AccountRoot accountRoot = this.AccountsRoot.Single(a => a.CoinType == coinType);
+            return accountRoot.AddNewAccountXpub(extPubKey, accountNumber, this.Network, accountCreationTime);
+        }
+
         /// <summary>
         /// Gets the first account that contains no transaction.
         /// </summary>
@@ -378,6 +385,45 @@ namespace Stratis.Bitcoin.Features.Wallet
                 ExternalAddresses = new List<HdAddress>(),
                 InternalAddresses = new List<HdAddress>(),
                 Name = $"account {newAccountIndex}",
+                HdPath = accountHdPath,
+                CreationTime = accountCreationTime
+            };
+
+            accounts.Add(newAccount);
+            this.Accounts = accounts;
+
+            return newAccount;
+        }
+
+        /// <summary>
+        /// Adds an account to the current account root.
+        /// </summary>
+        /// <remarks>The name given to the account is of the form "account (i)" by default, where (i) is an incremental index starting at 0.
+        /// According to BIP44, an account at index (i) can only be created when the account at index (i - 1) contains transactions.
+        /// <seealso cref="https://github.com/bitcoin/bips/blob/master/bip-0044.mediawiki"/></remarks>
+        /// <param name="accountExtPubKey">The extended public key for the account.</param>
+        /// <param name="accountIndex">The zero-based account index.</param>
+        /// <param name="network">The network for which this account will be created.</param>
+        /// <param name="accountCreationTime">Creation time of the account to be created.</param>
+        /// <returns>A new HD account.</returns>
+        public HdAccount AddNewAccountXpub(ExtPubKey accountExtPubKey, int accountIndex, Network network, DateTimeOffset accountCreationTime)
+        {
+            List<HdAccount> accounts = this.Accounts.ToList();
+
+            if (accounts.Any(x => x.HdPath.Split('/').Last() == accountIndex + "'"))
+            {
+                throw new Exception("TODO: Don't merge");
+            }
+
+            string accountHdPath = HdOperations.GetAccountHdPath((int)this.CoinType, accountIndex);
+
+            var newAccount = new HdAccount
+            {
+                Index = accountIndex,
+                ExtendedPubKey = accountExtPubKey.ToString(network),
+                ExternalAddresses = new List<HdAddress>(),
+                InternalAddresses = new List<HdAddress>(),
+                Name = $"account {accountIndex}",
                 HdPath = accountHdPath,
                 CreationTime = accountCreationTime
             };

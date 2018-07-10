@@ -67,6 +67,16 @@ namespace Stratis.Bitcoin.Features.Wallet.Interfaces
         Wallet RecoverWallet(string password, string name, string mnemonic, DateTime creationTime, string passphrase = null);
 
         /// <summary>
+        /// Recovers a wallet using extended public key and account number.
+        /// </summary>
+        /// <param name="name">The name of the wallet.</param>
+        /// <param name="requestExtPubKey">The extended public key associated with the account.</param>
+        /// <param name="accountIndex">The account number.</param>
+        /// <param name="creationTime">The date and time this wallet was created.</param>
+        /// <returns></returns>
+        Wallet RecoverWalletViaExtPubKey(string name, string requestExtPubKey, int accountIndex, DateTime creationTime);
+
+        /// <summary>
         /// Deletes a wallet.
         /// </summary>
         void DeleteWallet();
@@ -240,7 +250,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Interfaces
         /// </summary>
         /// <returns></returns>
         ICollection<uint256> GetFirstWalletBlockLocator();
-        
+
         /// <summary>
         /// Gets the list of the wallet filenames, along with the folder in which they're contained.
         /// </summary>

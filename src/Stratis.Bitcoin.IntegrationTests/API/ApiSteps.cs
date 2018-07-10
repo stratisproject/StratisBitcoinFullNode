@@ -5,6 +5,8 @@ using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
 using FluentAssertions;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.VisualStudio.TestPlatform.CommunicationUtilities;
 using NBitcoin;
 using Stratis.Bitcoin.Features.Api;
@@ -25,6 +27,8 @@ namespace Stratis.Bitcoin.IntegrationTests.API
         private const string JsonContentType = "application/json";
         private const string PosNode = "pos_node";
         private const string WalletName = "wallet_name";
+        private const string AccountZero = "account 0";
+        private const string AccountOne = "account 1";
         private const string WalletPassword = "wallet_password";
         private const string StratisRegTest = "StratisRegTest";
 
@@ -33,6 +37,7 @@ namespace Stratis.Bitcoin.IntegrationTests.API
         private string response;
         private NodeGroupBuilder nodeGroupBuilder;
         private IDictionary<string, CoreNode> nodes;
+        private HttpResponseMessage postResponse;
 
         public ApiSpecification(ITestOutputHelper output) : base(output)
         {
@@ -41,6 +46,9 @@ namespace Stratis.Bitcoin.IntegrationTests.API
         protected override void BeforeTest()
         {
             this.httpClient = new HttpClient();
+            this.httpClient.DefaultRequestHeaders.Accept.Clear();
+            this.httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue(JsonContentType));
+
             this.nodeGroupBuilder = new NodeGroupBuilder(Path.Combine(this.GetType().Name, this.CurrentTest.DisplayName));
         }
 
@@ -70,8 +78,6 @@ namespace Stratis.Bitcoin.IntegrationTests.API
 
         private void getting_general_info()
         {
-            this.httpClient.DefaultRequestHeaders.Accept.Clear();
-            this.httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue(JsonContentType));
             this.response = this.httpClient.GetStringAsync($"{this.apiUri}api/wallet/general-info?name={WalletName}").GetAwaiter().GetResult();
         }
 
@@ -101,18 +107,60 @@ namespace Stratis.Bitcoin.IntegrationTests.API
 
         private void calling_rpc_getblockhash_via_callbyname()
         {
-            this.httpClient.DefaultRequestHeaders.Accept.Clear();
-            this.httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue(JsonContentType));
-
             this.response = this.httpClient.GetStringAsync($"{this.apiUri}api/rpc/callbyname?methodName=getblockhash&height=0")
                 .GetAwaiter().GetResult();
         }
 
         private void calling_rpc_listmethods()
         {
-            this.httpClient.DefaultRequestHeaders.Accept.Clear();
-            this.httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue(JsonContentType));
             this.response = this.httpClient.GetStringAsync($"{this.apiUri}api/rpc/listmethods").GetAwaiter().GetResult();
+        }
+
+        private void calling_recover_via_extpubkey_for_account_0()
+        {
+            this.RecoverViaExtPubKey(0);
+        }
+
+        private void calling_recover_via_extpubkey_for_account_1()
+        {
+            this.RecoverViaExtPubKey(1);
+        }
+
+        private void RecoverViaExtPubKey(int accountIndex)
+        {
+            var request = new WalletExtPubRecoveryRequest
+            {
+                ExtPubKey = "xpub661MyMwAqRbcEgnsMFfhjdrwR52TgicebTrbnttywb9zn3orkrzn6MHJrgBmKrd7MNtS6LAim44a6V2gizt3jYVPHGYq1MzAN849WEyoedJ",
+                AccountIndex = accountIndex,
+                Name = "testXpubKeyWallet"
+            };
+
+            this.postResponse = this.httpClient.PostAsJsonAsync($"{this.apiUri}api/Wallet/recover-via-extpubkey", request)
+                .GetAwaiter().GetResult();
+
+            this.postResponse.StatusCode.Should().Be(StatusCodes.Status200OK);
+        }
+
+        private void a_wallet_is_created_without_private_key_for_account_0()
+        {
+            this.CheckAccountExists(0);
+        }
+
+        private void a_wallet_is_created_without_private_key_for_account_1()
+        {
+            this.CheckAccountExists(1);
+        }
+
+        private void CheckAccountExists(int accountIndex)
+        {
+            string getBalanceUrl = $"{this.apiUri}api/Wallet/balance?WalletName=testXpubKeyWallet&AccountName=account {accountIndex}";
+
+            this.response = this.httpClient
+                .GetStringAsync(getBalanceUrl)
+                .GetAwaiter().GetResult();
+
+            this.response.Should()
+                .Be("{\"balances\":[{\"accountName\":\"account " + accountIndex + "\",\"accountHdPath\":\"m/44'/105'/" + accountIndex + "'\",\"coinType\":105,\"amountConfirmed\":0,\"amountUnconfirmed\":0}]}");
         }
 
         private void staking_is_enabled_but_nothing_is_staked()

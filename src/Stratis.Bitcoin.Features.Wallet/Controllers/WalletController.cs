@@ -254,6 +254,50 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         }
 
         /// <summary>
+        /// Recovers a wallet using only the extended public key.
+        /// </summary>
+        /// <param name="request">The object containing the parameters used to recover a wallet.</param>
+        /// <returns></returns>
+        [Route("recover-via-extpubkey")]
+        [HttpPost]
+        public IActionResult RecoverViaExtPubKey([FromBody]WalletExtPubRecoveryRequest request)
+        {
+            Guard.NotNull(request, nameof(request));
+
+            if (!this.ModelState.IsValid)
+            {
+                return BuildErrorResponse(this.ModelState);
+            }
+
+            try
+            {
+                Wallet wallet = this.walletManager.RecoverWalletViaExtPubKey(request.Name, request.ExtPubKey, request.AccountIndex, request.CreationDate);
+
+                // start syncing the wallet from the creation date
+                this.walletSyncManager.SyncFromDate(request.CreationDate);
+
+                return this.Ok();
+            }
+            catch (WalletException e)
+            {
+                // indicates that this wallet already exists
+                this.logger.LogError("Exception occurred: {0}", e.ToString());
+                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.Conflict, e.Message, e.ToString());
+            }
+            catch (FileNotFoundException e)
+            {
+                // indicates that this wallet does not exist
+                this.logger.LogError("Exception occurred: {0}", e.ToString());
+                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.NotFound, "Wallet not found.", e.ToString());
+            }
+            catch (Exception e)
+            {
+                this.logger.LogError("Exception occurred: {0}", e.ToString());
+                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
+            }
+        }
+
+        /// <summary>
         /// Get some general info about a wallet.
         /// </summary>
         /// <param name="request">The name of the wallet.</param>
