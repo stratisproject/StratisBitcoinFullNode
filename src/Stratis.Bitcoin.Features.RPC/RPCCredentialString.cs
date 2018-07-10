@@ -2,7 +2,7 @@
 using System.Linq;
 using System.Net;
 
-namespace NBitcoin.RPC
+namespace Stratis.Bitcoin.Features.RPC
 {
     public class RPCCredentialString
     {

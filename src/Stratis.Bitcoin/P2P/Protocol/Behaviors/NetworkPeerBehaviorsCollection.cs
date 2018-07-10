@@ -30,7 +30,10 @@ namespace Stratis.Bitcoin.P2P.Protocol.Behaviors
         protected override void OnRemoved(INetworkPeerBehavior obj)
         {
             if (obj.AttachedPeer != null)
+            {
                 obj.Detach();
+                obj.Dispose();
+            }
         }
 
         internal bool DelayAttach
