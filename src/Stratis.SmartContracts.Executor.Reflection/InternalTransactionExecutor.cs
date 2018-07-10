@@ -90,8 +90,6 @@ namespace Stratis.SmartContracts.Executor.Reflection
                 newPersistentState, 
                 track);
 
-            smartContractState.GasMeter.Spend(result.GasConsumed);
-
             var revert = result.ExecutionException != null;
 
             if (revert)
