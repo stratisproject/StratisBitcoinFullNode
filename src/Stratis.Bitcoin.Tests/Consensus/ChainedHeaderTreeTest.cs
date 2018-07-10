@@ -2790,5 +2790,57 @@ namespace Stratis.Bitcoin.Tests.Consensus
                 chainedHeader = chainedHeader.Previous;
             }
         }
+
+        /// <summary>
+        /// Issue 54 @ CT is at 50a.
+        /// Finalized height is 40, max reorg is 10.
+        /// Some headers are presented (from 20a to 60b, with fork point 40a) by peer 1.
+        /// Peer 2 presents 25a to 55c with fork point at 39a. 
+        /// Headers from peer 1 should be marked for download(41b to 60b).
+        /// When peer 2 presents headers exception on ConnectNewHeaders should be thrown.
+        /// </summary>
+        [Fact]
+        public void PresentHeaders_TwoPeersTwoForks_Peer2CausesMaxReorgViolationException()
+        {
+            const int initialChainSize = 50;
+            const int peerOneId = 1;
+            const int peerTwoId = 2;
+
+            // Chain header tree setup.
+            TestContext testContext = new TestContextBuilder().WithInitialChain(initialChainSize).Build();
+            ChainedHeaderTree chainedHeaderTree = testContext.ChainedHeaderTree;
+            ChainedHeader initialChainTip = testContext.InitialChainTip;
+
+            // Chain tip is at h50.
+            Assert.Equal(initialChainSize, initialChainTip.Height);
+
+            // Setup max reorg of 10.
+            const int maxReorg = 10;
+            testContext.ChainStateMock.Setup(x => x.MaxReorgLength).Returns(maxReorg);
+
+            // Setup finalized block height to 40.
+            const int finalizedBlockHeight = 40;
+            testContext.FinalizedBlockMock.Setup(m => m.GetFinalizedBlockHeight()).Returns(finalizedBlockHeight);
+
+            // Peer 1 presents headers from 20a to 60b, with fork point 40a.
+            const int heightOfFirstFork = 40;
+            const int chainBExtensionBeyondFork = 20; // h41 -> h60
+            ChainedHeader tipOfForkOfChainB = testContext.ExtendAChain(chainBExtensionBeyondFork, initialChainTip.GetAncestor(heightOfFirstFork));
+            Assert.Equal(60, tipOfForkOfChainB.Height);
+            List<BlockHeader> listOfChainBBlockHeaders = testContext.ChainedHeaderToList(tipOfForkOfChainB, 41); // h20 -> h60
+            ConnectNewHeadersResult connectNewHeadersResult = chainedHeaderTree.ConnectNewHeaders(peerOneId, listOfChainBBlockHeaders);
+
+            // Headers from Peer 1 should be marked for download (41b to 60b).
+            Assert.Equal(connectNewHeadersResult.DownloadFrom.Header, tipOfForkOfChainB.GetAncestor(heightOfFirstFork + 1).Header);
+            Assert.Equal(connectNewHeadersResult.DownloadTo.Header, tipOfForkOfChainB.Header);
+            Assert.True(connectNewHeadersResult.HaveBlockDataAvailabilityStateOf(BlockDataAvailabilityState.BlockRequired));
+
+            // Peer 2 presents 25a to 55c with fork point at 39a.
+            const int heightOfSecondFork = 39;
+            const int chainCExtension = 16; // h40 -> h55
+            ChainedHeader tipOfForkOfChainC = testContext.ExtendAChain(chainCExtension, initialChainTip.GetAncestor(heightOfSecondFork));
+            List<BlockHeader> listOfChainCBlockHeaders = testContext.ChainedHeaderToList(tipOfForkOfChainC, 31); // 25 -> 55
+            Assert.Throws<MaxReorgViolationException>(() => chainedHeaderTree.ConnectNewHeaders(peerTwoId, listOfChainCBlockHeaders));
+        }
     }
 }
