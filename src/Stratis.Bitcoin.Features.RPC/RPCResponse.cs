@@ -3,7 +3,7 @@ using System.Text;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
-namespace NBitcoin.RPC
+namespace Stratis.Bitcoin.Features.RPC
 {
     //{"code":-32601,"message":"Method not found"}
     public class RPCError
@@ -28,7 +28,7 @@ namespace NBitcoin.RPC
     //{"result":null,"error":{"code":-32601,"message":"Method not found"},"id":1}
     public class RPCResponse
     {
-        internal RPCResponse(JObject json)
+        public RPCResponse(JObject json)
         {
             var error = json.GetValue("error") as JObject;
             if(error != null)
