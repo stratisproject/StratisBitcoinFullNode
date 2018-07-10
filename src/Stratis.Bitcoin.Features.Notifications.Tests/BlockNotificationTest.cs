@@ -66,7 +66,7 @@ namespace Stratis.Bitcoin.Features.Notifications.Tests
         {
             List<Block> blocks = this.CreateBlocks(3);
 
-            var chain = new ConcurrentChain(this.Network, blocks[0].Header);
+            var chain = new ConcurrentChain(this.Network, new ChainedHeader(blocks[0].Header, blocks[0].GetHash(), 0));
             this.AppendBlocksToChain(chain, blocks.Skip(1).Take(2));
 
             DataFolder dataFolder = CreateDataFolder(this);
@@ -99,7 +99,7 @@ namespace Stratis.Bitcoin.Features.Notifications.Tests
 
             List<Block> blocks = this.CreateBlocks(2);
 
-            var chain = new ConcurrentChain(this.Network, blocks[0].Header);
+            var chain = new ConcurrentChain(this.Network, new ChainedHeader(blocks[0].Header, blocks[0].GetHash(), 0));
             this.AppendBlocksToChain(chain, blocks.Skip(1).Take(1));
 
             var puller = new Mock<ILookaheadBlockPuller>();
@@ -132,7 +132,7 @@ namespace Stratis.Bitcoin.Features.Notifications.Tests
 
             List<Block> blocks = this.CreateBlocks(3);
 
-            var chain = new ConcurrentChain(this.Network, blocks[0].Header);
+            var chain = new ConcurrentChain(this.Network, new ChainedHeader(blocks[0].Header, blocks[0].GetHash(), 0));
             this.AppendBlocksToChain(chain, blocks.Skip(1));
 
             puller.SetupSequence(p => p.NextBlock(It.IsAny<CancellationToken>()))
@@ -214,7 +214,7 @@ namespace Stratis.Bitcoin.Features.Notifications.Tests
 
             List<Block> blocks = this.CreateBlocks(3);
 
-            var chain = new ConcurrentChain(this.Network, blocks[0].Header);
+            var chain = new ConcurrentChain(this.Network, new ChainedHeader(blocks[0].Header, blocks[0].GetHash(), 0));
             this.AppendBlocksToChain(chain, blocks.Skip(1));
 
             var notification = new BlockNotification(this.LoggerFactory.Object, chain, puller.Object, signals.Object, new AsyncLoopFactory(new LoggerFactory()), lifetime);
