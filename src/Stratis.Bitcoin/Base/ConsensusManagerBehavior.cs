@@ -40,15 +40,6 @@ namespace Stratis.Bitcoin.Base
 
         private Timer refreshTimer;
 
-        public ConnectNewHeadersResult ConsensusTipChanged(ChainedHeader chainedHeader)
-        {
-            // TODO async lock has to be obtained before calling CM.HeadersPresented
-            // TODO Call CM.HeadersPresented with (false) and return ConnectNewHeadersResult
-            // TODO clear the cached when peer disconnects
-
-            throw new NotImplementedException();
-        }
-
         public ConsensusManagerBehavior(IInitialBlockDownloadState initialBlockDownloadState, ConsensusManager consensusManager, ILoggerFactory loggerFactory)
         {
             this.loggerFactory = loggerFactory;
@@ -77,7 +68,6 @@ namespace Stratis.Bitcoin.Base
                 this.logger.LogTrace("(-)");
             }, null, 0, (int)TimeSpan.FromMinutes(10).TotalMilliseconds);
 
-            this.RegisterDisposable(this.refreshTimer);
             if (this.AttachedPeer.State == NetworkPeerState.Connected)
                 this.AttachedPeer.MyVersion.StartHeight = this.consensusManager.Tip?.Height ?? 0;
 
@@ -87,16 +77,13 @@ namespace Stratis.Bitcoin.Base
             this.logger.LogTrace("(-)");
         }
 
-        protected override void DetachCore()
+        public ConnectNewHeadersResult ConsensusTipChanged(ChainedHeader chainedHeader)
         {
-            this.logger.LogTrace("()");
+            // TODO async lock has to be obtained before calling CM.HeadersPresented
+            // TODO Call CM.HeadersPresented with (false) and return ConnectNewHeadersResult
+            // TODO clear the cached when peer disconnects
 
-            this.AttachedPeer.MessageReceived.Unregister(this.OnMessageReceivedAsync);
-            this.AttachedPeer.StateChanged.Unregister(this.OnStateChangedAsync);
-
-            this.bestChainSelector.RemoveAvailableTip(this.AttachedPeer.Connection.Id);
-
-            this.logger.LogTrace("(-)");
+            throw new NotImplementedException();
         }
 
         /// <summary>
@@ -121,7 +108,7 @@ namespace Stratis.Bitcoin.Base
                         break;
 
                     case HeadersPayload headers:
-                        await this.ProcessHeadersAsync(peer, headers).ConfigureAwait(false);
+                        this.ProcessHeaders(peer, headers);
                         break;
                 }
             }
@@ -140,6 +127,7 @@ namespace Stratis.Bitcoin.Base
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(invPayload), invPayload);
 
+            // Sync in case a peer advertises us a block we are not aware of.
             if (invPayload.Inventory.Any(i => ((i.Type & InventoryType.MSG_BLOCK) != 0) && !this.chain.Contains(i.Hash)))
             {
                 await this.TrySyncAsync().ConfigureAwait(false);
@@ -178,7 +166,7 @@ namespace Stratis.Bitcoin.Base
             }
 
             var headers = new HeadersPayload();
-            ChainedHeader consensusTip = this.chainState.ConsensusTip;
+            ChainedHeader consensusTip = this.consensusManager.Tip;
             consensusTip = this.chain.GetBlock(consensusTip.HashBlock);
 
             ChainedHeader fork = this.chain.FindFork(getHeadersPayload.BlockLocators);
@@ -231,7 +219,7 @@ namespace Stratis.Bitcoin.Base
         /// of our best chain's tip, we update our view of the best chain to that tip.
         /// </para>
         /// </remarks>
-        private async Task ProcessHeadersAsync(INetworkPeer peer, HeadersPayload headersPayload)
+        private void ProcessHeaders(INetworkPeer peer, HeadersPayload headersPayload)
         {
             this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(peer), peer.RemoteSocketEndpoint, nameof(headersPayload), headersPayload);
 
@@ -242,73 +230,11 @@ namespace Stratis.Bitcoin.Base
                 return;
             }
 
-            ChainedHeader pendingTipBefore = this.ExpectedTip;
-            this.logger.LogTrace("Pending tip is '{0}', received {1} new headers.", pendingTipBefore, headersPayload.Headers.Count);
+            // TODO if queue is not empty- add to queue instead of calling CM.
 
-            bool doTrySync = false;
+            ConnectNewHeadersResult result = this.consensusManager.HeadersPresented(peer, headersPayload.Headers);
 
-            // TODO: implement MAX_HEADERS_RESULTS in NBitcoin.HeadersPayload
-
-            ChainedHeader tip = pendingTipBefore;
-            foreach (BlockHeader header in headersPayload.Headers)
-            {
-                ChainedHeader prev = tip?.FindAncestorOrSelf(header.HashPrevBlock);
-                if (prev == null)
-                {
-                    this.logger.LogTrace("Previous header of the new header '{0}' was not found on the peer's chain, the view of the peer's chain is probably outdated.", header);
-
-                    // We have received a header from the peer for which we don't register a previous header.
-                    // This can happen if our information about where the peer is is invalid.
-                    // However, if the previous header is on the chain that we recognize,
-                    // we can fix it.
-
-                    // Try to find the header's previous hash on our best chain.
-                    prev = this.chain.GetBlock(header.HashPrevBlock);
-
-                    if (prev == null)
-                    {
-                        this.logger.LogTrace("Previous header of the new header '{0}' was not found on our chain either.", header);
-
-                        // If we can't connect the header we received from the peer, we might be on completely different chain or
-                        // a reorg happened recently. If we ignored it, we would have invalid view of the peer and the propagation
-                        // of blocks would not work well. So we ask the peer for headers using "getheaders" message.
-                        // Enforce a sync.
-                        doTrySync = true;
-                        break;
-                    }
-
-                    // Now we know the previous block header and thus we can connect the new header.
-                }
-
-                tip = new ChainedHeader(header, header.GetHash(), prev);
-                bool validated = this.chain.GetBlock(tip.HashBlock) != null || tip.Validate(peer.Network);
-                validated &= !this.chainState.IsMarkedInvalid(tip.HashBlock);
-                if (!validated)
-                {
-                    this.logger.LogTrace("Validation of new header '{0}' failed.", tip);
-                    this.invalidHeaderReceived = true;
-                    break;
-                }
-
-                this.ExpectedTip = tip;
-            }
-
-            if (pendingTipBefore != this.ExpectedTip)
-                this.logger.LogTrace("Pending tip changed to '{0}'.", this.ExpectedTip);
-
-            if ((this.ExpectedTip != null) && !this.bestChainSelector.TrySetAvailableTip(this.AttachedPeer.Connection.Id, this.ExpectedTip))
-                this.invalidHeaderReceived = true;
-
-            ChainedHeader chainedPendingTip = this.ExpectedTip == null ? null : this.chain.GetBlock(this.ExpectedTip.HashBlock);
-            if (chainedPendingTip != null)
-            {
-                // This allows garbage collection to collect the duplicated pendingTip and ancestors.
-                this.ExpectedTip = chainedPendingTip;
-            }
-
-            // If we made any advancement or the sync is enforced by 'doTrySync'- continue syncing.
-            if (doTrySync || (this.ExpectedTip == null) || (pendingTipBefore == null) || (pendingTipBefore.HashBlock != this.ExpectedTip.HashBlock))
-                await this.TrySyncAsync().ConfigureAwait(false);
+            // TODO Based on consumed add to queue or not
 
             this.logger.LogTrace("(-)");
         }
@@ -348,35 +274,55 @@ namespace Stratis.Bitcoin.Base
         /// <summary>
         /// Tries to sync the chain with the peer by sending it "headers" message.
         /// </summary>
-        public async Task TrySyncAsync()
+        private async Task TrySyncAsync()
         {
             this.logger.LogTrace("()");
 
             INetworkPeer peer = this.AttachedPeer;
             if (peer != null)
             {
-                if ((peer.State == NetworkPeerState.HandShaked) && !this.invalidHeaderReceived)
+                if (peer.State == NetworkPeerState.HandShaked)
                 {
                     var headersPayload = new GetHeadersPayload()
                     {
-                        BlockLocators = (this.ExpectedTip ?? this.chainState.ConsensusTip ?? this.chain.Tip).GetLocator(),
+                        BlockLocators = (this.ExpectedTip ?? this.consensusManager.Tip).GetLocator(),
                         HashStop = null
                     };
 
                     await peer.SendMessageAsync(headersPayload).ConfigureAwait(false);
                 }
                 else
-                    this.logger.LogTrace("No sync. Peer's state is {0} (need {1}), {2}invalid header received from this peer.", peer.State, NetworkPeerState.HandShaked, this.invalidHeaderReceived ? "" : "NO ");
+                    this.logger.LogTrace("No sync. Peer's state is not handshaked.");
             }
             else this.logger.LogTrace("No peer attached.");
 
             this.logger.LogTrace("(-)");
         }
 
+        protected override void DetachCore()
+        {
+            this.logger.LogTrace("()");
+
+            this.AttachedPeer.MessageReceived.Unregister(this.OnMessageReceivedAsync);
+            this.AttachedPeer.StateChanged.Unregister(this.OnStateChangedAsync);
+
+            this.consensusManager.PeerDisconnected(this.AttachedPeer.Connection.Id);
+
+            this.logger.LogTrace("(-)");
+        }
+
+        ///  <inheritdoc />
+        public override void Dispose()
+        {
+            this.refreshTimer?.Dispose();
+
+            base.Dispose();
+        }
+
         /// <inheritdoc />
         public override object Clone()
         {
-            return new ChainHeadersBehavior(this.chain, this.chainState, this.initialBlockDownloadState, this.bestChainSelector, this.loggerFactory);
+            return new ConsensusManagerBehavior(this.initialBlockDownloadState, this.consensusManager, this.loggerFactory);
         }
     }
 }
