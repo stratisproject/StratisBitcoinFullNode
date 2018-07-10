@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using Newtonsoft.Json;
 using Stratis.Bitcoin.Configuration;
@@ -9,7 +10,7 @@ namespace Stratis.Bitcoin.Features.Apps.Tests
 {
     public class AppsFileServiceTests
     {
-        private class StratisApp
+        private class StratisAppForJson
         {
             public string displayName { get; set; }
             public string webRoot { get; set; }
@@ -18,7 +19,7 @@ namespace Stratis.Bitcoin.Features.Apps.Tests
         [Fact]
         public void Test_StratisAppsFolderPath_throws_where_directory_does_not_exist()
         {
-            var dataFolder = new DataFolder(DateTime.Now.ToString());            
+            var dataFolder = new DataFolder(DateTime.Now.ToString(CultureInfo.CurrentCulture));            
 
             Assert.Throws<DirectoryNotFoundException>(() => new AppsFileService(dataFolder));
         }
@@ -37,17 +38,15 @@ namespace Stratis.Bitcoin.Features.Apps.Tests
         [Fact]
         public void Test_GetConfigurationFields_returns_displayName()
         {
-            const string DisplayName = "application1";
-            var stratisApp = new StratisApp {displayName = DisplayName};
+            const string displayName = "application1";
+            var stratisApp = new StratisAppForJson {displayName = displayName};
 
             CreateStratisAppJsonAndRunTest(() =>
             {
                 var dataFolder = new DataFolder(Directory.GetCurrentDirectory());
                 var service = new AppsFileService(dataFolder);
-                var fileInfo = new FileInfo(Path.Combine(service.StratisAppsFolderPath+"\\app", AppsFileService.StratisAppFileName));
-                service.GetConfigurationFields(fileInfo, out string displayName, out string webRoot);
-
-                Assert.Equal(DisplayName, displayName);
+                var fileInfo = new FileInfo(Path.Combine(service.StratisAppsFolderPath+"\\app", AppsFileService.StratisAppFileName));                
+                Assert.Equal(displayName, service.GetConfigSetting(fileInfo, "displayName"));
 
             }, stratisApp);
         }
@@ -55,22 +54,20 @@ namespace Stratis.Bitcoin.Features.Apps.Tests
         [Fact]
         public void Test_GetConfigurationFields_returns_webRoot()
         {
-            const string WebRoot = "app1root";
-            var stratisApp = new StratisApp { webRoot = WebRoot };
+            const string webRoot = "app1root";
+            var stratisApp = new StratisAppForJson { webRoot = webRoot };
 
             CreateStratisAppJsonAndRunTest(() =>
             {
                 var dataFolder = new DataFolder(Directory.GetCurrentDirectory());
                 var service = new AppsFileService(dataFolder);
                 var fileInfo = new FileInfo(Path.Combine(service.StratisAppsFolderPath + "\\app", AppsFileService.StratisAppFileName));
-                service.GetConfigurationFields(fileInfo, out string displayName, out string webRoot);
-
-                Assert.Equal(WebRoot, webRoot);
-
+                Assert.Equal(webRoot, service.GetConfigSetting(fileInfo, "webRoot"));
+                
             }, stratisApp);
         }
 
-        private static void CreateStratisAppJsonAndRunTest(Action test, StratisApp stratisApp = null)
+        private static void CreateStratisAppJsonAndRunTest(Action test, StratisAppForJson stratisApp = null)
         {
             string appDirectory = string.Empty, appJsonPath = string.Empty, currentDirectory = Directory.GetCurrentDirectory();
             StreamWriter appJsonFileStream = null;

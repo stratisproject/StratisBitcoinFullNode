@@ -11,18 +11,20 @@ namespace Stratis.Bitcoin.Features.Apps
     public class AppsStore : IAppsStore
     {
         private readonly ILogger logger;
-        private readonly List<StratisApp> applications = new List<StratisApp>();
+        private readonly List<IStratisApp> applications = new List<IStratisApp>();
         private readonly IAppsFileService appsFileService;
+        private readonly IStratisAppFactory appFactory;
 
-        public AppsStore(ILoggerFactory loggerFactory, IAppsFileService appsFileService)
+        public AppsStore(ILoggerFactory loggerFactory, IAppsFileService appsFileService, IStratisAppFactory appFactory)
         {
             this.appsFileService = appsFileService;
+            this.appFactory = appFactory;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
 
             this.Load();
         }
 
-        public IEnumerable<StratisApp> Applications => this.applications;
+        public IEnumerable<IStratisApp> Applications => this.applications;
 
         private void Load()
         {
@@ -39,13 +41,17 @@ namespace Stratis.Bitcoin.Features.Apps
             this.applications.AddRange(apps);
         }
 
-        private StratisApp CreateApp(FileInfo fileInfo)
+        private IStratisApp CreateApp(FileInfo fileInfo)
         {
             try
-            {                
-                this.appsFileService.GetConfigurationFields(fileInfo, out string displayName, out string webRoot);
+            {
+                var displayName = this.appsFileService.GetConfigSetting(fileInfo, "displayName");
+                var webRoot = this.appsFileService.GetConfigSetting(fileInfo, "webRoot");
 
-                var stratisApp = new StratisApp { DisplayName = displayName, Location = fileInfo.DirectoryName };
+                IStratisApp stratisApp = this.appFactory.New();
+                stratisApp.DisplayName = displayName;
+                stratisApp.Location = fileInfo.DirectoryName;
+
                 if (!string.IsNullOrEmpty(webRoot))
                     stratisApp.WebRoot = webRoot;
 

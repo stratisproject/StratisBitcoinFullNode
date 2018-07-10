@@ -5,30 +5,43 @@ using System.Linq;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Logging;
 using Stratis.Bitcoin.Features.Apps.Interfaces;
+using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.Apps
 {
-    public class AppsHost : IAppsHost
+    public class AppsHost : IDisposable, IAppsHost
     {
         private int seedPort = 32500;
         private readonly ILogger logger;
-        private readonly List<(StratisApp, IWebHost)> hostedApps = new List<(StratisApp, IWebHost)>();
+        private readonly List<(IStratisApp app, IWebHost host)> hostedApps = new List<(IStratisApp app, IWebHost host)>();
 
-        public AppsHost(ILoggerFactory loggerFactory)
+        public AppsHost(ILoggerFactory loggerFactory) 
         {
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
         }
 
-        public void Host(IEnumerable<StratisApp> stratisApps) =>
-            stratisApps.Where(x => x.IsSinglePageApp).ToList().ForEach(this.HostSinglePageApp);        
+        public IEnumerable<IStratisApp> HostedApps => this.hostedApps.Select(x => x.app);        
 
-        private void HostSinglePageApp(StratisApp stratisApp)
+        public void Host(IEnumerable<IStratisApp> stratisApps) =>
+            stratisApps.Where(x => x.IsSinglePageApp).ToList().ForEach(this.HostSinglePageApp);
+
+        public void Close() => this.Dispose();        
+
+        public void Dispose()
+        {
+            this.hostedApps.ForEach(x => x.Item2.Dispose());
+            this.hostedApps.Clear();
+        }
+
+        private void HostSinglePageApp(IStratisApp stratisApp)
         {
             try
             {
-                stratisApp.Address = $"http://localhost:{this.seedPort}";
+                int[] nextFreePort = {this.seedPort++};
+                IpHelper.FindPorts(nextFreePort);
+                stratisApp.Address = $"http://localhost:{nextFreePort.First()}";
 
-                (StratisApp, IWebHost) pair = (stratisApp, new WebHostBuilder()
+                (IStratisApp app, IWebHost host) pair = (stratisApp, new WebHostBuilder()
                             .UseKestrel()
                             .UseIISIntegration()
                             .UseWebRoot(Path.Combine(stratisApp.Location, stratisApp.WebRoot))
@@ -37,11 +50,9 @@ namespace Stratis.Bitcoin.Features.Apps
                             .UseStartup<SinglePageStartup>()
                             .Build());
 
-                pair.Item2.Start();
+                pair.host.Start();                
 
-                this.hostedApps.Add(pair);
-                this.seedPort++;
-
+                this.hostedApps.Add(pair);                
                 this.logger.LogError($"SPA '{stratisApp.DisplayName}' hosted at {stratisApp.Address}");
             }
             catch (Exception e)

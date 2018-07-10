@@ -4,6 +4,6 @@ namespace Stratis.Bitcoin.Features.Apps.Interfaces
 {
     public interface IAppsStore
     {        
-        IEnumerable<StratisApp> Applications { get; }
+        IEnumerable<IStratisApp> Applications { get; }
     }
 }

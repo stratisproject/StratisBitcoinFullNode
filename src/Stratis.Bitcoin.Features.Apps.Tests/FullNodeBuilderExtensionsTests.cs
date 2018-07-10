@@ -48,6 +48,14 @@ namespace Stratis.Bitcoin.Features.Apps.Tests
         }
 
         [Fact]
+        public void Test_UseApps_adds_the_AppFactory()
+        {
+            this.fullNodeBuilder.UseApps().Build();
+            var count = this.fullNodeBuilder.Services.Count(x => x.ServiceType == typeof(IStratisAppFactory));
+            Assert.Equal(1, count);
+        }
+
+        [Fact]
         public void Test_UseApps_adds_the_AppsController()
         {
             this.fullNodeBuilder.UseApps().Build();

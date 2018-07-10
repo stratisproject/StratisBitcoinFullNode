@@ -9,6 +9,7 @@ namespace Stratis.Bitcoin.Features.Apps
 {
     public class AppsFeature : FullNodeFeature
     {
+        private bool disposed;
         private readonly ILogger logger;
         private readonly IAppsStore appsStore;
         private readonly IAppsHost appsHost;
@@ -18,7 +19,6 @@ namespace Stratis.Bitcoin.Features.Apps
             this.appsStore = appsStore;
             this.appsHost = appsHost;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
-            this.logger.LogInformation($"{nameof(AppsFeature)} created");
         }
 
         public override void Initialize()
@@ -26,6 +26,17 @@ namespace Stratis.Bitcoin.Features.Apps
             this.logger.LogInformation($"Initializing {nameof(AppsFeature)}");
 
             this.appsHost.Host(this.appsStore.Applications);
+        }
+
+        public override void Dispose()
+        {
+            if (this.disposed)
+                return;
+
+            this.appsHost.Close();
+            base.Dispose();
+
+            this.disposed = true;
         }
     }
 
@@ -45,6 +56,7 @@ namespace Stratis.Bitcoin.Features.Apps
                         services.AddSingleton<IAppsFileService, AppsFileService>();
                         services.AddSingleton<IAppsHost, AppsHost>();
                         services.AddSingleton<AppsController>();
+                        services.AddSingleton<IStratisAppFactory, StratisAppFactory>();
                     });
             });
 

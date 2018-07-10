@@ -31,18 +31,17 @@ namespace Stratis.Bitcoin.Features.Apps
 
         public IEnumerable<FileInfo> GetStratisAppConfigFileInfos() =>
             new DirectoryInfo(this.StratisAppsFolderPath).GetFiles(StratisAppFileName, SearchOption.AllDirectories);
-        
-        public bool GetConfigurationFields(FileInfo stratisAppJson, out string displayName, out string webRoot)
-        {
-            displayName = webRoot = string.Empty;
 
+        public string GetConfigSetting(FileInfo stratisAppJson, string settingName)
+        {
             IConfigurationProvider provider = new ConfigurationBuilder()
                 .SetBasePath(stratisAppJson.DirectoryName)
                 .AddJsonFile(stratisAppJson.Name)
                 .Build().Providers.First();
+            
+            provider.TryGet(settingName, out string value);
 
-            return provider.TryGet("displayName", out displayName) &&
-                   provider.TryGet("webRoot", out webRoot);
-        }
+            return value;
+        }        
     }
 }
