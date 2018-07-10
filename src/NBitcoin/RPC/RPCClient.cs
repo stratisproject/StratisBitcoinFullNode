@@ -842,7 +842,7 @@ namespace NBitcoin.RPC
             if (nodeEndPoint == null)
                 throw new ArgumentNullException("nodeEndPoint");
 
-            SendCommandAsync(RPCOperations.addnode, nodeEndPoint.ToString(), "remove");
+            SendCommand(RPCOperations.addnode, nodeEndPoint.ToString(), "remove");
         }
 
         public async Task RemoveNodeAsync(EndPoint nodeEndPoint)
