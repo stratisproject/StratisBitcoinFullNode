@@ -2780,6 +2780,14 @@ namespace Stratis.Bitcoin.Tests.Consensus
             // No headers from chain b are requested for download.
             connectNewHeadersResult.DownloadFrom.Should().Be(null);
             connectNewHeadersResult.DownloadTo.Should().Be(null);
+
+            // Block availability state for 11b – 15b is header only.
+            ChainedHeader chainedHeader = connectNewHeadersResult.Consumed;
+            while (chainedHeader.Height > connectNewHeadersResult.Consumed.GetAncestor(11).Height)
+            {
+                chainedHeader.BlockDataAvailability.Should().Be(BlockDataAvailabilityState.HeaderOnly);
+                chainedHeader = chainedHeader.Previous;
+            }
         }
     }
 }
