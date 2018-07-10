@@ -328,7 +328,7 @@ namespace Stratis.Bitcoin.Base
                     services.AddSingleton<FullNodeFeatureExecutor>();
                     services.AddSingleton<Signals.Signals>().AddSingleton<ISignals, Signals.Signals>(provider => provider.GetService<Signals.Signals>());
                     services.AddSingleton<FullNode>().AddSingleton((provider) => { return provider.GetService<FullNode>() as IFullNode; });
-                    services.AddSingleton<ConcurrentChain>(new ConcurrentChain(fullNodeBuilder.Network, fullNodeBuilder.Network.GetGenesis().Header));
+                    services.AddSingleton<ConcurrentChain>(new ConcurrentChain(fullNodeBuilder.Network));
                     services.AddSingleton<IDateTimeProvider>(DateTimeProvider.Default);
                     services.AddSingleton<IInvalidBlockHashStore, InvalidBlockHashStore>();
                     services.AddSingleton<IChainState, ChainState>();

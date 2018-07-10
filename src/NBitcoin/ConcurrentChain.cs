@@ -28,17 +28,12 @@ namespace NBitcoin
         public ConcurrentChain(Network network)
         {
             this.network = network;
-        }
-
-        public ConcurrentChain(Network network, BlockHeader header)
-            : this(network)
-        {
-            SetTip(new ChainedHeader(header, header.GetHash(), 0));
+            SetTip(new ChainedHeader(network.GetGenesis().Header, network.GetGenesis().GetHash(), 0));
         }
 
         public ConcurrentChain(Network network, ChainedHeader chainedHeader)
-                : this(network)
         {
+            this.network = network;
             SetTip(chainedHeader);
         }
 

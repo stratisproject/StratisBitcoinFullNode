@@ -93,7 +93,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
 
         private ConcurrentChain CreateChain(int blocksCount)
         {
-            var chain = new ConcurrentChain(this.network, this.network.GetGenesis().Header);
+            var chain = new ConcurrentChain(this.network);
             for (int i = 0; i < blocksCount; i++)
             {
                 BlockHeader header = this.network.Consensus.ConsensusFactory.CreateBlockHeader();

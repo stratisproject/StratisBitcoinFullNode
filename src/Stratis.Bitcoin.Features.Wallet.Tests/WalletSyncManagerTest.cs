@@ -292,7 +292,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         [Fact]
         public void SyncFromDate_EmptyChain_UpdateUsingGenesisBlock()
         {
-            this.chain = new ConcurrentChain(Network.StratisMain, Network.StratisMain.GetGenesis().Header);
+            this.chain = new ConcurrentChain(Network.StratisMain);
 
             var walletSyncManager = new WalletSyncManager(this.LoggerFactory.Object, this.walletManager.Object, this.chain, Network.StratisMain,
              this.blockStoreCache.Object, this.storeSettings, this.nodeLifetime.Object);

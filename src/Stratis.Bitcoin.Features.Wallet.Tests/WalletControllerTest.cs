@@ -605,7 +605,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 }
             };
 
-            var concurrentChain = new ConcurrentChain(this.network, Network.Main.GetGenesis().Header);
+            var concurrentChain = new ConcurrentChain(this.network);
             ChainedHeader tip = WalletTestsHelpers.AppendBlock(null, new[] { concurrentChain });
 
             var connectionManagerMock = new Mock<IConnectionManager>();

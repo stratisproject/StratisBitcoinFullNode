@@ -45,7 +45,7 @@ namespace NBitcoin.Tests
         [Trait("UnitTest", "UnitTest")]
         public void CanGetMedianBlock()
         {
-            var chain = new ConcurrentChain(this.network, this.network.GetGenesis().Header);
+            var chain = new ConcurrentChain(this.network);
             DateTimeOffset now = DateTimeOffset.UtcNow;
             chain.SetTip(CreateBlock(now, 0, chain));
             chain.SetTip(CreateBlock(now, -1, chain));
@@ -1113,7 +1113,9 @@ namespace NBitcoin.Tests
 
             BlockHeader blockHeader = network.Consensus.ConsensusFactory.CreateBlockHeader();
             blockHeader.BlockTime = first;
-            var chain = new ConcurrentChain(this.network, blockHeader);
+
+            var chain = new ConcurrentChain(this.network, new ChainedHeader(blockHeader, blockHeader.GetHash(), 0));
+
             first = first + TimeSpan.FromMinutes(10);
 
             while (currentHeight != chain.Height)

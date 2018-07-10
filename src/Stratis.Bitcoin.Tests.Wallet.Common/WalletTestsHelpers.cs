@@ -271,7 +271,7 @@ namespace Stratis.Bitcoin.Tests.Wallet.Common
 
         public static ConcurrentChain GenerateChainWithHeight(int blockAmount, Network network)
         {
-            var chain = new ConcurrentChain(network, network.GetGenesis().Header);
+            var chain = new ConcurrentChain(network);
             uint nonce = RandomUtils.GetUInt32();
             uint256 prevBlockHash = chain.Genesis.HashBlock;
             for (int i = 0; i < blockAmount; i++)
@@ -299,8 +299,8 @@ namespace Stratis.Bitcoin.Tests.Wallet.Common
         public static (ConcurrentChain LeftChain, ConcurrentChain RightChain, List<Block> LeftForkBlocks, List<Block> RightForkBlocks)
             GenerateForkedChainAndBlocksWithHeight(int blockAmount, Network network, int forkBlock)
         {
-            var rightchain = new ConcurrentChain(network, network.GetGenesis().Header);
-            var leftchain = new ConcurrentChain(network, network.GetGenesis().Header);
+            var rightchain = new ConcurrentChain(network);
+            var leftchain = new ConcurrentChain(network);
             uint256 prevBlockHash = rightchain.Genesis.HashBlock;
             var leftForkBlocks = new List<Block>();
             var rightForkBlocks = new List<Block>();
@@ -354,7 +354,7 @@ namespace Stratis.Bitcoin.Tests.Wallet.Common
 
         public static (ConcurrentChain Chain, List<Block> Blocks) GenerateChainAndBlocksWithHeight(int blockAmount, Network network)
         {
-            var chain = new ConcurrentChain(network, network.GetGenesis().Header);
+            var chain = new ConcurrentChain(network);
             uint nonce = RandomUtils.GetUInt32();
             uint256 prevBlockHash = chain.Genesis.HashBlock;
             var blocks = new List<Block>();
@@ -375,7 +375,7 @@ namespace Stratis.Bitcoin.Tests.Wallet.Common
 
         public static ConcurrentChain PrepareChainWithBlock()
         {
-            var chain = new ConcurrentChain(Network.StratisMain, Network.StratisMain.GetGenesis().Header);
+            var chain = new ConcurrentChain(Network.StratisMain);
             uint nonce = RandomUtils.GetUInt32();
             Block block = Network.StratisMain.Consensus.ConsensusFactory.CreateBlock();
             block.AddTransaction(Network.StratisMain.CreateTransaction());
@@ -461,7 +461,7 @@ namespace Stratis.Bitcoin.Tests.Wallet.Common
 
         public static (ConcurrentChain chain, uint256 blockhash, Block block) CreateChainAndCreateFirstBlockWithPaymentToAddress(Network network, HdAddress address)
         {
-            var chain = new ConcurrentChain(network, network.GetGenesis().Header);
+            var chain = new ConcurrentChain(network);
 
             Block block = network.Consensus.ConsensusFactory.CreateBlock();
             block.Header.HashPrevBlock = chain.Tip.HashBlock;
@@ -484,8 +484,6 @@ namespace Stratis.Bitcoin.Tests.Wallet.Common
 
         public static List<Block> AddBlocksWithCoinbaseToChain(Network network, ConcurrentChain chain, HdAddress address, int blocks = 1)
         {
-            //var chain = new ConcurrentChain(network.GetGenesis().Header);
-
             var blockList = new List<Block>();
 
             for (int i = 0; i < blocks; i++)
