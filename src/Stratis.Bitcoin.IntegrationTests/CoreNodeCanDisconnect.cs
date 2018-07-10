@@ -24,8 +24,6 @@ namespace Stratis.Bitcoin.IntegrationTests
         private const string WalletPassword = "123456";
         private const string JingTheFastMiner = "Jing";
         private const string Bob = "Bob";
-        private const string Charlie = "Charlie";
-        private const string Dave = "Dave";
 
         protected override void BeforeTest()
         {
@@ -34,7 +32,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 
         protected override void AfterTest()
         {
-            
+            this.nodeGroupBuilder.Dispose();
         }
 
         [Fact]

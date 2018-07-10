@@ -104,10 +104,13 @@ namespace Stratis.Bitcoin.P2P.Peer
         private static bool Match(IPAddress ip, int? port, INetworkPeer peer)
         {
             bool isConnectedOrHandShaked = (peer.State == NetworkPeerState.Connected || peer.State == NetworkPeerState.HandShaked);
-            bool isAddressMatching = peer.RemoteSocketAddress.Equals(ip) && (!port.HasValue || peer.RemoteSocketPort == port.Value);
-            bool isPeerVersionAddressMatching = peer.PeerVersion != null &&
-                                                peer.PeerVersion.AddressFrom.Address.Equals(ip) &&
-                                                (!port.HasValue || peer.PeerVersion.AddressFrom.Port == port.Value);
+
+            bool isAddressMatching = peer.RemoteSocketAddress.Equals(ip)
+                                     && (!port.HasValue || port == peer.RemoteSocketPort);
+
+            bool isPeerVersionAddressMatching = peer.PeerVersion?.AddressFrom != null
+                                                && peer.PeerVersion.AddressFrom.Address.Equals(ip)
+                                                && (!port.HasValue || port == peer.PeerVersion.AddressFrom.Port);
 
             return (isConnectedOrHandShaked && isAddressMatching) || isPeerVersionAddressMatching;
         }
