@@ -4,7 +4,7 @@ using System.Linq;
 using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
 using NBitcoin;
-using NBitcoin.RPC;
+using Stratis.Bitcoin.Features.RPC;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Controllers;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
@@ -95,7 +95,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                 walletManager.Start();
 
                 RPCClient rpc = stratisNodeSync.CreateRPCClient();
-                rpc.SendCommand(NBitcoin.RPC.RPCOperations.generate, 10);
+                rpc.SendCommand(RPCOperations.generate, 10);
                 Assert.Equal(10, rpc.GetBlockCount());
 
                 BitcoinPubKeyAddress address = new Key().PubKey.GetAddress(rpc.Network);
