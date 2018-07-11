@@ -78,10 +78,6 @@ namespace Stratis.Bitcoin.Utilities
                 // Marking the file for deletion in the future.
                 File.Move(tempFilePath, $"{ filePath}.{ uniqueId}.del");
             }
-            catch (UnauthorizedAccessException)
-            {
-                // Thrown if file doesn't exist
-            }
         }
 
         /// <summary>
