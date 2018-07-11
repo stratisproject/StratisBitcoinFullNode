@@ -688,8 +688,14 @@ namespace Stratis.Bitcoin.Consensus
                 throw new ConnectHeaderException();
             }
 
-            List<ChainedHeader> newChainedHeaders = this.CreateNewHeaders(headers);
             uint256 lastHash = headers.Last().GetHash();
+
+            List<ChainedHeader> newChainedHeaders = null;
+
+            if (!this.chainedHeadersByHash.ContainsKey(lastHash))
+                newChainedHeaders = this.CreateNewHeaders(headers);
+            else
+                this.logger.LogTrace("No new headers presented.");
 
             this.AddOrReplacePeerTip(networkPeerId, lastHash);
 

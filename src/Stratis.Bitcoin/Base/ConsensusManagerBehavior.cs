@@ -36,23 +36,29 @@ namespace Stratis.Bitcoin.Base
         /// <remarks>
         /// The announced tip is accepted if it seems to be valid. Validation is only done on headers and so the announced tip may refer to invalid block.
         /// </remarks>
-        public ChainedHeader ExpectedTip { get; private set; }
+        public ChainedHeader ExpectedPeerTip { get; private set; }
 
+        /// <summary>Timer that periodically tries to sync.</summary>
         private Timer refreshTimer;
 
-        public ConsensusManagerBehavior(IInitialBlockDownloadState initialBlockDownloadState, ConsensusManager consensusManager, ILoggerFactory loggerFactory)
+        private readonly ConcurrentChain chain;
+
+        public ConsensusManagerBehavior(ConcurrentChain chain, IInitialBlockDownloadState initialBlockDownloadState, ConsensusManager consensusManager, ILoggerFactory loggerFactory)
         {
             this.loggerFactory = loggerFactory;
             this.initialBlockDownloadState = initialBlockDownloadState;
             this.consensusManager = consensusManager;
+            this.chain = chain;
 
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName, $"[{this.GetHashCode():x}] ");
         }
 
+        ///  <inheritdoc />
         protected override void AttachCore()
         {
             this.logger.LogTrace("()");
 
+            // Initialize auto sync timer.
             this.refreshTimer = new Timer(async (o) =>
             {
                 this.logger.LogTrace("()");
@@ -99,10 +105,6 @@ namespace Stratis.Bitcoin.Base
             {
                 switch (message.Message.Payload)
                 {
-                    case InvPayload inv:
-                        await this.ProcessInvAsync(inv).ConfigureAwait(false);
-                        break;
-
                     case GetHeadersPayload getHeaders:
                         await this.ProcessGetHeadersAsync(peer, getHeaders).ConfigureAwait(false);
                         break;
@@ -114,23 +116,6 @@ namespace Stratis.Bitcoin.Base
             }
             catch (OperationCanceledException)
             {
-            }
-
-            this.logger.LogTrace("(-)");
-        }
-
-        /// <summary>
-        /// Processes "inv" message received from the peer.
-        /// </summary>
-        /// <param name="invPayload">Payload of "inv" message to process.</param>
-        private async Task ProcessInvAsync(InvPayload invPayload)
-        {
-            this.logger.LogTrace("({0}:'{1}')", nameof(invPayload), invPayload);
-
-            // Sync in case a peer advertises us a block we are not aware of.
-            if (invPayload.Inventory.Any(i => ((i.Type & InventoryType.MSG_BLOCK) != 0) && !this.chain.Contains(i.Hash)))
-            {
-                await this.TrySyncAsync().ConfigureAwait(false);
             }
 
             this.logger.LogTrace("(-)");
@@ -158,7 +143,6 @@ namespace Stratis.Bitcoin.Base
             this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(peer), peer.RemoteSocketEndpoint, nameof(getHeadersPayload), getHeadersPayload);
 
             // Ignoring "getheaders" from peers because node is in initial block download unless the peer is whitelisted.
-            // Don't tell peers at which stage of syncing with the network node is, don't announce which blocks we have.
             if (this.initialBlockDownloadState.IsInitialBlockDownload() && !peer.Behavior<ConnectionManagerBehavior>().Whitelisted)
             {
                 this.logger.LogTrace("(-)[IGNORE_ON_IBD]");
@@ -194,7 +178,7 @@ namespace Stratis.Bitcoin.Base
 
             // Set our view of peer's tip equal to the last header that was sent to it.
             if (headers.Headers.Count != 0)
-                this.ExpectedTip = this.chain.GetBlock(headers.Headers.Last().GetHash()) ?? this.ExpectedTip;
+                this.ExpectedPeerTip = this.chain.GetBlock(headers.Headers.Last().GetHash()) ?? this.ExpectedPeerTip;
 
             await peer.SendMessageAsync(headers).ConfigureAwait(false);
 
@@ -229,12 +213,16 @@ namespace Stratis.Bitcoin.Base
                 this.logger.LogTrace("(-)[NO_HEADERS]");
                 return;
             }
+            // TODO Check that headers are consequtive. If not- ban the peer https://github.com/stratisproject/StratisBitcoinFullNode/issues/1344
 
             // TODO if queue is not empty- add to queue instead of calling CM.
 
+            //TODO add trycatch and handle the exceptions appropriatelly
             ConnectNewHeadersResult result = this.consensusManager.HeadersPresented(peer, headersPayload.Headers);
 
             // TODO Based on consumed add to queue or not
+
+            // TODO set expected tip to be last consumed
 
             this.logger.LogTrace("(-)");
         }
@@ -243,22 +231,25 @@ namespace Stratis.Bitcoin.Base
         {
             this.logger.LogTrace("({0}:'{1}',{2}:{3},{4}:{5})", nameof(peer), peer.RemoteSocketEndpoint, nameof(oldState), oldState, nameof(peer.State), peer.State);
 
-            try
+            if (peer.State == NetworkPeerState.HandShaked)
             {
-                await this.TrySyncAsync().ConfigureAwait(false);
-            }
-            catch (OperationCanceledException)
-            {
+                try
+                {
+                    await this.TrySyncAsync().ConfigureAwait(false);
+                }
+                catch (OperationCanceledException)
+                {
+                }
             }
 
             this.logger.LogTrace("(-)");
         }
 
-        public async Task ResetPendingTipAndSyncAsync()
+        public async Task ResetExpectedPeerTipAndSyncAsync()
         {
             this.logger.LogTrace("()");
 
-            this.ExpectedTip = null;
+            this.ExpectedPeerTip = null;
 
             try
             {
@@ -279,26 +270,24 @@ namespace Stratis.Bitcoin.Base
             this.logger.LogTrace("()");
 
             INetworkPeer peer = this.AttachedPeer;
-            if (peer != null)
-            {
-                if (peer.State == NetworkPeerState.HandShaked)
-                {
-                    var headersPayload = new GetHeadersPayload()
-                    {
-                        BlockLocators = (this.ExpectedTip ?? this.consensusManager.Tip).GetLocator(),
-                        HashStop = null
-                    };
 
-                    await peer.SendMessageAsync(headersPayload).ConfigureAwait(false);
-                }
-                else
-                    this.logger.LogTrace("No sync. Peer's state is not handshaked.");
+            if (peer != null && peer.State == NetworkPeerState.HandShaked)
+            {
+                var headersPayload = new GetHeadersPayload()
+                {
+                    BlockLocators = (this.ExpectedPeerTip ?? this.consensusManager.Tip).GetLocator(),
+                    HashStop = null
+                };
+
+                await peer.SendMessageAsync(headersPayload).ConfigureAwait(false);
             }
-            else this.logger.LogTrace("No peer attached.");
+            else
+                this.logger.LogTrace("Can't sync. Peer's state is not handshaked or peer was not attached.");
 
             this.logger.LogTrace("(-)");
         }
 
+        ///  <inheritdoc />
         protected override void DetachCore()
         {
             this.logger.LogTrace("()");
@@ -315,14 +304,13 @@ namespace Stratis.Bitcoin.Base
         public override void Dispose()
         {
             this.refreshTimer?.Dispose();
-
             base.Dispose();
         }
 
         /// <inheritdoc />
         public override object Clone()
         {
-            return new ConsensusManagerBehavior(this.initialBlockDownloadState, this.consensusManager, this.loggerFactory);
+            return new ConsensusManagerBehavior(this.chain, this.initialBlockDownloadState, this.consensusManager, this.loggerFactory);
         }
     }
 }
