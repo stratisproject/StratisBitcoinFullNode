@@ -4,7 +4,6 @@ using System.Threading;
 using Microsoft.Extensions.Logging;
 using Moq;
 using NBitcoin;
-using Stratis.Bitcoin.Features.Notifications;
 using Stratis.Bitcoin.Features.Notifications.Interfaces;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
@@ -29,13 +28,14 @@ namespace Stratis.Bitcoin.Features.LightWallet.Tests
 
         public LightWalletSyncManagerTest()
         {
+            this.network = Network.StratisMain;
+
             this.walletManager = new Mock<IWalletManager>();
-            this.chain = new ConcurrentChain();
+            this.chain = new ConcurrentChain(this.network);
             this.blockNotification = new Mock<IBlockNotification>();
             this.signals = new Mock<ISignals>();
             this.nodeLifetime = new Mock<INodeLifetime>();
             this.asyncLoopFactory = new Mock<IAsyncLoopFactory>();
-            this.network = Network.StratisMain;
         }
 
         [Fact]
