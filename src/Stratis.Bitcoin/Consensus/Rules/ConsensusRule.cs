@@ -45,12 +45,12 @@ namespace Stratis.Bitcoin.Consensus.Rules
         /// <summary>
         /// Initializes an instance of the object.
         /// </summary>
-        public ConsensusRuleDescriptor(ConsensusRule rule)
+        public ConsensusRuleDescriptor(ConsensusRule rule, RuleAttribute attribute)
         {
             Guard.NotNull(rule, nameof(rule));
 
             this.Rule = rule;
-            this.RuleAttributes = Attribute.GetCustomAttributes(rule.GetType()).OfType<RuleAttribute>().ToList();
+            this.RuleAttribute = Attribute.GetCustomAttributes(rule.GetType()).OfType<RuleAttribute>().ToList();
 
             PartialValidationRuleAttribute partialValidationRuleAttribute = this.RuleAttributes.OfType<PartialValidationRuleAttribute>().FirstOrDefault();
 
@@ -64,7 +64,7 @@ namespace Stratis.Bitcoin.Consensus.Rules
         public ConsensusRule Rule { get; }
 
         /// <summary>The collection of <see cref="RuleAttribute"/> that are attached to this rule.</summary>
-        public List<RuleAttribute> RuleAttributes { get; }
+        public RuleAttribute RuleAttribute { get; }
     }
 
     /// <summary>

@@ -112,7 +112,9 @@ namespace Stratis.Bitcoin.Consensus.Rules
                 consensusRule.Parent = this;
                 consensusRule.Logger = this.loggerFactory.CreateLogger(consensusRule.GetType().FullName);
                 consensusRule.Initialize();
-                
+
+                var atr = Attribute.GetCustomAttributes(consensusRule.GetType()).OfType<RuleAttribute>();
+
                 this.consensusRules.Add(consensusRule.GetType().FullName, new ConsensusRuleDescriptor(consensusRule));
             }
 

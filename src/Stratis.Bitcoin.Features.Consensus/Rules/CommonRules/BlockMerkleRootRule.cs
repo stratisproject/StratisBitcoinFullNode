@@ -24,7 +24,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
     /// kind of blocks.
     /// <seealso cref="https://bitcointalk.org/index.php?topic=102395.0"/>
     /// </remarks>
-    [PartialValidationRule]
+    [PartialValidationRule(CanSkipValidation = true)] // TODO remove this from the 
+    [IntegrityValidationRule]
     public class BlockMerkleRootRule : ConsensusRule
     {
         /// <inheritdoc />
