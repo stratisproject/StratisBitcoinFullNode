@@ -2474,7 +2474,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
                 Wallet wallet = this.walletFixture.GenerateBlankWallet("myWallet1", "password");
 
-                var chain = new ConcurrentChain(wallet.Network.GetGenesis().Header);
+                var chain = new ConcurrentChain(wallet.Network);
                 (ChainedHeader ChainedHeader, Block Block) chainResult = WalletTestsHelpers.AppendBlock(chain.Genesis, chain);
 
                 var walletManager = new WalletManager(this.LoggerFactory.Object, Network.Main, chain, NodeSettings.Default(), new Mock<WalletSettings>().Object,
@@ -2497,7 +2497,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
                 Wallet wallet = this.walletFixture.GenerateBlankWallet("myWallet1", "password");
 
-                var chain = new ConcurrentChain(wallet.Network.GetGenesis().Header);
+                var chain = new ConcurrentChain(wallet.Network);
                 (ChainedHeader ChainedHeader, Block Block) chainResult = WalletTestsHelpers.AppendBlock(chain.Genesis, chain);
                 (ChainedHeader ChainedHeader, Block Block) chainResult2 = WalletTestsHelpers.AppendBlock(chainResult.ChainedHeader, chain);
 
@@ -2912,7 +2912,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             Wallet wallet = this.walletFixture.GenerateBlankWallet("myWallet1", "password");
             Wallet wallet2 = this.walletFixture.GenerateBlankWallet("myWallet2", "password");
 
-            var chain = new ConcurrentChain(wallet.Network.GetGenesis().Header);
+            var chain = new ConcurrentChain(wallet.Network);
             ChainedHeader chainedBlock = WalletTestsHelpers.AppendBlock(chain.Genesis, chain).ChainedHeader;
 
             var walletManager = new WalletManager(this.LoggerFactory.Object, Network.Main, chain, NodeSettings.Default(), new Mock<WalletSettings>().Object,
@@ -2938,7 +2938,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             Wallet wallet = this.walletFixture.GenerateBlankWallet("myWallet1", "password");
             Wallet wallet2 = this.walletFixture.GenerateBlankWallet("myWallet2", "password");
 
-            var chain = new ConcurrentChain(wallet.Network.GetGenesis().Header);
+            var chain = new ConcurrentChain(wallet.Network);
             ChainedHeader chainedBlock = WalletTestsHelpers.AppendBlock(chain.Genesis, chain).ChainedHeader;
 
             var walletManager = new WalletManager(this.LoggerFactory.Object, Network.Main, chain, NodeSettings.Default(), new Mock<WalletSettings>().Object,
@@ -2965,7 +2965,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             Wallet wallet = this.walletFixture.GenerateBlankWallet("myWallet1", "password");
             wallet.AccountsRoot.ElementAt(0).CoinType = CoinType.Stratis;
 
-            var chain = new ConcurrentChain(wallet.Network.GetGenesis().Header);
+            var chain = new ConcurrentChain(wallet.Network);
             ChainedHeader chainedBlock = WalletTestsHelpers.AppendBlock(chain.Genesis, chain).ChainedHeader;
 
             var walletManager = new WalletManager(this.LoggerFactory.Object, Network.Main, chain, NodeSettings.Default(), new Mock<WalletSettings>().Object,
