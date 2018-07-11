@@ -1,6 +1,6 @@
 ﻿using System;
 using System.IO;
-using NBitcoin.RPC;
+using Stratis.Bitcoin.Features.RPC;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
 using Stratis.Bitcoin.P2P.Peer;
 

@@ -2,6 +2,7 @@
 using Moq;
 using NBitcoin;
 using Stratis.Bitcoin.Base;
+using Stratis.Bitcoin.BlockPulling2;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Configuration.Settings;
@@ -9,7 +10,9 @@ using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Consensus.Validators;
+using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Tests.Common;
+using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Tests.Consensus
 {
@@ -22,7 +25,6 @@ namespace Stratis.Bitcoin.Tests.Consensus
             public Mock<IIntegrityValidator> IntegrityValidatorMock = new Mock<IIntegrityValidator>();
             public readonly Mock<IPartialValidation> PartialValidationMock = new Mock<IPartialValidation>();
             public readonly Mock<ICheckpoints> CheckpointsMock = new Mock<ICheckpoints>();
-            public readonly Mock<IBlockPuller> BlockPullerMock = new Mock<IBlockPuller>();
             public readonly Mock<IPeerBanning> PeerBanningMock = new Mock<IPeerBanning>();
 
             public readonly Mock<IChainState> ChainStateMock = new Mock<IChainState>();
@@ -30,6 +32,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
 
             public readonly Mock<IFinalizedBlockHeight> FinalizedBlockMock = new Mock<IFinalizedBlockHeight>();
             public readonly ConsensusSettings ConsensusSettings = new ConsensusSettings(new NodeSettings(Network.RegTest));
+            public readonly Mock<IInitialBlockDownloadState> ibdStateLock = new Mock<IInitialBlockDownloadState>();
 
             internal ChainedHeaderTree ChainedHeaderTree;
 
@@ -38,8 +41,8 @@ namespace Stratis.Bitcoin.Tests.Consensus
             internal ConsensusManager CreateConsensusManager()
             {
                 this.ConsensusManager = new ConsensusManager(this.Network, new ExtendedLoggerFactory(), this.ChainStateMock.Object, 
-                    this.HeaderValidatorMock.Object, this.IntegrityValidatorMock.Object, this.PartialValidationMock.Object, this.CheckpointsMock.Object, this.ConsensusSettings, this.BlockPullerMock.Object,
-                    this.ConsensusRulesMock.Object, this.FinalizedBlockMock.Object, new Bitcoin.Signals.Signals(), this.PeerBanningMock.Object);
+                    this.HeaderValidatorMock.Object, this.IntegrityValidatorMock.Object, this.PartialValidationMock.Object, this.CheckpointsMock.Object, this.ConsensusSettings,
+                    this.ConsensusRulesMock.Object, this.FinalizedBlockMock.Object, new Bitcoin.Signals.Signals(), this.PeerBanningMock.Object, new NodeSettings(this.Network), new DateTimeProvider(), this.ibdStateLock.Object, new ConcurrentChain(Network.StratisMain));
 
                 this.ChainedHeaderTree = this.ConsensusManager.GetMemberValue("chainedHeaderTree") as ChainedHeaderTree;
 

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using NBitcoin.DataEncoders;
-using NBitcoin.RPC;
+using NBitcoin.Formatters;
 using Newtonsoft.Json.Linq;
 
 namespace NBitcoin
@@ -35,13 +35,13 @@ namespace NBitcoin
         }
 
         [Obsolete("Should use Block.Load outside of ConsensusFactories")]
-        internal Block(BlockHeader blockHeader) : this()
+        public Block(BlockHeader blockHeader) : this()
         {
             this.header = blockHeader;
         }
 
         [Obsolete("Should use Block.Load outside of ConsensusFactories")]
-        internal Block(byte[] bytes, ConsensusFactory consensusFactory)
+        public Block(byte[] bytes, ConsensusFactory consensusFactory)
         {
             var stream = new BitcoinStream(bytes)
             {
@@ -49,11 +49,6 @@ namespace NBitcoin
             };
 
             this.ReadWrite(stream);
-        }
-
-        [Obsolete("Should use Block.Load outside of ConsensusFactories")]
-        internal Block(byte[] bytes) : this(bytes, Network.Main.Consensus.ConsensusFactory)
-        {
         }
 
         public virtual void ReadWrite(BitcoinStream stream)
@@ -142,9 +137,10 @@ namespace NBitcoin
 
         public static Block ParseJson(Network network, string json)
         {
-            var formatter = new BlockExplorerFormatter();
+            var formatter = new BlockExplorerFormatter(network);
             JObject block = JObject.Parse(json);
             var txs = (JArray)block["tx"];
+
             Block blk = network.Consensus.ConsensusFactory.CreateBlock();
             blk.Header.Bits = new Target((uint)block["bits"]);
             blk.Header.BlockTime = Utils.UnixTimeToDateTime((uint)block["time"]);

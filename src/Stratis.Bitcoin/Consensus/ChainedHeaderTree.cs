@@ -179,7 +179,7 @@ namespace Stratis.Bitcoin.Consensus
         /// During the consensus tip changing process, which includes both the reorganization and advancement on the same chain,
         /// it happens that there are two entries for <see cref="LocalPeerId"/>. This means that two different blocks are being
         /// claimed by our node as its tip. This is necessary in order to protect the new consensus tip candidate from being
-        /// removed in case peers that were claiming it disconnect during the consensus tip changing process.  
+        /// removed in case peers that were claiming it disconnect during the consensus tip changing process.
         /// <para>
         /// All the leafs of the tree have to be tips of chains presented by peers, which means that
         /// hashes of the leaf block headers have to be keys with non-empty values in this dictionary.
@@ -254,7 +254,7 @@ namespace Stratis.Bitcoin.Consensus
 
             // Initialize local tip claim with consensus tip.
             this.AddOrReplacePeerTip(LocalPeerId, consensusTip.HashBlock);
-            
+
             this.logger.LogTrace("(-)");
         }
 
@@ -277,7 +277,7 @@ namespace Stratis.Bitcoin.Consensus
         public ChainedHeader GetChainedHeader(uint256 blockHash)
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(blockHash), blockHash);
-            
+
             if (this.chainedHeadersByHash.TryGetValue(blockHash, out ChainedHeader chainedHeader))
             {
                 this.logger.LogTrace("(-):'{0}'", chainedHeader);
@@ -300,7 +300,7 @@ namespace Stratis.Bitcoin.Consensus
         {
             this.logger.LogTrace("({0}:{1})", nameof(networkPeerId), networkPeerId);
 
-            if (!this.peerTipsByPeerId.TryGetValue(networkPeerId, out uint256 peerTipHash)) 
+            if (!this.peerTipsByPeerId.TryGetValue(networkPeerId, out uint256 peerTipHash))
             {
                 this.logger.LogTrace("(-)[PEER_TIP_NOT_FOUND]");
                 return;
@@ -361,7 +361,7 @@ namespace Stratis.Bitcoin.Consensus
             }
 
             // Same scenario as above except for prev block was validated which triggered next partial validation to be started.
-            if ((chainedHeader.BlockValidationState == ValidationState.PartiallyValidated) || 
+            if ((chainedHeader.BlockValidationState == ValidationState.PartiallyValidated) ||
                 (chainedHeader.BlockValidationState == ValidationState.FullyValidated))
             {
                 this.logger.LogTrace("(-)[ALREADY_VALIDATED]:null");
@@ -388,12 +388,12 @@ namespace Stratis.Bitcoin.Consensus
             {
                 if (header.BlockDataAvailability == BlockDataAvailabilityState.BlockAvailable)
                 {
-                    // Block header is not ancestor of the consensus tip so it's block data is guaranteed to be there. 
+                    // Block header is not ancestor of the consensus tip so it's block data is guaranteed to be there.
                     chainedHeaderBlocksToValidate.Add(new ChainedHeaderBlock(header.Block, header));
                     this.logger.LogTrace("Chained header '{0}' is selected for partial validation.", header);
                 }
             }
-            
+
             this.logger.LogTrace("(-):*.{0}={1},{2}={3}", nameof(chainedHeaderBlocksToValidate.Count), chainedHeaderBlocksToValidate.Count, nameof(fullValidationRequired), fullValidationRequired);
             return chainedHeaderBlocksToValidate;
         }
@@ -404,7 +404,7 @@ namespace Stratis.Bitcoin.Consensus
         private void ClaimPeerTip(int networkPeerId, uint256 tipHash)
         {
             this.logger.LogTrace("({0}:{1},{2}:'{3}')", nameof(networkPeerId), networkPeerId, nameof(tipHash), tipHash);
-            
+
             HashSet<int> peersClaimingThisHeader;
             if (!this.peerIdsByTipHash.TryGetValue(tipHash, out peersClaimingThisHeader))
             {
@@ -413,7 +413,7 @@ namespace Stratis.Bitcoin.Consensus
             }
 
             peersClaimingThisHeader.Add(networkPeerId);
-           
+
             this.logger.LogTrace("(-)");
         }
 
@@ -512,7 +512,7 @@ namespace Stratis.Bitcoin.Consensus
                     int finalizedHeight = this.finalizedBlockHeight.GetFinalizedBlockHeight();
 
                     // Do nothing in case peer's tip is on our consensus chain.
-                    if ((fork != null) && (fork.Height <= finalizedHeight))
+                    if ((fork != null) && (fork.Height < finalizedHeight))
                     {
                         peerIdsToResync.Add(peerId);
                         this.logger.LogTrace("Peer with Id {0} claims a chain that violates max reorg, its tip is '{1}' and the last finalized block height is {2}.", peerId, peerTip, finalizedHeight);
@@ -554,7 +554,7 @@ namespace Stratis.Bitcoin.Consensus
                 this.logger.LogTrace("(-)[GENESIS_REACHED]");
                 return;
             }
-            
+
             ChainedHeader currentBlockToDeleteData = consensusTip.GetAncestor(lastBlockHeightToKeep).Previous;
 
             // Process blocks that were not process before or until the genesis block exclusive.
@@ -571,7 +571,7 @@ namespace Stratis.Bitcoin.Consensus
 
             this.logger.LogTrace("(-)");
         }
-        
+
         /// <summary>
         /// Remove all the branches in the tree that are after the given <paramref name="subtreeRoot"/>
         /// including it and return all the peers that where claiming next headers.
@@ -593,32 +593,32 @@ namespace Stratis.Bitcoin.Consensus
 
                 foreach (ChainedHeader nextHeader in header.Next)
                     headersToProcess.Push(nextHeader);
-                
+
                 if (this.peerIdsByTipHash.TryGetValue(header.HashBlock, out HashSet<int> peers))
                 {
                     foreach (int peerId in peers)
                     {
                         // There was a partially validated chain that was better than our consensus tip, we've started full validation
                         // and found out that a block on this chain is invalid. At this point we have a marker with LocalPeerId on the new chain
-                        // but our consensus tip inside peerTipsByPeerId has not been changed yet, therefore we want to prevent removing 
-                        // the consensus tip from the structure. 
+                        // but our consensus tip inside peerTipsByPeerId has not been changed yet, therefore we want to prevent removing
+                        // the consensus tip from the structure.
                         if (peerId != LocalPeerId)
                         {
                             this.peerTipsByPeerId.Remove(peerId);
                             peersToBan.Add(peerId);
                         }
                     }
-                    
+
                     this.peerIdsByTipHash.Remove(header.HashBlock);
                 }
 
                 this.DisconnectChainHeader(header);
             }
-            
+
             this.logger.LogTrace("(-)");
             return peersToBan;
         }
-        
+
         private void DisconnectChainHeader(ChainedHeader header)
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(header), header);
@@ -903,7 +903,7 @@ namespace Stratis.Bitcoin.Consensus
         }
 
         /// <summary>
-        /// Remove the branch of the given <see cref="chainedHeader"/> from the tree that is not claimed by any peer . 
+        /// Remove the branch of the given <see cref="chainedHeader"/> from the tree that is not claimed by any peer .
         /// </summary>
         /// <param name="chainedHeader">The chained header that is the top of the branch.</param>
         private void RemoveUnclaimedBranch(ChainedHeader chainedHeader)
@@ -980,7 +980,7 @@ namespace Stratis.Bitcoin.Consensus
             uint256 oldTipHash = this.peerTipsByPeerId.TryGet(networkPeerId);
 
             this.ClaimPeerTip(networkPeerId, newTip);
-            
+
             this.peerTipsByPeerId.AddOrReplace(networkPeerId, newTip);
 
             if (oldTipHash != null)
@@ -1007,13 +1007,13 @@ namespace Stratis.Bitcoin.Consensus
         }
 
         /// <summary>
-        /// Find the headers that are not part of the tree and try to connect them to an existing chain 
+        /// Find the headers that are not part of the tree and try to connect them to an existing chain
         /// by creating new chained headers and linking them to their previous headers.
         /// </summary>
         /// <remarks>
         /// Header validation is performed on each header.
         /// It will check if the first header violates maximum reorganization rule.
-        /// <para>When headers are connected the next pointers of their previous headers are updated.</para>  
+        /// <para>When headers are connected the next pointers of their previous headers are updated.</para>
         /// </remarks>
         /// <param name="headers">The new headers that should be connected to a chain.</param>
         /// <returns>A list of newly created chained headers or <c>null</c> if no new headers were found.</returns>
@@ -1138,7 +1138,7 @@ namespace Stratis.Bitcoin.Consensus
 
                     int finalizedHeight = this.finalizedBlockHeight.GetFinalizedBlockHeight();
 
-                    if (fork.Height <= finalizedHeight)
+                    if (fork.Height < finalizedHeight)
                     {
                         this.logger.LogTrace("Reorganization of length {0} prevented, maximal reorganization length is {1}, consensus tip is '{2}' and the last finalized block height is {3}.", reorgLength, maxReorgLength, consensusTip, finalizedHeight);
                         this.logger.LogTrace("(-)[MAX_REORG_VIOLATION]");
@@ -1166,7 +1166,7 @@ namespace Stratis.Bitcoin.Consensus
 
         /// <summary>Represents the last processed header from the headers presented by the peer.</summary>
         public ChainedHeader Consumed { get; set; }
-        
+
         /// <inheritdoc />
         public override string ToString()
         {
@@ -1178,7 +1178,7 @@ namespace Stratis.Bitcoin.Consensus
         /// of consecutive headers, both items are included in the array.
         /// </summary>
         /// <returns>Array of consecutive headers.</returns>
-        public ChainedHeader[] ToHashArray()
+        public ChainedHeader[] ToArray()
         {
             return this.DownloadTo.ToChainedHeaderArray(this.DownloadFrom);
         }

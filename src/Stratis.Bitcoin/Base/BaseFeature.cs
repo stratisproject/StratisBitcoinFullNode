@@ -216,7 +216,7 @@ namespace Stratis.Bitcoin.Base
         {
             NodeSettings.PrintHelp(network);
         }
-        
+
         /// <summary>
         /// Get the default configuration.
         /// </summary>

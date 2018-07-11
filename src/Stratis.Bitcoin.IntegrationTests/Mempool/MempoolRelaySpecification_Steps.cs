@@ -3,8 +3,8 @@ using System.Linq;
 using FluentAssertions;
 using FluentAssertions.Common;
 using NBitcoin;
-using NBitcoin.RPC;
 using Stratis.Bitcoin.Connection;
+using Stratis.Bitcoin.Features.RPC;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
 using Xunit.Abstractions;
@@ -82,7 +82,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Mempool
             Transaction prevTrx = block.Transactions.First();
             var dest = new BitcoinSecret(new Key(), this.nodeA.FullNode.Network);
 
-            this.transaction = this.nodeA.FullNode.Network.Consensus.ConsensusFactory.CreateTransaction();
+            this.transaction = this.nodeA.FullNode.Network.CreateTransaction();
             this.transaction.AddInput(new TxIn(new OutPoint(prevTrx.GetHash(), 0), PayToPubkeyHashTemplate.Instance.GenerateScriptPubKey(this.nodeA.MinerSecret.PubKey)));
             this.transaction.AddOutput(new TxOut("25", dest.PubKey.Hash));
             this.transaction.AddOutput(new TxOut("24", new Key().PubKey.Hash)); // 1 btc fee

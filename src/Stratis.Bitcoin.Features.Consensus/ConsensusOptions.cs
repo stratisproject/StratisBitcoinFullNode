@@ -9,7 +9,7 @@ namespace Stratis.Bitcoin.Features.Consensus
     public class PosConsensusOptions : PowConsensusOptions
     {
         /// <summary>Coinstake minimal confirmations softfork activation height for the mainnet.</summary>
-        internal const int CoinstakeMinConfirmationActivationHeightMainnet = 940000;
+        internal const int CoinstakeMinConfirmationActivationHeightMainnet = 1005000;
 
         /// <summary>Coinstake minimal confirmations softfork activation height for the testnet.</summary>
         internal const int CoinstakeMinConfirmationActivationHeightTestnet = 436000;

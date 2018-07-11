@@ -512,7 +512,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
                     this.mempool.Object,
                     this.mempoolLock,
                     this.network,
-                    this.consensusRules, 
+                    this.consensusRules,
                     null);
         }
 
@@ -530,7 +530,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
             for (int i = 0; i < blockAmount; i++)
             {
                 Block block = network.Consensus.ConsensusFactory.CreateBlock();
-                block.AddTransaction(network.Consensus.ConsensusFactory.CreateTransaction());
+                block.AddTransaction(network.CreateTransaction());
                 block.UpdateMerkleRoot();
                 block.Header.BlockTime = new DateTimeOffset(new DateTime(2017, 1, 1, 0, 0, 0, DateTimeKind.Utc).AddDays(i));
                 block.Header.HashPrevBlock = prevBlockHash;
@@ -622,7 +622,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
             Block block = this.Network.Consensus.ConsensusFactory.CreateBlock();
             block.Header.HashPrevBlock = prevBlock.HashBlock;
 
-            Transaction transaction = this.Network.Consensus.ConsensusFactory.CreateTransaction();
+            Transaction transaction = this.Network.CreateTransaction();
             transaction.AddInput(TxIn.CreateCoinbase(newHeight));
             transaction.AddOutput(new TxOut(new Money(1, MoneyUnit.BTC), ScriptPubKey));
             block.Transactions.Add(transaction);

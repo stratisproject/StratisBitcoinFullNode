@@ -112,7 +112,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
         public void GetTrxAsyncWithTransactionReturnsExistingTransaction()
         {
             string dir = CreateTestDir(this);
-            Transaction trans = Network.Main.Consensus.ConsensusFactory.CreateTransaction();
+            Transaction trans = Network.Main.CreateTransaction();
             trans.Version = 125;
 
             using (var engine = new DBreezeEngine(dir))
@@ -215,16 +215,16 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             Block block = Network.Main.Consensus.ConsensusFactory.CreateBlock();
             BlockHeader blockHeader = block.Header;
             blockHeader.Bits = new Target(12);
-            Transaction transaction = Network.Main.Consensus.ConsensusFactory.CreateTransaction();
+            Transaction transaction = Network.Main.CreateTransaction();
             transaction.Version = 32;
             block.Transactions.Add(transaction);
-            transaction = Network.Main.Consensus.ConsensusFactory.CreateTransaction();
+            transaction = Network.Main.CreateTransaction();
             transaction.Version = 48;
             block.Transactions.Add(transaction);
             blocks.Add(block);
             
             Block block2 = Network.Main.Consensus.ConsensusFactory.CreateBlock();
-            transaction = Network.Main.Consensus.ConsensusFactory.CreateTransaction();
+            transaction = Network.Main.CreateTransaction();
             transaction.Version = 15;
             block2.Transactions.Add(transaction);
             blocks.Add(block2);
@@ -430,7 +430,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
         {
             string dir = CreateTestDir(this);
             Block block = Network.Main.Consensus.ConsensusFactory.CreateBlock();
-            block.Transactions.Add(Network.Main.Consensus.ConsensusFactory.CreateTransaction());
+            block.Transactions.Add(Network.Main.CreateTransaction());
 
             using (var engine = new DBreezeEngine(dir))
             {

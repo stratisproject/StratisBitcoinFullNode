@@ -4,8 +4,8 @@ using System.IO;
 using System.Linq;
 using NBitcoin.Crypto;
 using NBitcoin.DataEncoders;
+using NBitcoin.Formatters;
 using NBitcoin.Protocol;
-using NBitcoin.RPC;
 
 namespace NBitcoin
 {
@@ -1169,44 +1169,6 @@ namespace NBitcoin
             this.vout = new TxOutList(this);
         }
 
-        internal Transaction(string hex, ProtocolVersion version = ProtocolVersion.PROTOCOL_VERSION)
-            : this()
-        {
-            this.FromBytes(Encoders.Hex.DecodeData(hex), version);
-        }
-
-        internal Transaction(byte[] bytes)
-            : this()
-        {
-            this.FromBytes(bytes);
-        }
-
-        public static Transaction Load(string hex, Network network, ProtocolVersion version = ProtocolVersion.PROTOCOL_VERSION)
-        {
-            if (hex == null)
-                throw new ArgumentNullException(nameof(hex));
-
-            if (network == null)
-                throw new ArgumentNullException(nameof(network));
-
-            Transaction transaction = network.Consensus.ConsensusFactory.CreateTransaction();
-            transaction.FromBytes(Encoders.Hex.DecodeData(hex), version);
-            return transaction;
-        }
-
-        public static Transaction Load(byte[] bytes, Network network)
-        {
-            if (bytes == null)
-                throw new ArgumentNullException(nameof(bytes));
-
-            if (network == null)
-                throw new ArgumentNullException(nameof(network));
-
-            Transaction transaction = network.Consensus.ConsensusFactory.CreateTransaction();
-            transaction.FromBytes(bytes);
-            return transaction;
-        }
-
         public Money TotalOut
         {
             get
@@ -1660,6 +1622,7 @@ namespace NBitcoin
             }
             Sign(network, key, coins.ToArray());
         }
+
         /*
         public TxPayload CreatePayload()
         {
@@ -1671,22 +1634,12 @@ namespace NBitcoin
             return GetFormatter(format, network).ParseJson(tx);
         }
 
-        public static Transaction Parse(string hex)
-        {
-            return new Transaction(Encoders.Hex.DecodeData(hex));
-        }
-
         public string ToHex()
         {
             return Encoders.Hex.EncodeData(this.ToBytes());
         }
 
-        public override string ToString()
-        {
-            return ToString(RawFormat.BlockExplorer);
-        }
-
-        public string ToString(RawFormat rawFormat, Network network = null)
+        public string ToString(Network network, RawFormat rawFormat = RawFormat.BlockExplorer)
         {
             RawFormatter formatter = GetFormatter(rawFormat, network);
             return ToString(formatter);
@@ -1701,12 +1654,11 @@ namespace NBitcoin
                     formatter = new SatoshiFormatter(network);
                     break;
                 case RawFormat.BlockExplorer:
-                    formatter = new BlockExplorerFormatter();
+                    formatter = new BlockExplorerFormatter(network);
                     break;
                 default:
                     throw new NotSupportedException(rawFormat.ToString());
             }
-            formatter.Network = network ?? formatter.Network;
             return formatter;
         }
 
