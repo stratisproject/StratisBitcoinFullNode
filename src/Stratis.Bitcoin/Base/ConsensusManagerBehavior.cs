@@ -151,7 +151,6 @@ namespace Stratis.Bitcoin.Base
 
             var headers = new HeadersPayload();
             ChainedHeader consensusTip = this.consensusManager.Tip;
-            consensusTip = this.chain.GetBlock(consensusTip.HashBlock);
 
             ChainedHeader fork = this.chain.FindFork(getHeadersPayload.BlockLocators);
             if (fork != null)
@@ -175,10 +174,6 @@ namespace Stratis.Bitcoin.Base
                     }
                 }
             }
-
-            // Set our view of peer's tip equal to the last header that was sent to it.
-            if (headers.Headers.Count != 0)
-                this.ExpectedPeerTip = this.chain.GetBlock(headers.Headers.Last().GetHash()) ?? this.ExpectedPeerTip;
 
             await peer.SendMessageAsync(headers).ConfigureAwait(false);
 
@@ -213,11 +208,18 @@ namespace Stratis.Bitcoin.Base
                 this.logger.LogTrace("(-)[NO_HEADERS]");
                 return;
             }
-            // TODO Check that headers are consequtive. If not- ban the peer https://github.com/stratisproject/StratisBitcoinFullNode/issues/1344
+
+            for (int i = 1; i < headersPayload.Headers.Count; ++i)
+            {
+                if (headersPayload.Headers[i].HashPrevBlock != headersPayload.Headers[i - 1].GetHash())
+                {
+                    // TODO ban because headers are not consequtive
+                }
+            }
 
             // TODO if queue is not empty- add to queue instead of calling CM.
 
-            //TODO add trycatch and handle the exceptions appropriatelly
+            // TODO add trycatch and handle the exceptions appropriatelly
             ConnectNewHeadersResult result = this.consensusManager.HeadersPresented(peer, headersPayload.Headers);
 
             // TODO Based on consumed add to queue or not
@@ -231,15 +233,12 @@ namespace Stratis.Bitcoin.Base
         {
             this.logger.LogTrace("({0}:'{1}',{2}:{3},{4}:{5})", nameof(peer), peer.RemoteSocketEndpoint, nameof(oldState), oldState, nameof(peer.State), peer.State);
 
-            if (peer.State == NetworkPeerState.HandShaked)
+            try
             {
-                try
-                {
-                    await this.TrySyncAsync().ConfigureAwait(false);
-                }
-                catch (OperationCanceledException)
-                {
-                }
+                await this.TrySyncAsync().ConfigureAwait(false);
+            }
+            catch (OperationCanceledException)
+            {
             }
 
             this.logger.LogTrace("(-)");

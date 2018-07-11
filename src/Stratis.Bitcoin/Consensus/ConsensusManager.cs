@@ -380,21 +380,21 @@ namespace Stratis.Bitcoin.Consensus
         {
             this.logger.LogTrace("()");
 
-            var behaviors = new List<ChainHeadersBehavior>();
+            var behaviors = new List<ConsensusManagerBehavior>();
 
             lock (this.peerLock)
             {
                 foreach (INetworkPeer peer in this.peersByPeerId.Values)
-                    behaviors.Add(peer.Behavior<ChainHeadersBehavior>());
+                    behaviors.Add(peer.Behavior<ConsensusManagerBehavior>());
             }
 
             var blocksToDownload = new List<ConnectNewHeadersResult>();
 
-            foreach (ChainHeadersBehavior chainHeadersBehavior in behaviors)
+            foreach (ConsensusManagerBehavior consensusManagerBehavior in behaviors)
             {
-                ConnectNewHeadersResult connectNewHeadersResult = chainHeadersBehavior.ConsensusTipChanged(this.Tip);
+                ConnectNewHeadersResult connectNewHeadersResult = consensusManagerBehavior.ConsensusTipChanged(this.Tip);
 
-                int? peerId = chainHeadersBehavior.AttachedPeer?.Connection?.Id;
+                int? peerId = consensusManagerBehavior.AttachedPeer?.Connection?.Id;
 
                 if (peerId == null)
                     continue;
@@ -646,7 +646,7 @@ namespace Stratis.Bitcoin.Consensus
         }
 
         /// <summary>
-        /// Informs <see cref="ChainHeadersBehavior"/> of each peer
+        /// Informs <see cref="ConsensusManagerBehavior"/> of each peer
         /// to be resynced and simulates disconnection of the peer.
         /// </summary>
         /// <param name="peerIds">List of peer IDs to resync.</param>
@@ -664,7 +664,7 @@ namespace Stratis.Bitcoin.Consensus
                     {
                         this.logger.LogTrace("Resyncing peer ID {0}.", peerId);
 
-                        Task task = peer.Behavior<ChainHeadersBehavior>().ResetPendingTipAndSyncAsync();
+                        Task task = peer.Behavior<ConsensusManagerBehavior>().ResetExpectedPeerTipAndSyncAsync();
                         resyncTasks.Add(task);
                     }
                     else
