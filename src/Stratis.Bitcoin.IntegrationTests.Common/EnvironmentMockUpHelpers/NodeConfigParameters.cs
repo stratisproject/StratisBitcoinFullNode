@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 
 namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
@@ -25,6 +26,11 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
             foreach (KeyValuePair<string, string> kv in this)
                 builder.AppendLine(kv.Key + "=" + kv.Value);
             return builder.ToString();
+        }
+
+        public string[] AsConsoleArgArray()
+        {
+            return this.Select(p => $"-{p.Key}={p.Value}").ToArray();
         }
     }
 }
