@@ -991,7 +991,7 @@ namespace NBitcoin.Tests
             BlockHeader blockHeader = network.Consensus.ConsensusFactory.CreateBlockHeader();
             blockHeader.BlockTime = first;
 
-            var chain = new ConcurrentChain(blockHeader, network);
+            var chain = new ConcurrentChain(network, new ChainedHeader(blockHeader, blockHeader.GetHash(), 0));
             first = first + TimeSpan.FromMinutes(10);
 
             while (currentHeight != chain.Height)
