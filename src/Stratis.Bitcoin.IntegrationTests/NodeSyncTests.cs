@@ -136,15 +136,15 @@ namespace Stratis.Bitcoin.IntegrationTests
 
         [Fact]
         [Trait("unstable", "Timing out or failing on the assert not equal HashBlock")]
-        public void Given_NodesAreSynced_When_ABigReorgHappens_Then_TheReorgIsIgnored()
+        public async Task Given_NodesAreSynced_When_ABigReorgHappens_Then_TheReorgIsIgnored()
         {
             // Temporary fix so the Network static initialize will not break.
             //Network m = Network.Main;
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                CoreNode stratisMiner = builder.CreateStratisPosNode();
-                CoreNode stratisSyncer = builder.CreateStratisPosNode();
-                CoreNode stratisReorg = builder.CreateStratisPosNode();
+                CoreNode stratisMiner = builder.CreateStratisPosNode("miner");
+                CoreNode stratisSyncer = builder.CreateStratisPosNode("syncer");
+                CoreNode stratisReorg = builder.CreateStratisPosNode("reorg");
 
                 builder.StartAll();
                 stratisMiner.NotInIBD();
@@ -173,18 +173,19 @@ namespace Stratis.Bitcoin.IntegrationTests
                 // create a reorg by mining on two different chains
                 // ================================================
 
-                stratisMiner.CreateRPCClient().RemoveNode(stratisReorg.Endpoint);
-                stratisSyncer.CreateRPCClient().RemoveNode(stratisReorg.Endpoint);
+                stratisMiner.FullNode.ConnectionManager.RemoveNodeAddress(stratisReorg.Endpoint);
+                stratisSyncer.FullNode.ConnectionManager.RemoveNodeAddress(stratisReorg.Endpoint);
                 TestHelper.WaitLoop(() => !TestHelper.IsNodeConnected(stratisReorg));
+                TestHelper.WaitLoop(() => stratisMiner.FullNode.ConnectionManager.ConnectedPeers.Count(p => p.IsConnected) == 1);
 
                 Task<List<uint256>> t1 = Task.Run(() => stratisMiner.GenerateStratisWithMiner(11));
                 Task<List<uint256>> t2 = Task.Delay(1000).ContinueWith(t => stratisReorg.GenerateStratisWithMiner(12));
                 Task.WaitAll(t1, t2);
-                TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(stratisMiner));
-                TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(stratisReorg));
+                TestHelper.WaitLoop(() => stratisMiner.FullNode.Chain.Height >= 1 + 11);
+                TestHelper.WaitLoop(() => stratisReorg.FullNode.Chain.Height >= 1 + 12);
 
                 // make sure the nodes are actually on different chains.
-                Assert.NotEqual(stratisMiner.FullNode.Chain.GetBlock(2).HashBlock, stratisReorg.FullNode.Chain.GetBlock(2).HashBlock);
+                Assert.NotEqual(stratisMiner.FullNode.Chain.GetBlock(3).HashBlock, stratisReorg.FullNode.Chain.GetBlock(3).HashBlock);
 
                 TestHelper.TriggerSync(stratisSyncer);
                 TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(stratisMiner, stratisSyncer));

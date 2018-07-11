@@ -7,6 +7,8 @@ using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
 
 namespace Stratis.Bitcoin.IntegrationTests.Common
 {
+    using System.Threading.Tasks;
+
     public class SharedSteps
     {
         public static TransactionBuildContext CreateTransactionBuildContext(
@@ -81,5 +83,15 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
             nodes.Skip(1).ToList().ForEach(
                 n => TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(firstNode, n)));
         }
+
+        //public async Task WaitForNodesToSync(params CoreNode[] nodes)
+        //{
+        //    var firstNode = nodes.First();
+
+        //    await TestHelper.WaitLoopAsync(() => TestHelper.IsNodeSynced(firstNode));
+
+        //    nodes.Skip(1).ToList().ForEach(
+        //        async n => await TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(firstNode, n)));
+        //}
     }
 }

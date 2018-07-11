@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Text;
+using System.Linq;
 using FluentAssertions;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.Builders;
@@ -12,7 +12,7 @@ using Xunit.Abstractions;
 
 namespace Stratis.Bitcoin.IntegrationTests
 {
-  
+
     public class CoreNodeCanDisconnect : BddSpecification
     {
         private SharedSteps sharedSteps;
@@ -32,7 +32,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 
         protected override void AfterTest()
         {
-            this.nodeGroupBuilder.Dispose();
+            //this.nodeGroupBuilder.Dispose();
         }
 
         [Fact]
@@ -49,6 +49,11 @@ namespace Stratis.Bitcoin.IntegrationTests
                 .AndNoMoreConnections()
                 .Build();
 
+            this.sharedSteps.MineBlocks(1, this.nodes[JingTheFastMiner], AccountZero, WalletZero, WalletPassword);
+            this.sharedSteps.WaitForNodesToSync(this.nodes[JingTheFastMiner], this.nodes[Bob]);
+            this.nodes[JingTheFastMiner].FullNode.Chain.Tip.Height.Should().Be(1);
+            this.nodes[Bob].FullNode.Chain.Tip.Height.Should().Be(1);
+
             this.nodes[JingTheFastMiner].FullNode.ConnectionManager.RemoveNodeAddress(this.nodes[Bob].Endpoint);
             this.nodes[Bob].FullNode.ConnectionManager.RemoveNodeAddress(this.nodes[JingTheFastMiner].Endpoint);
 
@@ -56,7 +61,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 
             this.nodes[JingTheFastMiner].FullNode.Chain.Tip.Height.Should().Be(5);
             TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(this.nodes[Bob]));
-            this.nodes[Bob].FullNode.Chain.Tip.Height.Should().Be(0);
+            this.nodes[Bob].FullNode.Chain.Tip.Height.Should().Be(1);
         }
 
         public CoreNodeCanDisconnect(ITestOutputHelper output) : base(output)

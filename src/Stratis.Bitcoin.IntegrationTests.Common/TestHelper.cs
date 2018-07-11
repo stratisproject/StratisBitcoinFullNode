@@ -11,6 +11,8 @@ using Stratis.Bitcoin.P2P.Peer;
 
 namespace Stratis.Bitcoin.IntegrationTests.Common
 {
+    using System.Threading.Tasks;
+
     public class TestHelper
     {
         public static void WaitLoop(Func<bool> act)
@@ -19,7 +21,16 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
             while (!act())
             {
                 cancel.Token.ThrowIfCancellationRequested();
-                Thread.Sleep(50);
+                Thread.Sleep(500);
+            }
+        }
+        public static async Task WaitLoopAsync(Func<bool> act, int delayLengthInMs = 100)
+        {
+            var cancel = new CancellationTokenSource(Debugger.IsAttached ? 15 * 60 * 1000 : 30 * 1000);
+            while (!act())
+            {
+                cancel.Token.ThrowIfCancellationRequested();
+                await Task.Delay(delayLengthInMs, cancel.Token);
             }
         }
 
