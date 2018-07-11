@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using NBitcoin;
 using NBitcoin.Protocol;
 using Stratis.Bitcoin.Builder;
@@ -31,7 +29,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.Runners
 
         public override void BuildNode()
         {
-            var argsAsStringArray = this.configParameters.Select(p => $"-{p.Key}={p.Value}").ToArray();
+            var argsAsStringArray = this.configParameters.AsConsoleArgArray();
             var settings = new NodeSettings(this.network, this.protocolVersion, this.agent, argsAsStringArray);
             IFullNodeBuilder builder = new FullNodeBuilder().UseNodeSettings(settings);
 
