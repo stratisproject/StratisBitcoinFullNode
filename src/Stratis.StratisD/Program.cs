@@ -36,8 +36,7 @@ namespace Stratis.StratisD
                     .UseMempool()
                     .UseWallet()                    
                     .AddPowPosMining()
-                    .UseApi()                    
-                    .UseApps()
+                    .UseApi()                                        
                     .AddRPC()
                     .Build();
 
