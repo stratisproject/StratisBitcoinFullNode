@@ -38,7 +38,7 @@ namespace Stratis.Bitcoin.Consensus.Rules
     }
 
     /// <summary>
-    /// Provide additional information about a consensus rule that can be used by the rule engine.
+    /// Provide a mapping between a rule and its <see cref="RuleAttribute"/> that can be used by the rule engine.
     /// </summary>
     public class ConsensusRuleDescriptor
     {
@@ -50,15 +50,8 @@ namespace Stratis.Bitcoin.Consensus.Rules
             Guard.NotNull(rule, nameof(rule));
 
             this.Rule = rule;
-            this.RuleAttribute = Attribute.GetCustomAttributes(rule.GetType()).OfType<RuleAttribute>().ToList();
-
-            PartialValidationRuleAttribute partialValidationRuleAttribute = this.RuleAttributes.OfType<PartialValidationRuleAttribute>().FirstOrDefault();
-
-            this.CanSkipValidation = partialValidationRuleAttribute?.CanSkipValidation ?? false;
+            this.RuleAttribute = attribute;
         }
-
-        /// <summary>Rules that are strictly validation can be skipped unless the <see cref="PartialValidationRuleAttribute.CanSkipValidation"/> is <c>false</c>.</summary>
-        public bool CanSkipValidation { get; } 
 
         /// <summary>The rule represented by this descriptor.</summary>
         public ConsensusRule Rule { get; }
@@ -70,7 +63,7 @@ namespace Stratis.Bitcoin.Consensus.Rules
     /// <summary>
     /// An attribute that can be attached to a <see cref="ConsensusRule"/>.
     /// </summary>
-    /// When <see cref="CanSkipValidation"/> <c>true</c> rule is allowed to skip validation when the <see cref="ValidationContext.SkipValidation"/> is set to <c>true</c>.
+    /// When <see cref="CanSkipValidation"/> is <c>true</c> rule is allowed to skip validation when the <see cref="RuleContext.SkipValidation"/> is set to <c>true</c>.
     [AttributeUsage(AttributeTargets.Class, AllowMultiple = true, Inherited = true)]
     public abstract class RuleAttribute : Attribute
     {

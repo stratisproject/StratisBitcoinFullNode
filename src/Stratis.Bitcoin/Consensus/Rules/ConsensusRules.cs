@@ -20,7 +20,7 @@ namespace Stratis.Bitcoin.Consensus.Rules
         private readonly ILogger logger;
 
         /// <summary>A collection of rules that well be executed by the rules engine.</summary>
-        private readonly Dictionary<string, ConsensusRuleDescriptor> consensusRules;
+        private readonly Dictionary<string, ConsensusRule> consensusRules;
 
         /// <summary>Specification of the network the node runs on - regtest/testnet/mainnet.</summary>
         public Network Network { get; }
@@ -68,7 +68,7 @@ namespace Stratis.Bitcoin.Consensus.Rules
 
 
         /// <inheritdoc />
-        public IEnumerable<ConsensusRuleDescriptor> Rules => this.consensusRules.Values;
+        public IEnumerable<ConsensusRule> Rules => this.consensusRules.Values;
 
         /// <summary>
         /// Initializes an instance of the object.
@@ -94,7 +94,7 @@ namespace Stratis.Bitcoin.Consensus.Rules
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.PerformanceCounter = new ConsensusPerformanceCounter(this.DateTimeProvider);
 
-            this.consensusRules = new Dictionary<string, ConsensusRuleDescriptor>();
+            this.consensusRules = new Dictionary<string, ConsensusRule>();
             this.partialValidationRules = new List<ConsensusRuleDescriptor>();
             this.headerValidationRules = new List<ConsensusRuleDescriptor>();
             this.fullValidationRules = new List<ConsensusRuleDescriptor>();
@@ -113,15 +113,25 @@ namespace Stratis.Bitcoin.Consensus.Rules
                 consensusRule.Logger = this.loggerFactory.CreateLogger(consensusRule.GetType().FullName);
                 consensusRule.Initialize();
 
-                var atr = Attribute.GetCustomAttributes(consensusRule.GetType()).OfType<RuleAttribute>();
+                this.consensusRules.Add(consensusRule.GetType().FullName, consensusRule);
 
-                this.consensusRules.Add(consensusRule.GetType().FullName, new ConsensusRuleDescriptor(consensusRule));
+                var ruleAttributes = Attribute.GetCustomAttributes(consensusRule.GetType()).OfType<RuleAttribute>();
+
+                foreach (RuleAttribute ruleAttribute in ruleAttributes)
+                {
+                    if (ruleAttribute is FullValidationRuleAttribute)
+                        this.fullValidationRules.Add(new ConsensusRuleDescriptor(consensusRule, ruleAttribute));
+
+                    if (ruleAttribute is PartialValidationRuleAttribute)
+                        this.partialValidationRules.Add(new ConsensusRuleDescriptor(consensusRule, ruleAttribute));
+
+                    if (ruleAttribute is HeaderValidationRuleAttribute)
+                        this.headerValidationRules.Add(new ConsensusRuleDescriptor(consensusRule, ruleAttribute));
+
+                    if (ruleAttribute is IntegrityValidationRuleAttribute)
+                        this.integrityValidationRules.Add(new ConsensusRuleDescriptor(consensusRule, ruleAttribute));
+                }
             }
-
-            this.partialValidationRules.AddRange(this.consensusRules.Values.Where(w => w.RuleAttributes.OfType<PartialValidationRuleAttribute>().Any()));
-            this.fullValidationRules.AddRange(this.consensusRules.Values.Where(w => w.RuleAttributes.OfType<FullValidationRuleAttribute>().Any()));
-            this.headerValidationRules.AddRange(this.consensusRules.Values.Where(w => w.RuleAttributes.OfType<HeaderValidationRuleAttribute>().Any()));
-            this.integrityValidationRules.AddRange(this.consensusRules.Values.Where(w => w.RuleAttributes.OfType<IntegrityValidationRuleAttribute>().Any()));
 
             return this;
         }
@@ -177,7 +187,7 @@ namespace Stratis.Bitcoin.Consensus.Rules
             {
                 foreach (ConsensusRuleDescriptor ruleDescriptor in this.partialValidationRules)
                 {
-                    if (ruleContext.SkipValidation && ruleDescriptor.CanSkipValidation)
+                    if (ruleContext.SkipValidation && ruleDescriptor.RuleAttribute.CanSkipValidation)
                     {
                         this.logger.LogTrace("Rule {0} skipped for block at height {1}.", nameof(ruleDescriptor), ruleContext.ConsensusTip?.Height);
                     }
@@ -187,6 +197,26 @@ namespace Stratis.Bitcoin.Consensus.Rules
                     }
                 }
             }
+        }
+
+        /// <inheritdoc/>
+        public async Task HeaderValidationAsync(ValidationContext validationContext, ChainedHeader tip)
+        {
+            Guard.NotNull(validationContext, nameof(validationContext));
+
+            RuleContext ruleContext = this.CreateRuleContext(validationContext, tip);
+
+            await this.ExecuteRulesAsync(this.headerValidationRules, ruleContext).ConfigureAwait(false);
+        }
+
+        /// <inheritdoc/>
+        public async Task IntegrityValidationAsync(ValidationContext validationContext, ChainedHeader tip)
+        {
+            Guard.NotNull(validationContext, nameof(validationContext));
+
+            RuleContext ruleContext = this.CreateRuleContext(validationContext, tip);
+
+            await this.ExecuteRulesAsync(this.integrityValidationRules, ruleContext).ConfigureAwait(false);
         }
 
         /// <inheritdoc/>
@@ -219,7 +249,7 @@ namespace Stratis.Bitcoin.Consensus.Rules
 
                     foreach (ConsensusRuleDescriptor ruleDescriptor in rules)
                     {
-                        if (ruleContext.SkipValidation && ruleDescriptor.CanSkipValidation)
+                        if (ruleContext.SkipValidation && ruleDescriptor.RuleAttribute.CanSkipValidation)
                         {
                             this.logger.LogTrace("Rule {0} skipped for block at height {1}.", nameof(ruleDescriptor), ruleContext.ConsensusTip?.Height);
                         }
@@ -248,7 +278,7 @@ namespace Stratis.Bitcoin.Consensus.Rules
         /// <inheritdoc />
         public T GetRule<T>() where T : ConsensusRule
         {
-            return (T)this.Rules.Single(r => r.Rule is T).Rule;
+            return (T)this.Rules.Single(r => r is T);
         }
     }
 

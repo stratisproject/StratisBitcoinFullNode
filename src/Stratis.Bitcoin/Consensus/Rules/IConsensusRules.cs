@@ -17,7 +17,7 @@ namespace Stratis.Bitcoin.Consensus.Rules
         /// <summary>
         /// Collection of all the rules that are registered with the engine.
         /// </summary>
-        IEnumerable<ConsensusRuleDescriptor> Rules { get; }
+        IEnumerable<ConsensusRule> Rules { get; }
 
         /// <summary>
         /// Keeps track of how much time different actions took to execute and how many times they were executed.
@@ -85,6 +85,20 @@ namespace Stratis.Bitcoin.Consensus.Rules
         /// </summary>
         /// <returns>Hash of the block header which is now the tip of the chain.</returns>
         Task<RewindState> RewindAsync();
+
+        /// <summary>
+        /// Execute rules that are marked with the as <see cref="HeaderValidationRuleAttribute"/>.
+        /// </summary>
+        /// <param name="validationContext">The validation context.</param>
+        /// <param name="tip">The current tip.</param>
+        Task HeaderValidationAsync(ValidationContext validationContext, ChainedHeader tip);
+        
+        /// <summary>
+        /// Execute rules that are marked with the as <see cref="IntegrityValidationRuleAttribute"/>.
+        /// </summary>
+        /// <param name="validationContext">The validation context.</param>
+        /// <param name="tip">The current tip.</param>
+        Task IntegrityValidationAsync(ValidationContext validationContext, ChainedHeader tip);
 
         /// <summary>
         /// Execute rules that are marked with the as <see cref="PartialValidationRuleAttribute"/>.

@@ -20,7 +20,7 @@ namespace Stratis.Bitcoin.Consensus.Validators
         /// Validation of a header that was seen for the first time.
         /// </summary>
         /// <param name="chainedHeader">The chained header to be validated.</param>
-        void ValidateHeader(ChainedHeader chainedHeader);
+        Task ValidateHeader(ChainedHeader chainedHeader);
     }
 
     public interface IPartialValidation
@@ -45,26 +45,56 @@ namespace Stratis.Bitcoin.Consensus.Validators
         /// </remarks>
         /// <param name="block">The block that is going to be validated.</param>
         /// <param name="chainedHeader">The chained header of the block that will be validated.</param>
-        void VerifyBlockIntegrity(Block block, ChainedHeader chainedHeader);
+        Task VerifyBlockIntegrity(Block block, ChainedHeader chainedHeader);
     }
 
     // <inheritdoc />
     public class HeaderValidator : IHeaderValidator
     {
-        // <inheritdoc />
-        public void ValidateHeader(ChainedHeader chainedHeader)
+        private readonly IConsensusRules consensusRules;
+        private readonly ILogger logger;
+
+        public HeaderValidator(IConsensusRules consensusRules, ILoggerFactory loggerFactory)
         {
-            // TODO: add rule attributes for header validation
+            this.consensusRules = consensusRules;
+            this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
+        }
+
+        // <inheritdoc />
+        public async Task ValidateHeader(ChainedHeader chainedHeader)
+        {
+            this.logger.LogTrace("({0}:'{1}')", nameof(chainedHeader), chainedHeader);
+
+            var validationContext = new ValidationContext { ChainedHeader = chainedHeader };
+
+            await this.consensusRules.HeaderValidationAsync(validationContext, null);
+
+            this.logger.LogTrace("(-)");
         }
     }
 
     // <inheritdoc />
     public class IntegrityValidator : IIntegrityValidator
     {
-        // <inheritdoc />
-        public void VerifyBlockIntegrity(Block block, ChainedHeader chainedHeader)
+        private readonly IConsensusRules consensusRules;
+        private readonly ILogger logger;
+
+        public IntegrityValidator(IConsensusRules consensusRules, ILoggerFactory loggerFactory)
         {
-            // TODO: add rule attributes for partial validation
+            this.consensusRules = consensusRules;
+            this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
+        }
+
+        // <inheritdoc />
+        public async Task VerifyBlockIntegrity(Block block, ChainedHeader chainedHeader)
+        {
+            this.logger.LogTrace("({0}:'{1}')", nameof(chainedHeader), chainedHeader);
+
+            var validationContext = new ValidationContext { Block = block };
+
+            await this.consensusRules.IntegrityValidationAsync(validationContext, null);
+
+            this.logger.LogTrace("(-)");
         }
     }
 
@@ -89,7 +119,7 @@ namespace Stratis.Bitcoin.Consensus.Validators
 
             var validationContext = new ValidationContext {Block = item.ChainedHeaderBlock.Block};
 
-            await this.consensusRules.PartialValidationAsync(new ValidationContext { Block = item.ChainedHeaderBlock.Block }, null);
+            await this.consensusRules.PartialValidationAsync(new ValidationContext { Block = item.ChainedHeaderBlock.Block, ChainedHeader = item.ChainedHeaderBlock.ChainedHeader }, null);
 
             var partialValidationResult = new PartialValidationResult
             {
@@ -127,7 +157,7 @@ namespace Stratis.Bitcoin.Consensus.Validators
             /// <inheritdoc/>
             public override string ToString()
             {
-                return $",{nameof(this.ChainedHeaderBlock)}={this.ChainedHeaderBlock}";
+                return $"{nameof(this.ChainedHeaderBlock)}={this.ChainedHeaderBlock}";
             }
         }
     }
