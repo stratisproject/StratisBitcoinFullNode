@@ -12,7 +12,7 @@ namespace Stratis.Bitcoin.Features.Apps
 
         public string Address { get; set; }
 
-        public bool IsSinglePageApp { get; } = true;
+        public bool IsSinglePageApp { get; set; } = true;
     }
     
     public class StratisAppFactory : IStratisAppFactory

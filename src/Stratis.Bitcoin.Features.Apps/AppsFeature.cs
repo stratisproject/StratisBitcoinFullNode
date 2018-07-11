@@ -32,10 +32,11 @@ namespace Stratis.Bitcoin.Features.Apps
         {
             if (this.disposed)
                 return;
+            this.logger.LogInformation($"Disposing {nameof(AppsFeature)}");
 
             this.appsHost.Close();
-            base.Dispose();
 
+            base.Dispose();
             this.disposed = true;
         }
     }

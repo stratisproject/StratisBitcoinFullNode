@@ -8,35 +8,27 @@ using Stratis.Bitcoin.Features.Apps.Interfaces;
 namespace Stratis.Bitcoin.Features.Apps
 {
     public class AppsFileService : IAppsFileService
-    {
-        private string stratisAppsFolderPath;
+    {        
         public const string StratisAppFileName = "stratisApp.json";
 
         public AppsFileService(DataFolder dataFolder)
         {
+            if (!Directory.Exists(dataFolder.ApplicationsPath))
+                throw new DirectoryNotFoundException($"No such directory '{dataFolder.ApplicationsPath}'");
+
             this.StratisAppsFolderPath = dataFolder.ApplicationsPath;
         }
 
-        public string StratisAppsFolderPath
-        {
-            get => this.stratisAppsFolderPath;
-            private set
-            {
-                if (!Directory.Exists(value))
-                    throw new DirectoryNotFoundException($"No such directory '{value}'");
-                
-                this.stratisAppsFolderPath = value;
-            }
-        }
+        public string StratisAppsFolderPath { get; }
 
         public IEnumerable<FileInfo> GetStratisAppConfigFileInfos() =>
             new DirectoryInfo(this.StratisAppsFolderPath).GetFiles(StratisAppFileName, SearchOption.AllDirectories);
 
-        public string GetConfigSetting(FileInfo stratisAppJson, string settingName)
+        public string GetConfigSetting(FileInfo stratisAppConfig, string settingName)
         {
             IConfigurationProvider provider = new ConfigurationBuilder()
-                .SetBasePath(stratisAppJson.DirectoryName)
-                .AddJsonFile(stratisAppJson.Name)
+                .SetBasePath(stratisAppConfig.DirectoryName)
+                .AddJsonFile(stratisAppConfig.Name)
                 .Build().Providers.First();
             
             provider.TryGet(settingName, out string value);

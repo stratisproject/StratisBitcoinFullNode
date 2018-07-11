@@ -17,7 +17,7 @@ namespace Stratis.Bitcoin.Features.Apps.Tests
         }
 
         [Fact]
-        public void Test_StratisAppsFolderPath_throws_where_directory_does_not_exist()
+        public void Test_constructor_throws_where_directory_does_not_exist()
         {
             var dataFolder = new DataFolder(DateTime.Now.ToString(CultureInfo.CurrentCulture));            
 

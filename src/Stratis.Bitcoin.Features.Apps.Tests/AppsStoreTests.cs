@@ -11,15 +11,14 @@ namespace Stratis.Bitcoin.Features.Apps.Tests
 {
     public class AppsStoreTests
     {        
-        private readonly ILoggerFactory loggerFactory;
-        private readonly StratisAppFactory appFactory;
+        private readonly Mock<ILoggerFactory> loggerFactory;        
         private readonly Mock<IAppsFileService> appsFileService;
 
         public AppsStoreTests()
         {
-            this.loggerFactory = new Mock<ILoggerFactory>().Object;
+            this.loggerFactory = new Mock<ILoggerFactory>();
+            this.loggerFactory.Setup(x => x.CreateLogger(typeof(AppsHost).FullName)).Returns(new Mock<ILogger>().Object);
             this.appsFileService = new Mock<IAppsFileService>();
-            this.appFactory = new StratisAppFactory();
         }
 
         [Fact]
@@ -31,7 +30,7 @@ namespace Stratis.Bitcoin.Features.Apps.Tests
             this.appsFileService.Setup(x => x.GetConfigSetting(fileInfo, "displayName")).Returns(It.IsAny<string>());
             this.appsFileService.Setup(x => x.GetConfigSetting(fileInfo, "webRoot")).Returns(It.IsAny<string>());
 
-            var store = new AppsStore(this.loggerFactory, this.appsFileService.Object, this.appFactory);
+            var store = new AppsStore(this.loggerFactory.Object, this.appsFileService.Object, new StratisAppFactory());
 
             Assert.Single(store.Applications);
         }
@@ -45,7 +44,7 @@ namespace Stratis.Bitcoin.Features.Apps.Tests
             this.appsFileService.Setup(x => x.GetConfigSetting(fileInfo, "displayName")).Returns("app");
             this.appsFileService.Setup(x => x.GetConfigSetting(fileInfo, "webRoot")).Returns("root");
 
-            var store = new AppsStore(this.loggerFactory, this.appsFileService.Object, this.appFactory);
+            var store = new AppsStore(this.loggerFactory.Object, this.appsFileService.Object, new StratisAppFactory());
 
             Assert.Equal(2, store.Applications.Count());
         }
@@ -60,7 +59,7 @@ namespace Stratis.Bitcoin.Features.Apps.Tests
             this.appsFileService.Setup(x => x.GetConfigSetting(fileInfo, "displayName")).Returns(displayName);
             this.appsFileService.Setup(x => x.GetConfigSetting(fileInfo, "webRoot")).Returns("root");
 
-            var store = new AppsStore(this.loggerFactory, this.appsFileService.Object, this.appFactory);
+            var store = new AppsStore(this.loggerFactory.Object, this.appsFileService.Object, new StratisAppFactory());
 
             Assert.Equal(displayName, store.Applications.First().DisplayName);
         }
@@ -75,7 +74,7 @@ namespace Stratis.Bitcoin.Features.Apps.Tests
             this.appsFileService.Setup(x => x.GetConfigSetting(fileInfo, "displayName")).Returns("app");
             this.appsFileService.Setup(x => x.GetConfigSetting(fileInfo, "webRoot")).Returns(webRoot);
 
-            var store = new AppsStore(this.loggerFactory, this.appsFileService.Object, this.appFactory);
+            var store = new AppsStore(this.loggerFactory.Object, this.appsFileService.Object, new StratisAppFactory());
 
             Assert.Equal(webRoot, store.Applications.First().WebRoot);
         }
@@ -88,7 +87,7 @@ namespace Stratis.Bitcoin.Features.Apps.Tests
             this.appsFileService.Setup(x => x.GetStratisAppConfigFileInfos()).Returns(new List<FileInfo> { fileInfo });            
             this.appsFileService.Setup(x => x.GetConfigSetting(fileInfo, "displayName")).Returns("app");            
 
-            var store = new AppsStore(this.loggerFactory, this.appsFileService.Object, this.appFactory);
+            var store = new AppsStore(this.loggerFactory.Object, this.appsFileService.Object, new StratisAppFactory());
 
             Assert.Equal("wwwroot", store.Applications.First().WebRoot);
         }
@@ -103,7 +102,7 @@ namespace Stratis.Bitcoin.Features.Apps.Tests
             this.appsFileService.Setup(x => x.GetConfigSetting(fileInfo, "displayName")).Returns("app");
             this.appsFileService.Setup(x => x.GetConfigSetting(fileInfo, "webRoot")).Returns("root");
 
-            var store = new AppsStore(this.loggerFactory, this.appsFileService.Object, this.appFactory);
+            var store = new AppsStore(this.loggerFactory.Object, this.appsFileService.Object, new StratisAppFactory());
 
             Assert.Equal(Path.GetDirectoryName(location), store.Applications.First().Location);
         }

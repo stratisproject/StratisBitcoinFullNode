@@ -34,10 +34,10 @@ namespace Stratis.StratisD
                     .UseBlockStore()
                     .UsePosConsensus()
                     .UseMempool()
-                    .UseWallet()
-                    .UseApps()
+                    .UseWallet()                    
                     .AddPowPosMining()
-                    .UseApi()
+                    .UseApi()                    
+                    .UseApps()
                     .AddRPC()
                     .Build();
 

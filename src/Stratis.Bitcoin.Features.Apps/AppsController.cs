@@ -5,7 +5,7 @@ using Stratis.Bitcoin.Features.Apps.Interfaces;
 namespace Stratis.Bitcoin.Features.Apps
 {
     [Route("api/[controller]")]
-    public class AppsController : Controller
+    public class AppsController : Controller, IAppsController
     {
         private readonly ILogger logger;
         private readonly IAppsStore appsStore;

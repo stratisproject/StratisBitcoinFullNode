@@ -9,6 +9,6 @@ namespace Stratis.Bitcoin.Features.Apps.Interfaces
 
         IEnumerable<FileInfo> GetStratisAppConfigFileInfos();
 
-        string GetConfigSetting(FileInfo stratisAppJson, string fieldName);
+        string GetConfigSetting(FileInfo stratisAppConfig, string settingName);
     }
 }

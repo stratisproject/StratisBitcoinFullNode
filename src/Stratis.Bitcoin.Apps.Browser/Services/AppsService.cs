@@ -1,10 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Net.Http;
 using System.Runtime.Serialization.Json;
-using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Blazor;
-using Newtonsoft.Json;
 using Stratis.Bitcoin.Apps.Browser.Dto;
 using Stratis.Bitcoin.Apps.Browser.Interfaces;
 
