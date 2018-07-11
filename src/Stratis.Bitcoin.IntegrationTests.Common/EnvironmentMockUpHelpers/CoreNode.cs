@@ -547,7 +547,8 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
                             node.DependsOn.Remove(parent);
                     }
 
-                    if (node.DependsOn.Count != 0) continue;
+                    if (node.DependsOn.Count != 0)
+                        continue;
 
                     result.Add(node.Transaction);
                     dictionary.Remove(node.Hash);
