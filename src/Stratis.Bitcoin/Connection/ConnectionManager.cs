@@ -50,6 +50,8 @@ namespace Stratis.Bitcoin.Connection
 
         INetworkPeer FindNodeByIp(IPAddress ipAddress);
 
+        INetworkPeer FindNodeById(int peerId);
+
         string GetNodeStats();
 
         string GetStats();
@@ -291,6 +293,7 @@ namespace Stratis.Bitcoin.Connection
             return builder.ToString();
         }
 
+
         public string GetNodeStats()
         {
             var builder = new StringBuilder();
@@ -304,7 +307,7 @@ namespace Stratis.Bitcoin.Connection
                 builder.AppendLine(
                     "Peer:" + (peer.RemoteSocketEndpoint + ", ").PadRight(LoggingConfiguration.ColumnLength + 15) +
                     (" connected:" + (connectionManagerBehavior.Inbound ? "inbound" : "outbound") + ",").PadRight(LoggingConfiguration.ColumnLength + 7) +
-                    (" height:" + (chainHeadersBehavior.PendingTip != null ? chainHeadersBehavior.PendingTip.Height.ToString() : peer.PeerVersion?.StartHeight.ToString() ?? "unknown") + ",").PadRight(LoggingConfiguration.ColumnLength + 2) +
+                    (" height:" + (chainHeadersBehavior.ExpectedPeerTip != null ? chainHeadersBehavior.ExpectedPeerTip.Height.ToString() : peer.PeerVersion?.StartHeight.ToString() ?? "unknown") + ",").PadRight(LoggingConfiguration.ColumnLength + 2) +
                     " agent:" + agent);
             }
 
@@ -374,6 +377,11 @@ namespace Stratis.Bitcoin.Connection
         public INetworkPeer FindLocalNode()
         {
             return this.connectedPeers.FindLocal();
+        }
+
+        public INetworkPeer FindNodeById(int peerId)
+        {
+            return this.connectedPeers.FindById(peerId);
         }
 
         /// <summary>

@@ -8,6 +8,18 @@ namespace NBitcoin.Networks
 {
     public class StratisMain : Network
     {
+        /// <summary> Stratis maximal value for the calculated time offset. If the value is over this limit, the time syncing feature will be switched off. </summary>
+        public const int StratisMaxTimeOffsetSeconds = 25 * 60;
+
+        /// <summary> Stratis default value for the maximum tip age in seconds to consider the node in initial block download (2 hours). </summary>
+        public const int StratisDefaultMaxTipAgeInSeconds = 2 * 60 * 60;
+
+        /// <summary> The name of the root folder containing the different Stratis blockchains (StratisMain, StratisTest, StratisRegTest). </summary>
+        public const string StratisRootFolderName = "stratis";
+
+        /// <summary> The default name used for the Stratis configuration file. </summary>
+        public const string StratisDefaultConfigFilename = "stratis.conf";
+
         public StratisMain()
         {
             // The message start string is designed to be unlikely to occur in normal data.
@@ -76,7 +88,7 @@ namespace NBitcoin.Networks
             this.Base58Prefixes[(int)Base58Type.STEALTH_ADDRESS] = new byte[] { 0x2a };
             this.Base58Prefixes[(int)Base58Type.ASSET_ID] = new byte[] { 23 };
             this.Base58Prefixes[(int)Base58Type.COLORED_ADDRESS] = new byte[] { 0x13 };
-            
+
             this.Checkpoints = new Dictionary<int, CheckpointInfo>
             {
                 { 0, new CheckpointInfo(new uint256("0x0000066e91e46e5a264d42c89e1204963b2ee6be230b443e9159020539d972af"), new uint256("0x0000000000000000000000000000000000000000000000000000000000000000")) },
@@ -133,6 +145,37 @@ namespace NBitcoin.Networks
             this.Consensus.HashGenesisBlock = this.Genesis.GetHash();
             Assert(this.Consensus.HashGenesisBlock == uint256.Parse("0x0000066e91e46e5a264d42c89e1204963b2ee6be230b443e9159020539d972af"));
             Assert(this.Genesis.Header.HashMerkleRoot == uint256.Parse("0x65a26bc20b0351aebf05829daefa8f7db2f800623439f3c114257c91447f1518"));
+        }
+
+        protected static Block CreateStratisGenesisBlock(ConsensusFactory consensusFactory, uint nTime, uint nNonce, uint nBits, int nVersion, Money genesisReward)
+        {
+            string pszTimestamp = "http://www.theonion.com/article/olympics-head-priestess-slits-throat-official-rio--53466";
+
+            Transaction txNew = consensusFactory.CreateTransaction();
+            txNew.Version = 1;
+            txNew.Time = nTime;
+            txNew.AddInput(new TxIn()
+            {
+                ScriptSig = new Script(Op.GetPushOp(0), new Op()
+                {
+                    Code = (OpcodeType)0x1,
+                    PushData = new[] { (byte)42 }
+                }, Op.GetPushOp(Encoders.ASCII.DecodeData(pszTimestamp)))
+            });
+            txNew.AddOutput(new TxOut()
+            {
+                Value = genesisReward,
+            });
+
+            Block genesis = consensusFactory.CreateBlock();
+            genesis.Header.BlockTime = Utils.UnixTimeToDateTime(nTime);
+            genesis.Header.Bits = nBits;
+            genesis.Header.Nonce = nNonce;
+            genesis.Header.Version = nVersion;
+            genesis.Transactions.Add(txNew);
+            genesis.Header.HashPrevBlock = uint256.Zero;
+            genesis.UpdateMerkleRoot();
+            return genesis;
         }
     }
 }

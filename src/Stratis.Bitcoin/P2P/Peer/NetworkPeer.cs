@@ -867,6 +867,7 @@ namespace Stratis.Bitcoin.P2P.Peer
                 try
                 {
                     behavior.Detach();
+                    behavior.Dispose();
                 }
                 catch (Exception ex)
                 {
@@ -895,7 +896,7 @@ namespace Stratis.Bitcoin.P2P.Peer
         }
 
         /// <inheritdoc />
-        public T Behavior<T>() where T : NetworkPeerBehavior
+        public T Behavior<T>() where T : INetworkPeerBehavior
         {
             return this.Behaviors.Find<T>();
         }

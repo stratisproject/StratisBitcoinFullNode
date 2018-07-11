@@ -4,7 +4,7 @@ using Newtonsoft.Json;
 namespace Stratis.Bitcoin.Utilities.JsonConverters
 {
     /// <summary>
-    /// Converter used to convert <see cref="DateTimeOffset"/> to and from Unix time.
+    /// Converter used to convert <see cref="DateTimeOffset"/> to and from Unix time represented in JSON.
     /// </summary>
     /// <seealso cref="Newtonsoft.Json.JsonConverter" />
     public class DateTimeOffsetConverter : JsonConverter

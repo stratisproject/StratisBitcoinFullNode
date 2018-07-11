@@ -4,8 +4,8 @@ using System.IO;
 using System.Linq;
 using NBitcoin.Crypto;
 using NBitcoin.DataEncoders;
+using NBitcoin.Formatters;
 using NBitcoin.Protocol;
-using NBitcoin.RPC;
 
 namespace NBitcoin
 {
@@ -1169,44 +1169,6 @@ namespace NBitcoin
             this.vout = new TxOutList(this);
         }
 
-        internal Transaction(string hex, ProtocolVersion version = ProtocolVersion.PROTOCOL_VERSION)
-            : this()
-        {
-            this.FromBytes(Encoders.Hex.DecodeData(hex), version);
-        }
-
-        internal Transaction(byte[] bytes)
-            : this()
-        {
-            this.FromBytes(bytes);
-        }
-
-        public static Transaction Load(string hex, Network network, ProtocolVersion version = ProtocolVersion.PROTOCOL_VERSION)
-        {
-            if (hex == null)
-                throw new ArgumentNullException(nameof(hex));
-
-            if (network == null)
-                throw new ArgumentNullException(nameof(network));
-
-            Transaction transaction = network.Consensus.ConsensusFactory.CreateTransaction();
-            transaction.FromBytes(Encoders.Hex.DecodeData(hex), version, network);
-            return transaction;
-        }
-
-        public static Transaction Load(byte[] bytes, Network network)
-        {
-            if (bytes == null)
-                throw new ArgumentNullException(nameof(bytes));
-
-            if (network == null)
-                throw new ArgumentNullException(nameof(network));
-
-            Transaction transaction = network.Consensus.ConsensusFactory.CreateTransaction();
-            transaction.FromBytes(bytes, network: network);
-            return transaction;
-        }
-
         public Money TotalOut
         {
             get
@@ -1391,14 +1353,6 @@ namespace NBitcoin
                 _Hashes[0] = GetHash();
             if (!lazily && _Hashes[1] == null)
                 _Hashes[1] = GetWitHash();
-        }
-
-        public Transaction Clone(bool cloneCache, Network network = null)
-        {
-            Transaction clone = Load(this.ToHex(), network: network);
-            if(cloneCache)
-                clone._Hashes = this._Hashes.ToArray();
-            return clone;
         }
 
         private uint256[] _Hashes = null;
@@ -1668,35 +1622,24 @@ namespace NBitcoin
             }
             Sign(network, key, coins.ToArray());
         }
+
         /*
         public TxPayload CreatePayload()
         {
             return new TxPayload(this.Clone());
         }
         */
-#if !NOJSONNET
         public static Transaction Parse(string tx, RawFormat format, Network network = null)
         {
             return GetFormatter(format, network).ParseJson(tx);
-        }
-#endif
-
-        public static Transaction Parse(string hex)
-        {
-            return new Transaction(Encoders.Hex.DecodeData(hex));
         }
 
         public string ToHex()
         {
             return Encoders.Hex.EncodeData(this.ToBytes());
         }
-#if !NOJSONNET
-        public override string ToString()
-        {
-            return ToString(RawFormat.BlockExplorer);
-        }
 
-        public string ToString(RawFormat rawFormat, Network network = null)
+        public string ToString(Network network, RawFormat rawFormat = RawFormat.BlockExplorer)
         {
             RawFormatter formatter = GetFormatter(rawFormat, network);
             return ToString(formatter);
@@ -1711,12 +1654,11 @@ namespace NBitcoin
                     formatter = new SatoshiFormatter(network);
                     break;
                 case RawFormat.BlockExplorer:
-                    formatter = new BlockExplorerFormatter();
+                    formatter = new BlockExplorerFormatter(network);
                     break;
                 default:
                     throw new NotSupportedException(rawFormat.ToString());
             }
-            formatter.Network = network ?? formatter.Network;
             return formatter;
         }
 
@@ -1726,7 +1668,7 @@ namespace NBitcoin
                 throw new ArgumentNullException("formatter");
             return formatter.ToString(this);
         }
-#endif
+      
         /// <summary>
         /// Calculate the fee of the transaction
         /// </summary>
@@ -1888,12 +1830,6 @@ namespace NBitcoin
             }
 
             return new SequenceLock(nMinHeight, nMinTime);
-        }
-
-
-        private DateTimeOffset Max(DateTimeOffset a, DateTimeOffset b)
-        {
-            return a > b ? a : b;
         }
 
         /// <summary>

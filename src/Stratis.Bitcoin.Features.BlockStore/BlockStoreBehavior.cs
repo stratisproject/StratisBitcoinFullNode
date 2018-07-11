@@ -39,6 +39,8 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
         private readonly IBlockStoreCache blockStoreCache;
 
+        private ChainHeadersBehavior headersBehavior;
+
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
 
@@ -59,12 +61,15 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// <summary>Hash of the last block we've sent to the peer in response to "getblocks" message,
         /// or <c>null</c> if the peer haven't used "getblocks" message or if we sent a tip to it already.</summary>
         /// <remarks>
-        /// In case the peer is syncing using outdated "getblocks" message, we need to maintain 
-        /// the hash of the last block we sent to it in an inventory batch. Once the peer asks 
+        /// In case the peer is syncing using outdated "getblocks" message, we need to maintain
+        /// the hash of the last block we sent to it in an inventory batch. Once the peer asks
         /// for block data of the block with this hash, we will send a continuation inventory message.
         /// This will cause the peer to ask for more.
         /// </remarks>
         private uint256 getBlocksBatchLastItemHash;
+
+        /// <summary>Chained header of the last header sent to the peer.</summary>
+        private ChainedHeader lastHeaderSent;
 
         public BlockStoreBehavior(
             ConcurrentChain chain,
@@ -100,6 +105,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.logger.LogTrace("()");
 
             this.AttachedPeer.MessageReceived.Register(this.OnMessageReceivedAsync);
+            this.headersBehavior = this.AttachedPeer.Behavior<ChainHeadersBehavior>();
 
             this.logger.LogTrace("(-)");
         }
@@ -176,6 +182,22 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.logger.LogTrace("(-)");
         }
 
+        /// <summary>Gets the highest header between the header of the last block that was sent to a peer and the expected peer's tip.</summary>
+        private ChainedHeader GetHighestHeader()
+        {
+            this.logger.LogTrace("()");
+
+            ChainedHeader peerTip = this.headersBehavior.ExpectedPeerTip;
+
+            ChainedHeader highestHeader = peerTip;
+
+            if ((highestHeader == null) || ((this.lastHeaderSent != null) && (highestHeader.Height < this.lastHeaderSent.Height)))
+                highestHeader = this.lastHeaderSent;
+
+            this.logger.LogTrace("(-):'{0}'", highestHeader);
+            return highestHeader;
+        }
+
         /// <summary>
         /// Processes "getblocks" message received from the peer.
         /// </summary>
@@ -185,7 +207,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         {
             this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(peer), peer.RemoteSocketEndpoint, nameof(getBlocksPayload), getBlocksPayload);
 
-            // We only want to work with blocks that are in the store, 
+            // We only want to work with blocks that are in the store,
             // so we first get information about the store's tip.
             ChainedHeader blockStoreTip = this.chain.GetBlock(this.blockRepository.BlockHash);
             if (blockStoreTip == null)
@@ -268,17 +290,15 @@ namespace Stratis.Bitcoin.Features.BlockStore
             int count = inv.Inventory.Count;
             if (count > 0)
             {
-                var chainBehavior = peer.Behavior<ChainHeadersBehavior>();
-                ChainedHeader peerTip = chainBehavior.PendingTip;
+                ChainedHeader highestHeader = this.GetHighestHeader();
 
-                int peersHeight = peerTip != null ? peerTip.Height : 0;
-                if (peersHeight < lastAddedChainedHeader.Height)
+                if (highestHeader?.Height < lastAddedChainedHeader.Height)
                 {
-                    this.logger.LogTrace("Setting peer's pending tip to '{0}'.", lastAddedChainedHeader);
-                    chainBehavior.SetPendingTip(lastAddedChainedHeader);
+                    this.logger.LogTrace("Setting peer's last block sent to '{0}'.", lastAddedChainedHeader);
+                    this.lastHeaderSent = lastAddedChainedHeader;
 
-                    // Set last item of the batch (unless we are announcing the tip), which is then used 
-                    // when the peer sends us "getdata" message. When we detect "getdata" message for this block, 
+                    // Set last item of the batch (unless we are announcing the tip), which is then used
+                    // when the peer sends us "getdata" message. When we detect "getdata" message for this block,
                     // we will send continuation inventory message. This will cause the peer to ask for another batch of blocks.
                     // See ProcessGetDataAsync method.
                     if (sendContinuation)
@@ -317,7 +337,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
                     await peer.SendMessageAsync(new BlockPayload(block.WithOptions(this.chain.Network.Consensus.ConsensusFactory, peer.SupportedTransactionOptions))).ConfigureAwait(false);
                 }
 
-                // If the peer is syncing using "getblocks" message we are supposed to send 
+                // If the peer is syncing using "getblocks" message we are supposed to send
                 // an "inv" message with our tip to it once it asks for all blocks
                 // from the previous batch.
                 if (item.Hash == this.getBlocksBatchLastItemHash)
@@ -389,13 +409,14 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
             try
             {
-                var chainBehavior = peer.Behavior<ChainHeadersBehavior>();
+                ChainedHeader highestHeader = this.GetHighestHeader();
+
                 ChainedHeader bestIndex = null;
                 if (!revertToInv)
                 {
                     bool foundStartingHeader = false;
-                    // Try to find first chained block that the peer doesn't have, and then add all chained blocks past that one.
 
+                    // Try to find first chained block that the peer doesn't have, and then add all chained blocks past that one.
                     foreach (ChainedHeader chainedHeader in blocksToAnnounce)
                     {
                         bestIndex = chainedHeader;
@@ -405,14 +426,14 @@ namespace Stratis.Bitcoin.Features.BlockStore
                             this.logger.LogTrace("Checking is the peer '{0}' can connect header '{1}'.", peer.RemoteSocketEndpoint, chainedHeader);
 
                             // Peer doesn't have a block at the height of our block and with the same hash?
-                            if (chainBehavior.PendingTip?.FindAncestorOrSelf(chainedHeader) != null)
+                            if (highestHeader?.FindAncestorOrSelf(chainedHeader) != null)
                             {
                                 this.logger.LogTrace("Peer '{0}' already has header '{1}'.", peer.RemoteSocketEndpoint, chainedHeader.Previous);
                                 continue;
                             }
 
                             // Peer doesn't have a block at the height of our block.Previous and with the same hash?
-                            if (chainBehavior.PendingTip?.FindAncestorOrSelf(chainedHeader.Previous) == null)
+                            if (highestHeader?.FindAncestorOrSelf(chainedHeader.Previous) == null)
                             {
                                 // Peer doesn't have this header or the prior one - nothing will connect, so bail out.
                                 this.logger.LogTrace("Neither the header nor its previous header found for peer '{0}', reverting to 'inv'.", peer.RemoteSocketEndpoint);
@@ -440,7 +461,8 @@ namespace Stratis.Bitcoin.Features.BlockStore
                         if (headers.Count > 1) this.logger.LogDebug("Sending {0} headers, range {1} - {2}, to peer '{3}'.", headers.Count, headers.First(), headers.Last(), peer.RemoteSocketEndpoint);
                         else this.logger.LogDebug("Sending header '{0}' to peer '{1}'.", headers.First(), peer.RemoteSocketEndpoint);
 
-                        chainBehavior.SetPendingTip(bestIndex);
+                        this.lastHeaderSent = bestIndex;
+
                         await peer.SendMessageAsync(new HeadersPayload(headers.ToArray())).ConfigureAwait(false);
                         this.logger.LogTrace("(-)[SEND_HEADERS_PAYLOAD]");
                         return;
@@ -455,13 +477,12 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 {
                     // If falling back to using an inv, just try to inv the tip.
                     // The last entry in 'blocksToAnnounce' was our tip at some point in the past.
-
                     if (blocksToAnnounce.Any())
                     {
                         ChainedHeader chainedHeader = blocksToAnnounce.Last();
                         if (chainedHeader != null)
                         {
-                            if ((chainBehavior.PendingTip == null) || (chainBehavior.PendingTip.GetAncestor(chainedHeader.Height) == null))
+                            if ((highestHeader == null) || (highestHeader.GetAncestor(chainedHeader.Height) == null))
                             {
                                 inventoryBlockToSend.Add(chainedHeader.HashBlock);
                                 this.logger.LogDebug("Sending inventory hash '{0}' to peer '{1}'.", chainedHeader.HashBlock, peer.RemoteSocketEndpoint);

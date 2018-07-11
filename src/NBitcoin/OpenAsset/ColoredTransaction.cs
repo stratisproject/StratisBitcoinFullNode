@@ -1,11 +1,8 @@
-﻿#if !NOJSONNET
-using System.Threading.Tasks;
-using System.Linq;
-using Newtonsoft.Json.Linq;
-#endif
-using System;
+﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
+using Newtonsoft.Json.Linq;
 
 namespace NBitcoin.OpenAsset
 {
@@ -48,7 +45,8 @@ namespace NBitcoin.OpenAsset
                 this._Asset = value;
             }
         }
-#region IBitcoinSerializable Members
+
+        #region IBitcoinSerializable Members
 
         public void ReadWrite(BitcoinStream stream)
         {
@@ -70,7 +68,7 @@ namespace NBitcoin.OpenAsset
             }
         }
 
-#endregion
+        #endregion
 
         public override string ToString()
         {
@@ -80,6 +78,7 @@ namespace NBitcoin.OpenAsset
                 return "[" + this.Index + "] " + this.Asset;
         }
     }
+
     public class ColoredTransaction : IBitcoinSerializable
     {
         public static Task<ColoredTransaction> FetchColorsAsync(Transaction tx, IColoredTransactionRepository repo)
@@ -444,7 +443,7 @@ namespace NBitcoin.OpenAsset
                 .ToArray();
         }
 
-#region IBitcoinSerializable Members
+        #region IBitcoinSerializable Members
 
         public void ReadWrite(BitcoinStream stream)
         {
@@ -472,7 +471,7 @@ namespace NBitcoin.OpenAsset
             stream.ReadWrite(ref this._Transfers);
         }
 
-#endregion
+        #endregion
 
         private List<ColoredEntry> _Inputs;
         public List<ColoredEntry> Inputs
@@ -485,11 +484,6 @@ namespace NBitcoin.OpenAsset
             {
                 this._Inputs = value;
             }
-        }
-#if !NOJSONNET
-        public override string ToString()
-        {
-            return ToString(Network.Main);
         }
 
         public string ToString(Network network)
@@ -535,7 +529,7 @@ namespace NBitcoin.OpenAsset
             var quantity = new JProperty("quantity", entry.Asset.Quantity);
             inputs.Add(new JObject(index, asset, quantity));
         }
-#endif
+
         //00000000000000001c7a19e8ef62d815d84a473f543de77f23b8342fc26812a9 at 299220 Monday, May 5, 2014 3:47:37 PM first block
         public static readonly DateTimeOffset FirstColoredDate = new DateTimeOffset(2014, 05, 4, 0, 0, 0, TimeSpan.Zero);
     }

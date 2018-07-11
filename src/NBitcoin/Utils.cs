@@ -10,14 +10,7 @@ using System.Threading.Tasks;
 using NBitcoin.BouncyCastle.Math;
 using NBitcoin.DataEncoders;
 using NBitcoin.Protocol;
-#if !NOSOCKET
 using System.Net.Sockets;
-#endif
-#if WINDOWS_UWP
-using System.Net.Sockets;
-using Windows.Networking;
-using Windows.Networking.Connectivity;
-#endif
 
 namespace NBitcoin
 {
@@ -142,7 +135,7 @@ namespace NBitcoin
             }
         }
 
-#if !(PORTABLE || NETCORE)
+#if !NETCORE
         public static int ReadEx(this Stream stream, byte[] buffer, int offset, int count, CancellationToken cancellation = default(CancellationToken))
         {
             if(stream == null)
@@ -213,13 +206,12 @@ namespace NBitcoin
             {
                 cancellation.ThrowIfCancellationRequested();
                 int currentReadCount = 0;
-#if !NOSOCKET
+
                 if(stream is NetworkStream && cancellation.CanBeCanceled)
                 {
                     currentReadCount = stream.ReadAsync(buffer, offset + totalReadCount, count - totalReadCount, cancellation).GetAwaiter().GetResult();
                 }
                 else
-#endif
                 {
                     currentReadCount = stream.Read(buffer, offset + totalReadCount, count - totalReadCount);
                 }
@@ -257,7 +249,7 @@ namespace NBitcoin
         }
     }
 
-    internal static class ByteArrayExtensions
+    public static class ByteArrayExtensions
     {
         internal static bool StartWith(this byte[] data, byte[] versionBytes)
         {
@@ -270,7 +262,7 @@ namespace NBitcoin
             }
             return true;
         }
-        internal static byte[] SafeSubarray(this byte[] array, int offset, int count)
+        public static byte[] SafeSubarray(this byte[] array, int offset, int count)
         {
             if(array == null)
                 throw new ArgumentNullException("array");
@@ -380,7 +372,6 @@ namespace NBitcoin
             return ms.ToArray();
         }
 
-#if !NOSOCKET
         internal static IPAddress MapToIPv6(IPAddress address)
         {
             if(address.AddressFamily == AddressFamily.InterNetworkV6)
@@ -412,7 +403,6 @@ namespace NBitcoin
             return bytes[10] == 0xFF && bytes[11] == 0xFF;
         }
 
-#endif
         private static void Write(MemoryStream ms, byte[] bytes)
         {
             ms.Write(bytes, 0, bytes.Length);
@@ -579,8 +569,6 @@ namespace NBitcoin
             Shuffle(arr, null);
         }
 
-
-#if !NOSOCKET
         public static void SafeCloseSocket(Socket socket)
         {
             try
@@ -605,7 +593,7 @@ namespace NBitcoin
                 return endpoint;
             return new IPEndPoint(endpoint.Address.MapToIPv6Ex(), endpoint.Port);
         }
-#endif
+
         public static byte[] ToBytes(uint value, bool littleEndian)
         {
             if(littleEndian)
@@ -715,7 +703,6 @@ namespace NBitcoin
             }
         }
 
-#if !NOSOCKET
         public static IPAddress ParseIPAddress(string ip)
         {
             IPAddress address = null;
@@ -729,7 +716,7 @@ namespace NBitcoin
                 if (ip.Trim() == string.Empty || Uri.CheckHostName(ip) == UriHostNameType.Unknown)
                     throw;
 
-#if !(WINDOWS_UWP || NETCORE)
+#if !NETCORE
                 address = Dns.GetHostEntry(ip).AddressList[0];
 #else
                 string adr = DnsLookup(ip).GetAwaiter().GetResult();
@@ -783,26 +770,7 @@ namespace NBitcoin
             return string.Empty;
         }
 #endif
-#if WINDOWS_UWP
-        private static async Task<string> DnsLookup(string remoteHostName)
-        {
-            IReadOnlyList<EndpointPair> data = await DatagramSocket.GetEndpointPairsAsync(new HostName(remoteHostName), "0").AsTask().ConfigureAwait(false);
 
-            if(data != null && data.Count > 0)
-            {
-                foreach(EndpointPair item in data)
-                {
-                    if(item != null && item.RemoteHostName != null && item.RemoteHostName.Type == HostNameType.Ipv4)
-                    {
-                        return item.RemoteHostName.CanonicalName;
-                    }
-                }
-            }
-            return string.Empty;
-        }
-#endif
-
-#endif
         public static int GetHashCode(byte[] array)
         {
             unchecked

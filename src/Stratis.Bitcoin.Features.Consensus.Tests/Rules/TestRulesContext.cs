@@ -53,8 +53,10 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
     /// Test consensus rules for unit tests.
     /// </summary>
     public class TestConsensusRules : ConsensusRules
-    {        
+    {
         private Mock<IRuleRegistration> ruleRegistration;
+
+        public RuleContext RuleContext { get; set; }
 
         public TestConsensusRules(Network network, ILoggerFactory loggerFactory, IDateTimeProvider dateTimeProvider, ConcurrentChain chain, NodeDeployments nodeDeployments, ConsensusSettings consensusSettings, ICheckpoints checkpoints)
             : base(network, loggerFactory, dateTimeProvider, chain, nodeDeployments, consensusSettings, checkpoints)
@@ -74,7 +76,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
 
         public override RuleContext CreateRuleContext(ValidationContext validationContext, ChainedHeader tip)
         {
-            throw new System.NotImplementedException();
+            return this.RuleContext ?? new PowRuleContext();
         }
 
         public override Task<uint256> GetBlockHashAsync()
@@ -82,7 +84,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
             throw new System.NotImplementedException();
         }
 
-        public override Task<uint256> RewindAsync()
+        public override Task<RewindState> RewindAsync()
         {
             throw new System.NotImplementedException();
         }
@@ -128,7 +130,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
             string dataDir = Path.Combine("TestData", pathName);
             Directory.CreateDirectory(dataDir);
 
-            testRulesContext.NodeSettings = new NodeSettings(network, args:new[] { $"-datadir={dataDir}" });
+            testRulesContext.NodeSettings = new NodeSettings(network, args: new[] { $"-datadir={dataDir}" });
             testRulesContext.LoggerFactory = testRulesContext.NodeSettings.LoggerFactory;
             testRulesContext.LoggerFactory.AddConsoleWithFilters();
             testRulesContext.DateTimeProvider = DateTimeProvider.Default;
@@ -146,7 +148,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
 
         public static Block MineBlock(Network network, ConcurrentChain chain)
         {
-            var block = new Block();
+            var block = network.Consensus.ConsensusFactory.CreateBlock();
             var coinbase = new Transaction();
             coinbase.AddInput(TxIn.CreateCoinbase(chain.Height + 1));
             coinbase.AddOutput(new TxOut(Money.Zero, new Key()));
@@ -172,6 +174,5 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
 
             return block;
         }
-
     }
 }

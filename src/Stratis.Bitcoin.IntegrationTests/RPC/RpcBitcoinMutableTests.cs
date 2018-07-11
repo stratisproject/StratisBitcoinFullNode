@@ -5,8 +5,8 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using NBitcoin;
-using NBitcoin.RPC;
 using Newtonsoft.Json.Linq;
+using Stratis.Bitcoin.Features.RPC;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
 using Xunit;
@@ -232,7 +232,7 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
                 Transaction tx = Network.TestNet.GetGenesis().Transactions[0];
                 Transaction tx2 = rpcClient.DecodeRawTransaction(tx.ToBytes());
 
-                Assert.True(JToken.DeepEquals(tx.ToString(RawFormat.Satoshi), tx2.ToString(RawFormat.Satoshi)));
+                Assert.True(JToken.DeepEquals(tx.ToString(Network.TestNet, RawFormat.Satoshi), tx2.ToString(Network.TestNet, RawFormat.Satoshi)));
             }
         }
         [Fact]

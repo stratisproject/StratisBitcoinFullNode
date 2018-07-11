@@ -8,7 +8,7 @@ namespace NBitcoin.BuilderExtensions
     {
         public override bool CanCombineScriptSig(Network network, Script scriptPubKey, Script a, Script b)
         {
-            return PayToMultiSigTemplate.Instance.ExtractScriptPubKeyParameters(network, scriptPubKey) != null;
+            return PayToMultiSigTemplate.Instance.ExtractScriptPubKeyParameters(scriptPubKey) != null;
         }
 
         public override bool CanDeduceScriptPubKey(Network network, Script scriptSig)
@@ -18,17 +18,17 @@ namespace NBitcoin.BuilderExtensions
 
         public override bool CanEstimateScriptSigSize(Network network, Script scriptPubKey)
         {
-            return PayToMultiSigTemplate.Instance.ExtractScriptPubKeyParameters(network, scriptPubKey) != null;
+            return PayToMultiSigTemplate.Instance.ExtractScriptPubKeyParameters(scriptPubKey) != null;
         }
 
         public override bool CanGenerateScriptSig(Network network, Script scriptPubKey)
         {
-            return PayToMultiSigTemplate.Instance.ExtractScriptPubKeyParameters(network, scriptPubKey) != null;
+            return PayToMultiSigTemplate.Instance.ExtractScriptPubKeyParameters(scriptPubKey) != null;
         }
 
         public override Script CombineScriptSig(Network network, Script scriptPubKey, Script a, Script b)
         {
-            PayToMultiSigTemplateParameters para = PayToMultiSigTemplate.Instance.ExtractScriptPubKeyParameters(network, scriptPubKey);
+            PayToMultiSigTemplateParameters para = PayToMultiSigTemplate.Instance.ExtractScriptPubKeyParameters(scriptPubKey);
             // Combine all the signatures we've got:
             TransactionSignature[] aSigs = PayToMultiSigTemplate.Instance.ExtractScriptSigParameters(network, a);
             if(aSigs == null)
@@ -63,13 +63,13 @@ namespace NBitcoin.BuilderExtensions
 
         public override int EstimateScriptSigSize(Network network, Script scriptPubKey)
         {
-            PayToMultiSigTemplateParameters p2mk = PayToMultiSigTemplate.Instance.ExtractScriptPubKeyParameters(network, scriptPubKey);
+            PayToMultiSigTemplateParameters p2mk = PayToMultiSigTemplate.Instance.ExtractScriptPubKeyParameters(scriptPubKey);
             return PayToMultiSigTemplate.Instance.GenerateScriptSig(Enumerable.Range(0, p2mk.SignatureCount).Select(o => DummySignature).ToArray()).Length;
         }
 
         public override Script GenerateScriptSig(Network network, Script scriptPubKey, IKeyRepository keyRepo, ISigner signer)
         {
-            PayToMultiSigTemplateParameters multiSigParams = PayToMultiSigTemplate.Instance.ExtractScriptPubKeyParameters(network, scriptPubKey);
+            PayToMultiSigTemplateParameters multiSigParams = PayToMultiSigTemplate.Instance.ExtractScriptPubKeyParameters(scriptPubKey);
             var signatures = new TransactionSignature[multiSigParams.PubKeys.Length];
             Key[] keys =
                 multiSigParams

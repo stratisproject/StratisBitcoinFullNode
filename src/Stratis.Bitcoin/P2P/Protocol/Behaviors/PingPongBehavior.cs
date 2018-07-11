@@ -23,6 +23,8 @@ namespace Stratis.Bitcoin.P2P.Protocol.Behaviors
 
         private PingPongMode mode;
 
+        private Timer timer;
+
         /// <summary>
         /// Whether the behavior send Ping and respond with Pong (Default : Both)
         /// </summary>
@@ -97,7 +99,7 @@ namespace Stratis.Bitcoin.P2P.Protocol.Behaviors
             this.AttachedPeer.StateChanged.Register(this.OnStateChangedAsync);
             this.callbacksRegistered = true;
 
-            this.RegisterDisposable(new Timer(Ping, null, 0, (int)this.PingInterval.TotalMilliseconds));
+            this.timer = new Timer(Ping, null, 0, (int)this.PingInterval.TotalMilliseconds);
         }
 
         private bool PingVersion()
@@ -215,6 +217,14 @@ namespace Stratis.Bitcoin.P2P.Protocol.Behaviors
                 this.AttachedPeer.StateChanged.Unregister(this.OnStateChangedAsync);
             }
             this.ClearCurrentPing();
+        }
+
+        ///  <inheritdoc />
+        public override void Dispose()
+        {
+            this.timer?.Dispose();
+
+            base.Dispose();
         }
 
         #region ICloneable Members

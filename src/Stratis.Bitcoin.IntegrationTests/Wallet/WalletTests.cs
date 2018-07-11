@@ -3,7 +3,7 @@ using System.IO;
 using System.Linq;
 using Microsoft.Extensions.DependencyInjection;
 using NBitcoin;
-using NBitcoin.RPC;
+using Stratis.Bitcoin.Features.RPC;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Controllers;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
@@ -69,7 +69,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                 Assert.Null(stratisReceiver.FullNode.WalletManager().GetSpendableTransactionsInWallet("mywallet").First().Transaction.BlockHeight);
 
                 // generate two new blocks do the trx is confirmed
-                stratisSender.GenerateStratis(1, new List<Transaction>(new[] { trx.Clone() }));
+                stratisSender.GenerateStratis(1, new List<Transaction>(new[] { stratisSender.FullNode.Network.CreateTransaction(trx.ToBytes()) }));
                 stratisSender.GenerateStratis(1);
 
                 // wait for block repo for block sync to work
@@ -94,7 +94,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                 walletManager.Start();
 
                 RPCClient rpc = stratisNodeSync.CreateRPCClient();
-                rpc.SendCommand(NBitcoin.RPC.RPCOperations.generate, 10);
+                rpc.SendCommand(RPCOperations.generate, 10);
                 Assert.Equal(10, rpc.GetBlockCount());
 
                 BitcoinPubKeyAddress address = new Key().PubKey.GetAddress(rpc.Network);

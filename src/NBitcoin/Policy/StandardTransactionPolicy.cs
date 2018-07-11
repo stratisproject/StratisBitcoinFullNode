@@ -56,13 +56,13 @@ namespace NBitcoin.Policy
             get;
             set;
         }
-#if !NOCONSENSUSLIB
+
         public bool UseConsensusLib
         {
             get;
             set;
         }
-#endif
+
         public const int MaxScriptSigLength = 1650;
         #region ITransactionPolicy Members
 
@@ -121,7 +121,7 @@ namespace NBitcoin.Policy
             {
                 foreach(Coin txout in transaction.Outputs.AsCoins())
                 {
-                    ScriptTemplate template = StandardScripts.GetTemplateFromScriptPubKey(this.network, txout.ScriptPubKey);
+                    ScriptTemplate template = StandardScripts.GetTemplateFromScriptPubKey(txout.ScriptPubKey);
                     if(template == null)
                         errors.Add(new OutputPolicyError("Non-Standard scriptPubKey", (int)txout.Outpoint.N));
                 }
@@ -179,11 +179,8 @@ namespace NBitcoin.Policy
 
         private bool VerifyScript(IndexedTxIn input, Script scriptPubKey, Money value, ScriptVerify scriptVerify, out ScriptError error)
         {
-#if !NOCONSENSUSLIB
             if(!this.UseConsensusLib)
-#endif
                 return input.VerifyScript(this.network, scriptPubKey, value, scriptVerify, out error);
-#if !NOCONSENSUSLIB
             else
             {
                 bool ok = Script.VerifyScriptConsensus(scriptPubKey, input.Transaction, input.Index, scriptVerify);
@@ -199,7 +196,6 @@ namespace NBitcoin.Policy
                 }
                 return true;
             }
-#endif
         }
 
         #endregion
@@ -212,9 +208,7 @@ namespace NBitcoin.Policy
                 MaxTxFee = this.MaxTxFee,
                 MinRelayTxFee = this.MinRelayTxFee,
                 ScriptVerify = this.ScriptVerify,
-#if !NOCONSENSUSLIB
                 UseConsensusLib = this.UseConsensusLib,
-#endif
                 CheckMalleabilitySafe = this.CheckMalleabilitySafe,
                 CheckScriptPubKey = this.CheckScriptPubKey,
                 CheckFee = this.CheckFee

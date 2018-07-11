@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Net;
 using Microsoft.AspNetCore.Mvc;
+using NBitcoin;
 using Stratis.Bitcoin.Controllers.Models;
 using Stratis.Bitcoin.Features.WatchOnlyWallet.Models;
 using Stratis.Bitcoin.Utilities.JsonErrors;
@@ -81,7 +82,8 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet.Controllers
 
                     foreach (KeyValuePair<string, TransactionData> transactionData in watchAddress.Value.Transactions)
                     {
-                        watchedAddressModel.Transactions.Add(new TransactionVerboseModel(transactionData.Value.Transaction, watchOnlyWallet.Network));
+                        Transaction transaction = watchOnlyWallet.Network.CreateTransaction(transactionData.Value.Hex);
+                        watchedAddressModel.Transactions.Add(new TransactionVerboseModel(transaction, watchOnlyWallet.Network));
                     }
 
                     model.WatchedAddresses.Add(watchedAddressModel);
@@ -91,7 +93,7 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet.Controllers
                 {
                     var watchedTransactionModel = new WatchedTransactionModel
                     {
-                        Transaction = new TransactionVerboseModel(transaction.Value.Transaction, watchOnlyWallet.Network)
+                        Transaction = new TransactionVerboseModel(watchOnlyWallet.Network.CreateTransaction(transaction.Value.Hex), watchOnlyWallet.Network)
                     };
 
                     model.WatchedTransactions.Add(watchedTransactionModel);
