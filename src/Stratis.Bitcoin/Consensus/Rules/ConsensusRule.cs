@@ -70,53 +70,47 @@ namespace Stratis.Bitcoin.Consensus.Rules
     /// <summary>
     /// An attribute that can be attached to a <see cref="ConsensusRule"/>.
     /// </summary>
+    /// When <see cref="CanSkipValidation"/> <c>true</c> rule is allowed to skip validation when the <see cref="ValidationContext.SkipValidation"/> is set to <c>true</c>.
     [AttributeUsage(AttributeTargets.Class, AllowMultiple = true, Inherited = true)]
     public abstract class RuleAttribute : Attribute
     {
-    }
-
-    /// <summary>
-    /// Whether the rule will be considered a rule that only does validation and does not manipulate state in any way.
-    /// When <c>true</c> rule is allowed to skip validation when the <see cref="ValidationContext.SkipValidation"/> is set to <c>true</c>.
-    /// </summary>
-    /// <remarks>
-    /// State in this context is the manipulation of information in the consensus data store based on actions specified in <see cref="Block"/> and <see cref="Transaction"/>.
-    /// This will allow to ability to run validation checks on blocks (during mining for example) without change the underline store.
-    /// </remarks>
-    public class PartialValidationRuleAttribute : RuleAttribute
-    {
-        public PartialValidationRuleAttribute()
-        {
-            this.CanSkipValidation = true;
-        }
-
         /// <summary>A flag that specifies the rule can be skipped when the <see cref="RuleContext.SkipValidation"/> is set.</summary>
         public bool CanSkipValidation { get; set; }
     }
 
     /// <summary>
-    /// Whether the rule is manipulating the consensus state, making changes to the store.
+    /// A rule that is used when a partial validation is performed.
     /// </summary>
+    public class PartialValidationRuleAttribute : RuleAttribute
+    {
+    }
+
+    /// <summary>
+    /// A rule that is used when a full validation is performed.
+    /// </summary>
+    /// <remarks>
+    /// Full validation in this context is the manipulation of information in the consensus data store based on actions specified in <see cref="Block"/> and <see cref="Transaction"/>.
+    /// </remarks>
     public class FullValidationRuleAttribute : RuleAttribute
     {
     }
 
     /// <summary>
-    /// Validate block headers only.
+    /// A rule that is used when a header validation is performed.
     /// </summary>
     public class HeaderValidationRuleAttribute : RuleAttribute
     {
     }
 
     /// <summary>
-    /// Validate block headers only.
+    /// A rule that is used when integrity validation is performed on a received block.
     /// </summary>
     public class IntegrityValidationRuleAttribute : RuleAttribute
     {
     }
 
     /// <summary>
-    /// Whether the rule is manipulating the consensus state, making changes to the store.
+    /// A rule that is used when a transaction is received not as part of a block.
     /// </summary>
     public class MempoolRuleAttribute : RuleAttribute
     {

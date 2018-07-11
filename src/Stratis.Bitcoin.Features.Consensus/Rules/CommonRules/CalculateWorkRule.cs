@@ -7,7 +7,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
     /// <summary>
     /// Checks if <see cref="Block"/> has a valid PoW header and calculate the next block difficulty.
     /// </summary>
-    [PartialValidationRule(CanSkipValidation = false)]
+    [PartialValidationRule]
     public class CalculateWorkRule : ConsensusRule
     {
         /// <inheritdoc />

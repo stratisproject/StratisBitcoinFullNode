@@ -12,7 +12,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
     /// <summary>
     /// A rule that will validate the signature of a PoS block.
     /// </summary>
-    [PartialValidationRule]
+    [PartialValidationRule(CanSkipValidation = true)]
     public class PosBlockSignatureRule : StakeStoreConsensusRule
     {
         /// <inheritdoc />

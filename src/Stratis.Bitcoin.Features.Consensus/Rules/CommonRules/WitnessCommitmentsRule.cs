@@ -13,7 +13,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
     /// <summary>
     /// A rule that validates witness commitments.
     /// </summary>
-    [PartialValidationRule]
+    [PartialValidationRule(CanSkipValidation = true)]
     public class WitnessCommitmentsRule : ConsensusRule
     {
         /// <inheritdoc />

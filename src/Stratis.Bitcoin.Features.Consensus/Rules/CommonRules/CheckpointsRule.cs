@@ -9,7 +9,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
     /// <summary>
     /// A rule that verifies checkpoints, this rules depends on per network override classes.
     /// </summary>
-    [PartialValidationRule(CanSkipValidation = false)]
+    [PartialValidationRule]
     public class CheckpointsRule : ConsensusRule
     {
         /// <inheritdoc />
