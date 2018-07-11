@@ -85,8 +85,13 @@ namespace Stratis.Bitcoin.Consensus.Rules
     /// </remarks>
     public class PartialValidationRuleAttribute : RuleAttribute
     {
+        public PartialValidationRuleAttribute()
+        {
+            this.CanSkipValidation = true;
+        }
+
         /// <summary>A flag that specifies the rule can be skipped when the <see cref="RuleContext.SkipValidation"/> is set.</summary>
-        public bool CanSkipValidation { get; set; } = true;
+        public bool CanSkipValidation { get; set; }
     }
 
     /// <summary>

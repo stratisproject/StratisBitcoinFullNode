@@ -127,7 +127,7 @@ namespace Stratis.Bitcoin.Consensus.Validators
             /// <inheritdoc/>
             public override string ToString()
             {
-                return base.ToString() + $",{nameof(this.ChainedHeaderBlock)}={this.ChainedHeaderBlock}";
+                return $",{nameof(this.ChainedHeaderBlock)}={this.ChainedHeaderBlock}";
             }
         }
     }
