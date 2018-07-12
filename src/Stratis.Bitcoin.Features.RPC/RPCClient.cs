@@ -951,7 +951,7 @@ namespace Stratis.Bitcoin.Features.RPC
         public async Task<Block> GetBlockAsync(uint256 blockId)
         {
             RPCResponse resp = await SendCommandAsync(RPCOperations.getblock, blockId.ToString(), false).ConfigureAwait(false);
-            return new Block(Encoders.Hex.DecodeData(resp.Result.ToString()));
+            return Block.Load(Encoders.Hex.DecodeData(resp.Result.ToString()), this.Network);
         }
 
         /// <summary>

@@ -10,34 +10,35 @@ namespace NBitcoin
     /// </summary>
     public class ConcurrentChain : ChainBase
     {
-        private Dictionary<uint256, ChainedHeader> blocksById = new Dictionary<uint256, ChainedHeader>();
-        private Dictionary<int, ChainedHeader> blocksByHeight = new Dictionary<int, ChainedHeader>();
-        private ReaderWriterLock lockObject = new ReaderWriterLock();
+        private readonly Dictionary<uint256, ChainedHeader> blocksById = new Dictionary<uint256, ChainedHeader>();
+        private readonly Dictionary<int, ChainedHeader> blocksByHeight = new Dictionary<int, ChainedHeader>();
+        private readonly ReaderWriterLock lockObject = new ReaderWriterLock();
 
         private volatile ChainedHeader tip;
-        private Network network;
         public override ChainedHeader Tip { get { return this.tip; } }
+
         public override int Height { get { return this.Tip.Height; } }
+
+        private readonly Network network;
         public override Network Network { get { return this.network; } }
-        
-        public ConcurrentChain()
-        {
-            this.network = Network.Main;
-        }
-        
-        public ConcurrentChain(BlockHeader genesisHeader, Network network = null) // TODO: Remove the null default
-        {
-            this.network = network ?? Network.Main;
-            SetTip(new ChainedHeader(genesisHeader, genesisHeader.GetHash(), 0));
-        }
+
+        [Obsolete("Do not use this constructor, it will eventually be replaced with ChainHeaderTree.")]
+        public ConcurrentChain() { }
 
         public ConcurrentChain(Network network)
-            :this(network.GetGenesis().Header, network)
         {
+            this.network = network;
+            SetTip(new ChainedHeader(network.GetGenesis().Header, network.GetGenesis().GetHash(), 0));
         }
 
-        public ConcurrentChain(byte[] bytes, Network network = null) // TODO: Remove the null default
-            : this(network ?? Network.Main)
+        public ConcurrentChain(Network network, ChainedHeader chainedHeader)
+        {
+            this.network = network;
+            SetTip(chainedHeader);
+        }
+
+        public ConcurrentChain(Network network, byte[] bytes)
+            : this(network)
         {
             Load(bytes);
         }
@@ -113,26 +114,6 @@ namespace NBitcoin
                     stream.ReadWrite(block.Header);
                 }
             }
-        }
-
-        public ConcurrentChain Clone()
-        {
-            var chain = new ConcurrentChain();
-            chain.network = this.network;
-            chain.tip = this.tip;
-            using (this.lockObject.LockRead())
-            {
-                foreach (KeyValuePair<uint256, ChainedHeader> kv in this.blocksById)
-                {
-                    chain.blocksById.Add(kv.Key, kv.Value);
-                }
-
-                foreach (KeyValuePair<int, ChainedHeader> kv in this.blocksByHeight)
-                {
-                    chain.blocksByHeight.Add(kv.Key, kv.Value);
-                }
-            }
-            return chain;
         }
 
         /// <inheritdoc />

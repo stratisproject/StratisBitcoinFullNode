@@ -17,10 +17,10 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
     public class WalletSyncManagerTest : LogsTestBase
     {
         private ConcurrentChain chain;
-        private Mock<IWalletManager> walletManager;
-        private Mock<IBlockStoreCache> blockStoreCache;
-        private Mock<INodeLifetime> nodeLifetime;
-        private StoreSettings storeSettings;
+        private readonly Mock<IWalletManager> walletManager;
+        private readonly Mock<IBlockStoreCache> blockStoreCache;
+        private readonly Mock<INodeLifetime> nodeLifetime;
+        private readonly StoreSettings storeSettings;
 
         public WalletSyncManagerTest()
         {
