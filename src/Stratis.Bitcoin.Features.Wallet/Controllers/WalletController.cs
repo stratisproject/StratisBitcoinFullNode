@@ -271,7 +271,8 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
 
             try
             {
-                Wallet wallet = this.walletManager.RecoverWalletViaExtPubKey(request.Name, request.ExtPubKey, request.AccountIndex, request.CreationDate);
+                string accountExtPubKey = request.ExtPubKey;
+                Wallet wallet = this.walletManager.RecoverWallet(request.Name, ExtPubKey.Parse(accountExtPubKey), request.AccountIndex, request.CreationDate);
 
                 // start syncing the wallet from the creation date
                 this.walletSyncManager.SyncFromDate(request.CreationDate);

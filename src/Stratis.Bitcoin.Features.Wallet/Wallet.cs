@@ -187,11 +187,11 @@ namespace Stratis.Bitcoin.Features.Wallet
             return accountRoot.AddNewAccount(password, this.EncryptedSeed, this.ChainCode, this.Network, accountCreationTime);
         }
 
-        public HdAccount AddNewAccountXpub(CoinType coinType, ExtPubKey extPubKey, int accountNumber,
+        public HdAccount AddNewAccount(CoinType coinType, ExtPubKey extPubKey, int accountNumber,
             DateTimeOffset accountCreationTime)
         {
             AccountRoot accountRoot = this.AccountsRoot.Single(a => a.CoinType == coinType);
-            return accountRoot.AddNewAccountXpub(extPubKey, accountNumber, this.Network, accountCreationTime);
+            return accountRoot.AddNewAccount(extPubKey, accountNumber, this.Network, accountCreationTime);
         }
 
         /// <summary>
@@ -406,13 +406,18 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <param name="network">The network for which this account will be created.</param>
         /// <param name="accountCreationTime">Creation time of the account to be created.</param>
         /// <returns>A new HD account.</returns>
-        public HdAccount AddNewAccountXpub(ExtPubKey accountExtPubKey, int accountIndex, Network network, DateTimeOffset accountCreationTime)
+        public HdAccount AddNewAccount(ExtPubKey accountExtPubKey, int accountIndex, Network network, DateTimeOffset accountCreationTime)
         {
             List<HdAccount> accounts = this.Accounts.ToList();
 
             if (accounts.Any(x => x.HdPath.Split('/').Last() == accountIndex + "'"))
             {
-                throw new Exception("TODO: Don't merge");
+                throw new WalletException("There is already an account in this wallet with index: " + accountIndex);
+            }
+
+            if (accounts.Any(x => x.ExtendedPubKey == accountExtPubKey.ToString(network)))
+            {
+                throw new WalletException("There is already an account in this wallet with this xpubkey: " + accountExtPubKey.ToString(network));
             }
 
             string accountHdPath = HdOperations.GetAccountHdPath((int)this.CoinType, accountIndex);

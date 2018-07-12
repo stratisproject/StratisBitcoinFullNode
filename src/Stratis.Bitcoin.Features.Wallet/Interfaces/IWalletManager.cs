@@ -70,11 +70,11 @@ namespace Stratis.Bitcoin.Features.Wallet.Interfaces
         /// Recovers a wallet using extended public key and account number.
         /// </summary>
         /// <param name="name">The name of the wallet.</param>
-        /// <param name="requestExtPubKey">The extended public key associated with the account.</param>
+        /// <param name="extPubKey"></param>
         /// <param name="accountIndex">The account number.</param>
         /// <param name="creationTime">The date and time this wallet was created.</param>
         /// <returns></returns>
-        Wallet RecoverWalletViaExtPubKey(string name, string requestExtPubKey, int accountIndex, DateTime creationTime);
+        Wallet RecoverWallet(string name, ExtPubKey extPubKey, int accountIndex, DateTime creationTime);
 
         /// <summary>
         /// Deletes a wallet.

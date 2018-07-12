@@ -347,19 +347,17 @@ namespace Stratis.Bitcoin.Features.Wallet
             return wallet;
         }
 
-        public Wallet RecoverWalletViaExtPubKey(string name, string accountExtPubKey, int accountIndex, DateTime creationTime)
+        public Wallet RecoverWallet(string name, ExtPubKey extPubKey, int accountIndex, DateTime creationTime)
         {
             Guard.NotEmpty(name, nameof(name));
-            Guard.NotEmpty(accountExtPubKey, nameof(accountExtPubKey));
+            Guard.NotNull(extPubKey, nameof(extPubKey));
             this.logger.LogTrace("({0}:'{1}')", nameof(name), name);
-
-            ExtPubKey extPubKey = ExtPubKey.Parse(accountExtPubKey);
 
             // Create a wallet file.
             Wallet wallet = this.GenerateWalletFileXpub(name, creationTime);
 
             // Generate account
-            HdAccount account = wallet.AddNewAccountXpub(this.coinType, extPubKey, accountIndex, this.dateTimeProvider.GetTimeOffset());
+            HdAccount account = wallet.AddNewAccount(this.coinType, extPubKey, accountIndex, this.dateTimeProvider.GetTimeOffset());
             IEnumerable<HdAddress> newReceivingAddresses = account.CreateAddresses(this.network, this.walletSettings.UnusedAddressesBuffer);
             IEnumerable<HdAddress> newChangeAddresses = account.CreateAddresses(this.network, this.walletSettings.UnusedAddressesBuffer, true);
             this.UpdateKeysLookupLock(newReceivingAddresses.Concat(newChangeAddresses));
