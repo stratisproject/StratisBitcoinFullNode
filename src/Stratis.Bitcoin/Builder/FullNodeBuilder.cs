@@ -53,9 +53,6 @@ namespace Stratis.Bitcoin.Builder
         /// <inheritdoc />
         public Network Network { get; set; }
 
-        /// <inheritdoc />
-        public IServiceProvider ServiceProvider { get; private set; }
-
         /// <summary>Collection of DI services.</summary>
         public IServiceCollection Services { get; private set; }
 
@@ -180,24 +177,24 @@ namespace Stratis.Bitcoin.Builder
             // Create configuration file if required
             this.NodeSettings?.CreateDefaultConfigurationFile(this.Features.FeatureRegistrations);
 
-            this.ServiceProvider = this.Services.BuildServiceProvider();
-            this.ConfigureServices(this.ServiceProvider);
+            ServiceProvider fullNodeServiceProvider = this.Services.BuildServiceProvider();
+            this.ConfigureServices(fullNodeServiceProvider);
 
             // Obtain the nodeSettings from the service (it's set used FullNodeBuilder.UseNodeSettings)
-            var nodeSettings = this.ServiceProvider.GetService<NodeSettings>();
+            var nodeSettings = fullNodeServiceProvider.GetService<NodeSettings>();
             if (nodeSettings == null)
                 throw new NodeBuilderException("NodeSettings not specified");
 
-            var network = this.ServiceProvider.GetService<Network>();
+            var network = fullNodeServiceProvider.GetService<Network>();
             if (network == null)
                 throw new NodeBuilderException("Network not specified");
 
-            var fullNode = this.ServiceProvider.GetService<FullNode>();
+            var fullNode = fullNodeServiceProvider.GetService<FullNode>();
             if (fullNode == null)
                 throw new InvalidOperationException("Fullnode not registered with provider");
 
             fullNode.Initialize(new FullNodeServiceProvider(
-                this.ServiceProvider,
+                fullNodeServiceProvider,
                 this.Features.FeatureRegistrations.Select(s => s.FeatureType).ToList()));
 
             return fullNode;

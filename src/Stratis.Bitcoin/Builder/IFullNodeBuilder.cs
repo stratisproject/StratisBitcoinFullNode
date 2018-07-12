@@ -17,9 +17,6 @@ namespace Stratis.Bitcoin.Builder
         /// <summary>Specification of the network the node runs on - regtest/testnet/mainnet.</summary>
         Network Network { get; }
 
-        /// <summary>Provides an instance of a requested service.</summary>
-        IServiceProvider ServiceProvider { get; }
-
         /// <summary>Collection of DI services.</summary>
         IServiceCollection Services { get; }
 

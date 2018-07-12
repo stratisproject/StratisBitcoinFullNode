@@ -9,6 +9,9 @@ using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.Consensus.Rules;
 using Stratis.Bitcoin.Utilities;
+using Stratis.SmartContracts.Core;
+using Stratis.SmartContracts.Core.Receipts;
+using Stratis.SmartContracts.Core.State;
 
 namespace Stratis.Bitcoin.Features.SmartContracts
 {
@@ -17,9 +20,28 @@ namespace Stratis.Bitcoin.Features.SmartContracts
     /// </summary>
     public sealed class SmartContractConsensusRules : PowConsensusRules
     {
-        public SmartContractConsensusRules(Network network, ILoggerFactory loggerFactory, IDateTimeProvider dateTimeProvider, ConcurrentChain chain, NodeDeployments nodeDeployments, ConsensusSettings consensusSettings, ICheckpoints checkpoints, CoinView utxoSet, ILookaheadBlockPuller puller)
+        public readonly ISmartContractExecutorFactory ExecutorFactory;
+        public readonly ContractStateRepositoryRoot OriginalStateRoot;
+        public readonly ISmartContractReceiptStorage ReceiptStorage;
+
+        public SmartContractConsensusRules(
+            ConcurrentChain chain,
+            ICheckpoints checkpoints,
+            ConsensusSettings consensusSettings,
+            IDateTimeProvider dateTimeProvider,
+            ISmartContractExecutorFactory executorFactory,
+            ILoggerFactory loggerFactory,
+            Network network,
+            NodeDeployments nodeDeployments,
+            ContractStateRepositoryRoot originalStateRoot,
+            ILookaheadBlockPuller puller,
+            CoinView utxoSet,
+            ISmartContractReceiptStorage receiptStorage)
             : base(network, loggerFactory, dateTimeProvider, chain, nodeDeployments, consensusSettings, checkpoints, utxoSet, puller)
         {
+            this.ExecutorFactory = executorFactory;
+            this.OriginalStateRoot = originalStateRoot;
+            this.ReceiptStorage = receiptStorage;
         }
 
         /// <inheritdoc />

@@ -7,6 +7,9 @@ using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Consensus.Rules;
 using Stratis.Bitcoin.Utilities;
+using Stratis.SmartContracts.Core;
+using Stratis.SmartContracts.Core.Receipts;
+using Stratis.SmartContracts.Core.State;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus
@@ -16,11 +19,21 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus
         [Fact]
         public void ReflectionVirtualMachineFeature_OnInitialize_RulesAdded()
         {
-            var chain = new ConcurrentChain();
-            var loggerFactory = new ExtendedLoggerFactory();
             Network network = Network.StratisRegTest;
 
-            var consensusRules = new SmartContractConsensusRules(network, loggerFactory, DateTimeProvider.Default, chain, new Base.Deployments.NodeDeployments(network, chain), new Configuration.Settings.ConsensusSettings(), new Mock<ICheckpoints>().Object, new Mock<CoinView>().Object, new Mock<ILookaheadBlockPuller>().Object);
+            var chain = new ConcurrentChain(network);
+            var contractState = new ContractStateRepositoryRoot();
+            var executorFactory = new Mock<ISmartContractExecutorFactory>();
+            var loggerFactory = new ExtendedLoggerFactory();
+            var receiptStorage = new Mock<ISmartContractReceiptStorage>();
+
+            var consensusRules = new SmartContractConsensusRules(
+                chain, new Mock<ICheckpoints>().Object, new Configuration.Settings.ConsensusSettings(),
+                DateTimeProvider.Default, executorFactory.Object, loggerFactory, network,
+                new Base.Deployments.NodeDeployments(network, chain), contractState,
+                new Mock<ILookaheadBlockPuller>().Object,
+                new Mock<CoinView>().Object, receiptStorage.Object);
+
             var feature = new ReflectionVirtualMachineFeature(consensusRules, loggerFactory);
             feature.Initialize();
 

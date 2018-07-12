@@ -1,35 +1,14 @@
-﻿using System;
-using System.Collections.Generic;
-using Microsoft.Extensions.Logging;
-using Stratis.Bitcoin.Builder;
+﻿using System.Collections.Generic;
 using Stratis.Bitcoin.Consensus.Rules;
-using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
 using Stratis.Bitcoin.Features.SmartContracts.Consensus.Rules;
-using Stratis.SmartContracts.Core;
-using Stratis.SmartContracts.Core.Receipts;
-using Stratis.SmartContracts.Core.State;
 
 namespace Stratis.Bitcoin.Features.SmartContracts
 {
     public sealed class SmartContractRuleRegistration : IRuleRegistration
     {
-        private readonly Func<CoinView> coinView;
-        private readonly Func<ISmartContractExecutorFactory> executorFactory;
-        private readonly IFullNodeBuilder fullNodeBuilder;
-        private readonly Func<ILoggerFactory> loggerFactory;
-        private readonly Func<ContractStateRepositoryRoot> originalStateRoot;
-        private readonly Func<ISmartContractReceiptStorage> receiptStorage;
-
-        public SmartContractRuleRegistration(IFullNodeBuilder fullNodeBuilder)
+        public SmartContractRuleRegistration()
         {
-            this.fullNodeBuilder = fullNodeBuilder;
-
-            this.coinView = () => this.fullNodeBuilder.ServiceProvider.GetService(typeof(CoinView)) as CoinView;
-            this.executorFactory = () => this.fullNodeBuilder.ServiceProvider.GetService(typeof(ISmartContractExecutorFactory)) as ISmartContractExecutorFactory;
-            this.loggerFactory = () => this.fullNodeBuilder.ServiceProvider.GetService(typeof(ILoggerFactory)) as ILoggerFactory;
-            this.originalStateRoot = () => this.fullNodeBuilder.ServiceProvider.GetService(typeof(ContractStateRepositoryRoot)) as ContractStateRepositoryRoot;
-            this.receiptStorage = () => this.fullNodeBuilder.ServiceProvider.GetService(typeof(ISmartContractReceiptStorage)) as ISmartContractReceiptStorage;
         }
 
         public IEnumerable<ConsensusRule> GetRules()
@@ -65,7 +44,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                 // Smart contract specific rules
                 new TxOutSmartContractExecRule(),
                 new OpSpendRule(),
-                new SmartContractCoinviewRule(this.coinView(), this.executorFactory(), this.loggerFactory(), this.originalStateRoot(), this.receiptStorage()), // implements BIP68, MaxSigOps and BlockReward calculation
+                new SmartContractCoinviewRule(), // implements BIP68, MaxSigOps and BlockReward calculation
             };
 
             return rules;

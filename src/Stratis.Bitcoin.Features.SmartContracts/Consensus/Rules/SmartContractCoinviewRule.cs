@@ -8,11 +8,9 @@ using Stratis.Bitcoin.Base.Deployments;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Features.Consensus;
-using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
 using Stratis.Bitcoin.Utilities;
 using Stratis.SmartContracts.Core;
-using Stratis.SmartContracts.Core.Receipts;
 using Stratis.SmartContracts.Core.State;
 using Stratis.SmartContracts.Core.Util;
 
@@ -23,29 +21,14 @@ namespace Stratis.Bitcoin.Features.SmartContracts
     public sealed class SmartContractCoinviewRule : CoinViewRule
     {
         private List<Transaction> blockTxsProcessed;
-        private readonly CoinView coinview;
         private NBitcoin.Consensus consensusParams;
-        private readonly ISmartContractExecutorFactory executorFactory;
         private Transaction generatedTransaction;
-        private readonly ILogger logger;
-        private readonly ContractStateRepositoryRoot originalStateRoot;
-        private readonly ISmartContractReceiptStorage receiptStorage;
+        private ILogger logger;
         private uint refundCounter;
+        private SmartContractConsensusRules smartContractParent;
 
-        public SmartContractCoinviewRule(CoinView coinview,
-            ISmartContractExecutorFactory executorFactory,
-            ILoggerFactory loggerFactory,
-            ContractStateRepositoryRoot stateRoot,
-            ISmartContractReceiptStorage receiptStorage
-            )
+        public SmartContractCoinviewRule()
         {
-            this.coinview = coinview;
-            this.executorFactory = executorFactory;
-            this.generatedTransaction = null;
-            this.logger = loggerFactory.CreateLogger(this.GetType());
-            this.originalStateRoot = stateRoot;
-            this.receiptStorage = receiptStorage;
-            this.refundCounter = 1;
         }
 
         /// <inheritdoc />
@@ -56,6 +39,10 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             base.Initialize();
 
             this.consensusParams = this.Parent.Network.Consensus;
+            this.generatedTransaction = null;
+            this.logger = this.Parent.LoggerFactory.CreateLogger(this.GetType());
+            this.refundCounter = 1;
+            this.smartContractParent = (SmartContractConsensusRules)this.Parent;
 
             this.Logger.LogTrace("(-)");
         }
@@ -74,8 +61,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             this.Parent.PerformanceCounter.AddProcessedBlocks(1);
 
             // Start state from previous block's root
-            this.originalStateRoot.SyncToRoot(((SmartContractBlockHeader)context.ConsensusTip.Header).HashStateRoot.ToBytes());
-            IContractStateRepository trackedState = this.originalStateRoot.StartTracking();
+            this.smartContractParent.OriginalStateRoot.SyncToRoot(((SmartContractBlockHeader)context.ConsensusTip.Header).HashStateRoot.ToBytes());
+            IContractStateRepository trackedState = this.smartContractParent.OriginalStateRoot.StartTracking();
 
             this.refundCounter = 1;
             long sigOpsCost = 0;
@@ -170,10 +157,10 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             }
             else this.Logger.LogTrace("BIP68, SigOp cost, and block reward validation skipped for block at height {0}.", index.Height);
 
-            if (new uint256(this.originalStateRoot.Root) != ((SmartContractBlockHeader)block.Header).HashStateRoot)
+            if (new uint256(this.smartContractParent.OriginalStateRoot.Root) != ((SmartContractBlockHeader)block.Header).HashStateRoot)
                 SmartContractConsensusErrors.UnequalStateRoots.Throw();
 
-            this.originalStateRoot.Commit();
+            this.smartContractParent.OriginalStateRoot.Commit();
 
             this.Logger.LogTrace("(-)");
         }
@@ -272,7 +259,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         private void ExecuteContractTransaction(RuleContext context, Transaction transaction)
         {
             ISmartContractTransactionContext txContext = GetSmartContractTransactionContext(context, transaction);
-            ISmartContractExecutor executor = this.executorFactory.CreateExecutor(this.originalStateRoot, txContext);
+            ISmartContractExecutor executor = this.smartContractParent.ExecutorFactory.CreateExecutor(this.smartContractParent.OriginalStateRoot, txContext);
 
             ISmartContractExecutionResult result = executor.Execute(txContext);
 
@@ -291,7 +278,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         {
             ulong blockHeight = Convert.ToUInt64(context.ValidationContext.ChainedHeader.Height);
 
-            GetSenderUtil.GetSenderResult getSenderResult = GetSenderUtil.GetSender(transaction, this.coinview, this.blockTxsProcessed);
+            GetSenderUtil.GetSenderResult getSenderResult = GetSenderUtil.GetSender(transaction, this.smartContractParent.UtxoSet, this.blockTxsProcessed);
 
             if (!getSenderResult.Success)
                 throw new ConsensusErrorException(new ConsensusError("sc-consensusvalidator-executecontracttransaction-sender", getSenderResult.Error));
@@ -347,7 +334,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             try
             {
                 this.logger.LogTrace("Save Receipt : {0}:{1}", nameof(txContext.TransactionHash), txContext.TransactionHash);
-                this.receiptStorage.SaveReceipt(txContext, result);
+                this.smartContractParent.ReceiptStorage.SaveReceipt(txContext, result);
             }
             catch (Exception e)
             {
