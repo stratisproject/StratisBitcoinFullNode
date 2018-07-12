@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -41,14 +42,33 @@ namespace Stratis.Bitcoin.Base
         /// <summary>Timer that periodically tries to sync.</summary>
         private Timer refreshTimer;
 
+        /// <inheritdoc cref="ConcurrentChain"/>
         private readonly ConcurrentChain chain;
 
-        public ConsensusManagerBehavior(ConcurrentChain chain, IInitialBlockDownloadState initialBlockDownloadState, ConsensusManager consensusManager, ILoggerFactory loggerFactory)
+        /// <inheritdoc cref="IConnectionManager"/>
+        private readonly IConnectionManager connectionManager;
+
+        /// <inheritdoc cref="IPeerBanning"/>
+        private readonly IPeerBanning peerBanning;
+
+        /// <summary>List of block headers that were not yet consumed by <see cref="ConsensusManager"/>.</summary>
+        /// <remarks>Should be protected by <see cref="asyncLock"/>.</remarks>
+        private readonly List<BlockHeader> cachedHeaders;
+
+        /// <summary>Protects access to <see cref="cachedHeaders"/>.</summary>
+        private readonly AsyncLock asyncLock;
+
+        public ConsensusManagerBehavior(ConcurrentChain chain, IInitialBlockDownloadState initialBlockDownloadState, ConsensusManager consensusManager, IPeerBanning peerBanning, IConnectionManager connectionManager, ILoggerFactory loggerFactory)
         {
             this.loggerFactory = loggerFactory;
             this.initialBlockDownloadState = initialBlockDownloadState;
             this.consensusManager = consensusManager;
             this.chain = chain;
+            this.connectionManager = connectionManager;
+            this.peerBanning = peerBanning;
+
+            this.cachedHeaders = new List<BlockHeader>();
+            this.asyncLock = new AsyncLock();
 
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName, $"[{this.GetHashCode():x}] ");
         }
@@ -83,13 +103,35 @@ namespace Stratis.Bitcoin.Base
             this.logger.LogTrace("(-)");
         }
 
-        public ConnectNewHeadersResult ConsensusTipChanged(ChainedHeader chainedHeader)
+        /// <summary>Presents cached headers to <see cref="ConsensusManager"/> from the cache if any and removes consumed from the cache.</summary>
+        /// <param name="newTip">New consensus tip.</param>
+        public async Task<ConnectNewHeadersResult> ConsensusTipChangedAsync(ChainedHeader newTip)
         {
-            // TODO async lock has to be obtained before calling CM.HeadersPresented
-            // TODO Call CM.HeadersPresented with (false) and return ConnectNewHeadersResult
-            // TODO clear the cached when peer disconnects
+            this.logger.LogTrace("({0}:'{1}')", nameof(newTip), newTip);
 
-            throw new NotImplementedException();
+            using (await this.asyncLock.LockAsync().ConfigureAwait(false))
+            {
+                if (this.cachedHeaders.Count != 0)
+                {
+                    ConnectNewHeadersResult result = await this.PresentHeadersLockedAsync(this.cachedHeaders, false).ConfigureAwait(false);
+
+                    if (result.Consumed != null)
+                    {
+                        this.ExpectedPeerTip = result.Consumed;
+
+                        int consumedCount = this.cachedHeaders.IndexOf(result.Consumed.Header) + 1;
+
+                        this.cachedHeaders.RemoveRange(0, consumedCount);
+                        this.logger.LogTrace("{0} entries were consumed from the cache.", consumedCount);
+                    }
+
+                    this.logger.LogTrace("(-):'{0}'", result);
+                    return result;
+                }
+            }
+
+            this.logger.LogTrace("(-)[NO_CACHED_HEADERS]:null");
+            return null;
         }
 
         /// <summary>
@@ -110,7 +152,7 @@ namespace Stratis.Bitcoin.Base
                         break;
 
                     case HeadersPayload headers:
-                        this.ProcessHeaders(peer, headers);
+                        await this.ProcessHeadersAsync(peer, headers).ConfigureAwait(false);
                         break;
                 }
             }
@@ -198,35 +240,94 @@ namespace Stratis.Bitcoin.Base
         /// of our best chain's tip, we update our view of the best chain to that tip.
         /// </para>
         /// </remarks>
-        private void ProcessHeaders(INetworkPeer peer, HeadersPayload headersPayload)
+        private async Task ProcessHeadersAsync(INetworkPeer peer, HeadersPayload headersPayload)
         {
             this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(peer), peer.RemoteSocketEndpoint, nameof(headersPayload), headersPayload);
 
-            if (headersPayload.Headers.Count == 0)
+            List<BlockHeader> headers = headersPayload.Headers;
+
+            if (headers.Count == 0)
             {
                 this.logger.LogTrace("Headers payload with no headers was received. Assuming we're synced with the peer.");
                 this.logger.LogTrace("(-)[NO_HEADERS]");
                 return;
             }
 
-            for (int i = 1; i < headersPayload.Headers.Count; ++i)
+            // Check headers for consecutiveness.
+            for (int i = 1; i < headers.Count; ++i)
             {
-                if (headersPayload.Headers[i].HashPrevBlock != headersPayload.Headers[i - 1].GetHash())
+                if (headers[i].HashPrevBlock != headers[i - 1].GetHash())
                 {
-                    // TODO ban because headers are not consequtive
+                    this.peerBanning.BanAndDisconnectPeer(peer.PeerEndPoint, this.connectionManager.ConnectionSettings.BanTimeSeconds, "Peer presented nonconsecutive headers.");
+
+                    this.logger.LogTrace("(-)[PEER_BANNED]");
+                    return;
                 }
             }
 
-            // TODO if queue is not empty- add to queue instead of calling CM.
+            using (await this.asyncLock.LockAsync().ConfigureAwait(false))
+            {
+                // If queue is not empty- add to queue instead of calling CM.
+                if (this.cachedHeaders.Count != 0)
+                {
+                    this.cachedHeaders.AddRange(headers);
 
-            // TODO add trycatch and handle the exceptions appropriatelly
-            ConnectNewHeadersResult result = this.consensusManager.HeadersPresented(peer, headersPayload.Headers);
+                    this.logger.LogTrace("{0} headers were added to cache.", headers.Count);
+                }
+                else
+                {
+                    ConnectNewHeadersResult result = await this.PresentHeadersLockedAsync(headers).ConfigureAwait(false);
 
-            // TODO Based on consumed add to queue or not
+                    if (result.Consumed == null)
+                    {
+                        this.cachedHeaders.AddRange(headers);
+                        this.logger.LogTrace("None of {0} headers were consumed, all were added to cache.", headers.Count);
+                    }
+                    else
+                    {
+                        this.ExpectedPeerTip = result.Consumed;
 
-            // TODO set expected tip to be last consumed
+                        if (result.Consumed.Header != headers.Last())
+                        {
+                            // Some headers were not consumed, add to cache.
+                            int consumedCount = headers.IndexOf(result.Consumed.Header) + 1;
+                            this.cachedHeaders.AddRange(headers.Skip(consumedCount));
+
+                            this.logger.LogTrace("{0} out of {1} items were not consumed and added to cache.", headers.Count - consumedCount, headers.Count);
+                        }
+                    }
+                }
+            }
 
             this.logger.LogTrace("(-)");
+        }
+
+        /// <summary>Presents the headers to <see cref="ConsensusManager"/> and handles exceptions if any.</summary>
+        /// <remarks>Have to be locked by <see cref="asyncLock"/>.</remarks>
+        private async Task<ConnectNewHeadersResult> PresentHeadersLockedAsync(List<BlockHeader> headers, bool triggerDownload = true)
+        {
+            this.logger.LogTrace("({0}.{1}:{2},{3}:{4})", nameof(headers), nameof(headers.Count), headers.Count, nameof(triggerDownload), triggerDownload);
+
+            ConnectNewHeadersResult result = null;
+
+            try
+            {
+                result = this.consensusManager.HeadersPresented(this.AttachedPeer, headers, triggerDownload);
+            }
+            catch (ConnectHeaderException)
+            {
+                this.cachedHeaders.Clear();
+
+                // Resync in case can't connect.
+                await this.TrySyncAsync().ConfigureAwait(false);
+            }
+            catch (CheckpointMismatchException)
+            {
+                this.peerBanning.BanAndDisconnectPeer(this.AttachedPeer.PeerEndPoint, this.connectionManager.ConnectionSettings.BanTimeSeconds, "Peer presented header that violates a checkpoint.");
+            }
+
+            this.logger.LogTrace("(-):'{0}'", result);
+            return result;
         }
 
         private async Task OnStateChangedAsync(INetworkPeer peer, NetworkPeerState oldState)
@@ -244,6 +345,7 @@ namespace Stratis.Bitcoin.Base
             this.logger.LogTrace("(-)");
         }
 
+        /// <summary>Resets the expected peer tip and triggers synchronization.</summary>
         public async Task ResetExpectedPeerTipAndSyncAsync()
         {
             this.logger.LogTrace("()");
@@ -261,9 +363,7 @@ namespace Stratis.Bitcoin.Base
             this.logger.LogTrace("(-)");
         }
 
-        /// <summary>
-        /// Tries to sync the chain with the peer by sending it "headers" message.
-        /// </summary>
+        /// <summary>Tries to sync the chain with the peer by sending it <see cref="GetHeadersPayload"/>.</summary>
         private async Task TrySyncAsync()
         {
             this.logger.LogTrace("()");
@@ -303,13 +403,14 @@ namespace Stratis.Bitcoin.Base
         public override void Dispose()
         {
             this.refreshTimer?.Dispose();
+
             base.Dispose();
         }
 
         /// <inheritdoc />
         public override object Clone()
         {
-            return new ConsensusManagerBehavior(this.chain, this.initialBlockDownloadState, this.consensusManager, this.loggerFactory);
+            return new ConsensusManagerBehavior(this.chain, this.initialBlockDownloadState, this.consensusManager, this.peerBanning, this.connectionManager, this.loggerFactory);
         }
     }
 }
