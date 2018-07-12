@@ -1,4 +1,9 @@
-﻿using Xunit;
+﻿using System;
+using System.Linq;
+using DBreeze.Utils;
+using NBitcoin;
+using NBitcoin.DataEncoders;
+using Xunit;
 
 namespace Stratis.Bitcoin.IntegrationTests.API
 {
@@ -45,6 +50,15 @@ namespace Stratis.Bitcoin.IntegrationTests.API
 
             When(calling_recover_via_extpubkey_for_account_1);
             Then(a_wallet_is_created_without_private_key_for_account_1);
+        }
+
+        [Fact]
+        public void AddNewAccount_for_xpub_only_wallet_informs_user_to_create_new_wallet_()
+        {
+            Given(a_proof_of_stake_node_with_api_enabled);
+            Given(an_extpubkey_only_wallet_with_account_0);
+            When(attempting_to_add_an_account);
+            Then(it_is_rejected_and_user_is_told_to_restore_instead);
         }
     }
 }

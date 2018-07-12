@@ -459,6 +459,20 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             string walletName = "myWallet";
             string extPubKey = "xpub661MyMwAqRbcEgnsMFfhjdrwR52TgicebTrbnttywb9zn3orkrzn6MHJrgBmKrd7MNtS6LAim44a6V2gizt3jYVPHGYq1MzAN849WEyoedJ";
 
+            this.RecoverWithExtPubAndCheckSuccessfulResponse(walletName, extPubKey);
+        }
+
+        [Fact]
+        public void RecoverWalletViaExtPubKeySupportsStratisLegacyExtpubKey()
+        {
+            string walletName = "myWallet";
+            string extPubKey = "xq5hcJV8uJDLaNytrg6FphHY1vdqxP1rCPhAmp4xZwpxzYyYEscYEujAmNR5NrPfy9vzQ6BajEqtFezcyRe4zcGHH3dR6BKaKov43JHd8UYhBVy";
+
+            this.RecoverWithExtPubAndCheckSuccessfulResponse(walletName, extPubKey);
+        }
+
+        private void RecoverWithExtPubAndCheckSuccessfulResponse(string walletName, string extPubKey)
+        {
             var wallet = new Wallet
             {
                 Name = walletName,
@@ -468,12 +482,13 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
             var walletManager = new Mock<IWalletManager>();
 
-            ExtPubKey pubKey = ExtPubKey.Parse(extPubKey, wallet.Network);
-
-            walletManager.Setup(w => w.RecoverWallet(walletName, pubKey, 1, It.IsAny<DateTime>()))
+            walletManager.Setup(w => w.RecoverWallet(walletName, It.IsAny<ExtPubKey>(), 1, It.IsAny<DateTime>()))
                 .Returns(wallet);
 
-            var controller = new WalletController(this.LoggerFactory.Object, walletManager.Object, new Mock<IWalletTransactionHandler>().Object, new Mock<IWalletSyncManager>().Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, new Mock<IBroadcasterManager>().Object, DateTimeProvider.Default);
+            var controller = new WalletController(this.LoggerFactory.Object, walletManager.Object,
+                new Mock<IWalletTransactionHandler>().Object, new Mock<IWalletSyncManager>().Object,
+                It.IsAny<ConnectionManager>(), Network.StratisMain, new Mock<ConcurrentChain>().Object,
+                new Mock<IBroadcasterManager>().Object, DateTimeProvider.Default);
 
             IActionResult result = controller.RecoverViaExtPubKey(new WalletExtPubRecoveryRequest
             {
@@ -481,7 +496,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 FolderPath = "",
                 ExtPubKey = extPubKey,
                 AccountIndex = 1,
-                Network = "MainNet",
+                Network = wallet.Network.Name
             });
 
             walletManager.VerifyAll();

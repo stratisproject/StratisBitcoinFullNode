@@ -122,19 +122,37 @@ namespace Stratis.Bitcoin.IntegrationTests.API
 
         private void calling_recover_via_extpubkey_for_account_0()
         {
-            this.RecoverViaExtPubKey(0, WalletOne);
+            this.RecoverViaExtPubKey(WalletOne, "xpub6DGguHV1FQFPvZ5Xu7VfeENyiySv4R2bdd6VtvwxWGVTVNnHUmphMNgTRkLe8j2JdAv332ogZcyhqSuz1yUPnN4trJ49cFQXmEhwNQHUqk1", 0);
+        }
+
+        private void attempting_to_add_an_account()
+        {
+            var request = new GetUnusedAccountModel()
+            {
+                WalletName = WalletOne,
+                Password = WalletPassword
+            };
+
+            this.postResponse = this.httpClient.PostAsJsonAsync($"{this.apiUri}api/Wallet/account", request)
+                .GetAwaiter().GetResult();
+        }
+
+        private void an_extpubkey_only_wallet_with_account_0()
+        {
+            this.RecoverViaExtPubKey(WalletOne, "xpub6DGguHV1FQFPvZ5Xu7VfeENyiySv4R2bdd6VtvwxWGVTVNnHUmphMNgTRkLe8j2JdAv332ogZcyhqSuz1yUPnN4trJ49cFQXmEhwNQHUqk1", 0);
         }
 
         private void calling_recover_via_extpubkey_for_account_1()
         {
-            this.RecoverViaExtPubKey(1, WalletTwo);
+            //NOTE: use legacy stratis xpub key format for this one to ensure that works too.
+            this.RecoverViaExtPubKey(WalletTwo, "xq5hcJV8uJDLaNytrg6FphHY1vdqxP1rCPhAmp4xZwpxzYyYEscYEujAmNR5NrPfy9vzQ6BajEqtFezcyRe4zcGHH3dR6BKaKov43JHd8UYhBVy", 1);
         }
 
-        private void RecoverViaExtPubKey(int accountIndex, string walletName)
+        private void RecoverViaExtPubKey(string walletName, string extPubKey, int accountIndex)
         {
             var request = new WalletExtPubRecoveryRequest
             {
-                ExtPubKey = "xpub661MyMwAqRbcEgnsMFfhjdrwR52TgicebTrbnttywb9zn3orkrzn6MHJrgBmKrd7MNtS6LAim44a6V2gizt3jYVPHGYq1MzAN849WEyoedJ",
+                ExtPubKey = extPubKey,
                 AccountIndex = accountIndex,
                 Name = walletName
             };
@@ -175,6 +193,11 @@ namespace Stratis.Bitcoin.IntegrationTests.API
             stakingInfo.Should().NotBeNull();
             stakingInfo.Enabled.Should().BeTrue();
             stakingInfo.Staking.Should().BeFalse();
+        }
+
+        private void it_is_rejected_and_user_is_told_to_restore_instead()
+        {
+            this.postResponse.StatusCode.Should().Be(StatusCodes.Status403Forbidden);
         }
 
         private void the_blockhash_is_returned()

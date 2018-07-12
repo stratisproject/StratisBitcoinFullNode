@@ -392,6 +392,11 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             Wallet wallet = this.GetWalletByName(walletName);
 
+            if (wallet.IsExtPubKeyWallet)
+            {
+                throw new CannotAddAccountToXpubKeyWalletException("Use recover-via-extpubkey instead.");
+            }
+
             HdAccount res = this.GetUnusedAccount(wallet, password);
             this.logger.LogTrace("(-)");
             return res;
