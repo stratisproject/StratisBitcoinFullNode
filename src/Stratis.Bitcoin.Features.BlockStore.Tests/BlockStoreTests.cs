@@ -113,7 +113,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             int iterations = 0;
 
             var queue = this.blockStoreQueue.GetMemberValue("blocksQueue") as AsyncQueue<ChainedHeaderBlock>;
-            
+
             while (true)
             {
                 int itemsCount = ((Queue<ChainedHeaderBlock>)queue.GetMemberValue("items")).Count;

@@ -69,7 +69,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
             for (int i = 0; i < blockAmount; i++)
             {
                 Block block = chain.Network.Consensus.ConsensusFactory.CreateBlock();
-                Transaction transaction = chain.Network.Consensus.ConsensusFactory.CreateTransaction();
+                Transaction transaction = chain.Network.CreateTransaction();
                 block.AddTransaction(transaction);
                 block.UpdateMerkleRoot();
                 block.Header.BlockTime = new DateTimeOffset(new DateTime(2017, 1, 1, 0, 0, 0, DateTimeKind.Utc).AddDays(i));
@@ -154,7 +154,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
             for (int i = 0; i < blockAmount; i++)
             {
                 Block block = network.Consensus.ConsensusFactory.CreateBlock();
-                block.AddTransaction(network.Consensus.ConsensusFactory.CreateTransaction());
+                block.AddTransaction(network.CreateTransaction());
                 block.UpdateMerkleRoot();
                 block.Header.BlockTime = new DateTimeOffset(new DateTime(2017, 1, 1, 0, 0, 0, DateTimeKind.Utc).AddDays(i));
                 block.Header.HashPrevBlock = prevBlockHash;
@@ -184,7 +184,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
 
     public class TestConsensusRulesUnitTestBase : ConsensusRuleUnitTestBase<TestConsensusRules>
     {
-        public TestConsensusRulesUnitTestBase() : base( Network.TestNet)
+        public TestConsensusRulesUnitTestBase() : base(Network.TestNet)
         {
             this.network.Consensus.Options = new PowConsensusOptions();
             this.consensusRules = InitializeConsensusRules();
