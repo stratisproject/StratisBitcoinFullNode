@@ -27,7 +27,7 @@ namespace Stratis.Bitcoin.Features.Notifications.Tests
         [Trait("Module", "NotificationsController")]
         public void Given_SyncActionIsCalled_When_QueryParameterIsNullOrEmpty_Then_ReturnBadRequest(string from)
         {
-            var chain = new Mock<ConcurrentChain>();
+            var chain = new Mock<ConcurrentChain>(this.network);
             var blockNotification = new Mock<BlockNotification>(this.LoggerFactory.Object, chain.Object, new Mock<ILookaheadBlockPuller>().Object, new Signals.Signals(), new AsyncLoopFactory(new LoggerFactory()), new NodeLifetime());
 
             var notificationController = new NotificationsController(blockNotification.Object, chain.Object);

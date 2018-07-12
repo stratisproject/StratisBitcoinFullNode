@@ -1,6 +1,6 @@
 ﻿using System;
-using NBitcoin.RPC;
 using Newtonsoft.Json.Linq;
+using Stratis.Bitcoin.Features.RPC;
 using Xunit;
 
 namespace NBitcoin.Tests

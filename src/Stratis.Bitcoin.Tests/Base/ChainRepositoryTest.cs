@@ -43,7 +43,7 @@ namespace Stratis.Bitcoin.Tests.Base
             {
                 await repo.SaveFinalizedBlockHeightAsync(777);
                 await repo.SaveFinalizedBlockHeightAsync(555);
-                
+
                 Assert.Equal(777, repo.GetFinalizedBlockHeight());
             }
 
