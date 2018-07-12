@@ -2045,11 +2045,11 @@ namespace Stratis.Bitcoin.Tests.Consensus
             IEnumerable<BlockHeader> listOfAllUniqueBlockHeaders = ctx.SetupPeersForTest(initialChainSize, ctx, cht, initialChainTip, out ChainedHeader chainATip, out ChainedHeader chainDTip);
             CheckChainedHeaderTreeConsistency(cht, listOfAllUniqueBlockHeaders);
 
-            //Additional SetUp for current test
+            // Additional SetUp for current test.
             ChainedHeader chainKTip = chainDTip; //peer K has exactly the same chain as peer D.
             List<BlockHeader> peerKBlockHeaders = ctx.ChainedHeaderToList(chainKTip, chainKTip.Height);
 
-            //Claiming Peer K chain
+            // Claiming Peer K chain.
             ConnectNewHeadersResult connectionPeerKResult = cht.ConnectNewHeaders(5, peerKBlockHeaders);
             ctx.ClaimPeerChain(cht, chainKTip, connectionPeerKResult);
 
@@ -2107,7 +2107,8 @@ namespace Stratis.Bitcoin.Tests.Consensus
 
                 foreach (int peerId in tips.Value)
                 {
-                    if (peerId != -1) //ignore local
+                    // Ignore local.
+                    if (peerId != -1) 
                     {
                         peerEntryDictionary[peerId] = peerEntryDictionary[peerId]++;
 
@@ -2122,8 +2123,8 @@ namespace Stratis.Bitcoin.Tests.Consensus
             Assert.True(reflecttipHash);
             Assert.True(hasLocalPeer);
 
-            if (peerEntryDictionary.Count(x => x.Value > 1) > 0) eachPeerOneEntry = false; //Exactly 1 entry
-            if (peerEntryDictionary.Count(x => x.Value > 1) > 0) eachPeerOneEntry = false; //Exactly 1 entry
+            if (peerEntryDictionary.Count(x => x.Value > 1) > 0) eachPeerOneEntry = false; 
+            if (peerEntryDictionary.Count(x => x.Value > 1) > 0) eachPeerOneEntry = false; 
             Assert.True(eachPeerOneEntry);
 
             Dictionary<uint256, ChainedHeader> chainHeaders = cht.GetChainedHeadersByHash();
