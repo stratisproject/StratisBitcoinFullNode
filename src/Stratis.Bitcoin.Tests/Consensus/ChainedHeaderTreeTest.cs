@@ -253,17 +253,16 @@ namespace Stratis.Bitcoin.Tests.Consensus
                 return listOfAllUniqueBlockHeaders;
             }
 
-            internal void ClaimPeerChain(ChainedHeaderTree cht, ChainedHeader chainTip, ConnectNewHeadersResult connectionPeerResult)
+            internal void ClaimPeerChain(ChainedHeaderTree cht, ChainedHeader chainTip, ChainedHeader consumedHeader, int extensionSize)
             {
-                ChainedHeader chainedHeaderFrom = connectionPeerResult.DownloadFrom;
-                ChainedHeader currentConsumedCh = chainedHeaderFrom;
-                while (currentConsumedCh != null)
+                ChainedHeader[] consumedHeaders = consumedHeader.ToArray(extensionSize);
+
+                for (int i = 0; i < extensionSize; i++)
                 {
+                    ChainedHeader currentConsumedCh = consumedHeaders[i];
                     cht.BlockDataDownloaded(currentConsumedCh, chainTip.GetAncestor(currentConsumedCh.Height).Block);
                     cht.PartialValidationSucceeded(currentConsumedCh, out bool fullValidationRequired);
                     cht.ConsensusTipChanged(currentConsumedCh);
-
-                    currentConsumedCh = currentConsumedCh.Next.Any() ? currentConsumedCh.Next[0] : null;
                 }
             }
         }
@@ -2074,12 +2073,12 @@ namespace Stratis.Bitcoin.Tests.Consensus
             CheckChainedHeaderTreeConsistency(cht, listOfAllUniqueBlockHeaders);
 
             // Additional SetUp for current test.
-            ChainedHeader chainKTip = chainDTip; //peer K has exactly the same chain as peer D.
+            ChainedHeader chainKTip = ctx.ExtendAChain(0,chainDTip); //peer K has exactly the same chain as peer D.
             List<BlockHeader> peerKBlockHeaders = ctx.ChainedHeaderToList(chainKTip, chainKTip.Height);
 
             // Claiming Peer K chain.
             ConnectNewHeadersResult connectionPeerKResult = cht.ConnectNewHeaders(5, peerKBlockHeaders);
-            ctx.ClaimPeerChain(cht, chainKTip, connectionPeerKResult);
+            ctx.ClaimPeerChain(cht, chainKTip, connectionPeerKResult.Consumed, 5);
 
             Dictionary<uint256, ChainedHeader> chainedHeadersWithPeerK = cht.GetChainedHeadersByHash();
 
