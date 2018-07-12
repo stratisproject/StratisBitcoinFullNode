@@ -42,7 +42,11 @@ namespace Stratis.SmartContracts.Executor.Reflection
             }
 
             // TODO we should not be generating addresses in here!
-            uint160 contractAddress = carrier.CallData.ContractAddress ?? carrier.GetNewContractAddress();
+            uint160 contractAddress = null;
+            if (carrier.CallData.ContractAddress == uint160.Zero)
+                contractAddress = carrier.GetNewContractAddress();
+            else
+                contractAddress = carrier.CallData.ContractAddress;
 
             // If contract had no balance, received funds, but made no transfers, assign the current UTXO.
             if (stateSnapshot.GetUnspent(contractAddress) == null && carrier.Value > 0 && !internalTransfers.Any())
@@ -66,7 +70,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
         /// Should contract execution fail, we need to send the money, that was
         /// sent to contract, back to the contract's sender.
         /// </summary>
-        private Transaction CreateRefundTransaction( ISmartContractTransactionContext transactionContext)
+        private Transaction CreateRefundTransaction(ISmartContractTransactionContext transactionContext)
         {
             Transaction tx = this.network.Consensus.ConsensusFactory.CreateTransaction();
             // Input from contract call
