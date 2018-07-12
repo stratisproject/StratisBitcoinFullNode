@@ -55,12 +55,11 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                         InternalAddresses = new List<HdAddress>()
                     });
 
-                var chain = new Mock<ConcurrentChain>();
                 BlockHeader blockHeader = this.network.Consensus.ConsensusFactory.CreateBlockHeader();
-                chain.Setup(c => c.Tip).Returns(new ChainedHeader(blockHeader, blockHeader.GetHash(), 1));
+                var chain = new ConcurrentChain(this.network, new ChainedHeader(blockHeader, blockHeader.GetHash(), 1));
 
                 string dataDir = "TestData/WalletTransactionHandlerTest/BuildTransactionNoSpendableTransactionsThrowsWalletException";
-                var walletManager = new WalletManager(this.LoggerFactory.Object, this.network, chain.Object, NodeSettings.Default(), new Mock<WalletSettings>().Object,
+                var walletManager = new WalletManager(this.LoggerFactory.Object, this.network, chain, NodeSettings.Default(), new Mock<WalletSettings>().Object,
                     new DataFolder(new NodeSettings(args: new string[] { $"-datadir={dataDir}" }).DataDir), new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime(), DateTimeProvider.Default);
                 var walletTransactionHandler = new WalletTransactionHandler(this.LoggerFactory.Object, walletManager, new Mock<IWalletFeePolicy>().Object, this.network);
 
@@ -149,7 +148,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             TransactionBuildContext context = CreateContext(walletReference, "password", destinationKeys.PubKey.ScriptPubKey, new Money(7500), FeeType.Low, 0);
             Transaction transactionResult = walletTransactionHandler.BuildTransaction(context);
 
-            Transaction result = Transaction.Load(transactionResult.ToHex(), this.network);
+            Transaction result = this.network.CreateTransaction(transactionResult.ToHex());
             (PubKey PubKey, BitcoinPubKeyAddress Address) expectedChangeAddressKeys = WalletTestsHelpers.GenerateAddressKeys(wallet, accountKeys.ExtPubKey, "1/0");
 
             Assert.Single(result.Inputs);
@@ -368,7 +367,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             fundTransaction.Inputs.RemoveAt(1);
             Assert.Single(fundTransaction.Inputs); // 4 inputs
 
-            Transaction fundTransactionClone = fundTransaction.Clone();
+            Transaction fundTransactionClone = this.network.CreateTransaction(fundTransaction.ToBytes());
             var fundContext = new TransactionBuildContext(walletReference, new List<Recipient>(), "password")
             {
                 MinConfirmations = 0,
@@ -395,7 +394,9 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         {
             DataFolder dataFolder = CreateDataFolder(this);
 
-            var walletManager = new WalletManager(this.LoggerFactory.Object, this.network, new Mock<ConcurrentChain>().Object, NodeSettings.Default(), new Mock<WalletSettings>().Object,
+            var chain = new ConcurrentChain(this.network);
+
+            var walletManager = new WalletManager(this.LoggerFactory.Object, this.network, chain, NodeSettings.Default(), new Mock<WalletSettings>().Object,
                 dataFolder, new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime(), DateTimeProvider.Default);
 
             var walletTransactionHandler = new WalletTransactionHandler(this.LoggerFactory.Object, walletManager, It.IsAny<WalletFeePolicy>(), this.network);

@@ -2,7 +2,6 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using NBitcoin;
-using NBitcoin.JsonConverters;
 using Newtonsoft.Json;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Utilities.JsonConverters;
@@ -163,12 +162,6 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet
         public string Hex { get; set; }
 
         /// <summary>
-        /// A transaction affecting a script being watched.
-        /// </summary>
-        [JsonIgnore]
-        public Transaction Transaction => Transaction.Parse(this.Hex);
-
-        /// <summary>
         /// The hash of the block including this transaction.
         /// </summary>
         [JsonProperty(PropertyName = "blockHash", NullValueHandling = NullValueHandling.Ignore)]
@@ -237,9 +230,9 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet
             var transactions = serializer.Deserialize<IEnumerable<TransactionData>>(reader);
 
             var transactionsDictionary = new ConcurrentDictionary<string, TransactionData>();
-            foreach (TransactionData transaction in transactions)
+            foreach (TransactionData transactionData in transactions)
             {
-                transactionsDictionary.TryAdd(transaction.Transaction.GetHash().ToString(), transaction);
+                transactionsDictionary.TryAdd(transactionData.Id.ToString(), transactionData);
             }
 
             return transactionsDictionary;

@@ -150,7 +150,7 @@ namespace NBitcoin.Tests
             throw new NotSupportedException(lang);
         }
     }
-#if !PORTABLE
+
     public class bip39_Codegen
     {
         //[Fact]
@@ -266,5 +266,4 @@ namespace NBitcoin.Tests
             return data.Replace("\n", "\\n");
         }
     }
-#endif
 }

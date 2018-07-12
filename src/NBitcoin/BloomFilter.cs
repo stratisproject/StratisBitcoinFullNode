@@ -174,7 +174,7 @@ namespace NBitcoin
                             Insert(new OutPoint(hash, i));
                         else if((this.nFlags & (byte)BloomFlags.UPDATE_MASK) == (byte)BloomFlags.UPDATE_P2PUBKEY_ONLY)
                         {
-                            ScriptTemplate template = StandardScripts.GetTemplateFromScriptPubKey(Network.Main, txout.ScriptPubKey); // this is only valid for Bitcoin.
+                            ScriptTemplate template = StandardScripts.GetTemplateFromScriptPubKey(txout.ScriptPubKey); // this is only valid for Bitcoin.
                             if(template != null &&
                                     (template.Type == TxOutType.TX_PUBKEY || template.Type == TxOutType.TX_MULTISIG))
                                 Insert(new OutPoint(hash, i));

@@ -43,7 +43,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
             this.nodeGroupBuilder.Dispose();
         }
 
-        private void a_sending_and_receiving_stratis_bitcoin_node_and_wallet()
+        protected void a_sending_and_receiving_stratis_bitcoin_node_and_wallet()
         {
             IDictionary<string, CoreNode> nodeGroup = this.nodeGroupBuilder
                 .StratisPowNode("sending").Start().NotInIBD()
@@ -55,6 +55,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
                 .AndNoMoreConnections()
                 .Build();
 
+
             this.sendingStratisBitcoinNode = nodeGroup["sending"];
             this.receivingStratisBitcoinNode = nodeGroup["receiving"];
 
@@ -62,7 +63,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
                 .Network.Consensus.CoinbaseMaturity;
         }
 
-        private void a_block_is_mined_creating_spendable_coins()
+        protected void a_block_is_mined_creating_spendable_coins()
         {
             this.sharedSteps.MineBlocks(1, this.sendingStratisBitcoinNode, AccountName, SendingWalletName, WalletPassword);
         }
@@ -72,7 +73,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
             this.sharedSteps.MineBlocks(this.coinbaseMaturity - 1, this.sendingStratisBitcoinNode, AccountName, SendingWalletName, WalletPassword);
         }
 
-        private void more_blocks_mined_to_just_AFTER_maturity_of_original_block()
+        protected void more_blocks_mined_to_just_AFTER_maturity_of_original_block()
         {
             this.sharedSteps.MineBlocks(this.coinbaseMaturity, this.sendingStratisBitcoinNode, AccountName, SendingWalletName, WalletPassword);
 

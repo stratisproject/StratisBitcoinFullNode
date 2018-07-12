@@ -2,9 +2,7 @@
 using System.IO;
 using System.Linq;
 using NBitcoin.BouncyCastle.Crypto.Digests;
-#if !WINDOWS_UWP && !USEBC
 using System.Security.Cryptography;
-#endif
 
 namespace NBitcoin.Crypto
 {
@@ -23,7 +21,7 @@ namespace NBitcoin.Crypto
 
         public static uint256 Hash256(byte[] data, int offset, int count)
         {
-#if USEBC || WINDOWS_UWP || NETCORE
+#if NETCORE
             var sha256 = new Sha256Digest();
             sha256.BlockUpdate(data, offset, count);
             var rv = new byte[32];
@@ -71,7 +69,7 @@ namespace NBitcoin.Crypto
 
         public static byte[] RIPEMD160(byte[] data, int offset, int count)
         {
-#if USEBC || WINDOWS_UWP || NETCORE
+#if NETCORE
             var ripemd = new RipeMD160Digest();
             ripemd.BlockUpdate(data, offset, count);
             var rv = new byte[20];
@@ -269,7 +267,7 @@ namespace NBitcoin.Crypto
 
         public static byte[] SHA256(byte[] data, int offset, int count)
         {
-#if USEBC || WINDOWS_UWP || NETCORE
+#if NETCORE
             var sha256 = new Sha256Digest();
             sha256.BlockUpdate(data, offset, count);
             var rv = new byte[32];
@@ -377,22 +375,11 @@ namespace NBitcoin.Crypto
             }
         }
 
-#if USEBC || WINDOWS_UWP
-        public static byte[] HMACSHA512(byte[] key, byte[] data)
-        {
-            var mac = new NBitcoin.BouncyCastle.Crypto.Macs.HMac(new Sha512Digest());
-            mac.Init(new KeyParameter(key));
-            mac.Update(data);
-            byte[] result = new byte[mac.GetMacSize()];
-            mac.DoFinal(result, 0);
-            return result;
-        }
-#else
         public static byte[] HMACSHA512(byte[] key, byte[] data)
         {
             return new HMACSHA512(key).ComputeHash(data);
         }
-#endif
+
         public static byte[] BIP32Hash(byte[] chainCode, uint nChild, byte header, byte[] data)
         {
             var num = new byte[4];

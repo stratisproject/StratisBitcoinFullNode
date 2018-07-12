@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
-using NBitcoin.Protocol;
 
 namespace NBitcoin
 {
@@ -14,12 +12,7 @@ namespace NBitcoin
             {
 
             }
-            public Raw(byte[] data)
-            {
-                var str = new VarString();
-                str.FromBytes(data);
-                this._Data = str.GetString(true);
-            }
+
             private byte[] _Data = new byte[0];
             public byte[] Data
             {
@@ -28,6 +21,7 @@ namespace NBitcoin
                     return this._Data;
                 }
             }
+
             #region IBitcoinSerializable Members
 
             public void ReadWrite(BitcoinStream stream)
@@ -38,18 +32,12 @@ namespace NBitcoin
             #endregion
         }
 
-        public CachedNoSqlRepository(NoSqlRepository inner)
+        public CachedNoSqlRepository(NoSqlRepository inner) : base(inner.Network)
         {
-            this._InnerRepository = inner;
+            this.InnerRepository = inner;
         }
-        private readonly NoSqlRepository _InnerRepository;
-        public NoSqlRepository InnerRepository
-        {
-            get
-            {
-                return this._InnerRepository;
-            }
-        }
+
+        public NoSqlRepository InnerRepository { get; }
 
         private Dictionary<string, byte[]> _Table = new Dictionary<string, byte[]>();
         private HashSet<string> _Removed = new HashSet<string>();
@@ -59,16 +47,16 @@ namespace NBitcoin
         public override async Task PutBatch(IEnumerable<Tuple<string, IBitcoinSerializable>> values)
         {
             await base.PutBatch(values).ConfigureAwait(false);
-            await this._InnerRepository.PutBatch(values).ConfigureAwait(false);
+            await this.InnerRepository.PutBatch(values).ConfigureAwait(false);
         }
 
         protected override Task PutBytesBatch(IEnumerable<Tuple<string, byte[]>> enumerable)
         {
-            using(this.@lock.LockWrite())
+            using (this.@lock.LockWrite())
             {
-                foreach(Tuple<string, byte[]> data in enumerable)
+                foreach (Tuple<string, byte[]> data in enumerable)
                 {
-                    if(data.Item2 == null)
+                    if (data.Item2 == null)
                     {
                         this._Table.Remove(data.Item1);
                         this._Removed.Add(data.Item1);
@@ -89,37 +77,23 @@ namespace NBitcoin
         {
             byte[] result = null;
             bool found;
-            using(this.@lock.LockRead())
+            using (this.@lock.LockRead())
             {
                 found = this._Table.TryGetValue(key, out result);
             }
-            if(!found)
+            if (!found)
             {
                 Raw raw = await this.InnerRepository.GetAsync<Raw>(key).ConfigureAwait(false);
-                if(raw != null)
+                if (raw != null)
                 {
                     result = raw.Data;
-                    using(this.@lock.LockWrite())
+                    using (this.@lock.LockWrite())
                     {
                         this._Table.AddOrReplace(key, raw.Data);
                     }
                 }
             }
             return result;
-        }
-
-        public void Flush()
-        {
-            using(this.@lock.LockWrite())
-            {
-                this.InnerRepository
-                    .PutBatch(this._Removed.Select(k => Tuple.Create<string, IBitcoinSerializable>(k, null))
-                            .Concat(this._Added.Select(k => Tuple.Create<string, IBitcoinSerializable>(k, new Raw(this._Table[k])))))
-                    .GetAwaiter().GetResult();
-                this._Removed.Clear();
-                this._Added.Clear();
-                this._Table.Clear();
-            }
         }
     }
 }

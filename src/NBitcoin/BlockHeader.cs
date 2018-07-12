@@ -14,7 +14,7 @@ namespace NBitcoin
     /// </summary>
     public class BlockHeader : IBitcoinSerializable
     {
-        internal const int Size = 80;
+        public const int Size = 80;
 
         /// <summary>Current header version.</summary>
         public virtual int CurrentVersion => 3;
@@ -75,7 +75,7 @@ namespace NBitcoin
                 throw new ArgumentNullException(nameof(network));
 
             BlockHeader blockHeader = network.Consensus.ConsensusFactory.CreateBlockHeader();
-            blockHeader.ReadWrite(hex, network: network);
+            blockHeader.ReadWrite(hex, network.Consensus.ConsensusFactory);
 
             return blockHeader;
         }

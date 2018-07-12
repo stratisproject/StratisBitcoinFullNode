@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Reflection;
+using NBitcoin.DataEncoders;
 
 namespace NBitcoin
 {
@@ -38,6 +39,10 @@ namespace NBitcoin
         /// The <see cref="Transaction"/> type.
         /// </summary>
         private readonly TypeInfo transactionType = typeof(Transaction).GetTypeInfo();
+
+        public ConsensusFactory()
+        {
+        }
 
         /// <summary>
         /// Check if the generic type is assignable from <see cref="BlockHeader"/>.
@@ -102,18 +107,16 @@ namespace NBitcoin
         public virtual T TryCreateNew<T>() where T : IBitcoinSerializable
         {
             object result = null;
+
             if (IsBlock<T>())
-            {
                 result = (T)(object)CreateBlock();
-            }
+
             if (IsBlockHeader<T>())
-            {
                 result = (T)(object)CreateBlockHeader();
-            }
+
             if (IsTransaction<T>())
-            {
                 result = (T)(object)CreateTransaction();
-            }
+
             return (T)result;
         }
 
@@ -167,6 +170,26 @@ namespace NBitcoin
         public virtual Transaction CreateTransaction()
         {
             return new Transaction();
+        }
+
+        /// <summary>
+        /// Create a <see cref="Transaction"/> instance from a hex string representation.
+        /// </summary>
+        public virtual Transaction CreateTransaction(string hex)
+        {
+            var transaction = new Transaction();
+            transaction.FromBytes(Encoders.Hex.DecodeData(hex));
+            return transaction;
+        }
+
+        /// <summary>
+        /// Create a <see cref="Transaction"/> instance from a byte array representation.
+        /// </summary>
+        public virtual Transaction CreateTransaction(byte[] bytes)
+        {
+            var transaction = new Transaction();
+            transaction.FromBytes(bytes);
+            return transaction;
         }
     }
 
