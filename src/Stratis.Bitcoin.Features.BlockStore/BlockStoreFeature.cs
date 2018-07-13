@@ -174,7 +174,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
                     {
                         services.AddSingleton<IBlockRepository, BlockRepository>();
                         services.AddSingleton<IBlockStoreCache, BlockStoreCache>();
-                        services.AddSingleton<BlockStoreQueue>();
+                        services.AddSingleton<BlockStoreQueue>().AddSingleton<IBlockStore, BlockStoreQueue>(provider => provider.GetService<BlockStoreQueue>());
                         services.AddSingleton<BlockStoreManager>();
                         services.AddSingleton<BlockStoreSignaled>();
                         services.AddSingleton<StoreSettings>();
