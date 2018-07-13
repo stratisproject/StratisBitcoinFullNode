@@ -2,6 +2,7 @@
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using FluentAssertions;
 using NBitcoin;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Features.RPC;
@@ -127,16 +128,17 @@ namespace Stratis.Bitcoin.IntegrationTests
                 var coreSyncRpcClient = coreNodeSync.CreateRPCClient();
                 coreSyncRpcClient.AddNode(stratisNode.Endpoint, false);
 
-                // wait for download and assert
                 TestHelper.WaitLoop(() => stratisRpcClient.GetBestBlockHash() == coreSyncRpcClient.GetBestBlockHash());
+                int blockCount = coreSyncRpcClient.GetBlockCount();
+                blockCount.Should().Be(5);
+
                 bestBlockHash = coreSyncRpcClient.GetBestBlockHash();
                 Assert.Equal(tip.GetHash(), bestBlockHash);
             }
         }
 
         [Fact]
-        [Trait("unstable", "Timing out or failing on the assert not equal HashBlock")]
-        public async Task Given_NodesAreSynced_When_ABigReorgHappens_Then_TheReorgIsIgnored()
+        public void Given_NodesAreSynced_When_ABigReorgHappens_Then_TheReorgIsIgnored()
         {
             // Temporary fix so the Network static initialize will not break.
             //Network m = Network.Main;
@@ -173,10 +175,9 @@ namespace Stratis.Bitcoin.IntegrationTests
                 // create a reorg by mining on two different chains
                 // ================================================
 
-                stratisMiner.FullNode.ConnectionManager.RemoveNodeAddress(stratisReorg.Endpoint);
-                stratisSyncer.FullNode.ConnectionManager.RemoveNodeAddress(stratisReorg.Endpoint);
+                stratisMiner.CreateRPCClient().RemoveNode(stratisReorg.Endpoint);
+                stratisSyncer.CreateRPCClient().RemoveNode(stratisReorg.Endpoint);
                 TestHelper.WaitLoop(() => !TestHelper.IsNodeConnected(stratisReorg));
-                TestHelper.WaitLoop(() => stratisMiner.FullNode.ConnectionManager.ConnectedPeers.Count(p => p.IsConnected) == 1);
 
                 Task<List<uint256>> t1 = Task.Run(() => stratisMiner.GenerateStratisWithMiner(11));
                 Task<List<uint256>> t2 = Task.Delay(1000).ContinueWith(t => stratisReorg.GenerateStratisWithMiner(12));

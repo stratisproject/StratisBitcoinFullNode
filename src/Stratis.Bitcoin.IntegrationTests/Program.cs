@@ -25,7 +25,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 from type in assembly.GetTypes().Where(t => t == typeof(T))
                 where type.GetConstructor(Type.EmptyTypes) != null
                 from method in type.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static)
-                where method.GetCustomAttributes<FactAttribute>().Any() && method.Name.Contains("Given_NodesAreSynced_When_ABigReorgHappens_Then_TheReorgIsIgnored")
+                where method.GetCustomAttributes<FactAttribute>().Any() && method.Name.Equals("CanCoreSyncFromStratis")
                 select new { type, method }
             );
 

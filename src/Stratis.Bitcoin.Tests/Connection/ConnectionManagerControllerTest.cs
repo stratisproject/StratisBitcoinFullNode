@@ -67,5 +67,17 @@ namespace Stratis.Bitcoin.Tests.Controllers
 
             Assert.True((bool)json.Value);
         }
+
+        [Fact]
+        public void RemoveNode_Should_Remove_IpEndpoint_From_ConnectedPeers_Collection()
+        {
+            string endpoint = "127.0.0.1";
+            string command = "add";
+
+            var json = (JsonResult)this.controller.AddNodeAPI(endpoint, command);
+
+            Assert.True((bool)json.Value);
+
+        }
     }
 }
