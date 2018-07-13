@@ -513,7 +513,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
                     this.mempool.Object,
                     this.mempoolLock,
                     this.network,
-                    this.consensusRules,
+                    this.consensusRules.Object,
                     null);
         }
 

@@ -1,7 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Threading.Tasks;
 using FluentAssertions;
 using NBitcoin;
 using Stratis.Bitcoin.Features.Wallet;
@@ -122,7 +121,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
         }
 
         private void a_real_transaction()
-        {           
+        {
             var transactionBuildContext = new TransactionBuildContext(
                     this.miningWalletAccountReference,
                     new List<Recipient>() { new Recipient() { Amount = this.transferAmount, ScriptPubKey = this.receiverAddress.ScriptPubKey } },
@@ -153,20 +152,18 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
             this.retrievedBlockHashes.Should().OnlyHaveUniqueItems();
         }
 
-        private async Task trying_to_retrieve_the_transactions_by_Id_from_the_blockstore()
+        private void trying_to_retrieve_the_transactions_by_Id_from_the_blockstore()
         {
-            this.retrievedTransaction = await this.node.FullNode.BlockStoreManager().BlockRepository
-                .GetTrxAsync(this.transaction.GetHash());
-            this.wontRetrieveTransaction = await this.node.FullNode.BlockStoreManager().BlockRepository
-                .GetTrxAsync(this.wrongTransactionId);
+            this.retrievedTransaction = this.node.FullNode.BlockStoreManager().BlockRepository.GetTrxAsync(this.transaction.GetHash()).GetAwaiter().GetResult();
+            this.wontRetrieveTransaction = this.node.FullNode.BlockStoreManager().BlockRepository.GetTrxAsync(this.wrongTransactionId).GetAwaiter().GetResult();
         }
 
-        private async Task trying_to_retrieve_the_block_containing_the_transactions_from_the_blockstore()
+        private void trying_to_retrieve_the_block_containing_the_transactions_from_the_blockstore()
         {
-            this.retrievedBlockId = await this.node.FullNode.BlockStoreManager().BlockRepository
-                .GetTrxBlockIdAsync(this.transaction.GetHash());
-            this.wontRetrieveBlockId = await this.node.FullNode.BlockStoreManager().BlockRepository
-                .GetTrxAsync(this.wrongTransactionId);
+            this.retrievedBlockId = this.node.FullNode.BlockStoreManager().BlockRepository
+                .GetTrxBlockIdAsync(this.transaction.GetHash()).GetAwaiter().GetResult();
+            this.wontRetrieveBlockId = this.node.FullNode.BlockStoreManager().BlockRepository
+                .GetTrxAsync(this.wrongTransactionId).GetAwaiter().GetResult();
         }
 
         private void real_blocks_should_be_retrieved()
