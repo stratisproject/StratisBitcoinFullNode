@@ -28,6 +28,7 @@ namespace Stratis.Bitcoin.Configuration
             this.WalletPath = Path.Combine(path);
             this.LogPath = Path.Combine(path, "Logs");
             this.DnsMasterFilePath = path;
+            this.SmartContractStatePath = Path.Combine(path, "contracts");
             this.RootPath = path;
         }
 
@@ -71,5 +72,8 @@ namespace Stratis.Bitcoin.Configuration
         /// <summary>Path to DNS masterfile.</summary>
         /// <seealso cref="Features.Dns.IMasterFile.Save"/>
         public string DnsMasterFilePath { get; internal set; }
+
+        /// <summary>Path to the folder with smart contract state database files.</summary>
+        public string SmartContractStatePath { get; set; }
     }
 }
