@@ -4,13 +4,13 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Net.Sockets;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using NBitcoin.BouncyCastle.Math;
 using NBitcoin.DataEncoders;
 using NBitcoin.Protocol;
-using System.Net.Sockets;
 
 namespace NBitcoin
 {
@@ -711,7 +711,7 @@ namespace NBitcoin
             {
                 address = IPAddress.Parse(ip);
             }
-            catch (FormatException err)
+            catch (FormatException)
             {
                 if (ip.Trim() == string.Empty || Uri.CheckHostName(ip) == UriHostNameType.Unknown)
                     throw;

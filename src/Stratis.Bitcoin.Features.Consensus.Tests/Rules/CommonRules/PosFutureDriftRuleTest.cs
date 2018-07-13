@@ -13,7 +13,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
 
         public PosFutureDriftRuleTest()
         {
-            this.ruleContext.ValidationContext.Block = new Block();
+            this.ruleContext.ValidationContext.Block = this.network.CreateBlock();
         }
 
         [Fact]

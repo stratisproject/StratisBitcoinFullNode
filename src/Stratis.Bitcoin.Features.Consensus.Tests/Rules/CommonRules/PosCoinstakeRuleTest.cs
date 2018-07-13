@@ -10,7 +10,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
     {
         public PosCoinstakeRuleTest()
         {
-            this.ruleContext.ValidationContext.Block = new Block();
+            this.ruleContext.ValidationContext.Block = this.network.CreateBlock();
         }
 
         [Fact]
@@ -18,7 +18,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         {
             this.ruleContext.ValidationContext.Block.Transactions.Add(new Transaction());
 
-            var transaction = new Transaction();
+            var transaction = this.network.CreateTransaction();
             transaction.Inputs.Add(new TxIn()
             {
                 PrevOut = new OutPoint(new uint256(15), 1),
@@ -38,11 +38,11 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         [Fact]
         public async Task RunAsync_ProofOfStakeBlock_CoinBaseNotEmpty_TransactionNotEmpty_ThrowsBadStakeBlockConsensusErrorExceptionAsync()
         {
-            var transaction = new Transaction();
+            var transaction = this.network.CreateTransaction();
             transaction.Outputs.Add(new TxOut(new Money(1), (IDestination)null));
             this.ruleContext.ValidationContext.Block.Transactions.Add(transaction);
 
-            transaction = new Transaction();
+            transaction = this.network.CreateTransaction();
             transaction.Inputs.Add(new TxIn()
             {
                 PrevOut = new OutPoint(new uint256(15), 1),
@@ -62,11 +62,11 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         [Fact]
         public async Task RunAsync_ProofOfStakeBlock_MultipleCoinStakeAfterSecondTransaction_ThrowsBadMultipleCoinstakeConsensusErrorExceptionAsync()
         {
-            var transaction = new Transaction();
+            var transaction = this.network.CreateTransaction();
             transaction.Outputs.Add(new TxOut(Money.Zero, (IDestination)null));
             this.ruleContext.ValidationContext.Block.Transactions.Add(transaction);
 
-            transaction = new Transaction();
+            transaction = this.network.CreateTransaction();
             transaction.Inputs.Add(new TxIn()
             {
                 PrevOut = new OutPoint(new uint256(15), 1),
@@ -87,11 +87,11 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         [Fact]
         public async Task RunAsync_ProofOfStakeBlock_TransactionTimestampAfterBlockTimeStamp_ThrowsBlockTimeBeforeTrxConsensusErrorExceptionAsync()
         {
-            var transaction = new Transaction();
+            var transaction = this.network.CreateTransaction();
             transaction.Outputs.Add(new TxOut(Money.Zero, (IDestination)null));
             this.ruleContext.ValidationContext.Block.Transactions.Add(transaction);
 
-            transaction = new Transaction();
+            transaction = this.network.CreateTransaction();
             transaction.Inputs.Add(new TxIn()
             {
                 PrevOut = new OutPoint(new uint256(15), 1),
@@ -114,7 +114,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         [Fact]
         public async Task RunAsync_ProofOfWorkBlock_TransactionTimestampAfterBlockTimeStamp_ThrowsBlockTimeBeforeTrxConsensusErrorExceptionAsync()
         {
-            var transaction = new Transaction();
+            var transaction = this.network.CreateTransaction();
             transaction.Outputs.Add(new TxOut(Money.Zero, (IDestination)null));
             this.ruleContext.ValidationContext.Block.Transactions.Add(transaction);
 
@@ -131,11 +131,11 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         [Fact]
         public async Task RunAsync_ProofOfStakeBlock_ValidBlock_DoesNotThrowExceptionAsync()
         {
-            var transaction = new Transaction();
+            var transaction = this.network.CreateTransaction();
             transaction.Outputs.Add(new TxOut(Money.Zero, (IDestination)null));
             this.ruleContext.ValidationContext.Block.Transactions.Add(transaction);
 
-            transaction = new Transaction();
+            transaction = this.network.CreateTransaction();
             transaction.Inputs.Add(new TxIn()
             {
                 PrevOut = new OutPoint(new uint256(15), 1),
@@ -157,7 +157,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         [Fact]
         public async Task RunAsync_ProofOfWorkBlock_ValidBlock_DoesNotThrowExceptionAsync()
         {
-            var transaction = new Transaction();
+            var transaction = this.network.CreateTransaction();
             transaction.Outputs.Add(new TxOut(Money.Zero, (IDestination)null));
             this.ruleContext.ValidationContext.Block.Transactions.Add(transaction);
             this.ruleContext.ValidationContext.Block.Header.Time = (uint)1483747200;
