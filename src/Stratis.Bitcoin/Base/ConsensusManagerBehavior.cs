@@ -19,17 +19,26 @@ namespace Stratis.Bitcoin.Base
     /// <summary>Behavior that takes care of headers protocol. It also keeps the notion of peer's consensus tip.</summary>
     public class ConsensusManagerBehavior : NetworkPeerBehavior
     {
-        /// <summary>Factory for creating loggers.</summary>
-        private readonly ILoggerFactory loggerFactory;
-
-        /// <summary>Instance logger.</summary>
-        private readonly ILogger logger;
-
         /// <summary>Provider of IBD state.</summary>
         private readonly IInitialBlockDownloadState initialBlockDownloadState;
 
         /// <inheritdoc cref="ConsensusManager"/>
         private readonly ConsensusManager consensusManager;
+
+        /// <inheritdoc cref="ConcurrentChain"/>
+        private readonly ConcurrentChain chain;
+
+        /// <inheritdoc cref="IConnectionManager"/>
+        private readonly IConnectionManager connectionManager;
+
+        /// <inheritdoc cref="IPeerBanning"/>
+        private readonly IPeerBanning peerBanning;
+
+        /// <summary>Factory for creating loggers.</summary>
+        private readonly ILoggerFactory loggerFactory;
+
+        /// <summary>Instance logger.</summary>
+        private readonly ILogger logger;
 
         /// <summary>
         /// Our view of the peer's consensus tip constructed on peer's announcement of its tip using "headers" message.
@@ -40,16 +49,7 @@ namespace Stratis.Bitcoin.Base
         public ChainedHeader ExpectedPeerTip { get; private set; }
 
         /// <summary>Timer that periodically tries to sync.</summary>
-        private Timer refreshTimer;
-
-        /// <inheritdoc cref="ConcurrentChain"/>
-        private readonly ConcurrentChain chain;
-
-        /// <inheritdoc cref="IConnectionManager"/>
-        private readonly IConnectionManager connectionManager;
-
-        /// <inheritdoc cref="IPeerBanning"/>
-        private readonly IPeerBanning peerBanning;
+        private Timer autosyncTimer;
 
         /// <summary>List of block headers that were not yet consumed by <see cref="ConsensusManager"/>.</summary>
         /// <remarks>Should be protected by <see cref="asyncLock"/>.</remarks>
@@ -79,7 +79,7 @@ namespace Stratis.Bitcoin.Base
             this.logger.LogTrace("()");
 
             // Initialize auto sync timer.
-            this.refreshTimer = new Timer(async (o) =>
+            this.autosyncTimer = new Timer(async (o) =>
             {
                 this.logger.LogTrace("()");
 
@@ -169,12 +169,9 @@ namespace Stratis.Bitcoin.Base
         /// <param name="peer">Peer from which the message was received.</param>
         /// <param name="getHeadersPayload">Payload of "getheaders" message to process.</param>
         /// <remarks>
-        /// "getheaders" message is sent by the peer in response to "inv(block)" message
-        /// after the connection is established, or in response to "headers" message
-        /// until an empty array is returned.
+        /// "getheaders" message is sent by the peer in response to "headers" message until an empty array is received.
         /// <para>
-        /// This payload notifies peers of our current best validated height,
-        /// which is held by consensus tip (not concurrent chain tip).
+        /// This payload notifies peers of our current best validated height, which is held by consensus tip.
         /// </para>
         /// <para>
         /// If the peer is behind/equal to our best height an empty array is sent back.
@@ -402,7 +399,7 @@ namespace Stratis.Bitcoin.Base
         ///  <inheritdoc />
         public override void Dispose()
         {
-            this.refreshTimer?.Dispose();
+            this.autosyncTimer?.Dispose();
 
             base.Dispose();
         }
