@@ -20,7 +20,6 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         private CoreNode stratisSender;
         private CoreNode stratisReceiver;
         private Transaction transaction;
-        private ErrorResult errorResult;
         private MempoolValidationState mempoolValidationState;
         private HdAddress receivingAddress;
 

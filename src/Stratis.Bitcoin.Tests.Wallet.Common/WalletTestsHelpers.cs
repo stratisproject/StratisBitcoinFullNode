@@ -79,14 +79,14 @@ namespace Stratis.Bitcoin.Tests.Wallet.Common
             return address;
         }
 
-        public static ChainedHeader AppendBlock(ChainedHeader previous = null, params ConcurrentChain[] chains)
+        public static ChainedHeader AppendBlock(Network network, ChainedHeader previous = null, params ConcurrentChain[] chains)
         {
             ChainedHeader last = null;
             uint nonce = RandomUtils.GetUInt32();
             foreach (ConcurrentChain chain in chains)
             {
-                var block = new Block();
-                block.AddTransaction(new Transaction());
+                Block block = network.CreateBlock();
+                block.AddTransaction(network.CreateTransaction());
                 block.UpdateMerkleRoot();
                 block.Header.HashPrevBlock = previous == null ? chain.Tip.HashBlock : previous.HashBlock;
                 block.Header.Nonce = nonce;
@@ -96,13 +96,13 @@ namespace Stratis.Bitcoin.Tests.Wallet.Common
             return last;
         }
 
-        public static (ChainedHeader ChainedHeader, Block Block) AppendBlock(ChainedHeader previous, ConcurrentChain chain)
+        public static (ChainedHeader ChainedHeader, Block Block) AppendBlock(Network network, ChainedHeader previous, ConcurrentChain chain)
         {
             ChainedHeader last = null;
             uint nonce = RandomUtils.GetUInt32();
-            var block = new Block();
+            Block block = network.CreateBlock();
 
-            block.AddTransaction(new Transaction());
+            block.AddTransaction(network.CreateTransaction());
             block.UpdateMerkleRoot();
             block.Header.HashPrevBlock = previous == null ? chain.Tip.HashBlock : previous.HashBlock;
             block.Header.Nonce = nonce;

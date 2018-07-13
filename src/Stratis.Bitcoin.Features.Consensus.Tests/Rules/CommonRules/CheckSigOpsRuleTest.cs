@@ -13,7 +13,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         public CheckSigOpsRuleTest()
         {
             this.options = this.network.Consensus.Option<PowConsensusOptions>();
-            this.ruleContext.ValidationContext.Block = new NBitcoin.Block();
+            this.ruleContext.ValidationContext.Block = this.network.CreateBlock();
             this.ruleContext.Consensus = this.network.Consensus;
         }
 
