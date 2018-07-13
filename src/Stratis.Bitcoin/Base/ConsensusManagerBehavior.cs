@@ -203,28 +203,17 @@ namespace Stratis.Bitcoin.Base
             }
 
             var headers = new HeadersPayload();
-            ChainedHeader consensusTip = this.consensusManager.Tip;
 
             ChainedHeader fork = this.chain.FindFork(getHeadersPayload.BlockLocators);
+
             if (fork != null)
             {
-                if ((consensusTip == null) || (fork.Height > consensusTip.Height))
+                foreach (ChainedHeader header in this.chain.EnumerateToTip(fork).Skip(1))
                 {
-                    // Fork not yet validated.
-                    fork = null;
-                }
+                    headers.Headers.Add(header.Header);
 
-                if (fork != null)
-                {
-                    foreach (ChainedHeader header in this.chain.EnumerateToTip(fork).Skip(1))
-                    {
-                        if (header.Height > consensusTip.Height)
-                            break;
-
-                        headers.Headers.Add(header.Header);
-                        if ((header.HashBlock == getHeadersPayload.HashStop) || (headers.Headers.Count == 2000))
-                            break;
-                    }
+                    if ((header.HashBlock == getHeadersPayload.HashStop) || (headers.Headers.Count == 2000))
+                        break;
                 }
             }
 
@@ -281,6 +270,7 @@ namespace Stratis.Bitcoin.Base
                 if (this.cachedHeaders.Count > CacheSyncHeadersThreshold)
                 {
                     // Ignore this message because cache is full.
+                    this.logger.LogTrace("(-)[CACHE_IS_FULL]");
                     return;
                 }
 
@@ -290,33 +280,33 @@ namespace Stratis.Bitcoin.Base
                     this.cachedHeaders.AddRange(headers);
 
                     this.logger.LogTrace("{0} headers were added to cache.", headers.Count);
+                    this.logger.LogTrace("(-)[CACHED]");
+                    return;
                 }
-                else
+
+                ConnectNewHeadersResult result = await this.PresentHeadersLockedAsync(headers).ConfigureAwait(false);
+
+                if (result == null)
                 {
-                    ConnectNewHeadersResult result = await this.PresentHeadersLockedAsync(headers).ConfigureAwait(false);
-
-                    if (result.Consumed == null)
-                    {
-                        this.cachedHeaders.AddRange(headers);
-                        this.logger.LogTrace("None of {0} headers were consumed, all were added to cache.", headers.Count);
-                    }
-                    else
-                    {
-                        this.ExpectedPeerTip = result.Consumed;
-
-                        if (result.Consumed.Header != headers.Last())
-                        {
-                            // Some headers were not consumed, add to cache.
-                            int consumedCount = headers.IndexOf(result.Consumed.Header) + 1;
-                            this.cachedHeaders.AddRange(headers.Skip(consumedCount));
-
-                            this.logger.LogTrace("{0} out of {1} items were not consumed and added to cache.", headers.Count - consumedCount, headers.Count);
-                        }
-
-                        if (this.cachedHeaders.Count < CacheSyncHeadersThreshold)
-                            await this.TrySyncAsync(false).ConfigureAwait(false);
-                    }
+                    this.cachedHeaders.AddRange(headers);
+                    this.logger.LogTrace("None of {0} headers were consumed, all were added to cache.", headers.Count);
+                    this.logger.LogTrace("(-)[NONE_CONSUMED_CACHED]");
+                    return;
                 }
+
+                this.ExpectedPeerTip = result.Consumed;
+
+                if (result.Consumed.Header != headers.Last())
+                {
+                    // Some headers were not consumed, add to cache.
+                    int consumedCount = headers.IndexOf(result.Consumed.Header) + 1;
+                    this.cachedHeaders.AddRange(headers.Skip(consumedCount));
+
+                    this.logger.LogTrace("{0} out of {1} items were not consumed and added to cache.", headers.Count - consumedCount, headers.Count);
+                }
+
+                if (this.cachedHeaders.Count < CacheSyncHeadersThreshold)
+                    await this.TrySyncAsync(false).ConfigureAwait(false);
             }
 
             this.logger.LogTrace("(-)");
