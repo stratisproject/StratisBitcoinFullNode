@@ -76,7 +76,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
 
         private CoreNode CreateNode(NodeRunner runner, bool start, string configFile = "bitcoin.conf", bool useCookieAuth = false)
         {
-            var node = new CoreNode(runner, this, configFile);
+            var node = new CoreNode(runner, this, configFile, useCookieAuth);
             this.Nodes.Add(node);
             if (start) node.Start();
             return node;
@@ -85,7 +85,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
         public CoreNode CreateBitcoinCoreNode(string version = "0.13.1", bool useCookieAuth = false)
         {
             string bitcoinDPath = GetBitcoinCorePath(version);
-            return CreateNode(new BitcoinCoreRunner(this.GetNextDataFolderName(), bitcoinDPath), start: false, useCookieAuth: true);
+            return CreateNode(new BitcoinCoreRunner(this.GetNextDataFolderName(), bitcoinDPath), start: false, useCookieAuth: useCookieAuth);
         }
 
         public CoreNode CreateStratisPowNode(bool start = false)
