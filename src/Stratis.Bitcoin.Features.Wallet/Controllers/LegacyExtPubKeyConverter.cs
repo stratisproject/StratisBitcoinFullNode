@@ -6,8 +6,8 @@ using NBitcoin.DataEncoders;
 namespace Stratis.Bitcoin.Features.Wallet.Controllers
 {
     /// <summary>
-    /// At a point in Stratis' history, the version prefix for extended public key changed, 
-    /// however 3rd parties like Ledger didn't update yet.
+    /// Stratis X has a version prefix starting xq5h. Full node has a version prefix xpub for extended public key. 
+    /// 3rd parties like Ledger haven't update yet to the full node version prefix.
     /// This class provides a way to convert from the legacy format to the current format.
     /// <remarks>This class can be removed when the 3rd parties update their software.</remarks>
     /// </summary>
