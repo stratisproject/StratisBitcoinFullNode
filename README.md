@@ -111,3 +111,5 @@ To skip a build, for example if you've made very minor changes, include the text
 
 If you want get the :sparkles: latest :sparkles: (and unstable :bomb:) version of the nuget packages here: 
 * [Stratis.Bitcoin](https://ci.appveyor.com/api/projects/stratis/stratisbitcoinfullnode/artifacts/nuget/Stratis.Bitcoin.1.0.7-alpha.nupkg?job=Configuration%3A%20Release)
+
+
