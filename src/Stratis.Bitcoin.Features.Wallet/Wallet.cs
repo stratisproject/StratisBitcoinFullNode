@@ -196,13 +196,13 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <seealso cref="https://github.com/bitcoin/bips/blob/master/bip-0044.mediawiki"/>
         /// <param name="extPubKey">The extended public key for the wallet<see cref="EncryptedSeed"/>.</param>
         /// <param name="coinType">The type of coin this account is for.</param>
+        /// <param name="accountIndex">Zero-based index of the account to add.</param>
         /// <param name="accountCreationTime">Creation time of the account to be created.</param>
         /// <returns>A new HD account.</returns>
-        public HdAccount AddNewAccount(CoinType coinType, ExtPubKey extPubKey, int accountNumber,
-            DateTimeOffset accountCreationTime)
+        public HdAccount AddNewAccount(CoinType coinType, ExtPubKey extPubKey, int accountIndex, DateTimeOffset accountCreationTime)
         {
             AccountRoot accountRoot = this.AccountsRoot.Single(a => a.CoinType == coinType);
-            return accountRoot.AddNewAccount(extPubKey, accountNumber, this.Network, accountCreationTime);
+            return accountRoot.AddNewAccount(extPubKey, accountIndex, this.Network, accountCreationTime);
         }
 
         /// <summary>
@@ -358,7 +358,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         }
 
         /// <summary>
-        /// Adds an account to the current account root.
+        /// Adds an account to the current account root using encrypted seed and password.
         /// </summary>
         /// <remarks>The name given to the account is of the form "account (i)" by default, where (i) is an incremental index starting at 0.
         /// According to BIP44, an account at index (i) can only be created when the account at index (i - 1) contains transactions.
@@ -407,11 +407,8 @@ namespace Stratis.Bitcoin.Features.Wallet
         }
 
         /// <summary>
-        /// Adds an account to the current account root.
+        /// Adds an account to the current account root using extended public key.
         /// </summary>
-        /// <remarks>The name given to the account is of the form "account (i)" by default, where (i) is an incremental index starting at 0.
-        /// According to BIP44, an account at index (i) can only be created when the account at index (i - 1) contains transactions.
-        /// <seealso cref="https://github.com/bitcoin/bips/blob/master/bip-0044.mediawiki"/></remarks>
         /// <param name="accountExtPubKey">The extended public key for the account.</param>
         /// <param name="accountIndex">The zero-based account index.</param>
         /// <param name="network">The network for which this account will be created.</param>
@@ -419,7 +416,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <returns>A new HD account.</returns>
         public HdAccount AddNewAccount(ExtPubKey accountExtPubKey, int accountIndex, Network network, DateTimeOffset accountCreationTime)
         {
-            List<HdAccount> accounts = this.Accounts.ToList();
+            ICollection<HdAccount> accounts = this.Accounts;
 
             if (accounts.Any(x => x.HdPath.Split('/').Last() == accountIndex + "'"))
             {

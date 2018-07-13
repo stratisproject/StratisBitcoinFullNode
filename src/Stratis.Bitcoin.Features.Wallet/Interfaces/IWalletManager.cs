@@ -56,7 +56,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Interfaces
         Wallet LoadWallet(string password, string name);
 
         /// <summary>
-        /// Recovers a wallet.
+        /// Recovers a wallet using mnemonic and password.
         /// </summary>
         /// <param name="password">The user's password.</param>
         /// <param name="name">The name of the wallet.</param>
@@ -67,7 +67,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Interfaces
         Wallet RecoverWallet(string password, string name, string mnemonic, DateTime creationTime, string passphrase = null);
 
         /// <summary>
-        /// Recovers a wallet using extended public key and account number.
+        /// Recovers a wallet using extended public key and account index.
         /// </summary>
         /// <param name="name">The name of the wallet.</param>
         /// <param name="extPubKey"></param>
