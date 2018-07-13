@@ -858,7 +858,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
             catch (CannotAddAccountToXpubKeyWalletException e)
             {
                 this.logger.LogError("Exception occurred: {0}", e.ToString());
-                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.Forbidden, e.Message, e.ToString());
+                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.Forbidden, e.Message, string.Empty);
             }
             catch (Exception e)
             {

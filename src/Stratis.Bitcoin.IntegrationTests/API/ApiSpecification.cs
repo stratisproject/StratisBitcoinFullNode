@@ -1,9 +1,4 @@
-﻿using System;
-using System.Linq;
-using DBreeze.Utils;
-using NBitcoin;
-using NBitcoin.DataEncoders;
-using Xunit;
+﻿using Xunit;
 
 namespace Stratis.Bitcoin.IntegrationTests.API
 {
