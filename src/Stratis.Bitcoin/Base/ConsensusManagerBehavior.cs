@@ -51,6 +51,9 @@ namespace Stratis.Bitcoin.Base
         /// <summary>Timer that periodically tries to sync.</summary>
         private Timer autosyncTimer;
 
+        /// <summary>Interval in minutes for the <see cref="autosyncTimer"/>.</summary>
+        private const int AutosyncIntervalMinutes = 10;
+
         /// <summary>List of block headers that were not yet consumed by <see cref="ConsensusManager"/>.</summary>
         /// <remarks>Should be protected by <see cref="asyncLock"/>.</remarks>
         private readonly List<BlockHeader> cachedHeaders;
@@ -83,19 +86,13 @@ namespace Stratis.Bitcoin.Base
             {
                 this.logger.LogTrace("()");
 
-                try
-                {
-                    await this.TrySyncAsync().ConfigureAwait(false);
-                }
-                catch (OperationCanceledException)
-                {
-                }
+                await this.TrySyncAsync(true).ConfigureAwait(false);
 
                 this.logger.LogTrace("(-)");
-            }, null, 0, (int)TimeSpan.FromMinutes(10).TotalMilliseconds);
+            }, null, 0, (int)TimeSpan.FromMinutes(AutosyncIntervalMinutes).TotalMilliseconds);
 
             if (this.AttachedPeer.State == NetworkPeerState.Connected)
-                this.AttachedPeer.MyVersion.StartHeight = this.consensusManager.Tip?.Height ?? 0;
+                this.AttachedPeer.MyVersion.StartHeight = this.consensusManager.Tip.Height;
 
             this.AttachedPeer.StateChanged.Register(this.OnStateChangedAsync);
             this.AttachedPeer.MessageReceived.Register(this.OnMessageReceivedAsync, true);
@@ -113,16 +110,25 @@ namespace Stratis.Bitcoin.Base
             {
                 if (this.cachedHeaders.Count != 0)
                 {
-                    ConnectNewHeadersResult result = await this.PresentHeadersLockedAsync(this.cachedHeaders, false).ConfigureAwait(false);
+                    ConnectNewHeadersResult result = null;
 
-                    if (result.Consumed != null)
+                    try
                     {
-                        this.ExpectedPeerTip = result.Consumed;
+                        result = await this.PresentHeadersLockedAsync(this.cachedHeaders, false).ConfigureAwait(false);
 
-                        int consumedCount = this.cachedHeaders.IndexOf(result.Consumed.Header) + 1;
+                        if (result.Consumed != null)
+                        {
+                            this.ExpectedPeerTip = result.Consumed;
 
-                        this.cachedHeaders.RemoveRange(0, consumedCount);
-                        this.logger.LogTrace("{0} entries were consumed from the cache.", consumedCount);
+                            int consumedCount = this.cachedHeaders.IndexOf(result.Consumed.Header) + 1;
+
+                            this.cachedHeaders.RemoveRange(0, consumedCount);
+                            this.logger.LogTrace("{0} entries were consumed from the cache.", consumedCount);
+                        }
+                    }
+                    catch (OperationCanceledException)
+                    {
+                        // Ignore network exception caused by trySync.
                     }
 
                     this.logger.LogTrace("(-):'{0}'", result);
@@ -316,7 +322,7 @@ namespace Stratis.Bitcoin.Base
                 this.cachedHeaders.Clear();
 
                 // Resync in case can't connect.
-                await this.TrySyncAsync().ConfigureAwait(false);
+                await this.TrySyncAsync(false).ConfigureAwait(false);
             }
             catch (CheckpointMismatchException)
             {
@@ -331,13 +337,7 @@ namespace Stratis.Bitcoin.Base
         {
             this.logger.LogTrace("({0}:'{1}',{2}:{3},{4}:{5})", nameof(peer), peer.RemoteSocketEndpoint, nameof(oldState), oldState, nameof(peer.State), peer.State);
 
-            try
-            {
-                await this.TrySyncAsync().ConfigureAwait(false);
-            }
-            catch (OperationCanceledException)
-            {
-            }
+            await this.TrySyncAsync(true).ConfigureAwait(false);
 
             this.logger.LogTrace("(-)");
         }
@@ -349,25 +349,19 @@ namespace Stratis.Bitcoin.Base
 
             this.ExpectedPeerTip = null;
 
-            try
-            {
-                await this.TrySyncAsync().ConfigureAwait(false);
-            }
-            catch (OperationCanceledException)
-            {
-            }
+            await this.TrySyncAsync(true).ConfigureAwait(false);
 
             this.logger.LogTrace("(-)");
         }
 
         /// <summary>Tries to sync the chain with the peer by sending it <see cref="GetHeadersPayload"/>.</summary>
-        private async Task TrySyncAsync()
+        private async Task TrySyncAsync(bool ignorePeerDisconnectedExceptions) //TODO always swallow exception
         {
             this.logger.LogTrace("()");
 
             INetworkPeer peer = this.AttachedPeer;
 
-            if (peer != null && peer.State == NetworkPeerState.HandShaked)
+            if ((peer != null) && (peer.State == NetworkPeerState.HandShaked))
             {
                 var headersPayload = new GetHeadersPayload()
                 {
@@ -375,7 +369,17 @@ namespace Stratis.Bitcoin.Base
                     HashStop = null
                 };
 
-                await peer.SendMessageAsync(headersPayload).ConfigureAwait(false);
+                try
+                {
+                    await peer.SendMessageAsync(headersPayload).ConfigureAwait(false);
+                }
+                catch (OperationCanceledException)
+                {
+                    this.logger.LogTrace("Unable to send headers message to peer '{0}'.", peer.RemoteSocketEndpoint);
+
+                    if (!ignorePeerDisconnectedExceptions)
+                        throw;
+                }
             }
             else
                 this.logger.LogTrace("Can't sync. Peer's state is not handshaked or peer was not attached.");
