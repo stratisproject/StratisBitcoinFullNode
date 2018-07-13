@@ -53,11 +53,9 @@ namespace Stratis.Bitcoin.Features.Apps
                     .AddFeature<AppsFeature>()
                     .FeatureServices(services =>
                     {
-                        services.AddSingleton<IAppsStore, AppsStore>();
-                        services.AddSingleton<IAppsFileService, AppsFileService>();
+                        services.AddSingleton<IAppsStore, AppsStore>();                        
                         services.AddSingleton<IAppsHost, AppsHost>();
                         services.AddSingleton<AppsController>();
-                        services.AddSingleton<IStratisAppFactory, StratisAppFactory>();
                     });
             });
 

@@ -1,10 +1,19 @@
-﻿namespace Stratis.Bitcoin.Apps.Browser.Dto
+﻿using Newtonsoft.Json;
+
+namespace Stratis.Bitcoin.Apps.Browser.Dto
 {
     public class StratisApp
-    {
-        public string displayName { get; set; }
-        public string location { get; set; }
-        public string webRoot { get; set; }
-        public string address { get; set; }
+    {      
+        [JsonProperty("displayName")]
+        public string DisplayName { get; set; }
+
+        [JsonProperty("location")]
+        public string Location { get; set; }
+
+        [JsonProperty("webRoot")]
+        public string WebRoot { get; set; }
+
+        [JsonProperty("address")]
+        public string Address { get; set; }
     }
 }

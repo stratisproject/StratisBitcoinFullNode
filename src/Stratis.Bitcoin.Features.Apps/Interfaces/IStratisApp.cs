@@ -12,9 +12,4 @@
 
         bool IsSinglePageApp { get; }
     }
-
-    public interface IStratisAppFactory
-    {
-        IStratisApp New();
-    }
 }

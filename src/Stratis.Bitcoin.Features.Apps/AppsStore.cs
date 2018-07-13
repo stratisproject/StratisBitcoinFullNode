@@ -3,7 +3,9 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Microsoft.Extensions.Logging;
+using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.Apps.Interfaces;
+using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Utilities.Extensions;
 
 namespace Stratis.Bitcoin.Features.Apps
@@ -12,13 +14,12 @@ namespace Stratis.Bitcoin.Features.Apps
     {
         private readonly ILogger logger;
         private readonly List<IStratisApp> applications = new List<IStratisApp>();
-        private readonly IAppsFileService appsFileService;
-        private readonly IStratisAppFactory appFactory;
+        private readonly DataFolder dataFolder;
+        private const string ConfigFileName = "stratisApp.json";
 
-        public AppsStore(ILoggerFactory loggerFactory, IAppsFileService appsFileService, IStratisAppFactory appFactory)
+        public AppsStore(ILoggerFactory loggerFactory, DataFolder dataFolder)
         {
-            this.appsFileService = appsFileService;
-            this.appFactory = appFactory;
+            this.dataFolder = dataFolder;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
 
             this.Load();
@@ -28,38 +29,37 @@ namespace Stratis.Bitcoin.Features.Apps
 
         private void Load()
         {
-            IEnumerable<FileInfo> configs = this.appsFileService.GetStratisAppConfigFileInfos();
-            var apps = configs.Select(this.CreateApp).Where(x => x != null).ToList();
-
-            if (apps.IsEmpty())
+            try
             {
-                this.logger.LogWarning(
-                    $"No Stratis applications found at or below {this.appsFileService.StratisAppsFolderPath}");
-                return;
-            }
+                FileInfo[] fileInfos = new DirectoryInfo(this.dataFolder.ApplicationsPath)
+                    .GetFiles(ConfigFileName, SearchOption.AllDirectories);
 
-            this.applications.AddRange(apps);
+                IEnumerable<IStratisApp> apps = fileInfos.Select(x => new FileStorage<StratisApp>(x.DirectoryName))
+                                                         .Select(this.CreateAppInstance);
+
+                this.applications.AddRange(apps.Where(x => x != null));
+
+                if (this.applications.IsEmpty())
+                    this.logger.LogWarning("No Stratis applications found at or below {0}",
+                        this.dataFolder.ApplicationsPath);
+            }
+            catch (Exception e)
+            {
+                this.logger.LogError($"Failed to load Stratis apps : {0}", e.Message);                
+            }
         }
 
-        private IStratisApp CreateApp(FileInfo fileInfo)
+        private IStratisApp CreateAppInstance(FileStorage<StratisApp> fileStorage)
         {
             try
             {
-                var displayName = this.appsFileService.GetConfigSetting(fileInfo, "displayName");
-                var webRoot = this.appsFileService.GetConfigSetting(fileInfo, "webRoot");
-
-                IStratisApp stratisApp = this.appFactory.New();
-                stratisApp.DisplayName = displayName;
-                stratisApp.Location = fileInfo.DirectoryName;
-
-                if (!string.IsNullOrEmpty(webRoot))
-                    stratisApp.WebRoot = webRoot;
-
+                StratisApp stratisApp = fileStorage.LoadByFileName(ConfigFileName);
+                stratisApp.Location = fileStorage.FolderPath;
                 return stratisApp;
             }
             catch (Exception e)
             {
-                this.logger.LogError($"Failed to create app : {e.Message}");   
+                this.logger.LogError($"Failed to create app : {0}", e.Message);
                 return null;
             }
         }
