@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Base.Deployments;
+using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Utilities;
 
@@ -115,7 +116,10 @@ namespace Stratis.Bitcoin.Consensus.Rules
 
                 this.consensusRules.Add(consensusRule.GetType().FullName, consensusRule);
 
-                var ruleAttributes = Attribute.GetCustomAttributes(consensusRule.GetType()).OfType<RuleAttribute>();
+                var ruleAttributes = Attribute.GetCustomAttributes(consensusRule.GetType()).OfType<RuleAttribute>().ToList();
+
+                if(!ruleAttributes.Any())
+                    throw new ConsensusException($"The rule {consensusRule.GetType().FullName} must have at least one {nameof(RuleAttribute)}");
 
                 foreach (RuleAttribute ruleAttribute in ruleAttributes)
                 {
@@ -172,7 +176,7 @@ namespace Stratis.Bitcoin.Consensus.Rules
 
             using (new StopwatchDisposable(o => this.PerformanceCounter.AddBlockProcessingTime(o)))
             {
-                foreach (ConsensusRuleDescriptor ruleDescriptor in this.headerValidationRules)
+                foreach (ConsensusRuleDescriptor ruleDescriptor in this.fullValidationRules)
                 {
                     await ruleDescriptor.Rule.RunAsync(ruleContext).ConfigureAwait(false);
                 }
