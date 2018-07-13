@@ -272,24 +272,25 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
 
             try
             {
-                string accountExtPubKey = this.SanitiseExtPubKey(request.ExtPubKey);
+                string accountExtPubKey = 
+                    this.network.IsBitcoin() ? 
+                        request.ExtPubKey : LegacyExtPubKeyConverter.ConvertIfInLegacyStratisFormat(request.ExtPubKey, this.network);
 
-                Wallet wallet = this.walletManager.RecoverWallet(request.Name, ExtPubKey.Parse(accountExtPubKey), request.AccountIndex, request.CreationDate);
+                this.walletManager.RecoverWallet(request.Name, ExtPubKey.Parse(accountExtPubKey), request.AccountIndex, request.CreationDate);
 
-                // start syncing the wallet from the creation date
                 this.walletSyncManager.SyncFromDate(request.CreationDate);
 
                 return this.Ok();
             }
             catch (WalletException e)
             {
-                // indicates that this wallet already exists
+                // Wallet already exists.
                 this.logger.LogError("Exception occurred: {0}", e.ToString());
                 return ErrorHelpers.BuildErrorResponse(HttpStatusCode.Conflict, e.Message, e.ToString());
             }
             catch (FileNotFoundException e)
             {
-                // indicates that this wallet does not exist
+                // Wallet does not exist.
                 this.logger.LogError("Exception occurred: {0}", e.ToString());
                 return ErrorHelpers.BuildErrorResponse(HttpStatusCode.NotFound, "Wallet not found.", e.ToString());
             }
@@ -298,30 +299,6 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                 this.logger.LogError("Exception occurred: {0}", e.ToString());
                 return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
             }
-        }
-
-        private string SanitiseExtPubKey(string requestExtPubKey)
-        {
-            if (this.network.IsBitcoin())
-                return requestExtPubKey;
-
-            byte[] stratisVersionBytes = network.GetVersionBytes(Base58Type.EXT_PUBLIC_KEY, true); 
-            byte[] ledgerVersionByte = new byte[] { (0x04), (0x88), (0xC2), (0x1E) };
-
-            byte[] decodedExtPubKey = Encoders.Base58Check.DecodeData(requestExtPubKey);
-            byte[] extPubKeyVersionBytes = decodedExtPubKey.Take(4).ToArray();
-
-            if (extPubKeyVersionBytes.SequenceEqual(stratisVersionBytes))
-            {
-                return requestExtPubKey;
-            }
-            else if (extPubKeyVersionBytes.SequenceEqual(ledgerVersionByte))
-            {
-                byte[] vchData = decodedExtPubKey.Skip(4).ToArray();
-                return Encoders.Base58Check.EncodeData(stratisVersionBytes.Concat(vchData).ToArray());
-            }
-           
-            throw new FormatException($"ExtPubKey {requestExtPubKey} could not be parsed.");
         }
 
         /// <summary>
