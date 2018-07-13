@@ -54,6 +54,9 @@ namespace Stratis.Bitcoin.Base
         /// <summary>Interval in minutes for the <see cref="autosyncTimer"/>.</summary>
         private const int AutosyncIntervalMinutes = 10;
 
+        /// <summary>Amount of headers that should be cached until we stop syncing from the peer.</summary>
+        private const int CacheSyncHeadersThreshold = 2000;
+
         /// <summary>List of block headers that were not yet consumed by <see cref="ConsensusManager"/>.</summary>
         /// <remarks>Should be protected by <see cref="asyncLock"/>.</remarks>
         private readonly List<BlockHeader> cachedHeaders;
@@ -106,38 +109,43 @@ namespace Stratis.Bitcoin.Base
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(newTip), newTip);
 
+            ConnectNewHeadersResult result = null;
+            bool syncRequired = false;
+
             using (await this.asyncLock.LockAsync().ConfigureAwait(false))
             {
                 if (this.cachedHeaders.Count != 0)
                 {
-                    ConnectNewHeadersResult result = null;
-
                     try
                     {
                         result = await this.PresentHeadersLockedAsync(this.cachedHeaders, false).ConfigureAwait(false);
 
-                        if (result.Consumed != null)
+                        if (result != null)
                         {
                             this.ExpectedPeerTip = result.Consumed;
 
                             int consumedCount = this.cachedHeaders.IndexOf(result.Consumed.Header) + 1;
 
                             this.cachedHeaders.RemoveRange(0, consumedCount);
-                            this.logger.LogTrace("{0} entries were consumed from the cache.", consumedCount);
+                            int cacheSize = this.cachedHeaders.Count;
+
+                            this.logger.LogTrace("{0} entries were consumed from the cache, {1} items were left.", consumedCount, cacheSize);
+
+                            syncRequired = cacheSize == 0;
                         }
                     }
                     catch (OperationCanceledException)
                     {
-                        // Ignore network exception caused by trySync.
+                        // Ignore network exception in case peer was disconnected.
                     }
-
-                    this.logger.LogTrace("(-):'{0}'", result);
-                    return result;
                 }
             }
 
-            this.logger.LogTrace("(-)[NO_CACHED_HEADERS]:null");
-            return null;
+            if (syncRequired)
+                await this.TrySyncAsync(true).ConfigureAwait(false);
+
+            this.logger.LogTrace("(-):'{0}'", result);
+            return result;
         }
 
         /// <summary>
@@ -270,6 +278,12 @@ namespace Stratis.Bitcoin.Base
 
             using (await this.asyncLock.LockAsync().ConfigureAwait(false))
             {
+                if (this.cachedHeaders.Count > CacheSyncHeadersThreshold)
+                {
+                    // Ignore this message because cache is full.
+                    return;
+                }
+
                 // If queue is not empty- add to queue instead of calling CM.
                 if (this.cachedHeaders.Count != 0)
                 {
@@ -298,6 +312,9 @@ namespace Stratis.Bitcoin.Base
 
                             this.logger.LogTrace("{0} out of {1} items were not consumed and added to cache.", headers.Count - consumedCount, headers.Count);
                         }
+
+                        if (this.cachedHeaders.Count < CacheSyncHeadersThreshold)
+                            await this.TrySyncAsync(false).ConfigureAwait(false);
                     }
                 }
             }
