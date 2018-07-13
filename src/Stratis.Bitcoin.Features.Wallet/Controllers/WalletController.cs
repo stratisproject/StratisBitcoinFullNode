@@ -173,7 +173,6 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         /// Loads a wallet previously created by the user.
         /// </summary>
         /// <param name="request">The name of the wallet to load.</param>
-        /// <returns></returns>
         [Route("load")]
         [HttpPost]
         public IActionResult Load([FromBody]WalletLoadRequest request)
@@ -213,7 +212,6 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         /// Recovers a wallet.
         /// </summary>
         /// <param name="request">The object containing the parameters used to recover a wallet.</param>
-        /// <returns></returns>
         [Route("recover")]
         [HttpPost]
         public IActionResult Recover([FromBody]WalletRecoveryRequest request)
@@ -258,7 +256,6 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         /// Recovers a wallet using only the extended public key.
         /// </summary>
         /// <param name="request">The object containing the parameters used to recover a wallet.</param>
-        /// <returns></returns>
         [Route("recover-via-extpubkey")]
         [HttpPost]
         public IActionResult RecoverViaExtPubKey([FromBody]WalletExtPubRecoveryRequest request)
