@@ -28,9 +28,9 @@ namespace Stratis.StratisD
                     .UseBlockStore()
                     .UsePosConsensus()
                     .UseMempool()
-                    .UseWallet()                    
+                    .UseWallet()
                     .AddPowPosMining()
-                    .UseApi()                                        
+                    .UseApi()
                     .AddRPC()
                     .Build();
 
