@@ -63,13 +63,13 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
             
             consensusRules = consensusRules.Register(this.ruleRegistration.Object) as TestConsensusRules;
 
-            List<ConsensusRuleDescriptor> rules = consensusRules.Rules.ToList();
+            List<ConsensusRule> rules = consensusRules.Rules.ToList();
             Assert.Equal(2, rules.Count);
-            ConsensusRule rule = rules[0].Rule;
+            ConsensusRule rule = rules[0];
             Assert.Equal(typeof(TestConsensusRules), rule.Parent.GetType());
             Assert.NotNull(rule.Logger);
 
-            rule = rules[1].Rule;
+            rule = rules[1];
             Assert.Equal(typeof(TestConsensusRules), rule.Parent.GetType());
             Assert.NotNull(rule.Logger);
 

@@ -20,7 +20,7 @@ namespace Stratis.Bitcoin.Consensus.Validators
         /// Validation of a header that was seen for the first time.
         /// </summary>
         /// <param name="chainedHeader">The chained header to be validated.</param>
-        Task ValidateHeader(ChainedHeader chainedHeader);
+        void ValidateHeader(ChainedHeader chainedHeader);
     }
 
     public interface IPartialValidation
@@ -45,7 +45,7 @@ namespace Stratis.Bitcoin.Consensus.Validators
         /// </remarks>
         /// <param name="block">The block that is going to be validated.</param>
         /// <param name="chainedHeader">The chained header of the block that will be validated.</param>
-        Task VerifyBlockIntegrity(Block block, ChainedHeader chainedHeader);
+        void VerifyBlockIntegrity(Block block, ChainedHeader chainedHeader);
     }
 
     // <inheritdoc />
@@ -61,13 +61,13 @@ namespace Stratis.Bitcoin.Consensus.Validators
         }
 
         // <inheritdoc />
-        public async Task ValidateHeader(ChainedHeader chainedHeader)
+        public void ValidateHeader(ChainedHeader chainedHeader)
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(chainedHeader), chainedHeader);
 
             var validationContext = new ValidationContext { ChainedHeader = chainedHeader };
 
-            await this.consensusRules.HeaderValidationAsync(validationContext, null);
+            this.consensusRules.HeaderValidationAsync(validationContext, null);
 
             this.logger.LogTrace("(-)");
         }
@@ -86,13 +86,13 @@ namespace Stratis.Bitcoin.Consensus.Validators
         }
 
         // <inheritdoc />
-        public async Task VerifyBlockIntegrity(Block block, ChainedHeader chainedHeader)
+        public void VerifyBlockIntegrity(Block block, ChainedHeader chainedHeader)
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(chainedHeader), chainedHeader);
 
             var validationContext = new ValidationContext { Block = block };
 
-            await this.consensusRules.IntegrityValidationAsync(validationContext, null);
+            this.consensusRules.IntegrityValidationAsync(validationContext, null);
 
             this.logger.LogTrace("(-)");
         }
