@@ -405,7 +405,7 @@ namespace NBitcoin.Tests
         [Trait("UnitTest", "UnitTest")]
         public void CanForkSidePartialChain()
         {
-            Block genesis = TestUtils.CreateFakeBlock();
+            Block genesis = TestUtils.CreateFakeBlock(this.network);
             var side = new ConcurrentChain(this.network, new ChainedHeader(genesis.Header, genesis.GetHash(), 0));
             var main = new ConcurrentChain(this.network, new ChainedHeader(genesis.Header, genesis.GetHash(), 0));
             this.AppendBlock(side, main);
@@ -488,10 +488,11 @@ namespace NBitcoin.Tests
             ChainedHeader block = mainTip.GetAncestor(branchLength - 1);
             for (int i = 0; i < branchLength; i++)
             {
-                Block newBlock = TestUtils.CreateFakeBlock();
+                Block newBlock = TestUtils.CreateFakeBlock(this.network);
                 newBlock.Header.HashPrevBlock = block.Header.GetHash();
                 block = new ChainedHeader(newBlock.Header, newBlock.Header.GetHash(), block);
             }
+
             ChainedHeader branchTip = block;
 
             // Test 100 random starting points for locators.
@@ -533,7 +534,7 @@ namespace NBitcoin.Tests
 
         private ConcurrentChain CreateChain(int height)
         {
-            return this.CreateChain(TestUtils.CreateFakeBlock().Header, height);
+            return this.CreateChain(TestUtils.CreateFakeBlock(this.network).Header, height);
         }
 
         private ConcurrentChain CreateChain(BlockHeader genesis, int height)
@@ -541,7 +542,7 @@ namespace NBitcoin.Tests
             var chain = new ConcurrentChain(this.network, new ChainedHeader(genesis, genesis.GetHash(), 0));
             for (int i = 0; i < height; i++)
             {
-                Block b = TestUtils.CreateFakeBlock();
+                Block b = TestUtils.CreateFakeBlock(this.network);
                 b.Header.HashPrevBlock = chain.Tip.HashBlock;
                 chain.SetTip(b.Header);
             }
@@ -554,7 +555,7 @@ namespace NBitcoin.Tests
             uint nonce = RandomUtils.GetUInt32();
             foreach (ConcurrentChain chain in chains)
             {
-                Block block = TestUtils.CreateFakeBlock(this.network.CreateTransaction());
+                Block block = TestUtils.CreateFakeBlock(this.network);
                 block.Header.HashPrevBlock = previous == null ? chain.Tip.HashBlock : previous.HashBlock;
                 block.Header.Nonce = nonce;
                 if (!chain.TrySetTip(block.Header, out last))
