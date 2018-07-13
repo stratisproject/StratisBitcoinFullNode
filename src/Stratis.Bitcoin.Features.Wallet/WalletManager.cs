@@ -347,6 +347,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             return wallet;
         }
 
+        /// <inheritdoc />
         public Wallet RecoverWallet(string name, ExtPubKey extPubKey, int accountIndex, DateTime creationTime)
         {
             Guard.NotEmpty(name, nameof(name));
