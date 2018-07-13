@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Net;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
 using Moq;
 using NBitcoin;
 using NBitcoin.DataEncoders;
@@ -35,7 +34,6 @@ namespace Stratis.Bitcoin.Tests.Controllers
         private readonly Mock<IPooledGetUnspentTransaction> pooledGetUnspentTransaction;
         private readonly Mock<IGetUnspentTransaction> getUnspentTransaction;
         private readonly Mock<INetworkDifficulty> networkDifficulty;
-        private readonly Mock<ILoggerFactory> LoggerFactory;
         private NodeController controller;
 
         public NodeControllerTest()
@@ -52,9 +50,6 @@ namespace Stratis.Bitcoin.Tests.Controllers
             this.pooledGetUnspentTransaction = new Mock<IPooledGetUnspentTransaction>();
             this.getUnspentTransaction = new Mock<IGetUnspentTransaction>();
             this.networkDifficulty = new Mock<INetworkDifficulty>();
-            this.LoggerFactory = new Mock<ILoggerFactory>();
-            this.LoggerFactory.Setup(i => i.CreateLogger(It.IsAny<string>())).Returns(new Mock<ILogger>().Object);
-
 
             this.controller = new NodeController(this.fullNode.Object, this.LoggerFactory.Object, 
                 this.dateTimeProvider.Object, this.chainState.Object, this.nodeSettings, 

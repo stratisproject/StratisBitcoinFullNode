@@ -36,7 +36,6 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
         private readonly Mock<IConsensusLoop> consensusLoop;
         private readonly Mock<INetworkDifficulty> networkDifficulty;
         private FullNodeController controller;
-        private readonly bool initialBlockSignature;
 
         public FullNodeControllerTest()
         {

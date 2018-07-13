@@ -20,16 +20,16 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
 {
     public class PowMiningTest : LogsTestBase, IClassFixture<PowMiningTestFixture>
     {
-        private Mock<IAsyncLoopFactory> asyncLoopFactory;
+        private readonly Mock<IAsyncLoopFactory> asyncLoopFactory;
         private ConcurrentChain chain;
-        private Mock<IConsensusLoop> consensusLoop;
-        private Mock<IConsensusRules> consensusRules;
-        private NBitcoin.Consensus.ConsensusOptions initialNetworkOptions;
-        private PowMiningTestFixture fixture;
-        private Mock<ITxMempool> mempool;
-        private MempoolSchedulerLock mempoolLock;
-        private Network network;
-        private Mock<INodeLifetime> nodeLifetime;
+        private readonly Mock<IConsensusLoop> consensusLoop;
+        private readonly Mock<IConsensusRules> consensusRules;
+        private readonly NBitcoin.Consensus.ConsensusOptions initialNetworkOptions;
+        private readonly PowMiningTestFixture fixture;
+        private readonly Mock<ITxMempool> mempool;
+        private readonly MempoolSchedulerLock mempoolLock;
+        private readonly Network network;
+        private readonly Mock<INodeLifetime> nodeLifetime;
 
         public PowMiningTest(PowMiningTestFixture fixture)
         {
@@ -44,6 +44,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
 
             this.consensusLoop = new Mock<IConsensusLoop>();
             this.consensusLoop.SetupGet(c => c.Tip).Returns(() => this.chain.Tip);
+            this.consensusRules = new Mock<IConsensusRules>();
 
             this.mempool = new Mock<ITxMempool>();
             this.mempool.SetupGet(mp => mp.MapTx).Returns(new TxMempool.IndexedTransactionSet());

@@ -41,7 +41,6 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
         private uint256 retrievedBlockId;
         private Transaction wontRetrieveBlockId;
 
-
         public RetrieveFromBlockStoreSpecification(ITestOutputHelper output) : base(output)
         {
             this.sharedSteps = new SharedSteps();
@@ -57,7 +56,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
             this.builder?.Dispose();
         }
 
-        public void a_pow_node_running()
+        private void a_pow_node_running()
         {
             this.node = this.builder.CreateStratisPowNode();
             this.node.Start();
@@ -89,13 +88,13 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
             this.node.SetDummyMinerSecret(new BitcoinSecret(this.key, this.node.FullNode.Network));
         }
 
-        public void some_real_blocks_with_a_uint256_identifier()
+        private void some_real_blocks_with_a_uint256_identifier()
         {
             this.maturity = (int)this.node.FullNode.Network.Consensus.CoinbaseMaturity;
             this.blockIds = this.node.GenerateStratisWithMiner(this.maturity + 1);
         }
 
-        public void some_blocks_creating_reward()
+        private void some_blocks_creating_reward()
         {
             this.some_real_blocks_with_a_uint256_identifier();
         }
@@ -112,17 +111,17 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
             this.transaction.GetHash().Should().NotBe(this.wrongTransactionId, "it would corrupt the test");
         }
 
-        public void the_node_is_synced()
+        private void the_node_is_synced()
         {
             this.sharedSteps.WaitForNodeToSync(this.node);
         }
 
-        public void the_nodes_are_synced()
+        private void the_nodes_are_synced()
         {
             this.sharedSteps.WaitForNodeToSync(this.node, this.transactionNode);
         }
 
-        public void a_real_transaction()
+        private void a_real_transaction()
         {           
             var transactionBuildContext = new TransactionBuildContext(
                     this.miningWalletAccountReference,
@@ -142,12 +141,10 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
             this.sharedSteps.WaitForNodeToSync(this.node, this.transactionNode);
         }
 
-        public async Task trying_to_retrieve_the_blocks_from_the_blockstore()
+        private void trying_to_retrieve_the_blocks_from_the_blockstore()
         {
             this.retrievedBlocks = this.blockIds.Concat(new[] { this.wrongBlockId })
-                .Select(async id =>
-                    await this.node.FullNode.BlockStoreManager().BlockRepository
-                        .GetAsync(id)).Select(b => b.Result).ToList();
+                .Select(id => this.node.FullNode.BlockStoreManager().BlockRepository.GetAsync(id).GetAwaiter().GetResult()).Select(b => b).ToList();
 
             this.retrievedBlocks.Count(b => b != null).Should().Be(this.blockIds.Count);
             this.retrievedBlocks.Count(b => b == null).Should().Be(1);
@@ -156,7 +153,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
             this.retrievedBlockHashes.Should().OnlyHaveUniqueItems();
         }
 
-        public async Task trying_to_retrieve_the_transactions_by_Id_from_the_blockstore()
+        private async Task trying_to_retrieve_the_transactions_by_Id_from_the_blockstore()
         {
             this.retrievedTransaction = await this.node.FullNode.BlockStoreManager().BlockRepository
                 .GetTrxAsync(this.transaction.GetHash());
@@ -164,7 +161,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
                 .GetTrxAsync(this.wrongTransactionId);
         }
 
-        public async Task trying_to_retrieve_the_block_containing_the_transactions_from_the_blockstore()
+        private async Task trying_to_retrieve_the_block_containing_the_transactions_from_the_blockstore()
         {
             this.retrievedBlockId = await this.node.FullNode.BlockStoreManager().BlockRepository
                 .GetTrxBlockIdAsync(this.transaction.GetHash());
@@ -172,7 +169,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
                 .GetTrxAsync(this.wrongTransactionId);
         }
 
-        public void real_blocks_should_be_retrieved()
+        private void real_blocks_should_be_retrieved()
         {
             this.retrievedBlockHashes.Should().BeEquivalentTo(this.blockIds);
         }
@@ -189,7 +186,6 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
             this.retrievedTransaction.Outputs.Should()
                 .Contain(t => t.Value == this.transferAmount.Satoshi
                               && t.ScriptPubKey.GetDestinationAddress(this.node.FullNode.Network).ScriptPubKey == this.receiverAddress.ScriptPubKey);
-
         }
 
         private void the_wrong_transaction_id_should_return_null()
