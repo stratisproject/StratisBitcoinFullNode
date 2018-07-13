@@ -31,7 +31,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         [Fact]
         public async Task RunAsync_ZeroTransactions_ThrowsBadBlockLengthConsensusErrorExceptionAsync()
         {
-            this.ruleContext.ValidationContext.Block = new Block();
+            this.ruleContext.ValidationContext.Block = this.network.CreateBlock();
 
             ConsensusErrorException exception = await Assert.ThrowsAsync<ConsensusErrorException>(() => this.consensusRules.RegisterRule<BlockSizeRule>().RunAsync(this.ruleContext));
 
@@ -41,7 +41,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         [Fact]
         public async Task RunAsync_TransactionCountAboveMaxBlockBaseSize_ThrowsBadBlockLengthConsensusErrorExceptionAsync()
         {
-            this.ruleContext.ValidationContext.Block = new Block();
+            this.ruleContext.ValidationContext.Block = this.network.CreateBlock();
 
             for (int i = 0; i < this.options.MaxBlockBaseSize + 1; i++)
             {
@@ -93,7 +93,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         [Fact]
         public async Task TaskAsync_TransactionCountBelowLimit_DoesNotThrowExceptionAsync()
         {
-            this.ruleContext.ValidationContext.Block = new Block();
+            this.ruleContext.ValidationContext.Block = this.network.CreateBlock();
 
             for (int i = 0; i < 10; i++)
             {
@@ -123,7 +123,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
 
         private Block GenerateBlockWithWeight(int weight, TransactionOptions options)
         {
-            var block = new Block();
+            var block = this.network.CreateBlock();
             var transaction = new Transaction();
             transaction.Outputs.Add(new TxOut(new Money(10000000000), new Script()));
             block.Transactions.Add(transaction);

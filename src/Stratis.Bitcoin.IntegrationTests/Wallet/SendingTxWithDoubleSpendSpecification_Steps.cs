@@ -20,7 +20,6 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         private CoreNode stratisSender;
         private CoreNode stratisReceiver;
         private Transaction transaction;
-        private ErrorResult errorResult;
         private MempoolValidationState mempoolValidationState;
         private HdAddress receivingAddress;
 
@@ -65,8 +64,8 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             total.Should().Equals(Money.COIN * 105 * 50);
 
             // sync both nodes
-            this.stratisSender.CreateRPCClient().AddNode(stratisReceiver.Endpoint, true);
-            TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(stratisReceiver, stratisSender));
+            this.stratisSender.CreateRPCClient().AddNode(this.stratisReceiver.Endpoint, true);
+            TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(this.stratisReceiver, this.stratisSender));
         }
 
         private void coins_first_sent_to_receiving_wallet()

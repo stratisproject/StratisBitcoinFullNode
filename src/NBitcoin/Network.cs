@@ -697,6 +697,11 @@ namespace NBitcoin
             }
         }
 
+        public Block CreateBlock()
+        {
+            return this.Consensus.ConsensusFactory.CreateBlock();
+        }
+
         public Transaction CreateTransaction()
         {
             return this.Consensus.ConsensusFactory.CreateTransaction();

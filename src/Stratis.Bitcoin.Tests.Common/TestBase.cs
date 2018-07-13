@@ -20,9 +20,9 @@ namespace Stratis.Bitcoin.Tests.Common
         {
             this.Network = network;
             var serializer = new DBreezeSerializer();
-            serializer.Initialize(this.Network); 
+            serializer.Initialize(this.Network);
         }
-        
+
         public static string AssureEmptyDir(string dir)
         {
             int deleteAttempts = 0;
@@ -136,15 +136,15 @@ namespace Stratis.Bitcoin.Tests.Common
 
         public Block CreateBlock(int blockNumber, bool bigBlocks = false)
         {
-            var block = new Block();
+            Block block = this.Network.CreateBlock();
 
             int transactionCount = bigBlocks ? 1000 : 10;
 
             for (int j = 0; j < transactionCount; j++)
             {
-                var trx = new Transaction();
+                Transaction trx = this.Network.CreateTransaction();
 
-                block.AddTransaction(new Transaction());
+                block.AddTransaction(this.Network.CreateTransaction());
 
                 trx.AddInput(new TxIn(Script.Empty));
                 trx.AddOutput(Money.COIN + j + blockNumber, new Script(Enumerable.Range(1, 5).SelectMany(index => Guid.NewGuid().ToByteArray())));
