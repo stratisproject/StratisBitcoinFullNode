@@ -451,7 +451,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
         }
 
         [Obsolete("Please use GenerateStratisWithMiner instead.")]
-        public Block[] GenerateStratis(int blockCount, List<Transaction> passedTransactions = null, bool broadcast = true)
+        public uint256[] GenerateStratis(int blockCount, List<Transaction> passedTransactions = null, bool broadcast = true)
         {
             FullNode fullNode = (this.runner as StratisBitcoinPowRunner).FullNode;
             BitcoinSecret dest = this.MinerSecret;
@@ -484,32 +484,10 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
                     var newChain = new ChainedHeader(block.Header, blockHash, fullNode.Chain.Tip);
                     ChainedHeader oldTip = fullNode.Chain.SetTip(newChain);
                     fullNode.ConsensusLoop().Puller.InjectBlock(blockHash, new DownloadedBlock { Length = block.GetSerializedSize(), Block = block }, CancellationToken.None);
-
-                    //try
-                    //{
-                    //    var blockResult = new BlockResult { Block = block };
-                    //    fullNode.ConsensusLoop.AcceptBlock(blockResult);
-
-                    //    // similar logic to what's in the full node code
-                    //    if (blockResult.Error == null)
-                    //    {
-                    //        fullNode.ChainBehaviorState.ConsensusTip = fullNode.ConsensusLoop.Tip;
-                    //        //if (fullNode.Chain.Tip.HashBlock == blockResult.ChainedHeader.HashBlock)
-                    //        //{
-                    //        //    var unused = cache.FlushAsync();
-                    //        //}
-                    //        fullNode.Signals.Blocks.Broadcast(block);
-                    //    }
-                    //}
-                    //catch (ConsensusErrorException)
-                    //{
-                    //    // set back the old tip
-                    //    fullNode.Chain.SetTip(oldTip);
-                    //}
                 }
             }
 
-            return blocks.ToArray();
+            return blocks.Select(b => b.GetHash()).ToArray();
         }
 
         public async Task BroadcastBlocksAsync(Block[] blocks, INetworkPeer peer)

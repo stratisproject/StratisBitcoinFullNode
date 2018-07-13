@@ -39,7 +39,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
 
                 stratisSender.SetDummyMinerSecret(new BitcoinSecret(key, stratisSender.FullNode.Network));
                 int maturity = (int)stratisSender.FullNode.Network.Consensus.CoinbaseMaturity;
-                stratisSender.GenerateStratis(maturity + 5);
+                stratisSender.GenerateStratisWithMiner(maturity + 5);
                 // wait for block repo for block sync to work
 
                 TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(stratisSender));
@@ -70,7 +70,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
 
                 // generate two new blocks do the trx is confirmed
                 stratisSender.GenerateStratis(1, new List<Transaction>(new[] { stratisSender.FullNode.Network.CreateTransaction(trx.ToBytes()) }));
-                stratisSender.GenerateStratis(1);
+                stratisSender.GenerateStratisWithMiner(1);
 
                 // wait for block repo for block sync to work
                 TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(stratisSender));
@@ -402,14 +402,14 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                 Key key = wallet.GetExtendedPrivateKeyForAddress("123456", addr).PrivateKey;
 
                 stratisminer.SetDummyMinerSecret(key.GetBitcoinSecret(stratisminer.FullNode.Network));
-                stratisminer.GenerateStratis(10);
+                stratisminer.GenerateStratisWithMiner(10);
                 // wait for block repo for block sync to work
                 TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(stratisminer));
 
                 // push the wallet back
                 stratisminer.FullNode.Services.ServiceProvider.GetService<IWalletSyncManager>().SyncFromHeight(5);
 
-                stratisminer.GenerateStratis(5);
+                stratisminer.GenerateStratisWithMiner(5);
 
                 TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(stratisminer));
             }
@@ -432,7 +432,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                 Key key = wallet.GetExtendedPrivateKeyForAddress("123456", addr).PrivateKey;
 
                 stratisNodeSync.SetDummyMinerSecret(key.GetBitcoinSecret(stratisNodeSync.FullNode.Network));
-                stratisNodeSync.GenerateStratis(10);
+                stratisNodeSync.GenerateStratisWithMiner(10);
                 TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(stratisNodeSync));
 
                 // set the tip of best chain some blocks in the apst

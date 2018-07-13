@@ -7,7 +7,6 @@ using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
-using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.Utilities;
 using Xunit;
 
@@ -70,7 +69,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 stratisNodeSync.NotInIBD();
 
                 stratisNodeSync.SetDummyMinerSecret(new BitcoinSecret(new Key(), stratisNodeSync.FullNode.Network));
-                stratisNodeSync.GenerateStratis(105); // coinbase maturity = 100
+                stratisNodeSync.GenerateStratisWithMiner(105); // coinbase maturity = 100
                 TestHelper.WaitLoop(() => stratisNodeSync.FullNode.ConsensusLoop().Tip.HashBlock == stratisNodeSync.FullNode.Chain.Tip.HashBlock);
                 TestHelper.WaitLoop(() => stratisNodeSync.FullNode.GetBlockStoreTip().HashBlock == stratisNodeSync.FullNode.Chain.Tip.HashBlock);
 
@@ -176,22 +175,22 @@ namespace Stratis.Bitcoin.IntegrationTests
                 }
 
                 // Test 1: block with both of those transactions should be rejected.
-                Block block = stratisNodeSync.GenerateStratis(1, spends).Single();
+                uint256 block = stratisNodeSync.GenerateStratis(1, spends).Single();
                 TestHelper.WaitLoop(() => stratisNodeSync.FullNode.ConsensusLoop().Tip.HashBlock == stratisNodeSync.FullNode.Chain.Tip.HashBlock);
-                Assert.True(stratisNodeSync.FullNode.Chain.Tip.HashBlock != block.GetHash());
+                Assert.True(stratisNodeSync.FullNode.Chain.Tip.HashBlock != block);
 
                 // Test 2: ... and should be rejected if spend1 is in the memory pool
                 Assert.True(stratisNodeSync.AddToStratisMempool(spends[0]));
                 block = stratisNodeSync.GenerateStratis(1, spends).Single();
                 TestHelper.WaitLoop(() => stratisNodeSync.FullNode.ConsensusLoop().Tip.HashBlock == stratisNodeSync.FullNode.Chain.Tip.HashBlock);
-                Assert.True(stratisNodeSync.FullNode.Chain.Tip.HashBlock != block.GetHash());
+                Assert.True(stratisNodeSync.FullNode.Chain.Tip.HashBlock != block);
                 stratisNodeSync.FullNode.MempoolManager().Clear().Wait();
 
                 // Test 3: ... and should be rejected if spend2 is in the memory pool
                 Assert.True(stratisNodeSync.AddToStratisMempool(spends[1]));
                 block = stratisNodeSync.GenerateStratis(1, spends).Single();
                 TestHelper.WaitLoop(() => stratisNodeSync.FullNode.ConsensusLoop().Tip.HashBlock == stratisNodeSync.FullNode.Chain.Tip.HashBlock);
-                Assert.True(stratisNodeSync.FullNode.Chain.Tip.HashBlock != block.GetHash());
+                Assert.True(stratisNodeSync.FullNode.Chain.Tip.HashBlock != block);
                 stratisNodeSync.FullNode.MempoolManager().Clear().Wait();
 
                 // Final sanity test: first spend in mempool, second in block, that's OK:
@@ -200,7 +199,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 Assert.True(stratisNodeSync.AddToStratisMempool(spends[1]));
                 block = stratisNodeSync.GenerateStratis(1, oneSpend).Single();
                 TestHelper.WaitLoop(() => stratisNodeSync.FullNode.ConsensusLoop().Tip.HashBlock == stratisNodeSync.FullNode.Chain.Tip.HashBlock);
-                Assert.True(stratisNodeSync.FullNode.Chain.Tip.HashBlock == block.GetHash());
+                Assert.True(stratisNodeSync.FullNode.Chain.Tip.HashBlock == block);
 
                 // spends[1] should have been removed from the mempool when the
                 // block with spends[0] is accepted:
@@ -293,7 +292,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 stratisNodeSync.NotInIBD();
 
                 stratisNodeSync.SetDummyMinerSecret(new BitcoinSecret(new Key(), stratisNodeSync.FullNode.Network));
-                stratisNodeSync.GenerateStratis(101); // coinbase maturity = 100
+                stratisNodeSync.GenerateStratisWithMiner(101); // coinbase maturity = 100
                 TestHelper.WaitLoop(() => stratisNodeSync.FullNode.ConsensusLoop().Tip.HashBlock == stratisNodeSync.FullNode.Chain.Tip.HashBlock);
                 TestHelper.WaitLoop(() => stratisNodeSync.FullNode.ChainBehaviorState.ConsensusTip.HashBlock == stratisNodeSync.FullNode.Chain.Tip.HashBlock);
                 TestHelper.WaitLoop(() => stratisNodeSync.FullNode.GetBlockStoreTip().HashBlock == stratisNodeSync.FullNode.Chain.Tip.HashBlock);
