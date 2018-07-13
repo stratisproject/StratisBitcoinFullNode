@@ -89,7 +89,7 @@ namespace Stratis.Bitcoin.Base
             {
                 this.logger.LogTrace("()");
 
-                await this.TrySyncAsync(true).ConfigureAwait(false);
+                await this.SendGetHeadersPayloadAsync().ConfigureAwait(false);
 
                 this.logger.LogTrace("(-)");
             }, null, 0, (int)TimeSpan.FromMinutes(AutosyncIntervalMinutes).TotalMilliseconds);
@@ -110,39 +110,27 @@ namespace Stratis.Bitcoin.Base
             this.logger.LogTrace("({0}:'{1}')", nameof(newTip), newTip);
 
             ConnectNewHeadersResult result = null;
-            bool syncRequired = false;
 
             using (await this.asyncLock.LockAsync().ConfigureAwait(false))
             {
                 if (this.cachedHeaders.Count != 0)
                 {
-                    try
+                    result = await this.PresentHeadersLockedAsync(this.cachedHeaders, false).ConfigureAwait(false);
+
+                    if (result == null)
                     {
-                        result = await this.PresentHeadersLockedAsync(this.cachedHeaders, false).ConfigureAwait(false);
-
-                        if (result != null)
-                        {
-                            this.ExpectedPeerTip = result.Consumed;
-
-                            int consumedCount = this.cachedHeaders.IndexOf(result.Consumed.Header) + 1;
-
-                            this.cachedHeaders.RemoveRange(0, consumedCount);
-                            int cacheSize = this.cachedHeaders.Count;
-
-                            this.logger.LogTrace("{0} entries were consumed from the cache, {1} items were left.", consumedCount, cacheSize);
-
-                            syncRequired = cacheSize == 0;
-                        }
+                        this.logger.LogTrace("(-)[NO_HEADERS_CONNECTED]");
+                        return null;
                     }
-                    catch (OperationCanceledException)
-                    {
-                        // Ignore network exception in case peer was disconnected.
-                    }
+
+                    this.ExpectedPeerTip = result.Consumed;
+
+                    int consumedCount = this.cachedHeaders.IndexOf(result.Consumed.Header) + 1;
+                    this.cachedHeaders.RemoveRange(0, consumedCount);
+
+                    this.logger.LogTrace("{0} entries were consumed from the cache, {1} items were left.", consumedCount, this.cachedHeaders.Count);
                 }
             }
-
-            if (syncRequired)
-                await this.TrySyncAsync(true).ConfigureAwait(false);
 
             this.logger.LogTrace("(-):'{0}'", result);
             return result;
@@ -157,21 +145,15 @@ namespace Stratis.Bitcoin.Base
         {
             this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(peer), peer.RemoteSocketEndpoint, nameof(message), message.Message.Command);
 
-            try
+            switch (message.Message.Payload)
             {
-                switch (message.Message.Payload)
-                {
-                    case GetHeadersPayload getHeaders:
-                        await this.ProcessGetHeadersAsync(peer, getHeaders).ConfigureAwait(false);
-                        break;
+                case GetHeadersPayload getHeaders:
+                    await this.ProcessGetHeadersAsync(peer, getHeaders).ConfigureAwait(false);
+                    break;
 
-                    case HeadersPayload headers:
-                        await this.ProcessHeadersAsync(peer, headers).ConfigureAwait(false);
-                        break;
-                }
-            }
-            catch (OperationCanceledException)
-            {
+                case HeadersPayload headers:
+                    await this.ProcessHeadersAsync(peer, headers).ConfigureAwait(false);
+                    break;
             }
 
             this.logger.LogTrace("(-)");
@@ -217,7 +199,14 @@ namespace Stratis.Bitcoin.Base
                 }
             }
 
-            await peer.SendMessageAsync(headers).ConfigureAwait(false);
+            try
+            {
+                await peer.SendMessageAsync(headers).ConfigureAwait(false);
+            }
+            catch (OperationCanceledException)
+            {
+                this.logger.LogTrace("Unable to send headers message to peer '{0}'.", peer.RemoteSocketEndpoint);
+            }
 
             this.logger.LogTrace("(-)");
         }
@@ -306,7 +295,7 @@ namespace Stratis.Bitcoin.Base
                 }
 
                 if (this.cachedHeaders.Count < CacheSyncHeadersThreshold)
-                    await this.TrySyncAsync(false).ConfigureAwait(false);
+                    await this.SendGetHeadersPayloadAsync().ConfigureAwait(false);
             }
 
             this.logger.LogTrace("(-)");
@@ -329,7 +318,7 @@ namespace Stratis.Bitcoin.Base
                 this.cachedHeaders.Clear();
 
                 // Resync in case can't connect.
-                await this.TrySyncAsync(false).ConfigureAwait(false);
+                await this.SendGetHeadersPayloadAsync().ConfigureAwait(false);
             }
             catch (CheckpointMismatchException)
             {
@@ -344,7 +333,7 @@ namespace Stratis.Bitcoin.Base
         {
             this.logger.LogTrace("({0}:'{1}',{2}:{3},{4}:{5})", nameof(peer), peer.RemoteSocketEndpoint, nameof(oldState), oldState, nameof(peer.State), peer.State);
 
-            await this.TrySyncAsync(true).ConfigureAwait(false);
+            await this.SendGetHeadersPayloadAsync().ConfigureAwait(false);
 
             this.logger.LogTrace("(-)");
         }
@@ -356,13 +345,13 @@ namespace Stratis.Bitcoin.Base
 
             this.ExpectedPeerTip = null;
 
-            await this.TrySyncAsync(true).ConfigureAwait(false);
+            await this.SendGetHeadersPayloadAsync().ConfigureAwait(false);
 
             this.logger.LogTrace("(-)");
         }
 
         /// <summary>Tries to sync the chain with the peer by sending it <see cref="GetHeadersPayload"/>.</summary>
-        private async Task TrySyncAsync(bool ignorePeerDisconnectedExceptions) //TODO always swallow exception
+        private async Task SendGetHeadersPayloadAsync()
         {
             this.logger.LogTrace("()");
 
@@ -382,10 +371,7 @@ namespace Stratis.Bitcoin.Base
                 }
                 catch (OperationCanceledException)
                 {
-                    this.logger.LogTrace("Unable to send headers message to peer '{0}'.", peer.RemoteSocketEndpoint);
-
-                    if (!ignorePeerDisconnectedExceptions)
-                        throw;
+                    this.logger.LogTrace("Unable to send getheaders message to peer '{0}'.", peer.RemoteSocketEndpoint);
                 }
             }
             else
