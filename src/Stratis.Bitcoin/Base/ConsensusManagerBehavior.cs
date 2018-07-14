@@ -83,30 +83,6 @@ namespace Stratis.Bitcoin.Base
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName, $"[{this.GetHashCode():x}] ");
         }
 
-        ///  <inheritdoc />
-        protected override void AttachCore()
-        {
-            this.logger.LogTrace("()");
-
-            // Initialize auto sync timer.
-            this.autosyncTimer = new Timer(async (o) =>
-            {
-                this.logger.LogTrace("()");
-
-                await this.ResyncAsync().ConfigureAwait(false);
-
-                this.logger.LogTrace("(-)");
-            }, null, 0, (int)TimeSpan.FromMinutes(AutosyncIntervalMinutes).TotalMilliseconds);
-
-            if (this.AttachedPeer.State == NetworkPeerState.Connected)
-                this.AttachedPeer.MyVersion.StartHeight = this.consensusManager.Tip.Height;
-
-            this.AttachedPeer.StateChanged.Register(this.OnStateChangedAsync);
-            this.AttachedPeer.MessageReceived.Register(this.OnMessageReceivedAsync, true);
-
-            this.logger.LogTrace("(-)");
-        }
-
         /// <summary>Presents cached headers to <see cref="ConsensusManager"/> from the cache if any and removes consumed from the cache.</summary>
         /// <param name="newTip">New consensus tip.</param>
         public async Task<ConnectNewHeadersResult> ConsensusTipChangedAsync(ChainedHeader newTip)
@@ -313,18 +289,29 @@ namespace Stratis.Bitcoin.Base
 
         /// <summary>Presents the headers to <see cref="ConsensusManager"/> and handles exceptions if any.</summary>
         /// <remarks>Have to be locked by <see cref="asyncLock"/>.</remarks>
+        /// <param name="headers">List of headers that the peer presented.</param>
+        /// <param name="triggerDownload">Specifies if the download should be scheduled for interesting blocks.</param>
         private async Task<ConnectNewHeadersResult> PresentHeadersLockedAsync(List<BlockHeader> headers, bool triggerDownload = true)
         {
             this.logger.LogTrace("({0}.{1}:{2},{3}:{4})", nameof(headers), nameof(headers.Count), headers.Count, nameof(triggerDownload), triggerDownload);
 
             ConnectNewHeadersResult result = null;
 
+            INetworkPeer peer = this.AttachedPeer;
+
+            if (peer == null)
+            {
+                this.logger.LogTrace("(-)[PEER_DETACHED]:null");
+                return null;
+            }
+
             try
             {
-                result = this.consensusManager.HeadersPresented(this.AttachedPeer, headers, triggerDownload);
+                result = this.consensusManager.HeadersPresented(peer, headers, triggerDownload);
             }
             catch (ConnectHeaderException)
             {
+                this.logger.LogTrace("Unable to connect headers.");
                 this.cachedHeaders.Clear();
 
                 // Resync in case can't connect.
@@ -332,13 +319,16 @@ namespace Stratis.Bitcoin.Base
             }
             catch (CheckpointMismatchException)
             {
-                this.peerBanning.BanAndDisconnectPeer(this.AttachedPeer.PeerEndPoint, this.connectionManager.ConnectionSettings.BanTimeSeconds, "Peer presented header that violates a checkpoint.");
+                this.logger.LogTrace("Peer's headers violated a checkpoint. Peer will be banned and disconnected.");
+                this.peerBanning.BanAndDisconnectPeer(peer.PeerEndPoint, this.connectionManager.ConnectionSettings.BanTimeSeconds, "Peer presented header that violates a checkpoint.");
             }
+            //TODO catch more exceptions when validator are implemented and CM.HeadersPresented can throw anything else
 
             this.logger.LogTrace("(-):'{0}'", result);
             return result;
         }
 
+        /// <summary>Resyncs the peer whenever state is changed.</summary>
         private async Task OnStateChangedAsync(INetworkPeer peer, NetworkPeerState oldState)
         {
             this.logger.LogTrace("({0}:'{1}',{2}:{3},{4}:{5})", nameof(peer), peer.RemoteSocketEndpoint, nameof(oldState), oldState, nameof(peer.State), peer.State);
@@ -360,7 +350,7 @@ namespace Stratis.Bitcoin.Base
             this.logger.LogTrace("(-)");
         }
 
-        /// <summary>Tries to sync the chain with the peer by sending it <see cref="GetHeadersPayload"/>.</summary>
+        /// <summary>Tries to sync the chain with the peer by sending it <see cref="GetHeadersPayload"/> in case peer's state is <see cref="NetworkPeerState.HandShaked"/>.</summary>
         private async Task ResyncAsync()
         {
             this.logger.LogTrace("()");
@@ -391,14 +381,36 @@ namespace Stratis.Bitcoin.Base
         }
 
         ///  <inheritdoc />
+        protected override void AttachCore()
+        {
+            this.logger.LogTrace("()");
+
+            // Initialize auto sync timer.
+            this.autosyncTimer = new Timer(async (o) =>
+            {
+                this.logger.LogTrace("()");
+
+                await this.ResyncAsync().ConfigureAwait(false);
+
+                this.logger.LogTrace("(-)");
+            }, null, 0, (int)TimeSpan.FromMinutes(AutosyncIntervalMinutes).TotalMilliseconds);
+
+            if (this.AttachedPeer.State == NetworkPeerState.Connected)
+                this.AttachedPeer.MyVersion.StartHeight = this.consensusManager.Tip.Height;
+
+            this.AttachedPeer.StateChanged.Register(this.OnStateChangedAsync);
+            this.AttachedPeer.MessageReceived.Register(this.OnMessageReceivedAsync, true);
+
+            this.logger.LogTrace("(-)");
+        }
+
+        ///  <inheritdoc />
         protected override void DetachCore()
         {
             this.logger.LogTrace("()");
 
             this.AttachedPeer.MessageReceived.Unregister(this.OnMessageReceivedAsync);
             this.AttachedPeer.StateChanged.Unregister(this.OnStateChangedAsync);
-
-            this.consensusManager.PeerDisconnected(this.AttachedPeer.Connection.Id);
 
             this.logger.LogTrace("(-)");
         }
