@@ -1,11 +1,11 @@
 ﻿using NBitcoin;
-using Stratis.Bitcoin.Builder;
-using Stratis.Bitcoin.Configuration;
-using Stratis.Bitcoin.Features.Consensus;
-using Stratis.Bitcoin.Features.RPC;
-using Stratis.Bitcoin.Tests.Common;
-using Xunit;
-
+using Stratis.Bitcoin.Builder;	
+using Stratis.Bitcoin.Configuration;	
+using Stratis.Bitcoin.Features.Consensus;	
+using Stratis.Bitcoin.Features.RPC;	
+using Stratis.Bitcoin.Tests.Common;	
+using Xunit;	
+	
 namespace Stratis.Bitcoin.IntegrationTests.RPC
 {	
     public class RPCSettingsTest : TestBase	

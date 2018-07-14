@@ -299,7 +299,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                 this.logger.LogError(e, "Exception occurred: {0}", e.StackTrace);
                 if (e is System.FormatException)
                     return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
-        
+
                 return ErrorHelpers.BuildErrorResponse(HttpStatusCode.InternalServerError, e.Message, e.ToString());
             }
         }
@@ -462,7 +462,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                         HdPath = accountHistory.Account.HdPath
                     });
                 }
-                
+
                 return this.Json(model);
             }
             catch (Exception e)
@@ -710,9 +710,11 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                 foreach (TxOut output in transaction.Outputs)
                 {
                     bool isUnspendable = output.ScriptPubKey.IsUnspendable;
+
+                    string address = GetAddressFromScriptPubKey(output);
                     model.Outputs.Add(new TransactionOutputModel
                     {
-                        Address = isUnspendable ? null : output.ScriptPubKey.GetDestinationAddress(this.network).ToString(),
+                        Address = address,
                         Amount = output.Value,
                         OpReturnData = isUnspendable ? Encoding.UTF8.GetString(output.ScriptPubKey.ToOps().Last().PushData) : null
                     });
@@ -723,7 +725,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                 TransactionBroadcastEntry transactionBroadCastEntry = this.broadcasterManager.GetTransaction(transaction.GetHash());
 
                 if (!string.IsNullOrEmpty(transactionBroadCastEntry?.ErrorMessage))
-                {                    
+                {
                     this.logger.LogError("Exception occurred: {0}", transactionBroadCastEntry.ErrorMessage);
                     return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, transactionBroadCastEntry.ErrorMessage, "Transaction Exception");
                 }
@@ -812,7 +814,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                 IEnumerable<HdAccount> result = this.walletManager.GetAccounts(request.WalletName);
                 return this.Json(result.Select(a => a.Name));
             }
-            catch(Exception e)
+            catch (Exception e)
             {
                 this.logger.LogError("Exception occurred: {0}", e.ToString());
                 return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
@@ -1025,6 +1027,25 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
 
             this.walletSyncManager.SyncFromHeight(block.Height);
             return this.Ok();
+        }
+
+        /// <summary>
+        /// Retrieves a string that represents the receiving address for an output. For smart contract transactions,
+        /// returns the opcode that was sent i.e. OP_CALL or OP_CREATE
+        /// </summary>
+        private string GetAddressFromScriptPubKey(TxOut output)
+        {
+            if (output.ScriptPubKey.IsSmartContractExec())
+            {
+                return output.ScriptPubKey.ToOps().First().Code.ToString();
+            }
+
+            if (!output.ScriptPubKey.IsUnspendable)
+            {
+                return output.ScriptPubKey.GetDestinationAddress(this.network).ToString();
+            }
+
+            return null;
         }
 
         /// <summary>
