@@ -110,6 +110,7 @@ namespace Stratis.Bitcoin.Base
             this.logger.LogTrace("({0}:'{1}')", nameof(newTip), newTip);
 
             ConnectNewHeadersResult result = null;
+            bool syncRequired = false;
 
             using (await this.asyncLock.LockAsync().ConfigureAwait(false))
             {
@@ -127,10 +128,15 @@ namespace Stratis.Bitcoin.Base
 
                     int consumedCount = this.cachedHeaders.IndexOf(result.Consumed.Header) + 1;
                     this.cachedHeaders.RemoveRange(0, consumedCount);
+                    int cacheSize = this.cachedHeaders.Count;
 
-                    this.logger.LogTrace("{0} entries were consumed from the cache, {1} items were left.", consumedCount, this.cachedHeaders.Count);
+                    this.logger.LogTrace("{0} entries were consumed from the cache, {1} items were left.", consumedCount, cacheSize);
+                    syncRequired = cacheSize == 0;
                 }
             }
+
+            if (syncRequired)
+                await this.SendGetHeadersPayloadAsync().ConfigureAwait(false);
 
             this.logger.LogTrace("(-):'{0}'", result);
             return result;
