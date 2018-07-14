@@ -56,6 +56,7 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
                 CoreNode nodeB = builder.CreateBitcoinCoreNode();
                 builder.StartAll();
                 RPCClient rpc = nodeA.CreateRPCClient();
+                rpc.RemoveNodeAsync(nodeA.Endpoint);
                 rpc.AddNode(nodeB.Endpoint);
 
                 AddedNodeInfo[] info = null;
