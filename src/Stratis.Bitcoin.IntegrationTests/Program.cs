@@ -2,8 +2,10 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using Stratis.Bitcoin.IntegrationTests.Miners;
 using Stratis.Bitcoin.IntegrationTests.Wallet;
 using Xunit;
+using Xunit.Sdk;
 
 namespace Stratis.Bitcoin.IntegrationTests
 {

@@ -35,6 +35,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Transactions
         public TransactionWithNullDataSpecification(ITestOutputHelper output) : base(output)
         {
         }
+
         protected override void BeforeTest()
         {
             this.builder = NodeBuilder.Create(Path.Combine(this.GetType().Name, this.CurrentTest.DisplayName));

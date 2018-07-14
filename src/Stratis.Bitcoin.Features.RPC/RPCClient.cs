@@ -844,7 +844,7 @@ namespace Stratis.Bitcoin.Features.RPC
             if (nodeEndPoint == null)
                 throw new ArgumentNullException("nodeEndPoint");
 
-            SendCommand(RPCOperations.addnode, nodeEndPoint.ToString(), "remove");
+            SendCommandAsync(RPCOperations.addnode, nodeEndPoint.ToString(), "remove");
         }
 
         public async Task RemoveNodeAsync(EndPoint nodeEndPoint)

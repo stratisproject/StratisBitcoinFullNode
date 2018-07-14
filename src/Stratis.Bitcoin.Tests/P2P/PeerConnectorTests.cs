@@ -269,7 +269,8 @@ namespace Stratis.Bitcoin.Tests.P2P
                 peerAddressManager,
                 new IPeerConnector[] { peerConnector },
                 null,
-                connectionSettings);
+                connectionSettings, 
+                new VersionProvider());
 
             return connectionManager;
         }
