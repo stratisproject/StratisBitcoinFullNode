@@ -228,6 +228,15 @@ namespace Stratis.Bitcoin.Base
                 return;
             }
 
+            if (headers.Count > MaxItemsPerHeadersMessage)
+            {
+                this.logger.LogTrace("Headers payload with {0} headers was received. Protocol violation. Banning the peer.", headers.Count);
+                this.peerBanning.BanAndDisconnectPeer(peer.PeerEndPoint, this.connectionManager.ConnectionSettings.BanTimeSeconds, "Protocol violation.");
+
+                this.logger.LogTrace("(-)[TOO_MANY_HEADERS]");
+                return;
+            }
+
             // Check headers for consecutiveness.
             for (int i = 1; i < headers.Count; i++)
             {
