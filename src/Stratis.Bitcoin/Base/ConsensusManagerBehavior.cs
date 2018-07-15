@@ -243,7 +243,7 @@ namespace Stratis.Bitcoin.Base
 
             using (await this.asyncLock.LockAsync().ConfigureAwait(false))
             {
-                if (this.cachedHeaders.Count > CacheSyncHeadersThreshold)
+                if (this.cachedHeaders.Count > CacheSyncHeadersThreshold) //TODO when proven headers are implemented combine this with size threshold of N mb.
                 {
                     // Ignore this message because cache is full.
                     this.logger.LogTrace("(-)[CACHE_IS_FULL]");
@@ -280,7 +280,7 @@ namespace Stratis.Bitcoin.Base
                     this.logger.LogTrace("{0} out of {1} items were not consumed and added to cache.", headers.Count - consumedCount, headers.Count);
                 }
 
-                if (this.cachedHeaders.Count < CacheSyncHeadersThreshold)
+                if (this.cachedHeaders.Count == 0)
                     await this.ResyncAsync().ConfigureAwait(false);
             }
 
