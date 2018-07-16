@@ -51,11 +51,11 @@ namespace Stratis.SmartContracts.Executor.Reflection
         /// Contract does not exist, so set the gas units used to a value from the price list and set
         /// a <see cref="SmartContractDoesNotExistException"/>.
         /// </summary>
-        internal static ISmartContractExecutionResult ContractDoesNotExist(SmartContractCarrier carrier)
+        internal static ISmartContractExecutionResult ContractDoesNotExist(string methodName)
         {
             var executionResult = new SmartContractExecutionResult
             {
-                Exception = new SmartContractDoesNotExistException(carrier.CallData.MethodName),
+                Exception = new SmartContractDoesNotExistException(methodName),
                 GasConsumed = GasPriceList.ContractDoesNotExist()
             };
 
