@@ -134,7 +134,7 @@ namespace Stratis.Bitcoin.Tests.Common
             return blocks;
         }
 
-        public Block CreateBlock(int blockNumber, bool bigBlocks = false)
+        private Block CreateBlock(int blockNumber, bool bigBlocks = false)
         {
             Block block = this.Network.CreateBlock();
 
