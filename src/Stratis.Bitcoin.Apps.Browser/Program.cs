@@ -1,8 +1,6 @@
 ﻿using Microsoft.AspNetCore.Blazor.Browser.Rendering;
 using Microsoft.AspNetCore.Blazor.Browser.Services;
 using Microsoft.Extensions.DependencyInjection;
-using System;
-using System.Diagnostics;
 using Stratis.Bitcoin.Apps.Browser.Interfaces;
 using Stratis.Bitcoin.Apps.Browser.Services;
 

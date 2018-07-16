@@ -7,6 +7,9 @@ using Stratis.Bitcoin.Features.Apps.Interfaces;
 
 namespace Stratis.Bitcoin.Features.Apps
 {
+    /// <summary>
+    /// Feature allowing for the dynamic hosting of web-based applications targeting the FullNode.
+    /// </summary>
     public class AppsFeature : FullNodeFeature
     {
         private bool disposed;
@@ -23,7 +26,7 @@ namespace Stratis.Bitcoin.Features.Apps
 
         public override void Initialize()
         {
-            this.logger.LogInformation($"Initializing {nameof(AppsFeature)}");
+            this.logger.LogInformation("Initializing {0}", nameof(AppsFeature));
 
             this.appsHost.Host(this.appsStore.Applications);
         }
@@ -32,7 +35,7 @@ namespace Stratis.Bitcoin.Features.Apps
         {
             if (this.disposed)
                 return;
-            this.logger.LogInformation($"Disposing {nameof(AppsFeature)}");
+            this.logger.LogInformation("Disposing {0}", nameof(AppsFeature));
 
             this.appsHost.Close();
 

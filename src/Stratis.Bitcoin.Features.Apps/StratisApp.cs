@@ -3,6 +3,9 @@ using Stratis.Bitcoin.Features.Apps.Interfaces;
 
 namespace Stratis.Bitcoin.Features.Apps
 {
+    /// <summary>
+    /// Instances created from stratisApp.json
+    /// </summary>
     public class StratisApp : IStratisApp
     {
         [JsonProperty("displayName")]

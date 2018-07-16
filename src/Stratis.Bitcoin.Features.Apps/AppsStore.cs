@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using Microsoft.Extensions.Logging;
@@ -10,27 +11,41 @@ using Stratis.Bitcoin.Utilities.Extensions;
 
 namespace Stratis.Bitcoin.Features.Apps
 {
+    /// <summary>
+    /// Responsible for storing StratisApps as read from the current running Stratis folder.
+    /// </summary>
     public class AppsStore : IAppsStore
     {
         private readonly ILogger logger;
-        private readonly List<IStratisApp> applications = new List<IStratisApp>();
+        private List<IStratisApp> applications;
         private readonly DataFolder dataFolder;
         private const string ConfigFileName = "stratisApp.json";
 
         public AppsStore(ILoggerFactory loggerFactory, DataFolder dataFolder)
         {
             this.dataFolder = dataFolder;
-            this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
-
-            this.Load();
+            this.logger = loggerFactory.CreateLogger(this.GetType().FullName);            
         }
 
-        public IEnumerable<IStratisApp> Applications => this.applications;
+        public IEnumerable<IStratisApp> Applications
+        {
+            get
+            {
+                if (this.applications == null)
+                    this.Load();
+
+                return this.applications;
+            }
+        }
 
         private void Load()
         {
             try
             {
+                Debug.Assert(this.applications==null);
+
+                this.applications = new List<IStratisApp>();
+
                 FileInfo[] fileInfos = new DirectoryInfo(this.dataFolder.ApplicationsPath)
                     .GetFiles(ConfigFileName, SearchOption.AllDirectories);
 
@@ -40,12 +55,11 @@ namespace Stratis.Bitcoin.Features.Apps
                 this.applications.AddRange(apps.Where(x => x != null));
 
                 if (this.applications.IsEmpty())
-                    this.logger.LogWarning("No Stratis applications found at or below {0}",
-                        this.dataFolder.ApplicationsPath);
+                    this.logger.LogWarning("No Stratis applications found at or below {0}", this.dataFolder.ApplicationsPath);
             }
             catch (Exception e)
             {
-                this.logger.LogError($"Failed to load Stratis apps : {0}", e.Message);                
+                this.logger.LogError("Failed to load Stratis apps :{0}", e.Message);
             }
         }
 
@@ -59,7 +73,7 @@ namespace Stratis.Bitcoin.Features.Apps
             }
             catch (Exception e)
             {
-                this.logger.LogError($"Failed to create app : {0}", e.Message);
+                this.logger.LogError("Failed to create app :{0}", e.Message);
                 return null;
             }
         }

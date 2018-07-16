@@ -21,6 +21,7 @@ namespace Stratis.Bitcoin.Features.Apps
         public IActionResult GetApplications()
         {
             this.logger.LogInformation($"{nameof(this.GetApplications)}");
+
             return this.Ok(this.appsStore.Applications);
         }
     }

@@ -9,22 +9,28 @@ using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.Apps
 {
+    /// <summary>
+    /// Reponsible for web-hosting StratisApps
+    /// </summary>
     public class AppsHost : IDisposable, IAppsHost
     {        
         private readonly ILogger logger;
-        private readonly List<(IStratisApp app, IWebHost host)> hostedApps = new List<(IStratisApp app, IWebHost host)>();
+        private readonly List<(IStratisApp app, IWebHost host)> hostedApps;
 
         public AppsHost(ILoggerFactory loggerFactory) 
         {
-            this.logger = loggerFactory.CreateLogger(this.GetType().FullName);            
+            this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
+            this.hostedApps = new List<(IStratisApp app, IWebHost host)>();
         }
 
-        public IEnumerable<IStratisApp> HostedApps => this.hostedApps.Select(x => x.app);        
+        public IEnumerable<IStratisApp> HostedApps => this.hostedApps.Select(x => x.app);
 
-        public void Host(IEnumerable<IStratisApp> stratisApps) =>
+        public void Host(IEnumerable<IStratisApp> stratisApps)
+        {
             stratisApps.Where(x => x.IsSinglePageApp).ToList().ForEach(this.HostSinglePageApp);
+        }
 
-        public void Close() => this.Dispose();        
+        public void Close() => this.Dispose();
 
         public void Dispose()
         {
@@ -52,11 +58,11 @@ namespace Stratis.Bitcoin.Features.Apps
                 pair.host.Start();                
 
                 this.hostedApps.Add(pair);                
-                this.logger.LogInformation($"SPA '{stratisApp.DisplayName}' hosted at {stratisApp.Address}");
+                this.logger.LogInformation("SPA '{0}' hosted at {1}", stratisApp.DisplayName, stratisApp.Address);
             }
             catch (Exception e)
             {
-                this.logger.LogError($"Failed to host app '{stratisApp.DisplayName}' : {e.Message}");
+                this.logger.LogError("Failed to host app '{0}' :{1}", stratisApp.DisplayName, e.Message);
             }
         }
     }
