@@ -30,7 +30,7 @@ namespace Stratis.Bitcoin.Consensus.Rules
 
         /// <summary>
         /// Execute the logic in the current rule in an async approach.
-        /// If the validation of the rule fails a <see cref="ConsensusErrorException"/> will thrown.
+        /// If the validation of the rule fails a <see cref="ConsensusErrorException"/> will be thrown.
         /// </summary>
         /// <param name="context">The context that has all info that needs to be validated.</param>
         /// <returns>The execution task.</returns>
@@ -41,7 +41,7 @@ namespace Stratis.Bitcoin.Consensus.Rules
 
         /// <summary>
         /// Execute the logic in the current rule.
-        /// If the validation of the rule fails a <see cref="ConsensusErrorException"/> will thrown.
+        /// If the validation of the rule fails a <see cref="ConsensusErrorException"/> will be thrown.
         /// </summary>
         /// <param name="context">The context that has all info that needs to be validated.</param>
         /// <returns>The execution task.</returns>
