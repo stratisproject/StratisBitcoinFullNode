@@ -10,7 +10,7 @@ using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
 using Stratis.Bitcoin.Utilities;
 using Xunit;
 
-namespace Stratis.Bitcoin.IntegrationTests
+namespace Stratis.Bitcoin.IntegrationTests.Mempool
 {
     public class MemoryPoolTests
     {
@@ -83,11 +83,12 @@ namespace Stratis.Bitcoin.IntegrationTests
                 parentTx.AddOutput(new TxOut("25", dest1.PubKey.Hash));
                 parentTx.AddOutput(new TxOut("24", dest2.PubKey.Hash)); // 1 btc fee
                 parentTx.Sign(stratisNodeSync.FullNode.Network, stratisNodeSync.MinerSecret, false);
+
                 stratisNodeSync.Broadcast(parentTx);
                 // wiat for the trx to enter the pool
                 TestHelper.WaitLoop(() => stratisNodeSync.CreateRPCClient().GetRawMempool().Length == 1);
                 // mine the transactions in the mempool
-                stratisNodeSync.GenerateBlocks(1, stratisNodeSync.FullNode.MempoolManager().InfoAllAsync().Result.Select(s => s.Trx).ToList());
+                stratisNodeSync.GenerateBlockManually(stratisNodeSync.FullNode.MempoolManager().InfoAllAsync().Result.Select(s => s.Trx).ToList());
                 TestHelper.WaitLoop(() => stratisNodeSync.CreateRPCClient().GetRawMempool().Length == 0);
 
                 //create a new trx spending both outputs
@@ -175,31 +176,31 @@ namespace Stratis.Bitcoin.IntegrationTests
                 }
 
                 // Test 1: block with both of those transactions should be rejected.
-                uint256 block = stratisNodeSync.GenerateBlocks(1, spends).Single();
+                Block block = stratisNodeSync.GenerateBlockManually(spends);
                 TestHelper.WaitLoop(() => stratisNodeSync.FullNode.ConsensusLoop().Tip.HashBlock == stratisNodeSync.FullNode.Chain.Tip.HashBlock);
-                Assert.True(stratisNodeSync.FullNode.Chain.Tip.HashBlock != block);
+                Assert.True(stratisNodeSync.FullNode.Chain.Tip.HashBlock != block.GetHash());
 
                 // Test 2: ... and should be rejected if spend1 is in the memory pool
                 Assert.True(stratisNodeSync.AddToStratisMempool(spends[0]));
-                block = stratisNodeSync.GenerateBlocks(1, spends).Single();
+                block = stratisNodeSync.GenerateBlockManually(spends);
                 TestHelper.WaitLoop(() => stratisNodeSync.FullNode.ConsensusLoop().Tip.HashBlock == stratisNodeSync.FullNode.Chain.Tip.HashBlock);
-                Assert.True(stratisNodeSync.FullNode.Chain.Tip.HashBlock != block);
+                Assert.True(stratisNodeSync.FullNode.Chain.Tip.HashBlock != block.GetHash());
                 stratisNodeSync.FullNode.MempoolManager().Clear().Wait();
 
                 // Test 3: ... and should be rejected if spend2 is in the memory pool
                 Assert.True(stratisNodeSync.AddToStratisMempool(spends[1]));
-                block = stratisNodeSync.GenerateBlocks(1, spends).Single();
+                block = stratisNodeSync.GenerateBlockManually(spends);
                 TestHelper.WaitLoop(() => stratisNodeSync.FullNode.ConsensusLoop().Tip.HashBlock == stratisNodeSync.FullNode.Chain.Tip.HashBlock);
-                Assert.True(stratisNodeSync.FullNode.Chain.Tip.HashBlock != block);
+                Assert.True(stratisNodeSync.FullNode.Chain.Tip.HashBlock != block.GetHash());
                 stratisNodeSync.FullNode.MempoolManager().Clear().Wait();
 
                 // Final sanity test: first spend in mempool, second in block, that's OK:
                 var oneSpend = new List<Transaction>();
                 oneSpend.Add(spends[0]);
                 Assert.True(stratisNodeSync.AddToStratisMempool(spends[1]));
-                block = stratisNodeSync.GenerateBlocks(1, oneSpend).Single();
+                block = stratisNodeSync.GenerateBlockManually(oneSpend);
                 TestHelper.WaitLoop(() => stratisNodeSync.FullNode.ConsensusLoop().Tip.HashBlock == stratisNodeSync.FullNode.Chain.Tip.HashBlock);
-                Assert.True(stratisNodeSync.FullNode.Chain.Tip.HashBlock == block);
+                Assert.True(stratisNodeSync.FullNode.Chain.Tip.HashBlock == block.GetHash());
 
                 // spends[1] should have been removed from the mempool when the
                 // block with spends[0] is accepted:

@@ -69,7 +69,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                 Assert.Null(stratisReceiver.FullNode.WalletManager().GetSpendableTransactionsInWallet("mywallet").First().Transaction.BlockHeight);
 
                 // generate two new blocks do the trx is confirmed
-                stratisSender.GenerateBlocks(1, new List<Transaction>(new[] { stratisSender.FullNode.Network.CreateTransaction(trx.ToBytes()) }));
+                stratisSender.GenerateBlockManually(new List<Transaction>(new[] { stratisSender.FullNode.Network.CreateTransaction(trx.ToBytes()) }));
                 stratisSender.GenerateStratisWithMiner(1);
 
                 // wait for block repo for block sync to work
@@ -354,8 +354,8 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                 TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(stratisReceiver, stratisReorg));
 
                 // remove the reorg node and wait for node to be disconnected
-                stratisReceiver.CreateRPCClient().RemoveNodeAsync(stratisReorg.Endpoint);
-                stratisSender.CreateRPCClient().RemoveNodeAsync(stratisReorg.Endpoint);
+                stratisReceiver.CreateRPCClient().RemoveNodeAsync(stratisReorg.Endpoint).GetAwaiter().GetResult();
+                stratisSender.CreateRPCClient().RemoveNodeAsync(stratisReorg.Endpoint).GetAwaiter().GetResult();
                 TestHelper.WaitLoop(() => !TestHelper.IsNodeConnected(stratisReorg));
 
                 // create a reorg by mining on two different chains

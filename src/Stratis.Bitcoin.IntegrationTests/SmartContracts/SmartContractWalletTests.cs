@@ -89,7 +89,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 Assert.Null(scReceiver.FullNode.WalletManager().GetSpendableTransactionsInWallet(WalletName).First().Transaction.BlockHeight);
 
                 // generate two new blocks do the trx is confirmed
-                scSender.GenerateBlocks(1, new List<Transaction>(new[] { scSender.FullNode.Network.CreateTransaction(trx.ToBytes()) }));
+                scSender.GenerateBlockManually(new List<Transaction>(new[] { scSender.FullNode.Network.CreateTransaction(trx.ToBytes()) }));
                 scSender.GenerateStratisWithMiner(1);
 
                 // wait for block repo for block sync to work

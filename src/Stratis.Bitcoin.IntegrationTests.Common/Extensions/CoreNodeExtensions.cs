@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using NBitcoin;
 using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Features.Api;
@@ -8,6 +9,7 @@ using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
+using static Stratis.Bitcoin.BlockPulling.BlockPuller;
 
 namespace Stratis.Bitcoin.IntegrationTests
 {
@@ -49,44 +51,42 @@ namespace Stratis.Bitcoin.IntegrationTests
             return coreNode.FullNode.NodeService<ApiSettings>()?.ApiPort ?? -1;
         }
 
-        public static uint256[] GenerateBlocks(this CoreNode coreNode, int blocksToGenerate)
+        /// <summary>
+        /// This should only be used if we need to create a block manually, in all other cases please use
+        /// <see cref="CoreNode.GenerateStratisWithMiner"/>
+        /// </summary>
+        /// <param name="coreNode">The node we want to create the block with.</param>
+        /// <param name="transactions">Transactions we want to manually include in the block.</param>
+        public static Block GenerateBlockManually(this CoreNode coreNode, List<Transaction> transactions)
         {
-            return GenerateBlocks(coreNode, blocksToGenerate, new List<Transaction>());
-        }
+            uint nonce = 0;
 
-        public static uint256[] GenerateBlocks(this CoreNode coreNode, int blocksToGenerate, List<Transaction> transactions)
-        {
-            var blocks = new List<Block>();
+            var block = coreNode.FullNode.Network.CreateBlock();
+            block.Header.HashPrevBlock = coreNode.FullNode.Chain.Tip.HashBlock;
+            block.Header.Bits = block.Header.GetWorkRequired(coreNode.FullNode.Network, coreNode.FullNode.Chain.Tip);
+            block.Header.UpdateTime(DateTimeOffset.UtcNow, coreNode.FullNode.Network, coreNode.FullNode.Chain.Tip);
 
-            for (int i = 0; i < blocksToGenerate; i++)
+            var coinbase = coreNode.FullNode.Network.CreateTransaction();
+            coinbase.AddInput(TxIn.CreateCoinbase(coreNode.FullNode.Chain.Height + 1));
+            coinbase.AddOutput(new TxOut(coreNode.FullNode.Network.GetReward(coreNode.FullNode.Chain.Height + 1), coreNode.MinerSecret.GetAddress()));
+            block.AddTransaction(coinbase);
+
+            if (transactions.Any())
             {
-                uint nonce = 0;
-
-                var block = coreNode.FullNode.Network.CreateBlock();
-                block.Header.HashPrevBlock = coreNode.FullNode.Chain.Tip.HashBlock;
-                block.Header.Bits = block.Header.GetWorkRequired(coreNode.FullNode.Network, coreNode.FullNode.Chain.Tip);
-                block.Header.UpdateTime(DateTimeOffset.UtcNow, coreNode.FullNode.Network, coreNode.FullNode.Chain.Tip);
-
-                var coinbase = coreNode.FullNode.Network.CreateTransaction();
-                coinbase.AddInput(TxIn.CreateCoinbase(coreNode.FullNode.Chain.Height + 1));
-                coinbase.AddOutput(new TxOut(coreNode.FullNode.Network.GetReward(coreNode.FullNode.Chain.Height + 1), coreNode.MinerSecret.GetAddress()));
-                block.AddTransaction(coinbase);
-
-                if (transactions.Any())
-                {
-                    transactions = Reorder(transactions);
-                    block.Transactions.AddRange(transactions);
-                }
-
-                block.UpdateMerkleRoot();
-
-                while (!block.CheckProofOfWork())
-                    block.Header.Nonce = ++nonce;
-
-                blocks.Add(block);
+                transactions = Reorder(transactions);
+                block.Transactions.AddRange(transactions);
             }
 
-            return blocks.Select(b => b.GetHash()).ToArray();
+            block.UpdateMerkleRoot();
+
+            while (!block.CheckProofOfWork())
+                block.Header.Nonce = ++nonce;
+
+            uint256 blockHash = block.GetHash();
+            var chainedHeader = new ChainedHeader(block.Header, blockHash, coreNode.FullNode.Chain.Tip);
+            coreNode.FullNode.ConsensusLoop().Puller.InjectBlock(blockHash, new DownloadedBlock { Length = block.GetSerializedSize(), Block = block }, CancellationToken.None);
+
+            return block;
         }
 
         public static List<Transaction> Reorder(List<Transaction> transactions)
