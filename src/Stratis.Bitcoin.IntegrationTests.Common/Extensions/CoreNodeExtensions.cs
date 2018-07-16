@@ -59,19 +59,21 @@ namespace Stratis.Bitcoin.IntegrationTests
         /// <param name="transactions">Transactions we want to manually include in the block.</param>
         public static Block GenerateBlockManually(this CoreNode coreNode, List<Transaction> transactions)
         {
-            uint nonce = 0;
+            BitcoinSecret receiver = coreNode.MinerSecret;
+            DateTimeOffset now = coreNode.MockTime ?? DateTimeOffset.UtcNow;
 
-            var block = coreNode.FullNode.Network.CreateBlock();
+            uint nonce = 0;
+            var block = coreNode.FullNode.Network.Consensus.ConsensusFactory.CreateBlock();
             block.Header.HashPrevBlock = coreNode.FullNode.Chain.Tip.HashBlock;
             block.Header.Bits = block.Header.GetWorkRequired(coreNode.FullNode.Network, coreNode.FullNode.Chain.Tip);
-            block.Header.UpdateTime(DateTimeOffset.UtcNow, coreNode.FullNode.Network, coreNode.FullNode.Chain.Tip);
+            block.Header.UpdateTime(now, coreNode.FullNode.Network, coreNode.FullNode.Chain.Tip);
 
-            var coinbase = coreNode.FullNode.Network.CreateTransaction();
+            var coinbase = coreNode.FullNode.Network.Consensus.ConsensusFactory.CreateTransaction();
             coinbase.AddInput(TxIn.CreateCoinbase(coreNode.FullNode.Chain.Height + 1));
-            coinbase.AddOutput(new TxOut(coreNode.FullNode.Network.GetReward(coreNode.FullNode.Chain.Height + 1), coreNode.MinerSecret.GetAddress()));
+            coinbase.AddOutput(new TxOut(coreNode.FullNode.Network.GetReward(coreNode.FullNode.Chain.Height + 1), receiver.GetAddress()));
             block.AddTransaction(coinbase);
 
-            if (transactions.Any())
+            if (transactions?.Any() ?? false)
             {
                 transactions = Reorder(transactions);
                 block.Transactions.AddRange(transactions);
@@ -83,7 +85,8 @@ namespace Stratis.Bitcoin.IntegrationTests
                 block.Header.Nonce = ++nonce;
 
             uint256 blockHash = block.GetHash();
-            var chainedHeader = new ChainedHeader(block.Header, blockHash, coreNode.FullNode.Chain.Tip);
+            var newChain = new ChainedHeader(block.Header, blockHash, coreNode.FullNode.Chain.Tip);
+            ChainedHeader oldTip = coreNode.FullNode.Chain.SetTip(newChain);
             coreNode.FullNode.ConsensusLoop().Puller.InjectBlock(blockHash, new DownloadedBlock { Length = block.GetSerializedSize(), Block = block }, CancellationToken.None);
 
             return block;
