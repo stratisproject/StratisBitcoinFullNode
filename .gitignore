@@ -252,4 +252,3 @@ ModelManifest.xml
 /src/Stratis.Bitcoin.Tests/Stratis.Bitcoin.Tests/TestData
 /src/Stratis.StratisD/Logs
 /src/Stratis.BitcoinD/Logs
-src/Stratis.Bitcoin.Tests/Consensus/ChainedHeaderTreeTest.cs.orig
